@@ -2,9 +2,10 @@
   "display_name": "First Contact",
   "description": "Infiltrate Viral Dynamics Media to investigate suspected ENTROPY cell operations. Gather evidence of coordinated disinformation campaigns targeting local elections while maintaining your cover as an IT contractor. Your first mission to uncover the Social Fabric cell.",
   "difficulty_level": 1,
-  "secgen_scenario": "intro_to_linux_security_lab",
+  "secgen_scenario": "break_escape/safetynet/m01_first_contact.xml",
   "collection": "season_1",
-  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/introducing_attacks/m01-first-contact/",
+  "ui_theme": "spy",
+  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m01-first-contact/",
   "cybok": [
     {
       "ka": "NS",
@@ -17,7 +18,7 @@
       "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS"]
     },
     {
-      "ka": "OS",
+      "ka": "OSV",
       "topic": "Primitives for Isolation and Mediation",
       "keywords": ["authentication and identification"]
     },

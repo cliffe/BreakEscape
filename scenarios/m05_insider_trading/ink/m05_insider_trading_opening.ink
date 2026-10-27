@@ -12,6 +12,13 @@ VAR handler_trust = 50 // Synced scenario global: HaX's confidence (0-100); also
 // External variables (set by game)
 VAR player_name = "Agent 0x00"
 
+// Imported (read-only) from m04 (docs/agents/CARRY_OVER_PLAN.md): false when
+// the player never finished m04. Never assign these here.
+VAR m04_voltage_captured = false // Imported (read-only) from m04 voltage_captured: Voltage arrested or KO'd
+VAR m04_voltage_escaped = false  // Imported (read-only) from m04 voltage_escaped: the player took the button and he reached the dock
+// No m04_completed: m04's debrief opens only after the shutdown, which needs
+// Voltage captured or escaped, so a finished m04 run always sets one of the two.
+
 // ===========================================
 // OPENING
 // ===========================================
@@ -22,12 +29,34 @@ VAR player_name = "Agent 0x00"
 // too, not only on the last line. An early close or a reload mid-briefing
 // no longer strands it.
 #complete_task:receive_mission_briefing
-Narrator: A SAFETYNET briefing room. Director Netherton stands at the head of the table. Beside him, Nightshade has three monitors of access logs open. Before he ran the technical side, insider threat was his speciality.
+Narrator: A SAFETYNET briefing room. Director Netherton stands at the head of the table. Beside him, Nightshade has three monitors of access logs open.
 
 Director Magnus Netherton: Agent 0x00. This one is close to home in a way I dislike. Someone inside a Home Office contractor is handing ENTROPY the crown jewels.
 
 Director Magnus Netherton: I have brought Nightshade in because catching a mole is precisely his trade. Learn from him. HaX will run you on the ground.
 
+// PASS 5 (A5): m04's debrief set up Task Force Null; this is its first word
+// since. Nothing promised about later missions.
+// Carry-over (2026-10-17): a player who finished m04 hears Voltage's fate named
+// (m04_closing_debrief: "Voltage is in a room now" / "Voltage is gone").
+// The else branch is the original line, word for word (cached audio).
+{
+- m04_voltage_captured:
+    Director Magnus Netherton: Task Force Null is three people and a whiteboard. Voltage is in custody, because you took him alive. Every cell we've hit bought something. This time, a person.
+- m04_voltage_escaped:
+    Director Magnus Netherton: Task Force Null is three people and a whiteboard. Voltage is at large. You chose the button over him. Every cell we've hit bought something. This time, a person.
+- else:
+    Director Magnus Netherton: Task Force Null is three people and a whiteboard so far. Every cell we've hit bought something. This time it's bought a person. I want to know how.
+}
+
+// Phase 4 dialogue C1 (D5-28): the player speaks before the run reaches ten.
+// Both choices converge (a stance on the same briefing). Nightshade's "calm"
+// line below is quoted by m08 (m08_suspect_nightshade.ink:64): keep it word for word.
++ [Bought with what?]
+    Director Magnus Netherton: That is what you are going to tell me.
++ [Then we find out who sold.]
+    Director Magnus Netherton: Quite.
+-
 Agent 0x47 'Nightshade': Insiders are hard to catch because they never have to break in. They're already trusted.
 
 Agent 0x47 'Nightshade': So you hunt the pattern. Access a little too broad, hours a little too odd.
@@ -58,7 +87,7 @@ Agent HaX: Someone on the inside is stealing it.
 === damage_assessment ===
 #speaker:agent_0x99
 
-Agent HaX: Project Heisenberg. Quantum-safe key material for the national emergency dispatch network. The system that routes 999 calls.
+Agent HaX: Project Heisenberg. Quantum-safe key material for the national emergency dispatch network. The system that routes nine-nine-nine calls.
 
 Agent HaX: Seventy-three per cent of the package is already staged to go. The rest goes out within four hours unless we stop it.
 
@@ -271,12 +300,12 @@ Agent HaX: Last thing. How are you going to play it?
 
 + [Methodically. Document everything, interview everyone.]
     ~ player_approach = "cautious"
-    Agent HaX: Good. It's a puzzle. Give it the time it needs.
+    Agent HaX: Good. Write it all down. The police will want every page.
     -> final_instructions
 
 + [Fast and direct. Find the insider, stop the upload, get out.]
     ~ player_approach = "aggressive"
-    Agent HaX: Speed's good.
+    Agent HaX: Fast's fine. Sloppy isn't.
     -> final_instructions
 
 + [I'll read the room when I get there.]
@@ -300,7 +329,7 @@ Agent HaX: Thirty to forty-five lives ride on that upload. Keep the number with 
     Agent HaX: Just watch the clock while you're at it.
 }
 {player_approach == "aggressive":
-    Agent HaX: Move fast, but the police will still need a file they can use.
+    Agent HaX: And keep Patricia on side. You'll need her doors.
 }
 {player_approach == "diplomatic":
     Agent HaX: The insider might surprise you. Be ready for that.
@@ -340,4 +369,7 @@ Agent HaX: The final upload goes tonight. You have four hours.
 // redundant and relied on dynamic tags.
 #complete_task:receive_mission_briefing
 Agent HaX: Patricia Morgan's expecting you. Go.
--> END
+// Blind run B (finding 10): end on #exit_conversation (m06's briefing) so the
+// cutscene closes, not on "(Conversation ended - press ESC to close)".
+#exit_conversation
+-> DONE

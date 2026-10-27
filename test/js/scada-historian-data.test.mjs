@@ -6,9 +6,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
+import { readFileSync } from 'node:fs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const H = await import(pathToFileURL(join(here, '../../public/break_escape/js/minigames/scada-historian/scada-historian-data.js')).href);
+// The game modules are ESM but public/ has no package.json "type": "module", so Node would load
+// a plain import as CommonJS and fail on `export`. Import the source as an ES module via a data URL.
+const H = await import('data:text/javascript;base64,' + readFileSync(join(here, '../../public/break_escape/js/minigames/scada-historian/scada-historian-data.js')).toString('base64'));
 
 // Fixture shaped like sis02's historian_trend_viewer minigameData
 const SD = {

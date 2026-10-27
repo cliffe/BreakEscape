@@ -1,0 +1,13 @@
+{
+  "key": "06059ea3c7c9b0ef606e0619042abc83",
+  "npc": "victoria_sterling",
+  "text": "You find a hole in an NHS trust's patient records. The vendor offers you a T-shirt and a thank-you. A buyer offers forty thousand. What do you do?",
+  "voice": "Despina",
+  "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:17:53Z"
+}

@@ -13,6 +13,7 @@ import {
     SPRITE_PADDING_BOTTOM_ATLAS
 } from '../utils/constants.js';
 import { ensureCharacterTexture } from '../systems/character-textures.js';
+import { playerTalkPath, syncScenarioPlayer } from '../utils/player-avatar.js';
 import { insertDoorwayWaypoints } from '../systems/path-doorways.js';
 
 export let player = null;
@@ -136,16 +137,12 @@ export async function updatePlayerSprite(newSpriteKey) {
     player.body.setOffset(31, 66);
     
     // Update scenario reference BEFORE recreating animations so createPlayerAnimations() uses the new sprite
-    if (window.gameScenario) {
-        window.gameScenario.player = window.gameScenario.player || {};
-        window.gameScenario.player.spriteSheet = newSpriteKey;
-    }
+    if (window.gameScenario) syncScenarioPlayer(window.gameScenario, newSpriteKey);
 
     // Keep character registry in sync so person-chat portraits use the right talk image
     if (window.characterRegistry?.player) {
-        const legacyTalkMap = { 'hacker': 'assets/characters/hacker-talk.png', 'hacker-red': 'assets/characters/hacker-red-talk.png' };
         window.characterRegistry.player.spriteSheet = newSpriteKey;
-        window.characterRegistry.player.spriteTalk = legacyTalkMap[newSpriteKey] || `assets/characters/${newSpriteKey}_talk.png`;
+        window.characterRegistry.player.spriteTalk = playerTalkPath(newSpriteKey, window.gameScenario?.player?.spriteTalk);
     }
     
     // Destroy old animations before creating new ones (they reference the old sprite texture)
@@ -211,10 +208,10 @@ export function createPlayer(gameInstance) {
     const hasExplicitSprite = !!(window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet);
     console.log(`🎮 Loading player sprite: ${playerSprite}`);
 
-    // Update scenario to match saved preference (also initialises player object for scenarios that omit it)
+    // Update scenario to match saved preference (also initialises player object for scenarios that omit it).
+    // The talk portrait follows the chosen avatar: a scenario's spriteTalk for another character is replaced (aw9).
     if (window.gameScenario && window.breakEscapeConfig?.playerSprite) {
-        window.gameScenario.player = window.gameScenario.player || {};
-        window.gameScenario.player.spriteSheet = window.breakEscapeConfig.playerSprite;
+        syncScenarioPlayer(window.gameScenario, window.breakEscapeConfig.playerSprite);
     }
 
     // Find initial frame (first breathing-idle_south frame)
@@ -302,21 +299,21 @@ function setupKeyboardInput() {
             return;
         }
         
-        // E key for interaction
+        // F punches (jab, jab, cross for presses in a row); Q held blocks.
+        // A held key's auto-repeat doesn't count as more presses.
+        if (key === 'f') {
+            if (!event.repeat && window.playerCombat) window.playerCombat.attack();
+            event.preventDefault();
+            return;
+        }
+        if (key === 'q') {
+            if (!event.repeat && window.playerCombat) window.playerCombat.startBlock();
+            event.preventDefault();
+            return;
+        }
+
+        // E key for interaction: always interacts (a hostile NPC is punched)
         if (key === 'e') {
-            // Check interaction mode - if in punch mode, just punch in current direction
-            if (window.playerCombat) {
-                const currentMode = window.playerCombat.getInteractionMode();
-                if (currentMode === 'jab' || currentMode === 'cross') {
-                    // Punch in current facing direction (don't interact)
-                    window.playerCombat.punch();
-                    if (window.getTutorialManager) window.getTutorialManager().notifyAttackedInCombatMode();
-                    event.preventDefault();
-                    return;
-                }
-            }
-            
-            // Normal interaction mode - interact with nearest object
             if (window.tryInteractWithNearest) {
                 window.tryInteractWithNearest();
             }
@@ -363,8 +360,18 @@ function setupKeyboardInput() {
         }
     });
     
+    // Leaving the window (alt-tab) never delivers Q's keyup: lower the guard
+    window.addEventListener('blur', () => window.playerCombat?.endBlock());
+
     // Handle keyup events
     document.addEventListener('keyup', (event) => {
+        // Releasing Q lowers the guard even if a minigame paused the keyboard
+        // meanwhile, so the guard can't stick up
+        if (event.key.toLowerCase() === 'q') {
+            window.playerCombat?.endBlock();
+            return;
+        }
+
         // Skip if keyboard input is paused (for minigames that need keyboard input)
         if (keyboardPaused) {
             return;
@@ -741,7 +748,9 @@ export function movePlayerToPoint(x, y) {
 
         // Prefer a direct route when the full width of the player body has clear
         // physics LOS to the destination (world-aware: checks all rooms' wall boxes).
-        if (pathfindingManager.hasWorldPhysicsLineOfSight(px, py, x, y)) {
+        // hasPlayerLineOfSight also refuses a line through a "prefer to route
+        // around" object (systems/path-avoid.js); EasyStar then decides.
+        if (pathfindingManager.hasPlayerLineOfSight(px, py, x, y)) {
             console.log('  → Direct LOS clear — going straight');
             drawPathDebug(px, py, [{ x, y }], null);
             playerFollowingPath = false;
@@ -765,7 +774,7 @@ export function movePlayerToPoint(x, y) {
                 // so the feet go through the opening square instead of clipping
                 // its frame on a diagonal (path-doorways.js).
                 path = insertDoorwayWaypoints({ x: cx, y: cy }, path, pathfindingManager.openDoorways);
-                const smoothed = pathfindingManager.smoothWorldPathForPlayer(cx, cy, path);
+                const smoothed = pathfindingManager.smoothWorldPathForPlayer(cx, cy, path, true);
                 console.log(`  → Smoothed to ${smoothed.length} waypoints:`,
                     smoothed.map((p, i) => `[${i}](${p.x.toFixed(0)},${p.y.toFixed(0)})`).join(' → '));
 
@@ -998,6 +1007,15 @@ export function updatePlayerMovement() {
         return;
     }
 
+    // Blocking: stand in guard, no walking (player-combat.js startBlock)
+    if (window.playerCombat?.isBlocking) {
+        player.body.setVelocity(0, 0);
+        player.isMoving = false;
+        window.playerCombat.showGuardPose();
+        updateFootstepSound(false);
+        return;
+    }
+
     // Handle keyboard movement (takes priority over mouse movement)
     if (isKeyboardMoving) {
         updatePlayerKeyboardMovement();
@@ -1090,11 +1108,12 @@ function updatePlayerKeyboardMovement() {
         if (player.isMoving) {
             player.isMoving = false;
             const animDir = getAnimationKey(player.direction);
-            player.anims.stop(); // Stop current animation
-            // Don't interrupt special animations: punch, death, hit, etc.
+            // Don't interrupt special animations: punch, death, hit, etc. A punch
+            // plays out and then returns to idle itself (player-combat.js).
             const currentAnim = player.anims.currentAnim?.key || '';
-            if (!currentAnim.includes('punch') && !currentAnim.includes('jab') && 
+            if (!currentAnim.includes('punch') && !currentAnim.includes('jab') &&
                 !currentAnim.includes('death') && !currentAnim.includes('taking-punch')) {
+                player.anims.stop();
                 player.anims.play(`idle-${animDir}`, true);
             }
         }
@@ -1231,7 +1250,8 @@ function updatePlayerMouseMovement() {
         || playerPath.slice(playerPathIndex).some(p => p.pinned));
     if (playerFollowingPath && playerFinalGoal && !pinnedAhead) {
         const pm  = window.pathfindingManager;
-        if (pm && pm.hasWorldPhysicsLineOfSight(px, py, playerFinalGoal.x, playerFinalGoal.y)) {
+        if (pm && pm.hasPlayerLineOfSight(px, py, playerFinalGoal.x, playerFinalGoal.y,
+                [targetPoint, ...playerPath.slice(playerPathIndex)])) {
             targetPoint = playerFinalGoal;
             playerFinalGoal = null;
             playerPath = [];
@@ -1266,7 +1286,7 @@ function updatePlayerMouseMovement() {
         const pm = window.pathfindingManager;
         if (targetPoint.pinned) {
             arrived = false;
-        } else if (pm && !pm.hasWorldPhysicsLineOfSight(px, py, next.x, next.y)) {
+        } else if (pm && !pm.hasPlayerLineOfSight(px, py, next.x, next.y, [targetPoint])) {
             arrived = false;
         }
     }
@@ -1287,11 +1307,12 @@ function updatePlayerMouseMovement() {
         if (player.isMoving) {
             player.isMoving = false;
             const animDir = getAnimationKey(player.direction);
-            player.anims.stop(); // Stop current animation
-            // Don't interrupt special animations: punch, death, hit, etc.
+            // Don't interrupt special animations: punch, death, hit, etc. A punch
+            // plays out and then returns to idle itself (player-combat.js).
             const currentAnim = player.anims.currentAnim?.key || '';
             if (!currentAnim.includes('punch') && !currentAnim.includes('jab') &&
                 !currentAnim.includes('death') && !currentAnim.includes('taking-punch')) {
+                player.anims.stop();
                 player.anims.play(`idle-${animDir}`, true);
             }
         }

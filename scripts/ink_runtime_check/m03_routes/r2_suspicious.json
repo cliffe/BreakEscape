@@ -1,5 +1,5 @@
 {"steps":[
-{"note":"R2 suspicious: dropped read, walk-back, arrest, Danny exposed; Ffion brushoff after reload"},
+{"note":"R2 suspicious: dropped read, walk-back, arrest, Danny exposed; Ffion brushoff after reload; page reload before the night confrontation (A4 follow-up: read_dropped synced)"},
 {"talk":"briefing","picks":["Remind me","What are they dealing","Walk me through","What else are they planning","That's everything","thorough","Anything else","If he did the recon"]},
 {"set":{"briefing_played":true,"conference_reader_tried":true}},
 {"talk":"ffion","picks":["Where do I sign","Looking to level up","Lean in","Thanks. I'll head"]},
@@ -15,6 +15,6 @@
 {"talk":"phone","picks":["distcc logs","charged extra","whole network down","Nothing right now"]},
 {"talk":"danny","picks":["Your reconnaissance","answer for it","logging it all"]},
 {"set":{"night_confrontation_ready":true}},
-{"talk":"victoria","picks":["need to talk","St. Catherine's Hospital","Forty per cent","story you tell yourself","not walking out"]},
+{"talk":"victoria","picks":["need to talk","St. Catherine's Hospital","Forty per cent","story you tell yourself","not walking out"],"reload":"page"},
 {"talk":"debrief","picks":["People died on what","mass-casualty","Any lead","Good. He should","What's my next"]}
 ]}

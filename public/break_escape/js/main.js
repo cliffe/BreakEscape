@@ -24,6 +24,8 @@ import './systems/npc-game-bridge.js'; // Bridge for NPCs to influence game stat
 
 // Import Objectives System
 import { getObjectivesManager } from './systems/objectives-manager.js';
+// conclusionScreen type "success": sets window.showSuccessScreen for the objectives manager
+import './ui/success-screen.js';
 
 // Import Tutorial System
 import { getTutorialManager } from './systems/tutorial-manager.js';
@@ -39,6 +41,9 @@ import MusicController from './music/music-controller.js';
 import { wirePhaserGameSoundToBreakEscape } from './music/phaser-audio-bus.js';
 import { createMusicWidget } from './music/music-widget.js';
 import { createVmControlsWidget } from './ui/vm-controls-widget.js';
+import { initVmContextPause } from './systems/vm-context-pause.js';
+import { getDisplaySettings, applyTheme } from './ui/display-settings.js';
+import { createGameMenu } from './ui/game-menu.js';
 
 // Global game variables
 window.game = null;
@@ -157,7 +162,7 @@ function initializeGame() {
             const conclusionAim = scenario.objectives.find(a => a.missionConclusion);
             if (!conclusionAim || !window.objectivesManager) return;
             console.log('🔁 Replaying mission conclusion screen on reload');
-            window.objectivesManager.handleMissionConcluded(conclusionAim);
+            window.objectivesManager.handleMissionConcluded(conclusionAim, { replay: true });
         });
     }
     
@@ -180,8 +185,18 @@ function initializeGame() {
     // Mount music widget — retries internally until #player-hud-buttons is ready
     window.musicWidget = createMusicWidget();
 
+    // Player's theme override (Display settings) over the mission's theme
+    applyTheme();
+
+    // Pause menu: Esc or the menu button in the top-right corner
+    window.gameMenu = createGameMenu();
+
     // Mount VM controls widget — only renders when vmSetPanelUrl is set (VM-backed missions)
     window.vmControlsWidget = createVmControlsWidget();
+
+    // R13: NPCs hold still while the player is on the VM (launcher, VM Controls
+    // overlay, console in another tab or window)
+    initVmContextPause();
 
     // Activate VM set on game start/resume — POST directly to Hacktivity's
     // activate_and_start endpoint (same action the VM controls panel uses).
@@ -208,6 +223,10 @@ function initializeGame() {
 
     const applyPixelPerfectScale = () => {
         const container = document.getElementById('game-container');
+        // core/game.js later sets window.game to the main scene; its .game is the
+        // Phaser.Game, which owns the canvas. Without this every resize after
+        // load returned here and the scale never changed.
+        const game = window.game?.game || window.game;
         if (!game?.scale || !game.canvas || !container) return;
 
         const dpr = window.devicePixelRatio || 1;
@@ -215,8 +234,13 @@ function initializeGame() {
         const deviceHeight = Math.round(container.clientHeight * dpr);
         if (!deviceWidth || !deviceHeight) return;
 
-        // Integer scale closest to covering a 640x480 view (what ENVELOP used to show)
-        const scale = Math.max(1, Math.round(Math.max(deviceWidth / BASE_WIDTH, deviceHeight / BASE_HEIGHT)));
+        // Integer scale closest to fitting a 640x480 view. Fitting (the smaller
+        // ratio) rather than covering keeps wide screens from zooming in on width
+        // alone: a 2560x1080 window ran at 4x and showed only 270 game pixels of
+        // height. The player can step it up or down in the menu's Display page.
+        const { zoomStep, hudStep } = getDisplaySettings();
+        const autoScale = Math.max(1, Math.round(Math.min(deviceWidth / BASE_WIDTH, deviceHeight / BASE_HEIGHT)));
+        const scale = Math.max(1, autoScale + zoomStep);
         const gameWidth = Math.ceil(deviceWidth / scale);
         const gameHeight = Math.ceil(deviceHeight / scale);
 
@@ -234,6 +258,14 @@ function initializeGame() {
         // CSS size = gameSize * zoom = exactly gameSize * scale device pixels.
         // setZoom also refreshes the input bounds for the new canvas rect.
         game.scale.setZoom(scale / dpr);
+
+        // The HUD's pixel art is drawn at 2x, the game's scale at 1080p. Zoom it so
+        // one art pixel covers as many device pixels as one game pixel (a whole
+        // number, so it stays crisp), keeping UI and world pixels the same size.
+        // The HUD size setting steps that up or down; it never shrinks unasked.
+        const hudDevicePixels = Math.max(1, scale + hudStep);
+        const hudZoom = Math.max(hudStep < 0 ? 1 / dpr : 1, hudDevicePixels / 2 / dpr);
+        document.documentElement.style.setProperty('--hud-zoom', hudZoom);
 
         console.log(`Pixel scale ${scale}x (dpr ${dpr}): game ${gameWidth}x${gameHeight}`);
     };
@@ -257,6 +289,7 @@ function initializeGame() {
 
     // Add event listeners
     window.addEventListener('resize', handleResize);
+    window.addEventListener('be:display-settings-changed', handleResize);
     window.addEventListener('orientationchange', handleOrientationChange);
     document.addEventListener('fullscreenchange', handleOrientationChange);
     

@@ -1,0 +1,10 @@
+{
+  "scenario": "awareness_e5_signin_pages",
+  "start_room": "training_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

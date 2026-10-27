@@ -1,3 +1,5 @@
+> **Rename (2026-10-16):** Agent 0x23 'Cipher' is now 'Vector' (user's decision). Ids, globals, the ink file and routes were renamed with him (`agent_vector`, `accused_vector`, `vector_*`, `m08_suspect_vector.ink`). This file predates the rename and still says Cipher.
+
 # m08 "The Mole" — Identifier Contract
 
 > Sections 1–8 predate passes 2 and 3. Where they differ, the "PASS 2 amendments" and
@@ -11,6 +13,17 @@ Continuity: m08 opens on the m07 closer (`found_mole_evidence` → "the leak was
 the agent"). The traitor is **Agent 0x47 "Nightshade"**, a placed insider of
 ENTROPY's **Insider Threat Initiative** (see
 `story_design/universe_bible/03_entropy_cells/insider_threat_initiative.md`).
+
+---
+
+## Imported globals (carry-over, 2026-10-17)
+
+Source: `docs/agents/CARRY_OVER_PLAN.md` ("Built"). Declared in `scenario.json.erb` `importGlobals`, not in `globalVariables`; the server writes them into the game's globals when it is created. **Read-only:** no ink, tag, mapping or task may assign them.
+
+- `m07_team_assignment` (string, from m07 `team_assignment`: `fracture` / `trojan_horse` / `meltdown` / `""`).
+- `m07_team_redirected` (bool, from m07 `team_redirected`).
+- `m07_completed` (bool): a finished m07 run exists. Tells "sent nobody" apart from "never played".
+- Read by `m08_opening_briefing` `start` (ATHENA's "Portland happened" line). A player who never finished m07 hears the original line.
 
 ---
 
@@ -270,3 +283,27 @@ See `DESIGN_REVIEW.md`, "Changes made (pass 4 design)".
 - **Canon:** Netherton has run field operations for five years (director_netherton.md). Nightshade
   has fifteen years' service and **taught the player's intake**; he did not train in the player's
   cohort (m01 has the player on a first mission).
+
+---
+
+## PASS 5 amendments (alignment stage, 2026-10-14; supersede everything above where they differ)
+
+- **Round 1 globals** (already in `scenario.json.erb`): `named_before_box`, `named_by_director`,
+  `named_by_hax`, `nightshade_tipped_off`, `nightshade_tidied`, `triple_agent_first_payment`.
+  `name_the_mole` is required; `mole_identified` comes from Netherton's `audit_right` or a fallback.
+- **Round 2 objects:** break_room has three lockers, side by side on sprite `student_locker1`:
+  `cipher_locker` (0x23: `cipher_token_pouch`, `cipher_project_sheet`), `nightshade_locker` (0x47,
+  unchanged contents) and `phantom_locker` (0x88: `phantom_boarding_stub`, `phantom_suspect_wall`).
+  All three are key locks the start-kit picks open; `cipher_locker_key` and `phantom_locker_key` are
+  in each man's itemsHeld, given after his door-audit beat, dropped on a KO. `nightshade_go_bag` is
+  named "Holdall -- Locker 0x47" and reads neutral until `mole_identified`.
+- **Round 2 globals:** `audit_warned` (Netherton, second misread; HaX's ladder reads it),
+  `go_bag_lining_known` (the go-bag's passport and ticket are known: confrontation, HaX in person,
+  credits), `go_bag_read_named` (read after the naming, so HaX's lining text is skipped).
+  `receptionist_ai` hosts the tidy latch (room entries) and the two go-bag latches.
+- **Round 2 ink:** Netherton `name_a_suspect` became the stitch `hub.name_forming` (reopen lands on
+  the hub); synced VARs `audit_warned`, `all_flags_submitted`. HaX phone knots `hax_read_1`,
+  `hax_read_2`, `hax_read_wrong_time`, `hax_read_wrong_who`, `hax_read_right` (sets `named_by_hax`,
+  `mole_identified`, completes `name_the_mole`). Cipher knots `audit_beat`, `locker_key`; Cipher and
+  Phantom local VAR `gave_locker_key`. Confrontation VARs `accused_cipher`, `accused_phantom`,
+  `go_bag_lining_known`. Off-duty agent VARs `accused_*`. Debrief VAR `nightshade_tipped_off`.

@@ -195,6 +195,9 @@
     flex: 0 1 auto;
     align-items: stretch;
     min-width: 180px;
+    /* At most half the row, so a long choice can't push the choices onto a row of
+       their own and stretch the caption across the NPC's face (m08 R6) */
+    max-width: 48%;
 }
 
 /* Choices container - displayed in controls area */
@@ -216,9 +219,9 @@
     cursor: pointer;
     text-align: left;
     transition: all 0.1s ease;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    /* Wraps inside the half-width column rather than widening it (m08 R6) */
+    white-space: normal;
+    overflow-wrap: anywhere;
     min-width: 180px;
 }
 
@@ -522,4 +525,28 @@
     .person-chat-choice-button {
         display: none;
     }
+}
+
+/* Influence header and tells (06 N4). Sits above the speaker name. */
+.person-chat-header.se-chat-header {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.se-chat-header .influence-bar {
+    max-width: 340px;
+}
+
+.se-chat-header .pretext-tells {
+    list-style: none;
+    margin: 4px 0 0;
+    padding: 0;
+    max-height: 7.5em;
+    overflow: auto;
+    font-family: 'GNF', monospace;
+    font-size: 14px;
+}
+
+.se-chat-header .pretext-tells li {
+    margin: 0 0 4px;
 }

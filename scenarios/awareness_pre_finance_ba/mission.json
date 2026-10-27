@@ -1,0 +1,22 @@
+{
+  "display_name": "Awareness check: finance, before (BA)",
+  "description": "A four-minute check for finance staff, taken before the awareness episodes (pair BA). Ten messages from the payments inbox of Brightwell Foods, a fictional company. The result is kept so the matching after-check (awareness_post_finance_ba) can show how the two compare. Organiser note: each role's check tests the channel that role meets in its episode, and in a session that runs more than one episode only the learner's primary-role check is recorded.",
+  "difficulty_level": 1,
+  "scoring": "completion",
+  "secgen_scenario": null,
+  "collection": "training",
+  "ui_theme": "general",
+  "estimated_duration_minutes": 4,
+  "cybok": [
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": [
+        "Phishing",
+        "Security awareness",
+        "Invoice fraud",
+        "Usable security"
+      ]
+    }
+  ]
+}

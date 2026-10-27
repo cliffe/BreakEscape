@@ -77,7 +77,8 @@ Danny Foster: So. What happens now?
 #speaker:danny_foster
 Danny Foster: You'd do that. For me.
 + [Sterling goes down for her part. You don't have to. But you tell them everything.]
-    Danny Foster: Everything. Yes. God, yes.
+    // A4 fix pass: quieter, after the quiet scene before it.
+    Danny Foster: Everything. I've carried it round for months. I'd like to put it down.
     -> protect_done
 + [Don't thank me yet. Thinking about it, the map's yours. You'll answer for it.]
     Danny Foster: ...Right. For a second there I thought I'd got away with it.

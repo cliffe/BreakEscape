@@ -39,6 +39,16 @@ test('E10: door properties carry the pad options from the door or connected room
     }
 });
 
+test('SE lab R4 F1/A1: door properties carry lockedHint from the door or connected room', () => {
+    // The bootstrap filter reached the client, but doors.js was not copying lockedHint into
+    // doorSprite.doorProperties, so the opt-in locked-door hint never reached the door (lab R4
+    // F1). It is wired exactly like the pad options above. unlock-system already reads it.
+    const src = read('js/systems/doors.js');
+    assert.match(src, /lockedHint: lockProps\.lockedHint \?\? connectedRoomData\?\.lockedHint \?\? null/);
+    const u = read('js/systems/unlock-system.js');
+    assert.match(u, /lockable\.doorProperties\?\.lockedHint/);
+});
+
 test('E10: unlock-system reads door options for password and PIN pads', () => {
     const u = read('js/systems/unlock-system.js');
     for (const f of ['passwordHint', 'showHint', 'showKeyboard', 'maxAttempts', 'postitNote', 'showPostit']) {
@@ -50,15 +60,17 @@ test('E10: unlock-system reads door options for password and PIN pads', () => {
     assert.match(m, /maxAttempts: lockable\?\.maxAttempts \|\| lockable\?\.scenarioData\?\.maxAttempts \|\| lockable\?\.doorProperties\?\.maxAttempts \|\| undefined/);
 });
 
-test('E8: the player registry uses the configured spriteTalk when it matches the played sprite', () => {
+test('E8: the player registry uses the configured spriteTalk when it matches the played sprite', async () => {
+    // The rule moved into utils/player-avatar.js (aw9); game.js's registry calls it.
     const src = read('js/core/game.js');
-    const start = src.indexOf('spriteTalk: (() => {');
-    const body = src.slice(start, src.indexOf('})(),', start) + 5);
-    // run the real IIFE with a stand-in window
-    const run = (cfg, scenarioPlayer) => {
-        const w = { breakEscapeConfig: cfg, gameScenario: { player: scenarioPlayer } };
-        return new Function('window', `return ({ ${body} }).spriteTalk;`)(w);
-    };
+    assert.match(src, /spriteTalk: playerTalkPath\(chosenPlayerSprite\(\), window\.gameScenario\?\.player\?\.spriteTalk\)/);
+    const { mkdtempSync, writeFileSync } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const { pathToFileURL } = await import('node:url');
+    const dir = mkdtempSync(join(tmpdir(), 'engine-a-avatar-'));
+    writeFileSync(join(dir, 'player-avatar.mjs'), read('js/utils/player-avatar.js'));
+    const A = await import(pathToFileURL(join(dir, 'player-avatar.mjs')).href);
+    const run = (cfg, scenarioPlayer) => A.playerTalkPath(A.chosenPlayerSprite(cfg, { player: scenarioPlayer }), scenarioPlayer?.spriteTalk);
     assert.equal(run({ playerSprite: 'female_hacker_hood_v2' },
         { spriteSheet: 'female_hacker_hood_v2', spriteTalk: 'assets/characters/female_hacker_hood_talk.png' }),
         'assets/characters/female_hacker_hood_talk.png');

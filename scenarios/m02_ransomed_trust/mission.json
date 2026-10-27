@@ -2,8 +2,10 @@
   "display_name": "Ransomed Trust",
   "description": "St. Catherine's Regional went dark at 02:47. Forty-seven patients are on backup generators and the board votes on paying ENTROPY's ransom in four hours. You are booked in as an emergency security consultant — which buys you a paper badge and nothing else, because the ransomware took the access control server too. Nobody in this building can grant you access. Talk, borrow or pick your way to the backup server, turn ENTROPY's own backdoor against them, and find out who inside the hospital held the door open.",
   "difficulty_level": 1,
-  "secgen_scenario": "rooting_for_a_win",
+  "secgen_scenario": "break_escape/safetynet/m02_ransomed_trust.xml",
   "collection": "season_1",
+  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m02-ransomed-trust/",
+  "ui_theme": "spy",
   "cybok": [
     {
       "ka": "MAT",

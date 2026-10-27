@@ -9,6 +9,14 @@
 import { generateKeyCutsForLock, doesKeyMatchLock, PREDEFINED_LOCK_CONFIGS } from './key-lock-system.js';
 import KeyCutCalculator from '../utils/key-cut-calculator.js';
 import { catchLockpickInView } from './lockpick-catch.js';
+import { keypadTitle } from '../utils/lock-titles.js';
+import { resolveObjectField } from '../utils/conditional-text.js';
+import { socialOverlayParams } from '../minigames/framework/social-overlay.js';
+import { startInboxTriageMinigame } from './triage-starter.js';
+import { withLockedHint } from '../utils/locked-hint.js';
+import { rejectionAlert } from '../utils/flag-wording.js';
+import { startEpisodeRunner } from './episode-starter.js';
+export { startInboxTriageMinigame, startEpisodeRunner };
 
 // Maps Phaser texture keys to their actual filenames (where key !== filename stem)
 const TEXTURE_KEY_TO_FILE = {
@@ -71,8 +79,8 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
                 window.gameAlert('Successfully picked the lock!', 'success', 'Lock Picked', 2000);
                 callback(true);
             } else {
-                window.gameAlert('Failed to pick the lock.', 'error', 'Pick Failed', 2000);
-                callback(false);
+                // A real failed attempt: the caller (unlock-system.js) shows the one toast
+                callback(false, { failed: true });
             }
         }, 1000);
         return;
@@ -116,7 +124,8 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
         // This is a regular item - use scenarioData
         itemName = lockable?.scenarioData?.name || lockable?.name || 'Locked Item';
         itemImage = resolveObjectImageUrl(lockable?.texture?.key);
-        itemObservations = lockable?.scenarioData?.observations || '';
+        // observationVariants apply here too (m08 E5)
+        itemObservations = resolveObjectField(lockable?.scenarioData, 'observations', '') || '';
     }
 
     // Start the lockpicking minigame (Phaser version)
@@ -196,16 +205,15 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
         onComplete: (success, result) => {
             if (success) {
                 console.log('LOCKPICK SUCCESS');
+                window.expectContainerAfterUnlock?.(lockable);
                 window.gameAlert('Successfully picked the lock!', 'success', 'Lockpicking', 4000);
                 callback(true);
             } else {
-                console.log('LOCKPICK FAILED');
-                // Closed because the player was hit (player-damage-interrupt.js): that
-                // shows its own notice, so no "failed" toast on top of it.
-                if (!window.minigameClosedByDamage?.()) {
-                    window.gameAlert('Failed to pick the lock.', 'error', 'Lockpicking', 4000);
-                }
-                callback(false);
+                // The Phaser lockpick game has no failed-attempt state: it only ends
+                // unsuccessfully when closed (Close, ×, Esc, or a hit). Closing is not a
+                // failure, so no "Failed to pick the lock" toast here or in the caller.
+                console.log('LOCKPICK CLOSED');
+                callback(false, { cancelled: true });
             }
         }
     });
@@ -225,7 +233,7 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
                 unlockTargetCallback(lockable, type, lockable.layer);
             }
         } else {
-            window.gameAlert('None of your keys work with this lock.', 'error', 'Wrong Keys', 4000);
+            window.gameAlert(withLockedHint('None of your keys work with this lock.', lockable), 'error', 'Wrong Keys', 4000);
         }
         return;
     }
@@ -392,7 +400,8 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
         // This is a regular item - use scenarioData
         itemName = lockable?.scenarioData?.name || lockable?.name || 'Locked Item';
         itemImage = resolveObjectImageUrl(lockable?.texture?.key);
-        itemObservations = lockable?.scenarioData?.observations || '';
+        // observationVariants apply here too (m08 E5)
+        itemObservations = resolveObjectField(lockable?.scenarioData, 'observations', '') || '';
     }
 
     // Start the key selection minigame
@@ -436,6 +445,7 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
                 const successMsg = unlockMethod === 'lockpick'
                     ? 'Successfully picked the lock!'
                     : 'Successfully unlocked with the correct key!';
+                window.expectContainerAfterUnlock?.(lockable, type);
                 window.gameAlert(successMsg, 'success', 'Unlock Successful', 4000);
                 // Small delay to ensure minigame cleanup completes before room loading
                 if (unlockTargetCallback) {
@@ -448,8 +458,9 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
             } else {
                 console.log('KEY SELECTION FAILED');
                 // Closed because the player was hit: no "wrong key" on top of it (F2).
+                // A door with a lockedHint adds where the key comes from; others are unchanged.
                 if (!window.minigameClosedByDamage?.()) {
-                    window.gameAlert('The selected key doesn\'t work with this lock.', 'error', 'Wrong Key', 4000);
+                    window.gameAlert(withLockedHint('The selected key doesn\'t work with this lock.', lockable), 'error', 'Wrong Key', 4000);
                 }
             }
         }
@@ -528,11 +539,12 @@ export function startPinMinigame(lockable, type, correctPin, callback) {
     
     // Start the PIN minigame
     window.MinigameFramework.startMinigame('pin', null, {
-        title: `Enter PIN for ${type}`,
+        title: keypadTitle('Enter PIN', lockable, type),
         correctPin: correctPin,
         // Scenario option (doors keep it on doorProperties), default 3
         maxAttempts: lockable?.maxAttempts || lockable?.scenarioData?.maxAttempts || lockable?.doorProperties?.maxAttempts || undefined, // undefined: the minigame default (5), or no limit with a PIN cracker
-        pinLength: correctPin ? correctPin.length : 4, // Default to 4 if null (server-side validation)
+        // The server strips `requires`, so a non-4 PIN declares its length (pinLength is not secret)
+        pinLength: correctPin ? correctPin.length : (lockable?.scenarioData?.pinLength || lockable?.doorProperties?.pinLength || 4),
         hasPinCracker: hasPinCracker,
         allowBackspace: true,
         lockable: lockable,
@@ -540,11 +552,13 @@ export function startPinMinigame(lockable, type, correctPin, callback) {
         onComplete: (success, result) => {
             if (success) {
                 console.log('PIN MINIGAME SUCCESS');
+                window.expectContainerAfterUnlock?.(lockable, type);
                 window.gameAlert(`Correct PIN! The ${type} is now unlocked.`, 'success', 'PIN Accepted', 4000);
                 callback(true, result); // Pass result with serverResponse
             } else {
                 console.log('PIN MINIGAME FAILED');
-                if (!window.minigameClosedByDamage?.()) {
+                // result.cancelled: the player just closed the pad -- say nothing
+                if (!result?.cancelled && !window.minigameClosedByDamage?.()) {
                     window.gameAlert("Failed to enter correct PIN.", 'error', 'PIN Rejected', 3000);
                 }
                 callback(false, result);
@@ -567,7 +581,8 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
             callback(true);
         } else if (passwordInput !== null) {
             console.log('PASSWORD FAIL (fallback)');
-            window.gameAlert("Incorrect password.", 'error', 'Password Rejected', 3000);
+            const rej = rejectionAlert(lockable, type, { message: "Incorrect password.", title: 'Password Rejected' });
+            window.gameAlert(rej.message, 'error', rej.title, 3000);
             callback(false);
         }
         return;
@@ -580,7 +595,7 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
     
     // Start the password minigame
     window.MinigameFramework.startMinigame('password', null, {
-        title: `Enter password for ${type}`,
+        title: keypadTitle('Enter password', lockable, type),
         password: correctPassword,
         passwordHint: options.passwordHint || '',
         showHint: options.showHint || false,
@@ -590,16 +605,20 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
         showPostit: options.showPostit || false,
         lockable: lockable,
         type: type, // Pass type for server validation
+        onRefused: options.onRefused, // door_unlock_failed for a wrong password at a door
         requiresKeyboardInput: true, // Password minigame needs keyboard for text input
         onComplete: (success, result) => {
             if (success) {
                 console.log('PASSWORD MINIGAME SUCCESS');
+                window.expectContainerAfterUnlock?.(lockable, type);
                 window.gameAlert(`Correct password! The ${type} is now unlocked.`, 'success', 'Password Accepted', 4000);
                 callback(true, result); // Pass result with serverResponse
             } else {
                 console.log('PASSWORD MINIGAME FAILED');
                 if (!window.minigameClosedByDamage?.()) {
-                    window.gameAlert("Failed to enter correct password.", 'error', 'Password Rejected', 3000);
+                    // A flag lock says so: a mistyped flag is not "a password"
+                    const rej = rejectionAlert(lockable, type, { message: "Failed to enter correct password.", title: 'Password Rejected' });
+                    window.gameAlert(rej.message, 'error', rej.title, 3000);
                 }
                 callback(false, result);
             }
@@ -1106,3 +1125,159 @@ export function startCombinationMinigame(lockable, type, combination, callback) 
     });
 }
 window.startCombinationMinigame = startCombinationMinigame;
+
+// Social-engineering overlays (mail client, intel board). socialOverlayParams
+// supplies requiresKeyboardInput and disableClose; each overlay has its own Close.
+export function startMailClientMinigame(sprite, options = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Mail terminal unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    const data = sprite?.scenarioData?.minigameData || {};
+    window.MinigameFramework.startMinigame('mail-client', null, socialOverlayParams({
+        title: sprite?.scenarioData?.name || 'Mail',
+        accountIds: data.accountIds,
+        defaultAccount: data.defaultAccount,
+        onComplete: (success, result) => {
+            if (typeof options.onComplete === 'function') options.onComplete(success, result);
+        },
+        ...options
+    }));
+}
+window.startMailClientMinigame = startMailClientMinigame;
+
+export function startIntelBoardMinigame(sprite, options = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Case file unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    const data = sprite?.scenarioData?.minigameData || {};
+    window.MinigameFramework.startMinigame('intel-board', null, socialOverlayParams({
+        title: sprite?.scenarioData?.name || 'Case File',
+        mode: data.mode || 'recon',
+        returnTo: options.returnTo,
+        onComplete: (success, result) => {
+            if (typeof options.onComplete === 'function') options.onComplete(success, result);
+        }
+    }));
+}
+window.startIntelBoardMinigame = startIntelBoardMinigame;
+
+// OSINT workstation (P2-W): opens only the sites in minigameData.siteIds (all sites when absent).
+export function startOsintBrowserMinigame(sprite, options = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Workstation unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    const data = sprite?.scenarioData?.minigameData || {};
+    window.MinigameFramework.startMinigame('osint-browser', null, socialOverlayParams({
+        title: sprite?.scenarioData?.name || 'Workstation',
+        siteIds: data.siteIds,
+        start: data.start,
+        onComplete: (success, result) => {
+            if (typeof options.onComplete === 'function') options.onComplete(success, result);
+        }
+    }));
+}
+window.startOsintBrowserMinigame = startOsintBrowserMinigame;
+
+// Inbox triage (P3-W): the starter lives in triage-starter.js so tests can load it alone.
+window.startInboxTriageMinigame = startInboxTriageMinigame;
+
+// Awareness episode kiosk (P7-H): episode-starter.js holds the starter.
+window.startEpisodeRunner = startEpisodeRunner;
+
+// Landing-page builder (P5-G): the workstation opens the page named in
+// minigameData.landingPageId. The overlay derives the target from the page's single
+// `targets` key when targetId is absent (07 section 5). A workstation launch has no
+// kitId, so gameResult.kitId is null there; the mail Attach launch passes kitId.
+export function startLandingPageBuilder(sprite, options = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Page builder unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    const data = sprite?.scenarioData?.minigameData || {};
+    window.MinigameFramework.startMinigame('landing-page-builder', null, socialOverlayParams({
+        title: sprite?.scenarioData?.name || 'Page Builder',
+        landingPageId: options.landingPageId || data.landingPageId,
+        targetId: options.targetId || data.targetId,
+        kitId: options.kitId,
+        returnTo: options.returnTo,
+        onComplete: (success, result) => {
+            if (typeof options.onComplete === 'function') options.onComplete(success, result);
+        }
+    }));
+}
+window.startLandingPageBuilder = startLandingPageBuilder;
+
+// Engagement report (P6-W): the workstation opens the report built from the case records.
+export function startEngagementReport(sprite, options = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Report workstation unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    window.MinigameFramework.startMinigame('engagement-report', null, socialOverlayParams({
+        title: sprite?.scenarioData?.name || 'Engagement Report',
+        returnTo: options.returnTo,
+        onComplete: (success, result) => {
+            if (typeof options.onComplete === 'function') options.onComplete(success, result);
+        }
+    }));
+}
+window.startEngagementReport = startEngagementReport;
+
+// Mock authenticator (P7-W3): params { pushes, approvesAt, mode, onComplete, returnTo }.
+// socialOverlayParams sets requiresKeyboardInput and disableClose before construction.
+export function startAuthenticator(params = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Authenticator unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    window.MinigameFramework.startMinigame('authenticator', null, socialOverlayParams({
+        ...params,
+        onComplete: (success, result) => {
+            if (typeof params.onComplete === 'function') params.onComplete(success, result);
+        }
+    }));
+}
+window.startAuthenticator = startAuthenticator;
+
+// Pretext preparation (P4-T0). The callId branches in interactions.js call this
+// after the lockout check. socialOverlayParams sets requiresKeyboardInput and
+// disableClose before startMinigame reads them. The overlay draws its own Close.
+export function startPretextPrepMinigame(params = {}) {
+    if (!window.MinigameFramework) {
+        console.error('MinigameFramework not available');
+        window.gameAlert('Call preparation unavailable.', 'error', 'Error', 3000);
+        return;
+    }
+    if (!window.MinigameFramework.mainGameScene) {
+        window.MinigameFramework.init(window.game);
+    }
+    window.MinigameFramework.startMinigame('pretext-prep', null, socialOverlayParams(params));
+}
+window.startPretextPrepMinigame = startPretextPrepMinigame;

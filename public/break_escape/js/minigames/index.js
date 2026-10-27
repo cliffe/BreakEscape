@@ -13,6 +13,14 @@ export { FingerprintReaderMinigame, startFingerprintReader } from './biometrics/
 export { ContainerMinigame, startContainerMinigame, returnToContainerAfterNotes, returnToConversationAfterNPCInventory } from './container/container-minigame.js';
 export { PhoneChatMinigame, returnToPhoneAfterNotes } from './phone-chat/phone-chat-minigame.js';
 export { PersonChatMinigame } from './person-chat/person-chat-minigame.js';
+export { MailClientMinigame } from './mail-client/mail-client-minigame.js';
+export { IntelBoardMinigame } from './intel-board/intel-board-minigame.js';
+export { OsintBrowserMinigame } from './osint-browser/osint-browser-minigame.js';
+export { InboxTriageMinigame } from './inbox-triage/inbox-triage-minigame.js';
+export { PretextPrepMinigame } from './pretext-prep/pretext-prep-minigame.js';
+export { LandingPageBuilderMinigame } from './landing-page-builder/landing-page-builder-minigame.js';
+export { EngagementReportMinigame } from './engagement-report/engagement-report-minigame.js';
+export { AuthenticatorMinigame } from './authenticator/authenticator-minigame.js';
 export { PinMinigame, startPinMinigame } from './pin/pin-minigame.js';
 export { PasswordMinigame } from './password/password-minigame.js';
 export { TextFileMinigame, returnToTextFileAfterNotes } from './text-file/text-file-minigame.js';
@@ -94,8 +102,19 @@ import { PhoneChatMinigame, returnToPhoneAfterNotes } from './phone-chat/phone-c
 // Import the person chat minigame (In-person NPC conversations)
 import { PersonChatMinigame } from './person-chat/person-chat-minigame.js';
 
+// Import the social-engineering overlays (mail client, intel board)
+import { MailClientMinigame } from './mail-client/mail-client-minigame.js';
+import { IntelBoardMinigame } from './intel-board/intel-board-minigame.js';
+import { OsintBrowserMinigame } from './osint-browser/osint-browser-minigame.js';
+import { InboxTriageMinigame } from './inbox-triage/inbox-triage-minigame.js';
+import { EpisodeRunnerMinigame } from './episode-runner/episode-runner-minigame.js';
+import { PretextPrepMinigame } from './pretext-prep/pretext-prep-minigame.js';
+import { LandingPageBuilderMinigame } from './landing-page-builder/landing-page-builder-minigame.js';
+import { EngagementReportMinigame } from './engagement-report/engagement-report-minigame.js';
+import { AuthenticatorMinigame } from './authenticator/authenticator-minigame.js';
+
 // Import the PIN minigame
-import { PinMinigame, startPinMinigame } from './pin/pin-minigame.js';
+import { PinMinigame } from './pin/pin-minigame.js';
 
 // Import the password minigame
 import { PasswordMinigame } from './password/password-minigame.js';
@@ -155,6 +174,15 @@ MinigameFramework.registerScene('fingerprint-reader', FingerprintReaderMinigame)
 MinigameFramework.registerScene('container', ContainerMinigame);
 MinigameFramework.registerScene('phone-chat', PhoneChatMinigame);
 MinigameFramework.registerScene('person-chat', PersonChatMinigame);
+MinigameFramework.registerScene('mail-client', MailClientMinigame);
+MinigameFramework.registerScene('intel-board', IntelBoardMinigame);
+MinigameFramework.registerScene('osint-browser', OsintBrowserMinigame);
+MinigameFramework.registerScene('inbox-triage', InboxTriageMinigame);
+MinigameFramework.registerScene('episode-runner', EpisodeRunnerMinigame);
+MinigameFramework.registerScene('pretext-prep', PretextPrepMinigame);
+MinigameFramework.registerScene('landing-page-builder', LandingPageBuilderMinigame);
+MinigameFramework.registerScene('engagement-report', EngagementReportMinigame);
+MinigameFramework.registerScene('authenticator', AuthenticatorMinigame);
 MinigameFramework.registerScene('pin', PinMinigame);
 MinigameFramework.registerScene('password', PasswordMinigame);
 MinigameFramework.registerScene('text-file', TextFileMinigame);
@@ -199,7 +227,6 @@ window.returnToContainerAfterNotes = returnToContainerAfterNotes;
 window.returnToConversationAfterNPCInventory = returnToConversationAfterNPCInventory;
 window.returnToPhoneAfterNotes = returnToPhoneAfterNotes;
 window.returnToTextFileAfterNotes = returnToTextFileAfterNotes;
-window.startPinMinigame = startPinMinigame;
 window.startTitleScreenMinigame = startTitleScreenMinigame;
 window.startRFIDMinigame = startRFIDMinigame;
 window.returnToConversationAfterRFID = returnToConversationAfterRFID;

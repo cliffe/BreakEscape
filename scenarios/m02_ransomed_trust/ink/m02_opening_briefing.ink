@@ -18,6 +18,11 @@ VAR knows_entropy_link = false
 VAR asked_zds = false
 VAR asked_ransomware = false
 
+// Imported (read-only) from m01 (docs/agents/CARRY_OVER_PLAN.md): defaults when
+// the player never finished m01. Never assign these here.
+VAR m01_final_choice = ""    // Imported (read-only) from m01 final_choice: fight / arrest / recruit / expose / surrender
+VAR m01_completed = false    // Imported (read-only): a finished m01 run exists (here: Derek put down before he chose)
+
 // External variables (set by game)
 EXTERNAL player_name()
 
@@ -67,8 +72,32 @@ Agent HaX: Derek Lawson's cell, Social Fabric. That material gave us our first r
 
 Agent HaX: One entry in it matches this attack almost exactly. This is them.
 
+{not derek_outcome: -> derek_outcome ->}
 ~ knows_entropy_link = true
 -> briefing_hub
+
+// ===========================================
+// CARRY-OVER (2026-10-17): what the player did with Derek in m01, said once,
+// by whichever of the two ENTROPY-link answers comes first. A player who never
+// finished m01 hears nothing here (no line, no audio).
+// ===========================================
+
+=== derek_outcome ===
+{
+- m01_final_choice == "fight":
+    Agent HaX: You put Derek on the floor at Viral Dynamics. His lawyers are still shouting about it. His files don't care.
+- m01_final_choice == "arrest":
+    Agent HaX: You had Derek taken in by the book, and he hasn't said a word since. His files have done the talking.
+- m01_final_choice == "recruit":
+    Agent HaX: You offered Derek a deal and he turned you down. He'd rather be a martyr. His files weren't so loyal.
+- m01_final_choice == "expose":
+    Agent HaX: You put Derek's casualty projections on every front page. ENTROPY read them too, so they know what we know.
+- m01_final_choice == "surrender":
+    Agent HaX: Derek put the launch device down for you and came quietly. He still hasn't told us why.
+- m01_completed:
+    Agent HaX: You put Derek down before he'd said his piece. He's been saying it to his lawyers ever since.
+}
+->->
 
 // ===========================================
 // QUESTION HUB
@@ -104,6 +133,7 @@ Agent HaX: Two things. Social Fabric was cataloguing the other cells, and one en
 Agent HaX: Find a neglected system, encrypt everything, squeeze a public service that can't afford downtime.
 
 Agent HaX: And the ransom note reads like a business invoice. Same signature we flagged in Derek's material.
+{not derek_outcome: -> derek_outcome ->}
 
 Agent HaX: ENTROPY want to show that everything you rely on is one unpatched box from collapse. The patients are their chalkboard.
 

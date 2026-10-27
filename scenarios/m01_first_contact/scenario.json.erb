@@ -449,6 +449,22 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
       "order": 8,
       "tasks": [
         {
+          "taskId": "submit_launch_code",
+          "title": "Enter the launch authorisation code",
+          "type": "submit_flags",
+          <%# flag_3 (launch authorisation) is only accepted at the launch device
+              taken from Derek at the finale; the drop-site echoes a hint for it.
+              The station-qualified id is the launch device's local flag-1 slot
+              (its flags list holds only shatter_server:flag_3), so this cannot be
+              satisfied by the drop-site's own flag-1 (submit_linux_flag). R29 makes
+              flag_3's necessity explicit in the conclude gate below. %>
+          "targetFlags": ["entropy_launch_device:shatter_server-flag1"],
+          "targetCount": 1,
+          "currentCount": 0,
+          "status": "active",
+          "showProgress": true
+        },
+        {
           "taskId": "deactivate_launch",
           "title": "Deactivate the Launch",
           "type": "manual",
@@ -464,16 +480,19 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
       "unlockCondition": { "aimsCompleted": ["deactivate_the_launch"] },
       "order": 9,
       "missionConclusion": true,
-      <%# Ending gate: the three VM flags are the technical work this mission is
-          not allowed to skip. Story tasks are not listed -- they cost score if
-          unfinished, they do not withhold the ending. %>
+      "conclusionScreen": { "type": "bond_visualiser" },
+      <%# Ending gate: all four VM flags are the technical work this mission is
+          not allowed to skip. submit_launch_code (flag_3, entered at the launch
+          device) is listed explicitly so a future edit can't silently drop the
+          launch authorisation from the critical path (R29). Story tasks are not
+          listed -- they cost score if unfinished, they do not withhold the ending. %>
       "concludeRequires": {
-        "tasksCompleted": ["submit_ssh_flag", "submit_linux_flag", "submit_sudo_flag"]
+        "tasksCompleted": ["submit_ssh_flag", "submit_linux_flag", "submit_sudo_flag", "submit_launch_code"]
       },
       "tasks": [
         {
           "taskId": "use_launch_device",
-          "title": "Use the ENTROPY Launch Device",
+          "title": "File your debrief with Agent HaX",
           "type": "custom",
           "status": "active"
         }
@@ -601,7 +620,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "displayName": "Agent HaX",
           "npcType": "phone",
           "storyPath": "scenarios/m01_first_contact/ink/m01_phone_agent0x99.json",
-          "avatar": "assets/characters/agent_hax_headshot.png",
+          "avatar": "assets/characters/agent_hax_v2_headshot.png",
           "phoneId": "player_phone",
           "currentKnot": "first_call",
           "voice": {
@@ -725,7 +744,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "setGlobal": { "has_lockpick": true, "lockpicking_guide_offered": true },
               "sendTimedMessage": {
                 "delay": 1000,
-                "message": "Lockpick acquired. 🦎 Take a look around — any locked doors or containers you haven't been able to open? That key won't fit everything. Message me if you want the lockpicking field guide."
+                "message": "Lockpick acquired. 🦎 Any locked doors or containers you couldn't open yet? That key won't fit everything. Message me if you want the lockpicking field guide."
               }
             },
             {
@@ -754,7 +773,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "completeTask": "access_vm",
               "sendTimedMessage": {
                 "delay": 800,
-                "message": "That's your Kali terminal. 🦎 ENTROPY's attack infrastructure is accessible from here. You need to get in remotely — check what you've found on Derek for the target details and credentials. Message me if you want the field guide — it covers the tools for this."
+                "message": "That's your Kali terminal. 🦎 You need to get in remotely. Check what you've found on Derek for the target details and credentials. Message me for the field guide."
               }
             },
             {
@@ -764,7 +783,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "setGlobal": { "password_list_found": true },
               "sendTimedMessage": {
                 "delay": 1500,
-                "message": "Derek's password list. 🦎 Save those to a file on the Kali — one password per line — then feed it to Hydra with `-P passwords.txt`. That's your wordlist for the SSH brute force. I can upload a Linux and SSH field guide if you want it."
+                "message": "Derek's password list. 🦎 Save it to a file on the Kali, one password per line, and give it to Hydra with `-P passwords.txt`. Want the Linux and SSH field guide?"
               }
             },
             {
@@ -774,7 +793,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "setGlobal": { "field_guide_offered": true },
               "sendTimedMessage": {
                 "delay": 3000,
-                "message": "This password list could be useful when you get to the server room. I've put together a field guide on Linux commands, SSH bruteforce, and filesystem navigation. It should help you move faster once you're inside their Kali system. Let me know if you want it."
+                "message": "This list could help in the server room. I've a field guide on Linux commands, SSH brute force and moving round the filesystem. Let me know if you want it."
               }
             },
             {
@@ -875,7 +894,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 1500,
-                "message": "That text is encoded. Two quick rules for identifying what type: if it ends in `=` or `==` and only uses letters, numbers, `+`, and `/` — that's Base64. If it still has spaces and readable word-lengths but the letters look scrambled — that's a substitution cipher, probably ROT13. Have a look at which profile fits, then use the CyberChef workstation. Message me if you get stuck."
+                "message": "That text is encoded. Ends in `=` or `==`, only letters, numbers, `+` and `/`? Base64. Readable word lengths but scrambled letters? Probably ROT13. Try the CyberChef workstation."
               }
             },
             {
@@ -893,7 +912,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 2500,
-                "message": "That's the full picture. 🦎 The Architect is real. ENTROPY is a network. Derek is one node — but there are others, and none of them know each other. Stopping Operation Shatter buys time. Finding The Architect ends the war. Find Derek — you have everything you need to confront him now."
+                "message": "That's the full picture. 🦎 The Architect is real. Derek is one node in ENTROPY's network. Stopping Operation Shatter buys time; finding The Architect ends the war. Go and confront Derek."
               }
             },
             {
@@ -949,7 +968,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "completeTask": "submit_sudo_flag",
               "sendTimedMessage": {
                 "delay": 2000,
-                "message": "Encoded deployment intel secured — the shatter_configuration confirms full operation scope. 🦎 Two things left: ~/launch_code/launch_flag in the shatter account goes into Derek's device. And the ENTROPY archive opens with the DECRYPTION_KEY from derek's account."
+                "message": "Deployment intel secured. 🦎 Two things left: ~/launch_code/launch_flag in the shatter account goes into Derek's device, and the DECRYPTION_KEY from derek's account opens the ENTROPY archive."
               }
             },
             {
@@ -987,13 +1006,13 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 1500,
-                "message": "You have the launch device. 🦎 Priority one: disable the launch. Use the device to abort Operation Shatter — the authorization code is in the shatter account at `~/launch_code/launch_flag`. Enter it to end this."
+                "message": "You have the launch device. 🦎 Abort the launch: the authorization code is in the shatter account at `~/launch_code/launch_flag`. Enter it on the device to end this."
               }
             },
             {
               "eventPattern": "attack_aborted",
               "onceOnly": true,
-              "completeTask": ["deactivate_launch", "use_launch_device"],
+              "completeTask": "deactivate_launch",
               "sendTimedMessage": {
                 "delay": 2000,
                 "message": "Abort confirmed. Operation Shatter is dead. 🦎 Both codes secured. Call me when you're ready to debrief."
@@ -1002,7 +1021,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
             {
               "eventPattern": "attack_launched",
               "onceOnly": true,
-              "completeTask": ["deactivate_launch", "use_launch_device"],
+              "completeTask": "deactivate_launch",
               "sendTimedMessage": {
                 "delay": 4000,
                 "message": "...I'm seeing reports. 🦎 Hospital switchboards. Emergency lines flooded. The attack went through. Call me."
@@ -1088,6 +1107,12 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "npcType": "person",
           "eventMappings": [
             {
+              "_comment": "close_the_case is a bond_visualiser conclusion, so it must not complete before the debrief has finished (it would open the credits overlay over the debrief). use_launch_device completes when the debrief conversation closes; the music event on the same close rolls the credits. Same ordering as m10's M-2 fix.",
+              "eventPattern": "conversation_closed:closing_debrief_person",
+              "onceOnly": true,
+              "completeTask": "use_launch_device"
+            },
+            {
               "eventPattern": "global_variable_changed:start_debrief_cutscene",
               "condition": "value === true",
               "conversationMode": "person-chat",
@@ -1099,7 +1124,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           ],
           "position": { "x": 500, "y": 500 },
           "spriteSheet": "agent_hax",
-          "avatar": "assets/characters/agent_hax_headshot.png",
+          "avatar": "assets/characters/agent_hax_v2_headshot.png",
           "spriteTalk": "assets/characters/agent_hax_talk.png",
           "spriteVisemes": "assets/characters/agent_hax_visemes.png",
           "spriteConfig": {
@@ -1184,6 +1209,8 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
       "objects": [
         {
           "type": "safe",
+          "sprite": "filing_cabinet_locked2",
+          "position": { "x": 5.49, "y": 0.72 },
           "name": "Main Filing Cabinet",
           "takeable": false,
           "locked": true,
@@ -1223,13 +1250,22 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "type": "chalkboard",
           "name": "Office Chalkboard",
           "takeable": false,
+          "position": { "x": 6.49, "y": 0.4 },
           "observations": "A shared chalkboard covered in campaign schedules and meeting reminders."
         },
         {
           "type": "chalkboard",
           "name": "Office Chalkboard",
           "takeable": false,
+          "position": { "x": 2.29, "y": 0.4 },
           "observations": "A shared chalkboard covered in campaign schedules and meeting reminders. At the bottom in faded marker: 'Office safe — think election year. (2024 if you've already forgotten, Karen.)'"
+        },
+        {
+          "type": "bookcase",
+          "name": "Office Bookshelf",
+          "takeable": false,
+          "position": { "x": 3.99, "y": 0.5 },
+          "observations": "A shared bookshelf of binders and manuals."
         },
         {
           "type": "bin",
@@ -1360,8 +1396,11 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           ],
           "behavior": {
             "hostile": {
+              "fightStyle": "guarded",
               "chaseSpeed": 145,
-              "attackDamage": 25,
+              "attackDamage": 30,
+              "maxHP": 150,
+              "attackCooldown": 3200,
               "pauseToAttack": true
             }
           },
@@ -1374,9 +1413,10 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "takeable": true,
               "observations": "A ruggedised tactical device. Screen: OPERATION SHATTER — ARMED. T-72 HOURS TO LAUNCH WINDOW.",
               "acceptsVms": ["shatter_server"],
+              "acceptsVmLabels": { "shatter_server": "ENTROPY attack server" },
               "flags": ["shatter_server:flag_3"],
               "flagRewards": [
-                { "type": "set_global", "key": "launch_code_submitted", "value": true }
+                { "type": "set_global", "key": "launch_code_submitted", "value": true, "label": "Launch authorisation accepted — Operation Shatter is yours to abort." }
               ],
               "onAbort": {
                 "setGlobal": { "player_aborted_attack": true, "ready_for_debrief": true },
@@ -1513,7 +1553,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "id": "kevin_park",
           "displayName": "Kevin Park",
           "npcType": "person",
-          "position": { "x": 5.2, "y": 4.1 },
+          "position": { "x": 5.2, "y": 5.1 },
           "spriteSheet": "male_nerd_v2",
           "spriteTalk": "assets/characters/male_nerd_talk.png",
           "spriteVisemes": "assets/characters/male_nerd_visemes.png",
@@ -1531,9 +1571,11 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "globalVarOnKO": "kevin_ko",
           "behavior": {
             "hostile": {
+              "fightStyle": "slugger",
               "chaseSpeed": 145,
-              "attackDamage": 15,
-              "pauseToAttack": false
+              "attackDamage": 30,
+              "attackCooldown": 2600,
+              "pauseToAttack": true
             }
           },
           "itemsHeld": [
@@ -1669,9 +1711,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "takeable": true,
               "puzzle_graph_role": "tool",
               "puzzle_graph_note": "Decoding tool — required with Encoded Note (1) and Encoded Note (2) to derive safe/PC/cabinet PINs",
-              "observations": "A laptop preloaded with CyberChef — Patricia's personal crypto analysis tool. Take it.",
-              "storyPath": "scenarios/m01_first_contact/ink/m01_terminal_cyberchef.json",
-              "currentKnot": "start"
+              "observations": "A laptop preloaded with CyberChef — Patricia's personal crypto analysis tool. Take it."
             },
             {
               "type": "notes",
@@ -1816,7 +1856,16 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
             "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned.",
             "language": "en-US"
           },
-          "globalVarOnKO": "maya_ko"
+          "globalVarOnKO": "maya_ko",
+          "behavior": {
+            "hostile": {
+              "fightStyle": "cower",
+              "fleeSpeed": 120,
+              "attackDamage": 5,
+              "attackCooldown": 1200,
+              "pauseToAttack": true
+            }
+          }
         }
       ],
       "objects": [
@@ -1842,7 +1891,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
     "derek_office": {
       "type": "small_office_room1_1x1gu",
       "chatBackground": "assets/backgrounds/rooms/m01_derek_office_blended.png",
-      "lighting": { "mode": "motion" },
+      "lighting": { "mode": "on" },
       "locked": true,
       "lockType": "key",
       "requires": "derek_office_key",
@@ -1954,6 +2003,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
         },
         {
           "type": "safe",
+          "position": "as-type:filing_cabinet_locked",
           "id": "derek_cabinet",
           "name": "Derek's Filing Cabinet",
           "takeable": false,
@@ -2023,22 +2073,24 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
         {
           "type": "vm-launcher",
           "id": "vm_launcher_intro_linux",
-          "name": "VM Access Terminal",
+          "name": "IT Audit Station (Kali)",
           "sprite": "vm-launcher-kali",
           "takeable": false,
           "observations": "A Kali Linux system IT have prepared for your security audit.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
-          "vm": <%= vm_object('intro_to_linux_security_lab', {"id":1,"title":"kali","ip":"192.168.100.50","enable_console":true}) %>,
+          "vm": <%= vm_object('kali', {"id":1,"title":"kali","ip":"172.16.0.3","enable_console":true}) %>,
           "showPostit": true,
           "postitNote": "user: kali\npassword: kali"
         },
         {
           "type": "flag-station",
+          "sprite": "safetynet_flag_terminal1",
           "id": "flag_station_dropsite",
           "name": "SAFETYNET Drop-Site Terminal",
           "takeable": false,
           "observations": "Secure SAFETYNET terminal for submitting intercepted intelligence and VM flags",
           "acceptsVms": ["shatter_server"],
+          "acceptsVmLabels": { "shatter_server": "ENTROPY attack server" },
           "flags": ["shatter_server:flag_2", "shatter_server:flag_4"],
           "hintOnlyFlags": {
             "shatter_server:flag_1": "Decryption Key validated — this key unlocks the ENTROPY encrypted archive in the server room.",
@@ -2049,18 +2101,21 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "type": "set_global",
               "key": "linux_flag_submitted",
               "value": true,
+              "label": "Directory-traversal evidence secured — logged with SAFETYNET.",
               "description": "Directory traversal intel submitted (deployment_notes in operation_shatter/)"
             },
             {
               "type": "set_global",
               "key": "sudo_flag_submitted",
               "value": true,
+              "label": "Encoded deployment configuration secured — logged with SAFETYNET.",
               "description": "Encoded deployment intel submitted (shatter_configuration, base64) — requires sudo to shatter account"
             }
           ]
         },
         {
           "type": "safe",
+          "sprite": "entropy_drive_case1",
           "id": "entropy_encrypted_archive",
           "name": "ENTROPY Encrypted Archive",
           "takeable": false,
@@ -2075,6 +2130,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "type": "set_global",
               "key": "ssh_flag_submitted",
               "value": true,
+              "label": "Decryption key accepted — the ENTROPY archive unlocks.",
               "description": "ENTROPY archive decryption key confirmed — SSH brute force into derek's account complete"
             }
           ],
@@ -2110,6 +2166,15 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
       ]
     }
   },
+
+  <%# Carry-over (docs/agents/CARRY_OVER_PLAN.md): the story outcomes later
+      missions may import as read-only globals. m02 reads final_choice,
+      found_casualty_projections and player_launched_attack. JSON only: no ink
+      or audio in m01 changes. Renaming one of these breaks the importing
+      mission; the validator says which. %>
+  "exportGlobals": ["final_choice", "kevin_choice", "found_casualty_projections",
+                    "player_aborted_attack", "player_launched_attack",
+                    "maya_ko", "kevin_ko", "sarah_ko"],
 
   "globalVariables": {
     "player_name": "Agent Zero",

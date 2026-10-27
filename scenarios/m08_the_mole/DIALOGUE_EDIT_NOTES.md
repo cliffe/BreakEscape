@@ -1,3 +1,5 @@
+> **Rename (2026-10-16):** Agent 0x23 'Cipher' is now 'Vector' (user's decision). Ids, globals, the ink file and routes were renamed with him (`agent_vector`, `accused_vector`, `vector_*`, `m08_suspect_vector.ink`). This file predates the rename and still says Cipher.
+
 # m08 The Mole — script editor's notes on the dialogue pass
 
 Fresh review, 2 October 2026. Read-only apart from this file.

@@ -36,7 +36,6 @@ VAR audit_wrong_answers = 0
 #set_variable:talked_to_kevin=true
 #complete_task:meet_kevin
 {not met_kevin:
-    ~ met_kevin = true
     Kevin Park: Oh hey! You found the IT room. I'm Kevin—IT manager, sole IT department, and professional worrier.
     Kevin Park: You're the security auditor, right? Thank god you're here.
     Kevin Park: I've been telling them we need a review for months.
@@ -52,16 +51,22 @@ VAR audit_wrong_answers = 0
 // ================================================
 
 === first_meeting ===
+// Engine robustness audit (m01-m08): the met flag is set in each opening choice, not
+// before the opening, so an Esc and a reload at these choices bring the opening back
+// instead of skipping to the hub.
 #complete_task:meet_kevin
 + [Happy to help. What's the security situation?]
+    ~ met_kevin = true
     ~ influence += 2
     ~ discussed_audit = true
     # influence_increased
     -> security_situation
 + [I'll need access to secure areas for testing]
+    ~ met_kevin = true
     ~ discussed_audit = true
     -> access_discussion
 + [You seem stressed]
+    ~ met_kevin = true
     ~ influence += 1
     ~ discussed_audit = true
     # influence_increased
@@ -243,7 +248,9 @@ Kevin Park: Is it about the name-filing thing? Because I've been trying to figur
 === warn_kevin_details ===
 Kevin Park: Say that again.
 
-Player: I found a contingency plan in Derek's files. Fake logs, forged emails — all pointing to you. If this investigation closes in on him, he activates it. You get arrested. He walks.
+Player: I found a contingency plan in Derek's files. Fake logs, forged emails — all pointing to you.
+
+Player: If this investigation closes in on him, he activates it. You get arrested. He walks.
 
 Kevin Park: *quietly* Patricia.
 
@@ -584,7 +591,9 @@ Kevin Park: So what do I do? Do I just go back to my desk and pretend everything
 #set_variable:kevin_accused=true
 Kevin Park: The report has a "HEADER MISMATCH DETECTED" flag. That's not me questioning it — that's the mail server's own forensic system flagging a forgery.
 
-Kevin Park: And the anomaly report itself says my workstation was active at the same time the server room was being accessed. That means two sessions running simultaneously. That means someone else was using my credentials.
+Kevin Park: And the anomaly report itself says my workstation was active at the same time the server room was being accessed.
+
+Kevin Park: That means two sessions running simultaneously. That means someone else was using my credentials.
 
 Kevin Park: You're a security professional. You know what those flags mean.
 

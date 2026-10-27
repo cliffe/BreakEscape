@@ -60,8 +60,11 @@ export const minigameBridge = {
     async clickControl(indexOrLabel) {
         const mg = current();
         if (!mg) return fail('no-active-minigame');
+        // .tri-chip: inbox triage flag chips. [role="option"]: the mail composer and
+        // pretext-prep blank-picker rows. .mail-create-option: the Create-account radio
+        // rows. Same list as BaseMinigame#getTestState.
         const buttons = Array.from(mg.container.querySelectorAll(
-            'button, [role="button"], a[href], .clickable, input[type="button"], input[type="submit"]'
+            'button, [role="button"], a[href], .clickable, input[type="button"], input[type="submit"], .tri-chip, [role="option"], .mail-create-option'
         )).filter(el => el.offsetParent !== null);
         // Indices shift as a minigame re-renders, so allow a label too — a
         // caller that means "the SUBMIT button" should be able to say so.
@@ -70,7 +73,12 @@ export const minigameBridge = {
             el = buttons[indexOrLabel];
         } else {
             const needle = String(indexOrLabel).toLowerCase();
-            el = buttons.find(b => (b.innerText || b.value || '').trim().toLowerCase().includes(needle));
+            // Exact label first, then a prefix, then a substring, so "Send"
+            // does not hit "Use sender's name".
+            const text = b => (b.innerText || b.value || '').trim().toLowerCase();
+            el = buttons.find(b => text(b) === needle)
+                || buttons.find(b => text(b).startsWith(needle))
+                || buttons.find(b => text(b).includes(needle));
         }
         const index = buttons.indexOf(el);
         if (!el) {
@@ -83,6 +91,67 @@ export const minigameBridge = {
         await sleepFrames(2);
         const result = { ok: true, clicked: label };
         logAction('minigame.clickControl', { index, label }, result);
+        return result;
+    },
+
+    /**
+     * Set a <select> in the open minigame and fire input then change, as a
+     * human picking from the list does.
+     *
+     * `field` is a number (index among getState().fields, as for `type`) or a
+     * string matched against the select's id, name, class, aria-label, its
+     * <label> text and the text just before it. `option` matches an option
+     * value exactly, then its text exactly, then its text by substring.
+     * Failures list the selects and options that were there.
+     */
+    async select(field, option) {
+        const mg = current();
+        if (!mg) return fail('no-active-minigame');
+        const visible = el => el.offsetParent !== null;
+        const all = Array.from(mg.container.querySelectorAll(
+            'input:not([type="button"]):not([type="submit"]), textarea, select'
+        )).filter(visible);
+        const labelOf = el => {
+            const bits = [el.id, el.name, el.className, el.getAttribute('aria-label')];
+            if (el.id) {
+                const l = mg.container.querySelector(`label[for="${CSS.escape(el.id)}"]`);
+                if (l) bits.push(l.innerText);
+            }
+            const wrap = el.closest('label');
+            if (wrap) bits.push(wrap.innerText);
+            const prev = el.previousElementSibling;
+            if (prev) bits.push(prev.innerText);
+            const parentLabel = el.parentElement?.querySelector('label');
+            if (parentLabel) bits.push(parentLabel.innerText);
+            return bits.filter(Boolean).join(' | ');
+        };
+        const selects = all.map((el, index) => ({ el, index })).filter(x => x.el.tagName === 'SELECT');
+        const describe = () => selects.map(x => ({ index: x.index, label: labelOf(x.el).slice(0, 80),
+            value: x.el.value, options: Array.from(x.el.options).map(o => ({ value: o.value, text: o.text.trim() })) }));
+        let el;
+        if (typeof field === 'number') {
+            el = all[field];
+            if (el && el.tagName !== 'SELECT') return fail(`field-${field}-is-not-a-select`, { selects: describe() });
+        } else {
+            const needle = String(field).toLowerCase();
+            const hit = selects.find(x => labelOf(x.el).toLowerCase().includes(needle));
+            el = hit?.el;
+        }
+        if (!el) return fail(`no-select-matching:${field}`, { selects: describe() });
+        const opts = Array.from(el.options);
+        const want = String(option).toLowerCase();
+        const text = o => o.text.trim().toLowerCase();
+        const o = opts.find(x => x.value === String(option))
+            || opts.find(x => text(x) === want)
+            || opts.find(x => text(x).includes(want));
+        if (!o) return fail(`no-option-matching:${option}`, { options: opts.map(x => ({ value: x.value, text: x.text.trim() })) });
+        el.focus?.();
+        el.value = o.value;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        await sleepFrames(2);
+        const result = { ok: true, value: el.value, text: o.text.trim() };
+        logAction('minigame.select', { field, option }, result);
         return result;
     },
 

@@ -385,3 +385,34 @@ This document provides concise summaries of SecGen lab scenarios to inform Break
 - Use sudo privilege escalation: `sudo apt-get update -o APT::Update::Pre-Invoke::=/bin/sh` to get root
 - Find final flag in `/root`
 
+
+---
+
+## Modules available for mission use (added 2026-10-18)
+
+Drawn from the live, known-good catalogue scenarios (so Bookworm-tested). Use these when
+choosing or substituting a mission VM's vulnerabilities. Full rationale and the current
+mapping: `docs/agents/SECGEN_MODULE_PLAN.md`.
+
+**User-level RCE footholds** (each holds a flag and leads into a privesc):
+- `distcc_exec` (CVE-2004-2687) — from Rooting for a win. **Reserved to m03 only** (the "legacy build box").
+- `proftpd_133c_backdoor` — from Rooting for a win. In use: m02, m03.
+- `bludit_upload_images_exec` — from Feeling Blu. In use: m05.
+- `nostromo_code_exec` (CVE-2019-16278) — from Nosferatu. **Reserved for m09** (Digital Archaeology).
+- `ssh_erlangotp_rce` (CVE-2025-32433) — from SSH-it happens. Modern pre-auth SSH RCE; suits OT/telecom. Assigned to m04.
+- `apache_druid_rce` (CVE-2021-25646) — from Eventful Data. Analytics DB; suits finance/data backends. Assigned to m06.
+- `apache_spark_rce` — from Catching Sparks. Big-data processing; finance/data alternate.
+- `maltrail_rce` — from Off the Trail. Malicious-traffic monitor; suits a security/monitoring box.
+- `unrealirc_3281_backdoor` (CVE-2010-2075) — from Eyearesee. Old IRC backdoor; suits an abandoned C2 chat server.
+- `lucee_rce` — from Disastrous Development. **Lands root_rwx** — use where no separate privesc is wanted (e.g. root inside a container, with container-escape as the challenge).
+
+**Privilege escalation**: `sudoedit` (CVE-2023-22809, m04), `sudo_root_apt_get` (m08),
+`sudo_root_less` / `sudo_root_awk` / `sudo_root_more`, `writable_passwd` / `writable_shadow`,
+`readable_shadow` (m06).
+
+**Container escape** (from Container Escape): `nc_backdoor_docker_esc`, `nc_backdoor_chroot_esc`
+— an advanced capstone; candidate for the m10 finale.
+
+**distcc de-duplication (2026-10-18):** distcc was over-used (m03/m04/m06). It is now kept in
+m03 only (matching this plan's original skill map), with m04 → `ssh_erlangotp_rce` and
+m06 → `apache_druid_rce`.

@@ -64,6 +64,11 @@ You're not an IT contractor. And you've found Operation Shatter.
 // ================================================
 
 === insufficient_evidence ===
+// Engine robustness audit (m01-m08): a reopen resumes here, not at start, so recheck.
+// If the archive was read while this chat was closed, start opens the confrontation.
+{entropy_reveal_read:
+    -> start
+}
 Oh, you must be the IT contractor. Security audit, right?
 
 I'm kind of busy. Maybe check back later?

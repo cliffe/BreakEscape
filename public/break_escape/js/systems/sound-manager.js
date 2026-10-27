@@ -13,6 +13,8 @@ class SoundManager {
         this.enabled = true;
         this.masterVolume = 1.0;
         this.currentAmbient = null;
+        // Set once the end credits roll (music/ending-audio.js): no ambience after that.
+        this.ambienceSuppressed = false;
         
         // Sound volume categories (0-1)
         this.volumeSettings = {
@@ -285,7 +287,7 @@ class SoundManager {
      * @param {number} fadeInDuration - Fade-in duration in milliseconds (default 2000)
      */
     playAmbient(soundName, fadeInDuration = 2000) {
-        if (!this.enabled) return;
+        if (!this.enabled || this.ambienceSuppressed) return;
 
         const sound = this.sounds[soundName];
         if (!sound) {
@@ -353,6 +355,9 @@ class SoundManager {
      */
     fadeAmbientTo(soundName, normalizedVolume, duration = 400) {
         if (!this.enabled) return;
+        // After the credits only a fade to silence is allowed; ending-audio.js has
+        // already stopped the sound itself.
+        if (this.ambienceSuppressed && normalizedVolume !== 0) return;
 
         // Switch to a different sound — stop current immediately
         if (this.currentAmbient && this.currentAmbient !== soundName) {
@@ -404,6 +409,19 @@ class SoundManager {
             onUpdate: (tween) => sound.setVolume(tween.getValue()),
             onComplete: () => { this._ambientTween = null; }
         });
+    }
+
+    /**
+     * Keep room ambience off (the end credits) or allow it again. Turning it on
+     * forgets the current ambient and cancels its fade; the caller stops the sound,
+     * since the scene (and its tweens) is paused under the credits.
+     */
+    suppressAmbience(on = true) {
+        this.ambienceSuppressed = !!on;
+        if (!on) return;
+        this._suppressedAmbientKey = this.currentAmbient;
+        this.currentAmbient = null;
+        if (this._ambientTween) { this._ambientTween.stop(); this._ambientTween = null; }
     }
 
     /**

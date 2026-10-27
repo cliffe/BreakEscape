@@ -69,6 +69,21 @@ export function setupChairCollisions(chair) {
         }
     });
     
+    // Collision with the map's furniture collision rectangles (Object Layer 1: the boxes
+    // under cabinets, benches, sofas). They were player-only, so a pushed chair or trolley
+    // rolled straight over a lab bench (user review 2026-10-16).
+    Object.values(allRooms).forEach(room => {
+        (room.collisionBodies || []).forEach(box => {
+            if (box.body) {
+                if (chair.isSwivelChair) {
+                    game.physics.add.collider(chair, box, () => handleChairWallCollision(chair));
+                } else {
+                    game.physics.add.collider(chair, box);
+                }
+            }
+        });
+    });
+
     // Collision with closed door sprites
     Object.values(allRooms).forEach(room => {
         if (room.doorSprites) {

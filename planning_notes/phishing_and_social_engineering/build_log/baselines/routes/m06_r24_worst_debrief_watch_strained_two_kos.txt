@@ -1,0 +1,98 @@
+
+## R24 (dialogue C1, D6-3): the longest debrief before and after the new beats. Watch, cover strained, the guard and Dani knocked down, Priya walked the player through her graph, Irina turned (badge cloned, notes read) then knocked down, Kemal passed on Volkova's word, Satoshi stance 'wondered'. Every run must stay at 9 or under.
+   {set {"briefing_played":true,"found_blockchain_evidence":true,"found_architects_fund":true,"found_wallet_keys":true,"flag1_submitted":true,"flag2_submitted":true,"flag3_submitted":true,"flag4_submitted":true,"monitoring_enabled":true,"assets_decided":true,"cover_strained":true,"guard_ko":true,"trader_ko":true,"analyst_walked_through":true,"irina_recruited":true,"irina_ko":true,"irina_fate_decided":true,"irina_badge_cloned":true,"read_irina_notes":true,"exchange_infiltrated":true,"minder_passed":true,"minder_vouched":true,"minder_challenged":true,"satoshi_spoken":true,"satoshi_confronted":true,"satoshi_stance":"wondered"}}
+      [engine: both calls made, all four flags in -> ready_to_extract=true]
+      [HaX text: both calls made ... His safe's still shut, if that matters to you.]
+
+--- debrief ---
+      [set_variable debrief_played=true]
+  Narrator: SAFETYNET headquarters. The handler's office at four in the morning, the city still lit beyond the glass.
+  Agent HaX: Every ENTROPY cell banks at HashChain, and tonight we got the books.
+  Agent HaX: We've been chasing cells one at a time. Now we can see who pays them all.
+     (2 options)
+ > Start with the fund.
+  Agent HaX: You traced the fund yourself. In through the mixer, out by amount and time.
+  Agent HaX: $12.8 million, split across six cells. Every name's on that page.
+  Agent HaX: Three hundred and fifty to six hundred projected dead across the operations it pays for. The cells' own estimates.
+  Agent HaX: They wrote that number down and called it "The Architect's Masterpiece."
+     (2 options)
+ > How does anyone sign off on that?
+  Agent HaX: They think the system's falling anyway, and pushing it saves lives later.
+  Agent HaX: Greed I could bargain with. These people believe it.
+  Agent HaX: Every cell that took a payout is on our map, and they don't know it.
+  Agent HaX: They'll have the money in three days. Whatever it buys goes ahead unless we get there first.
+  Agent HaX: Volkova.
+  Agent HaX: You turned her.
+  Agent HaX: She gave us the mixer. Nobody alive knows ENTROPY's plumbing better.
+  Agent HaX: And then she went down on the trading floor. I'll be explaining that one upstairs.
+  Agent HaX: What she gave us still stands.
+     (2 options)
+ > Was it the right call?
+  Agent HaX: For tonight, yes. What's in her head beats anything on her servers.
+  Agent HaX: She's promised the pool keys and the wallet map by tonight, and the account that paid her.
+  Agent HaX: She came over because she believed you. Remember that when someone asks if she was worth it.
+  Agent HaX: And you cloned her office badge off her lanyard while she talked. She'll read that in the file one day.
+  Agent HaX: Reading her notes first was good work. You knew what she'd told herself before you said a word.
+  Agent HaX: We detained "Satoshi Nakamoto the Second" in his own office. The police have him, and nobody outside that van knows it yet.
+  Agent HaX: He told the arresting officer you'd admitted to wondering. I've left that out of the file.
+     (2 options)
+ > He'll be making speeches at the trial.
+  Agent HaX: Let him. The jury will have the allocation.
+  Agent HaX: The exchange stays open under watch. His payout was pre-signed, so it still goes, and then the police get the rest.
+  Agent HaX: His minder took Volkova's word for you, on the phone, with his boss behind the door.
+  Agent HaX: Your cover didn't last the night. HashChain rang the FCA, and that might cost us the next job.
+  Agent HaX: Okonkwo flagged those wallets before we ever did, and got knocked down for it.
+  Agent HaX: The guard on the checkpoint has a wife who wants to know why he's in A&E.
+  Agent HaX: None of them were in on it.
+  Agent HaX: Raghavan will want to know what she was drawing. Somebody from the police will tell her. I'd rather it was you.
+  Agent HaX: All four flags in.
+     (2 options)
+ > Walk me through it.
+  Agent HaX: A build service nobody had switched off got you onto their backend. One cracked password, and the same password opened a second account.
+  Agent HaX: The financial database gave us their doors, and the vault account gave us the keys to every cold wallet they hold.
+  Agent HaX: That's the whole chain, from outside to the keys, and they'd left every link open.
+  Agent HaX: One more thing. The FCA wants to know who was using its name tonight, and it wants a letter. Three findings.
+     (10 options)
+ > Their door passphrases follow a house rule, and the rule is pinned to a noticeboard.
+     (9 options)
+ > Two service accounts share one password.
+     (8 options)
+ > Every cold wallet's recovery keys sit on one account.
+  Agent HaX: Three for three. Any one of those would have cost them their licence. Together they explain how you walked in.
+  Agent HaX: Priya's write-up and the fund allocation, both. Wallets, transactions and what they pay for.
+  Agent HaX: That's evidence the police can use. People in several cells will face charges over the money.
+  Agent HaX: You left Satoshi's safe shut. Whatever he kept in it, the police will open on their schedule, not ours.
+  Agent HaX: A man like that keeps insurance. I'd have liked to read it first.
+  Agent HaX: Here's what worries me.
+  Agent HaX: Six cells, one fund, one seventy-two-hour clock. Somebody wrote one schedule for all of them.
+     (2 options)
+ > So they all move at once.
+  Agent HaX: If they do, we won't get much warning.
+  Agent HaX: Get some rest. Keep your phone on.
+      [task: hear_debrief]
+  [end]
+   [PASS] said: "And then she went down on the trading floor. I'll be explaining that one upstairs."
+   [PASS] said: "He told the arresting officer you'd admitted to wondering"
+   [PASS] said: "Let him. The jury will have the allocation."
+   [PASS] said: "The exchange stays open under watch"
+   [PASS] said: "His minder took Volkova's word for you"
+   [PASS] said: "Your cover didn't last the night. HashChain rang the FCA"
+   [PASS] said: "Okonkwo flagged those wallets"
+   [PASS] said: "The guard on the checkpoint has a wife"
+   [PASS] said: "None of them were in on it"
+   [PASS] said: "Raghavan will want to know what she was drawing"
+   [PASS] said: "That's the whole chain, from outside to the keys"
+   [PASS] said: "The FCA wants to know who was using its name tonight"
+   [PASS] said: "Three for three"
+   [PASS] said: "You left Satoshi's safe shut"
+   [PASS] said: "If they do, we won't get much warning."
+   [PASS] not said: "The police and the lawyers decide"
+   [PASS] not said: "We let it run. What's on that document"
+   [PASS] not said: "Map it, get on it"
+   [PASS] not said: "That goes in the report"
+   [PASS] not said: "The man in the corner office was Satoshi's Ghost"
+   [PASS] not said: "Some of them are already paid for"
+   [PASS] longest run 9 (debrief) <= 9
+
+[stats] spoken/narrated lines 45, choices 9, longest run without a choice 9 (debrief); runs>=6: debrief:9, debrief:7, debrief:9, debrief:7
+[result] all expectations met

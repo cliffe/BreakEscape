@@ -99,3 +99,24 @@ test('phone-chat UI renders history bubbles with the message, not the current ti
     assert.match(ui, /this\.addMessage\(msg\.type, msg\.text, false, msg\)/);
     assert.match(ui, /messageTime\.textContent = message \? messageClockText\(message\) : this\.getCurrentTime\(\)/);
 });
+
+// m05 E3 (engine regression 2026-10-16): with a story-rate clock the preloaded HaX
+// intro read 15:30 above a 16:30 start. Preloads are stamped at the current game
+// time when a clock is configured; the hour-back stamp stays for wall-clock games.
+test('preloaded intros are stamped at or after the in-game start', () => {
+    const src = read('minigames/phone-chat/phone-chat-conversation.js');
+    assert.match(src, /clock\?\.configured\s*\?\s*\{ timestamp: Date\.now\(\), gameTime: clock\.elapsedMs\(\) \}\s*:\s*\{ timestamp: Date\.now\(\) - 3600000 \}/);
+    const T0 = 1_800_000_000_000;
+    window.gameClock = new GameClock({ config: { start: 'Wed 16:30', rate: 2.5 }, now: T0 });
+    const msg = { timestamp: T0, gameTime: window.gameClock.elapsedMs(T0) };
+    assert.equal(messageClockText(msg, window.gameClock, T0), '16:30');
+    delete window.gameClock;
+});
+
+// F18 item 5: without a scenario gameClock the bubble would show the player's real
+// clock in a mission set at night, so it carries no time at all (order is the cue).
+test('phone bubbles show a time only when the scenario has an in-world clock', () => {
+    const ui = read('minigames/phone-chat/phone-chat-ui.js');
+    assert.match(ui, /if \(typeof window !== 'undefined' && window\.gameClock\?\.configured\) \{\s*const messageTime = document\.createElement\('div'\);/);
+    assert.doesNotMatch(ui, /\n\s*const messageTime = document\.createElement[^\n]*\n\s*messageTime\.className = 'message-time';\n\s*\/\/ The time this message arrived/);
+});

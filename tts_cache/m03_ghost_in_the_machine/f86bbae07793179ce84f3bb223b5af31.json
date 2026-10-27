@@ -1,0 +1,13 @@
+{
+  "key": "f86bbae07793179ce84f3bb223b5af31",
+  "npc": "narrator",
+  "text": "She answers at length. She likes this diagram.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:20:48Z"
+}

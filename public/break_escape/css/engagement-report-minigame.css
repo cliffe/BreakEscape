@@ -1,0 +1,291 @@
+/* Engagement report builder (design 10 stage 6, N1). A plain report surface: a
+   results table and findings cards. Every string the player reads is DOM text in
+   Source Sans 3, and marks are always paired with words. The stylesheet <link> is
+   added by the wiring packet (P6-W). */
+
+.engagement-report-container {
+    background: var(--ui-backdrop, rgba(6, 8, 16, 0.78));
+}
+
+.engagement-report-game-container {
+    width: min(960px, 96vw);
+    height: min(92vh, 860px);
+    margin: 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--ui-panel, #f4f1ea);
+    border: 4px solid var(--ui-line, #4c5b80);
+    box-shadow: 0 0 0 2px var(--ui-line, #4c5b80), inset 0 0 24px rgba(0, 0, 0, 0.18);
+}
+
+.er-root {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+    font-family: var(--se-font-readable, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
+    font-size: 16px;
+    color: #23252c;
+    outline: none;
+}
+
+.er-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 10px 14px;
+    background: var(--ui-surface, rgba(24, 30, 48, 0.94));
+    border-bottom: 3px solid var(--ui-line, #4c5b80);
+    color: var(--ui-text, #eef1f8);
+}
+
+.er-title {
+    margin: 0;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    font-weight: 400;
+    flex: 1 1 auto;
+}
+
+.er-progress {
+    margin: 0;
+    font-size: 16px;
+    color: var(--ui-text-dim, #a8b2c8);
+}
+
+.er-close {
+    flex: 0 0 auto;
+}
+
+.er-live {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.er-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.er-intro,
+.er-note {
+    margin: 0 0 12px;
+    color: #4a4e59;
+}
+
+.er-fail-note,
+.er-unseen {
+    font-style: italic;
+}
+
+.er-section {
+    margin: 0 0 24px;
+    padding: 14px;
+    background: #ffffff;
+    border: 2px solid var(--ui-line, #4c5b80);
+    border-radius: 4px;
+}
+
+.er-h {
+    margin: 0 0 12px;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.er-subh {
+    margin: 16px 0 6px;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.er-empty {
+    margin: 0;
+    color: #6b6f7a;
+}
+
+/* Mail table */
+.er-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 8px;
+}
+
+.er-table th,
+.er-table td {
+    padding: 6px 10px;
+    text-align: left;
+    border-bottom: 1px solid #d7d4cc;
+}
+
+.er-table thead th {
+    font-weight: 700;
+    border-bottom: 2px solid var(--ui-line, #4c5b80);
+}
+
+.er-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Page and call lines */
+.er-page-line,
+.er-call-line {
+    margin: 0 0 6px;
+}
+
+.er-page-line.is-unsent {
+    color: #6b6f7a;
+}
+
+/* Confirm */
+.er-confirm {
+    margin: 16px 0 0;
+}
+
+/* A question about the results (opt-in `question` item) */
+.er-question {
+    margin: 16px 0 0;
+}
+
+.er-confirmed {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: #1f6b3a;
+    font-weight: 700;
+}
+
+/* Findings */
+.er-finding-list {
+    margin: 0;
+    padding: 0 0 0 1.2em;
+}
+
+.er-card {
+    margin: 0 0 16px;
+    padding: 12px;
+    background: #faf8f3;
+    border: 2px solid #d7d4cc;
+    border-radius: 4px;
+}
+
+.er-finding.is-done {
+    border-color: #2f8f54;
+    background: #f1f8f2;
+}
+
+.er-card-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 12px;
+    margin: 0 0 10px;
+}
+
+.er-finding-text {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    flex: 1 1 auto;
+}
+
+.er-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+}
+
+.er-status.ready { color: #1f6b3a; }
+.er-status.not-ready { color: #8a6d1f; }
+
+.er-pair {
+    margin: 0 0 10px;
+}
+
+.er-pair-label {
+    margin: 0 0 4px;
+    font-weight: 700;
+}
+
+.er-options {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.er-option.is-chosen {
+    outline: 2px solid var(--ui-accent, #3a6ea5);
+}
+
+.er-feedback {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 6px 0 0;
+}
+
+.er-feedback.good { color: #1f6b3a; }
+.er-feedback.bad { color: #8a6d1f; }
+.er-feedback.blame { color: #a8402e; }
+
+.er-feedback .er-word { font-weight: 700; }
+
+.er-icon {
+    image-rendering: pixelated;
+    flex: 0 0 auto;
+}
+
+/* Narrow layout */
+@media (max-width: 768px) {
+    .engagement-report-game-container {
+        width: 100vw;
+        height: 100vh;
+        border-width: 0;
+    }
+
+    .er-table,
+    .er-table thead,
+    .er-table tbody,
+    .er-table tr,
+    .er-table th,
+    .er-table td {
+        display: block;
+    }
+
+    .er-table thead {
+        display: none;
+    }
+
+    .er-mail-row {
+        margin: 0 0 10px;
+        padding: 6px 0;
+        border-bottom: 2px solid var(--ui-line, #4c5b80);
+    }
+
+    .er-num {
+        text-align: left;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .er-scroll {
+        scroll-behavior: auto;
+    }
+}

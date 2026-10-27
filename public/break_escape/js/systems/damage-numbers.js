@@ -34,7 +34,7 @@ export class DamageNumbersSystem {
    * @param {number} x - World x position
    * @param {number} y - World y position
    * @param {number} amount - Damage amount
-   * @param {string} type - 'damage' or 'heal'
+   * @param {string} type - 'damage', 'heal' or 'blocked'
    */
   show(x, y, amount, type = 'damage') {
     // Get object from pool
@@ -54,6 +54,8 @@ export class DamageNumbersSystem {
       text.setColor('#ff4444'); // Red for damage
     } else if (type === 'heal') {
       text.setColor('#44ff44'); // Green for heal
+    } else if (type === 'blocked') {
+      text.setColor('#bbbbbb'); // Grey: what got through a guard or a block
     }
 
     // Add to active list

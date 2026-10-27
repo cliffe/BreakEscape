@@ -11,8 +11,12 @@ import { addToInventory, createItemIdentifier } from './inventory.js';
 import { playUISound, playGameSound } from './ui-sounds.js';
 import { applyActions } from './apply-actions.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
+import { isRemoteFlagLock, remoteFlagLockMessage } from '../utils/flag-lock.js';
 import { npcReachDistSq } from './npc-reach.js';
 import { shouldExamine, startExamine } from './examine.js';
+import { showPastTalkingToast } from './combat-input.js';
+import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
+import { interactionLineClear } from './interaction-walls.js';
 
 let gameRef = null;
 
@@ -247,7 +251,8 @@ export function checkObjectInteractions() {
             const dy = obj.y - py;
             const distanceSq = dx * dx + dy * dy;
 
-            if (distanceSq <= INTERACTION_RANGE_SQ) {
+            // In range and no wall between (interaction-walls.js)
+            if (distanceSq <= INTERACTION_RANGE_SQ && interactionLineClear(player, obj)) {
                 if (!obj.isHighlighted) {
                     obj.isHighlighted = true;
                     // Only apply tint if this is a sprite (has setTint method)
@@ -383,7 +388,7 @@ export function checkObjectInteractions() {
                 const npcDy = sprite.y - py;
                 const distanceSq = npcReachDistSq(player, sprite, npcDx * npcDx + npcDy * npcDy);
 
-                if (distanceSq <= INTERACTION_RANGE_SQ && sprite.visible) {
+                if (distanceSq <= INTERACTION_RANGE_SQ && sprite.visible && interactionLineClear(player, sprite)) {
                     if (!sprite.isHighlighted) {
                         sprite.isHighlighted = true;
                         // Add talk icon indicator for NPC (created on first highlight)
@@ -607,8 +612,91 @@ function addInteractionIndicator(obj) {
     }
 }
 
+// SE social-engineering lockout (00 §8, S10). window.socialInfluence exists only
+// for a scenario with social.characters, so shipped missions (m01–m08) never enter
+// these branches and behave exactly as before. Returns true (and shows a one-line
+// refusal) when `id` is a social character locked out on `channel`; a due lockout
+// lifts on the way, opening the channel. `id` is a character id or a channel NPC id.
+function socialChannelLocked(id, channel) {
+    const svc = window.socialInfluence;
+    if (!svc || typeof svc.isLockedOut !== 'function' || !svc.isLockedOut(id, channel)) return false;
+    const name = svc.getCharacterConfig?.(id)?.displayName || '';
+    // Say why and roughly how long: the lockout follows a flagged/reported attempt
+    // (00 §8), so without a reason the toast just reads as a dead end (F6-F10).
+    const act = channel === 'email' ? 'read your mail' : 'talk to you';
+    const who = name || 'That contact';
+    const text = `${who} flagged the last attempt and won't ${act} for now — give it a while, then try again more carefully.`;
+    (window.gameAlert || window.showNotification)?.(text, 'warning', '', 3500);
+    return true;
+}
+
+// SE pretext call (06 N5, 00 S10): a desk phone or an NPC carrying a callId opens
+// pretext-prep rather than plain dialogue. The lockout is checked first, so a
+// locked-out student is refused before the pretext card opens. The callId names a
+// social.pretextNpcs entry; its `character` names the social.characters entry whose
+// channel record (channels.phone for a phone, channels.person for an NPC) is opened.
+function grantsHeld(grants, globals) {
+    if (!grants || typeof grants !== 'object') return false;
+    const intel = Array.isArray(grants.intel) ? grants.intel : [];
+    const setGlobal = grants.setGlobal && typeof grants.setGlobal === 'object' ? grants.setGlobal : {};
+    if (!intel.length && !Object.keys(setGlobal).length) return false;
+    const intelOk = intel.every(id => globals[`se_intel_${id}`] === true);
+    const globalsOk = Object.entries(setGlobal).every(([name, value]) => globals[name] === value);
+    return intelOk && globalsOk;
+}
+
+function everyAskHeld(call, globals) {
+    const asks = call?.asks;
+    if (!asks || typeof asks !== 'object') return false;
+    const list = Object.values(asks);
+    if (!list.length) return false;
+    return list.every(ask => grantsHeld(ask?.grants, globals));
+}
+
+function startPretextCall(callId, { npcId = null, channel } = {}) {
+    const svc = window.socialInfluence;
+    const calls = window.gameScenario?.social?.pretextNpcs;
+    const call = Array.isArray(calls) ? calls.find(c => c && c.callId === callId) : null;
+    if (!svc || !call) {
+        console.warn('[interactions] pretext call has no social service or no pretextNpcs entry:', callId);
+        return;
+    }
+    const characterId = call.character;
+    if (socialChannelLocked(characterId, channel)) return; // refuse before pretext-prep opens
+    const globals = window.gameState?.globalVariables || {};
+    if (everyAskHeld(call, globals)) {
+        const name = svc.getCharacterConfig?.(characterId)?.displayName || '';
+        // A short, titled line so the student who rings back (the debrief warns that a
+        // call-back is what defeats the attack) gets a clear answer rather than silence
+        // (lab R1 F6). Calling again would only risk the line for facts already held.
+        const text = name
+            ? `You already have what ${name} can tell you. Ringing back would only put them on guard.`
+            : 'You already have what they can tell you. Ringing back would only raise suspicion.';
+        (window.gameAlert || window.showNotification)?.(text, 'info', 'Desk Phone', 3000);
+        return;
+    }
+    const recordNpcId = npcId || svc.getCharacterConfig?.(characterId)?.channels?.[channel] || null;
+    // A fresh call starts a clean transcript: the previous (completed) call's lines are
+    // cleared so the second call does not append under the first (R2 F6-F10). A mid-call
+    // reload keeps its open session, so its transcript is left to be restored. Gated to
+    // pretext calls, so shipped missions' chat history is never touched.
+    const savedState = globals[`pretext_${callId}_state`];
+    const resuming = savedState && typeof savedState === 'object' && savedState.open === true && savedState.callId === callId;
+    if (!resuming && recordNpcId && typeof window.npcManager?.clearConversationHistory === 'function') {
+        try { window.npcManager.clearConversationHistory(recordNpcId); } catch (e) { /* no history to clear */ }
+    }
+    // The starter (minigame-starters.js) sets requiresKeyboardInput before
+    // startMinigame reads params. P4-D's phone and NPC checks below are the
+    // only callId checks.
+    if (typeof window.startPretextPrepMinigame !== 'function') {
+        console.warn('[interactions] pretext-prep starter unavailable for call:', callId);
+        return;
+    }
+    window.startPretextPrepMinigame({ callId, character: characterId, npcId: recordNpcId });
+}
+
 export function handleObjectInteraction(sprite) {
-    console.log('OBJECT INTERACTION', { 
+    console.log('OBJECT INTERACTION', {
         name: sprite.name, 
         id: sprite.objectId,
         scenarioData: sprite.scenarioData
@@ -628,28 +716,10 @@ export function handleObjectInteraction(sprite) {
         });
     }
     
-    // Handle swivel chair interaction - trigger punch to kick it!
+    // Handle swivel chair interaction - a jab kicks it
     if (sprite.isSwivelChair && sprite.body) {
-        const player = window.player;
-        if (player && window.playerCombat) {
-            // In interact mode, auto-switch to jab for chairs
-            const currentMode = window.playerCombat.getInteractionMode();
-            const wasInteractMode = currentMode === 'interact';
-            
-            if (wasInteractMode) {
-                console.log('🪑 Chair in interact mode - auto-jabbing');
-                window.playerCombat.setInteractionMode('jab');
-            }
-            
-            // Trigger punch to kick the chair
-            window.playerCombat.punch();
-            
-            // Restore interact mode if we switched
-            if (wasInteractMode) {
-                setTimeout(() => {
-                    window.playerCombat.setInteractionMode('interact');
-                }, 100);
-            }
+        if (window.player && window.playerCombat) {
+            window.playerCombat.punch('jab');
         }
         return;
     }
@@ -658,35 +728,27 @@ export function handleObjectInteraction(sprite) {
     if (sprite._isNPC && sprite.npcId) {
         console.log('NPC INTERACTION', { npcId: sprite.npcId });
         
-        // Check if NPC is hostile
+        // A hostile NPC can't be talked to: say so, and throw the next punch
+        // of the combo at it
         const isHostile = window.npcHostileSystem && window.npcHostileSystem.isNPCHostile(sprite.npcId);
-        
-        // If hostile and in interact mode, auto-jab instead of talking
         if (isHostile && window.playerCombat) {
-            const currentMode = window.playerCombat.getInteractionMode();
-            const wasInteractMode = currentMode === 'interact';
-            
-            if (wasInteractMode) {
-                console.log('👊 Hostile NPC in interact mode - auto-jabbing');
-                window.playerCombat.setInteractionMode('jab');
-            }
-            
-            // Punch the hostile NPC
-            window.playerCombat.punch();
-            
-            // Restore interact mode if we switched
-            if (wasInteractMode) {
-                setTimeout(() => {
-                    window.playerCombat.setInteractionMode('interact');
-                }, 100);
-            }
+            showPastTalkingToast(sprite.npcId); // 7.1i: say why there's no conversation
+            window.playerCombat.attack({ x: sprite.x, y: sprite.y });
             return;
         }
-        
+
+        // SE social-engineering lockout on the person channel (00 §8, S10): a
+        // social character who is locked out will not talk until it lifts.
+        if (socialChannelLocked(sprite.npcId, 'person')) return;
+
         // Non-hostile NPCs - start chat minigame
         if (window.MinigameFramework && window.npcManager) {
             const npc = window.npcManager.getNPC(sprite.npcId);
             if (npc) {
+                // SE pretext call (06 N5): an NPC carrying a callId runs the pretext
+                // flow in person-chat, not plain dialogue. The lab needs only the
+                // phone case; a sprite test character exercises this one (P4-G).
+                if (npc.callId) { startPretextCall(npc.callId, { npcId: sprite.npcId, channel: 'person' }); return; }
                 // Start person-chat minigame with this NPC
                 window.MinigameFramework.startMinigame('person-chat', null, {
                     npcId: sprite.npcId,
@@ -716,6 +778,13 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // Consumables (coffee, snacks, a first aid kit) heal the player and are used
+    // up (7.1c). A takeable one is picked up first and used from the inventory.
+    if (shouldConsumeOnInteract(sprite, window.inventory?.items)) {
+        useConsumable(sprite);
+        return;
+    }
+
     // Notify tutorial when inventory item is clicked
     // Items in inventory have takeable set to false
     if (sprite.scenarioData.takeable === false && window.getTutorialManager) {
@@ -728,6 +797,13 @@ export function handleObjectInteraction(sprite) {
     // If takeable is true the card is still in the world and should be picked up normally.
     if (sprite.scenarioData.type === 'keycard' && sprite.scenarioData.takeable === false) {
         console.log('KEYCARD INTERACTION (inventory) - checking for cloner');
+
+        // The cloner is already open (e.g. mid-read from a conversation): starting it
+        // again in clone mode would end that minigame and lose the read (as E-H).
+        if (window.MinigameFramework?.isOpen?.('rfid')) {
+            console.log('RFID minigame already open; ignoring keycard click');
+            return;
+        }
 
         // Check if player has RFID cloner
         const hasCloner = window.inventory.items.some(item =>
@@ -758,9 +834,19 @@ export function handleObjectInteraction(sprite) {
     const PICKUP_THEN_INTERACT_TYPES = new Set([
         'workstation', 'lab-workstation',
         'vm-launcher', 'vm_launcher',
-        'launch-device', 'phone'
+        'launch-device', 'phone',
+        'mail_terminal'   // SE: a takeable mail terminal is carried and opened from inventory (00 S14)
     ]);
     if (sprite.scenarioData.takeable && PICKUP_THEN_INTERACT_TYPES.has(sprite.scenarioData.type)) {
+        // A locked takeable mail terminal must be unlocked before it is picked up and
+        // opened from inventory, or the lock is skipped entirely (the pickup re-enters
+        // this handler with no lock test). Send it to the unlock flow first; once
+        // unlocked it is picked up on the next interaction (00 S14). Scoped to
+        // mail_terminal (N-3): the other pickup types keep their prior behaviour.
+        if (sprite.scenarioData.type === 'mail_terminal' && sprite.scenarioData.locked === true) {
+            handleUnlock(sprite, 'item');
+            return;
+        }
         playUISound('item');
         addToInventory(sprite);
         setTimeout(() => handleObjectInteraction(sprite), 1000);
@@ -976,6 +1062,82 @@ export function handleObjectInteraction(sprite) {
         return;
     }
   
+    // Social-engineering overlays: the case file opens its overlay here. The
+    // mail terminal branch sits after the generic lock check (near the phone
+    // branch), so a locked terminal reaches handleUnlock first (00 S14, P1-F).
+    if (sprite.scenarioData.type === 'case-file') {
+        if (window.startIntelBoardMinigame) {
+            window.startIntelBoardMinigame(sprite);
+        } else {
+            window.gameAlert('Case file unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
+    // OSINT workstation (P2-W): opens the OSINT browser on the sites in minigameData.siteIds.
+    if (sprite.scenarioData.type === 'osint-workstation') {
+        if (window.startOsintBrowserMinigame) {
+            window.startOsintBrowserMinigame(sprite);
+        } else {
+            window.gameAlert('Workstation unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
+    // Inbox triage workstation (P3-W): opens the set named in minigameData.triageSetId.
+    if (sprite.scenarioData.type === 'triage-workstation') {
+        if (window.startInboxTriageMinigame) {
+            window.startInboxTriageMinigame(sprite);
+        } else {
+            window.gameAlert('Workstation unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
+    // Awareness episode kiosk (P7-H): runs the episode named in minigameData.episodeId.
+    if (sprite.scenarioData.type === 'kiosk') {
+        if (window.startEpisodeRunner) {
+            window.startEpisodeRunner(sprite);
+        } else {
+            window.gameAlert('Kiosk unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
+    // Landing-page builder workstation (P5-G): opens the page named in
+    // minigameData.landingPageId (07 section 6). The id is hyphenated (D3).
+    if (sprite.scenarioData.type === 'page-builder') {
+        if (window.startLandingPageBuilder) {
+            window.startLandingPageBuilder(sprite);
+        } else {
+            window.gameAlert('Page builder unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
+    // Engagement report workstation (P6-W): the report reads the case records itself.
+    if (sprite.scenarioData.type === 'report-workstation') {
+        // Optional stage gate (R-b5): the lab keys this on the phishing stage
+        // (sends_done, set once all three targets have landed) so the report cannot be written — and its tasks cannot
+        // complete out of order — before the aim it belongs to has unlocked. The gate
+        // is read from the object's own minigameData, so it is inert for any mission
+        // that does not set it.
+        const gate = sprite.scenarioData.minigameData && sprite.scenarioData.minigameData.requiresGlobal;
+        if (typeof gate === 'string' && gate &&
+            !(window.gameState && window.gameState.globalVariables && window.gameState.globalVariables[gate] === true)) {
+            const msg = (sprite.scenarioData.minigameData && sprite.scenarioData.minigameData.lockedMessage) ||
+                'There is nothing to write up yet.';
+            window.gameAlert(msg, 'info', sprite.scenarioData.name || 'Report Workstation', 3500);
+            return;
+        }
+        if (window.startEngagementReport) {
+            window.startEngagementReport(sprite);
+        } else {
+            window.gameAlert('Report workstation unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
     // Handle Major Incident Command Board
     if (sprite.scenarioData.type === 'command_board') {
         if (window.startCommandBoardMinigame) {
@@ -1043,12 +1205,14 @@ export function handleObjectInteraction(sprite) {
                 // Server sends a count, not the values (see Game#filter_requires_and_contents_recursive).
                 flagCount:         sprite.scenarioData.flagCount ?? (sprite.scenarioData.flags || []).length,
                 acceptsVms:        sprite.scenarioData.acceptsVms || [],
+                acceptsVmLabels:   sprite.scenarioData.acceptsVmLabels || null,
                 onAbort:           sprite.scenarioData.onAbort  || null,
                 onLaunch:          sprite.scenarioData.onLaunch || null,
                 abortConfirmText:  sprite.scenarioData.abortConfirmText  || null,
                 launchConfirmText: sprite.scenarioData.launchConfirmText || null,
                 flagsAllSubmitted: sprite.scenarioData.flagsAllSubmitted === true,
-                submittedFlags:    window.gameState?.submittedFlags || [],
+                // This station's own submitted flags, from the server (never the game-wide list)
+                submittedFlags:    Array.isArray(sprite.scenarioData.submittedFlags) ? sprite.scenarioData.submittedFlags : undefined,
                 gameId:            window.breakEscapeConfig?.gameId || window.gameConfig?.gameId
             });
             return;
@@ -1276,10 +1440,23 @@ export function handleObjectInteraction(sprite) {
             });
             return;
         }
+        // In range but on the far side of a wall (interaction-walls.js)
+        if (!interactionLineClear(player, sprite)) {
+            console.log('INTERACTION_BLOCKED_BY_WALL', { objectName: sprite.name, objectId: sprite.objectId || sprite.npcId });
+            return;
+        }
     }
     
     const data = sprite.scenarioData;
     
+    // Flag lock opened by a flag-station reward elsewhere: say where, rather than
+    // opening a prompt that would reject every flag typed into it
+    if (isRemoteFlagLock(data)) {
+        playUISound('reject');
+        window.gameAlert(remoteFlagLockMessage(data), 'info', data.name || 'Locked', 6000);
+        return;
+    }
+
     // Flag-locked items: submit a flag to unlock, validated server-side via /unlock endpoint
     if (data.locked === true && data.lockType === 'flag') {
         window.MinigameFramework.startMinigame('flag-station', null, {
@@ -1316,7 +1493,19 @@ export function handleObjectInteraction(sprite) {
         handleUnlock(sprite, 'item');
         return;
     }
-    
+
+    // SE mail terminal: opens the mail client on the device's accounts. Placed
+    // after the generic lock check (and beside the phone branch) so an object
+    // lock on a terminal is honoured before the overlay opens (00 S14, 01 §5, P1-F).
+    if (data.type === 'mail_terminal') {
+        if (window.startMailClientMinigame) {
+            window.startMailClientMinigame(sprite);
+        } else {
+            window.gameAlert('Mail terminal unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
     const resolvedObservations = resolveObjectField(data, 'observations', sprite.observations || null);
     const resolvedText = resolveObjectField(data, 'text', null);
 
@@ -1325,14 +1514,33 @@ export function handleObjectInteraction(sprite) {
         message += `Observations: ${resolvedObservations}\n`;
     }
     
+    // SE pretext call (06 N5, 00 S10): a desk phone carrying a callId opens
+    // pretext-prep. Placed ABOVE the phone gate below, which admits only a phone
+    // with text/voice/npcIds, so a desk phone with just a callId would never
+    // reach a branch placed inside it (an engine change, 00 §11). The lockout is
+    // checked inside startPretextCall, before the pretext card opens.
+    // The phone schema stores callId under minigameData. A top-level callId is
+    // still accepted. This is the branch P4-D placed.
+    const phoneCallId = data.minigameData?.callId || data.callId;
+    if (data.type === 'phone' && phoneCallId) {
+        startPretextCall(phoneCallId, { channel: 'phone' });
+        return;
+    }
+
     // For phone type objects, use phone-chat with runtime conversion or direct NPC access
     if (data.type === 'phone' && (data.text || data.voice || data.npcIds)) {
         console.log('Phone object detected:', { type: data.type, text: data.text, voice: data.voice, npcIds: data.npcIds });
-        
+
+        // SE lockout on the phone channel (00 §8, S10): refuse before opening
+        // phone-chat when any listed NPC is a locked-out social character.
+        if (window.socialInfluence && Array.isArray(data.npcIds)) {
+            for (const nid of data.npcIds) { if (socialChannelLocked(nid, 'phone')) return; }
+        }
+
         // Check if phone-chat system is available
         if (window.MinigameFramework && window.npcManager) {
             const phoneId = data.phoneId || 'default_phone';
-            
+
             // Check if phone has already been converted or has npcIds
             if (data.npcIds && data.npcIds.length > 0) {
                 console.log('Phone has npcIds, opening phone-chat directly', { npcIds: data.npcIds });
@@ -1691,12 +1899,13 @@ export function tryInteractWithNearest() {
     let best = null;
     let bestScore = Infinity;
 
-    function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ, npcSprite = null) {
+    function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ, npcSprite = null, target = npcSprite) {
         const dx = objX - px;
         const dy = objY - py;
         const plainSq = dx * dx + dy * dy;
         const distSq = npcSprite ? npcReachDistSq(player, npcSprite, plainSq) : plainSq;
         if (distSq > rangeSq) return;
+        if (target && !interactionLineClear(player, target)) return; // wall between
         const dist = Math.sqrt(distSq);
         const score = angularDiff(objX, objY) * 1000 + dist;
         if (score < bestScore) { bestScore = score; best = { objX, objY, handleFn }; }
@@ -1711,7 +1920,7 @@ export function tryInteractWithNearest() {
         if (room.objects) {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
-                consider(obj.x, obj.y, () => handleObjectInteraction(obj));
+                consider(obj.x, obj.y, () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj);
             });
         }
 
@@ -1768,14 +1977,15 @@ export function tryInteractWithNPC(npcSprite) {
     const distanceSq = npcReachDistSq(player, npcSprite, getInteractionDistance(player, npcSprite.x, npcSprite.y));
     const distance = Math.sqrt(distanceSq);
 
-    // Only interact if within range
-    if (distance <= INTERACTION_RANGE) {
+    // Only interact if within range, with no wall between
+    if (distance <= INTERACTION_RANGE && interactionLineClear(player, npcSprite)) {
         // Check if NPC is hostile - if so, trigger punch instead of conversation
         const npcId = npcSprite.npcId;
         if (npcId && window.npcHostileSystem && window.npcHostileSystem.isNPCHostile(npcId)) {
             // Hostile NPC - punch instead of talk
             if (window.playerCombat) {
-                window.playerCombat.punch();
+                showPastTalkingToast(npcId); // 7.1i: say why there's no conversation
+                window.playerCombat.attack({ x: npcSprite.x, y: npcSprite.y });
             }
             return true;
         }
@@ -1790,14 +2000,16 @@ export function tryInteractWithNPC(npcSprite) {
 }
 
 // Simple range check for click-based interactions (no direction offset).
-// Returns true if the given sprite is within INTERACTION_RANGE of the player centre.
+// Returns true if the given sprite is within INTERACTION_RANGE of the player centre
+// and no wall stands between them (so a click through a wall walks there instead).
 export function isObjectInInteractionRange(sprite) {
     const player = window.player;
     if (!player || !sprite) return false;
     const dx = sprite.x - player.x;
     const dy = sprite.y - player.y;
     const distSq = dx * dx + dy * dy;
-    return (sprite._isNPC ? npcReachDistSq(player, sprite, distSq) : distSq) <= INTERACTION_RANGE_SQ;
+    if ((sprite._isNPC ? npcReachDistSq(player, sprite, distSq) : distSq) > INTERACTION_RANGE_SQ) return false;
+    return interactionLineClear(player, sprite);
 }
 
 // Export for global access

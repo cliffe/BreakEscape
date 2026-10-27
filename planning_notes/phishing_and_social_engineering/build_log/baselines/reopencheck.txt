@@ -1,0 +1,335 @@
+
+== m01_first_contact / agent_0x99 (m01_phone_agent0x99.json): 1455 reopens, 1125 re-runs, 0 problem(s)
+   entry: currentKnot "first_call" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+   held back in report_operation_shatter: 1 line(s); tags: unlock_task:inform_safetynet_operation_shatter
+      "...Say that again."
+   held back in shatter_casualties: 2 line(s)
+      "Agent Zero, this is worse than we thought."
+      "How bad are we talking?"
+   held back in shatter_reaction: 3 line(s)
+      "...Forty-two to eighty-five people. Calculated. Deliberate."
+      "They're not just terrorists. They're mass murderers with spreadsheets."
+      "Agent Zero, listen carefully. Your mission just changed priority."
+   held back in updated_objectives: 3 line(s)
+      "New priority objective: Stop Operation Shatter before deployment."
+      "Find the complete documentation—target lists, message templates, deployment systems."
+      "Gather proof of Derek's involvement. And shut down their attack infrastructure before thos"
+   held back in general_advice: 2 line(s)
+      "Remember the mission priorities: gather evidence, identify operatives, minimize innocent c"
+      "Most people at Viral Dynamics are legitimate employees. We want ENTROPY, not collateral da"
+   held back in framing_evidence_briefing: 3 line(s)
+      "Read those files carefully, Agent Zero. Not just the content — the details around it."
+      "Who filed what. Who signed off. Whether the headers actually match what they claim to be."
+      "Forensic markers are easy to overlook. They're also hard to fake perfectly."
+   held back in closing_debrief: 2 line(s)
+      "Operation Shatter went through — the attack hit. Let's review what happened."
+      "Operation Shatter is neutralized. Let's review what happened."
+   held back in request_cyberchef_guide: 2 line(s); tags: set_variable:cyberchef_guide_requested:true, give_item:lab-workstation:safetynet_field_guide_encoding_decoding_cyberchef
+      "I'm uploading the CyberChef decoding guide now."
+      "Use it when a note looks like Base64 or a shift cipher. Start with the pattern, not the to"
+   held back in cyberchef_help: 3 line(s)
+      "You've found encoded notes. Both can be decoded in CyberChef — or using the commandline to"
+      "If you have found a CyberChef workstation. For the base64 one: drag "From Base64" into the"
+      "For the one where the letters look scrambled but word lengths are right — that could be RO"
+   held back in linux_help: 3 line(s)
+      "Linux navigation basics: ls lists files, cd changes directory, cat reads files."
+      "Check the home directory first. User files, hidden configs—look for .bashrc, .ssh, persona"
+      "Hidden files start with a dot. Use ls -la to see them."
+   held back in event_derek_office_locked: 3 line(s)
+      "That's Derek's office — locked tight. You'll need a way in."
+      "A lockpick would do the trick. Kevin in IT might be able to help with that."
+      "Or there might be a spare key somewhere. Poke around the other offices."
+   held back in request_priv_esc_guide: 3 line(s); tags: set_variable:priv_esc_guide_requested:true, give_item:lab-workstation:safetynet_field_guide_priv_escalation
+      "I've uploaded the privilege escalation guide to your secure terminal."
+      "Once you've got SSH access, use it to check sudo permissions and move into the target acco"
+      "Read it when you hit the wall on the remote system."
+   held back in sudo_help: 3 line(s)
+      "Privilege escalation means gaining access to other accounts or higher permissions."
+      "Try "sudo -l" to see what sudo permissions you have. Some accounts allow switching users."
+      "Command: sudo -u otherusername bash gives you a shell as that user."
+   held back in request_lockpicking_guide: 2 line(s); tags: set_variable:lockpicking_guide_requested:true, give_item:lab-workstation:safetynet_field_guide_lockpicking
+      "I've uploaded the lockpicking field guide to your secure terminal."
+      "Covers pin tumbler mechanics, tension control, and how to read pin feedback. Light pressur"
+   held back in shatter_details_2: 1 line(s)
+      "What did you find?"
+   held back in mission_commitment: 3 line(s); tags: complete_task:inform_safetynet_operation_shatter
+      "Good work discovering this. Now we know what we're dealing with."
+      "Continue investigating. Find the Operation Shatter files, identify all operatives, and pre"
+      "Call me if you need support. This just became a race against the clock."
+   held back in ssh_help: 3 line(s)
+      "SSH brute force uses Hydra to test password lists against login prompts."
+      "The key is knowing the username and using good password lists."
+      "Command format: hydra -l username -P passwordlist.txt target ssh"
+   held back in shatter_details_1: 2 line(s)
+      "Operation Shatter. Christ."
+      "What exactly are they planning?"
+   held back in request_field_guide: 3 line(s); tags: set_variable:field_guide_requested:true, give_item:lab-workstation:safetynet_field_guide_ssh_basics
+      "I'm uploading the SSH and Linux basics manual to your secure terminal right now."
+      "You've got Linux fundamentals, SSH bruteforce with Hydra, and the filesystem navigation yo"
+      "The manual is in your inventory—reference it whenever you need it."
+   held back in lockpick_help: 3 line(s)
+      "Lockpicking is about patience and listening."
+      "There's a binding order to pins. You need to find the pin that's binding."
+      "Each pin has a sweet spot. Apply tension, test each pin, feel for the feedback."
+
+== m02_ransomed_trust / agent_0x99 (m02_phone_agent0x99.json): 462 reopens, 395 re-runs, 0 problem(s)
+   entry: currentKnot "first_call" -> enters at "start"; 60 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+   held back in hint_lockpick: 5 line(s)
+      "The server room is the one door in that hospital where picks and charm are both useless."
+      "RFID, on a standalone offline controller. That's why it still works."
+      "It only takes a card that already exists, and no new card can be issued, because the machi"
+   held back in hint_password: 3 line(s)
+      "Gary has spent six months being treated as an overhead. Don't be the fifth person tonight "
+      "He does not want sympathy, he wants somebody to acknowledge he was right in writing. Give "
+      "And whatever you do, don't ask how he let this happen. He'll hand you the card and be no f"
+   held back in board_email_reaction: 3 line(s)
+      "The board was going to sack Gary and bury his warnings before anyone asked questions."
+      "That's a deliberate cover-up of what created this crisis."
+      "That email will matter at the press terminal."
+   held back in request_lockpicking_guide: 2 line(s); tags: give_item:lab-workstation:m02_lockpicking_field_guide
+      "Lockpicking guide uploaded to your terminal."
+      "Light tension, find the binding pin, set it, repeat. Read the lock by feel -- don't force "
+   held back in cover_burned_who: 7 line(s)
+      "Somebody who knew exactly which lever to pull."
+      "Think what that call required. Knowing you existed. Knowing your booking was informal. Kno"
+      "And knowing security would challenge rather than assume."
+   held back in request_exploitation_guide: 2 line(s); tags: give_item:lab-workstation:m02_exploitation_field_guide
+      "ProFTPD exploitation workflow uploaded."
+      "Module, payload, listener, and what to check once you're in. It's all there."
+   held back in discuss_ideology: 2 line(s)
+      "You've read Ghost's calculations. They projected deaths before the operation started and p"
+      "This is what ENTROPY looks like across every cell we've uncovered. True believers, with ri"
+   held back in hint_pin_safe: 3 line(s); tags: set_global:escrow_safe_known:true
+      "Gary's backup procedures say the offline keys are in a physical PIN safe. Emergency equipm"
+      "Four-digit code. Hospitals use institutional dates -- founding years, significant administ"
+      "The answer's somewhere in the building. Check plaques, framed documents, administrative no"
+   held back in ghost_contact_reaction: 3 line(s)
+      "Ghost's watching the network. They've been on it since before you arrived."
+      "They know which rooms you've opened, and they can cut your line to me for a few seconds."
+      "That's pressure, nothing more. They can't stop you from there."
+   held back in hint_encoding: 4 line(s)
+      "Encoding isn't encryption."
+      "Encoding -- Base64, ROT13, hex -- transforms data for storage or transit. No secret key. R"
+      "Encryption requires a key. Without it, the data is meaningless."
+   held back in request_privesc_guide: 2 line(s); tags: give_item:lab-workstation:m02_privilege_escalation_field_guide
+      "Privilege escalation guide uploaded."
+      "Enumerate with sudo -l first, then take the smallest step that reaches the files you need."
+   held back in request_vulnerability_guide: 2 line(s); tags: give_item:lab-workstation:m02_vulnerability_field_guide
+      "Sending vulnerability analysis guide."
+      "You're in. This one helps you work out which of those services will actually give."
+   held back in ghost_deal_reaction: 6 line(s)
+      "You made a deal with Ghost."
+      "Free decryption keys. No ransom payment. Faster recovery, ENTROPY denied the money."
+      "In exchange: you publish the board's negligence from the press terminal."
+   held back in request_scanning_exploitation_guide: 3 line(s); tags: give_item:lab-workstation:m02_scanning_exploitation_field_guide
+      "Scanning and exploitation guide uploaded."
+      "It runs the whole chain. Nmap fingerprint, research the CVE, feed the scan into Metasploit"
+      "Work it top to bottom and you won't miss a step."
+   held back in hint_start: 4 line(s)
+      "Front desk, then through the ward to the offices."
+      "The night coordinator on reception has every mechanical override key on a hook behind her."
+      "That includes IT. The first lock tonight is a person."
+   held back in request_scanning_guide: 2 line(s); tags: give_item:lab-workstation:m02_scanning_field_guide
+      "Uploading the recon guide now."
+      "Use it to find what's alive on that network and what the backup server's running. Then dec"
+   held back in request_ssh_guide: 2 line(s); tags: give_item:lab-workstation:m02_ssh_bruteforce_field_guide
+      "SSH access and bruteforce guide sent."
+      "Confirm the port's open, test a sensible username against a focused wordlist with Hydra, t"
+   held back in hint_vm: 3 line(s)
+      "The ProFTPD 1.3.3c backdoor. Remote code execution via a backdoor planted in the source co"
+      "A clean release shipped days later, back in 2010. St. Catherine's is still running the poi"
+      "The exploit gets you root on the backup server. Ghost's deployment log is in there."
+   held back in request_infoleak_note: 4 line(s); tags: give_item:lab-workstation:m02_infoleak_field_note
+      "Field note's on your terminal."
+      "Clamp the cracker on and read the lights. Greens are the right digit in the right slot, am"
+      "Each guess, the lights rule out combinations. Four or five rows and the code has nowhere t"
+
+== m02_ransomed_trust / ghost (m02_phone_ghost.json): 91 reopens, 79 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 60 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+   held back in start: 3 line(s)
+      "[ENCRYPTED CHANNEL - GHOST]"
+      "Still at it. Good -- I'd have thought less of you if you'd gone home."
+      "I've been reading their estates paperwork while you work. There's a five-year plan in ther"
+   held back in ghost_final_statement: 3 line(s)
+      "One last thing, and then I'll let you get on."
+      "I planned it, I costed it, and if you find me I won't run and I won't deny a word."
+      "I'd quite like the trial. It's the only room left where somebody has to sit and hear the w"
+   held back in ghost_introduction: 3 line(s)
+      "We're not here for profit. St. Catherine's ignored security warnings for six months."
+      "Gary Whitlock's email, May 17th: "ProFTPD vulnerability, critical severity, immediate patc"
+      "Hospital response: "Budget constraints. Defer to next fiscal year.""
+   held back in ransom_demand: 5 line(s)
+      "A hundred and fifty thousand pounds, in Bitcoin, to the address on their own screens. They"
+      "Less than five per cent of what they spent on the scanner. Sit with that."
+      "They'll find it down the back of a sofa, and still tell the inquiry it was an impossible p"
+   held back in on_proftpd_exploited: 7 line(s)
+      "> EXPLOIT SIGNATURE DETECTED"
+      "> PROFTPD 1.3.3c BACKDOOR -- ST. CATHERINE'S BACKUP SERVER"
+      "You just used my backdoor against me."
+   held back in on_backup_located: 4 line(s)
+      "> NETWORK ACCESS: 4 SECONDS"
+      "> CAPABILITY DEMONSTRATION"
+      "Four seconds. Your handler didn't notice."
+   held back in ghost_philosophy: 6 line(s)
+      "I surveyed two hundred and fourteen hospitals. A hundred and forty-seven are carrying some"
+      "And every one of them was warned about it in writing."
+      "There is always a Gary Whitlock. There is always a file of emails."
+   held back in player_threatens: 4 line(s)
+      "Forty feet. That's a very precise number for someone who's telling me numbers are the prob"
+      "She was on that machine last night as well. And the night before. Nobody rang SAFETYNET ab"
+      "I haven't touched her. I haven't been within two hundred miles of her."
+
+== m02_ransomed_trust / press_terminal_system (m02_object_press_terminal.json): 1800 reopens, 454 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+   held back in confirm_stay_quiet: 6 line(s)
+      "CONFIRM: Do not transmit?"
+      "The board liability email, budget decisions, and Gary Whitlock's warning archive remain co"
+      "St. Catherine's reputation protected. Board members retain their positions."
+   held back in confirm_upload: 4 line(s)
+      "CONFIRM UPLOAD?"
+      "The board chair's cover-up memo, the budget decisions and six months of Gary Whitlock's ig"
+      "St. Catherine's board cannot suppress this."
+   shown again as new output: relay_locked_investigation_choices: HOSPITAL COMMUNICATIONS TERMINAL
+   shown again as new output: relay_locked_investigation_choices: >>> OUTGOING RELAY LOCKED <<<
+   shown again as new output: relay_locked_incident_choices: HOSPITAL COMMUNICATIONS TERMINAL
+   shown again as new output: confirm_stay_quiet: The sector-wide vulnerability profile does not become public knowledge.
+
+== m03_ghost_in_the_machine / agent_0x99 (m03_phone_agent0x99.json): 523 reopens, 440 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 60 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+   held back in hint_encoding: 3 line(s)
+      "Take the CyberChef workstation in the server room. Paste anything that looks like nonsense"
+      "ROT13 reads like scrambled English. Base64 is letters, numbers, plus and slash. Hex is pai"
+      "And if it's still scrambled after one pass, it's layered. Decode again."
+   held back in hint_guard: 3 line(s)
+      "At night he stops anyone his torch finds. Watch his loop and move while his back's turned."
+      "And never pick a lock where he can see you. If he catches the picks, he stops talking."
+      "You can talk your way past him, or pay him, but then he knows your face. Clean is better."
+   held back in request_lockpicking_guide: 3 line(s); tags: give_item:lab-workstation:m03_lockpicking_field_guide
+      "Lockpicking guide sent."
+      "Light tension, find the binding pin, set it, repeat."
+      "And only once the guard's turned away. Pick in his sightline and you're made."
+   held back in hint_danny: 2 line(s)
+      "One. Danny Foster, a consultant, in the south office off the executive wing. He drew the r"
+      "Whether he answers for that or gets a way out is partly your call. See him before you sett"
+   held back in hint_sterling_night: 2 line(s)
+      "She's on a call, back to the door, and she won't deal with you until you put something in "
+      "Finish the network first: recon, the services, the distcc box. Once the case is made she'l"
+   held back in hint_lockpicking: 3 line(s)
+      "You've got the pick kit from the start. Sterling's office and the cabinets are keyed. Pick"
+      "It takes time and it exposes you. Work the lock only when the guard's back is turned."
+      "Get caught at it and he won't argue. He'll come for you."
+   held back in hint_confrontation: 6 line(s)
+      "Agent. You've got the logs, and she's still in the conference room. The case stands whethe"
+      "Want the Architect? Offer her a deal, and a cold one. She flips to save herself, not becau"
+      "Want her off the board? Arrest her. But she came ready to run, so corner her or she walks."
+   held back in request_cyberchef_guide: 2 line(s); tags: give_item:lab-workstation:m03_cyberchef_field_guide
+      "CyberChef guide sent."
+      "ROT13, Base64, hex. If a decode still looks scrambled, it's layered -- decode again. There"
+   held back in request_rfid_guide: 3 line(s); tags: set_global:cloner_explained:true, give_item:lab-workstation:m03_rfid_field_guide
+      "RFID cloning guide sent."
+      "Read, crack, emulate. Reception's card is weak defaults -- a dictionary attack is near ins"
+      "Sterling's is custom keys. Read it, then run Darkside. About half a minute."
+   held back in hint_network: 3 line(s)
+      "The VM terminal in the server room is the only way onto their training network. Scan it fi"
+      "The FTP box is the ProFTPD backdoor from St. Catherine's. The web host has the price list."
+      "distcc is the one that matters -- that's where the operational logs sit. Submit all four a"
+   held back in request_recon_guide: 2 line(s); tags: give_item:lab-workstation:m03_recon_field_guide
+      "Reconnaissance guide sent."
+      "Map before you touch anything. nmap the subnet and read the versions. The scan flag's in w"
+   held back in hint_rfid: 4 line(s); tags: set_global:cloner_explained:true
+      "Two stages. Reception first. Talk to her and lean in by her lanyard, and the cloner reads "
+      "Weak defaults: read it, crack it, save it. That opens the conference door."
+      "Then Sterling's executive card in the meeting. Custom keys -- read it, then Darkside, half"
+   held back in hint_guard_hostile: 2 line(s)
+      "He's hostile, and he keeps swinging while you're on this phone. Get off it and keep out of"
+      "He goes down if you fight him, but it goes on the record and it ends any claim to a quiet "
+   held back in hint_safe: 2 line(s)
+      "The code isn't on the board. The board says Sable re-coded the safe and mailed the night t"
+      "So it's on her office machine, an unsent message saved as raw source. Decode it at the Cyb"
+   held back in request_proftpd_guide: 2 line(s); tags: give_item:lab-workstation:m03_proftpd_field_guide
+      "ProFTPD guide sent. That's the backdoor that took St. Catherine's down."
+      "Their FTP box runs the trojaned 1.3.3c build. Anonymous login gets you nothing that matter"
+   held back in hint_clone: 3 line(s)
+      "Her card's custom keys. It takes about half a minute to read, and she steps away when she'"
+      "Stand at the whiteboard, keep her talking about the lab, and don't ask the question that m"
+      "If the read drops, take her back to the board and start again."
+   held back in request_netexploit_guide: 2 line(s); tags: give_item:lab-workstation:m03_netexploit_field_guide
+      "distcc guide sent."
+      "The legacy distcc daemon on 3632 runs jobs for anyone who asks -- CVE-2004-2687. Point the"
+   held back in hint_password: 3 line(s)
+      "People never change the default. That IT slip on her monitor tells you the format."
+      "The founding year's on the plaque in reception. Put the two together."
+      "The wall safe's a different code. She mails it to the night team from her office. Check wh"
+
+== m04_critical_failure / agent_0x99 (m04_phone_agent0x99.json): 1800 reopens, 1341 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+
+== m04_critical_failure / robert_vance_phone (m04_phone_robert_vance.json): 1800 reopens, 907 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+
+== m05_insider_trading / agent_0x99_handler (m05_phone_agent_0x99.json): 1800 reopens, 1431 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+
+== m05_insider_trading / recruiter (m05_phone_recruiter.json): 1800 reopens, 259 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+
+== m05_insider_trading / patricia_phone (m05_phone_patricia.json): 1800 reopens, 1080 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+
+== m06_follow_the_money / agent_0x99_handler (m06_phone_agent_0x99.json): 1800 reopens, 1363 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+
+== m07_architects_gambit / agent_0x99 (m07_phone_agent_0x99.json): 1800 reopens, 1280 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+
+== m07_architects_gambit / the_architect (m07_architect_comms.json): 472 reopens, 316 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+
+== m08_the_mole / agent_0x99 (m08_phone_agent_0x99.json): 1800 reopens, 1165 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+   held back in hax_read_1: 1 line(s)
+      "Two questions, the ones he'd ask. When was the plan opened?"
+   held back in hax_read_2: 1 line(s)
+      "Who was behind the lab door at 10:38, and still inside?"
+
+== lab_tesseract_trials / agent_0x99 (phone_agent_0x99.json): 1800 reopens, 990 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+   held back in hub: 2 line(s)
+      "Go ahead."
+      "I'm here. Careful what you say on this line."
+   shown again as new output: hub: Go ahead.
+
+== lab_tesseract_trials / ghost (phone_ghost.json): 1800 reopens, 524 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+   held back in waiting: 7 line(s)
+      "Still watching."
+      "Your envelope's waiting. Only one key opens it."
+      "The corridor. Fewer candidates every hour."
+   held back in the_offer_again: 1 line(s)
+      "Back. So you've decided."
+   held back in closed: 1 line(s)
+      "NO CARRIER."
+
+== sis02_energy / marcus_webb (npc_marcus_webb.json): 1800 reopens, 719 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+   held back in isolation_scope_scene: 3 line(s)
+      "The cable stops the RDP session. It doesn't stop the historian. That's dual-homed, and I'v"
+      "Cut the historian's enterprise leg and we lose the dispatch feed and NESO reporting. Ops f"
+      "Shut SCADA down and Hall 2 runs on local BMS only. Somebody walks it every hour with a gas"
+   held back in shutdown_argument_scene: 1 line(s)
+      "I'd want the jump server logs before we drop half the site. If it's a sensor fault, we've "
+   held back in evidence_scene: 3 line(s)
+      "One thing before you press it. The ESD makes the BMS run its shutdown routine. That overwr"
+      "The historian only has what the screen showed. Got ten seconds? Export the BMS register ta"
+      "With the gas up, only if you're already at OPS-01."
+   held back in nis_scene: 1 line(s)
+      "Before I sign it. Do we send what we've got, or wait till we know more?"
+
+== sis02_energy / tom_hadley (npc_tom_hadley.json): 1800 reopens, 333 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+   held back in ot_scope: 2 line(s)
+      "Enterprise IT. Workstations, servers, email, the domain. The SCADA side's out of scope, by"
+      "I've never seen your jump server sessions, your historian traffic or your battery data."
+
+Total problems: 0
+exit 0

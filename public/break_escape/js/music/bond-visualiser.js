@@ -22,8 +22,10 @@
  */
 
 import MusicController from './music-controller.js';
+import { silenceBackgroundForEnding, AUDIO_HOLD_TEXT } from './ending-audio.js';
 import { displayDashes } from '../utils/display-dashes.js';
-import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME } from './credits-theme.js';
+import { resolveCreditsTheme, getCreditsTheme, trackInfoLabel, DEFAULT_CREDITS_THEME, scenarioCreditsOverlay, nextCreditsHeader, creditsHeader, nextCreditsText, creditsStatus } from './credits-theme.js';
+import { cardHoldMs } from './closing-sequence.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 const PIX = 4; // pixel block size for all drawing
@@ -1237,6 +1239,9 @@ const STYLE_MAP = {
     'section-header': `font-family:VT323,monospace;font-size:18px;color:#FFD700;opacity:0.8;letter-spacing:0.3em;text-shadow:${_GLOW_DARK},0 0 16px rgba(255,215,0,0.6);`,
     'entry':          `font-family:VT323,monospace;font-size:28px;color:#00FF41;letter-spacing:0.1em;text-shadow:${_GLOW_DARK},0 0 20px rgba(0,255,65,0.8);`,
     'warning':        `font-family:VT323,monospace;font-size:28px;color:#FF6600;letter-spacing:0.1em;text-shadow:${_GLOW_DARK},0 0 20px rgba(255,100,0,0.9),0 0 40px rgba(255,100,0,0.4);`,
+    // closingCard (closing-sequence.js): several lines shown together, then the teaser
+    'card':           `font-family:VT323,monospace;font-size:30px;line-height:1.35;color:#E8F4FF;letter-spacing:0.06em;text-shadow:${_GLOW_DARK},0 0 16px rgba(160,210,255,0.6);`,
+    'teaser':         `font-family:VT323,monospace;font-size:26px;line-height:1.35;color:#C77DFF;font-style:italic;letter-spacing:0.08em;text-shadow:${_GLOW_DARK},0 0 18px rgba(199,125,255,0.7);`,
 };
 
 function _startCredits(lines) {
@@ -1271,14 +1276,24 @@ function _startCredits(lines) {
     }
     label.style.cssText = 'text-align:center;padding:0 10%;transition:opacity 0.4s ease;';
 
-    // Filter to non-empty lines only
-    const items = lines.filter(l => l.text && l.text.trim());
+    // Filter to non-empty lines only (a card carries its own lines)
+    const items = lines.filter(l => (Array.isArray(l.lines) && l.lines.length) || (l.text && l.text.trim()));
 
     let idx = 0;
 
     function showNext() {
         if (!_creditsActive || idx >= items.length) {
+            const finished = _creditsActive && idx >= items.length;
             _stopCredits();
+            // A forced (disableClose) credits screen waits for the track to end, which
+            // a muted or headless browser may never report: the close control stayed
+            // hidden for 12 minutes (m07 blind M1). Once the last line has shown, let
+            // the player close it.
+            if (finished && _disableClose) {
+                _disableClose = false;
+                const closeBtn = document.getElementById('bv-close-btn');
+                if (closeBtn) closeBtn.style.display = '';
+            }
             return;
         }
         const item = items[idx++];
@@ -1287,14 +1302,50 @@ function _startCredits(lines) {
         label.style.opacity = '0';
         _creditsTimerId = setTimeout(() => {
             label.style.cssText = `text-align:center;padding:0 10%;transition:opacity 0.4s ease;${baseStyle}`;
-            label.textContent   = displayDashes(item.text);
+            let holdMs = 3000;
+            if (Array.isArray(item.lines) && item.lines.length) {
+                // A closing card or teaser: its lines together, one per row
+                label.textContent = '';
+                for (const line of item.lines) {
+                    const row = document.createElement('div');
+                    row.className = 'bv-cr-card-line';
+                    // auto sides: centre the row once CSS caps it to the map panel's width
+                    row.style.margin = '0.25em auto';
+                    row.textContent = displayDashes(line);
+                    label.appendChild(row);
+                    if (_themeDef.logCredits) addLog('> ' + displayDashes(line));
+                }
+                holdMs = cardHoldMs(item.lines.length);
+            } else {
+                label.textContent = displayDashes(item.text);
+                if (_themeDef.logCredits) addLog('> ' + displayDashes(item.text));
+            }
             label.style.opacity = '1';
-            if (_themeDef.logCredits) addLog('> ' + displayDashes(item.text));
-            _creditsTimerId = setTimeout(showNext, 3000);
+            _creditsTimerId = setTimeout(showNext, holdMs);
         }, 450); // brief fade-out gap before switching text
     }
 
     showNext();
+}
+
+let _creditsHoldToken = 0;  // a later open (or close) drops a held credits start
+
+/** One steady line on the credits layer, shown while the credits wait for the music. */
+function _showCreditsHold(text) {
+    const overlay = document.getElementById('bv-credits-overlay');
+    if (!overlay) return;
+    clearTimeout(_creditsHideTimer); _creditsHideTimer = null;
+    overlay.style.cssText = 'display:flex;position:fixed;inset:0;z-index:200000;background:transparent;' +
+        'pointer-events:none;align-items:center;justify-content:center;opacity:1;transition:opacity 0.6s ease;';
+    let label = overlay.querySelector('#bv-cr-label');
+    if (!label) {
+        label = document.createElement('div');
+        label.id = 'bv-cr-label';
+        overlay.appendChild(label);
+    }
+    label.style.cssText = `text-align:center;padding:0 10%;transition:opacity 0.4s ease;${STYLE_MAP['entry']}`;
+    label.textContent = text;
+    label.style.opacity = '1';
 }
 
 function _stopCredits() {
@@ -1344,7 +1395,7 @@ function _updateStats(data, audio) {
         const fd = document.getElementById('bv-freq-disp'); if (fd) fd.textContent=freq.toFixed(1).padStart(7,' ');
     }
 
-    if (_themeDef.rotateOps && kickHit && Math.random() > 0.85) {
+    if (_themeDef.rotateOps && !_fixedOperation && kickHit && Math.random() > 0.85) {
         _opIdx = (_opIdx + 1) % OPERATIONS.length;
         const on = document.getElementById('bv-op-name'); if (on) on.textContent=OPERATIONS[_opIdx];
     }
@@ -1466,7 +1517,11 @@ let _resizeHandler = null;
  * Pick the theme from the scenario and re-skin the overlay for it. A theme whose
  * overlay() returns null (safetynet) keeps the overlay exactly as built.
  */
+let _headerText = null;  // set by a credits entry's headerText; survives later open({})
+let _statusText = null;  // the same for statusText (the STATUS row)
 function _applyTheme(opts) {
+    _headerText = nextCreditsHeader(_headerText, opts);
+    _statusText = nextCreditsText(_statusText, opts, 'statusText');
     if (opts.credits?.length) _lastCredits = opts.credits;
     _theme    = resolveCreditsTheme(window.gameScenario);
     _themeDef = getCreditsTheme(_theme);
@@ -1479,12 +1534,32 @@ function _applyTheme(opts) {
     const stamp = _overlay.querySelector('.bv-classified');
     if (stamp) stamp.style.display = _themeDef.stamp ? '' : 'none';
 
+    const missionName = window.breakEscapeConfig?.missionDisplayName || window.gameScenario?.scenario_name;
     const t = _themeDef.overlay({
-        missionName: window.breakEscapeConfig?.missionDisplayName || window.gameScenario?.scenario_name,
+        missionName,
         credits:     _lastCredits,
     });
     if (t) _applyOverlayText(t);
+    const h1 = _overlay.querySelector('.bv-title-block h1');
+    if (h1) h1.textContent = creditsHeader(_headerText, t?.heading);
+    const status = _overlay.querySelectorAll('.bv-status-block .bv-status-line .val')[1];
+    if (status) status.textContent = creditsStatus(_statusText, t?.status);
+    _applyScenarioOverlay(scenarioCreditsOverlay(window.gameScenario, missionName));
     _themeApplied = _theme;
+}
+
+// The scenario's own operation name and ticker (creditsOverlay), over the theme's
+let _fixedOperation = false;
+function _applyScenarioOverlay({ operation, ticker }) {
+    _fixedOperation = !!operation;
+    if (operation) {
+        const op = _overlay.querySelector('#bv-op-name');
+        if (op) op.textContent = operation;
+    }
+    if (ticker) {
+        const el = _overlay.querySelector('.bv-ticker-inner');
+        if (el) el.textContent = ticker;
+    }
 }
 
 function _applyOverlayText(t) {
@@ -1574,8 +1649,20 @@ function _open_overlay(opts = {}) {
 
     // Credits — can be set on initial open or injected into an already-open visualiser
     if (opts.credits?.length) {
+        // Credits mean the ending: only its music plays under them (ending-audio.js).
+        silenceBackgroundForEnding();
         _stopCredits(); // cancel any in-progress credits first
-        _startCredits(opts.credits);
+        const token = ++_creditsHoldToken;
+        if (opts.creditsAfter && typeof opts.creditsAfter.then === 'function') {
+            // Reload: the ending's track may be waiting for the first click or key
+            // (autoplay). Hold the credits until it sounds, so they cannot finish first.
+            _showCreditsHold(opts.holdText || AUDIO_HOLD_TEXT);
+            opts.creditsAfter.then(() => {
+                if (_open && token === _creditsHoldToken) _startCredits(opts.credits);
+            });
+        } else {
+            _startCredits(opts.credits);
+        }
     }
 
     // Record whether we should auto-close when the track ends
@@ -1609,6 +1696,7 @@ function _close_overlay() {
     if (_resizeHandler) { window.removeEventListener('resize', _resizeHandler); _resizeHandler = null; }
 
     // Stop any credits immediately (no fade — overlay is closing anyway)
+    _creditsHoldToken++;
     _creditsActive = false;
     clearTimeout(_creditsTimerId);  _creditsTimerId  = null;
     clearTimeout(_creditsHideTimer); _creditsHideTimer = null;
@@ -1722,6 +1810,8 @@ export const BondVisualiser = {
      * @param {boolean}  [opts.autoClose]    - close the visualiser when musiccontroller:trackended fires
      * @param {boolean}  [opts.autoStop]     - stop music after current track ends; visualiser stays open
      * @param {boolean}  [opts.disableClose] - hide × button and block Esc (forced/cutscene mode)
+     * @param {string}   [opts.headerText]   - header in place of MISSION COMPLETE // AUDIO INTEL; kept by later opens without credits
+     * @param {string}   [opts.statusText]   - STATUS row value in place of MONITORING; same rules as headerText
      */
     open(opts) { _open_overlay(opts || {}); },
     /** Close the fullscreen visualiser. */

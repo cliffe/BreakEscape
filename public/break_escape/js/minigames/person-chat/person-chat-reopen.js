@@ -61,3 +61,54 @@ export function reopenContextLine({ isReopen, result, remembered }) {
     if (!result.choices || result.choices.length === 0) return null;
     return remembered;
 }
+
+/**
+ * The knot that owns the story's current choices ("hub.0.c-1" -> "hub"), or null.
+ * currentPathString is null at a choice point, so the first choice's source path
+ * is read instead (as the reopen re-navigation in person-chat-minigame.js does).
+ * @param {Object} story - an inkjs Story
+ */
+export function choiceOwnerKnot(story) {
+    const first = story?.currentChoices?.[0];
+    if (!first) return null;
+    const sourcePath = first.sourcePath || (first._sourcePath && first._sourcePath.toString());
+    return sourcePath ? sourcePath.split('.')[0] || null : null;
+}
+
+/**
+ * Opt-in hub refresh for a reopen that resumed mid-knot (NPC config
+ * "reopenRefreshesHub": true; lab D9).
+ *
+ * Closing a conversation while a topic's last line is still on screen saves the
+ * story part-way through that topic: its tail (`~ quiet = true -> hub`) has not
+ * run yet. A reopen then runs the tail first, the hub consumes the `quiet` flag
+ * the tail just set, prints nothing, and the reopen shows the old topic line again
+ * (reopenContextLine) instead of the hub's line for where the player is now.
+ *
+ * When the NPC opts in, the reopen resumed mid-knot, and the first continue
+ * printed nothing and stopped at choices, this re-enters the knot that owns those
+ * choices, as a reopen at a choice point already does. The tail's own pass has
+ * cleared `quiet`, so the second pass prints the hub's current line. Anything else
+ * (the flag off, a choice-point reopen, a continue that printed text, no choices)
+ * returns null and changes nothing.
+ * @param {Object} opts
+ * @param {boolean} opts.optedIn - the NPC's reopenRefreshesHub flag
+ * @param {boolean} opts.resumedMidKnot - the restored story had no choices yet
+ * @param {Object} opts.result - the first continue() result
+ * @param {Object} opts.story - the inkjs Story, resting on result's choices
+ * @returns {string|null} the knot re-entered, or null when nothing was done
+ */
+export function refreshHubAfterMidKnotReopen({ optedIn, resumedMidKnot, result, story }) {
+    if (optedIn !== true || !resumedMidKnot || !result || !story) return null;
+    if (result.text && result.text.trim()) return null;
+    if (!result.choices || result.choices.length === 0) return null;
+    const knot = choiceOwnerKnot(story);
+    if (!knot) return null;
+    try {
+        story.ChoosePathString(knot);
+    } catch (e) {
+        console.warn(`⚠️ Could not re-enter "${knot}" after a mid-knot reopen:`, e.message);
+        return null;
+    }
+    return knot;
+}

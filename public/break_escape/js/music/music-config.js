@@ -151,5 +151,16 @@ export const MUSIC_CONFIG = {
                 { title: 'Safetynet in the Smoke', file: 'Vocals/Safetynet in the Smoke.mp3' },
             ]
         },
+
+        // 'silence' — true silence (F10): one 10-second silent track that loops, so a
+        // music event can fade the score out and hold it out ("playlist": "silence")
+        // until a later event switches to a real playlist.
+        silence: {
+            displayName: 'Silence',
+            shuffle: 'sequential',
+            tracks: [
+                { title: 'Silence', file: 'Silence/Silence.mp3' },
+            ]
+        },
     }
 };

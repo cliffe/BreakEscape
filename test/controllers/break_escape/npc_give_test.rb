@@ -74,6 +74,40 @@ module BreakEscape
       refute ItemIdentity.addressed_by?({ 'type' => 'notes' }, 'notes', nil, nil)
     end
 
+    # ---- m10 F3: a reload re-sends held items ----------------------------------
+    # Two NPC copies hold the same item (m10's four Nightshades share one ink). The
+    # first in room order has not been met; the player got the item from the other.
+
+    test 'a held item re-sent with no source NPC is accepted, not revalidated against an unmet copy' do
+      game = create_game(irina_items: [NPC_EMAIL], encountered: %w[irina], inventory: [NPC_EMAIL])
+      game.record_npc_gift!('irina', NPC_EMAIL)
+
+      post inventory_game_url(game), params: { action_type: 'add', item: NPC_EMAIL }, as: :json
+
+      assert_response :success, response.body
+      game.reload
+      assert_equal ['ceo_email_npc'], game.player_state['inventory'].map { |i| i['id'] }
+      assert_equal %w[irina], game.player_state['npc_given_items'].keys, 'no gift recorded for the unmet copy'
+    end
+
+    test 'an item not yet held, with no source NPC, is still validated (the unmet copy refuses)' do
+      game = create_game(irina_items: [NPC_EMAIL], encountered: %w[irina])
+
+      post inventory_game_url(game), params: { action_type: 'add', item: NPC_EMAIL }, as: :json
+
+      assert_response :unprocessable_entity
+      assert_match(/NPC not encountered: patricia/, response.parsed_body['message'])
+    end
+
+    test 'a held item given again by a named NPC is still validated against that NPC' do
+      game = create_game(irina_items: [NPC_EMAIL], encountered: %w[irina], inventory: [NPC_EMAIL])
+
+      post inventory_game_url(game), params: { action_type: 'add', item: NPC_EMAIL, source_npc_id: 'patricia' }, as: :json
+
+      assert_response :unprocessable_entity
+      assert_match(/NPC not encountered: patricia/, response.parsed_body['message'])
+    end
+
     # ---- E22 -----------------------------------------------------------------
 
     test 'items an NPC has given are not restored to its itemsHeld on reload' do
@@ -139,7 +173,7 @@ module BreakEscape
     end
 
     def create_game(patricia_items: [NPC_EMAIL], irina_items: [], cabinet_items: [CABINET_EMAIL],
-                    encountered: %w[patricia irina], extra_npcs: [])
+                    encountered: %w[patricia irina], extra_npcs: [], inventory: [])
       scenario = {
         'startRoom' => 'lobby',
         'rooms' => {
@@ -157,7 +191,7 @@ module BreakEscape
         }
       }
       state = {
-        'currentRoom' => 'lobby', 'unlockedRooms' => ['lobby'], 'unlockedObjects' => [], 'inventory' => [],
+        'currentRoom' => 'lobby', 'unlockedRooms' => ['lobby'], 'unlockedObjects' => [], 'inventory' => inventory.map(&:deep_dup),
         'encounteredNPCs' => encountered, 'globalVariables' => {}, 'notes' => [], 'health' => 100,
         'objectivesState' => { 'tasks' => {}, 'aims' => {} }
       }

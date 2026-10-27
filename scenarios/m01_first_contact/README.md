@@ -10,19 +10,21 @@
 ### ✅ Core Files
 - `scenario.json.erb` - Game world structure (corrected format)
 - `mission.json` - Mission metadata and CyBOK mappings
-- `ink/*.ink` - 9 Ink dialogue scripts (source)
-- `ink/*.json` - 9 compiled Ink scripts (ready for game)
+- `ink/*.ink` - 7 Ink dialogue scripts (source)
+- `ink/*.json` - 7 compiled Ink scripts (ready for game)
 
 ### ✅ Ink Scripts (All Compiled Successfully)
 1. `m01_opening_briefing` - Mission start cutscene
-2. `m01_npc_sarah` - Receptionist NPC
+2. `m01_npc_sarah` - Receptionist NPC (Sarah O'Brien)
 3. `m01_npc_kevin` - IT Manager (social engineering target)
-4. `m01_npc_maya` - Data Analyst (whistleblower)
-5. `m01_npc_derek` - CEO (antagonist confrontation)
-6. `m01_terminal_dropsite` - VM flag submission terminal
-7. `m01_terminal_cyberchef` - Base64 decoder workstation
-8. `m01_phone_agent0x99` - Handler (phone support)
-9. `m01_closing_debrief` - Mission ending
+4. `m01_npc_maya` - Content Analyst / informant (Maya Chen)
+5. `m01_derek_confrontation` - Senior Marketing Manager (antagonist confrontation)
+6. `m01_phone_agent0x99` - Handler (phone support, Agent HaX)
+7. `m01_closing_debrief` - Mission ending
+
+The drop-site and CyberChef terminals are no longer ink scripts — the drop-site is a
+flag-station object and the CyberChef workstation opens the CyberChef UI directly
+(the old `m01_terminal_*` scripts were removed in commit `debfd589`).
 
 ### ✅ Rooms (7 Total)
 - Reception Area (starting room)
@@ -111,7 +113,7 @@ Before marking as production-ready:
 
 ## Integration with VM Scenario
 
-**SecGen Scenario:** `intro_to_linux_security_lab`
+**SecGen Scenario:** `break_escape/safetynet/m01_first_contact.xml`
 
 The scenario integrates with a VM for technical challenges:
 1. Player gets password hints from Kevin (in-game)

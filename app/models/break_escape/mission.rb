@@ -64,6 +64,31 @@ module BreakEscape
       load_mission_metadata&.dig('lab_sheet_url').presence
     end
 
+    # HUD skins, styled in public/break_escape/css/ui-themes.css. A mission picks
+    # one with "ui_theme" in mission.json; anything else falls back to the default.
+    UI_THEMES = %w[general spy cyberpunk crt eldritch circuit secops].freeze
+    DEFAULT_UI_THEME = 'general'.freeze
+
+    def self.normalise_ui_theme(theme)
+      UI_THEMES.include?(theme.to_s) ? theme.to_s : nil
+    end
+
+    def ui_theme
+      self.class.normalise_ui_theme(load_mission_metadata&.dig('ui_theme')) || DEFAULT_UI_THEME
+    end
+
+    # How a game of this mission is scored, from mission.json "scoring".
+    # tasks (default): 70 × tasks + 30 × aims. partial_then_complete: that,
+    # capped at 99 until the mission concludes, then 100. completion: 0 until
+    # the mission concludes, then 100.
+    SCORING_MODES = %w[tasks partial_then_complete completion].freeze
+    DEFAULT_SCORING_MODE = 'tasks'.freeze
+
+    def scoring_mode
+      mode = load_mission_metadata&.dig('scoring').to_s
+      SCORING_MODES.include?(mode) ? mode : DEFAULT_SCORING_MODE
+    end
+
     # Get all CyBOK entries. Always returns break_escape_cyboks — these are the
     # authoritative source for the mission regardless of host mode. In Hacktivity,
     # the GameSlot syncs these into the host's cyboks table on save so that the
@@ -139,6 +164,29 @@ module BreakEscape
       # Cache the failure too, so a broken template logs once rather than per request
       self.class.voice_config_cache[name] = { mtime: mtime, configs: {}.freeze } if mtime
       {}
+    end
+
+    # NPCs in this mission whose sprites can be unlocked as player avatars
+    # ([{ 'sprite', 'name' }], see AvatarUnlocks.candidates). Feeds the avatar
+    # menu's catalogue of locked characters. Cached per template mtime like
+    # current_voice_configs; NPC sprites don't depend on vm_context.
+    def avatar_candidates
+      template_path = scenario_path.join('scenario.json.erb')
+      mtime = File.mtime(template_path)
+      cached = self.class.avatar_candidate_cache[name]
+      return cached[:candidates] if cached && cached[:mtime] == mtime
+
+      candidates = AvatarUnlocks.candidates(generate_scenario_data({})).freeze
+      self.class.avatar_candidate_cache[name] = { mtime: mtime, candidates: candidates }
+      candidates
+    rescue => e
+      Rails.logger.warn "[BreakEscape] Could not read avatar candidates for #{name}: #{e.message}"
+      self.class.avatar_candidate_cache[name] = { mtime: mtime, candidates: [].freeze } if mtime
+      []
+    end
+
+    def self.avatar_candidate_cache
+      @avatar_candidate_cache ||= Concurrent::Map.new
     end
 
     # Voice configs by speaker id from rendered scenario data (see current_voice_configs).

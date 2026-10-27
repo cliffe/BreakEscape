@@ -38,6 +38,7 @@ Read the scenario brief and opening (time of day, setting). Pick the scenario-le
 | ------------------- | ------------------------------- | ------- |
 | Day office, default | omit (engine default `#c4cad8`) | —       |
 | Night shift         | `#b8bfce`                       | m02     |
+| Evening office      | `#c6c4c8`                       | m05     |
 
 Keep lit rooms readable: below about `#a8b0c0`, the art starts to look muddy. `darkAmbient` defaults to `#101424`; `#0a0f1c` suits server rooms, where the LEDs carry the room.
 
@@ -55,6 +56,12 @@ Rooms with people in them start lit automatically, even in `motion` mode. Phone 
 - **NPC torch** (on the NPC, not the room): `"behavior": { "torch": { "condition": "globalVars.night === true" } }` (or `true`). The NPC carries a beam the way they face, shown only when their room is dim (it scales with the room's current ambient, so it's invisible in a lit office). For guards on night patrol.
 
 ## Step 4 — light sources the engine doesn't know
+
+**A mission's own art first goes through the room's `emitters`, not `EMITTERS`.** An entry keyed on the object id or a texture-key prefix (`"qdc_rack_black": { "color": "#6dffb0", "radius": 40, "intensity": 0.45, "effect": "blink", "leds": 0.6 }`) gives it a glow, and `leds` (density 0–1) scatters rack-style blinking status LEDs over its face like the stock racks. A variant can set `"leds": 0` (power cut) or `ledColor`.
+
+**Fire**: `"effect": "fire"` on an emitter gives an irregular warm flicker that leans towards yellow, plus small flame tongues rising across the glow's width (`"flames"`: how many, default 6, 0 none). It is flash-safe (one slow swell under 1 Hz, a quicker wobble under a 10% change, each tongue at most about 1.5 a second) and holds still under `prefers-reduced-motion`. Pair it with `above` and a small `floorTint` in a lit room (m04's vented bank B).
+
+**`above` glows keep their hue in a lit room.** The glow's colour is multiplied into the light map under it before the additive bloom, so a red indicator on pale art reads red, not pink-white. Only saturated colours change much. Set `"hueKeep": false` on a variant to get the old plain additive look.
 
 If the lookup lists a "light-looking" object that really gives off light, add it to `EMITTERS` in `systems/lighting.js`. Match on texture key: screens are cool blue, lamps warm, racks green with `leds`, alarms red `pulse`. This changes every lit mission, so log it and check one other lit mission still looks right. Leave false positives (magazine racks, cylinder racks) alone.
 
@@ -97,8 +104,11 @@ To see the strike or the torch, drive a session yourself (`tools/playtest/sessio
 - **Overlays stay above the light map.** Any new marker drawn in the world that must stay readable in the dark (icons, bars, labels) sets its depth through `overlayDepth()` from `utils/constants.js`.
 - **WebGL only.** Lighting turns itself off on the Canvas renderer, and players can turn it off with `?lighting=off`. Never make a puzzle need the lighting.
 
+- **A lit prop that changes face needs a base `sprite`.** An object with `spriteVariants` and no `sprite` falls back to its `type` (`rooms.js`) when a variant clears, so the screen turns into a generic `smartscreen` mid-scene. Both m07 (video wall) and m08 (disposition screen) hit this on 2026-10-14. Set `"sprite"` to the normal face even when the map slot already places it. A light can't make a prop look lit if the art doesn't: draw the lit face too.
+
 ## Known limits
 
 - Light crosses side walls into the next room.
 - Glows and LEDs draw over an NPC standing in front of them.
 - Emitters match on texture key only, so an object with a scenario `sprite` override is matched on the override.
+- A room `light` (and an ADD glow without `above`) can't colour a near-white lit floor; use an emitter with `above` (its hue is kept) or `floorTint`. Lifted 2026-10-16: red `above` glows no longer wash pink in lit rooms, and a mission's own rack art can have blinking LEDs (`leds`).

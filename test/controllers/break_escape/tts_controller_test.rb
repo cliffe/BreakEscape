@@ -447,7 +447,7 @@ module BreakEscape
       story_path = "tmp/tts_cospeaker_#{Process.pid}/story.json"
       line       = "The board meets at dawn."
       File.write(tmp_dir.join("story.json"),
-                 { "inkVersion" => 21, "root" => ["^Director: #{line}", "done"] }.to_json)
+                 { "inkVersion" => 21, "root" => ["^Director: #{line}", "\n", "done"] }.to_json)
 
       @game.scenario_data["rooms"]["lobby"]["npcs"] = [
         { "id" => "briefing_npc", "voice" => { "name" => "Kore", "style" => nil, "language" => nil },
@@ -481,7 +481,7 @@ module BreakEscape
       FileUtils.mkdir_p(tmp_dir)
       story_path = "tmp/tts_cospeaker_no_#{Process.pid}/story.json"
       File.write(tmp_dir.join("story.json"),
-                 { "inkVersion" => 21, "root" => ["^Director: A real line.", "done"] }.to_json)
+                 { "inkVersion" => 21, "root" => ["^Director: A real line.", "\n", "done"] }.to_json)
 
       @game.scenario_data["rooms"]["lobby"]["npcs"] = [
         { "id" => "briefing_npc", "voice" => { "name" => "Kore", "style" => nil, "language" => nil },
@@ -498,6 +498,67 @@ module BreakEscape
       assert_match(/not found/i, json_body["error"])
     ensure
       FileUtils.rm_rf(tmp_dir) if tmp_dir
+    end
+
+    # A co-speaker that has a story of its own (m04: Vance in HaX's debrief; m07:
+    # phone HaX in Netherton's debrief) is accepted for a line another story
+    # voices as them, and only for that speaker.
+    COSPEAKER_HOST = "test/fixtures/files/ink_line_walker/cospeaker_host.json".freeze
+    COSPEAKER_OWN  = "test/fixtures/files/ink_line_walker/cospeaker_vance_own.json".freeze
+
+    def use_cospeaker_scenario
+      @game.scenario_data["rooms"]["lobby"]["npcs"] = [
+        { "id" => "agent_0x99_debrief", "displayName" => "Agent HaX", "npcType" => "person",
+          "voice" => { "name" => "Aoede", "style" => "Calm.", "language" => "en-GB" }, "storyPath" => COSPEAKER_HOST },
+        { "id" => "robert_vance", "displayName" => "Robert Vance", "npcType" => "person",
+          "voice" => { "name" => "Charon", "style" => "Tired.", "language" => "en-GB" }, "storyPath" => COSPEAKER_OWN }
+      ]
+      @game.save!
+    end
+
+    # True when the request got past validation to generation.
+    def reaches_generation?(npc_id, text)
+      calls = []
+      with_env("GEMINI_API_KEY" => "dummy_key_for_test") do
+        stub_generate_returning(nil, calls) do
+          post tts_game_url(@game), params: { npc_id: npc_id, text: text }
+        end
+      end
+      calls.any? { |c| c[:kwargs][:npc_id] == npc_id }
+    end
+
+    test "tts accepts a co-speaker's line from another NPC's story although the co-speaker has its own story" do
+      use_cospeaker_scenario
+      assert reaches_generation?("robert_vance", "Nobody gets to call it an accident.")
+      assert reaches_generation?("robert_vance", "It'll hurt us. People should still know.")
+    end
+
+    test "tts refuses a co-speaker's text that is in no scenario story" do
+      use_cospeaker_scenario
+      refute reaches_generation?("robert_vance", "Words nobody wrote.")
+      assert_response :forbidden
+    end
+
+    test "tts refuses a line from another story that is spoken by someone else" do
+      use_cospeaker_scenario
+      refute reaches_generation?("robert_vance", "You made the disclosure call.")
+      assert_response :forbidden
+      refute reaches_generation?("agent_0x99_debrief", "The plant is safe for now.")
+      assert_response :forbidden
+    end
+
+    test "tts accepts a phone handler's line in an in-person host's story, by display name" do
+      @game.scenario_data["rooms"]["lobby"]["npcs"] = [
+        { "id" => "closing_debrief", "displayName" => "Director Netherton", "npcType" => "person",
+          "voice" => { "name" => "Charon", "style" => nil, "language" => "en-GB" }, "storyPath" => COSPEAKER_HOST },
+        { "id" => "agent_0x99", "displayName" => "Agent HaX", "npcType" => "phone",
+          "voice" => { "name" => "Aoede", "style" => "Secure line.", "language" => "en-GB" }, "storyPath" => COSPEAKER_OWN }
+      ]
+      @game.save!
+      assert reaches_generation?("agent_0x99", "You made the disclosure call.")
+      assert reaches_generation?("agent_0x99", "They spent years on this. Tonight you took it off them.")
+      refute reaches_generation?("agent_0x99", "Nobody gets to call it an accident.")
+      assert_response :forbidden
     end
 
     # ─── TTS generation failure ───────────────────────────────────────────────

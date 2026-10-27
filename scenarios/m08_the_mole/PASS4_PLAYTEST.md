@@ -1,3 +1,5 @@
+> **Rename (2026-10-16):** Agent 0x23 'Cipher' is now 'Vector' (user's decision). Ids, globals, the ink file and routes were renamed with him (`agent_vector`, `accused_vector`, `vector_*`, `m08_suspect_vector.ink`). This file predates the rename and still says Cipher.
+
 # m08 The Mole: pass-4 design playtest script
 
 Covers the parts the pass-4 design fixes changed (see `DESIGN_REVIEW.md`, "Changes made (pass 4 design)"). Sonnet, keyless server on :3001, per `.claude/skills/playtest-scenario/SKILL.md`:

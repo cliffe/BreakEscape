@@ -1,0 +1,13 @@
+{
+  "key": "a145969e2dca3fdd101386b9e4dff1d8",
+  "npc": "narrator",
+  "text": "She's out cold. Whatever she knows, she isn't saying it tonight.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:26:31Z"
+}

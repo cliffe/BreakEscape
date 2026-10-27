@@ -139,6 +139,10 @@ export class GameOverScreen {
       this.overlay.style.display = 'flex';
       this.isShowing = true;
 
+      // Close anything opened in the second since the knockout, so nothing
+      // runs under this screen (m04 confirmation R2 N1)
+      window.closeMinigameForKnockout?.();
+
       // Disable player movement
       if (window.player) {
         window.player.disableMovement = true;
@@ -153,10 +157,26 @@ export class GameOverScreen {
     }
   }
 
-  restart() {
-    // Reset player health
+  async restart() {
+    // Full health, saved with the reset below, so the reload doesn't bring back
+    // the HP from before the knockout (m05 E6)
     if (window.playerHealth) {
       window.playerHealth.reset();
+    }
+
+    // Hostile NPCs that aren't knocked out calm down and go back to their posts
+    // (7.1d): the reset is saved before the reload, so the player doesn't wake
+    // up beside an NPC still swinging at them
+    try {
+      window.npcHostileSystem?.resetHostilesForRespawn?.();
+      if (window.stateSync?.sync) {
+        await Promise.race([
+          window.stateSync.sync(),
+          new Promise(resolve => setTimeout(resolve, 2000))
+        ]);
+      }
+    } catch (err) {
+      console.warn('Respawn hostility reset failed:', err);
     }
 
     // Re-enable player movement

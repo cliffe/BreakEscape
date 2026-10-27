@@ -1,0 +1,379 @@
+{
+  "scenario_id": "awareness_e7_voice_ceo_defend",
+  "scenario_name": "Voice and the CEO: the finance line",
+  "scenario_brief": "Awareness episode E7, phone and inbox only. You're covering the finance office's phone and inbox at Brightwell Foods, a fictional food manufacturer, on a Friday afternoon. Three voicemails and two emails are waiting, and you can't always tell by the voice who left them: decide what to do with each, and ring back or report anything that doesn't sit right.",
+  "endGoal": "Go through the voicemails and emails at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "finance_line_aim",
+      "title": "Cover the finance line",
+      "description": "Go through the three voicemails and two emails at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e7_voice_ceo_defend_defend_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Finance line done",
+        "body": "You've been through all five messages and finished this episode."
+      },
+      "tasks": [
+        {
+          "taskId": "check_finance_line",
+          "title": "Cover the finance line",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e7_voice_ceo_defend_state": {},
+    "se_awareness_records": [],
+    "episode_e7_voice_ceo_defend_defend_percent": 0,
+    "episode_e7_voice_ceo_defend_defend_reportRate": 0,
+    "episode_e7_voice_ceo_defend_defend_done": false,
+    "episode_e7_voice_ceo_defend_defend_pass": false
+  },
+  "social": {
+    "triageSets": [
+      {
+        "id": "e7_finance_line",
+        "title": "Finance office: phone and inbox",
+        "brief": "You're covering the finance office's phone and inbox on Friday afternoon while the team is in the quarter-end meeting. Adaeze Okafor, the finance manager, is the one who signs off payments here. Three voicemails and two emails have come in. For each one, choose Trust, Report, Delete or Verify (ring the person back on a number you already hold), then tick what you noticed. Nobody will ask whether a voice sounded real: what counts is what each message asks you to do. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "vish_callback_pressure",
+          "secrecy_or_bypass",
+          "borrowed_authority",
+          "changed_bank_details"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "episode_e7_voice_ceo_defend_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e7_vm_ravinder_train",
+            "kind": "voicemail",
+            "from": {
+              "name": "Ravinder Sandhu",
+              "address": "Ravinder (mobile), in your contacts"
+            },
+            "time": "13:05",
+            "duration": "0:24",
+            "audio": {
+              "clipId": "VO8_ravinder_train"
+            },
+            "transcript": [
+              {
+                "who": "Ravinder",
+                "text": "Hi, it's Ravinder. I'm on the train back from Leeds, so the signal comes and goes. I approved the oat flour invoices in the system before I left, so they're fine for Monday's run. Nothing for you to do. If Adaeze needs me, I'm on my mobile. Thanks."
+              }
+            ],
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "borrowed_authority": "It's the chief executive, but he isn't using that to skip anything: the invoices went through the normal approval in the system.",
+                "default": "It came from Ravinder's mobile, which is already in the office contacts. It asks you to do nothing, and he tells you to ring that same mobile if anyone needs him. If you wanted to check, ringing him back on it would be a fine Verify."
+              },
+              "falseAlarmCost": "It asks for nothing, so little is lost, but flagging it has someone chase Ravinder on the train to re-confirm invoices he already approved."
+            }
+          },
+          {
+            "id": "e7_vm_ravinder_cloned",
+            "kind": "voicemail",
+            "from": {
+              "address": "07700 900771 (not in your contacts)"
+            },
+            "time": "14:48",
+            "duration": "0:38",
+            "audio": {
+              "clipId": "VO8_ravinder_cloned"
+            },
+            "transcript": [
+              {
+                "who": "Ravinder",
+                "text": "Hi, it's Ravinder. I'm on a borrowed phone, mine's died, so don't bother trying my mobile."
+              },
+              {
+                "who": "Ravinder",
+                "text": "The Leeds site: the agent needs the deposit, eighteen thousand four hundred, before five today or it goes to the other bidder. I've emailed you about it."
+              },
+              {
+                "who": "Ravinder",
+                "text": "Keep it between us until the board announces it, and don't wait for Adaeze. I'm signing it off myself. I'm going into a meeting, so just email me when it's gone. Thanks."
+              }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "vish_callback_pressure",
+                "secrecy_or_bypass",
+                "borrowed_authority"
+              ],
+              "perFlagNote": {
+                "vish_callback_pressure": "'Don't bother trying my mobile' and 'just email me' shut off the one check that works whoever is speaking: ringing Ravinder back on the number you already hold. The borrowed phone is the excuse.",
+                "secrecy_or_bypass": "'Keep it between us' and 'don't wait for Adaeze' ask you to skip the approval that would catch this, and 'before five today' leaves no time to ask anyone",
+                "borrowed_authority": "The chief executive's own voice is doing the job the approval process should do. It sounded like him, and a voice on its own doesn't prove who is speaking"
+              },
+              "ifTrusted": "£18,400 would go to an account the caller controls. Ravinder was on the train from Leeds and never made this call.",
+              "reportReply": "Thanks. We rang Ravinder on his usual mobile: he hadn't called, and there is no deposit due on a Leeds site. We've warned finance and the other directors' assistants."
+            }
+          },
+          {
+            "id": "e7_vm_lindiwe_gate",
+            "kind": "voicemail",
+            "from": {
+              "name": "Lindiwe Mokoena",
+              "address": "Lindiwe (extension 2214), in your contacts"
+            },
+            "time": "15:20",
+            "duration": "0:31",
+            "audio": {
+              "clipId": "VO8_lindiwe_gate"
+            },
+            "transcript": [
+              {
+                "who": "Lindiwe",
+                "text": "Hi, it's Lindiwe on the chilled unit. Sorry to land this on you. The Harlow driver's at the gate and says their system has our account on hold, so he's to take the cartons back."
+              },
+              {
+                "who": "Lindiwe",
+                "text": "I've told him we don't pay anything at the gate. Could someone in finance ring Harlow on the number in the supplier file and find out what's going on? I'm on extension 2214, or my mobile's on the staff list. Cheers."
+              }
+            ],
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "secrecy_or_bypass": "She's in a hurry, but she asks you to follow the process, not skip it: no paying at the gate, and a call to Harlow on the number already on file.",
+                "vish_callback_pressure": "She gives you two ways to ring her back, her extension and the mobile on the staff list.",
+                "default": "It's Lindiwe's own extension, it asks for no payment, and what she wants is the safe check itself. Ringing Harlow on the supplier-file number, or ringing her back on 2214, is the right kind of Verify."
+              },
+              "falseAlarmCost": "Left unactioned, nobody rings Harlow, the driver takes the chilled cartons back, and the delivery is lost."
+            }
+          },
+          {
+            "id": "e7_ceo_wire",
+            "from": {
+              "name": "Ravinder Sandhu",
+              "address": "ravinder.sandhu.private@inboxly.example"
+            },
+            "to": "finance@brightwellfoods.example",
+            "subject": "Need this paid today",
+            "time": "15:31",
+            "body": "Are you at your desk? I need a payment of £18,400 made today to secure a new site in Leeds. I've left you a voicemail about it too. It's confidential until the board announces it, so please keep it to yourself and don't put it through the usual approval. I'll sign it off when I'm back.\nI'm in meetings all afternoon, so reply here rather than calling.\nRavinder\nSent from my phone",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "ravinder.sandhu.private@inboxly.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "borrowed_authority",
+                "secrecy_or_bypass",
+                "urgencyCalibrated",
+                "vish_callback_pressure"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The name is the chief executive's, but the address is a personal inbox at inboxly.example, not brightwellfoods.example. The voicemail it mentions doesn't make it more real: a fake voice and a fake email can come from the same sender",
+                "borrowed_authority": "The chief executive's name is doing the job the approval process should do. 'I'll sign it off when I'm back' and 'don't put it through the usual approval' lean on his seniority to push it past the check, and a name in the From line is no proof he sent it",
+                "secrecy_or_bypass": "'Keep it to yourself' and 'don't put it through the usual approval' ask you to skip the check that would catch this",
+                "urgencyCalibrated": "'Today' and 'in meetings all afternoon' leave no time to check before the money would move",
+                "vish_callback_pressure": "'Reply here rather than calling' is there to stop you doing the one thing that would catch this: ringing Ravinder back on the number you already hold. A sender who talks you out of checking is the warning sign, not the reassurance."
+              },
+              "ifTrusted": "£18,400 would go to an account the sender controls. The real Ravinder never asked for it.",
+              "reportReply": "Thanks. Ravinder knows nothing about it, and his real address is on brightwellfoods.example. The voicemail came from the same people, so we've reported both."
+            }
+          },
+          {
+            "id": "e7_bank_confirmed",
+            "from": {
+              "name": "Adaeze Okafor",
+              "address": "adaeze.okafor@brightwellfoods.example"
+            },
+            "to": "finance@brightwellfoods.example",
+            "subject": "Marsh End Eggs: new bank details (confirmed by phone)",
+            "time": "15:44",
+            "body": "Hi team,\nMarsh End Eggs wrote last week to say they've changed bank. Before acting on it, I rang them on the number in our supplier file (not the one on their letter) and spoke to Joyce in their accounts office. She confirmed the new account.\nI've updated the supplier record and signed off the change, so their next invoice can go to the new account in next week's run.\nConfirmed by phone: Adaeze Okafor, 21 October\nAdaeze",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "brightwellfoods.example",
+              "replyTo": "adaeze.okafor@brightwellfoods.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "changed_bank_details": "It is a bank change, but it was checked the safe way: Adaeze rang Marsh End on the number already in the supplier file, not one from their letter, and logged it. That's the same check that would have stopped the Leeds deposit.",
+                "senderTrust": "The address is Adaeze's real Brightwell one, and the name matches it.",
+                "default": "It comes from your own finance manager, it doesn't hurry you, and it tells you how the change was confirmed. If you still wanted to check, ringing Adaeze on her extension would be a fine Verify."
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e7_voice_ceo_defend",
+      "role": "everyone",
+      "company": "brightwell_foods",
+      "brand": {
+        "name": "Brightwell Foods",
+        "logoText": "BRIGHTWELL",
+        "accent": "#2f6f5e"
+      },
+      "variant": "defendOnly",
+      "durationTargetMin": 8,
+      "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: three voicemails and two emails on the finance office's line. No real person's voice is used.",
+      "stages": [
+        "brief",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "check_finance_line",
+      "defend": {
+        "setId": "e7_finance_line",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. You're covering the finance office's phone and inbox on Friday afternoon. Three voicemails and two emails are waiting. Some are real and some were made to trick you, and you can't always tell by the voice. Sort them, and verify or report anything that doesn't sit right. Ringing back when you're unsure is always fine and never marked down, though a real caller does take a colleague's time to check.",
+        "flipMissedHeading": "Nothing to replay this time",
+        "flipLandedNoTells": "Nothing in it tripped a check this time. Next, the same kind of message reaches the finance office, and you're the one reading it.",
+        "noBlameLine": "A familiar voice is hard to doubt, and these calls were built to lean on exactly that trust, so anyone can be caught by one.",
+        "mondayCard": "On Monday: a voice you recognise is not proof of who is calling, and neither is an email that backs it up. If a call or voicemail asks for money, secrecy or a skipped step, ring the person back on a number you already hold, then report it using the route in the box below.",
+        "defendOnly": "A familiar voice feels like proof, and these messages were made to use that, so anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away and why ringing back on a number you already hold works whoever is speaking.",
+        "defendIntro": "Go through the voicemails and emails and decide what to do with each one. Read each voicemail's transcript: what it asks you to do matters more than whose voice it is. Work through them at your own pace; it all comes back to ringing the person yourself.",
+        "voicePanel": {
+          "heading": "How a voice gets copied",
+          "text": "Recordings of someone speaking in public, such as a talk, an interview or a company video, can be used to make new sentences in a voice that sounds like theirs. If you can't reach the person to check, ask someone who would know, such as the finance manager."
+        }
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_brightwell",
+      "door_sign": "Training Room",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.6,
+            "color": "#ffe2b0",
+            "radius": 110,
+            "intensity": 0.5
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "agnieszka_duda",
+          "displayName": "Agnieszka Duda",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/awareness_e7_voice_ceo_defend/ink/agnieszka_duda.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_e7_voice_ceo_defend_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "check_finance_line"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk showing the finance office's phone and inbox, with voicemails and emails waiting.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e7_voice_ceo_defend_defend_done",
+              "value": "A touch-screen kiosk showing the finance office's phone and inbox. The voicemails and emails are all dealt with."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e7_voice_ceo_defend"
+          }
+        }
+      ]
+    }
+  }
+}

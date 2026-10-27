@@ -7,7 +7,7 @@
  * @module phone-chat-conversation
  */
 
-import { phoneStepLines } from './phone-chat-speaker.js';
+import { phoneStepLines, callStartKnots } from './phone-chat-speaker.js';
 
 // A preload in progress, per NPC entry. The inventory (on pickup) and the phone-chat
 // minigame (on open) both preload; a second caller waits for the first instead of
@@ -41,6 +41,9 @@ export default class PhoneChatConversation {
         this.storyEnded = false;
         // Set false for throwaway preload runs so ink writes don't leak into window.gameState.globalVariables
         this.observeGlobals = true;
+        // Voiced call (F20): the call's knots (set by the minigame) and the lines printed from them
+        this.callKnots = null;
+        this.callLines = new Set();
         
         console.log(`💬 PhoneChatConversation initialized for NPC: ${npcId}`);
     }
@@ -77,6 +80,7 @@ export default class PhoneChatConversation {
             
             // Load into InkEngine
             this.engine.loadStory(storyJson);
+            this.storyJson = storyJson; // read for a voiced call's knots (F20)
             
             // Note: We don't set npc_name variable here because it causes issues with state serialization.
             // The NPC display name is handled in the UI layer instead.
@@ -338,6 +342,7 @@ export default class PhoneChatConversation {
         
         try {
             const result = this.engine.continue();
+            this._noteCallStep(result.text, result.tags, PhoneChatConversation.stepKnot(this.engine.story));
 
             // Process tags for side effects (like #exit_conversation)
             if (result.tags && result.tags.length > 0) {
@@ -586,10 +591,16 @@ export default class PhoneChatConversation {
      * The baseline runs with the global observer detached, so it writes nothing.
      *
      * @param {Function} syncGlobals - (story) => void, writes the current globals in
+     * @param {Object} [opts]
+     * @param {boolean} [opts.force] - re-run even if no global changed. A fresh pretext
+     *   call needs this: its opening choices were baked by the preload with the card VARs
+     *   still empty, and syncGlobals fills them as story-LOCAL VARs, which the global
+     *   comparison never sees. Re-running re-bakes the choices with the filled VARs and,
+     *   as always, drops the leading output the player has already read (M2 / lab F1).
      * @returns {{ renavigated: boolean, knot?: string, messages?: string[], tags?: string[],
      *             replayedSteps?: number, result?: Object }}
      */
-    reopenWithCurrentGlobals(syncGlobals) {
+    reopenWithCurrentGlobals(syncGlobals, { force = false } = {}) {
         const story = this.engine?.story;
         if (!this.storyLoaded || !story) return { renavigated: false };
 
@@ -604,7 +615,7 @@ export default class PhoneChatConversation {
         if (typeof syncGlobals === 'function') syncGlobals(story);
         const globalsChanged = Object.keys(globalsBefore)
             .some(name => story.variablesState[name] !== globalsBefore[name]);
-        if (!globalsChanged || !(story.currentChoices?.length > 0)) {
+        if ((!globalsChanged && !force) || !(story.currentChoices?.length > 0)) {
             return { renavigated: false };
         }
 
@@ -654,6 +665,7 @@ export default class PhoneChatConversation {
         fresh.forEach(step => {
             tags.push(...step.tags);
             messages.push(...phoneStepLines(step.text, step.tags));
+            this._noteCallStep(step.text, step.tags, step.knot);
         });
         if (tags.length > 0) this.processTags(tags);
 
@@ -716,6 +728,80 @@ export default class PhoneChatConversation {
     }
 
     /**
+     * The line the contact list should preview for an opted-in looping hint contact
+     * (NPC config "livePreview": true; lab R5 F4).
+     *
+     * A hint hub writes its stage line into the thread only when the thread is
+     * opened: the reopen re-runs the knot under today's globals and appends what is
+     * new (reopenWithCurrentGlobals). Until then the list's preview, which reads the
+     * thread, shows the line from the last open, or the preloaded opening if the
+     * player never opened it. This works out what that reopen would append, without
+     * doing it: a throwaway story restored from npc.storyState, globals synced the
+     * way the minigame syncs them, no global observer, no tags run, nothing added to
+     * the thread and npc.storyState untouched.
+     *
+     * @param {Object} npc - the NPC entry (needs livePreview, storyState and a story)
+     * @param {Object} npcManager
+     * @param {Object} inkEngine - a spare InkEngine (its story is replaced)
+     * @param {Object} [opts]
+     * @param {Function} [opts.syncGlobals] - (story) => void, as the minigame's reopen
+     * @param {string|Object} [opts.storySource] - JSON or a URL; default as preloadOpening
+     * @returns {Promise<string|null>} the raw newest line ("Name: text"), or null when
+     *   opening the thread would add nothing (the thread's own last line stands)
+     */
+    static async previewReopen(npc, npcManager, inkEngine, { syncGlobals, storySource } = {}) {
+        if (!npc || npc.livePreview !== true || !npc.storyState) return null;
+        // A pretext call's thread is a call log, not a hint hub
+        if (npc.pretextCallId || npc.callId) return null;
+        let source = storySource || npc.storyJSON;
+        if (!source && npc.storyPath) {
+            const gameId = typeof window !== 'undefined' ? window.breakEscapeConfig?.gameId : null;
+            if (gameId) source = `/break_escape/games/${gameId}/ink?npc=${encodeURIComponent(npc.id)}`;
+        }
+        if (!source) return null;
+
+        const temp = new PhoneChatConversation(npc.id, npcManager, inkEngine);
+        temp.observeGlobals = false;
+        temp.processTags = () => {};      // a dry run: no tag reaches the game
+        try {
+            if (!(await temp.loadStory(source))) return null;
+            if (!temp.restoreState(npc.storyState)) return null;
+            const story = temp.engine.story;
+            const sync = s => {
+                if (typeof syncGlobals === 'function') syncGlobals(s);
+                // An intro's held-back globals count as applied, as on a real open
+                // (applyDeferredGlobals: only where the global still has its preload value)
+                const deferred = npc.deferredGlobals;
+                const base = npc.deferredGlobalsBase || {};
+                const globals = (typeof window !== 'undefined' && window.gameState?.globalVariables) || {};
+                if (deferred && typeof deferred === 'object') {
+                    for (const [name, value] of Object.entries(deferred)) {
+                        if (!s.variablesState.GlobalVariableExistsWithName(name)) continue;
+                        const current = globals[name] === undefined ? null : globals[name];
+                        if (Object.prototype.hasOwnProperty.call(base, name) && current !== base[name]) continue;
+                        s.variablesState[name] = value;
+                    }
+                }
+            };
+            const reopen = temp.reopenWithCurrentGlobals(sync);
+            let messages = reopen.renavigated ? reopen.messages : [];
+            if (!reopen.renavigated && story.canContinue && !(story.currentChoices?.length > 0)) {
+                // Saved part-way through a knot: an open continues it (showCurrentChoices)
+                messages = [];
+                PhoneChatConversation.collectSteps(story)
+                    .forEach(step => messages.push(...phoneStepLines(step.text, step.tags)));
+            }
+            const lines = (messages || []).map(m => String(m || '').trim()).filter(Boolean);
+            return lines.length > 0 ? lines[lines.length - 1] : null;
+        } catch (e) {
+            console.warn(`⚠️ Live preview for ${npc.id} failed:`, e.message);
+            return null;
+        } finally {
+            temp.cleanup();
+        }
+    }
+
+    /**
      * True when opening this NPC at `knot` would replay the opening a preload has
      * already put in the thread: the knot is the one the preload ran, the thread holds
      * only preloaded lines (the player hasn't answered yet), and the preload's story
@@ -728,6 +814,33 @@ export default class PhoneChatConversation {
         return !!(npc && knot && npc.storyState && npc.preloadedKnot === knot &&
             conversationHistory.length > 0 &&
             conversationHistory.every(msg => msg.preloaded));
+    }
+
+    /**
+     * Write `#set_global:name:value` tags into a story's own variables (only those the
+     * story declares), so the next line of a dry run reads them as the live game would.
+     * Parses the value as chat-helpers' set_global does. Touches nothing outside `story`.
+     * @param {Object} story - the inkjs Story
+     * @param {string[]} tags
+     */
+    static mirrorSetGlobalTags(story, tags) {
+        const vars = story?.variablesState;
+        if (!vars || !Array.isArray(tags)) return;
+        for (const tag of tags) {
+            const text = String(tag).trim();
+            const i = text.indexOf(':');
+            if (i < 0 || text.slice(0, i).trim().toLowerCase() !== 'set_global') continue;
+            const parts = text.slice(i + 1).trim().split(':');
+            const name = parts[0]?.trim();
+            const raw = parts[1]?.trim();
+            if (!name || !vars.GlobalVariableExistsWithName(name)) continue;
+            if (typeof window !== 'undefined' && window.npcConversationStateManager?.isReadOnlyGlobal?.(name)) continue;
+            let value = raw;
+            if (raw === 'true') value = true;
+            else if (raw === 'false') value = false;
+            else if (raw !== undefined && raw !== '' && !isNaN(raw)) value = Number(raw);
+            try { vars[name] = value; } catch (e) { /* a type the story rejects: leave it */ }
+        }
     }
 
     static async _preloadOpeningOnce(npc, npcManager, inkEngine) {
@@ -748,8 +861,14 @@ export default class PhoneChatConversation {
         // After a reload: restore this contact's own ink flags (e.g. first_contact)
         // so its start knot skips an intro the player already read
         window.npcConversationStateManager?.applySavedInkVariables?.(npc.id, tempConversation.engine?.story);
+        // Engine-written VARs (00 S7) last, after the load's sync and the saved flags
+        window.npcConversationStateManager?.applyEngineVariables?.(npc.id, tempConversation.engine?.story, { channel: 'phone-preload' });
 
         const entryKnot = npc.currentKnot || 'start';
+        // A voiced call's knot is not preloaded: its opening is shown and spoken when the
+        // call opens (F20). The contact's home knot still preloads as before.
+        const callKnot = entryKnot.split('.')[0];
+        if (callKnot !== (npc.homeKnot || 'start').split('.')[0] && callStartKnots(npc).has(callKnot)) return 0;
         tempConversation.goToEntryKnot(entryKnot);
 
         // Accumulate all intro messages and game action tags until we hit choices or end
@@ -758,7 +877,12 @@ export default class PhoneChatConversation {
         for (let guard = 0; guard < 500; guard++) {
             const result = tempConversation.continue();
             allMessages.push(...phoneStepLines(result.text, result.tags));
-            if (result.tags && result.tags.length > 0) allTags.push(...result.tags);
+            if (result.tags && result.tags.length > 0) {
+                allTags.push(...result.tags);
+                // The game applies these on first open, but a later line of this dry run
+                // must already see them (F16), so mirror them into the temp story only
+                PhoneChatConversation.mirrorSetGlobalTags(tempConversation.engine?.story, result.tags);
+            }
             if (result.hasEnded || (result.choices && result.choices.length > 0) || !result.canContinue) break;
         }
         if (allMessages.length === 0) return 0;
@@ -766,10 +890,17 @@ export default class PhoneChatConversation {
         // player opened it), that run already showed the opening
         if (npcManager.getConversationHistory(npc.id).length > 0) return 0;
 
+        // Without an in-game clock the intro reads as sent an hour ago (wall time).
+        // With one, it is stamped now: an hour back put the first texts before the
+        // story's start time (m05 E3: 15:30 above a 16:30 start).
+        const clock = window.gameClock;
+        const preloadStamp = clock?.configured
+            ? { timestamp: Date.now(), gameTime: clock.elapsedMs() }
+            : { timestamp: Date.now() - 3600000 };
         allMessages.forEach(message => {
             npcManager.addMessage(npc.id, 'npc', message.trim(), {
                 preloaded: true,
-                timestamp: Date.now() - 3600000 // 1 hour ago
+                ...preloadStamp
             });
         });
 
@@ -862,9 +993,34 @@ export default class PhoneChatConversation {
         const steps = [];
         while (story.canContinue && steps.length < limit) {
             const text = story.Continue() || '';
-            steps.push({ text, tags: [...(story.currentTags || [])] });
+            steps.push({ text, tags: [...(story.currentTags || [])], knot: PhoneChatConversation.stepKnot(story) });
         }
         return steps;
+    }
+
+    /**
+     * The knot the last Continue()'s line came from: the path of its first text in the
+     * output stream. Null when no text sits in the story (a line printed from a variable).
+     */
+    static stepKnot(story) {
+        const stream = story?.state?.outputStream || [];
+        for (const obj of stream) {
+            if (obj && obj.parent && typeof obj.value === 'string' && obj.value.trim()) {
+                return String(obj.path?.toString?.() || '').split('.')[0] || null;
+            }
+        }
+        return null;
+    }
+
+    /** Voiced call (F20): remember a step's lines when they came from one of the call's knots. */
+    _noteCallStep(text, tags, knot) {
+        if (!this.callKnots || !knot || !this.callKnots.has(knot)) return;
+        phoneStepLines(text, tags).forEach(line => this.callLines.add(line));
+    }
+
+    /** True when a line printed in this session came from the voiced call's knots (F20). */
+    isCallLine(raw) {
+        return this.callLines.has(String(raw || '').trim());
     }
 
     static sameStep(a, b) {

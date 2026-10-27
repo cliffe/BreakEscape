@@ -176,6 +176,61 @@ Asset format (produced by `tools/pixellab_pipeline.py`):
   2–6 s whenever the mouth is resting, including pauses mid-line. Each NPC's id seeds its own
   schedule, so two portraits never blink in step.
 
+## Alternative Portraits (`portraitVariants`)
+
+An NPC can carry a second (or third) dialogue portrait, such as m05's David Torres slumped and
+bleeding after a knockout (`david_torres_ko`). Each entry swaps any of `spriteTalk`,
+`spriteVisemes` and `avatar`; fields it leaves out keep the NPC's own value.
+
+```json
+"portraitVariants": [
+  {
+    "name": "ko",
+    "ko": true,
+    "spriteTalk": "assets/characters/david_torres_ko_talk.png",
+    "spriteVisemes": "assets/characters/david_torres_ko_visemes.png"
+  },
+  { "name": "night", "condition": "globalVars.night_shift === true", "spriteTalk": "..." }
+]
+```
+
+- `ko: true` holds while the NPC is knocked out (the combat state, which is set before
+  `npc_ko` fires, or its `globalVarOnKO` global, which survives a reload); `ko: false` while it
+  isn't.
+- `condition` uses the globalVars syntax of `utils/global-condition.js` (`!`, `===`, `!==`,
+  `<`, `>`, `&&`, `||`, no parentheses). With `ko` as well, both must hold.
+- The first entry whose gates hold wins. With none, the NPC's own fields are used.
+- Person-chat checks the list each time it draws this NPC, so a global set mid-conversation
+  (or the KO itself) shows from the next line. Phone chats use the matching `avatar` in the
+  contact list and conversation header.
+- In ink, `# portrait:<name>` forces the named entry for the rest of the conversation, and
+  `# portrait:base` goes back to the NPC's own fields. `# portrait:<npc_id>:<name>` does the
+  same for another character in the scene. Tags take effect at the next block of lines shown.
+  An entry with a `name` and no gate is reachable only this way.
+
+The code is `js/utils/portrait-variants.js`. The validator checks field names, that the images
+exist, that condition globals are declared, and that each `# portrait:` tag in the NPC's ink
+names one of its entries.
+
+## Holograms and ghosts (`spriteStyle`)
+
+An NPC can be drawn see-through, glowing and flickering without new art. The engine lays the look over the normal frames (`systems/npc-sprite-style.js`), so it holds through idle, walk, `taking-punch` and `falling-back-death`, and through a knockout and a reload.
+
+```json
+"spriteSheet": "athena",
+"spriteStyle": { "alpha": 0.8, "glow": "#7fe8ff", "flicker": true }
+```
+
+| Key | Default | Effect |
+| --- | --- | --- |
+| `alpha` | 1 | See-through amount, 0.3-1 (lower is clamped so the NPC stays visible and clickable). It multiplies the alpha the engine sets itself (0 when hidden, 1 when revealed, any fade), so it never fights those. |
+| `glow` | none | Outline glow colour. Phaser `postFX.addGlow` on the sprite (WebGL only; the Canvas renderer gets alpha and flicker only). |
+| `glowStrength` | 2 | Outer glow strength, 0.5-6. |
+| `flicker` | false | Every 2.5-7 s a 170 ms two-step dip (to 50% then 70%), plus a slow shimmer of the glow strength. At most two flashes in any second, and none under `prefers-reduced-motion`. |
+| `light` | true with a glow | The NPC lights the room's light map in the glow colour: a soft pool on the floor and a brighter core over the figure. |
+
+**Lighting.** Room lighting (`systems/lighting.js`) multiplies a light map over the whole world, so a sprite drawn under it, glow included, is darkened in a dim room. `light` handles that: `stampNpcGlows` adds the glow colour into the map round the NPC (in their own room only, like an NPC torch), so the figure stays bright in the dark and casts a cyan pool. In a lit room the map is already near white there, so the light only adds a faint tint. A knocked-out hologram still glows at half strength; a hidden one gives no light.
+
 ## Adding New Characters
 
 ### From PixelLab (API, preferred)

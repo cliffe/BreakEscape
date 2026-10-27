@@ -214,7 +214,7 @@ export function handleUnlock(lockable, type) {
                     finalDifficulty: difficulty
                 });
                 
-                startLockpickingMinigame(lockable, window.game, difficulty, async (success) => {
+                startLockpickingMinigame(lockable, window.game, difficulty, async (success, outcome) => {
                     if (success) {
                         // Notify server of successful lockpick to update player_state and get room/container data
                         const serverResponse = await notifyServerUnlock(lockable, type, 'lockpick');
@@ -224,7 +224,8 @@ export function handleUnlock(lockable, type) {
                         }, 100);
                     } else {
                         console.log('LOCKPICK FAILED');
-                        if (!window.minigameClosedByDamage?.()) {
+                        // Closing the minigame (outcome.cancelled) is not a failed attempt: no toast
+                        if (!outcome?.cancelled && !window.minigameClosedByDamage?.()) {
                             window.gameAlert('Failed to pick the lock. Try again.', 'error', 'Pick Failed', 3000);
                         }
                     }
@@ -232,7 +233,12 @@ export function handleUnlock(lockable, type) {
             } else {
                 console.log('NO KEYS OR LOCKPICK AVAILABLE');
                 emitDoorUnlockFailed('no_key');
-                window.gameAlert(`Requires key`, 'error', 'Locked', 4000);
+                // Opt-in hint: a scenario may author `lockedHint` on the door/room to tell the
+                // player where the key comes from (SE lab F17). Doors without it keep the plain
+                // "Requires key" line unchanged, so shipped missions behave exactly as before.
+                const lockedHint = lockable.lockedHint || lockable.doorProperties?.lockedHint ||
+                                   lockable.scenarioData?.lockedHint || lockable.properties?.lockedHint || '';
+                window.gameAlert(lockedHint ? `Requires key. ${lockedHint}` : `Requires key`, 'error', 'Locked', lockedHint ? 5500 : 4000);
             }
             break;
 
@@ -282,7 +288,10 @@ export function handleUnlock(lockable, type) {
                 showKeyboard: lockable.showKeyboard || lockable.scenarioData?.showKeyboard || pwDoor.showKeyboard || false,
                 maxAttempts: lockable.maxAttempts || lockable.scenarioData?.maxAttempts || pwDoor.maxAttempts || 3,
                 postitNote: lockable.postitNote || lockable.scenarioData?.postitNote || pwDoor.postitNote || '',
-                showPostit: lockable.showPostit || lockable.scenarioData?.showPostit || pwDoor.showPostit || false
+                showPostit: lockable.showPostit || lockable.scenarioData?.showPostit || pwDoor.showPostit || false,
+                // A wrong password at a door: door_unlock_failed (reason wrong_password,
+                // or wrong_password_case when only the letter case was wrong)
+                onRefused: emitDoorUnlockFailed
             };
 
             // Pass null for required password - will be validated server-side
@@ -511,6 +520,13 @@ export function handleUnlock(lockable, type) {
                     console.error('RFID unlock failed:', error);
                     window.gameAlert('Access denied', 'error', 'Error', 3000);
                 });
+            }
+            // A cloner with nothing to offer (no keycards to tap, no saved clones): the
+            // reader just refuses, rather than opening an empty cloner screen (m07 U9)
+            else if (hasCloner && keycards.length === 0 && savedCards.length === 0) {
+                console.log('RFID CLONER EMPTY: no keycards, no saved cards');
+                window.gameAlert('Access denied. No keycard, and nothing saved on the cloner.', 'error', 'Access Denied', 4000);
+                emitDoorUnlockFailed('no_card');
             }
             // PRIORITY 2: If player has RFID cloner, open minigame to emulate or read cards
             else if (hasCloner) {

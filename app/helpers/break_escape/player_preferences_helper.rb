@@ -12,19 +12,25 @@ module BreakEscape
       end
     end
 
-    def sprite_valid_for_scenario?(sprite, scenario_data)
-      return true unless scenario_data['validSprites'].present?
-
-      valid_sprites = Array(scenario_data['validSprites'])
-
-      valid_sprites.any? do |pattern|
-        BreakEscape::PlayerPreference.sprite_matches_pattern?(sprite, pattern)
-      end
-    end
-
     # Menu label for a sprite key; the _v2 suffix is an asset detail, not part of the name.
     def sprite_label(sprite)
       sprite.delete_suffix('_v2').humanize
+    end
+
+    # Tooltip for an avatar menu card (an AvatarUnlocks.menu row).
+    def avatar_card_title(entry)
+      missions = Array(entry['missions'])
+      case entry['status']
+      when 'locked'
+        missions.any? ? "Complete #{missions.to_sentence(two_words_connector: ' or ', last_word_connector: ', or ')} to unlock" : 'Locked'
+      when 'unlocked'
+        missions.any? ? "Unlocked by completing #{missions.to_sentence}" : nil
+      when 'mission' then 'Available in this mission'
+      end
+    end
+
+    def avatar_badge(entry)
+      { 'unlocked' => 'Unlocked', 'mission' => 'This mission' }[entry['status']]
     end
 
     def sprite_headshot_path(sprite)

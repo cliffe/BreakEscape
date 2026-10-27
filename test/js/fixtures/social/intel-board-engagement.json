@@ -1,0 +1,48 @@
+{
+  "people": [],
+  "intelFacts": {},
+  "intelBoard": { "title": "Engagement: Fixture Co", "people": [], "readinessSlots": {} },
+  "engagement": {
+    "scopeNote": "Authorised exercise for Fixture Co (fictional).",
+    "roe": {
+      "inScope": ["work email to named staff", "public OSINT"],
+      "outScope": ["personal accounts", "physical entry"],
+      "stopContact": "The duty line"
+    },
+    "scope": {
+      "title": "Rules of engagement",
+      "intro": "Read the sheet, then sort the cards.",
+      "onCompleteGlobal": "roe_signed",
+      "steps": [
+        { "id": "scope", "onCompleteGlobal": "roe_scope_done" },
+        { "id": "stoprule", "onCompleteGlobal": "roe_stoprule_done" }
+      ],
+      "cards": [
+        { "id": "work_mail", "kind": "sort", "step": "scope", "text": "Email a staff member's work address", "inScope": true, "why": "Work accounts are named in the sheet." },
+        { "id": "personal_mail", "kind": "sort", "step": "scope", "text": "Email a staff member's personal address", "inScope": false, "why": "Section 4 limits the test to work accounts." },
+        { "id": "real_compromise", "kind": "question", "step": "stoprule", "text": "You find a real compromise. What do you do?",
+          "options": [
+            { "id": "stop_call", "text": "Stop and call the emergency contact", "correct": true, "why": "A real incident is not part of the exercise." },
+            { "id": "carry_on", "text": "Note it and carry on", "correct": false, "why": "Carrying on could harm a real person." }
+          ] }
+      ]
+    },
+    "plan": {
+      "title": "Engagement plan",
+      "onCompleteGlobal": "plan_done",
+      "steps": [
+        { "id": "objective", "onCompleteGlobal": "plan_objective_done" },
+        { "id": "measures", "onCompleteGlobal": "plan_measures_done" }
+      ],
+      "objectivesPrompt": "Pick the objective that fits the brief.",
+      "objectives": [
+        { "id": "how_far", "step": "objective", "text": "Find out how far a pretext gets", "correct": true, "why": "It fits the brief." },
+        { "id": "disrupt", "step": "objective", "text": "Disrupt payroll", "correct": false, "why": "Disruption is barred." }
+      ],
+      "measures": [
+        { "id": "how_far_m", "step": "measures", "text": "How far each attempt gets", "correct": true, "why": "The lab can record it." },
+        { "id": "names", "step": "measures", "text": "Which named staff fell for it", "correct": false, "why": "That blames people." }
+      ]
+    }
+  }
+}

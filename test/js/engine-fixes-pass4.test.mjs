@@ -53,9 +53,15 @@ const helpersUrl = copy('utils/helpers.js', 'helpers.mjs', [
 const tutorialUrl = copy('systems/tutorial-manager.js', 'tutorial-manager.mjs');
 stub('constants-stub.mjs', 'export const TILE_SIZE = 32;');
 stub('pathfinding-stub.mjs', 'export class NPCPathfindingManager {}');
+copy('config/combat-config.js', 'combat-config.mjs');
+copy('systems/npc-chase-leash.js', 'npc-chase-leash.mjs');
+copy('systems/fight-styles.js', 'fight-styles.mjs');
 const behaviorUrl = copy('systems/npc-behavior.js', 'npc-behavior.mjs', [
     ["'../utils/constants.js'", "'./constants-stub.mjs'"],
     ["'./npc-pathfinding.js'", "'./pathfinding-stub.mjs'"],
+    ["'../config/combat-config.js'", "'./combat-config.mjs'"],
+    ["'./npc-chase-leash.js'", "'./npc-chase-leash.mjs'"],
+    ["'./fight-styles.js'", "'./fight-styles.mjs'"],
 ]);
 
 const store = new Map();
@@ -66,7 +72,8 @@ globalThis.localStorage = {
 };
 globalThis.window = { gameState: { globalVariables: {} } };
 globalThis.document = { getElementById: () => null };
-globalThis.navigator = { userAgent: 'node' };
+// Node 21+ has a read-only navigator getter, so define it rather than assign.
+Object.defineProperty(globalThis, 'navigator', { value: { userAgent: 'node' }, configurable: true, writable: true });
 window.innerWidth = 1400;
 
 const { default: NPCManager } = await import(npcManagerUrl);

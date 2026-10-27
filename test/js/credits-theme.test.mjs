@@ -8,7 +8,9 @@ import { dirname, join } from 'node:path';
 import { readFileSync } from 'node:fs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const T = await import(pathToFileURL(join(here, '../../public/break_escape/js/music/credits-theme.js')).href);
+// The game modules are ESM but public/ has no package.json "type": "module", so Node would load
+// a plain import as CommonJS and fail on `export`. Import the source as an ES module via a data URL.
+const T = await import('data:text/javascript;base64,' + readFileSync(join(here, '../../public/break_escape/js/music/credits-theme.js')).toString('base64'));
 
 test('theme selection: creditsTheme picks a theme, anything else gets safetynet', () => {
     assert.equal(T.resolveCreditsTheme({ creditsTheme: 'cyber' }), 'cyber');
@@ -74,4 +76,27 @@ test('cyber theme copes with no credits and no mission name', () => {
 test('schema enum lists exactly the themes in the table', () => {
     const schema = JSON.parse(readFileSync(join(here, '../../scripts/scenario-schema.json'), 'utf8'));
     assert.deepEqual([...schema.properties.creditsTheme.enum].sort(), Object.keys(T.CREDITS_THEMES).sort());
+});
+
+// m07 E7 (blind A M3): the safetynet overlay's filler named the wrong operation
+// and outcome for every mission. A scenario can now give its own (creditsOverlay).
+test('creditsOverlay: optional operation name and ticker, defaults untouched', () => {
+    assert.deepEqual(T.scenarioCreditsOverlay({}), { operation: null, ticker: null });
+    assert.deepEqual(T.scenarioCreditsOverlay(null), { operation: null, ticker: null });
+    assert.deepEqual(T.scenarioCreditsOverlay({ creditsOverlay: { operation: ' GAMBIT ', ticker: ['A', ' ', 'B'] } }),
+        { operation: 'GAMBIT', ticker: '██ A ██ B ██' });
+    assert.deepEqual(T.scenarioCreditsOverlay({ creditsOverlay: { ticker: 'plain text' } }),
+        { operation: null, ticker: 'plain text' });
+});
+
+// 2026-10-17: with no creditsOverlay.operation the OPERTN row takes the mission's
+// display name (capitals), so the rotation never names another operation.
+test('creditsOverlay: operation falls back to the mission display name', () => {
+    assert.deepEqual(T.scenarioCreditsOverlay({}, "The Architect's Gambit"),
+        { operation: "THE ARCHITECT'S GAMBIT", ticker: null });
+    assert.deepEqual(T.scenarioCreditsOverlay({ creditsOverlay: { operation: 'GAMBIT' } }, 'The Mole'),
+        { operation: 'GAMBIT', ticker: null }, 'scenario value wins');
+    assert.deepEqual(T.scenarioCreditsOverlay({}, '  '), { operation: null, ticker: null });
+    const bv = readFileSync(join(here, '../../public/break_escape/js/music/bond-visualiser.js'), 'utf8');
+    assert.match(bv, /scenarioCreditsOverlay\(window\.gameScenario, missionName\)/);
 });

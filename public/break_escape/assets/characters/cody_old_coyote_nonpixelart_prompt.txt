@@ -1,0 +1,10 @@
+Make portrait for Cody Old Coyote
+A young Apsáalooke (Crow) man of about 24 from Lodge Grass, Montana, with warm brown skin, a broad face with high cheekbones, and long straight black hair in a single neat braid over one shoulder, a night security guard at a records archive saving for a lineman's course. Dark brown eyes and an open, earnest, slightly wary look. He wears a navy-blue security guard shirt with epaulettes and plain pocket flaps, no patches, dark navy uniform trousers, a black duty belt with a key ring of brass keys and a small black torch, and a black digital watch; his hands hang at his sides, one near the key ring. Standing alone against an empty plain light-grey backdrop, no room or furniture behind him. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, one call (finale batch). Reframed with reframe_portrait.py --flip; unflipped original is cody_old_coyote_concept_1_raw.png. Approved by the user 2026-10-22; adopted from wip/cody_old_coyote_concept_1.png.

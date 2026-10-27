@@ -1,0 +1,71 @@
+{
+"steps": [
+{
+"note": "R33 (phase 4 dialogue C1, D5-5): the player hangs up on the offer to think, rings back, hears the terms again and takes the deal."
+},
+{
+"set": {
+"torres_identified": true
+}
+},
+{
+"talk": "recruiter",
+"picks": [
+"Say nothing",
+"You're talking about him like a receipt",
+"You're talking about ambulances",
+"fanatic",
+"I'm done talking"
+]
+},
+{
+"said": [
+"There are more like him in the pipeline right now.",
+"And it won't help the others",
+"Operation Schrödinger, if your file needs a name."
+]
+},
+{
+"talk": "recruiter",
+"picks": [
+"Ring the TalentStack number back",
+"Run the terms past me again",
+"Fine. The envelope goes to Reading. I never saw it."
+]
+},
+{
+"expect": {
+"recruiter_deal_decided": true,
+"recruiter_deal_accepted": true
+}
+},
+{
+"said": [
+"You forget the envelope. It goes to Reading"
+],
+"notSaid": [
+"the number forty-seven"
+]
+},
+{
+"set": {
+"final_choice": "arrest"
+}
+},
+{
+"talk": "recruiter",
+"picks": [
+"Ring the TalentStack number back",
+"I'll live with it"
+]
+},
+{
+"said": [
+"We're square, then. The file's forgotten on my end too."
+]
+},
+{
+"maxRun": 9
+}
+]
+}

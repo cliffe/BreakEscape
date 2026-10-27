@@ -1,7 +1,7 @@
 // NPCManager with event → knot auto-mapping and conversation history
 // OPTIMIZED: InkEngine caching, event listener cleanup, debug logging
 // default export NPCManager
-import { isInLineOfSight, drawLOSCone, clearLOSCone, getNPCFacingDirection } from './npc-los.js';
+import { isInLineOfSight, drawLOSCone, clearLOSCone, getNPCFacingDirection, losVisualSuppressed, losVisualOutOfRoom, losCatchSpent } from './npc-los.js';
 import { classifyPhoneLine, phoneStepLines } from '../minigames/phone-chat/phone-chat-speaker.js';
 
 /**
@@ -11,6 +11,7 @@ import { classifyPhoneLine, phoneStepLines } from '../minigames/phone-chat/phone
  *   "value >= 4"
  *   "data.prop === 'string'"
  *   "data.prop && data.prop.includes('substring')"
+ *   "data.result.maxAttemptsReached === true"   (dotted paths; a missing link is undefined)
  */
 function safeEvaluateCondition(conditionStr, eventData) {
   const value = eventData?.value;
@@ -30,15 +31,26 @@ function safeEvaluateCondition(conditionStr, eventData) {
     return t;
   }
 
-  // Helper: resolve "value", "data.prop", or "globalVars.prop" from eventData
+  // Helper: follow a dotted path ("result.maxAttemptsReached") into an object.
+  // Any missing link gives undefined rather than throwing.
+  function dig(root, path) {
+    let cur = root;
+    for (const key of path.split('.')) {
+      if (cur === null || cur === undefined) return undefined;
+      cur = cur[key];
+    }
+    return cur;
+  }
+
+  // Helper: resolve "value", "data.prop[.sub...]", or "globalVars.prop[.sub...]" from eventData
   function resolveLHS(token) {
     const t = token.trim();
     if (t === 'value') return value;
     if (t === 'name')  return name;
-    const propMatch = t.match(/^data\.(\w+)$/);
-    if (propMatch) return eventData?.[propMatch[1]];
-    const globalMatch = t.match(/^globalVars\.(\w+)$/);
-    if (globalMatch) return window.gameState?.globalVariables?.[globalMatch[1]];
+    const propMatch = t.match(/^data\.(\w+(?:\.\w+)*)$/);
+    if (propMatch) return dig(eventData, propMatch[1]);
+    const globalMatch = t.match(/^globalVars\.(\w+(?:\.\w+)*)$/);
+    if (globalMatch) return dig(window.gameState?.globalVariables, globalMatch[1]);
     return undefined;
   }
 
@@ -69,20 +81,20 @@ function safeEvaluateCondition(conditionStr, eventData) {
     }
 
     // "<lhs>.includes('substring')"
-    const includesMatch = expr.match(/^(value|data\.\w+|globalVars\.\w+)\.includes\(['"]([^'"]*)['"]\)$/);
+    const includesMatch = expr.match(/^(value|data(?:\.\w+)+|globalVars(?:\.\w+)+)\.includes\(['"]([^'"]*)['"]\)$/);
     if (includesMatch) {
       const lhs = resolveLHS(includesMatch[1]);
       return !!(lhs && typeof lhs === 'string' && lhs.includes(includesMatch[2]));
     }
 
     // "<lhs> OP literal"
-    const compareMatch = expr.match(/^(value|name|data\.\w+|globalVars\.\w+)\s*(===|!==|>=|<=|>|<)\s*(.+)$/);
+    const compareMatch = expr.match(/^(value|name|data(?:\.\w+)+|globalVars(?:\.\w+)+)\s*(===|!==|>=|<=|>|<)\s*(.+)$/);
     if (compareMatch) {
       return applyOp(resolveLHS(compareMatch[1]), compareMatch[2], parseLiteral(compareMatch[3]));
     }
 
     // Bare truthy check on a recognised operand
-    if (/^(value|name|data\.\w+|globalVars\.\w+)$/.test(expr)) {
+    if (/^(value|name|data(?:\.\w+)+|globalVars(?:\.\w+)+)$/.test(expr)) {
       return !!resolveLHS(expr);
     }
 
@@ -109,11 +121,55 @@ export default class NPCManager {
 
   // Limits on what a phone thread saves (exportPhoneState)
   static PHONE_HISTORY_MAX_MESSAGES = 150;
+  // A delayMs mapping whose delay is up while a minigame is open checks again this often
+  static DELAYED_MAPPING_RETRY_MS = 500;
+  // An event-mapping conversation (phone call, person-chat, video call) opens this long
+  // after its event, so whatever it closed has torn down; a scripted conversation queued
+  // behind another checks this often whether it can open (_queueScriptedConversation)
+  static SCRIPTED_CALL_START_MS = 500;
+  static SCRIPTED_CALL_RETRY_MS = 500;
   static PHONE_MESSAGE_MAX_CHARS = 4000;
   static PHONE_STORY_STATE_MAX_CHARS = 60000;
   // gameTime: elapsed game ms when the message arrived (window.gameClock), so its
   // shown time stays put across reopen and reload (messageClockText in game-clock.js)
   static PHONE_MESSAGE_FIELDS = ['type', 'text', 'timestamp', 'gameTime', 'read', 'isBark', 'timed', 'preloaded'];
+
+  /**
+   * Resolve a "Name:" speaker prefix to a character id (social build item 0.6,
+   * data contract 00 S2). Same scan as person-chat's normalizeSpeakerId: the first
+   * character, in registration order, whose id or displayName matches the name
+   * (case-insensitive) wins. One change, for social characters only: when the
+   * caller says the conversation's own NPC is a social character (preferOwn), and
+   * the first match is by displayName alone and the own NPC has the same
+   * displayName, the own NPC wins. Without preferOwn the old first-match scan runs
+   * unchanged, so m01 to m08 (no social.characters) resolve exactly as before.
+   * Whether to apply the tie rule to every conversation is an open question for the
+   * user (P0-R R-01). An id match is never overridden.
+   * @param {Object<string, {displayName?: string}>} characters - id -> character
+   * @param {string} speakerName - the prefix text, e.g. "Priya Nair"
+   * @param {string|null} ownNpcId - the NPC whose conversation this is
+   * @param {{preferOwn?: boolean}} [options] - preferOwn: the own NPC is a social
+   *   character (window.socialInfluence.isSocialCharacter), so it wins a name tie
+   * @returns {string|null} the character id, in its own casing, or null
+   */
+  static resolveSpeakerId(characters, speakerName, ownNpcId = null, { preferOwn = false } = {}) {
+    if (!characters || typeof speakerName !== 'string') return null;
+    const normalized = speakerName.toLowerCase().trim();
+    if (!normalized) return null;
+
+    for (const [id, character] of Object.entries(characters)) {
+      if (id.toLowerCase() === normalized) return id;
+      if (character?.displayName && character.displayName.toLowerCase() === normalized) {
+        const own = preferOwn && ownNpcId ? characters[ownNpcId] : null;
+        if (own && id !== ownNpcId && own.displayName &&
+            own.displayName.toLowerCase() === normalized) {
+          return ownNpcId;
+        }
+        return id;
+      }
+    }
+    return null;
+  }
 
   constructor(eventDispatcher, barkSystem = null) {
     this.eventDispatcher = eventDispatcher;
@@ -128,6 +184,10 @@ export default class NPCManager {
     this.timerInterval = null; // Timer for checking timed messages
     this._timedMessageSeq = 0; // ids for mapping texts (see exportTimedMessages)
     this._savedPhoneState = new Map(); // npcId -> saved phone thread, applied when the NPC registers
+    this._delayedMappings = new Map(); // npcId -> Map(eventKey -> timer id) for mappings with delayMs
+    this._scriptedCall = null;        // the scripted conversation starting or open: { npcId, minigame }
+    this._scriptedCallQueue = [];     // scripted conversations that arrived while one was starting or open
+    this._scriptedCallTimer = null;   // retry timer for the queue
     this._restoredTimedPending = new Map(); // id -> { triggerTime } for NPC-level texts not yet re-registered
     this._restoredTimedDelivered = new Set(); // ids of NPC-level texts delivered before a reload
     this._phoneStateSent = new Map(); // npcId -> JSON last confirmed saved (markPhoneStateSynced)
@@ -192,6 +252,8 @@ export default class NPCManager {
       npcType: 'phone',  // Default to phone-based NPC
       itemsHeld: []  // Initialize empty inventory for NPC item giving
     }, realOpts);
+    // The knot the phone opens on outside a call, kept before any jump moves currentKnot: a voiced call stops voicing there (F20)
+    if (entry.homeKnot === undefined) entry.homeKnot = entry.currentKnot || 'start';
     
     // Only set default phoneId for phone NPCs (not person NPCs)
     if (entry.npcType === 'phone' && !entry.phoneId) {
@@ -279,7 +341,9 @@ export default class NPCManager {
         background: entry.timedConversation.background, // Optional background image
         waitForEvent: entry.timedConversation.waitForEvent || null,
         skipIfGlobal: entry.timedConversation.skipIfGlobal || null,
-        setGlobalOnStart: entry.timedConversation.setGlobalOnStart || null
+        setGlobalOnStart: entry.timedConversation.setGlobalOnStart || null,
+        disableClose: entry.timedConversation.disableClose === true,
+        voiced: entry.timedConversation.voiced === true
       });
       console.log(`[NPCManager] Scheduled timed conversation for ${realId} to knot: ${entry.timedConversation.targetKnot}`);
     }
@@ -297,7 +361,7 @@ export default class NPCManager {
    * Returns the NPC if one should handle lockpick_used_in_view with person-chat
    * Otherwise returns null
    */
-  shouldInterruptLockpickingWithPersonChat(roomIdOrIds, playerPosition = null) {
+  shouldInterruptLockpickingWithPersonChat(roomIdOrIds, playerPosition = null, lockable = null) {
     // One room id or several (lockpick-catch.js passes the player's room and the lock's room)
     const roomIds = (Array.isArray(roomIdOrIds) ? roomIdOrIds : [roomIdOrIds]).filter(Boolean);
     if (roomIds.length === 0) return null;
@@ -334,8 +398,9 @@ export default class NPCManager {
 
         // Only interrupt if one of those mappings would actually fire now (E4).
         // Otherwise the pick was swallowed: no minigame and no conversation.
-        // The payload matches what unlock-system emits, minus the lockable.
-        const gateEventData = { npcId: npc.id, roomId: npc.roomId, timestamp: Date.now() };
+        // The payload matches what lockpick-catch emits.
+        // `lockable` lets a mapping condition test which lock is being picked (data.lockable.scenarioData.id).
+        const gateEventData = { npcId: npc.id, roomId: npc.roomId, lockable, timestamp: Date.now() };
         const firing = lockpickMappings.find(({ mapping, index }) =>
           this._mappingWouldFire(npc.id, 'lockpick_used_in_view',
             this._buildMappingConfig(mapping, index), gateEventData).fire);
@@ -521,6 +586,10 @@ export default class NPCManager {
       console.log(`  📌 Registering listener for event: ${eventPattern} → ${config.knot}`);
 
       const listener = (eventData) => {
+        if (config.delayMs > 0) {
+          this._scheduleDelayedMapping(npcId, eventPattern, config, eventData);
+          return;
+        }
         this._handleEventMapping(npcId, eventPattern, config, eventData);
       };
 
@@ -537,8 +606,152 @@ export default class NPCManager {
     console.log(`✅ Registered ${mappingsArray.length} event mappings for ${npcId}`);
   }
 
+  /**
+   * A mapping with `delayMs` fires that long after its event, not at once (m08 E15:
+   * let the player look round a room before the scene opens). The checks run twice:
+   * now, so a handler that couldn't fire schedules nothing, and again when the delay
+   * is up (_handleEventMapping), so a condition that has stopped holding (a
+   * `globalVars.x` term) cancels it. One delay per handler is pending at a time; a
+   * repeat of the event meanwhile is ignored. When the delay is up while a minigame
+   * or conversation is open, it waits for that to close rather than cutting it off.
+   */
+  _scheduleDelayedMapping(npcId, eventPattern, config, eventData) {
+    const check = this._mappingWouldFire(npcId, eventPattern, config, eventData);
+    if (!check.fire) {
+      console.log(`⏭️ Not scheduling ${eventPattern} for ${npcId}: ${check.reason}`);
+      return;
+    }
+    if (!this._delayedMappings.has(npcId)) this._delayedMappings.set(npcId, new Map());
+    const pending = this._delayedMappings.get(npcId);
+    if (pending.has(check.eventKey)) return;
+
+    const fire = () => {
+      if (window.MinigameFramework?.currentMinigame) {
+        pending.set(check.eventKey, setTimeout(fire, NPCManager.DELAYED_MAPPING_RETRY_MS));
+        return;
+      }
+      pending.delete(check.eventKey);
+      this._handleEventMapping(npcId, eventPattern, config, eventData);
+    };
+    pending.set(check.eventKey, setTimeout(fire, config.delayMs));
+    console.log(`⏳ ${eventPattern} for ${npcId} fires in ${config.delayMs}ms (condition re-checked then)`);
+  }
+
+  /**
+   * Open a scripted conversation: an event mapping's phone call, person-chat or video
+   * call, or a timedConversation. With no other scripted conversation starting or open
+   * it goes as it always has. An event mapping (startDelayMs SCRIPTED_CALL_START_MS)
+   * closes whatever minigame is open and opens that long after; a timedConversation
+   * (startDelayMs 0) opens at once, and startMinigame closes what is open.
+   *
+   * A second one arriving in that window, or while the first is open, used to open
+   * over it, and the first was gone for good (its onceOnly trigger persisted on the
+   * close, its deferred globals already cleared). m10 R3 M-1: HaX's gallery call and
+   * Victoria's, released 120-160 ms apart when the Mission Brief notes closed; F25: a
+   * phone call and a person-chat, or a person-chat and a timedConversation, due
+   * together. Now it waits in a queue and opens once the first, and any minigame
+   * opened from it, has closed.
+   * @param {{ npcId: string, label: string, sceneType: string, params: Function,
+   *   startDelayMs?: number, beforeOpen?: Function, onStart?: Function, opening?: boolean }} conv
+   *   params() builds the minigame params when it opens. beforeOpen() runs just before
+   *   (false: drop it). onStart(minigame) runs after. opening: a timedConversation,
+   *   which holds the mission brief popup while queued (hasPendingOpeningConversation).
+   */
+  _queueScriptedConversation(conv) {
+    const framework = window.MinigameFramework;
+    // A task or objective toast raised a moment ago (the room-entry task whose event
+    // started this) was showing when the conversation opened, got pulled back and showed
+    // again on close. Pull it back now, before it is visible, and hold toasts until the
+    // conversation is up (F24).
+    window.holdRecentNotifications?.();
+    window.expectPanelWithin?.((conv.startDelayMs || 0) + 1000);
+    if (!this._scriptedCallBusy() && this._scriptedCallQueue.length === 0) {
+      this._scriptedCall = { npcId: conv.npcId, minigame: null };
+      if (!conv.startDelayMs) {
+        this._openScriptedConversation(conv);
+        return;
+      }
+      if (framework.currentMinigame) {
+        framework.endMinigame(false, null);
+      }
+      setTimeout(() => this._openScriptedConversation(conv), conv.startDelayMs);
+      return;
+    }
+    console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) waits: ${this._scriptedCall?.npcId || 'another'}'s conversation is starting or open`);
+    this._scriptedCallQueue.push(conv);
+    this._pumpScriptedCallQueue();
+  }
+
+  /** An event-mapping phone call (see _queueScriptedConversation). */
+  _queueScriptedPhoneCall(call) {
+    this._queueScriptedConversation({
+      sceneType: 'phone-chat',
+      label: call.eventPattern,
+      startDelayMs: NPCManager.SCRIPTED_CALL_START_MS,
+      ...call
+    });
+  }
+
+  /** True while a scripted conversation is starting, or is the open minigame. */
+  _scriptedCallBusy() {
+    const current = this._scriptedCall;
+    if (!current) return false;
+    if (!current.minigame) return true;   // inside the start delay
+    const open = window.MinigameFramework?.currentMinigame;
+    if (open === current.minigame && !open._ending) return true;
+    this._scriptedCall = null;
+    return false;
+  }
+
+  _openScriptedConversation(conv) {
+    let started = null;
+    if (conv.beforeOpen && conv.beforeOpen() === false) {
+      this._scriptedCall = null;
+      if (this._scriptedCallQueue.length) this._pumpScriptedCallQueue();
+      return;
+    }
+    try {
+      started = window.MinigameFramework.startMinigame(conv.sceneType, null, conv.params());
+    } catch (error) {
+      console.error(`❌ ${conv.sceneType} for ${conv.npcId} failed to open:`, error);
+    }
+    this._scriptedCall = started ? { npcId: conv.npcId, minigame: started } : null;
+    conv.onStart?.(started);
+    if (this._scriptedCallQueue.length) this._pumpScriptedCallQueue();
+  }
+
+  // A queued conversation opens when none is starting or open, no minigame is open
+  // (the player may have gone from the call to the notepad and back) and the player is
+  // not knocked out (startMinigame would refuse it, and it would be lost)
+  _pumpScriptedCallQueue() {
+    if (this._scriptedCallTimer) return;
+    const tick = () => {
+      this._scriptedCallTimer = null;
+      if (!this._scriptedCallQueue.length) return;
+      const framework = window.MinigameFramework;
+      if (!framework || this._scriptedCallBusy() || framework.currentMinigame ||
+          window.playerIsKnockedOut?.()) {
+        this._scriptedCallTimer = setTimeout(tick, NPCManager.SCRIPTED_CALL_RETRY_MS);
+        return;
+      }
+      const conv = this._scriptedCallQueue.shift();
+      this._scriptedCall = { npcId: conv.npcId, minigame: null };
+      this._openScriptedConversation(conv);
+    };
+    this._scriptedCallTimer = setTimeout(tick, NPCManager.SCRIPTED_CALL_RETRY_MS);
+  }
+
+  /** Cancel an NPC's pending delayMs mappings. */
+  _cancelDelayedMappings(npcId) {
+    const pending = this._delayedMappings.get(npcId);
+    if (!pending) return;
+    for (const timer of pending.values()) clearTimeout(timer);
+    this._delayedMappings.delete(npcId);
+  }
+
   /** Remove the event-mapping listeners registered for an NPC (see registerNPC). */
   _removeEventMappingListeners(npcId) {
+    this._cancelDelayedMappings(npcId);
     const listeners = this.eventListeners.get(npcId);
     if (!listeners) return;
     if (this.eventDispatcher) {
@@ -561,6 +774,7 @@ export default class NPCManager {
         once: mapping.onceOnly || mapping.once,
         cooldown: mapping.cooldown,
         condition: mapping.condition,
+        delayMs: Number(mapping.delayMs) > 0 ? Number(mapping.delayMs) : 0,  // fire this long after the event, re-checking then
         maxTriggers: mapping.maxTriggers,  // Add max trigger limit
         conversationMode: mapping.conversationMode,  // Add conversation mode (e.g., 'person-chat')
         changeStoryPath: mapping.changeStoryPath,  // Change the NPC's story file
@@ -570,9 +784,12 @@ export default class NPCManager {
         skipTask: mapping.skipTask,          // taskId or [taskId] — mark tasks skipped (can no longer be done)
         unlockTask: mapping.unlockTask,      // taskId or [taskId] — unlock tasks directly
         unlockAim: mapping.unlockAim,        // aimId or [aimId] — unlock aims directly
+        unlockDoor: mapping.unlockDoor,      // roomId or [roomId] — unlock doors on the server (persists)
         emitEvent:     mapping.emitEvent     || null,   // event name to emit when mapping fires
         emitEventData: mapping.emitEventData || {},     // optional payload for that event
         disableClose:  mapping.disableClose  || false,  // hide × and block Esc for this conversation
+        resume:        mapping.resume === true,         // phone-chat: reopen the saved thread, no knot jump
+        voiced:        mapping.voiced === true,         // phone-chat: speak the NPC's lines through TTS (F17)
         background:    mapping.background    || null,    // optional background image path
         // NEW ACTION FIELDS [Phase 2-4]
         setVisible:         mapping.setVisible          ?? undefined,
@@ -766,6 +983,19 @@ export default class NPCManager {
       });
     }
 
+    // Unlock doors through the server's NPC unlock path (F19), so the unlock is
+    // saved and survives a reload; the bridge updates door sprites and emits
+    // door_unlocked_by_npc, as an ink #unlock_door does. One request at a time.
+    if (config.unlockDoor && window.NPCGameBridge?.unlockDoor) {
+      const rooms = Array.isArray(config.unlockDoor) ? config.unlockDoor : [config.unlockDoor];
+      (async () => {
+        for (const roomId of rooms) {
+          const result = await window.NPCGameBridge.unlockDoor(roomId, npcId);
+          console.log(`🔓 Event unlockDoor: ${roomId}`, result?.success ? 'ok' : result?.error);
+        }
+      })();
+    }
+
     // Emit a custom event if specified (enables event chaining from NPC mappings)
     if (config.emitEvent) {
       const payload = config.emitEventData || {};
@@ -933,15 +1163,10 @@ export default class NPCManager {
       
       // Not in an active conversation OR jump failed - start a new person-chat minigame
       console.log(`👤 Starting new person-chat conversation for NPC ${npcId}`);
-      
-      // Close any currently running minigame (like lockpicking) first
-      if (window.MinigameFramework && window.MinigameFramework.currentMinigame) {
-        console.log(`🛑 Closing currently running minigame before starting person-chat`);
-        window.MinigameFramework.endMinigame(false, null);
-        console.log(`✅ Closed current minigame`);
-      }
-      
-      // Start the person-chat minigame after a brief delay for cleanup.
+
+      // Start the person-chat minigame after a brief delay for cleanup. On its own it
+      // closes any running minigame (like lockpicking) first; behind another scripted
+      // conversation it waits its turn (_queueScriptedConversation).
       if (window.MinigameFramework) {
         // Capture NPC's home position now so it can be restored after the conversation.
         // Only needed when navigateToPlayer is set (NPC-initiated event cutscenes).
@@ -951,63 +1176,69 @@ export default class NPCManager {
           capturedHome = behavior?.homePosition ? { ...behavior.homePosition } : null;
         }
 
+        const knotToUse = config.targetKnot || config.knot || npc.currentKnot;
         console.log(`⏳ Waiting 500ms before starting person-chat cutscene for ${npcId}`);
-        setTimeout(() => {
-          console.log(`✅ Starting person-chat minigame for ${npcId}`);
-          const knotToUse = config.targetKnot || config.knot || npc.currentKnot;
-
-          // Store home on NPC object so the #return_home Ink tag can access it.
-          if (capturedHome) {
-            npc._capturedHome = capturedHome;
-          }
-
-          window.MinigameFramework.startMinigame('person-chat', null, {
+        this._queueScriptedConversation({
+          npcId: npc.id,
+          label: eventPattern,
+          sceneType: 'person-chat',
+          startDelayMs: NPCManager.SCRIPTED_CALL_START_MS,
+          beforeOpen: () => {
+            console.log(`✅ Starting person-chat minigame for ${npcId}`);
+            // Store home on NPC object so the #return_home Ink tag can access it.
+            if (capturedHome) {
+              npc._capturedHome = capturedHome;
+            }
+          },
+          params: () => ({
             npcId: npc.id,
             startKnot: knotToUse,
             background: config.background || null,
             scenario: window.gameScenario,
             disableClose: config.disableClose || false
-          });
-          persistOnClose();
-          console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → person-chat conversation`);
+          }),
+          onStart: () => {
+            persistOnClose();
+            console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → person-chat conversation`);
 
-          // When the conversation closes, if the NPC is far from the player (they couldn't
-          // have plausibly walked over in time), teleport them adjacent to the player first,
-          // then walk them home — giving the visual impression of them leaving after the chat.
-          // Skip this if #return_home already fired mid-conversation (npc._capturedHome cleared).
-          if (config.navigateToPlayer && capturedHome && window.npcBehaviorManager) {
-            const onConvClosed = () => {
-              window.eventDispatcher?.off(`conversation_closed:${npcId}`, onConvClosed);
-              delete npc._capturedHome;
+            // When the conversation closes, if the NPC is far from the player (they couldn't
+            // have plausibly walked over in time), teleport them adjacent to the player first,
+            // then walk them home — giving the visual impression of them leaving after the chat.
+            // Skip this if #return_home already fired mid-conversation (npc._capturedHome cleared).
+            if (config.navigateToPlayer && capturedHome && window.npcBehaviorManager) {
+              const onConvClosed = () => {
+                window.eventDispatcher?.off(`conversation_closed:${npcId}`, onConvClosed);
+                delete npc._capturedHome;
 
-              const behavior = window.npcBehaviorManager.getBehavior(npcId);
-              if (!behavior?.sprite) return;
+                const behavior = window.npcBehaviorManager.getBehavior(npcId);
+                if (!behavior?.sprite) return;
 
-              const player = window.player;
-              const playerX = player?.body?.center?.x ?? player?.x;
-              const playerY = player?.body?.center?.y ?? player?.y;
-              if (playerX === undefined) return;
+                const player = window.player;
+                const playerX = player?.body?.center?.x ?? player?.x;
+                const playerY = player?.body?.center?.y ?? player?.y;
+                if (playerX === undefined) return;
 
-              const npcX = behavior.sprite.x;
-              const npcY = behavior.sprite.y;
-              const dist = Math.sqrt((npcX - playerX) ** 2 + (npcY - playerY) ** 2);
+                const npcX = behavior.sprite.x;
+                const npcY = behavior.sprite.y;
+                const dist = Math.sqrt((npcX - playerX) ** 2 + (npcY - playerY) ** 2);
 
-              // If NPC is more than ~6 tiles away, teleport adjacent to player first
-              // so it looks like they came over to talk before walking home.
-              if (dist > 192) {
-                console.log(`🪄 ${npcId} too far (${Math.round(dist)}px) — teleporting near player before walk-home`);
-                behavior.sprite.setPosition(playerX + 48, playerY);
-                if (behavior.sprite.body) behavior.sprite.body.reset(playerX + 48, playerY);
-              }
+                // If NPC is more than ~6 tiles away, teleport adjacent to player first
+                // so it looks like they came over to talk before walking home.
+                if (dist > 192) {
+                  console.log(`🪄 ${npcId} too far (${Math.round(dist)}px) — teleporting near player before walk-home`);
+                  behavior.sprite.setPosition(playerX + 48, playerY);
+                  if (behavior.sprite.body) behavior.sprite.body.reset(playerX + 48, playerY);
+                }
 
-              // Walk home.
-              setTimeout(() => {
-                window.npcBehaviorManager.goToAndStay(npcId, capturedHome.x, capturedHome.y, 80);
-              }, 300);
-            };
-            window.eventDispatcher?.on(`conversation_closed:${npcId}`, onConvClosed);
+                // Walk home.
+                setTimeout(() => {
+                  window.npcBehaviorManager.goToAndStay(npcId, capturedHome.x, capturedHome.y, 80);
+                }, 300);
+              };
+              window.eventDispatcher?.on(`conversation_closed:${npcId}`, onConvClosed);
+            }
           }
-        }, 500);
+        });
 
         return;  // Exit early - person-chat will start after delay
       } else {
@@ -1021,23 +1252,26 @@ export default class NPCManager {
       if (window.MinigameFramework) {
         const knotToUse = config.targetKnot || config.knot || npc.currentKnot;
 
-        // Close any currently running minigame first
-        if (window.MinigameFramework.currentMinigame) {
-          window.MinigameFramework.endMinigame(false, null);
-        }
-
-        setTimeout(() => {
-          window.MinigameFramework.startMinigame('person-chat', null, {
+        // Closes whatever is open and opens 500 ms later, or waits behind another
+        // scripted conversation (_queueScriptedConversation)
+        this._queueScriptedConversation({
+          npcId: npc.id,
+          label: eventPattern,
+          sceneType: 'person-chat',
+          startDelayMs: NPCManager.SCRIPTED_CALL_START_MS,
+          params: () => ({
             npcId: npc.id,
             startKnot: knotToUse,
             background: config.background || null,
             scenario: window.gameScenario,
             disableClose: config.disableClose || false,
             videoCall: true
-          });
-          persistOnClose();
-          console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → person-chat VIDEO CALL`);
-        }, 500);
+          }),
+          onStart: () => {
+            persistOnClose();
+            console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → person-chat VIDEO CALL`);
+          }
+        });
 
         return;
       } else {
@@ -1049,23 +1283,28 @@ export default class NPCManager {
       if (window.MinigameFramework) {
         const knotToUse = config.targetKnot || config.knot || npc.currentKnot;
 
-        // Close any currently running minigame first
-        if (window.MinigameFramework.currentMinigame) {
-          window.MinigameFramework.endMinigame(false, null);
-        }
-
-        setTimeout(() => {
-          window.MinigameFramework.startMinigame('phone-chat', null, {
+        // The params are built when the call opens: a call queued behind another reads
+        // the NPC's saved story (resume) as it is by then
+        this._queueScriptedPhoneCall({
+          npcId: npc.id,
+          eventPattern,
+          params: () => ({
             npcId: npc.id,
             phoneId: npc.phoneId || 'player_phone',
-            startKnot: knotToUse,
+            // resume: a re-ring of an unfinished call. No knot, so phone-chat restores the
+            // saved story and shows the choice the player left unanswered. With no saved
+            // story yet it falls back to the knot, as a first ring.
+            startKnot: (config.resume && npc.storyState) ? null : knotToUse,
             title: npc.displayName || 'Phone',
             theme: npc.phoneTheme,
-            disableClose: config.disableClose || false
-          });
-          persistOnClose();
-          console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → phone-chat conversation`);
-        }, 500);
+            disableClose: config.disableClose || false,
+            voiced: config.voiced === true
+          }),
+          onStart: () => {
+            persistOnClose();
+            console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → phone-chat conversation`);
+          }
+        });
 
         return;
       } else {
@@ -1404,7 +1643,7 @@ export default class NPCManager {
   //     }
   //   }
   scheduleTimedConversation(opts) {
-    const { npcId, targetKnot, triggerTime, delay, background, waitForEvent, skipIfGlobal, setGlobalOnStart } = opts;
+    const { npcId, targetKnot, triggerTime, delay, background, waitForEvent, skipIfGlobal, setGlobalOnStart, disableClose, voiced } = opts;
 
     if (!npcId || !targetKnot) {
       console.error('[NPCManager] scheduleTimedConversation requires npcId and targetKnot');
@@ -1423,7 +1662,9 @@ export default class NPCManager {
       waitForEvent: waitForEvent || null,
       triggerTime: waitForEvent ? null : actualDelay, // Only set triggerTime if not waiting for event
       skipIfGlobal: skipIfGlobal || null,     // Skip if this global is already truthy
-      setGlobalOnStart: setGlobalOnStart || null // Set this global to true when conversation fires
+      setGlobalOnStart: setGlobalOnStart || null, // Set this global to true when conversation fires
+      disableClose: disableClose === true, // no ×, no Esc (documented; was dropped before 2026-10-21)
+      voiced: voiced === true // phone-chat: speak the NPC's lines through TTS (F17)
     };
 
     this.timedConversations.push(conversation);
@@ -1477,6 +1718,8 @@ export default class NPCManager {
    */
   hasPendingOpeningConversation(withinMs = 10000) {
     const globals = window.gameState?.globalVariables || {};
+    // A timedConversation delivered but queued behind another scene is still to come
+    if (this._scriptedCallQueue.some(c => c.opening)) return true;
     return this.timedConversations.some(c =>
       !c.delivered &&
       (c.delay || 0) <= withinMs &&
@@ -1512,6 +1755,8 @@ export default class NPCManager {
   _checkTimedMessages() {
     const now = Date.now();
     const elapsed = now - this.gameStartTime;
+
+    window.mailScheduler?.tick?.(now); // mail replies and timed mail (mail-scheduler.js)
 
     for (const message of this.timedMessages) {
       // Skip messages that haven't been triggered yet (waiting for event)
@@ -1610,45 +1855,60 @@ export default class NPCManager {
       }
     }
 
-    // Mark the guard global immediately so that reloads during the cutscene also skip it.
-    if (conversation.setGlobalOnStart && window.gameState?.globalVariables) {
-      const startVarName = conversation.setGlobalOnStart;
-      const startOldValue = window.gameState.globalVariables[startVarName];
-      window.gameState.globalVariables[startVarName] = true;
-      window.eventDispatcher?.emit(`global_variable_changed:${startVarName}`, {
-        name: startVarName, value: true, oldValue: startOldValue
-      });
-      console.log(`[NPCManager] Set global '${conversation.setGlobalOnStart}' = true for ${conversation.npcId}`);
+    if (!window.MinigameFramework || typeof window.MinigameFramework.startMinigame !== 'function') {
+      console.warn(`[NPCManager] MinigameFramework not available to start conversation for timed conversation`);
+      return;
     }
-    
-    // Update NPC's current knot to the target knot
-    npc.currentKnot = conversation.targetKnot;
-    
-    // Check if MinigameFramework is available to start the appropriate minigame
-    if (window.MinigameFramework && typeof window.MinigameFramework.startMinigame === 'function') {
-      // Determine which minigame type to start based on NPC type
-      if (npc.npcType === 'phone') {
-        console.log(`📱 Starting timed phone conversation for ${conversation.npcId} at knot: ${conversation.targetKnot}`);
-        
-        window.MinigameFramework.startMinigame('phone-chat', null, {
+
+    // Opens at once, as it always has, unless another scripted conversation is
+    // starting or open: then it waits its turn (_queueScriptedConversation)
+    const isPhone = npc.npcType === 'phone';
+    this._queueScriptedConversation({
+      npcId: conversation.npcId,
+      label: 'timedConversation',
+      sceneType: isPhone ? 'phone-chat' : 'person-chat',
+      startDelayMs: 0,
+      opening: true,
+      beforeOpen: () => {
+        // Queued behind another scene: its guard may have been set meanwhile
+        if (conversation.skipIfGlobal && window.gameState?.globalVariables?.[conversation.skipIfGlobal]) {
+          console.log(`[NPCManager] Skipping timed conversation for ${conversation.npcId}: global '${conversation.skipIfGlobal}' is already set`);
+          return false;
+        }
+        // Mark the guard global as it opens so that reloads during the cutscene also
+        // skip it (not while it is queued: a reload then must still play it)
+        if (conversation.setGlobalOnStart && window.gameState?.globalVariables) {
+          const startVarName = conversation.setGlobalOnStart;
+          const startOldValue = window.gameState.globalVariables[startVarName];
+          window.gameState.globalVariables[startVarName] = true;
+          window.eventDispatcher?.emit(`global_variable_changed:${startVarName}`, {
+            name: startVarName, value: true, oldValue: startOldValue
+          });
+          console.log(`[NPCManager] Set global '${conversation.setGlobalOnStart}' = true for ${conversation.npcId}`);
+        }
+        // Update NPC's current knot to the target knot
+        npc.currentKnot = conversation.targetKnot;
+        console.log(isPhone
+          ? `📱 Starting timed phone conversation for ${conversation.npcId} at knot: ${conversation.targetKnot}`
+          : `🎭 Starting timed person conversation for ${conversation.npcId} at knot: ${conversation.targetKnot}`);
+      },
+      params: () => isPhone
+        ? {
           npcId: conversation.npcId,
           phoneId: npc.phoneId || 'player_phone',
           title: 'Phone',
-          theme: npc.phoneTheme
-        });
-      } else {
-        console.log(`🎭 Starting timed person conversation for ${conversation.npcId} at knot: ${conversation.targetKnot}`);
-        
-        window.MinigameFramework.startMinigame('person-chat', null, {
+          theme: npc.phoneTheme,
+          disableClose: conversation.disableClose === true,
+          voiced: conversation.voiced === true
+        }
+        : {
           npcId: conversation.npcId,
           title: npc.displayName || conversation.npcId,
-          background: conversation.background // Optional background image path
-        });
-      }
-    } else {
-      console.warn(`[NPCManager] MinigameFramework not available to start conversation for timed conversation`);
-    }
-    
+          background: conversation.background, // Optional background image path
+          disableClose: conversation.disableClose === true
+        }
+    });
+
     console.log(`[NPCManager] Delivered timed conversation from ${conversation.npcId} to knot: ${conversation.targetKnot}`);
   }
 
@@ -2096,6 +2356,8 @@ export default class NPCManager {
   _updateLOSVisualizations(scene) {
     // console.log(`🎯 Updating LOS visualizations for ${this.npcs.size} NPCs`);
     let visualizedCount = 0;
+    // The player's room, held over a doorway crossing (currentPlayerRoom is null there)
+    if (window.currentPlayerRoom) this._losPlayerRoom = window.currentPlayerRoom;
     
     for (const npc of this.npcs.values()) {
       // Only visualize person-type NPCs with LOS config
@@ -2104,8 +2366,17 @@ export default class NPCManager {
         continue;
       }
       
-      if (!npc.los || !npc.los.enabled || (!this.losVisualizeAll && npc.los.visualize !== true)) {
-        // console.log(`   Skip "${npc.id}" - no LOS config, disabled, or not flagged for visualization`);
+      // Hidden and knocked-out NPCs draw no cone or sight circle (7.1j)
+      const suppressed = losVisualSuppressed(npc, window.npcHostileSystem?.isNPCKO?.(npc.id) === true)
+        // and NPCs in another room, unless hostile (m06 R5)
+        || losVisualOutOfRoom(npc, this._losPlayerRoom, window.npcHostileSystem?.isNPCHostile?.(npc.id) === true);
+      // and NPCs whose only lockpick catch can't fire any more (m08 E9); not in debug show-all
+      const catchSpent = () => !this.losVisualizeAll && losCatchSpent(npc, (mapping, index) =>
+        this._mappingWouldFire(npc.id, 'lockpick_used_in_view', this._buildMappingConfig(mapping, index),
+          { npcId: npc.id, roomId: npc.roomId, timestamp: Date.now() }),
+        window.npcHostileSystem?.isNPCHostile?.(npc.id) === true);
+      if (suppressed || !npc.los || !npc.los.enabled || (!this.losVisualizeAll && npc.los.visualize !== true) || catchSpent()) {
+        // console.log(`   Skip "${npc.id}" - hidden or KO, no LOS config, disabled, or not flagged for visualization`);
         if (this.losVisualizations.has(npc.id)) {
           clearLOSCone(this.losVisualizations.get(npc.id));
           this.losVisualizations.delete(npc.id);
@@ -2152,6 +2423,11 @@ export default class NPCManager {
   destroy() {
     this._clearLOSVisualizations();
     this.stopTimedMessages();
+    for (const npcId of [...this._delayedMappings.keys()]) this._cancelDelayedMappings(npcId);
+    clearTimeout(this._scriptedCallTimer);
+    this._scriptedCallTimer = null;
+    this._scriptedCallQueue = [];
+    this._scriptedCall = null;
     
     // Clear all event listeners
     for (const listeners of this.eventListeners.values()) {

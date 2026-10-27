@@ -9,6 +9,10 @@
  */
 import { displayDashes } from '../utils/display-dashes.js';
 
+// Pixel-art arrow (assets/icons/chevron-down.png), drawn as a mask in the text
+// colour; a toggle with .is-collapsed turns it to point right
+const CHEVRON = '<i class="obj-chevron" aria-hidden="true"></i>';
+
 export class ObjectivesPanel {
   constructor(objectivesManager) {
     this.manager = objectivesManager;
@@ -36,9 +40,9 @@ export class ObjectivesPanel {
     const header = document.createElement('div');
     header.className = 'objectives-header';
     header.innerHTML = `
-      <span class="objectives-title">📋 Objectives</span>
+      <span class="objectives-title"><i class="objectives-clipboard" aria-hidden="true"></i>Objectives</span>
       <div class="objectives-controls">
-        <button class="objectives-toggle" aria-label="Toggle objectives" title="Collapse/Expand">▼</button>
+        <button class="objectives-toggle" aria-label="Toggle objectives" title="Collapse/Expand">${CHEVRON}</button>
       </div>
     `;
     
@@ -67,7 +71,7 @@ export class ObjectivesPanel {
       this.aimCollapsed[aimId] = !this.aimCollapsed[aimId];
       aimEl.classList.toggle('aim-collapsed', this.aimCollapsed[aimId]);
       const toggle = aimHeader.querySelector('.aim-toggle');
-      if (toggle) toggle.textContent = this.aimCollapsed[aimId] ? '▶' : '▼';
+      if (toggle) toggle.classList.toggle('is-collapsed', this.aimCollapsed[aimId]);
     });
 
     this.container.appendChild(header);
@@ -79,10 +83,34 @@ export class ObjectivesPanel {
     this.isCollapsed = !this.isCollapsed;
     this.container.classList.toggle('collapsed', this.isCollapsed);
     const toggle = this.container.querySelector('.objectives-toggle');
-    toggle.textContent = this.isCollapsed ? '▶' : '▼';
+    toggle.classList.toggle('is-collapsed', this.isCollapsed);
     if (window.getTutorialManager) window.getTutorialManager().notifyObjectivesToggled();
   }
   
+  /**
+   * Required tasks get a '*' only in an aim that has at least one visible
+   * optional task, so aims (and missions) without optional tasks look as they
+   * always did. Only open tasks carry it: a completed or skipped task is
+   * settled. Purely presentational; task.title is never changed.
+   */
+  static requiredMarkerTaskIds(aim) {
+    const visible = (aim.tasks || []).filter(t => t.status !== 'locked');
+    if (!visible.some(t => t.optional === true)) return new Set();
+    return new Set(visible
+      .filter(t => t.optional !== true && t.status !== 'completed' && t.status !== 'skipped')
+      .map(t => t.taskId));
+  }
+
+  /**
+   * The "* required" key sits in the header of each aim that shows a '*', not
+   * in the panel header: a panel-wide key read as if unmarked tasks were
+   * optional in every aim, including aims with no optional tasks (m08 E1).
+   */
+  static requiredKeyHtml() {
+    return '<span class="aim-required-key" title="In this aim, tasks marked * are required; unmarked tasks are optional.">'
+      + '<span class="task-required-mark" aria-hidden="true">*</span> required</span>';
+  }
+
   render(aims) {
     if (!aims || aims.length === 0) {
       this.content.innerHTML = '<div class="no-objectives">No active objectives</div>';
@@ -110,25 +138,34 @@ export class ObjectivesPanel {
           if (!aimEl) return;
           aimEl.classList.add('aim-collapsed');
           const toggle = aimEl.querySelector('.aim-toggle');
-          if (toggle) toggle.textContent = '▶';
+          if (toggle) toggle.classList.add('is-collapsed');
         }, 800);
       }
       this.aimStatus[aim.aimId] = aim.status;
       const collapsed = this.aimCollapsed[aim.aimId];
-      const toggleIcon = collapsed ? '▶' : '▼';
+      const markedIds = ObjectivesPanel.requiredMarkerTaskIds(aim);
+      const requiredKey = markedIds.size > 0 && !isCompleted ? ObjectivesPanel.requiredKeyHtml() : '';
 
       html += `
         <div class="objective-aim ${aimClass}${collapsed ? ' aim-collapsed' : ''}" data-aim-id="${aim.aimId}">
           <div class="aim-header">
             <span class="aim-icon">${aimIcon}</span>
-            <span class="aim-title">${this.escapeHtml(aim.title)}</span>
-            <span class="aim-toggle">${toggleIcon}</span>
+            <span class="aim-title">${this.escapeHtml(aim.title)}</span>${requiredKey}
+            <span class="aim-toggle${collapsed ? ' is-collapsed' : ''}">${CHEVRON}</span>
           </div>
           <div class="aim-tasks">
       `;
       
+      // An aim whose one visible task carries the aim's own title would print the same line twice
+      // (P3 F11: "Check the work phone" under "Check the work phone"). The aim line already says it
+      // and ticks when the task does, so that task row is left out.
+      const norm = (t) => String(t || '').trim().toLowerCase();
+      const visible = aim.tasks.filter(t => t.status !== 'locked');
+      const echoTaskId = visible.length === 1 && norm(visible[0].title) === norm(aim.title) ? visible[0].taskId : null;
+
       aim.tasks.forEach(task => {
         if (task.status === 'locked') return; // Don't show locked tasks
+        if (task.taskId === echoTaskId) return;
         
         // Skipped: the story closed it off. Greyed and struck through with a
         // label, never a tick (it doesn't count as done; see skipTask)
@@ -141,11 +178,14 @@ export class ObjectivesPanel {
           progressText = ` <span class="task-progress">(${task.currentCount || 0}/${task.targetCount})</span>`;
         }
         const skippedLabel = skipped ? '<span class="task-skipped-label">skipped</span>' : '';
+        const optionalClass = task.optional === true ? ' task-optional' : '';
+        const requiredMark = markedIds.has(task.taskId)
+          ? '<span class="task-required-mark" aria-label="required">*</span>' : '';
         
         html += `
-          <div class="objective-task ${taskClass}" data-task-id="${task.taskId}">
+          <div class="objective-task ${taskClass}${optionalClass}" data-task-id="${task.taskId}">
             <span class="task-icon">${taskIcon}</span>
-            <span class="task-title">${this.escapeHtml(task.title)}${progressText}</span>${skippedLabel}
+            <span class="task-title">${this.escapeHtml(task.title)}${requiredMark}${progressText}</span>${skippedLabel}
           </div>
         `;
       });

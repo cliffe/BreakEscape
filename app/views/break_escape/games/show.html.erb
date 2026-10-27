@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html>
+<%# HUD skin: mission.json "ui_theme", or ?ui_theme= to preview another one %>
+<% ui_theme = BreakEscape::Mission.normalise_ui_theme(params[:ui_theme]) || @mission.ui_theme %>
+<html data-ui-theme="<%= ui_theme %>">
 <head>
   <title><%= @mission.display_name %> - BreakEscape</title>
   <%= csrf_meta_tags %>
@@ -64,9 +66,34 @@
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/tutorial.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/vm-launcher-minigame.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/flag-station-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/mail-client-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/intel-board-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/osint-browser-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/inbox-triage-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/awareness-skin.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/episode-runner.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/pretext-prep-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/landing-page-builder-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/engagement-report-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/authenticator-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/influence-bar.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/network-segmentation-map-minigame.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/music-widget.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/bond-visualiser.css') %>">
+  <%# Loaded last so a theme's rules win over the base HUD styles %>
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/game-menu.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/ui-themes.css') %>">
+  <%# A theme the player picked in the menu (Display) beats the mission's, but not a
+      ?ui_theme= preview; set it before first paint %>
+  <script nonce="<%= content_security_policy_nonce %>">
+    try {
+      var beTheme = JSON.parse(localStorage.getItem('be_display_settings') || '{}').theme;
+      if (!/[?&]ui_theme=/.test(location.search) &&
+          <%= raw BreakEscape::Mission::UI_THEMES.to_json %>.indexOf(beTheme) !== -1) {
+        document.documentElement.dataset.uiTheme = beTheme;
+      }
+    } catch (e) {}
+  </script>
   <%= break_escape_import_map %>
 </head>
 <body>
@@ -197,6 +224,7 @@
       missionConcludedAt: <%= raw(@game.mission_concluded_at&.iso8601.to_json) %>,
       missionId: <%= @game.mission_id %>,
       missionDisplayName: <%= raw(@mission.display_name.to_json) %>,
+      uiTheme: '<%= ui_theme %>',
       // Dev-only Playwright/agent test bridge (window.__test). Never true in
       // production, so main.js never imports the bridge code there.
       testBridge: <%= Rails.env.production? ? 'false' : 'true' %>
@@ -295,20 +323,41 @@
     <% end %>
     <p id="session-restart-status" style="color:#ffaa00; font-size:14px; font-family:'GNF', monospace; margin:0; display:none;">Resetting...</p>
   </div>
+  <%# Enter = Resume while the overlay is up; other keys do nothing (decisions form 2026-10-17).
+      A module, so it has run before DOMContentLoaded below. %>
+  <script type="module" src="<%= be_asset_path('/break_escape/js/ui/session-resume-keys.js') %>" nonce="<%= content_security_policy_nonce %>"></script>
   <script nonce="<%= content_security_policy_nonce %>">
     document.addEventListener('DOMContentLoaded', function() {
-      if (!window.breakEscapeConfig || !window.breakEscapeConfig.hasProgress) return;
+      // Strip skip_resume on every load, progress or not. It used to be stripped
+      // only when the game had progress, so a fresh session kept it in the URL and
+      // its first reload skipped the overlay while later reloads showed it
+      // (m05 E8, m08 R8).
       var skipParams = new URLSearchParams(window.location.search);
-      if (skipParams.get('skip_resume')) {
+      var skipResume = !!skipParams.get('skip_resume');
+      if (skipResume) {
         skipParams.delete('skip_resume');
         var cleanUrl = window.location.pathname + (skipParams.toString() ? '?' + skipParams.toString() : '');
         history.replaceState(null, '', cleanUrl);
-        return;
       }
+      if (skipResume || !window.breakEscapeConfig || !window.breakEscapeConfig.hasProgress) return;
 
       var overlay = document.getElementById('session-resume-overlay');
       var newSessionBtn = document.getElementById('session-new-btn');
       overlay.style.display = 'flex';
+      // Timed dialogue (person-chat auto-advance, its voice, phone typing) waits while this
+      // is set, and carries on at the close event (utils/session-overlay-pause.js).
+      window.breakEscapeSessionOverlayShowing = true;
+
+      // Keys: Enter resumes, nothing else gets through to the title screen or the game
+      // (ui/session-resume-keys.js). Clicks still work on every button.
+      var resumeBtn = document.getElementById('session-resume-btn');
+      if (window.BreakEscapeSessionResumeKeys) {
+        window.BreakEscapeSessionResumeKeys.installResumeKeyGuard({
+          target: window,
+          isShowing: function() { return overlay.style.display !== 'none'; },
+          onResume: function() { if (!resumeBtn.disabled) resumeBtn.click(); }
+        });
+      }
 
       // Paginate the "OTHER SESSIONS" list (5 per page)
       (function() {
@@ -338,6 +387,8 @@
 
       document.getElementById('session-resume-btn').addEventListener('click', function() {
         overlay.style.display = 'none';
+        window.breakEscapeSessionOverlayShowing = false;
+        window.dispatchEvent(new Event('break-escape:session-overlay-closed'));
       });
 
       document.getElementById('session-restart-btn').addEventListener('click', function() {

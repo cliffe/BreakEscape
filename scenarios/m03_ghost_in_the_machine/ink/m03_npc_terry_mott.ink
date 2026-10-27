@@ -28,6 +28,13 @@ VAR ffion_night_story = ""
 // before that goes back to the question, not to "You again."
 VAR excuse_given = false
 VAR excuse_menu_quiet = false
+// A4 fix pass: quiet flag for route_reply, so a reopen there re-asks his question.
+VAR route_quiet = false
+// Fix pass 2026-10-17 (regression F4): synced. Set by the scenario when a Restart
+// calms him (npc_hostile_state_changed reset:true). fight_reset drops the fight
+// memory and clears it; fight_was_reset picks his one wary line on the way back in.
+VAR terry_fight_reset = false
+VAR fight_was_reset = false
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -37,6 +44,9 @@ VAR excuse_menu_quiet = false
 
 === start ===
 #speaker:npc
+{ terry_fight_reset:
+    -> fight_reset
+}
 { guard_hostile:
     #display:guard-hostile
     // Pass 2 blind fixes 2: after a lockpick catch he never told them to leave.
@@ -87,8 +97,13 @@ VAR excuse_menu_quiet = false
 }
 { (player_warned && not guard_hostile) && not bribe_accepted:
     #display:guard-suspicious
-    // D3-20: varied re-entry.
-    Terry Mott: {&You again.|Still here, then.|You're making my night very long.}
+    { fight_was_reset:
+        ~ fight_was_reset = false
+        Terry Mott: Back on your feet, then. One wrong move and I'm on the radio.
+    - else:
+        // D3-20: varied re-entry.
+        Terry Mott: {&You again.|Still here, then.|You're making my night very long.}
+    }
     ~ hub_quiet = true
     -> hub
 }
@@ -100,6 +115,9 @@ VAR excuse_menu_quiet = false
 // and a player he already threatened with the police.
 === on_sighted ===
 #speaker:npc
+{ terry_fight_reset:
+    -> fight_reset
+}
 { mission_phase != "act2_infiltration":
     -> guard_idle
 }
@@ -117,6 +135,20 @@ VAR excuse_menu_quiet = false
     Terry Mott: I told you to leave. You didn't.
     -> hostile_count
 }
+-> start
+
+// Fix pass 2026-10-17 (regression F4, the Restart ruling): a Restart that calmed him
+// undid the fight, so his "I warned you" memory goes with it. The challenge and the
+// excuse he heard stay; the detection count stays for the debrief. Choice-free, so a
+// reopen can't run it twice; start then routes as if the fight never happened.
+=== fight_reset ===
+~ guard_hostile = false
+~ ordered_out = false
+~ terry_fight_reset = false
+#set_global:terry_fight_reset:false
+// Only when start will land on the "You again." re-entry; a first challenge or the
+// excuse question already reads right after a reset.
+~ fight_was_reset = mission_phase == "act2_infiltration" and player_warned and excuse_given and not bribe_accepted
 -> start
 
 === daytime ===
@@ -203,7 +235,7 @@ VAR excuse_menu_quiet = false
         # influence_decreased
         Terry Mott: Funny. Ffion said notebook.
         // D4-9: the catch has teeth; he doesn't wave the story through.
-        Terry Mott: Notebook, files. Make your mind up. Five minutes, and I'm stood at the end of the corridor.
+        Terry Mott: Notebook, files. Make your mind up. Get what you came for, and don't make me come looking.
         ~ hub_quiet = true
         -> hub
     - ffion_night_story == "sterling":
@@ -255,7 +287,7 @@ Terry Mott: You got ID? Key card?
         ~ guard_influence = guard_influence + 5
         # influence_increased
         Terry Mott: A visitor badge at three and her card at eleven.
-        Terry Mott: Either she's taken a shine to you or I'm in trouble. Ten minutes.
+        Terry Mott: Either she's taken a shine to you or I'm in trouble. Don't be long.
     - else:
         ~ guard_influence = guard_influence + 15
         # influence_increased
@@ -289,7 +321,7 @@ Terry Mott: She does ring down at odd hours. Which files?
     { (not day_greeted or ffion_night_story == "sterling") and guard_detection_count == 0:
         ~ guard_suspicious = false
     }
-    Terry Mott: Ten minutes. Then I come looking.
+    Terry Mott: Don't make me come looking for you.
     ~ hub_quiet = true
     -> hub
 * [She didn't specify -- said I'd know them when I saw them. Confidential.]
@@ -476,12 +508,13 @@ Terry Mott: {asked_knock_off:Told you this afternoon. On till six.|Double shift 
 { guard_suspicious:
     Terry Mott: Though tonight's been more eventful than usual.
 }
-Terry Mott: Rounds every fifteen minutes. Doors, windows, anyone where they shouldn't be. Like you, possibly.
+Terry Mott: I do my rounds. Doors, windows, anyone where they shouldn't be. Like you, possibly.
 * [What's your route?]
     Terry Mott: Round the executive wing, mostly. Sterling's office, Mr Foster's, back down the corridor.
     Terry Mott: Why d'you want to know my route?
     ~ guard_suspicious = true
-    -> hub
+    ~ route_quiet = true
+    -> route_reply
 * [Must be boring work.]
     ~ guard_influence = guard_influence + 5
     # influence_increased
@@ -489,6 +522,34 @@ Terry Mott: Rounds every fifteen minutes. Doors, windows, anyone where they shou
     -> hub
 + [Fair enough.]
     -> hub
+
+// A4 fix pass (S6): he asks a straight question, so the player can answer it. Each
+// answer returns to his hub (he has already waved the player on) or ends the chat,
+// like the rest of his hub; the stakes stay those of on_sighted. Its own knot, so a
+// reopen with these choices saved lands here, not on ask_shift's opener.
+=== route_reply ===
+#speaker:npc
+{ route_quiet:
+    ~ route_quiet = false
+- else:
+    Terry Mott: I asked you a question. My route. Why?
+}
+* [So I'm not under your feet. I'll be done before you come round again.]
+    Terry Mott: Considerate. I'll be back past this door before long. Be done by then.
+    ~ hub_quiet = true
+    -> hub
+* [No reason! Just... making conversation.]
+    ~ guard_influence = guard_influence - 5
+    # influence_decreased
+    Terry Mott: Making conversation. At eleven at night. About my route.
+    Terry Mott: I'll be making mine past this corridor a lot more often, then.
+    ~ hub_quiet = true
+    -> hub
+* [Forget I asked. I'll get out of your way.]
+    Terry Mott: Best idea you've had tonight.
+    ~ idle_quiet = true
+    #exit_conversation
+    -> guard_idle
 
 === ask_building ===
 #speaker:npc
@@ -602,6 +663,9 @@ Terry Mott: Picks. Right. We're done talking.
 { idle_quiet:
     ~ idle_quiet = false
 - else:
+    { terry_fight_reset:
+        -> fight_reset
+    }
     // D4-8: the first night meeting goes straight to his challenge (one torch, no
     // extra click). Inside the else, so it runs on a reopen, never on an exit.
     { mission_phase == "act2_infiltration" and (not player_warned or not excuse_given) and not guard_hostile and not bribe_accepted:

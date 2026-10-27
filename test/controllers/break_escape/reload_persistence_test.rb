@@ -611,6 +611,24 @@ module BreakEscape
       assert_equal({}, clock['timers']['started'])
     end
 
+    test 'gameClock anchors reached are saved, the first record wins, bad ones are dropped (7.5f)' do
+      game = create_game
+      put sync_state_game_url(game), params: { scenarioClock: {
+        elapsedMs: 600_000, anchors: { '0' => { atMs: 540_000, gameSec: 72_600 } }
+      } }, as: :json
+      put sync_state_game_url(game), params: { scenarioClock: {
+        elapsedMs: 700_000,
+        anchors: { '0' => { atMs: 690_000, gameSec: 80_000 }, '1' => { atMs: 650_000, gameSec: 75_000 },
+                   'x' => { atMs: 1, gameSec: 1 }, '2' => { atMs: 'soon', gameSec: 1 } }
+      } }, as: :json
+      assert_response :success
+
+      clock = scenario_json(game)['savedScenarioClock']
+      assert_equal 700_000, clock['elapsedMs']
+      assert_equal({ '0' => { 'atMs' => 540_000, 'gameSec' => 72_600 }, '1' => { 'atMs' => 650_000, 'gameSec' => 75_000 } },
+                   clock['anchors'])
+    end
+
     test 'command board log: earliest stamp wins, settled entries kept, sent only with a board' do
       game = create_game
       put sync_state_game_url(game), params: { commandBoardLog: [{ id: 'ncsc_notified', t: 42_000 }, { id: 'pump_dose_error_caught', t: -1 }] }, as: :json
@@ -687,8 +705,85 @@ module BreakEscape
                    game.reload.player_state['npcHostility'], 'A KO is never undone; an unknown NPC is dropped')
     end
 
+    # 7.1g (m08 E12): a hurt hostile NPC came back at full health after a reload.
+    test 'NPC hostility keeps a hurt NPC HP, and drops bad or KO HP' do
+      game = create_game
+      game.scenario_data['rooms']['lobby']['npcs'] = [{ 'id' => 'guard', 'npcType' => 'person' },
+                                                     { 'id' => 'clerk', 'npcType' => 'person' },
+                                                     { 'id' => 'boxer', 'npcType' => 'person' }]
+      game.save!
+
+      put sync_state_game_url(game), params: { npcHostility: {
+        'guard' => { hostile: true, ko: false, hp: 30, maxHP: 60 },
+        'clerk' => { hostile: true, ko: false, hp: 90, maxHP: 60 },
+        'boxer' => { hostile: true, ko: true, hp: 10, maxHP: 100 }
+      } }, as: :json
+      assert_response :success
+
+      assert_equal({ 'guard' => { 'hostile' => true, 'ko' => false, 'hp' => 30, 'maxHP' => 60 },
+                     'clerk' => { 'hostile' => true, 'ko' => false },
+                     'boxer' => { 'hostile' => true, 'ko' => true } },
+                   scenario_json(game)['savedNpcHostility'])
+    end
+
+    # m08 confirmation R4: a KO'd NPC came back lying facing down whichever way it fell.
+    test 'NPC hostility keeps the facing a KO fell in, the first one, and only a known direction' do
+      game = create_game
+      game.scenario_data['rooms']['lobby']['npcs'] = [{ 'id' => 'athena', 'npcType' => 'person' },
+                                                     { 'id' => 'guard', 'npcType' => 'person' },
+                                                     { 'id' => 'clerk', 'npcType' => 'person' }]
+      game.save!
+
+      put sync_state_game_url(game), params: { npcHostility: {
+        'athena' => { hostile: true, ko: true, facing: 'down-right' },
+        'guard' => { hostile: true, ko: true, facing: 'sideways' },
+        'clerk' => { hostile: true, ko: false, facing: 'left' }
+      } }, as: :json
+      put sync_state_game_url(game), params: { npcHostility: {
+        'athena' => { hostile: true, ko: true, facing: 'up' }
+      } }, as: :json
+      assert_response :success
+
+      assert_equal({ 'athena' => { 'hostile' => true, 'ko' => true, 'facing' => 'down-right' },
+                     'guard' => { 'hostile' => true, 'ko' => true },
+                     'clerk' => { 'hostile' => true, 'ko' => false } },
+                   scenario_json(game)['savedNpcHostility'])
+    end
+
     test 'no savedNpcHostility when nothing has turned' do
       assert_nil scenario_json(create_game)['savedNpcHostility']
+    end
+
+    # m05 E6 (user 2026-10-17): a reload mid-fight was a free full heal.
+    test 'player HP syncs, the latest value wins, and it comes back on load' do
+      game = create_game
+
+      put sync_state_game_url(game), params: { playerHealth: { hp: 64, maxHP: 100 }, clientTs: 2000 }, as: :json
+      put sync_state_game_url(game), params: { playerHealth: { hp: 48, maxHP: 100 }, clientTs: 3000 }, as: :json
+      assert_response :success
+      assert_equal({ 'hp' => 48, 'maxHP' => 100 }, scenario_json(game)['savedPlayerHealth'])
+
+      # A stale flush from the old page doesn't put the older HP back
+      put sync_state_game_url(game), params: { playerHealth: { hp: 90, maxHP: 100 }, clientTs: 2500 }, as: :json
+      assert_equal({ 'hp' => 48, 'maxHP' => 100 }, game.reload.player_state['playerHealth'])
+    end
+
+    test 'player HP: bad values are ignored, and a save at 0 HP loads as full health' do
+      game = create_game
+
+      put sync_state_game_url(game), params: { playerHealth: { hp: 30, maxHP: 100 } }, as: :json
+      [{ hp: 120, maxHP: 100 }, { hp: -5, maxHP: 100 }, { hp: 'lots', maxHP: 100 }, { hp: 10, maxHP: 0 }].each do |bad|
+        put sync_state_game_url(game), params: { playerHealth: bad }, as: :json
+      end
+      assert_equal({ 'hp' => 30, 'maxHP' => 100 }, game.reload.player_state['playerHealth'])
+
+      put sync_state_game_url(game), params: { playerHealth: { hp: 0, maxHP: 100 } }, as: :json
+      assert_equal({ 'hp' => 0, 'maxHP' => 100 }, game.reload.player_state['playerHealth'])
+      assert_nil scenario_json(game)['savedPlayerHealth'], 'a knocked-out player wakes at full health'
+    end
+
+    test 'no savedPlayerHealth before any sync' do
+      assert_nil scenario_json(create_game)['savedPlayerHealth']
     end
 
     # =========================================================================

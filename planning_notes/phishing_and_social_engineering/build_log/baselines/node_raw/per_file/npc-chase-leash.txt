@@ -1,0 +1,55 @@
+TAP version 13
+# Subtest: the leash: inside the range and the room, the NPC chases
+ok 1 - the leash: inside the range and the room, the NPC chases
+  ---
+  duration_ms: 0.732148
+  ...
+# Subtest: the leash: past the range, it gives up
+ok 2 - the leash: past the range, it gives up
+  ---
+  duration_ms: 0.075226
+  ...
+# Subtest: the leash: at its own door, it gives up unless chaseAcrossRooms
+ok 3 - the leash: at its own door, it gives up unless chaseAcrossRooms
+  ---
+  duration_ms: 0.0598
+  ...
+# Subtest: chaseRange: a positive scenario value wins, else the combat-config default
+ok 4 - chaseRange: a positive scenario value wins, else the combat-config default
+  ---
+  duration_ms: 0.05588
+  ...
+# Subtest: parseConfig: chaseRange defaults to combat-config.js; a scenario can override it
+ok 5 - parseConfig: chaseRange defaults to combat-config.js; a scenario can override it
+  ---
+  duration_ms: 0.412026
+  ...
+# Subtest: a hostile chases the player inside its room
+ok 6 - a hostile chases the player inside its room
+  ---
+  duration_ms: 0.19424
+  ...
+# Subtest: the player steps through the door: the hostile gives up and walks home
+ok 7 - the player steps through the door: the hostile gives up and walks home
+  ---
+  duration_ms: 0.106816
+  ...
+# Subtest: past a per-NPC chaseRange the hostile gives up, even in its own room
+ok 8 - past a per-NPC chaseRange the hostile gives up, even in its own room
+  ---
+  duration_ms: 0.15583
+  ...
+# Subtest: chaseAcrossRooms: true keeps the old follow-through-doors chase
+ok 9 - chaseAcrossRooms: true keeps the old follow-through-doors chase
+  ---
+  duration_ms: 0.079968
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 111.59069

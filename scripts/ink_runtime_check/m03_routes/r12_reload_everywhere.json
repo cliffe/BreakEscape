@@ -1,7 +1,7 @@
 {"steps":[
 {"note":"R12 (cycle 4 review): reloads at every risky moment. Mid-read, at the test after the card is saved, at Ffion's night question, mid-challenge with Terry, at Danny's question, at Sterling's 'Who are you with?' and at her one move."},
 {"set":{"briefing_played":true,"reception_badge_cloned":true,"cloner_explained":true}},
-{"talk":"ffion","picks":["Thanks. Where do I sign","I should head"]},
+{"talk":"ffion","picks":["Where do I sign","I should head"]},
 {"talk":"victoria","picks":["Why am I here","responsible","whiteboard","What kind of services"]},
 {"note":"reload mid-read (Halfway)"},
 {"talk":"victoria","reload":true,"picks":["Keep her talking","What do the students","pricing","Skills are cheap"]},

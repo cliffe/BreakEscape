@@ -19,7 +19,6 @@ VAR asked_about_patricia = false
 #set_variable:talked_to_maya=true
 #complete_task:talk_to_maya
 {not met_maya:
-    ~ met_maya = true
     Maya Chen: Oh! You startled me. You're the... IT contractor, right? The security auditor?
     -> first_meeting
 }
@@ -33,10 +32,15 @@ VAR asked_about_patricia = false
 // ================================================
 
 === first_meeting ===
+// Engine robustness audit (m01-m08): the met flag is set in each opening choice, not
+// before the opening, so an Esc and a reload at these choices bring the opening back
+// instead of skipping to the hub.
 + [That's right. I'm reviewing security systems]
+    ~ met_maya = true
     Maya Chen: Are you really here for a security audit? Or are you here because of my message?
     -> reveal_check
 + [You seem nervous]
+    ~ met_maya = true
     ~ influence += 1
     # influence_increased
     Maya Chen: I have reason to be. Things aren't what they seem here.
@@ -92,7 +96,9 @@ Maya Chen: They're planning to kill people. On purpose. They call it "Operation 
 ~ discussed_operation = true
 #unlock_task:inform_safetynet_operation_shatter
 
-Maya Chen: From what I've gathered, Operation Shatter is a coordinated disinformation attack. They've profiled millions of people—demographic cohorts they're betting will panic first—cross-referenced with who reacts fastest to an alert, who forwards without checking, who trusts which channels.
+Maya Chen: From what I've gathered, Operation Shatter is a coordinated disinformation attack.
+
+Maya Chen: They've profiled millions of people—demographic cohorts they're betting will panic first—cross-referenced with who reacts fastest to an alert, who forwards without checking, who trusts which channels.
 
 Maya Chen: The plan is to send fake emergency messages—hospital closures, bank failures, government alerts—tuned per segment where they think it'll spread fastest.
 

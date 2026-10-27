@@ -41,6 +41,7 @@ const MEMO = !FLAGS['no-memo'];
 
 function newStory(json, knot) {
   const s = new Story(json);
+  s.allowExternalFunctionFallbacks = true;   // as InkEngine.loadStory (00 S1)
   const errors = [];
   s.onError = (msg, type) => errors.push(`${type}: ${msg}`);
   for (const [name, fn] of Object.entries(EXTERNALS)) {

@@ -9,6 +9,7 @@
 
 import { TILE_SIZE, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY } from '../utils/constants.js';
 import { directionFromAnimKey, koPoseAnimKey, KO_ORIGIN_SHIFT } from './npc-direction.js';
+import { applySpriteStyle } from './npc-sprite-style.js';
 
 /**
  * Create an NPC sprite in the game world
@@ -193,7 +194,8 @@ export function createNPCSprite(scene, npc, roomData) {
             // "npc-<id>-idle" key, which has no direction: getNPCDirection used to read
             // "idle" from it, found no "death-idle" animation and hid the NPC, so a
             // knocked-out NPC vanished after a reload while its drops stayed.
-            const direction = getNPCDirection(npc.id, sprite);
+            // The way it fell, saved with the KO (npc-hostile.js); older saves have none
+            const direction = window.npcHostileSystem.getKOFacing?.(npc.id) || getNPCDirection(npc.id, sprite);
             const deathAnimKey = koPoseAnimKey(npc.id, direction, (k) => scene.anims.exists(k));
             
             if (deathAnimKey) {
@@ -237,6 +239,10 @@ export function createNPCSprite(scene, npc, roomData) {
             console.log(`👻 NPC ${npc.id} initially hidden (behavior.initiallyHidden: true)`);
         }
         
+        // Optional look over the frames (holograms, ghosts): npc-sprite-style.js.
+        // Applied last, so it starts from the alpha the KO / hidden checks above left.
+        if (npc.spriteStyle) applySpriteStyle(scene, sprite, npc.spriteStyle);
+
         console.log(`✅ NPC sprite created: ${npc.id} at (${worldPos.x}, ${worldPos.y})`);
         
         return sprite;

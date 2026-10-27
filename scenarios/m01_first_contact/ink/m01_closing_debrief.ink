@@ -148,6 +148,10 @@ Agent HaX: But you did. And those people will never know how close they came.
 === evidence_review ===
 Agent HaX: Let's review what you recovered.
 
+Agent HaX: And the way you got there matters. You got onto their operative's account, escalated to the infrastructure account running Operation Shatter, and pulled its keys.
+
+Agent HaX: Gaining access, escalating privilege, turning their own key against them — that's the chain that stopped this.
+
 {found_casualty_projections && found_target_database:
     -> evidence_complete
 }
@@ -243,7 +247,7 @@ Agent HaX: I noticed you worked with both Kevin and Maya.
 Agent HaX: Kevin gave you legitimate access—that's the IT contractor cover working as intended.
 
 {maya_identity_protected:
-    Agent HaX: And Maya... you protected her identity. She's safe. She can continue her journalism without looking over her shoulder.
+    Agent HaX: And Maya... you protected her identity. She's safe. She can continue her work without looking over her shoulder.
     Agent HaX: That matters. She took a risk contacting us.
 - else:
     Agent HaX: Maya's identity was compromised during the operation. We're relocating her for safety.
@@ -299,7 +303,9 @@ Agent HaX: You ran this operation without building rapport with either Kevin or 
 
 Agent HaX: Kevin Park was removed from the picture during the operation.
 
-Agent HaX: Post-operation check on Kevin's files confirms: no ENTROPY connections. No hidden agenda. He was exactly what he appeared to be—an IT manager who'd been raising security concerns nobody would listen to.
+Agent HaX: Post-operation check on Kevin's files confirms: no ENTROPY connections. No hidden agenda.
+
+Agent HaX: He was exactly what he appeared to be—an IT manager who'd been raising security concerns nobody would listen to.
 
 Agent HaX: You had the authority. The operation succeeded. I'm logging it as an operational casualty, not a failure of judgment.
 
@@ -308,7 +314,9 @@ Agent HaX: You had the authority. The operation succeeded. I'm logging it as an 
 === both_removed ===
 Agent HaX: Both Kevin Park and Maya Chen were removed from the picture during the operation.
 
-Agent HaX: I want to be direct with you: neither of them was ENTROPY. Kevin was an IT manager flagging concerns. Maya was our own informant—the one who brought us the lead on Operation Shatter in the first place.
+Agent HaX: I want to be direct with you: neither of them was ENTROPY.
+
+Agent HaX: Kevin was an IT manager flagging concerns. Maya was our own informant—the one who brought us the lead on Operation Shatter in the first place.
 
 Agent HaX: We lost whatever intelligence Maya had still to share. That's a real cost. ENTROPY's internal connections, the names she hadn't written down yet—gone.
 
@@ -342,7 +350,9 @@ Agent HaX: You ran this mostly solo.
 
 Agent HaX: Maya Chen was removed during the operation.
 
-Agent HaX: We may never know what Maya had to tell us. She'd been documenting everything about ENTROPY's operations at Viral Dynamics. The parts she hadn't written down yet—names, contacts, methods—that intelligence is gone.
+Agent HaX: We may never know what Maya had to tell us. She'd been documenting everything about ENTROPY's operations at Viral Dynamics.
+
+Agent HaX: The parts she hadn't written down yet—names, contacts, methods—that intelligence is gone.
 
 Agent HaX: Maya wasn't ENTROPY. She was our informant. She trusted SAFETYNET enough to reach out, and that cost her.
 
@@ -489,7 +499,9 @@ Agent HaX: He's cleared now. But he's traumatized. His neighbors saw him taken a
 === kevin_wrongly_accused_outcome ===
 Agent HaX: Kevin Park was reported as an ENTROPY operative. He was taken in for questioning this morning.
 
-Agent HaX: He'll be cleared. The forged email had a "HEADER MISMATCH DETECTED" flag — the mail server's own forensic system flagged it as a forgery. The anomaly report showed his workstation running a simultaneous session, which means someone else was using his credentials.
+Agent HaX: He'll be cleared. The forged email had a "HEADER MISMATCH DETECTED" flag — the mail server's own forensic system flagged it as a forgery.
+
+Agent HaX: The anomaly report showed his workstation running a simultaneous session, which means someone else was using his credentials.
 
 Agent HaX: Any competent investigator will see that in the first hour. Kevin pointed all of this out to you directly.
 

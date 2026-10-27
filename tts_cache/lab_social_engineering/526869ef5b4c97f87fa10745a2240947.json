@@ -1,0 +1,13 @@
+{
+  "key": "526869ef5b4c97f87fa10745a2240947",
+  "npc": "fairbairn",
+  "text": "Because next time it won't be caught, and I'd rather learn that from you than a thief.",
+  "voice": "Sadaltager",
+  "style": "Managing director who founded a small British firm, early sixties, white Scottish. Speak with a consistent soft Edinburgh Scottish accent throughout — do not shift to any other accent. Lower-mid pitch; unhurried, careful pace. Courteous and a little formal: a client who has agreed to the test and wants it done properly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_social_engineering",
+  "source": "generate",
+  "generated": "2026-10-23",
+  "recorded_at": "2026-10-23T14:39:06Z"
+}

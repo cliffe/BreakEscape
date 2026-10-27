@@ -171,3 +171,76 @@ Brief: `docs/agents/LIGHTING_PASS_BRIEF.md`. Plans in each mission's `LIGHTING_P
 - Cycle 2 (engine, at the coordinator's instruction): **L2** the light map now ends each frame on a no-op additive stamp, so a `floorTint` stamp drawn last no longer blanks it; m01, m02, sis01, sis02 and Tesseract re-toured before/after: same on/off states, pixel differences only from blinking LEDs, pulses and walking NPCs. **L1** room lighting `variants` with a condition (schema, node test `test/js/lighting-room-variants.test.mjs`); missions without variants re-toured: unchanged. **L3** NPC torch via `behavior.torch` (schema, node test `test/js/lighting-npc-torch.test.mjs`); strength from the room's current ambient, so it never shows in a lit office. Tour flags `--close-intro`, `--globals`, `--show-npc`, `--restore-off`, `--check` (skill Step 5).
 - Not yet exercised: a page reload at night with variants (blocked in the agent session; needs a tester).
 - Cycle 4: **E4** vision cones above the light map (`npc-los.js`, overlayDepth rule against the light map's depth). m03 closed: final tours with final maps and sprites, nothing above minor.
+
+### m06_follow_the_money (2026-10-13, m06 pass 5, lighting cycles 1-4)
+
+Plan and log: `scenarios/m06_follow_the_money/LIGHTING_PLAN.md`. Night (`#b8bfce`). Rooms: lobby on, warm `#c4b8a6`; checkpoint on; trading floor on `#b2b8c8` (market wall `above`, r 80); Irina's office motion `#bcb6aa` (banker's lamp); lab on `#b0b8c6`; server room and data centre motion, cyan `#a8c2ce` / `#a2bac8`, darks `#0a0f1c`; executive wing on `#bcb6b0`, `panels: false` (gallery sconces); Satoshi's office on `#b6aea6`. All `hce_*` props glow through per-room emitters (no `EMITTERS` change). Phase glows: the custody console by id (cyan, amber pulse on `console_warned`, steady red on `console_tripped`, green on `found_architects_fund`); `assets_seized` turns the ticker, the market wall and Satoshi's block screen red. No room variants, no torches, call points off.
+
+Lessons:
+- `blink` with `above` is a hard 1 Hz on/off, m01's signpost for an interactable; on props it reads as "interact here". Use `breathe` or steady.
+- An additive glow on a near-white sprite adds nothing; light the darker parts round it (the cage panels, not the white mesh door).
+- Wall-strip signs and screens are short: the glow centres on the sprite, so anything over about r 24 blooms over the rim into the room to the north. Use offsetY 4-6 and small radii.
+- Additive glows don't show on bright screens or pale floors in a lit room; a story change on a screen wall needs `above` plus `floorTint`, or a dark surface to land on.
+- Proposal: rack-style LEDs for `hce_*` props (m06 `DECISIONS_PENDING.md` D9).
+
+### m05_insider_trading (2026-10-13/14, m05 pass 5, lighting cycles 1-5)
+
+Plan and log: `scenarios/m05_insider_trading/LIGHTING_PLAN.md`. Evening, about 16:30 to 20:15 (scenario ambient `#c6c4c8`). On: lobby `#d2d0d0`, corridor, break room `#ccc4b8`, open office, lab `#ccd2dc`, Patricia `#c4bec4`. Motion: server hallway (dark `#121828`), server room `#b2b2c8` and vault `#b0b2c2` (darks `#0a0f1c`), Torres' office `#c4bcb0` with his desk lamp left on. Room `variants` (as m03, here keyed on a story beat): at `torres_identified` (about 20:00, past the badge log's 19:00 after-hours line) the lobby goes to `#b0b8ca` with `panels: false`, the corridor to motion with `offAfter` 75 and dark `#161c30`, and the server hallway, server room and vault to `on` (Patricia: "His badge just went through the hallway and the vault's logged him in"). The upload terminal (texture prefix `pc` in the vault, the only PC there): engine screen glow, then amber breathe while it runs, steady red once `final_choice` is set. All `qdc_*` props through per-room emitters; no `EMITTERS` change. Call points off; suppression panels steady.
+
+Lessons:
+- A good switch for a lit-room variant is a global set inside a conversation whose own words explain the change ("his badge just went through the hallway"). The chat covers the screen while the variant lands, so the missing strike isn't seen, and the player has been told why.
+- `motion` as a variant for a corridor works as "after hours": the corridor goes dark at once if the player isn't in it, and strikes the next time they walk through. A small ambient step on a lit room (the lobby, `#b8bfce` against `#d2d0d0`) barely shows; `panels: false` plus about 25 per channel does.
+- Emitter `offsetX`/`offsetY` are world pixels. At the tour's 2x zoom they move the glow twice as far on screen, so halve what you measure on a shot.
+- Glows on props in a room that is always lit only show if the prop is dark (sign faces, rack fronts). Cool glows on pale lab kit, a TV on a sage wall and a glass case did nothing or made a flare; drop them rather than keep no-op config.
+- A glow on one item of a set (one locker in a bank of key safes) reads as "this one matters". Light the whole set or none of it.
+- The resume overlay still makes the harness's `bootstrap` loop after a reload (playtest skill note). For a reload check, click the overlay's "Resume" button by its exact text in an `eval`, then poll for `window.lightingSystem`.
+- Proposal: LEDs for `qdc_*` racks and HSMs (m05 `DECISIONS_PENDING.md` D16, the same limit as m06 D9).
+
+### m07_architects_gambit (2026-10-14, m07 pass 5, lighting cycles 1-5)
+
+Plan and log: `scenarios/m07_architects_gambit/LIGHTING_PLAN.md`. A grid control facility at night in winter, mid-evacuation, on mains all night (scenario ambient `#b8bfce`). Checkpoint on `#bcc2ce`; ops floor on `#aab0c2`, `panels: false`, the amber video wall as its light (emitter r 60 plus two room `lights` under the wall's ends); server hall motion `#a0b0c0` / `#0a0f1c` (Elena keeps it lit); SCADA on `#aaa4b6`, `panels: false`, lit by the countdown display; generator hall motion `#bcc0b8` / dark `#121828`; cable vault on `#a8b4b0` with one faulty fitting. Phases on saved globals: `cascade_armed` (wall breathes orange, end lights step orange through a room variant, countdown breathes red), `countdown_expired` (countdown steady bright red, mimic dims grey; the wall stays orange because its art and text stay amber, L1 pending), `grid_saved` (countdown dim and steady, cascade screen green). ATS-1's lamp blinks amber on the same condition as its text variant. Countdown faces per state through `spriteVariants`. All `pnw_*` glows through per-room emitters; no `EMITTERS` change. Call points off; suppression panel steady. Reviews by a fresh Opus agent each cycle.
+
+Lessons:
+- A room `light` draws into the MULTIPLY light map, so it can only bring the art back up to its unlit colour. On a blue lit ambient it reads warm only by holding blue and green down; pick a variant's colour by what it does to G and B, not by its hue. To brighten past the art, use an emitter with `above` and `floorTint`.
+- A light on a wall of screens needs room lights under its ends, or it lights the floor as one spot.
+- A screen's light can only follow the story if its face does: draw a sprite per state and wire it as `spriteVariants` in the `textVariants` order. Otherwise a red glow round a face saying AWAITING HOST claims something the prop doesn't show.
+- A glow on a lit room's wall item needs a small radius and offsetY of 12-30, or it blooms over the north rim and reads as light outside the building.
+- One object carries one glow: a fault lamp replacing a status lamp is fine when the text says the status changed.
+
+### m08_the_mole (2026-10-14, m08 pass 5, lighting cycles 1-5)
+
+Plan and log: `scenarios/m08_the_mole/LIGHTING_PLAN.md`. SAFETYNET HQ at night on Level Red (scenario ambient `#b8bfce`). On: lobby `#bcc2ce` (LEVEL RED screen breathes red `above`, memorial stars a small warm `above` glow), Director `#bab0a4` with `panels: false` and one warm desk pool, ops `#b2b8c8`, intel `#b0b8c6`, crypto lab `#b4bcca`, staff room `#ccc4b8`. Motion: server room `#a0b0c0` / `#0a0f1c`, archives `#bcc0b8` / `#121828`, interrogation suite `#c0c4cc`. The suite follows the story through room `variants`: during the confrontation (`all_flags_submitted && mole_identified && !fate_decided`) on, `panels: false`, `#8c929e`, one white pool over the table and the subject, RECORDING lamp plus recorder and camera tally lights red; after `fate_decided`, house lights up and recording off. Evidence wall and disposition screen faces per state through `spriteVariants`. Red-LED badge readers by the doors (`above`, r 6, steady). No light singles out a suspect: every crypto screen keeps the built-in glow, no locker glows, nothing changes in the lab or staff room at the naming. All `hq_*` glows through per-room emitters; no `EMITTERS` change. Call points off. Reviews by a fresh Opus agent each cycle; browser check with two reloads (game 2508) and a re-check of the face swaps in the order a player meets them (game 2509).
+
+Lessons:
+- A map decoration can't change its face: `spriteVariants` only work on scenario objects. A sign that must switch on with the story (a RECORDING lamp) has to be a scenario object; a round `above` glow on a 48×11 box lights its middle only. Pale letters on a dark box at least turn pink-white under red light. Tally lights (r 5, `above`) on small kit nearby carry "recording" well.
+- A glow centred on a screen of three anonymous cards lands on the middle card and reads as one suspect singled out. In a mole hunt, check where every glow lands on any set of people, lockers or desks, not only on the culprit's.
+- For a confrontation, put the pool on the person, not the table: the subject stands behind the table, so offset the light a tile north of it.
+- An object with `spriteVariants` needs a base `sprite` too, even when the map gives it the right texture: on a global change with no matching variant `rooms.js` falls back to `sprite || type` (m07 7bf88a4c, m08 B1). Test the face swap in the order a player meets it: load the room first, then set the global.
+- Set globals in a browser check through `applyActions` `set_global` so `global_variable_changed` fires and `spriteVariants` swap; a plain assignment to `globalVariables` only reaches lighting (it polls).
+
+### m09_digital_archaeology (2026-10-22, finale, lighting rounds 1-2)
+
+Plan and log: `scenarios/m09_digital_archaeology/LIGHTING_PLAN.md`. A records warehouse in Helena at night (scenario ambient `#b8bfce`); each room's light from stage 5's "Lighting" lines.
+- **On:** dock `#bab09c`, no panels, two sodium pools `#ffc070`; front desk `#b0b6c4` with Noor's lamp warm `above`; closet `#a8b0c4`, no panels; reading room `#c8bca4`, no panels, two green lamps; hub and cage `#a8b0c0`, no panels, a hard white pool on the hatch counter / the shredder line.
+- **Motion:** staff passage (flicker, dark `#161c30`); open stacks (`startOn: false`, dark `#141a2a`); office `#c4b8a6`, dark `#14121c`, desk lamp and kettle light; tape room `#a4b0c8`, dark `#0a0f1c`, blue standby LEDs on the m09 reel shelves (`leds`, `ledColor`); salvage cage `#b4b2b8`, dark `#0a0f1c`, Tomb Beta's rack the one amber light (`ledColor` `#ffb060`), screens dimmed.
+- Call points off. No engine change.
+
+Lessons:
+- `startOn: false` doesn't hold a dark entry while a patrolling NPC is in the room: about 300 ms after the room loads, `checkNpcMotion` strikes the lights, and `offAfter` never fires while the NPC stays in the room. The strike happens as the door opens. There is no player-only sensor.
+- A "warm light in the dark" needs everything else in the room turned down: the screens and a neighbour's lamp outshone an amber rack at r 40 and 0.55. Give the rack `ledColor` too, or its LEDs read stock green once lit.
+- A desk lamp's colour needs `above` in a lit room, or the pool reads white-cream.
+- A status lamp that says a story state (a wipe running or halted) should use the same condition as the task that records that state, not a looser one.
+
+### m10_full_disclosure (2026-10-22, finale, lighting rounds 1-2)
+
+Plan and log: `scenarios/m10_full_disclosure/LIGHTING_PLAN.md`. Tomb Gamma, a 1962 bunker, one night (scenario ambient `#b8bfce`); each room's light from stage 5's "Mood" lines.
+- **On:** forward post (exterior) `#a4b0d0` cold, no panels, sodium pool at the gate, work lamp over the table, the vans' doors warm (`above` emitters with `floorTint` on the decor vans, plus spill lights); tunnel `#aeb2bc`, no panels, three caged-bulb floor pools; security `#b2b8c8`; workshop `#b4b8c4`; hall `#a8b0c4`, rack LEDs, backlit plotting board (`hueKeep: false`); gallery `#a8b0c0`, no panels, cold slit-window light (`floorTint`) and warm bulb pools; core `#aeb2bc`, no panels, two neutral bulb pools.
+- **Motion:** power room `#b0b4bc`, dark `#141a24`: load board lamps, battery LEDs (`ledColor`), the isolator amber while live and green once cut.
+- Call points off. No engine change.
+
+Lessons:
+- A wall-hung bulb (feet above the floor line) pools on the wall, not the floor: give it a small `above` glow for the bulb and put the floor pool in room `lights` about a tile below it.
+- Room emitters don't follow a motion room's on/off state, so a "ceiling" bulb emitter lights the dark room before the strike; set it to 0 in motion rooms until the engine has such a flag.
+- Room `lights` add without keeping hue, so a warm light on a cold ambient clips towards white at its centre; carry a "warm thing" with an `above` emitter (hue kept) and `floorTint`, and use a room light only for the spill.
+- Check every proposed ambient against the readability floor (luma about 175): two review suggestions fell below it.
+

@@ -1,7 +1,7 @@
 /**
  * Procedural fingerprint generator (pure; the only DOM use is drawPrint).
  *
- * Method: a zero-pole orientation field (loop / whorl) or a tented-arch field,
+ * Method: an orientation field per class (hairpin loop, zero-pole whorl, humped arch),
  * then ~8 passes of oriented Gabor filtering over seeded white noise, so ridges
  * organise themselves along the field and form endings and forks naturally.
  * A soft-edged egg-shaped mask with low-frequency "pressure" noise gives the
@@ -90,10 +90,12 @@ function singularPoints(pattern, size, rng) {
     const N = size;
     const j = () => (rng() - 0.5) * 0.05 * N;
     if (pattern === 'loop') {
-        const side = rng() < 0.5 ? -1 : 1; // which way the delta sits
+        // The delta is found where the loop meets the base ridges (buildOrientation fills it in).
+        const side = rng() < 0.5 ? -1 : 1; // which way the delta sits; the loop opens the other way
         return {
-            cores: [{ x: 0.5 * N - side * 0.03 * N + j(), y: 0.42 * N + j() }],
-            deltas: [{ x: 0.5 * N + side * 0.16 * N + j(), y: 0.72 * N + j() }]
+            side,
+            cores: [{ x: 0.5 * N + side * 0.05 * N + j(), y: 0.40 * N + j() }],
+            deltas: []
         };
     }
     if (pattern === 'whorl') {
@@ -111,21 +113,60 @@ function singularPoints(pattern, size, rng) {
     return { cores: [], deltas: [] };
 }
 
-/** Orientation field theta[i] (ridge direction, radians, mod pi) in the canonical frame. */
+/**
+ * Orientation field theta[i] (ridge direction, radians, mod pi) in the canonical frame.
+ * Each class is drawn so it reads at card size (m04 playtests: a zero-pole loop came out as a
+ * fan and the old arch as near-flat stripes, so loop and arch cards looked alike):
+ * - arch: ridges flow side to side with a clear hump in the middle, flat at the edges;
+ * - loop: a hairpin. Ridges come in from one side, turn round the core and go back out the
+ *   same side, over horizontal base ridges. The delta forms where the two meet; it is found
+ *   here and written to `sp.deltas`;
+ * - whorl: the two-core, two-delta zero-pole field (concentric rings).
+ */
 function buildOrientation(pattern, size, sp, rng) {
     const N = size;
     const theta = new Float32Array(N * N);
     if (pattern === 'arch') {
         const cx = 0.5 * N + (rng() - 0.5) * 0.06 * N;
-        const cy = 0.52 * N;
-        const w = 0.3 * N, h = 0.3 * N;
-        const k = 1.1 + rng() * 0.5;
+        const cy = 0.55 * N;
+        const w = 0.2 * N, h = 0.28 * N;
+        const k = 3 + rng() * 0.6;
+        sp.centre = { x: cx, y: cy }; // the top of the hump, the arch's reference point
         for (let y = 0; y < N; y++) {
             for (let x = 0; x < N; x++) {
                 const e = Math.exp(-(((y - cy) / h) ** 2));
-                theta[y * N + x] = Math.atan(k * ((x - cx) / w) * e);
+                const u = (x - cx) / w;
+                theta[y * N + x] = Math.atan(k * u * Math.exp(-u * u) * e);
             }
         }
+        return theta;
+    }
+    if (pattern === 'loop') {
+        const c = sp.cores[0], side = sp.side;
+        // the loop's axis runs from the core out to the open side, a little downhill
+        const da = 20 * Math.PI / 180;
+        const ax = -side * Math.cos(da), ay = Math.sin(da);
+        const tAxis = Math.atan2(ay, ax);
+        const by = 0.70 * N, bw = 0.08 * N; // where the hairpin gives way to the base ridges
+        let best = Infinity, delta = null;
+        for (let y = 0; y < N; y++) {
+            const w = smoothstep(by - bw, by + bw, y);
+            for (let x = 0; x < N; x++) {
+                const px = x - c.x, py = y - c.y;
+                // round the head: tangent to circles about the core; along the legs: parallel to the axis
+                const tU = px * ax + py * ay <= 0 ? Math.atan2(py, px) + Math.PI / 2 : tAxis;
+                const vx = (1 - w) * Math.cos(2 * tU) + w; // base ridges run horizontally (doubled angle 0)
+                const vy = (1 - w) * Math.sin(2 * tU);
+                theta[y * N + x] = 0.5 * Math.atan2(vy, vx);
+                // delta: where the doubled-angle vectors come closest to cancelling, on the delta
+                // side of the core and inside the touch (the mask is 0.3 N wide each side)
+                const mag = vx * vx + vy * vy;
+                if (px * side > 0.04 * N && Math.abs(x - 0.5 * N) < 0.22 * N && Math.abs(y - by) < 2 * bw && mag < best) {
+                    best = mag; delta = { x, y };
+                }
+            }
+        }
+        sp.deltas = [delta || { x: c.x + side * 0.2 * N, y: by }];
         return theta;
     }
     const theta0 = 0; // far-field ridges run horizontally
@@ -349,7 +390,8 @@ function resolveVariant(variant, size, partial) {
  * @returns {{size:number, owner:string, pattern:string, ridges:Float32Array, mask:Float32Array,
  *   cores:{x:number,y:number}[], deltas:{x:number,y:number}[],
  *   minutiae:{x:number,y:number,type:'ending'|'bifurcation',ux:number,uy:number}[],
- *   bounds:{x:number,y:number,w:number,h:number},
+ *   bounds:{x:number,y:number,w:number,h:number}, centre:{x:number,y:number},
+ *   canonical:{cores:Object[], deltas:Object[], centre:{x:number,y:number}, opens:('left'|'right'|null)},
  *   transform:{rotation:number,dx:number,dy:number,cutAngle:(number|null),cutOffset:number}}}
  *   `ridges` and `mask` are row-major 0..1. `minutiae` are in this print's frame; `ux`/`uy` are the
  *   canonical coordinates, equal for the same finger across variants. `bounds` bounds mask > 0.5.
@@ -441,7 +483,20 @@ export function generatePrint({ owner, pattern, size = 128, variant = null, part
     }
     const bounds = x1 < 0 ? { x: 0, y: 0, w: 0, h: 0 } : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
 
-    return { size: N, owner, pattern: pat, ridges, mask, cores, deltas, minutiae, bounds, transform: tf };
+    // Canonical (upright card) frame: the reference point the comparison marks are placed round
+    // (the core, the middle of a whorl's two cores, or the summit of an arch) and, for a loop,
+    // which way it opens (the side away from the delta).
+    const canonCentre = pat === 'arch' ? sp.centre
+        : { x: sp.cores.reduce((t, c) => t + c.x, 0) / sp.cores.length, y: sp.cores.reduce((t, c) => t + c.y, 0) / sp.cores.length };
+    const canonical = {
+        cores: sp.cores.map(c => ({ x: c.x, y: c.y })),
+        deltas: sp.deltas.map(d => ({ x: d.x, y: d.y })),
+        centre: { x: canonCentre.x, y: canonCentre.y },
+        opens: pat === 'loop' ? (sp.side > 0 ? 'left' : 'right') : null
+    };
+    const centre = toFinal(canonCentre.x, canonCentre.y);
+
+    return { size: N, owner, pattern: pat, ridges, mask, cores, deltas, minutiae, bounds, transform: tf, centre, canonical };
 }
 
 /** Parse '#rgb', '#rrggbb', 'rgb(...)' / 'rgba(...)' to [r, g, b]. */

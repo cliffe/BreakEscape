@@ -24,6 +24,11 @@ export class VmControlsWidget {
         this._countdownInterval = null;
     }
 
+    /** True while the VM Controls overlay is showing (read by vm-context-pause.js). */
+    get isOpen() {
+        return this._overlayOpen === true;
+    }
+
     mount() {
         if (!this._url) return;
 

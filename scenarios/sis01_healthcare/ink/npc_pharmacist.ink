@@ -32,7 +32,7 @@ VAR asked_normal = false
 {pharmacist_arrived:
     -> hub
 }
-~ pharmacist_arrived = true
+// pharmacist_arrived is set at the top of hub, after the opening choices, so a reload mid-opening replays it.
 // Round 3: met after the library is already restored, so skip the "until it's verified" lines.
 {drug_library_restored:
     Hamza Iqbal: Hamza Iqbal, on-call pharmacist. Helen sent me up about the drug library.
@@ -118,6 +118,7 @@ Hamza Iqbal: Pumps can go back into use, with a second nurse checking every new 
 // ===========================================
 
 === hub ===
+~ pharmacist_arrived = true
 {hub_quiet:
     ~ hub_quiet = false
 - else:

@@ -109,6 +109,15 @@ export class PinMinigame extends MinigameScene {
         const interfaceContainer = document.createElement('div');
         interfaceContainer.className = 'pin-minigame-interface';
         
+        // Which lock this keypad opens ("Enter PIN: Director's Safe"); the header is
+        // cleared above, so the title shows here (m08 E2)
+        if (this.params.title && this.params.title !== 'PIN Entry') {
+            const titleElement = document.createElement('div');
+            titleElement.className = 'pin-minigame-title';
+            titleElement.textContent = this.params.title.replace(/ -- /g, ' \u2013 ');
+            interfaceContainer.appendChild(titleElement);
+        }
+
         // Create digital display
         const displayContainer = document.createElement('div');
         displayContainer.className = 'pin-minigame-display-container';
@@ -632,6 +641,11 @@ export class PinMinigame extends MinigameScene {
     }
     
     complete(success) {
+        // Closing the pad (Cancel, x, Esc, a hit) without a verdict is not a wrong PIN:
+        // flag it so callers can close quietly (no "PIN Rejected", no failure sound).
+        if (!success && !this.gameResult) {
+            this.gameResult = { success: false, cancelled: true, attempts: this.attemptCount || 0 };
+        }
         // Call parent complete with result
         super.complete(success, this.gameResult);
     }
@@ -695,5 +709,5 @@ export function startPinMinigame(correctPin = '1234', options = {}) {
     window.MinigameFramework.startMinigame('pin', null, params);
 }
 
-// Make the function available globally
-window.startPinMinigame = startPinMinigame;
+// Not assigned to window: window.startPinMinigame is the real starter from
+// systems/minigame-starters.js (lockable, type, correctPin, callback).

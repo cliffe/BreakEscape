@@ -11,6 +11,15 @@
  *   "gameClock": { "start": "Tue 07:30" }      (or just "gameClock": "Tue 07:30")
  * The in-game time is then the start plus elapsed game time. Without it,
  * clock displays keep showing the real wall clock, as they always did.
+ *
+ * A story rate and phase anchors keep the in-game time in step with the story:
+ *   "gameClock": { "start": "Wed 16:30", "rate": 6,
+ *                  "anchors": [{ "condition": "globalVars.night === true", "time": "20:10" }] }
+ * rate: game minutes per real minute (default 1). anchors: when an anchor's
+ * condition (globalVars syntax, && only) first holds, the clock jumps forward to
+ * its time, never back; a time with no day means that time on the current game
+ * day. Reached anchors are saved with the clock, so a reload keeps each message's
+ * time. Elapsed game time (timers, delays) is real time and is not scaled.
  */
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -41,6 +50,22 @@ function pad2(n) {
   return String(n).padStart(2, '0');
 }
 
+/** Game minutes per real minute: a positive number, else 1. Capped at 1440 (a day a minute). */
+export function parseGameClockRate(config) {
+  const rate = Number(config && typeof config === 'object' ? config.rate : undefined);
+  return Number.isFinite(rate) && rate > 0 ? Math.min(rate, 1440) : 1;
+}
+
+/** The scenario's anchors that parse: [{ index, condition, target: {dayIndex, seconds} }]. */
+export function parseGameClockAnchors(config) {
+  const list = config && typeof config === 'object' && Array.isArray(config.anchors) ? config.anchors : [];
+  return list.map((a, index) => ({
+    index,
+    condition: typeof a?.condition === 'string' ? a.condition : null,
+    target: parseGameClockStart(a?.time)
+  })).filter(a => a.condition && a.target);
+}
+
 
 export class GameClock {
   /**
@@ -53,6 +78,67 @@ export class GameClock {
     const savedElapsed = Number(saved?.elapsedMs);
     this.startTime = now - (Number.isFinite(savedElapsed) && savedElapsed > 0 ? savedElapsed : 0);
     this.start = parseGameClockStart(config);
+    this.rate = parseGameClockRate(config);
+    this.anchors = this.start ? parseGameClockAnchors(config) : [];
+    // Anchors already reached: index -> { atMs: elapsed ms, gameSec: game seconds from
+    // the start day's midnight }. Restored from the save, so times stay put.
+    this.reached = new Map();
+    const savedAnchors = saved?.anchors && typeof saved.anchors === 'object' ? saved.anchors : {};
+    for (const a of this.anchors) {
+      const r = savedAnchors[a.index] || savedAnchors[String(a.index)];
+      if (r && Number.isFinite(Number(r.atMs)) && Number.isFinite(Number(r.gameSec))) {
+        this.reached.set(a.index, { atMs: Number(r.atMs), gameSec: Number(r.gameSec) });
+      }
+    }
+  }
+
+  /**
+   * Game seconds from the start day's midnight at an elapsed time: the start,
+   * advanced at the story rate from the latest anchor reached by then.
+   */
+  gameSecondsAt(atElapsedMs) {
+    let fromMs = 0;
+    let fromSec = this.start ? this.start.seconds : 0;
+    for (const r of this.reached.values()) {
+      if (r.atMs <= atElapsedMs && r.atMs >= fromMs) { fromMs = r.atMs; fromSec = r.gameSec; }
+    }
+    // Before the game started (a preloaded text "an hour ago") time runs at 1:1,
+    // so a backdated message keeps the gap it was written with
+    const rate = atElapsedMs < 0 ? 1 : this.rate;
+    return fromSec + Math.floor(((atElapsedMs - fromMs) / 1000) * rate);
+  }
+
+  /** An anchor's time as game seconds from the start day's midnight, on or after `nowSec`'s day. */
+  anchorGameSeconds(target, nowSec) {
+    if (target.dayIndex === null || this.start.dayIndex === null) {
+      return Math.floor(nowSec / 86400) * 86400 + target.seconds;
+    }
+    const days = ((target.dayIndex - this.start.dayIndex) % 7 + 7) % 7;
+    let sec = days * 86400 + target.seconds;
+    while (sec + 7 * 86400 <= nowSec) sec += 7 * 86400;
+    return sec;
+  }
+
+  /**
+   * Jump to any anchor whose condition now holds (first time only), never back.
+   * @param {(condition: string) => boolean} holds - evaluates a globalVars condition
+   * @returns {boolean} true when the clock moved
+   */
+  checkAnchors(holds, now = Date.now()) {
+    if (!this.anchors.length || typeof holds !== 'function') return false;
+    let moved = false;
+    for (const a of this.anchors) {
+      if (this.reached.has(a.index)) continue;
+      let ok = false;
+      try { ok = holds(a.condition) === true; } catch (e) { ok = false; }
+      if (!ok) continue;
+      const atMs = this.elapsedMs(now);
+      const cur = this.gameSecondsAt(atMs);
+      const target = this.anchorGameSeconds(a.target, cur);
+      this.reached.set(a.index, { atMs, gameSec: Math.max(cur, target) });
+      if (target > cur) moved = true;
+    }
+    return moved;
   }
 
   /** True when the scenario gave an in-game start time. */
@@ -74,7 +160,7 @@ export class GameClock {
       const d = new Date(this.startTime + atElapsedMs);
       return { day: WEEKDAYS[d.getDay()], hours: d.getHours(), minutes: d.getMinutes(), seconds: d.getSeconds() };
     }
-    const total = this.start.seconds + Math.floor(atElapsedMs / 1000);
+    const total = this.gameSecondsAt(atElapsedMs);
     const dayOffset = Math.floor(total / 86400);
     // A time before the game started (a phone thread preloaded "an hour ago") wraps
     // back into the previous day rather than going negative
@@ -98,7 +184,12 @@ export class GameClock {
   }
 
   exportState(now = Date.now()) {
-    return { elapsedMs: this.elapsedMs(now) };
+    const out = { elapsedMs: this.elapsedMs(now) };
+    if (this.reached.size > 0) {
+      out.anchors = {};
+      for (const [i, r] of this.reached) out.anchors[i] = { atMs: r.atMs, gameSec: r.gameSec };
+    }
+    return out;
   }
 }
 

@@ -95,14 +95,46 @@ export const POWDERS = {
  * - `findHintVisible`: a faint smudge shows in the find step without the torch.
  * - `partial`: 'never' | 'maybe' (about half the surfaces) | 'always' the print is cut by a straight edge.
  * - `sheenScale`: multiplier for the torch sheen's visibility radius.
+ * - `marks`: minutiae marked round the core on the lift and every card in the compare step (F26), so the
+ *   cards can be told apart by eye; the right card carries the same marks in the same places.
  * @type {Object<string, {pfog:number, minCoverage:number, residueStrength:number, candidates:number,
- *   decoySamePattern:'never'|'one'|'all', findHintVisible:boolean, partial:'never'|'maybe'|'always', sheenScale:number}>}
+ *   decoySamePattern:'never'|'one'|'all', findHintVisible:boolean, partial:'never'|'maybe'|'always', sheenScale:number,
+ *   marks:number}>}
  */
 export const DIFFICULTY = {
-    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'one', findHintVisible: true, partial: 'never', sheenScale: 1.0 },
-    medium: { pfog: 6, minCoverage: 0.45, residueStrength: 1.0, candidates: 3, decoySamePattern: 'one', findHintVisible: false, partial: 'maybe', sheenScale: 1.0 },
-    hard: { pfog: 5, minCoverage: 0.55, residueStrength: 0.9, candidates: 3, decoySamePattern: 'all', findHintVisible: false, partial: 'always', sheenScale: 0.7 }
+    // easy: the decoy has a different pattern class, so the compare is by class; near-identical
+    // whorls on easy were not a fair comparison (m08 E16). Medium and hard keep the minutiae test.
+    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'never', findHintVisible: true, partial: 'never', sheenScale: 1.0, marks: 3 },
+    medium: { pfog: 6, minCoverage: 0.45, residueStrength: 1.0, candidates: 3, decoySamePattern: 'one', findHintVisible: false, partial: 'maybe', sheenScale: 1.0, marks: 3 },
+    hard: { pfog: 5, minCoverage: 0.55, residueStrength: 0.9, candidates: 3, decoySamePattern: 'all', findHintVisible: false, partial: 'always', sheenScale: 0.7, marks: 2 }
 };
+
+const PATTERN_CLASSES = ['loop', 'whorl', 'arch'];
+
+/**
+ * Pattern class for each decoy reference card, from the difficulty's `decoySamePattern` rule.
+ * 'never' (easy) gives every decoy a class other than the lift's, so the cards differ by class;
+ * 'one' makes the first decoy share the lift's class; 'all' makes every decoy share it.
+ * A decoy that must differ keeps its own class (`ownPatterns[k]`) when that already differs, so a
+ * person's card shows the same finger on every surface; otherwise the seed picks another class.
+ * @param {'loop'|'whorl'|'arch'} liftPattern
+ * @param {number} count number of decoys
+ * @param {'never'|'one'|'all'} rule
+ * @param {number} seed unsigned integer, picks among the other classes
+ * @param {string[]} [ownPatterns] each decoy's own pattern class (patternForOwner)
+ * @returns {string[]}
+ */
+export function decoyPatterns(liftPattern, count, rule, seed, ownPatterns = []) {
+    const others = PATTERN_CLASSES.filter(p => p !== liftPattern);
+    const out = [];
+    for (let k = 0; k < count; k++) {
+        const own = ownPatterns[k];
+        if (rule === 'all' || (rule === 'one' && k === 0)) out.push(liftPattern);
+        else if (others.includes(own)) out.push(own);
+        else out.push(others[(seed + k) % others.length]);
+    }
+    return out;
+}
 
 const DARK_TYPES = /(^|[-_])(pc|computer|laptop|monitor|screen|terminal|phone|smartphone|tablet|display|workstation)([-_]|$)/i;
 const LIGHT_TYPES = /(cup|mug|glass|bottle|ceramic|plate|bowl|pot)/i;

@@ -1,0 +1,108 @@
+{
+"steps": [
+{
+"note": "R32 (phase 4 dialogue C1, D5-5): the player hangs up on the Recruiter's offer, rings back and says no. The refusal is recorded, she remembers it on a third call, and the debrief says the player turned her down."
+},
+{
+"set": {
+"torres_identified": true
+}
+},
+{
+"talk": "recruiter",
+"picks": [
+"How many more",
+"What were you actually after",
+"Why does ENTROPY want",
+"That number was known",
+"I'm done talking"
+]
+},
+{
+"expect": {
+"recruiter_deal_offered": true,
+"recruiter_deal_decided": false,
+"recruiter_deal_accepted": false
+}
+},
+{
+"said": [
+"Control? Nobody wants to run it. We want the minutes.",
+"A forty-to-seventy-minute failover window",
+"Time's short for both of us"
+]
+},
+{
+"talk": "recruiter",
+"picks": [
+"Ring the TalentStack number back",
+"No deal."
+]
+},
+{
+"expect": {
+"recruiter_deal_decided": true,
+"recruiter_deal_accepted": false
+}
+},
+{
+"said": [
+"Still deciding?",
+"Then we're done. I'll close your file.",
+"She hangs up first."
+],
+"notSaid": [
+"[choice] I already told you",
+"Think it over"
+]
+},
+{
+"talk": "recruiter",
+"picks": [
+"Ring the TalentStack number back"
+]
+},
+{
+"said": [
+"You said no once. I heard you."
+]
+},
+{
+"set": {
+"found_medical_bills": true,
+"found_door_log": true,
+"found_pamphlet": true,
+"found_upload_schedule": true,
+"flag1_submitted": true,
+"flag2_submitted": true,
+"flag3_submitted": true,
+"flag4_submitted": true,
+"final_choice": "arrest",
+"torres_arrested": true,
+"found_pipeline_list": true
+}
+},
+{
+"talk": "debrief",
+"picks": [
+0,
+"And the research portal",
+"Whose job",
+"He did this",
+"Same hand",
+"same way again"
+]
+},
+{
+"said": [
+"you turned her down"
+],
+"notSaid": [
+"You never answered her offer"
+]
+},
+{
+"maxRun": 9
+}
+]
+}

@@ -13,7 +13,7 @@
  * @module rfid-ui
  */
 
-import { getProtocolInfo, detectProtocol } from './rfid-protocols.js';
+import { getProtocolInfo, detectProtocol, getReadProfile } from './rfid-protocols.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
 export class RFIDUIRenderer {
@@ -135,6 +135,14 @@ export class RFIDUIRenderer {
             savedOption.textContent = '  Saved';
             savedOption.addEventListener('click', () => this.showSavedCards());
             menu.appendChild(savedOption);
+
+            // Nothing cloned yet: say so up front rather than after a trip into Saved
+            if (this.dataManager.getSavedCards().length === 0) {
+                const none = document.createElement('div');
+                none.className = 'flipper-info-dim';
+                none.textContent = 'No saved cards to emulate yet';
+                menu.appendChild(none);
+            }
         } else {
             // Clone mode - just show "Reading..." message
             const info = document.createElement('div');
@@ -225,6 +233,11 @@ export class RFIDUIRenderer {
             noCards.className = 'flipper-info';
             noCards.textContent = 'No saved cards';
             screen.appendChild(noCards);
+
+            const how = document.createElement('div');
+            how.className = 'flipper-info-dim';
+            how.textContent = 'Nothing to emulate yet. Read a keycard with the cloner to save it here.';
+            screen.appendChild(how);
         } else {
             // Card list
             const cardList = document.createElement('div');
@@ -373,9 +386,17 @@ export class RFIDUIRenderer {
         }
         screen.appendChild(emulating);
 
-        // Trigger emulation after showing screen
+        // Trigger emulation after showing screen. If it throws (bad card data), say so
+        // rather than leaving "Emulating..." up with nothing happening.
         setTimeout(() => {
-            this.minigame.handleEmulate(card);
+            if (!this.getScreen()) return; // closed meanwhile
+            try {
+                this.minigame.handleEmulate(card);
+            } catch (e) {
+                console.error('Emulation failed:', e);
+                this.showError('Emulation failed', 'The saved card data is unreadable. Read the card again.');
+                setTimeout(() => { if (this.getScreen()) this.showSavedCards(); }, 3000);
+            }
         }, 500);
     }
 
@@ -558,21 +579,25 @@ export class RFIDUIRenderer {
         breadcrumb.textContent = 'RFID > Read';
         screen.appendChild(breadcrumb);
 
-        // Status
+        // What the cloner sees on this card: band, protocol and whether it is encrypted
+        const card = this.minigame.cardToClone || {};
+        const profile = getReadProfile(detectProtocol(card));
+
+        const band = document.createElement('div');
+        band.className = 'flipper-info-dim';
+        band.textContent = profile.band;
+        screen.appendChild(band);
+
         const status = document.createElement('div');
         status.className = 'flipper-info';
-        status.textContent = 'Reading 1/2';
+        status.textContent = profile.cryptoClass === 'open' ? 'Reading ID...' : 'Reading UID...';
         screen.appendChild(status);
 
-        // Modulation
-        const modulation = document.createElement('div');
-        modulation.className = 'flipper-info-dim';
-        modulation.textContent = '> ASK   PSK';
-        screen.appendChild(modulation);
+        screen.appendChild(this.createCryptoLine(profile));
 
         // Instruction
         const instruction = document.createElement('div');
-        instruction.className = 'flipper-info';
+        instruction.className = 'flipper-info-dim';
         instruction.textContent = "Don't move card...";
         screen.appendChild(instruction);
 
@@ -588,7 +613,45 @@ export class RFIDUIRenderer {
         screen.appendChild(progressContainer);
 
         // Start reading animation
-        this.minigame.startCardReading();
+        this.minigame.startCardReading(profile.readMs);
+    }
+
+    /**
+     * One line saying whether the card's data is encrypted: green for "in clear",
+     * amber with a padlock for encrypted.
+     * @param {{cryptoLine: string, cryptoClass: string}} profile - from getReadProfile
+     */
+    createCryptoLine(profile) {
+        const line = document.createElement('div');
+        line.className = `rfid-crypto-line rfid-crypto-${profile.cryptoClass}`;
+        line.textContent = `${profile.cryptoClass === 'open' ? '🔓' : '🔒'} ${profile.cryptoLine}`;
+        return line;
+    }
+
+    /**
+     * A MIFARE Classic 1K card's 16 sectors as a row of cells: lit once its key is known.
+     * @param {number} known - sectors whose key is recovered
+     * @param {string} [id] - element id, so an attack can light cells as it goes
+     */
+    createSectorGrid(known, id) {
+        const grid = document.createElement('div');
+        grid.className = 'rfid-sector-grid';
+        if (id) grid.id = id;
+        for (let i = 0; i < 16; i++) {
+            const cell = document.createElement('div');
+            cell.className = i < known ? 'rfid-sector rfid-sector-open' : 'rfid-sector';
+            grid.appendChild(cell);
+        }
+        return grid;
+    }
+
+    /** Light the first `known` cells of a sector grid already on screen. */
+    updateSectorGrid(id, known) {
+        const grid = document.getElementById(id);
+        if (!grid || !grid.children) return;
+        Array.from(grid.children).forEach((cell, i) => {
+            cell.className = i < known ? 'rfid-sector rfid-sector-open' : 'rfid-sector';
+        });
     }
 
     /**
@@ -658,7 +721,9 @@ export class RFIDUIRenderer {
 
         // Card data fields
         const data = document.createElement('div');
-        data.className = keyless ? 'flipper-card-data flipper-card-data-compact' : 'flipper-card-data';
+        // Compact when the keyless hint or the sector grid needs the room
+        const compact = keyless || displayData.protocol.startsWith('MIFARE_Classic');
+        data.className = compact ? 'flipper-card-data flipper-card-data-compact' : 'flipper-card-data';
         displayData.fields.forEach(field => {
             const fieldDiv = document.createElement('div');
             fieldDiv.innerHTML = `<strong>${field.label}:</strong> ${field.value}`;
@@ -678,6 +743,11 @@ export class RFIDUIRenderer {
 
         screen.appendChild(data);
 
+        // MIFARE Classic: show the 16 sectors, locked until their keys are recovered
+        if (displayData.protocol.startsWith('MIFARE_Classic')) {
+            screen.appendChild(this.createSectorGrid(this.dataManager.getKnownKeyCount(cardData)));
+        }
+
         // Buttons
         const buttons = document.createElement('div');
         buttons.className = 'flipper-buttons';
@@ -688,7 +758,7 @@ export class RFIDUIRenderer {
             // MIFARE Classic with no keys: no plain Save, point at the attack menu.
             const why = document.createElement('div');
             why.className = 'flipper-info flipper-crack-hint';
-            why.textContent = 'Sector keys protect the data. Weak default keys fall to a dictionary attack; custom keys need Darkside or Nested.';
+            why.textContent = '🔒 Sectors encrypted: recover the keys to read them. Default keys fall to a dictionary attack; custom keys need Darkside.';
             screen.appendChild(why);
             saveBtn.textContent = 'Crack keys first';
             saveBtn.addEventListener('click', () => this.showProtocolInfo(cardData));
@@ -744,10 +814,14 @@ export class RFIDUIRenderer {
         }
         screen.appendChild(status);
 
+        // The MIFARE stage EM4100 never needs
+        screen.appendChild(this.createCryptoLine({ cryptoClass: 'locked', cryptoLine: 'Sectors encrypted: recovering keys' }));
+        screen.appendChild(this.createSectorGrid(this.sectorsKnownFrom(data), 'attack-sector-grid'));
+
         // Progress bar
         const progressContainer = document.createElement('div');
         progressContainer.className = 'rfid-progress-container';
-        progressContainer.style.marginTop = '20px';
+        progressContainer.style.marginTop = '12px';
 
         const progressBar = document.createElement('div');
         progressBar.className = 'rfid-progress-bar';
@@ -800,6 +874,16 @@ export class RFIDUIRenderer {
         if (percentage) {
             percentage.textContent = `${Math.floor(data.progress)}%`;
         }
+
+        this.updateSectorGrid('attack-sector-grid', this.sectorsKnownFrom(data));
+    }
+
+    /** Sectors cracked so far, from an attack's progress data. */
+    sectorsKnownFrom(data) {
+        if (data.progress >= 100) return 16;
+        if (data.sectorsRemaining !== undefined) return 16 - data.sectorsRemaining;
+        if (data.currentSector !== undefined) return data.currentSector;
+        return 0;
     }
 
     /**
@@ -822,17 +906,27 @@ export class RFIDUIRenderer {
     /**
      * Show error message
      * @param {string} message - Error message
+     * @param {string} [detail] - Short line underneath saying why
+     * @param {string} [tone] - 'notice' for "nothing happened" (amber, no cross)
      */
-    showError(message) {
+    showError(message, detail, tone) {
         const screen = this.getScreen();
+        if (!screen) return;
         screen.innerHTML = '';
 
+        const notice = tone === 'notice';
         const error = document.createElement('div');
-        error.className = 'flipper-error';
+        error.className = notice ? 'flipper-error flipper-notice' : 'flipper-error';
         error.innerHTML = `
-            <div class="flipper-error-icon">✗</div>
+            <div class="flipper-error-icon">${notice ? '📡' : '✗'}</div>
             <div class="flipper-error-message">${message}</div>
         `;
+        if (detail) {
+            const why = document.createElement('div');
+            why.className = 'flipper-error-detail';
+            why.textContent = detail;
+            error.appendChild(why);
+        }
         screen.appendChild(error);
     }
 

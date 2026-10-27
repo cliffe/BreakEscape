@@ -40,13 +40,13 @@ VAR guard_asked_name = false
     -> start.waved_choices
 }
 { guard_grace:
-    Checkpoint Guard: Still here. Still not on my list. Try reception.
+    Checkpoint Guard: Still here. Still not on my list. Lobby's that way.
     -> start.grace_choices
 }
 { not guard_asked_name:
     ~ guard_asked_name = true
     Narrator: A contract guard with a clipboard walks a slow line across the checkpoint, between you and the trading-floor door.
-    Checkpoint Guard: Afternoon. Floor's restricted. Who are you?
+    Checkpoint Guard: Evening. Floor's restricted. Who are you?
 - else:
     Checkpoint Guard: You again. Who are you, then?
 }
@@ -60,7 +60,7 @@ VAR guard_asked_name = false
     Checkpoint Guard: Regulator. Yeah, they said there'd be one. Who are you here to see?
     -> start.name
 + [IT. I've been asked to look at the servers.]
-    Checkpoint Guard: IT come in through the back with a ticket number. You're not on my list.
+    Checkpoint Guard: Tech support come in through the back with a ticket number. You're not on my list.
     #exit_conversation
     -> start.question
 + [A consultant. Blockchain audit.]
@@ -105,7 +105,7 @@ Checkpoint Guard: Door's open. Don't touch the screens; the traders bite.
 #exit_conversation
 -> start.waved_choices
 
-// lockpick_used_in_view (event-started, cooldown 0). Checks the waved-through
+// lockpick_used_in_view (event-started, cooldown 250 ms; see the erb comment). Checks the waved-through
 // and grace states first, so a man who let you in never challenges you.
 === on_lockpick_seen ===
 { guard_waved_through:
@@ -128,6 +128,7 @@ Checkpoint Guard: Door's open. Don't touch the screens; the traders bite.
 #set_variable:guard_caught=true
 Narrator: Across the room, the guard's head comes up. He has seen the picks.
 Checkpoint Guard: Oi. Away from that door.
-Checkpoint Guard: I don't know who you are, and now I'm not going to take your word for it. Go back out to reception and sign in properly.
+Checkpoint Guard: I don't know who you are, and now I'm not going to take your word for it. Go back out to the lobby and come in properly.
+Checkpoint Guard: And I'll be ringing whoever you say sent you.
 #exit_conversation
 -> start.grace_choices

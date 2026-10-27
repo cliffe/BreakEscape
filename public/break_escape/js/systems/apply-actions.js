@@ -1,4 +1,6 @@
 import { displayDashes } from '../utils/display-dashes.js';
+import { writeGlobal } from './global-writer.js';
+import { grantFact, readyToastText } from './social-intel.js';
 
 /**
  * Shared action executor for scenario-defined action descriptors.
@@ -10,6 +12,8 @@ import { displayDashes } from '../utils/display-dashes.js';
  * Supported action types:
  *   set_global     { key, value }    — patches gameState.globalVariables and fires
  *                                      global_variable_changed:<key>
+ *   grant_fact     { fact }          — grants an intel fact once (note, readiness) and
+ *                                      toasts "Noted: <fact label>" (00 S15)
  *   emit_event     { event_name }    — fires a raw eventDispatcher event
  *   complete_task  { taskId }        — marks an objective task complete
  *   unlock_object  { objectId }      — unlocks a world object (+ optional server persist)
@@ -32,12 +36,34 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
 
             case 'set_global':
                 if (action.key !== undefined && window.gameState?.globalVariables) {
-                    window.gameState.globalVariables[action.key] = action.value;
-                    window.eventDispatcher?.emit(`global_variable_changed:${action.key}`, {
-                        name: action.key,
-                        value: action.value
-                    });
+                    // The shared writer (00 S3). emitAlways: set_global emits on every
+                    // call, same value or not, as it always has (some mappings re-set a
+                    // value to re-fire). The only new behaviour is the broadcast to
+                    // cached stories that declare the name; the open chat's story is
+                    // left as before (openChat: false).
+                    writeGlobal(action.key, action.value, { emitAlways: true, openChat: false });
                     console.log(`[applyActions] set_global ${action.key} =`, action.value);
+                }
+                break;
+
+            case 'grant_fact':
+                if (action.fact) {
+                    // Flip-only (social-intel.js): a repeat grant does nothing, so the
+                    // toast shows once, beside the note the grant adds.
+                    const granted = grantFact(action.fact, { source });
+                    if (granted.granted) {
+                        // Title "Noted", body the fact label: the toast reads "Noted: <label>"
+                        // once, not doubled (P1-T T5).
+                        window.gameAlert?.(granted.label, 'info', 'Noted', 4000);
+                        // If this fact just made a target ready, point the player at the
+                        // place to act on it (P1-T T8): the target's channel, or the
+                        // scenario's intelBoard.readyToast.
+                        const newlyReady = granted.readiness?.newlyReady || [];
+                        if (newlyReady.length) {
+                            window.gameAlert?.(readyToastText(newlyReady),
+                                'success', 'Ready to approach', 6000);
+                        }
+                    }
                 }
                 break;
 
@@ -78,7 +104,20 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                     if (window.gameState?.unlockedRooms && !window.gameState.unlockedRooms.includes(action.room_id)) {
                         window.gameState.unlockedRooms.push(action.room_id);
                     }
-                    window.eventDispatcher?.emit('door_unlocked', { roomId: action.room_id, source });
+                    // A flag reward has already unlocked the room on the server: open the
+                    // door sprites to it now, as NPCGameBridge.unlockDoor does, or the door
+                    // asks for its lock until the next reload (F18). Other sources are
+                    // client-only, and the server would refuse the room, so they don't.
+                    if (source === 'flag_reward') {
+                        Object.values(window.rooms || {}).forEach(room => (room?.doorSprites || []).forEach(door => {
+                            if (door?.doorProperties?.connectedRoom === action.room_id) door.doorProperties.locked = false;
+                        }));
+                        if (window.gameScenario?.rooms?.[action.room_id]) window.gameScenario.rooms[action.room_id].locked = false;
+                        if (window.rooms?.[action.room_id]) window.rooms[action.room_id].locked = false;
+                    }
+                    // connectedRoom is the room unlocked, as in unlock-system.js's door_unlocked:
+                    // objectives-manager and eventMapping conditions (data.connectedRoom) read it
+                    window.eventDispatcher?.emit('door_unlocked', { roomId: action.room_id, connectedRoom: action.room_id, source });
                 }
                 break;
 

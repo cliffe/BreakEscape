@@ -706,7 +706,7 @@ boardroom_pin = "0417"
           "displayName": "Agent HaX",
           "npcType": "phone",
           "storyPath": "scenarios/m02_ransomed_trust/ink/m02_phone_agent0x99.json",
-          "avatar": "assets/characters/agent_hax_headshot.png",
+          "avatar": "assets/characters/agent_hax_v2_headshot.png",
           "phoneId": "player_phone",
           "currentKnot": "first_call",
           "voice": {
@@ -1422,7 +1422,7 @@ boardroom_pin = "0417"
           "npcType": "person",
           "position": { "x": 500, "y": 500 },
           "spriteSheet": "agent_hax",
-          "avatar": "assets/characters/agent_hax_headshot.png",
+          "avatar": "assets/characters/agent_hax_v2_headshot.png",
           "spriteTalk": "assets/characters/agent_hax_talk.png",
           "spriteVisemes": "assets/characters/agent_hax_visemes.png",
           "spriteConfig": {
@@ -2031,14 +2031,17 @@ boardroom_pin = "0417"
     catch scene that can win him over. 360-degree LOS: it's a small office and he is
     sat in it. Once only, so the next attempt picks normally. Like Val's catch, it
     can't fire for a player holding any key until the "Switch to Lockpicking" LOS
-    fix lands in the engine (unlock-system.js key branch). %>
-          "los": { "enabled": true, "range": 400, "angle": 360, "visualize": false },
+    fix lands in the engine (unlock-system.js key branch).
+    Sight occlusion (2026-10-22): occlusion off. With walls and tall props blocking
+    sight, the steel filing cabinet beside his locked one hid a player picking it from
+    the front (browser check, game 3180), and this catch is meant to always fire. %>
+          "los": { "enabled": true, "range": 400, "angle": 360, "visualize": false, "occlusion": false },
           "eventMappings": [
             {
               "eventPattern": "lockpick_used_in_view",
               "targetKnot": "on_cabinet_picked",
               "conversationMode": "person-chat",
-              "condition": "!globalVars.accused_wrong_suspect",
+              "condition": "!globalVars.accused_wrong_suspect && data.lockable.scenarioData.id === 'it_filing_cabinet'",
               "onceOnly": true
             }
           ],
@@ -2231,6 +2234,7 @@ boardroom_pin = "0417"
         },
         {
           "type": "phone",
+          "sprite": "bluetooth_scanner",
           "id": "ghost_terminal_device",
           "name": "Planted Network Device",
           "takeable": true,
@@ -2275,9 +2279,9 @@ boardroom_pin = "0417"
         {
           "type": "vm-launcher",
           "id": "vm_launcher_rooting_for_a_win",
-          "name": "VM Access Terminal",
+          "name": "SAFETYNET Field Console",
           "takeable": false,
-          "observations": "Kali attack terminal -- your working box for reaching the hospital backup server over the network",
+          "observations": "Your SAFETYNET field box -- the Kali kit you patched into the server room's isolated segment, the one point in the building that can still reach the backup server's network. HaX pushes your tools and field guides to it from here.",
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('attack_vm', {"id":1,"title":"kali","ip":"172.16.0.2","enable_console":true}) %>,
           "puzzle_graph_role": "vm",
@@ -2285,31 +2289,43 @@ boardroom_pin = "0417"
         },
         {
           "type": "flag-station",
+          "sprite": "safetynet_flag_terminal1",
           "id": "flag_station_dropsite",
           "name": "SAFETYNET Drop-Site Terminal",
           "takeable": false,
           "observations": "Secure terminal for submitting intercepted intelligence and VM flags",
           "acceptsVms": ["hospital_backup_server"],
+          "acceptsVmLabels": { "hospital_backup_server": "St. Catherine's backup server" },
           "flags": <%= flags_for_vm('hospital_backup_server', ['flag{ssh_access_granted}', 'flag{proftpd_backdoor_exploited}', 'flag{database_backup_located}', 'flag{ghost_operational_log}']) %>,
+          <%# rewards[i] pairs with flags[i]. flags 1 and 2 used to fire emit_events
+              (ssh_flag_submitted / proftpd_flag_submitted) that nothing listened to --
+              the whole thread keys on objective_task_completed:submit_*_flag -- so they
+              showed only a toast. R18: each now prints a small carried artefact the VM
+              already holds (Gary's recovery crib for the SSH foothold, the root-only
+              deployment log for the ProFTPD step), matching flags 3/4. %>
           "flagRewards": [
             {
-              "type": "emit_event",
-              "event_name": "ssh_flag_submitted",
-              "description": "SSH access flag submitted - server credentials intercepted"
+              "type": "give_item",
+              "item_name": "Gary's Recovery Crib Sheet",
+              "label": "SSH foothold confirmed — a page lifted from Gary's account.",
+              "description": "SSH access flag submitted - the drop-site prints the recovery crib lifted from Gary's account"
             },
             {
-              "type": "emit_event",
-              "event_name": "proftpd_flag_submitted",
-              "description": "ProFTPD exploitation flag submitted - shell access established"
+              "type": "give_item",
+              "item_name": "Equipment Deployment Log",
+              "label": "ProFTPD backdoor exploited — root on the backup server, with Ghost's deployment log.",
+              "description": "ProFTPD exploitation flag submitted - root access prints Ghost's equipment deployment log"
             },
             {
               "type": "give_item",
               "item_name": "Verified Restore Manifest",
+              "label": "Backup catalogue mapped — a verified restore manifest is cut.",
               "description": "Database backup flag submitted - the drop-site cuts a verified restore manifest from the recovered catalogue"
             },
             {
               "type": "unlock_object",
               "objectId": "entropy_staging_cache",
+              "label": "Ghost's operational log recovered — the ENTROPY staging cache opens.",
               "description": "Ghost's operational log submitted - ENTROPY Staging Cache unlocks automatically"
             }
           ],
@@ -2318,6 +2334,26 @@ boardroom_pin = "0417"
     of which snapshot is safe to restore. Item-backed, so the console reads the
     player's inventory rather than a hidden global. %>
           "itemsHeld": [
+            {
+              "type": "text_file",
+              "id": "gary_recovery_crib",
+              "name": "Gary's Recovery Crib Sheet",
+              "takeable": true,
+              "readable": true,
+              "text": "ST. CATHERINE'S IT // BACKUP ADMIN CRIB SHEET\nCopied from gary's account on the backup server once the foothold was in.\n\n- Admin login is still the old shared password. Never rotated.\n- Nightly restore runbook: use the Hospital Recovery Console in the server room.\n- Vendor advisory (ignored): the file-transfer service on this box ships a known backdoor. Patch released years ago. Never applied -- flagged as 'no downtime window'.\n\nThe door was propped open and labelled. We just walked through it.",
+              "observations": "Lifted from Gary's account the moment the SSH foothold landed: the reused admin password and a file-transfer advisory nobody ever acted on. Not root yet -- but you are inside.",
+              "puzzle_graph_role": "reward"
+            },
+            {
+              "type": "text_file",
+              "id": "equipment_deployment_log",
+              "name": "Equipment Deployment Log",
+              "takeable": true,
+              "readable": true,
+              "text": "EQUIPMENT DEPLOYMENT LOG // RESTRICTED\nRecovered from root on the backup server after the ProFTPD backdoor gave way.\n\nInside contact: unpaid contractor, standing grievance over a withheld invoice.\nOverride badge ran the evacuation drill six weeks ago.\nSame badge held the server-room doors open again on Friday night.\nBadge number: withheld in this log.\n\nWhoever propped ENTROPY's door is on the staff list, not the payroll.",
+              "observations": "Pulled from root once the ProFTPD backdoor gave way -- Ghost's own deployment log. It describes the insider exactly, but stops short of a badge number.",
+              "puzzle_graph_role": "reward"
+            },
             {
               "type": "text_file",
               "id": "verified_restore_manifest",
@@ -2563,6 +2599,7 @@ boardroom_pin = "0417"
         },
         {
           "type": "safe",
+          "sprite": "entropy_drive_case1",
           "id": "entropy_field_case",
           "name": "Sealed Equipment Case",
           "takeable": false,
@@ -2606,7 +2643,7 @@ boardroom_pin = "0417"
           "type": "safe",
           "id": "entropy_staging_cache",
           "name": "ENTROPY Staging Cache",
-          "sprite": "safe3",
+          "sprite": "entropy_drive_case1",
           "takeable": false,
           "locked": true,
           "lockType": "flag",
@@ -3045,7 +3082,7 @@ boardroom_pin = "0417"
           "id": "press_terminal",
           "name": "Hospital Communications Terminal",
           "takeable": false,
-          "sprite": "workstation",
+          "sprite": "entropy_comms_terminal1",
           "observations": "Secure outgoing relay connected to regional press networks. A system for transmitting official hospital communications to media contacts. The indicator light is green -- it's active.",
           "phoneId": "press_terminal",
           "npcIds": ["press_terminal_system"],
@@ -3509,6 +3546,24 @@ boardroom_pin = "0417"
     ["advised_board_pay", "advised_board_refuse"]
   ],
 
+  <%# Carry-over (docs/agents/CARRY_OVER_PLAN.md). Imports are read-only and
+      default to "never played m01": HaX's Derek line in the briefing and the
+      casualty-projections line in the debrief fall back to the original lines.
+      Exports: m03 reads paid_ransom, ghost_keys_used, ward_recovering and
+      bed4_manually_stabilised (HaX's St. Catherine's line). Renaming one of
+      these breaks the importing mission; the validator says which. %>
+  "importGlobals": [
+    { "from": "m01_first_contact", "var": "final_choice",               "default": "" },
+    { "from": "m01_first_contact", "var": "found_casualty_projections", "default": false },
+    { "from": "m01_first_contact", "var": "player_launched_attack",     "default": false },
+    { "from": "m01_first_contact", "completed": "m01_completed" }
+  ],
+  "exportGlobals": ["paid_ransom", "ghost_keys_used", "ward_recovering", "bed4_manually_stabilised",
+                    "patient_bed4_deceased", "exposed_hospital", "ghost_deal_accepted",
+                    "insider_asset_arrested", "insider_asset_escaped",
+                    "ghost_deal_refused", "gary_protected", "patient_assaulted", "receptionist_ko",
+                    "ward_nurse_ko", "raval_ko", "gary_ko", "dr_kim_ko", "reeves_fate"],
+
   "globalVariables": {
     "player_name": "Agent 0x00",
     "briefing_played": false,
@@ -3651,6 +3706,7 @@ boardroom_pin = "0417"
     "insider_asset_arrested": false,
     "insider_asset_escaped": false,
     "insider_asset_exposed": false,
+    "reeves_fate": "",
     "awaiting_ambush": false,
     "insider_ambushed": false,
     "accused_wrong_suspect": false,

@@ -177,7 +177,8 @@ module BreakEscape
 
       # Load player preference data for the in-game modal
       @player_preference = current_player_preference || create_default_preference
-      @available_sprites = PlayerPreference::AVAILABLE_SPRITES
+      @player_preference.scenario_context = @game.scenario_data
+      @avatar_menu = @player_preference.avatar_menu
 
       # Guard: player must have selected a valid sprite before entering the game
       if !@player_preference.sprite_selected?
@@ -343,9 +344,22 @@ module BreakEscape
           filtered['savedNpcHostility'] = @game.player_state['npcHostility']
         end
 
+        # The player's HP, so a reload mid-fight isn't a free full heal (m05 E6).
+        # A save at 0 HP (a knockout) isn't sent: the player wakes at full.
+        saved_hp = @game.player_state['playerHealth']
+        if saved_hp.is_a?(Hash) && saved_hp['hp'].is_a?(Numeric) && saved_hp['hp'].positive?
+          filtered['savedPlayerHealth'] = saved_hp
+        end
+
         # Phone threads (texts, read state, story position) per phone contact.
         if @game.player_state['phoneState'].present?
           filtered['savedPhoneState'] = @game.player_state['phoneState']
+        end
+
+        # Mail client state (mailboxes, pending reply jobs, threads, drafts,
+        # metrics; 00 §10a). Absent for a mission that never used mail.
+        if @game.player_state['mailState'].present?
+          filtered['savedMailState'] = @game.player_state['mailState']
         end
 
         # Include current inventory from player_state for page reload recovery
@@ -455,7 +469,7 @@ module BreakEscape
         return render_error("Room not found: #{room_id}", :not_found) unless room_data
 
         # Annotate flag-stations and launch-devices with whether all their flags are submitted
-        annotate_station_submission_status!(room_data)
+        annotate_station_submission_status!(room_data, room_id)
 
         # Track NPC encounters BEFORE sending response
         npc_count = room_data['npcs']&.length || 0
@@ -588,10 +602,14 @@ module BreakEscape
           return render_error('NPC story file not found', :not_found)
         end
 
-        ink_valid  = InkTextValidator.validate(ink_json_path.to_s, text)
-        bark_valid = ScenarioBarkValidator.validate(npc, text)
+        # A co-speaker's line can live in another NPC's story (Vance in HaX's
+        # debrief, HaX in Netherton's), so also accept a line that some story
+        # in this scenario voices as this NPC.
+        valid = InkTextValidator.validate(ink_json_path.to_s, text) ||
+                ScenarioBarkValidator.validate(npc, text) ||
+                spoken_as_npc_in_scenario?(npc_id, text)
 
-        unless ink_valid || bark_valid
+        unless valid
           Rails.logger.warn "[TTS] Text validation failed for NPC #{npc_id}: #{text.truncate(60)}"
           return render_error('Text not found in NPC story or barks', :forbidden)
         end
@@ -599,8 +617,8 @@ module BreakEscape
         # Scenario-only NPC with voice config but no Ink story of its own. Its lines are
         # either scenario barks (eventMappings / timedMessages), or it is a co-speaker whose
         # lines live in another NPC's Ink story (e.g. a director speaking inside a briefing
-        # cutscene). Accept both; the text must still come from this mission's own content.
-        unless ScenarioBarkValidator.validate(npc, text) || text_in_scenario_ink_stories?(text)
+        # cutscene). The text must be a line that story voices as this NPC.
+        unless ScenarioBarkValidator.validate(npc, text) || spoken_as_npc_in_scenario?(npc_id, text)
           Rails.logger.warn "[TTS] Bark text validation failed for NPC #{npc_id}: #{text.truncate(60)}"
           return render_error('Text not found in NPC barks or scenario stories', :forbidden)
         end
@@ -683,6 +701,9 @@ module BreakEscape
     def sync_state
       stale = false
       refusal = nil
+      # Sections a merge refused over a cap (the saved copy stands). Reported
+      # as notSaved so the client does not mark them confirmed and resends them.
+      @not_saved = []
       Game.transaction do
         @game = Game.lock.select(*SYNC_STATE_COLUMNS).find(params[:id])
         authorize @game if defined?(Pundit)
@@ -708,7 +729,10 @@ module BreakEscape
       elsif stale
         render json: { success: true, stale: true }
       else
-        render json: { success: true }
+        body = { success: true }
+        body[:notSaved] = @not_saved if @not_saved.any?
+        body[:mailTrimmed] = @mail_trimmed if @mail_trimmed.present?
+        render json: body
       end
     end
 
@@ -838,6 +862,10 @@ module BreakEscape
           feedback = @game.pin_cracker_feedback(target_type, target_id, attempt)
           body[:feedback] = feedback if feedback
         end
+        # Right apart from letter case: the keypad says passwords are case-sensitive
+        if method == 'password' && @game.password_case_mismatch?(target_type, target_id, attempt)
+          body[:caseMismatch] = true
+        end
         return render json: body, status: :unprocessable_entity
       end
 
@@ -923,6 +951,16 @@ module BreakEscape
         when 'add'
           # Validate item exists and is collectible
           source_npc_id = (params[:source_npc_id] || params[:sourceNpcId]).presence&.to_s
+          # Already held and no giver named: nothing to add, so nothing to validate.
+          # A reload used to re-send every held item like this, and re-validating an
+          # NPC gift with no source NPC took the first NPC copy holding it in room
+          # order, one the player may not have met (m10 F3: "NPC not encountered:
+          # nightshade_lock"). A give that names its NPC still validates, so the
+          # gift record for that NPC is kept.
+          if source_npc_id.blank? && @game.inventory_includes?(item.to_unsafe_h)
+            Rails.logger.info "[BreakEscape] Item already in inventory, accepted without revalidation: #{item['type']} / #{item['name']}"
+            return render json: { success: true, inventory: @game.player_state['inventory'] }
+          end
           validation_error = validate_item_collectible(item, source_npc_id)
           if validation_error
             Rails.logger.warn "[BreakEscape] inventory validation failed: #{validation_error}"
@@ -1196,7 +1234,16 @@ module BreakEscape
         if owning_station
           unless owning_id == station_id
             Rails.logger.info "[FlagDebug] REJECTED: owning #{owning_id.inspect} != submitted #{station_id.inspect}"
-            return render json: { success: false, message: 'Incorrect flag', debug: { owning_id: owning_id, station_id: station_id } }, status: :unprocessable_entity
+            # R9: say which station takes it, but only one the player has already
+            # found (its room is unlocked), so a refusal never leaks a device
+            # they haven't met yet.
+            return render json: {
+              success: false,
+              message: 'Incorrect flag',
+              reason: 'wrong_station',
+              ownerStationName: discovered_station_name(owning_station),
+              debug: { owning_id: owning_id, station_id: station_id }
+            }, status: :unprocessable_entity
           end
         else
           Rails.logger.info "[FlagDebug] No owning station found for flag — will proceed to submit_flag validation"
@@ -1255,7 +1302,7 @@ module BreakEscape
           updatedTasks:   task_outcomes[:updated_tasks]
         }
       else
-        render json: result, status: :unprocessable_entity
+        render json: result.merge(reason: result[:reason] || 'invalid'), status: :unprocessable_entity
       end
     end
 
@@ -1382,8 +1429,8 @@ module BreakEscape
     # values over newer ones, so they are skipped for it. npcVisibility and
     # phoneState are here too: visibility is latest-wins per NPC (it can be
     # set back to hidden), and a phone entry replaces the saved one whole, so
-    # an older thread would drop newer texts. npcHostility likewise. Returns a
-    # refusal message, or nil.
+    # an older thread would drop newer texts. npcHostility and playerHealth
+    # likewise. Returns a refusal message, or nil.
     def merge_last_write_wins_sections
       if params[:currentRoom]
         room = params[:currentRoom]
@@ -1407,8 +1454,22 @@ module BreakEscape
         @game.replace_timed_messages!(params[:timedMessages].to_unsafe_h)
       end
 
-      if params[:phoneState].respond_to?(:to_unsafe_h)
-        @game.merge_phone_state!(params[:phoneState].to_unsafe_h)
+      if params[:phoneState].respond_to?(:to_unsafe_h) &&
+         @game.merge_phone_state!(params[:phoneState].to_unsafe_h) == false
+        @not_saved << 'phoneState'
+      end
+
+      # mailState: each key replaces the saved message, thread or list whole, so
+      # an older copy would undo a read mark or bring back a delivered job (00 §10a)
+      if params[:mailState].respond_to?(:to_unsafe_h)
+        if @game.merge_mail_state!(params[:mailState].to_unsafe_h) == false
+          @not_saved << 'mailState'
+        elsif @game.mail_trimmed_keys.any?
+          # A successful save still trimmed read mail to fit the 1 MB cap: report
+          # the dropped keys so the client drops them too, instead of holding
+          # them as confirmed and losing them silently on reload (P1-D).
+          @mail_trimmed = @game.mail_trimmed_keys
+        end
       end
 
       if params[:npcVisibility].respond_to?(:to_unsafe_h)
@@ -1418,6 +1479,11 @@ module BreakEscape
       # Hostility is latest-wins per NPC (a KO is kept by the merge itself)
       if params[:npcHostility].respond_to?(:to_unsafe_h)
         @game.merge_npc_hostility!(params[:npcHostility].to_unsafe_h)
+      end
+
+      # The player's HP (m05 E6): latest wins, so a stale flush can't undo a hit
+      if params[:playerHealth].respond_to?(:to_unsafe_h)
+        @game.merge_player_health!(params[:playerHealth].to_unsafe_h)
       end
 
       # Notes merge by id, so an edit overwrites the saved copy and a new note
@@ -1484,6 +1550,8 @@ module BreakEscape
         # - bluetooth: requires device MAC/name (e.g., "00:11:22:33:44:55")
         # - rfid: requires card IDs (e.g., ["master_keycard"])
         lock_type = obj['lockType']
+        BreakEscape::Game.set_pin_length!(obj) # PIN pad length, before the PIN goes
+        BreakEscape::Game.strip_puzzle_graph_keys!(obj) # generator-only authoring fields
         if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
           obj.delete('requires')
         end
@@ -1742,10 +1810,18 @@ module BreakEscape
         end
       elsif location[:type] == 'npc'
         npc_id = location[:npc_id]
-        unless @game.player_state['encounteredNPCs'].include?(npc_id)
-          error_msg = "NPC not encountered: #{npc_id}"
-          Rails.logger.warn "[BreakEscape] #{error_msg}"
-          return error_msg
+        unless @game.player_state['encounteredNPCs']&.include?(npc_id)
+          # A headless email record (00 S8) is never in a room, so walking in never
+          # marks it encountered. A give from it only fires from its own on_email ink,
+          # which the mail runner (P1-J) runs on delivery, so that delivery IS first
+          # contact: encounter it here (the runner records the same on the client).
+          if headless_email_record?(npc_id)
+            @game.encounter_npc!(npc_id)
+          else
+            error_msg = "NPC not encountered: #{npc_id}"
+            Rails.logger.warn "[BreakEscape] #{error_msg}"
+            return error_msg
+          end
         end
       elsif location[:type] == 'flag_station'
         # Flag station items are valid if they're in the player's inventory (already awarded server-side)
@@ -1757,6 +1833,20 @@ module BreakEscape
 
       Rails.logger.info "[BreakEscape] Item collection valid: #{item_type}"
       nil # No error
+    end
+
+    # A headless email record (social.characters.*.emailRecord, 00 S8): a scenario
+    # NPC with no room. A room NPC with the same id wins, so it is not treated as
+    # headless (Game.scenario_npc_records drops the clashing record the same way).
+    def headless_email_record?(npc_id)
+      return false unless npc_id.present?
+      return false unless BreakEscape::Game.headless_npc_records(@game.scenario_data).any? { |record| record['id'] == npc_id }
+      # A room NPC with the same id wins and is encountered the ordinary way.
+      rooms = @game.scenario_data['rooms']
+      in_a_room = rooms.is_a?(Hash) && rooms.each_value.any? do |room|
+        room.is_a?(Hash) && room['npcs'].is_a?(Array) && room['npcs'].any? { |n| n.is_a?(Hash) && n['id'] == npc_id }
+      end
+      !in_a_room
     end
 
     # Locate the scenario definition of an item the client wants to add.
@@ -1795,6 +1885,18 @@ module BreakEscape
             npc['itemsHeld']&.each do |held_item|
               return npc_location.call(npc, room_id, held_item) if matches.call(held_item)
             end
+          end
+        end
+
+        # A headless record (00 S8) gives from no room. A room NPC with the same id
+        # wins, as in Game.scenario_npc_records.
+        in_a_room = @game.scenario_data['rooms'].each_value.any? do |room_data|
+          room_data['npcs']&.any? { |npc| npc['id'] == source_npc_id }
+        end
+        unless in_a_room
+          headless = BreakEscape::Game.headless_npc_records(@game.scenario_data).find { |npc| npc['id'] == source_npc_id }
+          headless&.dig('itemsHeld')&.each do |held_item|
+            return npc_location.call(headless, nil, held_item) if matches.call(held_item)
           end
         end
       end
@@ -1962,6 +2064,11 @@ module BreakEscape
         end
       end
 
+      # Headless records (social.characters.*.emailRecord, data contract 00 S8),
+      # after every room, so a room NPC or object keeps its id
+      headless = BreakEscape::Game.headless_npc_records(@game.scenario_data).find { |npc| npc['id'] == npc_id }
+      return headless if headless
+
       # Log available NPCs for debugging
       if available_npcs.any?
         Rails.logger.debug "[BreakEscape] Available NPCs: #{available_npcs.join(', ')}"
@@ -1972,17 +2079,18 @@ module BreakEscape
       nil
     end
 
-    # True when text appears in any NPC's Ink story in this game's scenario.
-    # Used for co-speaker NPCs, which have a voice but speak inside another NPC's story.
-    def text_in_scenario_ink_stories?(text)
-      story_paths = []
-      @game.scenario_data['rooms']&.each_value do |room_data|
-        room_data['npcs']&.each { |other| story_paths << other['storyPath'] if other['storyPath'] }
-      end
-      story_paths.uniq.any? do |story_path|
-        json_path = resolve_and_compile_ink(story_path)
-        json_path && InkTextValidator.validate(json_path.to_s, text)
-      end
+    # True when one of this game's ink stories has a line the client voices as
+    # npc_id with this text (speaker resolved by prefix, displayName or
+    # #speaker tag, as person-chat does). Never arbitrary text: the line must
+    # be in the scenario's ink and attributed to that speaker.
+    def spoken_as_npc_in_scenario?(npc_id, text)
+      scenario_name = @game.mission&.name
+      return false unless scenario_name
+
+      TtsLineExtractor.cached(scenario_name, @game.scenario_data).spoken_by?(npc_id, text)
+    rescue StandardError => e
+      Rails.logger.warn "[TTS] Co-speaker check failed for #{npc_id}: #{e.class}: #{e.message}"
+      false
     end
 
     # Resolve ink path and compile if necessary
@@ -2110,14 +2218,14 @@ module BreakEscape
         reward_key = obj['flagRewards'].keys.find { |k| k.downcase == flag_key.downcase }
         reward = obj['flagRewards'][reward_key] if reward_key
         if reward
-          rewards << reward.merge('flag_station_id' => flag_station_id, 'room_id' => room_id)
+          rewards << reward.merge('flag_station_id' => flag_station_id, 'room_id' => reward['room_id'] || room_id)
         end
       elsif obj['flagRewards'].is_a?(Array)
         if obj['requires']
           # Flag-locked object (safe/container with lockType: 'flag' and a single requires flag).
           # All rewards apply when the lock flag matches — no index lookup needed.
           obj['flagRewards'].each do |r|
-            rewards << r.merge('flag_station_id' => flag_station_id, 'room_id' => room_id)
+            rewards << r.merge('flag_station_id' => flag_station_id, 'room_id' => r['room_id'] || room_id)
           end
         else
           # Array structure: rewards[i] corresponds to flags[i]
@@ -2125,7 +2233,7 @@ module BreakEscape
           if flag_index && obj['flagRewards'][flag_index]
             rewards << obj['flagRewards'][flag_index].merge(
               'flag_station_id' => flag_station_id,
-              'room_id' => room_id
+              'room_id' => obj['flagRewards'][flag_index]['room_id'] || room_id
             )
           end
         end
@@ -2162,6 +2270,14 @@ module BreakEscape
         else
           results << { type: 'unknown', data: reward }
         end
+
+        # R1: an optional in-world `label` the station shows instead of the
+        # generic "Event triggered" / "Door unlocked: <room id>" line. Forwarded
+        # rewards above already carry it.
+        last = results.last
+        if reward['label'].present? && last.is_a?(Hash) && !last.key?('label') && !last.key?(:label)
+          results[-1] = last.merge(label: reward['label'])
+        end
       end
 
       # Mark rewards as claimed
@@ -2190,7 +2306,10 @@ module BreakEscape
     end
 
     def process_door_unlock_reward(reward, flag_key)
-      room_id = reward['room_id'] || reward['target_room']
+      # The reward's own target wins; room_id falls back to the station's room only
+      # when the reward names none (find_flag_rewards). F18: the station's room used
+      # to overwrite the target, so the reward opened the wrong room.
+      room_id = reward['target_room'] || reward['room_id']
 
       return { type: 'error', message: 'No room_id specified' } unless room_id
 
@@ -2217,9 +2336,28 @@ module BreakEscape
 
     # Annotate flag-station and launch-device objects in room data with `flagsAllSubmitted`,
     # derived from the server's submitted_flags list. Mutates room_data in place.
-    def annotate_station_submission_status!(room_data)
-      submitted = Set.new((@game.player_state['submitted_flags'] || []).map(&:downcase))
+    def annotate_station_submission_status!(room_data, room_id = nil)
+      submitted_list = @game.player_state['submitted_flags'] || []
+      submitted = Set.new(submitted_list.map(&:downcase))
+      # Submitted flags as the player typed them, keyed by lower-case value
+      submitted_as_typed = submitted_list.each_with_object({}) { |f, h| h[f.downcase] ||= f }
       station_types = %w[flag-station launch-device]
+
+      # The client copy has its flag lists stripped to a count (see
+      # filter_requires_and_contents_recursive), so a station's own flags are read
+      # from the unfiltered room. Keyed by station id so each annotation below
+      # lists only THAT station's flags (the link panel's "Submitted Flags" showed
+      # every machine's: m09 Tomb Beta listed the catalogue server's).
+      raw_flags_by_station = {}
+      collect = lambda do |obj|
+        return unless obj.is_a?(Hash) && station_types.include?(obj['type'])
+        raw_flags_by_station[(obj['id'] || obj['name']).to_s] = Array(obj['flags'])
+      end
+      raw_room = room_id ? @game.room_data(room_id) : nil
+      if raw_room
+        raw_room['objects']&.each { |obj| collect.call(obj) }
+        raw_room['npcs']&.each { |npc| npc['itemsHeld']&.each { |item| collect.call(item) } }
+      end
 
       annotate = lambda do |obj|
         return unless obj.is_a?(Hash) && station_types.include?(obj['type'])
@@ -2227,6 +2365,14 @@ module BreakEscape
         obj['flagsAllSubmitted'] = flags.any? && flags.all? do |ref|
           resolved = resolve_flag_value(ref)&.downcase
           resolved && submitted.include?(resolved)
+        end
+        # Only this station's flags, in the order it lists them
+        own = raw_flags_by_station[(obj['id'] || obj['name']).to_s]
+        if own
+          obj['submittedFlags'] = own.filter_map do |ref|
+            resolved = resolve_flag_value(ref)&.downcase
+            resolved && submitted_as_typed[resolved]
+          end
         end
       end
 
@@ -2349,6 +2495,27 @@ module BreakEscape
 
     # Check whether a flag matches a hintOnlyFlags entry on the station identified by station_id.
     # Returns the hint message string if matched, nil otherwise.
+    # The owning station's name for a wrong-station refusal, or nil when the
+    # player hasn't found it yet. "Found" means the room it stands in (or the
+    # room of the NPC carrying it) is unlocked; a station whose room can't be
+    # located is not named.
+    def discovered_station_name(station)
+      return nil unless station.is_a?(Hash)
+
+      name = station['name'].presence
+      return nil unless name
+
+      station_id = station['id'] || station['name']
+      @game.scenario_data['rooms']&.each do |room_id, room|
+        in_room = room['objects']&.any? { |o| (o['id'] || o['name']) == station_id } ||
+                  room['npcs']&.any? { |npc| npc['itemsHeld']&.any? { |i| (i['id'] || i['name']) == station_id } }
+        next unless in_room
+
+        return @game.room_unlocked?(room_id) ? name : nil
+      end
+      nil
+    end
+
     def find_hint_only_message(flag_key, station_id)
       @game.scenario_data['rooms']&.each do |_room_id, room|
         room['objects']&.each do |obj|

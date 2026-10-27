@@ -38,6 +38,18 @@ VAR flag4_submitted = false
 VAR recruiter_contacted_player = false
 VAR patricia_ko = false
 VAR halloran_accused = false
+VAR named_before_portal = false // Synced scenario global: Torres named before flag 3 (D1; set by HaX's torres_identified mapping)
+VAR torres_fight_offered = false // Synced scenario global (scenario design R1, m2): Torres turned on the player from the fight line, set in combat_offer; read by the debrief
+VAR door_log_hinted = false // Synced scenario global (puzzle R1, P1/D-D): HaX spelled out the front-door method; bars the early-naming reward
+VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
+VAR torres_reason_guessed = false
+
+// PASS 5 (D1, D2): how far the upload has got depends on the night. Named
+// early, before the research server confirmed it: a lower bar and more time.
+// Halloran accused: he saw Security move and brought the upload forward, so
+// the bar sits at 99 and one region's rotation window has already gone.
+// The accusation wins if both are true. Whole-line variants, no printed
+// numbers (voiced-line rule).
 
 // PASS 4 (design): evidence shapes what the player can argue on the turn
 // path (journal, flag 4), and every ending stays open whatever was found.
@@ -61,9 +73,17 @@ VAR halloran_accused = false
 
 === confrontation_scene ===
 #speaker:narrator
-Narrator: 20:14. The data centre. The racks roar.
-
-Narrator: David Torres sits alone at the terminal, a USB drive in the front port. The transfer bar reads 94 per cent. Sixteen minutes to the window.
+{
+- halloran_accused:
+    Narrator: Eight-fourteen. The data centre. The racks roar.
+    Narrator: David Torres sits alone at the terminal, a USB drive in the front port. The transfer bar reads 99 per cent. He brought the window forward.
+- named_before_portal:
+    Narrator: Eight-oh-two. The data centre. The racks roar.
+    Narrator: David Torres sits alone at the terminal, a USB drive in the front port. The transfer bar reads 88 per cent. Twenty-eight minutes to the window.
+- else:
+    Narrator: Eight-fourteen. The data centre. The racks roar.
+    Narrator: David Torres sits alone at the terminal, a USB drive in the front port. The transfer bar reads 94 per cent. Sixteen minutes to the window.
+}
 
 Narrator: He doesn't turn around.
 
@@ -78,8 +98,16 @@ David Torres: "Security consultant." You're not an auditor.
 
 David Torres: The vault logged me in twice tonight. One of them was you.
 
+// PASS 5 R2 m8: the early-naming reward lands in the scene, when it is
+// earned the honest way (the same terms as the credit and the debrief line).
+// R3-1: the front-door reason given before the naming, not the late click.
+// R3-3: "You're early", so it doesn't echo "half an hour" below.
+{named_before_portal and door_log_reasoned_first and not torres_reason_guessed and not halloran_accused and not door_log_hinted:
+    David Torres: You're early. I thought I had until the server gave me up.
+}
+
 {halloran_accused:
-    David Torres: You had Ruth suspended. I watched Security walk her back to the lab. That's when I knew I had tonight and no more.
+    David Torres: You had Ruth suspended. I watched Security walk her back to the lab, and I brought the upload forward. One region's schedule went an hour ago.
 }
 
 + [It's over, David. Step away from the terminal.]
@@ -141,7 +169,7 @@ David Torres: Thirty to forty-five people, the first time they use it. Ambulance
 
 + [You're no different from ENTROPY's other true believers.]
     #speaker:narrator
-    Narrator: He opens his mouth to answer, then stops himself.
+    Narrator: He almost laughs.
     -> torres_rationalization
 
 === torres_rationalization ===
@@ -166,10 +194,20 @@ David Torres: Is thirty to forty-five families. Like mine.
 
 David Torres: Three months ago I was trying to save my wife.
 
-David Torres: Now I'm sixteen minutes from getting people killed.
-
-#speaker:narrator
-Narrator: The transfer bar ticks to 95 per cent.
+{
+- halloran_accused:
+    David Torres: Now I'm one per cent from getting people killed. More than one region's worth.
+    #speaker:narrator
+    Narrator: The transfer bar holds at 99 per cent. The last segment is the biggest.
+- named_before_portal:
+    David Torres: Now I'm half an hour from getting people killed.
+    #speaker:narrator
+    Narrator: The transfer bar ticks to 89 per cent.
+- else:
+    David Torres: Now I'm sixteen minutes from getting people killed.
+    #speaker:narrator
+    Narrator: The transfer bar ticks to 95 per cent.
+}
 
 -> final_choice_moment
 
@@ -188,11 +226,13 @@ Narrator: The transfer bar ticks to 95 per cent.
     #complete_task:confront_torres
     -> arrest_path
 
-+ [Drop the philosophy. Step away, or I make you.]
+// Blind run B (finding 2): the choice says it's a fight (m06's "Sit down.
+// (Make him.)"), and the narration warns before he swings.
++ [Drop the philosophy. Step away, or I make you. (Fight him.)]
     #complete_task:confront_torres
     -> combat_offer
 
-+ [I'm going public. The programme, the Recruiter, you. From a source nobody can trace.]
++ [I'm going public. The programme and the Recruiter, from a source nobody can trace.]
     #complete_task:confront_torres
     -> public_exposure_path
 
@@ -210,9 +250,11 @@ David Torres: Not too far gone? You don't know how far.
 // PASS 4 fix 8: what the player can say depends on what they found.
 // The Elena argument is always there, so the ending never closes.
 === turn_argument ===
-+ {found_torres_journal} [You wrote "what have I become". People who've gone all the way don't ask that.]
+// PASS 5 R2 m9: the journal no longer ends on "What have I become?", which
+// m06's Irina notes also use; the turn argument quotes the line that's left.
++ {found_torres_journal} [You wrote you don't recognise yourself. People who've gone all the way don't.]
     #speaker:david_torres
-    David Torres: You did read it. I've asked it every night for a month.
+    David Torres: You did read it. I've read it back every night for a month.
     -> turn_come_back
 + {flag4_submitted} [The Architect signed off on forty-five deaths. What's your life worth to them?]
     #speaker:david_torres
@@ -239,8 +281,8 @@ David Torres: And Elena?
 Narrator: You make the offer: the trial paid for, and somewhere quiet for the family if it ever gets dangerous.
 
 {recruiter_contacted_player:
-    Narrator: You tell him the Recruiter has been in touch with you tonight, with forty-seven more names lined up behind him.
-    David Torres: Forty-seven...
+    Narrator: You tell him the Recruiter rang you tonight, and that he isn't her only one.
+    David Torres: She told me I was the only one.
 }
 
 + [I need everything. How she contacts you, how you're paid, who else you've met.]
@@ -333,13 +375,14 @@ David Torres: Then I've got nothing to say to you. I'll wait for them.
 // ===========================================
 
 === combat_offer ===
+~ torres_fight_offered = true
 #speaker:david_torres
 
 David Torres: You're not taking me. Elena needs me.
 
 #hostile:david_torres
 #speaker:narrator
-Narrator: He shoves the chair back and comes at you.
+Narrator: He shoves the chair back and comes at you with his fists up. This is going to be a fight.
 
 ~ fight_quiet = true
 #exit_conversation
@@ -371,7 +414,14 @@ Narrator: He shoves the chair back and comes at you.
 #speaker:narrator
 Narrator: Torres went down hard against the rack. He isn't getting up.
 
-Narrator: His breathing is ragged, and blood is pooling under his head. The terminal reads 97 per cent.
+{
+- halloran_accused:
+    Narrator: His breathing is ragged, and blood is pooling under his head. The terminal reads 99 per cent.
+- named_before_portal:
+    Narrator: His breathing is ragged, and blood is pooling under his head. The terminal reads 91 per cent.
+- else:
+    Narrator: His breathing is ragged, and blood is pooling under his head. The terminal reads 97 per cent.
+}
 
 + [Kill the upload, then stay with him: recovery position, pressure, call it in.]
     ~ torres_arrested = true
@@ -386,7 +436,14 @@ Narrator: His breathing is ragged, and blood is pooling under his head. The term
 
 === post_ko_arrest ===
 #speaker:narrator
-Narrator: You pull the drive and kill the transfer at 97 per cent. The last of it stays in the building.
+{
+- halloran_accused:
+    Narrator: You pull the drive and kill the transfer at 99 per cent. The last of it stays in the building.
+- named_before_portal:
+    Narrator: You pull the drive and kill the transfer at 91 per cent. The last of it stays in the building.
+- else:
+    Narrator: You pull the drive and kill the transfer at 97 per cent. The last of it stays in the building.
+}
 
 {patricia_ko:
     Narrator: Then you roll him onto his side, press your jacket to the cut, and call HaX. An ambulance and the police arrive together, and nobody asks who rang. He comes round in hospital, under guard.
@@ -400,9 +457,16 @@ Narrator: You pull the drive and kill the transfer at 97 per cent. The last of i
 
 === post_ko_handoff ===
 #speaker:narrator
-Narrator: You pull the drive and kill the transfer at 97 per cent. The last of it stays in the building.
+{
+- halloran_accused:
+    Narrator: You pull the drive and kill the transfer at 99 per cent. The last of it stays in the building.
+- named_before_portal:
+    Narrator: You pull the drive and kill the transfer at 91 per cent. The last of it stays in the building.
+- else:
+    Narrator: You pull the drive and kill the transfer at 97 per cent. The last of it stays in the building.
+}
 
-Narrator: You step over him on the way out.
+Narrator: You step over him. He doesn't move.
 
 ~ after_quiet = true
 #exit_conversation
@@ -422,6 +486,11 @@ David Torres: The others she's working on... they'd be warned. That's the point,
 David Torres: And me? My family?
 
 + [You'll be named. Elena will read it. The kids will see your face.]
+    -> public_exposure_consequence
+// Phase 4 dialogue C1 (D5-22): the ending can be chosen for the programme
+// without wanting to hurt the family.
++ [I'll keep your name out of it if I can. I can't promise.]
+    David Torres: You can't. Somebody always finds the name.
     -> public_exposure_consequence
 
 === public_exposure_consequence ===
@@ -446,7 +515,14 @@ David Torres: I did this to save them. And you're going to wreck them anyway.
 // PASS 4 fix 15: the player's hand or his. Same outcome either way.
 === stop_upload ===
 #speaker:narrator
-Narrator: The transfer bar sits at 97 per cent. His hand is still beside the keyboard.
+{
+- halloran_accused:
+    Narrator: The transfer bar sits at 99 per cent. His hand is still beside the keyboard.
+- named_before_portal:
+    Narrator: The transfer bar sits at 91 per cent. His hand is still beside the keyboard.
+- else:
+    Narrator: The transfer bar sits at 97 per cent. His hand is still beside the keyboard.
+}
 + [Pull the drive myself.]
     Narrator: You pull the USB drive out of the port. The transfer window stalls, then throws an error. The last of it stays in the building.
     -> upload_stopped
@@ -471,12 +547,12 @@ Narrator: The transfer bar sits at 97 per cent. His hand is still beside the key
     Narrator: As many as you can reach. You don't promise more.
 }
 
+// C2 (D5C2-20): without the deal he has "nothing to say to you", so he gets
+// one line. With it, the court question already came in arrest_family_question.
 {torres_arrested and not entropy_program_exposed:
     #speaker:david_torres
-    David Torres: How long will I get?
-    David Torres: ...No. That's for a court, isn't it. Not you.
     {elena_treatment_funded:
-        David Torres: But Elena gets her treatment.
+        David Torres: Elena gets her treatment. That's all I asked for.
         Narrator: You nod.
     - else:
         David Torres: Elena will be dead before I get out.

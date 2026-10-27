@@ -79,6 +79,10 @@
   height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr auto;
+  /* minmax(0, ...): a wide child (the ticker, the canvas) can't widen the page
+     past the window and push the right-hand panel off it (m06, m07 at 1400 px) */
+  grid-template-columns: minmax(0, 1fr);
+  box-sizing: border-box;
   padding: 16px;
   gap: 12px;
 }
@@ -120,6 +124,9 @@
   color: var(--bv-green);
   margin-top: 4px;
   letter-spacing: 1px;
+  /* A long mission name wraps at narrow widths; without a line height of its own the two
+     caption lines drew on top of each other (lab R15 T4). */
+  line-height: 1.6;
 }
 
 #bond-vis-overlay .bv-status-block {
@@ -140,6 +147,8 @@
   padding: 3px 6px;
   border: 1px solid currentColor;
   display: inline-block;
+  white-space: nowrap; /* "● REVIEW" split over two lines at 900 px (lab R15 T4) */
+  line-height: 1.6;
 }
 #bond-vis-overlay .bv-badge.red  { color: var(--bv-red);  border-color: var(--bv-red);  box-shadow: 0 0 6px var(--bv-red); }
 #bond-vis-overlay .bv-badge.gold { color: var(--bv-gold); border-color: var(--bv-gold); }
@@ -167,7 +176,7 @@
 
 #bond-vis-overlay .bv-stage {
   display: grid;
-  grid-template-columns: 180px 1fr 180px;
+  grid-template-columns: 180px minmax(0, 1fr) 180px;
   gap: 12px;
   min-height: 0;
 }
@@ -461,4 +470,23 @@
 
 .bv-cr-gap {
   height: 22px;
+}
+
+/* Closing-card lines (bond-visualiser.js _startCredits): no wider than the
+   central map panel (window minus 16px padding, two 180px side panels and two
+   12px gaps, plus a little air), and balanced so a short last word ("out.")
+   does not sit alone. Browsers without text-wrap: balance fall back to pretty,
+   then to normal wrapping inside the same width. A line that already fits is
+   left on one row. */
+.bv-cr-card-line {
+  max-width: calc(100vw - 440px);
+  margin-left: auto;
+  margin-right: auto;
+  text-wrap: pretty;
+  text-wrap: balance;
+}
+
+@media (max-width: 900px) {
+  /* side panels are hidden here, so the centre is the whole width */
+  .bv-cr-card-line { max-width: none; }
 }

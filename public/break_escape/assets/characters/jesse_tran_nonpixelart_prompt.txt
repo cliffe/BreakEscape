@@ -1,0 +1,10 @@
+Make portrait for Jesse Tran
+A lanky Vietnamese-American man of about 29 from Seattle, with light-medium skin, a narrow clean-shaven face, round thin black-framed glasses, and messy, shaggy black hair grown out past his ears with a fringe falling into his eyes, an IT contractor at a records archive with something to hide. Dark eyes and a guarded, sidelong, evasive look, polite but giving nothing away. He wears an unbuttoned faded maroon-and-grey flannel shirt with the sleeves pushed up over a plain washed-out black t-shirt, loose grey chinos, a black canvas belt, a black smartwatch, and a small black USB stick on a cord around his wrist; his hands are pushed partly into his trouser pockets. Standing alone against an empty plain light-grey backdrop, no room or furniture behind him. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, one call (finale batch, re-roll after user review of concept_1). Reframed with reframe_portrait.py --flip; unflipped original is jesse_tran_concept_2_raw.png. Approved by the user 2026-10-22; adopted from wip/jesse_tran_concept_2.png.

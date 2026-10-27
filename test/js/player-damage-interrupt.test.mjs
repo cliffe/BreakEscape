@@ -88,11 +88,12 @@ test('minigameClosedByDamage is true just after a damage close, false later', as
 test('lockpick failure toasts check minigameClosedByDamage', () => {
     const starters = readFileSync(join(here, '../../public/break_escape/js/systems/minigame-starters.js'), 'utf8');
     const unlock = readFileSync(join(here, '../../public/break_escape/js/systems/unlock-system.js'), 'utf8');
-    for (const [name, text, msg] of [['minigame-starters', starters, "'Failed to pick the lock.', 'error', 'Lockpicking'"], ['unlock-system', unlock, "'Failed to pick the lock. Try again.'"]]) {
-        const i = text.indexOf(msg);
-        assert.ok(i > 0, `${name}: toast present`);
-        assert.match(text.slice(i - 200, i), /minigameClosedByDamage/, `${name}: toast guarded`);
-    }
+    // The starter no longer toasts (closing is not a failure; lockpick-close-toast.test.mjs),
+    // so the one remaining toast, in unlock-system, carries the guard.
+    assert.doesNotMatch(starters, /gameAlert\('Failed to pick the lock/);
+    const i = unlock.indexOf("'Failed to pick the lock. Try again.'");
+    assert.ok(i > 0, 'unlock-system: toast present');
+    assert.match(unlock.slice(i - 200, i), /minigameClosedByDamage/, 'unlock-system: toast guarded');
 });
 
 // F2: the other failure toasts on close paths (wrong key, PIN, password) are guarded too.
@@ -103,4 +104,53 @@ test('key, PIN and password failure toasts check minigameClosedByDamage', () => 
         assert.ok(i > 0, `${msg}: toast present`);
         assert.match(starters.slice(i - 220, i), /minigameClosedByDamage/, `${msg}: toast guarded`);
     }
+});
+
+// m07 U12 (2026-10-17): a hit leaves the phone open, so HaX's fight texts can be
+// read. Attacks carry on (npc-attack-pause.test.mjs), so the phone is no shield.
+test('a hit leaves the phone open, with an HP notice that every hit refreshes', async () => {
+    const { PHONE_HIT_NOTICE_MS } = await import(pathToFileURL(join(dir, 'interrupt.mjs')).href);
+    const fw = makeFramework();
+    fw.currentMinigame._sceneType = 'phone-chat';
+    fw.currentMinigame.params = {};
+    // A stand-in toast column: notify() returns the toast element, as showNotification does
+    const column = { children: [], removeChild(el) { this.children.splice(this.children.indexOf(el), 1); el.parentNode = null; } };
+    const notes = [];
+    const notify = (...a) => { notes.push(a); const el = { text: a[0], parentNode: column }; column.children.push(el); return el; };
+    assert.equal(closeMinigameOnDamage(4, { framework: fw, notify, hp: 52, maxHP: 100 }), false);
+    assert.ok(fw.currentMinigame, 'still open');
+    assert.deepEqual(fw.ended, []);
+    assert.equal(notes.length, 1);
+    assert.match(notes[0][0], /You're being hit! HP 52\/100\. Close the phone \(Esc\) to fight back\./);
+    assert.equal(notes[0][1], 'warning', 'warnings are not held behind an open minigame');
+    assert.equal(notes[0][3], PHONE_HIT_NOTICE_MS);
+    assert.ok(PHONE_HIT_NOTICE_MS > 2000, 'outlasts the gap between hits (default cooldown 2 s)');
+    // The next hit, a second later: a new notice with the new HP replaces the old one
+    closeMinigameOnDamage(4, { framework: fw, notify, hp: 48, maxHP: 100 });
+    assert.equal(notes.length, 2, 'not throttled');
+    assert.equal(column.children.length, 1, 'one notice at a time');
+    assert.match(column.children[0].text, /48\/100/);
+    // A notify that holds the toast (returns null) doesn't break the next hit
+    closeMinigameOnDamage(4, { framework: fw, notify: () => null, hp: 44, maxHP: 100 });
+    assert.equal(column.children.length, 0, 'the last shown notice is removed');
+    closeMinigameOnDamage(4, { framework: fw, notify, hp: 40, maxHP: 100 });
+    assert.equal(column.children.length, 1);
+});
+
+test('a knockout or a phone cutscene still closes the phone', () => {
+    const fw = makeFramework();
+    fw.currentMinigame._sceneType = 'phone-chat';
+    fw.currentMinigame.params = {};
+    assert.equal(closeMinigameOnDamage(10, { framework: fw, notify: () => {}, ko: true }), true);
+    assert.deepEqual(fw.ended, [false]);
+
+    const fw2 = makeFramework();
+    fw2.currentMinigame._sceneType = 'phone-chat';
+    fw2.currentMinigame.params = { cutscene: true };
+    assert.equal(closeMinigameOnDamage(10, { framework: fw2, notify: () => {} }), true);
+});
+
+test('player-health tells the interrupt when a hit is a knockout', () => {
+    const src = readFileSync(join(here, '../../public/break_escape/js/systems/player-health.js'), 'utf8');
+    assert.match(src, /closeMinigameOnDamage\(amount, \{ ko: state\.currentHP <= 0 \}\)/);
 });

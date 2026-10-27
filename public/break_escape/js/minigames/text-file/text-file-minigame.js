@@ -42,7 +42,7 @@ export class TextFileMinigame extends MinigameScene {
         
         // Customize the header
         this.headerElement.innerHTML = `
-            <h3><img src="/break_escape/assets/icons/text-file.png" alt="Document" class="icon"> ${displayDashes(this.textFileData.fileName)}</h3>
+            <h3><img src="/break_escape/assets/icons/notes.png" alt="Document" class="icon"> ${displayDashes(this.textFileData.fileName)}</h3>
             <p>Viewing text file contents</p>
         `;
         
@@ -51,7 +51,7 @@ export class TextFileMinigame extends MinigameScene {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
             notebookBtn.id = 'minigame-notebook';
-            notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes-sm.png" alt="Notepad" class="icon-small"> Add to Notepad';
+            notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
             this.controlsElement.appendChild(notebookBtn);
             
             // Change cancel button text to "Close"

@@ -5,7 +5,7 @@
 ## Character Overview
 
 **Status:** ENTROPY Supreme Commander
-**Real Identity:** Unknown to ENTROPY, including its cell leaders. SAFETYNET's lead suspect since m06 is Dr. Adrian Tesseract, its own former chief strategist (see [Identity: what SAFETYNET suspects](#identity-what-safetynet-suspects)).
+**Real Identity:** Unknown to ENTROPY, including its cell leaders. SAFETYNET's lead suspect since m06 is Dr. Adrian Tesseract, its own former chief strategist; the finale (m09) confirms it (see [Identity: what SAFETYNET suspects](#identity-what-safetynet-suspects)).
 **Tier:** Tier 1 Mastermind (Background Presence Only)
 **Last Known Activity:** Coordinating multi-cell quantum computing operations
 **Threat Level:** Critical (Strategic Leadership)
@@ -34,10 +34,11 @@ Some unverified intelligence suggests:
 
 Season-one canon (user decision, pass 4). This supersedes "identity unknown" wherever the two disagree, for SAFETYNET's side only.
 
-- **ENTROPY doesn't know.** Cell leaders and operatives have never met him and don't know who he is. That stays true (see "What Players Learn" under the cell-leader dialogue, and Operational Security).
+- **ENTROPY doesn't know.** Cell leaders and operatives have never met him and don't know who he is. That stays true (see "What Players Learn" under the cell-leader dialogue, and Operational Security). Nightshade is the one exception: Tesseract recruited him in person (below).
 - **SAFETYNET has a name.** In m06, Satoshi Nakamoto II's insurance file puts it at 87%: Dr. Adrian Tesseract, SAFETYNET's former chief strategist, who walked out seven years ago after a disagreement about where the work was heading (he believed the Cyber Security arms race would speed up the collapse it was meant to prevent). He trained half the agents in the field. Agent HaX was one of his students. It is a lead, not a confirmed identity.
 - **m07 plants it, without naming him.** On the player's handset he uses a line HaX gives every agent she runs ("Let it hurt afterwards, not during. I expect you've been told that."), and HaX hears her teacher in it. A player who skipped m06's file learns only that the Architect knows how SAFETYNET trains its people.
-- **Reveal.** m08 and later can build on it; the season plan confirms the identity at M9. Until a mission confirms it, SAFETYNET characters call it a lead or a suspicion, never a fact, and no ENTROPY character names him.
+- **He recruited Nightshade.** Tesseract recruited Agent 0x47 "Nightshade" for ENTROPY fifteen years before m08, when Nightshade was 23 and in his SAFETYNET training intake. Tesseract was still SAFETYNET's chief strategist then, eight years before he walked out. m08 implies it without naming him: Nightshade says they found him "at twenty-three", during his own training, and calls the Architect "the man who put me here fifteen years ago". In m09 the Helena archive holds Nightshade's recruitment file in Tesseract's hand (FINALE_ARC, row 106). So Nightshade has met him face to face, as his teacher, which no cell leader has. (Canon added 2026-10-21 for the Season 1 finale; user-confirmed.)
+- **Reveal.** The finale confirms the identity. In m09 the player finds proof at the Helena archive, in Tesseract's own hand, that the Architect is Dr Adrian Tesseract, and Netherton says the name aloud for the first time once the proof comes together. Until that point (m06 to m08, and m09 before the proof), SAFETYNET characters call it a lead or a suspicion, never a fact, and no ENTROPY character names him.
 - **Consistency.** He is a man in his sixties (voice bible; m07 voice style), which fits Tesseract's age. The rest of this file's speculation (academic, Western European or North American, a PhD) is compatible with him.
 
 ### **Operational Role**

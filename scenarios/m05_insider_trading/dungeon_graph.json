@@ -40,13 +40,13 @@
     },
     {
       "id": "door_data_center",
-      "label": "Key Vault — Fingerprint Access. Cryptography Lead Only.<br/>Biometric lock",
+      "label": "Key Vault — Fingerprint Access. Heisenberg Leads Only.<br/>Biometric lock",
       "kind": "lock",
       "optional": false
     },
     {
       "id": "data_center",
-      "label": "Key Vault — Fingerprint Access. Cryptography Lead Only.",
+      "label": "Key Vault — Fingerprint Access. Heisenberg Leads Only.",
       "kind": "room",
       "optional": false
     },
@@ -135,8 +135,8 @@
       "optional": false
     },
     {
-      "id": "research_badge",
-      "label": "Research Badge",
+      "id": "visitor_spare_4471",
+      "label": "Visitor Spare (#4471)",
       "kind": "key",
       "optional": true
     },
@@ -172,7 +172,7 @@
     },
     {
       "id": "vmch_submit_flag1",
-      "label": "Submit Flag 1: Leaked Bludit admin credentials (recon)",
+      "label": "Submit Flag 1: The login someone left lying about (recon)",
       "kind": "vm",
       "optional": false
     },
@@ -184,7 +184,7 @@
     },
     {
       "id": "vmch_submit_flag2",
-      "label": "Submit Flag 2: Authenticated Bludit image-upload RCE",
+      "label": "Submit Flag 2: A foothold on the research portal (upload RCE)",
       "kind": "vm",
       "optional": false
     },
@@ -340,11 +340,11 @@
     },
     {
       "from": "npc_dr_ruth_halloran",
-      "to": "research_badge",
+      "to": "visitor_spare_4471",
       "soft": true
     },
     {
-      "from": "research_badge",
+      "from": "visitor_spare_4471",
       "to": "door_server_hallway",
       "soft": true
     },

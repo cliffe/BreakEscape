@@ -14,7 +14,7 @@ export const COMBAT_CONFIG = {
       frame: 6,
       canPunch: true,
       damage: 10,
-      cooldown: 500,
+      cooldown: 400,
       animationKey: 'lead-jab',
       description: 'Fast, weak punch attack'
     },
@@ -24,21 +24,45 @@ export const COMBAT_CONFIG = {
       frame: 11,
       canPunch: true,
       damage: 25,
-      cooldown: 1500,
+      cooldown: 1100,
       animationKey: 'cross-punch',
       description: 'Slow, powerful punch attack'
     }
   },
 
-  // Define the cycle order for the toggle button
+  // The cycle order the old mode toggle used. The toggle is gone (click and
+  // tap always move or interact; punches have their own button and keys),
+  // but jab and cross above still give each punch its damage and cooldown.
   modeOrder: ['interact', 'jab', 'cross'],
+
+  // Holding block (Q, or the on-screen block button): the player stands in
+  // guard and can't walk or punch. A hit from the front does this share of
+  // its damage and doesn't knock the player back.
+  block: {
+    damageScale: 0.2,
+    coverHalfAngle: 70,  // degrees either side of facing that the guard covers
+    autoFaceRange: 96    // on raising the guard, turn to a hostile this close
+  },
 
   player: {
     maxHP: 100,
     punchDamage: 20,
     punchRange: 32,
     punchCooldown: 1000,
-    punchAnimationDuration: 500
+    // Half-angle of the punch cone either side of the facing direction (7.1h:
+    // widened from 30°, which missed an attacker standing a little off-axis)
+    punchConeHalfAngle: 40,
+    punchAnimationDuration: 500,
+    // Slow regen out of combat (player-regen.js): once nothing has hurt the
+    // player for delayMs, +hpPerTick every tickMs, up to capFraction of max
+    // HP. A scenario's top-level playerRegen overrides any of these, or turns
+    // it off with false. Kept low so coffee and snacks still matter.
+    regen: {
+      delayMs: 10000,
+      tickMs: 2000,
+      hpPerTick: 1,
+      capFraction: 0.5
+    }
   },
   npc: {
     defaultMaxHP: 100,

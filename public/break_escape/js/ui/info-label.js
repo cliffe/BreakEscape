@@ -8,6 +8,7 @@
 import { INTERACTION_RANGE, INTERACTION_RANGE_SQ } from '../utils/constants.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { displayDashes } from '../utils/display-dashes.js';
+import { interactionLineClear } from '../systems/interaction-walls.js';
 
 const SIDE_DOOR_RANGE_SQ  = INTERACTION_RANGE_SQ * 4;  // 2× radius for E/W doors
 const SIDE_DOOR_Y_OFFSET  = INTERACTION_RANGE / 2;
@@ -72,11 +73,12 @@ export function updateInfoLabel() {
     let bestScore = Infinity;
     let bestText  = null;
 
-    function consider(ox, oy, text, rangeSq) {
+    function consider(ox, oy, text, rangeSq, target = null) {
         if (!text) return;
         const dx = ox - px;
         const dy = oy - py;
         if (dx * dx + dy * dy > rangeSq) return;
+        if (target && !interactionLineClear(player, target)) return; // wall between
         const score = angularDiff(ox, oy) * 1000 + Math.sqrt(dx * dx + dy * dy);
         if (score < bestScore) {
             bestScore = score;
@@ -94,7 +96,7 @@ export function updateInfoLabel() {
                     'observations',
                     obj.observations || obj.scenarioData?.name || obj.name || null
                 );
-                consider(obj.x, obj.y, text, INTERACTION_RANGE_SQ);
+                consider(obj.x, obj.y, text, INTERACTION_RANGE_SQ, obj);
             });
         }
 
@@ -120,7 +122,7 @@ export function updateInfoLabel() {
                 if (koCheck && sprite.npcId && koCheck.isNPCKO(sprite.npcId)) return;
                 const npc = sprite.npcId && window.npcManager ? window.npcManager.getNPC(sprite.npcId) : null;
                 const text = npc?.observations || npc?.displayName || null;
-                consider(sprite.x, sprite.y, text, INTERACTION_RANGE_SQ);
+                consider(sprite.x, sprite.y, text, INTERACTION_RANGE_SQ, sprite);
             });
         }
     });

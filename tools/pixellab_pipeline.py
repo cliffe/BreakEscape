@@ -1705,8 +1705,9 @@ def apply_overrides(key, root):
         return 0
     n = 0
     for f in src.rglob("*.png"):
-        rel = f.relative_to(src)  # <template>/<direction>/frame_NNN.png
-        dest = root / "animations" / rel
+        rel = f.relative_to(src)  # <template>/<direction>/frame_NNN.png, or rotations/<direction>.png
+        # rotations/south.png is where the converter cuts the 32px headshot from
+        dest = root / rel if rel.parts[0] == "rotations" else root / "animations" / rel
         if dest.parent.exists():
             shutil.copy(f, dest)
             n += 1
@@ -1924,6 +1925,16 @@ def cmd_import(args):
     key = args.key or (None if len(args.target) == 36 else args.target)
     if not key:
         sys.exit("give --key (the spriteSheet name the scenario will use)")
+    if (Path(args.assets_dir) / f"{key}.png").exists() and not args.ignore_drift:
+        # Hand edits painted onto the atlas (not saved as overrides) would be lost.
+        from pixellab_drift_audit import audit
+        status, drift, _ = audit(key)
+        if drift:
+            sys.exit(f"{key}.png has {len(drift)} frame(s) edited by hand and not saved as overrides, "
+                     f"e.g. {', '.join(list(drift)[:4])}.\nAdopt them first: python3 tools/pixellab_drift_audit.py "
+                     f"{key} --adopt  (or pass --ignore-drift to discard them)")
+        if status != "clean":
+            print(f"drift check: {status}")
     if args.offline:
         # Rebuild from the last download, e.g. after `fix`. Overrides are reapplied.
         root = export_root_for(key)
@@ -2322,6 +2333,8 @@ def main():
     p.set_defaults(func=cmd_import)
 
     p.add_argument("--offline", action="store_true", help="reconvert the last download (after `fix`) without downloading")
+    p.add_argument("--ignore-drift", action="store_true",
+                   help="replace the atlas even if it has hand edits not saved as overrides (they are lost)")
 
     p = sub.add_parser("qa", help="contact sheets + hints for reviewing an imported character's frames")
     p.add_argument("key", help="an imported key, e.g. bernie_nwosu")

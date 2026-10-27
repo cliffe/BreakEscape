@@ -1,0 +1,13 @@
+{
+  "key": "3bed992e6fb23caeaab7a2ec43ba56d3",
+  "npc": "narrator",
+  "text": "Sterling has nothing more to say to you.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:26:40Z"
+}

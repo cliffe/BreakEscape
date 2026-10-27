@@ -1,0 +1,113 @@
+{
+  "_note": "Fixture for social-mail-composer.test.mjs (P1-E2): a social block modelled on 00 §1/§10 and the 04 Hampshire/Pierce targets with templateSets. Tests never read live mission content.",
+  "people": [
+    { "id": "pierce", "kind": "cast", "address": "m.pierce@ledgerwell.example", "forms": { "first": "Melanie", "short": "Mel", "formal": "Ms Pierce", "full": "Melanie Pierce" } },
+    { "id": "baker", "kind": "cast", "address": "j.baker@ledgerwell.example", "forms": { "first": "Jed", "full": "Jed Baker" } },
+    { "id": "hampshire", "kind": "cast", "address": "careers@ledgerwell.example", "forms": { "full": "Chris Hampshire" } },
+    { "id": "portal", "kind": "sender", "address": "payroll-notices@ledgerwell.example", "forms": { "full": "Ledgerwell Payroll Portal" } },
+    { "id": "leeds_baker", "kind": "outside", "address": "j.baker@leedsplumbing.example", "forms": { "full": "J. Baker" } }
+  ],
+  "intelFacts": {
+    "email_pattern": {
+      "text": "Staff addresses are first-initial.surname@ledgerwell.example.",
+      "subject": "company", "source": "r_pattern",
+      "provides": [ { "type": "address", "rule": "initial.surname@ledgerwell.example", "label": "an address built from the pattern" } ]
+    },
+    "pierce_role": {
+      "text": "Melanie Pierce works in Finance.", "subject": "pierce", "source": "row_pierce",
+      "provides": [
+        { "type": "name", "about": "recipient", "value": "pierce_first", "label": "Melanie", "kind": "generic" },
+        { "type": "name", "about": "recipient", "value": "pierce_formal", "label": "Ms Pierce", "kind": "generic" },
+        { "type": "name", "about": "recipient", "value": "pierce_full", "label": "Melanie Pierce", "kind": "generic" },
+        { "type": "team", "value": "finance", "label": "Finance", "kind": "generic" }
+      ]
+    },
+    "pierce_trusts_jed": {
+      "text": "Melanie trusts Jed Baker.", "subject": "pierce", "source": "post_pierce_jed",
+      "provides": [ { "type": "name", "about": "sender", "value": "baker_full", "label": "Jed Baker", "kind": "distinctive" } ]
+    },
+    "pierce_expects_balance_sheet": {
+      "text": "Melanie expects a Q3 balance sheet from Jed on Fridays.", "subject": "pierce", "source": "note_q3",
+      "provides": [
+        { "type": "document", "value": "balance_sheet", "label": "the Q3 balance sheet", "kind": "distinctive", "attachmentKind": "spreadsheet" },
+        { "type": "name", "about": "sender", "value": "baker_full", "label": "Jed Baker", "kind": "distinctive" },
+        { "type": "name", "about": "recipient", "value": "pierce_short", "label": "Mel", "kind": "generic" },
+        { "type": "date", "value": "friday", "label": "Friday", "kind": "generic" }
+      ]
+    },
+    "baker_namesake": {
+      "text": "A J. Baker in Leeds.", "subject": "company", "source": "r_namesake",
+      "provides": [ { "type": "name", "about": "sender", "value": "leeds_baker_full", "label": "J. Baker", "kind": "stale" } ]
+    },
+    "hampshire_careers": { "text": "The careers inbox accepts CVs from anyone.", "subject": "hampshire", "source": "careers_inbox", "provides": [] },
+    "hampshire_cv_backlog": {
+      "text": "Chris is behind on CVs before Friday.", "subject": "hampshire", "source": "post_hampshire_cvs",
+      "provides": [ { "type": "date", "value": "friday", "label": "Friday", "kind": "generic" } ]
+    },
+    "careers_attachment": {
+      "text": ".odt/.docx only.", "subject": "hampshire", "source": "apply_format",
+      "provides": [ { "type": "document", "value": "cv", "label": "my CV", "kind": "distinctive", "attachmentKind": "document" } ]
+    }
+  },
+  "templates": {
+    "from_named": { "part": "from", "text": "{sender_name} <{sender_address}>", "slots": [ { "id": "sender_name", "type": "name", "about": "sender" }, { "id": "sender_address", "type": "address" } ] },
+    "from_own": { "part": "from", "text": "{account_name} <{account_address}>", "slots": [] },
+    "greet_named": { "part": "greeting", "text": "Hi {name},", "slots": [ { "id": "name", "type": "name", "about": "recipient" } ] },
+    "greet_generic": { "part": "greeting", "text": "Hello,", "slots": [] },
+    "pretext_sheet": { "part": "pretext", "text": "Here is {document} you wanted {when}.", "urgency": "low", "slots": [ { "id": "document", "type": "document" }, { "id": "when", "type": "date" } ] },
+    "pretext_invoice": { "part": "pretext", "text": "Your supplier invoice is overdue.", "urgency": "high", "slots": [] },
+    "pretext_apply": { "part": "pretext", "text": "I'm applying for the open role.", "urgency": "low", "slots": [], "implies": [ { "type": "document", "value": "cv" } ] },
+    "pretext_enquiry": { "part": "pretext", "text": "I'd like to ask about your accounting services.", "urgency": "low", "slots": [] },
+    "ask_open_attached": { "part": "ask", "text": "Can you open the attached file and check it before Friday?", "urgency": "low", "slots": [] },
+    "ask_confirm": { "part": "ask", "text": "Can you confirm you have received this?", "urgency": "low", "slots": [] },
+    "ask_review_cv": { "part": "ask", "text": "Could you review my CV when you have a moment?", "urgency": "low", "slots": [] }
+  },
+  "phishTargets": [
+    {
+      "id": "pierce", "character": "pierce", "address": "m.pierce@ledgerwell.example", "displayName": "Melanie Pierce",
+      "subjects": [ { "id": "s_quick", "text": "Quick one", "topic": "general" }, { "id": "s_review", "text": "For your review", "topic": "finance" } ],
+      "interests": { "topics": ["finance"] },
+      "addressedAs": ["pierce_first", "pierce_short", "pierce_formal"],
+      "primedFor": { "distinctiveValues": ["balance_sheet"], "genericValues": ["finance", "friday"], "minDistinct": 1, "expectedAttachment": "spreadsheet", "trusts": ["baker"] },
+      "requiredFactors": ["senderTrust", "addressedTo", "pretextRelevant", "attachmentPlausible"],
+      "advisoryFactors": ["senderAuth", "urgencyCalibrated"],
+      "templateSets": {
+        "from": ["from_named", "from_own"],
+        "greeting": ["greet_named", "greet_generic"],
+        "pretext": ["pretext_sheet", "pretext_invoice"],
+        "ask": ["ask_open_attached", "ask_confirm"]
+      }
+    },
+    {
+      "id": "hampshire", "address": "careers@ledgerwell.example", "displayName": "Chris Hampshire",
+      "subjects": [ { "id": "s_application", "text": "Application", "topic": "recruitment" }, { "id": "s_hello", "text": "Hello", "topic": "general" } ],
+      "interests": { "topics": ["recruitment"] },
+      "emailReplyDelay": 15,
+      "primedFor": { "distinctiveValues": ["cv"], "minDistinct": 1, "expectedAttachment": "document", "trusts": ["*"] },
+      "requiredFactors": ["senderTrust", "pretextRelevant", "attachmentPlausible"],
+      "advisoryFactors": ["senderAuth", "urgencyCalibrated"],
+      "templateSets": {
+        "from": ["from_own"],
+        "greeting": ["greet_generic"],
+        "pretext": ["pretext_apply", "pretext_enquiry"],
+        "ask": ["ask_review_cv", "ask_confirm"]
+      }
+    }
+  ],
+  "mailClient": {
+    "accounts": [
+      { "id": "guest", "address": "guest@workstation.example", "displayName": "Operator", "kind": "given", "person": null, "mailbox": "guest", "spoofsFrom": true },
+      { "id": "freemail", "address": "tarnside.test@freemail.example", "displayName": "T. Test", "kind": "given", "person": null, "mailbox": "freemail", "spoofsFrom": false }
+    ],
+    "contacts": [
+      { "id": "hampshire", "person": "hampshire", "name": "Chris Hampshire", "addresses": ["careers@ledgerwell.example"], "role": "Careers", "revealedBy": "se_intel_hampshire_careers", "targetId": "hampshire" },
+      { "id": "pierce", "person": "pierce", "name": "Melanie Pierce", "addresses": ["m.pierce@ledgerwell.example"], "role": "Finance", "revealedBy": "se_intel_pierce_role", "character": "pierce", "targetId": "pierce" },
+      { "id": "it", "person": "it", "name": "IT Desk", "addresses": ["it@ledgerwell.example"], "role": "IT" }
+    ],
+    "payloadKit": [
+      { "id": "kit_balance_sheet", "label": "Q3 balance sheet", "kind": "spreadsheet" },
+      { "id": "kit_cv", "label": "CV", "kind": "document" },
+      { "id": "kit_payroll_page", "label": "Payroll page", "kind": "link", "landingPageId": "payroll_login" }
+    ]
+  }
+}

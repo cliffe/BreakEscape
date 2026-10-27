@@ -22,8 +22,41 @@ export function initPlayerHealth() {
     isKO: () => state.isKO,
     damage: (amount) => damagePlayer(amount),
     heal: (amount) => healPlayer(amount),
-    reset: () => { state = createInitialState(); }
+    reset: () => { state = createInitialState(); },
+    exportState: () => exportPlayerHealth(),
+    restore: (saved) => restorePlayerHealth(saved)
   };
+}
+
+/**
+ * { hp, maxHP } for the server (state-sync.js playerHealth), so a reload
+ * mid-fight is no longer a free full heal (m05 E6, user 2026-10-17).
+ */
+export function exportPlayerHealth() {
+  if (!state) return null;
+  return { hp: state.currentHP, maxHP: state.maxHP };
+}
+
+/**
+ * Restore HP saved before a reload (savedPlayerHealth, game.js). A save at 0 HP
+ * (a knockout) or anything invalid gives full health: the player wakes up. The
+ * saved fraction of health is kept if the configured max HP has changed.
+ * @param {{hp:number, maxHP:number}} saved
+ * @returns {boolean} true if HP was set below full
+ */
+export function restorePlayerHealth(saved) {
+  if (!state) return false;
+  state = createInitialState();
+  if (!saved || typeof saved !== 'object') return false;
+  const { hp, maxHP } = saved;
+  if (!Number.isFinite(hp) || !Number.isFinite(maxHP) || maxHP <= 0 || hp <= 0 || hp >= maxHP) {
+    return false;
+  }
+  const restored = maxHP === state.maxHP ? hp : Math.round((hp / maxHP) * state.maxHP);
+  state.currentHP = Math.max(1, Math.min(state.maxHP, restored));
+  if (state.currentHP >= state.maxHP) return false;
+  console.log(`❤️ Restored player HP: ${state.currentHP}/${state.maxHP}`);
+  return true;
 }
 
 function damagePlayer(amount) {
@@ -49,12 +82,18 @@ function damagePlayer(amount) {
     });
   }
 
-  // Taking damage closes any open minigame so the player can respond
-  closeMinigameOnDamage(amount);
+  // Mark the knockout before closing the open minigame: its onComplete can open
+  // another (the notepad returns to the phone), and startMinigame refuses only
+  // once isKO is set (m04 confirmation R2 N1)
+  const knockedOut = state.currentHP <= 0 && !state.isKO;
+  if (knockedOut) state.isKO = true;
+
+  // Taking damage closes any open minigame so the player can respond (the
+  // phone stays open unless the hit is a knockout: player-damage-interrupt.js)
+  closeMinigameOnDamage(amount, { ko: state.currentHP <= 0 });
 
   // Check for KO
-  if (state.currentHP <= 0 && !state.isKO) {
-    state.isKO = true;
+  if (knockedOut) {
 
     // Play death animation
     if (window.player) {

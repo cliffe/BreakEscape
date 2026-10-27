@@ -10,9 +10,15 @@
 import { ASSETS_PATH } from '../../config.js';
 import TTSManager from '../../systems/tts-manager.js';
 import MusicController from '../../music/music-controller.js';
-import { displayPhoneLine } from './phone-chat-speaker.js';
+import { displayPhoneLine, otherSpeaker } from './phone-chat-speaker.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { messageClockText } from '../../systems/game-clock.js';
+import { hasHiddenChoicesBelow, numberedChoiceText } from './phone-chat-choices.js';
+import { createBottomPin } from './phone-chat-scroll.js';
+import { portraitFor } from '../../utils/portrait-variants.js';
+import { ChatInfluence } from '../../ui/pretext-chrome.js';
+import PhoneChatConversation from './phone-chat-conversation.js';
+import InkEngine from '../../systems/ink/ink-engine.js';
 
 export default class PhoneChatUI {
     /**
@@ -108,6 +114,7 @@ export default class PhoneChatUI {
                         <div class="choices-container" id="choices-container">
                             <!-- Choice buttons will be added here -->
                         </div>
+                        <div class="choices-more-cue" id="choices-more-cue" aria-hidden="true">▼ more choices</div>
                     </div>
                 </div>
             </div>
@@ -128,9 +135,27 @@ export default class PhoneChatUI {
             backButton: document.getElementById('back-button'),
             messagesContainer: document.getElementById('messages-container'),
             typingIndicator: document.getElementById('typing-indicator'),
-            choicesContainer: document.getElementById('choices-container')
+            choicesContainer: document.getElementById('choices-container'),
+            choicesMoreCue: document.getElementById('choices-more-cue')
         };
+
+        // The cue sits below the list, not over it (m08 R4: it covered the fourth choice)
+        this.elements.choicesMoreCue?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const box = this.elements.choicesContainer;
+            box?.scrollBy?.({ top: box.clientHeight, behavior: 'smooth' });
+        });
         
+        // Show or hide the "more choices" cue as the player scrolls the list
+        this.elements.choicesContainer?.addEventListener('scroll', () => this.updateChoicesScrollCue());
+
+        // Keep the last bubble above the choices as the panel fills in or changes
+        // height, and when the window resizes (round 7, m06 M2)
+        this._bottomPin?.destroy();
+        this._bottomPin = createBottomPin(this.elements.messagesContainer, {
+            watch: [this.elements.choicesContainer, this.elements.typingIndicator]
+        });
+
         console.log('✅ Phone UI rendered');
     }
     
@@ -342,6 +367,11 @@ export default class PhoneChatUI {
      * @param {string} phoneId - Optional phone ID to filter contacts
      */
     showContactList(phoneId = null) {
+        // Torn down (the phone closed while a start was still awaiting): nothing to show
+        if (!this.elements.contactListView || !this.elements.conversationView) {
+            console.warn('⚠️ Phone UI torn down; not showing the contact list');
+            return;
+        }
         this.currentView = 'contact-list';
         this.currentNPCId = null;
         
@@ -400,9 +430,58 @@ export default class PhoneChatUI {
         npcs.forEach(npc => {
             const contactItem = this.createContactItem(npc);
             contactList.appendChild(contactItem);
+            // Opt-in (NPC "livePreview": true, lab R5 F4): a looping hint contact
+            // previews the line opening its thread would add now
+            if (npc.livePreview === true) this.refreshLivePreview(npc, contactItem);
         });
-        
+
         console.log(`📋 Populated ${npcs.length} contacts`);
+    }
+
+    /**
+     * Replace an opted-in contact's preview with the line its thread would gain if
+     * opened now (PhoneChatConversation.previewReopen). A dry run: the thread, the
+     * unread count and the saved story are not touched. The row keeps its history
+     * preview if the run adds nothing, fails, or the row or thread changed meanwhile.
+     * @param {Object} npc - the NPC entry
+     * @param {HTMLElement} contactItem - its row in the list
+     * @returns {Promise<string|null>} the preview shown, or null
+     */
+    async refreshLivePreview(npc, contactItem) {
+        const historyLength = this.npcManager.getConversationHistory(npc.id).length;
+        const stateManager = typeof window !== 'undefined' ? window.npcConversationStateManager : null;
+        const raw = await PhoneChatConversation.previewReopen(npc, this.npcManager, new InkEngine(`${npc.id}-preview`), {
+            syncGlobals: story => {
+                stateManager?.syncGlobalVariablesToStory?.(story);
+                stateManager?.applyEngineVariables?.(npc.id, story, { channel: 'phone-chat' });
+            }
+        });
+        if (!raw || !contactItem?.isConnected) return null;
+        // The thread was opened (or texted) while the dry run ran: its own line stands
+        if (this.npcManager.getConversationHistory(npc.id).length !== historyLength) return null;
+        const el = contactItem.querySelector('.contact-last-message');
+        if (!el) return null;
+        const preview = this.previewText({ type: 'npc', text: raw }, npc);
+        if (preview === null) return null;
+        el.innerHTML = displayDashes(preview);
+        return preview;
+    }
+
+    /**
+     * A message's text as the contact list previews it: the speaker prefix handled,
+     * "You: " on the player's lines, cut to 40 characters. Null for narration.
+     * @param {Object} message - { type, text }
+     * @param {Object} npc - the contact
+     * @returns {string|null}
+     */
+    previewText(message, npc) {
+        const maxLength = 40;
+        const line = displayPhoneLine(message.type, message.text, npc);
+        if (line.type === 'narrator') return null;
+        const previewText = line.type === 'player' ? `You: ${line.text}` : line.text;
+        return previewText.length > maxLength
+            ? previewText.substring(0, maxLength) + '...'
+            : previewText;
     }
     
     /**
@@ -438,19 +517,20 @@ export default class PhoneChatUI {
             lastMessageTime = this.formatTimestamp(lastMessage.timestamp);
         }
         
-        // Resolve avatar path to full URL if relative
-        let avatarSrc = npc.avatar;
-        if (npc.avatar && !npc.avatar.startsWith('/') && !npc.avatar.startsWith('http')) {
-            if (npc.avatar.startsWith('assets/')) {
-                avatarSrc = `/break_escape/${npc.avatar}`;
+        // Resolve avatar path to full URL if relative (portraitVariants may swap it)
+        const avatar = portraitFor(npc)?.avatar;
+        let avatarSrc = avatar;
+        if (avatar && !avatar.startsWith('/') && !avatar.startsWith('http')) {
+            if (avatar.startsWith('assets/')) {
+                avatarSrc = `/break_escape/${avatar}`;
             } else {
-                avatarSrc = `${ASSETS_PATH}/${npc.avatar}`;
+                avatarSrc = `${ASSETS_PATH}/${avatar}`;
             }
         }
 
         contactItem.innerHTML = `
             <div class="contact-avatar">
-                ${npc.avatar ? `<img src="${avatarSrc}" alt="${npc.displayName}">` : '👤'}
+                ${avatar ? `<img src="${avatarSrc}" alt="${npc.displayName}">` : '👤'}
             </div>
             <div class="contact-info">
                 <div class="contact-name">${npc.displayName || npc.id}</div>
@@ -481,6 +561,12 @@ export default class PhoneChatUI {
             return;
         }
         
+        // Torn down (the phone closed while a start was still awaiting): nothing to show
+        if (!this.elements.contactListView || !this.elements.conversationView) {
+            console.warn(`⚠️ Phone UI torn down; not showing conversation with ${npcId}`);
+            return;
+        }
+
         this.currentView = 'conversation';
         this.currentNPCId = npcId;
         
@@ -494,6 +580,7 @@ export default class PhoneChatUI {
         // Clear messages and choices
         this.elements.messagesContainer.innerHTML = '';
         this.elements.choicesContainer.innerHTML = '';
+        this._bottomPin?.pin(false);
         
         console.log(`💬 Showing conversation with ${npc.displayName || npcId}`);
     }
@@ -504,7 +591,8 @@ export default class PhoneChatUI {
      * @param {string} npcId - NPC identifier
      */
     updateHeader(npcName, npcId) {
-        const npc = this.npcManager.getNPC(npcId);
+        // portraitVariants may swap the avatar (a knocked-out headshot, say)
+        const npc = portraitFor(this.npcManager.getNPC(npcId));
         
         // Clear and rebuild header content
         const conversationInfo = this.elements.conversationHeader.querySelector('.conversation-info');
@@ -547,7 +635,37 @@ export default class PhoneChatUI {
             // Fallback to old method
             this.elements.npcName.textContent = npcName;
         }
+        this.mountInfluenceBar(npcId);
     }
+
+    /**
+     * Influence bar and tells for a social contact (06 N4, P4-E).
+     * Tells also land in the thread as render-only bubbles, not history.
+     * A non-social contact mounts nothing.
+     */
+    _social() {
+        if (!this._chatInfluence) {
+            this._chatInfluence = new ChatInfluence({
+                parent: () => this.elements?.conversationHeader || null,
+                messages: () => this.elements?.messagesContainer || null,
+                mount: 'phone-chat',
+                place: 'end',
+                onBand: (band) => {
+                    const header = this.elements?.conversationHeader;
+                    if (!header) return;
+                    header.dataset.band = String(band);
+                    const img = header.querySelector('.conversation-avatar');
+                    if (img) img.dataset.band = String(band);
+                }
+            });
+        }
+        return this._chatInfluence;
+    }
+
+    mountInfluenceBar(npcId) { return this._social().mountBar(npcId); }
+    mountPretext(opts) { return this._social().mountPretext(opts); }
+    refreshPretext() { return this._social().refresh(); }
+    socialHeaderState() { return this._chatInfluence ? this._chatInfluence.state() : null; }
     
     /**
      * Add a message bubble to the conversation
@@ -637,22 +755,37 @@ export default class PhoneChatUI {
             // Regular text message
             const messageText = document.createElement('div');
             messageText.className = 'message-text';
+            // Another character's line in this thread ("Name: …") gets their name over
+            // the bubble, prefix dropped, instead of reading as the contact's own (F14)
+            let bodyText = trimmedText;
+            const other = type === 'npc' ? otherSpeaker(trimmedText, contact, this._knownSpeakerNames()) : null;
+            if (other) {
+                const sender = document.createElement('div');
+                sender.className = 'message-sender';
+                sender.textContent = displayDashes(other.name);
+                messageBubble.appendChild(sender);
+                messageBubble.classList.add('other-speaker');
+                bodyText = other.text;
+            }
             // Terminal theme adds its own "> " prompt in CSS; skip it when the line already starts with one
-            if (/^\s*>/.test(trimmedText)) messageText.classList.add('has-own-prompt');
-            messageText.textContent = displayDashes(trimmedText);
+            if (/^\s*>/.test(bodyText)) messageText.classList.add('has-own-prompt');
+            messageText.textContent = displayDashes(bodyText);
             
             messageBubble.appendChild(messageText);
             
             console.log(`💬 Added ${type} message: ${trimmedText.substring(0, 30)}...`);
         }
         
-        // Add timestamp
-        const messageTime = document.createElement('div');
-        messageTime.className = 'message-time';
-        // The time this message arrived, not the time the thread was opened: every
-        // bubble used to show the current time, so a whole thread read e.g. "12:29"
-        messageTime.textContent = message ? messageClockText(message) : this.getCurrentTime();
-        messageBubble.appendChild(messageTime);
+        // Add timestamp, but only an in-world one. A scenario with a gameClock stamps each
+        // bubble with the game time it arrived at. Without one the only time to show would be
+        // the player's real clock ("12:29" in a mission set at night), so the bubble carries no
+        // time and the thread's order is the only time cue (F18 item 5).
+        if (typeof window !== 'undefined' && window.gameClock?.configured) {
+            const messageTime = document.createElement('div');
+            messageTime.className = 'message-time';
+            messageTime.textContent = message ? messageClockText(message) : this.getCurrentTime();
+            messageBubble.appendChild(messageTime);
+        }
         
         this.elements.messagesContainer.appendChild(messageBubble);
         
@@ -661,6 +794,13 @@ export default class PhoneChatUI {
         }
 
         return Promise.resolve();
+    }
+
+    /** Display names of every registered character, for otherSpeaker(). */
+    _knownSpeakerNames() {
+        const npcs = this.npcManager?.npcs;
+        if (!npcs || typeof npcs.values !== 'function') return [];
+        return Array.from(npcs.values()).map(n => n?.displayName).filter(Boolean);
     }
 
     _typewriterMessage(text, scrollToBottom) {
@@ -745,7 +885,7 @@ export default class PhoneChatUI {
      */
     addChoices(choices) {
         if (!choices || choices.length === 0) {
-            this.elements.choicesContainer.innerHTML = '';
+            this.clearChoices();
             return;
         }
         
@@ -755,27 +895,50 @@ export default class PhoneChatUI {
             const choiceButton = document.createElement('button');
             choiceButton.className = 'choice-button';
             choiceButton.dataset.index = index;
-            choiceButton.textContent = displayDashes(choice.text);
+            // Number prefix for choices 1-9, as person-chat shows (keys 1-9 pick them)
+            // The plain text is kept for the player's message bubble
+            choiceButton.dataset.text = displayDashes(choice.text);
+            choiceButton.textContent = numberedChoiceText(choiceButton.dataset.text, index);
             
             this.elements.choicesContainer.appendChild(choiceButton);
         });
-        
+
         this.scrollToBottom();
+        this.updateChoicesScrollCue();
+        // Measure again once the buttons have laid out
+        if (typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(() => this.updateChoicesScrollCue());
+        }
         console.log(`🔘 Added ${choices.length} choices`);
     }
     
+    /**
+     * Show the "more choices" cue only while choices are hidden below the fold
+     */
+    updateChoicesScrollCue() {
+        const box = this.elements?.choicesContainer;
+        const cue = this.elements?.choicesMoreCue;
+        if (!box || !cue) return;
+        cue.classList.toggle('visible', hasHiddenChoicesBelow(box));
+    }
+
     /**
      * Clear all choice buttons
      */
     clearChoices() {
         this.elements.choicesContainer.innerHTML = '';
+        this.elements.choicesMoreCue?.classList.remove('visible');
     }
     
     /**
      * Show typing indicator (NPC is "typing")
      */
     showTypingIndicator() {
-        this.elements.typingIndicator.style.display = 'flex';
+        // The phone can be torn down under a typeout: a tag on the chosen line
+        // (start_debrief_cutscene) closes it before the reply is typed (m06 N-6-1)
+        const el = this.elements?.typingIndicator;
+        if (!el) return;
+        el.style.display = 'flex';
         this.scrollToBottom();
     }
     
@@ -783,7 +946,8 @@ export default class PhoneChatUI {
      * Hide typing indicator
      */
     hideTypingIndicator() {
-        this.elements.typingIndicator.style.display = 'none';
+        const el = this.elements?.typingIndicator;
+        if (el) el.style.display = 'none';
     }
     
     /**
@@ -791,13 +955,16 @@ export default class PhoneChatUI {
      * @param {boolean} smooth - Whether to use smooth scrolling
      */
     scrollToBottom(smooth = true) {
-        const container = this.elements.messagesContainer;
-        if (container) {
-            container.scrollTo({
-                top: container.scrollHeight,
-                behavior: smooth ? 'smooth' : 'auto'
-            });
+        const container = this.elements?.messagesContainer;
+        if (!container) return;
+        if (this._bottomPin) {
+            this._bottomPin.pin(smooth);
+            return;
         }
+        container.scrollTo({
+            top: container.scrollHeight,
+            behavior: smooth ? 'smooth' : 'auto'
+        });
     }
     
     /**
@@ -888,6 +1055,8 @@ export default class PhoneChatUI {
      * Cleanup and remove UI
      */
     cleanup() {
+        this._chatInfluence?.destroy();
+        this._chatInfluence = null;
         // Stop and destroy TTS manager
         this.ttsManager.destroy();
 
@@ -902,6 +1071,8 @@ export default class PhoneChatUI {
             this._typewriterCancel();
             this._typewriterCancel = null;
         }
+        this._bottomPin?.destroy();
+        this._bottomPin = null;
         this.container.innerHTML = '';
         this.elements = {};
         this.currentView = 'contact-list';

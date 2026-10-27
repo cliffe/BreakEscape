@@ -12,6 +12,17 @@ that uses it. A name that exists in ink but not in this file is a bug.
 
 ---
 
+## Imported globals (carry-over, 2026-10-17) — supersede everything below where they differ
+
+Source: `docs/agents/CARRY_OVER_PLAN.md` ("Built"). Declared in `scenario.json.erb` `importGlobals`, not in `globalVariables`; the server writes them into the game's globals when it is created. **Read-only:** no ink, tag, mapping or task may assign them (the validator errors, the server drops the write).
+
+- `m06_assets_seized` (bool, from m06 `assets_seized`): the player froze the fund. Read by `m07_opening_briefing` `start`.
+- `m06_monitoring_enabled` (bool, from m06 `monitoring_enabled`): the fund was left running under watch. Read by `m07_opening_briefing` `start`.
+- `m06_architect_identity_found` (bool, from m06 `architect_identity_found`): the player opened Satoshi's safe. Read by HaX's `topic_teacher`.
+- `m06_completed` (bool): a finished m06 run exists. Read by `m07_opening_briefing` `start`; tells "finished without choosing" apart from "never played".
+- All four are `false` for a player who never finished m06; those players hear the original lines.
+- **Exports** (`exportGlobals`, for m08 and later): `team_assignment`, `team_redirected`, `grid_saved`, `mercer_fate`, `elena_outcome`, `architect_echo_heard`. Renaming one breaks m08; the validator says so.
+
 ## PASS 4 amendments (2026-10-02) — these supersede everything below where they differ
 
 Source: `DESIGN_REVIEW.md`, "Changes made (pass 4 design)".
@@ -23,6 +34,7 @@ Source: `DESIGN_REVIEW.md`, "Changes made (pass 4 design)".
 - **Removed mapping:** the recon-guide offer on `room_entered:server_room`; `recon_guide_offered` is now set by the vm-launcher mapping with `nfs_guide_offered`.
 - **Aim title:** `trace_the_intrusion` is "Trace How They Got In (Optional)". Task ids unchanged.
 - **Round 2:** HaX knot `topic_park`; HaX local `park_hint_given`; HaX VARs `casualty_projection_found`, `park_ko`, `park_resolved` (synced). New mappings: `item_picked_up:key` → `maintenance_key_found` (the key's `onPickup` never runs), a post-abort `npc_ko:james_mercer` row, a found-intercept variant of the sign-off text, three flags-missing variants of the fallback. `take_the_debrief` retitled "Call HaX when you're ready to be brought in" (id unchanged). Round 3: `hurt_line_said` is now a synced global (declared in `globalVariables`), set by HaX mappings on `team_assigned` or first ops-floor entry, not in `first_call_committed`.
+- **Finale carry-over (2026-10-21, F5):** `teacher_discussed` is now a synced global (declared in `globalVariables`, default `false`; HaX's `topic_teacher` adds `#set_global:teacher_discussed:true` under its `~` assignment; the local VAR stays for the L280 check) and is exported for m09/m10.
 
 ## PASS 3 amendments (2026-10-01) — these supersede everything below where they differ
 
@@ -208,8 +220,10 @@ multi-stage.
 |---|---|---|---|---|
 | 1 | `scada_attack_host:flag_1` | `flag{nfs_coordination_traffic}` | Mount the misconfigured NFS export, recover the attack timeline | **The coordination traffic** — four operations, one schedule, one authority. Carries the Trojan Horse dormancy field (`T+9d`) and the `EHR-`/`CAD-` vendor manifest |
 | 2 | `scada_attack_host:flag_2` | `flag{netcat_c2_intercepted}` | Service enumeration, netcat C2 channel | Override codes **and the SCADA password** — the redundant route past Elena |
-| 3 | `scada_attack_host:flag_3` | `flag{root_on_attack_host}` | Privilege escalation to root | Control of the host running the countdown |
-| 4 | `scada_attack_host:flag_4` | `flag{cascade_scripts_terminated}` | Terminate the attack processes, lock out remote access | The grid holds; unlocks `crisis_control_system` |
+| 3 | `scada_attack_host:flag_3` | `flag{operator_account_login}` | Log in to the user account (name from the share, password from the listener) | The host notices; the countdown arms |
+| 4 | `scada_attack_host:flag_4` | `flag{root_on_attack_host}` | Root via a sudo rule | The grid holds; unlocks `crisis_control_system` |
+
+(SecGen alignment 2026-10-16: position 3 is the user account and position 4 is root, per the SecGen XML. The old placeholder slugs had root at 3.)
 
 **WP2 owns `flagRewards`.** Required `set_global` writes, at minimum:
 

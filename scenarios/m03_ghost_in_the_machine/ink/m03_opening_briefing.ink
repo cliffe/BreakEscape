@@ -1,7 +1,8 @@
 EXTERNAL player_name()
 
-// Pass 5 (P4-23): the stance of record is mission_approach's pick (and last_advice's
-// "aggressive"); earlier briefing writes were always overwritten, so they're gone.
+// Pass 5 (P4-23): the stance of record is mission_approach's pick; earlier briefing
+// writes were always overwritten, so they're gone. A4 fix pass: last_advice no longer
+// overwrites it either, because the debrief names the pick back to the player.
 // player_approach and knows_m2_connection are scenario globals, so assigning them here
 // writes through to game state. The debrief reads player_approach; knows_m2_connection
 // is read only below. No EXTERNAL getters: the engine binds only six, and an unbound
@@ -15,6 +16,14 @@ VAR asked_network = false
 VAR asked_cover = false
 // D2-10: the short route. Local; replaces the dead player_approach "direct" write.
 VAR skipped_background = false
+// Imported (read-only) from m02 (docs/agents/CARRY_OVER_PLAN.md): false when the
+// player never finished m02. Never assign these here. Read in the same order as
+// m02's own debrief (m02_closing_debrief.ink patient_outcomes).
+VAR m02_paid_ransom = false              // Imported (read-only) from m02 paid_ransom
+VAR m02_ghost_keys_used = false          // Imported (read-only) from m02 ghost_keys_used
+VAR m02_ward_recovering = false          // Imported (read-only) from m02 ward_recovering: a fast restore (here: the combined one)
+VAR m02_bed4_manually_stabilised = false // Imported (read-only) from m02 bed4_manually_stabilised: the player bagged Mr Pryce by hand
+VAR m02_completed = false                // Imported (read-only): a finished m02 run exists (here: the slow offline restore)
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -76,6 +85,20 @@ Agent HaX: They don't run the attacks. They arm the cells that do.
 === st_catherines_connection ===
 #speaker:agent_0x99
 Agent HaX: You worked St. Catherine's last month. The hospital that went dark.
+// Carry-over (2026-10-17): a player who finished m02 hears their recovery call
+// and what it cost, as m02's debrief told it. Never played: no extra line.
+{
+- m02_paid_ransom:
+    Agent HaX: You paid the ransom and had the wards back inside the hour. Two died. Ghost's cell is spending the money now.
+- m02_ghost_keys_used:
+    Agent HaX: You took Ghost's keys and had the wards back inside the hour. One died. Ghost can still walk back into that network.
+- m02_ward_recovering:
+    Agent HaX: You ran the combined restore and paid Ghost nothing. Two died, both critical before it started. The wards held.
+- m02_bed4_manually_stabilised:
+    Agent HaX: You restored from the offline keys and bagged Mr Pryce by hand. Five died in those eleven hours. He wasn't one of them.
+- m02_completed:
+    Agent HaX: You restored from the offline keys. Eleven and a half hours, and six people died in that window.
+}
 Agent HaX: The ransomware ran on a ProFTPD backdoor. That exploit didn't come from the crew who deployed it.
 * [Did Zero Day sell Ghost the way in?]
     ~ knows_m2_connection = true
@@ -90,7 +113,13 @@ Agent HaX: The ransomware ran on a ProFTPD backdoor. That exploit didn't come fr
     Agent HaX: Ghost pulled the trigger. Someone handed them the gun. That's what we go and find.
     -> mission_stakes
 * [Walk me through St. Catherine's again.]
-    Agent HaX: A ward of patients on life support, encrypted in the night. How many died came down to a recovery call.
+    // Carry-over browser check: a player who finished m02 has just heard their
+    // own count, so the recap points back at their call instead of repeating it.
+    {m02_completed:
+        Agent HaX: A ward of patients on life support, encrypted in the night. The recovery call was yours, and you know what it cost.
+    - else:
+        Agent HaX: A ward of patients on life support, encrypted in the night. How many died came down to a recovery call.
+    }
     Agent HaX: That's the buyer, Ghost. Zero Day sold the exploit and invoiced for it.
     ~ knows_m2_connection = true
     #set_global:knows_m2_connection:true
@@ -99,11 +128,13 @@ Agent HaX: The ransomware ran on a ProFTPD backdoor. That exploit didn't come fr
 === mission_stakes ===
 #speaker:agent_0x99
 Agent HaX: They sold it as a product. Twenty-five thousand on the invoice, healthcare premium already built into the price.
-* [That's murder with an invoice attached.]
+// A4 fix pass: the old "murder with an invoice attached" read as a slogan. The
+// global keeps its id (called_it_murder); the debrief quotes the new wording.
+* [So they knew it was a hospital, and put a price on that.]
     ~ handler_trust = handler_trust + 10
     # influence_increased
     #set_global:called_it_murder:true
-    Agent HaX: That's the case we're building. And there's a Phase 2 behind it.
+    Agent HaX: They knew, and they billed for knowing. That's the case we're building. And there's a Phase 2 behind it.
     -> objectives
 * [Then we take the supplier off the board.]
     ~ handler_trust = handler_trust + 5
@@ -208,20 +239,21 @@ Agent HaX: Your call.
 + [I'll be thorough. Document everything.]
     ~ player_approach = "cautious"
     #set_global:player_approach:cautious
-    Agent HaX: Smart. Zero Day leaves paper. Find it, connect it.
-    Agent HaX: And there's a guard on nights. Stealth counts.
+    // A4 fix pass: a reply that answers this option, not a generic one.
+    Agent HaX: Good. Zero Day invoices everything, so somewhere in that building St. Catherine's is on paper. Bring me the paper.
+    Agent HaX: Thorough takes time, though, and there's a guard on nights. Don't let him find you reading.
     -> final_instructions
 + [I move fast, grab the objectives, get out.]
     ~ player_approach = "aggressive"
     #set_global:player_approach:aggressive
-    Agent HaX: Less time for things to go wrong. But don't blow past the distcc logs -- that's the case.
+    Agent HaX: Less time in the building, less time for it to go wrong. Just don't sprint past the distcc logs. They're the case.
     -> final_instructions
 + [I'll stay flexible. Read the situation.]
     ~ player_approach = "diplomatic"
     #set_global:player_approach:diplomatic
     ~ handler_trust = handler_trust + 10
     # influence_increased
-    Agent HaX: Then watch her, not the room. Call if you need me.
+    Agent HaX: Then watch Sterling, not the furniture. Whatever she wants most is your way in. Call if you need me.
     -> final_instructions
 
 === final_instructions ===
@@ -248,9 +280,9 @@ Agent HaX: And there's a consultant, Danny Foster. He did the hospital recon. Co
     # influence_increased
     Agent HaX: Then get the facts. He'll still be there.
     -> deployment
+// A4 fix pass: no longer overwrites player_approach. The debrief now names the
+// approach the player picked in mission_approach, and this is a verdict on Danny.
 * [If he did the recon, he's part of it.]
-    ~ player_approach = "aggressive"
-    #set_global:player_approach:aggressive
     Agent HaX: Maybe. Get the proof before you make that call.
     -> deployment
 * [Understood]

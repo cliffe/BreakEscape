@@ -1,19 +1,73 @@
-# Resume note: security awareness course plan (2026-10-14), paused for usage
+# Resume note: awareness course plan and kids game pitch (planning branch ccr-8675a21c-vu1k0k)
 
-Plan folder `planning_notes/security_awareness_course/`; **open work is in its `TODO.md`**. Briefs: `docs/agents/AWARENESS_COURSE_BRIEF.md`, `AWARENESS_MODULE_SEEDS.md`, `AWARENESS_REVIEW_BRIEF.md`. Branch ccr-8675a21c-vu1k0k, pushed.
-- Done: course docs, research, compliance mapping, all six feature documents, catalogue (BE-01 to BE-30, MG-01 to MG-29, EX-01 to EX-08, HA-01 to HA-26), first drafts of all 26 modules.
-- All 26 modules have first drafts (every writer finished). Reviews were stopped by the user to save usage; nothing restarts on its own. Restart from TODO.md section 1.
-- Public repo: keep Hacktivity at feature level; Hacktivity privacy points went to the user in chat only.
+Plan folder `planning_notes/security_awareness_course/` (open work in its `TODO.md`); kids game pitch `planning_notes/kids_cyber_game/`. Being reconciled with what main has built (the social-engineering build and the awareness episodes in `planning_notes/phishing_and_social_engineering/`). Public repo: keep Hacktivity at feature level.
 
-# Resume note — m03 pass 2 (2026-10-12): all stages done except the user's blind run
+# Resume note: VM weave fixes (started 2026-10-23)
+
+Brief `docs/agents/VM_WEAVE_FIX_BRIEF.md`; source `scenarios/VM_INTEGRATION_REVIEW.md` (bbc7e25c6), R1–R39 approved except R10 (standalone-only; Hacktivity deployment is the focus). Baseline commits before edits: d12120486, 4501b7c26, 6aebbed38; SecGen 7c2773df1. Running: engine (Opus), game m01–m03 / m04–m06 / m07–m08 / m09–m10 (opus48), SecGen m04+m08 / m09 / m10 (opus48). Status 2026-10-23: DONE. All approved items landed and browser-checked: engine 74810fe06; m01 711851e39, m02 e5dac40ea, m03 49ca8dcd3, m04 3caa47eae, m05 e794996a1, m06 84f8ec099, m07 1f292b5f2, m08 364c44673, m09 d8a78bab6, m10 25c50194a; SecGen 7c2532511 (m04, m08), 2b0e1b4bc (m09, m10); review status 5afd7576e. Rules corrected by the user: diegetic + required are the hard rules. Open: the user's SecGen build checks; a real end-to-end VM playtest; TTS for the changed voiced lines (user's cost call); m10 hatch kill-config excerpt only shows on the proximity label.
+
+# Resume note: backlog batch (started 2026-10-22)
+
+Brief `docs/agents/BACKLOG_BATCH_BRIEF.md`. Done 2026-10-22: commits 5a8bf225 (engine), c98b7e55 (m06 tracer board), cf16ef61 (m02 Gary occlusion off); 13 backlog entries removed. Open follow-ups are in `docs/IDEAS_BACKLOG.md` under "Follow-ups from the backlog batch" (owed browser checks for route-around and combat, Node 20 for the harness, m06 blind run, Gary's mapping).
+
+# Resume note: social-engineering build (started 2026-10-21)
+
+Brief `docs/agents/SE_BUILD_BRIEF.md`; plan and log `planning_notes/phishing_and_social_engineering/IMPLEMENTATION_PLAN.md`, `SE_BUILD_LOG.md` (its "Resume" section holds the current status).
+
+# Resume note: finale m09 + m10 (started 2026-10-20)
+
+Brief `docs/agents/FINALE_BRIEF.md`; log `scenarios/FINALE_DEV_LOG.md`; pending `scenarios/FINALE_DECISIONS_PENDING.md`. Outputs under `planning_notes/overall_story_plan/mission_initializations/finale/`, `.../m09_digital_archaeology/`, `.../m10_full_disclosure/`.
+Plan: phase A inventory (carry-over m01–m04, m05–m08; VM shape) → stage 0 joint for both missions + finale arc doc → stages 1+2, 3, 4+5, 6, 7, 8, 9 per mission (author + ≥3 review rounds; milestone cross-reviews after 3, 5, 8) → AGENTS.md improvement loops. User answers F1–F4 in the log (all endings kept; SecGen drafts, m08 exports, teaser slot, stage-doc commits approved).
+Status (2026-10-21, stage 9): stages 0–8 closed for both missions (last cb97a2fb). Stage 8: reviews + helper files + STAGE_8_RULINGS.md in planning_notes/.../finale/; fixes in m09 CONTRACT §15, m10 CONTRACT §11, FINALE_ARC §22 (stage 9 handover: asset list first; mappings; texts files m09 texts/, m10 texts/BARKS_AND_TEXTS.md). VM answers in finale/STAGE_8_VM_ANSWERS.md (opus48 only; Opus 5.5 never reads it): m10 has three target machines; second flag terminal per mission bound to the same VM (m01 precedent); Tomb Beta early peek accepted (user), salvage-cage property label added. Running: stage 9 builders (m09, m10 scenario.json.erb + mission.json), Sonnet agent for m01–m08 exportGlobals (58) + F5 ink changes (commit only those hunks; m01 erb has other sessions' edits). Then: opus48 VM wiring pass, validator/door/dungeon checks, walkthrough, then AGENTS.md loops (playtests, dressing, lighting, POV, characters after user OKs art scope, lab sheet, audio after TTS count). Pending for user: F9 SecGen build. README_scenario_design.md '||' sentence: fix at stage 9 (file has other sessions' edits).
+
+# Resume note — m07 and m08 full passes (pass 5, started 2026-10-13)
+
+Same process and rules as m05/m06 below (user, 2026-10-13: run concurrently, no user input; blocking items go in each mission's `DECISIONS_PENDING.md`). Briefs `docs/agents/M07_PASS_BRIEF.md`, `M08_PASS_BRIEF.md`. Started: stage-1 regression playtest and alignment review cycle 1 for both. m05 is at dialogue cycle 3 review + room dressing; m06 at struggling-run fix browser check.
+
+# Resume note — m05–m08 full passes (pass 5), status 2026-10-14
+
+All four run without the user's input; anything blocked is in each mission's `DECISIONS_PENDING.md`.
+
+- **m05, m06, m07: every unblocked stage done** (alignment → puzzle chains → scenario design → dialogue → dressing → lighting → playtests incl. a blind struggling run and fixes). Each has a "do your best" prompt for the user: `docs/agents/M05_/M06_/M07_BLIND_PLAYTEST_PROMPT.md` (and M04's).
+- **Waiting on the user:** POV chat backgrounds (metered Gemini: m05 D17, m06 D10, m07 D-POV); character picks; first-room sign-offs (m05 D15 Halloran's lab, m07 U13 operations floor, m08 R1 lobby); SecGen checks (each mission's U-items, esp. m08 U1 addenda: whether the VM account names Nightshade); engine items (each file's E/D items; backlog in `docs/IDEAS_BACKLOG.md`).
+- **m08: every unblocked stage done** as well (lighting closed, blind struggling run A to the credits with the mole deducible from evidence, fixes browser-checked). Prompt: `docs/agents/M08_BLIND_PLAYTEST_PROMPT.md`.
+- Lessons: playtest skill gotcha on NPC combat state (D10 was harness-induced); dressing skill traps on NPC tap frames and top-left reach; never `git stash` in the shared tree (in all briefs).
+
+# Resume note — m05 and m06 full passes (pass 5, started 2026-10-13)
+
+Running alongside m04's pass, without the user's input (user, 2026-10-13): anything needing the user goes in each mission's `DECISIONS_PENDING.md` and work moves on. Briefs `docs/agents/M05_PASS_BRIEF.md`, `M06_PASS_BRIEF.md` (no VM-content summaries: a safety check stopped the orchestrator writing them; reviewers judge only that flags are required and woven in). Stage order as AGENTS.md "Iterating": regression, alignment, puzzle chains, scenario design, dialogue + dressing, lighting, POV, characters (parked for picks), playtests and blind runs. Started: regression A and alignment round 1 for both.
+
+# Resume note — m04 full pass (pass 5, 2026-10-13): all stages done except the user's blind run
+
+Brief `docs/agents/M04_PASS_BRIEF.md`; log `scenarios/m04_critical_failure/IMPROVEMENT_LOOP_LOG.md`. Stages closed:
+- alignment (4 rounds)
+- puzzle chains (4)
+- scenario design (2)
+- dialogue (3 cycles)
+- room dressing (7)
+- lighting (4)
+- POV backgrounds (all 9 rooms, 19 Gemini calls)
+- characters (7 new; HaX glow-up option A in every mission)
+- struggling-player run, its fixes, and a final targeted check
+
+Route driver: 33 routes. The user's blind run: `docs/agents/M04_BLIND_PLAYTEST_PROMPT.md` (report → `PASS5_BLIND_A.md`).
+
+Pending for the user, in `scenarios/m04_critical_failure/DECISIONS_PENDING.md`:
+- sign-offs: the first POV room (P1);
+- engine: L1 fire effect, L2 hue-preserving glows, L3 validator `||` check, E1 dotted paths, E2 pause hostiles during cutscenes;
+- SecGen checks.
+
+# Resume note — m03 pass 2 (2026-10-13): complete
 
 Brief `docs/agents/M03_PASS2_BRIEF.md`; log `scenarios/m03_ghost_in_the_machine/IMPROVEMENT_LOOP_LOG.md` "Pass 2". Later (user): lab sheet, audio, engine triage, SecGen.
-- Dialogue: 5 cycles, signed off (ship), plus blind-run fixes 1-2. Route driver scripts/ink_runtime_check/m03_routes/ (24 routes).
+- Dialogue: 5 cycles, signed off (ship), plus blind-run fixes 1-2. Route driver scripts/ink_runtime_check/m03_routes/ (27 routes).
 - Room dressing: 7 cycles, layout final (room_zds_* maps). Lighting: 4 cycles, closed. POV backgrounds: 4 rounds, all 7 rooms, day/night via chatBackground conditions.
 - Characters: Victoria, Danny, Ffion Rees, Terry Mott (Black British) with own art, visemes from talk, walk sprites, frames reviewed (33 strips + round 2 re-alignment). Nightshade = renamed male_scientist_v2; HaX = agent_hax.
 - Engine today (all user-approved): lighting L1 variants, L2 white-map, L3 torch, E4 cones above light map, tour flags, chatBackground conditions, toasts reading-time lifetime, RFID denial hold + door_unlock_failed, KO body on reload.
 - Terry: night on-sight challenge (talk your way out), lockpick catch → hostile; Perfect Stealth = never seen.
-- Blind runs: B (struggling) complete; A, A2, A3 ("do your best") each stopped by auto mode's safety check at 60/30/65%. The user runs the complete one from docs/agents/M03_BLIND_PLAYTEST_PROMPT.md (report → PASS2_BLIND_A3.md is taken; use A4). Session 2191 may still be open on :3001 (user's call).
+- Blind runs: B (struggling) complete; A4 ("do your best", user-run) reached the credits: 0 blockers, 0 majors, 8 minors, fixed in 408e0805, 7745ec6f, 4b6acad7. PASS2_STEALTH_CHECK.md: the A4 fixes pass in the browser; the lockpick catch forces a fight (user: fine, it's winnable); Terry's clock threats reworded (157dae9b). Route driver now has "reload": "page" (only synced globals survive), 27 routes.
+- TODO (user, 2026-10-13): check m04's VM against SecGen (puzzle review F2): does root on bms_jump_server show a temperature-rewriting "calibration override", and do the four flag names match HaX's texts? HaX's line was softened to the in-game "charge-ceiling override" meanwhile; restore the stronger claim if the VM has it. Also check (puzzle review R2-6): that the ProFTPD *backdoor* guide offered after m04's scan flag fits what the FTP flag involves, and the "fake rack status page" (erb ~311, ~930). Done outside this session (the safety check stops agents reading the XML).
+- TODO (user + orchestrator, 2026-10-13): m03 lab sheet VM stages. The lab sheet (`scenarios/m03_ghost_in_the_machine/labsheet.md`, copied to HacktivityLabSheets) has the scan, FTP, price list and distcc stages written from the in-game text and field guides only, marked "not checked against the VM". Auto mode's safety check stopped this session reading the SecGen XML for them, so the user runs that step in a normal session, writing to `scenarios/m03_ghost_in_the_machine/LABSHEET_VM_STAGES.md`. Then merge it into labsheet.md and the HacktivityLabSheets copy together.
 - Not pushed (branch ahead of origin by ~70 commits).
 
 # Resume note — room POV chat backgrounds (2026-10-11): COMPLETE
@@ -143,3 +197,9 @@ Updated 2026-10-02. Brief: `docs/agents/PASS4_BRIEF.md`. Log: `scenarios/PASS4_E
 
 ## sis02 improvement loop (2026-10-05)
 Branch claude/m03-improvement-loop. Brief docs/agents/SIS02_LOOP_BRIEF.md, log scenarios/sis02_energy/IMPROVEMENT_LOG.md. Playbook phases 1-5 done through round 4 (5e52b40); confirmation Run H running. Next: lab sheet rewrite (phase 6; HacktivityLabSheets not in the container: add_repo cliffe/HacktivityLabSheets), cast (phase 7; ask before PixelLab spend), round-2 dialogue review (phase 8), audio last (ask; Helen and Priya fully re-voice, sis03 Eleanor ~26 lines).
+
+# Resume note: VM lab-sheet reconcile (2026-10-23)
+Brief docs/agents/VM_LABSHEET_BRIEF.md. All 10 VM technical-steps companions in HacktivityLabSheets reconciled to the current VMs. Rewrote m04, m08, m09, m10 (changed VMs) + fixed m05 (missing Base64 decode step) and m07 (listener carries operator password, not the door password). m01/m02/m03/m06 correct as-is. 6 files modified in HacktivityLabSheets, NOT committed (awaiting user OK). m09 mission.json Druid->credentialed-access line fixed and committed (e7a2ae426). Open for user: (1) commit the HacktivityLabSheets sheets; (2) m08 game hook says "credentials in git history/stash" + offers the Secrets-in-Git-History guide, but the VM puts the password in a loose /home/git file read via the RCE (only the recon text naming svc-planning is committed) — decide VM change vs soften game text (m08 shipped). Minor: m10 SecGen XML <description> prose says flag 3 at the server-hall console; game wires it to sealed_hatch (cosmetic XML tidy).
+
+# Resume note: m08 git-history redesign (2026-10-23, done)
+m08's "secrets in git history" hook made real. SecGen (committed): 5da749373 (gitlist_040 optional strings_to_leak_in_history → secret in deleted commit history; sudo_root_apt_get optional sudo_user → scope NOPASSWD to one account; both default to current behaviour, 6 other scenarios unaffected), 0abe02aaa (m08 wiring: flag-2 credential in deleted history, root scoped to www-data so the GitList RCE is required to finish; svc-planning has no sudo, mail 0600). m08 companion rewritten to the new chain: HacktivityLabSheets df39426. User signed off the design before commit. BUILD CHECKS (user's Proxmox, on the build-checks artifact): m08 — svc-planning can't reach root, www-data can via RCE→sudo apt-get; deleted-history secret absent at HEAD, recoverable via git log/show; mail 0600 owned svc-planning; flag order recon→cred→mail→root. Default build of sudo_root_apt_get + gitlist_040 scenarios unchanged (backward-compat). Open design note: whether GitList 0.4.0 web UI renders the deleted commit's diff (if it must be strictly RCE-gated, switch flag 2 to the stash variant) — root is RCE-gated regardless, so this only affects whether flag 2 alone is also web-reachable.

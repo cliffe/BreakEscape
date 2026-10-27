@@ -3,7 +3,10 @@
  * Loads NPC Ink stories via Rails API endpoint
  * Uses in-memory caching only (no persistent storage between sessions)
  */
-import { ensureCharacterTextures, spriteKeysForNPCs } from './character-textures.js';
+import { ensureCharacterTextures, spriteKeysForNPCs, collectCharacterSprites } from './character-textures.js';
+import { avoidPlayerLookalike } from '../utils/npc-lookalike.js';
+import { chosenPlayerSprite } from '../utils/player-avatar.js';
+import { headlessNpcRecords } from './scenario-npc-records.js';
 
 export default class NPCLazyLoader {
   constructor(npcManager) {
@@ -75,6 +78,12 @@ export default class NPCLazyLoader {
       console.log(`📖 Loading ${storyPromises.length} Ink stories for room ${roomId}`);
     }
 
+    // P5-4: an NPC wearing the player's chosen avatar swaps to a free stock sprite (and its
+    // stock portrait), so the learner and the host are never twins. The player's choice stands.
+    const swapped = avoidPlayerLookalike(roomData.npcs, chosenPlayerSprite(),
+      collectCharacterSprites(window.gameScenario || {}));
+    if (swapped.length) console.log(`🎭 Swapped look-alike NPC sprite(s) away from the player's avatar: ${swapped.join(', ')}`);
+
     // Character atlases are preloaded from the scenario's characterSprites list.
     // This loads any the list missed, alongside the stories, before sprites are made.
     // window.game is the Phaser.Game until game.js create() swaps in the scene itself
@@ -109,6 +118,29 @@ export default class NPCLazyLoader {
     }
     
     this.loadedRooms.add(roomId);
+  }
+
+  /**
+   * Register the scenario's headless NPC records (social.characters.*.emailRecord,
+   * data contract 00 S8) at game start: no room, no sprite. Their stories load on
+   * first use, through the same ink endpoint as room NPCs. A scenario with no
+   * `social` key registers nothing.
+   * @param {object} scenario - the bootstrap scenario (window.gameScenario)
+   * @returns {string[]} ids registered
+   */
+  registerHeadlessRecords(scenario) {
+    const registered = [];
+    for (const record of headlessNpcRecords(scenario)) {
+      // A room NPC already registered under this id keeps it (the server's
+      // scenario_npc_records drops the clashing record the same way)
+      if (this.npcManager.getNPC?.(record.id)) continue;
+      this.npcManager.registerNPC(record);
+      registered.push(record.id);
+    }
+    if (registered.length) {
+      console.log(`✅ Registered ${registered.length} headless NPC record(s): ${registered.join(', ')}`);
+    }
+    return registered;
   }
 
   /**

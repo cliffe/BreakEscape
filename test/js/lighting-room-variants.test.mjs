@@ -18,7 +18,9 @@ writeFileSync(join(dir, 'constants.mjs'), readFileSync(join(js, 'utils/constants
 writeFileSync(join(dir, 'conditional-text.mjs'), readFileSync(join(js, 'utils/conditional-text.js'), 'utf8'));
 writeFileSync(join(dir, 'lighting.mjs'), readFileSync(join(js, 'systems/lighting.js'), 'utf8')
   .replace("'../utils/constants.js'", "'./constants.mjs'")
-  .replace("'../utils/conditional-text.js'", "'./conditional-text.mjs'"));
+  .replace("'../utils/conditional-text.js'", "'./conditional-text.mjs'")
+  .replace("'./npc-sprite-style.js'", "'./npc-sprite-style.mjs'"));
+writeFileSync(join(dir, 'npc-sprite-style.mjs'), readFileSync(join(js, 'systems/npc-sprite-style.js'), 'utf8'));
 const { resolveRoomLighting } = await import(pathToFileURL(join(dir, 'lighting.mjs')).href);
 
 const NIGHT = 'globalVars.clone_call_done === true';

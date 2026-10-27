@@ -1,0 +1,85 @@
+
+## R35 (blind A M2, m7): the redirect text says when the window shuts (operator login or the timer), the decline reply says it can still change, and a decline followed by a move leaves only the move on record (redirect_declined clears), so the debrief and credits don't say 'weighed, and held'.
+
+--- phone ---
+      [task: assign_tactical_team]
+      [mapping agent_0x99: set team_assigned=true]
+      [mapping agent_0x99: set revision_found_open=true]
+      [clock: architect_taunt_t20 started at 0 min]
+      [clock: architect_taunt_t10 started at 0 min]
+      [clock: redirect_window_close started at 0 min]
+      [clock: redirect_window_display started at 0 min]
+      [mapping agent_0x99: set revision_before_commit=true]
+  HaX here, Agent. I've got your channel and the board.
+  The ops room's running four fires tonight. If I go quiet for ten seconds, it isn't personal.
+  The team's logged for Meltdown, San Francisco. It's on the record. It'd take something new to move it.
+  Get past the checkpoint to the operations floor.
+     (3 options)
+ > Understood. Let's go.
+  Call me the second you hit something you can't open.
+     [0] Those numbers were understated. I want the team moved to Trojan Horse.
+     [1] Talk to me about the two we're not covering.
+     [2] Where do I stand?
+     [3] Remind me of the layout and the clock.
+     [4] I'll call you back.
+  [stopped: no pick]
+
+--- phone @hub ---
+     (5 options)
+ > Those numbers were understated. I want the team moved to Trojan Horse.
+  I hear you. Here's the cost, straight.
+  They peel off Meltdown and land in Austin forty minutes late, with the injection already running.
+  Best case, they stop it at a third. Call it a partial.
+  And the place you pull them from goes dark. Whatever was going to happen there, happens.
+  Health record and dispatch keys are late in the Austin run. Even a late team keeps ambulances on the road.
+  You pay for it with the operation you abandon. Your call.
+  The window stays open until you log in as their operator, or the timer on screen runs out. Then the team stays put.
+     (2 options)
+ > No. Leave them where they are.
+      [ink: redirect_declined=true]
+      [set_global redirect_declined=true]
+  Then they stay. I'll log that you weighed it and held. If that changes before you log in as their operator, tell me.
+     [0] Those numbers were understated. I want the team moved to Trojan Horse.
+     [1] Talk to me about the two we're not covering.
+     [2] Where do I stand?
+     [3] Remind me of the layout and the clock.
+     [4] I'll call you back.
+  [stopped: no pick]
+   [PASS] said: "until you log in as their operator, or the timer on screen runs out"
+   [PASS] said: "If that changes before you log in as their operator, tell me"
+   [PASS] not said: "now or never"
+   [PASS] redirect_declined = true (expected true)
+
+--- phone @hub ---
+     (5 options)
+ > Those numbers were understated. I want the team moved to Trojan Horse.
+  I hear you. Here's the cost, straight.
+  They peel off Meltdown and land in Austin forty minutes late, with the injection already running.
+  Best case, they stop it at a third. Call it a partial.
+  And the place you pull them from goes dark. Whatever was going to happen there, happens.
+  Health record and dispatch keys are late in the Austin run. Even a late team keeps ambulances on the road.
+  You pay for it with the operation you abandon. Your call.
+  The window stays open until you log in as their operator, or the timer on screen runs out. Then the team stays put.
+     (2 options)
+ > Move them. Trojan Horse. Now.
+      [ink: team_assignment="trojan_horse"]
+      [ink: team_redirected=true]
+      [ink: redirect_declined=false]
+      [set_global team_redirected=true]
+      [set_global team_assignment=trojan_horse]
+      [set_global redirect_declined=false]
+  Redirecting. Austin confirmed, forty minutes out.
+  Narrator: One pin swings across the board to Austin. The pin it left behind goes dark and stays dark.
+  Done. It's logged under your name.
+     [0] Talk to me about the two we're not covering.
+     [1] Where do I stand?
+     [2] Remind me of the layout and the clock.
+     [3] I'll call you back.
+  [stopped: no pick]
+   [PASS] redirect_declined = false (expected false)
+   [PASS] team_redirected = true (expected true)
+   [PASS] credits don't say: "weighed, and held"
+   [PASS] credits say: "redirected mid-flight"
+
+[stats] spoken/narrated lines 23, choices 5, longest run without a choice 7 (phone); runs>=6: phone:7, phone:7
+[result] all expectations met

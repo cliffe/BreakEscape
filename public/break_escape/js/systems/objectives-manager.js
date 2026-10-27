@@ -24,8 +24,13 @@ export class ObjectivesManager {
   /**
    * Initialize objectives from scenario data
    * @param {Array} objectivesData - Array of aim objects from scenario
+   * @param {Object} [options]
+   * @param {boolean} [options.liveGlobalUnlock] - open a locked aim as soon as
+   *   its globalVariable unlockCondition becomes true (see watchGlobalUnlocks).
+   *   game.js passes true only for a scenario with a `social` block, so the
+   *   Licence to Hack missions keep checking the condition on load only.
    */
-  initialize(objectivesData) {
+  initialize(objectivesData, options = {}) {
     if (!objectivesData || !objectivesData.length) {
       console.log('📋 No objectives defined in scenario');
       return;
@@ -76,7 +81,9 @@ export class ObjectivesManager {
     
     // Reconcile with current game state (handles items collected before objectives loaded)
     this.reconcileWithGameState();
-    
+
+    this.watchGlobalUnlocks(!!options.liveGlobalUnlock);
+
     this.initialized = true;
     console.log(`📋 Objectives initialized: ${this.aims.length} aims, ${Object.keys(this.taskIndex).length} tasks`);
     this.notifyListeners();
@@ -715,6 +722,38 @@ export class ObjectivesManager {
   }
 
   /**
+   * Live globalVariable unlocks (DOCS_GAPS gap 20). Without this, a
+   * globalVariable unlockCondition is checked only when the game loads (the
+   * server derives it, Game#objectives_state_for_client), so the aim opens in
+   * play only if something also calls unlockAim (an eventMapping or an
+   * #unlock_aim tag), which is how m03, m05 and m07 do it. With live set, the
+   * manager listens on global_variable_changed:<name> for every such aim and
+   * unlocks it when the condition holds; it also checks once now, for a global
+   * already set before the objectives loaded. unlockAim is idempotent, so a
+   * scenario that also calls it gets one unlock and one notification.
+   */
+  watchGlobalUnlocks(live) {
+    (this._globalUnlockSubs || []).forEach(([name, fn]) => this.eventDispatcher?.off?.(name, fn));
+    this._globalUnlockSubs = [];
+    if (!live || !this.eventDispatcher) return;
+
+    const check = () => {
+      this.aims.forEach(aim => {
+        if (aim.status !== 'locked' && !(aim.status === 'active' && aim.revealedEarly)) return;
+        if (!aim.unlockCondition?.globalVariable) return;
+        if (this.isUnlockConditionMet(aim)) this.unlockAim(aim.aimId);
+      });
+    };
+    const names = new Set(this.aims.map(a => a.unlockCondition?.globalVariable).filter(Boolean));
+    names.forEach(name => {
+      const event = `global_variable_changed:${name}`;
+      this.eventDispatcher.on(event, check);
+      this._globalUnlockSubs.push([event, check]);
+    });
+    if (names.size) check();
+  }
+
+  /**
    * A task in a locked aim completed, made progress or was unlocked: show the
    * aim, so the player sees the progress they are making, even though its
    * unlockCondition may not be met yet (an optional-looking earlier task left
@@ -843,8 +882,12 @@ export class ObjectivesManager {
     // (any other locked aim was revealed by its task before this runs)
     if (aim.status === 'locked' && this.isStoryGated(aim)) return;
     
-    // Skipped tasks don't block the aim (it completes with a gap; see skipTask)
-    const allComplete = aim.tasks.every(task => task.optional || this.isTaskSettled(task));
+    // Skipped tasks don't block the aim (it completes with a gap; see skipTask).
+    // Optional tasks don't block it either, unless every task is optional: then
+    // the aim completes only once each one is settled, not on the first (m07 U5).
+    // Mirrors Game#check_aim_completion on the server.
+    const hasRequired = aim.tasks.some(task => !task.optional);
+    const allComplete = aim.tasks.every(task => (hasRequired && task.optional) || this.isTaskSettled(task));
     
     if (allComplete && aim.status !== 'completed') {
       aim.status = 'completed';
@@ -1052,7 +1095,7 @@ export class ObjectivesManager {
    * and also from main.js on reload when breakEscapeConfig.missionConcludedAt is set.
    * @param {Object} aim - The aim object with missionConclusion:true
    */
-  handleMissionConcluded(aim) {
+  handleMissionConcluded(aim, { replay = false } = {}) {
     if (!aim) return;
 
     console.log(`🏁 Mission concluded via aim: ${aim.aimId}`);
@@ -1073,9 +1116,28 @@ export class ObjectivesManager {
     } else if (screen.type === 'bond_visualiser') {
       // Open the fullscreen bond visualiser (used for mission credits / victory sequence)
       if (window.BondVisualiser) {
-        window.BondVisualiser.open(screen.bondVisualiserOpts || {});
+        const opts = { ...(screen.bondVisualiserOpts || {}) };
+        // On reload nothing re-fires the music event that carried the credits, so
+        // rebuild them from the saved globals (F22) unless the aim brings its own.
+        if (replay && !opts.credits?.length) {
+          Object.assign(opts, window.endingReplayOptions?.(window.gameScenario) || {});
+          // ...and play the ending's own track with them. The credits wait for it
+          // (creditsAfter), since a fresh page may hold audio until the first click.
+          if (opts.credits?.length) {
+            Object.assign(opts, window.startEndingReplayMusic?.(window.gameScenario) || {});
+          }
+        }
+        window.BondVisualiser.open(opts);
       } else {
         console.warn('[ObjectivesManager] window.BondVisualiser is not defined');
+      }
+    } else if (screen.type === 'success') {
+      // The simple success screen for short training episodes (ui/success-screen.js):
+      // waits until no minigame is open, shows once per page load, and can be closed.
+      if (window.showSuccessScreen) {
+        window.showSuccessScreen(screen);
+      } else {
+        console.warn('[ObjectivesManager] window.showSuccessScreen is not defined');
       }
     }
   }

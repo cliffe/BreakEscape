@@ -38,6 +38,11 @@ VAR insider_ambushed = false
 VAR cover_burned = false
 VAR cover_restored = false
 VAR bernie_vouched = false
+
+// Imported (read-only) from m01 (docs/agents/CARRY_OVER_PLAN.md): false when the
+// player never finished m01. Never assign these here.
+VAR m01_found_casualty_projections = false // Imported (read-only) from m01 found_casualty_projections: the player found Derek's spreadsheet
+VAR m01_player_launched_attack = false     // Imported (read-only) from m01 player_launched_attack: the player let Operation Shatter launch
 VAR staff_lanyard_obtained = false
 VAR insider_method_confirmed = false
 
@@ -202,7 +207,16 @@ Agent HaX: To Ghost, the patients were the argument.
 
 Agent HaX: Yes. ENTROPY. The same network that ran Social Fabric out of Viral Dynamics.
 
-Agent HaX: Derek Lawson kept casualty projections. A spreadsheet of how many Operation Shatter would kill, approved before he pulled the trigger.
+// Carry-over (2026-10-17): a player who finished m01 hears what they did with
+// the spreadsheet; the else branch is the original line, word for word.
+{
+- m01_player_launched_attack:
+    Agent HaX: Derek Lawson kept casualty projections. You let Operation Shatter launch, and people died, near enough the number on his spreadsheet.
+- m01_found_casualty_projections:
+    Agent HaX: Derek Lawson kept casualty projections. You found the spreadsheet yourself: how many Operation Shatter would kill, signed off in advance.
+- else:
+    Agent HaX: Derek Lawson kept casualty projections. A spreadsheet of how many Operation Shatter would kill, approved before he pulled the trigger.
+}
 
 // Round 2 (CF-E): only quote the manifesto if the player found it.
 {lore_ghosts_manifesto_found:
@@ -250,9 +264,12 @@ Agent HaX: We don't have a name. We have a philosophy, a signature, and now two 
     Agent HaX: The manifesto -- read it again when you have time. It's how they see themselves. Understanding their ideology matters for what comes next.
 }
 
-{not flag_ghost_log_submitted and not lore_ghosts_manifesto_found:
-    Agent HaX: The exploit chain was exactly what Ghost's communications suggested -- the ProFTPD 1.3.3c backdoor, fourteen years unpatched. Standard ENTROPY playbook.
-}
+// R6: the technical-arc recap is unconditional now. It used to be gated to
+// players who did NOT submit the ghost log and did NOT find the manifesto, so the
+// completionist -- who most earned the reflection -- was routed to the manifesto
+// lines and never heard it. Same line, always fires; it sits alongside, not
+// instead of, the manifesto beats above.
+Agent HaX: The exploit chain was exactly what Ghost's communications suggested -- the ProFTPD 1.3.3c backdoor, fourteen years unpatched. Standard ENTROPY playbook.
 
 {ghost_keys_used:
     Agent HaX: And you took Ghost's keys. Free, on Ghost's terms -- the restore ran on the attacker's goodwill, and the price was a promise.
@@ -651,6 +668,7 @@ Agent HaX: Ransomware Incorporated is still operational.
 
 === insider_rolled_up ===
 #speaker:agent_0x99
+#set_global:reeves_fate:arrested
 
 Agent HaX: And you got the one Ghost planted inside. Graham Reeves, badge SC-4471.
 
@@ -675,6 +693,7 @@ Agent HaX: Underpaid, ignored, radicalised by the same negligence he helped puni
 
 === insider_neutralised_ko ===
 #speaker:agent_0x99
+#set_global:reeves_fate:ko
 
 {insider_identified:
     Agent HaX: And you put down the inside asset yourself. Graham Reeves, badge SC-4471.
@@ -690,6 +709,7 @@ Agent HaX: Underpaid, ignored, radicalised by the same negligence he helped puni
 
 === insider_flagged ===
 #speaker:agent_0x99
+#set_global:reeves_fate:flagged
 
 Agent HaX: You identified Ghost's inside asset -- Graham Reeves, night security supervisor, badge SC-4471. You didn't get to close it out yourself, but your identification was enough.
 
@@ -699,6 +719,7 @@ Agent HaX: SAFETYNET moved on your identification and picked Reeves up before he
 
 === insider_escaped ===
 #speaker:agent_0x99
+#set_global:reeves_fate:escaped
 #set_global:insider_asset_escaped:true
 
 // Round 1 (B4): only claim Ghost said it if the player heard it.
@@ -724,6 +745,7 @@ Agent HaX: Vanished. No trace. The same way Ghost went. That one's on the clock 
 
 === insider_missed_wrong ===
 #speaker:agent_0x99
+#set_global:reeves_fate:missed
 
 Agent HaX: One loose end. Ghost wasn't bluffing about an inside affiliate -- there was one. And you spent your suspicion on the wrong person.
 
@@ -735,6 +757,7 @@ Agent HaX: It happens. The evidence pointed where they wanted it to point. But i
 
 === insider_unnoticed ===
 #speaker:agent_0x99
+#set_global:reeves_fate:unnoticed
 
 Agent HaX: One thing we never closed. Ghost said someone in that building confirmed their operational timing. An ENTROPY affiliate.
 

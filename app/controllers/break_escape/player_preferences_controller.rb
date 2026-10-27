@@ -2,11 +2,11 @@ module BreakEscape
   class PlayerPreferencesController < ApplicationController
     before_action :set_player_preference
     before_action :authorize_preference
+    before_action :set_scenario_context
 
     # GET /break_escape/configuration
     def show
-      @available_sprites = PlayerPreference::AVAILABLE_SPRITES
-      @scenario = load_scenario_if_validating
+      @avatar_menu = @player_preference.avatar_menu
     end
 
     # PATCH /break_escape/configuration
@@ -45,8 +45,7 @@ module BreakEscape
         respond_to do |format|
           format.html do
             flash.now[:alert] = 'Please select a character sprite.'
-            @available_sprites = PlayerPreference::AVAILABLE_SPRITES
-            @scenario = load_scenario_if_validating
+            @avatar_menu = @player_preference.avatar_menu
             render :show, status: :unprocessable_entity
           end
           format.json do
@@ -97,13 +96,21 @@ module BreakEscape
       params.require(:player_preference).permit(:selected_sprite, :in_game_name)
     end
 
+    # The game being chosen for (game_id from the pre-game redirect or the
+    # in-game menu): its validSprites shape the menu and what update accepts.
+    # Only the player's own games count, since a scenario's validSprites make
+    # characters choosable.
+    def set_scenario_context
+      @scenario = load_scenario_if_validating
+      @player_preference.scenario_context = @scenario
+    end
+
     def load_scenario_if_validating
       return nil unless params[:game_id].present?
 
-      game = Game.find_by(id: params[:game_id])
+      game = Game.find_by(id: params[:game_id], player: current_player)
       return nil unless game
 
-      # Return scenario data with validSprites info
       game.scenario_data
     end
   end

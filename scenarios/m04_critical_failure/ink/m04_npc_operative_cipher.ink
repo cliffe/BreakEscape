@@ -22,6 +22,9 @@ VAR radio_interrupted = false
 // call got out, so Relay is waiting in Hall 2.
 VAR cipher_walked = false
 VAR cell_alerted = false
+// Pass 5 decision 1: if Vance has sounded the evacuation, the crew is already
+// out, so the "go and look" line changes. Read only.
+VAR crew_warned = false
 
 === start ===
 {cipher_walked: -> cipher_gone}
@@ -33,7 +36,7 @@ VAR cell_alerted = false
 // ===========================================
 
 === cipher_detection ===
-Narrator: He is crouched at the end of the rack row with a panel open and a handset already half out of its clip.
+Narrator: He's up the rack row, a handset already half out of its clip.
 
 ENTROPY Operative 'Cipher': Hey. Hey! This bay's locked off for maintenance. Who signed you in?
 
@@ -50,7 +53,7 @@ ENTROPY Operative 'Cipher': Hey. Hey! This bay's locked off for maintenance. Who
 * [Hall 2 is venting. You want to be on a radio right now?]
     ~ radio_interrupted = true
     Narrator: It lands. His eyes go to the hydrogen panel over your shoulder, and the handset stops moving.
-    ENTROPY Operative 'Cipher': That panel's amber. That panel is not supposed to be amber.
+    ENTROPY Operative 'Cipher': Verdomme. That panel's amber. That panel is not supposed to be amber.
     -> cipher_standoff
 
 // ===========================================
@@ -65,7 +68,7 @@ ENTROPY Operative 'Cipher': Voltage, Hall 1. We've got a live one.
 
 Narrator: The handset squawks once and goes dead. He drops it and squares up.
 
-ENTROPY Operative 'Cipher': You picked the wrong facility.
+ENTROPY Operative 'Cipher': Wrong night to come looking.
 
 #hostile
 #exit_conversation
@@ -102,8 +105,13 @@ ENTROPY Operative 'Cipher': Nobody's in the halls at night. That's the whole poi
 
 Narrator: He says it too fast.
 
-* [There's a night crew in Hall 2. Go and look.]
+* {not crew_warned} [There's a night crew in Hall 2. Go and look.]
     ENTROPY Operative 'Cipher': ...You're lying.
+    Narrator: His eyes go to the Hall 2 door, and stay there.
+    -> cipher_walks
+
+* {crew_warned} [Hear that klaxon? Nine people just walked out of Hall 2.]
+    ENTROPY Operative 'Cipher': ...Nine?
     Narrator: His eyes go to the Hall 2 door, and stay there.
     -> cipher_walks
 
@@ -116,7 +124,13 @@ Narrator: He says it too fast.
 // global is set last, because its mapping hides him at once.
 === cipher_walks ===
 ENTROPY Operative 'Cipher': If you're lying, I'm coming back for you.
-Narrator: He clips the handset back on his belt, unradioed, and walks for the Hall 2 door without looking at you again.
+// Fix pass 2026-10-17 (regression F2): after a Restart his radio call still
+// stands (cell_alerted), so "unradioed" only when the call never got out.
+{ cell_alerted:
+    Narrator: He clips the handset back on his belt and walks for the Hall 2 door without looking at you again.
+- else:
+    Narrator: He clips the handset back on his belt, unradioed, and walks for the Hall 2 door without looking at you again.
+}
 #complete_task:neutralize_operative_cipher
 ~ cipher_walked = true
 #exit_conversation

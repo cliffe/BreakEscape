@@ -24,7 +24,7 @@ Break Escape hosts more than one kind of game. Settle which kind you're working 
   - The aim is a fun game with well-written dialogue in the style of a TV spy thriller: tension, secrets, characters with their own agendas, sharp exchanges and reveals that land. Agent HaX is the handler, ENTROPY the enemy.
   - The VM flags are required to complete each mission. They are woven into the story, and what the game says about the VMs must match SecGen (`scenarios/break_escape/safetynet/<mission>.xml` in the SecGen repo).
   - Kit is cumulative across missions. Combat is allowed.
-  - Teaching comes through the hands-on VM work and the field guides. Don't lecture in the dialogue.
+  - The learning comes through the hands-on VM work and the linked field guides, not through lecturing in the dialogue.
 - **Security-Informed Safety serious games (sis01–sis03):** education first.
   - They are CyBOK games on risk management, safety cases, incident response and the sector's regulation, played standalone, sometimes by student teams.
   - The aim is decisions that are genuinely arguable, professional voices that sound like the real job, facts that match the scenario's `information_pack.md`, and a debrief and lab sheet that give students something to reflect on.
@@ -94,6 +94,9 @@ Calibrate first: put the first mission that's ready through the dialogue stage a
 - **Opus** for planning and review work: scenario planning, design review, adversarial review, implementation of anything that needs judgement, engine work, architecture decisions, and dialogue writing. These tasks require understanding nuance, weighing trade-offs, and making open-ended judgements.
 - **Sonnet** for well-defined executable tasks: browser playtests from a script, mechanical edits with clear rules (e.g. renaming, replacing a pattern across files), audits with a checklist, re-tests, polish items, and any implementation task where the scope, rules and acceptance criteria are clear and documented. Sonnet excels at following a well-written spec.
 - **Haiku** for information retrieval and mechanical file operations: searching for symbols or patterns across the codebase, building lists of files matching criteria, find-and-replace operations, and simple data extraction. These tasks are fast, reliable, and cheap, freeing Opus and Sonnet for higher-level work.
+- **Opus 5.5 orchestrates, as it always has** — for planning, review, design, dialogue and everything not touching the VM/technical layer. Opus 5.5 subagents (`general-purpose`, `Plan`, or any agent launched with `model: "opus"`) get the same work and the same limit.
+- **The `opus48` agent type handles the VM/technical layer.** Opus 5.5's content safeguards are stricter than Opus 4.8's: they over-flag practice-VM and lab material, and have stopped VM-writing subagents. Opus 4.8 handles the same material fine. So send **SecGen scenario and module reads and edits, the VM technical-step writing and the technical lab-sheet companion to the `opus48` agent type** (`.claude/agents/opus48.md`: Opus 4.8, medium effort; launch it without a `model` override, which would put it back on Opus 5.5). Keep the game walkthrough and the VM technical steps in separate files (the `mission-lab-sheet` companion split), so the Opus 5.5 orchestrator and its subagents only ever handle the non-technical half. If a specific VM-dense doc still snags the orchestrator, isolate that doc from its reading rather than moving the orchestrator off Opus 5.5. This is model-fit, not evading a refusal: route the work so Opus 5.5 never has to read the material its filter rejects.
+- **If a safety classifier stops an `opus48` VM or SecGen task, stop and offer the user a `sonnet-cvp` or Haiku retry. Don't run it yourself.** Report the exact stop message, what the agent had done, and the file or step it was on. If the message allows it, offer to rerun the **same task with the same prompt** on the selected model. The user decides after reading the message. If they agree, run it unchanged: no rewording to slip past the check, no stripped context, no wider reads. If that is stopped too, or either model declines the task itself, report it and stop: no further offers, no third model, no doing it yourself.
 - Don't throttle concurrency to save usage. Run independent agents together. The economy that matters is model choice, not agent count.
 
 ## Writing a subagent prompt
@@ -102,7 +105,7 @@ Calibrate first: put the first mission that's ready through the dialogue stage a
 - State scope and limits explicitly: which files it may edit, which it must not (other missions, finished missions, `.claude/skills/*`, other repos), and "don't commit".
 - Say what to return: a change list, test results, evidence (file:line, game ids, screenshots), and the questions for the next step.
 - Ask for plans and long documents to be written **section by section with Edit**. A whole-file rewrite once got truncated and a plan was lost.
-- Keep prose at game-design level. Refer to casualty figures, attack steps and similar security detail by citation rather than restating them, and keep briefs about lab-sheet or exploit content short ("carry out approved item L1 in the log"). Long, detailed briefs on those topics were stopped by a safety classifier.
+- Keep prose at game-design level. Refer to casualty figures, attack steps and similar detail by citation rather than restating them, and keep briefs that touch the lab sheets or the VM's technical content short ("carry out approved item L1 in the log"). Long, detailed briefs on those topics have been stopped mid-run before; where the task is the VM's technical content itself, hand it to the model chosen for that (see "Choosing a model").
 - When parallel agents touch the same area, split them by file and tell each one to re-read any shared file just before editing it.
 
 ## Making judgements without asking
@@ -133,6 +136,17 @@ Everything else goes into the approval log for the user: engine or server change
   3. Ask through the question tool with **checkbox options**: a short label, a one-line trade-off, the recommended option first, related questions batched into one call. The user often answers in the free-text field, so read the answer carefully rather than assuming one of the boxes.
   4. Carry on with independent work while waiting.
   5. When the user answers, move the item from the pending file into the log with their choice.
+- **For visual picks, or many decisions at once, publish a review page** (the user's preferred way, 2026-10-22). Build one HTML artifact and send the link; it replaces the question tool for these. The first one was the lab bust picker (`https://claude.ai/artifact/51uFp9kwkZiVviLY7NBkwW`).
+  - **When to use it:** choosing between images (bust variants, concepts, backgrounds, props), or a batch of decisions that each need a picture or a paragraph of context.
+  - **What goes on it:**
+    - One row per subject (character, room, finding), with the reference image (the concept, or the current state) beside the options.
+    - Pixel art scaled up 2× with `image-rendering: pixelated`. This is a review thumbnail only, never a game asset.
+    - Images embedded as data URIs.
+    - Each option clickable, as a radio card with its variant id, plus a "none of these, make more" option.
+    - A one-line note under each option giving the agent's view, with its recommendation marked "suggested". The user still makes every pick.
+  - **How the user answers:** a "Copy picks" box at the bottom collects the answers for the user to paste back. Each line carries the question as well as the answer, `key (question title): choice — note`, so the pasted text makes sense on its own in the conversation and in any log it's copied into. Picks persist in localStorage, so the page can be reopened.
+  - **When options are added:** republish the same file path. The link stays the same and a regenerating script builds the page again.
+  - **Agents waiting on the picks:** pause any paid step that depends on them, then resume each agent with its picks.
 - Ask only when the answer changes what happens next. Otherwise pick the conventional default and mention it.
 - When the user says "use your best judgement", decide, act, and say what you chose.
 - Report outcomes plainly: what passed, what failed with evidence, what was skipped. A static check isn't a browser test, so say which one you ran.
@@ -157,10 +171,34 @@ Everything else goes into the approval log for the user: engine or server change
 - The bug classes that recurred across pass 4 are checked automatically: the validator's recurring-bug checks (lockpick catches that can't fire, opening cutscene without `waitForEvent`, sprite art, look-alikes, dead `VAR`s, undeclared `#set_global`, repeated bark lines) and `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<m>/` (fall-through choices, blank re-entry, popup on narration, phone prefixes, exits with no reply, stage cues). Clear or justify each finding before a mission goes to playtest; the rest of the list is in `README_scenario_design.md` ("Common bugs and how to avoid them") and the review skills. Use `--skip-ink --no-graph` to validate a mission someone else is editing without rewriting its files.
 - **Check that a claimed fix happened.** Agents reported fixes they hadn't made several times in pass 4 (a clock line "made conditional", phone prefixes "removed", a flag call "no longer repeating"). Before accepting a report, grep or read the line for every claim that matters.
 - **A follow-up message can arrive after an agent has stopped.** It then does nothing. After sending a follow-up, check the file changed before moving on, and resend if it didn't.
-- **When the safety classifier times out on an agent**, its work wasn't reviewed: check the diff yourself (files touched, validator, reopencheck) before building on it.
+- **When a content safeguard stops an agent mid-run**, its work wasn't reviewed: check the diff yourself (files touched, validator, reopencheck) before building on it.
 - **Blind and regression playtests.** Regression runs (answers known, but each secret fetched from its in-game source first) prove the route works; a blind run, with a script that doesn't name the answer, is needed once after any puzzle or deduction changes. See the playtest-scenario skill.
 - **Before committing a mission whose last round changed structure** (new knots, moved objects, changed conditions), run a short targeted browser check of exactly those changes.
 - Look at the screenshots yourself before calling UI work done.
+
+## Reporting progress by stage
+
+When the user asks for progress, or at the end of a long run, report by stage (the user's preferred format, 2026-10-22). Use one block per track (for example, a lab and its awareness episodes), in a fenced code block so the bars line up:
+
+```
+Stage             Progress    B/M/m open  Status
+Scenario design   ██████████  0/0/0       5 of 5 cycles, closed
+Dialogue          ████░░░░░░  0/0/2       cycle 2 done, cycle 3 review running
+Rooms             ██░░░░░░░░  0/0/9       review done; fixes, lighting, POV to do
+Lab sheet         ░░░░░░░░░░  –           last
+```
+
+- **Stages** are POLISH_PLAN's (or the mission loop's) stages, in order, plus any work stream running alongside them (characters, fun changes, check forms).
+- **The bar** is ten blocks. Fill it by cycles or rounds done out of planned, or by a fair judgement for stages without cycles. A closed stage is full.
+- **B/M/m open** counts the blockers, majors and minors still open from that stage's latest review or playtest. Count findings that are fixed but not yet confirmed as open, and add "fixing" to the status. Use `–` where no review has run yet. Leave trivials out of the column, and mention them in the status if they matter.
+- **Status** is one short line: cycles done, what is running now, what is left.
+
+After the blocks, add:
+- a short table of the rounds completed in this session;
+- a numbered "what's left" list, in the order the work will happen;
+- anything waiting on the user (decisions, approvals, art to eyeball).
+
+Take the counts from the review and playtest files and the logs, not from memory, and say where a count is an estimate.
 
 ## Housekeeping
 

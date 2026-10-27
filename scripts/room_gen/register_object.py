@@ -58,8 +58,13 @@ def main(argv):
     known = {Path(t["image"]).stem: t["id"] for t in extras["tiles"]}
     next_id = max(known.values()) + 1
     # insert game.js loads after the load line of the highest-id extras tile
-    last_name = max(known, key=known.get)
-    anchor = re.search(r"^.*this\.load\.image\('%s'.*\n" % re.escape(last_name), game, re.M)
+    # (the highest-id tile may be loaded in a loop, e.g. an animation's frames, with no
+    # line of its own: fall back to the next highest that has one)
+    anchor = None
+    for last_name in sorted(known, key=known.get, reverse=True):
+        anchor = re.search(r"^.*this\.load\.image\('%s'.*\n" % re.escape(last_name), game, re.M)
+        if anchor:
+            break
     if not anchor:
         sys.exit(f"game.js has no load line for {last_name}; add the new loads by hand")
 

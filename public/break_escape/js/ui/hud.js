@@ -1,31 +1,24 @@
 /**
  * HUD (Heads-Up Display) System
- * Manages the player's HUD including avatar button and interaction mode toggle
- * Uses HTML elements with a small Phaser canvas for hand animations
+ * Manages the player's HUD: the avatar button, and the Punch and Block
+ * buttons for touch (and mouse) play. Click and tap always move or interact;
+ * the old three-way mode toggle is gone.
  */
 
-import { COMBAT_CONFIG } from '../config/combat-config.js';
 import { setHudLabel, clearHudLabel } from './info-label.js';
 import { attacksDisabled } from '../systems/player-combat.js';
 
 export class PlayerHUD {
   constructor(scene) {
     this.scene = scene;
-    this.currentModeIndex = 0; // Start with 'interact' mode
-    this.isAnimating = false;
     this.isInitialized = false; // Prevent multiple initialization attempts
     
     // HTML elements
     this.avatarButton = null;
     this.avatarImg = null;
-    this.modeToggleButton = null;
-    this.modeLabel = null;
-    this.handCanvas = null;
-    
-    // Phaser elements for hand animation
-    this.handPhaserGame = null;
-    this.handSprite = null;
-    this.handScene = null;
+    this.combatButtons = null;
+    this.punchButton = null;
+    this.blockButton = null;
 
     console.log('✅ Player HUD initialized');
   }
@@ -76,42 +69,13 @@ export class PlayerHUD {
     this.avatarButton.appendChild(this.avatarImg);
     hudContainer.appendChild(this.avatarButton);
 
-    // Create mode toggle button
-    this.modeToggleButton = document.createElement('div');
-    this.modeToggleButton.id = 'hud-mode-toggle-button';
-    this.modeToggleButton.className = 'hud-button';
-    this.modeToggleButton.addEventListener('mouseenter', () => setHudLabel(`${this.getCurrentMode()} mode — Q to toggle`));
-    this.modeToggleButton.addEventListener('mouseleave', () => clearHudLabel());
-    
-    this.handCanvas = document.createElement('canvas');
-    this.handCanvas.id = 'hud-hand-canvas';
-    this.handCanvas.width = 64;
-    this.handCanvas.height = 64;
-    this.handCanvas.style.imageRendering = 'pixelated';
-    this.handCanvas.style.imageRendering = '-moz-crisp-edges';
-    this.handCanvas.style.imageRendering = 'crisp-edges';
-    this.modeToggleButton.appendChild(this.handCanvas);
-    
-    this.modeLabel = document.createElement('span');
-    this.modeLabel.id = 'hud-mode-label';
-    this.modeLabel.textContent = 'INTERACT';
-    this.modeToggleButton.appendChild(this.modeLabel);
-    hudContainer.appendChild(this.modeToggleButton);
-    if (attacksDisabled()) {
-      this.modeToggleButton.style.display = 'none';
-    }
-
     // Set up avatar button
     this.setupAvatarButton();
-    
-    // Set up mode toggle button
-    this.setupModeToggleButton();
-    
-    // Initialize Phaser for hand animations
-    this.initializeHandPhaser();
-    
-    // Set up keyboard shortcuts
-    this.setupKeyboardShortcuts();
+
+    // Punch and Block buttons (none in scenarios without combat)
+    if (!attacksDisabled()) {
+      this.createCombatButtons();
+    }
 
     console.log('✅ HUD created');
   }
@@ -241,262 +205,86 @@ export class PlayerHUD {
   }
 
   /**
-   * Set up mode toggle button
+   * The Punch and Block buttons, bottom right above the phone: Punch throws
+   * the next punch of the combo (jab, jab, cross), Block guards while held.
+   * Touch handlers call preventDefault so Phaser doesn't also take the touch
+   * as a tap on the game (which would walk there); a finger on the canvas can
+   * keep walking meanwhile.
    */
-  setupModeToggleButton() {
-    const currentMode = this.getCurrentMode();
-    this.updateButtonStyle(currentMode);
-    this.modeLabel.textContent = currentMode.toUpperCase();
+  createCombatButtons() {
+    const box = document.createElement('div');
+    box.id = 'combat-buttons';
 
-    // Click handler (desktop) and touchend handler (mobile — avoids 300ms delay
-    // and works even when the Phaser canvas is consuming touchstart events).
-    this.modeToggleButton.addEventListener('click', () => {
-      if (!this.isAnimating) {
-        this.cycleMode();
-      }
-    });
-    this.modeToggleButton.addEventListener('touchend', (e) => {
+    this.blockButton = this.makeCombatButton('hud-block-button', 'Block', 'Block — hold Q');
+    this.punchButton = this.makeCombatButton('hud-punch-button', 'Punch', 'Punch — F or right-click; press again for jab, jab, cross');
+    box.appendChild(this.blockButton);
+    box.appendChild(this.punchButton);
+    document.body.appendChild(box);
+    this.combatButtons = box;
+
+    const punch = (e) => {
       e.preventDefault();
-      if (!this.isAnimating) {
-        this.cycleMode();
-      }
-    });
-
-    console.log(`🎮 Mode toggle button set up (mode: ${currentMode})`);
-  }
-
-  /**
-   * Initialize Phaser for hand sprite animations
-   */
-  initializeHandPhaser() {
-    const HUD_HAND_SCENE_KEY = 'HUDHandScene';
-    
-    class HUDHandScene extends Phaser.Scene {
-      constructor() {
-        super({ key: HUD_HAND_SCENE_KEY });
-      }
-
-      preload() {
-        // Load hand frames spritesheet
-        const assetsPath = window.breakEscapeConfig?.assetsPath || 'public/break_escape/assets';
-        this.load.spritesheet('hand_frames', `${assetsPath}/icons/hand_frames.png`, {
-          frameWidth: 32,
-          frameHeight: 32
-        });
-      }
-
-      create() {
-        // Create hand sprite in center of canvas - scale 2x for pixel-perfect rendering
-        const handSprite = this.add.sprite(32, 32, 'hand_frames', 0);
-        handSprite.setOrigin(0.5);
-        handSprite.setScale(2); // Exact 2x scale: 32px → 64px (pixel-perfect)
-        
-        // Create animations for transitions
-        this.createHandAnimations();
-        
-        // Store reference
-        if (window.playerHUD) {
-          window.playerHUD.handSprite = handSprite;
-          window.playerHUD.handScene = this;
-          
-          // Set initial frame based on current mode
-          const mode = window.playerHUD.getCurrentMode();
-          const modeConfig = COMBAT_CONFIG.interactionModes[mode];
-          handSprite.setFrame(modeConfig.frame);
-        }
-      }
-
-      createHandAnimations() {
-        // Animation: interact (0) to jab (6)
-        if (!this.anims.exists('hand_interact_to_jab')) {
-          this.anims.create({
-            key: 'hand_interact_to_jab',
-            frames: this.anims.generateFrameNumbers('hand_frames', { start: 1, end: 6 }),
-            frameRate: 20,
-            repeat: 0
-          });
-        }
-
-        // Animation: jab (6) to cross (11)
-        if (!this.anims.exists('hand_jab_to_cross')) {
-          this.anims.create({
-            key: 'hand_jab_to_cross',
-            frames: this.anims.generateFrameNumbers('hand_frames', { start: 7, end: 11 }),
-            frameRate: 20,
-            repeat: 0
-          });
-        }
-
-        // Animation: cross (11) to interact (0)
-        if (!this.anims.exists('hand_cross_to_interact')) {
-          this.anims.create({
-            key: 'hand_cross_to_interact',
-            frames: this.anims.generateFrameNumbers('hand_frames', { start: 12, end: 14 }).concat([{ key: 'hand_frames', frame: 0 }]),
-            frameRate: 20,
-            repeat: 0
-          });
-        }
-      }
-    }
-
-    const config = {
-      type: Phaser.CANVAS,
-      canvas: this.handCanvas,
-      width: 64,
-      height: 64,
-      transparent: true,
-      scene: [HUDHandScene],
-      scale: {
-        mode: Phaser.Scale.NONE
-      },
-      render: {
-        pixelArt: true,
-        antialias: false,
-        roundPixels: true
-      }
+      window.playerCombat?.attack();
     };
+    this.punchButton.addEventListener('touchstart', punch, { passive: false });
+    this.punchButton.addEventListener('mousedown', (e) => { if (e.button === 0) punch(e); });
 
-    this.handPhaserGame = new Phaser.Game(config);
-    console.log('✨ Phaser hand animation initialized');
-  }
-
-  /**
-   * Set up keyboard shortcuts
-   */
-  setupKeyboardShortcuts() {
-    document.addEventListener('keydown', (e) => {
-      // Q key to toggle mode
-      if (e.key === 'q' || e.key === 'Q') {
-        // Don't trigger if typing in an input field
-        if (document.activeElement.tagName === 'INPUT' || 
-            document.activeElement.tagName === 'TEXTAREA') {
-          return;
-        }
-        if (!this.isAnimating) {
-          this.cycleMode();
-        }
-      }
+    const blockOn = (e) => {
+      e.preventDefault();
+      if (window.playerCombat?.startBlock()) this.blockButton.classList.add('held');
+    };
+    const blockOff = (e) => {
+      e?.preventDefault?.();
+      window.playerCombat?.endBlock();
+      this.blockButton.classList.remove('held');
+    };
+    this.blockButton.addEventListener('touchstart', blockOn, { passive: false });
+    this.blockButton.addEventListener('touchend', blockOff, { passive: false });
+    this.blockButton.addEventListener('touchcancel', blockOff, { passive: false });
+    this.blockButton.addEventListener('mousedown', (e) => { if (e.button === 0) blockOn(e); });
+    this.blockButton.addEventListener('mouseup', blockOff);
+    this.blockButton.addEventListener('mouseleave', () => {
+      if (this.blockButton.classList.contains('held')) blockOff();
     });
-
-    console.log('⌨️  Keyboard shortcuts set up: Q = toggle mode');
+    // Q (player.js) ends a block too: keep the button's look in step
+    this._syncBlockLook = () => {
+      if (!window.playerCombat?.isBlocking) this.blockButton.classList.remove('held');
+    };
   }
 
-  /**
-   * Get current interaction mode
-   * @returns {string}
-   */
-  getCurrentMode() {
-    return COMBAT_CONFIG.modeOrder[this.currentModeIndex];
-  }
-
-  /**
-   * Cycle to next interaction mode
-   */
-  cycleMode() {
-    if (this.isAnimating) return; // Prevent rapid clicking
-    if (attacksDisabled()) return; // Scenario has no combat: stay in interact mode
-
-    const oldMode = this.getCurrentMode();
-    
-    // Increment mode index (with wrap-around)
-    this.currentModeIndex = (this.currentModeIndex + 1) % COMBAT_CONFIG.modeOrder.length;
-    const newMode = this.getCurrentMode();
-    
-    console.log(`🔄 Cycling mode: ${oldMode} → ${newMode}`);
-
-    // Animate the transition
-    this.animateTransition(oldMode, newMode);
-
-    // Update combat system
-    if (window.playerCombat) {
-      window.playerCombat.setInteractionMode(newMode);
-    }
-
-    // Notify tutorial when player switches into a combat mode
-    if ((newMode === 'jab' || newMode === 'cross') && window.getTutorialManager) {
-      window.getTutorialManager().notifyCombatModeToggled();
-    }
-
-    // Play click sound (if available)
-    if (window.playUISound) {
-      window.playUISound('click');
-    }
-  }
-
-  /**
-   * Animate transition between modes
-   * @param {string} oldMode - The previous mode
-   * @param {string} newMode - The new mode to transition to
-   */
-  animateTransition(oldMode, newMode) {
-    this.isAnimating = true;
-    
-    // Add animating class for CSS animation
-    this.modeToggleButton.classList.add('animating');
-
-    // Determine which animation to play
-    let animKey = null;
-    if (oldMode === 'interact' && newMode === 'jab') {
-      animKey = 'hand_interact_to_jab';
-    } else if (oldMode === 'jab' && newMode === 'cross') {
-      animKey = 'hand_jab_to_cross';
-    } else if (oldMode === 'cross' && newMode === 'interact') {
-      animKey = 'hand_cross_to_interact';
-    }
-
-    // Play Phaser animation if available
-    if (this.handSprite && this.handScene && animKey && this.handScene.anims.exists(animKey)) {
-      this.handSprite.play(animKey);
-      
-      // Wait for animation to complete
-      this.handSprite.once('animationcomplete', () => {
-        this.finishTransition(newMode);
-      });
-    } else {
-      // Fallback: instant frame change
-      const modeConfig = COMBAT_CONFIG.interactionModes[newMode];
-      if (this.handSprite) {
-        this.handSprite.setFrame(modeConfig.frame);
-      }
-      
-      // Finish after short delay
-      setTimeout(() => {
-        this.finishTransition(newMode);
-      }, 200);
-    }
-  }
-
-  /**
-   * Finish mode transition
-   */
-  finishTransition(newMode) {
-    // Update button style and label
-    this.updateButtonStyle(newMode);
-    this.modeLabel.textContent = newMode.toUpperCase();
-    
-    // Remove animating class
-    this.modeToggleButton.classList.remove('animating');
-    
-    this.isAnimating = false;
-  }
-
-  /**
-   * Update button style based on current mode
-   */
-  updateButtonStyle(mode) {
-    // Remove all mode classes
-    this.modeToggleButton.classList.remove('mode-interact', 'mode-jab', 'mode-cross');
-    
-    // Add current mode class
-    this.modeToggleButton.classList.add(`mode-${mode}`);
-
-    console.log(`🎨 Button style updated: ${mode}`);
+  makeCombatButton(id, text, label) {
+    const button = document.createElement('div');
+    button.id = id;
+    button.className = 'combat-button';
+    button.setAttribute('role', 'button');
+    button.setAttribute('aria-label', text);
+    const icon = document.createElement('span');
+    icon.className = 'combat-button-icon';
+    button.appendChild(icon);
+    const caption = document.createElement('span');
+    caption.className = 'combat-button-label';
+    caption.textContent = text;
+    button.appendChild(caption);
+    button.addEventListener('mouseenter', () => setHudLabel(label));
+    button.addEventListener('mouseleave', () => clearHudLabel());
+    button.addEventListener('contextmenu', (e) => e.preventDefault());
+    return button;
   }
 
   /**
    * Update HUD (called every frame)
    */
   update() {
+    this._syncBlockLook?.();
+    // No fight buttons over the knockout screen
+    if (this.combatButtons) {
+      const hide = window.playerHealth?.isKO?.() === true;
+      if (this._combatHidden !== hide) {
+        this._combatHidden = hide;
+        this.combatButtons.style.display = hide ? 'none' : '';
+      }
+    }
+
     // Check if player sprite has changed and update avatar if needed
     if (window.player?.texture?.key) {
       const currentSprite = this.avatarImg.alt;
@@ -515,18 +303,13 @@ export class PlayerHUD {
    * Clean up HUD when scene shuts down
    */
   destroy() {
-    // Destroy Phaser hand game
-    if (this.handPhaserGame) {
-      this.handPhaserGame.destroy(true);
-      this.handPhaserGame = null;
-    }
-    
     // Remove event listeners
     if (this.avatarButton) {
       this.avatarButton.replaceWith(this.avatarButton.cloneNode(true));
     }
-    if (this.modeToggleButton) {
-      this.modeToggleButton.replaceWith(this.modeToggleButton.cloneNode(true));
+    if (this.combatButtons) {
+      this.combatButtons.remove();
+      this.combatButtons = null;
     }
 
     console.log('🗑️  HUD destroyed');

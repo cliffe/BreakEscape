@@ -9,43 +9,43 @@
   <description>
 # Mission 2: Ransomed Trust
 
-St. Catherine's Regional Medical Center has been hit by ransomware. Forty-seven patients on life support systems are at risk. Ghost has encrypted critical hospital systems and is demanding £150,000 in Bitcoin.
+St. Catherine's Regional Medical Centre has been hit by ransomware. Patients on life support are at risk. ENTROPY has encrypted critical hospital systems and is demanding £150,000 in Bitcoin.
 
-You have been deployed to investigate the attack and restore hospital operations. Intelligence suggests Ghost infiltrated the network weeks ago via an insider — codename "Asset #47" — who planted equipment and exploited an unpatched ProFTPD vulnerability on the hospital's backup server.
+You have been deployed to investigate the attack and restore hospital operations. ENTROPY got in weeks ago, with help from someone inside, and exploited an unpatched ProFTPD backdoor on the hospital's backup server.
 
 ## Your Objectives
 
 1. **Gain access to the hospital backup server** - The server is running a vulnerable ProFTPD service
-2. **Locate Ghost's operational files** - Evidence of the infiltration is hidden on the system
+2. **Locate Ghost's operational files** - Evidence of the infiltration is on the system
 3. **Recover the offline backup keys** - These keys can decrypt patient data without paying the ransom
-4. **Identify the insider** - Find evidence linking Asset #47 to the attack
-5. **Trace ENTROPY's attack methodology** - Understand how Ghost penetrated hospital security
+4. **Identify the insider** - Find the evidence that points to who helped ENTROPY in
+5. **Trace ENTROPY's attack methodology** - Understand how they penetrated hospital security
 
 ## Investigation Brief
 
-**IT Administrator**: Marcus Webb warned hospital management about the ProFTPD vulnerability 6 months ago. His warnings were ignored. Ghost is now using him as a scapegoat.
+**IT Administrator**: Gary Whitlock warned hospital management about the ProFTPD vulnerability for months. His warnings were ignored. ENTROPY is now using him as a scapegoat.
 
-**Network Bridge**: Asset #47 planted a wireless network bridge in the IT department, providing Ghost remote access to the backup server.
+**Network Bridge**: A wireless network bridge was planted in the IT department, giving ENTROPY a remote foothold on the backup server.
 
-**Equipment Manifest**: Ghost's operational files should reveal the full scope of the infiltration, including details about Asset #47, the equipment deployed, and the hospital emergency storage safe PIN.
+**Operational Files**: Ghost's files on the server should reveal the full scope of the infiltration and the evidence that leads to the insider.
 
-**Database Backup**: The server contains encrypted patient database backups. Finding these will reveal the path to Ghost's operational logs and prove Marcus Webb's innocence.
+**Database Backup**: The server contains encrypted patient database backups and the restore catalogue. Finding them opens the path to Ghost's operational logs and clears Gary Whitlock.
 
 ## Technical Challenge Path
 
 You will need to:
-- Exploit the ProFTPD 1.3.3c backdoor (trojaned source release, OSVDB-69562)
-- Escalate privileges to access restricted files
+- Exploit the ProFTPD 1.3.3c distribution backdoor (OSVDB-69562; no CVE assigned)
+- Reach the restricted files
 - Decode Ghost's obfuscated operational files
-- Connect technical evidence to physical game elements (PIN cracker device, guard identity)
+- Connect the technical evidence to the physical investigation (the cracker device in the sealed case, and the badge that held the doors)
 
 ## Narrative Payoff
 
 Successfully rooting this server will:
-- Prove Marcus Webb was warning about vulnerabilities (vindicating him)
-- Reveal Asset #47's identity as the hospital security guard
-- Expose the PIN (4729) needed to open the emergency storage safe
-- Provide evidence of Ghost's infiltration methodology
+- Show that Gary Whitlock was warning about the vulnerability all along
+- Surface the evidence that identifies the insider
+- Point to the escrow safe the attackers staged against
+- Lay out ENTROPY's infiltration methodology end to end
 - Connect the VM challenge to the physical escape room investigation
 
 Ghost doesn't know you're coming. Make it count.
@@ -128,22 +128,21 @@ Ghost doesn't know you're coming. Make it count.
   </system>
 
   <system>
-    <system_name>server</system_name>
+    <system_name>hospital_backup_server</system_name>
     <base distro="Debian 12" type="desktop" name="KDE"/>
 
     <!-- User accounts on the hospital backup server -->
     <input into_datastore="user_accounts_server">
-      <!-- marcus: IT Administrator, scapegoated by Ghost, has vulnerability warnings -->
+      <!-- gary: IT Administrator (Gary Whitlock), scapegoated by Ghost, has vulnerability warnings -->
       <generator type="account">
         <input into="username">
-          <value>marcus</value>
+          <value>gary</value>
         </input>
         <input into="password">
-          <generator type="random_word_generator">
-            <input into="wordlist">
-              <value>top-20-common-SSH-passwords</value>
-            </input>
-          </generator>
+          <!-- In-game hint set (Gary's sticky note / HaX): the player is told
+               "Hospital1987" is the backup-server SSH password. Keep this literal
+               so the in-game clue resolves in Hacktivity. -->
+          <value>Hospital1987</value>
         </input>
         <input into="super_user">
           <value>false</value>
@@ -153,71 +152,55 @@ Ghost doesn't know you're coming. Make it count.
           <value>hospital_docs/backup_procedures</value>
         </input>
         <input into="strings_to_leak">
-          <!-- Vulnerability warning email proves Marcus warned management -->
-          <value>From: Marcus Webb &lt;mwebb@stcatherines.hospital&gt;
-To: Hospital IT Committee &lt;itcommittee@stcatherines.hospital&gt;
-Date: November 12, 2025
-Subject: URGENT: ProFTPD Vulnerability Requires Immediate Patching
+          <!-- Vulnerability warning email proves Gary warned management -->
+          <value>From: Gary Whitlock (IT Systems)
+To: Dr. Sarah Kim (CTO)
+CC: Board Secretariat
+Date: 8 November
+Subject: URGENT -- ProFTPD 1.3.3c backdoor on backup server
 
-Dear Committee Members,
+Dr Kim,
 
-I am writing to formally document a CRITICAL security vulnerability on our backup server (backup01.stcatherines.local).
+Seventh time of asking. The backup server is still running ProFTPD 1.3.3c -- the trojaned source release from 2010. That build carries a backdoor in its own source code, which gives an attacker remote code execution with no credentials at all. A clean version has been available since 2010.
 
-VULNERABILITY DETAILS:
-- Service: ProFTPD 1.3.3c
-- Flaw class: Backdoor planted in the 1.3.3c SOURCE DISTRIBUTION, Nov-Dec 2010
-- Identifier: OSVDB-69562. No CVE assigned -- a CVE describes a defect in the
-  software itself, and this was a compromise of the tarball on the mirrors.
-  Metasploit: exploit/unix/ftp/proftpd_133c_backdoor
-- Impact: unauthenticated remote command execution as the server user
-- Exploit Status: Public exploits available
+This box holds every clinical backup we have. If it goes, the wards go with it.
 
-RISK ASSESSMENT:
-This backdoor allows UNAUTHENTICATED REMOTE ROOT ACCESS. An attacker could:
-- Access all patient database backups
-- Steal offline recovery keys
-- Plant ransomware or malware
-- Exfiltrate sensitive medical records
+I have costed the remediation at £85,000. That is the whole ask. I am not asking for a project, I am asking for a server that is not fourteen years out of date.
 
-RECOMMENDATION:
-IMMEDIATE patching to ProFTPD 1.3.4 or later is required.
-Estimated downtime: 30 minutes during maintenance window.
+Please put this in front of the board as CRITICAL and not as an IT wish-list item.
 
-This is my THIRD WARNING about this vulnerability.
-Previous warnings: August 2025, September 2025
-
-I take no responsibility for breaches resulting from continued inaction.
-
-Regards,
-Marcus Webb
-Senior IT Administrator
-St. Catherine's Regional Medical Center</value>
+Gary</value>
 
           <!-- Backup procedures document with flag -->
           <encoder module_path="modules/encoders/selector/concatenate">
             <input into="strings_to_encode">
-              <value>ST. CATHERINE'S HOSPITAL - BACKUP PROCEDURES
+              <value>ST. CATHERINE'S HOSPITAL - BACKUP AND RECOVERY PROCEDURES
 
-OFFLINE BACKUP ENCRYPTION KEYS
-Location: Emergency Storage Safe (Physical Security)
-Safe Model: Sargent &amp; Greenleaf 6120
-Access: PIN-locked (4-digit code)
-PIN Location: Restricted (IT Director only)
+OFFLINE RECOVERY KEYS
+Location: Emergency escrow safe (physical security)
+Access: 4-digit PIN
+PIN: the hospital's founding year -- never changed, flagged at three audits
+Holder of record: IT Director
 
 ONLINE RECOVERY KEYS
 Location: /var/backups/hospital_db/
 Encryption: AES-256
 Access: Root user only
 
-RECOVERY PROCEDURE:
-1. Retrieve offline backup keys from emergency storage safe
-2. Combine with online recovery keys from backup server
-3. Use combined keys to decrypt patient database backups
-4. Restore to production systems
+RESTORE CATALOGUE
+Location: /var/backups/hospital_db/
+Purpose: identifies the last clean snapshot. The recovery console will not
+restore anything without it -- it cannot tell a clean snapshot from a poisoned one.
 
-NOTE: Both key sets are required for full recovery.
-Marcus Webb documented this procedure after management refused
-to implement proper cloud backup solutions.
+RECOVERY PROCEDURE:
+1. Retrieve the offline keys from the escrow safe
+2. Combine with the online recovery keys from this server
+3. Confirm the clean snapshot against the restore catalogue
+4. Decrypt and restore patient databases to production
+
+NOTE: both key sets and the catalogue are required for a full recovery.
+Gary Whitlock documented this procedure after management declined a
+proper off-site backup.
 
 For investigation of suspected intrusion, check:
 /root/.ghost_ops/ directory (if it exists - indicates compromise)</value>
@@ -241,7 +224,7 @@ For investigation of suspected intrusion, check:
 
     <utility module_path=".*/kde_minimal">
       <input into="autologin_user">
-        <value>marcus</value>
+        <value>gary</value>
       </input>
       <input into="accounts">
         <datastore>user_accounts_server</datastore>
@@ -254,59 +237,52 @@ For investigation of suspected intrusion, check:
 
     <vulnerability module_path="vulnerabilities/unix/ftp/proftpd_133c_backdoor">
       <input into="strings_to_leak">
-        <!-- Post-exploitation: Ghost's equipment manifest (reveals Asset #47, PIN 4729, equipment details) -->
+        <!-- Post-exploitation (root): Ghost's equipment deployment log (unpaid inside contact, PIN cracker in the sealed case, ransom amount) -->
         <value>OPERATION RANSOMED TRUST - EQUIPMENT DEPLOYMENT LOG
 ====================================================
 
 INFILTRATION TIMELINE:
 Week 1: Network bridge deployment
-Week 3: Emergency storage reconnaissance  
+Week 3: Emergency storage reconnaissance
 Week 6: ProFTPD exploit execution
 
-ASSET DETAILS:
--------------
-Asset ID: #47
-Cover: Hospital Security Guard (Night Shift)
-Handler: Ghost
-Payment: £15,000 (10% of projected ransom)
-Status: ACTIVE
+INSIDE CONTACT:
+--------------
+Status: ACTIVE. Unpaid. The contact came to us -- a grievance of their own,
+not a wage. No money has changed hands and none will. Do not offer further payment.
+Access: an internal override badge. It ran the unscheduled fire drill six weeks
+ago, when the "fire safety" contractor sweep placed the bridge, and it held the
+doors again during Friday's drill.
 
 EQUIPMENT ISSUED:
 ----------------
 1. Wireless Network Bridge (Netgear R6400)
-   - Serial: WNB-2024-0847-A
-   - Location: IT Department, hidden behind server rack
+   - Location: IT Department, hidden behind the server rack
    - Purpose: Remote access foothold
    - Status: Deployed Week 1, operational
 
-2. PIN Cracker Device v2.4
-   - Serial: RI-2024-0847
-   - Location: Server Room, maintenance cabinet (Rack 3)
-   - Purpose: Emergency storage safe access (reconnaissance)
-   - Target PIN discovered: 4729
+2. PIN Cracker Device
+   - Location: Server Room, inside the sealed case in the maintenance rack
+   - Purpose: Staged against the emergency escrow safe (the PIN is the
+     hospital's founding year, never changed)
    - Status: Concealed Week 6, ready for recovery
 
-3. ProFTPD Exploit Payload (1.3.3c source backdoor)
+3. ProFTPD 1.3.3c Backdoor Exploit Payload
    - Deployment: Week 6 via network bridge
    - Execution: Successful
    - Ransom note delivered: Confirmed
 
-RECOVERY INSTRUCTIONS:
----------------------
-Equipment Location: Server Maintenance Cabinet
-- Rack 3, bottom shelf
-- Behind power supply stack
-- Access code: Asset47
-
-Emergency Safe PIN (if needed): 4729
+RANSOM:
+------
+Amount: £150,000, payable in BTC at the prevailing rate
 Payment wallet: bc1q7cyrfmckn2ewz5m78ts6jt9lcfhfwcvzefm27k
 
 OPERATIONAL SECURITY:
 --------------------
-- Asset #47 has plausible deniability (legitimate security role)
+- The contact has a legitimate reason to be on the floor. Plausible deniability holds.
 - Equipment serials sanitized (untraceable to ENTROPY)
 - Payment routed through 3 BTC mixers
-- If Asset compromised: DENY ALL KNOWLEDGE
+- If the contact is compromised: DENY ALL KNOWLEDGE
 
 -- Ghost, Ransomware Incorporated</value>
         <generator type="flag_generator"/>
@@ -328,52 +304,41 @@ RESTRICTED AREAS (requires authentication):
 - /var/backups/hospital_db/ (encrypted patient data)
 - /root/.ghost_ops/ (UNAUTHORIZED - investigate if found)
 
-For authorized access, contact: Marcus Webb (mwebb@stcatherines.hospital)
+For authorized access, contact: Gary Whitlock (gwhitlock@stcatherines.hospital)
 
-System Administrator: Marcus Webb
+System Administrator: Gary Whitlock
 Last Security Audit: OVERDUE (6 months)
 Known Vulnerabilities: UNPATCHED (management decision)</value>
         <generator type="flag_generator"/>
 
         <encoder type="^(ascii|alpha)_reversible$" difficulty="low">
           <input into="strings_to_encode">
-            <value>ASSET #47 OPERATIONAL INSTRUCTIONS (ENCODED FOR SECURITY)
+            <value>OPERATION RANSOMED TRUST - GHOST'S OPERATIONAL LOG (ENCODED)
 ===================================
 
-Your role is CRITICAL to Operation Ransomed Trust.
+WINDOW CONFIRMATION:
+The entry window was held open during Friday's fire drill, 02:30-03:00.
+Internal override badge SC-4471 ran that drill and silenced the panel, as it
+ran the drill six weeks ago when the "fire safety" contractor sweep placed the
+bridge. That badge is what put us on the floor. The estate went dark at 02:47,
+inside the window.
 
-PHASE 1 - RECONNAISSANCE (Weeks 1-4):
-- Plant network bridge in IT room (COMPLETE)
-- Map security systems and access points (COMPLETE)
-- Identify high-value targets (COMPLETE)
-- Scout emergency storage layout (COMPLETE)
+ON THE INSIDE CONTACT:
+No name in this log, and none in the next. They came to us, not the other way
+round -- a grievance, not a wage. No money has changed hands. If anyone ever
+traces the badge, let them: SC-4471 leads to a post, not to a payroll.
 
-PHASE 2 - EXECUTION (Week 6):
-- Verify network bridge still operational
-- Confirm backup server vulnerability unpatched
-- Report final go/no-go status
-- Execute ProFTPD exploit remotely
-- Monitor hospital response
-- Maintain cover as legitimate security
+KEY MATERIAL:
+Ghost's session keys and the restore-catalogue override are staged in the
+cache in the server-room rack, behind the sealed case. Recover them before
+the recovery console is touched.
 
-PHASE 3 - POST-ATTACK (Current):
-- Act as eyes on the ground
-- Report any investigation attempts
-- Prevent evidence discovery if possible
-- DO NOT interfere with ransom payment process
-- Maintain security guard role
+STANDING ORDERS:
+- Eyes on the ground. Report any investigation.
+- Do not interfere with the ransom process.
+- Hold the line. Deny everything.
 
-PAYMENT SCHEDULE:
-- Phase 1 completion: £5,000 (PAID)
-- Phase 2 completion: £4,500 (PAID)
-- Equipment deployment: £3,500 (PAID)
-- Final payment: £2,000 (on ransom collection)
-Total: £15,000
-
-Your daughter's medical bills will be covered regardless.
-Ghost keeps his promises.
-
--- R.I. (Ransomware Incorporated)</value>
+-- Ghost, Ransomware Incorporated</value>
             <generator type="flag_generator"/>
           </input>
         </encoder>

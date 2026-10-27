@@ -1,0 +1,519 @@
+{
+  "scenario_id": "awareness_pre_hr_ba",
+  "scenario_name": "Recruitment inbox check: before (BA)",
+  "scenario_brief": "The first of two short checks for HR and recruitment staff at Tarrowby Logistics, a fictional company. Ten emails from the Tarrowby recruitment inbox: applications, CVs and messages from colleagues and agencies. Decide what to do with each one. Your result is saved so the second check can compare with it.",
+  "endGoal": "Sort the ten emails at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "first_check_aim",
+      "title": "Do the first check",
+      "description": "Sort ten emails at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "triage_pre_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "First check done",
+        "body": "Your result is saved, ready for the second check to compare with."
+      },
+      "tasks": [
+        {
+          "taskId": "finish_check",
+          "title": "Finish the first check",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_pre_hr_ba_state": {},
+    "se_awareness_records": [],
+    "triage_pre_percent": 0,
+    "triage_pre_reportRate": 0,
+    "triage_pre_done": false,
+    "triage_pre_pass": false
+  },
+  "exportGlobals": [
+    "triage_pre_percent",
+    "triage_pre_reportRate",
+    "triage_pre_done"
+  ],
+  "social": {
+    "triageSets": [
+      {
+        "id": "hr_form_b",
+        "title": "Recruitment inbox check",
+        "brief": "Ten messages from a Tarrowby Logistics recruitment inbox. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "stage": "pre",
+        "scoringProfile": "awareness",
+        "feedbackMode": "end",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "enable_content_prompt",
+          "secrecy_or_bypass",
+          "reply_to_differs"
+        ],
+        "flagChips": {
+          "enable_content_prompt": "It asks me to turn on editing or content to see it"
+        },
+        "outcome": {
+          "setGlobalPrefix": "triage_{stage}_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "hb_reference_real",
+            "from": {
+              "name": "Kevin Brannigan",
+              "address": "k.brannigan@dewsburycoldstore.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Reference for Bethany Hirst",
+            "time": "09:00",
+            "body": "Hello Fatima,\nThanks for your call yesterday. As promised, my reference for Bethany Hirst is attached. She worked for us for three years and I'd have her back tomorrow.\nKevin Brannigan\nOperations Manager, Dewsbury Cold Store",
+            "attachments": [
+              {
+                "id": "ref",
+                "label": "Reference_Bethany_Hirst.docx",
+                "kind": "document"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "dewsburycoldstore.example",
+              "replyTo": "k.brannigan@dewsburycoldstore.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "enable_content_prompt": "It's a Word file, which is a normal way to send a reference, and it asks you to switch nothing on.",
+                "default": "A former employer you rang yesterday, naming the candidate, from the company's own address."
+              }
+            }
+          },
+          {
+            "id": "hb_bank_details",
+            "from": {
+              "name": "Deborah Haldane",
+              "address": "deborah.haldane.hr@quickpost-mail.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "New starters: bank details needed today",
+            "time": "09:25",
+            "body": "Fatima,\nI'm working from home today and can't get onto the system. Please send me the new starters' bank details as a spreadsheet to this address before 5. Don't copy payroll in; I'll sort it with them myself.\nDeborah",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quickpost-mail.example",
+              "replyTo": "deborah.haldane.hr@quickpost-mail.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "Deborah's name on a personal inbox at quickpost-mail.example, not tarrowby.example",
+                "urgencyCalibrated": "'Needed today', 'before 5' and 'don't copy payroll in' push you to act fast and skip the people who would normally check"
+              },
+              "ifTrusted": "New starters' bank details would go to a stranger, who could use them to divert their first pay.",
+              "reportReply": "Thanks. Deborah didn't send this. Bank details only ever go to payroll, through the onboarding system."
+            }
+          },
+          {
+            "id": "hb_protected_reference",
+            "from": {
+              "name": "Ray Turner",
+              "address": "ray.turner.ref@quickpost-mail.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Reference",
+            "time": "08:35",
+            "body": "Hello,\nAttached is the reference you asked for.\nIt's a protected form. Click Enable Editing and then Enable Content at the top to read it.\nRegards,\nRay Turner",
+            "attachments": [
+              {
+                "id": "ref",
+                "label": "Reference_form.docx",
+                "kind": "document"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quickpost-mail.example",
+              "replyTo": "ray.turner.ref@quickpost-mail.example"
+            },
+            "factorStrings": {
+              "enable_content_prompt": {
+                "redFlag": "The document asks you to enable editing or content before it will show anything"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "enable_content_prompt",
+                "addressedTo"
+              ],
+              "perFlagNote": {
+                "enable_content_prompt": "A real reference shows up when you open it. Being told to enable editing and then content is the step the file needs before it can run anything",
+                "addressedTo": "'Hello' with no name, and it never says which candidate the reference is for: it could have gone to anyone"
+              },
+              "ifTrusted": "Switching on content would let the document run a small program on your computer.",
+              "reportReply": "Thanks. The file was set up to run a program once content was switched on. We've blocked the sender."
+            }
+          },
+          {
+            "id": "hb_starter_forms",
+            "from": {
+              "name": "Tarrowby Onboarding",
+              "address": "onboarding@tarrowby.example"
+            },
+            "to": "recruitment@tarrowby.example",
+            "subject": "New starter forms complete: 2 people",
+            "time": "11:30",
+            "body": "Two new starters have finished their forms. Open the onboarding system from the intranet as usual to review them; this email has no link on purpose.\nThis is an automatic message.",
+            "auth": {
+              "spf": "fail",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "mail.starterhub.example",
+              "replyTo": "onboarding@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "The onboarding system's usual automatic notice. It names the real company, carries no link on purpose, and sends you to the intranet you already use. It asks for nothing."
+              }
+            }
+          },
+          {
+            "id": "hb_preview_guide",
+            "from": {
+              "name": "Ibrahim Diallo",
+              "address": "ibrahim.diallo@tarrowby.example"
+            },
+            "to": "recruitment@tarrowby.example",
+            "subject": "How to preview attachments safely",
+            "time": "09:50",
+            "body": "Hello all,\nYou open more attachments from strangers than anyone else here, so I've written a two-minute guide to previewing CVs safely:\n{{link:guide}}\nIf a file ever asks you to switch something on, don't; send it to us.\nIbrahim\nIT Support",
+            "links": [
+              {
+                "id": "guide",
+                "text": "intranet.tarrowby.example/preview",
+                "destination": "https://intranet.tarrowby.example/preview"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "ibrahim.diallo@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "linkCredible": "The link goes where it says, to Tarrowby's own intranet, and the guide asks for no sign-in.",
+                "default": "IT's real address, a guide on the intranet, and no hurry."
+              }
+            }
+          },
+          {
+            "id": "hb_other_offer",
+            "from": {
+              "name": "Roseanne Wadsworth",
+              "address": "roseanne.wadsworth@kettlewick.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Candidate has another offer: can you tell me by Friday?",
+            "time": "10:40",
+            "body": "Hi Fatima,\nOne of my night supervisor candidates has had another offer and has to answer by Monday. Could you let me know by Friday whether Colin wants a second interview? No paperwork needed yet, just a yes or no.\nThanks,\nRoseanne\nKettlewick Talent",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "kettlewick.example",
+              "replyTo": "roseanne.wadsworth@kettlewick.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "urgencyCalibrated": "There is a deadline, but it's a real one with a reason, and all she wants is a yes or no.",
+                "default": "The agency you use, from its real address, asking for a decision, not for data or a payment."
+              }
+            }
+          },
+          {
+            "id": "hb_onboarding_spoof",
+            "from": {
+              "name": "Thanh Nguyen",
+              "address": "thanh.nguyen@tarrowby-onboarding.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Right-to-work copies for the onboarding file",
+            "time": "10:15",
+            "body": "Hi Fatima,\nThe onboarding file for Monday's starters is missing their right-to-work copies. Could you reply with their passport scans attached so I can finish it?\nThanks,\nThanh\nOnboarding",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby-onboarding.example",
+              "replyTo": "thanh.nguyen@tarrowby-onboarding.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "lookalike_domain"
+              ],
+              "flagAlternatives": [
+                [
+                  "senderTrust",
+                  "lookalike_domain"
+                ]
+              ],
+              "perFlagNote": {
+                "senderTrust": "The name says Thanh at Tarrowby, but the address is on tarrowby-onboarding.example, which isn't Tarrowby's",
+                "lookalike_domain": "Tarrowby's own sites end in tarrowby.example. tarrowby-onboarding.example adds a word with a hyphen, making a separate domain anyone can register, so don't assume it's theirs"
+              },
+              "ifTrusted": "The new starters' passport scans would go to a stranger.",
+              "reportReply": "Thanks. Thanh didn't send it, tarrowby-onboarding.example isn't ours, and the onboarding file is complete."
+            }
+          },
+          {
+            "id": "hb_induction_moved",
+            "from": {
+              "name": "Thanh Nguyen",
+              "address": "thanh.nguyen@tarrowby.example"
+            },
+            "to": "recruitment@tarrowby.example",
+            "subject": "Induction day moves to Tuesday",
+            "time": "08:10",
+            "body": "Hi all,\nNext week's induction for new starters moves from Monday to Tuesday, same time, in the training room at Normanton. I've updated the invitations.\nThanh\nOnboarding",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "thanh.nguyen@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Thanh's real Tarrowby address, a date change, and nothing to open, pay or sign in to."
+              }
+            }
+          },
+          {
+            "id": "hb_thank_you",
+            "from": {
+              "name": "Bethany Hirst",
+              "address": "bethany.hirst@quickpost-mail.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Thank you for today",
+            "time": "12:00",
+            "body": "Dear Fatima,\nThank you for this morning's interview for the warehouse operative role, and for the tour of the Normanton site. I enjoyed meeting the team and I'm still very keen on the job.\nBest wishes,\nBethany Hirst",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quickpost-mail.example",
+              "replyTo": "bethany.hirst@quickpost-mail.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderTrust": "Candidates write from personal email, so a quickpost-mail.example address is normal here.",
+                "default": "A candidate, by name, about an interview you held, asking for nothing."
+              }
+            }
+          },
+          {
+            "id": "hb_shortlist_missing",
+            "from": {
+              "name": "Gareth Ingram",
+              "address": "gareth.ingram@quickpost-mail.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "CV attached: warehouse operative",
+            "time": "11:05",
+            "body": "Hi,\nMy CV is attached for the warehouse operative job. If it hasn't come through, it's also on your careers page here:\n{{link:cv}}\nSign in with your work email to view it.\nGareth",
+            "links": [
+              {
+                "id": "cv",
+                "text": "tarrowby-jobs.example/cv/3307",
+                "destination": "https://tarrowby-jobs.example/cv/3307"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quickpost-mail.example",
+              "replyTo": "gareth.ingram@quickpost-mail.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "attachmentPlausible"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "Read it slowly: tarrowby-jobs.example isn't tarrowby.example. Tarrowby's own sites end in tarrowby.example; the added word with a hyphen makes a separate domain anyone can register, so don't assume it's theirs",
+                "attachmentPlausible": "It says the CV is attached, but nothing is, and the link that replaces it wants you to sign in"
+              },
+              "ifTrusted": "The link opens a sign-in page that collects your Tarrowby password.",
+              "reportReply": "Thanks. tarrowby-jobs.example isn't ours, and we've blocked it."
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "pre_hr_ba",
+      "role": "hr_recruitment",
+      "company": "tarrowby_logistics",
+      "brand": {
+        "name": "Tarrowby Logistics",
+        "logoText": "TARROWBY",
+        "accent": "#3b5b8c"
+      },
+      "variant": "full",
+      "durationTargetMin": 4,
+      "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: ten emails from the Tarrowby recruitment inbox.",
+      "stages": [
+        "check"
+      ],
+      "conclusionTaskId": "finish_check",
+      "defend": {
+        "setId": "hr_form_b",
+        "stage": "pre",
+        "reportAlwaysVisible": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on",
+    "ambient": "#bcc2cc"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_tarrowby",
+      "door_sign": "Training Room",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "drinks_vending": {
+            "color": "#e0f0ff",
+            "radius": 40,
+            "intensity": 0.45
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.3,
+            "color": "#dfe8f4",
+            "radius": 72,
+            "intensity": 0.3
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "ibrahim_diallo",
+          "displayName": "Ibrahim Diallo",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "male_nerd_v2",
+          "spriteTalk": "assets/characters/male_nerd_talk.png",
+          "spriteVisemes": "assets/characters/male_nerd_visemes.png",
+          "storyPath": "scenarios/awareness_pre_hr_ba/ink/ibrahim_pre.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:triage_pre_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "finish_check"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk with ten emails from the recruitment inbox, ready for the first check.",
+          "minigameData": {
+            "episodeId": "pre_hr_ba"
+          }
+        }
+      ]
+    }
+  }
+}

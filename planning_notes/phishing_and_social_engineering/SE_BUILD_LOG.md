@@ -1,0 +1,976 @@
+# Build log: social-engineering systems
+
+Brief: `docs/agents/SE_BUILD_BRIEF.md`. Plan: `IMPLEMENTATION_PLAN.md`. Artefacts: `build_log/`.
+
+## Resume
+
+Status (2026-10-21): Phase 0 closed (two review rounds, ten browser comparison runs, two targeted checks). Phase 1a closed (`5e2889ff`). Phase 1 closed (`391b7dd7`). Phases 2-4 wave 1 and the P2/P3 wiring committed. Phases 2-4 built; Grok reviews found 2 blockers and 5 majors; a Grok fix round is running. Phases 0-4 closed; Phase 5 built and wired; the lab built (plan, data, ink, report, board modes, lints, meter). Next: P5-T and P5-R (builder bridge and review), P6-W lab wiring, P6-T0, P6-R, lab playtests L1-L6 and F1-F17, then design cycles. Waiting on the user: art batch 1 questions (art_batch1/REVIEW.md) and the R-01 speaker-tie question below.
+
+## User instructions for this build (2026-10-21)
+
+- Influence-bar visibility configurable per NPC: done as README decision AA (`835e4cea`).
+- Commit at the end of each design-implement-review iteration (standing authority for this build).
+- First batch of art may be generated with Gemini and PixelLab without asking per image; ask before any
+  later round of improvements. Pixel art is made at its final size, never rescaled.
+- Hacktivity changes go to main, but check with the user before making any Hacktivity change. Other
+  repos may be changed now.
+- Builder (07) packets in future rounds go to `opus48`, not Haiku (2026-10-21). The plan's Phase 5 model columns still say Haiku; the opus48 agent that starts Phase 5 updates them.
+- New tasks went to the `grok` agent type while the weekly Claude quota was low (2026-10-21); the credit has since reset, so new tasks go back to Claude models per AGENTS.md (the running Grok fix round finishes).
+- Grok's work is reviewed by Opus, or by opus48 where it is the attack-shaped emulation (Phase 4, builder), before it is committed (2026-10-21).
+- Ample quota for the next 24 hours: iterate and use subagents freely; the aim is a high-quality, fun and educational game (2026-10-21).
+- Questions: the question tool when no context is needed; otherwise a batched `.md` with images and
+  context.
+
+## Decisions taken without asking
+
+| Date | Decision | Reason |
+|------|----------|--------|
+| 2026-10-21 | lab_scanning and sis01 R3 checks run as their own packet, P0-A9 | keeps each mission packet to one mission |
+| 2026-10-21 | First art batch = the new Slice rows of ASSETS (OBJ1, OBJ2, NPC5, UI1 to UI7) | "first batch" read as the first build slice |
+
+## Packet results
+
+- **P0-P** (Haiku): doc edits, verified and committed `c526f89a`.
+- **P0-A** (Sonnet): baselines in `build_log/baselines/` at HEAD 1f13ee91, Node 18.19.1. Full suite 748 pass; every file passes alone; `engine-fixes-pass3` (3/3 full runs) and `engine-fixes-round4` (1/3) fail on the Node 18 structured-clone runner error, so both are quarantined (plan 0.7 updated). reopencheck 0 problems; 244 route outputs exit 0 (m03's driver prints no verdict); m01 inkcheck start-path only.
+- **P0-A7** (Sonnet): m07 browser baseline, game 2804, verify-run progress; `team_assigned` chain observed in order; phone thread identical after reload (unread badge clears, `timedMessages` empties: compare thread text, not engine fields). 3 unidentified 404s.
+- **P0-A6** (Sonnet): m06 baseline, game 2808, verify-run progress; Irina unspaced popups "+ Influence: Dr. Irina Volkova" (trust 0→30, then 35 after reload); `server_passphrase_known` mapping sends one HaX message; zero errors. Ink vars read null outside an open conversation (cache cleared on reload). `irina_trust` (number) not in verify-run's globals list.
+- **P0-L** (Sonnet): Source Sans 3 bundled as two variable files plus OFL.txt; SHA-256s re-checked by the orchestrator and match `build_log/P0-L_fonts.md`; fonts.css +41 lines, nothing existing changed. F6: canvas text needs `document.fonts.load` with the real string before create or `setText`.
+- **P0-A5** (Sonnet): m05 baseline, game 2810, verify-run progress (6 tasks); 10 unspaced popups across Patricia, Lisa, Owen, Halloran; Patricia pair shares only synced globals; reload keeps values but story positions restart at hubs; no errors. Harness note: `converse` ending at `maxTurns` drops the last choice's popup, so later runs repeat the exact `maxTurns` listed in the report.
+- **P0-N** (Sonnet): verify-run task listing (`--tasks` or `social` key counts them), `count-task-posts.sh` (pairs exact-path POSTs with the controller's 200-only "Task completed" log line), `se/check-bridge.mjs` (fails on any non-true eval, and on a file with no evals unless `--allow-empty`). Gate passed: fixture 2816 exits 0 with `--tasks`, 1 without; m05 opening-only 2817 exits 1. The `social`-key path is untested until the slice exists. Opus review in P0-R.
+- **P0-A2** (Sonnet): m02 baseline, game 2813, verify-run progress (6 tasks); popups `± Influence: <name>` with counts per NPC in the report; no hostile state; HaX phone chat (declares `EXTERNAL player_name()`) and a bark load cleanly; reload keeps all 128 globals. Popup/console hook kept as `build_log/baselines/browser/popup-console-hook.js` for the comparison runs. Seen, not pursued: Mr Pryce (bed 4) interact lands on his ventilator panel.
+- **P0-A8** (Sonnet): m08 baseline, game 2805, verify-run progress; mapping chain (badge audit, HaX timed messages, flags 1-4 then `all_flags_submitted`) recorded; five spaced-form popups. Comparison runs must repeat the deliberate Phantom accusation (sets `nightshade_tipped_off` etc.), read ink vars after a conversation closes, and check whether the post-reload `brief` inventory missing the Post-It and Badge Audit Printout is display-only. 3 unidentified 404s (same count as m07).
+- **P0-A9** (Sonnet): lab_scanning game 2815 (three `+ Influence: Reconnaissance Specialist` popups) and sis01 game 2807 (Hartley +, David -; popup fires on the line after the tag); both verify-run progress. Existing behaviour, not ours: lab_scanning's timed intro replays after reload and resets `instructor_rapport` to 0, and the rapport has no cap. Filed for the user below, not fixed (a lab, outside this build).
+- **P0-A4** (Sonnet): m04 baseline, game 2811, verify-run progress (4/4 tasks, score 25); person chat and five barks from `EXTERNAL` stories pass; Vance pair: each tag gives two popups (person and "(ops desk)"), `vance_trust_level` carries across channels (30 → 113, above the ink's 0-100 comment); 95 globals identical after reload; 32 × 404, mostly `female_hacker_hood_v2_talk.png`.
+
+## Spikes
+
+- **F1** (P0-B, Opus; game 2814 on :3001, console-driven probe stories, so exercised, not earned): a write from outside reaches an open person chat and an open phone chat on the next line, and an `EXTERNAL`'s write shows on the same line. The writer writes gameState, broadcasts, then writes `currentMinigame.inkEngine.story` with `variableChangedEvent` detached. That gave one emit per change, no observer echo and no loop. A broadcast alone does not reach either open story. One hazard: inside `Continue()` an ink assignment has not reached gameState yet, so `se_influence` must read its base value from the calling story (ink set 100, then +1, gave 5). The engine objects, with file:line, are in `build_log/P0-B_spikes.md` for P0-D.
+- **F2** (P0-B): `scripts/ink_runtime_check/social-load-all.mjs` ran 79 m01–m08 stories through 214 runs (chat, event, phone preload, bark) with fallbacks off and on. No outcome differs. 2 runs differ in error wording only (m02/m03 HaX bark probe: `player_name` is unbound on the bark path either way). Only those two compiled stories call an `EXTERNAL`, and no m01–m08 mapping reaches the ink bark path. First output: `build_log/P0-B_social-load-all_first-output.txt`. 0.1 can land. The item 8 fixtures should be the m02/m03 HaX stories, not m04.
+- **P0-A3** (Sonnet): m03 baseline, game 2809, verify-run progress (4 tasks); Ffion 11 and Victoria 9 popups, bark after the night turn, no ink errors; 76 globals identical after reload. F1 (likely harness-induced): closing Ffion's chat with the cloner open saved an EM4100 card, set no flag, threw `NPC not found: null` and left an empty person-chat overlay; by hand it worked. Comparison runs do that beat by hand.
+- **P0-B** (Opus): F1 passes in both chats with no echo; the in-`Continue()` read-modify-write hazard is folded into plan 0.2. F2 `social-load-all.mjs`: 79 stories, 214 runs, 0 outcome differences flag off vs on (two wording-only lines on the m02/m03 HaX bark probe); fixtures for back-compat 8 updated. `getInkEngine` (`npc-manager.js:2079`) is dead code.
+- **P0-A1** (Sonnet): m01 baseline, game 2812, verify-run progress. Derek: `#influence:-100` logs `Unknown game action tag: influence` today (so P0-G must keep it a no-op for non-social NPCs), hostility comes from `#hostile`. Kevin `#hostile:kevin_park`: hostile but untinted until reload, tinted `0xFF6666` after; KO about 15 s later. Briefing: check `timedMessages[0].delivered`, not the close event. All ten browser baselines are in; Phase 0 editing packets released.
+- **P0-J** (Sonnet): `scripts/validate_social.rb` + seven area stubs, `--strict-social`, generic and `social.characters` lints, plus a schema check of `influence.display` (P1-K may take it over). Test 8/8. R0 over 69 scenarios: no new lines. Open: id uniqueness checks `id` only (the unlock endpoint also matches `name`); `kiosk.png` and `mail_terminal.png` must exist before any scenario using them passes `--strict-social`. Commit held until P0-I's validator edits land.
+- **P0-K** (Sonnet): CI job `node-tests` (Node 20, `npm ci`, social+validator globs, full suite minus the two quarantined files, each run alone, social-scenario loop, `git diff --exit-code`); jsdom ^26.1.0; lockfile tracked. Gate in a working-tree worktree on Node 18: 759 tests pass. The orchestrator made `validator-portrait-variants` create `tmp/` itself (it failed on a fresh checkout). CI goes green only once the user pushes.
+- **P0-H** (Opus): `email_` excluded from export and record; `applyEngineVariables` writer registry (empty today) called last in person-chat, both phone open paths and the phone preload. Test 9/9; reopencheck 0 problems; 72/72 on the reopen and sync tests. Decision: `saveNPCState` left unfiltered; instead P1-J sets the whole `email_*` set before every run (plan row updated). `phone-chat-minigame.js` also carries another session's forced-call-lock edits, so P0-H's 6 lines are committed by patch, not the whole file.
+- **P0-E** (Sonnet): `_syncOnce` boolean, `lastError`, `syncConfirmed({attempts, onRetry})` with 250 ms doubling to 4 s, 403 final; `ApiClient.put` sets `error.status`. Tests 38/38 with the existing sync tests. R4 m01 identical before (HEAD files served by route) and after: no lost globals, 0 idle requests, 1 request per changed global.
+- **Shared-tree note:** another session has uncommitted engine edits in the same files (phone-chat-minigame/-ui/-speaker, npc-manager, npc-hostile, music, test-bridge, player-combat). Phase 0 commits stage only this build's hunks.
+- **P0-C** (Opus): fallbacks on in `loadStory` and all ink tools; README rule changed; `social-ink-fallback` 10/10; reopencheck and all 244 route outputs byte-identical to baseline. The orchestrator fixed `social-load-all.mjs:104` to set the flag both ways (it compared on with on once the engine set it); rerun: 0 differ, the 2 known wording-only lines.
+- **P0-D** (Opus): `systems/global-writer.js` (`writeGlobal(name, valueOrFn, {emitAlways, deferEmit, engine, npcId, openChat, clamp})`, `readGlobal`, `emitGlobalEvents`, `writeStoryDetached`, `getOpenChat`); `set_global` uses it with `emitAlways` and `openChat: false`. Test 19/19 incl. the F1 hazard (mutation-checked); suite 824/826 (the two quarantined). Decision: `set_global` keeps `openChat: false`, as `00` S3 allows no wider change to shipped behaviour; social paths use `openChat: true`.
+- **P0-M** (Opus): return-to and `social-overlay.js` built; F5 answered (pause holds only with the suspend handling); 46/46 targeted, suite 839/841 (quarantine). Notes-return gap recorded in plan 0.9 for the mail packet.
+- **P0-I** (Opus): `scenario_npc_records` server and client (`systems/scenario-npc-records.js`), registered at start; duplicate `find_npc_in_scenario` removed; validator helpers. Rails 675 runs 0 failures; node 851/853 (quarantine); R0 over 71 scenarios: 0 lines from this change. Follow-ups decided: storyPath examples in `00` corrected to `scenarios/...`; id-clash warning added to P1-H; `encounteredNPCs` on first delivery added to P1-J; the display-name tie wired into person-chat `normalizeSpeakerId` by the same agent: done, 15/15 in `social-npc-records`, suite 854/855 (round4 quarantined). Expected visible change: m05 Patricia's person-chat lines with a shared name prefix now go to the in-person NPC; P0-T's m05 run must check it.
+- **Art batch 1** (Opus, PixelLab only, 290 generations, 0 Gemini): 3 sprites and 26 UI pieces at native size, nothing overwritten; committed `ebc95bdb`. Hampshire follows the contract (Careers/HR, she), British Chinese, mid fifties. Seven picks taken and three questions for the user at the top of `art_batch1/REVIEW.md`.
+- **P0-F** (Opus): `systems/social-influence.js` (install returns null with no `social.characters`; API in its header). Test 21/21; suite 875/877 (quarantine); reopencheck unchanged; nothing imports it yet. Decisions recorded for P0-R to check: `at: 0` defaults to "above"; a value already past a threshold at load fires nothing; silent lifts still emit change-only `global_variable_changed`; per-change toast left to S4; new events `npc_reported`, `social_conversation_ended`. Follow-ups put into P1-J (pass the runner's engine) and P1-K (bar reads `gameState`).
+- **P0-G** (Opus): tag cases for social characters only, found via `window.socialInfluence`; `_gained`/`_lost` default step 10; service installed by dynamic import only when `social.characters` exists. Test 15/15; HEAD-vs-new comparison of five non-social tag sequences identical; routes byte-identical; social-load-all exit 0. `session-overlay-pause` flaked once with the same runner error (passes alone and on rerun): watch it. Follow-ups into P4-B (ledger wiring) and P1-J (`NPCGameBridge`).
+- **Phase 0 suites (orchestrator):** node 890/891 (pass3 quarantined), Rails 675 runs 0 failures. Implementation committed before review.
+- **P0-T m07** (Sonnet, game 2836): 23 same, 2 different, 4 not comparable. Inventory order after reload varies (the baseline varied too). `assign_tactical_team` lingered in openTasks for three reads after its chain set the globals; final state identical; passed to P0-R to rule out the set_global writer.
+- **P0-T m06** (Sonnet, game 2842): 19 same, 1 different, 1 not reached. Irina popups, trust values, the one-message mapping and ink-equals-global all match. Different: a Resume overlay after reload (from `show.html.erb` and `Game#has_progress?`, neither touched in Phase 0; the m02-m05 baselines also met it), so judged a baseline artefact.
+- **P0-T lab_scanning** (game 2839): 19 same, 0 different. **sis01** (game 2845): 15 same, 0 different, 2 not reached (incidental baseline reads).
+- **P0-T m02** (game 2840): 25 same, 2 different. Popups per NPC, HaX phone and bark, 128 globals after reload all match. Different: Doyle's first `converse` repeated "Six beds in this bay..." about ten times before choices showed (end state the same); a timing-dependent guard warning did not fire. Queued: a targeted rerun of the Doyle talk on a fresh game to rule out a loader-order effect.
+- **P0-T m05** (game 2841): 20 same, 6 different, 1 not reached. Expected change seen: Patricia's prefixed person-chat lines show her name and in-person bust (`speaker-npc`, `npcId: patricia_morgan`), reading correctly. The six differences are turn-limit boundary timing (extra popups for Lisa and Halloran, identical final values and transcripts), clock text and warning counts; none points at Phase 0.
+- **P0-T m08** (game 2844): 35 same, 0 different. The missing Post-It and Badge Audit Printout are notes, not inventory: the test bridge's `brief` view simply does not list notes, so nothing is lost (struck from the shipped-content list).
+- **P0-T m01** (game 2837): 51 same, 0 different, 3 not reached (capture gaps). Derek's `#influence:-100` still unknown, hostility from `#hostile`; Kevin's tint after reload unchanged. The new `restored: true` on the hostile restore event is from the other session's 859da19d, not Phase 0.
+- **P0-T m04** (game 2838): 50 same, 1 different, 2 not reached. Vance values, barks, 95 globals all match. The baseline's "two popups per tag" was an observer artefact (one element per tag; `showInfluencePopup` appends the container then prepends). Different: after reload, `mg continue` did not close the title screen (DOM click did), load average about 40; passed to P0-R with the m07 item, and queued for a targeted rerun on a quiet machine.
+
+**Targeted check A** (games 2848, 2851): m02 Doyle's repeat did not reproduce (3 popups, influence 6, as baseline). m04: only Enter passes the resume overlay; Space then closes the title. Existing design (`ui/session-resume-keys.js`), not Phase 0.
+
+### Phase 0, round 2 (Opus): 0 blocker, 0 major, 2 minor
+
+All 15 round 1 findings closed (R-12 by deferral). Node 926/930 (pass3 quarantined; round4 and the finale session's new `event-mapping-unlock-door` hit the runner error, pass alone). No m01-m08 regression; the m03 superseded-instance warning is the old person-chat delayed complete, not the new manager path. New minors N-01 (forced-latch inference after reload) and N-02 (parent onComplete during an interrupt) scheduled into P4-D and P1-F.
+
+**Targeted check B** (games 2849, 2858): no superseded-instance warning in either m03 cloner beat; both saves set their globals and tasks; m05 Patricia shows her name and in-person bust. **Phase 0 closed** and the fix round committed (only this build's hunks staged in the two files shared with the finale session).
+
+### Phase 1a, round 1 (P1-R, opus48): 0 blocker, 1 major, 6 minor
+
+`build_log/P1-R_review.md`. Verdict: ship. J-1 (major): `performSend` queues a reply job for a data-only target that never opened the mail, against 00 §10; no effect on Hampshire. Minors N-1 to N-6 and O-1 (the Done-when validator command needs the file path). No m01-m08 regression. P1-A's ten gaps, P1-F's boost/strict and the composer/bridge boundary endorsed. Fix round 1 (opus48) takes these plus the ten P1-T UI items; decisions in its brief: locked-pickup limited to `mail_terminal`, `syncConfirmed` treats refused sections as unconfirmed, composer opens with no pretext chosen.
+
+Fix round 1 (opus48): all of J-1, N-1 to N-6, O-1 and the ten UI items fixed (table in the review file). Social and validator tests 280/280, Rails 714/0, slice validator exit 0, bridge 37/37. Orchestrator checked the screenshots (solid panels, icon ticks, reply line, Done button, composer opens unchosen). The board repetition was fixed in slice data (distinct `doneString`s), keeping 03's two lists. Queued for 1b: the composer shows both "Send as" and "From" with the same address; the bridge generator in scratch is stale (the committed `.jsonl` is the source now). **Phase 1a closed.**
+
+### Phase 1b, round 1 (P1-T2 review, opus48): 0 blocker, 1 major, 7 minor
+
+`build_log/P1-T2_review.md`. T2-1 (major): the runner applies `se_influence` before the reply is appended and guards only on the reply, so if `globalVariables` saves while `mailState` does not (pagehide drop, or a server refusal over cap), a reload re-runs the job and doubles the influence. Minors: thread position stored for every reply (T2-2), fire-and-forget scheduling (T2-3), the give trust gap (T2-4, acceptable for a lab), a stale comment (T2-5), withReply checklist after reload (T2-6), created account across tabs (T2-7), boost/strict lint (T2-8). Playtest (Sonnet, game 2909, `build_log/P1-T2_playtest.md`): every Done-when (1b) item passes; verify-run 3 tasks; one POST each. 13 minor player-experience notes. Back-compat item 7's bridge half not yet run. Fix round 2 (opus48) takes the review and playtest findings together.
+
+Fix round 2 (opus48): T2-1 fixed with an applied-marker global `se_mail_applied` that shares the influence's sync fate (the review's mailState placement would not have closed it; two partial-sync tests), T2-2, T2-3, T2-5, T2-8 fixed, T2-4 accepted with a test, T2-6 and T2-7 deferred; playtest A2, A3, A5 to A11, A13 fixed; A1, A4, A12 deferred. Back-compat item 7 bridge half passes (game 2913). Rails 717/0, slice validator 0, bridge-1a 37/37, bridge-1b 78/78. Orchestrator screenshot check: raw `{placeholders}` still show in template selects, change reasons are factor ids, two toolbar labels clip; queued as plan packet P6-M with the deferrals. **Phase 1 closed.**
+
+### Phase 4, round 1 (P4-T, grok): 1 blocker, 3 major, 7 minor
+
+`build_log/P4-T.md`. T4-1 (blocker, confirmed by the orchestrator in `person-chat-pretext.js`): a call records its outcome and shows the debrief only on `complete(true)`; Esc, ink END and a report close with `complete(false)` or teardown, so the outcome is never written and the session stays open. T4-2 (major, confirmed in `pretext-judge.js` `claimValue`): the judge reads blanks by blank name, the card stores them by fact id. T4-3: slice asks grant only globals, so a call never feeds the mail loop. T4-4: a granted ask is offered again. Minors T4-5 to T4-11 in the file. R3 regression over m01-m08, lab_scanning and sis01: no blocker or major (Grok's comparison; m01 combat-number differences attributed to the combat session's d9d2bf59). Fix round waits for the Phase 2 and 3 reviews.
+
+### Phase 2, round 1 (P2-T, grok): 0 blocker, 1 major, 5 minor
+
+`build_log/P2-T.md`. The Phase 1a playtest passes with facts found by browsing (game 2949); bridge-2 15/15 (game 2950). F1 (major): addresses inside selectable blocks render in GNF, because `.minigame-container button` (minigames-framework.css) beats `.ob-block { font: inherit }`, and `_lines()` marks only staff addresses and metadata as `ob-readable`. Minors: site tabs show ids, Teague's headshot 404s, no ready toast when browsing grants the last fact, stale stand-in line in mission.json, `pages[].path` unlinted and `pages[].url` missing from 00 §11.
+
+### Phase 3, round 1 (P3-T, grok): 1 blocker, 1 major, 3 minor
+
+`build_log/P3-T.md`. T3-1 (blocker): a landed Hampshire send records no tells, and the triage loader drops sent records without tells, so the player's own mail is never replayed. T3-2 (major): the review card marks Report on real mail with a red cross although the scorer gives it full marks. Minors: glossary closed on the analyst set, a missing `auth.summary`, the saving notice on a first save. Scorer 84/84, reopen once, blocked save, 403, 600 px and defender picks held. bridge-3's reload races the next command.
+
+Fix round 1 for Phases 2-4 sent to grok with a one-line brief (P2-T, P3-T, P4-T findings).
+
+### Lab plan, round 1 (opus48): 0 blocker, 2 major, 8 minor
+
+`scenarios/lab_social_engineering/REVIEW_R1.md`. Engine audit verified claim by claim. R1-M1: the §4 table still had 22 tasks. R1-M2: with `test_account` required, a student who lands Hampshire from guest could be stuck without a cue. Decision: `test_account` is the first active task in `phish_easy` ("Set up an address to send from"), stated plainly by Ruth and the objective; no hard block on guest. Folding in by the planner (opus48).
+
+### Lab plan, round 2 (opus48): 0 blocker, 1 major, 4 minor
+
+`scenarios/lab_social_engineering/REVIEW_R2.md`. All round 1 findings confirmed closed. R2-M1: the plan relied on a live red-flag meter that is not built and had no owner. Decision: build it, in P6-M (row updated). Minors: in-voice replies for Hampshire's likely failures, the metadata step named in the task and Ruth's hint, "see Ruth for the key" at locked doors, and a sharper, shorter opening with a real choice. Folding in by the planner.
+
+Fix round 1 for Phases 2-4 (grok): every P2-T, P3-T and P4-T finding reported fixed (tables at the end of each file); bridges 1a 38, 1b 82, 2 15, 3 32, 4 30 (bridge-4 changed to click Done because Close now shows the debrief); Rails 722/0; slice validator 0. Two JS files Grok reported failing (`navigator` assignment) pass here: Grok's Node version. Uncommitted pending Claude review: Opus reviews the Phase 2-3 work (`build_log/REVIEW_grok_P2P3.md`), opus48 the Phase 4 work (`REVIEW_grok_P4.md`).
+
+### Grok's Phase 4 work, Claude review (opus48): 0 blocker, 0 major, 5 minor
+
+`build_log/REVIEW_grok_P4.md`. Every P4-T finding real and every fix correct; the reviewer re-ran the P4 suites (94/94), the slice validator and bridge-4 (30/30, game 2964), confirming a phone call records `reported` and a person call `walked_away`, while aborts record nothing. No m01-m08 path reaches the new code. Minors R-1 to R-5; decision on R-5: the hint ladder advances on any failed call (report, refusals, nothing granted), not only reports. Phase 4 done once the R-minors land with the Phase 2-3 fixes.
+
+### Grok's Phase 2-3 work, Claude review (Opus): 0 blocker, 4 major, 10 minor
+
+`build_log/REVIEW_grok_P2P3.md`. Phase 2 fixes correct. Phase 3: Grok's T3-1 fix relabelled Hampshire's CV ask as urgent so a tell was stored, so every Hampshire send shows a false "rushed" advisory and the replayed card flags a deadline that is not there (R-1); the replayed card contradicts itself on authentication (R-2); the authored phish `pay_today` comes from the real domain with every check passing (R-3); no bridge opens the replayed card (R-4). No m01-m08 change (validator identical on all eight before and after `84b96773`). Decisions: revert the urgency change and point the player-sent entry at Teague's spoofed send; give `pay_today` a look-alike domain and a header note as in 05's example; add bridge rows that open the replayed card; fix all minors (F3 shows the contract's default icon); check-bridge compares eval counts. Fix round 2 (opus48) takes these plus the Phase 4 R-minors.
+
+### Phase 5, review (P5-R, opus48): 0 blocker, 0 major, 3 minor
+
+`build_log/P5-R.md`. No m01-m08 impact (landing guard runs only with landing globals; R4 confirmed). 07 §1 safety verified in code: preview draws only inert elements, local image paths, no network, no typed value stored. Minors: equal-rank victim write-backs resync needlessly (F1, fix by skipping equal rank); `pendingMessage` stored unsanitised but bounded (F2); a scope note (F3). The browser bridge P5-T is the last open item.
+
+### Lab, implementation review 1 (P6-R, opus48): 0 blocker, 1 major, 6 minor
+
+`scenarios/lab_social_engineering/IMPL_REVIEW_R1.md`. Faithful, solvable build. R-A (major): Lord's look-alike-domain replay in triage comes back as a failing spoof, because the sent record drops the chosen domain and `lookupDomain` reads the wrong place (`brands[].domains`). Decisions: fix both and add an end-to-end Lord send to triage check; the report workstation refuses until the phishing stage is done (R-b5); Ruth's hints send the student back to Fairbairn (R-b3); fix R-b1, R-b2, R-b6 and P5-R's F1 and F2. Fix round (opus48).
+
+## Questions for the user
+
+- **How to build the rest of Phase 4** (call preparation screen P4-C, call UI P4-E, its bridge and playtest). The orchestrator's brief for P4-C was stopped by a safety classifier.
+
+- **How to build the composer (P1-E2).** See the stop above.
+
+- **Speaker tie in shipped missions (R-01).** Applying the tie everywhere would give every briefing and debrief's "Agent HaX:" lines, and m07/m08 Netherton and Nightshade, the portrait of the conversation's own NPC instead of the first matching record. Probably a fix, but visible in finished missions. Held back until the user decides.
+
+## Found in shipped content (for the user; not fixed here)
+
+- Dev database has a pending migration (20261004000001 RemoveJsonbGinIndexesFromBreakEscapeGames) so `bin/rails db:seed` refuses; agents seed with `bin/rails runner` instead. Run the migration when convenient.
+- Resume overlay after reload swallows Space; a keyboard player who presses Space first sees nothing happen until Enter (existing `ui/session-resume-keys.js` design; targeted check A).
+
+- lab_scanning: reload replays the timed intro and resets `instructor_rapport` (P0-A9).
+- m02: interacting with Mr Pryce (bed 4) lands on his ventilator panel (P0-A2).
+- `female_hacker_hood_v2_talk.png` 404s in m03 and m04 (and likely every mission using that sprite); the file does not exist (P0-A3, P0-A4).
+- m03: closing a chat while the cloner is open can leave an empty person-chat overlay and `NPC not found: null` (P0-A3 F1, seen via the harness only).
+
+- **P0-T m03** (games 2843, 2846): 25 same, 5 different, 4 not reached. Popup counts lower than the baseline (Ffion 10 v 11, Victoria 5 v 9) with identical influence totals and tag counts: the baseline observer's double count (as found in m04). One `complete() called on a superseded minigame instance` warning during the Victoria cloner save, an old guard also seen in m02 and m05 baselines, but on the path P0-M changed: for the round 2 reviewer to check. Cloner beat by hand worked.
+
+- **P1-B** (Sonnet): `systems/social-intel.js` (grantFact flip-only, note, sync, readiness; evaluateReadiness), `grant_fact` action with "Noted: <label>" toast, unique note ids in notes-minigame. Test 9/9. The new import in apply-actions needed stubs in three tests that load it standalone (one is the finale session's untracked file; told them). 00 has no fact `label`, so the toast shows the full fact text until scenarios add one.
+
+- **P1-I** (Sonnet): `scenarios/test_social_slice/` built from contract values; seeded via `bin/rails runner 'load db/seeds.rb'` because the dev DB has a pending migration (20261004000001, not ours; left for the user). Orchestrator: widened `scenario-schema.json` (`grant_fact` action with `fact`; object-valued globals for `se_board_state` etc.) and added `folder: inbox` to the seeded messages; now `--strict-social` exits 0. Open for the review: headshot key `avatar` on `social.people`, sender `avatar` on seeded mail (contract names neither), `se_board_state` still undeclared, and P1-H's "outcome global not read" warning ignores eventMappings.
+
+- **P1-D** (Opus): `merge_mail_state!` with caps, whitelists and trim order (read seeded, read replies, sent; unread never dropped; over-cap updates refused whole), `savedMailState` bootstrap, merge after phoneState. Model 13/45, controller 6/26, Rails 703/0. Client contract sent to P1-C: `seeded: true` on seeded records, null to remove a key, field whitelist. Open: the 1 MB total trim can drop read mail from a mailbox the client still holds as confirmed.
+
+- **P1-A** (Sonnet): `systems/phish-rules.js`, pure, 48/48 incl. every 04 and 00 worked example and Hampshire. Ten contract gaps resolved, listed in `build_log/P1-A_decisions.md` for P1-R.
+
+- **P1-G** (Sonnet): intel board recon mode (`minigames/intel-board/`, pure `board-model.js`, CSS with batch-1 art), readiness read from globals not computed, `se_board_state` `{v:1, recon:{seenReady}}`, textContent only. Test 10/10. It installed jsdom 26.1.0 into the shared node_modules with `--no-save` (additive; the lockfile already pins it). Not yet rendered in a browser.
+
+- **P1-H** (Sonnet): `validate_social/mail.rb` and `board.rb` (04 N3, N11, N10 subset; 01 N18; 03 N6; the email-id clash as an error when the character has an `emailRecord`). Test 10/10; R0 unchanged on all 73 scenarios; slice `--strict-social` clean (the outcome-read check now counts `global_variable_changed:<name>`). Left for 1b/P1-M: `on_email`/`email_*` ink checks, `expectedLink.brandId`, closed-target decoys, `emailKnots`, `se_intel_*` declarations. `mail_terminal` schema entry is P1-W's.
+
+- **P1-E1** (Sonnet): mail client shell (`minigames/mail-client/`: minigame, reader, pure `mail-data.js`, notification), CSS with batch-1 art, textContent only. Test 13/13. Seam for P1-F: `mailState` from params, else `window.mailState`.
+- **P1-E2 (composer): stopped.** A safety classifier stopped the orchestrator while it was writing the composer brief; the agent had started on a truncated prompt and was stopped before it wrote any file (checked). Not retried or reworded; the user is asked how to proceed. P1-F (mail bridge) waits on it. P1-W wiring launched meanwhile.
+
+- **P1-W** (Sonnet): both overlays registered, started, branched in interactions.js (mail branch plain, for P1-F to move), CSS linked, schema entries, preload lines; slice `--strict-social` exits 0; both open and close in the slice (game 2864), art crisp at 2x; m01 smoke check fine (game 2865). The `mailScheduler` lines in core/game.js are P1-C's, not the finale session's. Playwright 1.64.1 needs Node 24 here (it used the cached one).
+- **P1-E2 routed to opus48** (user, 2026-10-21, after the session restart).
+
+- **P1-C** (Opus; resumed after the restart): `systems/mail-scheduler.js` (`window.mailScheduler`, wall-clock jobs, delivery into the sending account's mailbox, outcome global via writeGlobal), `mailState` keyed section with dotted `mailboxes.<id>` keys and id-only job compare, dropped whole from the reduced pagehide flush. Tests 9/9 and 7/7; R4 on m01 and m05 unchanged with no `mailState` in their bodies. F3: background tabs throttle to about once a minute after a minute hidden, so deadlines are wall-clock with a tick on visibilitychange; time closed does not count. F4: a generous student's mailState is about 40 KB, a delivery diff about 35 KB of the 60 KB keepalive budget. Two client-side follow-ups put into P1-F.
+
+- **Sync-size review** (Opus, user request): `build_log/sync_size_review.md`. Mail save keeps the earlier rules (idle sends nothing, id-only job compare, no extra writes) but strains them: whole mailbox resent per change (~35 KB), pagehide budget, 25-40 KB rewritten on every row write, seeded mail stored in full, one key for all threads, server refusals silent (phone too). Decision: packet P1-S applies all four recommendations before P1-F.
+
+- **P1-E2** (opus48): composer (`mail-client/mail-composer.js`), gate from `phish-rules.preSendGate`, picker offers held facts only, Hampshire's blank-free templates send directly. Test 10/10; social tests 232/232. Boundary: the composer builds the message and calls `params.onSend`/`onDraftChange`; judging, sent record, job and metrics are P1-F's. Compose state is on `scene.composer.getState()`, not yet in `getTestState().mail` (P1-T0 adds it with the shell test). P1-F goes to opus48 too, after P1-S.
+
+- **Shared tree, 2026-10-21:** a third session (breakescape-be, combat controls) owns the uncommitted combat edits (core/game.js pointer input, interactions.js hostile and chair branches ~630-655 and ~1815, player, hud, tutorial-manager, test-bridge/state.js) and is changing m01's `behavior.hostile` for Derek, Kevin and Maya. Later R3 runs on m01 must expect that change; it is not ours.
+
+- **P1-F** (opus48): N-02 fixed in `startMinigame` (drains a minigame opened by a parent's onComplete during an interrupt; test 2/2); `notifyNewMail` hooked to `mail_delivered`; shell seeding sets `seeded: true`; new `mail-bridge.js` (judge, sent record, text job for data-only targets, metrics, attempts, checklist, drafts persisted); `mail_terminal` in PICKUP_THEN_INTERACT_TYPES with the locked-pickup rule, branch moved after the lock check. Test 11/11; suite 1079/1082 (runner flake). Browser gate (game 2878): terminal opens the client, a landed send writes one sent record and one job, the sync carries per-message keys and seeded stubs. Choices for P1-R: `boostIfGlobal` makes a factor advisory and `strictIfGlobal` required (designs silent); mail-channel lockout check left to Phase 4.
+
+- **P1-T0** (Sonnet): `tools/playtest/se/bridge-1a.jsonl`, 37 boolean evals (A mail client, B board, C composer, E Esc order, D reload, F send and reply). Game 2882: 36/37. D3 fails for real: the server draft whitelist drops `contactId`, so the composer resets a restored draft after reload; sent to the P1-F agent to fix both ends. Running notes: Playwright here needs the Node 24 binary and a wrapper for the cached chromium; reload via `?skip_resume=1`.
+
+- **P1-T** (Sonnet, games 2886 and 2887): steps 1-6 pass; bridge 37/37; verify-run `--tasks` 2 completed; one POST per task. 0 blocker, 0 major, 10 minor UI findings (`build_log/P1-T.md`). Orchestrator checked the screenshots: the result/compose panels are see-through (the form shows under "It landed."), ticks doubled ("✓ ✓") and drawn as text not the `mark-tick` art, board cards repeat each line under Done:/Missing: and show a corner artefact, the mail Close sits on its own row. Plus: toast "Noted: Noted:", no "reply coming" line, Edit & resend after a landing, no prompt after the third fact, composer defaults to the landing template. For the fix round with P1-R.
+
+- **P1-K** (Sonnet): `ui/influence-bar.js` + `css/influence-bar.css` (CSS bar, ART SLOT note for UI9, mark icons paired with a worded legend), mounted in the reading pane and on board person cards; reads gameState only; `resolveInfluenceDisplay` honoured. Test 13/13. Orchestrator added the CSS link to show.html.erb. Note for later packets: tests that copy `mail-reader.js` or `intel-board-minigame.js` must also copy `systems/social-influence.js` and `ui/influence-bar.js`.
+
+- **P1-L** (Sonnet): account switcher (native select, only with 2+ accounts or a pending creation), Create-account panel (writes `acct_<id>_choice` then `acct_<id>`), Send as select, `burned_<id>` blocks Send with "This address has been reported. Send as another account.", unread per mailbox, contacts map to the headless record id (rule inlined in mail-data.js; keep in step with scenario-npc-records.js). Social tests 322/322. Slice needs (sent to P1-O): freemail account and createMenu, terminal accountIds, declared acct/burned globals. Open: a created account isn't pushed to other open clients.
+
+- **P1-N** (Sonnet): narrow layout (no horizontal scroll at 600 px, measured), focus rings and 44 px targets, live region fix, reduced motion, focus kept across rebuilds, picker Home/End and Tab trap, `inert` behind open panels, one Send as row, withReply reveal on `mail_job_done` (pending = a queued job for the message), silent job for an unopened withReply send. Test 11/11. Open: after a reload a withReply checklist is not re-shown (verdict is); P1-T0b to add 600 px, inert and withReply rows.
+
+- **P1-O** (opus48): character test target `teague` (Morgan Teague) with `teague_mail.ink` (`on_email`, EXTERNAL `se_influence` with fallback; inkcheck clean over the state matrix), four stand-in notes, the Pierce-pattern templates with blanks, payload kit, `freemail` created account, declared acct/burned globals, `social.characters.teague` with `emailRecord` (`teague_mail`). Slice `--strict-social` exit 0. Teague kept off the board's people so the 1a bridge rows still hold. P1-T0b reads the ids from the slice scenario itself.
+
+- **P1-M** (opus48): escalating `result.hint` after a failed send (never on a first miss or a landing), shown as "Hint: ..." in the checklist (orchestrator added its CSS); boost/strict stay boolean (influence is read by the ink); lints: `on_email` knot, declared `email_*` VARs, `se_influence` on both paths (both idioms), `#compose_reply` target, `emailKnots`, closed-target decoy, `expectedLink` shape. Caught and fixed its own false positive on Teague's ink. Social/validator 338/338; slice and m01 exit 0. Deferred into plan rows: `se_intel_*` declarations (P2-B), `expectedLink.brandId` brand check (P5-C).
+
+- **P1-J** (opus48): `systems/mail-runner.js` (private InkEngine per delivery, restore and sync, the whole `email_*` set via `applyEngineVariables`, `se_influence` bound with runId=msgId before the first Continue, one reply into the sending account's mailbox, tags applied ui-less with the record id, `#mail_later` and `#compose_reply`, thread position stored, idempotent reply id). Test 16/16 against the real engine, scheduler and influence service. Follow-up sent to the same agent: call it from the bridge for character targets, the startup import, and the server half of encounteredNPCs for headless records.
+
+- **P1-J wiring** (opus48): bridge calls the runner for character targets through a lazy import (keeps the data-only test harnesses unchanged; onSend skips an unopened mail); startup import in core/game.js; server auto-encounters a headless email record on its `#give_item` (room NPCs still refused when unmet), with a Rails test, and P0-I's opposite test updated. Rails 716/0; social set 101/101; bridge-1a 36/37, A3 (Tab order) now outdated by the account switcher, sent to P1-T0b to update. For the review: the server cannot check that the record has actually delivered a reply before a give.
+
+- **P1-T0b** (Sonnet): `tools/playtest/se/bridge-1b.jsonl`, 78 rows (accounts, picker and gate on Teague, sends, inert, influence bar, withReply, burned, reload, 600 px via an iframe container since the game refuses to start in a frame). Game 2905: 74/78; all [P1-J] rows pass but one. bridge-1a A3 updated, 37/37 (game 2906). Failures sent to an opus48 fixer: F-1 (the From row with blanks is hidden while the gate still needs them, so Teague can't be sent as Operator), K2 (Teague not on the board), F-2 (a reply refresh drops the bar's "Last change" line).
+
+- **1b bridge fixes** (opus48): F-1 (`_fromIsOwn` false when the From template has blanks), K2 (Teague on the board; bridge-1a B1/B6/B7 updated for two people), F-2 (the reading pane keeps the bar across a refresh). bridge-1a 37/37 (game 2907), bridge-1b 78/78 (game 2908); social and validator 349/349 serially. Phase 1b implementation committed; P1-T2 (review and playtest) next.
+
+- **P3-A** (Sonnet): `minigames/inbox-triage/triage-scoring.js`, pure; `scoreTriage({messages, answers, profile, bands, passPercent})`; the 05 worked example gives 68% (analyst) and 86% (awareness). Test 17/17. API passed to P3-B.
+
+- **P2-C** (Sonnet): slice OSINT data (`social.osint` with company, social and document sites plus three tools; four concept cards; `se_osint_state`), fact sources re-pointed to OSINT element ids, stand-ins kept and marked for removal at P2-W. Validator 0 (osint.rb still a stub then; agent checked the block by script). For P2-W: add the `osint-workstation` object (spec in its report) with a placeholder sprite copy, since OBJ7's art is not in batch 1; bridge rows that use stand-ins listed for replacement once they go. Stale facts left out of the slice so composer options do not shift.
+
+- **P3-D** (Sonnet): board defender mode (pure `buildDefenderModel`, cards with options and "Reduce this", wrong picks explain and stay changeable, good picks lock, picks saved in `se_board_state.defender`, globals set once on the flip, re-set on reopen if missed). Test 13/13; social glob 353/353. Additions for P3-E to adopt or reject: optional title, intro and per-item `step` keys. `indicators` not built (off by default, no shape in 00).
+
+- **P4-F** (Sonnet): `validate_social/pretext.rb` (reports threshold, ink ids, blank VARs named for the fact they feed, claims, declared call globals with types, route to "got it", tells, N12 once-only choices, callId pointers incl. the `phone` schema entry). Test 12/12; validator glob 64/64; R0 unchanged. Its own marker `"unverifiable": true` on a claim is not in 00/06. Naming and schema needs sent to P4-B and P4-G.
+
+- **P3-E** (Sonnet): `validate_social/triage.rb` (set shape, message kinds, authored messages, playerSent and its auth table, workstations and their globals, done-keyed tasks, paired forms) and defender lints in `board.rb`. Test 20/20; mail and framework validator tests still pass; slice exits 0. Guessed shapes to recheck: the landing-page domain menu (07 not opened) and `triage-workstation` minigameData `{triageSetId, stage?, conclusionTaskId?}`. The `carry_over_json_writes` follow-up is in P3-W's row.
+
+- **P2-B** (Sonnet): `validate_social/osint.rb` (`se_intel_*` declared for every fact, `se_osint_state`, id namespaces, one award path per fact, references, the §11 host/ASCII/denylist field list incl. concept-card text) with a reusable `HostLint` for P5-C; address-bar tests on P2-A's `formatAddress`. Tests 15/15 and 8/8; R0: 72 scenarios 0 issues; slice 0 errors, 7 warnings (the stand-ins, until P2-W removes them). Follow-ups in P2-W's row.
+
+- **P2-A** (Sonnet): OSINT browser overlay (`minigames/osint-browser/`: minigame, pure model, `address-bar.js`, shared `concept-card.js` for P5-D), CSS, getTestState; collect, repeat, decoy, showIf profiles, document properties, tools, Case file with return-to, reload; no text inputs. Test 16/16; screenshots at 1280 and 600 px read fine. Additions: `se_osint_state.at` (last place) and an optional `note` on blocks. Note: the social glob showed 34 influence/runner/tag failures while P4-D was editing social-influence.js; recheck when P4-D lands.
+
+- **P3-B** (Sonnet): inbox triage overlay (`minigames/inbox-triage/`: minigame, message loader with `playerSent`, chip tables, header panel), CSS on the mail client's frame, opt-in reader options in `mail-reader.js`. Tests 14 and 16; social and validator glob 500/500 serially (the earlier influence failures were P4-D mid-edit). Additions for P3-E/00: `forwardedBy`, `auth.summary`, set `brief`, set `nudges`; landing-page domain lookup guessed (07 not opened). P3-W runs after P2-W so the two wiring packets do not edit the shared files together.
+
+- **P3-C** (Opus): `systems/triage-starter.js` (save with deferEmit, await `syncConfirmed`, then emit with done last; withheld events kept per prefix; pass never cleared; reopen re-emits once when the conclusion task is open; stored results open read-only). Event name `inbox_triage_completed` chosen (none in the designs). Tests 17/17; Rails `social_sync_then_emit_test` 5/41/0; browser `tools/playtest/se/triage-sync-regress.js` on game 2916 passes blocked, offline and 403. For P3-W: the starter wiring and `conclusionTaskId` in minigameData (`build_log/P3-C_starter.md`). For P3-E: require `outcome.setGlobalPrefix`.
+
+- **P4-A** (opus48): `systems/pretext-judge.js`, pure: `judgeUtterance`, `judgeAsk`, `bandForInfluence`; the 06 §4.2 scoring incl. match-credit cap, repairs, double-downs, ask floor (inclusive), refusals to report, forced verification failure, clamping. Test 14/14 incl. the Priya and Dev examples. Spec = pretextNpcs entry merged with the character's thresholds and influence (to document in 00/06). 06 prose and §5 JSON disagree on `hurry_deflect` (-20 v -10); the JSON was followed.
+
+- **P4-D** (opus48): N-01 done with a persisted `<character>_forced` global (engine-internal, undeclared); `isLockedOut(id, channel)`; lockout refusals on person, phone and mail before anything opens; the `callId` branches in interactions.js (phone object above the text/voice gate; NPC with a callId) open `pretext-prep` through a lockout-checked starter. social-influence 27/27, social glob 440/440. Orchestrator: a refused mail send no longer counts as sent (`lockedOut` skips `recordSend`). For P4-T0/P4-C: register `pretext-prep` and its starter but do not add a second callId branch. For P4-F: allow `<character>_forced` as a derived global.
+
+- **P2-W** (Sonnet): OSINT browser registered, started, branched, preloaded, linked; placeholder `osint-workstation.png` (copy of workstation.png); schema entries incl. `social.osint`; `Context.raw` for the ASCII lint; stand-ins removed, `slice_osint` added; bridge rows now browse. Slice `--strict-social` 0 with no stand-in warnings; social and validator 516/516; bridge-1a 38/38 (game 2917), bridge-1b 82/82 (game 2918). Open: site tabs show ids (slice data needs `name`); add `sites[].pages[].url` to 00 §11. **P3-W launched on grok** (first grok packet).
+
+- **P4-G** (opus48): two slice calls: `brandt_desk_call` (phone-only via `slice_desk_phone`, one-minute lockout) and `quinn_floor_call` (person NPC `quinn_desk` with a walk sprite, so the pip shows); ink `brandt_desk` and `quinn_floor`, inkcheck clean; phone `callId` schema entry. Slice `--strict-social` exit 0 (one `callId` unknown-field warning, routed to P4-T0). Asks grant globals only, so the call-to-mail-blank path is not exercised by the slice. Found: P4-F's clean fixture ink repeats `~ temp` in one knot and would not compile (lint-only); the slice inlines the external into the divert instead.
+
+- **P4-B** (opus48): `person-chat/person-chat-pretext.js` (PretextSession stored in `pretext_<callId>_state`, `makePretextExternals` with ledger idempotency, `mergeSpec`, `finalisePretext`, `fillPretextVars` named by fact, `attachPretext` with its own debrief panel); both chat loaders begin/track/end a run and pass `runId` in tag options, only for social characters. Tests 11/11; judge+session 25; back-compat set 94/94; social glob 451/451; engine regression 57/57. P4-C must pass `blanks` keyed by fact id (in its plan row).
+
+- **P3-W** (grok, first grok packet): triage scene registered, starter wired, `triage-workstation` branch, CSS, preload, placeholder sprite, schema entry, `carry_over_json_writes` knows the four result globals; slice triage set `slice_inbox` (incl. the player's own Hampshire send), workstation, task `triage_sorted`, defender board on two facts. Orchestrator re-ran: slice `--strict-social` 0 errors; social and validator 535/535; validator output identical to HEAD on all 72 shipped scenarios; Rails suite below.
+
+- **P4-C stopped (2026-10-21).** A safety classifier stopped the orchestrator while it wrote the Grok brief for the call-preparation screen; the Grok relay had started on a cut-off brief and was stopped before writing anything (checked). Not retried or reworded. Phase 4's remaining packets (P4-C, P4-E, P4-T0, P4-T) wait for the user. P3-T0 (triage bridge) launched on grok meanwhile.
+
+- **P3-T0** (grok): `tools/playtest/se/bridge-3.jsonl`, 32 evals (triage opens, keys inert, round answered, result survives reload, `triage_sorted` once, defender wrong/good picks and `defender_profile_done`). Grok's report: 32/32 (game 2920), bridge-1a 38/38, bridge-1b 82/82; not yet re-run by Claude (the Phase 3 playtest will). Gap: a fresh game has no sent mail, so the `playerSent` card is not exercised.
+
+- **P4-C** (grok, one-line brief per the user): `minigames/pretext-prep/` (brief, card of blanks from held facts, opens the chat with `blanks` keyed by fact id). Orchestrator re-ran: social and validator 547/547. For the Phase 4 review: the judge looks values up by blank name while the card keys by fact id, which only agree when they are the same string (true in the slice and Dev, not Priya's `{name: manager}`); the 06 §4.5 hint ladder is not on the card.
+
+- **P4-E** (grok, one-line brief): influence bar and tells in both chat headers (`ui/pretext-chrome.js`), render-only phone tell bubbles, portrait tint, world pip for sprite characters (`ui/npc-influence-pips.js`, created in core/game.js), the board's "From the call" section. Pip test 8/8. It reordered the start of both chats' `cleanup()`, which broke two source-text tests (finale-voiced-calls, session-overlay-pause); the orchestrator moved its lines below the existing ones and the full Node suite passes 1353/1353. Not yet looked at in a browser.
+- **P4-T0** (grok, one-line brief): `pretext-prep` registered and started from P4-D's callId paths; `callId` in the NPC schema (quinn_desk warning gone); desk phone moved to a reachable tile; `tools/playtest/se/bridge-4.jsonl` 30/30 on game 2926 (Grok's run). The fact picker is not exercised (slice starts with nothing held); the overlay CSS is duplicated in a page stylesheet. Orchestrator: slice validator 0, Rails 722/0.
+
+- **P2-T0** (grok, one-line brief): `tools/playtest/se/bridge-2.jsonl`, 15 evals (keys inert, Tab order, Esc closes properties first, Close and Esc succeed, Case file returns to the same page, reload keeps visited pages and granted facts). Grok's run: 15/15 on game 2928. Tools panel not covered. Note: `playtest-session.js` appends to its log, so check one session's output at a time.
+
+- **P6-A** (Opus): lab plan partly written (`scenarios/lab_social_engineering/PLAN.md`: §1 engine audit with file:line, §3 cast, §5 to mid stage 2, §9 cut order) before a content safeguard stopped it in §5. Not retried on Opus. Per the user's routing of attack-shaped work to opus48, the rest goes to an opus48 agent with a pointer-only brief. Useful engine facts it found: `phish_<id>_landed` and `pretext_call_done` are authored, not engine-written; no `giveItem` in eventMappings (Ruth's ink gives keys, or a mapping `unlockDoor`s); default reply delay 20 s; triage `passPercent` defaults to 0.
+
+- **P5-B** (opus48): builder preview renderer `minigames/landing-page-builder/landing-page-render.js` (two layers, inert text, hot-spots in inspect mode, raw homograph and xn-- rendering, the off-menu/non-.example guard frame, readable font inline). Test 10/10 incl. the network-API grep. For P5-A: the guard is duplicated by rule, not import. For the review: the xn-- form also shows in the preview address bar.
+
+- **P5-A** (opus48): builder model `landing-page-model.js` (pure: `scorePage`, `guardDomain`, `buildRecord`, `applyScore`, `setBuilt`, `linkInfoFor`, `describeVictimOutcome`, `betterVictim`, `captureGranted`; closed key sets). Tests 20/20 incl. the 07 worked example (34, 87, 75, 100). Plan table P5 rows now opus48 (the Phase 5 prose still says Haiku). Wordings need `slips: true` to score zero (sent to P5-C as a lint). P5-B duplicates the domain guard by rule; the review should consider importing `guardDomain` instead.
+
+- **P6-A finished** (opus48): `scenarios/lab_social_engineering/PLAN.md`, 15 sections (rooms, cast, 8 aims and 22 tasks, stages 0-7 and debrief, voice and ink, hand-offs, art and audio, cut order, playtest scripts L1-L6 and F1-F13, packets, checks, risks). Orchestrator decisions on its questions: Q1 add a `test_account` task completed on `acct_freemail` (23 tasks); Q2 keep the working title "Phishing and Social Engineering" (user may rename); Q3 open with `timedConversation` + `waitForEvent: game_loaded`, fix the §5 sentence; Q4 ENV read with a constant fallback. Review rounds on opus48 next.
+
+- **P5-C** (opus48): `validate_social/landing.rb` (the 07 N6 and N7 lints, the `expectedLink.brandId` cross-check, a punycode encoder, reuse of `HostLint` and `ctx.raw`, a confusables table, `wordings` must have one `match` and at least one `slips`), `social.landingPages` schema entry. Tests 24/24; validator glob 100/100; slice output byte-identical. Contract it set: defender strings at `strings["domainTier<N>Defender"]`; P5-D and the lab must use those keys and `slips: true`.
+
+- **P5-D** (opus48): builder overlay (steps 1-5, score panel, Attach and Attach anyway, Case file launch, concept cards, persistence through the writer), CSS. Test 13/13; social and validator glob 623/623. Contracts it set, accepted by the orchestrator: a page lists held facts in `pretext.facts` (fact ids); pages author `fields` and `extraSensitiveFields`; `{firstName}` comes from `social.people[].forms.first`. P5-G's fixture page and the lab must author these.
+
+- **P6-D** (Haiku): Tesseract's collection moved to `lab_games` (mission.json and three docs); the missions index titleizes it as "Lab Games", so no label code is needed. `db:seed` on deployed instances is the user's.
+- **P5-F** (opus48): a landing-state shape guard in `state-sync.js` `buildSharedSections` (closed key sets kept local, checked against the model's by test; no-op without landing globals). Test 8/8; every test that copies state-sync 89/89; R4 on m01 and m05 unchanged (games 2958, 2959).
+
+- **P5-E** (opus48): builder step 6, defender inspection (`landing-page-inspect.js`, pure; hot-spots, padlock decoy, show the link target, five-habits card), CSS. Tests 27/27; social and validator glob 645/645. Found: the lint (P5-C) checks defender strings at `domainTier<N>Defender` but the model reads `defDomainTier<N>`, `tellFormOrigin`, `tellHoverMismatch`, `padlockDecoy`. Decision: the model's names win; P5-G changes the lint and fixture to match.
+
+- **P6-C** (Sonnet): board `scope` and `plan` modes (brief, rules sheet, sort piles, question card, single-select picks; wrong answers explain and stay changeable; step and block globals set once). Tests 33/33 with the recon and defender tests. For P6-W: add `scope` and `plan` to the case-file `mode` schema. For P6-G: lints for `step` and `correct` counts. For P6-E (sent): `plan.objectivesPrompt`, `plan.measuresPrompt`, `scope.intro`.
+
+- **P6-B** (opus48): engagement report overlay (`minigames/engagement-report/`: pure `buildReportModel(social, globals, mailState)` reading mail metrics, the page's victim record and the call globals; findings pair a root cause with a control; the blame option explains itself; `se_report_state` ids only). Test 15/15. Decision: the call panel reads the lab's fixed global names (`pretext_<callId>_outcome`/`_lowest`, `pretext_call_done`, `<character>_reported`). Wiring and bridge wait for P6-W, P6-T0 and the lab scenario.
+
+- **P6-F** (opus48): seven lab ink stories (Ruth, Ruth's phone hints, Fairbairn, Tomasz, Dev's call, Pierce and Lord mail replies); all compile; dialoguelint clean; inkcheck and loopcheck clean over a state matrix; tag trace confirms the landings, key hand-overs, backup completions and the debrief. Fixed its own bug (Fairbairn's scenes did not auto-play on first visit). Ids contract in `scenarios/lab_social_engineering/BUILD_P6F.md`, sent to P6-E.
+
+- **P6-E** (opus48): `scenarios/lab_social_engineering/` data (four rooms, the full social block, 8 aims and 23 tasks, globals), matched to P6-F's ids; strict validator 0 errors with the ink lints passing; doors aligned; P6-C's three text fields added. Placeholder `report-workstation.png` (copy of case-file.png). Committed with P5-A to P5-F, P6-B, P6-C, P6-D.
+
+- **P6-M** (opus48): live red-flag meter while composing (per target; on for Hampshire), template selects show the filled sentence, influence reasons in words, toolbar clip fixed, the withReply checklist rebuilt after a reload (`pendingMessage` whitelisted on the server). Mail tests 132/132; Rails 723/0. Orchestrator checked the meter screenshot. Its residual urgency flag on Hampshire is Grok's R-1 change, which fix round 2 reverts.
+- **P6-G** (Sonnet): engagement step and one-correct lints in `board.rb`; `lab.rb` (every scored option has a `why`, completing globals declared, mappings name declared globals and real tasks); lab block in `missions.json`. Validator tests 122/122; lab and slice `--strict-social` clean; reopencheck on the lab 0 problems.
+
+- **P5-G** (opus48): builder wired (scene, starter, `page-builder` branch, preload, CSS, schema, placeholder sprite); mail `link` kind (offered only for a target a page serves, nested builder launch and re-attach) and the send-path victim record and one capture note; defender-string keys aligned to the model (`defDomainTier<N>`); slice fixture page `payroll_login` for a new `lord` target. Tests 24/24 and 8/8; social and validator 699/699. Note: `mail-bridge.js` now imports the landing model, so every test that copies it must copy the model too (already done in the tree; commit together).
+
+- **Fix round 2 for Phases 2-4** (opus48): every finding in both Claude reviews fixed (replay now uses Teague's spoofed send; `pay_today` uses a look-alike domain with a header note; new bridge-3b opens the replayed card, bridge-3c the collapsed header; check-bridge `--expect` fails on a short run; hint ladder advances on any failed call). Orchestrator re-ran: full Node 1499/1499, Rails 723/0, slice and lab `--strict-social` 0. Known harness gaps: a reload while an overlay is open breaks the session on this machine's headless shell (bridge-1a and bridge-3 at that step; reload-free equivalents pass), and bridge-1a B1 still expects one board person (the slice now has Lord). Phases 2, 3 and 4 closed. Committed with P5-G and P6-M.
+
+- **P6-W** (Sonnet): report registered, started, branched, linked, preloaded; schema notes the board's four modes. Lab `--strict-social` 0; full Node 1499/1499; the report opens in a lab game (3010). Found: the report's root-cause and control options have no `text`, so their buttons are blank; sent to opus48 with a lint so it cannot recur.
+
+- **Bridge harness fix** (Sonnet): the reload race (an eval started against the old page as navigation committed) fixed with two Node-side screenshot steps after each reload wait; bridge-1a B1 updated for three board people. All seven slice bridges pass on fresh games: 1a 38, 1b 82, 2 15, 3 32, 3b 8, 3c 4, 4 30. Note: the session `--log` appends, so use a fresh output path per run.
+
+- **P6-T0** (Sonnet): `tools/playtest/se/bridge-6.jsonl`, 35 evals on the lab (scope sheet, plan whiteboard, report, reload). Game 3045: 34/35; RP2 failed because the report model keyed calls by `id` while the contract and the lab use `callId`. Orchestrator fixed `report-model.js` to read `callId` (falling back to `id`) and the fixture; report test 15/15. Open for P6-R: Ruth's opening hub defeats `bootstrap`; report tasks complete from their globals while the `report` aim is still locked.
+
+- **P5-T** (opus48): `tools/playtest/se/bridge-5.jsonl`, 29/29 on a fresh slice game; verify-run progress (`lord_landed`). Steps 1-8: open, build rows, scores 34 and 87, change after score, attach anyway, inspect all seven giveaways, reloads at four points, step strip and 44 px targets. Lord was revealed by a console grant (the call is Phase 4's), the rest earned. A true 600 px render needs a separate run. **Phase 5 closed.**
+
+- **Lab fix round 1** (opus48): R-A fixed (the sent record carries the chosen domain; new Node end-to-end test sends to Lord and checks the triage replay); the report workstation waits for `phish_lord_landed`; Dev's granted line matches the ask; Ruth's hints read `pretext_call_reported` and send the student back to Fairbairn; P5-R F1 and F2. Node 1508 pass (five files hit the known parallel-run runner error, pass alone); Rails 723/0; validators 0; bridges 1a 38, 1b 82, 2 15, 3 32, 3b 8, 3c 4, 4 30, 5 29, 6 35. R-b4 (phone avatars) waits for art. Next: lab playtests L1-L6 and F1-F17.
+
+- **Lab playtest L2** (Sonnet, game 3067): recon stage plays well (all 11 facts by browsing, board readiness, `osint_done`, reload). Two real bugs: B1 Ruth never hands over a key in-session (her story stays in `hub`, so the `keys` knot never runs; a reload delivers them), B2 the Recon key opens the Operations door (pins only 4 apart; the key check accepts near pins). Also: no "see Ruth for the key" line at locked doors, an unplanned handle-search tool, the PDF Path field shows the username but grants nothing. Fixes batched after the other L runs.
+
+- **Lab playtest L1** (Sonnet, game 3071): stages 0 and 1 pass (opening and Fairbairn's choice, scope sorting, stop rule, plan picks, reload). Confirms B1 with its cause: a reopened chat resumes at the last choice knot, and Ruth's always ends in `hub`, so `keys`/`recheck`/`resume` never run again until a reload; her phone hints go stale the same way. Notes: "Section 4" is not on the sheet; the blame bounce is not in Fairbairn's voice; the Fairbairn answer is never reflected later; his intro jumps straight to signing; the right plan picks are both first in their lists; duplicate opening lines from Ruth.
+
+- **Lab playtest L3** (Sonnet, game 3069): stage 3 passes (create freemail, land Hampshire, land Pierce with the Jed spoof, reload during a reply wait lands once, Ruth's cue for the hard target). Same key blocker. Minors: create-account Confirm with nothing picked is silent; the lab's Hampshire CV ask still reads as rushed on the meter (the slice fix did not reach the lab data); reply timestamps differ from seeded mail times; the blank picker labels the right choice "a specific, insider detail" (gives it away); the terminal reopens on guest; nothing tells the student a reply is coming outside the checklist.
+
+- **Lab playtest L5** (Sonnet, game 3070, report `scenarios/lab_social_engineering/playtests/L5.md`): C2–C4, C6, C7 pass (report shows the call line, three findings pair, reload intact, verify-run 20 tasks, score 87). C5 fails on the Ruth key blocker (all three keys). **New blocker B3:** the `payroll_login` landing page has no `pretext` object, so the brand and purpose gates never pass; Lord cannot land on shipped data (score 75 every build) and the builder's "What Sofia is expecting" card stays empty after the call. **Major:** Dev's choice menu shows empty blanks on first view (menu built before the values are written; first sent line stays blank in history). Minors: Dev's name check on the payslip-date ask not signposted and each retry costs 10 influence; report call line prints a raw id (`got_it`) and target rows reorder after reload; timestamps 00:4x vs 08:xx; Hampshire meter lists urgency; picker labels give the answer away; harness `clickControl "Send"` substring-matches; `bootstrap` cannot leave Ruth's opening chat.
+
+- **Lab playtest L6** (Sonnet, game 3068, report `scenarios/lab_social_engineering/playtests/L6.md`): 12 checks pass. Triage holds the tester's own sends (`own_pierce`, `own_lord`), the header panel teaches each tell, triage passes at 78%, defender picks set `profile_done`, Tomasz's debrief closes Defend, and the server shows the mission concluded (23/23 tasks, 8/8 aims). Confirms B1 (keys only on the first Ruth open after a page load) and B3 (with `pretext` patched in memory, the same choices score 100 and Lord lands). **Major F2:** no end screen; the `defend` aim has no `conclusionScreen`. **Major F4:** Dev's "pending" reply is a dead end; recovery needs a repeat of the opening line, influence carries between calls, and `open_buddy` gives +10 on every repeat (farmable). Confirms the empty-blank major. Minors: `own_lord` replay sender/auth doesn't match what the guest account sent; no way to check `cv_portfolio`'s link target; Create-account panel stays mounted and Close needs several presses; timestamps; defender board says "name not given" after the name is known; Tomasz says "no fuss" after a messy call; harness `lock` picks the first key.
+
+- **Lab playtest L4** (Sonnet, games 3072 page-first and 3083 call-first, report `scenarios/lab_social_engineering/playtests/L4.md`): `prepare_hard` completes in both orders; the Dev call grants both asks and `lord_trusts_portal_sender`; F7 (reopen after one ask) and F8 (re-score after Attach) pass; reload, Esc and Close pass. Lord does not land (B3). Confirms B1. **New B4:** Ruth's phone hint thread is stuck at `stage0` (loops to itself, never returns to `hub`), so no later hint rung is reachable. Confirms the empty-blank major. Minors: Dev never says the portal name/address; the prep card shows "(name not given)" once held; the date ask comes back pending even when the name was the opener; the board shows Sofia "Ready to approach" before the portal name is known; account creation hidden inside the account drop-down; page-first gives two FAIL rows with nothing pointing to the call.
+- **L1–L6 complete.** Consolidated fix list: `scenarios/lab_social_engineering/playtests/FIX_ROUND_L.md`; lab fix round 2 on opus48.
+
+- **Impl review R2** (opus48, `scenarios/lab_social_engineering/IMPL_REVIEW_R2.md`): 0 blocker, 0 major. B1–B4 and M1–M4 correct; ink tunnels and phone stage guards cannot loop or double-give; the anti-farm rule is sound; compiled ink matches a fresh compile. Minors for the next round: Dev's lockout `recoverTo: -30` is now dead config (a fresh call resets to start), so drop it or floor the reset at it; the B2 log note named the wrong gate (corrected above); the harness items in FIX_ROUND_L (`clickControl` substring, `lock` first key, `bootstrap` in Ruth's opening) are deferred to the next harness pass.
+
+- **Lab re-run R1** (Sonnet, fresh game 3143 plus 3169 for side paths, report `scenarios/lab_social_engineering/playtests/R1.md`): start to end screen with **no workarounds**, one deliberate reload, verify-run 23/23, score 100. 12 of 13 checks pass: all three Ruth keys in session, no cross-opening, phone hints follow the stage, Dev's pending path is signposted and can't be farmed, the builder panel fills, Lord lands first send, Hampshire shows 0 flags, the end screen shows. **Still failing (major):** the first Dev menu has empty blanks and the first sent line is stored blank; the ink VARs are already right at render, so the fillVars re-asserts do nothing (suspect the first choices are baked before `attachPretext` sets `_pretext`). 13 minors in R1.md. Lab fix round 3 on opus48: `playtests/FIX_ROUND_R1.md`.
+
+- **Lab fix round 3** committed as 093d9449. I changed Dev's desk-phone line to use "them", so it stays neutral for any character. The harness fixes (clickControl exact-first, lock key rotation, bootstrap repeat-menu exit) were blocked by the auto-mode classifier as a shared-resource edit, because `.claude/skills/playtest-scenario/scripts/playtest-session.js` and `test-bridge/minigames.js` are shared with other sessions. They are queued for the user to decide on. Playtests work round them in the meantime. R2 and the F1–F17 failure routes are running on Sonnet.
+
+- **Lab re-run R2** (Sonnet, fresh game 3190, `playtests/R2.md`): start to end screen, 23/23, score 100, no workarounds, 0 blocker, 0 major. 12 of 13 checks pass. The first Dev menu is fixed; the triage replay, Lord advisory and report row now reflect the real send; the board, Tomasz, Ruth's rung, mail Close, last-account reopen and one-morning times all work. Fail (minor): the create-account "Pick an address first." toast is `info`, which `notifications.js` holds while a full-screen panel is open, so it shows only after close; use an in-panel line or `warning`. Other minors: seeded mail 08:15–08:55 runs ahead of the clock (sends 08:03); the influence "floor" wording is unexplained; `moveToNear` Tomasz flaked once; Dev never names the portal (decided, no change); `cv_portfolio` link still click-only (decided).
+
+- **Failure routes F6–F10** (Sonnet, game 3189, `playtests/F6-F10.md`): all 5 pass. F6 against the current design: Dev is reported at the refusal limit (-60) before the -70 threshold, only the phone is locked, and after the wait he reopens at 0 with the first menu filled. PLAN §10 F6 and §3 (lines 543–546, Ruth's line text) are out of date. Minors:
+  - Dev's authored `reported` goodbye line never shows.
+  - The second call's transcript and the bar's "Last change" line carry over from the first call.
+  - Ruth's phone keeps the "Dev flagged" line after a clean second call.
+  - The report's pretext row mixes the two calls, and the landing row shows the last attached page, not the one that landed.
+  - The lockout toast gives no reason or duration.
+  - The hint after a failed third Lord send names facts already held.
+  - The board's "doesn't name it" line stays after the name is learned.
+  - "Attach anyway" on a 35/100 page completes `payroll_page_attached`. This is intended (the plan lets a weak page be sent so it fails at the target), but the task text should not read as success.
+  - `phish_lord_landed` lags the "It landed" line by a few seconds.
+  - A later failed triage replay overwrites `triage_percent`.
+
+- **Failure routes F1–F5** (Sonnet, game 3192, `playtests/F1-F5.md`): all five branches pass against the plan. It found three hint-ladder defects:
+  - **H1:** `phish-rules.js:418-424` indexes `hints[prior]` with `prior >= 1`, so `hints[0]`, the softest hint, can never be shown for any target.
+  - **H2:** hints follow the miss count, not the failing factor. On Lord's third miss, with only the link missing, the hint said to call the desk again.
+  - **H3:** Pierce's third hint ("can only send as itself") shows on a send from `guest`.
+
+  Minors:
+  - The Lord portal-domain advisory shows on a Jed-spoof message.
+  - The call debrief shows each ask's cost only after the ask.
+  - The call-prep panel lists the 2019 org chart without its "Old or unverified" warning.
+  - Influence after landing is inconsistent: Lord stays at -20, Pierce goes to -10.
+
+- **Failure routes F11–F17** (Sonnet, games 3191 and 3195 at 600×900, `playtests/F11-F17.md`):
+  - F12–F16 pass:
+    - Every stateful reload point survives (mid-triage restarts the round by design, with no notice).
+    - At 600 px the overlays are usable (the map is tiny).
+    - The guest-lands-first, careers-inbox and metadata-unread recoveries all work.
+  - F11 fails on the literal wording only: six overlays log `minigame_failed` on close (mail abort by design; pretext card and triage intro are ours; person/phone chat and lockpick are engine). No close completes a task.
+  - F17 fails:
+    - The locked doors never point to Ruth.
+    - Ruth's phone stage 2 says "You've the key already" before the key is held.
+    - Stage 7 has no key line.
+  - The harness hard-codes 1400×1000; the run used a scratch copy for 600 px.
+- **R2 and F1–F17 complete: 0 blocker.** Consolidated in `playtests/FIX_ROUND_F.md`; lab fix round 4 runs on opus48.
+- **Lab fix round 4 (F)** (Opus): `playtests/FIX_ROUND_F.md`. Hints and guidance: H1 the softest ladder
+  rung is now reachable (`phish-rules.js` indexes `hints[priorFailures - 1]`); H2/H3 a new opt-in
+  `hintsByFactor` keys the hint to the factor that actually failed, with an account-aware senderTrust
+  entry (`{ spoof, forced }`) so a `guest` miss and a `freemail` miss get different advice — Pierce and
+  Lord author it, the flat `hints` ladder is the fallback. F17: `ruth_phone.ink` stage 2 (Recon) no
+  longer says "you've the key already" and points to Ruth, stage 7 (Blue Team) gains a key line, and
+  the three lab rooms set an opt-in `lockedHint` the no-key door toast appends (doors without it are
+  unchanged). F15 the board's "Where mail goes" goalString points at the careers inbox line. The lockout
+  toast now gives a reason and a rough wait. Call/report: Dev's `outcomes.reported.line` is spoken in
+  the chat before the debrief; a fresh pretext call clears the prior transcript; the Dev-flagged phone
+  line clears once a clean call-back succeeds (`not pretext_call_done`); `pretext_<callId>_lowest` is a
+  running minimum across calls; the report landing row names the domain of the page that *landed*
+  (stored on the victim record as `domainId`), not the last attached; the 2019 org chart carries its
+  "old or unverified" warning in the call-prep list; the Lord `senderAuth` advisory no longer assumes a
+  portal claim. Overlays: the pretext card closes cleanly (not a failure); the triage brief carries a
+  one-line "closing/reloading restarts the round" notice (F12); the mail create-account "Pick an
+  address first." shows inside the panel, not as a held toast. Influence "floor" is spelled out as
+  "needs N or better". Left (logged): the Lord-vs-Pierce landing influence is already symmetric in both
+  ink stories and configs (no code defect — the reading differed by miss count); the `phish_lord_landed`
+  lag is the by-design reply delay; the triage intro keeps its abort because it is what prevents scoring
+  a half-finished round (PLAN F11 wording updated to match); the "Attach anyway" task title already
+  reads as "build", not "passes". New tests: `social-phish-rules` H1/H2/H3 and
+  `social-lab-ruth-phone-keys` (stage openers + the stage-4 flagged-line gate). PLAN/IMPLEMENTATION_PLAN
+  F6/§3/F11 text brought in line (Dev reopens at 0, the refusal limit reports first near -60, Ruth's
+  actual line). Gates: lab `--strict-social` exit 0; `social-*` Node suites green (social-mail-runner
+  fails only in the full parallel run, passes alone — known structured-clone flake). `ruth_phone.ink`
+  recompiled to its `.json`. No shipped mission (m01–m10) scenario, ink, audio or behaviour touched —
+  every engine change is opt-in (`hintsByFactor`, `lockedHint`) or gated to the social systems
+  (pretext/lockout/mail/report), which m01–m10 do not use.
+
+- **Dialogue review C1** (Opus, `scenarios/lab_social_engineering/DIALOGUE_REVIEW_C1.md`): 40 ranked line-level proposals. The voices are mostly sound. Top issues:
+  - Tomasz's "messages look familiar" choice spoils the own-mail reveal before triage.
+  - Fairbairn signs twice.
+  - The "no names" condition can be missed.
+  - The law (Computer Misuse Act) is never named.
+  - The genuine forwarded balance-sheet mail uses a phishing excuse and can't carry the DKIM it claims.
+  - Dev never names the portal.
+  - Dev's lines ignore his influence band, and the team reaction repeats.
+  - Teaching accuracy: the padlock claim, "all fail" when DKIM is none, the throwaway-address rationale, the unresolved opening invoice.
+  - The "X, not Y" slogan is overused.
+
+  **Decision (orchestrator):** accept the reversal on Dev naming the portal (item 6). Ruth's hint already tells the student to get it from him, so the earlier "no change" left the hint false. Apply C1 after R3 reports, on opus48, because it touches the call ink and the triage mail.
+
+- **Lab re-run R3** (Sonnet, game 3196, `playtests/R3.md`): start to end screen, 23/23, score 100, no console edits. These checks pass: the phone key rungs, the Lord link hint, Dev's lockout reason and goodbye line, the clean second transcript, the call-prep stale mark and "needs N", the in-panel Confirm message, the triage restart notice, the report showing the domain that landed, and the mail times. Still failing:
+  - The door `lockedHint` never reaches the client, because `filtered_scenario_for_bootstrap` in `game.rb:770` whitelists the room fields. The Node tests read the raw scenario.
+  - H3 still fires on guest when the student picks the own-From template.
+  - H1's soft rung is unreachable in practice, because every factor has a keyed hint.
+
+  Minors: the link hint doesn't tell missing from wrong; Dev's "Last change" line carries over; the call globals are stale between calls; replies arrive for missed sends; the first Close after a miss goes back to compose. Fix round 5 on opus48: `playtests/FIX_ROUND_R3.md`, which also applies C1.
+
+- **Dialogue review C2** (Opus, `scenarios/lab_social_engineering/DIALOGUE_REVIEW_C2.md`): 30 ranked proposals. Cycle 1 mostly landed: LedgerPay is consistent, the Tomasz reveal is gated, Dev reacts per technique, and the slogans are down to three.
+  - Contradictions it found:
+    - Gareth's signing is told three ways.
+    - The throwaway-address phone rung is stale.
+    - Ruth credits the service desk with Sofia's name, which came from the team page.
+    - Some hub lines repeat the line straight before them.
+    - The build log claims a Pierce `ownFrom` hint that isn't in the scenario.
+  - Story issues it found:
+    - The only tension is Dev's influence bar, and a report changes nothing (item 8: Dev's manager rings Gareth).
+    - The close can be missed, and reads out a list.
+    - "Blame stops reporting" is said about seven times.
+  - **Decisions (orchestrator):** accept item 2 (real applicants write from webmail, which is what Chris's checklist scores). Item 23 may edit this lab's mission.json. Item 27 (candour and repair tells shown together) needs a playtest check. Apply C2 with the R4 findings in one round.
+
+- **Lab re-run R4** (Sonnet, games 3197 and 3198, `playtests/R4.md`): start to end screen, 23/23, score 100.
+  - Round-5 claims that did **not** land live:
+    - the door hint (`doors.js` drops `lockedHint` from `doorProperties`);
+    - Lord's `linkCredible` (still a string in the scenario);
+    - Dev's "Last change" (still carries over);
+    - Lord's ladder rung (wrong factor).
+  - **Major D1:** Fairbairn reopens at his hub, so the sign scene (CMA line, his condition) and the payoff only play on a fresh open. This is the same pattern as B1.
+  - Passed: the guest own-From hint, the softest rung on Pierce, Close after a miss, LedgerPay, Dev's mood lines, the Tomasz gate and closing choice, and the bank-change triage contrast.
+  - **Lesson:** unit tests of helpers passed while the live path was broken. Round 6 must prove each fix on the path the game runs. Fix round 6 on opus48: `playtests/FIX_ROUND_R4.md`, which also applies C2.
+
+- **Dialogue review C3** (Opus, `scenarios/lab_social_engineering/DIALOGUE_REVIEW_C3.md`): 16 ranked proposals, deliberately short. Every applied cycle-2 item checks out, and the lab now reads as one story.
+  - Five continuity slips from cycle 2:
+    - "call-back" is used in two senses.
+    - "He knows it was us" is ambiguous.
+    - Gareth's last line no longer fits after the payoff.
+    - Ruth's phone ignores `fairbairn_payoff_heard`.
+    - Tomasz says "five fixes" when the report has three.
+  - The close mostly lands. Item 1 rewrites the final line (the third "no names" in a minute, and the report pinned up in the kitchen).
+  - The no-blame point now appears about five times on the main route, which is about right.
+  - Items 4, 5 and 10 touch ink logic; the rest are text-only. Apply with the R5 findings.
+
+- **Lab re-run R5** (Sonnet, games 3200 and 3201, `playtests/R5.md`): start to end screen, 23/23, score 100, all keys. 5 of the 6 checks pass: the door toast hint is captured live on all three doors, the Lord missing/wrong hints are right, the second-miss hint fits the factor, × and Esc close the client in one press, and report rows use roles. **All reopen-order tests pass for Ruth, Fairbairn and Tomasz.** Check 4 passes in part: a first call that ends at net 0 leaks "Last change" into the second call. Dialogue: J1–J10 (stale post-payoff guidance, the end card's "staff keep reporting" claim, the role row still identifying Sofia, a Melanie spoiler, triage "caught 0 of 3"). Fix round 7 on opus48: `playtests/FIX_ROUND_R5.md`, which also applies C3.
+
+- **Rooms and lighting review C1** (Opus, `scenarios/lab_social_engineering/ROOMS_REVIEW_C1.md`): none of the four rooms reads as its purpose yet.
+  - All four use m01's main office map unchanged.
+  - The lab has no lighting and no chat backgrounds.
+  - The hub boards are identical placeholder corkboards.
+  - The three workstations share one laptop icon.
+  - Ruth and Fairbairn stand in front of the boards.
+  - The Operations desk phone may be hidden behind a PC tower.
+
+  Group (a), no new art: lab-owned maps copied from m03, m04 and m05 rooms; real fixtures via `as-type:`; NPCs moved off the boards; lighting reused; m01's background as a stop-gap. Group (b): 7 core assets, namely 2 POV backgrounds (Engagement Office, Blue Team; Gemini concept to PixelLab, needs user permission) and 5 PIL signs (free).
+
+  **Decision (orchestrator):** A1 is in scope. The lab owns its maps, so later edits to m03–m05 can't reach it. The room-type registration in shared files is staged hunk by hunk. Group (a) and the PIL signs go next, after R6. The POV backgrounds wait for the user's permission.
+
+- **Lab re-run R6** (Sonnet, games 3202 and 3207, `playtests/R6.md`): start to end screen, 23/23, score 100. 5 of 6 checks pass: Dev's net-0 boundary and refused-ask debrief, no post-payoff Gareth pointers, the end card, the Melanie spoiler gone, the triage no-flags card. Fail: Ruth's phone still points to Tomasz after the close (low harm, it sits under the end card). Student view: good pacing, always clear except after the scope cards. Worst moments: the silent wait after the Lord send (F6), the skippable Gareth signature (F5), the abrupt end. Fix round 8 on opus48: `playtests/FIX_ROUND_R6.md`.
+- **User decision:** generate both POV chat backgrounds (Engagement Office, Blue Team) as a batch, after dressing and lighting.
+
+- **User direction (2026-10-22):** get all the new mechanics fully featured and well tested first. The full AGENTS.md multi-skill polish of the scenarios comes after. No new dialogue, rooms or art cycles are queued; the two in-flight POV backgrounds (already approved) finish. Next is a mechanics completeness audit (`MECHANICS_AUDIT.md`).
+
+- **Lab re-run R7** (Sonnet, game 3214, `playtests/R7.md`): start to end, 23/23, score 100, 0 blocker, 0 major; all six round-8 checks pass. The new rooms read as their purpose (Blue Team strongest), and the signs read at native size. Minors queued for the mechanics or polish passes:
+  - Dev's bar shows the raw id "payslip_date".
+  - The "Finance (new starter)" row can be read as Sofia, since Dev's call line calls her the new starter.
+  - Recon's decor desk has a brighter monitor than the real OSINT PC.
+  - The harness left the player on the Blue Team wall strip.
+  - The Operations chairs are crowded.
+  - Recon is dark for a second on entry (motion light).
+  - The plan board's "Count these" has no clear referent.
+
+- **Lab re-run R8** (Sonnet, game 3323, `playtests/R8.md`): regression after today's mechanics batch. No regression against R7: 23/23, score 100, two reloads survived, ready-toast text unchanged, Dev's bar starts at 0 and matches the log. The harness fixes removed every R7 workaround. Still open:
+  - **Harness:** `bootstrap` loops on the end card after a reload (H3); `brief` errors right after a reload (H4); the mail selects and blank pickers still need DOM eval (H1).
+  - **Minors:**
+    - F4: Dev's card offered only "Finance" for Team. Check whether the stale "Accounts" option needs the 2019 org-chart fact, or whether it has regressed.
+    - F2: the "Finance (new starter)" row is still read as Sofia.
+    - F7: triage "Pressure: caught 0 of 1".
+    - The raw id `payslip_date`.
+
+- **R8 F4 resolved: not a regression.** "Accounts" comes only from the `old_org_chart` fact on the OSINT Archive page, which R8 never visited. The card code is unchanged since before R6. Design note for the polish pass: the stale-fact trap and the wrong-team correction are optional, so a student who skips Archive never meets them. This is intended (out-of-date intel is a lesson, not a gate); reconsider when polishing.
+
+- **Free-text mail body mode** (opus48): `mailClient.bodyMode: "freeText"` / `freeTextFlavour: true` adds one unscored box. Its text is appended to the sent body and is never judged or written into ink, so the templated parts alone decide the send. Fixture `test_social_freetext`, `bridge-freetext.jsonl` 8/8, `social-mail-freetext` 10/10. **Note:** this landed in commit f7a531b1, under the finale session's message "Finale: five-phase improvement loop started", because that session committed while these files were staged here. The content is correct; only the message is wrong. History was not rewritten.
+
+- **Phone-chat residuals D9 and R5 F4 fixed** (Opus). Both are opt-in NPC flags, set only by the lab.
+  - **D9:** person-chat `reopenRefreshesHub` re-enters the hub when a mid-knot reopen prints nothing and stops at choices. Cause: closing on a topic's last line saves the story before its `quiet` tail runs.
+  - **F4:** phone `livePreview` dry-runs the reopen on a throwaway story, so the contact row previews the line opening it would add.
+  - Ruth, Fairbairn and Tomasz get `reopenRefreshesHub`; Ruth's phone gets `livePreview`.
+  - Tests: `phone-chat-hub-residuals` 9/9. Rails 744/0.
+  - Browser: the lab before and after the flag; m02, m04 and m05 phone previews and person-chat reopens unchanged.
+
+## Review rounds
+
+### Phase 0, round 1 (P0-R, Opus): 0 blocker, 2 major, 13 minor
+
+`build_log/P0-R_review.md`. R0 0/71 differ; Rails 675/0; node 890/891. Majors: R-01 the display-name tie re-routes about 1,850 shipped lines (every briefing and debrief's "Agent HaX:", m07/m08 Netherton, m08 Nightshade and break-room HaX), not just m05 Patricia; R-02 a forced report re-arms on the next change. Both extra items (m07 lingering task, m04 title after reload) judged not Phase 0: the first is a server round trip, the second the session-resume key guard swallowing Space.
+
+Decision: R-01 restricted to social characters for now (no visible change to m01-m08); whether to apply the tie to shipped missions goes to the user. Fix round 1 (Opus): 14 fixed, R-12 deferred to P1-H as an error; table in the review file. Gates: social group 145 x5, node 909/911 (quarantine), Rails 675/0, reopencheck 0, social-load-all as expected, R0 0/71 differ. Two older tests (`engine-fixes-round4:50`, `-round6:176`) needed one-line updates for the R-04 call-site change. Round 2 confirmation review and targeted browser checks A (m02 Doyle, m04 reload) and B (m03 cloner return, m05 Patricia) running.
+
+### Lab fix round L (Opus): blockers B1-B4, majors M1-M4, several minors
+
+Source: `scenarios/lab_social_engineering/playtests/FIX_ROUND_L.md` and L1-L6. Not committed.
+
+Blockers:
+- **B1** (ruth.ink): the key hand-over ran only via `start -> resume`, which a reopen (engine resumes at `hub`) skipped. `hub` now runs `recheck` and `keys` as tunnels (`-> recheck -> -> keys ->`) on every entry; both idempotent (completeTask ignores a done task; each key is once-guarded). Keys hand over in one session with no reload. Node test `test/js/social-lab-ruth-keys.test.mjs` drives the compiled story through hub reopens (each key once, none re-given).
+- **B2** (scenario): the three door key/lock pin sets sat within the lockpick tolerance (per-pin diffs of 4), so one key opened another door. Re-spread to recon [12,24,36,48], operations [50,14,46,20], blue_team [28,54,16,34] — no two keys share a key cut (the real gate is `key-operations.js:189`: cut = clamp(round(pin-20),0,110), a match needs every cut within 5; pins at or below 20 all collapse to cut 0, so check cuts, not raw pins), so no key opens another door; each still opens its own (diff 0). Updated on both the key items and the room doors.
+- **B3** (scenario + validator): `landingPages[payroll_login]` had no `pretext`/`fields`, so the builder's brand/purpose gates never passed and Lord never landed. Added `pretext {brandId: ledgerwell, purposeId: payslip, facts: [lord_portal_name, lord_payslip_date]}` (lab intel ids, which the builder prefixes with `se_intel_` — not the slice's bare ids), plus `fields` and `extraSensitiveFields`. The "What Sofia is expecting" panel now fills after the call. Validator: `validate_social/landing.rb` `pretext_block` errors (fails `--strict-social`) on a page with no `pretext`, a brandId that is not a brand, or a purposeId that is not a purpose; test added in `validator-landing-pages.test.mjs` (clean fixture `lp_clean.json` gained a pretext).
+- **B4** (ruth_phone.ink): the hint thread stuck on whatever stage it opened at, because the engine resumes a reopened phone at the stage knot, not `hub`. Each stage now guards on entry (`{ <stage-done condition>: -> hub }`) and `hub` re-routes to the current stage; globals are monotonic so no loop. The "collect the key in person" rungs were softened to plain pointers to Ruth now B1 is fixed.
+
+Majors:
+- **M1** (scenario): the `defend` aim had no end screen. Added `conclusionScreen { type: end_screen, ... }` (the generic overlay, as lockpick_gauntlet uses).
+- **M2** (phone-chat): the pretext call's first choice menu showed empty blanks — the card VARs were not set before the opening choices were built. `continueStory()` now re-asserts `this._pretext.fillVars()` synchronously, immediately before the continue loop that builds the choices (and `showCurrentChoices` re-asserts it too). The compiled Dev ink interpolates correctly when the VARs precede the Continue (verified in a node check).
+- **M3** (pretext judge/session/ink): (a) repeating an opener no longer farms influence — the judge tracks facts proven this call (`session.provenFacts`) and gives a re-claimed fact 0 credit; (b) an ask whose verification fact was already proven as the opener now grants instead of coming back pending; (c) Dev's pending line now tells the student to give the name; (d) **decision: influence does not carry between calls** — a fresh call resets the character to its start, so a call-back is a fair fresh attempt; the "pushed too hard" lesson stays with the report + channel lockout, which gate whether you may call back. Tomasz's debrief no longer says "no fuss" after a call whose influence dipped below the start.
+- **M4** (scenario): `ask_review_cv` urgency was `medium` against Hampshire's `advisoryMax: low`, so the plain CV mail tripped the "feels rushed" red flag. Set to `low` to match the slice.
+
+Minors fixed: neutral blank-picker labels ("a specific detail" / "an older detail", was "a specific, insider detail" / "may be out of date"); the engagement report's call line reads a sentence not the raw id `got_it`; the personal-accounts scope card no longer cites a non-existent "Section 4"; the plan whiteboard no longer lists the correct objective and measure first.
+
+Minors left (logged, not small / out of safe scope this round):
+- No bespoke locked-door line pointing to Ruth on the room door prompt (room doors have no lockedMessage hook; the phone hints and Ruth's hub lines point to her).
+- Reply timestamps read real wall-clock (00:4x) against seeded 08:xx mail — needs a configured game clock for the lab (broad engine change).
+- Mail client UI: workstation reopens on `guest` after a reload; Create-account Confirm with nothing picked is silent; account creation sits inside the account drop-down; the Create-account panel stays mounted and Close needs several presses.
+- Engagement report target rows reorder after a reload (sort stability).
+- Defender board / prep card still show the `lord_portal` fact's "(name not given)" after the name is learned (it is a separate, earlier fact; accurate at recon time).
+- Board shows Sofia "Ready to approach" before the portal name is known (readiness vs. capability).
+- Dev's portal answer: decided no change — the portal's name in this lab is "the staff portal" (which he names) and the sender address is a picker fact.
+- Triage `own_lord` replay sender/auth do not match the guest send; `cv_portfolio` has no way to inspect its link target; nothing outside the checklist signposts an incoming reply.
+
+Gates: lab `--strict-social --no-graph --skip-ink` exit 0; slice `--strict-social` exit 0; node social/phone/validator suite 778/778 incl. the new ruth-keys test and the new pretext/landing tests.
+
+### Lab fix round R1-follow-up (Opus): re-run R1 + IMPL_REVIEW_R2 findings
+
+Source: `scenarios/lab_social_engineering/playtests/FIX_ROUND_R1.md`, drawing on `playtests/R1.md`
+and `IMPL_REVIEW_R2.md`. Not committed.
+
+Major (M2 / R1 F1) — fixed, with a proof:
+- The real cause was not the fillVars ordering (round 2 was already right for the *fresh-navigation*
+  path). Dev's contact is preloaded on the player phone, so a fresh call takes the **restored**
+  branch of `openConversation`, replaying the preloaded story state. That state was baked by the
+  preload with the card VARs empty, so `currentChoices[0]` read "I'm helping , your new starter in ."
+  The round-2 re-asserts set the VARs but never re-built the already-baked choices, and the reopen
+  re-run is gated on a GLOBAL change (the card VARs are story-local), so it never fired.
+- Fix: `reopenWithCurrentGlobals(sync, { force })` (phone-chat-conversation.js) now re-runs the knot
+  owning the current choices even with no global change when `force` is set; the phone loader
+  (phone-chat-minigame.js) sets `force` for a fresh pretext call (`this._pretext && !resuming`).
+  Re-running re-bakes the opening choices with the filled VARs and, as always, drops the leading
+  output already in the thread, so the greeting is not replayed. `attachPretext` exposes `resuming`
+  on the handle. The round-2 re-asserts stay: they are load-bearing on the non-preloaded fresh path.
+- Proof: `test/js/social-pretext-first-menu.test.mjs` (+ fixture `social_pretext_first_menu.ink/.json`,
+  shaped like the Dev call). Asserts the preload bakes the blank choice, a forced re-run re-bakes it
+  to "I'm helping Sofia Lord, your new starter in Finance." with no greeting replayed, and that
+  WITHOUT force the blank persists (reproduces F1). 3/3 pass.
+
+Minors fixed:
+- **R2 #1 (dead config):** dropped Dev's lockout `recoverTo: -30` (the fresh-call reset always
+  overwrote it). Keeps code and config consistent with the logged decision (the lesson is the report
+  + channel lockout, not a worse start).
+- **Dev influence economy (F2/F3):** Dev's `start` moved -10 -> 0 so a student who does nothing
+  wrong sees a neutral bar, not one that looks already hurt. Grantability is unchanged (portal_name
+  needs no verification either way; payslip_date still needs the opener's name). Tomasz's debrief
+  "no fuss" threshold moved with the start, `lowest >= -10` -> `>= 0` (tomasz.ink), so it still means
+  "influence never dropped below where Dev started" — a clean call reads no-fuss, a pending-before-the-
+  opener call reads leaned-on, as before.
+- **Desk phone feedback (F6):** the "you already have what Dev can tell you" line is now a titled
+  3 s notification that also says ringing back would only put him on guard. (Both desk-phone branches
+  already showed a toast; the headless harness does not capture transient toasts, which is why R1 read
+  it as silence — noted for the harness items below.)
+- **Ruth's phone recon rung (F13):** stage 2's opening no longer tells the student to come and collect
+  a key they already hold ("You've the key already — the OSINT workstation's through that door"), and
+  the third rung now matches its reply ("I can't work out the username pattern" -> read the PDF props).
+- **Tomasz's first hub line (F12):** the intro now branches — if triage and the board are already done
+  it acknowledges that instead of saying "Two jobs for you".
+- **Triage own_lord + Lord send advisory (F7/F8):** `own_lord` dropped `domainFrom: landing_domain`, so
+  the replay now shows the account the student really sent from (guest -> fail/none/fail, the student's
+  own From) rather than rewriting the sender to the look-alike domain with all-pass auth; added a
+  `senderAuth` note and an account-neutral header note. Lord's `senderAuth.fail` string no longer
+  assumes a "freemail-style account" — it reads "the claimed portal domain never sent this" (correct
+  from guest or freemail).
+- **Report landing-page row (F9):** the row now names the look-alike domain the student chose
+  (resolved from the page record's `choices.domainId` against the brand menu), not the authored
+  link text for the real portal.
+- **SOC board / prep card "name not given" (F10):** `lord_portal`'s text changed from "(name not
+  given)" to "the post doesn't name it" — a permanent fact about the source, so it no longer reads as
+  stale once the name is learned from Dev (single intel-fact string, shared by board and prep card).
+- **Mail client (F11):** (a) Create-account Confirm is left enabled and gives "Pick an address first."
+  instead of being a dead button; (b) closing the checklist of a *landed* send now drops the composer
+  too, so it is back to the inbox in one press, not three (a failed send still keeps the composer for
+  Edit & resend); (c) the client persists the open account to `se_mail_last_account` and reopens on it
+  after a reload rather than snapping to guest. Engine behaviour tests in `social-mail-accounts` updated
+  to match (Confirm enabled; the extra remembered-account change event).
+- **Reply timestamps (F5):** added `gameClock { start: "Mon 08:00" }` (rate 1) to the lab, so sent and
+  reply records carry morning times in the same window as the seeded 08:xx-10:xx mail, not the wall
+  clock.
+
+Not changed (logged):
+- **Dev's portal name/sender (F4):** decided no change, per the prior round.
+- **cv_portfolio link discoverability (F14):** left as a hover/click-to-reveal — inspecting a link
+  before trusting it is the intended triage behaviour; flagged as "consider" only.
+- **Harness (tools/playtest/se): BLOCKED.** `clickControl` substring match, `lock` picking the first
+  key, and `bootstrap` not leaving Ruth's opening chat live in
+  `.claude/skills/playtest-scenario/scripts/playtest-session.js`, which SE_BUILD_BRIEF forbids this
+  build from editing. Not touched. Still as reported; needs the orchestrator (or a skill-owning pass).
+
+Gates: lab `ruby scripts/validate_scenario.rb ... --no-graph --skip-ink --strict-social` exit 0
+(suggestions / recommended-field warnings only). Node: all affected suites green — the new
+social-pretext-first-menu (3), plus social-pretext-*, engagement-report, intel-board(+defender/
+engagement), triage, mail (shell/accounts/composer/link-victim), phone-reopen, lab-ruth-keys,
+validator-social-* and every test importing the touched engine files (interactions, phone-chat,
+report-model, mail-client). ruth_phone.ink and tomasz.ink recompiled to their committed .json.
+No shipped mission (m01-m10) scenario, ink or audio touched; the phone-chat change is a no-op unless
+`params.pretextCallId` is set, so m01-m08 phone chats are unaffected.
+
+## Fix round 5 — R3 findings (Part A) + dialogue review C1 (Part B)
+
+Brief: `scenarios/lab_social_engineering/playtests/FIX_ROUND_R3.md`
+(sources `playtests/R3.md`, `DIALOGUE_REVIEW_C1.md`).
+
+### Part A — R3 engine/scenario findings
+- **F1 door hint (major):** `Game#filtered_scenario_for_bootstrap` (`app/models/break_escape/game.rb`)
+  dropped `lockedHint`, so `unlock-system.js` never got the "how to get the key" line for the locked-door
+  toast. Added `lockedHint` to the kept room-field whitelist. Added it to the validator's
+  `known_room_fields` (`scripts/validate_scenario.rb`) so it stops warning "will be ignored". Ruby test
+  added in `test/models/break_escape/filtered_scenario_test.rb` (asserts the filtered payload, not the
+  raw scenario). The second F1 gap (a Key Ring's wrong-key path has no hint) is unchanged: the toast
+  hint shows to a keyless player, which in this lab is the Recon door only — logged, not fixed.
+- **F2/H3 own-From hint:** `resolveHeader` now exposes `spoofCapable`; `selectFactorHint` tells apart a
+  spoof-capable account that left From as itself (new `ownFrom` variant) from a freemail account that
+  cannot spoof (`forced`). Pierce's `senderTrust` hint gained the `ownFrom` rung.
+- **F3 soft rung reachable:** the first repeated miss (prior 1) now shows the softest ladder rung
+  `hints[0]`; the factor-keyed hint takes over from the second repeated miss (prior ≥ 2). Before, every
+  required factor of Pierce/Lord was keyed, so `hints[0]` was dead. (Decision: "softest rung first,
+  factor hints from the second", per the brief's option. H3 test updated to prior 2.)
+- **F4 link hint missing vs wrong:** `linkCredible` hint is now a `{ missing, wrong }` object, picked by
+  whether a page is attached; Lord's link hint updated.
+- **F5 Dev bar "Last change" carry-over:** `influence-bar.js` seed stops at a `new_call` boundary in the
+  service log, so a fresh call shows no stale change line.
+- **F7 report call row:** `report-model.js` now reads `pretext_<callId>_reports`; the report line reads
+  as two calls ("an earlier call was reported … a later call got what it asked for") instead of one
+  contradictory one.
+- **F10 close after a miss:** closing the mail checklist of a failed send now drops the composer too
+  (Esc/× = "leave"); the explicit "Edit & resend" button is the only path that keeps the composer.
+- **F6/F8/F9 (logged, not changed):** F6 (globals stale until a call ends) is inherent and is exactly
+  what the F7 row now reports around. F8 (replies on a miss) is by design: a character target replies
+  in-character on both branches (00 §10), and its miss lines are factor-specific and distinct from the
+  landed line (`pierce_mail.ink`/`lord_mail.ink`) — intended, no change. F9 (landed-global ~40 s lag)
+  is a known timing artefact, not addressed this round.
+- New/updated JS tests: `social-phish-rules` (F3 soft rung; H3/F2 ownFrom; F4 missing/wrong),
+  `social-influence-bar` (new_call boundary), `social-engagement-report` (two-call row). All green.
+
+### Part B — dialogue review C1 (40 proposals)
+Applied, with judgement: items 1–10, 12–40 and the slogan trim (30). Item 6 (orchestrator-accepted):
+the payroll portal is now named **LedgerPay** across `intelFacts.lord_portal_name`,
+`lord_trusts_portal_sender`, `people[portal].forms.full`, the landing wording `w_formal`, Dev's ink and
+Ruth's hints. Item 11's `senderTrust` flag checked against the triage chip set (valid). Deviations:
+- **Item 11 Tomasz debrief line SKIPPED:** the new `supplier_bank_change` triage message already pays
+  off the opening spoofed-invoice hook (its `ifTrusted`/`reportReply` name the near-miss), and item 13
+  wanted the debrief *shorter*; adding another Tomasz line would re-bloat it. Logged.
+- **Item 7/8 repair line:** the repair choice is now gated (shown only after an Accounts slip) with a
+  fixed "Sorry, my mistake. She's in Finance." label. To satisfy the social lint (a declared blank must
+  surface in the choice) the now-unused `blanks`/`claims` were dropped from the `repair_team` line; the
+  judge's repair still fires from `repairs: "team"` alone (clears the open mismatch, awards candour
+  credit), so the mechanic is unchanged. Dev's `reaction` is now band- and technique-aware.
+- **Item 35 reported line:** set in `outcomes.reported.line`; the ink `reaction` band≥3 branch now just
+  `-> END` (no spoken line) so the finalise-spoken goodbye is not doubled.
+- Unranked: fixed `vendor_invoice.whyFine` ("the usual amount" → no amount in body). Left the
+  "on Friday"/"on Fridays" wording and the typo-squat concept-card terminology (Phase 5 / builder-owned).
+
+Gates: lab `validate_scenario.rb … --strict-social --no-graph` exit 0 (suggestions + the pre-existing
+narrator-voice ink warning only; dialogue lint is advisory). All 7 lab ink files recompiled to their
+committed `.json`. Node: every suite over the touched files green (146/146 across mail/report/influence/
+phish run together); the full-process `node --test test/js/*.test.mjs` shows 3 unrelated files
+(engine-fixes-pass3, engine-fixes-round4, event-mapping-unlock-door) failing only in the all-in-one
+process from jsdom global collisions — each passes in isolation and tests code this round did not touch.
+Ruby `filtered_scenario_test` 20/20. No shipped mission (m01–m10) scenario, ink or audio touched; the
+engine changes only affect consumers of `phishTargets`/`social` (SE lab), and the influence-bar
+`new_call` boundary is SE-only (no m01–m10 social characters).
+
+## Lab fix round 6 — R4 findings + dialogue review C2 (2026-10-22)
+
+Brief: `scenarios/lab_social_engineering/playtests/FIX_ROUND_R4.md`, detail from `R4.md` and
+`DIALOGUE_REVIEW_C2.md`. Every Part A fix is proven on the path the game runs (a live bridge, or a
+test that drives the real data and the real engine module), because round 5 reported fixes that never
+reached the live game.
+
+### Corrections to round-5 claims that did not land
+- **Door hint.** Round 5 fixed the bootstrap filter, so `gameScenario.rooms.recon_room.lockedHint`
+  reached the client, but `doors.js` never copied the field onto the door sprite, so the toast stayed
+  "Requires key". Now fixed at the sprite (below) and proven live.
+- **`linkCredible`.** Round 5's engine already read `{ missing, wrong }`, but the scenario still held a
+  bare string at the Lord target, so the split never showed. Now an object.
+- **Dev's "Last change".** Round 5's seed scan stopped at `new_call`, but the live bar also seeds from
+  the service log before the reset is recorded and is cleared by the live `new_call` event only now.
+- **Pierce's `ownFrom` hint.** Round 5's log claimed the rung; it was not in the scenario. Added.
+
+### Part A — R4 findings (live-path proofs)
+- **A1 door hint (F1, major).** `doors.js` `doorProperties` now carries
+  `lockedHint: lockProps.lockedHint ?? connectedRoomData?.lockedHint ?? null`, beside the pad options
+  wired the same way; `unlock-system.js` already reads `lockable.doorProperties?.lockedHint`. A door/room
+  without the field gets `null`, so shipped missions are unchanged. **Proof:** live bridge
+  `tools/playtest/se/bridge-r4-door.jsonl` on a fresh game (3199) on :3001 — the live recon door sprite
+  in `window.rooms.engagement_office.doorSprites` carries `doorProperties.locked === true` and the exact
+  `lockedHint`; `check-bridge.mjs` RESULT: PASS (3/3). Source-pin also in `engine-fixes-engine-a`.
+- **A2 wrong-page link hint (F2).** Lord's `hintsByFactor.linkCredible` is now `{ missing, wrong }`.
+  **Proof:** `social-phish-rules` test "A2/F2" drives `evaluateMessage` with a no-page send (state
+  missing → missing rung) and a wrong-domain send (state fail → wrong rung).
+- **A3 / D6 hint ladder.** The first repeated miss shows the soft rung `hints[0]` only when the first
+  required factor failed; when an earlier factor passed and a later one failed (Lord's sender passes,
+  the link fails), it shows the factor-keyed hint instead. **Proof:** `social-phish-rules` test "F3/D6"
+  (later-factor miss → keyed on prior 1; first-factor miss → soft rung on prior 1, keyed on prior 2).
+- **A4 / F3 / D12 Dev "Last change".** `influence-bar.js` `_onEvent` now treats reason `new_call` as a
+  call boundary: it clears the change line and never shows itself, so a fresh call opens with no stale
+  line regardless of whether the bar mounted before or after the reset. **Proof:** `social-influence-bar`
+  test "live: a new_call reset event…" (plus the existing seed-boundary test).
+- **A5 / F4 close behaviour.** Esc on the mail checklist now closes the whole client (via
+  `requestClose`), matching the Close button; "Edit & resend" stays the one path that keeps the composer.
+  **Proof:** `social-mail-bridge` test "A5/F4" drives the real `MailClientMinigame` in jsdom: a miss, a
+  dispatched Escape, checklist dismissed and `gameState.isActive === false` in one press.
+- **A6 / D1 Fairbairn reopens at his hub.** The `sign` and `payoff` scenes are now a `scenecheck` tunnel
+  at the top of `hub` (Ruth's recheck/keys pattern), so an engine-resumed reopen fires a due scene even
+  when the student spoke to him before signing. **Proof:** new `social-lab-fairbairn-scenes.test.mjs`
+  drives the compiled `fairbairn.json` the way the loader does (restore + `ChoosePathString(hub)`): the
+  sign scene and its CMA line fire on the reopen after signing, the payoff on the reopen after filing,
+  each once.
+- **A7 hub-reopen audit.** Audited every lab ink. Only Fairbairn had start-only content; fixed above.
+  Ruth person/phone already route stage checks through the hub (`social-lab-ruth-keys`,
+  `social-lab-ruth-phone-keys`); Tomasz's both-done and reveals are reachable from `hub`; Dev is a call
+  (per-call reset handled in D4); Lord/Pierce are headless email. New per-NPC reopen test added for
+  Fairbairn.
+- **A8 Dev's second call (D4/D5/D7).** D4: `~ team_checked = false` at the top of `dev_service_desk`'s
+  `start` resets the team acknowledgement per fresh call (a fresh call restarts at `start` via
+  `restartAfterEnd`; a mid-call reload resumes at the choices, so its state is kept). D5: "Who is she?"
+  after the student named her → "What's she after?". D7: Tomasz's debrief now branches on the outcome
+  first, so a reported-then-recovered call reads "Dev reported the first call … your call-back still got
+  the date" rather than only "Dev reported you".
+- **A9 / D3 / F8 report names people.** The report results table now labels rows by role, not name, via
+  an opt-in `engagement.report.labelBy: "role"` read by `report-model.js` (falls back to name when a
+  target has no role, so other scenarios are unaffected). Rows read Careers / Finance / Finance intern.
+  Tomasz's close no longer says "the report names nobody" verbatim (item 5). **Proof:** the role resolver
+  is covered by the report model; the scenario carries the flag and the contacts' `role`.
+- **F5** (reported/dev_reported stay true after a good second call): addressed by the D7 branch reorder;
+  the report row already reads it as two calls (round 5). **F6** (Ruth's phone neutral line on a
+  half-successful reported call) and **F9** (Dev thread menu after a call): logged, not changed — F6 is
+  an edge of `pretext_call_done` being set by the portal grant; both are minor and low-value to force.
+- **F7 reply/miss mismatch.** `phish-rules.js` no longer collapses a missing link to `link: 'fail'`:
+  `result.link` is `'none'` for no page, `'fail'` for a wrong one, so Lord says "There's no link here"
+  vs "That link isn't our portal". Pierce's addressedTo miss reworded to cover a wrong name as well as
+  none. **Proof:** `social-phish-rules` test "linkCredible … no link is missing" updated to `link === 'none'`.
+
+### Part B — dialogue review C2 (30 proposals)
+Applied 1–28 and 30, with judgement. Orchestrator decisions honoured: item 2 (throwaway-address reason =
+real applicants write from webmail), item 23 (`mission.json` edited), item 27 (engine checked first).
+- **Item 27 engine check:** on a repair turn `pretext-judge.js` consumes the line's technique and shows
+  only the repair tell (it splices the candour technique out), so the candour technique tell and the
+  repair tell can never render on the same turn — no same-turn duplication exists. The repair tell was
+  still made distinct and informative ("Corrected. Dev now has Finance, the team on his record.") per the
+  review's secondary reason.
+- **Item 11** swaps the invoice/bank-change times (invoice 09:25, bank-change 10:05) and gives the
+  bank-change body a sort code and account, so the fraud rides on the real invoice (also fixes D14).
+- **Item 29 (typo-squat terminology) SKIPPED:** the review itself defers it to the page-builder owner
+  (Phase 5, Haiku); I did not open design 07 or the builder.
+- D-items beyond the C2 list: D8 (Ruth brief/key double lines → `quiet`), D9 logged as a residual (the
+  `quiet` flag can swallow a reopened greeting; a full fix needs engine work on `quiet` persistence and is
+  out of this round's scope), D10 (two meanings of "the other half" → reworded + `quiet`), D11 ("every one
+  of them" → "I hired most of that floor myself"; stale "Mind the sheet" → conditional), D13 (service-desk
+  choice reworded so it no longer presupposes Tomasz raised it), D15 (stale "the post doesn't name it" →
+  "…but the service desk does").
+
+### Gates
+- Node: every touched-area suite green per file — `social-*`, `validator-social-*`,
+  `social-lab-fairbairn-scenes` (new), `engine-fixes-engine-a`, and the door/unlock tests. Two updated
+  assertions in `social-phish-rules` (F7 `link === 'none'`; F3/D6 soft-rung-vs-keyed) reflect the
+  intended behaviour change. Running the whole `test/js` set in one process still shows the known flaky
+  "Unable to deserialize cloned data" runner IPC error (non-deterministic file count); every such file
+  passes in isolation.
+- Validator: `validate_scenario.rb scenarios/lab_social_engineering/scenario.json.erb --no-graph
+  --skip-ink --strict-social` → schema passed, no errors (only the standard lab suggestions and two
+  pre-existing phone-avatar recommended-field notes).
+- All 7 lab ink files recompiled to their `.json` (inklecate).
+- No shipped mission (m01–m10) scenario, ink or audio touched. The only cross-mission engine change is
+  the additive `lockedHint` on `doorProperties` (null default → identical behaviour); the rest are
+  SE-only (phishTargets/social consumers, the SE influence bar, the SE mail checklist, the opt-in report
+  `labelBy`).
+
+## Lab fix round 7 — R5 findings (Part A) + dialogue review C3 (Part B) (2026-10-22)
+
+Source: `scenarios/lab_social_engineering/playtests/FIX_ROUND_R5.md`, detail in `R5.md` and
+`DIALOGUE_REVIEW_C3.md`. Polish round. Each logic fix is proven on the real code path with a Node test.
+
+### Part A — R5 findings
+
+- **F1 — Dev's bar carries a stale "Last change" when the first call ended on net 0.** Root cause:
+  person-chat-pretext resets influence to the character's start with reason `new_call`; when the
+  previous call ended on the start value the reset is 0→0, and `social-influence.js` `_commit`'s emit
+  guard (`previous !== value || crossed || rearmed`) suppressed the `npc_influence_changed` event, so a
+  bar mounted *before* the reset never got the `new_call` event that clears its seeded line. (The log
+  seed and the live handler already special-case `new_call`; only the emission was missing.) Fix: in
+  `_commit`, also emit when the entry's reason is `new_call` (a call boundary always announces itself,
+  even at 0 delta). Narrow — a non-boundary 0→0 write stays silent. Proof:
+  `test/js/social-influence-new-call.test.mjs` (3 tests: 0→0 boundary emits + logs; non-boundary no-op
+  silent; real −30→0 boundary unchanged). The bar's consumption of that event is already covered by
+  `social-influence-bar.test.mjs` ("live: a new_call reset event clears a stale change line").
+- **F2 — bar and log disagree ("+10 candour" vs "+20 CALM ✓ Corrected").** The disagreeing "+10
+  candour" on the bar is the stale first-call line surfacing at the second call's open; once F1 clears
+  the bar at the call boundary it is gone, so the disagreement goes with it. The residual within-call
+  granularity difference (the bar shows the last single influence entry, the debrief shows the turn
+  total) is the pre-existing R4 D12 cosmetic, explicitly "not changed" there; left as-is — reconciling
+  it needs a design decision on bar aggregation, out of a polish round.
+- **F3 / J5 — call debrief says "You got what you came for." over a refused ask.** `got_it` means at
+  least one ask was granted, but the same call can have had an ask refused (an earlier grant, a later
+  refusal). Fix is display-only in `person-chat-pretext.js` `renderDebrief`: when the outcome is
+  `got_it` and `session.refusals > 0`, the line reads "You got some of what you came for." `outcomeFor`
+  and the payload globals are untouched. Proof: `test/js/social-pretext-debrief.test.mjs`.
+- **F4 — Ruth's phone-list preview shows her oldest line, not her newest.** Investigated, not fixed.
+  Root cause: Ruth's phone is a looping hint hub; only the preloaded opening line is persisted to the
+  shared phone conversation history, so the contact-list preview (which reads that history) keeps
+  showing the opening while the live thread regenerates later stage lines from the engine each open.
+  Dev's row is correct because a pretext call persists its lines. A fix means changing how the shared
+  phone-chat history/preview works (`phone-chat-conversation.js` / `phone-chat-ui.js`), which is used
+  by m01–m10's support hubs — a regression risk the brief forbids in a polish round. R5 already marks
+  this as the unchanged second half of R4 F6. Left for the orchestrator to schedule as its own item.
+- **J1 — Ruth stale after Fairbairn's payoff.** `ruth.ink` `keys`: the blue-team key hand-over line
+  now branches on `fairbairn_payoff_heard` (declared as a synced global), so a student who has already
+  heard Gareth is not sent back to him.
+- **J2 — Ruth's phone keeps pointing at Gareth after the payoff.** Combined with C3 item 5 (below).
+- **J3 — end card claims staff "keep reporting", which the report says it cannot see.** `scenario.json.erb`
+  end-screen body reworded to "…Gareth keeps his staff, and now he knows where the gaps are." (NB: C3's
+  "considered and left alone" preferred keeping the end-screen "keep reporting" line; R5 J3 in Part A
+  asks to reword it, and its reasoning is sound, so Part A wins. Logged as a deliberate choice between
+  the two reviews.)
+- **J4 — "Finance intern" row names Sofia (the only intern).** Added `"role": "Finance"` to the `lord`
+  phishTarget so the engagement report labels her row "Finance" (the report prefers a phishTarget's
+  role over the contact's). The intel-board contact keeps "Finance intern" for the pretext. Report rows
+  are now Careers / Finance / Finance — no unique role identifies a person. Verified by parsing the
+  resolved scenario.
+- **J8 — Ruth gives away Melanie's pretext.** `ruth.ink` `topic_account`: the spoiler "borrow a name
+  she already trusts" is replaced with "you'll have to work out what gets past her" — keeps the nudge,
+  drops the answer the Pierce misses are built around.
+- **J10 — triage Result card says "Sender address (caught 0 of 3)" when no flags were ticked.**
+  `inbox-triage-minigame.js`: when no flag was named anywhere (no catch in `flagRecall` and no false
+  claim in `falseByFactor`), the weakest-skill line reads "You didn't name any flags on these
+  messages, so there's nothing to grade skill by skill. …" instead of a 0-of-N skill. Proof:
+  `test/js/social-triage-weakest.test.mjs` (no-flags case + control with a flag ticked).
+- **J6 — "five fixes"** = C3 item 6 (below). **J7** (door toast "Requires key." + specific hint read
+  twice): left — it works, the hint is correctly placed, and the generic line comes from the shared
+  door-lock system used by m01–m10. **J9** (Fairbairn's two goodbyes): recorded as fine; C3 item 4 adds
+  a third post-payoff branch before them, which is consistent with J9.
+
+### Part B — dialogue review C3 (16 proposals), all applied
+
+1. `tomasz.ink` `debrief_close`: kitchen line → "…I've talked him down to the executive summary." (drops
+   the third "no names" and the bad idea of pinning a security report in the staff kitchen).
+2. `tomasz.ink` `debrief` (`dev_reported && got_it` branch): "your call-back" → "your second call"
+   (removes the clash with "a call-back rule").
+3. `ruth.ink` `hub` (`pretext_call_reported && not pretext_call_done`): the ambiguous "He knows it was
+   us" → "Gareth promised to look into it, with a straight face. Give the desk a while to calm down."
+4. `fairbairn.ink` goodbye: added a `report_filed` branch ("…Tomasz is through there. I think he's
+   enjoying this more than he lets on.") above the existing signed/else branches, so the last line
+   after the payoff points onward rather than saying "Go gently with them" after the attack is over.
+5 / J2. `ruth_phone.ink`: declared `VAR fairbairn_payoff_heard` and gated both "Has Gareth seen the
+   report?" (stage7) and "Anything for Gareth?" (stage_done) on `not fairbairn_payoff_heard`.
+6 / J6. `tomasz.ink` `debrief`: "five fixes" → "three fixes" (matches the three report findings/controls).
+7. `ruth.ink` `topic_plan`: deleted the second no-names line (it repeated the first); kept `~ quiet`.
+8. `scenario.json.erb` `measures[names].why`: "Gareth's one rule." → "Gareth's one condition is no names
+   in anything he reads." (states the rule for a student who reached the plan without hearing Gareth).
+9. `ruth.ink` `topic_scope`: dropped the "you're not testing, you're breaking the law" X-you're-Y line
+   (the law is stated at the signing) → "If something isn't on it, ask me before you try it."
+10. `fairbairn.ink` `start`: added `~ quiet = true` after the introduction so "Yes?" does not follow it.
+11. `tomasz.ink` `start` and `hub`: removed the Midlands/Scots tag "mind" from both lines (Dev's/Gareth's
+    voice, not Tomasz's).
+12. `ruth.ink` `hub` (`phish_lord_landed && not report_filed`): "gave us them" → "gave us all three".
+13. `ruth.ink` `topic_recon`: PDF-properties hint → "open the published PDF's properties. The author
+    field shows how usernames are built." (matches the phone hint fixed in cycle 2).
+14. `scenario.json.erb` triage `own_lord` `urgencyCalibrated` note: "A payslip 'ready now'…" → "A payslip
+    waiting to be read is the pull to click before checking the address." (the student's own send never
+    said "ready now").
+15. `scenario.json.erb` `fwd_balance_sheet` body: "as promised" → "a few days early for once" (the real
+    sheet arrives Monday after a Friday promise; removes the date contradiction).
+16. `mission.json` description: removed the "for a client whose…" phrasing that read as a second company,
+    and the design-brief word "Deterministic".
+
+No C3 items skipped.
+
+### Gates
+
+- Node (per file, to avoid the known whole-dir runner IPC flake): all green —
+  `social-influence`, `social-influence-bar`, `social-influence-pip`, `social-influence-new-call` (new),
+  `social-pretext-session/-prep/-first-menu/-judge`, `social-pretext-debrief` (new),
+  `social-triage-scoring/-ui/-starter`, `social-triage-weakest` (new), `social-lord-triage-e2e`,
+  `social-engagement-report`, `social-lab-ruth-keys`, `social-lab-ruth-phone-keys`,
+  `social-lab-fairbairn-scenes`, `social-lab-ruth-payoff-lines` (new: proves J1, C3 item 4 and item 5
+  on the compiled ink), `validator-social-lab/-triage/-pretext`.
+- Validator: `validate_scenario.rb scenarios/lab_social_engineering/scenario.json.erb --no-graph
+  --skip-ink --strict-social` → schema passed, no errors (standard lab suggestions and the two
+  pre-existing phone-avatar recommended-field notes only).
+- All 4 touched lab ink files recompiled to `.json` (dev/lord/pierce recompiled identically, no diff).
+- Engine changes are all SE-only paths (social-influence service, pretext debrief, inbox-triage), none
+  installed or reached by m01–m10; no shipped mission scenario, ink or audio touched.
+
+## Lab fix round 8 — R6 findings (2026-10-22)
+
+Brief: `scenarios/lab_social_engineering/playtests/FIX_ROUND_R6.md`, detail in `playtests/R6.md`.
+R6 passed 5 of 6 checks; all findings minor. opus48. Not committed. Each logic fix proved on the
+compiled ink / live DOM path, not asserted from a solution guide.
+
+### Findings (live-path proofs)
+
+- **F5 — Gareth's signature was skippable.** The `authorise` aim completed from the RoE sheet alone,
+  before Gareth signed. Re-pointed the `stop_rule` task to complete on `fairbairn_condition_heard`
+  (the sign scene) instead of `roe_stoprule_done`: `scenario.json.erb` eventMapping and `ruth.ink`
+  recheck both now key on it; the task is retitled "Answer the stop-rule, then get Gareth to sign".
+  Still 23 tasks. Proof: `social-lab-ruth-keys` new case drives ruth.json's recheck — stop_rule stays
+  open with the sheet done, completes once `fairbairn_condition_heard` is set.
+- **F6 — dead wait after a landed send.** The checklist banner reads "It landed" but the completing
+  global (and the task tick) only lands with the delayed reply. Pierce/Lord own that global in their
+  `on_email` ink (one owner per target, per PLAN §4), so kept the single-owner design and took the
+  brief's second option: `mail-bridge.js renderChecklist` now, on a landed send with a reply scheduled,
+  says "Their reply is on its way. This step ticks off when it arrives, in a moment." (all three targets
+  go through this). Proof: `social-mail-bridge` landed-send test asserts the new wording.
+- **F2 — Ruth's phone pointed at Tomasz after the close.** Added `engagement_closed` (declared in
+  `globalVariables`, set by `tomasz.ink` `debrief_close`); `ruth_phone.ink` routes to a new `closed`
+  knot once it is set, with a closed-engagement line instead of "Go and let Tomasz close it out".
+  Proof: `social-lab-ruth-phone-keys` new case — the Tomasz pointer shows before the close, the
+  closed line after.
+- **F3 — Ruth's phone repeated the stage-7 pointer after every reply, and offered a key already held.**
+  Stage 7 is only reached once `report_filed`, so the Blue Team key is in the ring; dropped
+  "If that door's locked, I've got the key — come and see me" and gated the pointer behind a
+  `stage7_seen` once-flag → "Blue Team room next. Tomasz will set you off.", printed once.
+  Proof: `social-lab-ruth-phone-keys` — the pointer appears exactly once across three hint questions;
+  the existing stage-7 test updated to assert no key is re-offered.
+- **F1 — Dev call bar "Last change" disagreed with the tells row.** The bar showed the last single
+  influence entry; the tells row shows the turn total. Added `InfluenceBar.setChangeFromTurn(entries)`
+  (sum of the turn's deltas, reason from the largest-magnitude entry) and called it from
+  `pretext-chrome.js ChatInfluence.refresh()`, so the bar matches the tells row. Proof:
+  `social-influence-bar` new case — +10/-30 shows "-20 team", not "-30".
+- **F4 — plan board success text reused the report's wording.** `scenario.json.erb` plan
+  `measures[how_far].why` "Each one points at a step in a process that could have stopped it." →
+  "Count these and the report shows how far each attempt got, without naming a single person."
+- **F7 — triage 60/100 for a right verdict with no flags.** No change: `05` §"Per-message score"
+  specifies a phish verdict = 60 and reasons = `40 × (caught − false)/F` = 0 when nothing is ticked, so
+  60 is correct. Left as-is per the brief ("change it only if it contradicts the doc").
+- **Report, two "Finance" rows.** `labelBy: "role"` resolved both Pierce and Lord to "Finance"
+  (Lord's phishTarget `role` overrode the contact's "Finance intern"). Gave the phishTargets distinct
+  report roles — Pierce "Finance (new starter)", Lord "Finance (intern)". phishTarget.role is read
+  only by the report resolver (mail UI uses the contact role), so no other display changed. Proof:
+  covered by `social-engagement-report` (green).
+- **Report, pairing feedback named "Sofia" and "Dev".** `scenario.json.erb` findings: the service-desk
+  cause/control whys and the look-alike-page why now use roles ("the service desk", "the operator",
+  "the intern"), no names.
+- **Triage card, "caught 0 of N" with no flags.** `inbox-triage-minigame.js`: when no flag was ticked
+  (no catch and no false claim), the per-factor `.tri-skills` breakdown is hidden entirely and only the
+  "nothing to grade skill by skill" line prints. Proof: `social-triage-ui` new case.
+- **Gareth's "the one who nearly paid that invoice".** `fairbairn.ink` payoff → "the one who nearly
+  wired that invoice to a fake supplier last quarter", tying it to the opening's near-miss rather than
+  the student's balance-sheet spoof.
+
+### Gates
+
+- Node (per file, to dodge the known whole-dir runner flake): all touched files green —
+  `social-influence-bar` (new F1 case), `social-mail-bridge` (F6), `social-triage-ui` (triage card),
+  `social-lab-ruth-phone-keys` (F2, F3, updated stage-7), `social-lab-ruth-keys` (F5),
+  `social-triage-scoring`, `social-triage-weakest`, `social-engagement-report`, `validator-social-lab`.
+  Whole `social-*`/`validator-social-*` set: 709 tests, all green per file; one non-deterministic
+  whole-dir flake on `social-mail-runner` (untouched file; passes alone and on re-run).
+- Validator: `validate_scenario.rb scenarios/lab_social_engineering/scenario.json.erb --no-graph
+  --skip-ink --strict-social` → schema passed, exit 0, no errors (standard lab suggestions and the two
+  pre-existing phone-avatar recommended-field notes only).
+- All 4 touched lab ink files recompiled to `.json` (ruth, ruth_phone, fairbairn, tomasz).
+- Engine changes are SE-only paths (influence bar's new method + pretext-chrome refresh, mail-client
+  checklist, inbox-triage result card); none reached by m01–m10. No shipped mission scenario, ink,
+  audio, or lab room art touched.
+
+## Lab rooms, group (a) and the PIL signs (2026-10-22)
+
+Source: `scenarios/lab_social_engineering/ROOMS_REVIEW_C1.md` A1–A5, plus B3–B4 (signs) drawn by hand. No PixelLab, no Gemini. Screenshots: scratchpad `se-rooms-a/` (`tour1/*.png` lighting tour game 3209; `r2-*.png`, `r3-tomasz-chat.png` games 3211–3212; `prev1/contact.png`, `prev2/pair.png` map renders; `signs_8x.png`).
+
+- **A1, own maps.** Four lab-owned types, copied from the review's seeds and dressed with `room_edit.py`: `room_se_engagement` (from `room_zds_conference`), `room_se_recon` (`room_zds_office`), `room_se_ops` (`room_qdc_open`), `room_se_blueteam` (`room_aes_security`). Registered in `core/game.js` (`tilemapTiledJSON`), `scripts/scenario-schema.json` (enum), the room table in `README_scenario_design.md` and the hand-maintained note in `generate_rooms.py`. Seed maps unchanged (`git diff` empty). Off-tone props removed (bar cart, camp bed, pizza, cans, certificates, hi-vis hook, radio charger, key cabinet, IT SUPPORT sign, QDC network board); props moved off door rows (credenza deleted from the hub's west door, blinds off the hub's north door, servers and fire point off Recon's east door); Blue Team's photocopier and steel cabinet (and their collision boxes) removed because the room's bottom two rows sit under the hub's wall.
+- **B3–B4, signs (PIL, free).** `scripts/room_gen/make_se_props.py` draws `se_logo_sign1` (64x19, TARNSIDE / ASSURANCE with a shield-and-tick) and `se_sign_engagement1`, `se_sign_recon1`, `se_sign_ops1`, `se_sign_blueteam1` (11px plates in the `hq_*_sign1` shape, navy with a teal rim) at native size. Registered with `register_object.py --wall`.
+- **A2, fixtures.** Probe first (game 3208): `osint_workstation` with `"position": "as-type:pc"` drew `pc8` at the slot, kept `type: osint-workstation` and opened the OSINT browser. Then: `roe_sheet` as-type `notes` (the table's notes1), `planning_whiteboard` `whiteboard`, `recon_board` `qdc_suspects_board`, `report_workstation` `pc` (new side desk), `mail_workstation` `pc` + `"sprite": "mail_terminal"` (keeps the envelope), `page_builder` `pc` (pc11 relayered last so it takes the lower desk's pc6), `desk_phone` no position (claims `phone3` on the second desk), `triage_workstation` `security_monitor`, `soc_board` `siem_dashboard`. `slot_audit.py --notes`: 0 problems (was 9).
+- **A3, NPCs.** Ruth (3.5,4.5), Fairbairn (6.5,4.25), Tomasz (6,6); every NPC frame is clear of every interactable.
+- **A4, lighting.** Scenario `"lighting": { "enabled": true, "defaultMode": "on" }`; per-room blocks as the review proposed (hub day office, Recon and Operations motion, Blue Team `#b2b8c8` with the SIEM and DVR glowing).
+- **A5, stop-gap backgrounds.** Hub `m03_conference_room_01_blended.png`, Blue Team `m04_security_office_blended.png` (seen behind Tomasz in game 3212).
+- **Browser checks** (keyless :3001, all rooms unlocked server-side): every door crossed both ways with `enter` (W, E, N/S) with no clash. A real pointer tap at the centre of each of the 13 targets opens the right thing: three intel boards, RoE sheet, report PC (its "nothing to write up yet" toast), Ruth, Fairbairn, OSINT browser, mail client, page builder, pretext prep from the desk phone, inbox triage, SOC board; Tomasz via `interact` (approached, then chat). The desk phone is visible on the second Operations desk (`tour1/operations_room-b.png`). Two clashes found and fixed on the way: chairs behind the report and OSINT PCs, and the takeaway coffees beside the OSINT PC, each raised a pick-one menu.
+- **Gates.** Strict validator (`--no-graph --skip-ink --strict-social`) exit 0, schema passed, door alignment OK; `check_door_alignment.py` OK; `check_room_walls.py` 64 on all four; `generate_rooms.py --check` OK on all four (warnings are generic N-door and bottom-row hints for doors these rooms don't have). Node: the 7 tests that read `core/game.js` plus the `validator-social-*` and `social-lab-*` files, 18 files, all pass. m01, m03, m04, m05 validate clean.
+- **Left for later.** The three seeds keep their own brand lines on the walls (cyan in the hub and Recon, violet in Operations, green in Blue Team), so the firm's rooms don't share one wall colour; a lab tileset would fix it. In game 3211 Fairbairn had left his spot and stood beside the player at the report desk with a talk bubble (not checked why: pushed by the player, or walking over to talk), so the report PC's menu listed him once; his placed spot is clear. Tomasz still wears the hi-vis placeholder, and the m04 stop-gap background shows the same. POV backgrounds B1–B2 wait for the batch the user approved.
+
+## Lab rooms, group (b): POV chat backgrounds B1–B2 (2026-10-22)
+
+Source: `ROOMS_REVIEW_C1.md` B1–B2, `room-pov-background` skill, batch approved by the user. Made from the rooms as dressed and lit in group (a): `pov_prep.py` back-wall strips and inventories for `room_se_engagement` and `room_se_blueteam`, tour game 3213 (keyless :3001, both rooms lit). Scratch: `se-pov/` (concepts, previews, `px/` conversions, `shot_*` chat shots).
+
+- **Gemini: 5 calls** (pro). Blue Team: one generation, one daytime relight edit. Engagement Office: one generation, one relight edit (the generation had dark ceiling panels), one shift-and-outpaint for a left view (`pov_view.py --shift 0.38`).
+- **PixelLab: 6 conversions** (`pixelate_background.py`, 400x400). First pass at strength 500 garbled the sign lettering and left round haze blotches on the left view's side wall. Second pass at 600 (left view seed 7) cleared the blotches but not the lettering. Kept: hub 600, hub left 600/seed 7, Blue Team 500 (600 washed it out). Balance 2561 before.
+- **Files** (`public/break_escape/assets/backgrounds/rooms/`): `lab_se_engagement_office{,_left}{_nonpixelart,,_blended}.png`, `lab_se_blue_team{_nonpixelart,,_blended}.png`. Blends from `blend_backgrounds.py --only`. The signs (TARNSIDE ASSURANCE, ENGAGEMENT, BLUE TEAM) were then patched in the three `_blended` files only: the concept's sign rectangles, at the same 400px the blend uses, composited over with a 1px feather, so the lettering reads. The 400px pixel-art files are untouched.
+- **Wiring.** `engagement_office.chatBackground` is now views by x: `[0, 0.5]` the left view (Ruth at 35%: corner door to her left, logo sign and whiteboard behind her, as on the map), `[0.5, 1]` the room-wide view (Fairbairn at 65%: corkboard and blinded window behind him). `blue_team_room.chatBackground` is `lab_se_blue_team_blended.png` (Tomasz: CCTV wall, BLUE TEAM plate and SIEM screen behind him). The m03 and m04 stop-gaps are gone from the lab.
+- **Checks.** Validator `--skip-ink --no-graph` passed. `chat-background-shot.sh` on :3001: Ruth loaded the left view, Fairbairn the room-wide view, Tomasz the Blue Team view; all three looked right after the sign patch (`se-pov/shot_r2`, `shot_f2`, `shot_t2`).
+- **Known flaws, accepted.** In the hub concept the conference table runs front to back with four chairs, where the map has it left to right with three chairs behind. Also, the west side door is missing. Both sit low in the frame or behind a portrait in the chat crop. The hub left view's player-speaking crop is mostly plain side wall. Blue Team's world-map screen came out dimmer after the relight; it sits behind the player's portrait. Tomasz's hi-vis placeholder still clashes with the room (character pipeline).

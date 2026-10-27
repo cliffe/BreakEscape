@@ -1,0 +1,136 @@
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "new"}
+{"cmd": "note", "message": "bridge-deduction-c (DRAFT, sidecar): fixture C careful run on test_social_deduction_c. Plan §9.3 C0-C5 and §11.6. Board DOM selectors ([data-suspect], [data-mark]) are placeholders until P10-H fixes the view's markup."}
+{"cmd": "eval", "fn": "async () => { /* C0a baseline: every deduction global declared, runtime and triggers installed, nudge off, no clue held, no verdict; a spy records toasts from here on */ window.__toasts = window.__toasts || []; if (!window.__toastSpy) { const orig = window.gameAlert; window.gameAlert = (...a) => { window.__toasts.push(a); return orig ? orig(...a) : undefined; }; window.__toastSpy = true; } const G = window.__test.getState().globals; const DS = G.deduction_state || {}; const R = window.deductionRuntime; const st = R && R.getState(); const facts = Object.keys(G).filter(k => k.startsWith('se_intel_c_')); return !!R && !!window.scenarioTriggers && facts.length === 12 && facts.every(k => G[k] === false) && ['ded_c_ahmed','ded_c_novak','ded_c_baptiste'].every(s => G['deduction_verdict_' + s] === '' && G['deduction_outcome_' + s] === '') && G.deduction_closed === false && G.c_keycard_revoked === false && G.c_comms_locked === false && !!st && st.state.nudged.length === 0 && window.inventory.items.some(i => i && i.scenarioData && i.scenarioData.id === 'c_keycard'); }"}
+{"cmd": "moveToNear", "id": "c_board"}
+{"cmd": "interact", "id": "c_board"}
+{"cmd": "waitFor", "kind": "minigame", "id": "intel-board", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* C0b the board: title Safe house, one profile card, hidden stakes line and no briefText, three cards with every cell Hidden (kit 2/2/2, travel 1, alibi 1), counts with 0 found, no Make the call, no nudge line */ const mg = window.MinigameFramework.currentMinigame; const s = mg && mg.getTestState(); const b = s && s.board && s.board.deduction; if (!b) return false; const allHidden = b.suspects.every(x => x.cells.every(c => c.state === 'hidden')); const kitCells = b.suspects.map(x => x.cells.filter(c => /^c_.*_(safenet|field_kit|burner)$/.test(c.fact)).length); return b.title === 'Safe house' && b.profiles.join() === 'sleeper' && b.stakesLine === 'The stakes are not known.' && !b.briefText && b.suspects.length === 3 && allHidden && kitCells.join() === '2,2,2' && b.counts.cult_burner.count === 1 && b.counts.cult_burner.found === 0 && b.counts.safenet_phone.count === 3 && b.canSubmit === false && b.suspects.every(x => !x.nudge) && !/You have enough to decide/.test(mg.container.textContent) && /\\u2726 marked|✦ marked/.test(mg.container.textContent); }"}
+{"cmd": "eval", "fn": "async () => { /* C0c Space and E are inert while the board is open (the player does not move, no interaction starts, the board stays open) */ const t = window.__test; const p0 = t.getState().player; for (const k of [' ', 'e', 'E']) { window.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true })); window.dispatchEvent(new KeyboardEvent('keyup', { key: k, bubbles: true })); } await new Promise(r => setTimeout(r, 300)); const p1 = t.getState().player; const mg = window.MinigameFramework.currentMinigame; return !!mg && mg.getTestState().board.mode === 'deduction' && Math.abs(p1.x - p0.x) < 1 && Math.abs(p1.y - p0.y) < 1; }"}
+{"cmd": "eval", "fn": "async () => { /* C0d Tab reaches every control on the board (each mark button of each card and Close) in document order */ const mg = window.MinigameFramework.currentMinigame; const ctl = [...mg.container.querySelectorAll('button, [tabindex]:not([tabindex=\"-1\"])')].filter(e => !e.disabled); if (ctl.length < 10) return false; ctl[0].focus(); const seen = new Set([document.activeElement]); for (let i = 0; i < ctl.length + 2; i++) { document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true })); const nx = ctl[ctl.indexOf(document.activeElement) + 1]; if (nx) nx.focus(); seen.add(document.activeElement); } return ctl.every(e => seen.has(e)); }"}
+{"cmd": "note", "message": "C0 esc"}
+{"cmd": "mg", "action": "pressKey", "args": ["Escape"]}
+{"cmd": "waitFor", "kind": "minigameClosed"}
+{"cmd": "eval", "fn": "async () => { /* C0e Esc closes the board as a normal exit: no minigame_failed */ const t = window.__test; const l = t.peekLog(500); let i = -1; l.forEach((e, j) => { if (e.kind === 'note' && e.message === 'C0 esc') i = j; }); const evs = l.slice(i + 1).filter(e => e.kind === 'event'); return !t.getState().activeMinigame && !evs.some(e => e.event === 'minigame_failed'); }"}
+{"cmd": "interact", "id": "c_board"}
+{"cmd": "waitFor", "kind": "minigame", "id": "intel-board", "timeoutMs": 30000}
+{"cmd": "mg", "action": "clickText", "args": ["Close"]}
+{"cmd": "waitFor", "kind": "minigameClosed"}
+{"cmd": "note", "message": "C1 kits and gossip"}
+{"cmd": "converse", "id": "ded_c_ahmed", "choices": ["^Show me your kit", "^Where were you the night of the leak", "^How do I get into the garage", "^I'll leave you to it"]}
+{"cmd": "eval", "fn": "async () => { /* C1a Ahmed's kit grants his SAFETYNET phone; his own word about the leak grants nothing; no comms-lock offer anywhere yet */ const G = window.__test.getState().globals; const DS = G.deduction_state || {}; return G.se_intel_c_ahmed_safenet === true && G.se_intel_c_ahmed_alibi === false && G.c_waiting_ded_c_ahmed === false; }"}
+{"cmd": "converse", "id": "ded_c_baptiste", "choices": ["^Has anyone been out of town", "^What's Novak like", "^Show me your kit", "^I'll leave you to it"]}
+{"cmd": "eval", "fn": "async () => { /* C1b Baptiste: the first gossip is free and grants Ahmed's quarry trip; the second costs 15 after its answer (she points at her kit bag); showing her kit costs nothing */ const G = window.__test.getState().globals; const DS = G.deduction_state || {}; return G.se_intel_c_ahmed_travel === true && G.se_intel_c_baptiste_safenet === true && G.ded_c_baptiste_influence === -15 && G.ded_c_baptiste_wary === false; }"}
+{"cmd": "eval", "fn": "async () => { /* C1c HaX: no lock offer (nobody waits) and no office code (keycard still live) */ window.MinigameFramework.startMinigame('phone-chat', { npcId: 'ded_c_handler' }); await new Promise(r => setTimeout(r, 800)); const ch = (window.__test.minigame.getState().dialogue || {}).choices || []; const texts = ch.map(c => c.text || c); return !texts.some(t => /Lock the comms room/.test(t)) && !texts.some(t => /I still need the office/.test(t)) && texts.some(t => /Where do things stand/.test(t)); }"}
+{"cmd": "mg", "action": "choose", "args": ["^Nothing for now"]}
+{"cmd": "waitFor", "kind": "minigameClosed"}
+{"cmd": "enter", "room": "c_bedroom"}
+{"cmd": "eval", "fn": "async () => { /* C1d the start keycard opened the bedroom (DL8 counts it open) */ return window.__test.getState().player.room === 'c_bedroom'; }"}
+{"cmd": "moveToNear", "id": "c_bedroom_drawer"}
+{"cmd": "interact", "id": "c_bedroom_drawer"}
+{"cmd": "waitFor", "kind": "minigame", "id": "lockpicking", "timeoutMs": 15000}
+{"cmd": "mg", "action": "completeLockpick"}
+{"cmd": "waitFor", "kind": "minigame", "id": "container", "timeoutMs": 15000}
+{"cmd": "mg", "action": "take", "args": ["Baptiste's kit bag"]}
+{"cmd": "mg", "action": "pressKey", "args": ["Escape"]}
+{"cmd": "mg", "action": "pressKey", "args": ["Escape"]}
+{"cmd": "waitFor", "kind": "minigameClosed"}
+{"cmd": "eval", "fn": "async () => { /* C1e the kit bag (picks, assisted) grants Baptiste's field kit and carries the office code; still nobody decided and no nudge toast (nudge is off) */ const G = window.__test.getState().globals; const DS = G.deduction_state || {};const nudgeToasts = (window.__toasts || []).filter(a => /You have enough to decide/.test(String(a[0]))); const st = window.deductionRuntime.getState(); return G.se_intel_c_baptiste_field_kit === true && window.inventory.items.some(i => i && i.scenarioData && i.scenarioData.id === 'c_baptiste_kit_list') && Object.values(st.decidable).every(v => v === false) && nudgeToasts.length === 0; }"}
+{"cmd": "enter", "room": "c_lounge"}
+{"cmd": "interact", "id": "c_board"}
+{"cmd": "waitFor", "kind": "minigame", "id": "intel-board", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* C1f marks: Novak Undecided, Ahmed Not a sleeper with a reason (his SAFETYNET phone); marks are notes, no verdict */ const mg0 = window.MinigameFramework.currentMinigame; const q = (s, m) => mg0.container.querySelector(`[data-suspect=\"${s}\"] [data-mark=\"${m}\"]`); const a = q('ded_c_novak', 'undecided'); const b2 = q('ded_c_ahmed', 'clear'); if (!a || !b2) return false; a.click(); b2.click(); await new Promise(r => setTimeout(r, 200)); const why = mg0.container.querySelector('[data-suspect=\"ded_c_ahmed\"] [data-because=\"c_ahmed_safenet\"]'); if (why) why.click(); await new Promise(r => setTimeout(r, 200)); const G = window.__test.getState().globals; const m = (G.deduction_state || {}).marks || {}; return m.ded_c_ahmed && m.ded_c_ahmed.mark === 'clear' && (!m.ded_c_novak || m.ded_c_novak.mark === 'undecided') && G.deduction_verdict_ded_c_ahmed === ''; }"}
+{"cmd": "mg", "action": "clickText", "args": ["Close"]}
+{"cmd": "waitFor", "kind": "minigameClosed"}
+{"cmd": "note", "message": "RELOAD"}
+{"cmd": "sync"}
+{"cmd": "waitFor", "kind": "condition", "fn": "() => { window.__preReload = true; setTimeout(() => location.assign(location.pathname + \"?skip_resume=1\"), 50); return true; }"}
+{"cmd": "waitFor", "kind": "condition", "fn": "() => !window.__preReload && window.__test && window.__test.isReady() === true", "timeoutMs": 60000}
+{"cmd": "eval", "fn": "async () => { /* RELOAD the page reloaded (sentinel gone) and the game is ready */ const t0 = Date.now(); while (!(window.__test && window.__test.waitUntilReady) && Date.now() - t0 < 60000) await new Promise(r => setTimeout(r, 250)); if (window.__preReload) return false; const r = await window.__test.waitUntilReady({ timeoutMs: 60000 }); return !!(r && r.ok); }"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "resume"}
+{"cmd": "eval", "fn": "async () => { /* C1g after a reload the marks survive and the board model shows them */ const G = window.__test.getState().globals; const DS = G.deduction_state || {}; const m = DS.marks || {}; return m.ded_c_ahmed && m.ded_c_ahmed.mark === 'clear' && G.se_intel_c_baptiste_field_kit === true && G.ded_c_baptiste_influence === -15; }"}
+{"cmd": "note", "message": "C2 the office"}
+{"cmd": "enter", "room": "c_office"}
+{"cmd": "lock", "code": "5183"}
+{"cmd": "enter", "room": "c_office"}
+{"cmd": "eval", "fn": "async () => { /* C2a the office opened with the code from Baptiste's bag */ return window.__test.getState().player.room === 'c_office'; }"}
+{"cmd": "converse", "id": "ded_c_novak", "choices": ["^Show me your kit", "^Where were you the night of the leak", "^Mind if I look over the comms rota"]}
+{"cmd": "eval", "fn": "async () => { /* C2b the clone choice starts the RFID cloner in clone mode on Novak's badge; save the copy (flipper menu items are clicked through the DOM) */ const t0 = Date.now(); while (!(window.MinigameFramework.currentMinigame && /rfid/i.test(window.MinigameFramework.currentMinigame.constructor.name)) && Date.now() - t0 < 15000) await new Promise(r => setTimeout(r, 250)); await new Promise(r => setTimeout(r, 4000)); const btn = [...document.querySelectorAll('button, .flipper-menu-item')].find(e => /save/i.test(e.textContent)); if (!btn) return false; btn.click(); await new Promise(r => setTimeout(r, 2500)); return window.__test.getState().globals.c_novak_badge_cloned === true; }"}
+{"cmd": "waitFor", "kind": "global", "name": "c_novak_badge_cloned", "expected": true}
+{"cmd": "converse", "choices": ["^I'll leave you to it"]}
+{"cmd": "eval", "fn": "async () => { /* C2c Novak's ink granted her SAFETYNET phone, not her bag; the copy is saved under the name the garage trigger matches */ const G = window.__test.getState().globals; const DS = G.deduction_state || {}; const cards = (window.gameState && window.gameState.rfidCloner && window.gameState.rfidCloner.savedCards) || []; return G.se_intel_c_novak_safenet === true && G.se_intel_c_novak_burner === false; }"}
+{"cmd": "moveToNear", "id": "c_novak_drawer"}
+{"cmd": "interact", "id": "c_novak_drawer"}
+{"cmd": "waitFor", "kind": "minigame", "id": "lockpicking", "timeoutMs": 15000}
+{"cmd": "mg", "action": "completeLockpick"}
+{"cmd": "waitFor", "kind": "minigame", "id": "container", "timeoutMs": 15000}
+{"cmd": "mg", "action": "take", "args": ["Novak's bag"]}
+{"cmd": "mg", "action": "pressKey", "args": ["Escape"]}
+{"cmd": "mg", "action": "pressKey", "args": ["Escape"]}
+{"cmd": "waitFor", "kind": "minigameClosed"}
+{"cmd": "moveToNear", "id": "c_ahmed_locker"}
+{"cmd": "interact", "id": "c_ahmed_locker"}
+{"cmd": "waitFor", "kind": "minigame", "id": "lockpicking", "timeoutMs": 15000}
+{"cmd": "mg", "action": "completeLockpick"}
+{"cmd": "waitFor", "kind": "minigame", "id": "container", "timeoutMs": 15000}
+{"cmd": "mg", "action": "take", "args": ["Ahmed's field kit"]}
+{"cmd": "mg", "action": "pressKey", "args": ["Escape"]}
+{"cmd": "mg", "action": "pressKey", "args": ["Escape"]}
+{"cmd": "waitFor", "kind": "minigameClosed"}
+{"cmd": "moveToNear", "id": "c_safe_note"}
+{"cmd": "interact", "id": "c_safe_note"}
+{"cmd": "mg", "action": "pressKey", "args": ["Escape"]}
+{"cmd": "waitFor", "kind": "minigameClosed"}
+{"cmd": "moveToNear", "id": "c_office_safe"}
+{"cmd": "interact", "id": "c_office_safe"}
+{"cmd": "lock", "code": "1890"}
+{"cmd": "waitFor", "kind": "minigame", "id": "container", "timeoutMs": 15000}
+{"cmd": "mg", "action": "take", "args": ["Travel log"]}
+{"cmd": "mg", "action": "pressKey", "args": ["Escape"]}
+{"cmd": "mg", "action": "pressKey", "args": ["Escape"]}
+{"cmd": "waitFor", "kind": "minigameClosed"}
+{"cmd": "eval", "fn": "async () => { /* C2d office state (§9.3 O+office): Novak decidable (her bag), Baptiste decidable (never went), Ahmed still open (alibi hidden); no nudge toast */ const G = window.__test.getState().globals; const DS = G.deduction_state || {};const nudgeToasts = (window.__toasts || []).filter(a => /You have enough to decide/.test(String(a[0]))); const d = window.deductionRuntime.getState().decidable; return G.se_intel_c_novak_burner && G.se_intel_c_ahmed_field_kit && G.se_intel_c_novak_travel && G.se_intel_c_baptiste_travel && d.ded_c_novak === true && d.ded_c_baptiste === true && d.ded_c_ahmed === false && nudgeToasts.length === 0; }"}
+{"cmd": "note", "message": "C2 garage reader"}
+{"cmd": "enter", "room": "c_lounge"}
+{"cmd": "enter", "room": "c_garage"}
+{"cmd": "eval", "fn": "async () => { /* C2e the garage reader opens the RFID tool in unlock mode; emulate the saved copy of Novak's badge (clicked through the DOM) */ const t0 = Date.now(); while (!window.MinigameFramework.currentMinigame && Date.now() - t0 < 15000) await new Promise(r => setTimeout(r, 250)); const pick = [...document.querySelectorAll('.flipper-menu-item, button')].find(e => /Novak's badge/.test(e.textContent)); if (!pick) return false; pick.click(); await new Promise(r => setTimeout(r, 600)); const em = [...document.querySelectorAll('.flipper-menu-item, button')].find(e => /emulate/i.test(e.textContent)); if (em) em.click(); await new Promise(r => setTimeout(r, 3500)); return true; }"}
+{"cmd": "waitFor", "kind": "global", "name": "se_intel_c_novak_alibi", "expected": true}
+{"cmd": "eval", "fn": "async () => { /* C2f t_c_badge (card_emulated, cardName Novak's badge, success) granted Novak's no-alibi clue and showed the 03:40 reader line */ const G = window.__test.getState().globals; const DS = G.deduction_state || {}; return G.se_intel_c_novak_alibi === true && (window.__toasts || []).some(a => /LAST USED 03:40/.test(String(a[0]))); }"}
+{"cmd": "enter", "room": "c_garage"}
+{"cmd": "note", "message": "C3 door log"}
+{"cmd": "moveToNear", "id": "c_door_log"}
+{"cmd": "interact", "id": "c_door_log"}
+{"cmd": "waitFor", "kind": "minigame", "id": "log-filter", "timeoutMs": 15000}
+{"cmd": "eval", "fn": "async () => { /* C3a flag the 03:40 garage row and confirm */ const mg = window.MinigameFramework.currentMinigame; const row = [...mg.container.querySelectorAll('tr, .log-row, [data-row]')].find(e => /03:40/.test(e.textContent)); if (!row) return false; row.click(); await new Promise(r => setTimeout(r, 300)); const flag = [...mg.container.querySelectorAll('button')].find(e => /FLAG ENTRY/.test(e.textContent)); if (!flag) return false; flag.click(); await new Promise(r => setTimeout(r, 300)); const ok = [...mg.container.querySelectorAll('button')].find(e => /CONFIRM/i.test(e.textContent)); if (ok) ok.click(); await new Promise(r => setTimeout(r, 600)); return true; }"}
+{"cmd": "waitFor", "kind": "global", "name": "c_door_log_done", "expected": true}
+{"cmd": "mg", "action": "pressKey", "args": ["Escape"]}
+{"cmd": "waitFor", "kind": "minigameClosed"}
+{"cmd": "eval", "fn": "async () => { /* C3b the door log granted all three alibi cells; all twelve clues held; everyone decidable; still no nudge toast and state.nudged empty */ const G = window.__test.getState().globals; const DS = G.deduction_state || {};const nudgeToasts = (window.__toasts || []).filter(a => /You have enough to decide/.test(String(a[0]))); const st = window.deductionRuntime.getState(); const facts = Object.keys(G).filter(k => k.startsWith('se_intel_c_')); return facts.every(k => G[k] === true) && Object.values(st.decidable).every(v => v === true) && st.state.nudged.length === 0 && nudgeToasts.length === 0; }"}
+{"cmd": "note", "message": "C4 act"}
+{"cmd": "enter", "room": "c_lounge"}
+{"cmd": "enter", "room": "c_office"}
+{"cmd": "converse", "id": "ded_c_novak", "choices": ["^Go and wait in the comms room"]}
+{"cmd": "eval", "fn": "async () => { /* C4a Novak goes to wait: c_waiting_ded_c_novak set, she leaves the scene, no verdict yet */ const G = window.__test.getState().globals; const DS = G.deduction_state || {}; const sp = ((window.rooms && window.rooms.c_office && window.rooms.c_office.npcSprites) || []).find(x => x.npcId === 'ded_c_novak'); return G.c_waiting_ded_c_novak === true && G.deduction_verdict_ded_c_novak === '' && (!sp || sp.destroyed || !sp.visible); }"}
+{"cmd": "eval", "fn": "async () => { /* C4b HaX now offers the lock (and only now); choose it, hear the warning, then Lock it */ window.MinigameFramework.startMinigame('phone-chat', { npcId: 'ded_c_handler' }); await new Promise(r => setTimeout(r, 800)); const ch = (window.__test.minigame.getState().dialogue || {}).choices || []; const texts = ch.map(c => c.text || c); return texts.some(t => /Lock the comms room with whoever is waiting inside/.test(t)); }"}
+{"cmd": "mg", "action": "choose", "args": ["^Lock the comms room"]}
+{"cmd": "mg", "action": "choose", "args": ["^Lock it"]}
+{"cmd": "waitFor", "kind": "global", "name": "c_comms_locked", "expected": true}
+{"cmd": "eval", "fn": "async () => { /* C4c t_c_wait_novak ran an act verdict: Novak guilty, kind act; reveal end, so no outcome global and no Right call toast; the case is still open */ const G = window.__test.getState().globals; const DS = G.deduction_state || {}; const v = (DS.verdicts || {}).ded_c_novak; return G.deduction_verdict_ded_c_novak === 'guilty' && !!v && v.kind === 'act' && G.deduction_outcome_ded_c_novak === '' && !(window.__toasts || []).some(a => /Right call|Wrong call/.test(String(a[0]))) && G.deduction_closed === false && G.c_keycard_revoked === false; }"}
+{"cmd": "mg", "action": "choose", "args": ["^Nothing for now"]}
+{"cmd": "waitFor", "kind": "minigameClosed"}
+{"cmd": "note", "message": "C5 exit phone"}
+{"cmd": "enter", "room": "c_lounge"}
+{"cmd": "moveToNear", "id": "c_exit_phone"}
+{"cmd": "interact", "id": "c_exit_phone"}
+{"cmd": "eval", "fn": "async () => { /* C5a the confirm names what leaving does; Cancel (the 'not yet') leaves the case open */ await new Promise(r => setTimeout(r, 300)); const box = document.querySelector('.game-confirm-btn.game-confirm-cancel'); const msg = document.body.textContent; if (!box || !/Call extraction and leave\\?/.test(msg)) return false; box.click(); await new Promise(r => setTimeout(r, 300)); const G = window.__test.getState().globals; return G.deduction_closed === false && G.c_leaving === false; }"}
+{"cmd": "interact", "id": "c_exit_phone"}
+{"cmd": "eval", "fn": "async () => { /* C5b confirm: c_leaving and c_comms_locked set, the case closes, the debrief opens */ await new Promise(r => setTimeout(r, 300)); const ok = document.querySelector('.game-confirm-btn.game-confirm-ok'); if (!ok) return false; ok.click(); return true; }"}
+{"cmd": "waitFor", "kind": "global", "name": "deduction_closed", "expected": true}
+{"cmd": "waitFor", "kind": "minigame", "id": "intel-board", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* C5c debrief: Novak right_guilty (act) with 'Sleeper: yes, carries a cult-issued burner'; Ahmed and Baptiste Not named (innocent) with their Why lines; all-right no-blame line */ const mg = window.MinigameFramework.currentMinigame; const s = mg && mg.getTestState(); const b = s && s.board && s.board.deduction; const d = mg.getTestState().board.deduction.debrief; if (!d) return false; const card = id => d.cards.find(c => c.id === id); const n = card('ded_c_novak'), a = card('ded_c_ahmed'), bp = card('ded_c_baptiste'); const t = mg.container.textContent; return n.outcome === 'right_guilty' && n.verdictKind === 'act' && n.why.some(w => /Sleeper: yes, carries a cult-issued burner/.test(w)) && a.outcome === 'right_clear' && a.verdictKind === 'none' && a.why.some(w => /Sleeper: no, .*verified alibi/.test(w)) && bp.outcome === 'right_clear' && bp.verdictKind === 'none' && bp.why.some(w => /never went to the quarry site/.test(w)) && /Not named \\(innocent\\)/.test(t) && d.noBlame === 'allRight'; }"}
+{"cmd": "mg", "action": "clickText", "args": ["Finish"]}
+{"cmd": "waitFor", "kind": "task", "id": "c_extracted", "timeoutMs": 30000}
+{"cmd": "waitFor", "kind": "global", "name": "c_ending", "expected": true}
+{"cmd": "eval", "fn": "async () => { /* C5d Finish: c_case_solved and c_extracted completed, c_ending set; credits under EXTRACTED without the escape, trust or network lines; MISSION COMPLETE nowhere (header, ticker, credits) */ const t0 = Date.now(); while (!(window.BondVisualiser && window.BondVisualiser.isOpen && window.BondVisualiser.isOpen()) && Date.now() - t0 < 20000) await new Promise(r => setTimeout(r, 250)); await new Promise(r => setTimeout(r, 1500)); const txt = (sel) => [...document.querySelectorAll(sel)].map(e => e.textContent).join(' | '); const header = txt('.bv-title-block h1'); const ticker = txt('.bv-ticker-inner'); const credits = txt('.bv-credits, .bv-credits-list'); const noMC = !/MISSION COMPLETE/i.test(header + ticker + credits); const om = window.objectivesManager; const st = id => om && om.taskIndex && om.taskIndex[id] && om.taskIndex[id].status; return st('c_case_solved') === 'completed' && st('c_extracted') === 'completed' && /EXTRACTED/.test(header) && /EXTRACTED/.test(ticker) && /SAFE HOUSE/.test(ticker) && noMC && !/A sleeper walked out/.test(credits) && !/scattered/.test(credits) && !/revoked your keycard/.test(credits); }"}
+{"cmd": "sync"}
+{"cmd": "drain"}
+{"cmd": "quit"}

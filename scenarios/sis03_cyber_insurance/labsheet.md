@@ -7,36 +7,78 @@ overview: |
 description: |
   Assess a cyber insurance claim for a battery storage site where an attacker disabled the Safety Instrumented System and a hardwired emergency shutdown stopped the cells short of thermal runaway. Learn how cyber policies cover physical damage, how security warranties turn technical controls into coverage conditions, why a safety-constrained patch deferral is hard to judge, how evidence is lost when safety comes first, what intelligence attribution can and cannot prove, and how UK bodies divide the work (Ofgem and DESNZ jointly as competent authority under the NIS Regulations, the NCSC as the CSIRT, the FCA and PRA for the insurer). You will make, and defend, a coverage recommendation that has no clean answer.
 cybok:
-  - ka: "SIS"
+  - ka: "TGSIS"
     topic: "Language and Concept Alignment"
-    keywords: ["warranty, breach and causation", "safety case versus insurance argument", "intelligence confidence versus legal proof"]
-  - ka: "SIS"
+    keywords: ["VOCABULARY", "LEGAL TERMINOLOGY"]
+  - ka: "TGSIS"
     topic: "Incident Response and Resilience"
-    keywords: ["forensic causal chain", "evidence preservation versus safety", "post-incident recovery and recertification"]
-  - ka: "SIS"
+    keywords: ["INCIDENT RESPONSE", "EVIDENCE COLLECTION"]
+  - ka: "TGSIS"
     topic: "Requirements Reconciliation"
-    keywords: ["patch management versus IEC 61511 recertification", "compensating controls", "cooperation clause versus safety action"]
-  - ka: "SIS"
+    keywords: ["SAFETY REQUIREMENT", "PATCHING"]
+  - ka: "TGSIS"
     topic: "Patching of Systems with Safety Cases"
-    keywords: ["deferred SIS firmware update", "SIL 2 recertification", "risk acceptance and review"]
-  - ka: "SIS"
+    keywords: ["PATCHING", "IEC 61511"]
+  - ka: "TGSIS"
     topic: "Architecture"
-    keywords: ["IT/OT segmentation", "SIS independence", "shared IT between neighbouring organisations"]
-  - ka: "SIS"
+    keywords: ["SEGMENTATION", "SAFETY INSTRUMENTED SYSTEM"]
+  - ka: "TGSIS"
     topic: "Organisational Culture"
-    keywords: ["insurer and policyholder incentives", "accepted risks nobody reviewed", "knowledge at renewal"]
-  - ka: "SIS"
+    keywords: ["RISK ACCEPTANCE", "SECURITY CULTURE"]
+  - ka: "TGSIS"
     topic: "Tools and Standards"
-    keywords: ["IEC 61511", "IEC 62443", "NCSC CAF", "LMA5567A", "Insurance Act 2015"]
-  - ka: "RMG"
-    topic: "Risk Governance"
-    keywords: ["risk transfer", "residual risk", "moral hazard"]
+    keywords: ["IEC 61511", "IEC 62443", "NCSC CAF", "LMA5567A"]
+  - ka: "LR"
+    topic: "Contract"
+    keywords: ["encouraging security standards via contract", "warranties and their exclusion", "limitations of liability and exclusions of liability", "breach of contract and remedies", "effects of contract on non-contracting parties"]
+  - ka: "LR"
+    topic: "Public International Law"
+    keywords: ["attributing action to a state under international law", "the law of armed conflict"]
+  - ka: "LR"
+    topic: "Introductory Principles of Legal Research"
+    keywords: ["evidence and proof", "liability and courts"]
   - ka: "LR"
     topic: "Other Regulatory Matters"
-    keywords: ["NIS Regulations 2018", "cyber insurance and war exclusions", "third-party liability"]
-  - ka: "MAT"
-    topic: "Attacks and Exploitation"
-    keywords: ["initial access broker to APT handoff", "printer firmware supply chain", "attribution confidence"]
+    keywords: ["industry-specific regulations", "NIS Regulations 2018", "Insurance Act 2015"]
+  - ka: "RMG"
+    topic: "Risk governance"
+    keywords: ["RISK TRANSFER", "RESIDUAL RISK", "RISK ACCEPTANCE"]
+  - ka: "RMG"
+    topic: "Risk assessment and management principles"
+    keywords: ["Vulnerability management", "Risk assessment and management in cyber-physical systems and operational technology"]
+  - ka: "F"
+    topic: "Definitions and Conceptual Models"
+    keywords: ["digital (forensic) trace", "CHAIN OF EVIDENCE"]
+  - ka: "F"
+    topic: "Main Memory Forensics"
+    keywords: ["challenges of live forensics"]
+  - ka: "F"
+    topic: "Operating System Analysis"
+    keywords: ["data acquisition", "TIMELINE ANALYSIS"]
+  - ka: "SOIM"
+    topic: "Human Factors: Incident Management"
+    keywords: ["follow up: post incident activities"]
+  - ka: "SOIM"
+    topic: "Knowledge: Intelligence and Analysis"
+    keywords: ["cyber-threat intelligence", "THREAT INTELLIGENCE SHARING"]
+  - ka: "AB"
+    topic: "Models"
+    keywords: ["attribution"]
+  - ka: "AB"
+    topic: "Characterisation of Adversaries"
+    keywords: ["state actors", "cyber-dependent organised crime"]
+  - ka: "AB"
+    topic: "Elements of a Malicious Operation"
+    keywords: ["infection vectors", "specialised services", "SUPPLY CHAIN ATTACK"]
+  - ka: "AAA"
+    topic: "Authentication"
+    keywords: ["user authentication", "PROVISIONING AND DEPROVISIONING"]
+  - ka: "CPS"
+    topic: "Cyber-Physical Systems Domains"
+    keywords: ["industrial control systems", "electric power grids"]
+  - ka: "CPS"
+    topic: "Policy and Political Aspects"
+    keywords: ["incentives and regulation", "CYBER-INSURANCE", "WAR EXCLUSION"]
 categories: ["security_informed_safety"]
 tags: ["security-informed-safety", "cyber-insurance", "energy", "battery-storage", "warranties", "act-of-war-exclusion", "forensics", "safety-case", "nis-regulations", "break-escape"]
 type: ["game-based-learning", "lab-sheet"]
@@ -124,7 +166,7 @@ Work through these after you have finished. Use your own run: Eleanor's debrief 
 
 > Tip: In a group, split the roles: one player argues Albion's case using Whitworth's points, one argues Meridian's using Eleanor's, and one plays the loss adjuster. Swap and repeat.
 
-### 1. Risk Management {#1-risk-management}
+### 1. Risk Management {#reflect-1-risk-management}
 
 **Questions**
 
@@ -142,7 +184,7 @@ Work through these after you have finished. Use your own run: Eleanor's debrief 
 
 > Action: **E2. Moral hazard.** In no more than 300 words, explain how insurance can weaken or strengthen a policyholder's incentive to invest in security, using one example from Albion and one from Meridian's own conduct.
 
-### 2. Incident Response and Evidence {#2-incident-response-and-evidence}
+### 2. Incident Response and Evidence {#reflect-2-incident-response-and-evidence}
 
 **Questions**
 
@@ -160,7 +202,7 @@ Work through these after you have finished. Use your own run: Eleanor's debrief 
 
 > Action: **E4. Two timelines.** Build a timeline of the incident from the first foothold to the claim on 5 May 2026, then a second timeline of the policy (inception, renewal review, deadline, extension request, incident, claim). Mark where the two meet.
 
-### 3. Security-Informed Safety and the Coverage Decision {#3-security-informed-safety-and-the-coverage-decision}
+### 3. Security-Informed Safety and the Coverage Decision {#reflect-3-security-informed-safety-and-the-coverage-decision}
 
 **Questions**
 

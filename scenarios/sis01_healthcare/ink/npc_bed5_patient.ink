@@ -44,7 +44,7 @@ VAR seen_saved = false
 {player_approached:
     -> hub
 }
-~ player_approached = true
+// player_approached is set by hub once the opening choice is made, so a reload mid-opening replays it.
 ~ hub_quiet = true
 Mrs Kowalski: You're the one from IT?
 Mrs Kowalski: You all look like you've been up all night with this.

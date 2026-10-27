@@ -41,6 +41,9 @@ export class TutorialManager {
         this.isMobile = this.detectMobile();
         this.tutorialOverlay = null;
         this.onComplete = null;
+        // True from the moment the game decides to ask until the player answers,
+        // including the settle delay before the modal appears (isPromptOpen)
+        this.promptOpen = false;
 
         // Track player actions for tutorial progression
         this.playerMoved = false;
@@ -103,10 +106,24 @@ export class TutorialManager {
     }
 
     /**
-     * Show prompt asking if player wants to do tutorial
+     * Is the "would you like a tutorial?" prompt open, or about to open?
+     * It is plain DOM, not a minigame, so systems that hold while a minigame is
+     * open (npc-sight-challenge.js) check this as well.
      */
-    showTutorialPrompt() {
+    isPromptOpen() {
+        return this.promptOpen;
+    }
+
+    /**
+     * Show prompt asking if player wants to do tutorial.
+     * @param {Object} [options]
+     * @param {number} [options.delayMs=0] wait this long before showing the modal;
+     *   the prompt counts as open (isPromptOpen) from the call, not from when it appears
+     */
+    showTutorialPrompt({ delayMs = 0 } = {}) {
+        this.promptOpen = true;
         return new Promise((resolve) => {
+          const open = () => {
             // Create modal overlay
             const overlay = document.createElement('div');
             overlay.className = 'tutorial-prompt-overlay';
@@ -125,14 +142,19 @@ export class TutorialManager {
 
             document.getElementById('tutorial-yes').addEventListener('click', () => {
                 document.body.removeChild(overlay);
+                this.promptOpen = false;
                 resolve(true);
             });
 
             document.getElementById('tutorial-no').addEventListener('click', () => {
                 this.markDeclined();
                 document.body.removeChild(overlay);
+                this.promptOpen = false;
                 resolve(false);
             });
+          };
+          if (delayMs > 0) setTimeout(open, delayMs);
+          else open();
         });
     }
 
@@ -173,8 +195,8 @@ export class TutorialManager {
                 },
                 {
                     title: 'Combat Mode',
-                    instruction: 'Tap the hand icon in the bottom-left HUD to cycle through Interact, and attack modes.',
-                    objective: 'Switch to an attack mode using the toggle button, then tap to attack',
+                    instruction: 'Tapping the screen always walks or interacts. To fight, use the buttons at the bottom right: tap Punch (tap again quickly for jab, jab, cross) and hold Block to guard.',
+                    objective: 'Tap Punch, then hold Block',
                     checkComplete: () => this.playerToggledCombatMode && this.playerAttackedInCombatMode
                 }
             ];
@@ -221,8 +243,8 @@ export class TutorialManager {
                 },
                 {
                     title: 'Combat Mode',
-                    instruction: 'Press Q or click the hand icon in the bottom-left HUD to cycle through Interact, Quick Jab, and Cross Punch modes.',
-                    objective: 'Press Q to switch to an attack mode, then click or E to attack',
+                    instruction: 'Clicking always walks or interacts. To fight, right-click or press F to punch (press again quickly for jab, jab, cross) and hold Q to block. Touch players get Punch and Block buttons at the bottom right.',
+                    objective: 'Punch with F or right-click, then hold Q to block',
                     checkComplete: () => this.playerToggledCombatMode && this.playerAttackedInCombatMode
                 }
             ];
@@ -455,6 +477,15 @@ export class TutorialManager {
         if (this.active) {
             this.playerRan = true;
         }
+    }
+
+    /**
+     * Notify tutorial that the player raised the guard (Q or the Block
+     * button). Completes the combat step's "toggled" half, which used to be
+     * switching to an attack mode before the toggle was replaced.
+     */
+    notifyBlocked() {
+        this.notifyCombatModeToggled();
     }
 
     /**

@@ -75,6 +75,12 @@
       "optional": false
     },
     {
+      "id": "cyberchef_workstation",
+      "label": "CyberChef Workstation",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "operations_office",
       "label": "Operations Office",
       "kind": "room",
@@ -147,6 +153,12 @@
       "optional": false
     },
     {
+      "id": "spare_keycard_level_1",
+      "label": "Spare Keycard (Level 1)",
+      "kind": "key",
+      "optional": true
+    },
+    {
       "id": "battery_hall_1",
       "label": "BATTERY HALL 1 — RESTRICTED ACCESS — PPE REQUIRED",
       "kind": "room",
@@ -189,8 +201,8 @@
       "optional": false
     },
     {
-      "id": "npc_voltage_critical_mass_leader",
-      "label": "Voltage (Critical Mass Leader)",
+      "id": "npc_voltage_critical_mass",
+      "label": "Voltage (Critical Mass)",
       "kind": "key",
       "optional": false
     },
@@ -237,14 +249,14 @@
       "optional": false
     },
     {
-      "id": "vmch_submit_distcc_exploit_flag",
-      "label": "Submit proof of the distcc foothold",
+      "id": "vmch_submit_erlang_rce_flag",
+      "label": "Submit proof of the Erlang/OTP SSH foothold",
       "kind": "vm",
       "optional": false
     },
     {
-      "id": "vmfl_submit_distcc_exploit_flag",
-      "label": "Distcc Exploit Flag",
+      "id": "vmfl_submit_erlang_rce_flag",
+      "label": "Erlang Rce Flag",
       "kind": "flag",
       "optional": false
     },
@@ -288,6 +300,11 @@
       "soft": false
     },
     {
+      "from": "rfid_cloner",
+      "to": "door_engineering_workshop",
+      "soft": false
+    },
+    {
       "from": "main_entrance",
       "to": "lock_pick_kit",
       "soft": false
@@ -305,6 +322,11 @@
     {
       "from": "lock_pick_kit",
       "to": "lock_extraction_gobag",
+      "soft": false
+    },
+    {
+      "from": "main_entrance",
+      "to": "cyberchef_workstation",
       "soft": false
     },
     {
@@ -373,6 +395,16 @@
       "soft": false
     },
     {
+      "from": "lock_security_equipment_locker",
+      "to": "spare_keycard_level_1",
+      "soft": true
+    },
+    {
+      "from": "spare_keycard_level_1",
+      "to": "door_battery_hall_2",
+      "soft": true
+    },
+    {
       "from": "battery_hall_1",
       "to": "analogue_thermometer_rack_bank_c_wall",
       "soft": false
@@ -414,11 +446,11 @@
     },
     {
       "from": "plant_room",
-      "to": "npc_voltage_critical_mass_leader",
+      "to": "npc_voltage_critical_mass",
       "soft": false
     },
     {
-      "from": "npc_voltage_critical_mass_leader",
+      "from": "npc_voltage_critical_mass",
       "to": "action_deal_with_voltage",
       "soft": false
     },
@@ -448,13 +480,13 @@
       "soft": true
     },
     {
-      "from": "vmch_submit_distcc_exploit_flag",
-      "to": "vmfl_submit_distcc_exploit_flag",
+      "from": "vmch_submit_erlang_rce_flag",
+      "to": "vmfl_submit_erlang_rce_flag",
       "soft": false
     },
     {
       "from": "vmfl_submit_ftp_intel_flag",
-      "to": "vmch_submit_distcc_exploit_flag",
+      "to": "vmch_submit_erlang_rce_flag",
       "soft": true
     },
     {
@@ -463,7 +495,7 @@
       "soft": false
     },
     {
-      "from": "vmfl_submit_distcc_exploit_flag",
+      "from": "vmfl_submit_erlang_rce_flag",
       "to": "vmch_submit_privesc_flag",
       "soft": true
     },
@@ -508,7 +540,7 @@
       "soft": false
     },
     {
-      "from": "vmfl_submit_distcc_exploit_flag",
+      "from": "vmfl_submit_erlang_rce_flag",
       "to": "lock_esd_pushbutton",
       "soft": false
     },

@@ -168,5 +168,27 @@ module BreakEscape
       json = JSON.parse(response.body)
       assert json['error']
     end
+
+    # A headless record (social.characters.*.emailRecord, data contract 00 S8) is
+    # in no room, and its story is still served by its channels.email id
+    test 'ink endpoint serves a headless record story' do
+      scenario = @game.scenario_data.merge(
+        'social' => { 'characters' => { 'pierce' => {
+          'displayName' => 'Melanie Pierce',
+          'channels' => { 'email' => 'pierce_mail' },
+          'emailRecord' => { 'storyPath' => 'scenarios/ink/test-npc.json' }
+        } } }
+      )
+      game = Game.create!(mission: @mission, player: @player, scenario_data: scenario)
+
+      get "/break_escape/games/#{game.id}/ink", params: { npc: 'pierce_mail' }
+
+      assert_response :success, response.body
+      assert_equal JSON.parse(File.read(Engine.root.join('scenarios/ink/test-npc.json'))), JSON.parse(response.body)
+
+      # The character id is not a record id
+      get "/break_escape/games/#{game.id}/ink", params: { npc: 'pierce' }
+      assert_response :not_found
+    end
   end
 end

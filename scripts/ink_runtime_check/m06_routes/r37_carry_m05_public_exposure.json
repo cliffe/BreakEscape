@@ -1,0 +1,40 @@
+{
+ "imports": {
+  "m05_final_choice": "public_exposure"
+ },
+ "steps": [
+  {
+   "note": "R37 (carry-over, 2026-10-17): m05 finished with the Initiative exposed. HaX names it before the first choice, then 'Which exchange?' (the route that skips the payments knot still hears it)."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Which exchange",
+    "Why would Volkova",
+    "I'm ready"
+   ]
+  },
+  {
+   "said": [
+    "You put the Initiative on the front pages, and TalentStack's accounts came out with it. That's how we traced the one going out.",
+    "HashChain Exchange"
+   ],
+   "notSaid": [
+    "You turned Torres, so he's still taking their money, on our script now. That's how we traced the one going out.",
+    "Out: $847,000 to the Insider Threat Initiative for the Quantum Dynamics job, through TalentStack's wallet.",
+    "You handed Torres to the polic",
+    "The police took Torres with nh",
+    "You knocked Torres out and sta",
+    "You left Torres on that floor,"
+   ]
+  },
+  {
+   "set": {
+    "briefing_played": true
+   }
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

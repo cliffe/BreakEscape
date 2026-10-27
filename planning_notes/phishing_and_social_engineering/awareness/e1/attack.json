@@ -1,0 +1,161 @@
+{
+  "_note": "E1 invoice-fraud attack fragment (P7-F). A fragment of the `social` block; the shell packet (P7-K) copies these keys into scenarios/awareness_e1_invoice_fraud/scenario.json.erb. All companies and people are fictional. The learner, a junior red-teamer in Brightwell Foods' finance team, impersonates the accounts contact at supplier Harlow Packaging and emails the finance manager (phish target `supplier_contact` = Adaeze Okafor) to change the bank details on an open invoice. No payload, no link, no attachment. See the P7-F report 'Docs hand-off' for the globals the shell must declare.",
+
+  "people": [
+    { "id": "adaeze", "kind": "cast", "address": "adaeze.okafor@brightwellfoods.example",
+      "forms": { "first": "Adaeze", "formal": "Ms Okafor", "full": "Adaeze Okafor" } },
+    { "id": "tom", "kind": "cast", "address": "tom.reilly@brightwellfoods.example",
+      "forms": { "first": "Tom", "full": "Tom Reilly" } },
+    { "id": "mason", "kind": "outside", "address": "derek.mason@harlowpackaging.example",
+      "forms": { "first": "Derek", "full": "Derek Mason" } }
+  ],
+
+  "intelFacts": {
+    "brightwell_finance_manager": {
+      "text": "Adaeze Okafor is Brightwell's Finance Manager and signs off supplier payments.",
+      "subject": "adaeze", "source": "blk_finance_mgr",
+      "provides": [],
+      "reduceNote": "Keep the name and remit of whoever authorises payments off the public site; attackers target the signer."
+    },
+    "harlow_supplier_contact": {
+      "text": "Accounts queries for supplier Harlow Packaging go to Derek Mason, derek.mason@harlowpackaging.example.",
+      "subject": "mason", "source": "blk_harlow",
+      "provides": [
+        { "type": "name", "about": "sender", "value": "mason_full", "label": "Derek Mason", "kind": "distinctive" },
+        { "type": "address", "value": "mason_address", "label": "derek.mason@harlowpackaging.example", "kind": "distinctive" }
+      ],
+      "reduceNote": "Do not publish a named supplier contact and address; it lets an attacker spoof a sender the finance team already trusts."
+    },
+    "brightwell_open_invoice": {
+      "text": "Quarter-end note: invoice INV-2217 from Harlow Packaging is still open and due for payment this week.",
+      "subject": "adaeze", "source": "blk_invoice",
+      "provides": [
+        { "type": "reference", "value": "inv_4471", "label": "invoice INV-2217", "kind": "distinctive" }
+      ],
+      "reduceNote": "Open invoice numbers and amounts posted publicly give a fraudster the exact pretext to reference."
+    },
+    "brightwell_quarter_end": {
+      "text": "A finance post about the quarter-end rush to clear supplier invoices on time.",
+      "subject": "adaeze", "source": "post_quarter_end",
+      "provides": [],
+      "reduceNote": "Staff posts about a payment deadline hand an attacker a ready-made reason to hurry you."
+    }
+  },
+
+  "templates": {
+    "from_named": { "part": "from", "text": "{sender_name} <{sender_address}>",
+      "slots": [ { "id": "sender_name", "type": "name", "about": "sender", "label": "sender's name" },
+                 { "id": "sender_address", "type": "address", "label": "sender's address" } ] },
+    "greet_generic": { "part": "greeting", "text": "Hello,", "slots": [] },
+    "pretext_bank_change": { "part": "pretext",
+      "text": "Following up on {invoice}: our bank account has changed, so please update the payee details before you release payment.",
+      "slots": [ { "id": "invoice", "type": "reference", "label": "which invoice" } ],
+      "urgency": "high" },
+    "pretext_statement": { "part": "pretext", "text": "Please find our latest monthly statement for your records.", "slots": [],
+      "urgency": "low" },
+    "pretext_bank_change_calm": { "part": "pretext",
+      "text": "When you have a moment on {invoice}: our bank account has recently changed, so the payee details will need updating before the next payment run. No rush today.",
+      "slots": [ { "id": "invoice", "type": "reference", "label": "which invoice" } ],
+      "urgency": "low" },
+    "ask_confirm": { "part": "ask", "text": "Can you confirm once the new details are saved?", "slots": [],
+      "urgency": "low" },
+    "ask_when_convenient": { "part": "ask", "text": "Just drop me a line whenever it's sorted.", "slots": [],
+      "urgency": "low" }
+  },
+
+  "mailClient": {
+    "accounts": [
+      { "id": "analyst", "address": "analyst@brightwellfoods.example", "displayName": "Red-team analyst",
+        "kind": "given", "person": null, "mailbox": "analyst", "spoofsFrom": true }
+    ],
+    "mailboxes": [ { "id": "analyst" } ],
+    "contacts": [
+      { "id": "adaeze", "person": "adaeze", "name": "Adaeze Okafor",
+        "addresses": ["adaeze.okafor@brightwellfoods.example"], "role": "Finance Manager",
+        "revealedBy": "se_intel_brightwell_finance_manager", "targetId": "supplier_contact" }
+    ],
+    "seededMessages": [
+      { "id": "brief", "mailbox": "analyst",
+        "from": { "name": "Red team lead", "address": "lead@redteam.example", "avatar": "npc_neutral" },
+        "to": "analyst@brightwellfoods.example", "subject": "Authorised exercise: Brightwell Foods",
+        "body": "Hello,\n\nThis is the authorised Brightwell Foods exercise. In scope: this inbox and the people on it. Research the finance team, then write one message. Nothing leaves this account.\n\nRed team lead",
+        "time": "09:02", "unread": true, "folder": "inbox" }
+    ],
+    "checklistTiming": "onSend",
+    "bodyMode": "templates",
+    "freeTextFlavour": false,
+    "showRedFlagMeter": true
+  },
+
+  "osint": {
+    "profile": "awareness",
+    "sites": [
+      { "id": "brightwell_site", "name": "Brightwell Foods", "url": "brightwellfoods.example", "type": "company-site",
+        "pages": [
+          { "id": "team", "title": "Our team", "blocks": [
+            { "id": "blk_finance_mgr", "kind": "staff", "person": "adaeze", "name": "Adaeze Okafor",
+              "role": "Finance Manager", "address": "adaeze.okafor@brightwellfoods.example", "fact": "brightwell_finance_manager" },
+            { "id": "blk_ap_clerk", "kind": "staff", "person": "tom", "name": "Tom Reilly",
+              "role": "Accounts Payable", "address": "tom.reilly@brightwellfoods.example" } ] },
+          { "id": "suppliers", "title": "Our suppliers", "blocks": [
+            { "id": "blk_harlow", "kind": "p",
+              "text": "Harlow Packaging Ltd has supplied our cartons since 2019. Accounts queries go to Derek Mason, derek.mason@harlowpackaging.example.",
+              "fact": "harlow_supplier_contact" } ] },
+          { "id": "finance_news", "title": "Finance update", "blocks": [
+            { "id": "blk_invoice", "kind": "p",
+              "text": "Quarter-end: invoice INV-2217 from Harlow Packaging is still open and due for payment this week.",
+              "fact": "brightwell_open_invoice" } ] } ] },
+
+      { "id": "brightwell_social", "name": "Friendface", "url": "friendface.example", "type": "social",
+        "profiles": [
+          { "person": "adaeze", "posts": [
+            { "id": "post_quarter_end", "text": "Mad week in finance: quarter-end, and everyone wants their invoices paid yesterday.",
+              "fact": "brightwell_quarter_end" },
+            { "id": "post_adaeze_other", "text": "The allotment is finally giving us tomatoes. Small wins." } ] } ] }
+    ]
+  },
+
+  "phishTargets": [
+    {
+      "id": "supplier_contact",
+      "address": "adaeze.okafor@brightwellfoods.example",
+      "displayName": "Adaeze Okafor",
+      "role": "Finance Manager",
+      "subjects": [
+        { "id": "s_invoice", "text": "Invoice INV-2217", "topic": "finance", "requires": ["brightwell_open_invoice"] },
+        { "id": "s_other", "text": "Quick note", "topic": "general" }
+      ],
+      "interests": { "topics": ["finance"] },
+      "emailReplyDelay": 6,
+      "redFlagMeter": true,
+      "urgency": { "advisoryMax": "low" },
+      "templateSets": {
+        "from": ["from_named"],
+        "greeting": ["greet_generic"],
+        "pretext": ["pretext_bank_change", "pretext_bank_change_calm", "pretext_statement"],
+        "ask": ["ask_confirm", "ask_when_convenient"]
+      },
+      "primedFor": {
+        "distinctiveValues": ["inv_4471"],
+        "minDistinct": 1,
+        "trusts": ["mason"],
+        "story": "a bank-detail change on an open invoice from the supplier contact she already deals with"
+      },
+      "requiredFactors": ["senderTrust", "pretextRelevant"],
+      "advisoryFactors": ["urgencyCalibrated"],
+      "factorStrings": {
+        "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
+        "senderTrust": { "pass": "✓ From the supplier contact she deals with", "fail": "She does not recognise this sender. She acts on invoice mail from the supplier contact already on file.", "redFlag": "The From line carries Derek Mason's real Harlow address, so it reads as the supplier she trusts, but it was forged: Harlow never sent it." },
+        "pretextRelevant": { "pass": "✓ Ties to an invoice she is expecting to pay", "fail": "No open invoice she can match this to, so no reason to act on it.", "redFlag": null },
+        "urgencyCalibrated": { "pass": "✓ The pressure reads as believable" }
+      },
+      "replies": { "landed": "Thanks Derek, I'll get the payee details updated before we run payment.", "missed": "Thanks, but I don't act on this kind of email without checking. I'll ring the supplier on the number we already hold first." },
+      "hints": [
+        "Who does Brightwell's finance team already trust for invoices from this supplier?",
+        "What open invoice could you tie the message to, so it reads as expected?",
+        "Set the From line to the supplier's accounts contact on file, not your own address."
+      ],
+      "outcome": { "setGlobal": { "phish_supplier_contact_landed": true } }
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 // ===========================================
 // VOLTAGE - CONFRONTATION (ANTAGONIST)
 // Mission 4: Critical Failure
-// Break Escape - Climactic Encounter with Critical Mass Leader
+// Break Escape - Climactic Encounter with Critical Mass's field lead (Blackout leads the cell)
 // ===========================================
 
 // ===========================================
@@ -13,9 +13,14 @@
 
 // Ink-owned state
 VAR voltage_confronted = false           // Has the confrontation played?
+// Pass 5: skip the standoff re-entry lines once, right after a goodbye (m03 hub_quiet).
+VAR voltage_quiet = false
+// Phase 4 dialogue C1 (D5-32): now a synced global, set with #set_global; the
+// debrief pays it off.
 VAR asked_the_number = false             // Did the player make him state the casualty figure?
 
-// Ink-owned record of how the DIALOGUE ended: "", "escaped", "fought".
+// Ink-owned record of how the DIALOGUE ended: "" or "escaped" (D5-27: the
+// unread "fought" and "arrested" writes were removed).
 VAR voltage_dialogue_outcome = ""
 
 // Engine-owned, synced in from globalVariables. Read freely. Only the peaceful
@@ -31,13 +36,22 @@ VAR operative_static_defeated = false
 VAR voltage_fight_started = false
 VAR vented_by_trigger = false
 VAR racks_vented = false              // engine-owned; the 14-minute vent or the race
-VAR operatives_defeated = 0
 // PASS 4 fix 21: set when the player identifies his print on the bypass module. Read only.
 VAR voltage_print_on_bypass = false
 // Round 2 (playtest issue 4): his count reads all three KO globals; the old
 // operatives_defeated counter only ever counted Cipher and Relay.
 VAR operative_cipher_defeated = false
 VAR operative_relay_defeated = false
+// Pass 5 A1: the button stance is offered only once grid control can take the
+// shed (the same two conditions as the ESD's permissive, less Voltage himself).
+VAR attack_mechanism_known = false
+VAR anomaly_detected = false
+// Round 2 (review m6, m8): he heard the alarm; the night crew's fate; Static
+// leaves with him on the button route. Read only.
+VAR crew_warned = false
+VAR crew_lost = false
+VAR static_stood_aside = false
+VAR static_engaged = false
 
 // External variables (set by game)
 EXTERNAL player_name()
@@ -69,11 +83,19 @@ EXTERNAL player_name()
 
 // Re-entry while the fight is unresolved: he is still here, still working.
 === voltage_standoff_resumed ===
-Voltage: *not looking up from the laptop* Still here.
+{voltage_quiet:
+    ~ voltage_quiet = false
+- else:
+    // Phase 4 dialogue C1 (D5-22): not a fourth "Still here."
+    Voltage: *not looking up* You came back. Nothing you say next will be new.
+}
 
-Voltage: Nothing you say next will be new.
+// Pass 5 A1: backing off is now a stance, so the choice has to come back.
++ [Then let's finish this.]
+    -> confrontation_choice
 
 + [Say nothing.]
+    ~ voltage_quiet = true
     #exit_conversation
     -> voltage_standoff_resumed
 
@@ -82,7 +104,7 @@ Voltage: Nothing you say next will be new.
 
 // Voltage at laptop, notices player entry
 
-So they sent someone.
+One of you. I'd budgeted for more.
 
 ~ temp down = 0
 {operative_cipher_defeated:
@@ -102,7 +124,17 @@ So they sent someone.
 - down == 1:
     You got past my people.
 - else:
-    And not one of my people saw you come.
+    // Phase 4 dialogue C1 (D5-1): Static's challenge always plays first.
+    {static_stood_aside:
+        And Static let you walk up to my bench. He'll explain that later.
+    - else:
+        You got past my people.
+    }
+}
+
+// Round 2 (review m6): HaX says he heard the alarm, so he has.
+{crew_warned:
+    Your klaxon. Nine people in hi-vis on my cameras, walking out the fire doors. Very humane.
 }
 
 But you're late. This place has no security worth the name, and we've had three days in it.
@@ -123,7 +155,7 @@ Polite. They train that into you.
 === voltage_confrontational ===
 #speaker:voltage
 
-Bold. Conviction never stopped an attack.
+Ja. They all say that on the way in.
 
 -> voltage_threatens_trigger
 
@@ -141,7 +173,7 @@ Bold. Conviction never stopped an attack.
 
 Your move.
 
-* [Then we do this the hard way.]
+* [Then I take that laptop off you.]
     -> confrontation_choice
 
 * [Make me understand it first.]
@@ -158,10 +190,12 @@ Look at my hand. Then look at the clock.
 
 === voltage_negotiation_attempt ===
 #speaker:voltage
+// Scenario design m7: the debrief can say he told you this.
+#set_global:voltage_six_cities:true
 
 You want to talk? Fine.
 
-This site is one test run. The Architect has six cities on the go.
+This site is one test run. The Architect has six cities lined up.
 
 Infrastructure attacks, and Social Fabric ready to turn the panic into a riot.
 
@@ -188,6 +222,7 @@ Voltage: Budget cuts, ageing cells, one fake maintenance firm, and we walked in 
 Voltage: We didn't make it fragile. We just stopped pretending it wasn't.
 
 * [How many does the hall take with it?]
+    #set_global:asked_the_number:true
     ~ asked_the_number = true
     -> voltage_states_the_number
 
@@ -198,11 +233,12 @@ Voltage: We didn't make it fragile. We just stopped pretending it wasn't.
 === voltage_states_the_number ===
 #speaker:voltage
 
+#set_global:blackout_named:true
 Narrator: He answers without hesitating, and without looking away.
 
-Voltage: Eleven on site tonight. Nine on the night crew in Hall 2, two in the gatehouse.
+Voltage: Eleven on site tonight. Nine on the night crew in Hall 2, the duty engineer, and the man on the gate.
 
-Voltage: On the feed, best case, forty-odd. Oxygen concentrators, the dialysis unit at St Aldate's, home ventilators. That's the number Blackout signed, and I countersigned.
+Voltage: On the feed, best case, forty-odd. Oxygen concentrators, the dialysis unit at Saint Aldate's, home ventilators. That's the number Blackout signed, and I countersigned.
 
 Voltage: You think I don't know it. I know it to one decimal place.
 
@@ -225,6 +261,7 @@ Voltage: There's no version of this where I blink. You should have worked that o
 
 === voltage_architect_deflection ===
 #speaker:voltage
+#set_global:blackout_named:true
 
 Voltage: The Architect? You'll never find him.
 
@@ -249,29 +286,57 @@ Voltage: I run this site. Blackout signs for Critical Mass. Above him it stops b
 === confrontation_choice ===
 #speaker:voltage
 
-Narrator: The laptop is open on the plant-room bench with the trigger armed on screen, and the red mushroom head of the hardwired shutdown is on the wall behind him. You cannot reach both.
+// Phase 4 dialogue C1 (D5-6): the narration plays on the first visit only, and
+// claims the dilemma only when the button is on offer.
+{confrontation_choice == 1:
+    {attack_mechanism_known and anomaly_detected:
+        Narrator: The laptop's open on the bench, the trigger armed on screen. Behind him, on the wall, is the red mushroom head of the hardwired shutdown. You cannot reach both.
+    - else:
+        Narrator: The laptop's open on the bench, the trigger armed on screen. Behind him, on the wall, is the red mushroom head of the hardwired shutdown.
+    }
+}
 
-Voltage: So. The button, or me.
+// Pass 5 A1: before grid control will take the shed, the button does nothing,
+// so he says so, and the button stance isn't offered.
+{attack_mechanism_known and anomaly_detected:
+    Voltage: So. The button, or me.
+- else:
+    Voltage: The button? Press it. Grid control won't shed a megawatt on what you've got.
+}
 
 // PASS 3 P11a/P11b: with Static up, a fight is a race he can win, so "both" is
 // genuinely off the table; with Static down the arrest is earned instead.
-{operative_static_defeated:
+// Round 2 (browser O1): "both" only parses when the button is on offer.
+{
+- operative_static_defeated:
     Voltage: Static's down. So it's you, me, and one keystroke.
-- else:
+- attack_mechanism_known and anomaly_detected:
     Voltage: You don't get to have both. I'd decide quickly.
+- else:
+    Voltage: And Static's still in this room. I'd decide quickly.
 }
 
 + [I'm taking you down. Now.] #color:red
-    ~ voltage_dialogue_outcome = "fought"
     -> choice_fight
 
-+ {operative_static_defeated} [Step away from the bench. You're under arrest.]
-    ~ voltage_dialogue_outcome = "arrested"
+// Scenario design m9 (orchestrator decision 2): SAFETYNET has no arrest powers;
+// agents detain and hand over to the police (bible safetynet/overview.md, "The
+// Cost of Independence"; PASS2 lesson 39). Globals and credits unchanged.
++ {operative_static_defeated} [Step away from the bench. You're coming with me.]
     -> choice_arrest
 
-+ [Go for the button and let him run.]
++ {attack_mechanism_known and anomaly_detected} [Go for the button and let him run.]
     ~ voltage_dialogue_outcome = "escaped"
     -> choice_button
+
+// Pass 5 A1: the way out when the player isn't ready to commit. He stays at the
+// bench; re-talk lands on voltage_standoff_resumed, which offers the stances again.
++ [Not like this. (Back off.)]
+    ~ voltage_confronted = true
+    ~ voltage_quiet = true
+    Voltage: Then get out of my plant room. The clock doesn't care either way.
+    #exit_conversation
+    -> voltage_standoff_resumed
 
 // ---------- FIGHT ----------
 
@@ -280,10 +345,26 @@ Voltage: So. The button, or me.
 ~ voltage_confronted = true
 
 #complete_task:confront_voltage
-Voltage: You've picked the slow option.
+Voltage: Then you'll have to be faster than one keystroke.
+// Pass 5 A3: Static is no longer only a man you talk to. If he's still up when
+// the fight starts, he comes in with it.
+{operative_static_defeated:
+    -> choice_fight_alone
+- else:
+    -> choice_fight_with_static
+}
 
+=== choice_fight_alone ===
 Narrator: He moves for the bench and you move for him, and the plant room stops being a place where anyone is talking.
 
+#hostile
+#exit_conversation
+-> END
+
+=== choice_fight_with_static ===
+Narrator: He moves for the bench, Static comes off the wall at you, and the plant room stops being a place where anyone is talking.
+
+#hostile:operative_static
 #hostile
 #exit_conversation
 -> END
@@ -296,13 +377,17 @@ Narrator: He moves for the bench and you move for him, and the plant room stops 
 Narrator: He looks at your hands, then at the door behind you.
 
 // PASS 3 P11a: only reachable with Static down.
-Voltage: Nobody left to stop you. All right.
+// Blind run A (worst line 2): "Nobody left to stop you. All right." folded in one
+// beat. He weighs the keystroke now, and the player's line gives him his reason:
+// a court reads his casualty model out loud, which is what he says he wants.
+Voltage: You're between me and the dock. I could still make that keystroke before you reached me.
+Voltage: So give me a reason not to.
 
 // PASS 4 fix 21: the optional second print gives the arrest line its evidence.
-+ {voltage_print_on_bypass} [Your thumb's on the bypass module. Blackout signed, you countersigned. Tell that to a court.]
++ {voltage_print_on_bypass} [Your thumb's on the bypass module. Explain that to a court.]
     -> arrest_taken
 
-+ {not voltage_print_on_bypass} [Blackout signed it. You countersigned. Tell that to a court.]
++ {not voltage_print_on_bypass} [Hands where I can see them. A court can check your sums.]
     -> arrest_taken
 
 // PASS 3 (round 3, M2): the old "Last chance. Step away." made him refuse and
@@ -319,7 +404,10 @@ Voltage: Nobody left to stop you. All right.
 // Every OTHER path leaves voltage_captured to the engine.
 ~ voltage_captured = true
 ~ voltage_confronted = true
+// D5-25: the resting knot's re-entry line is skipped once, right after this.
+~ voltage_quiet = true
 #complete_task:confront_voltage
+#set_global:blackout_named:true
 Voltage: ...A court. Fine. Let them read the casualty model. I signed it.
 Narrator: He steps back from the bench with his hands open, and lets you take the laptop off it.
 #exit_conversation
@@ -333,10 +421,20 @@ Narrator: He steps back from the bench with his hands open, and lets you take th
 #speaker:voltage
 
 Narrator: You break for the wall. He doesn't try to stop you. He goes the other way, for the dock door.
+// Round 2 (review m8): Static, who stood aside, goes with him (the scenario hides
+// him on static_left, set from voltage_escaped).
+{static_stood_aside and not static_engaged and not operative_static_defeated:
+    Narrator: Static peels off the wall and goes with him without a word.
+}
 
 Voltage: Good. That's the right call.
 
-Voltage: You save your eleven and your forty. I'll be long gone before anyone counts them.
+// Round 2 (review m6): after a vent with the crew in Hall 2, there is no eleven left to save.
+{crew_lost:
+    Voltage: You save your forty. I'll be long gone before anyone counts them.
+- else:
+    Voltage: You save your eleven and your forty. I'll be long gone before anyone counts them.
+}
 
 ~ voltage_escaped = true
 ~ voltage_confronted = true
@@ -373,9 +471,10 @@ Narrator: The dock door bangs open onto the loading bay and the cold, and he's g
     #exit_conversation
     -> voltage_after_trigger
 
-+ {operative_static_defeated} [Hands on the bench. You're under arrest.]
++ {operative_static_defeated} [Hands on the bench. The police can have you.]
     ~ voltage_captured = true
     ~ voltage_confronted = true
+    ~ voltage_quiet = true
     #complete_task:confront_voltage
     Voltage: Why not. The number's moving already.
     #exit_conversation
@@ -401,34 +500,43 @@ Narrator: The dock door bangs open onto the loading bay and the cold, and he's g
 #speaker:voltage
 
 #complete_task:confront_voltage
+// Phase 4 dialogue C1 (D5-25): a re-entry line, skipped once after a goodbye.
+{voltage_quiet:
+    ~ voltage_quiet = false
+- else:
+    Voltage: *flat* {&Still counting?|You've got me. You haven't got him.}
+}
 
 + [Nothing you want to tell me?]
-    Voltage: I told you the number. The only true thing anyone said in here tonight.
+    // Phase 4 dialogue C2 (D6-10): only if he stated it on this route. The visit
+    // count is lost on a reload, and the fallback is still true then.
+    {voltage_states_the_number:
+        Voltage: I told you the number. The only true thing anyone said in here tonight.
+    - else:
+        Voltage: Read the casualty model on that bench. It's the only honest document in the building.
+    }
     -> voltage_captured_end
 
 + [Say nothing.]
+    ~ voltage_quiet = true
     #exit_conversation
-    Narrator: He sits against the bench with his wrists zipped, watching the red button he never reached.
+    Narrator: He sits against the bench with his wrists zipped, watching the laptop he'll never touch again.
     -> voltage_captured_end
 
 // ===========================================
 // ESCAPE OUTCOMES
 // ===========================================
 
-// Re-entered after he ran for the dock. He is gone; this knot just holds the
-// dock door open in the fiction and never ends the story (lesson 21).
+// Re-entered after he ran for the dock. He is gone (setVisible false on
+// voltage_escaped, plus #remove_npc), so nobody can talk to him; this knot only
+// keeps the story from ending (lesson 21). Phase 4 dialogue C1 (D5-25): the two
+// choices here were dead text, so one resting choice, as Cipher's cipher_gone.
 === voltage_escape_success ===
 ~ voltage_dialogue_outcome = "escaped"
 ~ voltage_confronted = true
 #complete_task:confront_voltage
 
-+ [Look through the dock door.]
-    Narrator: The loading bay is empty and cold. A vehicle was here. It isn't now.
++ [(He's gone.)]
     #exit_conversation
-    -> voltage_escape_success
-
-+ [Turn back to the button.]
-    #exit_conversation
-    Narrator: The red mushroom head is still on the wall behind you, and the racks are still climbing.
     -> voltage_escape_success
 

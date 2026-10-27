@@ -223,6 +223,35 @@ h1 {
   image-rendering: crisp-edges;
 }
 
+/* Characters met in missions (AvatarUnlocks.menu statuses) */
+.sprite-card.avatar-unlocked:not(.selected) {
+  border-color: #b8860b;
+}
+
+.sprite-card.avatar-mission:not(.selected) {
+  border-color: #1e90ff;
+}
+
+/* A locked character shows as a dark silhouette until earned */
+.sprite-card.avatar-locked .sprite-headshot {
+  filter: grayscale(1) brightness(0.25);
+}
+
+.avatar-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  padding: 1px 4px;
+  font-size: 9px;
+  color: #000;
+  background: #ffd700;
+  pointer-events: none;
+}
+
+.sprite-card.avatar-mission .avatar-badge {
+  background: #87cefa;
+}
+
 .sprite-radio {
   display: none;
 }

@@ -876,7 +876,7 @@ Each has a recommended default so the build can go ahead; the user can overrule 
 | Q7 | Field guide as a published HacktivityLabSheets page | yes / notes only | **Notes only** (no other repo touched). |
 | Q8 | Ghost's claim to be listening | true; bluff; left open | **Left open, and scoped to today and the Keyholder device** (A-m19). The handset is replaced in every ending. |
 | Q9 | How dark is the betrayal ending? | HaX relocated, nobody hurt; someone hurt | **Nobody hurt** (accepted). The weight is "Did you read it?" |
-| Q10 | mission.json `collection` and display name | `escape_room`; `vm_labs` (wrong: no VM); new | **`escape_room`** (accepted), "The Keyholder Trials", difficulty 1, CyBOK entries from `lab_encoding_encryption/mission.json` plus AC "public key cryptography" and "hash functions". |
+| Q10 | mission.json `collection` and display name | `escape_room`; `vm_labs` (wrong: no VM); new | **`lab_games`** (accepted; changed from `escape_room` by `10` N6), "The Keyholder Trials", difficulty 1, CyBOK entries from `lab_encoding_encryption/mission.json` plus AC "public key cryptography" and "hash functions". |
 | Q11 | Accents for Tom (Huddersfield), Sidhu (Indian English), Megan (Manchester) | as in section 2 | **A short sample of each voice goes to the user before the dialogue pass**, flagging Sidhu's "see," and "isn't it?" markers for a yes or no (A-m20). The draft doesn't use them. |
 | Q12 | 1979 job tape owner | **Settled:** anonymous ("OWNER [REDACTED]. PROJECT KEYHOLDER.") | |
 | Q13 | `concludeRequires` | **Settled:** `{ "tasksCompleted": ["open_relay_terminal"] }`, server-authoritative (R5). | |

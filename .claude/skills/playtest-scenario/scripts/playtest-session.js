@@ -9,6 +9,7 @@
  * browser per step.
  *
  *   node playtest-session.js --url <game-url> [--speed fast|human] [--headless]
+ *                            [--vw 1400] [--vh 1000]     (or env VW / VH)
  *
  * Commands (one JSON object per line):
  *   {"cmd":"bootstrap","tutorial":"decline","resume":"new"}
@@ -28,12 +29,14 @@
  *   {"cmd":"mg","action":"clickText","args":["Continue"]}
  *   {"cmd":"mg","action":"clickCanvas","args":[420,300]}   (nested Phaser canvas)
  *   {"cmd":"mg","action":"type","args":[0,"Hospital1987",{"submit":true}]}
+ *   {"cmd":"select","field":"template","option":"urgent"}    (set a <select>; also mg action "select")
  *   {"cmd":"waitFor","kind":"global","name":"bernie_gave_key"}
  *   {"cmd":"waitFor","kind":"task","id":"sign_in_at_reception"}
  *   {"cmd":"waitFor","kind":"minigame","id":"person-chat"}
  *   {"cmd":"waitFor","kind":"minigameClosed"}
  *   {"cmd":"waitFor","kind":"event","name":"room_entered:it_department"}
  *   {"cmd":"drain"}                          → action + event log, then clears
+ *   {"cmd":"toasts"}                         → text of every toast shown since the last call
  *   {"cmd":"screenshot","path":"/tmp/x.png"} → ONLY for diagnosing a failure
  *   {"cmd":"eval","fn":"() => window.__test.scan(400)"}
  *   {"cmd":"quit"}
@@ -136,11 +139,44 @@ function substituteFlags(node, at) {
   if (!argv.url) { emit({ ok: false, error: 'missing --url' }); process.exit(1); }
 
   // Headed by default: the point is that a person can watch the playtest.
+  // Viewport defaults to 1400x1000; --vw/--vh or VW/VH override it (e.g. 600
+  // to check a narrow layout).
+  const pickDim = (a, e, d) => { const n = parseInt(a !== undefined && a !== true ? a : e, 10); return n > 0 ? n : d; };
+  const VW = pickDim(argv.vw, process.env.VW, 1400);
+  const VH = pickDim(argv.vh, process.env.VH, 1000);
   const browser = await chromium.launch({
     headless: argv.headless === true || argv.headless === 'true',
-    args: ['--window-size=1400,1000']
+    args: [`--window-size=${VW},${VH}`]
   });
-  const page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
+  const page = await browser.newPage({ viewport: { width: VW, height: VH } });
+
+  // Toast capture. Installed before any page script runs, so it sees toasts
+  // raised during load. Watches the whole document for added .notification
+  // nodes (the container, #notification-container, may not exist yet) and
+  // records their text; the `toasts` command returns and clears the list.
+  await page.addInitScript(() => {
+    window.__toastLog = [];
+    const grab = (el) => {
+      if (!el || el.nodeType !== 1 || window.__toastSeen?.has(el)) return;
+      const list = el.matches?.('.notification') ? [el] : [...(el.querySelectorAll?.('.notification') || [])];
+      for (const n of list) {
+        (window.__toastSeen ||= new WeakSet());
+        if (window.__toastSeen.has(n)) continue;
+        window.__toastSeen.add(n);
+        const q = (sel) => n.querySelector(sel)?.innerText?.trim() || '';
+        window.__toastLog.push({
+          at: Date.now(),
+          type: ['success', 'warning', 'error', 'info'].find(t => n.classList.contains(t)) || undefined,
+          title: q('.notification-title'),
+          message: q('.notification-message') || (n.innerText || '').trim()
+        });
+      }
+    };
+    const start = () => new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(grab)))
+      .observe(document.documentElement, { childList: true, subtree: true });
+    if (document.documentElement) start();
+    else document.addEventListener('DOMContentLoaded', start, { once: true });
+  });
 
   // Disable HTTP cache. A game JS file edited between runs (e.g. a bridge fix
   // applied while iterating) can otherwise be served from a prior Playwright
@@ -187,7 +223,31 @@ function substituteFlags(node, at) {
   const pause = (ms) => ms ? page.waitForTimeout(ms) : Promise.resolve();
 
   /** Compact state: everything needed for one decision, without the bulk. */
+  /**
+   * Wait (bounded) for the player sprite. Right after a reload getState() throws
+   * "Cannot read properties of null (reading 'x')" until it exists.
+   */
+  async function waitForPlayer(timeoutMs = 15000) {
+    const t0 = Date.now();
+    let last = null;
+    for (;;) {
+      const r = await page.evaluate(() => {
+        try {
+          if (!window.__test) return { ok: false, why: 'no __test yet' };
+          const s = window.__test.getState();
+          return s && s.player ? { ok: true } : { ok: false, why: 'no player in state' };
+        } catch (e) { return { ok: false, why: String(e.message || e) }; }
+      }).catch(e => ({ ok: false, why: String(e.message || e) }));
+      if (r.ok) return { ready: true };
+      last = r.why;
+      if (Date.now() - t0 >= timeoutMs) return { ready: false, reason: last, waitedMs: Date.now() - t0 };
+      await page.waitForTimeout(400);
+    }
+  }
+
   async function brief() {
+    const w = await waitForPlayer();
+    if (!w.ready) return { ready: false, reason: 'player-not-ready', detail: w.reason, waitedMs: w.waitedMs };
     const { _aims, ...b } = await page.evaluate(() => {
       const s = window.__test.getState();
       return {
@@ -237,15 +297,57 @@ function substituteFlags(node, at) {
     // open" reading is therefore not proof the overworld is ready — require
     // several consecutive clear checks before returning.
     let clear = 0;
+    // A hub that offers the same menu again would otherwise loop on choice 1.
+    const seenMenus = new Map();
+    const exitRe = /\b(bye|goodbye|leave|later|that's all|that's it|nothing|done|go|thanks)\b/i;
+    const pw = await waitForPlayer();
+    if (!pw.ready) return { trace, settled: false, ready: false, reason: 'player-not-ready', detail: pw.reason };
+    // An ending screen is a terminal state: credits (state.missionEnd) or an end
+    // card whose only buttons leave the game. Stop there rather than click it.
+    const endCheck = () => page.evaluate(() => {
+      const s = window.__test.getState();
+      if (s.missionEnd) return { kind: 'credits', text: String(s.missionEnd.creditsText || '').slice(0, 200),
+                                 closable: !!s.missionEnd.closable };
+      const bl = s.blockingUi;
+      if (!bl) return null;
+      const labels = bl.buttons.map(b => b.label);
+      const head = String(bl.text || '').split('\n')[0];
+      const leaveRe = /return to missions|back to missions|exit (game|mission)|main menu|leave game/i;
+      const endRe = /engagement closed|mission (complete|ended|over|concluded)|the end\b|case closed|credits/i;
+      const resumeRe = /tutorial|resume|session/i;
+      if (resumeRe.test(bl.classes || '') || resumeRe.test(bl.text || '')) return null;
+      const onlyLeaves = labels.length > 0 && labels.every(l => leaveRe.test(l));
+      const hasEndText = endRe.test(bl.text || '') || endRe.test(bl.classes || '');
+      if (onlyLeaves || (hasEndText && labels.some(l => leaveRe.test(l)))) {
+        return { kind: 'end-card', text: head, buttons: labels };
+      }
+      return null;
+    }).catch(() => null);
     for (let i = 0; i < maxSteps; i++) {
+      const ended = await endCheck();
+      if (ended) {
+        trace.push(`ending screen (${ended.kind}): left alone`);
+        return { trace, settled: true, ended: true, endKind: ended.kind, endScreen: ended, state: await brief() };
+      }
       const mg = await page.evaluate(() => window.__test.getState().activeMinigame);
       if (mg) {
         clear = 0;
         const d = await page.evaluate(() => window.__test.minigame.getState()?.dialogue);
         if (d && (d.awaitingChoice || d.canContinue)) {
           if (d.awaitingChoice) {
-            trace.push(`cutscene choice 1 of ${d.choices.length}`);
-            await page.evaluate(() => window.__test.minigame.choose(1));
+            // choices are objects ({number, text}); tolerate plain strings too.
+            const texts = d.choices.map(ch => (typeof ch === 'string' ? ch : ch.text) || '');
+            const key = texts.join('|');
+            let n = 1;
+            if (seenMenus.has(key)) {
+              const ix = texts.findIndex(t => exitRe.test(t));
+              n = ix >= 0 ? ix + 1 : texts.length;
+              trace.push(`repeat menu, choice ${n} of ${texts.length}`);
+            } else {
+              seenMenus.set(key, true);
+              trace.push(`cutscene choice 1 of ${texts.length}`);
+            }
+            await page.evaluate(k => window.__test.minigame.choose(k), n);
           } else {
             await page.evaluate(() => window.__test.minigame.continue());
           }
@@ -340,6 +442,15 @@ function substituteFlags(node, at) {
     },
     dismiss: async (c) => {
       const r = await page.evaluate(l => window.__test.dismissBlockingUi(l), c.label || null);
+      await pause(speed.step);
+      return r;
+    },
+
+    // Set a <select> in the open minigame: {"cmd":"select","field":"template","option":"urgent"}
+    // field = index among mg getState().fields, or text matching the select's
+    // id/name/class/label; option = value, or option text (exact, then substring).
+    select: async (c) => {
+      const r = await page.evaluate(([f, o]) => window.__test.minigame.select(f, o), [c.field, c.option]);
       await pause(speed.step);
       return r;
     },
@@ -506,6 +617,7 @@ function substituteFlags(node, at) {
       const read = () => page.evaluate(() => window.__test.minigame.getState());
       const steps = [];
       let lastInsert = null;
+      const tried = new Set();
       let st = await read();
       if (!st) return { ok: false, reason: 'no-active-minigame' };
 
@@ -529,13 +641,18 @@ function substituteFlags(node, at) {
                      + 'password lock, pass {"code":"..."}. Otherwise read `mg getState` and drive it by hand.' };
       }
 
-      for (let i = 0; i < 12; i++) {
-        // Key lock, stage 1: choose a key. Prefer one whose label matches
-        // `key`, else the only one, else the first.
+      // 40 iterations: a wrong-key insert animation takes about 4s and the red
+      // flash about 2s before the key list returns.
+      for (let i = 0; i < 40; i++) {
+        // Key lock, stage 1: choose a key. A named `key` wins. With none named,
+        // try each held key in turn (first one not yet tried), else the first.
         if (st.keySelection && st.keySelection.length) {
           const want = (c.key || '').toLowerCase();
           const pick = (want && st.keySelection.find(k => (k.label || '').toLowerCase().includes(want)))
+            || st.keySelection.find(k => !tried.has(k.label))
             || st.keySelection[0];
+          tried.add(pick.label);
+          lastInsert = null;
           steps.push(`select key "${pick.label || '?'}" at ${pick.x},${pick.y}`);
           await page.evaluate(([x, y]) => window.__test.minigame.clickCanvas(x, y), [pick.x, pick.y]);
         // Key lock, stage 2: insert it.
@@ -614,6 +731,12 @@ function substituteFlags(node, at) {
       const target = c.room || c.id;
       if (!target) return { ok: false, reason: 'no-room-given' };
       return page.evaluate(t => window.__test.enterRoom(t), target);
+    },
+
+    /** Text of every notification/toast shown since the last call. */
+    toasts: async () => {
+      const list = await page.evaluate(() => { const l = window.__toastLog || []; window.__toastLog = []; return l; });
+      return { count: list.length, toasts: list, messages: list.map(t => t.title ? `${t.title}: ${t.message}` : t.message) };
     },
 
     drain: async () => ({ log: await page.evaluate(() => window.__test.drainLog()),

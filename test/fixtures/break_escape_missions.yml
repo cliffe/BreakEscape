@@ -26,3 +26,13 @@ secgen_vm_lab:
   collection: vm_labs
   created_at: <%= Time.now %>
   updated_at: <%= Time.now %>
+
+lab_games_fixture:
+  name: lab_games_fixture
+  display_name: Lab Games Fixture Mission
+  description: Fixture for the lab_games collection listing
+  published: true
+  difficulty_level: 1
+  collection: lab_games
+  created_at: <%= Time.now %>
+  updated_at: <%= Time.now %>

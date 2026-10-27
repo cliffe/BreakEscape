@@ -29,7 +29,8 @@ module BreakEscape
       'NS' => 'Network Security',
       'HS' => 'Hardware Security',
       'CPS' => 'Cyber Physical Systems',
-      'PLT' => 'Physical Layer and Telecommunications Security'
+      'PLT' => 'Physical Layer and Telecommunications Security',
+      'TGSIS' => 'Topic Guide: Security-Informed Safety'
     }.freeze
 
     CATEGORY_MAPPING = {
@@ -38,7 +39,8 @@ module BreakEscape
       'Attacks & Defences' => %w[MAT AB SOIM F],
       'Systems Security' => %w[C OSV DSS AAA FM],
       'Software and Platform Security' => %w[SS WAM SSL],
-      'Infrastructure Security' => %w[AC NS HS CPS PLT]
+      'Infrastructure Security' => %w[AC NS HS CPS PLT],
+      'Topic Guides' => %w[TGSIS]
     }.freeze
 
     def ka_full_name

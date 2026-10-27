@@ -1,0 +1,190 @@
+{
+  "_note": "E2 malicious-CV attack fragment (wave 4, the opus48 attack half of E2). A fragment of the `social` block; the full-episode shell (wave 4) copies these keys into scenarios/awareness_e2_*/scenario.json.erb and the defend-only/check shells leave the attack out. All companies and people are fictional (BRAND_SET.md, Tarrowby Logistics). The learner, a junior red-teamer on an authorised Tarrowby exercise, poses as a job applicant and emails the recruitment lead (phish target `recruiter_contact` = Fatima Begum) a CV from the abstract payload kit (a Word document — the 'enable content' / malicious-CV lure, concept level; no real payload). The lesson is the open inbox: a recruiter opens attachments from strangers for a living, so no trusted-sender spoof is needed. Required factors are `pretextRelevant` (tie the application to the advertised vacancy) and `attachmentPlausible` (attach the CV she expects, not an odd archive). See the hand-off notes below for the globals the shell must declare, the target id and the stored flip tell.",
+
+  "_shellNotes": {
+    "target": "recruiter_contact (Fatima Begum, recruitment lead). Open inbox (primedFor.trusts = ['*']): no trusted-sender spoof, the account sends own-From as the applicant persona.",
+    "stages": ["brief", "osint", "write", "flip", "defend", "debrief"],
+    "siteIds": ["tarrowby_site", "tarrowby_social"],
+    "accountIds": ["analyst"],
+    "defaultAccount": "analyst",
+    "globalsToDeclare": [
+      "se_intel_tarrowby_recruiter",
+      "se_intel_tarrowby_vacancy",
+      "se_intel_tarrowby_hiring_manager",
+      "se_intel_tarrowby_cv_request",
+      "se_osint_state",
+      "phish_recruiter_contact_landed",
+      "phish_recruiter_contact_attempts"
+    ],
+    "readsLanded": "Something must read phish_recruiter_contact_landed (as E1 reads phish_supplier_contact_landed) so the exported global is used.",
+    "newCastName": "Alex Rendell — the applicant persona on the learner's exercise account (a.rendell.jobs@inboxly.example). Invented for E2; add to BRAND_SET.md Tarrowby cast if adopted.",
+    "storedTells": "The application pretext is calm (urgency low; M2). A landed send that keeps the ask's same-day deadline (ask_review, medium) still reads as overdone against advisoryMax low and stores [urgencyCalibrated]; pairing the application with ask_calm (low) clears the urgency advisory and stores no tell, so a careful learner can lower the meter while still landing. The attachment is seen in the flip but is NOT an engine tell: phish-rules only stores senderTrust/senderAuth/linkCredible/urgencyCalibrated. The E2 defend-side channel tells (sender-attachment mismatch, enable-content prompt, unexpected link, generic greeting, lookalike domain) live only in the defend set."
+  },
+
+  "people": [
+    { "id": "fatima", "kind": "cast", "address": "fatima.begum@tarrowby.example",
+      "forms": { "first": "Fatima", "formal": "Ms Begum", "full": "Fatima Begum" } },
+    { "id": "colin", "kind": "cast", "address": "colin.mather@tarrowby.example",
+      "forms": { "first": "Colin", "formal": "Mr Mather", "full": "Colin Mather" } },
+    { "id": "jun", "kind": "cast", "address": "jun.watanabe@tarrowby.example",
+      "forms": { "first": "Jun", "full": "Jun Watanabe" } }
+  ],
+
+  "intelFacts": {
+    "tarrowby_recruiter": {
+      "text": "Fatima Begum is Tarrowby's Recruitment Lead, and CVs for current vacancies are sent straight to her.",
+      "subject": "fatima", "source": "blk_recruiter",
+      "provides": [],
+      "reduceNote": "Naming one person as the inbox for every CV tells an attacker exactly who opens attachments from strangers, and who to aim a malicious CV at."
+    },
+    "tarrowby_vacancy": {
+      "text": "Tarrowby is advertising a Warehouse Operative vacancy, reference WHO-114.",
+      "subject": "colin", "source": "blk_vacancy",
+      "provides": [
+        { "type": "reference", "value": "vacancy_who114", "label": "the Warehouse Operative role (WHO-114)", "kind": "distinctive" }
+      ],
+      "reduceNote": "A public vacancy reference gives a fraudster the exact role to quote, so an application lands as expected."
+    },
+    "tarrowby_hiring_manager": {
+      "text": "Colin Mather is Tarrowby's Warehouse Manager and the hiring manager for the open warehouse roles.",
+      "subject": "colin", "source": "blk_hiring_mgr",
+      "provides": [
+        { "type": "name", "value": "mather_full", "label": "Colin Mather", "kind": "distinctive" }
+      ],
+      "reduceNote": "Publishing the hiring manager's name lets a candidate name-drop the right person, which makes a cold application feel expected."
+    },
+    "tarrowby_cv_request": {
+      "text": "A Tarrowby recruitment post asks people to email their CV straight in for the warehouse roles.",
+      "subject": "fatima", "source": "post_cv_request",
+      "provides": [],
+      "reduceNote": "A post inviting the public to email CVs trains staff to open unsolicited attachments; point applicants at an upload portal instead."
+    }
+  },
+
+  "templates": {
+    "from_own": { "part": "from", "text": "{account_name} <{account_address}>", "slots": [] },
+    "greet_generic": { "part": "greeting", "text": "Hello,", "slots": [] },
+    "pretext_application": { "part": "pretext",
+      "text": "I'd like to apply for {vacancy}, which I understand {hiring_manager} is recruiting for. My CV is attached for your review.",
+      "slots": [
+        { "id": "vacancy", "type": "reference", "label": "which vacancy" },
+        { "id": "hiring_manager", "type": "name", "label": "the hiring manager" }
+      ],
+      "urgency": "low" },
+    "pretext_general": { "part": "pretext",
+      "text": "I wanted to introduce myself and tell you a little about my background, in case anything suitable comes up.",
+      "slots": [],
+      "urgency": "low" },
+    "ask_review": { "part": "ask",
+      "text": "Could you confirm you have received my CV and let me know the next steps before the closing date today?",
+      "slots": [],
+      "urgency": "medium" },
+    "ask_calm": { "part": "ask",
+      "text": "No rush at all — take a look whenever you have a chance.",
+      "slots": [],
+      "urgency": "low" }
+  },
+
+  "mailClient": {
+    "accounts": [
+      { "id": "analyst", "address": "a.rendell.jobs@inboxly.example", "displayName": "Alex Rendell",
+        "kind": "given", "person": null, "mailbox": "analyst", "spoofsFrom": false }
+    ],
+    "mailboxes": [ { "id": "analyst" } ],
+    "contacts": [
+      { "id": "fatima", "person": "fatima", "name": "Fatima Begum",
+        "addresses": ["fatima.begum@tarrowby.example"], "role": "Recruitment Lead",
+        "revealedBy": "se_intel_tarrowby_recruiter", "targetId": "recruiter_contact" }
+    ],
+    "payloadKit": [
+      { "id": "kit_cv", "kind": "document", "label": "CV (Word document)" },
+      { "id": "kit_portfolio_zip", "kind": "archive", "label": "Portfolio (zip archive)" }
+    ],
+    "seededMessages": [
+      { "id": "brief", "mailbox": "analyst",
+        "from": { "name": "Red team lead", "address": "lead@redteam.example", "avatar": "npc_neutral" },
+        "to": "a.rendell.jobs@inboxly.example", "subject": "Authorised exercise: Tarrowby Logistics",
+        "body": "Hello,\n\nThis is the authorised Tarrowby Logistics exercise. In scope: this inbox and the recruitment team on it. Research the open vacancy and the recruiter, then send one candidate email with a CV attached. Nothing leaves this account.\n\nRed team lead",
+        "time": "09:04", "unread": true, "folder": "inbox" }
+    ],
+    "checklistTiming": "onSend",
+    "bodyMode": "templates",
+    "freeTextFlavour": false,
+    "showRedFlagMeter": true
+  },
+
+  "osint": {
+    "profile": "awareness",
+    "sites": [
+      { "id": "tarrowby_site", "name": "Tarrowby Logistics", "url": "tarrowby.example", "type": "company-site",
+        "pages": [
+          { "id": "team", "title": "Our people", "blocks": [
+            { "id": "blk_recruiter", "kind": "staff", "person": "fatima", "name": "Fatima Begum",
+              "role": "Recruitment Lead", "address": "fatima.begum@tarrowby.example", "fact": "tarrowby_recruiter" },
+            { "id": "blk_hiring_mgr", "kind": "staff", "person": "colin", "name": "Colin Mather",
+              "role": "Warehouse Manager", "address": "colin.mather@tarrowby.example", "fact": "tarrowby_hiring_manager" },
+            { "id": "blk_hr_assistant", "kind": "staff", "person": "jun", "name": "Jun Watanabe",
+              "role": "HR Assistant", "address": "jun.watanabe@tarrowby.example" } ] },
+          { "id": "careers", "title": "Careers", "blocks": [
+            { "id": "blk_vacancy", "kind": "p",
+              "text": "Now hiring: Warehouse Operative (ref WHO-114), reporting to Warehouse Manager Colin Mather. Apply now.",
+              "fact": "tarrowby_vacancy" } ] } ] },
+
+      { "id": "tarrowby_social", "name": "Friendface", "url": "friendface.example", "type": "social",
+        "profiles": [
+          { "person": "fatima", "posts": [
+            { "id": "post_cv_request", "text": "We're hiring across the warehouse! Don't wait for the portal — just email your CV straight to me and I'll take a look.",
+              "fact": "tarrowby_cv_request" },
+            { "id": "post_fatima_other", "text": "Three new starters through the door this month. Best part of the job." } ] } ] }
+    ]
+  },
+
+  "phishTargets": [
+    {
+      "id": "recruiter_contact",
+      "address": "fatima.begum@tarrowby.example",
+      "displayName": "Fatima Begum",
+      "role": "Recruitment Lead",
+      "subjects": [
+        { "id": "s_application", "text": "Application — Warehouse Operative (WHO-114)", "topic": "recruitment", "requires": ["tarrowby_vacancy"] },
+        { "id": "s_other", "text": "Quick note", "topic": "general" }
+      ],
+      "interests": { "topics": ["recruitment"] },
+      "emailReplyDelay": 6,
+      "redFlagMeter": true,
+      "urgency": { "advisoryMax": "low" },
+      "templateSets": {
+        "from": ["from_own"],
+        "greeting": ["greet_generic"],
+        "pretext": ["pretext_application", "pretext_general"],
+        "ask": ["ask_review", "ask_calm"]
+      },
+      "primedFor": {
+        "distinctiveValues": ["vacancy_who114"],
+        "minDistinct": 1,
+        "trusts": ["*"],
+        "expectedAttachment": "document",
+        "story": "a CV sent in for the warehouse vacancy she is actively recruiting for"
+      },
+      "requiredFactors": ["pretextRelevant", "attachmentPlausible"],
+      "advisoryFactors": ["urgencyCalibrated"],
+      "factorStrings": {
+        "open": { "pass": "✓ She opens CVs from applicants she does not know", "fail": "Nothing about the message made her open it.", "redFlag": null },
+        "pretextRelevant": { "pass": "✓ Ties to the vacancy she is recruiting for", "fail": "No vacancy she can match this to, so no reason to treat it as an application.", "redFlag": null },
+        "attachmentPlausible": {
+          "pass": "✓ A CV is exactly what she expects to receive",
+          "missing": { "fail": "No CV is attached, so there is nothing for her to open.", "redFlag": null },
+          "wrong-type": { "fail": "An archive is not what an applicant sends; she would hesitate to open it, so the lure is weaker.", "redFlag": null }
+        },
+        "urgencyCalibrated": { "pass": "✓ The pressure reads as believable" }
+      },
+      "replies": { "landed": "Thanks for your application — I'll open your CV and pass it to the hiring manager.", "missed": "Thanks for this. I'll open the CV in the viewer, and if it asks me to enable anything or sign in to see it, I'll leave it and ask you to send it another way." },
+      "hints": [
+        "What is Tarrowby actually advertising, and what reference does the vacancy carry?",
+        "Name the vacancy she is recruiting for so the application reads as expected.",
+        "Recruiters expect a CV; attach the document, not an archive they would hesitate to open."
+      ],
+      "outcome": { "setGlobal": { "phish_recruiter_contact_landed": true } }
+    }
+  ]
+}

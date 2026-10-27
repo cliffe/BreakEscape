@@ -1,0 +1,13 @@
+{
+  "key": "d69195256eb2c059454b5d673a87f94c",
+  "npc": "narrator",
+  "text": "Your eyes stay on the network diagram.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:20:18Z"
+}

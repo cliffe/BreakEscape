@@ -1,0 +1,122 @@
+{
+"steps": [
+{
+"note": "R12 (round 4, review M1 / browser B1, m8a): three flags in, the alarm sounded (early: the attack isn't mapped), then the attack is mapped 2 minutes later. The HUD must switch from the alarm's advisory to the normal one at the mapping; the normal clock wins (advisory at mapping + 8, vent at + 14), so the debrief must not blame the alarm."
+},
+{
+"set": {
+"briefing_played": true,
+"guard_admitted": true,
+"vance_met": true,
+"vance_provided_keycard": true,
+"vance_card_cloned": true,
+"vance_is_ally": true,
+"anomaly_detected": true,
+"server_room_reached": true,
+"flag_network_scan_submitted": true,
+"flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true,
+"vance_spoken": true
+}
+},
+{
+"talk": "vance_phone",
+"picks": [
+"night crew",
+"Sound it",
+"That's everything"
+]
+},
+{
+"said": [
+"you've not finished in the workshop"
+]
+},
+{
+"expect": {
+"crew_warned_early": true
+}
+},
+{
+"hud": "h2_advisory_alarm"
+},
+{
+"advance": 2
+},
+{
+"set": {
+"server_room_reached": true,
+"plant_reader_seen": true,
+"fingerprint_kit_found": true,
+"flag_network_scan_submitted": true,
+"flag_ftp_intel_submitted": true,
+"flag_distcc_exploit_submitted": true,
+"flag_privesc_submitted": true,
+"all_flags_in": true,
+"evidence_maintenance_logs_found": true,
+"attack_mechanism_known": true
+}
+},
+{
+"hud": "h2_advisory"
+},
+{
+"advance": 8
+},
+{
+"expect": {
+"hydrogen_alarm": true,
+"racks_vented": false
+}
+},
+{
+"advance": 6
+},
+{
+"expect": {
+"racks_vented": true,
+"vented_by_alarm_clock": false,
+"crew_lost": false
+}
+},
+{
+"set": {
+"voltage_captured": true,
+"voltage_neutralised": true,
+"esd_authorized": true,
+"attack_prevented": true,
+"operative_static_defeated": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Bring me in",
+"Bring me in",
+"On my way"
+]
+},
+{
+"talk": "debrief",
+"picks": [
+"Bank B went",
+"What did we get",
+"how did they get in",
+"And the network",
+"goes in the report",
+"The Architect",
+"I'm in",
+"Full public",
+"honour"
+]
+},
+{
+"said": [
+"Hall 2 was empty when it went"
+],
+"notSaid": [
+"Your alarm started his clock"
+]
+}
+]
+}

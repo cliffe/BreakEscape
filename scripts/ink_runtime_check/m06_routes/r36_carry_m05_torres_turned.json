@@ -1,0 +1,40 @@
+{
+ "imports": {
+  "m05_final_choice": "turn_double_agent"
+ },
+ "steps": [
+  {
+   "note": "R36 (carry-over, 2026-10-17): m05 finished with Torres turned. HaX names it before the first choice, then 'Which payments?'."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Which payments",
+    "Why would Volkova",
+    "I'm ready"
+   ]
+  },
+  {
+   "said": [
+    "You turned Torres. He's still taking their money, but on our script now. That's how we traced the one going out.",
+    "Out: $847,000 to the Insider Threat Initiative for the Quantum Dynamics job, through TalentStack's wallet.",
+    "Somebody is keeping the books"
+   ],
+   "notSaid": [
+    "You put the Initiative on the front pages, and TalentStack's accounts came out with it. That's how we traced the one going out.",
+    "You handed Torres to the polic",
+    "The police took Torres with nh",
+    "You knocked Torres out and sta",
+    "You left Torres on that floor,"
+   ]
+  },
+  {
+   "set": {
+    "briefing_played": true
+   }
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

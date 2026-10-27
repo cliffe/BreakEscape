@@ -5,13 +5,15 @@ import { createPlayer, updatePlayerMovement, movePlayerToPoint, facePlayerToward
 import { initializePathfinder } from './pathfinding.js';
 import { initializeInventory, processInitialInventoryItems } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
+import { wallClearFrom, findClearStandPoint } from '../systems/interaction-walls.js';
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
 import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu } from '../ui/interaction-menu.js';
-import { resolveObjectField } from '../utils/conditional-text.js';
+import { resolveObjectField, evaluateGlobalCondition } from '../utils/conditional-text.js';
 import { introduceScenario } from '../utils/helpers.js';
 import '../minigames/index.js';
 import SoundManager from '../systems/sound-manager.js';
 import { initPlayerHealth } from '../systems/player-health.js';
+import { startPlayerRegen } from '../systems/player-regen.js';
 import { initNPCHostileSystem } from '../systems/npc-hostile.js';
 import { COMBAT_CONFIG } from '../config/combat-config.js';
 import { initCombatDebug } from '../utils/combat-debug.js';
@@ -21,6 +23,7 @@ import { SpriteEffectsSystem } from '../systems/sprite-effects.js';
 import { AttackTelegraphSystem } from '../systems/attack-telegraph.js';
 import { HealthUI } from '../ui/health-ui.js';
 import { NPCHealthBars } from '../ui/npc-health-bars.js';
+import { NPCInfluencePips } from '../ui/npc-influence-pips.js';
 import { GameOverScreen } from '../ui/game-over-screen.js';
 import { createPlayerHUD } from '../ui/hud.js';
 import { PlayerCombat } from '../systems/player-combat.js';
@@ -33,12 +36,39 @@ import { ScenarioTimerUI } from '../ui/scenario-timer.js';  // [Phase 5] Countdo
 import { ScenarioTimerDispatcher } from '../ui/scenario-timer-dispatcher.js';  // [Phase 5] Timer event dispatcher
 import { GameClock } from '../systems/game-clock.js';  // Elapsed game time (resumes after a reload) and the in-game clock
 import { sightChallengeWatcher } from '../systems/npc-sight-challenge.js';  // Opt-in los.challengeOnSight guards
+import '../systems/npc-sight-occlusion.js';  // Walls, doors and tall props block NPC sight (sets window.npcSightOcclusion)
 import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
 import { initLighting } from '../systems/lighting.js';
 import { collectCharacterSprites, queueCharacterAtlases, ensureCharacterTexture } from '../systems/character-textures.js';
+import { mailScheduler } from '../systems/mail-scheduler.js';  // Mail jobs and mailState (social missions)
+import '../systems/mail-runner.js';  // Registers the ink-job runner on the mail scheduler (P1-J); self-installs on import after mailScheduler
+import { notifyNewMail } from '../minigames/mail-client/mail-notification.js';  // HUD/bark for delivered mail (P1-F)
+import { watchReadinessGlobals } from '../systems/social-intel.js';  // needsGlobal readiness slots re-check on a global change
+import { chosenPlayerSprite, playerTalkPath } from '../utils/player-avatar.js';  // aw9: the chosen avatar wins, the portrait follows
 
 // Global variables that will be set by main.js
 let gameScenario;
+
+/**
+ * gameClock.anchors: jump the in-game clock when an anchor's condition first holds.
+ * Checked as soon as a global the condition names changes (so a text sent right after
+ * is stamped after the jump), and once a second for globals set without an event.
+ */
+function watchGameClockAnchors(clock) {
+    const prev = window._gameClockAnchorWatch;
+    if (prev) {
+        clearInterval(prev.timer);
+        prev.subs.forEach(([name, fn]) => window.eventDispatcher?.off?.(name, fn));
+        window._gameClockAnchorWatch = null;
+    }
+    if (!clock?.anchors?.length) return;
+    const check = () => clock.checkAnchors(c => evaluateGlobalCondition(c, window.gameState?.globalVariables || {}));
+    const names = new Set(clock.anchors.flatMap(a => Array.from(a.condition.matchAll(/globalVars\.(\w+)/g), m => m[1])));
+    const subs = [...names].map(n => [`global_variable_changed:${n}`, check]);
+    subs.forEach(([name, fn]) => window.eventDispatcher?.on?.(name, fn));
+    window._gameClockAnchorWatch = { timer: setInterval(check, 1000), subs };
+    check();
+}
 
 // Preload function - loads all game assets
 export function preload() {
@@ -106,6 +136,11 @@ export function preload() {
     this.load.tilemapTiledJSON('room_uni_special', 'rooms/room_uni_special.json'); // Special Collections: bookcases, reading table on a rug, archive safe slot (2x2 GU)
     this.load.tilemapTiledJSON('room_uni_seminar', 'rooms/room_uni_seminar.json'); // Seminar room: whiteboard between blinds, long table, flip chart (2x2 GU)
     this.load.tilemapTiledJSON('room_uni_staff', 'rooms/room_uni_staff.json'); // Open-plan staff office: three desk pods, kitchenette, pigeonholes, photocopier (4x2 GU)
+    // Awareness training rooms, one per company (copies of room_uni_seminar, hand-maintained with room_edit.py)
+    this.load.tilemapTiledJSON('room_aw_brightwell', 'rooms/room_aw_brightwell.json'); // Brightwell Foods finance training room (2x2 GU)
+    this.load.tilemapTiledJSON('room_aw_tarrowby', 'rooms/room_aw_tarrowby.json'); // Tarrowby Logistics depot training room (2x2 GU)
+    this.load.tilemapTiledJSON('room_aw_quayholt', 'rooms/room_aw_quayholt.json'); // Quayholt Insurance service-desk training room (2x2 GU)
+    this.load.tilemapTiledJSON('room_aw_merrin_sallow', 'rooms/room_aw_merrin_sallow.json'); // Merrin & Sallow Architects studio meeting room (2x2 GU)
     this.load.tilemapTiledJSON('room_zds_reception', 'rooms/room_zds_reception.json'); // m03 Zero Day lobby: WHITEHAT sign, marble desk, plaque, awards, leather sofa (2x2 GU)
     this.load.tilemapTiledJSON('room_zds_conference', 'rooms/room_zds_conference.json'); // m03 boardroom: whiteboard, wall screen, walnut table, leather chairs (2x2 GU)
     this.load.tilemapTiledJSON('room_zds_office', 'rooms/room_zds_office.json'); // m03 consultant's office: desk with PC and photo, review, camp bed (2x2 GU)
@@ -113,6 +148,72 @@ export function preload() {
     this.load.tilemapTiledJSON('room_zds_servers', 'rooms/room_zds_servers.json'); // m03 server room: two rack rows, marketplace board, wall safe, VM desk, ops bench (2x2 GU)
     this.load.tilemapTiledJSON('room_zds_hall', 'rooms/room_zds_hall.json'); // m03 corridor: threat map, WHITEHAT sign, water cooler, planter (2x1 GU, 10x6)
     this.load.tilemapTiledJSON('room_zds_hall_exec', 'rooms/room_zds_hall_exec.json'); // m03 executive-wing corridor: carpet, prints, clock, PRIVATE plate (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_aes_hall1', 'rooms/room_aes_hall1.json'); // m04 Battery Hall 1: Rack Bank C rows, dial thermometer, status display, H2 detector (4x2 GU, 20x10)
+    this.load.tilemapTiledJSON('room_aes_hall2', 'rooms/room_aes_hall2.json'); // m04 Battery Hall 2 / inverter room: banks A and B, BMS cabinet, inverter rows (4x2 GU, 20x10)
+    this.load.tilemapTiledJSON('room_aes_plant', 'rooms/room_aes_plant.json'); // m04 inverter / plant room: ESD station, switchgear, transformer, generator, bench (2x2 GU)
+    this.load.tilemapTiledJSON('room_aes_workshop', 'rooms/room_aes_workshop.json'); // m04 engineering workshop: terminal bench, test bench, OT racks (2x2 GU)
+    this.load.tilemapTiledJSON('room_aes_security', 'rooms/room_aes_security.json'); // m04 security office: camera wall, console, lockers (2x2 GU)
+    this.load.tilemapTiledJSON('room_aes_ops', 'rooms/room_aes_ops.json'); // m04 operations office: duty engineer's desk, kitchenette, noticeboard (2x2 GU)
+    this.load.tilemapTiledJSON('room_aes_reception', 'rooms/room_aes_reception.json'); // m04 gatehouse reception: Albion sign, security counter, PPE station (2x2 GU)
+    this.load.tilemapTiledJSON('room_aes_control', 'rooms/room_aes_control.json'); // m04 SCADA control room: HMI console, operator chairs (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_aes_dock', 'rooms/room_aes_dock.json'); // m04 loading dock: roller shutter, pallets, bay lines (2x2 GU)
+    this.load.tilemapTiledJSON('room_hce_trading', 'rooms/room_hce_trading.json'); // m06 HashChain trading floor: ticker, market wall, trading desks (2x2 GU)
+    this.load.tilemapTiledJSON('room_hce_lobby', 'rooms/room_hce_lobby.json'); // m06 HashChain lobby: wordmark, curved desk, ATM, lounge (2x2 GU)
+    this.load.tilemapTiledJSON('room_hce_hall', 'rooms/room_hce_hall.json'); // m06 HashChain checkpoint: noticeboard, guard desk (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_hce_office', 'rooms/room_hce_office.json'); // m06 HashChain Irina's office: bookcases, maths whiteboard, desk (2x2 GU)
+    this.load.tilemapTiledJSON('room_hce_lab', 'rooms/room_hce_lab.json'); // m06 HashChain blockchain lab: mining rigs, node shelf, analyst desks (2x2 GU)
+    this.load.tilemapTiledJSON('room_hce_servers', 'rooms/room_hce_servers.json'); // m06 HashChain server room: rack rows, ops bench, console (2x2 GU)
+    this.load.tilemapTiledJSON('room_hce_vault', 'rooms/room_hce_vault.json'); // m06 HashChain data centre: custody cage, HSMs, custody console (2x2 GU)
+    this.load.tilemapTiledJSON('room_hce_exec_hall', 'rooms/room_hce_exec_hall.json'); // m06 HashChain executive wing: runner, press clipping, console table (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_hce_ceo', 'rooms/room_hce_ceo.json'); // m06 HashChain Satoshi's office: desk, screens, display case, sofa (2x2 GU)
+    this.load.tilemapTiledJSON('room_qdc_lobby', 'rooms/room_qdc_lobby.json'); // m05 QDC reception: wordmark, security desk, speed gates, waiting area (2x2 GU)
+    this.load.tilemapTiledJSON('room_qdc_hall', 'rooms/room_qdc_hall.json'); // m05 QDC main corridor: noticeboard, posters, vending (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_qdc_server_hall', 'rooms/room_qdc_server_hall.json'); // m05 QDC server hallway: badge reader, notices, comms cabinet (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_qdc_break', 'rooms/room_qdc_break.json'); // m05 QDC break room: kitchenette, espresso, tables, sofa (2x2 GU)
+    this.load.tilemapTiledJSON('room_qdc_open', 'rooms/room_qdc_open.json'); // m05 QDC open-plan office: desk banks, IT corner, rollout screen (2x2 GU)
+    this.load.tilemapTiledJSON('room_qdc_torres', 'rooms/room_qdc_torres.json'); // m05 QDC Torres' office: desk, bookcase, lattice board, family drawing (2x2 GU)
+    this.load.tilemapTiledJSON('room_qdc_security', 'rooms/room_qdc_security.json'); // m05 QDC security office (Patricia): CCTV wall, suspects board, filing (2x2 GU)
+    this.load.tilemapTiledJSON('room_qdc_servers', 'rooms/room_qdc_servers.json'); // m05 QDC server room: rack rows, research terminal, drop-site bench (2x2 GU)
+    this.load.tilemapTiledJSON('room_qdc_vault', 'rooms/room_qdc_vault.json'); // m05 QDC key vault: key safes, HSM racks, upload terminal (2x2 GU)
+    this.load.tilemapTiledJSON('room_hq_lobby', 'rooms/room_hq_lobby.json'); // m08 SAFETYNET HQ lobby: reception, alert screen, memorial wall, security line (2x2 GU)
+    this.load.tilemapTiledJSON('room_hq_director', 'rooms/room_hq_director.json'); // m08 SAFETYNET Director's office: desk on a rug, safe, bookcase, credenza (2x2 GU)
+    this.load.tilemapTiledJSON('room_hq_ops', 'rooms/room_hq_ops.json'); // m08 SAFETYNET operations floor: status wall, desks, print tray (2x2 GU)
+    this.load.tilemapTiledJSON('room_hq_intel', 'rooms/room_hq_intel.json'); // m08 SAFETYNET intelligence analysis: tactical board, console, desk (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_hq_servers', 'rooms/room_hq_servers.json'); // m08 SAFETYNET server room: two rack rows, GitList and relay desks (2x2 GU)
+    this.load.tilemapTiledJSON('room_hq_archives', 'rooms/room_hq_archives.json'); // m08 SAFETYNET security archives: shelves, mobile stack, desks (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_hq_crypto', 'rooms/room_hq_crypto.json'); // m08 SAFETYNET cryptography lab: key cabinet, cipher board, Enigma, desks (2x2 GU)
+    this.load.tilemapTiledJSON('room_hq_interview', 'rooms/room_hq_interview.json'); // m08 SAFETYNET interrogation suite: table, mirror, evidence wall (2x2 GU)
+    this.load.tilemapTiledJSON('room_hq_break', 'rooms/room_hq_break.json'); // m08 SAFETYNET staff room: kitchenette, coffee machine, three lockers, tables (2x2 GU)
+    this.load.tilemapTiledJSON('room_qdc_lab', 'rooms/room_qdc_lab.json'); // m05 QDC Heisenberg lab: cryostat, laser bench, glovebox, lab bench (2x2 GU)
+    this.load.tilemapTiledJSON('room_pnw_checkpoint', 'rooms/room_pnw_checkpoint.json'); // m07 PNW Grid security checkpoint: guard counter, muster board, screening lane (2x2 GU)
+    this.load.tilemapTiledJSON('room_pnw_ops', 'rooms/room_pnw_ops.json'); // m07 PNW Grid operations floor: video wall, substation map, console rows, supervisor's dais (2x2 GU)
+    this.load.tilemapTiledJSON('room_pnw_servers', 'rooms/room_pnw_servers.json'); // m07 PNW Grid server hall: rack rows, SCADA backup server, VM terminal, relay (2x2 GU)
+    this.load.tilemapTiledJSON('room_pnw_scada', 'rooms/room_pnw_scada.json'); // m07 PNW Grid SCADA control: mimic board, countdown, master desk (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_pnw_genhall', 'rooms/room_pnw_genhall.json'); // m07 PNW Grid backup generation hall: ATS-1, gensets, day tank (4x2 GU, 20x10)
+    this.load.tilemapTiledJSON('room_pnw_vault', 'rooms/room_pnw_vault.json'); // m07 PNW Grid cable vault: cable ladder, splice, trench (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_m09_dock', 'rooms/room_m09_dock.json'); // m09 Mountain States Records & Retention loading dock yard: shutter, guard hut desk, pallets, fence (2x2 GU)
+    this.load.tilemapTiledJSON('room_m09_front', 'rooms/room_m09_front.json'); // m09 Mountain States Records & Retention front desk: counter, Noor's desk, box trolleys (2x2 GU)
+    this.load.tilemapTiledJSON('room_m09_stacks', 'rooms/room_m09_stacks.json'); // m09 Mountain States Records & Retention open stacks: client-deposit shelving bays, H&L bay (4x2 GU, 20x10)
+    this.load.tilemapTiledJSON('room_m09_closet', 'rooms/room_m09_closet.json'); // m09 Mountain States Records & Retention server closet: rack, degausser (1x1 GU, 5x6)
+    this.load.tilemapTiledJSON('room_m09_passage', 'rooms/room_m09_passage.json'); // m09 Mountain States Records & Retention staff passage: noticeboard, hooks (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_m09_reading', 'rooms/room_m09_reading.json'); // m09 Mountain States Records & Retention reading room: reading desk, drop terminal, microfiche (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_m09_restricted', 'rooms/room_m09_restricted.json'); // m09 Mountain States Records & Retention restricted stacks: hatch counter, binders (2x2 GU)
+    this.load.tilemapTiledJSON('room_m09_cage', 'rooms/room_m09_cage.json'); // m09 Mountain States Records & Retention restricted cage: shredder line, plan cabinet (2x2 GU)
+    this.load.tilemapTiledJSON('room_m09_office', 'rooms/room_m09_office.json'); // m09 Mountain States Records & Retention Sorensen's office: binders, credenza, floor safe (2x2 GU)
+    this.load.tilemapTiledJSON('room_m09_tape', 'rooms/room_m09_tape.json'); // m09 Mountain States Records & Retention tape room: reel shelves, reel deck, shelf-mark legend (2x2 GU)
+    this.load.tilemapTiledJSON('room_m09_salvage', 'rooms/room_m09_salvage.json'); // m09 Mountain States Records & Retention salvage cage: Tomb Beta rack, crates (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_m10_forward', 'rooms/room_m10_forward.json'); // m10 Tomb Gamma forward post: gravel, fence, vans, folding table, gate hut (4x2 GU, 20x10)
+    this.load.tilemapTiledJSON('room_m10_tunnel', 'rooms/room_m10_tunnel.json'); // m10 Tomb Gamma blast tunnel: caged bulbs, guard post desk, ladder (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_m10_security', 'rooms/room_m10_security.json'); // m10 Tomb Gamma security office: monitoring desk, records cupboard, fitter's locker (2x2 GU)
+    this.load.tilemapTiledJSON('room_m10_workshop', 'rooms/room_m10_workshop.json'); // m10 Tomb Gamma workshop floor: benches, cracker rack (2x2 GU)
+    this.load.tilemapTiledJSON('room_m10_power', 'rooms/room_m10_power.json'); // m10 Tomb Gamma power room: Bakelite load board, bypass, battery bay (2x2 GU)
+    this.load.tilemapTiledJSON('room_m10_hall', 'rooms/room_m10_hall.json'); // m10 Tomb Gamma server hall (old command room): plotting board, release console, racks, sealed hatch (4x2 GU, 20x10)
+    this.load.tilemapTiledJSON('room_m10_gallery', 'rooms/room_m10_gallery.json'); // m10 Tomb Gamma gallery: walkway, slit windows, outer lock keypad (2x1 GU, 10x6)
+    this.load.tilemapTiledJSON('room_m10_core', 'rooms/room_m10_core.json'); // m10 Tomb Gamma core: key console, core host terminal, service door (2x2 GU)
+    this.load.tilemapTiledJSON('room_se_engagement', 'rooms/room_se_engagement.json'); // lab_social_engineering hub: Tarnside logo, boards, meeting table, report desk (2x2 GU; from room_zds_conference)
+    this.load.tilemapTiledJSON('room_se_recon', 'rooms/room_se_recon.json'); // lab_social_engineering recon room: two research desks, org chart, notice board (2x2 GU; from room_zds_office)
+    this.load.tilemapTiledJSON('room_se_ops', 'rooms/room_se_ops.json'); // lab_social_engineering operations: desk banks with PCs and a phone (2x2 GU; from room_qdc_open)
+    this.load.tilemapTiledJSON('room_se_blueteam', 'rooms/room_se_blueteam.json'); // lab_social_engineering blue team: camera wall, SIEM board, monitoring desk (2x2 GU; from room_aes_security)
 
     // Load room images (now using smaller 32px scale images)
     this.load.image('room_reception', 'tiles/rooms/room1.png');
@@ -132,6 +233,10 @@ export function preload() {
     this.load.image('room_uni_library', 'tiles/rooms/room_uni_library.png'); // deep green carpet
     this.load.image('room_uni_special', 'tiles/rooms/room_uni_special.png'); // oxblood carpet with a rug
     this.load.image('room_uni_workshop', 'tiles/rooms/room_uni_workshop.png'); // concrete, hazard line round the bench
+    this.load.image('room_aw_brightwell', 'tiles/rooms/room_aw_brightwell.png'); // awareness: off-white, green skirting, charcoal carpet
+    this.load.image('room_aw_tarrowby', 'tiles/rooms/room_aw_tarrowby.png'); // awareness: pale grey, steel-blue skirting, sheet vinyl
+    this.load.image('room_aw_quayholt', 'tiles/rooms/room_aw_quayholt.png'); // awareness: cool white, purple skirting, blue carpet
+    this.load.image('room_aw_merrin_sallow', 'tiles/rooms/room_aw_merrin_sallow.png'); // awareness: warm stone, bronze skirting, concrete
     this.load.image('room_zds_lobby', 'tiles/rooms/room_zds_lobby.png'); // m03: polished stone, hat-mark inlay
     this.load.image('room_zds_carpet', 'tiles/rooms/room_zds_carpet.png'); // m03: slate-blue carpet tiles
     this.load.image('room_zds_exec', 'tiles/rooms/room_zds_exec.png'); // m03: walnut parquet with a navy and gold rug
@@ -140,6 +245,77 @@ export function preload() {
     this.load.image('room_zds_hall', 'tiles/rooms/room_zds_hall.png'); // m03: the lobby stone without decals, for the corridors
     this.load.image('room_zds_office_floor', 'tiles/rooms/room_zds_office_floor.png'); // m03: carpet with a small worn kilim (Danny's office)
     this.load.image('room_zds_hall_exec', 'tiles/rooms/room_zds_hall_exec.png'); // m03: carpet with a burgundy runner (executive corridor)
+    this.load.image('room_aes_lobby', 'tiles/rooms/room_aes_lobby.png'); // m04 Albion Energy Storage: terrazzo, bolt inlay
+    this.load.image('room_aes_carpet', 'tiles/rooms/room_aes_carpet.png'); // m04 Albion Energy Storage: blue-grey carpet, kitchenette vinyl
+    this.load.image('room_aes_security', 'tiles/rooms/room_aes_security.png'); // m04 Albion Energy Storage: charcoal carpet
+    this.load.image('room_aes_control', 'tiles/rooms/room_aes_control.png'); // m04 Albion Energy Storage: anti-static vinyl
+    this.load.image('room_aes_workshop', 'tiles/rooms/room_aes_workshop.png'); // m04 Albion Energy Storage: concrete, hazard line
+    this.load.image('room_aes_plant', 'tiles/rooms/room_aes_plant.png'); // m04 Albion Energy Storage: green epoxy, ESD keep-clear
+    this.load.image('room_aes_dock', 'tiles/rooms/room_aes_dock.png'); // m04 Albion Energy Storage: concrete, bay lines
+    this.load.image('room_aes_hall1_w', 'tiles/rooms/room_aes_hall1_w.png'); // m04 Albion Energy Storage: Hall 1 epoxy, west half
+    this.load.image('room_aes_hall1_e', 'tiles/rooms/room_aes_hall1_e.png'); // m04 Albion Energy Storage: Hall 1 epoxy, east half
+    this.load.image('room_aes_hall2_w', 'tiles/rooms/room_aes_hall2_w.png'); // m04 Albion Energy Storage: Hall 2 epoxy, west half
+    this.load.image('room_aes_hall2_e', 'tiles/rooms/room_aes_hall2_e.png'); // m04 Albion Energy Storage: Hall 2 epoxy, east half
+    this.load.image('room_hce_lobby', 'tiles/rooms/room_hce_lobby.png'); // m06 HashChain Exchange: marble, hex-chain inlay
+    this.load.image('room_hce_hall', 'tiles/rooms/room_hce_hall.png'); // m06 HashChain Exchange: marble (checkpoint)
+    this.load.image('room_hce_trading', 'tiles/rooms/room_hce_trading.png'); // m06 HashChain Exchange: blue-grey carpet, aisle
+    this.load.image('room_hce_office', 'tiles/rooms/room_hce_office.png'); // m06 HashChain Exchange: taupe carpet
+    this.load.image('room_hce_lab', 'tiles/rooms/room_hce_lab.png'); // m06 HashChain Exchange: grey vinyl, trunking
+    this.load.image('room_hce_servers', 'tiles/rooms/room_hce_servers.png'); // m06 HashChain Exchange: raised floor, cold aisles
+    this.load.image('room_hce_vault', 'tiles/rooms/room_hce_vault.png'); // m06 HashChain Exchange: raised floor, custody cage line
+    this.load.image('room_hce_exec_hall', 'tiles/rooms/room_hce_exec_hall.png'); // m06 HashChain Exchange: smoked oak, navy runner
+    this.load.image('room_hce_ceo', 'tiles/rooms/room_hce_ceo.png'); // m06 HashChain Exchange: smoked oak, amber rug
+    this.load.image('room_qdc_lobby', 'tiles/rooms/room_qdc_lobby.png'); // m05 Quantum Dynamics: pale stone, Bloch-sphere inlay
+    this.load.image('room_qdc_hall', 'tiles/rooms/room_qdc_hall.png'); // m05 Quantum Dynamics: slate carpet tiles
+    this.load.image('room_qdc_server_hall', 'tiles/rooms/room_qdc_server_hall.png'); // m05 Quantum Dynamics: grey vinyl, trunking
+    this.load.image('room_qdc_break', 'tiles/rooms/room_qdc_break.png'); // m05 Quantum Dynamics: wood-effect vinyl, kitchen strip
+    this.load.image('room_qdc_open', 'tiles/rooms/room_qdc_open.png'); // m05 Quantum Dynamics: blue-grey carpet, walkway
+    this.load.image('room_qdc_torres', 'tiles/rooms/room_qdc_torres.png'); // m05 Quantum Dynamics: oak, blue rug
+    this.load.image('room_qdc_security', 'tiles/rooms/room_qdc_security.png'); // m05 Quantum Dynamics: plum carpet
+    this.load.image('room_qdc_servers', 'tiles/rooms/room_qdc_servers.png'); // m05 Quantum Dynamics: raised floor, cold aisles
+    this.load.image('room_qdc_vault', 'tiles/rooms/room_qdc_vault.png'); // m05 Quantum Dynamics: dark raised floor, red two-person line
+    this.load.image('room_hq_lobby', 'tiles/rooms/room_hq_lobby.png'); // m08 SAFETYNET HQ: dark granite, SAFETYNET seal
+    this.load.image('room_hq_director', 'tiles/rooms/room_hq_director.png'); // m08 SAFETYNET HQ: walnut parquet, navy rug
+    this.load.image('room_hq_ops', 'tiles/rooms/room_hq_ops.png'); // m08 SAFETYNET HQ: charcoal carpet, walkways
+    this.load.image('room_hq_intel', 'tiles/rooms/room_hq_intel.png'); // m08 SAFETYNET HQ: dark navy carpet
+    this.load.image('room_hq_servers', 'tiles/rooms/room_hq_servers.png'); // m08 SAFETYNET HQ: raised floor, cold aisles
+    this.load.image('room_hq_archives', 'tiles/rooms/room_hq_archives.png'); // m08 SAFETYNET HQ: sealed concrete, aisle lines
+    this.load.image('room_hq_crypto', 'tiles/rooms/room_hq_crypto.png'); // m08 SAFETYNET HQ: grey anti-static tiles, hatched box
+    this.load.image('room_hq_interview', 'tiles/rooms/room_hq_interview.png'); // m08 SAFETYNET HQ: worn grey vinyl
+    this.load.image('room_hq_break', 'tiles/rooms/room_hq_break.png'); // m08 SAFETYNET HQ: wood-effect vinyl, kitchen strip
+    this.load.image('room_qdc_lab', 'tiles/rooms/room_qdc_lab.png'); // m05 Quantum Dynamics: white anti-static tiles, hatched boxes
+    this.load.image('room_pnw_checkpoint', 'tiles/rooms/room_pnw_checkpoint.png'); // m07 PNW Grid: grey terrazzo, fir-and-bolt inlay
+    this.load.image('room_pnw_ops', 'tiles/rooms/room_pnw_ops.png'); // m07 PNW Grid: dark blue carpet, aisle, dais
+    this.load.image('room_pnw_servers', 'tiles/rooms/room_pnw_servers.png'); // m07 PNW Grid: raised floor, cold aisle
+    this.load.image('room_pnw_scada', 'tiles/rooms/room_pnw_scada.png'); // m07 PNW Grid: dark anti-static tiles
+    this.load.image('room_pnw_genhall_w', 'tiles/rooms/room_pnw_genhall_w.png'); // m07 PNW Grid: generation hall epoxy, west half
+    this.load.image('room_pnw_genhall_e', 'tiles/rooms/room_pnw_genhall_e.png'); // m07 PNW Grid: generation hall epoxy, east half
+    this.load.image('room_pnw_vault', 'tiles/rooms/room_pnw_vault.png'); // m07 PNW Grid: wet concrete, cable trench
+    this.load.image('room_m09_dock', 'tiles/rooms/room_m09_dock.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_front', 'tiles/rooms/room_m09_front.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_stacks_w', 'tiles/rooms/room_m09_stacks_w.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_stacks_e', 'tiles/rooms/room_m09_stacks_e.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_closet', 'tiles/rooms/room_m09_closet.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_passage', 'tiles/rooms/room_m09_passage.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_reading', 'tiles/rooms/room_m09_reading.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_restricted', 'tiles/rooms/room_m09_restricted.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_cage', 'tiles/rooms/room_m09_cage.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_office', 'tiles/rooms/room_m09_office.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_tape', 'tiles/rooms/room_m09_tape.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m09_salvage', 'tiles/rooms/room_m09_salvage.png'); // m09 Mountain States Records & Retention sheet
+    this.load.image('room_m10_forward_w', 'tiles/rooms/room_m10_forward_w.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_forward_e', 'tiles/rooms/room_m10_forward_e.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_tunnel', 'tiles/rooms/room_m10_tunnel.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_security', 'tiles/rooms/room_m10_security.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_workshop', 'tiles/rooms/room_m10_workshop.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_power', 'tiles/rooms/room_m10_power.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_hall_w', 'tiles/rooms/room_m10_hall_w.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_hall_e', 'tiles/rooms/room_m10_hall_e.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_gallery', 'tiles/rooms/room_m10_gallery.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_m10_core', 'tiles/rooms/room_m10_core.png'); // m10 Tomb Gamma sheet
+    this.load.image('room_se_boardroom', 'tiles/rooms/room_se_boardroom.png'); // lab_social_engineering: Tarnside teal wall line, carpet with the meeting-table rug
+    this.load.image('room_se_carpet', 'tiles/rooms/room_se_carpet.png'); // lab_social_engineering: Tarnside teal wall line, slate-blue carpet (recon, operations)
+    this.load.image('room_se_charcoal', 'tiles/rooms/room_se_charcoal.png'); // lab_social_engineering: Tarnside teal wall line, charcoal carpet (blue team)
     this.load.image('room14', 'tiles/rooms/room14.png');
     this.load.image('room19', 'tiles/rooms/room19.png');
     this.load.image('door_32', 'tiles/door_32.png');
@@ -184,6 +360,24 @@ export function preload() {
     this.load.image('notes', 'objects/notes1.png');
     this.load.image('checklist', 'objects/checklist.png');
     this.load.image('phone', 'objects/phone1.png');
+    this.load.image('mail_terminal', 'objects/mail_terminal.png');
+    this.load.image('case-file', 'objects/case-file.png');
+    this.load.image('osint-workstation', 'objects/osint-workstation.png');
+    this.load.image('triage-workstation', 'objects/triage-workstation.png');
+    this.load.image('kiosk', 'objects/kiosk.png');
+    this.load.image('aw_brightwell_oatbox1', 'objects/aw_brightwell_oatbox1.png');
+    this.load.image('aw_hard_hat1', 'objects/aw_hard_hat1.png');
+    this.load.image('aw_chair_south_slate1', 'objects/aw_chair_south_slate1.png');
+    this.load.image('aw_chair_north_slate1', 'objects/aw_chair_north_slate1.png');
+    this.load.image('aw_chair_w_slate1', 'objects/aw_chair_w_slate1.png');
+    this.load.image('aw_pc_off1', 'objects/aw_pc_off1.png');
+    this.load.image('aw_studio_chair_s1', 'objects/aw_studio_chair_s1.png');
+    this.load.image('aw_studio_chair_n1', 'objects/aw_studio_chair_n1.png');
+    this.load.image('aw_brightwell_range1', 'objects/aw_brightwell_range1.png');
+    this.load.image('aw_quayholt_queue1', 'objects/aw_quayholt_queue1.png');
+    this.load.image('aw_chairs_stacked_slate1', 'objects/aw_chairs_stacked_slate1.png');
+    this.load.image('page-builder', 'objects/page-builder.png');
+    this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');
     this.load.image('smartscreen', 'objects/smartscreen.png');
     this.load.image('photo', 'objects/picture1.png');
@@ -240,7 +434,10 @@ export function preload() {
         this.load.image(`wheelchair-rotate${i}`, `objects/wheelchair-rotate${i}.png`);
     }
     // Linen cart, corridor IV stand, empty trolley bed and ward drug trolley: 8-direction frames for the same swap.
-    for (const base of ['linen-cart-rotate', 'iv-stand-rotate', 'bed-empty-rotate', 'drug-trolley-rotate']) {
+    for (const base of ['linen-cart-rotate', 'iv-stand-rotate', 'bed-empty-rotate', 'drug-trolley-rotate',
+                        // wheeled props and office chairs that roll and spin (user, 2026-10-16)
+                        'instrument-trolley-rotate', 'tool-trolley-rotate', 'book-trolley-rotate',
+                        'chair-grey-4-rotate', 'chair-darkgray-1-rotate', 'chair-grey-1-rotate']) {
         for (let i = 1; i <= 8; i++) {
             this.load.image(`${base}${i}`, `objects/${base}${i}.png`);
         }
@@ -505,6 +702,10 @@ export function preload() {
     this.load.image('plant-large13-top-ani2', 'objects/plant-large13-top-ani2.png');
     this.load.image('plant-large13-top-ani3', 'objects/plant-large13-top-ani3.png');
     this.load.image('plant-large13-top-ani4', 'objects/plant-large13-top-ani4.png');
+    // fiddle-leaf fig in a grey planter (planter_fig1) with a 7-frame sway, m08 lobby (user, 2026-10-16)
+    for (let i = 1; i <= 7; i++) {
+        this.load.image(`planter-fig1-top-ani${i}`, `objects/planter-fig1-top-ani${i}.png`);
+    }
     this.load.image('pc1', 'objects/pc1.png');
     this.load.image('pc3', 'objects/pc3.png');
     this.load.image('pc4', 'objects/pc4.png');
@@ -796,6 +997,304 @@ export function preload() {
     this.load.image('exec_chair_back1', 'objects/exec_chair_back1.png');
     this.load.image('usb_bowl1', 'objects/usb_bowl1.png');
     this.load.image('bar_cart1', 'objects/bar_cart1.png');
+    this.load.image('aes_esd_station1', 'objects/aes_esd_station1.png');
+    this.load.image('aes_esd_button2', 'objects/aes_esd_button2.png');
+    this.load.image('aes_dial_thermometer1', 'objects/aes_dial_thermometer1.png');
+    this.load.image('aes_h2_detector1', 'objects/aes_h2_detector1.png');
+    this.load.image('aes_vent_fan1', 'objects/aes_vent_fan1.png');
+    this.load.image('aes_ppe_rack1', 'objects/aes_ppe_rack1.png');
+    this.load.image('aes_status_display1', 'objects/aes_status_display1.png');
+    this.load.image('aes_first_aid1', 'objects/aes_first_aid1.png');
+    this.load.image('aes_emergency_phone1', 'objects/aes_emergency_phone1.png');
+    this.load.image('aes_breaker_panel1', 'objects/aes_breaker_panel1.png');
+    this.load.image('aes_pegboard1', 'objects/aes_pegboard1.png');
+    this.load.image('aes_cctv1', 'objects/aes_cctv1.png');
+    this.load.image('aes_lockout_station1', 'objects/aes_lockout_station1.png');
+    this.load.image('aes_hose_reel1', 'objects/aes_hose_reel1.png');
+    this.load.image('aes_hose_reel2', 'objects/aes_hose_reel2.png');
+    this.load.image('aes_radio_charger1', 'objects/aes_radio_charger1.png');
+    this.load.image('aes_hv_sign1', 'objects/aes_hv_sign1.png');
+    this.load.image('aes_barrier1', 'objects/aes_barrier1.png');
+    this.load.image('aes_battery_module1', 'objects/aes_battery_module1.png');
+    this.load.image('aes_battery_rack1', 'objects/aes_battery_rack1.png');
+    this.load.image('aes_battery_rack2', 'objects/aes_battery_rack2.png');
+    this.load.image('aes_beacon1', 'objects/aes_beacon1.png');
+    this.load.image('aes_bms_bypass1', 'objects/aes_bms_bypass1.png');
+    this.load.image('aes_bms_bypass2', 'objects/aes_bms_bypass2.png');
+    this.load.image('aes_bollard1', 'objects/aes_bollard1.png');
+    this.load.image('aes_cable_drum1', 'objects/aes_cable_drum1.png');
+    this.load.image('aes_chiller1', 'objects/aes_chiller1.png');
+    this.load.image('aes_clipboard1', 'objects/aes_clipboard1.png');
+    this.load.image('aes_compressor1', 'objects/aes_compressor1.png');
+    this.load.image('aes_cones1', 'objects/aes_cones1.png');
+    this.load.image('aes_control_panel1', 'objects/aes_control_panel1.png');
+    this.load.image('aes_drum1', 'objects/aes_drum1.png');
+    this.load.image('aes_gas_cylinders1', 'objects/aes_gas_cylinders1.png');
+    this.load.image('aes_generator1', 'objects/aes_generator1.png');
+    this.load.image('aes_generator2', 'objects/aes_generator2.png');
+    this.load.image('aes_inverter1', 'objects/aes_inverter1.png');
+    this.load.image('aes_inverter2', 'objects/aes_inverter2.png');
+    this.load.image('aes_junction_box1', 'objects/aes_junction_box1.png');
+    this.load.image('aes_microwave1', 'objects/aes_microwave1.png');
+    this.load.image('aes_pallet1', 'objects/aes_pallet1.png');
+    this.load.image('aes_pallet_truck1', 'objects/aes_pallet_truck1.png');
+    this.load.image('aes_suppression1', 'objects/aes_suppression1.png');
+    this.load.image('aes_switchgear1', 'objects/aes_switchgear1.png');
+    this.load.image('aes_switchgear2', 'objects/aes_switchgear2.png');
+    this.load.image('aes_toolbox1', 'objects/aes_toolbox1.png');
+    this.load.image('aes_tool_trolley1', 'objects/aes_tool_trolley1.png');
+    this.load.image('aes_transformer1', 'objects/aes_transformer1.png');
+    this.load.image('aes_bank_c_sign1', 'objects/aes_bank_c_sign1.png');
+    this.load.image('aes_bank_a_sign1', 'objects/aes_bank_a_sign1.png');
+    this.load.image('aes_bank_b_sign1', 'objects/aes_bank_b_sign1.png');
+    this.load.image('aes_esd_sign1', 'objects/aes_esd_sign1.png');
+    this.load.image('aes_inverter_sign1', 'objects/aes_inverter_sign1.png');
+    this.load.image('aes_dock_sign1', 'objects/aes_dock_sign1.png');
+    this.load.image('aes_ppe_sign1', 'objects/aes_ppe_sign1.png');
+    this.load.image('aes_hv_danger1', 'objects/aes_hv_danger1.png');
+    this.load.image('aes_process_diagram1', 'objects/aes_process_diagram1.png');
+    this.load.image('aes_procedures_sign1', 'objects/aes_procedures_sign1.png');
+    this.load.image('aes_round_terminal1', 'objects/aes_round_terminal1.png');
+    this.load.image('aes_logo_sign1', 'objects/aes_logo_sign1.png');
+    this.load.image('aes_roller_shutter1', 'objects/aes_roller_shutter1.png');
+    this.load.image('aes_spill_kit1', 'objects/aes_spill_kit1.png');
+    this.load.image('aes_spill_cabinet1', 'objects/aes_spill_cabinet1.png');
+    this.load.image('aes_ladder1', 'objects/aes_ladder1.png');
+    this.load.image('aes_combiner1', 'objects/aes_combiner1.png');
+    this.load.image('aes_combiner2', 'objects/aes_combiner2.png');
+    this.load.image('aes_floor_tray1', 'objects/aes_floor_tray1.png');
+    this.load.image('aes_air_mover1', 'objects/aes_air_mover1.png');
+    this.load.image('aes_condenser1', 'objects/aes_condenser1.png');
+    this.load.image('aes_bms_tower1', 'objects/aes_bms_tower1.png');
+    this.load.image('aes_ppe_cabinet1', 'objects/aes_ppe_cabinet1.png');
+    this.load.image('aes_cabinet_dark1', 'objects/aes_cabinet_dark1.png');
+    this.load.image('aes_floor_grate1', 'objects/aes_floor_grate1.png');
+    this.load.image('aes_trestle1', 'objects/aes_trestle1.png');
+    this.load.image('aes_trestle2', 'objects/aes_trestle2.png');
+    this.load.image('aes_ups1', 'objects/aes_ups1.png');
+    this.load.image('aes_lockers_grey1', 'objects/aes_lockers_grey1.png');
+    this.load.image('aes_shelving1', 'objects/aes_shelving1.png');
+    this.load.image('aes_pcs_cabinet1', 'objects/aes_pcs_cabinet1.png');
+    this.load.image('aes_elec_cabinet1', 'objects/aes_elec_cabinet1.png');
+    this.load.image('aes_console1', 'objects/aes_console1.png');
+    this.load.image('aes_skip1', 'objects/aes_skip1.png');
+    this.load.image('aes_tool_chest1', 'objects/aes_tool_chest1.png');
+    this.load.image('aes_gas_detector2', 'objects/aes_gas_detector2.png');
+    this.load.image('aes_hivis_hook1', 'objects/aes_hivis_hook1.png');
+    this.load.image('aes_shutter_ctrl1', 'objects/aes_shutter_ctrl1.png');
+    this.load.image('aes_bypass_module1', 'objects/aes_bypass_module1.png');
+    this.load.image('aes_mimic_board1', 'objects/aes_mimic_board1.png');
+    this.load.image('aes_speed_gate1', 'objects/aes_speed_gate1.png');
+    this.load.image('aes_security_desk1', 'objects/aes_security_desk1.png');
+    this.load.image('aes_dvr1', 'objects/aes_dvr1.png');
+    this.load.image('aes_office_chair1', 'objects/aes_office_chair1.png');
+    this.load.image('hce_logo_sign1', 'objects/hce_logo_sign1.png');
+    this.load.image('hce_logo_small1', 'objects/hce_logo_small1.png');
+    this.load.image('hce_ticker1', 'objects/hce_ticker1.png');
+    this.load.image('hce_world_clocks1', 'objects/hce_world_clocks1.png');
+    this.load.image('hce_chart_screen1', 'objects/hce_chart_screen1.png');
+    this.load.image('hce_chart_screen2', 'objects/hce_chart_screen2.png');
+    this.load.image('hce_chart_screen3', 'objects/hce_chart_screen3.png');
+    this.load.image('hce_mining_rig1', 'objects/hce_mining_rig1.png');
+    this.load.image('hce_mining_rig2', 'objects/hce_mining_rig2.png');
+    this.load.image('hce_cage_panel1', 'objects/hce_cage_panel1.png');
+    this.load.image('hce_cage_door1', 'objects/hce_cage_door1.png');
+    this.load.image('hce_console_table1', 'objects/hce_console_table1.png');
+    this.load.image('hce_bench1', 'objects/hce_bench1.png');
+    this.load.image('hce_crypto_atm1', 'objects/hce_crypto_atm1.png');
+    this.load.image('hce_node_shelf1', 'objects/hce_node_shelf1.png');
+    this.load.image('hce_wallet_cabinet1', 'objects/hce_wallet_cabinet1.png');
+    this.load.image('hce_price_board1', 'objects/hce_price_board1.png');
+    this.load.image('hce_trading_station1', 'objects/hce_trading_station1.png');
+    this.load.image('hce_comms_cabinet1', 'objects/hce_comms_cabinet1.png');
+    this.load.image('hce_kiosk1', 'objects/hce_kiosk1.png');
+    this.load.image('hce_hsm1', 'objects/hce_hsm1.png');
+    this.load.image('hce_hsm2', 'objects/hce_hsm2.png');
+    this.load.image('hce_coin_sculpture1', 'objects/hce_coin_sculpture1.png');
+    this.load.image('hce_coin_pedestal1', 'objects/hce_coin_pedestal1.png');
+    this.load.image('hce_display_case1', 'objects/hce_display_case1.png');
+    this.load.image('hce_reception_desk1', 'objects/hce_reception_desk1.png');
+    this.load.image('hce_press_clipping1', 'objects/hce_press_clipping1.png');
+    this.load.image('hce_whiteboard_maths1', 'objects/hce_whiteboard_maths1.png');
+    this.load.image('hce_whiteboard_graph1', 'objects/hce_whiteboard_graph1.png');
+    this.load.image('hce_whitepaper_frame1', 'objects/hce_whitepaper_frame1.png');
+    this.load.image('hce_custody_sign1', 'objects/hce_custody_sign1.png');
+    this.load.image('hce_exec_sign1', 'objects/hce_exec_sign1.png');
+    this.load.image('hce_staff_sign1', 'objects/hce_staff_sign1.png');
+    this.load.image('hce_server_sign1', 'objects/hce_server_sign1.png');
+    this.load.image('hce_lab_sign1', 'objects/hce_lab_sign1.png');
+    this.load.image('hce_block_screen1', 'objects/hce_block_screen1.png');
+    this.load.image('hce_phd_frame1', 'objects/hce_phd_frame1.png');
+    this.load.image('hce_sconce1', 'objects/hce_sconce1.png');
+    this.load.image('hce_art_canvas1', 'objects/hce_art_canvas1.png');
+    this.load.image('qdc_cryostat1', 'objects/qdc_cryostat1.png');
+    this.load.image('qdc_dewar1', 'objects/qdc_dewar1.png');
+    this.load.image('qdc_key_lockers1', 'objects/qdc_key_lockers1.png');
+    this.load.image('qdc_key_cabinet1', 'objects/qdc_key_cabinet1.png');
+    this.load.image('qdc_fume_hood1', 'objects/qdc_fume_hood1.png');
+    this.load.image('qdc_glovebox1', 'objects/qdc_glovebox1.png');
+    this.load.image('qdc_optical_bench1', 'objects/qdc_optical_bench1.png');
+    this.load.image('qdc_kitchenette1', 'objects/qdc_kitchenette1.png');
+    this.load.image('qdc_espresso1', 'objects/qdc_espresso1.png');
+    this.load.image('qdc_fridge1', 'objects/qdc_fridge1.png');
+    this.load.image('qdc_recycling_bins1', 'objects/qdc_recycling_bins1.png');
+    this.load.image('qdc_instrument_rack1', 'objects/qdc_instrument_rack1.png');
+    this.load.image('qdc_rack_black1', 'objects/qdc_rack_black1.png');
+    this.load.image('qdc_collection_tin1', 'objects/qdc_collection_tin1.png');
+    this.load.image('qdc_logo_sign1', 'objects/qdc_logo_sign1.png');
+    this.load.image('qdc_logo_small1', 'objects/qdc_logo_small1.png');
+    this.load.image('qdc_lab_sign1', 'objects/qdc_lab_sign1.png');
+    this.load.image('qdc_server_sign1', 'objects/qdc_server_sign1.png');
+    this.load.image('qdc_vault_sign1', 'objects/qdc_vault_sign1.png');
+    this.load.image('qdc_security_sign1', 'objects/qdc_security_sign1.png');
+    this.load.image('qdc_it_sign1', 'objects/qdc_it_sign1.png');
+    this.load.image('qdc_lab_rules1', 'objects/qdc_lab_rules1.png');
+    this.load.image('qdc_badge_hook1', 'objects/qdc_badge_hook1.png');
+    this.load.image('qdc_laser_warning1', 'objects/qdc_laser_warning1.png');
+    this.load.image('qdc_whiteboard_lattice1', 'objects/qdc_whiteboard_lattice1.png');
+    this.load.image('qdc_whiteboard_net1', 'objects/qdc_whiteboard_net1.png');
+    this.load.image('qdc_suspects_board1', 'objects/qdc_suspects_board1.png');
+    this.load.image('qdc_dispatch_screen1', 'objects/qdc_dispatch_screen1.png');
+    this.load.image('qdc_kid_drawing1', 'objects/qdc_kid_drawing1.png');
+    this.load.image('qdc_poster_secure1', 'objects/qdc_poster_secure1.png');
+    this.load.image('qdc_poster_ready1', 'objects/qdc_poster_ready1.png');
+    this.load.image('qdc_poster_team1', 'objects/qdc_poster_team1.png');
+    this.load.image('qdc_it_notice1', 'objects/qdc_it_notice1.png');
+    this.load.image('qdc_whiteboard_keys1', 'objects/qdc_whiteboard_keys1.png');
+    this.load.image('qdc_two_person_sign1', 'objects/qdc_two_person_sign1.png');
+    this.load.image('qdc_kitchenette2', 'objects/qdc_kitchenette2.png');
+    this.load.image('qdc_cctv_desk1', 'objects/qdc_cctv_desk1.png');
+    this.load.image('qdc_eyewash1', 'objects/qdc_eyewash1.png');
+    this.load.image('qdc_lab_desk1', 'objects/qdc_lab_desk1.png');
+    this.load.image('qdc_filing_steel1', 'objects/qdc_filing_steel1.png');
+    this.load.image('filing_cabinet_locked2', 'objects/filing_cabinet_locked2.png');
+    this.load.image('qdc_hsm1', 'objects/qdc_hsm1.png');
+    this.load.image('pnw_logo_sign1', 'objects/pnw_logo_sign1.png');
+    this.load.image('pnw_evac_board1', 'objects/pnw_evac_board1.png');
+    this.load.image('pnw_nerc_notice1', 'objects/pnw_nerc_notice1.png');
+    this.load.image('pnw_muster_sign1', 'objects/pnw_muster_sign1.png');
+    this.load.image('pnw_video_wall1', 'objects/pnw_video_wall1.png');
+    this.load.image('pnw_substation_map1', 'objects/pnw_substation_map1.png');
+    this.load.image('pnw_countdown1', 'objects/pnw_countdown1.png');
+    this.load.image('pnw_mimic1', 'objects/pnw_mimic1.png');
+    this.load.image('notes_plantlog1', 'objects/notes_plantlog1.png');
+    this.load.image('pnw_genplate_one1', 'objects/pnw_genplate_one1.png');
+    this.load.image('pnw_genplate_two1', 'objects/pnw_genplate_two1.png');
+    this.load.image('pnw_genplate_three1', 'objects/pnw_genplate_three1.png');
+    this.load.image('pnw_ear_sign1', 'objects/pnw_ear_sign1.png');
+    this.load.image('pnw_cable_ladder1', 'objects/pnw_cable_ladder1.png');
+    this.load.image('pnw_splice1', 'objects/pnw_splice1.png');
+    this.load.image('pnw_ops_sign1', 'objects/pnw_ops_sign1.png');
+    this.load.image('pnw_server_sign1', 'objects/pnw_server_sign1.png');
+    this.load.image('pnw_scada_sign1', 'objects/pnw_scada_sign1.png');
+    this.load.image('pnw_genhall_sign1', 'objects/pnw_genhall_sign1.png');
+    this.load.image('pnw_vault_sign1', 'objects/pnw_vault_sign1.png');
+    this.load.image('pnw_security_sign1', 'objects/pnw_security_sign1.png');
+    this.load.image('pnw_hose_reel1', 'objects/pnw_hose_reel1.png');
+    this.load.image('pnw_genset1', 'objects/pnw_genset1.png');
+    this.load.image('pnw_ats1', 'objects/pnw_ats1.png');
+    this.load.image('pnw_switch_cabinet1', 'objects/pnw_switch_cabinet1.png');
+    this.load.image('pnw_genset_panel1', 'objects/pnw_genset_panel1.png');
+    this.load.image('pnw_engine_cabinet1', 'objects/pnw_engine_cabinet1.png');
+    this.load.image('pnw_day_tank1', 'objects/pnw_day_tank1.png');
+    this.load.image('pnw_console1', 'objects/pnw_console1.png');
+    this.load.image('pnw_console2', 'objects/pnw_console2.png');
+    this.load.image('pnw_console_pos1', 'objects/pnw_console_pos1.png');
+    this.load.image('pnw_xray1', 'objects/pnw_xray1.png');
+    this.load.image('pnw_arch1', 'objects/pnw_arch1.png');
+    this.load.image('pnw_batteries1', 'objects/pnw_batteries1.png');
+    this.load.image('pnw_cable_trolley1', 'objects/pnw_cable_trolley1.png');
+    this.load.image('pnw_transformer1', 'objects/pnw_transformer1.png');
+    this.load.image('pnw_junction_box1', 'objects/pnw_junction_box1.png');
+    this.load.image('notes_ledger1', 'objects/notes_ledger1.png');
+    this.load.image('notes_clip1', 'objects/notes_clip1.png');
+    this.load.image('pnw_backup_tag1', 'objects/pnw_backup_tag1.png');
+    this.load.image('pnw_portable_printer1', 'objects/pnw_portable_printer1.png');
+    this.load.image('pnw_master_desk1', 'objects/pnw_master_desk1.png');
+    this.load.image('pnw_badge_printer1', 'objects/pnw_badge_printer1.png');
+    this.load.image('pnw_ats_cover1', 'objects/pnw_ats_cover1.png');
+    this.load.image('notes_tucked1', 'objects/notes_tucked1.png');
+    this.load.image('pnw_backup_server1', 'objects/pnw_backup_server1.png');
+    this.load.image('pnw_office_chair_m1', 'objects/pnw_office_chair_m1.png');
+    this.load.image('pnw_desk_return1', 'objects/pnw_desk_return1.png');
+    this.load.image('hq_logo_sign1', 'objects/hq_logo_sign1.png');
+    this.load.image('hq_logo_small1', 'objects/hq_logo_small1.png');
+    this.load.image('hq_memorial1', 'objects/hq_memorial1.png');
+    this.load.image('hq_alert_screen1', 'objects/hq_alert_screen1.png');
+    this.load.image('hq_ops_board1', 'objects/hq_ops_board1.png');
+    this.load.image('hq_tactical_board1', 'objects/hq_tactical_board1.png');
+    this.load.image('hq_evidence_wall1', 'objects/hq_evidence_wall1.png');
+    this.load.image('hq_disposition1', 'objects/hq_disposition1.png');
+    this.load.image('hq_one_way_mirror1', 'objects/hq_one_way_mirror1.png');
+    this.load.image('hq_recording1', 'objects/hq_recording1.png');
+    this.load.image('hq_badge_reader1', 'objects/hq_badge_reader1.png');
+    this.load.image('hq_poster_postit1', 'objects/hq_poster_postit1.png');
+    this.load.image('hq_poster_ears1', 'objects/hq_poster_ears1.png');
+    this.load.image('hq_poster_red1', 'objects/hq_poster_red1.png');
+    this.load.image('hq_cipher_board1', 'objects/hq_cipher_board1.png');
+    this.load.image('hq_ops_sign1', 'objects/hq_ops_sign1.png');
+    this.load.image('hq_intel_sign1', 'objects/hq_intel_sign1.png');
+    this.load.image('hq_crypto_sign1', 'objects/hq_crypto_sign1.png');
+    this.load.image('hq_server_sign1', 'objects/hq_server_sign1.png');
+    this.load.image('hq_break_sign1', 'objects/hq_break_sign1.png');
+    this.load.image('hq_director_sign1', 'objects/hq_director_sign1.png');
+    this.load.image('hq_archive_sign1', 'objects/hq_archive_sign1.png');
+    this.load.image('hq_interview_sign1', 'objects/hq_interview_sign1.png');
+    this.load.image('hq_flowers1', 'objects/hq_flowers1.png');
+    this.load.image('hq_locker_a1', 'objects/hq_locker_a1.png');
+    this.load.image('hq_locker_b1', 'objects/hq_locker_b1.png');
+    this.load.image('hq_locker_c1', 'objects/hq_locker_c1.png');
+    this.load.image('hq_badge_printer1', 'objects/hq_badge_printer1.png');
+    this.load.image('hq_confidential_bin1', 'objects/hq_confidential_bin1.png');
+    this.load.image('notes_postit1', 'objects/notes_postit1.png');
+    this.load.image('notes_legalpad1', 'objects/notes_legalpad1.png');
+    this.load.image('hq_interview_table1', 'objects/hq_interview_table1.png');
+    this.load.image('hq_xray1', 'objects/hq_xray1.png');
+    this.load.image('hq_enigma1', 'objects/hq_enigma1.png');
+    this.load.image('hq_mobile_stack1', 'objects/hq_mobile_stack1.png');
+    this.load.image('hq_archive_shelf1', 'objects/hq_archive_shelf1.png');
+    this.load.image('hq_security_container1', 'objects/hq_security_container1.png');
+    this.load.image('hq_green_safe1', 'objects/hq_green_safe1.png');
+    this.load.image('hq_camera_tripod1', 'objects/hq_camera_tripod1.png');
+    this.load.image('hq_detector_arch1', 'objects/hq_detector_arch1.png');
+    this.load.image('hq_console1', 'objects/hq_console1.png');
+    this.load.image('hq_rack1', 'objects/hq_rack1.png');
+    this.load.image('hq_desk_safe1', 'objects/hq_desk_safe1.png');
+    this.load.image('notes_notebook1', 'objects/notes_notebook1.png');
+    this.load.image('hq_recorder1', 'objects/hq_recorder1.png');
+    this.load.image('qdc_safety_shower1', 'objects/qdc_safety_shower1.png');
+    this.load.image('qdc_first_aid_cabinet1', 'objects/qdc_first_aid_cabinet1.png');
+    this.load.image('pnw_console2_p1', 'objects/pnw_console2_p1.png');
+    this.load.image('pnw_console1_p2', 'objects/pnw_console1_p2.png');
+    this.load.image('pnw_console1_p4', 'objects/pnw_console1_p4.png');
+    this.load.image('pnw_console2_p5', 'objects/pnw_console2_p5.png');
+    this.load.image('pnw_console1_p6', 'objects/pnw_console1_p6.png');
+    this.load.image('m09_logo_sign1', 'objects/m09_logo_sign1.png');
+    this.load.image('m09_sign_reading1', 'objects/m09_sign_reading1.png');
+    this.load.image('m09_sign_restricted1', 'objects/m09_sign_restricted1.png');
+    this.load.image('m09_sign_staff1', 'objects/m09_sign_staff1.png');
+    this.load.image('m09_sign_tape1', 'objects/m09_sign_tape1.png');
+    this.load.image('m09_sign_salvage1', 'objects/m09_sign_salvage1.png');
+    this.load.image('m09_sign_bay2', 'objects/m09_sign_bay2.png');
+    this.load.image('m09_sign_director1', 'objects/m09_sign_director1.png');
+    this.load.image('m09_sign_series_r1', 'objects/m09_sign_series_r1.png');
+    this.load.image('m09_sign_stacks1', 'objects/m09_sign_stacks1.png');
+    this.load.image('m09_sign_returns1', 'objects/m09_sign_returns1.png');
+    this.load.image('m09_shelf_legend1', 'objects/m09_shelf_legend1.png');
+    this.load.image('m09_keypad1', 'objects/m09_keypad1.png');
+    this.load.image('m09_door_controller1', 'objects/m09_door_controller1.png');
+    this.load.image('m09_bay_plate10', 'objects/m09_bay_plate10.png');
+    this.load.image('m09_bay_plate11', 'objects/m09_bay_plate11.png');
+    this.load.image('m09_bay_plate12', 'objects/m09_bay_plate12.png');
+    this.load.image('m09_bay_label1', 'objects/m09_bay_label1.png');
+    this.load.image('m09_rubber_stamp1', 'objects/m09_rubber_stamp1.png');
+    this.load.image('m09_hatch_counter1', 'objects/m09_hatch_counter1.png');
+    this.load.image('m09_mesh_low1', 'objects/m09_mesh_low1.png');
+    this.load.image('m09_crate_alpha1', 'objects/m09_crate_alpha1.png');
+    this.load.image('m09_crate_beta1', 'objects/m09_crate_beta1.png');
+    this.load.image('m09_box_taped1', 'objects/m09_box_taped1.png');
+    this.load.image('m09_box_open1', 'objects/m09_box_open1.png');
+    this.load.image('m09_degausser1', 'objects/m09_degausser1.png');
     this.load.image('backup_recovery',         'objects/backup_recovery.png');
     this.load.image('dual_auth',               'objects/dual_auth.png');
     this.load.image('ehr-terminal',            'objects/ehr-terminal.png');
@@ -880,6 +1379,105 @@ export function preload() {
     this.load.image('chair-white-2-rotate6', 'objects/chair-white-2-rotate6.png');
     this.load.image('chair-white-2-rotate7', 'objects/chair-white-2-rotate7.png');
     this.load.image('chair-white-2-rotate8', 'objects/chair-white-2-rotate8.png');
+
+    // ENTROPY field equipment (ruggedised hardware, used via scenario sprite overrides)
+    this.load.image('entropy_drive_case1', 'objects/entropy_drive_case1.png');
+    this.load.image('entropy_command_unit1', 'objects/entropy_command_unit1.png');
+    this.load.image('entropy_comms_terminal1', 'objects/entropy_comms_terminal1.png');
+    this.load.image('safetynet_flag_terminal1', 'objects/safetynet_flag_terminal1.png');
+    this.load.image('m09_reel_deck1', 'objects/m09_reel_deck1.png');
+    this.load.image('m09_microfiche1', 'objects/m09_microfiche1.png');
+    this.load.image('m09_box_trolley1', 'objects/m09_box_trolley1.png');
+    this.load.image('m09_reel_shelf1', 'objects/m09_reel_shelf1.png');
+    this.load.image('m09_tape_cabinet1', 'objects/m09_tape_cabinet1.png');
+    this.load.image('m09_drop_screen1', 'objects/m09_drop_screen1.png');
+    this.load.image('m09_sign_bay1', 'objects/m09_sign_bay1.png');
+    this.load.image('m09_deck_controller1', 'objects/m09_deck_controller1.png');
+    this.load.image('m09_county_map1', 'objects/m09_county_map1.png');
+    this.load.image('m09_sign_silence1', 'objects/m09_sign_silence1.png');
+    this.load.image('m09_sign_personnel1', 'objects/m09_sign_personnel1.png');
+    this.load.image('m09_shelves_white1', 'objects/m09_shelves_white1.png');
+    this.load.image('m09_shelves_red1', 'objects/m09_shelves_red1.png');
+    this.load.image('m09_shelves_half1', 'objects/m09_shelves_half1.png');
+    this.load.image('m09_shelves_flip1', 'objects/m09_shelves_flip1.png');
+    this.load.image('m09_mesh_rail1', 'objects/m09_mesh_rail1.png');
+    this.load.image('m09_hatch_screen1', 'objects/m09_hatch_screen1.png');
+    this.load.image('m09_hatch_counter2', 'objects/m09_hatch_counter2.png');
+    this.load.image('m09_rubber_stamp2', 'objects/m09_rubber_stamp2.png');
+    this.load.image('m09_strip_sack1', 'objects/m09_strip_sack1.png');
+    this.load.image('m09_folder1', 'objects/m09_folder1.png');
+    this.load.image('m10_sign_fallout1', 'objects/m10_sign_fallout1.png');
+    this.load.image('m10_sign_security1', 'objects/m10_sign_security1.png');
+    this.load.image('m10_sign_workshop1', 'objects/m10_sign_workshop1.png');
+    this.load.image('m10_sign_plant1', 'objects/m10_sign_plant1.png');
+    this.load.image('m10_sign_ops1', 'objects/m10_sign_ops1.png');
+    this.load.image('m10_sign_gallery1', 'objects/m10_sign_gallery1.png');
+    this.load.image('m10_sign_level1', 'objects/m10_sign_level1.png');
+    this.load.image('m10_sign_level2', 'objects/m10_sign_level2.png');
+    this.load.image('m10_sign_keepclear1', 'objects/m10_sign_keepclear1.png');
+    this.load.image('m10_sign_post1', 'objects/m10_sign_post1.png');
+    this.load.image('m10_sign_batteries1', 'objects/m10_sign_batteries1.png');
+    this.load.image('m10_caged_lamp1', 'objects/m10_caged_lamp1.png');
+    this.load.image('m10_readout1', 'objects/m10_readout1.png');
+    this.load.image('m10_readout_side1', 'objects/m10_readout_side1.png');
+    this.load.image('m10_door_panel1', 'objects/m10_door_panel1.png');
+    this.load.image('m10_load_board1', 'objects/m10_load_board1.png');
+    this.load.image('m10_bakelite_panel1', 'objects/m10_bakelite_panel1.png');
+    this.load.image('m10_slit_window1', 'objects/m10_slit_window1.png');
+    this.load.image('m10_plotting_board1', 'objects/m10_plotting_board1.png');
+    this.load.image('m10_wall_ladder1', 'objects/m10_wall_ladder1.png');
+    this.load.image('m10_hatch1', 'objects/m10_hatch1.png');
+    this.load.image('m10_keypad_plate1', 'objects/m10_keypad_plate1.png');
+    this.load.image('m10_service_door1', 'objects/m10_service_door1.png');
+    this.load.image('m10_map_board1', 'objects/m10_map_board1.png');
+    this.load.image('m10_field_screen1', 'objects/m10_field_screen1.png');
+    this.load.image('m10_breaching_case1', 'objects/m10_breaching_case1.png');
+    this.load.image('m10_kit_crate1', 'objects/m10_kit_crate1.png');
+    this.load.image('m10_gate_hut1', 'objects/m10_gate_hut1.png');
+    this.load.image('m10_gate_hut_dark1', 'objects/m10_gate_hut_dark1.png');
+    this.load.image('m10_key_console1', 'objects/m10_key_console1.png');
+    this.load.image('m10_cracker_rack1', 'objects/m10_cracker_rack1.png');
+    this.load.image('m10_van1', 'objects/m10_van1.png');
+    this.load.image('m10_van2', 'objects/m10_van2.png');
+    this.load.image('m10_van3', 'objects/m10_van3.png');
+    this.load.image('m10_bypass_panel1', 'objects/m10_bypass_panel1.png');
+    this.load.image('m10_wall_screen1', 'objects/m10_wall_screen1.png');
+    this.load.image('m10_plans1', 'objects/m10_plans1.png');
+    this.load.image('m10_field_screen_dark1', 'objects/m10_field_screen_dark1.png');
+    this.load.image('m10_console_controls1', 'objects/m10_console_controls1.png');
+    this.load.image('m10_cupboard1', 'objects/m10_cupboard1.png');
+    this.load.image('m10_locker1', 'objects/m10_locker1.png');
+    this.load.image('m10_gate_post1', 'objects/m10_gate_post1.png');
+    this.load.image('m10_gate_post_dark1', 'objects/m10_gate_post_dark1.png');
+    this.load.image('m10_van_step1', 'objects/m10_van_step1.png');
+    this.load.image('m10_van_step2', 'objects/m10_van_step2.png');
+    this.load.image('m10_work_lamp1', 'objects/m10_work_lamp1.png');
+    this.load.image('m10_generator1', 'objects/m10_generator1.png');
+    this.load.image('m10_portal_head1', 'objects/m10_portal_head1.png');
+    this.load.image('m10_blast_leaf1', 'objects/m10_blast_leaf1.png');
+    this.load.image('m10_key_isolator1', 'objects/m10_key_isolator1.png');
+    this.load.image('m10_wall_phone1', 'objects/m10_wall_phone1.png');
+    this.load.image('m10_coat_hooks1', 'objects/m10_coat_hooks1.png');
+    this.load.image('m10_sign_core1', 'objects/m10_sign_core1.png');
+    this.load.image('m10_fire_buckets1', 'objects/m10_fire_buckets1.png');
+    this.load.image('m10_tool_roll1', 'objects/m10_tool_roll1.png');
+    this.load.image('m10_steel_stand1', 'objects/m10_steel_stand1.png');
+    this.load.image('se_logo_sign1', 'objects/se_logo_sign1.png');
+    this.load.image('se_sign_engagement1', 'objects/se_sign_engagement1.png');
+    this.load.image('se_sign_recon1', 'objects/se_sign_recon1.png');
+    this.load.image('se_sign_ops1', 'objects/se_sign_ops1.png');
+    this.load.image('se_sign_blueteam1', 'objects/se_sign_blueteam1.png');
+    this.load.image('m10_steel_bench1', 'objects/m10_steel_bench1.png');
+    this.load.image('m10_steel_chair1', 'objects/m10_steel_chair1.png');
+    this.load.image('m10_field_screen_curve1', 'objects/m10_field_screen_curve1.png');
+    this.load.image('aw_logo_brightwell1', 'objects/aw_logo_brightwell1.png');
+    this.load.image('aw_logo_tarrowby1', 'objects/aw_logo_tarrowby1.png');
+    this.load.image('aw_logo_quayholt1', 'objects/aw_logo_quayholt1.png');
+    this.load.image('aw_logo_merrin_sallow1', 'objects/aw_logo_merrin_sallow1.png');
+    this.load.image('aw_poster_report_brightwell1', 'objects/aw_poster_report_brightwell1.png');
+    this.load.image('aw_poster_report_tarrowby1', 'objects/aw_poster_report_tarrowby1.png');
+    this.load.image('aw_poster_report_quayholt1', 'objects/aw_poster_report_quayholt1.png');
+    this.load.image('aw_poster_report_merrin_sallow1', 'objects/aw_poster_report_merrin_sallow1.png');
 
     // Load audio files
     // NPC system sounds
@@ -977,6 +1575,10 @@ export async function create() {
     // globals are merged: a save can hold names the scenario no longer declares,
     // which stay in gameState but don't sync. Nothing is pruned from the save.
     window.npcConversationStateManager?.setDeclaredGlobals?.(Object.keys(gameScenario.globalVariables || {}));
+    // Globals imported from earlier missions (the server resolved them into
+    // globalVariables when the game was created): read-only from here on.
+    const importedNames = Object.keys(gameScenario.importedGlobals || {});
+    window.npcConversationStateManager?.setReadOnlyGlobals?.(importedNames);
 
     // Merge in server-saved global variables (from a resumed session).
     // Saved values take precedence over scenario defaults so that persistent
@@ -985,6 +1587,10 @@ export async function create() {
         Object.assign(window.gameState.globalVariables, gameScenario.savedGlobalVariables);
         console.log('🌐 Merged saved global variables from server:', gameScenario.savedGlobalVariables);
     }
+    // A save never overrides an imported value.
+    importedNames.forEach(name => {
+        window.gameState.globalVariables[name] = gameScenario.globalVariables?.[name];
+    });
     
     // Restore saved notes from a previous session (includes player observations).
     // Deduplicate by id so notes added this session aren't lost if restore races with addNote.
@@ -1037,6 +1643,7 @@ export async function create() {
         config: gameScenario.gameClock || null,
         saved: gameScenario.savedScenarioClock || null
     });
+    watchGameClockAnchors(window.gameClock);
 
     // Scenarios with a command board (the server sends its config as commandBoard): record
     // its entries from game start, each stamped with the game time it happened, even while
@@ -1062,6 +1669,23 @@ export async function create() {
         window.npcManager?.restorePhoneState?.(gameScenario.savedPhoneState);
     }
 
+    // Mail (social missions): the saved mailState, or the scenario's seeded mail on a
+    // first load. A mission with no social.mailClient and nothing saved stays inactive
+    // and sends no mailState (00 S9). Jobs restart their countdown from remainingMs.
+    mailScheduler.init({ scenario: gameScenario, saved: gameScenario.savedMailState || null });
+    // Readiness slots that wait on a global (needsGlobal) re-check when it changes. A
+    // scenario with no such slot (every shipped mission) installs nothing.
+    watchReadinessGlobals({ scenario: gameScenario });
+    // A delivered reply or timed message raises the mail notification (01 N14,
+    // 00 S9): appended silently when a client is open on that mailbox, a toast
+    // otherwise. Hooked once per page (P1-F, P1-C follow-up).
+    if (!mailScheduler._notifyHooked) {
+        mailScheduler._notifyHooked = true;
+        mailScheduler.onEvent((event, data) => {
+            if (event === 'mail_delivered' && data?.message) notifyNewMail(data.message);
+        });
+    }
+
     // Restore objectives state from server if available (passed via objectivesState)
     if (gameScenario.objectivesState) {
         window.gameState.objectives = gameScenario.objectivesState;
@@ -1080,7 +1704,9 @@ export async function create() {
     // This must happen in create() because gameScenario isn't available until now
     if (gameScenario.objectives && window.objectivesManager) {
         console.log('📋 Initializing objectives from scenario...');
-        window.objectivesManager.initialize(gameScenario.objectives);
+        // Lab games (a `social` block) open a globalVariable-gated aim as soon as
+        // the global changes; other scenarios keep the load-time check only
+        window.objectivesManager.initialize(gameScenario.objectives, { liveGlobalUnlock: !!gameScenario.social });
         
         // Create UI panel (dynamically import to avoid circular dependencies)
         import('../ui/objectives-panel.js').then(module => {
@@ -1124,21 +1750,10 @@ export async function create() {
         const playerData = {
             id: 'player',
             displayName: window.gameState?.playerName || window.gameScenario?.player?.displayName || 'Agent 0x00',
-            spriteSheet: window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet || 'male_hacker_hood_v2',
-            spriteTalk: (() => {
-                const sprite = window.breakEscapeConfig?.playerSprite || window.gameScenario?.player?.spriteSheet || 'male_hacker_hood_v2';
-                // Use the scenario's configured player.spriteTalk when it belongs to the played sprite
-                // (the player's chosen sprite overrides the scenario's, and old scenarios carry a stale
-                // default talk image, so a file for a different character is ignored)
-                const configuredTalk = window.gameScenario?.player?.spriteTalk;
-                if (configuredTalk) {
-                    const stem = (configuredTalk.split('/').pop() || '').replace(/\.\w+$/, '').replace(/[_-]talk$/, '');
-                    if (stem && stem === sprite.replace(/_v2$/, '')) return configuredTalk;
-                }
-                // Legacy sprites use hyphen naming; all others follow {sprite}_talk.png convention
-                const legacyMap = { 'hacker': 'assets/characters/hacker-talk.png', 'hacker-red': 'assets/characters/hacker-red-talk.png' };
-                return legacyMap[sprite] || `assets/characters/${sprite}_talk.png`;
-            })(),
+            spriteSheet: chosenPlayerSprite(),
+            // The scenario's player.spriteTalk only when it belongs to the played sprite: the
+            // player's chosen avatar overrides the scenario's, and the portrait follows it (aw9).
+            spriteTalk: playerTalkPath(chosenPlayerSprite(), window.gameScenario?.player?.spriteTalk),
             metadata: {}
         };
         window.characterRegistry.setPlayer(playerData);
@@ -1205,6 +1820,13 @@ export async function create() {
         frameRate: 8,
         repeat: 0
     });
+
+    this.anims.create({
+        key: 'planter-fig1-bump',
+        frames: [1, 2, 3, 4, 5, 6, 7].map(i => ({ key: `planter-fig1-top-ani${i}` })),
+        frameRate: 10,
+        repeat: 0
+    });
     
     // Initialize rooms system after player exists
     initializeRooms(this);
@@ -1239,6 +1861,14 @@ export async function create() {
     // Initialize combat systems
     COMBAT_CONFIG.validate();
     window.playerHealth = initPlayerHealth();
+    // HP saved before a reload (m05 E6); a save at 0 HP comes back as full
+    if (gameScenario?.savedPlayerHealth) {
+        window.playerHealth.restore(gameScenario.savedPlayerHealth);
+    }
+    // Slow regen out of combat, up to half HP (player-regen.js; scenario playerRegen)
+    window.playerRegen?.stop?.();
+    window.playerRegen = startPlayerRegen({ scenario: gameScenario, defaults: COMBAT_CONFIG.player.regen,
+        eventDispatcher: window.eventDispatcher, hpEvent: 'player_hp_changed', getHealth: () => window.playerHealth });
     window.npcHostileSystem = initNPCHostileSystem();
     // NPCs that turned hostile or were knocked out before a reload (E-B), before
     // any room's NPCs load; each behavior announces its restored hostility.
@@ -1256,7 +1886,12 @@ export async function create() {
 
     // Initialize UI systems
     window.healthUI = new HealthUI();
+    // Show restored HP (the hearts start full)
+    if (window.playerHealth.getHP() < window.playerHealth.getMaxHP()) {
+        window.healthUI.updateHP(window.playerHealth.getHP(), window.playerHealth.getMaxHP());
+    }
     window.npcHealthBars = new NPCHealthBars(this);
+    window.npcInfluencePips = new NPCInfluencePips(this);
     window.gameOverScreen = new GameOverScreen();
     
     initCombatDebug();
@@ -1309,7 +1944,26 @@ export async function create() {
                 // Continue with room creation even if NPC loading fails
             }
         }
-        
+
+        // Headless NPC records (social.characters.*.emailRecord) have no room, so
+        // they register here, once, at game start. No-op without a `social` key.
+        try {
+            window.npcLazyLoader?.registerHeadlessRecords?.(gameScenario);
+        } catch (error) {
+            console.error('Failed to register headless NPC records:', error);
+        }
+
+        // Social influence service (00 S5): only a scenario with social.characters
+        // loads it. With no `social` key nothing is imported or installed.
+        if (gameScenario.social?.characters && Object.keys(gameScenario.social.characters).length > 0) {
+            try {
+                const { installSocialInfluence } = await import('../systems/social-influence.js');
+                installSocialInfluence({ scenario: gameScenario, dispatcher: window.eventDispatcher });
+            } catch (error) {
+                console.error('Failed to install the social influence service:', error);
+            }
+        }
+
         createRoom(startRoomId, startingRoomData, startingRoomPosition);
         revealRoom(startRoomId);
     } catch (error) {
@@ -1340,7 +1994,11 @@ export async function create() {
     // Initialize pathfinder
     initializePathfinder(this);
     
-    // Set up input handling
+    // Set up input handling. Right-click is the punch, so no browser menu
+    // over the game. A second touch pointer lets a finger on the canvas keep
+    // walking while another presses a HUD button.
+    this.input.mouse?.disableContextMenu();
+    this.input.addPointer(1);
     this.input.on('pointerdown', (pointer) => {
         // Check if a minigame is currently running - if so, don't process main game clicks
         if (window.MinigameFramework && window.MinigameFramework.currentMinigame) {
@@ -1355,46 +2013,16 @@ export async function create() {
         const worldX = this.cameras.main.scrollX + pointer.x;
         const worldY = this.cameras.main.scrollY + pointer.y;
         
-        // Check interaction mode - if in punch mode (jab or cross), just punch in the direction of click
-        if (window.playerCombat) {
-            const currentMode = window.playerCombat.getInteractionMode();
-            if (currentMode === 'jab' || currentMode === 'cross') {
-                // Calculate direction from player to click point
-                const player = window.player;
-                if (player) {
-                    const dx = worldX - player.x;
-                    const dy = worldY - player.y;
-                    
-                    // Calculate direction using same logic as NPCs
-                    const absVX = Math.abs(dx);
-                    const absVY = Math.abs(dy);
-                    
-                    let direction;
-                    // Threshold: if one axis is > 2x the other, consider it pure cardinal
-                    if (absVX > absVY * 2) {
-                        direction = dx > 0 ? 'right' : 'left';
-                    } else if (absVY > absVX * 2) {
-                        direction = dy > 0 ? 'down' : 'up';
-                    } else {
-                        // Diagonal
-                        if (dy > 0) {
-                            direction = dx > 0 ? 'down-right' : 'down-left';
-                        } else {
-                            direction = dx > 0 ? 'up-right' : 'up-left';
-                        }
-                    }
-                    
-                    // Update player facing direction
-                    player.lastDirection = direction;
-                    
-                    // Trigger punch animation (don't move)
-                    window.playerCombat.punch();
-                    if (window.getTutorialManager) window.getTutorialManager().notifyAttackedInCombatMode();
-                }
-                return; // Exit early - no movement or interaction in punch modes
+        // Right-click punches towards the pointer (jab, jab, cross for clicks in
+        // a row). Left click and touch always move or interact; touch players
+        // punch with the on-screen button (hud.js).
+        if (pointer.rightButtonDown()) {
+            if (window.playerCombat) {
+                window.playerCombat.attack({ x: worldX, y: worldY });
             }
+            return;
         }
-        
+
         // A menu is already open — this tap is meant to dismiss it. Consume it so
         // it doesn't also move the player / trigger another interaction.
         if (isInteractionMenuOpen()) {
@@ -1442,8 +2070,14 @@ export async function create() {
                     const stopShortOffset = TILE_SIZE * 0.75;
                     const normalizedDx = dx / distance;
                     const normalizedDy = dy / distance;
-                    movePlayerToPoint(npcAtPosition.x - normalizedDx * stopShortOffset,
-                                      npcBottomY - normalizedDy * stopShortOffset);
+                    let stand = { x: npcAtPosition.x - normalizedDx * stopShortOffset,
+                                  y: npcBottomY - normalizedDy * stopShortOffset };
+                    // Through a wall, "stop short on my side" lands behind the wall:
+                    // walk round to a spot on the NPC's side instead (interaction-walls.js)
+                    if (!wallClearFrom(stand, npcAtPosition)) {
+                        stand = findClearStandPoint(npcAtPosition, player, window.pathfindingManager, INTERACTION_RANGE) || stand;
+                    }
+                    movePlayerToPoint(stand.x, stand.y);
                 }
             }
             return;
@@ -1494,7 +2128,8 @@ export async function create() {
                                     const reachAfter = (p) => Math.hypot(p.x - footDx - obj.x, p.y - footDy - obj.y);
                                     const walk = (p) => Math.hypot(p.x - (player.x + footDx), p.y - (player.y + footDy));
                                     const aimed = pfm.findNearestWalkableWorldCell(target.x, target.y);
-                                    if (!aimed || reachAfter(aimed) > INTERACTION_RANGE - 4) {
+                                    // (or the aimed spot is behind a wall: interaction-walls.js)
+                                    if (!aimed || reachAfter(aimed) > INTERACTION_RANGE - 4 || !wallClearFrom(aimed, obj)) {
                                         let best = aimed, bestReach = aimed ? reachAfter(aimed) : Infinity, bestWalk = aimed ? walk(aimed) : Infinity;
                                         for (let a = 0; a < 16; a++) {
                                             const ang = (a / 16) * Math.PI * 2;
@@ -1503,7 +2138,7 @@ export async function create() {
                                                     obj.x + Math.cos(ang) * r + footDx, obj.y + Math.sin(ang) * r + footDy, 3);
                                                 if (!c) continue;
                                                 const ra = reachAfter(c), wk = walk(c);
-                                                const ok = ra <= INTERACTION_RANGE - 4, bestOk = bestReach <= INTERACTION_RANGE - 4;
+                                                const ok = ra <= INTERACTION_RANGE - 4 && wallClearFrom(c, obj), bestOk = bestReach <= INTERACTION_RANGE - 4 && wallClearFrom(best, obj);
                                                 if ((ok && (!bestOk || wk < bestWalk)) || (!ok && !bestOk && ra < bestReach)) {
                                                     best = c; bestReach = ra; bestWalk = wk;
                                                 }
@@ -1670,11 +2305,10 @@ async function checkAndShowTutorial() {
         return;
     }
 
-    // Wait a bit for the game to settle (after title screen, etc.)
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Ask if player wants tutorial
-    const wantsTutorial = await tutorialManager.showTutorialPrompt();
+    // Ask if player wants tutorial, after a second for the game to settle (title
+    // screen, etc.). The prompt counts as open from now, so sight challenges hold
+    // through the delay too (npc-sight-challenge.js).
+    const wantsTutorial = await tutorialManager.showTutorialPrompt({ delayMs: 1000 });
 
     if (wantsTutorial) {
         // Start the tutorial
@@ -1703,7 +2337,10 @@ export function update() {
     }
 
     // NPCs with los.challengeOnSight react when the player walks into their sight
-    sightChallengeWatcher.update(Date.now());
+    // (not while the player is on the VM: R13, vm-context-pause.js)
+    if (!window.isVmContextActive?.()) {
+        sightChallengeWatcher.update(Date.now());
+    }
 
     // [Phase 5] Update scenario timers (fire timers and dispatch events)
     if (window.scenarioTimerDispatcher) {
@@ -1731,6 +2368,9 @@ export function update() {
     }
     if (window.npcHealthBars) {
         window.npcHealthBars.update();
+    }
+    if (window.npcInfluencePips) {
+        window.npcInfluencePips.update();
     }
     if (window.playerHUD) {
         window.playerHUD.update();
@@ -1832,6 +2472,7 @@ function gatherInteractablesNearClick(worldX, worldY) {
     };
 
     const koSystem = window.npcHostileSystem;
+    const doorwaysSeen = new Map();
 
     Object.values(window.rooms).forEach(room => {
         // Items
@@ -1839,7 +2480,10 @@ function gatherInteractablesNearClick(worldX, worldY) {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
                 if (!isObjectInInteractionRange(obj)) return;
-                if (!tapHits(obj.x, obj.y, obj)) return;
+                // Swivel props (rolling chairs, trolleys) count only when the tap is on their own
+                // sprite: the radial slop round their top-left put a chair into the menu for
+                // the PC on the desk in front of it (user review 2026-10-16, more chairs swivel).
+                if (obj.isSwivelChair ? !tapHits(Infinity, Infinity, obj) : !tapHits(obj.x, obj.y, obj)) return;
                 const data = obj.scenarioData || {};
                 const name = data.name || obj.name || 'Item';
                 const detail = resolveObjectField(data, 'observations', obj.observations || null);
@@ -1892,14 +2536,25 @@ function gatherInteractablesNearClick(worldX, worldY) {
                 const ddy = door.y - player.y;
                 if (ddx * ddx + ddy * ddy > DOOR_RANGE_SQ) return;
                 if (!tapHits(door.x, door.y, door)) return;
-                candidates.push({
+                // Each room draws its own sprite for a shared N/S doorway, so the two
+                // sides of one door can both be in reach: list the doorway once, by the
+                // sprite of the room the player is standing in (m09 dressing R2).
+                const pairKey = [door.doorProperties.roomId, door.doorProperties.connectedRoom].sort().join('|');
+                const seen = doorwaysSeen.get(pairKey);
+                if (seen) {
+                    if (door.doorProperties.roomId !== window.currentPlayerRoom) return;
+                    candidates.splice(candidates.indexOf(seen), 1);
+                }
+                const entry = {
                     label: door.doorProperties.door_sign || 'Door',
                     detail: door.doorProperties.locked ? 'Locked' : null,
                     icon: openHandIcon(),
                     onSelect: () => {
                         if (window.handleDoorInteraction) window.handleDoorInteraction(door);
                     }
-                });
+                };
+                doorwaysSeen.set(pairKey, entry);
+                candidates.push(entry);
             });
         }
     });

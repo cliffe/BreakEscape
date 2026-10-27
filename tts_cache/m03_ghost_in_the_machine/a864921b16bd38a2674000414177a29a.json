@@ -1,0 +1,13 @@
+{
+  "key": "a864921b16bd38a2674000414177a29a",
+  "npc": "terry_mott",
+  "text": "Ms. Sterling? She's the boss. Signs my wages, never learnt my name. It's Terry, since you didn't ask.",
+  "voice": "Algieba",
+  "style": "Contract security guard in his fifties. Speak with a consistent South London / Estuary English accent throughout -- do not shift to any other accent. Low, slightly gravelly pitch; slow, flat pace. Tired, dry and procedural; not stupid, and not paid enough to be a hero.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:34:51Z"
+}

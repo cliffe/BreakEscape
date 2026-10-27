@@ -40,5 +40,24 @@ module BreakEscape
       assert_response :redirect
       assert_match /\/games\/\d+/, @response.location
     end
+
+    test "index lists a lab_games mission under the Lab Games heading" do
+      mission = break_escape_missions(:lab_games_fixture)
+      get missions_url
+      assert_response :success
+
+      heading = css_select('h2.collection-heading').find { |h| h.text.strip == 'Lab Games' }
+      assert heading, 'expected a "Lab Games" collection heading'
+      assert_select '.mission-title', text: mission.display_name
+      assert_equal 'lab_games', mission.collection
+    end
+
+    test "collection filter lab_games shows only lab_games missions" do
+      get missions_url(collection: 'lab_games')
+      assert_response :success
+      assert_select '.mission-title', text: break_escape_missions(:lab_games_fixture).display_name
+      assert_select '.mission-title', text: break_escape_missions(:ceo_exfil).display_name, count: 0
+      assert_select 'h2.collection-heading', text: 'Lab Games'
+    end
   end
 end

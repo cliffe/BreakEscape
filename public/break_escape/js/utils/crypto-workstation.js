@@ -46,6 +46,9 @@ export function closeLaptop() {
         window.game.input.mouse.enabled = true;
         window.game.input.keyboard.enabled = true;
     }
+
+    // Barks held while the popup was open (npc-barks.js _shouldDefer)
+    window.barkSystem?.drainDeferredBarks?.();
 }
 
 // Open the crypto workstation iframe in a new tab. CyberChef keeps the recipe

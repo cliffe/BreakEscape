@@ -7,12 +7,21 @@
 # report is fiction. Run it after every playtest and paste the output into the
 # report.
 #
-#   BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id>
+#   BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb [--tasks] <game_id>
 #
 # Exit status is 1 when the game shows no progress at all, so a fabricated run
 # fails rather than merely looking odd.
+#
+# The objectivesState tasks are always listed (status and completion time), with
+# tasks_completed and the score. Completed tasks count toward the verdict only
+# when the scenario has a top-level `social` key or --tasks is passed. Other
+# missions keep the old verdict: their opening briefings complete tasks by
+# themselves, so a completed task is not evidence of play there. The record
+# holds only a status, so "completed once" is proved by tasks_completed and the
+# score; tools/playtest/count-task-posts.sh checks the request log.
 
-game_id = ARGV[0] or abort 'usage: verify-run.rb <game_id>'
+count_tasks_flag = !ARGV.delete('--tasks').nil?
+game_id = ARGV[0] or abort 'usage: verify-run.rb [--tasks] <game_id>'
 g = BreakEscape::Game.find(game_id)
 ps = g.player_state || {}
 
@@ -35,6 +44,27 @@ puts "NPCs met        #{npcs.length}: #{npcs.join(', ')}"
 puts "flags submitted #{flags.length}: #{flags.join(', ')}"
 puts "globals set     #{globals.length}: #{globals.keys.sort.join(', ')}"
 
+tasks = (ps.dig('objectivesState', 'tasks') || {})
+completed_ids = tasks.select { |_, t| t.is_a?(Hash) && t['status'] == 'completed' }.keys
+social = begin
+  g.scenario_data.key?('social')
+rescue StandardError => e
+  puts "scenario        could not read scenario data (#{e.class}); treating as non-social"
+  false
+end
+tasks_count_toward_verdict = social || count_tasks_flag
+
+puts "tasks           #{tasks.length} in objectivesState, #{completed_ids.length} completed"
+tasks.each do |id, t|
+  t = {} unless t.is_a?(Hash)
+  detail = t['completedAt'] ? "  at #{t['completedAt']}" : ''
+  detail += "  progress #{t['progress']}" if t['progress']
+  puts "  #{id.ljust(34)} #{t['status'].inspect}#{detail}"
+end
+puts "tasks_completed #{g.tasks_completed.inspect}"
+puts "score           #{g.score.inspect}"
+puts "social scenario #{social}#{tasks_count_toward_verdict ? ' (completed tasks count toward the verdict)' : ' (completed tasks do not count; pass --tasks to count them)'}"
+
 # What counts as evidence of play. Rooms and NPCs are seeded at creation for
 # some missions, and the opening cutscene sets several globals before the
 # player has done anything, so neither is proof. Only these can happen by
@@ -44,6 +74,7 @@ signals = {
   'objects unlocked' => objects.length,
   'flags submitted' => flags.length
 }
+signals['tasks completed'] = completed_ids.length if tasks_count_toward_verdict
 played = signals.values.sum
 
 puts

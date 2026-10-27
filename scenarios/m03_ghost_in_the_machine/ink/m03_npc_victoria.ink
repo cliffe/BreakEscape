@@ -49,9 +49,10 @@ VAR idle_quiet = false
 VAR hub_quiet = false
 // Pass 2 dialogue round 2 (2026-10-12).
 // D2-3: her afternoon question to the recruit ("sold" / "hedged" / "asked"), quoted
-// back at night. Local: only this ink reads it.
+// back at night. A4 fix pass: now a synced scenario global too, for the credits line.
 VAR victoria_test_answer = ""
 // Scenes #6 / D4-2: "keen" at the afternoon goodbye; read back at night with "sold".
+// A4 fix pass: synced, so a reload between afternoon and night keeps it.
 VAR afternoon_goodbye = ""
 // D2-17: synced. The player looked in on her night call; she reveals she saw them.
 VAR sterling_on_call_seen = false
@@ -62,6 +63,11 @@ VAR named_target_selection = false
 VAR defended_danny = false // Synced scenario global: set when the player speaks up for Danny's survey to Sterling
 // D4-14: the player opened the night on St. Catherine's.
 VAR came_via_hospital = false
+// A4 fix pass (S8): synced. She saw the cloner's light during the read (clone_check_2).
+VAR cloner_glimpsed = false
+// Synced: how the player covered it ("flattery" / "diagram" / "certs"), read back at night.
+// Synced, not local, because ink locals are not restored after a page reload.
+VAR cloner_deflection = ""
 
 // Root divert. When a conversation has ended (-> DONE), the engine restores only
 // its variables on the next talk and continues from the root (npc-conversation-
@@ -95,12 +101,17 @@ VAR came_via_hospital = false
     // Pass 4 (fix 2): a knocked-out receptionist doesn't go unnoticed. Feeds the
     // P4 suspicion logic, and opens the "eager recruit" walk-back.
     { receptionist_ko:
-        ~ victoria_suspicious = victoria_suspicious + 10
+        // Engine robustness audit: counted once, as this opening can now replay after a reload.
+        { not suspicion_warned:
+            ~ victoria_suspicious = victoria_suspicious + 10
+        }
         ~ suspicion_warned = true
         Victoria Sterling: Our receptionist isn't at her desk. You didn't pass her on the way in?
         Narrator: She says it lightly. She watches your face the whole time she says it.
     }
-    ~ recruitment_discussed = true
+    // Engine robustness audit (m01-m08): recruitment_discussed is set in philosophy_intro,
+    // after her first question is answered, so an Esc and a reload at that question bring
+    // the recruitment pitch back instead of skipping to the hub.
     -> first_impression
 }
 { recruitment_discussed && not victoria_card_cloned:
@@ -146,6 +157,7 @@ Victoria Sterling: Competent is cheap. That's not why you're here.
     -> philosophy_intro
 
 === philosophy_intro ===
+~ recruitment_discussed = true
 #speaker:victoria_sterling
 // D4-1 sweep / D4-12: a day knot re-entered at night (a reopen lands on the knot
 // that owns the saved choices) hands over to start, which routes by phase.
@@ -354,18 +366,21 @@ Victoria Sterling: Good. Indignation is cheap, and it pays nobody's rent.
 Victoria Sterling: You find a hole in an NHS trust's patient records. The vendor offers you a T-shirt and a thank-you. A buyer offers forty thousand. What do you do?
 + [Take the forty. The vendor had years to find it.]
     ~ victoria_test_answer = "sold"
+    #set_global:victoria_test_answer:sold
     ~ victoria_influence = victoria_influence + 10
     # influence_increased
     Victoria Sterling: Quickly said. I'll remember that.
     -> question_done
 + [Report it. Then invoice the vendor for my time anyway.]
     ~ victoria_test_answer = "hedged"
+    #set_global:victoria_test_answer:hedged
     ~ victoria_influence = victoria_influence + 5
     # influence_increased
     Victoria Sterling: Wanting both. Honest, at least. It won't make you rich.
     -> question_done
 + [I'd want to know what the buyer wanted it for.]
     ~ victoria_test_answer = "asked"
+    #set_global:victoria_test_answer:asked
     ~ victoria_suspicious = victoria_suspicious + 5
     Victoria Sterling: Then you'd never sell anything. The buyer who explains himself is the one you should worry about.
     { victoria_suspicious >= 10 and not suspicion_warned:
@@ -485,6 +500,8 @@ Victoria Sterling: The lab's the easy part. The money is in knowing who'll pay, 
 ~ read_dropped = true
 // Pass 5 (P1-25): synced so HaX's "she keeps stepping away" hint shows only now.
 #set_global:clone_read_dropped:true
+// A4 follow-up: read_dropped is synced too, so the night opener's "training network twice" line survives a reload.
+#set_global:read_dropped:true
 Victoria Sterling: Let's sit back down. I'd rather see your face than the back of your head.
 Narrator: She walks back to the table. The cloner's read stalls halfway, then drops. Out of range.
 // Pass 2 blind fixes (B F2): say how to get the read back, and skip the hub's
@@ -504,20 +521,28 @@ Victoria Sterling: You ask questions like someone taking notes. I like that in s
 // Cycle 2, scene #1: one beat of danger during the read, only for a player who has
 // already pushed her. Narration only: no choice, no gate.
 { victoria_suspicious >= 5 and not read_dropped:
+    ~ cloner_glimpsed = true
+    #set_global:cloner_glimpsed:true
     Narrator: Her eyes drop to your pocket, where the cloner's light shows through the cloth. Then back to the board.
 }
 // Pass 2 blind fixes: "Nearly there. Keep her talking." read as a game prompt.
 Narrator: Against your leg, the cloner is still working. A few seconds more.
 * [Skills are cheap. Knowing where to sell them isn't.]
+    ~ cloner_deflection = "flattery"
+    #set_global:cloner_deflection:flattery
     ~ victoria_influence = victoria_influence + 10
     # influence_increased
     Victoria Sterling: Exactly. Which is why my researchers are paid like surgeons.
     -> clone_complete
 * [This lab can't have been cheap to build.]
+    ~ cloner_deflection = "diagram"
+    #set_global:cloner_deflection:diagram
     Narrator: Your eyes stay on the network diagram.
     Victoria Sterling: It paid for itself in a quarter. Universities teach them to write it up. I teach them what it's worth.
     -> clone_complete
 * [Do you offer any formal certifications?]
+    ~ cloner_deflection = "certs"
+    #set_global:cloner_deflection:certs
     Victoria Sterling: Certificates are for people who want permission. My students don't ask.
     -> clone_complete
 
@@ -565,6 +590,7 @@ Victoria Sterling: That's enough philosophy for one afternoon. The programme sta
 // Scenes #6 / D4-2: only "keen" is read back at night (with the "sold" answer).
 * [This is exactly the kind of work I've been looking for.]
     ~ afternoon_goodbye = "keen"
+    #set_global:afternoon_goodbye:keen
     ~ victoria_influence = victoria_influence + 10
     # influence_increased
     Victoria Sterling: Good. I'll have the enrolment details sent over.
@@ -625,6 +651,20 @@ Victoria Sterling: You came back after hours. Recruits don't do that.
     // Only after a reload or a chat closed before the test.
     Victoria Sterling: You were very easy to like this afternoon. That should have worried me sooner.
   }
+}
+// A4 fix pass (S8): the cloner's light she saw during the read, and how the player
+// covered it. Not after a receptionist KO (that opener is already about the afternoon).
+{ cloner_glimpsed and not receptionist_ko:
+    {
+    - cloner_deflection == "flattery":
+        Victoria Sterling: Your pocket lit up this afternoon, and you chose that moment to flatter me. I enjoyed the flattery. I should have looked at the pocket.
+    - cloner_deflection == "diagram":
+        Victoria Sterling: Your pocket lit up this afternoon, and my network diagram suddenly fascinated you. I checked my card was still in my bag. It was. That's the trick, isn't it?
+    - cloner_deflection == "certs":
+        Victoria Sterling: Your pocket lit up this afternoon, and you asked me about certificates. Nobody cares about certificates. You wanted me looking anywhere else.
+    - else:
+        Victoria Sterling: Something in your pocket lit up this afternoon. I told myself it was a phone.
+    }
 }
 // Pass 4 (fix 6): telling her own guard costs the player the question.
 { guard_told_safetynet:

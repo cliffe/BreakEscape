@@ -801,6 +801,10 @@ export function startNotesMinigame(item, noteContent, observationText, navigateT
             // Check if we need to return to a container after notes minigame
             if (window.pendingContainerReturn && window.returnToContainerAfterNotes) {
                 console.log('Returning to container after notes minigame');
+                // The notes panel is closing and the container opens 100 ms later. Held
+                // toasts released in that gap showed, were pulled back by the container
+                // and showed again on close (F13, engine F24).
+                window.expectPanelWithin?.(1000);
                 // Small delay to ensure notes minigame cleanup completes
                 setTimeout(() => {
                     window.returnToContainerAfterNotes();
@@ -810,6 +814,7 @@ export function startNotesMinigame(item, noteContent, observationText, navigateT
             // Check if we need to return to phone after notes minigame
             if (window.pendingPhoneReturn && window.returnToPhoneAfterNotes) {
                 console.log('Returning to phone after notes minigame');
+                window.expectPanelWithin?.(1000); // held toasts wait for it (F13, engine F24)
                 // Small delay to ensure notes minigame cleanup completes
                 setTimeout(() => {
                     window.returnToPhoneAfterNotes();
@@ -819,6 +824,7 @@ export function startNotesMinigame(item, noteContent, observationText, navigateT
             // Check if we need to return to text file after notes minigame
             if (window.pendingTextFileReturn && window.returnToTextFileAfterNotes) {
                 console.log('Returning to text file after notes minigame');
+                window.expectPanelWithin?.(1000); // held toasts wait for it (F13, engine F24)
                 // Small delay to ensure notes minigame cleanup completes
                 setTimeout(() => {
                     window.returnToTextFileAfterNotes();
@@ -829,6 +835,14 @@ export function startNotesMinigame(item, noteContent, observationText, navigateT
     
     console.log('Starting minigame with params:', params);
     window.MinigameFramework.startMinigame('notes', null, params);
+}
+
+// Unique note ids: the timestamp plus a counter, so several notes added in one
+// millisecond (a call grants three facts in one run) do not collide in the sync merge.
+let noteIdCounter = 0;
+function nextNoteId() {
+    noteIdCounter = (noteIdCounter + 1) % 1000;
+    return Date.now() * 1000 + noteIdCounter;
 }
 
 // Global addNote function for compatibility with the old notes system
@@ -865,7 +879,7 @@ window.addNote = function(title, text, important = false) {
     }
     
     const note = {
-        id: Date.now(),
+        id: nextNoteId(),
         title: title,
         text: text,
         timestamp: new Date(),

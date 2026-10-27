@@ -2,8 +2,10 @@
   "display_name": "The Mole",
   "description": "Someone inside SAFETYNET handed ENTROPY the Portland deployment before it was signed. Two agents are dead. Go back to headquarters and find the traitor among your own colleagues, quietly, before they vanish.",
   "difficulty_level": 2,
-  "secgen_scenario": "m08_the_mole",
+  "secgen_scenario": "break_escape/safetynet/m08_the_mole.xml",
   "collection": "season_1",
+  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m08-the-mole/",
+  "ui_theme": "spy",
   "id": "m08_the_mole",
   "title": "Mission 8: The Mole",
   "subtitle": "Internal Investigation",
@@ -13,7 +15,9 @@
   "season": 1,
   "episodeNumber": 8,
   "requiredPrecedingMissions": [],
-  "recommendedPrecedingMissions": ["m07_architects_gambit"],
+  "recommendedPrecedingMissions": [
+    "m07_architects_gambit"
+  ],
   "campaignEnhanced": true,
   "standalonePlayable": true,
   "primaryCell": "Insider Threat Initiative",
@@ -29,74 +33,49 @@
   ],
   "cybok": [
     {
-      "ka": "AAA",
-      "topic": "Authentication",
-      "keywords": ["user authentication"]
-    },
-    {
       "ka": "NS",
-      "topic": "PENETRATION TESTING",
-      "keywords": ["SECURE SHELL (SSH)"]
+      "topic": "Networking Applications",
+      "keywords": ["NMAP", "PORT SCANNING", "SECURE SHELL (SSH)"]
     },
     {
-      "ka": "MAT",
-      "topic": "Attacks and exploitation",
-      "keywords": ["EXPLOITATION", "EXPLOITATION FRAMEWORKS", "GitList CVE-2018-1000533"]
+      "ka": "WAM",
+      "topic": "Server-Side Vulnerabilities and Mitigations",
+      "keywords": ["injection vulnerabilities", "server-side misconfiguration and vulnerable components"]
     },
     {
       "ka": "SS",
       "topic": "Categories of Vulnerabilities",
-      "keywords": ["CVEs and CWEs", "Version control security", "Secret management failures", "Configuration vulnerabilities", "Credential leakage in repositories"]
+      "keywords": ["CVES AND CWES", "HARD-CODED PASSWORD"]
     },
     {
       "ka": "SOIM",
-      "topic": "PENETRATION TESTING",
-      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS", "PENETRATION TESTING - ACTIVE PENETRATION", "Internal threat hunting", "Anomaly detection", "Evidence correlation"]
-    },
-    {
-      "ka": "AAA",
-      "topic": "Authorisation",
-      "keywords": ["access control", "Elevated privileges", "Vulnerabilities and attacks on access control misconfigurations"]
+      "topic": "Fundamental Concepts",
+      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS", "VULNERABILITY ANALYSIS"]
     },
     {
       "ka": "OSV",
       "topic": "Primitives for Isolation and Mediation",
-      "keywords": ["Access controls and operating systems", "Linux security model", "Attacks against SUDO"]
-    },
-    {
-      "ka": "AB",
-      "topic": "Models",
-      "keywords": ["kill chains"]
-    },
-    {
-      "ka": "MAT",
-      "topic": "Malicious Activities by Malware",
-      "keywords": ["cyber kill chain"]
-    },
-    {
-      "ka": "HF",
-      "topic": "Human Factors",
-      "keywords": ["Insider threat psychology", "Behavioral indicators", "Social engineering within trusted environments", "Trust exploitation"]
-    },
-    {
-      "ka": "F",
-      "topic": "Forensics",
-      "keywords": ["Digital evidence collection", "Log analysis", "Communication metadata", "Timeline reconstruction", "Forensic timeline reconstruction"]
-    },
-    {
-      "ka": "AC",
-      "topic": "Applied Cryptography",
-      "keywords": ["Encrypted communication analysis", "Decoding intercepted messages", "Operational security failures"]
-    },
-    {
-      "ka": "CPS",
-      "topic": "Physical Security",
-      "keywords": ["Physical access control", "RFID cloning", "PIN code systems"]
+      "keywords": ["physical access and secure deletion", "authentication and identification", "PRIVILEGE ESCALATION"]
     },
     {
       "ka": "AAA",
       "topic": "Authentication",
-      "keywords": ["RFID authentication", "PIN-based authentication", "Access control bypass"]
+      "keywords": ["user authentication", "BIOMETRICS", "SMART CARDS", "PERSONAL IDENTIFICATION NUMBER AND MEMORABLE INFORMATION"]
+    },
+    {
+      "ka": "AB",
+      "topic": "Characterisation of Adversaries",
+      "keywords": ["THE INSIDER THREAT", "state actors"]
+    },
+    {
+      "ka": "F",
+      "topic": "Definitions and Conceptual Models",
+      "keywords": ["digital (forensic) trace", "AUDIT TRAIL"]
+    },
+    {
+      "ka": "C",
+      "topic": "Symmetric Cryptography",
+      "keywords": ["ENCODING", "CAESAR CIPHER"]
     }
   ],
   "secgen": {
@@ -113,9 +92,9 @@
   },
   "mechanics": {
     "new": [
-      "Ally investigation system",
-      "Evidence timeline reconstruction",
-      "Internal security exploitation",
+      "Naming the mole from a door audit read against the leak's timestamp",
+      "Suspects who confirm or refuse their own audit rows",
+      "Tip-off costs (any accusation before the naming gets around the floor, and the mole clears his locker)",
       "Triple agent mechanics (conditional)",
       "Non-hostile social engineering"
     ],
@@ -149,7 +128,7 @@
       "significance": "The traitor, ideological convert, central antagonist"
     },
     {
-      "name": "Agent 0x23 'Cipher'",
+      "name": "Agent 0x23 'Vector'",
       "role": "Intelligence Analyst",
       "affiliation": "SAFETYNET",
       "significance": "Red herring suspect"
@@ -166,13 +145,13 @@
       "choicePoint": "Nightshade's Fate",
       "options": [
         {
-          "choice": "Arrest",
-          "consequence": "Justice served, no ongoing intelligence, morally clean",
+          "choice": "Detain and hand over to police (no deal)",
+          "consequence": "He answers in court; SAFETYNET keeps no claim on him and gets no ongoing intelligence",
           "variable": "nightshade_arrested = true"
         },
         {
-          "choice": "Turn Triple Agent",
-          "consequence": "Intelligence access, risk of double-cross, moral compromise",
+          "choice": "Keep him in place as a triple agent",
+          "consequence": "Intelligence access and a first payment owed at Tomb Gamma; risk of double-cross, on the Director's signature",
           "variable": "nightshade_triple_agent = true"
         }
       ],
@@ -182,41 +161,41 @@
       ]
     },
     {
-      "choicePoint": "Expose Internal Vulnerabilities",
+      "choicePoint": "The debrief: what you tell the Director about the sealed warning",
       "options": [
         {
-          "choice": "Public Accountability",
-          "consequence": "Forces reform, damages reputation and operational security",
-          "variable": "safetynet_exposed = true"
+          "choice": "He's the crime, not you",
+          "consequence": "Netherton carries it privately; the credits record that you defended him",
+          "variable": "debrief_stance = \"defended\""
         },
         {
-          "choice": "Quiet Fix",
-          "consequence": "Maintains operational security, no public accountability",
-          "variable": "safetynet_exposed = false"
+          "choice": "Own the gap",
+          "consequence": "Netherton puts his own name in the report beside Nightshade's",
+          "variable": "debrief_stance = \"owned\""
         }
       ]
     }
   ],
   "loreCollectibles": [
     {
-      "name": "Insider Threat Initiative 'Deep State' Manual",
-      "location": "Nightshade's encrypted files",
-      "significance": "Systematic ENTROPY infiltration of government"
+      "name": "Insider Threat Initiative 'Deep State' Brief",
+      "location": "Nightshade's staff locker, break room",
+      "significance": "How ENTROPY recruits convinced insiders during training"
     },
     {
-      "name": "The Architect's Communication to Nightshade",
-      "location": "Decoded encrypted archive",
-      "significance": "The Architect's voice and personality revealed"
+      "name": "Nightshade's Sent Mail to The Architect",
+      "location": "USB stick in his locker, decoded at the Crypto Lab's CyberChef station",
+      "significance": "His own account of the trade, in his words"
     },
     {
-      "name": "SAFETYNET's Global Threat Database Catalog",
+      "name": "SAFETYNET's Global Threat Database Catalogue",
       "location": "Security Archives",
       "significance": "Scope of what The Architect stole in M7"
     },
     {
-      "name": "Nightshade's Training Records",
+      "name": "Dr Okafor's Sealed Psych Evaluation",
       "location": "Director's safe",
-      "significance": "SAFETYNET missed warning signs, organizational failure"
+      "significance": "The warning SAFETYNET had in writing a year ago, and sealed"
     },
     {
       "name": "Tomb Gamma Coordinates",
@@ -243,27 +222,25 @@
   },
   "successMetrics": {
     "fullSuccess": [
-      "Mole identified with conclusive evidence",
+      "Mole named to the Director from the door audit on the first reading",
       "All 4 VM flags submitted",
       "All 5 LORE collectibles found",
-      "Appropriate choice made for Nightshade",
+      "No innocent suspect accused, and Nightshade not tipped off",
       "Tomb Gamma location secured"
     ],
     "partialSuccess": [
-      "Mole identified with some evidence gaps",
-      "2-3 VM flags submitted",
-      "Some LORE collectibles found",
-      "Nightshade handled but incomplete intelligence"
+      "Mole named after a misread, or an innocent accused and then apologised to",
+      "All 4 VM flags submitted",
+      "Some LORE collectibles found"
     ],
     "minimalSuccess": [
-      "Mole identified but rushed evidence",
-      "1-2 VM flags submitted",
-      "Limited LORE discovery",
-      "Poor confrontation outcome"
+      "The Director (or HaX) had to read the door audit for you",
+      "All 4 VM flags submitted",
+      "Nightshade tipped off before he was named"
     ]
   },
   "developmentStatus": "Feature-complete Draft",
   "version": "0.3.0",
   "estimated_duration_minutes": 70,
-  "lastUpdated": "2026-08-31"
+  "lastUpdated": "2026-10-13"
 }

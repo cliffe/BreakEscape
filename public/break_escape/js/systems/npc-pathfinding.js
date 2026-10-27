@@ -16,6 +16,7 @@
 
 import { TILE_SIZE, GRID_SIZE, PATHFINDING_STEP } from '../utils/constants.js';
 import { addDoorway } from './path-doorways.js';
+import { AVOID_CELL_COST, collectAvoidRects, avoidCells, crossesAvoidRect } from './path-avoid.js';
 
 const PATROL_EDGE_OFFSET = 2; // Distance from room edge (2 tiles)
 
@@ -737,20 +738,58 @@ export class NPCPathfindingManager {
         // The grid keeps a body's clearance round every obstacle, so a body
         // can be standing (legally, a few px from a wall or desk) in a cell the
         // grid calls blocked, and EasyStar finds nothing from a blocked start.
-        // Start from the nearest walkable cell instead; it is within 2 cells.
+        // Start from the nearest walkable cell the body can walk straight to.
         let sx = toCX(startX), sy = toCY(startY);
         if (this.worldGrid[sy]?.[sx] !== 0) {
-            const near = this.findNearestWalkableWorldCell(startX, startY, 2);
+            const near = this.findNearestWalkableStartCell(startX, startY);
             if (near) { sx = toCX(near.x); sy = toCY(near.y); }
         }
 
         if (avoidNPCs) this._avoidNPCPositions(sx, sy);
+        // Player paths also pay extra to cross "prefer to route around" objects
+        // (path-avoid.js). calculate() runs every queued search to the end
+        // before it returns, so the costs are cleared straight after it.
+        const costed = avoidNPCs ? this._applyPreferAvoidCosts() : 0;
 
         this.worldPathfinder.findPath(sx, sy, toCX(endX), toCY(endY), (tilePath) => {
             if (avoidNPCs) this.worldPathfinder.stopAvoidingAllAdditionalPoints();
             callback(tilePath?.length > 0 ? tilePath.map(p => toWorld(p.x, p.y)) : null);
         });
         this.worldPathfinder.calculate();
+        if (costed) this.worldPathfinder.removeAllAdditionalPointCosts();
+    }
+
+    /** Footprints of every "prefer to route around" object in the loaded rooms. */
+    getPreferAvoidRects() {
+        const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+        if (this._avoidRectCache && now - this._avoidRectCache.at < 100) return this._avoidRectCache.rects;
+        const sprites = [];
+        for (const roomId in (window.rooms || {})) {
+            const objs = window.rooms[roomId]?.objects;
+            if (objs) for (const k in objs) sprites.push(objs[k]);
+        }
+        if (Array.isArray(window.chairs)) sprites.push(...window.chairs);
+        const rects = collectAvoidRects(sprites);
+        this._avoidRectCache = { at: now, rects };
+        return rects;
+    }
+
+    /** Put AVOID_CELL_COST on the world pathfinder for every avoided cell; returns the count. */
+    _applyPreferAvoidCosts() {
+        if (!this.worldPathfinder?.setAdditionalPointCost || !this.worldGrid) return 0;
+        const cells = avoidCells(this.getPreferAvoidRects(), this.worldGridBounds, this.worldGrid);
+        for (const { cx, cy } of cells) this.worldPathfinder.setAdditionalPointCost(cx, cy, AVOID_CELL_COST);
+        return cells.length;
+    }
+
+    /**
+     * Player LOS: hasWorldPhysicsLineOfSight, and the line doesn't cross a
+     * "prefer to route around" object (path-avoid.js). `via`: raw route points
+     * between the two ends; an object the route goes through anyway is allowed.
+     */
+    hasPlayerLineOfSight(x1, y1, x2, y2, via = null) {
+        if (!this.hasWorldPhysicsLineOfSight(x1, y1, x2, y2)) return false;
+        return !crossesAvoidRect(x1, y1, x2, y2, this.getPreferAvoidRects(), { via });
     }
 
     /**
@@ -786,6 +825,46 @@ export class NPCPathfindingManager {
             if (best !== null) break;
         }
         return best;
+    }
+
+    /**
+     * Where a body standing at (worldX, worldY) should start a path from: the
+     * nearest walkable cell it can walk to in a straight line. The grid keeps a
+     * body's clearance round every obstacle, so a narrow open gap (behind m01's
+     * reception desk, against the back wall) is all blocked cells; the nearest
+     * walkable cell there is often on the far side of the desk, and an NPC sent
+     * to it walks into the desk and stays (m01: Sarah punched behind her desk).
+     * Only the centre line is tested: the gap is narrower than the body-width
+     * sweep, and the physics slides the body along an edge it grazes.
+     * Falls back to the plain nearest cell when nothing in range has a line.
+     */
+    findNearestWalkableStartCell(worldX, worldY, maxRadius = 10) {
+        if (!this.worldGrid || !this.worldGridBounds) return null;
+        const { minX, minY, cols, rows, step } = this.worldGridBounds;
+        const centerCX = Math.floor((worldX - minX) / step);
+        const centerCY = Math.floor((worldY - minY) / step);
+        if (this.worldGrid[centerCY]?.[centerCX] === 0) {
+            return { x: minX + centerCX * step + step / 2, y: minY + centerCY * step + step / 2 };
+        }
+
+        const candidates = [];
+        for (let dy = -maxRadius; dy <= maxRadius; dy++) {
+            for (let dx = -maxRadius; dx <= maxRadius; dx++) {
+                const cx = centerCX + dx, cy = centerCY + dy;
+                if (cy < 0 || cy >= rows || cx < 0 || cx >= cols) continue;
+                if (this.worldGrid[cy][cx] !== 0) continue;
+                const x = minX + cx * step + step / 2;
+                const y = minY + cy * step + step / 2;
+                candidates.push({ x, y, d: (x - worldX) ** 2 + (y - worldY) ** 2 });
+            }
+        }
+        candidates.sort((a, b) => a.d - b.d);
+        for (const c of candidates) {
+            if (this.hasWorldPhysicsLineOfSight(worldX, worldY, c.x, c.y, 0, 0)) {
+                return { x: c.x, y: c.y };
+            }
+        }
+        return this.findNearestWalkableWorldCell(worldX, worldY, maxRadius);
     }
 
     /**
@@ -1024,8 +1103,10 @@ export class NPCPathfindingManager {
     /**
      * Greedy string-pull using hasWorldPhysicsLineOfSight — no roomId needed.
      * Should be used for all player path smoothing.
+     * avoidProps (player click-to-move): also keep shortcuts off "prefer to
+     * route around" objects the raw route went round (path-avoid.js).
      */
-    smoothWorldPathForPlayer(startX, startY, path) {
+    smoothWorldPathForPlayer(startX, startY, path, avoidProps = false) {
         if (!path || path.length <= 1) return path;
         const debug = isDebug();
         const smoothed = [];
@@ -1038,7 +1119,10 @@ export class NPCPathfindingManager {
             let limit = path.length - 1;
             for (let k = i; k < path.length; k++) if (path[k].pinned) { limit = k; break; }
             for (let j = limit; j > i; j--) {
-                if (this.hasWorldPhysicsLineOfSight(cx, cy, path[j].x, path[j].y)) {
+                const clear = avoidProps
+                    ? this.hasPlayerLineOfSight(cx, cy, path[j].x, path[j].y, path.slice(i, j))
+                    : this.hasWorldPhysicsLineOfSight(cx, cy, path[j].x, path[j].y);
+                if (clear) {
                     farthest = j; break;
                 }
             }

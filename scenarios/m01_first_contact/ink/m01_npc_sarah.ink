@@ -18,7 +18,6 @@ VAR asked_about_manager = false
 
 === start ===
 {not met_sarah:
-    ~ met_sarah = true
     Sarah O'Brien: Hi! You must be the IT contractor. I'm Sarah, the receptionist.
     Sarah O'Brien: Let me get you checked in for the security audit.
     -> first_checkin
@@ -47,6 +46,9 @@ VAR asked_about_manager = false
 // ================================================
 
 === receive_items ===
+// Engine robustness audit (m01-m08): the met flag is set when the opening is done, not
+// before it plays, so an Esc and a reload mid-opening replay it instead of losing it.
+~ met_sarah = true
 ~ has_badge = true
 ~ has_office_key = true
 #give_item:id_badge

@@ -71,6 +71,11 @@ export async function addItemToRoom(roomId, item, options = {}) {
     }
 }
 
+/** True for the temp_<time> ids given to stand-in sprites (container items). */
+export function isStandInObjectId(itemId) {
+    return typeof itemId === 'string' && /^temp_\d+$/.test(itemId);
+}
+
 /**
  * Remove an item from a room (e.g., player picks up)
  * @param {string} roomId - Room ID
@@ -78,6 +83,10 @@ export async function addItemToRoom(roomId, item, options = {}) {
  * @returns {Promise<boolean>} Success status
  */
 export async function removeItemFromRoom(roomId, itemId) {
+    // Items taken from a container or the inventory get a stand-in sprite with a
+    // temp_<time> id. It was never a room object, so the server answered 422
+    // (m06 confirmation N-6-1: a note read from the custody console)
+    if (isStandInObjectId(itemId)) return false;
     const gameId = window.breakEscapeConfig?.gameId;
     if (!gameId) {
         console.error('Cannot sync room state: gameId not available');
@@ -379,7 +388,7 @@ export async function batchUpdateRoomState(updates) {
 }
 
 // Export to window for global access
-window.RoomStateSync = {
+if (typeof window !== 'undefined') window.RoomStateSync = {
     addItemToRoom,
     removeItemFromRoom,
     updateObjectState,

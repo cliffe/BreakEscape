@@ -3,6 +3,7 @@ import { CombatEvents } from '../events/combat-events.js';
 import { getNPCDirection } from './npc-sprites.js';
 
 const npcHostileStates = new Map();
+const KO_FACINGS = new Set(['down', 'up', 'left', 'right', 'down-left', 'down-right', 'up-left', 'up-right']);
 
 // Hostility and KO set this session or saved before a reload (E-B), so an NPC
 // that turned on the player is still hostile after a reload and a knocked-out
@@ -14,8 +15,54 @@ const hostilityRecord = new Map();
 // sprite exists (takeRestoredHostility), so its tint and health bar come back.
 const restoredPending = new Map();
 
+// A hurt NPC (not KO'd) also records its HP, so a reload doesn't bring it back
+// at full health (7.1g, m08 E12): { hostile, ko, hp, maxHP }.
 function recordHostility(npcId, state) {
-  hostilityRecord.set(npcId, { hostile: !!state.isHostile, ko: !!state.isKO });
+  const entry = { hostile: !!state.isHostile, ko: !!state.isKO };
+  // The way it fell, so a reload lays it in that death animation's last frame
+  // rather than facing down (m08 confirmation R4: ATHENA fell right, came back down)
+  if (state.isKO && KO_FACINGS.has(state.koFacing)) entry.facing = state.koFacing;
+  if (!state.isKO && state.currentHP > 0 && state.currentHP < state.maxHP) {
+    entry.hp = state.currentHP;
+    entry.maxHP = state.maxHP;
+  }
+  hostilityRecord.set(npcId, entry);
+}
+
+// The combat numbers a scenario can set per NPC in behavior.hostile (7.1e).
+// Missing values fall back to combat-config.js in createHostileState.
+const HOSTILE_STAT_KEYS = ['attackDamage', 'maxHP', 'attackCooldown', 'attackRange'];
+
+/**
+ * The NPC's configured combat numbers: its behavior's hostile config first
+ * (npc-behavior.js parseConfig), then the config passed to setNPCHostile.
+ * Only positive numbers count; anything else is left out.
+ */
+function configuredHostileStats(npcId, config) {
+  const fromBehavior = window.npcBehaviorManager?.getBehavior?.(npcId)?.config?.hostile || {};
+  const stats = {};
+  for (const key of HOSTILE_STAT_KEYS) {
+    const value = [fromBehavior[key], config?.[key]].find(v => typeof v === 'number' && v > 0);
+    if (value !== undefined) stats[key] = value;
+  }
+  return stats;
+}
+
+/**
+ * Apply configured combat numbers to a state that already exists (7.1f): a
+ * getState() read before the NPC turned builds a default state, which used to
+ * keep the default 10 damage. An unhurt NPC takes the new maxHP as its HP; a
+ * hurt one keeps its HP, capped at the new maximum.
+ */
+function applyHostileStats(state, stats) {
+  if (stats.attackDamage) state.attackDamage = stats.attackDamage;
+  if (stats.attackCooldown) state.attackCooldown = stats.attackCooldown;
+  if (stats.attackRange) state.attackRange = stats.attackRange;
+  if (stats.maxHP && stats.maxHP !== state.maxHP && !state.isKO) {
+    const unhurt = state.currentHP >= state.maxHP;
+    state.maxHP = stats.maxHP;
+    state.currentHP = unhurt ? stats.maxHP : Math.min(state.currentHP, stats.maxHP);
+  }
 }
 
 function createHostileState(npcId, config = {}) {
@@ -40,14 +87,53 @@ export function initNPCHostileSystem() {
     getState: (npcId) => getNPCHostileState(npcId),
     damageNPC: (npcId, amount) => damageNPC(npcId, amount),
     isNPCKO: (npcId) => isNPCKO(npcId),
+    isNPCKOImmune: (npcId) => isNPCKOImmune(npcId),
+    getKOFacing: (npcId) => getKOFacing(npcId),
     exportHostility: () => exportHostility(),
     restoreHostility: (saved) => restoreHostility(saved),
     takeRestoredHostility: (npcId) => takeRestoredHostility(npcId),
-    announceRestoredHostile: (npcId, config) => announceRestoredHostile(npcId, config)
+    announceRestoredHostile: (npcId, config) => announceRestoredHostile(npcId, config),
+    resetHostilesForRespawn: () => resetHostilesForRespawn()
   };
 }
 
-/** { npcId: { hostile, ko } } for the server (state-sync.js). */
+/**
+ * The player chose Restart after a knockout (7.1d; m05 D5, m07 U11): every
+ * hostile NPC that isn't knocked out goes back to its start state, calm (or
+ * hostile again if the scenario starts it hostile) and at full health. The
+ * reload that follows puts it back at its post. A KO'd NPC stays down, so
+ * what it dropped stays dropped; nothing here touches an NPC's itemsHeld, so
+ * one that wasn't KO'd still holds its items. An NPC that goes hostile -> calm
+ * emits NPC_HOSTILE_CHANGED { npcId, isHostile: false, reset: true } before it
+ * is saved, so missions' mappings clear their hostile flags. No event when it
+ * returns to hostile (startHostile): that is no change for a mapping to see.
+ * @returns {string[]} the NPCs reset
+ */
+export function resetHostilesForRespawn() {
+  const reset = [];
+  for (const [npcId, state] of npcHostileStates) {
+    if (!state.isHostile || state.isKO) continue;
+    const behavior = window.npcBehaviorManager?.getBehavior?.(npcId);
+    state.isHostile = behavior?.config?.hostile?.startHostile === true;
+    state.currentHP = state.maxHP;
+    if (behavior) behavior.hostile = state.isHostile;
+    if (!state.isHostile) {
+      window.eventDispatcher?.emit(CombatEvents.NPC_HOSTILE_CHANGED, { npcId, isHostile: false, reset: true });
+    }
+    recordHostility(npcId, state);
+    reset.push(npcId);
+  }
+  if (reset.length) console.log(`⚔️ Respawn: reset hostility for ${reset.join(', ')}`);
+  return reset;
+}
+
+/** The direction a knocked-out NPC fell facing, or null if not known. */
+export function getKOFacing(npcId) {
+  const state = npcHostileStates.get(npcId);
+  return state?.isKO && KO_FACINGS.has(state.koFacing) ? state.koFacing : null;
+}
+
+/** { npcId: { hostile, ko, hp?, maxHP?, facing? } } for the server (state-sync.js). */
 export function exportHostility() {
   return Object.fromEntries(hostilityRecord);
 }
@@ -58,7 +144,7 @@ export function exportHostility() {
  * (npc-sprites.js reads isNPCKO, npc-behavior.js reads takeRestoredHostility).
  * A change made this session wins. No event is emitted here: the NPC's
  * behavior announces a restored hostile once its sprite exists.
- * @param {Object} saved - { npcId: { hostile: bool, ko: bool } }
+ * @param {Object} saved - { npcId: { hostile: bool, ko: bool, hp?, maxHP? } }
  */
 export function restoreHostility(saved) {
   if (!saved || typeof saved !== 'object') return 0;
@@ -73,6 +159,10 @@ export function restoreHostility(saved) {
     if (ko) {
       state.isKO = true;
       state.currentHP = 0;
+      if (KO_FACINGS.has(entry.facing)) state.koFacing = entry.facing;
+    } else if (validSavedHP(entry)) {
+      state.maxHP = entry.maxHP;
+      state.currentHP = entry.hp;
     }
     recordHostility(npcId, state);
     restoredPending.set(npcId, { hostile, ko });
@@ -80,6 +170,11 @@ export function restoreHostility(saved) {
   }
   if (restored) console.log(`⚔️ Restored hostility for ${restored} NPC(s)`);
   return restored;
+}
+
+function validSavedHP(entry) {
+  const { hp, maxHP } = entry;
+  return Number.isFinite(hp) && Number.isFinite(maxHP) && hp > 0 && maxHP > 0 && hp <= maxHP;
 }
 
 /**
@@ -97,13 +192,14 @@ export function takeRestoredHostility(npcId) {
 /**
  * A restored hostile NPC's sprite now exists: tell the rest of the game, as
  * setNPCHostile does when an NPC turns, so its health bar, the threat music
- * and hostility eventMappings come back. Picks up the behavior's attackDamage,
- * which wasn't known when the state was restored.
+ * and hostility eventMappings come back. Picks up the behavior's combat numbers
+ * (attackDamage, maxHP, attackCooldown, attackRange), which weren't known when
+ * the state was restored.
  */
 export function announceRestoredHostile(npcId, config) {
   const state = npcHostileStates.get(npcId);
   if (!state || !state.isHostile || state.isKO) return false;
-  if (config?.attackDamage) state.attackDamage = config.attackDamage;
+  applyHostileStats(state, configuredHostileStats(npcId, config));
   window.eventDispatcher?.emit(CombatEvents.NPC_HOSTILE_CHANGED, { npcId, isHostile: true, restored: true });
   return true;
 }
@@ -117,11 +213,14 @@ function setNPCHostile(npcId, isHostile, config) {
   // Get or create state with config
   let state = npcHostileStates.get(npcId);
   if (!state) {
-    // Get attack damage from NPC behavior config if available
-    const npcBehavior = window.npcBehaviorManager?.getBehavior(npcId);
-    const attackDamage = npcBehavior?.config?.hostile?.attackDamage || config?.attackDamage;
-    state = createHostileState(npcId, { attackDamage });
+    // Combat numbers from the NPC's behavior.hostile (or the passed config):
+    // attackDamage, maxHP, attackCooldown and attackRange (7.1e)
+    state = createHostileState(npcId, configuredHostileStats(npcId, config));
     npcHostileStates.set(npcId, state);
+  } else if (isHostile) {
+    // A state can exist before the turn (any getState() call creates one with
+    // defaults): turning hostile still applies the configured numbers (7.1f)
+    applyHostileStats(state, configuredHostileStats(npcId, config));
   }
 
   const wasHostile = state.isHostile;
@@ -160,7 +259,21 @@ function getNPCHostileState(npcId) {
   return state;
 }
 
+/**
+ * An NPC with "koImmune": true in the scenario can't be hurt or knocked out
+ * (the finale's story-critical NPCs). Player punches pass over it without
+ * turning it hostile (player-combat.js), and damageNPC refuses it, so no
+ * npc_ko, globalVarOnKO, taskOnKO or item drop can come from it.
+ */
+export function isNPCKOImmune(npcId) {
+  return window.npcManager?.getNPC?.(npcId)?.koImmune === true;
+}
+
 function damageNPC(npcId, amount) {
+  if (isNPCKOImmune(npcId)) {
+    console.log(`🛡️ NPC ${npcId} is koImmune - no damage`);
+    return false;
+  }
   const state = getNPCHostileState(npcId);
   if (!state) return false;
 
@@ -173,15 +286,20 @@ function damageNPC(npcId, amount) {
   state.currentHP = Math.max(0, state.currentHP - amount);
 
   console.log(`NPC ${npcId} HP: ${oldHP} → ${state.currentHP}`);
+  if (state.currentHP > 0) recordHostility(npcId, state); // saved with hostility (7.1g)
 
   // Check for KO
   if (state.currentHP <= 0) {
     state.isKO = true;
-    recordHostility(npcId, state);
 
     // Get NPC reference for death animation and server sync
     const npc = window.npcManager?.getNPC(npcId);
     const sprite = npc?._sprite || npc?.sprite;
+    // The facing playNPCDeathAnimation reads below, saved with the KO
+    if (sprite) {
+      try { state.koFacing = getNPCDirection(npcId, sprite); } catch (e) { /* no facing */ }
+    }
+    recordHostility(npcId, state);
     
     // Sync NPC KO state to server for persistence
     if (window.RoomStateSync && npc?.roomId) {

@@ -242,6 +242,21 @@ module BreakEscape
       assert_nil JSON.parse(@response.body)['feedback']
     end
 
+    test 'a wrong password that differs only in case is flagged caseMismatch' do
+      office = @game.scenario_data['rooms']['office']
+      office['lockType'] = 'password'
+      office['requires'] = 'CascadeWindow19'
+      @game.save!
+
+      post unlock_game_url(@game), params: { targetType: 'door', targetId: 'office', attempt: 'cascadewindow19', method: 'password' }
+      assert_response :unprocessable_entity
+      assert_equal true, JSON.parse(@response.body)['caseMismatch']
+
+      post unlock_game_url(@game), params: { targetType: 'door', targetId: 'office', attempt: 'cascadewindow20', method: 'password' }
+      assert_response :unprocessable_entity
+      assert_nil JSON.parse(@response.body)['caseMismatch']
+    end
+
     test 'mastermind scoring counts each PIN digit once' do
       score = ->(secret, guess) { Game.mastermind_feedback(secret, guess) }
       assert_equal({ rightPlace: 0, rightNumber: 2 }, score.('0417', '1234'))
@@ -526,6 +541,38 @@ module BreakEscape
       assert office, 'Office room should be present in scenario'
       assert_nil office['requires'],
                  "SECURITY: 'requires' (PIN answer) must not be sent to the client for pin-locked rooms"
+    end
+
+    # biometric_breach: a 5-digit door PIN (72958) could not be typed, because the
+    # client never sees `requires` and the pad assumed 4 digits. The server now
+    # sends the length, and still never the PIN or a password.
+    test 'SECURITY: bootstrap and room payloads send pinLength but no PIN or password' do
+      office = @game.scenario_data['rooms']['office']
+      office['requires'] = '72958'
+      office['objects'] = [
+        { 'id' => 'safe', 'type' => 'safe', 'name' => 'Safe', 'locked' => true, 'lockType' => 'pin', 'requires' => '204816' },
+        { 'id' => 'pc', 'type' => 'pc', 'name' => 'PC', 'locked' => true, 'lockType' => 'password', 'requires' => 'hunter2secret' }
+      ]
+      @game.player_state['unlockedRooms'] = %w[reception office]
+      @game.save!
+
+      get scenario_game_url(@game)
+      assert_response :success
+      boot = JSON.parse(response.body)
+      assert_equal 5, boot.dig('rooms', 'office', 'pinLength')
+      assert_nil boot.dig('rooms', 'office', 'requires')
+
+      get room_game_url(@game, room_id: 'office')
+      assert_response :success
+      room_body = response.body
+      safe = JSON.parse(room_body).dig('room', 'objects').find { |o| o['id'] == 'safe' }
+      assert_equal 6, safe['pinLength']
+
+      { 'bootstrap' => JSON.generate(boot), 'room payload' => room_body }.each do |where, body|
+        %w[72958 204816 hunter2secret].each do |secret|
+          assert_not_includes body, secret, "SECURITY: lock answer #{secret} reached the #{where}"
+        end
+      end
     end
 
     # ─── vm_panel / vm_set_panel: standalone mode guard ───────────────────────

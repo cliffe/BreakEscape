@@ -1,3 +1,5 @@
+> **Rename (2026-10-16):** Agent 0x23 'Cipher' is now 'Vector' (user's decision). Ids, globals, the ink file and routes were renamed with him (`agent_vector`, `accused_vector`, `vector_*`, `m08_suspect_vector.ink`). This file predates the rename and still says Cipher.
+
 # m08 The Mole — design re-review 1 (pass 4)
 
 Fresh adversarial review of "Changes made (pass 4 design)" in `DESIGN_REVIEW.md`, against the working tree on 2026-10-02 (`git diff HEAD -- scenarios/m08_the_mole/` plus the untracked `PASS4_PLAYTEST.md`). Read-only apart from this file. Line numbers are `scenario.json.erb` (erb) unless another file is named.

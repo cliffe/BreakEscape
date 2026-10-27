@@ -2,26 +2,26 @@
 
 # m07_architects_gambit — Scenario Graph Reference
 
-Four ENTROPY operations went live inside the same sixty seconds. SAFETYNET has one agent in range and one tactical team. You are the agent, forty minutes from a grid control facility outside Portland, where a loaded sequence can black out three states in winter. The team can reach one of the other three crises. You decide which. Two go unanswered, and somebody will read out what happened at both.
+Four ENTROPY operations went live inside the same sixty seconds. SAFETYNET has one agent in range and one tactical team. You are the agent, forty minutes from a grid control facility outside Portland, where a loaded sequence can black out three states in winter. The team can reach one of the other three crises, and where it goes is your call. Two go unanswered, and somebody will read out what happened at both.
 
 ## Scenario Statistics
 
 | Metric | Value |
 |---|---|
 | Story aims | 6 |
-| Total tasks | 18 (5 optional) |
+| Total tasks | 18 (7 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 8 |
 | AND-gate convergences | 1 |
 | Rooms | 6 |
-| Puzzle graph nodes / edges | 42 / 48 |
-| Story graph nodes / edges | 6 / 5 |
+| Puzzle graph nodes / edges | 42 / 49 |
+| Story graph nodes / edges | 7 / 5 |
 
 ## Critical Path
 
 3 hops through story aims — minimum mandatory sequence to reach mission completion:
 
-**Commit The Team And Get Inside → Get Into The Control Room → Take The Attack Host Off The Board → Stop The Sequence And Report**
+**Enter Server Hall -- Restricted → Get Into The Control Room → Take The Attack Host Off The Board → Stop The Sequence And Report**
 
 ## How to Read These Diagrams
 
@@ -103,13 +103,13 @@ flowchart TD
   recovered_site_reference_tomb_gamma{"Recovered Site Reference -- 'Tomb Gamma'"}
   intercepted_mail_deployment_confirmed{"Intercepted Mail -- Deployment Confirmed"}
   andgate1((" + "))
-  vmch_recover_coordination_traffic["Mount the attack host's open NFS export and submit the flag on it"]
+  vmch_recover_coordination_traffic["Mount the attack host's open NFS export and submit its flag at the relay"]
   vmfl_recover_coordination_traffic{"Recover Coordination Traffic Flag"}
-  vmch_intercept_c2_channel["Find the listener on the attack host, read what it sends and submit the flag"]
+  vmch_intercept_c2_channel["Find the listener on the attack host, read what it sends and submit its flag at the relay"]
   vmfl_intercept_c2_channel{"Intercept C2 Channel Flag"}
-  vmch_escalate_on_attack_host["Log in to the attack host with the recovered account and submit the flag in its home directory"]
+  vmch_escalate_on_attack_host["Log in to the attack host with the recovered account; submit that account's flag at the relay"]
   vmfl_escalate_on_attack_host{"Escalate On Attack Host Flag"}
-  vmch_terminate_cascade_scripts["Escalate to root on the attack host and submit the root flag"]
+  vmch_terminate_cascade_scripts["Escalate to root on the attack host and submit the root flag at the relay"]
   vmfl_terminate_cascade_scripts{"Terminate Cascade Scripts Flag"}
 
   door_server_room --> server_room
@@ -118,7 +118,8 @@ flowchart TD
   door_cable_vault --> cable_vault
   security_checkpoint -.-> lock_pick_kit
   lock_pick_kit -.-> door_generator_room
-  security_checkpoint --> rfid_cloner
+  security_checkpoint -.-> rfid_cloner
+  rfid_cloner -.-> door_server_room
   security_checkpoint --> fingerprint_kit
   security_checkpoint --> threat_desk_summary_tasking_02_41_pt
   security_checkpoint --> lock_badge_printer
@@ -171,7 +172,7 @@ flowchart TD
   class vmfl_recover_coordination_traffic,vmfl_intercept_c2_channel,vmfl_escalate_on_attack_host,vmfl_terminate_cascade_scripts flag
 
   classDef optional stroke-dasharray:5 2
-  class lock_pick_kit,contractor_badge_station optional
+  class lock_pick_kit,rfid_cloner,contractor_badge_station optional
   class node_start start
 ```
 
@@ -203,15 +204,16 @@ flowchart TD
   aim_reach_the_control_room{{"Get Into The Control Room"}}
   aim_take_the_attack_host{{"Take The Attack Host Off The Board"}}
   aim_end_the_sequence{{"Stop The Sequence And Report"}}
+  story_enter_server_hall_restricted>"Enter Server Hall -- Restricted"]
 
   aim_commit_the_team -.-> aim_reach_the_control_network
-  aim_commit_the_team -.-> aim_trace_the_intrusion
-  aim_commit_the_team -.-> aim_reach_the_control_room
   aim_reach_the_control_room -.-> aim_take_the_attack_host
   aim_take_the_attack_host -.-> aim_end_the_sequence
+  story_enter_server_hall_restricted -.->|server_hall_reached| aim_trace_the_intrusion
+  story_enter_server_hall_restricted -.->|server_hall_reached| aim_reach_the_control_room
 
-  class aim_commit_the_team,aim_reach_the_control_room,aim_take_the_attack_host,aim_end_the_sequence critical
-  class aim_reach_the_control_network,aim_trace_the_intrusion aim
+  class aim_commit_the_team,aim_reach_the_control_network,aim_trace_the_intrusion aim
+  class aim_reach_the_control_room,aim_take_the_attack_host,aim_end_the_sequence,story_enter_server_hall_restricted critical
 ```
 
 ## Story + Puzzle (Integrated)
@@ -273,13 +275,13 @@ flowchart TD
   recovered_site_reference_tomb_gamma{"Recovered Site Reference -- 'Tomb Gamma'"}
   intercepted_mail_deployment_confirmed{"Intercepted Mail -- Deployment Confirmed"}
   andgate1((" + "))
-  vmch_recover_coordination_traffic["Mount the attack host's open NFS export and submit the flag on it"]
+  vmch_recover_coordination_traffic["Mount the attack host's open NFS export and submit its flag at the relay"]
   vmfl_recover_coordination_traffic{"Recover Coordination Traffic Flag"}
-  vmch_intercept_c2_channel["Find the listener on the attack host, read what it sends and submit the flag"]
+  vmch_intercept_c2_channel["Find the listener on the attack host, read what it sends and submit its flag at the relay"]
   vmfl_intercept_c2_channel{"Intercept C2 Channel Flag"}
-  vmch_escalate_on_attack_host["Log in to the attack host with the recovered account and submit the flag in its home directory"]
+  vmch_escalate_on_attack_host["Log in to the attack host with the recovered account; submit that account's flag at the relay"]
   vmfl_escalate_on_attack_host{"Escalate On Attack Host Flag"}
-  vmch_terminate_cascade_scripts["Escalate to root on the attack host and submit the root flag"]
+  vmch_terminate_cascade_scripts["Escalate to root on the attack host and submit the root flag at the relay"]
   vmfl_terminate_cascade_scripts{"Terminate Cascade Scripts Flag"}
   aim_commit_the_team{{"Commit The Team And Get Inside"}}
   aim_reach_the_control_network{{"Get Onto The Control Network"}}
@@ -287,6 +289,7 @@ flowchart TD
   aim_reach_the_control_room{{"Get Into The Control Room"}}
   aim_take_the_attack_host{{"Take The Attack Host Off The Board"}}
   aim_end_the_sequence{{"Stop The Sequence And Report"}}
+  story_enter_server_hall_restricted>"Enter Server Hall -- Restricted"]
 
   door_server_room --> server_room
   door_scada_control --> scada_control
@@ -294,7 +297,8 @@ flowchart TD
   door_cable_vault --> cable_vault
   security_checkpoint -.-> lock_pick_kit
   lock_pick_kit -.-> door_generator_room
-  security_checkpoint --> rfid_cloner
+  security_checkpoint -.-> rfid_cloner
+  rfid_cloner -.-> door_server_room
   security_checkpoint --> fingerprint_kit
   security_checkpoint --> threat_desk_summary_tasking_02_41_pt
   security_checkpoint --> lock_badge_printer
@@ -337,10 +341,10 @@ flowchart TD
   vm_access_terminal --> vmch_recover_coordination_traffic
   security_checkpoint --> operations_floor
   aim_commit_the_team -.-> aim_reach_the_control_network
-  aim_commit_the_team -.-> aim_trace_the_intrusion
-  aim_commit_the_team -.-> aim_reach_the_control_room
   aim_reach_the_control_room -.-> aim_take_the_attack_host
   aim_take_the_attack_host -.-> aim_end_the_sequence
+  story_enter_server_hall_restricted -.->|server_hall_reached| aim_trace_the_intrusion
+  story_enter_server_hall_restricted -.->|server_hall_reached| aim_reach_the_control_room
   operations_floor -.-> aim_commit_the_team
   door_server_room -.-> aim_reach_the_control_network
   vmfl_recover_coordination_traffic -.-> aim_reach_the_control_network
@@ -361,11 +365,11 @@ flowchart TD
   class action_question_elena action
   class andgate1 gate
   class vmfl_recover_coordination_traffic,vmfl_intercept_c2_channel,vmfl_escalate_on_attack_host,vmfl_terminate_cascade_scripts flag
-  class aim_commit_the_team,aim_reach_the_control_room,aim_take_the_attack_host,aim_end_the_sequence critical
-  class aim_reach_the_control_network,aim_trace_the_intrusion aim
+  class aim_commit_the_team,aim_reach_the_control_network,aim_trace_the_intrusion aim
+  class aim_reach_the_control_room,aim_take_the_attack_host,aim_end_the_sequence,story_enter_server_hall_restricted critical
 
   classDef optional stroke-dasharray:5 2
-  class lock_pick_kit,contractor_badge_station optional
+  class lock_pick_kit,rfid_cloner,contractor_badge_station optional
   class node_start start
 ```
 
@@ -474,13 +478,14 @@ flowchart TD
   rc_cascade_countdown_display_29{"Cascade Countdown Display"}
   rc_casualty_projection_30{"Signed Casualty Projection"}
   rc_npc_dr_james_mercer_31("Dr. James Mercer")
-  rc_maintenance_log_32{"Plant Maintenance Log"}
-  rc_backup_transfer_switch_33{"Backup Power Transfer Switch"}
-  rc_genset_control_panel_34{"Genset Control Panel"}
-  rc_vault_trunk_runs_35{"Trunk Cable Runs"}
-  rc_tomb_gamma_dossier_36{"Recovered Site Reference -- 'Tomb Gamma'"}
-  rc_mole_intercept_evidence_37{"Intercepted Mail -- Deployment Confirmed"}
-  rc_npc_thomas_park_38("Thomas Park")
+  rc_genhall_first_aid_kit_32{"First Aid Kit"}
+  rc_maintenance_log_33{"Plant Maintenance Log"}
+  rc_backup_transfer_switch_34{"Backup Power Transfer Switch"}
+  rc_genset_control_panel_35{"Genset Control Panel"}
+  rc_vault_trunk_runs_36{"Trunk Cable Runs"}
+  rc_tomb_gamma_dossier_37{"Recovered Site Reference -- 'Tomb Gamma'"}
+  rc_mole_intercept_evidence_38{"Intercepted Mail -- Deployment Confirmed"}
+  rc_npc_thomas_park_39("Thomas Park")
 
   security_checkpoint --> operations_floor
   operations_floor --> server_room
@@ -518,18 +523,19 @@ flowchart TD
   scada_control --> rc_cascade_countdown_display_29
   scada_control --> rc_casualty_projection_30
   scada_control --> rc_npc_dr_james_mercer_31
-  generator_room --> rc_maintenance_log_32
-  generator_room --> rc_backup_transfer_switch_33
-  generator_room --> rc_genset_control_panel_34
-  cable_vault --> rc_vault_trunk_runs_35
-  cable_vault --> rc_tomb_gamma_dossier_36
-  cable_vault --> rc_mole_intercept_evidence_37
-  cable_vault --> rc_npc_thomas_park_38
+  generator_room --> rc_genhall_first_aid_kit_32
+  generator_room --> rc_maintenance_log_33
+  generator_room --> rc_backup_transfer_switch_34
+  generator_room --> rc_genset_control_panel_35
+  cable_vault --> rc_vault_trunk_runs_36
+  cable_vault --> rc_tomb_gamma_dossier_37
+  cable_vault --> rc_mole_intercept_evidence_38
+  cable_vault --> rc_npc_thomas_park_39
 
   class security_checkpoint,operations_floor room
   class server_room,scada_control,generator_room,cable_vault lock
   class rc_badge_printer_1,rc_crisis_control_system_27 container
-  class rc_printed_contractor_badge_2,rc_visitor_log_3,rc_checkpoint_evacuation_board_4,rc_m07_rfid_field_guide_7,rc_m07_lockpicking_field_guide_8,rc_m07_recon_field_guide_9,rc_m07_nfs_field_guide_10,rc_m07_ssh_field_guide_11,rc_m07_privesc_field_guide_12,rc_hollis_server_badge_14,rc_generator_maintenance_key_17,rc_situation_board_18,rc_substation_map_19,rc_shift_handover_sheet_20,rc_ops_floor_workstation_21,rc_vm_launcher_attack_terminal_22,rc_flag_station_safetynet_relay_23,rc_scada_backup_server_24,rc_rack_cabling_note_25,rc_obj28_28,rc_cascade_countdown_display_29,rc_casualty_projection_30,rc_maintenance_log_32,rc_backup_transfer_switch_33,rc_genset_control_panel_34,rc_vault_trunk_runs_35,rc_tomb_gamma_dossier_36,rc_mole_intercept_evidence_37 item
-  class rc_npc_director_magnus_netherton_5,rc_npc_agent_hax_6,rc_npc_ray_hollis_13,rc_npc_the_architect_15,rc_npc_director_magnus_netherton_16,rc_npc_elena_rodriguez_26,rc_npc_dr_james_mercer_31,rc_npc_thomas_park_38 npc
+  class rc_printed_contractor_badge_2,rc_visitor_log_3,rc_checkpoint_evacuation_board_4,rc_m07_rfid_field_guide_7,rc_m07_lockpicking_field_guide_8,rc_m07_recon_field_guide_9,rc_m07_nfs_field_guide_10,rc_m07_ssh_field_guide_11,rc_m07_privesc_field_guide_12,rc_hollis_server_badge_14,rc_generator_maintenance_key_17,rc_situation_board_18,rc_substation_map_19,rc_shift_handover_sheet_20,rc_ops_floor_workstation_21,rc_vm_launcher_attack_terminal_22,rc_flag_station_safetynet_relay_23,rc_scada_backup_server_24,rc_rack_cabling_note_25,rc_obj28_28,rc_cascade_countdown_display_29,rc_casualty_projection_30,rc_genhall_first_aid_kit_32,rc_maintenance_log_33,rc_backup_transfer_switch_34,rc_genset_control_panel_35,rc_vault_trunk_runs_36,rc_tomb_gamma_dossier_37,rc_mole_intercept_evidence_38 item
+  class rc_npc_director_magnus_netherton_5,rc_npc_agent_hax_6,rc_npc_ray_hollis_13,rc_npc_the_architect_15,rc_npc_director_magnus_netherton_16,rc_npc_elena_rodriguez_26,rc_npc_dr_james_mercer_31,rc_npc_thomas_park_39 npc
   class node_start start
 ```

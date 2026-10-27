@@ -34,7 +34,7 @@ Every proposed change is text. The net cost on the ~76-minute estimate is about 
 | 9 | NPC KO resilience | Not applicable: `"disableAttacks": true` (`scenario.json.erb:155`). Analogue holds: nothing blocks the required NPC tasks (Tom, Jordan); Jordan hides only after the decision. | n/a | No change. | §2h |
 | 10 | Opening and closing bookends | Briefing is a `timedConversation` with `skipIfGlobal` (`scenario.json.erb:382-389`). Debrief reached from HaX's hub (`phone_agent_0x99.ink:192-197`) via `start_debrief_cutscene` (`scenario.json.erb:489`, `disableClose`); `hear_debrief` completes before the exit (`closing_debrief.ink:143`); bond visualiser on victory (`:290`). No `onceOnly` on the debrief mapping, on purpose (DESIGN.md:1078). | at standard | No change. | `m01_first_contact/scenario.json.erb:1081-1087`; `m02_ransomed_trust/scenario.json.erb:491` |
 | + | README_scenario_design.md | Validator: 0 errors; the warnings are the deliberate ones from earlier rounds, campaign suggestions that don't apply, and (since the room-dressing pass) two foyer spacing warnings that belong to that pass. Reviewer spot-checked the Authoring Rules and found no new violations. | at standard | No change in this plan. | `README_scenario_design.md` |
-| + | Canon fit as a post-m02 side mission | Ghost's voice, hood, "no name" and St Catherine's match m02. Two optional wording points (C1, C2). The freshers'-week date sits awkwardly against m02/m03 (OD2). "sent" and "double" would clash with m03-m08 if canon (OD1). The mission is already outside the campaign (collection `escape_room`, `mission.json:6`). | minor + decisions | Canon status recorded; endings kept inside the lab; no dated claims. | See "Canon and lore alignment" |
+| + | Canon fit as a post-m02 side mission | Ghost's voice, hood, "no name" and St Catherine's match m02. Two optional wording points (C1, C2). The freshers'-week date sits awkwardly against m02/m03 (OD2). "sent" and "double" would clash with m03-m08 if canon (OD1). The mission is already outside the campaign (collection `lab_games`, `mission.json:6`). | minor + decisions | Canon status recorded; endings kept inside the lab; no dated claims. | See "Canon and lore alignment" |
 
 ## Target end-state
 
@@ -122,7 +122,7 @@ K1 waits on the user's answers to OD1 and OD2. It doesn't block Phases 1-3, whic
 - **sent:** HaX relocated, Ghost believes 0x00 is theirs. m08's mole hunt never treats 0x00 as compromised, and its Director says "There may be others in this service, recruited the same way and still waiting." (`m08_the_mole/ink/m08_closing_debrief.ink:130`). Under this ending 0x00 would be an obvious suspect.
 - **double:** 0x00 is a live double agent inside Ransomware Inc. with a decoy flat. No later mission mentions it; m08 would have to account for it.
 
-**Already isolated:** collection `escape_room` (`mission.json:6`; m02 is `season_1`); globals don't carry across missions; the sequel hook is marked lab-local (DESIGN.md:786-790).
+**Already isolated:** collection `lab_games` (`mission.json:6`; m02 is `season_1`); globals don't carry across missions; the sequel hook is marked lab-local (DESIGN.md:786-790).
 
 ## Open decisions for the user
 

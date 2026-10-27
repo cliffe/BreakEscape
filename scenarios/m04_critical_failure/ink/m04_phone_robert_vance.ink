@@ -13,7 +13,7 @@
 
 // Ink-owned state
 VAR vance_support_calls = 0
-VAR guidance_provided = ""
+// Phase 4 dialogue C1 (D5-27): guidance_provided removed (never read).
 VAR asked_charge_control = false
 VAR asked_server_room = false
 VAR asked_disabling = false
@@ -37,6 +37,18 @@ VAR robert_vance_ko = false        // global; Vance knocked out -- nobody answer
 VAR anomaly_detected = false
 VAR hydrogen_alarm = false
 VAR racks_vented = false
+// Pass 5 decision 1: the night crew can be warned from the phone too. crew_warned
+// is written with #set_global (synced); attack_prevented is read only.
+VAR crew_warned = false
+VAR attack_prevented = false
+// Round 2: the hub states the alarm's real cost, which depends on whether the
+// clock is already running. The workshop card feeds priority_guidance,
+// mirroring the face-to-face vance_priority.
+// Round 4 (review M2). Read only. (all_flags_in and vance_provided_keycard
+// dropped in puzzle chains R3-4 / R3-6: nothing read them.)
+VAR voltage_neutralised = false
+VAR relay_card_cloned = false
+VAR operative_relay_defeated = false
 
 EXTERNAL player_name()
 
@@ -69,10 +81,16 @@ EXTERNAL player_name()
     -> vance_no_answer
 
 === vance_phone_support_start ===
-{vance_support_calls == 1:
-    {player_name()}. What do you need?
+{
+- vance_support_calls == 1:
+    Vance. What do you need?
+- attack_prevented:
+    Banks are isolated. The hydrogen's coming down at last.
+// Phase 4 dialogue C1 (D5-22): not "Still here." from four characters.
+- anomaly_detected:
+    Vance. The hydrogen's still climbing.
 - else:
-    Still here. Still watching it climb.
+    Vance.
 }
 
 -> support_hub
@@ -95,7 +113,7 @@ EXTERNAL player_name()
     # influence_increased
     -> server_room_guidance
 
-+ {not asked_disabling} [How do I shut this down safely?]
++ {not asked_disabling and not attack_prevented} [How do I shut this down safely?]
     ~ asked_disabling = true
     ~ vance_trust_level += 3
     # influence_increased
@@ -104,9 +122,12 @@ EXTERNAL player_name()
 + {plant_reader_seen and not asked_plant_reader} [The plant room's on a fingerprint reader.]
     ~ asked_plant_reader = true
     HV room. Authorised persons only, and tonight that's me.
-    I can't leave the desk. Voltage is through there, and somebody has to watch the real numbers.
+    I can't leave the desk. Somebody has to watch the hydrogen, and I don't know who's through there.
     They didn't need me on the ninth. I log every round on the Hall 1 panel. They lifted my print off it. Do the same.
     -> support_hub
+
++ {(anomaly_detected or attack_mechanism_known) and not crew_warned and not racks_vented and not attack_prevented} [The night crew in Hall 2. Can you get them out?]
+    -> crew_offer
 
 + [What should I be doing right now?]
     ~ vance_trust_level += 5
@@ -127,21 +148,17 @@ EXTERNAL player_name()
 // ===========================================
 
 === charge_control_systems_explanation ===
-~ guidance_provided = "charge_control_systems"
-
 Three rack banks, A, B and C, and each one's got its own management unit and its own cooling loop.
 
 They all run over SCADA, and SCADA is theirs. Type a change at a terminal and they'll just push it back.
 
-The one thing they can't reach is the hardwired shutdown in the plant room.
+What they can't reach is the hardwired shutdown in the plant room.
 
 It isolates the banks and forces the vents. It all comes down to that button.
 
 -> support_hub
 
 === server_room_guidance ===
-~ guidance_provided = "server_room"
-
 {attack_mechanism_known:
     You've got their setup mapped. That's the hard part done.
     Now it's the shutdown. Nothing you type will hold. They own that layer.
@@ -154,40 +171,88 @@ It isolates the banks and forces the vents. It all comes down to that button.
 -> support_hub
 
 === safe_disabling_guidance ===
-~ guidance_provided = "disabling"
-
 One thing, and it isn't a keyboard.
 
 Every control path runs through SCADA, and SCADA is theirs. Delete their script and they'll push it back before you've closed the window.
 
-The shutdown button in the plant room is hardwired. Straight to the bank isolators, no network in the middle. The one thing they couldn't touch.
+// Phase 4 dialogue C1: "the one thing they couldn't touch" is said once, in
+// charge_control_systems_explanation. D5-5: no "press it" before it can arm.
+The shutdown button in the plant room is hardwired. Straight to the bank isolators, no network in the middle.
 
-Get to it and press it. That's the mission.
+{
+- attack_mechanism_known and anomaly_detected:
+    Get to it and press it.
+- attack_mechanism_known:
+    It won't arm until grid control has a real reading. The dial in Hall 1.
+- anomaly_detected:
+    It won't arm until grid control knows how they did it. That's the workshop.
+- else:
+    It won't arm until grid control believes you. Prove the screens wrong, then prove how.
+}
 
 {urgency_stage >= 3:
     And be quick. I'm watching bank B climb while we talk.
 - else:
-    Steady, though. Rush it and you trip the very thing you're stopping.
+    Steady, though. Watch the hydrogen panel in Hall 2 on your way.
 }
 
 -> support_hub
 
+// Round 2 (review m2): mirrors the face-to-face vance_priority, so the phone
+// never sends the player to the shutdown before it can work.
 === priority_guidance ===
-{not attack_mechanism_known:
-    Find out how they're driving the SCADA network. Everything waits on that.
-    The jump-server terminal in the workshop is your way in.
-}
-{attack_mechanism_known and urgency_stage >= 3:
+{
+- attack_prevented:
+    Go and see what they left behind. I'll watch the banks.
+- not anomaly_detected:
+    My screens all read the same feed. Check the racks against something that isn't on it.
+    There's an old dial on the Rack Bank C wall in Hall 1.
+- not server_room_reached and not (relay_card_cloned or operative_relay_defeated):
+    The workshop wants a Level 2 card, and mine's only Level 1. Their contractors had Level 2.
+- not attack_mechanism_known:
+    The workshop. If they got onto my network, it was through the jump server in there.
+- urgency_stage >= 3:
     We're past planning. Get to the hardwired shutdown and press it. It's the only thing left that works.
-}
-{attack_mechanism_known and urgency_stage < 3:
+- else:
     You know what they did. Now get to the shutdown and press it.
 }
 
 -> support_hub
 
+// Pass 5 decision 1. Text knot, then a choices-only knot (phone reopen rule, E13).
+// Round 2 (review M1, orchestrator decision 1): the cost is said plainly before
+// "Sound it.", and it is true to when it's asked: before the attack is mapped
+// the alarm starts a clock; after, the clock is already running.
+=== crew_offer ===
+I can sound the evacuation from here. Klaxon and strobes in every hall.
+{
+- voltage_neutralised:
+    Whoever was in my plant room isn't listening any more. It costs you nothing.
+- attack_mechanism_known:
+    Whoever's in my plant room hears it too. Your clock's running anyway. All it costs you now is surprise.
+- else:
+    And whoever's in my plant room hears it too. He'll not wait for morning.
+    Half an hour, maybe, and you've not finished in the workshop.
+}
+-> crew_offer_choices
+
+=== crew_offer_choices ===
++ [Sound it. Get them out.]
+    -> crew_sound
++ [Not yet.]
+    Your call. Say the word and it goes.
+    -> support_hub
+
+=== crew_sound ===
+#set_global:crew_warned:true
+~ crew_warned = true
+Sounding it now. They're moving. Nine of them, out through the Hall 2 fire doors.
+-> support_hub
+
 === urgency_assessment ===
 {
+- attack_prevented:
+    Not any more. The cells are cooling.
 - racks_vented:
     Bank B's gone. A and C are holding, for now.
     The hardwired shutdown isolates what's left and forces the vents. Get to it.
@@ -195,10 +260,10 @@ Get to it and press it. That's the mission.
     Bank B's venting hydrogen. That's the stage before fire.
     The ESD is built for exactly this. Get to it.
 - anomaly_detected:
-    The historian has the cells past sixty and climbing. My screens still say twenty-eight.
+    Your dial says sixty-one. I've the hydrogen readout from the vent controller up here, it's off their network, and it's climbing.
     They've set it for 0800, but cells that hot don't wait for a clock.
 - else:
-    The historian reads hotter than my screens. Read the dial in Hall 1 and you'll see by how much.
+    My screens say twenty-eight and I don't believe them. Read the dial in Hall 1. It isn't on their network.
     They've set it for 0800.
 }
 
@@ -207,7 +272,7 @@ Get to it and press it. That's the mission.
 === support_call_end ===
 Call me if you need it.
 
-{urgency_stage >= 3:
+{urgency_stage >= 3 and not attack_prevented:
     And hurry.
 - else:
     I'm not going anywhere.

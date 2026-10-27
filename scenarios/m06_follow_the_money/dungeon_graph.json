@@ -63,6 +63,18 @@
       "optional": false
     },
     {
+      "id": "door_satoshi_office",
+      "label": "CEO<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "satoshi_office",
+      "label": "CEO",
+      "kind": "room",
+      "optional": false
+    },
+    {
       "id": "reception_lobby",
       "label": "HashChain Exchange",
       "kind": "room",
@@ -84,6 +96,12 @@
       "id": "fingerprint_kit",
       "label": "Fingerprint Kit",
       "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "lock_satoshi_signing_case",
+      "label": "Satoshi Signing Case",
+      "kind": "lock",
       "optional": false
     },
     {
@@ -207,6 +225,18 @@
       "optional": false
     },
     {
+      "id": "privacy_coin_mixing_analysis",
+      "label": "Privacy Coin Mixing Analysis",
+      "kind": "item",
+      "optional": true
+    },
+    {
+      "id": "lock_executive_safe",
+      "label": "Executive Safe",
+      "kind": "lock",
+      "optional": false
+    },
+    {
       "id": "cryptography_research_notes",
       "label": "Cryptography Research Notes",
       "kind": "item",
@@ -219,22 +249,34 @@
       "optional": false
     },
     {
-      "id": "lock_executive_safe",
-      "label": "Executive Safe",
-      "kind": "lock",
-      "optional": false
-    },
-    {
       "id": "framed_press_clipping",
       "label": "Framed Press Clipping",
       "kind": "item",
       "optional": true
     },
     {
-      "id": "satoshi_office",
-      "label": "CEO",
-      "kind": "room",
+      "id": "npc_kemal_aydin",
+      "label": "Kemal Aydin",
+      "kind": "key",
       "optional": false
+    },
+    {
+      "id": "ceo_s_office_key",
+      "label": "CEO's Office Key",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "release_signing_record",
+      "label": "Release Signing Record",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "signing_case",
+      "label": "Signing Case",
+      "kind": "item",
+      "optional": true
     },
     {
       "id": "executive_safe",
@@ -342,6 +384,11 @@
       "soft": false
     },
     {
+      "from": "door_satoshi_office",
+      "to": "satoshi_office",
+      "soft": false
+    },
+    {
       "from": "reception_lobby",
       "to": "lock_pick_kit",
       "soft": false
@@ -364,7 +411,12 @@
     {
       "from": "reception_lobby",
       "to": "fingerprint_kit",
-      "soft": false
+      "soft": true
+    },
+    {
+      "from": "fingerprint_kit",
+      "to": "lock_satoshi_signing_case",
+      "soft": true
     },
     {
       "from": "security_checkpoint",
@@ -492,6 +544,16 @@
       "soft": false
     },
     {
+      "from": "blockchain_lab",
+      "to": "privacy_coin_mixing_analysis",
+      "soft": true
+    },
+    {
+      "from": "privacy_coin_mixing_analysis",
+      "to": "lock_executive_safe",
+      "soft": true
+    },
+    {
       "from": "irina_office",
       "to": "cryptography_research_notes",
       "soft": false
@@ -513,7 +575,37 @@
     },
     {
       "from": "framed_press_clipping",
-      "to": "lock_executive_safe",
+      "to": "lock_satoshi_signing_case",
+      "soft": true
+    },
+    {
+      "from": "executive_wing",
+      "to": "npc_kemal_aydin",
+      "soft": false
+    },
+    {
+      "from": "npc_kemal_aydin",
+      "to": "ceo_s_office_key",
+      "soft": false
+    },
+    {
+      "from": "ceo_s_office_key",
+      "to": "door_satoshi_office",
+      "soft": false
+    },
+    {
+      "from": "satoshi_office",
+      "to": "lock_satoshi_signing_case",
+      "soft": false
+    },
+    {
+      "from": "lock_satoshi_signing_case",
+      "to": "release_signing_record",
+      "soft": false
+    },
+    {
+      "from": "satoshi_office",
+      "to": "signing_case",
       "soft": true
     },
     {

@@ -314,7 +314,7 @@ One line each, so that writers can keep a mission's cast distinct and don't reus
 |---|---|---|---|
 | Checkpoint Guard (`checkpoint_guard`) | Alnilam | South London | Goes by his list and nothing else. |
 | Dr Irina Volkova (`irina_volkova`) | Kore | Light Russian | Guarded, precise cryptographer with doubts. |
-| Dani Okonkwo (`trader_npc`) | Puck | South-east London (Peckham) | Jittery young trader; over-explains. "They". |
+| Dani Okonkwo (`trader_npc`) | Puck | South-east London (Peckham) | Jittery young trader; over-explains. A young man: "he" (user, 2026-10-16). |
 | Priya Raghavan (`blockchain_analyst`) | Leda | Northern English (Leeds) | Enthusiastic forensics analyst who hasn't seen what her graph proves. |
 | Satoshi Nakamoto II (`satoshi_nakamoto`) | Umbriel (en-US) | US West Coast (San Francisco) | Charismatic ideologue; calm, amused, unrepentant. |
 
@@ -332,12 +332,12 @@ One line each, so that writers can keep a mission's cast distinct and don't reus
 | Character (id) | Voice | Accent | Talks like |
 |---|---|---|---|
 | ATHENA (`opening_briefing_cutscene`, `receptionist_ai`) | Kore | RP | Building AI; corporate-calm, unnervingly helpful. |
-| Agent 0x23 'Cipher' (`agent_cipher`) | Iapetus | Educated Glaswegian | Brilliant, anxious cryptographer; fast, over-explains. |
+| Agent 0x23 'Vector' (`agent_vector`; was 'Cipher' until 2026-10-16) | Iapetus | Educated Glaswegian | Brilliant, anxious cryptographer; fast, over-explains. |
 | Agent 0x88 'Phantom' (`agent_phantom`) | Fenrir | Light educated Ghanaian English | Charming field coordinator running his own errand. |
 | Junior Analyst (`background_analyst`) | Vindemiatrix | East Midlands (Leicester) | Hasn't slept; soft, worried. |
 | Off-Duty Agent (`background_agent`) | Puck | Geordie | Eavesdropping gossip. |
 
-**Name clashes to watch.** Different people share names across missions: Patricia Wells (m01, mentioned) and Patricia Morgan (m05); ENTROPY's 'Cipher' (m04) and SAFETYNET's Agent 0x23 'Cipher' (m08); Okonkwo (Val, m02; Dani, m06); Park (Kevin m01, Lisa m05, Thomas m07); Chen (Maya m01, Ms Chen m02, the canon's Dr Chen). Don't let a line imply they're related unless that's intended.
+**Name clashes to watch.** Different people share names across missions: Patricia Wells (m01, mentioned) and Patricia Morgan (m05); ENTROPY's 'Cipher' (m04) and SAFETYNET's Agent 0x23, renamed 'Vector' on 2026-10-16 to end that clash (m08); Okonkwo (Val, m02; Dani, m06); Park (Kevin m01, Lisa m05, Thomas m07); Chen (Maya m01, Ms Chen m02, the canon's Dr Chen). Don't let a line imply they're related unless that's intended.
 
 ## Drift found in pass 4
 

@@ -87,6 +87,47 @@
     "optional": ["tabs", "tabSet", "title", "caseRef", "reviewedVar", "confirmedVar", "confirmGateTab", "confirmLabel", "confirmHint", "confirmReadyHint", "confirmSuccessText"]
   },
 
+  "mail_terminal": {
+    "required": [],
+    "optional": ["accountIds", "defaultAccount"]
+  },
+
+  "case-file": {
+    "required": [],
+    "optional": ["mode"],
+    "modes": ["recon", "defender", "scope", "plan"]
+  },
+
+  "report-workstation": {
+    "required": [],
+    "optional": ["requiresGlobal", "lockedMessage"]
+  },
+
+  "phone": {
+    "required": [],
+    "optional": ["callId"]
+  },
+
+  "osint-workstation": {
+    "required": [],
+    "optional": ["siteIds", "start"]
+  },
+
+  "triage-workstation": {
+    "required": [],
+    "optional": ["triageSetId", "stage", "conclusionTaskId"]
+  },
+
+  "kiosk": {
+    "required": ["episodeId"],
+    "optional": []
+  },
+
+  "page-builder": {
+    "required": ["landingPageId"],
+    "optional": ["targetId"]
+  },
+
   "notes": {
     "optional": ["timerRef"]
   },
@@ -110,5 +151,12 @@
   "dual_auth": {
     "_dispatch": "lockType",
     "required": ["itsec_pin", "clinical_pin"]
+  },
+  "blockchain_explorer": {
+    "_comment": "Matched by interactionType. Graph mode (default) uses seedTransaction/wallets/transactions; mode 'mixer_match' (the tracing board) uses mixer/deposits/withdrawals.",
+    "required": [],
+    "optional": ["mode", "title", "caseRef", "currency", "stateWrites",
+                 "seedTransaction", "mixerFanOutThreshold", "targetWalletAddress", "wallets", "transactions",
+                 "mixer", "deposits", "withdrawals", "slotLabel", "filesLabel", "completionText"]
   }
 }

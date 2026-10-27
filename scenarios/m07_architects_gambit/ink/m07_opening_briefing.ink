@@ -8,6 +8,11 @@
 VAR player_name = "Agent 0x00"
 VAR team_assignment = ""
 VAR team_assigned = false
+// Imported (read-only) from m06 (docs/agents/CARRY_OVER_PLAN.md): false when
+// the player never finished m06. Never assign these here.
+VAR m06_assets_seized = false      // Imported (read-only) from m06 assets_seized: the fund was frozen
+VAR m06_monitoring_enabled = false // Imported (read-only) from m06 monitoring_enabled: the fund was left running and watched
+VAR m06_completed = false          // Imported (read-only): a finished m06 run exists (here: finished without choosing)
 
 // ================================================
 // BEAT 1 - SECURE LINK FROM HQ. The agent is in a car on the I-5,
@@ -16,13 +21,26 @@ VAR team_assigned = false
 // ================================================
 
 === start ===
-Narrator: 02:41 Pacific. Rain on the I-5, and the secure tablet on the passenger seat lights up. Behind the Director, a wall map with four red pins.
+Narrator: Two forty-one in the morning, Pacific time. Rain on the I-5, and the secure tablet on the passenger seat lights up. Behind the Director, a wall map with four red pins.
 
 Director Magnus Netherton: Agent 0x00. Keep driving. I would rather you heard this from me than read it off a screen.
 
-Director Magnus Netherton: Four ENTROPY operations went live inside the same sixty seconds. Four cells, one schedule.
+// Phase 4 dialogue C1 (D7-17): two pairs merged, so the opening runs nine.
+Director Magnus Netherton: Four ENTROPY operations went live inside the same sixty seconds. Three days ago you followed the fund behind them.
 
-Director Magnus Netherton: Three days ago you followed one fund paying six cells on one seventy-two-hour clock. Four of them are on that map.
+// PASS 5 alignment r1 (m13): nod to m06's freeze-or-watch choice. Carry-over
+// (2026-10-17): a player who finished m06 hears their own choice named; the
+// else branch is the original fate-neutral line, word for word (cached audio).
+{
+- m06_assets_seized:
+    Director Magnus Netherton: You froze it before the payout, and not one more coin reached the cells. The advances had already been paid. Tonight is what they paid for.
+- m06_monitoring_enabled:
+    Director Magnus Netherton: You left it running so we could see where it went. We watched the payout reach every cell on our map. Tonight is what it paid for.
+- m06_completed:
+    Director Magnus Netherton: You never froze that fund. The advances had already been paid, and tonight is what they paid for.
+- else:
+    Director Magnus Netherton: Frozen or watched, the advances had already been paid. Tonight is what they paid for.
+}
 
 Director Magnus Netherton: Washington. Austin. San Francisco. And a grid control facility outside Portland, Oregon.
 
@@ -30,9 +48,7 @@ Narrator: The Portland pin stops blinking and goes solid.
 
 Director Magnus Netherton: Pacific Northwest Regional Grid Control. One hundred and forty-seven substations. Eight point four million people in Washington, Oregon and Northern California.
 
-Director Magnus Netherton: A sequence on their SCADA stack takes all of it down in four steps. It is waiting on a start signal from a host inside the building.
-
-Director Magnus Netherton: Nobody stops it from outside that building.
+Director Magnus Netherton: A sequence on their SCADA stack takes it all down in four steps. It waits on a signal from a host inside the building. Nobody stops it from outside.
 
 // PASS 3 (capability arc): the kit, in the one knot every run opens on.
 Director Magnus Netherton: You have your go-bag: picks, the cloner, the print kit. No PIN cracker. Analysis still has it in pieces.
@@ -61,6 +77,9 @@ Director Magnus Netherton: You have your go-bag: picks, the cloner, the print ki
 * [Four operations on one clock. How do we know all this?]
     Director Magnus Netherton: We know the shape of it because we intercepted the tasking traffic. Targets, assignments, casualty modelling.
     Director Magnus Netherton: The threat desk has had six hours with it. Everything I read you tonight comes out of that intercept.
+    // PASS 5 alignment r1 (M6, DECISIONS_PENDING U1): m08's mole read a Portland
+    // plan two days before this order, so the plan has to have existed.
+    Director Magnus Netherton: Portland has been on our contingency board since Thursday, with you pencilled in as the nearest agent. Tonight's intercept told us it was live, and gave us the other three.
     -> briefing_questions
 + [Understood. Talk to me about the other three.]
     -> delegation_intro
@@ -70,6 +89,12 @@ Director Magnus Netherton: You have your go-bag: picks, the cloner, the print ki
 // ================================================
 
 === delegation_intro ===
+// PASS 5 scenario design r1 (m3): the drive happens here, with the Director
+// still on the line, so the commit is made at the gate. The window (40 min from
+// the commit), T-10 and "before you are through the gate" then agree with the
+// story clock. The handoff keeps the building.
+Narrator: He keeps the line open while the desk pulls the other three together. Forty minutes of rain and empty interstate. Then an industrial park outside Portland, three twenty-four by the dashboard clock.
+
 Director Magnus Netherton: We have one tactical team airborne and uncommitted. One. It can reach one of the other three in time to matter.
 
 Director Magnus Netherton: The other two go unanswered.
@@ -117,7 +142,7 @@ Director Magnus Netherton: The breach makes the lie checkable. The desk projects
     Director Magnus Netherton: Nothing you could put on a casualty board tonight. The deaths come over the week, city by city.
     Director Magnus Netherton: And the records cannot be un-leaked. They will be on darknet markets by the weekend.
     -> brief_fracture_tail
-* [What can the team actually stop at this point?]
+* (stop_asked) [What can the team actually stop at this point?]
     Director Magnus Netherton: Not the exfiltration. Sixty million records are gone before they land.
     Director Magnus Netherton: They can take the cluster before it publishes. A breach without the story is a scandal. With the story, it is a constitutional crisis.
     -> brief_fracture_tail
@@ -126,6 +151,12 @@ Director Magnus Netherton: The breach makes the lie checkable. The desk projects
 
 === brief_fracture_tail ===
 Director Magnus Netherton: Cell lead is Michael Reeves, fifteen years an NSA analyst. He designs operations and reads the results. He does not attend.
+
+// Phase 4 dialogue C1 (D7-18): every tail says what the team would stop, not
+// only Trojan Horse's.
+{not brief_fracture.stop_asked:
+    Director Magnus Netherton: If the team goes there, the story never runs. The breach does.
+}
 
 -> delegation_hub
 
@@ -192,6 +223,9 @@ Director Magnus Netherton: Cell lead calls himself The Liquidator. Probably Marc
 
 Director Magnus Netherton: Now he takes value the other way, and he cannot resist making it elegant.
 
+// Phase 4 dialogue C1 (D7-18)
+Director Magnus Netherton: If the team goes there, the ransomware never reaches the hospitals.
+
 -> delegation_hub
 
 // ================================================
@@ -201,11 +235,11 @@ Director Magnus Netherton: Now he takes value the other way, and he cannot resis
 === compare_operations ===
 Director Magnus Netherton: Side by side, then. I will read it flat.
 
-Director Magnus Netherton: Fracture: an election nobody believes in. Twenty to forty dead over a week. The records never come back.
+Director Magnus Netherton: Fracture. An election nobody believes in. Twenty to forty dead over a week. The records never come back.
 
-Director Magnus Netherton: Trojan Horse: access to forty-seven million systems. No projected fatalities. A decade to rebuild.
+Director Magnus Netherton: Trojan Horse. Access to forty-seven million systems. No projected fatalities. A decade to rebuild.
 
-Director Magnus Netherton: Meltdown: eighty to a hundred and forty dead this week. The markets recover inside a year. The patients do not.
+Director Magnus Netherton: Meltdown. Eighty to a hundred and forty dead this week. The markets recover inside a year. The patients do not.
 
 * [So Meltdown. It's the only one killing people tonight.]
     Director Magnus Netherton: That is the reading the numbers invite.
@@ -285,8 +319,6 @@ Director Magnus Netherton: Say the word and their aircraft turns.
 Director Magnus Netherton: Two operations now run with nobody in their way. On the record, that is my decision as much as yours.
 
 Director Magnus Netherton: Go. I will pick you up on the secure channel when it matters.
-
-Narrator: Forty minutes of rain and empty interstate. Then an industrial park outside Portland, 03:24 by the dashboard clock.
 
 Narrator: Chain-link, a lowered barrier, three storeys of concrete. People are coming out of the front doors with coats over their heads.
 

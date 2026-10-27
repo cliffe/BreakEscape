@@ -6,50 +6,52 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 
 ## Minigames
 
-- **Fingerprint: Distinct reference cards on easy** (m04 playtests, twice; S). On easy the two reference cards look near-identical, so the compare step can't be done by eye; the m04 final run picked Vance's card by a 50/50 guess. Worth doing soon.
 - **Recovery console: the Close button overlaps the banner at 1280x800** (dash check; S).
-- **Toasts shouldn't cover minigame overlays or the person-chat speaker name** (m04 and m02 playtests; S). HaX toasts sat over the reader overlay's hint and over the speaker caption in person-chat.
 - **Fingerprint: Hide reference-card names until a match** (m04 review; S). At medium difficulty and up, the dusting compare step would be a real identification.
-- **Show the EM4100 vs MIFARE difference in the cloner** (m08 fixer; S). Make it visible that EM4100 has no crypto and clones instantly, while MIFARE needs a key attack.
 - **Dusting and "Search Room" for carried items** (m08 fixer; S–M). A clean way to dust something in the inventory.
 
 - **Use the dusting minigame's approach on the other minigames** (orchestrator, 2026-10-02; S each to review, M–L to rebuild). The redesigned fingerprint minigame goes through clear stages (find, powder, dust, lift, compare), each teaching one forensic idea, with pixel-art tools and generous scoring. The user liked it more than the old one. Review the lockpicking, RFID cloning and PIN minigames against the same test: does each step teach something, is it fun rather than fiddly, and does it look like the real thing?
-- **Blockchain explorer as a tracing board** (m06 fixer; M). The unused shared `blockchain-explorer` minigame (only in `scenarios/test-blockchain-explorer`) could get a "match across the mixer" mode and become m06's follow-the-money board, instead of reading log files.
 - **Keypad-residue dusting** (m06 fixer; S–M). Dust a keypad for worn keys to narrow a PIN: a natural, educational second use of the fingerprint kit (e.g. Satoshi's safe).
 - **Pixel-art surfaces for dusting** (fingerprint art pass; S). Mugs, glass and desk surfaces are still drawn procedurally. The PixelLab backing card looked worse than the procedural one, so try surfaces one at a time and keep whichever looks better.
 
 ## Engine and UI
 
 From the PIN cracker fix (2026-10-10), found but not fixed:
-- **biometric_breach's 5-digit PIN can't be entered** (S). Its PIN is `72958` (`scenarios/biometric_breach/scenario.json.erb:290`) but the PIN starter assumes 4 digits when the server withholds the PIN (`systems/minigame-starters.js:535`). Send the length, not the PIN.
-- **Door PINs reach the client at startup** (S). `filtered_scenario_for_bootstrap` in `game.rb` keeps rooms' `requires`, so a player can read door PINs from the startup data.
-- **`window.startPinMinigame` name clash** (S). `minigames/index.js:202` overrides the starter from `minigame-starters.js:915` with the demo helper. The game imports the starter directly, so only callers of the global are affected.
-- **Unrouted `api/games_controller.rb#unlock`** (S). Dead code with its own unlock logic; remove it or route it.
-- **Cancelling the PIN pad shows "PIN Rejected"** (S). Cancel should close quietly.
 
 - **A "VM launched" event** (m05 fixer; S). Tasks like "Get into the research portal" could complete on real use instead of on flag 1.
 - **`object_unlock_failed` event** (m06 re-review; S). The engine emits nothing when a PIN or password is wrong, so a handler can't react to repeated wrong guesses.
-- **Combat tuning for missions** (m04 playtest; S–M). A heal item or slow regen missions can place; a room leash so a chasing NPC gives up at her own door; pass `maxHP` and `attackCooldown` through from a scenario's hostile config (`parseConfig` drops them today). Fights in sequence are currently hard to survive.
-- **Ink visit counts don't survive a reload** (m02 pre-commit check; S–M). After a reload Val replays her full Reeves speech because knot visit counts and local VARs aren't restored (only synced globals are). Missions work round it with synced globals.
-- **Standing NPCs can be pushed and don't return** (m05 pre-commit check; S). The player's path pushed Halloran 35–60 px off her spot and she stayed there; standing NPCs should be immovable or walk back.
+- **Ink visit counts don't survive a reload** (m02 pre-commit check; S–M). After a reload, knot visit counts, `TURNS()` and the story position are lost. Ink-local VARs ARE restored: the engine saves `npcInkVariables` after each choice (since 18237332, confirmed in the browser in m06 game 2304, 2026-10-13). Openers keyed on visit counts replay; key them on a VAR or a synced global instead.
 - **Non-combatant NPCs** (m02 fixer; S). A `nonCombatant` flag so bed-bound patients and similar can't be punched.
 - **Console source tiles hidden until available** (m02 fixer; S). The Ghost tile shows greyed before the offer.
-- **Auto-advance paced by line length when there's no audio** (m08 dialogue playtest; S). Without TTS every line holds ~5 s whatever its length; short replies drag in long hubs. With audio, pacing follows the speech.
 - **Planted devices speak their lines aloud** (user, 2026-10-10; S–M). A planted network device such as Ghost's phone could play its dialogue through TTS like an NPC, with a click on the line to skip it.
-- **"Prefer to route around" objects** (user, 2026-10-10; M). A per-object setting (e.g. a vending machine) so click-to-walk pathfinding tries a path around the object first, and only walks through it when there's no clean path; WASD movement stays unchanged.
-- **Unlock player avatars from completed missions** (user, 2026-10-10; M). A character becomes available as a player avatar once the player has met them in a mission they've completed.
 - **Progress in gated objectives** (m08 fixer; S). Tasks like "Interview the suspects" could show "Seen: Cipher, Phantom".
 - **Open person-chats hear global changes** (m08 fixer; M). Today a conversation that's open doesn't see a global change until the minigame returns.
-
-- **Carry choices between missions** (m07 review; L). `consequences_persist` is set on missions but nothing carries globals from one mission to the next. It would let m08 open differently depending on m07 (the Austin backdoor "day nine"), and let HaX remember the Tesseract conversation.
+- **Carry choices between missions** (m07 review; L). **Built 2026-10-17** (`exportGlobals` / `importGlobals`; `README_scenario_design.md`, "Carrying choices between missions", and `docs/agents/CARRY_OVER_PLAN.md`). The old `consequences_persist` field in mission.json is retired. Still open from this entry: HaX remembering the Tesseract conversation, which needs m07's `teacher_discussed` promoted to a scenario global first.
 - **Phone timestamps survive a reload** (m03 dialogue playtest; S). After a reload every message in a thread is re-stamped with the reload minute.
 - **Resume in the room you left** (engine fixer; M). Reload always respawns at `startRoom`; see P10 in the pass-4 log.
+  - Also on a KO (m06 struggling run A, 2026-10-13): a knocked-out player respawns in reception, five rooms from the fight, with the hostile NPC still hostile.
+- **A hit closes the phone** (m05/m07 browser checks, 2026-10-14; S–M). `player-damage-interrupt.js` closes any open minigame on damage, so a player being chased can't read HaX's fight-controls texts or use a phone way out (m05 "Send Security"). Pause NPC attacks while the phone is open, or don't close the phone on damage. **Done 2026-10-17 (a73b1175):** the phone stays open on a hit and attacks carry on (no free shield); a KO closes it.
+- **Punch cone misses with single-arrow facing** (m07 puzzle browser check, 2026-10-14; S). The ±30° punch cone means attackers standing ~45° off a cardinal facing are mostly missed unless the player holds two arrow keys (1 of ~25 vs 11 of 11). Widen the cone, auto-face the nearest hostile on a punch, or show a cue.
+- **All-optional aims complete on their first task** (m07 fixer, 2026-10-14; S). `objectives-manager.js:847`: an aim whose tasks are all optional is marked complete as soon as one task is, so it folds early. Complete it only when every task is settled. m07 works round it by making the tasks required.
+- **Wall paintings float outside rooms in shared maps** (m07 regression; S). Seen outside m07's scada_control and checkpoint east wall; the maps are shared by m04, m07, m08 and sis02.
 - **Timers survive a reload** (m07 fixer; S). A started timer restarts from zero after a reload.
 - **Re-readable cutscene transcripts on the phone** (m07 fixer; M). Players could reread a briefing instead of relying on paper summaries like m07's Threat Desk Summary.
 - **Guard line-of-sight hooks** (m07 fixer; M). Some missions draw decorative LOS cones that mean nothing; a general "player spotted" event would let any guard react.
-
 - **Person-chat resume** (pass 3; M). When a face-to-face conversation reopens, the engine goes back to the knot of the first saved choice, so a resumed check can show its choices without the question that led to them (seen with Netherton in m08). Phone chat had the same problem and now replays nothing already seen (E10/E13); person-chat could get the same treatment.
 - **Sync globals when a conversation closes** (sis02 D6, 2026-10-09; S). Globals reach the server every 30 s or on pagehide (`state-sync.js`), so a crash or killed tab within 30 s of a conversation loses flags like `helen_briefed` and the NPC replays its scene. Call `window.stateSync?.sync()` after `conversation_closed` in person-chat and phone-chat. Normal reloads aren't affected.
+- **Tutorial prompt over the opening cutscene** (engine, 2026-10-13; S). The yes/no tutorial prompt appears about 1 s after load, on top of a `game_loaded` cutscene (seen in m03 and m04). Hold the prompt until the opening cutscene and brief close. `timedConversation` and event-triggered person-chats also don't check `tutorialManager.isPromptOpen()` (added in 0b66f334 for sight challenges); a short-delay one can open over the prompt.
+- **Completion toasts cover a countdown HUD** (m04 pass 5, 2026-10-13; S). Task Complete / Objective Complete toasts sit over the right half of the scenario-timer HUD for a few seconds. Offset the toast stack below an active countdown.
+- **Scenario timers and closed tabs** (m04 puzzle review, 2026-10-13; S). Timers run on wall-clock time while the tab is open, but resume from their saved running time after a reload, so closing the tab pauses a clock (m04's early-alarm clock) while VM work goes on elsewhere. Decide whether a mission clock should keep running server-side.
+- **Engine minors from the m06 regression (2026-10-13; S each):**
+  - **Objectives panel:** with several aims open it clips the later tasks and shows no scrollbar. It also covers the left of the room.
+  - **Hearts row:** it overlaps the inventory bar.
+- **HaX's headshot avatar** (art, 2026-10-13; S). The phone and toast avatar `agent_hax_headshot.png` still shows her old look, because it's cut from the walk sprite. Her bust was glowed up (option A). Make a headshot from the new bust, or redo her walk sprite to match.
+- **Per-item `dropOnKO: false`** (m05 alignment review, 2026-10-13; S). An NPC's KO drops everything in `itemsHeld`, so Owen's office spare lands before anyone suspects Torres. Allow items to stay with a KO'd NPC (or be relayed later by script).
+- **Save visit counts with the game** (m06 scenario review, 2026-10-13; S–M). Ink-local VARs already survive a reload (`npcInkVariables`, confirmed in m06 game 2304). Visit counts, `TURNS()` and story position don't, so an opener keyed on `knot > 1` replays. Saving visit counts would fix that class in every mission.
+- **KO item drops land on top of each other** (m06 dressing, 2026-10-13; S). Items dropped by a knocked-out NPC land about 8 px apart, so picking one up opens a pick-one menu. Spread drops at least 32 px.
+
+- **Follow-ups from the backlog batch (2026-10-22):**
+  - **Sight-blocking prop list** (S). Fig plants, x-ray scanners, the DVR stack and `brochure_rack` don't block sight; flag any with `blocksSight: true` where a mission wants cover.
 
 From the security awareness course planning (2026-10-14; details in `planning_notes/security_awareness_course/features/break_escape_engine.md` and `research/current_state_break_escape.md`), found but not fixed:
 - **Ink choice tags are dropped** (S). `ink-engine.js:69` discards tags on choices, so a tag on a choice line never fires.
@@ -63,7 +65,7 @@ From the security awareness course planning (2026-10-14; details in `planning_no
 
 ## Story and missions
 
-- **Carry m03's Sterling and Danny threads forward** (m03 pass-2 dialogue review, 2026-10-12; M). No mission from m04 to m08 mentions Victoria Sterling or Danny Foster. A recruited Sterling could turn up as an asset or a liability later, and the debrief's "Somebody has to tell him she's walking. It should be you." could be paid off. Depends on "Carry choices between missions".
+- **Carry m03's Sterling and Danny threads forward** (m03 pass-2 dialogue review, 2026-10-12; M). No mission from m04 to m08 mentions Victoria Sterling or Danny Foster. A recruited Sterling could turn up as an asset or a liability later, and the debrief's "Somebody has to tell him she's walking. It should be you." could be paid off. **Partly done 2026-10-17:** m04 now names both fates through carry-over (HaX on Sterling in the briefing, on Danny at Task Force Null in the debrief). Still open: Sterling as a later asset or liability, and the "It should be you" payoff.
 - **m08 pays off the Architect's teacher line** (m07 fixer; S). Nightshade or HaX quotes "Let it hurt afterwards, not during."
 
 - **A sticky "What should I be doing?" handler choice** (style guide; M). Answers from current progress, so a hint the player missed isn't gone for good (m02's hint choices retire after one use).
@@ -74,6 +76,12 @@ From the security awareness course planning (2026-10-14; details in `planning_no
 - **A short Ben Ashworth scene in m05** (m05 writer; S–M). Ben is a named red herring with no lines; a brief scene would make the suspect list two people deep.
 
 - **m04: meet the wall before the fingerprint kit** (user, 2026-10-05, from m03's RFID cloner; S–M). A capability grant only feels earned if the player has first hit the lock it opens. Let the player reach the biometric reader (or a print they can't lift) and feel the lack of the kit before the OptiGrid tool case hands it over. This is the lesson from m03's RFID cloner.
+
+- **m05: pay off m04's open threads** (m04 pass-5 alignment review, 2026-10-13; S). m04 sets up Task Force Null, Calder Wharf and Loom, but m05 never mentions them. Add one line to m05's briefing (at least Task Force Null) during the m05 pass, and weigh re-voicing a cached line.
+
+- **"Under arrest" canon in m01, m02, m06** (m04 scenario review, 2026-10-13; S). SAFETYNET agents detain and hand over; they don't arrest. m04 is fixed; m01 (cached audio), m02 and m06 still say "You're under arrest". Fix during each mission's pass and re-voice the line.
+
+- **v2 sprites without a talk sheet** (m06 dressing walk, 2026-10-13; S–M, PixelLab). These 11 sprite keys have no `<key>_talk.png`: female_blowse_v2, **female_hacker_hood_v2** (the default player sprite), female_office_worker_v2, female_scientist_v2, female_security_guard_v2, female_telecom_v2, male_nerd_v2, male_office_worker_v2, male_security_guard_v2, male_spy_v2 and male_telecom_v2. Every conversation requests the player's talk image, giving about 80–90 404s per session, and the portrait falls back. Run the pipeline's talk and visemes stages for each, or have `player.js` fall back to the headshot without requesting. The fingerprint minigame's `reader-bezel.png` and similar 404s are optional art probes (`fingerprint-art.js`) and are fine.
 
 ## New games
 
@@ -86,6 +94,9 @@ From the security awareness course planning (2026-10-14; details in `planning_no
 
 - **Open sprites and opening animations for every container** (user, 2026-10-10; M–L). Each container sprite gets an open version and a short transition that plays when the player opens it: the safe door swings open, the bin lid lifts. A per-object attribute says whether it closes again afterwards.
 - **Action frames in talk sprites** (user, 2026-10-10; M). Add action frames alongside the visemes, such as `action_give_item` showing the character handing something to the player. The ink names the action where the script needs it.
+  - **Detail (user, 2026-10-17):** custom visemes triggered from ink, e.g. a `give_item` frame with the NPC's hand held out towards the player. Make each one as an edit of the NPC's init image (`<key>_talk_init.png`). The pose changes the whole bust, not just the mouth, so it can only show in a short pause between voiced lines, never while lip sync runs.
+  - **Scope:** generate them only where an NPC's ink would benefit from an action or emotion shown on screen (handing over a card, a shrug, a flinch, a laugh). Don't make a standard set for every NPC.
+  - Engine side: a tag such as `# action:give_item` shows the frame for a set time, or until the next line's audio starts, then returns to `rest`. The viseme sheet's JSON lists the extra frames.
 
 - **Align voice style text when audio is generated** (style guide; S). m03–m06 Nightshade identity text and m06 HaX briefing/debrief text differ slightly from the canonical wording in the voice bible.
 
@@ -98,10 +109,8 @@ From the security awareness course planning (2026-10-14; details in `planning_no
 
 - **Lint: "Not X. Y." across sentences, in narration** (m04 script editor; S). The `not-x-but-y` rule misses the two-sentence form ("Not doubt. Irritation.") and narrator lines, and "She is not X; she Y".
 
-- **Validator: patrol legs longer than `changeDirectionInterval`** (m02 fixer; S). Warn when a waypoint leg can't be walked before the re-target timer fires.
 - **Grouped phone submenus as a standard pattern** (m02 fixer; S). m02 folded nine guide buttons into one "Send me a field guide." submenu; worth documenting for all handlers.
 
-- **Validator: catch mappings that can never fire** (m02 fixer; S). Flag a `lockpick_used_in_view` mapping whose room has no pickable lock.
 - **Graph generator: end the critical path on the missionConclusion aim**, and accept `puzzle_graph_links` on NPCs (m02 fixer; S).
 
 - **Write up the "what failed" debrief and permissive-ESD patterns** in README_scenario_design.md (m04 fixer; S).
@@ -129,4 +138,15 @@ From the security awareness course planning (2026-10-14; details in `planning_no
 The slot audit and wall check used to skip type `room_it` (file `room_IT.json`). Now fixed, they show objects that land at random positions in that map: m01 it_room "IT Security Concerns" (notes2); m04 engineering_workshop "BMS Jump Server Terminal" (vm-launcher) and "SAFETYNET Drop-Site Terminal" (flag-station), m04 plant_room "Emergency Shutdown Pushbutton" (emergency-button); lockpick_gauntlet keyed_door_1 two keys. Each needs a sprite slot or a position. Not fixed: other missions.
 
 ## SIS scenarios
-- **Carry sis02 choices into sis03** (sis02 consistency pass, 2026-10-05; M). sis03 now takes the sis02 information pack's reference timeline as fact (ESD at about 06:34 on the dial, no PLC-BMS register image, initial NIS notification at 07:00, Hall 1 not lost) and both `mission.json` files set `consequences_persist: false`. Real carry-over would read a finished sis02 game's globals when sis03 starts and vary: Exhibit B's evidence gap (`evidence_before_esd`: registers saved or not (`bms_registers_saved`)), the claim (`facility_evacuated`: Hall 1 lost to fire, so a much larger physical-damage figure), the containment and notification timeline in Whitworth's notification (`early_esd_activation`, `nis_initial_choice`, `nis_deadline_missed`), and the Trent Water claim (`trent_water_notified`, `trent_water_verify_first`). Needs the engine's cross-mission carry-over (see "Carry choices between missions" above) and a sis03 fallback when sis02 was never played.
+- **Carry sis02 choices into sis03** (sis02 consistency pass, 2026-10-05; M). sis03 now takes the sis02 information pack's reference timeline as fact (ESD at about 06:34 on the dial, no PLC-BMS register image, initial NIS notification at 07:00, Hall 1 not lost) and neither carries anything from sis02 (the old `consequences_persist` field is retired). Real carry-over would read a finished sis02 game's globals when sis03 starts and vary: Exhibit B's evidence gap (`evidence_before_esd`: registers saved or not (`bms_registers_saved`)), the claim (`facility_evacuated`: Hall 1 lost to fire, so a much larger physical-damage figure), the containment and notification timeline in Whitworth's notification (`early_esd_activation`, `nis_initial_choice`, `nis_deadline_missed`), and the Trent Water claim (`trent_water_notified`, `trent_water_verify_first`). The engine side is built (`exportGlobals` / `importGlobals`), but ERB can't see imports, so the document variations need either conditional readable text or the variation moved into dialogue (`docs/agents/CARRY_OVER_PLAN.md`, section 4); plus a sis03 fallback when sis02 was never played.
+
+- **Lint: guards that a reopen skips (2026-10-22, m10 alignment R9).** Within a session, person-chat reopens at the knot that owns the saved choices (person-chat-minigame.js:551-566), not at `start`. A state guard placed only in an entry knot is skipped on a reopen, so a deal or choice stays offered after the world has moved on. A lint could flag menu knots that offer state-changing choices without re-checking the guards their entry knot checks. Prototype simulation: the m10 R9 scratch scripts (reopen_sim.cjs).
+
+- **Lint: tunnels that hold choices in closable conversations (2026-10-22, m10 alignment R10-M1).** A reopen resets the ink call stack, so a knot entered as a tunnel (`-> knot ->`) that offers choices and ends `->->` throws on the next pick ("An error occurred when processing your choice") and stalls the scene until a page reload. A lint could flag any knot with choices that ends `->->` in a person-chat without disableClose. Also check older missions for the pattern. Prototype: m10 R10 scratch `tess_tunnel2.cjs`.
+- **Hostility after a Restart (2026-10-22, corrected by m10 R11).** A reload does restore hostility (since 8e868565, npc-hostile.js:8-30); only a Restart after the player is knocked out calms hostiles (resetHostilesForRespawn). m10 re-arms Voltage in ink for that path. Worth deciding per mission whether a chosen fight should survive a Restart.
+
+- **Phone chat applies a batch's #set_global only after the whole batch (2026-10-22, m09 dialogue R2 m1).** In phone-chat-minigame.js continueStory, tags from an opening run after every line up to the next choices is collected, so an ink condition later in the same batch still sees the old value. Writers must branch only after a choice; an engine change could apply tags line by line as person-chat now effectively does.
+- **Log filter: a `badge` logType (2026-10-22, deduction plan fold, GAPSAB-8).** The log-filter minigame only has `vpn` and `ics_rdp`, so door/badge logs in the deduction fixtures map onto `vpn` filters that don't fit door rows. A `badge` type (door, card, time, result) would suit insider-risk cases.
+- **Notifications: aria-live container, reduced motion, unread-clue badge (2026-10-22, deduction sidecar A11Y_UX_REVIEW A1/A5, SIDECAR-40).** Toasts are not announced to screen readers and animate under `prefers-reduced-motion`; a HUD badge for unread clues would help the deduction board. Engine-wide, outside Phase 10's owners.
+- **Engine items waiting on the user (2026-10-23, finale playtests).** (1) A reload places the player at `scenario.startRoom` (player.js:206), though the server saves and returns `player_state.currentRoom`. (2) The story credits come back empty after a reload (closing-sequence.js replay). (3) A scenario has no setting to turn off the tutorial popup (tutorial-manager.js uses localStorage only). (4) Some Task Complete and "noted" toasts still show twice.
+- **Flag-lock reward labels and toasts behind the station (2026-10-23, VM weave browser check m01).** (1) A flag-locked container (m01's ENTROPY archive) runs its rewards but the unlock flows straight into the container, so the new reward `label` is never shown; show it as a toast or in the container header. (2) No "Task Complete" toast appeared while the flag station was open (m01 `submit_launch_code`), though the task completed; queue toasts until the station closes.

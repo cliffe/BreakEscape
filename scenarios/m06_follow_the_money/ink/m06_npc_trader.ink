@@ -3,17 +3,24 @@
 // Innocent employee, provides context
 // ===========================================
 
-VAR trader_talked = false
 VAR topic_volume = false
 VAR topic_monero = false
 VAR topic_irina = false
 VAR first_meeting = true
+VAR trader_spoken = false // Synced scenario global (scenario design R1, m12): set when his first chat closes
 // Final round (m03 pattern): set by every exit, so the resting knot's re-entry
 // line shows on a reopen and never in the same batch as a goodbye.
 VAR hub_quiet = false
+// Dialogue C1 (D6-5): the latest thing about Irina Dani has reacted to
+// (1 sitting detained, 2 walked out, 3 knocked down), so each reaction plays once.
+VAR irina_news = 0
 
 // External variables
 VAR player_name = "Agent 0x00"
+// Dialogue C1 (D6-5): synced; Dani sits two desks from Irina
+VAR irina_arrested = false
+VAR irina_taken = false
+VAR irina_ko = false
 
 // ===========================================
 // INITIAL MEETING
@@ -22,18 +29,32 @@ VAR player_name = "Agent 0x00"
 === start ===
 #speaker:trader
 
-{first_meeting:
+{first_meeting and not trader_spoken:
     ~ first_meeting = false
 
     #speaker:narrator
     Narrator: A young trader watches six price charts at once, placing the occasional order without appearing to look at it.
 
-    Dani Okonkwo: You're the regulator, yeah? FCA?
+    // Dialogue C2 (D6-53): a first meeting after Irina's fate is settled.
+    {
+    - irina_arrested or irina_ko:
+        {
+        - irina_ko:
+            ~ irina_news = 3
+        - irina_taken:
+            ~ irina_news = 2
+        - else:
+            ~ irina_news = 1
+        }
+        Dani Okonkwo: You're the regulator? Is this about Irina? *glances at her desk* I don't know anything. Honestly.
+    - else:
+        Dani Okonkwo: You're the regulator, yeah? FCA?
 
-    Dani Okonkwo: Don't worry, we're legit. Mostly.
+        Dani Okonkwo: Don't worry, we're legit. Mostly.
+    }
 
-    + [Mostly? That's an interesting qualifier.]
-        Dani Okonkwo: Joking. It's all above board. Irina makes sure. Honestly. Ignore me.
+    + {not irina_arrested and not irina_ko} [Mostly? That's an interesting qualifier.]
+        Dani Okonkwo: Joking. It's all above board. Irina makes sure. Ignore me.
         -> hub
 
     + [It's a standard audit. Nothing to worry about, if everything's compliant.]
@@ -44,6 +65,10 @@ VAR player_name = "Agent 0x00"
     + [What does this place actually do?]
         -> operations_overview
 - else:
+    // Dialogue C1 (D6-5): news about Irina comes first (the hub prints it).
+    {(irina_ko and irina_news < 3) or (irina_taken and not irina_ko and irina_news < 2) or (irina_arrested and not irina_taken and not irina_ko and irina_news < 1):
+        -> hub
+    }
     Dani Okonkwo: Hi again. What's up?
     ~ hub_quiet = true
     -> hub
@@ -68,19 +93,31 @@ Dani Okonkwo: Fast, cheap, loads of volume. It's a tough market, to be fair.
 // ===========================================
 
 === hub ===
-{ hub_quiet:
+// Dialogue C1 (D6-5): a reopen re-enters here, so the floor's reaction to
+// Irina lives in the re-entry line, once per change.
+{
+- hub_quiet:
     ~ hub_quiet = false
+- irina_ko and irina_news < 3:
+    ~ irina_news = 3
+    Dani Okonkwo: Irina's on the floor and nobody's-- did you-- *stops* Don't answer that.
+- irina_taken and not irina_ko and irina_news < 2:
+    ~ irina_news = 2
+    Dani Okonkwo: They walked Irina out past my desk. Am I next? Honestly, you can tell me.
+- irina_arrested and not irina_taken and not irina_ko and irina_news < 1:
+    ~ irina_news = 1
+    Dani Okonkwo: *barely above a whisper* She's just sitting there. Are you allowed to tell me what's going on?
 - else:
     Dani Okonkwo: {&Anything else?|Go on, then.|What else?}
 }
 
-+ {not topic_volume} [Eight hundred million a day. Is that normal for you?]
++ {not topic_volume} [How much goes through here in a day?]
     -> volume_discussion
 
 + {not topic_monero} [Why is so much of this in Monero?]
     -> monero_discussion
 
-+ {not topic_irina} [What's Dr. Volkova like to work for?]
++ {not topic_irina and not irina_arrested and not irina_ko} [What's Dr Volkova like to work for?]
     -> irina_discussion
 
 + [That's all, thanks.]
@@ -134,7 +171,7 @@ Dani Okonkwo: We're compliant. We're just also, like, private. That's the brand.
 === suspicious_activity ===
 #speaker:trader
 
-Dani Okonkwo: Depends on your perspective.
+Dani Okonkwo: Depends who's asking.
 
 Dani Okonkwo: Some people want privacy. Some want to hide money. From a chart they look the same.
 
@@ -214,7 +251,7 @@ Dani Okonkwo: Irina and Satoshi do compliance. I just watch the charts.
 // Review M1: this is the "flagged the wallets" conversation the task names.
 #complete_task:question_the_trader
 
-Dani Okonkwo: *lowers voice* Between us? Some of it's weird. Big round sums going in late at night. Same wallets, same habit.
+Dani Okonkwo: *lowers voice* Between us? Some of it's weird. Big round sums going in late at night. Same wallets, like clockwork.
 
 Dani Okonkwo: I put the wallet names in the daily report. It's on the desk. One's got "ENTROPY" right there in the address.
 

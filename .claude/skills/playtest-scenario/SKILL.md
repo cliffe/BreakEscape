@@ -106,8 +106,13 @@ Never reconstruct a trace from what you expected to happen. If a command was not
 ## Small things that have each cost a run
 
 - **The end-of-mission credits overlay never closes, and that is correct.** A scenario whose conclusionScreen is `bond_visualiser` opens a fullscreen `bv-stage` overlay with `autoStop: true` (music stops, visualiser stays open) and `disableClose: true` (no × button, Esc blocked). Nothing closes it, by design — it is the terminal state. Two runs have been lost waiting for it to clear, one of them concluding the game had hung on blocked audio. It has not hung. **Mission conclusion is decided server-side**, in `check_mission_conclusion`, and depends only on every `concludeRequires.tasksCompleted` task being persisted. Check the game record; never wait on the screen.
+- **Don't read an NPC's combat state before it turns hostile.** `npcHostileSystem.getState(id)` (or `getNPCHostileState`) creates a default combat state with 10 damage when none exists, and turning hostile then keeps it, so the fight runs at 10 per hit instead of the configured value. Three 2026-10-14 runs reported "Torres hits for 10" this way; real play uses the configured damage. Measure damage from the player's HP drops, and read NPC state only after the first hit.
 - `mg type(i, text, {submit:true})` sends Enter **and** clicks a submit button if Enter changed nothing. Flag stations ignore Enter entirely; before this, a submitted flag silently never arrived. Check `submittedVia` in the result.
 - `mg clickControl` takes an index **or** a label substring — `clickControl("submit")`. Prefer the label: indices shift as a minigame re-renders. A failure lists the controls that were available.
+- `mg clickControl` also reaches the mail client's Create-account address rows (`label.mail-create-option`, then `clickControl("Confirm")`) and the blank-picker options in the mail composer and pretext-prep cards (`[role="option"]`, so `clickControl("Beta")` by label). They show up in `getState().controls` once open.
+- `{"cmd":"select","field":"template","option":"urgent"}` sets a `<select>` inside the open minigame and fires `input` then `change` (same as `mg select`). `field` is an index into `getState().fields` or text matched against the select's id, name, class, aria-label or label; `option` matches a value, then the option text exactly, then by substring. This opens the mail client's account switcher too (`field:0, option:"create:freemail"`). A miss lists the selects and options that were there. Compose selects (template, subject, attach, To, Send as) only render once earlier choices make them relevant, and re-render after each change, so re-read `getState()` between selects.
+- `brief` waits up to 15 s for the player sprite after a reload. If it never appears, `brief` returns `{ready:false, reason:"player-not-ready"}` rather than throwing.
+- `bootstrap` stops on an ending: the credits overlay (`state.missionEnd`) or an end card whose only buttons leave the game ("Return to Missions"). It returns `settled:true, ended:true, endKind:"credits"|"end-card"` and does not click. Use `brief` after that. It cannot be used to get past an ending.
 - A container shows "Loading contents..." for a beat after opening. `mg getState` now waits that out; a state read during it reports an empty safe.
 - An unlocked door can still be shut, and `enter` opens it before walking through. An unlocked door that has *vanished* is normal: opening a door removes its sprite on both sides. `enter` doesn't need the sprite.
 - `converse` stops once the conversation stops saying anything new, so hub NPCs no longer burn the whole turn budget. Pass `choices` when you need a branch.
@@ -218,6 +223,8 @@ Always start a fresh game unless the user asks to resume one.
 ### Prerequisites
 
 The bridge only exists outside production (`breakEscapeConfig.testBridge`). Playwright lives in the repo (`node_modules`, chromium already installed). If `window.__test` never appears, the server is in production mode or `main.js` failed to load — say so rather than retrying.
+
+The harness needs Node 24, and the system Node is 18 on this machine: run it with `~/.cache/ms-playwright-go/1.57.0/node`. Use `--headless true` here, because headed mode is unreliable.
 
 ---
 
@@ -410,6 +417,10 @@ Then, per walkthrough step, the loop is: **read `brief` → act → wait determi
 Prefer the high-level commands — `room`, `converse`, `lock`, `enter` — over hand-rolled `mg` sequences. Each of them exists because the hand-rolled version failed a run.
 
 Full command list is in the header of `scripts/playtest-session.js`.
+
+**Viewport.** The default is 1400x1000. Pass `--vw 600 --vh 900`, or set `VW` and `VH` in the environment (the arguments win), to check a narrow or phone-sized layout. Confirm with `{"cmd":"eval","fn":"() => window.innerWidth"}`.
+
+**Toasts.** `{"cmd":"toasts"}` returns every notification shown since the last call, then clears the list: `{count, toasts:[{at, type, title, message}], messages:["Locked: Requires key. ..."]}`. A MutationObserver installed at page load records each `.notification` element as it is added, so a toast that has already faded is still caught (don't poll `.notification-message` yourself). Call it once before the action to clear anything from the opening, then again after. Info and success toasts raised while a minigame is open are held by the engine until it closes, so they appear after the close, not during. A page reload clears the list.
 
 ### Driving dialogue
 

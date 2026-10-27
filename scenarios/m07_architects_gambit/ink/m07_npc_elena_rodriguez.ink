@@ -12,13 +12,15 @@
 //      summaries and read the Trojan Horse vendor manifest. Sets
 //      projection_revised. Redundant with VM flag 1 (NFS traffic), which is
 //      the same document.
-//   2. The SCADA control room password, and the cable vault PIN. Both
-//      redundant elsewhere. Nothing is gated on her.
+//   2. The SCADA control room password, and the rule for the cable vault
+//      keypad (PASS 5 alignment r1, regression m-8: the rule, not the digits,
+//      so the ATS-1 plate is still read). Both redundant elsewhere. Nothing is
+//      gated on her.
 //
 // Outcomes: elena_outcome = "turned" | "fled" | "ko". KO is engine-side.
 // ===========================================
 
-EXTERNAL player_name()
+// PASS 5 alignment r2 (m9): the unused EXTERNAL player_name() is gone.
 
 // Synced from globalVariables by the engine at call-open
 VAR elena_outcome = ""
@@ -30,7 +32,6 @@ VAR team_redirected = false
 VAR redirect_window_closed = false
 VAR found_coordination_traffic = false
 VAR casualty_projection_found = false
-VAR vault_pin_found = false
 VAR scada_password_found = false
 VAR elena_met = false
 
@@ -42,6 +43,14 @@ VAR asked_stayed = false
 VAR asked_mercer = false
 VAR revision_heard = false
 VAR gave_keys = false
+// Phase 4 dialogue C1 (D7-24): the player told her the brief said ninety.
+VAR told_ninety = false
+// Phase 4 dialogue C1 (D7-37): set on every return from inside a conversation
+// and on the exits, so the re-entry line plays only on a re-talk (Hollis's pattern).
+VAR hub_quiet = false
+// Blind A m4: the reminder goes once both doors it answers have been reached.
+VAR scada_door_reached = false
+VAR vault_entered = false
 
 === start ===
 {elena_ko:
@@ -77,23 +86,34 @@ Elena Rodriguez: If you're not one of his, you're law. Either way, let me finish
 + [Finish what, exactly?]
     Elena Rodriguez: The load-shed tables. He rewrote them. I'm trying to put back the ones that keep the hospitals on the priority list.
     Elena Rodriguez: Forty minutes I've been at it. It's read-only. Of course it is.
-    -> hub
+    -> back
 
 + [SAFETYNET. Hands where I can see them.]
     Elena Rodriguez: *lifts both hands, unimpressed* There. Now what? You've got as little time as I have, and you're spending it on me.
-    -> hub
+    -> back
 
 + [You're Elena Rodriguez. Critical Mass.]
     Elena Rodriguez: You've read a file about me.
     Elena Rodriguez: Then you know what I did. You don't know what I was told. Nobody asks that.
     ~ asked_who = true
-    -> hub
+    -> back
 
 // ===========================================
 // HUB
 // ===========================================
 
+// Phase 4 dialogue C1 (D7-37): every in-conversation return comes through here.
+=== back ===
+~ hub_quiet = true
+-> hub
+
 === hub ===
+// A re-talk re-enters this knot (the owner of the saved choice), so the
+// re-entry line lives here. hub_quiet is false only on a re-talk.
+{not hub_quiet:
+    Elena Rodriguez: {&Ask. I can listen and type.|I haven't moved. Neither have the tables.}
+}
+~ hub_quiet = false
 + {not asked_told} [What were you told this was?]
     -> q_told
 
@@ -106,7 +126,9 @@ Elena Rodriguez: If you're not one of his, you're law. Either way, let me finish
 + {not asked_mercer} [Tell me about Mercer.]
     -> q_mercer
 
-+ {asked_told and not revision_heard} [The Austin operation. They briefed it as no fatalities, dormant for ninety days.]
+// PASS 5 alignment r1 (M2): the player no longer names Austin out of nowhere.
+// They ask about the other operations; she is the one who picks out Austin.
++ {asked_told and not revision_heard} [The other three operations tonight. What were you told about them?]
     -> lever_briefing
 
 + {casualty_projection_found and not revision_heard} [I've read the casualty projection. His signature's on it.]
@@ -121,7 +143,7 @@ Elena Rodriguez: If you're not one of his, you're law. Either way, let me finish
 + [I need to keep moving.]
     Elena Rodriguez: Yes. You do.
     #exit_conversation
-    -> hub
+    -> back
 
 === q_told ===
 ~ asked_told = true
@@ -136,16 +158,16 @@ Elena Rodriguez: Long enough that the committee that's ignored this grid for ele
 
 Elena Rodriguez: That was the plan I agreed to. I have the version I signed off. It's on that laptop.
 
--> hub
+-> back
 
 === q_why ===
 ~ asked_why = true
 
 Elena Rodriguez: Because the grid really is that fragile. That part was never a lie. It's the part nobody wants to hear.
 
-Elena Rodriguez: I wrote a cascade study in 2019. Twenty-three transformers, no spares, eighteen months to build replacements.
+Elena Rodriguez: I wrote a cascade study in 2019. Twenty-three transformers. If the spares were gone, eighteen months to build replacements.
 
-Elena Rodriguez: One bad afternoon and you lose a region for a year.
+Elena Rodriguez: They found spares since. Four to seven days, this time. In December, that's long enough.
 
 Elena Rodriguez: I sent it to the operator, the regulator and a congressional committee. One of them acknowledged receipt.
 
@@ -153,7 +175,7 @@ Elena Rodriguez: Then somebody read it properly. Asked me about page forty. Nobo
 
 Elena Rodriguez: That's how they get people like me. You'd think it was money.
 
--> hub
+-> back
 
 === q_stayed ===
 ~ asked_stayed = true
@@ -166,7 +188,7 @@ Elena Rodriguez: And there's a small chance. The load-shed tables decide who sta
 
 Elena Rodriguez: It's a thin plan. The other one is feeling bad in a different building.
 
--> hub
+-> back
 
 === q_mercer ===
 ~ asked_mercer = true
@@ -175,13 +197,13 @@ Elena Rodriguez: James Mercer. My professor's professor. Twenty years at the Dep
 
 Elena Rodriguez: He's the most convincing man I've ever met. I think he lied to himself first, and I was downstream.
 
-Elena Rodriguez: He's upstairs in the control room. He won't come down. He'd have to look at somebody who believed him.
+Elena Rodriguez: He's in the control room, through the north door. He won't come out. He'd have to look at somebody who believed him.
 
 {not scada_password_found and elena_outcome == "":
     Elena Rodriguez: Don't ask me for the door. Not yet.
 }
 
--> hub
+-> back
 
 // ===========================================
 // THE REVISION -- two ways in, same document
@@ -190,11 +212,14 @@ Elena Rodriguez: He's upstairs in the control room. He won't come down. He'd hav
 === lever_briefing ===
 Narrator: She stops working. For the first time, both her hands are still.
 
-Elena Rodriguez: Say the second half of that again. Ninety days.
+Elena Rodriguez: Told? Nothing. I was copied on their schedule. What were you told about Austin?
 
-+ [Ninety days dormant. No projected fatalities. That's the brief.]
+// Blind run A fixes (m3): names the source the player carries (the threat desk
+// summary in the start kit), so a player who skipped the Trojan Horse brief isn't guessing.
++ [The desk summary says ninety days dormant. No deaths projected.]
+    ~ told_ninety = true
     -> revision_beat
-+ [Why? What do you know about Austin?]
++ [Why Austin?]
     -> revision_beat
 
 === lever_projection ===
@@ -216,15 +241,17 @@ Elena Rodriguez: I was copied on the coordination summaries. All four cells, one
 
 Elena Rodriguez: I read the Austin row because it was the boring one.
 
-Elena Rodriguez: The dormancy field says T plus nine. Nine days. Same table your ninety came out of, one column over.
+// Phase 4 dialogue C1 (D7-24): she knows about "ninety" only if told; the
+// manifest line names no name, so it doesn't promise one.
+Elena Rodriguez: The dormancy field says T plus nine. Nine days. {told_ninety: Same table your ninety came out of, one column over.|The column next to it says ninety. That's the one somebody wanted read.}
 
-Elena Rodriguez: And I recognised a name on the vendor manifest. Over a third of the entries are prefixed EHR or CAD.
+Elena Rodriguez: And I read the vendor manifest. Over a third of the entries are prefixed EHR or CAD.
 
 + [Assume I don't know what those prefixes mean.]
     Elena Rodriguez: Electronic health records. And computer-aided dispatch.
     -> revision_dispatch
 + [Dispatch. As in 911 call routing.]
-    Elena Rodriguez: As in 911 call routing.
+    Elena Rodriguez: Yes. Where every nine-one-one call goes first.
     -> revision_dispatch
 
 === revision_dispatch ===
@@ -240,14 +267,19 @@ Elena Rodriguez: I spent six months telling myself I was the one operation where
     Elena Rodriguez: It's on the backup server, on a share nobody locked down. Read it yourself. Don't take it from me.
 }
 
-{team_assigned and not team_redirected and not redirect_window_closed:
+// PASS 5 alignment r2 (m8): a team already in Austin was not sent on the
+// brief's numbers, and nobody needs her sympathy for it.
+{team_assigned and team_assignment != "trojan_horse" and not redirect_window_closed:
     Elena Rodriguez: If you've already sent people somewhere tonight, you sent them on those numbers.
 }
-{team_assigned and redirect_window_closed:
+{team_assigned and team_assignment != "trojan_horse" and redirect_window_closed:
     Elena Rodriguez: You've already sent them, haven't you. I'm sorry. I'd rather have known this in June.
 }
+{team_assignment == "trojan_horse":
+    Elena Rodriguez: If your people are in Austin, they're in the right place. Tell them about dispatch.
+}
 
--> hub
+-> back
 
 // ===========================================
 // OUTCOME: TURNED
@@ -259,7 +291,8 @@ Elena Rodriguez: You know what you're asking. Help you, and there's no version o
 + [I'm not going to pretend otherwise. There isn't.]
     Elena Rodriguez: No. There isn't. Thank you for not making it sound like a deal.
     -> turn_yes
-+ [Then do it for the reason you wrote page forty.]
+// PASS 5 alignment r1 (regression m-6): only once she has told you about page forty.
++ {asked_why} [Then do it for the reason you wrote page forty.]
     Elena Rodriguez: That's a cheap thing to say to me.
     Elena Rodriguez: It's also the only true thing anyone's said in this building since Thursday.
     -> turn_yes
@@ -272,48 +305,58 @@ Elena Rodriguez: You know what you're asking. Help you, and there's no version o
 // PASS 2 (lesson 3): tags above the lines, so an early close still records them.
 #set_global:elena_outcome:turned
 #set_global:scada_password_found:true
-#set_global:vault_pin_found:true
 ~ gave_keys = true
 
 Narrator: She flattens a folded worksheet against the rack.
 
-Elena Rodriguez: Control room door: CascadeWindow19. He's too vain to change it twice.
+Elena Rodriguez: Control room door: CascadeWindow19, capitals exactly as I've written them. He's too vain to change it twice.
 
-Elena Rodriguez: Cable vault keypad: 4703. Mercer's tech reset it after my survey, so the plant log's out of date.
+Elena Rodriguez: Mercer's tech reset the vault keypad after my survey. The plant log's out of date.
+
+Elena Rodriguez: The new code is the last four of the serial on the transfer switch plate.
 
 Elena Rodriguez: The trunk runs are down there. That's where the physical half of this got in.
 
 Elena Rodriguez: He'll be at the master console. He won't be armed. He'll want to explain.
 
+-> post_turn_back
+
+// Phase 4 dialogue C1 (D7-37): the same re-entry pattern as the hub.
+=== post_turn_back ===
+~ hub_quiet = true
 -> post_turn_hub
 
 === post_turn_hub ===
+{not hub_quiet:
+    Elena Rodriguez: {&The tables are coming back. Slowly.|What else?}
+}
+~ hub_quiet = false
 // PASS 2: was gated on "not gave_keys", which was always true by here, so
 // the repeat could never be offered.
-+ [Give me the control room door and the vault code again.]
-    Elena Rodriguez: CascadeWindow19. Vault keypad is 4703.
-    -> post_turn_hub
++ {not (scada_door_reached and vault_entered)} [Give me the control room door and the vault code again.]
+    Elena Rodriguez: CascadeWindow19, capitals as written. The vault code is the last four of the serial on the transfer switch plate.
+    -> post_turn_back
 
 + [What do I say to him?]
     Elena Rodriguez: Nothing that sounds like a negotiation. He's better at those than you are.
     Elena Rodriguez: Ask him what the carve-out page says. He'll answer, because he can't help it, and then you'll both know.
-    -> post_turn_hub
+    -> post_turn_back
 
 + [What happens to you after tonight?]
     Elena Rodriguez: I tell somebody with a recorder everything I know, for as long as they want. Then I go where they put me.
     Elena Rodriguez: Don't call it brave. It's the only door left I don't have to lie my way through.
-    -> post_turn_hub
+    -> post_turn_back
 
 + [Stay on the load-shed tables. Keep the hospitals lit.]
     Elena Rodriguez: That was the plan anyway. It helps, being told.
     Narrator: She is back on the floor beside the rack before you reach the door.
     #exit_conversation
-    -> post_turn_hub
+    -> post_turn_back
 
 + [Go. Get out of the building.]
     Elena Rodriguez: I'll go when the tables are back. Not before.
     #exit_conversation
-    -> post_turn_hub
+    -> post_turn_back
 
 // ===========================================
 // OUTCOME: FLED
@@ -330,8 +373,7 @@ Elena Rodriguez: That's what he did. Put a number in front of me and told me wha
     -> pressure_recover
 + [I don't have time to be gentle with you.]
     -> flee
-+ [Say nothing.]
-    You: ...
++ [(Say nothing.)]
     Narrator: The silence goes on a beat too long, and she reads it.
     -> flee
 
@@ -348,11 +390,10 @@ Elena Rodriguez: Ask me again. Properly. If I say no, you leave me at this rack.
     ~ elena_outcome = "turned"
     #set_global:elena_outcome:turned
     #set_global:scada_password_found:true
-    #set_global:vault_pin_found:true
     ~ gave_keys = true
-    Elena Rodriguez: Control room door is CascadeWindow19. Vault keypad is 4703.
+    Elena Rodriguez: Control room door is CascadeWindow19, capitals as written. Vault code is the last four of the serial on the transfer switch plate.
     Elena Rodriguez: That's everything I have. Go.
-    -> post_turn_hub
+    -> post_turn_back
 
 === flee ===
 ~ elena_outcome = "fled"

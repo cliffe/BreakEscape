@@ -1,0 +1,10 @@
+Make portrait for Ibrahim Diallo
+A French-Senegalese man of about 45, IT support lead at a logistics firm, fifteen years in Leeds, with deep dark-brown skin, a long lean face and a patient, unhurried look. Close-cropped black hair greying at the temples and a short, neat salt-and-pepper beard, dark eyes. He wears a charcoal quarter-zip wool jumper over a white shirt collar, dark indigo jeans and a black leather belt. Standing alone against an empty plain light-grey backdrop, no room or furniture behind him. No text, no writing, no badges and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images. Reframed with reframe_portrait.py --flip. Batch D (check-mission hosts), batch generation approved by the user with no first-image sign-off.

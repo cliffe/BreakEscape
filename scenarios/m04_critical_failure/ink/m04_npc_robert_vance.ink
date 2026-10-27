@@ -8,21 +8,36 @@
 
 // Variables for tracking relationship and mission state
 VAR vance_trust_level = 0 // Synced scenario global: Vance's trust/cooperation (0-100), read by the debrief; also raised by phone (m04_phone_robert_vance)
-VAR revealed_mission = false       // Has player revealed SAFETYNET mission?
+// Phase 4 dialogue C1 (D5-27): revealed_mission, scada_threat_confirmed,
+// operatives_defeated and urgency_stage removed (never read here).
 VAR vance_is_ally = false          // Full ally status activated
 VAR vance_provided_keycard = false  // global; set ONLY by mappings when the card is really held: card_cloned (PASS 3 clone route) or item_picked_up:keycard (KO drop)
 VAR plant_reader_seen = false      // global; set by HaX's room_entered:battery_hall_2 bark (PASS 3 P8)
 VAR discussed_optigrid = false
-VAR scada_threat_confirmed = false
 VAR vance_met = false              // First meeting completed; re-talk lands in the hub
 // PASS 4 fix 9: globals, read only. Hard evidence lets a cover-route player
 // bring Vance in later, as HaX advises.
 VAR anomaly_detected = false
 VAR evidence_maintenance_logs_found = false
-
-// Game state variables
-VAR operatives_defeated = 0
-VAR urgency_stage = 0
+// Pass 5 (alignment minor): "What should I be doing?" reads the night as it is.
+VAR attack_mechanism_known = false
+VAR attack_prevented = false
+// Pass 5 decision 1: the night crew can be warned. crew_warned is written with
+// #set_global (synced); racks_vented is engine-owned. crew_discussed is local:
+// Vance has explained the cost once.
+VAR crew_warned = false
+VAR racks_vented = false
+VAR crew_discussed = false
+// Round 4: Voltage down makes the alarm free (review M2). Read only.
+// (The all_flags_in branch was dead once the gate went: puzzle chains R3-4.)
+VAR voltage_neutralised = false
+// Round 4 (browser m2): a re-entry line on the hub, skipped once right after a
+// goodbye (m03 hub_quiet), so a re-talk doesn't open under a stale line.
+VAR vance_quiet = false
+// Round 2: the workshop-card step in vance_priority.
+VAR server_room_reached = false
+VAR relay_card_cloned = false
+VAR operative_relay_defeated = false
 
 // External variables (set by game)
 // The engine binds exactly six externals (person-chat-conversation.js:96-129):
@@ -44,6 +59,8 @@ EXTERNAL player_name()
 {vance_met: -> vance_hub}
 #speaker:robert_vance
 #complete_task:meet_robert_vance
+// Scenario design n4: the player has spoken to him, even if they leave mid-meeting.
+#set_global:vance_spoken:true
 
 // Vance looks up from desk, visibly tired and annoyed
 
@@ -66,7 +83,7 @@ A grid-safety audit at four in the morning. You regulator lot keep strange hours
 === vance_professional_response ===
 #speaker:robert_vance
 
-Right. I run a tight ship here, budget and all.
+Right. I run a tight ship here, on a tighter budget.
 
 Tick your boxes and let's be quick about it. I've a plant to keep running.
 
@@ -114,9 +131,7 @@ Safety record's spotless. Who've you been listening to?
 ~ vance_trust_level += 3
 # influence_increased
 
-Staff records? Fine. But tell me what you're after.
-
-We've nothing to hide.
+Staff records? Fine. We've nothing to hide.
 
 -> vance_provides_access
 
@@ -167,7 +182,7 @@ Is there a problem?
 
 Just OptiGrid this month. Budget cuts, essential work only.
 
-Which is why an audit at this hour is... hard going. We do what we can with what we've got.
+Which is why an audit at this hour is the last thing I need. We do what we can with what we've got.
 
 -> vance_provides_access
 
@@ -189,7 +204,7 @@ Unusual? Not that I've seen. Why?
 
 Alright. What do you need?
 
-Staff records, maintenance logs, access to the halls. Whatever it takes.
+Staff records, maintenance logs, anything off this desk.
 
 -> vance_provides_access
 
@@ -212,7 +227,7 @@ The workshop's on the contractors' cards. The plant room's high-voltage, authori
 // Round 2: no #speaker here. On a choices-only knot the tag printed an empty
 // "None: " line before the choices (playtest issue 7).
 
-+ {not vance_provided_keycard} [(Lean in over the site map while the cloner reads his lanyard.)]
++ {not vance_provided_keycard} [(Use the cloner.) Lean in over the site map, close enough to read his lanyard.]
     -> vance_clone_cover
 
 // STICKY. This knot is reached from contractors_inquiry, concerns_question,
@@ -234,9 +249,9 @@ The workshop's on the contractors' cards. The plant room's high-voltage, authori
 === optigrid_details_request ===
 #speaker:robert_vance
 
-Three of them, here two days. Network work and SCADA optimisation, they said.
+Three of them, in and out since the ninth. Network work and SCADA optimisation, they said.
 
-Cards and an order number. I never found the order behind it. What's your concern?
+They didn't want an escort, either. What's your concern?
 
 + [Nothing yet. Just building a picture.]
     -> initial_meeting_end_professional
@@ -319,6 +334,7 @@ Anything else, I'm at the ops desk. Watching the screens.
 
 // TRIGGERS: Task 1.2 completion
 
+~ vance_quiet = true
 #exit_conversation
 -> vance_hub
 
@@ -331,8 +347,9 @@ Anything else, I'm at the ops desk. Watching the screens.
 
 Of course. And... if you find anything, come to me.
 
-This place is my responsibility. People depend on it.
+This place is mine to answer for. I'd rather hear it from you than from the fire brigade.
 
+~ vance_quiet = true
 #exit_conversation
 -> vance_hub
 
@@ -347,12 +364,20 @@ This place is my responsibility. People depend on it.
 === vance_hub ===
 // Round 2: no #speaker here. On a choices-only knot the tag printed an empty
 // "None: " line before the choices (playtest issue 7).
+{
+- vance_quiet:
+    ~ vance_quiet = false
+- vance_is_ally:
+    Robert Vance: {&What do you need?|Go on.|Aye?}
+- else:
+    Robert Vance: {&Something else?|Yes?|Make it quick.}
+}
 
 // Flat knot-level choices with conditions (choices inside a {cond: ...} block
 // don't gather reliably). At least one is always available in every state.
 // Safety net (M3, PASS 3 P2): copy the Level 1 card if no path did. Covert
 // wording on the cover route so the hub doesn't blow the cover.
-+ {not vance_provided_keycard and not vance_is_ally} [(Ask about the site map again, and stand close.)]
++ {not vance_provided_keycard and not vance_is_ally} [(Use the cloner.) Ask about the site map again, and stand close to his lanyard.]
     -> vance_clone_hub
 
 + {not vance_provided_keycard and vance_is_ally} [Let me copy your card.]
@@ -368,11 +393,26 @@ This place is my responsibility. People depend on it.
     -> vance_hub
 
 + {vance_is_ally} [What should I be doing right now?]
-    Robert Vance: The screens are lying to you. I'm on the historian, and the real rack temperatures are climbing. Get to the hardwired shutdown. Software won't save us.
+    -> vance_priority
+
+// Pass 5 decision 1: the night crew. Vance raises the cost before he acts; the
+// choice stays open until it's taken, a bank vents, or the shutdown goes in.
++ {vance_is_ally and (anomaly_detected or attack_mechanism_known) and not crew_warned and not crew_discussed and not racks_vented and not attack_prevented} [Is anyone working in the halls tonight?]
+    -> vance_crew_offer
+
++ {vance_is_ally and crew_discussed and not crew_warned and not racks_vented and not attack_prevented} [Sound the evacuation. Get the night crew out.]
+    -> vance_crew_sound
+
++ {vance_is_ally and not attack_prevented} [Stay on the ops desk. I'll call if I need the engineering side.]
+    Robert Vance: I'm not going anywhere. Call the moment you're moving.
+    ~ vance_quiet = true
+    #exit_conversation
     -> vance_hub
 
-+ {vance_is_ally} [Stay on the ops desk. I'll call if I need the engineering side.]
-    Robert Vance: I'm not going anywhere. Call the moment you're moving.
+// Blind run A (m1): after the shutdown the line above still sent the player in.
++ {vance_is_ally and attack_prevented} [I'm sweeping the site before I call it in. Stay on the desk.]
+    Robert Vance: Aye. I'll sit here and watch that needle come down.
+    ~ vance_quiet = true
     #exit_conversation
     -> vance_hub
 
@@ -384,20 +424,71 @@ This place is my responsibility. People depend on it.
 + {not vance_is_ally and not anomaly_detected and evidence_maintenance_logs_found} [I'm not an auditor. That OptiGrid crew you emailed about is still in your building.]
     -> vance_early_reveal
 
+// Struggling run A (F4): a cover-route player with the attack mapped but no dial
+// and no logs could not drop the cover, so HaX's crew text had nowhere to go.
++ {not vance_is_ally and not anomaly_detected and not evidence_maintenance_logs_found and attack_mechanism_known} [I'm not an auditor. They're inside your control network, and I can prove it.]
+    -> vance_early_reveal
+
 + {not vance_is_ally} [A few more questions about the facility.]
-    Robert Vance: Make it quick. I've got a plant to run.
+    Robert Vance: Quickly, then. Three banks, nine on the module swap in Hall 2, and one of me.
     -> vance_hub
 
 + {not vance_is_ally} [That's all for now.]
     Robert Vance: Right. I'll be at the ops desk.
+    ~ vance_quiet = true
     #exit_conversation
     -> vance_hub
+
+=== vance_priority ===
+{
+- attack_prevented:
+    Robert Vance: The banks are isolated and the needle's coming down. Go and see what they left behind.
+- not anomaly_detected:
+    Robert Vance: My screens all read the same feed. Check the racks against something that isn't on it. There's an old dial on the Rack Bank C wall in Hall 1.
+- not server_room_reached and not (relay_card_cloned or operative_relay_defeated):
+    Robert Vance: The workshop wants a Level 2 card, and mine's only Level 1. Their contractors had Level 2.
+- not attack_mechanism_known:
+    Robert Vance: The workshop. If they got onto my network, it was through the jump server in there.
+- else:
+    Robert Vance: You know what they did. My hydrogen readout's still climbing.
+    Robert Vance: Get to the hardwired shutdown. Software won't save us.
+}
+-> vance_hub
+
+=== vance_crew_offer ===
+~ crew_discussed = true
+Robert Vance: Nine. The module-swap crew, behind the inverter wall in Hall 2, till six. Your contractor wanted the halls clear from midnight. I said no.
+Robert Vance: I can sound the evacuation from this desk. Klaxon and strobes in every hall.
+{
+- voltage_neutralised:
+    Robert Vance: Whoever was in my plant room isn't listening any more. It costs you nothing.
+- attack_mechanism_known:
+    Robert Vance: Whoever's in my plant room hears it too. Your clock's running anyway. All it costs you now is surprise.
+- else:
+    Robert Vance: Whoever's in my plant room hears it too. He'll not wait for morning. Half an hour, maybe, and you've not finished in the workshop.
+}
+-> vance_crew_choices
+
+=== vance_crew_choices ===
++ [Sound it. Get them out.]
+    -> vance_crew_sound
++ [Not yet. Let me get closer to Voltage first.]
+    Robert Vance: Your call. It's on this desk when you want it.
+    -> vance_hub
+
+=== vance_crew_sound ===
+#set_global:crew_warned:true
+~ crew_warned = true
+Robert Vance: Sounding it now.
+Narrator: Somewhere past the walls a klaxon starts, and the strobes in the corridor go white.
+Robert Vance: They're moving. Nine of them, out through the Hall 2 fire doors.
+-> vance_hub
 
 === vance_plant_reader_ally ===
 // Round 2: no #speaker here. On a choices-only knot the tag printed an empty
 // "None: " line before the choices (playtest issue 7).
 + [Then come and open it.]
-    Robert Vance: With Voltage on the other side? And somebody has to watch the real numbers.
+    Robert Vance: With whoever's on the other side? And somebody has to stay on this desk.
     Robert Vance: They didn't need me on the ninth. I log every round on the Hall 1 panel. They'll have lifted it off that. Do what they did.
     Robert Vance: One finger, no second check. We'll be fixing that.
     -> vance_hub
@@ -425,7 +516,6 @@ Alright. You've got my attention. What's this really about?
 === vance_early_reveal ===
 #speaker:robert_vance
 
-~ revealed_mission = true
 ~ vance_trust_level += 30
 # influence_increased
 
@@ -468,9 +558,9 @@ How long have we got?
 
 // Vance's expression shows horror and guilt
 
-I let them in. Their cards worked and I didn't chase the order.
+I let them in. I signed them through myself.
 
-Credentials, background checks, all of it. God. What have I done?
+They had credentials, background checks, the lot. I never once rang the firm.
 
 + [You couldn't have known. The credentials were forged. Stop them with me now.]
     ~ vance_trust_level += 15
@@ -492,7 +582,7 @@ Credentials, background checks, all of it. God. What have I done?
 
 That's under four hours.
 
-Right. Then there's no time to waste.
+Right. Then I'd best stop sitting here.
 
 -> vance_commits_to_helping
 
@@ -517,11 +607,9 @@ Tell me what you need. Anything.
 
 You'll have the halls. And I know the SCADA side better than they do.
 
-Not on my site. We're stopping this.
-
 I'll have the access logs and the monitoring up from here.
 
-Come back to the ops desk when you need the SCADA side, and I'm on comms while you move.
+Come back to the ops desk when you need me. I'm on comms while you move.
 
 // PASS 3 P2: the ally paths bypass vance_provides_access, so the card is copied
 // here (12 ally paths, M3). The exit is its own knot so the clone can't share
@@ -531,6 +619,10 @@ Come back to the ops desk when you need the SCADA side, and I'm on comms while y
 === vance_commits_choices ===
 // Round 2: no #speaker here. On a choices-only knot the tag printed an empty
 // "None: " line before the choices (playtest issue 7).
+// Phase 4 dialogue C1 (D5-25): a re-entry line, after the first arrival.
+{vance_commits_choices > 1:
+    Robert Vance: Right. What else?
+}
 + {not vance_provided_keycard} [I'll need into the halls.]
     -> vance_clone_ally
 + [I'm going.]
@@ -540,6 +632,9 @@ Come back to the ops desk when you need the SCADA side, and I'm on comms while y
 #speaker:robert_vance
 // TRIGGERS: Task 1.2 completion, vance_is_ally activated early
 ~ vance_met = true
+~ vance_quiet = true
+// Phase 4 dialogue C1 (D5-20): he answers the player's "I'm going."
+Robert Vance: Go. I'll be on the desk.
 #exit_conversation
 -> vance_hub
 
@@ -550,6 +645,6 @@ Come back to the ops desk when you need the SCADA side, and I'm on comms while y
 
 // Vance looks confused but lets it go
 
-Alright. You know where I am if you need me.
+Alright. If you say so.
 
 -> initial_meeting_end_professional

@@ -16,14 +16,18 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import PersonChatUI from './person-chat-ui.js';
 import PhoneChatConversation from '../phone-chat/phone-chat-conversation.js'; // Reuse phone-chat conversation logic
 import InkEngine from '../../systems/ink/ink-engine.js';
+import { attachPretext } from './person-chat-pretext.js';
 import { processGameActionTags, determineSpeaker as determineSpeakerFromTags } from '../helpers/chat-helpers.js';
+import { splitReplyTags, partitionSlowTags } from './person-chat-pending-reply.js';
 import npcConversationStateManager from '../../systems/npc-conversation-state.js';
 import TTSManager from '../../systems/tts-manager.js';
-import { rememberNpcLine, getRememberedNpcLine, reopenContextLine } from './person-chat-reopen.js';
+import { rememberNpcLine, getRememberedNpcLine, reopenContextLine, refreshHubAfterMidKnotReopen } from './person-chat-reopen.js';
 import { startEventConversation } from './person-chat-event-start.js';
 import { personChatBackgroundFor } from './person-chat-background.js';
+import { advanceDelayMs, readingTimeMs } from './dialogue-pacing.js';
+import { isSessionOverlayShowing, onSessionOverlayClosed, whenSessionOverlayClosed } from '../../utils/session-overlay-pause.js';
 
-// Configuration constants for dialogue auto-advance timing
+// Auto-advance timing: readingTimeMs()/advanceDelayMs() in dialogue-pacing.js; this is only the scheduleDialogueAdvance default
 const DIALOGUE_AUTO_ADVANCE_DELAY = 5000; // Default delay in milliseconds for new dialogue text (5 seconds)
 const DIALOGUE_END_DELAY = 1000; // Delay in milliseconds for ending conversations (1 second)
 
@@ -66,12 +70,13 @@ export class PersonChatMinigame extends MinigameScene {
         }
         this.npc = npc;
         
-        // Get player config from scenario
-        this.playerData = this.scenario.player || {
-            id: 'player',
-            displayName: 'Agent 0x00',
-            spriteSheet: 'hacker'
-        };
+        // Get player config from scenario, with the character registry's player on top: the
+        // registry holds the chosen avatar and its portrait, so the video-call self-view shows
+        // the learner's own avatar, not a talk image the scenario named for someone else (aw9).
+        const registryPlayer = window.characterRegistry?.player || null;
+        this.playerData = (this.scenario.player || registryPlayer)
+            ? { ...(this.scenario.player || {}), ...(registryPlayer || {}) }
+            : { id: 'player', displayName: 'Agent 0x00', spriteSheet: 'hacker' };
         
         // Build character index for multi-character support
         this.characters = this.buildCharacterIndex();
@@ -203,6 +208,7 @@ export class PersonChatMinigame extends MinigameScene {
         }, this.npcManager);
 
         this.ui.render();
+        this.ui.mountInfluenceBar(this.npcId);
 
         // Pass TTSManager to the portrait renderer so mouth animation can be
         // driven by real audio amplitude (noise gate on TTS audio only –
@@ -257,7 +263,8 @@ export class PersonChatMinigame extends MinigameScene {
                 canContinue: continueVisible && choices.length === 0,
                 awaitingChoice: choices.length > 0,
                 ended: !!this.conversation?.storyEnded
-            }
+            },
+            se: this.ui?.socialHeaderState?.() || null
         };
     }
 
@@ -405,14 +412,29 @@ export class PersonChatMinigame extends MinigameScene {
             if (this.autoAdvanceTimer) {
                 clearTimeout(this.autoAdvanceTimer);
             }
-            // Set new timeout that will call handleContinueButtonClick
-            this.autoAdvanceTimer = setTimeout(() => {
-                if (this.pendingContinueCallback && typeof this.pendingContinueCallback === 'function') {
-                    const callback = this.pendingContinueCallback;
-                    this.pendingContinueCallback = null;
-                    callback();
-                }
-            }, delay);
+            this._releaseOverlayHold?.();
+            this._releaseOverlayHold = null;
+            // Held while the session-resume overlay is up (a reload mid-cutscene): the line
+            // stays on screen, and its full delay starts when Resume closes the overlay.
+            const arm = () => {
+                this.autoAdvanceTimer = setTimeout(() => {
+                    this.autoAdvanceTimer = null;
+                    if (isSessionOverlayShowing()) { hold(); return; }
+                    if (this.pendingContinueCallback && typeof this.pendingContinueCallback === 'function') {
+                        const pending = this.pendingContinueCallback;
+                        this.pendingContinueCallback = null;
+                        pending();
+                    }
+                }, delay);
+            };
+            const hold = () => {
+                this._releaseOverlayHold = onSessionOverlayClosed(() => {
+                    this._releaseOverlayHold = null;
+                    // Skipped if the line was moved on meanwhile (a jump, choices, cleanup)
+                    if (this.pendingContinueCallback === callback && !this.isClickThroughMode) arm();
+                });
+            };
+            if (isSessionOverlayShowing()) hold(); else arm();
         }
     }
     
@@ -457,13 +479,23 @@ export class PersonChatMinigame extends MinigameScene {
             }
             
             const loaded = await this.conversation.loadStory(storySource);
+
+            // Closed while the story was loading, or ended by another minigame opening
+            // over it (cleanup() without complete(), F25): the UI is torn down and the
+            // social run already ended, so there is nothing to start or show
+            if (this._cleanedUp || !this.gameState.isActive) return;
             
             if (!loaded) {
                 console.error('❌ Failed to load conversation story');
                 this.showError('Failed to load conversation');
                 return;
             }
-            
+
+            // Begin the per-run influence ledger before any choice is made or the
+            // story is restored, so pretext_say / pretext_ask / se_influence are
+            // idempotent under a reload replay (00 §8; no-op for a non-social NPC).
+            this._beginSocialRun();
+
             // If a startKnot was provided (event-triggered conversation or video call), restore
             // the NPC's saved story state first (ink-local VARs, visit counts, once-only choice
             // history), then go to the event's knot. Jumping in a fresh story reset them (D2).
@@ -501,6 +533,10 @@ export class PersonChatMinigame extends MinigameScene {
                         console.log(`🔁 Previous conversation had ended - restarting ${this.npcId} at knot: ${this.npc.currentKnot}`);
                     } else {
                         console.log(`🔄 Continuing previous conversation with ${this.npcId}`);
+                        // Saved part-way through a knot (closed on its last line): read by the
+                        // opt-in hub refresh in showCurrentDialogue (person-chat-reopen.js, D9)
+                        this._resumedMidKnot = stateRestored === true && restoredStory.canContinue &&
+                            !(restoredStory.currentChoices?.length > 0);
                     }
                 } else {
                     // First time conversation - navigate to start knot
@@ -549,7 +585,22 @@ export class PersonChatMinigame extends MinigameScene {
                 npcConversationStateManager.syncInventoryVariablesToStory(this.inkEngine.story, this.npc);
                 console.log('🔄 Re-synced global and inventory variables before showing dialogue');
             }
-            
+
+            // Engine-written VARs (00 S7) go in last: after the restore and both syncs,
+            // so neither can overwrite them, and before the first Continue reads them
+            if (this.inkEngine && this.inkEngine.story) {
+                npcConversationStateManager.applyEngineVariables(this.npcId, this.inkEngine.story, { channel: 'person-chat' });
+            }
+
+            // A pretext call (06): bind pretext_say / pretext_ask and se_influence,
+            // restore or start the session, fill the card VARs and arm the debrief —
+            // after restore, sync and the engine VARs, before the first Continue.
+            if (this.params?.pretextCallId) {
+                try { await attachPretext(this, { chat: 'person' }); }
+                catch (e) { console.warn('⚠️ pretext attach failed:', e.message); }
+                if (this._cleanedUp || !this.gameState.isActive) return;
+            }
+
             this.isConversationActive = true;
 
             // Clear any stale choices from a previous conversation before showing new dialogue
@@ -577,6 +628,23 @@ export class PersonChatMinigame extends MinigameScene {
             // Only the first display after a reopen may need the context line
             const isReopen = this.isResumedConversation;
             this.isResumedConversation = false;
+            const resumedMidKnot = isReopen && this._resumedMidKnot === true;
+            this._resumedMidKnot = false;
+
+            // Opt-in (NPC "reopenRefreshesHub": true, lab D9): a reopen that resumed mid-knot
+            // and reached the hub's choices saying nothing re-enters the hub once, so it
+            // shows the hub's current line rather than the old topic line. Off by default.
+            if (isReopen && refreshHubAfterMidKnotReopen({
+                optedIn: this.npc?.reopenRefreshesHub,
+                resumedMidKnot,
+                result,
+                story: this.inkEngine?.story
+            })) {
+                console.log(`🔄 ${this.npcId}: resumed mid-knot at a silent hub, re-entering it (reopenRefreshesHub)`);
+                // Still a reopen: if the hub prints nothing again, the context line applies
+                this.isResumedConversation = true;
+                return this.showCurrentDialogue();
+            }
 
             // Store result for later use
             this.lastResult = result;
@@ -830,6 +898,47 @@ export class PersonChatMinigame extends MinigameScene {
     }
     
     /**
+     * Options for processGameActionTags: this conversation's NPC and its engine, so a
+     * social tag (#influence, #report, 00 S5) is attributed without relying on
+     * window.currentConversationNPCId (P0-R R-04). Only the social tag path reads
+     * them; non-social tags behave exactly as before.
+     */
+    _tagOptions() {
+        const opts = { npcId: this.npcId || this.npc?.id || null, engine: this.inkEngine?.story ? this.inkEngine : null };
+        // The per-run ledger id, so an #influence / #report tag is deduped under the
+        // same run as the pretext externals (00 §8 "Idempotency"). Set only for a
+        // social conversation; absent for every other NPC, which reads nothing of it.
+        if (this._socialRunId) opts.runId = this._socialRunId;
+        return opts;
+    }
+
+    /**
+     * Begin the per-run influence ledger for a social conversation (00 §8; P4-B).
+     * A run is one open conversation: beginRun gives it a fresh turn counter and
+     * trackTurns advances that counter on each ChooseChoiceIndex, so pretext_say,
+     * pretext_ask and se_influence are idempotent under a reload replay. A chat
+     * with a non-social NPC (every m01 to m08 NPC) does nothing here, because no
+     * social-influence service is installed for those missions.
+     */
+    _beginSocialRun() {
+        const influence = (typeof window !== 'undefined') ? window.socialInfluence : null;
+        const npcId = this.npcId || this.npc?.id || null;
+        if (this._socialRunId || !npcId || !influence?.isSocialCharacter?.(npcId) || !this.inkEngine?.story) return;
+        this._socialRunId = `chat:${npcId}:${Date.now()}`;
+        influence.beginRun?.(this._socialRunId);
+        this._undoTrackTurns = influence.trackTurns?.(this.inkEngine, this._socialRunId) || null;
+    }
+
+    /** End the influence ledger run and unwrap ChooseChoiceIndex. */
+    _endSocialRun() {
+        const influence = (typeof window !== 'undefined') ? window.socialInfluence : null;
+        if (this._undoTrackTurns) { try { this._undoTrackTurns(); } catch (e) { /* unwrap best-effort */ } this._undoTrackTurns = null; }
+        if (influence && this._socialRunId) influence.endRun?.(this._socialRunId);
+        this._socialRunId = null;
+        if (this._pretext?.teardown) { try { this._pretext.teardown(); } catch (e) { /* ignore */ } this._pretext = null; }
+    }
+
+    /**
      * PHASE 1: Normalize speaker ID for consistent lookup
      * 
      * Converts raw speaker ID to canonical form and validates existence
@@ -858,8 +967,17 @@ export class PersonChatMinigame extends MinigameScene {
             return this.npc.id;
         }
         
-        // Look up by ID or displayName (case-insensitive)
-        for (const [id, character] of Object.entries(this.characters)) {
+        // Look up by ID or displayName (case-insensitive). NPCManager.resolveSpeakerId
+        // does the same scan; when this conversation's own NPC is a social character
+        // (scenario social.characters, social build 0.6) a display-name tie goes to it.
+        // Every other conversation keeps the first match (P0-R R-01).
+        const resolveSpeakerId = this.npcManager?.constructor?.resolveSpeakerId;
+        if (typeof resolveSpeakerId === 'function') {
+            const influence = typeof window !== 'undefined' ? window.socialInfluence : null;
+            const preferOwn = !!(this.npc?.id && influence?.isSocialCharacter?.(this.npc.id));
+            const resolved = resolveSpeakerId(this.characters, speakerId, this.npc?.id, { preferOwn });
+            if (resolved) return resolved;
+        } else for (const [id, character] of Object.entries(this.characters)) {
             if (id.toLowerCase() === normalized) {
                 return id; // Return original casing
             }
@@ -976,19 +1094,13 @@ export class PersonChatMinigame extends MinigameScene {
             // the exit_conversation tag and calls complete(true) after showing the text.
             if (shouldExit) {
                 console.log('🚪 Exit conversation tag detected - showing response then closing minigame');
-                this.scheduleDialogueAdvance(() => {
-                    this.displayAccumulatedDialogue(result);
-                }, 1500);
+                this._deferReply(result);
                 return;
             }
             
             // Normal dialogue flow: display the result (dialogue blocks) after a small delay
             console.log(`🎯 After choice: scheduling displayAccumulatedDialogue with result.text length: ${result?.text?.length || 0}`);
-            this.scheduleDialogueAdvance(() => {
-                // Process accumulated dialogue by splitting into individual speaker blocks
-                console.log(`🎯 Inside scheduled callback: calling displayAccumulatedDialogue`);
-                this.displayAccumulatedDialogue(result);
-            }, 1500);
+            this._deferReply(result);
 
         } catch (error) {
             console.error('❌ Error handling choice:', error);
@@ -996,6 +1108,114 @@ export class PersonChatMinigame extends MinigameScene {
         }
     }
     
+    /**
+     * Show a choice's reply after the usual 1.5 s (or on the next click), keeping its
+     * state tags safe meanwhile.
+     *
+     * handleChoice has already saved the story past this reply, but the reply's tags
+     * only run when displayAccumulatedDialogue does. A close (Esc, x, a scene change)
+     * or a page reload in that gap lost them (R8 m3: the m09 hatch bin choice) while
+     * the saved position said they had run. cleanup() and a pagehide now flush the
+     * reply's state tags (_flushPendingReply). We flush on close/hide rather than
+     * applying tags at choice time because normal play must not change: #hostile,
+     * #give_item and the like still land when their line appears, not 1.5 s before it
+     * (and #exit_conversation keeps its show-then-close handling). A hard reload is
+     * covered by a beforeunload / pagehide flush, which runs ahead of state-sync's own
+     * pagehide sync so the globals it sends include the flushed tags. Server writes
+     * that need a round trip (give_item) are best-effort there.
+     * @param {Object} result - the makeChoice() result holding the reply and its tags
+     */
+    _deferReply(result) {
+        this._pendingReply = result;
+        if (this._cleanedUp) {
+            // Already closed (an #end_conversation ended the chat inside makeChoice):
+            // nothing will display this reply, so apply its state tags now and stop.
+            this._flushPendingReply();
+            return;
+        }
+        if (!this._onPageHide) {
+            this._onPageHide = () => this._flushPendingReply({ keepPending: true });
+            // beforeunload as well as pagehide: state-sync's own pagehide listener
+            // (state-sync.js start()) is registered first and runs first, and its
+            // keepalive request sends the globals as they are at that moment. Found in
+            // the browser: a pagehide-only flush ran after it and the tags never
+            // reached the server. beforeunload fires earlier in the same unload.
+            window.addEventListener('beforeunload', this._onPageHide);
+            window.addEventListener('pagehide', this._onPageHide);
+        }
+        this.scheduleDialogueAdvance(() => {
+            this._pendingReply = null;
+            this._dropPageHideHook();
+            this.displayAccumulatedDialogue(result);
+        }, 1500);
+    }
+
+    /** Stop listening for the page going away (the reply has shown, or the chat closed). */
+    _dropPageHideHook() {
+        if (!this._onPageHide) return;
+        window.removeEventListener('beforeunload', this._onPageHide);
+        window.removeEventListener('pagehide', this._onPageHide);
+        this._onPageHide = null;
+    }
+
+    /**
+     * Apply the pending reply's state tags once. Presentation tags (portrait, lighting,
+     * exit) are left to the display path. With keepPending (pagehide, which may be a
+     * bfcache stash rather than a close) the reply still displays later, minus the
+     * tags already applied; otherwise (cleanup) the reply is dropped and its timer cleared.
+     * @param {{keepPending?: boolean}} [opts]
+     */
+    _flushPendingReply({ keepPending = false } = {}) {
+        const reply = this._pendingReply;
+        if (!keepPending) {
+            this._pendingReply = null;
+            if (this.autoAdvanceTimer) {
+                clearTimeout(this.autoAdvanceTimer);
+                this.autoAdvanceTimer = null;
+            }
+            this.pendingContinueCallback = null;
+        }
+        if (!reply || reply._stateTagsApplied) return;
+        const { state } = splitReplyTags(reply.tags);
+        reply._stateTagsApplied = true;
+        if (state.length === 0) return;
+        console.log('🏷️ Flushing pending reply state tags:', state);
+        // processGameActionTags reads the NPC from this global (give_item, hostile...)
+        const prevNpcId = window.currentConversationNPCId;
+        window.currentConversationNPCId = this.npcId;
+        // Order differs from the display path, which runs the tags in ink order in one
+        // call. processGameActionTags awaits a server round trip on give_item /
+        // remove_npc and runs the tags after it a tick later, and on a reload that tick
+        // may never come (found in the browser: cage_bin set, bin_chosen lost). So the
+        // tags that never wait run first, in one call that finishes synchronously.
+        const { slow, fast } = partitionSlowTags(state);
+        const run = (batch) => {
+            // give_item / remove_npc read the NPC from this global, and cleanup() nulls
+            // it while an earlier tag is still awaiting; set it again for every call
+            window.currentConversationNPCId = this.npcId;
+            return processGameActionTags(batch, this.ui, this._tagOptions());
+        };
+        const onError = err => console.error('❌ Error flushing pending reply tags:', err);
+        try {
+            if (fast.length > 0) Promise.resolve(run(fast)).catch(onError);
+        } catch (err) { onError(err); }
+        window.currentConversationNPCId = prevNpcId;
+        // Slow tags one at a time: each one's NPC context is set just before its own
+        // call, and two give_items never overlap (the SQLite busy case chat-helpers avoids)
+        let chain = Promise.resolve();
+        for (const tag of slow) {
+            chain = chain.then(() => run([tag])).catch(onError);
+        }
+        if (slow.length > 0) {
+            chain.then(() => {
+                // Leave the global as the close left it
+                if (this._cleanedUp && window.currentConversationNPCId === this.npcId) {
+                    window.currentConversationNPCId = null;
+                }
+            });
+        }
+    }
+
     /**
      * Display accumulated dialogue by splitting into individual speaker blocks
      * @param {Object} result - Result with potentially multiple lines and tags
@@ -1013,7 +1233,17 @@ export class PersonChatMinigame extends MinigameScene {
             // This ensures tags are processed even if there's no visible text
             if (result.tags && result.tags.length > 0) {
                 console.log('🏷️ Processing action tags from accumulated dialogue:', result.tags);
-                processGameActionTags(result.tags, this.ui);
+                // State tags already flushed by _flushPendingReply must not run twice
+                // Tags that never wait run first, in ink order, in one call that finishes
+                // synchronously; give_item / remove_npc (a server round trip each) follow,
+                // in ink order. A reload during that round trip used to lose every tag
+                // listed after the give_item (R10 m2). No scenario relies on a give_item
+                // landing before a later tag in the same reply (checked against every
+                // item_picked_up mapping that reads a global).
+                const { fast, slow } = partitionSlowTags(
+                    result._stateTagsApplied ? splitReplyTags(result.tags).presentation : result.tags);
+                if (fast.length > 0) processGameActionTags(fast, this.ui, this._tagOptions());
+                if (slow.length > 0) processGameActionTags(slow, this.ui, this._tagOptions());
                 
                 // Check for exit_conversation tag
                 const shouldExit = result.tags.some(tag => tag.includes('exit_conversation'));
@@ -1283,7 +1513,7 @@ export class PersonChatMinigame extends MinigameScene {
                     if (nextLine.tags.length > 0) {
                         const prevNpcId = window.currentConversationNPCId;
                         window.currentConversationNPCId = this.npcId;
-                        await processGameActionTags(nextLine.tags, this.ui);
+                        await processGameActionTags(nextLine.tags, this.ui, this._tagOptions());
                         window.currentConversationNPCId = prevNpcId;
                     }
                     if (this.inkEngine && this.inkEngine.story) {
@@ -1299,13 +1529,13 @@ export class PersonChatMinigame extends MinigameScene {
                     // line (give_item, complete_task...) arrive here with no text, and
                     // displayAccumulatedDialogue never sees them, so run them first.
                     if (nextLine.tags && nextLine.tags.length > 0) {
-                        await processGameActionTags(nextLine.tags, this.ui);
+                        await processGameActionTags(nextLine.tags, this.ui, this._tagOptions());
                     }
                     console.log(`📋 Back to choices: ${nextLine.choices.length} options available`);
                     this.ui.showChoices(nextLine.choices);
                 } else if (nextLine.hasEnded) {
                     if (nextLine.tags && nextLine.tags.length > 0) {
-                        await processGameActionTags(nextLine.tags, this.ui);
+                        await processGameActionTags(nextLine.tags, this.ui, this._tagOptions());
                     }
                     // Story ended - save state and show message
                     if (this.inkEngine && this.inkEngine.story) {
@@ -1369,8 +1599,9 @@ export class PersonChatMinigame extends MinigameScene {
         );
         rememberNpcLine(this.npcId, { text: line, speaker: block.speaker, isNarrator: block.isNarrator });
 
-        // Determine auto-advance delay — use TTS audio duration if available
-        let advanceDelay = DIALOGUE_AUTO_ADVANCE_DELAY;
+        // Auto-advance delay: TTS audio duration if there is audio, else a reading-time
+        // estimate for the line (set again below once TTS has answered).
+        let advanceDelay = readingTimeMs(line);
 
         // Play TTS for NPC speakers (not player, not system)
         if (this.ttsManager && block.speaker && block.speaker !== 'player' && block.speaker !== 'system') {
@@ -1397,11 +1628,12 @@ export class PersonChatMinigame extends MinigameScene {
                 : (block.speaker && block.speaker !== 'player' && !isOwnNpcByName && parsedSpeaker?.voice
                     ? block.speaker
                     : this.npcId);
+            // Voice starts when the session-resume overlay closes, not under it
+            await whenSessionOverlayClosed();
+            if (!this.ttsManager) return;
             const audioDuration = await this.ttsManager.play(ttsSpeakerId, ttsText);
-            if (audioDuration && audioDuration > 0) {
-                // Use audio duration + buffer as advance delay
-                advanceDelay = audioDuration + 500;
-            }
+            // Audio length + buffer; null (no key, fetch or load failure) uses the estimate
+            advanceDelay = advanceDelayMs(line, audioDuration);
 
             // Preload next line while current plays. Resolve its speaker the same way
             // so multi-NPC conversations preload against the correct voice.
@@ -1445,7 +1677,7 @@ export class PersonChatMinigame extends MinigameScene {
             // Process any game action tags (give_item, unlock_door, etc.)
             if (result.tags && result.tags.length > 0) {
                 console.log('🏷️ Processing tags from story:', result.tags);
-                processGameActionTags(result.tags, this.ui);
+                processGameActionTags(result.tags, this.ui, this._tagOptions());
             }
             
             // Determine who is speaking based on tags
@@ -1471,8 +1703,9 @@ export class PersonChatMinigame extends MinigameScene {
                 console.log(`📋 ${result.choices.length} choices available`);
             } else if (result.canContinue) {
                 // No choices but can continue - auto-advance after delay
-                console.log(`⏳ Auto-continuing in ${DIALOGUE_AUTO_ADVANCE_DELAY / 1000} seconds...`);
-                this.scheduleDialogueAdvance(() => this.showCurrentDialogue(), DIALOGUE_AUTO_ADVANCE_DELAY);
+                const holdMs = readingTimeMs(result.text);
+                console.log(`⏳ Auto-continuing in ${holdMs / 1000} seconds...`);
+                this.scheduleDialogueAdvance(() => this.showCurrentDialogue(), holdMs);
             } else {
                 // No choices and can't continue - check if there's more content
                 // Try to continue anyway (for linear scripted conversations)
@@ -1497,7 +1730,7 @@ export class PersonChatMinigame extends MinigameScene {
                         }
                         this.showConversationOverMessage('(No more dialogue available - press ESC to close)');
                     }
-                }, DIALOGUE_AUTO_ADVANCE_DELAY);
+                }, readingTimeMs(result.text));
             }
         } catch (error) {
             console.error('❌ Error displaying dialogue:', error);
@@ -1512,11 +1745,18 @@ export class PersonChatMinigame extends MinigameScene {
      * @param {string} message - Text to show
      */
     showConversationOverMessage(message) {
+        // A pretext call finalises here: outcome, debrief, session closed (06 §6).
+        // The "press ESC" line is for an ordinary conversation.
+        if (this._pretext && !this._pretext.finished) {
+            this._pretext.finish();
+            return;
+        }
         this.ui.showDialogue(message, 'system');
         if (this.params.disableClose === true) {
-            setTimeout(() => {
+            // Not under the session-resume overlay: the closing line stays up until Resume
+            whenSessionOverlayClosed().then(() => setTimeout(() => {
                 if (this.gameState.isActive) this.complete(true);
-            }, 2000);
+            }, 2000));
         }
     }
     
@@ -1594,6 +1834,10 @@ export class PersonChatMinigame extends MinigameScene {
             
             console.log(`   Knot after jump: ${this.conversation.engine.story.state?.currentPathString}`);
             
+            // A choice's reply still waiting to show would be dropped by the clears below:
+            // apply its state tags first (see _deferReply)
+            this._flushPendingReply();
+
             // Clear any pending callbacks since we're changing the story
             if (this.autoAdvanceTimer) {
                 clearTimeout(this.autoAdvanceTimer);
@@ -1625,6 +1869,20 @@ export class PersonChatMinigame extends MinigameScene {
      * This is called by the base class before the minigame is removed
      */
     cleanup() {
+        // Drop an auto-advance held for the session-resume overlay
+        this._releaseOverlayHold?.();
+        this._releaseOverlayHold = null;
+        this._cleanedUp = true;
+
+        // A reply still waiting to be shown: apply its state tags now (the story is
+        // already saved past it), then stop its timer so nothing fires after the close.
+        this._flushPendingReply();
+        this._dropPageHideHook();
+
+        // End the influence ledger run and unwrap ChooseChoiceIndex / the pretext
+        // close interceptor (no-op for a non-social or non-pretext conversation).
+        this._endSocialRun();
+
         // Stop and destroy TTS
         if (this.ttsManager) {
             this.ttsManager.stop();
@@ -1663,6 +1921,10 @@ export class PersonChatMinigame extends MinigameScene {
         window.currentConversationNPCId = null;
         window.currentConversationMinigameType = null;
 
+        // Ended without complete() (another minigame opened over this one): a
+        // startConversation() still awaiting its story must see the chat as closed
+        this.gameState.isActive = false;
+
         // Play any barks that were deferred while the conversation was open
         if (window.barkSystem) {
             window.barkSystem.drainDeferredBarks();
@@ -1692,8 +1954,10 @@ export class PersonChatMinigame extends MinigameScene {
             // A new background is a scene shot: the old speaker leaves with the old
             // scene, and the next speaker (or Narrator[character]) brings a portrait back
             this.ui.portraitRenderer.setCharacterHidden(true);
-            // An opening Background[...] is the first content: nothing to reveal
+            // An opening Background[...] is the first content: nothing to reveal.
+            // End the initial black hold so the (cover) scene shot can draw.
             this.ui.awaitingFirstContent = false;
+            this.ui.portraitRenderer._holdingForContent = false;
             // Background[room]: this conversation's own background (the NPC's or its room's
             // chatBackground), e.g. to cut back inside after an exterior establishing shot
             if (backgroundFilename.trim().toLowerCase() === 'room') {

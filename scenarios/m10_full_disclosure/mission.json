@@ -1,0 +1,223 @@
+{
+  "display_name": "Full Disclosure",
+  "description": "Tomb Gamma, a Cold War bunker under Montana. At six o'clock the man behind ENTROPY's plan releases every weakness SAFETYNET ever catalogued to every city at once. Raid the bunker with Task Force Null, take his systems one host at a time, find the sleeper on your own team, and decide at his console what happens to the database, and to him.",
+  "difficulty_level": 3,
+  "secgen_scenario": "break_escape/safetynet/m10_full_disclosure.xml",
+  "_vm_wire": "VM-WIRE: secgen_scenario points at the SecGen draft (three targets — bunker_monitor, release_host, core_host — plus the Kali attack_vm). The box is not built yet; flag values are generated at build (F9: confirm the three hostnames, that each station takes the right flag, and that root login over SSH is refused on the release and core hosts). lab_sheet_url is added with the lab sheet, the last step.",
+  "collection": "season_1",
+  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m10-full-disclosure/",
+  "ui_theme": "spy",
+  "id": "m10_full_disclosure",
+  "title": "Mission 10: Full Disclosure",
+  "subtitle": "Season Finale",
+  "difficulty": 3,
+  "tier": "Advanced",
+  "estimatedDuration": "100-110 minutes",
+  "season": 1,
+  "episodeNumber": 10,
+  "requiredPrecedingMissions": [],
+  "recommendedPrecedingMissions": [
+    "m08_the_mole",
+    "m09_digital_archaeology"
+  ],
+  "campaignEnhanced": true,
+  "standalonePlayable": true,
+  "primaryCell": "The Architect",
+  "secondaryCells": ["Zero Day Syndicate", "Ransomware Incorporated", "Critical Mass", "Insider Threat Initiative", "Social Fabric"],
+  "location": "Tomb Gamma, a converted Cold War bunker, Lewis and Clark County, Montana",
+  "missionType": "Raid",
+  "narrativeThemes": [
+    "Vulnerability disclosure",
+    "Teacher and student",
+    "Betrayal from inside",
+    "Every choice costs someone",
+    "The season's choices come home"
+  ],
+  "cybok": [
+    {
+      "ka": "OSV",
+      "topic": "Role of Operating Systems",
+      "keywords": ["isolation", "virtual machines", "CONTAINERS", "CHROOT"]
+    },
+    {
+      "ka": "OSV",
+      "topic": "Primitives for Isolation and Mediation",
+      "keywords": ["physical access and secure deletion", "authentication and identification", "PRIVILEGE ESCALATION"]
+    },
+    {
+      "ka": "NS",
+      "topic": "Network Security Tools",
+      "keywords": ["network security monitoring"]
+    },
+    {
+      "ka": "NS",
+      "topic": "Networking Applications",
+      "keywords": ["NMAP", "PORT SCANNING"]
+    },
+    {
+      "ka": "WAM",
+      "topic": "Server-Side Vulnerabilities and Mitigations",
+      "keywords": ["injection vulnerabilities", "server-side misconfiguration and vulnerable components"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["user authentication", "BIOMETRICS", "SMART CARDS", "PERSONAL IDENTIFICATION NUMBER AND MEMORABLE INFORMATION"]
+    },
+    {
+      "ka": "AB",
+      "topic": "Characterisation of Adversaries",
+      "keywords": ["THE INSIDER THREAT", "SOCIAL ENGINEERING"]
+    },
+    {
+      "ka": "AB",
+      "topic": "Elements of a Malicious Operation",
+      "keywords": ["SUPPLY CHAIN ATTACK"]
+    },
+    {
+      "ka": "F",
+      "topic": "Definitions and Conceptual Models",
+      "keywords": ["AUDIT TRAIL"]
+    },
+    {
+      "ka": "LR",
+      "topic": "Ethics",
+      "keywords": ["vulnerability testing", "VULNERABILITY DISCLOSURE", "RESPONSIBLE DISCLOSURE"]
+    },
+    {
+      "ka": "SSL",
+      "topic": "Motivations for Secure Software Lifecycle",
+      "keywords": ["customers don’t apply patches"]
+    },
+    {
+      "ka": "F",
+      "topic": "Artifact Analysis",
+      "keywords": ["ENCODING"]
+    }
+  ],
+  "secgen": {
+    "scenario": "m10_full_disclosure (Break Escape SAFETYNET: Mission 10 — Full Disclosure VMs)",
+    "vulnerabilities": [
+      "Maltrail unauthenticated command injection in the monitoring platform's login handler (security monitoring host foothold)",
+      "Staging schedule held in the monitoring platform's threat-data store (monitoring host, second flag)",
+      "Privileged container (Docker) escape to the host beneath it (release host)",
+      "Chroot jail escape to the host beneath it (core host)",
+      "Network mapping and service fingerprinting across the bunker network"
+    ],
+    "flags": 4,
+    "difficulty": "Advanced",
+    "integrationMethod": "Three targets, four flag stations, one flag each: the gate terminal takes the monitoring host's foothold, the release console its staging schedule, the sealed section's hatch the release host, the core host terminal the core host; each flag's reward sets a story global that opens the bunker's doors"
+  },
+  "mechanics": {
+    "new": [
+      "A raid team that moves room by room with you, one of whom is the sleeper",
+      "Naming the sleeper on the line or face to face, with a cost for a wrong name",
+      "A three-exchange argument whose landed points decide how the end can go",
+      "Three database choices: secure, coordinated disclosure, or destroy both copies",
+      "Six endings, including a clearly signposted way to join ENTROPY"
+    ],
+    "reinforced": [
+      "Lockpicking",
+      "RFID cloning",
+      "Fingerprint lifting",
+      "PIN cracking",
+      "CyberChef decoding (Base64)",
+      "Social engineering"
+    ]
+  },
+  "keyNPCs": [
+    {
+      "name": "Dr Adrian Tesseract",
+      "role": "The Architect",
+      "affiliation": "ENTROPY",
+      "significance": "The season's antagonist, met at last, waiting at his own console"
+    },
+    {
+      "name": "Director Magnus Netherton",
+      "role": "SAFETYNET Director",
+      "affiliation": "SAFETYNET",
+      "recurring": true,
+      "significance": "Runs the raid from the forward post; the database choice is argued with him on the line"
+    },
+    {
+      "name": "Agent 0x99 'HaX'",
+      "role": "Handler",
+      "affiliation": "SAFETYNET",
+      "recurring": true,
+      "significance": "Tesseract trained her; she is on the line to the end"
+    },
+    {
+      "name": "Halina Kowalczyk",
+      "role": "Breaching lead, Task Force Null",
+      "affiliation": "SAFETYNET",
+      "significance": "Eleven years in SAFETYNET"
+    },
+    {
+      "name": "Marisol Quintero",
+      "role": "Raid lead, Task Force Null",
+      "affiliation": "SAFETYNET",
+      "significance": "Objects to going in at all"
+    }
+  ],
+  "moralChoices": [
+    {
+      "choicePoint": "His console",
+      "options": [
+        { "choice": "Stop it", "consequence": "The release is disarmed; anything already queued through the backdoor still goes", "variable": "console_choice = \"stopped\"" },
+        { "choice": "Take the key (three steps, each with a way back)", "consequence": "The Publication goes to every city; MISSION FAILED", "variable": "ending = \"joined\"" }
+      ]
+    },
+    {
+      "choicePoint": "The database",
+      "options": [
+        { "choice": "Secure it", "consequence": "Back in the vault; operations keep running; the hospitals stay unpatched", "variable": "database_outcome = \"secured\"" },
+        { "choice": "Coordinated disclosure", "consequence": "Vendors first, with workarounds; two operations go dark", "variable": "database_outcome = \"disclosed\"" },
+        { "choice": "Wipe both copies", "consequence": "The room purges; he escapes; the agent is suspended", "variable": "database_outcome = \"both_wiped\"" }
+      ]
+    },
+    {
+      "choicePoint": "How it ends for him",
+      "options": [
+        { "choice": "Arrest", "consequence": "A trial", "variable": "ending = \"arrest\"" },
+        { "choice": "Talk him into surrender and cooperation", "consequence": "His protocol rolls up two more cells; no trial", "variable": "ending = \"surrender\"" },
+        { "choice": "Lethal force as he reaches for the key", "consequence": "Justified; the board signs", "variable": "ending = \"lethal\"" },
+        { "choice": "Shoot him where he sits (signposted, confirmed)", "consequence": "An execution; the agent is held for the board", "variable": "ending = \"executed\"" }
+      ]
+    }
+  ],
+  "loreCollectibles": [
+    { "name": "Citadel Incident File V-47", "location": "Forward post", "significance": "The theft, the door left open on Netherton's signature, the cracker quarantine" },
+    { "name": "Alarm Log, Refit to Date", "location": "Security office records cupboard", "significance": "The purge circuit and his rule for it" },
+    { "name": "Asante's Corrected Model", "location": "Workshop bench terminal, behind a Base64 margin note", "significance": "His casualty figure was wrong, and he knew" },
+    { "name": "Release Schedule: Staging Copy", "location": "Server hall", "significance": "The Publication's two modes, the head start's buyers, SAFETYNET's own RETAIN" },
+    { "name": "Core Host: File Index", "location": "The core", "significance": "His own filing: the vault line still open, the key's rule, the purge" }
+  ],
+  "campaignConnections": {
+    "fromMissions1to9": [
+      "Ninety-one choices from m01 to m09 change who is in the bunker, who helps, who betrays and what is said",
+      "Nightshade's fate (m08) and his file (m09) decide the first scene at the door",
+      "Ghost (m02), Victoria Sterling (m03) and Voltage (m04) each hold a door",
+      "m09's Recruiter decides whether the sleeper is already named"
+    ]
+  },
+  "successMetrics": {
+    "fullSuccess": [
+      "All 4 VM flags submitted",
+      "The sleeper named before the core",
+      "Nothing went at four",
+      "Two or more points landed, and an ending chosen with its cost in view"
+    ],
+    "partialSuccess": [
+      "All 4 VM flags submitted",
+      "A head start share went at the lock, or an officer wrongly sent back"
+    ],
+    "minimalSuccess": [
+      "All 4 VM flags submitted",
+      "Any ending but Join"
+    ]
+  },
+  "developmentStatus": "Stage 9 assembly (draft)",
+  "version": "0.1.0",
+  "estimated_duration_minutes": 105,
+  "lastUpdated": "2026-10-21"
+}

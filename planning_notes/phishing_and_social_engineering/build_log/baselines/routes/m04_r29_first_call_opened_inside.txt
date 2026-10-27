@@ -1,0 +1,22 @@
+
+## R29 (post-close fix: first-call hub guard, control): the first open comes once inside, so the guard (reopen only) doesn't fire and the inside answers and objectives still play.
+   {set {"briefing_played":true,"guard_admitted":true,"checkpoint_passed":true,"vance_met":true,"vance_spoken":true}}
+
+--- phone ---
+  Agent, status check. Are you inside the facility?
+     (3 options)
+ > I'm inside. Met Robert Vance, the facility manager.
+  How's he taking the cover? Buying it, or watching you?
+     (2 options)
+ > Cooperative. He's getting me access.
+  Good. Hold the cover until you've got hard evidence. Then bring him in.
+  First, prove the screens are lying. Something in Battery Hall 1 that isn't on their feed.
+  Then the engineering workshop, off the same hall. That's how they got onto the SCADA network.
+ > On it.
+  Call me when you've got a real reading.
+  [chat closes]
+   [PASS] said: "I'm inside. Met Robert Vance, the facility manager."
+   [PASS] said: "First, prove the screens are lying."
+
+[stats] spoken/narrated lines 6, choices 3, longest run without a choice 3 (phone); runs>=6: 
+[result] all expectations met

@@ -2,6 +2,8 @@ module BreakEscape
   class Game < ApplicationRecord
     self.table_name = 'break_escape_games'
 
+    include CarryOver
+
     # Associations
     belongs_to :player, polymorphic: true
     belongs_to :mission, class_name: 'BreakEscape::Mission'
@@ -23,9 +25,11 @@ module BreakEscape
     # Callbacks
     before_create :sync_vm_set_id_column
     before_create :generate_scenario_data
+    before_create :resolve_imported_globals # CarryOver: earlier missions' choices, before player_state is built
     before_create :initialize_player_state
     before_create :set_started_at
     before_create :set_scoring_totals
+    before_save :record_avatar_unlocks, if: :avatar_unlocks_changed?
     after_commit :fire_completion_callback, if: :status_previously_changed_to_completed?
     after_commit :fire_completion_callback, if: :task_progress_previously_changed?
     after_commit :fire_completion_callback, if: :mission_conclusion_previously_changed?
@@ -43,8 +47,21 @@ module BreakEscape
       status == 'completed' || mission_concluded_at.present?
     end
 
-    # Calculate task-based score (task completion scoring method)
+    # Calculate task-based score (task completion scoring method), shaped by the
+    # mission's scoring mode (mission.json "scoring"; see Mission#scoring_mode).
+    # "Concluded" means mission_concluded_at is set, not status == 'completed':
+    # Hacktivity's Finish button sets that status without a conclusion.
     def calculate_task_score
+      concluded = mission_concluded_at.present?
+      case mission&.scoring_mode
+      when 'completion'            then concluded ? 100.0 : 0.0
+      when 'partial_then_complete' then concluded ? 100.0 : [raw_task_score, 99.0].min
+      else                              raw_task_score
+      end
+    end
+
+    # 70 × tasks/total + 30 × aims/total. The default ("tasks") score.
+    def raw_task_score
       return 0.0 if total_tasks.zero?
 
       task_score = (tasks_completed.to_f / total_tasks) * 70
@@ -74,13 +91,22 @@ module BreakEscape
 
     # Resets player_state to initial values, preserving mission context (VM/flags)
     def reset_player_state!
-      preserved_keys = %w[vm_set_id vm_ips flags_by_vm standalone_flags]
+      # unlockedAvatars: a reset must not take back avatars a completed run earned.
+      # storySnapshot: the last finished run's choices, which later missions
+      # import (CarryOver). A concluded game from before snapshots existed gets
+      # one now, from the globals about to be wiped.
+      write_story_snapshot if mission_concluded_at.present? && !player_state.key?(CarryOver::SNAPSHOT_KEY)
+      preserved_keys = %w[vm_set_id vm_ips flags_by_vm standalone_flags] +
+                       [AvatarUnlocks::STATE_KEY, CarryOver::SNAPSHOT_KEY]
       new_state = player_state.slice(*preserved_keys)
       self.player_state = new_state
       initialize_player_state
       self.tasks_completed = 0
       self.objectives_completed = 0
-      self.score = 0
+      # 0 in the default mode, as before (the counts were just zeroed). In the
+      # partial_then_complete and completion modes a concluded game keeps 100,
+      # because a Restart never clears mission_concluded_at.
+      self.score = calculate_task_score.round
       save!
     end
 
@@ -111,11 +137,12 @@ module BreakEscape
     end
 
     # Inventory management
-    def add_inventory_item!(item)
-      player_state['inventory'] ||= []
+    # True when the player already holds this item (by id, or by type and name
+    # when either side has no id). The match add_inventory_item! dedupes on.
+    def inventory_includes?(item)
+      return false if item.blank?
 
-      # Check if item already exists in inventory (by id or combination of type and name)
-      item_exists = player_state['inventory'].any? do |existing_item|
+      (player_state['inventory'] || []).any? do |existing_item|
         # Match by ID if both have IDs
         if item['id'].present? && existing_item['id'].present?
           existing_item['id'] == item['id']
@@ -125,6 +152,13 @@ module BreakEscape
           existing_item['name'] == item['name']
         end
       end
+    end
+
+    def add_inventory_item!(item)
+      player_state['inventory'] ||= []
+
+      # Check if item already exists in inventory (by id or combination of type and name)
+      item_exists = inventory_includes?(item)
 
       unless item_exists
         player_state['inventory'] << item
@@ -227,9 +261,20 @@ module BreakEscape
     # Merge the client's global variables. A null value deletes the key: the
     # client sends null for a global that no longer exists (the SIEM minigame
     # deletes its state key). Does not save!; the caller does.
+    # Imported globals (CarryOver) are read-only: a client write to one, delete
+    # included, is dropped.
     def merge_global_variables!(variables)
       globals = player_state['globalVariables'] ||= {}
+      read_only = imported_global_names
       variables.each do |key, value|
+        if read_only.include?(key.to_s)
+          # The first sync after a load resends every global, imports included
+          # and unchanged; only a changed value is worth a warning.
+          if globals[key.to_s] != value
+            Rails.logger.warn "[BreakEscape] Ignored a client write to imported global '#{key}'"
+          end
+          next
+        end
         if value.nil?
           globals.delete(key)
         else
@@ -512,6 +557,25 @@ module BreakEscape
       nil
     end
 
+    # Recorded on completion, and again when a completed game meets more NPCs.
+    # Partial loads (sync_state selects a few columns and never changes these)
+    # are skipped, because reading a column that wasn't loaded raises.
+    def avatar_unlocks_changed?
+      return false unless %w[status mission_concluded_at scenario_data player_state].all? { |a| has_attribute?(a) }
+      return false unless mission_completed? && player_state.is_a?(Hash)
+
+      new_record? || will_save_change_to_player_state? || will_save_change_to_status? ||
+        will_save_change_to_mission_concluded_at?
+    end
+
+    # Grow-only: what a completed run unlocked stays unlocked.
+    def record_avatar_unlocks
+      key = AvatarUnlocks::STATE_KEY
+      existing = Array(player_state[key]).select { |e| e.is_a?(Hash) }
+      merged = (existing + AvatarUnlocks.for_game(self)).uniq { |e| e['sprite'] }
+      player_state[key] = merged unless merged == player_state[key]
+    end
+
     def status_previously_changed_to_completed?
       saved_change_to_status?(to: 'completed')
     end
@@ -601,14 +665,8 @@ module BreakEscape
         .uniq
     end
 
-    # Find NPC in scenario data
-    def find_npc_in_scenario(npc_id)
-      scenario_data['rooms']&.each do |_room_id, room|
-        npc = room['npcs']&.find { |n| n['id'] == npc_id }
-        return npc if npc
-      end
-      nil
-    end
+    # find_npc_in_scenario is defined once, in the public section below, on top of
+    # scenario_npc_records (this file used to define it twice; Ruby kept the later one).
 
     # Check if an item is already in the player's inventory
     # Matches by type, id, or name (similar to container filtering logic)
@@ -730,9 +788,26 @@ module BreakEscape
           kept_fields = {}
           # maxAttempts..showKeyboard are the password/PIN pad options (not secret): door pads read them from here.
           # chatBackground: person-chat falls back to the room's image before the room is lazy-loaded.
-          %w[type connections locked lockType requires difficulty door_sign keyPins ambientSound ambientVolume
-             maxAttempts passwordHint showHint postitNote showPostit showKeyboard chatBackground].each do |field|
+          # lighting: the room's lighting block (mode, ambient, emitters, variants) — not secret.
+          # The client's door-spill needs it to know whether a still-unloaded room is lit, so
+          # light leaks under a closed door into a lit room (but not into a dark motion room).
+          # lockedHint: the door's "how to get the key" line (not secret); unlock-system.js
+          # appends it to the locked toast, so it must survive the bootstrap filter (lab R3 F1).
+          # pinLength: digits on a PIN door's pad (not secret); the controller fills it from
+          # `requires` when it strips the PIN, so a 5-digit door gets a 5-digit pad.
+          %w[type connections locked lockType requires difficulty door_sign keyPins lockedHint ambientSound ambientVolume
+             maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength chatBackground lighting].each do |field|
             kept_fields[field] = room_data[field] if room_data.key?(field)
+          end
+
+          # A motion-sensor room is lit only when someone's actually in it. NPCs are stripped
+          # from the lazy payload, so expose just whether a present (non-phone, non-hidden) NPC
+          # occupies the room, for the door-spill's before-loaded fallback.
+          npcs = room_data['npcs']
+          if npcs.is_a?(Array)
+            kept_fields['hasPresentNpc'] = npcs.any? do |n|
+              n.is_a?(Hash) && n['npcType'] != 'phone' && !(n['behavior'].is_a?(Hash) && n['behavior']['initiallyHidden'])
+            end
           end
 
           # If the player has already unlocked this room, mark it as unlocked so the
@@ -933,6 +1008,24 @@ module BreakEscape
       end
     end
 
+    # Flag stations (objects, or items NPCs hold) with an unlock_object reward
+    # for this object, whichever flag pays it.
+    def flag_reward_stations_targeting(object)
+      object_refs = [object['id'], object['name']].compact.map(&:to_s)
+      return [] if object_refs.empty?
+
+      targets_object = ->(reward) { reward.is_a?(Hash) && reward['type'] == 'unlock_object' && object_refs.include?(reward['objectId'].to_s) }
+      stations = []
+      scenario_data['rooms']&.each_value do |room|
+        room['objects']&.each { |o| stations << o if o['flagRewards'] }
+        room['npcs']&.each { |n| n['itemsHeld']&.each { |i| stations << i if i['flagRewards'] } }
+      end
+      stations.select do |station|
+        rewards = station['flagRewards']
+        (rewards.is_a?(Hash) ? rewards.values : Array(rewards)).any?(&targets_object)
+      end
+    end
+
     # Unlock validation
     def validate_unlock(target_type, target_id, attempt, method)
       Rails.logger.info "[BreakEscape] validate_unlock: type=#{target_type}, id=#{target_id}, attempt=#{attempt}, method=#{method}"
@@ -962,7 +1055,7 @@ module BreakEscape
           # NPC unlock: Validate NPC has been encountered and has permission to unlock this door
           if method == 'npc'
             npc_id = attempt  # NPC id is passed as 'attempt'
-            return validate_npc_unlock(npc_id, target_id)
+            return npc_mapping_unlocks_door?(npc_id, target_id) || validate_npc_unlock(npc_id, target_id)
           end
 
           unless unlock_method_matches_lock?(room['lockType'], method)
@@ -1122,6 +1215,27 @@ module BreakEscape
       self.class.mastermind_feedback(lock['requires'].to_s, attempt.to_s)
     end
 
+    # A wrong password that matches the real one ignoring case. The keypad then says
+    # passwords are case-sensitive (m07 E4: cascadewindow19 for CascadeWindow19).
+    # It tells the player only that their own entry was right apart from case.
+    def password_case_mismatch?(target_type, target_id, attempt)
+      lock = target_type == 'door' ? room_data(target_id) : find_scenario_object(target_id)
+      return false unless lock && lock['lockType'] == 'password'
+
+      secret = lock['requires'].to_s
+      guess = attempt.to_s
+      secret.present? && guess != secret && guess.casecmp?(secret)
+    end
+
+    # Tell the client how many digits a PIN lock takes, since `requires` (the PIN)
+    # is stripped before it gets there. The PIN pad defaults to 4 without this, so
+    # a 5-digit PIN could never be typed. Call before deleting `requires`.
+    def self.set_pin_length!(lock)
+      return unless lock.is_a?(Hash) && lock['lockType'] == 'pin' && lock['requires'].present?
+
+      lock['pinLength'] = lock['requires'].to_s.length
+    end
+
     def self.mastermind_feedback(secret, guess)
       secret_digits = secret.chars
       guess_digits = guess.chars
@@ -1166,6 +1280,19 @@ module BreakEscape
       nil
     end
 
+    # F19: an NPC eventMapping with `unlockDoor: "<room_id>"` (or a list) lets that
+    # NPC open the door through the 'npc' unlock path when the mapping fires. The
+    # event fires on the client, so, as with completeTask and setGlobal mappings,
+    # there is no encounter check: the scenario naming the room is the permission.
+    def npc_mapping_unlocks_door?(npc_id, room_id)
+      npc = find_npc_in_scenario(npc_id)
+      return false unless npc
+
+      Array(npc['eventMappings']).any? do |mapping|
+        mapping.is_a?(Hash) && Array(mapping['unlockDoor']).include?(room_id)
+      end
+    end
+
     # Validate NPC unlock permission
     def validate_npc_unlock(npc_id, target_id)
       Rails.logger.info "[BreakEscape] Validating NPC unlock: npc=#{npc_id}, target=#{target_id}"
@@ -1194,14 +1321,62 @@ module BreakEscape
       true
     end
 
-    # Find NPC in scenario data
+    # Find an NPC record in the scenario: a room NPC, or a headless record
+    # (scenario_npc_records). The first room NPC with the id wins, as before.
     def find_npc_in_scenario(npc_id)
-      scenario_data['rooms']&.each do |_room_id, room_data|
-        room_data['npcs']&.each do |npc|
-          return npc if npc['id'] == npc_id
+      scenario_npc_records.find { |npc| npc['id'] == npc_id }
+    end
+
+    # Every NPC record the scenario defines: each room's npcs (in room order), then
+    # the headless records (data contract 00 S8). A scenario with no `social` key
+    # gives exactly the room NPCs.
+    def scenario_npc_records
+      self.class.scenario_npc_records(scenario_data)
+    end
+
+    def self.scenario_npc_records(data)
+      return [] unless data.is_a?(Hash)
+
+      room_npcs = []
+      rooms = data['rooms']
+      if rooms.is_a?(Hash)
+        rooms.each_value do |room|
+          next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
+
+          room['npcs'].each { |npc| room_npcs << npc if npc.is_a?(Hash) }
         end
       end
-      nil
+      room_ids = room_npcs.map { |npc| npc['id'] }
+      room_npcs + headless_npc_records(data).reject { |rec| room_ids.include?(rec['id']) }
+    end
+
+    # Headless NPC records: one per social.characters entry with an emailRecord,
+    # registered with no room and no sprite so mail can reach a character whose
+    # room has not loaded (00 S8, section 9). The record's id is the character's
+    # channels.email; an entry without one has no record. phoneId "mail_only" is
+    # a phone no scenario lists, so the record never shows as a phone contact.
+    HEADLESS_PHONE_ID = 'mail_only'
+
+    def self.headless_npc_records(data)
+      social = data.is_a?(Hash) ? data['social'] : nil
+      characters = social.is_a?(Hash) ? social['characters'] : nil
+      return [] unless characters.is_a?(Hash)
+
+      characters.filter_map do |_character_id, character|
+        next unless character.is_a?(Hash)
+
+        record = character['emailRecord']
+        record_id = character['channels'].is_a?(Hash) ? character['channels']['email'] : nil
+        next unless record.is_a?(Hash) && record_id.is_a?(String) && !record_id.empty?
+
+        record.merge(
+          'id' => record_id,
+          'displayName' => record['displayName'] || character['displayName'] || record_id,
+          'npcType' => 'phone',
+          'phoneId' => HEADLESS_PHONE_ID,
+          'itemsHeld' => record['itemsHeld'].is_a?(Array) ? record['itemsHeld'] : []
+        )
+      end
     end
 
     # ==========================================
@@ -1545,6 +1720,7 @@ module BreakEscape
     MAX_SCENARIO_CLOCK_ELAPSED_MS = 7.days.in_milliseconds
     MAX_SCENARIO_TIMERS = 200
     MAX_CLOCK_KEY_LENGTH = 200
+    MAX_CLOCK_ANCHORS = 50
 
     # Merge the client's game clock: elapsed game time and the scenario timers' state
     # (fired / cancelled ids, and how long each started startOnGlobal timer has run).
@@ -1583,6 +1759,25 @@ module BreakEscape
           timers_elapsed = [timers_elapsed, timers['elapsedMs'].to_i.clamp(0, MAX_SCENARIO_CLOCK_ELAPSED_MS)].max
         end
         saved['timers'] = { 'elapsedMs' => timers_elapsed, 'fired' => fired, 'cancelled' => cancelled, 'started' => started }
+      end
+
+      # gameClock.anchors reached ({ index => { atMs, gameSec } }): the first record of
+      # an anchor wins, so a reload keeps the time each message was shown at
+      anchors = incoming['anchors']
+      if anchors.is_a?(Hash)
+        saved_anchors = saved['anchors'].is_a?(Hash) ? saved['anchors'].dup : {}
+        anchors.each do |idx, rec|
+          key = idx.to_s
+          next unless key.match?(/\A\d{1,3}\z/) && rec.is_a?(Hash) && !saved_anchors.key?(key)
+          at_ms = rec['atMs']
+          game_sec = rec['gameSec']
+          next unless at_ms.is_a?(Numeric) && game_sec.is_a?(Numeric)
+          next if saved_anchors.size >= MAX_CLOCK_ANCHORS
+
+          saved_anchors[key] = { 'atMs' => at_ms.to_i.clamp(0, MAX_SCENARIO_CLOCK_ELAPSED_MS),
+                                 'gameSec' => game_sec.to_i.clamp(0, 7 * 86_400 * 52) }
+        end
+        saved['anchors'] = saved_anchors
       end
 
       player_state['scenarioClock'] = saved
@@ -1646,8 +1841,12 @@ module BreakEscape
       player_state['npcVisibility'] = merged
     end
 
+    MAX_NPC_HP = 100_000
+    # Directions a knocked-out NPC can have fallen facing (its death animation's suffix)
+    NPC_FACINGS = %w[down up left right down-left down-right up-left up-right].freeze
+
     # Merge NPC hostility and KO sent by the client ({ npcId => { hostile, ko } },
-    # npc-hostile.js exportHostility), so an NPC that turned on the player is
+    # with hp and maxHP for a hurt NPC and facing for a KO'd one; npc-hostile.js exportHostility), so an NPC that turned on the player is
     # still hostile after a reload (E-B). Only NPCs the scenario has are kept.
     # A KO is never undone: once down, an NPC stays down. Does not save!; the
     # caller does.
@@ -1665,11 +1864,44 @@ module BreakEscape
         next unless [true, false].include?(hostile) && [true, false].include?(ko)
 
         ko ||= merged.dig(npc_id, 'ko') == true
-        merged[npc_id] = { 'hostile' => hostile, 'ko' => ko }
+        record = { 'hostile' => hostile, 'ko' => ko }
+        # A hurt NPC's HP (7.1g), so a reload doesn't restore it at full health
+        hp = entry['hp']
+        max_hp = entry['maxHP']
+        if !ko && hp.is_a?(Numeric) && max_hp.is_a?(Numeric) &&
+           hp.positive? && hp <= max_hp && max_hp <= MAX_NPC_HP
+          record['hp'] = hp
+          record['maxHP'] = max_hp
+        end
+        # The way a KO'd NPC fell, so a reload lays it in the same pose (m08 R4).
+        # The first fall's facing is kept.
+        if ko
+          facing = merged.dig(npc_id, 'facing')
+          facing = entry['facing'] unless NPC_FACINGS.include?(facing)
+          record['facing'] = facing if NPC_FACINGS.include?(facing)
+        end
+        merged[npc_id] = record
       end
       return if merged.size > MAX_NPC_VISIBILITY
 
       player_state['npcHostility'] = merged
+    end
+
+    MAX_PLAYER_HP = 100_000
+
+    # Save the player's HP sent by the client ({ hp, maxHP }; player-health.js
+    # exportPlayerHealth), so a reload mid-fight isn't a free full heal (m05 E6).
+    # 0 HP (a knockout) is kept as sent; the scenario endpoint doesn't send it
+    # back, so the player wakes at full health. Does not save!; the caller does.
+    def merge_player_health!(incoming)
+      return unless incoming.is_a?(Hash)
+
+      hp = incoming['hp']
+      max_hp = incoming['maxHP']
+      return unless hp.is_a?(Numeric) && max_hp.is_a?(Numeric)
+      return unless max_hp.positive? && max_hp <= MAX_PLAYER_HP && hp >= 0 && hp <= max_hp
+
+      player_state['playerHealth'] = { 'hp' => hp, 'maxHP' => max_hp }
     end
 
     # Every NPC id the game can have in a room: the scenario's, plus any added
@@ -1677,14 +1909,20 @@ module BreakEscape
     def scenario_npc_ids
       ids = Set.new
       if has_attribute?(:scenario_data)
-        (scenario_data['rooms'] || {}).each_value do |room|
-          Array(room['npcs']).each { |npc| ids << npc['id'] if npc.is_a?(Hash) && npc['id'].is_a?(String) }
-        end
+        scenario_npc_records.each { |npc| ids << npc['id'] if npc['id'].is_a?(String) }
       else
-        # sync_state's narrow load leaves scenario_data out; read just the ids
-        found = self.class.where(id: id).pick(Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*].id')"))
-        found = JSON.parse(found) if found.is_a?(String)
-        Array(found).each { |npc_id| ids << npc_id if npc_id.is_a?(String) }
+        # sync_state's narrow load leaves scenario_data out; read just the ids:
+        # room NPCs, and the headless records' ids (social.characters.*.channels.email
+        # where the character has an emailRecord; see headless_npc_records)
+        found = self.class.where(id: id).pick(
+          Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*].id')"),
+          Arel.sql("jsonb_path_query_array(scenario_data, " \
+                   "'$.social.characters.* ? (@.emailRecord.type() == \"object\").channels.email')")
+        )
+        Array(found).each do |list|
+          list = JSON.parse(list) if list.is_a?(String)
+          Array(list).each { |npc_id| ids << npc_id if npc_id.is_a?(String) && !npc_id.empty? }
+        end
       end
       (player_state['room_states'] || {}).each_value do |state|
         next unless state.is_a?(Hash)
@@ -1783,10 +2021,11 @@ module BreakEscape
 
       if merged.to_json.bytesize > MAX_PHONE_STATE_BYTES
         Rails.logger.warn "[BreakEscape] phoneState over #{MAX_PHONE_STATE_BYTES} bytes; update not saved"
-        return
+        return false # the caller reports it as notSaved, so the client resends
       end
 
       player_state['phoneState'] = merged
+      true
     end
 
     def sanitize_phone_state_entry(entry)
@@ -1837,6 +2076,354 @@ module BreakEscape
 
       clean
     end
+
+    # mailState: the social-engineering mail client's saved state (00 §10a,
+    # 01 "Persisted mail"). Its own caps, not the phone's.
+    MAX_MAIL_STATE_BYTES = 1.megabyte
+    MAX_MAIL_MESSAGES_PER_MAILBOX = 200
+    MAX_MAIL_BODY_CHARS = 4000
+    MAX_MAIL_JOBS = 50
+    MAX_MAIL_MAILBOXES = 20
+    MAX_MAIL_THREADS = 200
+    MAX_MAIL_DRAFTS = 20
+    MAX_MAIL_METRICS = 200
+    MAX_MAIL_THREAD_POSITION_BYTES = 60.kilobytes
+    MAX_MAIL_STRING = 1000
+    MAX_MAIL_ID_LENGTH = 300
+    MAX_MAIL_JSON_DEPTH = 6
+    MAX_MAIL_JSON_ENTRIES = 200
+    MAIL_STATE_KEYS = %w[mailboxes jobs threads drafts metrics].freeze
+    MAIL_MESSAGE_KEYS = %w[
+      id thread mailbox folder fromAccount from to targetId subject templates slots body
+      attachment link landed tells time gameTime read kind seeded links attachments highlights
+      pendingMessage
+    ].freeze
+    MAIL_JOB_KINDS = %w[ink text seed].freeze
+    MAIL_JOB_STRING_KEYS = %w[character npcId accountId msgId knot targetId messageId mailbox global outcomeGlobal].freeze
+    MAIL_DRAFT_KEYS = %w[to subject templates slots attachment link targetId headerFrom contactId freeText].freeze
+    MAIL_METRIC_COUNTS = %w[sent failed landed].freeze
+
+    # Merge the mail client's keyed section (00 §10a "Persistence"). Keys:
+    #   mailboxes.<box>.<msgId>  one message, upserted by id into the mailbox
+    #                            (appended when new); null removes it. A seeded
+    #                            message comes as a stub { id, seeded, read, gameTime }.
+    #   threads.<key>            one thread's position; null removes it.
+    #   jobs, drafts, metrics    replaced whole; null removes it.
+    # Mailbox ids hold no dot (validator), so the key splits on the first dot
+    # after the prefix; a message id may hold dots. A whole mailbox or a whole
+    # threads key is not accepted. A mailbox over its message cap, or the section
+    # over MAX_MAIL_STATE_BYTES, is trimmed: oldest read replies, then oldest
+    # sent records. Seeded stubs, unread mail and pending jobs are never dropped:
+    # if trimming is not enough, or a count cap is passed, the update is not
+    # saved and the previous state stands (a reply and the job that produced it
+    # change together, so one is never kept without the other). Returns true
+    # when saved, false when refused (the caller reports it as notSaved), nil
+    # when nothing usable came. Does not save!; the caller does.
+    #
+    # When a save does trim read mail to fit the byte cap, the dropped message
+    # keys are left in #mail_trimmed_keys so the controller can report them
+    # (P1-D): the client still holds that mail as confirmed, so without the
+    # report it would vanish on the next reload without the client knowing.
+    def merge_mail_state!(incoming)
+      @mail_trimmed_keys = []
+      return nil unless incoming.is_a?(Hash)
+
+      updates = mail_state_updates(incoming)
+      return nil if updates.empty?
+
+      merged = (player_state['mailState'] || {}).deep_dup
+      updates.each do |path, value|
+        if path.is_a?(Array) && path[0] == 'mailboxes'
+          _, box_id, msg_id = path
+          boxes = merged['mailboxes'] ||= {}
+          box = boxes[box_id] ||= { 'messages' => [] }
+          box['messages'] = Array(box['messages'])
+          index = box['messages'].index { |m| m.is_a?(Hash) && m['id'] == msg_id }
+          if value.nil?
+            box['messages'].delete_at(index) if index
+          elsif index
+            box['messages'][index] = value
+          else
+            box['messages'] << value
+          end
+          boxes.delete(box_id) if box['messages'].empty?
+        elsif path.is_a?(Array) # ['threads', key]
+          threads = merged['threads'] ||= {}
+          if value.nil?
+            threads.delete(path[1])
+          else
+            threads[path[1]] = value
+          end
+          merged.delete('threads') if threads.empty?
+        elsif value.nil?
+          merged.delete(path)
+        else
+          merged[path] = value
+        end
+      end
+      merged.delete('mailboxes') if merged['mailboxes'] == {}
+
+      dropped = []
+      refusal = mail_state_refusal(merged, updates, dropped)
+      if refusal
+        Rails.logger.warn "[BreakEscape] mailState #{refusal}; update not saved"
+        return false
+      end
+
+      player_state['mailState'] = merged
+      @mail_trimmed_keys = dropped
+      true
+    end
+
+    # Message keys (mailboxes.<box>.<msgId>) the last merge_mail_state! trimmed
+    # to fit the caps while still saving (P1-D). Empty after a refusal (nothing
+    # was saved) or when nothing was trimmed.
+    def mail_trimmed_keys
+      @mail_trimmed_keys || []
+    end
+
+    private
+
+    # Incoming keys sanitised, as { 'jobs' => [...], ['mailboxes', box, msgId] => {...},
+    # ['threads', key] => {...}, ... }. A key whose value cannot be sanitised is
+    # left out (the saved one stands).
+    def mail_state_updates(incoming)
+      updates = {}
+      incoming.each do |key, value|
+        key = key.to_s
+        if key.start_with?('mailboxes.')
+          box_id, msg_id = key.delete_prefix('mailboxes.').split('.', 2)
+          next unless mail_box_id?(box_id) && mail_id?(msg_id)
+
+          if value.nil?
+            updates[['mailboxes', box_id, msg_id]] = nil
+          else
+            clean = sanitize_mail_message(value.is_a?(Hash) ? value.merge('id' => msg_id) : value)
+            updates[['mailboxes', box_id, msg_id]] = clean if clean
+          end
+        elsif key.start_with?('threads.')
+          thread_key = key.delete_prefix('threads.')
+          next unless thread_key.present? && thread_key.length <= 200
+
+          if value.nil?
+            updates[['threads', thread_key]] = nil
+          else
+            clean = sanitize_mail_threads(thread_key => value)&.dig(thread_key)
+            updates[['threads', thread_key]] = clean if clean
+          end
+        elsif %w[jobs drafts metrics].include?(key)
+          if value.nil?
+            updates[key] = nil
+          else
+            clean = send("sanitize_mail_#{key}", value)
+            updates[key] = clean unless clean.nil?
+          end
+        end
+      end
+      updates
+    end
+
+    # Why the merged section cannot be saved, or nil. Trims messages first,
+    # recording the keys it drops in `dropped` (mailboxes.<box>.<msgId>) so the
+    # caller can tell the client what a successful save shed (P1-D). On a
+    # refusal nothing is saved, so the caller ignores anything collected here.
+    def mail_state_refusal(merged, updates, dropped)
+      boxes = merged['mailboxes'] || {}
+      return "has #{boxes.size} mailboxes (cap #{MAX_MAIL_MAILBOXES})" if boxes.size > MAX_MAIL_MAILBOXES
+      return "has #{merged['jobs'].size} jobs (cap #{MAX_MAIL_JOBS})" if Array(merged['jobs']).size > MAX_MAIL_JOBS
+      return "has #{merged['threads'].size} threads (cap #{MAX_MAIL_THREADS})" if merged['threads'].to_h.size > MAX_MAIL_THREADS
+      return "has #{merged['drafts'].size} drafts (cap #{MAX_MAIL_DRAFTS})" if merged['drafts'].to_h.size > MAX_MAIL_DRAFTS
+      return "has #{merged['metrics'].size} metrics (cap #{MAX_MAIL_METRICS})" if merged['metrics'].to_h.size > MAX_MAIL_METRICS
+
+      updates.each_key.filter_map { |path| path[1] if path.is_a?(Array) && path[0] == 'mailboxes' }.uniq.each do |box_id|
+        box = boxes[box_id]
+        next unless box
+
+        trim_mail_messages!([[box_id, box]], dropped) { box['messages'].size <= MAX_MAIL_MESSAGES_PER_MAILBOX }
+        if box['messages'].size > MAX_MAIL_MESSAGES_PER_MAILBOX
+          return "mailbox #{box_id} holds more than #{MAX_MAIL_MESSAGES_PER_MAILBOX} unread or seeded messages"
+        end
+      end
+
+      bytes = merged.to_json.bytesize
+      if bytes > MAX_MAIL_STATE_BYTES
+        trim_mail_messages!(boxes.to_a, dropped) do |msg|
+          bytes -= msg.to_json.bytesize + 1 if msg
+          bytes <= MAX_MAIL_STATE_BYTES
+        end
+        bytes = merged.to_json.bytesize
+        return "over #{MAX_MAIL_STATE_BYTES} bytes after trimming" if bytes > MAX_MAIL_STATE_BYTES
+      end
+      nil
+    end
+
+    # Drop messages from the given mailboxes, in trim order, until the block
+    # (called with the message just dropped, or nil before the first) is true.
+    # `box_pairs` is [[box_id, box], ...]; each dropped message's key
+    # (mailboxes.<box_id>.<msgId>) is pushed onto `dropped`. Order: read inbox
+    # replies, then sent records; oldest first within each (gameTime, then
+    # position). Seeded stubs and unread inbox mail are kept: a dropped stub
+    # would bring its message back unread on reload, and a stub is about 60 bytes.
+    def trim_mail_messages!(box_pairs, dropped)
+      return if yield(nil)
+
+      candidates = []
+      box_pairs.each_with_index do |(box_id, box), box_index|
+        box['messages'].each_with_index do |msg, index|
+          next if msg['seeded'] == true
+
+          tier = if msg['folder'] == 'sent' then 1
+                 elsif msg['read'] != true then next
+                 else 0
+                 end
+          time = msg['gameTime'].is_a?(Numeric) ? msg['gameTime'] : -1
+          candidates << [[tier, time, box_index, index], box_id, box, msg]
+        end
+      end
+
+      candidates.sort_by(&:first).each do |_, box_id, box, msg|
+        box['messages'].delete_at(box['messages'].index { |m| m.equal?(msg) })
+        if msg['id']
+          dropped << "mailboxes.#{box_id}.#{msg['id']}"
+        else
+          # Every saved record carries an id (sanitize_mail_message requires one,
+          # and the client keys by it), so this should not happen. If it does, the
+          # drop has no key to report, and the client would hold the message as
+          # confirmed and lose it on the next reload. Log it rather than drop it
+          # in silence (P1-D reporting; IMPL_REVIEW_MECHANICS minor 2).
+          Rails.logger.warn "[BreakEscape] trimmed a mail message with no id in mailbox #{box_id}; drop not reported to the client"
+        end
+        break if yield(msg)
+      end
+    end
+
+    def sanitize_mail_message(msg)
+      return nil unless msg.is_a?(Hash) && mail_id?(msg['id'])
+
+      MAIL_MESSAGE_KEYS.each_with_object({}) do |key, clean|
+        next unless msg.key?(key)
+
+        value = msg[key]
+        case key
+        when 'body'
+          clean[key] = value[0, MAX_MAIL_BODY_CHARS] if value.is_a?(String)
+        when 'folder'
+          clean[key] = value if %w[inbox sent].include?(value)
+        when 'gameTime'
+          clean[key] = value if value.is_a?(Numeric)
+        when 'read', 'seeded'
+          clean[key] = value if [true, false].include?(value)
+        when 'landed'
+          clean[key] = value if [true, false, nil].include?(value)
+        when 'tells'
+          clean[key] = value.select { |t| t.is_a?(String) && t.length <= 100 }.first(50) if value.is_a?(Array)
+        else
+          clean[key] = sanitize_mail_json(value)
+        end
+      end
+    end
+
+    def sanitize_mail_jobs(value)
+      return nil unless value.is_a?(Array)
+
+      value.filter_map do |job|
+        next unless job.is_a?(Hash) && mail_id?(job['jobId']) && MAIL_JOB_KINDS.include?(job['kind'])
+
+        clean = { 'jobId' => job['jobId'], 'kind' => job['kind'] }
+        MAIL_JOB_STRING_KEYS.each do |key|
+          clean[key] = job[key] if job[key].is_a?(String) && job[key].length <= MAX_MAIL_ID_LENGTH
+        end
+        clean['outcomeGlobal'] = nil if job.key?('outcomeGlobal') && job['outcomeGlobal'].nil?
+        clean['remainingMs'] = job['remainingMs'].to_i.clamp(0, MAX_TIMED_MESSAGE_DELAY_MS) if job['remainingMs'].is_a?(Numeric)
+        clean['choice'] = job['choice'].to_i if job['choice'].is_a?(Numeric)
+        clean['text'] = job['text'][0, MAX_MAIL_BODY_CHARS] if job['text'].is_a?(String)
+        clean['vars'] = sanitize_mail_json(job['vars']) if job['vars'].is_a?(Hash)
+        clean
+      end
+    end
+
+    def sanitize_mail_threads(value)
+      return nil unless value.is_a?(Hash)
+
+      value.each_with_object({}) do |(key, thread), clean|
+        next unless key.is_a?(String) && key.length <= 200 && thread.is_a?(Hash)
+
+        entry = {}
+        position = thread['position']
+        if (position.is_a?(String) || position.is_a?(Hash)) &&
+           (position.is_a?(String) ? position.bytesize : position.to_json.bytesize) <= MAX_MAIL_THREAD_POSITION_BYTES
+          entry['position'] = position.is_a?(Hash) ? position.to_h : position
+        end
+        entry['choices'] = sanitize_mail_json(thread['choices'].first(20)) if thread['choices'].is_a?(Array)
+        expects = thread['expects']
+        if expects.is_a?(Hash) && %w[choices compose].include?(expects['mode'])
+          entry['expects'] = { 'mode' => expects['mode'] }
+          entry['expects']['targetId'] = expects['targetId'] if expects['targetId'].is_a?(String) && expects['targetId'].length <= 100
+          # The "Choose a reply" option texts (01 N8): kept so the follow-up control
+          # survives a reload before the player picks. Bounded in count and length.
+          if expects['options'].is_a?(Array)
+            opts = expects['options'].select { |o| o.is_a?(String) }.first(10).map { |o| o[0, MAX_MAIL_STRING] }
+            entry['expects']['options'] = opts unless opts.empty?
+          end
+        end
+        clean[key] = entry
+      end
+    end
+
+    def sanitize_mail_drafts(value)
+      return nil unless value.is_a?(Hash)
+
+      value.each_with_object({}) do |(account_id, draft), clean|
+        next unless account_id.is_a?(String) && account_id.length <= 100 && draft.is_a?(Hash)
+
+        clean[account_id] = draft.slice(*MAIL_DRAFT_KEYS).to_h.transform_values { |v| sanitize_mail_json(v) }
+      end
+    end
+
+    def sanitize_mail_metrics(value)
+      return nil unless value.is_a?(Hash)
+
+      value.each_with_object({}) do |(target_id, metric), clean|
+        next unless target_id.is_a?(String) && target_id.length <= 100 && metric.is_a?(Hash)
+
+        entry = {}
+        MAIL_METRIC_COUNTS.each do |key|
+          entry[key] = metric[key].to_i.clamp(0, 100_000) if metric[key].is_a?(Numeric)
+        end
+        entry['firstTryLanded'] = metric['firstTryLanded'] if [true, false].include?(metric['firstTryLanded'])
+        clean[target_id] = entry
+      end
+    end
+
+    def mail_id?(value)
+      value.is_a?(String) && value.present? && value.length <= MAX_MAIL_ID_LENGTH
+    end
+
+    def mail_box_id?(value)
+      value.is_a?(String) && value.present? && value.length <= 100
+    end
+
+    # Plain JSON only: string-keyed hashes, arrays, short strings, finite
+    # numbers, booleans and null, nested at most MAX_MAIL_JSON_DEPTH deep.
+    def sanitize_mail_json(value, depth = 0)
+      case value
+      when String then value[0, MAX_MAIL_STRING]
+      when Integer, true, false, nil then value
+      when Float then value.finite? ? value : nil
+      when Hash
+        return {} if depth >= MAX_MAIL_JSON_DEPTH
+
+        value.first(MAX_MAIL_JSON_ENTRIES).each_with_object({}) do |(k, v), out|
+          out[k.to_s] = sanitize_mail_json(v, depth + 1) if k.to_s.length <= 100
+        end
+      when Array
+        return [] if depth >= MAX_MAIL_JSON_DEPTH
+
+        value.first(MAX_MAIL_JSON_ENTRIES).map { |v| sanitize_mail_json(v, depth + 1) }
+      end
+    end
+
+    public
 
     # Aim/Task status helpers
     def aim_status(aim_id)
@@ -1962,6 +2549,7 @@ module BreakEscape
       self.mission_concluded_at = now
       self.status               = 'completed'
       self.completed_at         = now
+      write_story_snapshot # CarryOver; the credits' /conclude refreshes it after the debrief
       true  # concluded
     end
 
@@ -2096,6 +2684,10 @@ module BreakEscape
 
       set_global.each do |name, value|
         name = name.to_s
+        if imported_global?(name)
+          Rails.logger.warn "[BreakEscape] Task #{task['taskId']} onComplete.setGlobal '#{name}' is an imported (read-only) global; not applied"
+          next
+        end
         unless declared.key?(name)
           Rails.logger.warn "[BreakEscape] Task #{task['taskId']} onComplete.setGlobal '#{name}' is not declared in globalVariables; not applied server-side"
           next
@@ -2131,9 +2723,14 @@ module BreakEscape
       # past 100%.
       return if player_state.dig('objectivesState', 'aims', aim_id, 'status') == 'completed'
 
-      all_complete = aim['tasks'].all? do |task|
+      # Optional tasks don't hold the aim open, unless every task is optional:
+      # then it completes only once each one is settled, not on the first
+      # (m07 U5). Mirrors checkAimCompletion in objectives-manager.js.
+      tasks = aim['tasks'] || []
+      has_required = tasks.any? { |task| task['optional'] != true }
+      all_complete = tasks.all? do |task|
         # skipped: closed off by the story (skip_task!); the aim completes with a gap
-        task['optional'] == true || %w[completed skipped].include?(task_status(task['taskId']))
+        (has_required && task['optional'] == true) || %w[completed skipped].include?(task_status(task['taskId']))
       end
 
       if all_complete
@@ -2167,15 +2764,42 @@ module BreakEscape
       end
     end
 
+    # Authoring-only fields for the puzzle-graph generator
+    # (scripts/validate_scenario.rb). They name solutions and describe the
+    # puzzle chain, so the client never gets them. The exceptions are the
+    # two fields the client reads: puzzle_graph_role and puzzle_graph_unlocks
+    # (public/break_escape/js/systems/consumables.js, hasScenarioRole).
+    PUZZLE_GRAPH_CLIENT_KEYS = %w[puzzle_graph_role puzzle_graph_unlocks].freeze
+
+    def self.strip_puzzle_graph_keys!(hash)
+      hash.delete_if do |k, _|
+        k.is_a?(String) && k.start_with?('puzzle_graph_') && !PUZZLE_GRAPH_CLIENT_KEYS.include?(k)
+      end
+    end
+
     def filter_requires_and_contents_recursive(obj)
       case obj
       when Hash
+        self.class.strip_puzzle_graph_keys!(obj)
+
         # Remove 'requires' for exploitable lock types (key/pin/password)
         # Keep it for biometric/bluetooth/rfid since they reference collectible items, not answers
         # - biometric: requires fingerprint owner name (e.g., "Mrs Moo")
         # - bluetooth: requires device MAC/name (e.g., "00:11:22:33:44:55")
         # - rfid: requires card IDs (e.g., ["master_keycard"])
         lock_type = obj['lockType']
+
+        # A flag lock with no 'requires' can't take a flag where it stands: a
+        # flag-station reward opens it. Tell the client so it can say where,
+        # instead of a prompt that rejects every flag. Must run before 'requires'
+        # is stripped below.
+        if lock_type == 'flag' && obj['locked'] && obj['requires'].blank?
+          obj['flagUnlockedRemotely'] = true
+          station = flag_reward_stations_targeting(obj).first
+          obj['flagUnlockedAt'] = station['name'] if station && station['name'].present?
+        end
+
+        self.class.set_pin_length!(obj)
         if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
           obj.delete('requires')
         end
@@ -2216,6 +2840,8 @@ module BreakEscape
         obj['npcs']&.each { |n| filter_requires_and_contents_recursive(n) }
         obj['tableItems']&.each { |t| filter_requires_and_contents_recursive(t) }
         obj['itemsHeld']&.each { |i| filter_requires_and_contents_recursive(i) }
+        # Unlocked containers keep their contents in the room payload.
+        obj['contents'].each { |c| filter_requires_and_contents_recursive(c) } if obj['contents'].is_a?(Array)
 
       when Array
         obj.each { |item| filter_requires_and_contents_recursive(item) }
@@ -2319,6 +2945,9 @@ module BreakEscape
       # Dynamic room state tracking (delta overlay on scenario_data)
       self.player_state['room_states'] ||= {}           # Hash of room modifications
       self.player_state['npc_given_items'] ||= {}       # npc_id => items that NPC has handed to the player
+
+      # Imported globals (CarryOver): their values and the read-only list.
+      apply_imported_globals_to_state
     end
 
     def set_started_at
@@ -2417,13 +3046,13 @@ module BreakEscape
         if BreakEscape::Mission.hacktivity_mode? && hacktivity_flag_solved?(flag_key)
           return { success: true, message: 'Flag accepted!', already_in_hacktivity: true }
         end
-        return { success: false, message: 'Flag already submitted' }
+        return { success: false, message: 'Flag already submitted', reason: 'already_submitted' }
       end
 
       # Validate flag exists in scenario
       valid_flags = extract_valid_flags_from_scenario
       unless valid_flags.any? { |f| f.downcase == flag_key.downcase }
-        return { success: false, message: 'Invalid flag' }
+        return { success: false, message: 'Invalid flag', reason: 'invalid' }
       end
 
       # Submit to Hacktivity if in Hacktivity mode
@@ -2465,6 +3094,16 @@ module BreakEscape
       return { concluded: false, already: false, missing: ['no missionConclusion aim in scenario'] } if aim.nil?
 
       if mission_concluded_at.present?
+        # The credits of a game that had already concluded (the aim's tasks got
+        # there first, or a Restart replay): refresh the story snapshot later
+        # missions import, so it holds the debrief's final choices. Only when the
+        # story globals the ending needs are set again, so a half-finished replay
+        # can't overwrite a full run. Never refuses the credits, and touches only
+        # player_state: no score, completed_at or completion hook.
+        if conclude_story_globals_met?(aim)
+          write_story_snapshot
+          save!
+        end
         return { concluded: true, already: true, missing: [] }
       end
 
@@ -2476,6 +3115,7 @@ module BreakEscape
       self.status               = 'completed'
       self.completed_at         = now
       self.score                = calculate_task_score.round
+      write_story_snapshot # CarryOver
       save!
 
       { concluded: true, already: false, missing: [] }

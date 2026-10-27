@@ -101,6 +101,71 @@ export const CREDITS_THEMES = {
     },
 };
 
+/**
+ * A scenario's own words for the safetynet credits overlay (m07 E7: every mission
+ * showed "OPERATION: IRONSEAL" and "ENTROPY CONTAINED ... WELL PLAYED"). Both are
+ * optional; without them the overlay keeps its built-in text.
+ *   "creditsOverlay": { "operation": "SCHRODINGER", "ticker": ["LINE", "LINE"] }
+ * operation fills the header's OPERTN: row (no rotation); ticker replaces the
+ * footer ticker (an array is joined with the ██ separators). With no operation,
+ * the row takes the mission's display name in capitals when one is given
+ * (fallbackName), so it never shows another mission's code name (2026-10-17).
+ * @param {object} scenario
+ * @param {string} [fallbackName] - the mission's display name
+ * @returns {{operation: string|null, ticker: string|null}}
+ */
+export function scenarioCreditsOverlay(scenario, fallbackName) {
+    const cfg = scenario?.creditsOverlay;
+    const clean = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+    const fallback = clean(fallbackName);
+    const operation = clean(cfg?.operation) || (fallback ? fallback.toUpperCase() : null);
+    let ticker = null;
+    if (Array.isArray(cfg?.ticker)) {
+        const lines = cfg.ticker.map(clean).filter(Boolean);
+        if (lines.length) ticker = `██ ${lines.join(' ██ ')} ██`;
+    } else {
+        ticker = clean(cfg?.ticker);
+    }
+    return { operation, ticker };
+}
+
+/** The visualiser's header when neither the ending nor the theme sets one. */
+export const DEFAULT_CREDITS_HEADER = 'MISSION COMPLETE // AUDIO INTEL';
+
+/**
+ * The header text an open of the visualiser leaves in place. A credits entry's
+ * `headerText` (e.g. "MISSION FAILED // AUDIO INTEL") sets it; a new credits roll
+ * without one goes back to the default (null); an open with no credits, such as a
+ * conclusionScreen's open({}) after the credits, keeps what is there.
+ * @param {string|null} current
+ * @param {object} [opts] - the open() options
+ * @returns {string|null}
+ */
+export function nextCreditsHeader(current, opts) {
+    return nextCreditsText(current, opts, 'headerText');
+}
+
+/** The same rule for any opt-in text field of a credits entry (headerText, statusText). */
+export function nextCreditsText(current, opts, key) {
+    const text = typeof opts?.[key] === 'string' ? opts[key].trim() : '';
+    if (text) return text;
+    if (opts?.credits?.length) return null;
+    return current ?? null;
+}
+
+/** The STATUS row's value when neither the ending nor the theme sets one. */
+export const DEFAULT_CREDITS_STATUS = 'MONITORING';
+
+/** What the STATUS row shows: the ending's statusText, else the theme's status, else the default. */
+export function creditsStatus(statusText, themeStatus) {
+    return statusText || themeStatus || DEFAULT_CREDITS_STATUS;
+}
+
+/** What the header shows: the ending's text, else the theme's heading, else the default. */
+export function creditsHeader(headerText, themeHeading) {
+    return headerText || themeHeading || DEFAULT_CREDITS_HEADER;
+}
+
 export function resolveCreditsTheme(scenario) {
     const name = scenario?.creditsTheme;
     return Object.prototype.hasOwnProperty.call(CREDITS_THEMES, name) ? name : DEFAULT_CREDITS_THEME;

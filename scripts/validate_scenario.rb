@@ -15,6 +15,7 @@ require 'pathname'
 require 'set'
 require 'base64'
 require 'open3'
+require_relative 'validate_social'
 
 # Try to load json-schema gem, provide helpful error if missing
 begin
@@ -65,6 +66,15 @@ class ScenarioBinding
     if vm_context && vm_context['flags_by_vm']
       flags = vm_context['flags_by_vm'][vm_name]
       return flags.to_json if flags
+    end
+    fallback.to_json
+  end
+
+  # Get a slice of flags for a VM (mirrors Mission::ScenarioBinding#flags_for_vm_slice).
+  def flags_for_vm_slice(vm_name, start_index, count, fallback = [])
+    if vm_context && vm_context['flags_by_vm']
+      flags = vm_context['flags_by_vm'][vm_name]
+      return flags.slice(start_index, count).to_json if flags
     end
     fallback.to_json
   end
@@ -229,6 +239,8 @@ def check_scenario_directory_structure(erb_path)
       if missing_fields.any?
         issues << "❌ INVALID: mission.json is missing required fields: #{missing_fields.join(', ')}"
       end
+
+      issues.concat(check_mission_scoring(mission))
     rescue JSON::ParserError => e
       issues << "❌ INVALID: mission.json contains invalid JSON: #{e.message}"
     rescue StandardError => e
@@ -239,6 +251,29 @@ def check_scenario_directory_structure(erb_path)
   issues
 end
 
+# mission.json "scoring" (read by BreakEscape::Mission#scoring_mode). An unknown
+# value is an error (the engine would silently fall back to "tasks"). With the
+# rendered scenario, warn when a mode that only reaches 100 on conclusion has no
+# missionConclusion aim, since such a mission can never score 100.
+SCORING_MODES = %w[tasks partial_then_complete completion].freeze
+
+def check_mission_scoring(mission, json_data = nil)
+  return [] unless mission.is_a?(Hash) && mission.key?('scoring')
+
+  mode = mission['scoring']
+  unless SCORING_MODES.include?(mode)
+    return ["❌ INVALID: mission.json 'scoring' is #{mode.inspect}; it must be one of #{SCORING_MODES.join(', ')} " \
+            "(or left out, which means tasks)"]
+  end
+  return [] if json_data.nil? || mode == 'tasks'
+
+  has_conclusion = (json_data['objectives'] || []).any? { |aim| aim.is_a?(Hash) && aim['missionConclusion'] }
+  return [] if has_conclusion
+
+  ["⚠️ WARNING: mission.json 'scoring' is \"#{mode}\" but no aim has missionConclusion:true, so " \
+   "mission_concluded_at is never set and the score can never reach 100"]
+end
+
 # Check for unknown fields in JSON that aren't in the schema
 def check_unknown_fields(json_data)
   warnings = []
@@ -246,8 +281,9 @@ def check_unknown_fields(json_data)
   # Known top-level fields
   known_top_level = %w[
     scenario_id scenario_name scenario_brief endGoal version startRoom startPosition
-    show_scenario_brief disableAttacks creditsTheme gameClock flags music startItemsInInventory globalVariables
+    show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
     player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
+    importGlobals exportGlobals social
   ]
 
   # Check top-level unknown fields
@@ -259,7 +295,7 @@ def check_unknown_fields(json_data)
 
   # Known room fields
   known_room_fields = %w[
-    type door_sign connections locked lockType requires keyPins difficulty
+    type door_sign connections locked lockType requires keyPins lockedHint difficulty
     ambientSound ambientVolume objects npcs _comment dimensions biometricMatchThreshold lighting
     chatBackground
   ]
@@ -267,10 +303,10 @@ def check_unknown_fields(json_data)
   # Known NPC fields
   known_npc_fields = %w[
     id displayName npcType position spriteSheet spriteTalk spriteVisemes spriteConfig
-    voice behavior globalVarOnKO restartOnRetalk taskOnKO storyPath currentKnot avatar
+    voice behavior globalVarOnKO restartOnRetalk reopenRefreshesHub livePreview taskOnKO koImmune storyPath callId currentKnot avatar
     phoneId phoneTheme unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
-    observations disableClose los rfidCard chatBackground _comment
+    observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
 
   # Known NPC los fields, and those of the opt-in los.challengeOnSight
@@ -281,16 +317,19 @@ def check_unknown_fields(json_data)
 
   # Known NPC behavior fields
   known_behavior_fields = %w[
-    initiallyHidden immovable hostile facePlayer patrol staticSprite collisionBox _comment torch
+    initiallyHidden immovable hostile facePlayer facePlayerDistance personalSpace patrol staticSprite
+    collisionBox _comment torch
   ]
+  # behavior.personalSpace sub-fields (npc-behavior.js parseConfig)
+  known_personal_space_fields = %w[enabled distance backAwaySpeed backAwayDistance _comment]
 
   # Known eventMapping fields
   known_event_mapping_fields = %w[
-    eventPattern condition onceOnly maxTriggers cooldown fireOnlyWhenLoaded
+    eventPattern condition onceOnly maxTriggers cooldown fireOnlyWhenLoaded delayMs
     bark message barkDelay
-    targetKnot conversationMode background disableClose
+    targetKnot conversationMode background disableClose resume voiced
     patrolOverride setPatrolSpeed setDwellMultiplier setVisible
-    sendTimedMessage setGlobal completeTask skipTask unlockTask unlockAim
+    sendTimedMessage setGlobal completeTask skipTask unlockTask unlockAim unlockDoor
     _comment
   ]
 
@@ -306,8 +345,9 @@ def check_unknown_fields(json_data)
     md = obj['minigameData']
     return unless md.is_a?(Hash)
 
-    schema      = minigame_schemas[obj['type']] || minigame_schemas[obj['lockType']] || minigame_schemas[obj['id']]
-    schema_key  = [obj['type'], obj['lockType'], obj['id']].find { |k| k && minigame_schemas[k] }
+    # interactionType last: a generic 'pc' that opens a named minigame (blockchain_explorer).
+    schema      = minigame_schemas[obj['type']] || minigame_schemas[obj['lockType']] || minigame_schemas[obj['id']] || minigame_schemas[obj['interactionType']]
+    schema_key  = [obj['type'], obj['lockType'], obj['id'], obj['interactionType']].find { |k| k && minigame_schemas[k] }
     unless schema
       dispatch_key = obj['type'] || obj['lockType'] || obj['id']
       warnings << "⚠️ WARNING: '#{path}' has minigameData but no schema is defined for '#{dispatch_key}' — add an entry to minigame-data-schemas.json."
@@ -338,7 +378,7 @@ def check_unknown_fields(json_data)
     voice ttsVoice sender timestamp avatar sprite
     collection_group onRead onPickup onInteract
     lockType requires opens_lock key_id keyPins card_id difficulty
-    passwordHint showHint showKeyboard maxAttempts
+    passwordHint showHint showKeyboard maxAttempts pinLength
     postitNote showPostit
     hasFingerprint fingerprintOwner fingerprintDifficulty fingerprintQuality
     fingerprintOwnerName fingerprintPattern fingerprintSurface fingerprintCandidates biometricMatchThreshold
@@ -346,13 +386,13 @@ def check_unknown_fields(json_data)
     hacktivityMode vm acceptsVms flags flagRewards
     mode onAbort onLaunch abortConfirmText launchConfirmText
     itemsHeld contents triggerOnInteract
-    minigameData
+    minigameData interactionType
     gateVar sealedMessage openableReadyMessage
     puzzle_graph_role puzzle_graph_aim puzzle_graph_unlocks
     puzzle_graph_and_with puzzle_graph_reveals puzzle_graph_optional puzzle_graph_note
     storyPath currentKnot
     completesTask completesTaskOnOpen
-    puzzle_graph_links
+    puzzle_graph_links hintOnlyFlags acceptsVmLabels
     _comment
   ]
 
@@ -411,6 +451,28 @@ def check_unknown_fields(json_data)
               warnings << "⚠️ WARNING: '#{npc_path}/behavior' has unknown field '#{key}' — this field will be ignored by the game engine."
             end
           end
+          fpd = npc['behavior']['facePlayerDistance']
+          if npc['behavior'].key?('facePlayerDistance') && !(fpd.is_a?(Numeric) && fpd > 0)
+            warnings << "⚠️ WARNING: '#{npc_path}/behavior/facePlayerDistance' should be a positive number of pixels " \
+                        "(default 96); #{fpd.inspect} falls back to the default."
+          end
+          ps = npc['behavior']['personalSpace']
+          if npc['behavior'].key?('personalSpace')
+            if ps.is_a?(Hash)
+              ps.each_key do |key|
+                next if known_personal_space_fields.include?(key)
+                warnings << "⚠️ WARNING: '#{npc_path}/behavior/personalSpace' has unknown field '#{key}' — " \
+                            "known: #{(known_personal_space_fields - ['_comment']).join(', ')}."
+              end
+              if !ps.key?('enabled') && ps.keys.any? { |k| %w[distance backAwaySpeed backAwayDistance].include?(k) }
+                warnings << "⚠️ WARNING: '#{npc_path}/behavior/personalSpace' sets distances but not \"enabled\": true, " \
+                            "so the NPC never backs away."
+              end
+            else
+              warnings << "⚠️ WARNING: '#{npc_path}/behavior/personalSpace' should be an object " \
+                          "{ enabled, distance, backAwaySpeed, backAwayDistance }; #{ps.inspect} is ignored."
+            end
+          end
         end
 
         # Check los fields, and the opt-in challengeOnSight inside it (npc-sight-challenge.js)
@@ -445,6 +507,11 @@ def check_unknown_fields(json_data)
             unless known_event_mapping_fields.include?(key)
               warnings << "⚠️ WARNING: '#{mapping_path}' has unknown field '#{key}' — this field will be ignored by the game engine."
             end
+          end
+          # unlockDoor (F19): each room it names must exist, or the server refuses the unlock
+          [mapping['unlockDoor']].flatten.compact.each do |rid|
+            next if rid.is_a?(String) && json_data['rooms'].is_a?(Hash) && json_data['rooms'].key?(rid)
+            warnings << "❌ ERROR: '#{mapping_path}/unlockDoor' names room #{rid.inspect}, which is not a room in this scenario."
           end
         end
       end
@@ -626,6 +693,97 @@ def check_ink_dialogue_hazards(ink_lines, source_ink_path, valid_speakers)
   issues
 end
 
+# Headless NPC records (social build item 0.5; data contract 00 S8): one per
+# social.characters entry with an emailRecord. The id is the character's
+# channels.email (an entry without one has no record); npcType "phone", phoneId
+# "mail_only", no room. Mirrors BreakEscape::Game.headless_npc_records and
+# public/break_escape/js/systems/scenario-npc-records.js. A record that reuses a
+# room NPC's id is dropped (the room NPC wins). Returns [[record, path], ...];
+# a scenario with no `social` key has none.
+def headless_npc_records(json_data)
+  social = json_data.is_a?(Hash) ? json_data['social'] : nil
+  characters = social.is_a?(Hash) ? social['characters'] : nil
+  return [] unless characters.is_a?(Hash)
+
+  room_ids = Set.new
+  if json_data['rooms'].is_a?(Hash)
+    json_data['rooms'].each_value do |room|
+      next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
+
+      room['npcs'].each { |npc| room_ids << npc['id'] if npc.is_a?(Hash) }
+    end
+  end
+  characters.filter_map do |character_id, character|
+    next unless character.is_a?(Hash)
+
+    record = character['emailRecord']
+    record_id = character['channels'].is_a?(Hash) ? character['channels']['email'] : nil
+    next unless record.is_a?(Hash) && record_id.is_a?(String) && !record_id.empty?
+    next if room_ids.include?(record_id)
+
+    npc = record.merge(
+      'id' => record_id,
+      'displayName' => record['displayName'] || character['displayName'] || record_id,
+      'npcType' => 'phone',
+      'phoneId' => 'mail_only',
+      'itemsHeld' => record['itemsHeld'].is_a?(Array) ? record['itemsHeld'] : []
+    )
+    [npc, "social/characters/#{character_id}/emailRecord"]
+  end
+end
+
+# Every NPC record: each room's npcs, in room order, then the headless records.
+# Returns [[npc, path], ...]. With no `social` key, exactly the room NPCs.
+def scenario_npc_records(json_data)
+  records = []
+  json_data['rooms']&.each do |room_id, room|
+    room['npcs']&.each_with_index { |npc, idx| records << [npc, "rooms/#{room_id}/npcs[#{idx}]"] }
+  end
+  records + headless_npc_records(json_data)
+end
+
+# Check for #give_item tags left after the last line of text they belong to.
+# A tag on its own line attaches to the next line of text below it (inkjs gives it
+# with that line's Continue(), and every chat reads tags line by line), so a tag
+# between two lines of text fires with the second one: that is the README's
+# "above the line it belongs to" and is fine (DOCS_GAPS gap 24). The case to warn
+# on is a tag after text with no text directly below it (a divert, choice, gather,
+# brace or the end of the file next): it then fires on whatever line prints next,
+# often in another knot, or with no line at all.
+def give_item_placement_issues(ink_lines, source_ink_path)
+  issues = []
+  ink_lines.each_with_index do |line, i|
+    stripped = line.strip
+    next unless stripped.start_with?('#give_item:')
+
+    # Find the nearest preceding non-blank line
+    j = i - 1
+    j -= 1 while j >= 0 && ink_lines[j].strip.empty?
+    next if j < 0
+
+    prev = ink_lines[j].strip
+    # Skip if preceding line is a tag, choice, divert, code, knot/stitch header, comment, or brace
+    next if prev.start_with?('#', '*', '+', '->', '~', '=', '//', '{', '}')
+    next if prev.empty?
+
+    # Skip if a line of text follows (past blank lines and further tag lines):
+    # the tag belongs to that line
+    k = i + 1
+    k += 1 while k < ink_lines.size && (ink_lines[k].strip.empty? || ink_lines[k].strip.start_with?('#'))
+    if k < ink_lines.size
+      nxt = ink_lines[k].strip
+      next unless nxt.start_with?('*', '+', '-', '<-', '~', '=', '//', '{', '}')
+    end
+
+    item_type = stripped.sub(/^#give_item:/, '').strip
+    issues << "⚠️ WARNING: '#{source_ink_path}' line #{i + 1}: '#give_item:#{item_type}' appears after " \
+              "a text/dialogue line. Move '#give_item:#{item_type}' to the line immediately BEFORE " \
+              "the dialogue so the item transfer fires on the same story.Continue() call. " \
+              "Wrong: dialogue → tag. Correct: tag → dialogue."
+  end
+  issues
+end
+
 def check_ink_files(json_data, base_dir, scenario_dir = nil)
   issues = []
   ink_files_to_check = Set.new
@@ -633,26 +791,21 @@ def check_ink_files(json_data, base_dir, scenario_dir = nil)
 
   # Every id / displayName the engine's character registry will know about.
   valid_speakers = Set.new
-  json_data['rooms']&.each_value do |room|
-    room['npcs']&.each do |npc|
-      valid_speakers << npc['id'].to_s.downcase if npc['id']
-      valid_speakers << npc['displayName'].to_s.downcase if npc['displayName']
-    end
+  scenario_npc_records(json_data).each do |npc, _path|
+    valid_speakers << npc['id'].to_s.downcase if npc['id']
+    valid_speakers << npc['displayName'].to_s.downcase if npc['displayName']
   end
   if json_data['player']
     valid_speakers << json_data['player']['id'].to_s.downcase if json_data['player']['id']
     valid_speakers << json_data['player']['displayName'].to_s.downcase if json_data['player']['displayName']
   end
 
-  # Collect all referenced ink files from NPCs
-  json_data['rooms']&.each do |room_id, room|
-    room['npcs']&.each_with_index do |npc, idx|
-      if npc['storyPath']
-        path = "rooms/#{room_id}/npcs[#{idx}]"
-        items_held = npc['itemsHeld'] || []
-        items_held_types = (npc['itemsHeld'] || []).map { |item| item['type'] }.compact
-        ink_files_to_check.add({ path: path, storyPath: npc['storyPath'], items_held_types: items_held_types, items_held: items_held })
-      end
+  # Collect all referenced ink files from NPCs (room NPCs and headless records)
+  scenario_npc_records(json_data).each do |npc, path|
+    if npc['storyPath']
+      items_held = npc['itemsHeld'] || []
+      items_held_types = (npc['itemsHeld'] || []).map { |item| item['type'] }.compact
+      ink_files_to_check.add({ path: path, storyPath: npc['storyPath'], items_held_types: items_held_types, items_held: items_held })
     end
   end
 
@@ -704,34 +857,9 @@ def check_ink_files(json_data, base_dir, scenario_dir = nil)
         issues << "❌ INVALID: '#{npc_path}' references ink file '#{source_ink_path}' but compilation failed: #{e.message}"
       end
 
-      # Check for #give_item tags placed after a dialogue/text line.
-      # In Break Escape, the tag must appear BEFORE the dialogue line so that the item transfer
-      # fires on the same story.Continue() call as the text that describes it. A tag on the
-      # line immediately after dialogue is attached to that preceding text in Ink semantics,
-      # which in some engine paths causes the tag to fire on a later Continue() with no NPC
-      # context, silently dropping the item give.
       begin
         ink_lines = File.readlines(full_ink_path)
-        ink_lines.each_with_index do |line, i|
-          stripped = line.strip
-          next unless stripped.start_with?('#give_item:')
-
-          # Find the nearest preceding non-blank line
-          j = i - 1
-          j -= 1 while j >= 0 && ink_lines[j].strip.empty?
-          next if j < 0
-
-          prev = ink_lines[j].strip
-          # Skip if preceding line is a tag, choice, divert, code, knot/stitch header, comment, or brace
-          next if prev.start_with?('#', '*', '+', '->', '~', '=', '//', '{', '}')
-          next if prev.empty?
-
-          item_type = stripped.sub(/^#give_item:/, '').strip
-          issues << "⚠️ WARNING: '#{source_ink_path}' line #{i + 1}: '#give_item:#{item_type}' appears after " \
-                    "a text/dialogue line. Move '#give_item:#{item_type}' to the line immediately BEFORE " \
-                    "the dialogue so the item transfer fires on the same story.Continue() call. " \
-                    "Wrong: dialogue → tag. Correct: tag → dialogue."
-        end
+        issues.concat(give_item_placement_issues(ink_lines, source_ink_path))
 
         # Cross-reference: every #give_item:type used in this file must match an item
         # in the NPC's itemsHeld array. If not, the give will silently fail at runtime.
@@ -1052,7 +1180,8 @@ def check_objectives_wiring(json_data, base_dir)
   # eventMapping fallback (keyed to its KO global) for the second one.
   # Reference: m01_first_contact gives every conversation-gated task a
   # taskOnKO (e.g. dr_sarah_kim→meet_dr_kim, derek_lawson→confront_derek).
-  # Skipped when the scenario sets "disableAttacks": true.
+  # Skipped when the scenario sets "disableAttacks": true. A task one of whose completing
+  # NPCs has "koImmune": true is KO-safe.
   # ─────────────────────────────────────────────────────────────
   begin
     # Tasks completed via any eventMapping (phones, handlers, objects, rooms) — KO-safe.
@@ -1066,10 +1195,13 @@ def check_objectives_wiring(json_data, base_dir)
       end
     end
 
+    # NPCs with koImmune: true can't be knocked out, so their conversations are KO-safe.
+    ko_immune_ids = Set.new
     json_data['rooms']&.each do |_room_id, room|
       room['npcs']&.each do |npc|
         scan_event_mappings.call(npc['eventMappings'])
         taskonko_tasks << npc['taskOnKO'] if npc['taskOnKO']
+        ko_immune_ids << npc['id'] if npc['koImmune'] == true
       end
       room['objects']&.each { |obj| scan_event_mappings.call(obj['eventMappings']) }
     end
@@ -1079,21 +1211,19 @@ def check_objectives_wiring(json_data, base_dir)
     # NPC is knocked out. A '#complete_task:' tag in such a phone NPC's ink is a KO fallback for
     # the knocked-out NPC (m06 Satoshi, m05 Patricia), so remember the ink per KO'd NPC id.
     ko_phone_ink = Hash.new { |h, k| h[k] = [] }
-    json_data['rooms']&.each do |_room_id, room|
-      room['npcs']&.each do |npc|
-        next unless npc['npcType'] == 'phone' && npc['storyPath']
-        ko_ids = Array(npc['eventMappings']).map { |m| m.is_a?(Hash) && m['eventPattern'].to_s[/\Anpc_ko:(.+)\z/, 1] }.compact
-        next if ko_ids.empty?
-        ink_text = nil
-        [npc['storyPath'].sub(/\.json$/, '.ink'), npc['storyPath'].sub(/\.ink$/, '.json')].each do |rel|
-          full = File.join(base_dir, rel)
-          if File.exist?(full)
-            ink_text = File.read(full)
-            break
-          end
+    scenario_npc_records(json_data).each do |npc, _path|
+      next unless npc['npcType'] == 'phone' && npc['storyPath']
+      ko_ids = Array(npc['eventMappings']).map { |m| m.is_a?(Hash) && m['eventPattern'].to_s[/\Anpc_ko:(.+)\z/, 1] }.compact
+      next if ko_ids.empty?
+      ink_text = nil
+      [npc['storyPath'].sub(/\.json$/, '.ink'), npc['storyPath'].sub(/\.ink$/, '.json')].each do |rel|
+        full = File.join(base_dir, rel)
+        if File.exist?(full)
+          ink_text = File.read(full)
+          break
         end
-        ko_ids.each { |kid| ko_phone_ink[kid] << ink_text } if ink_text
       end
+      ko_ids.each { |kid| ko_phone_ink[kid] << ink_text } if ink_text
     end
 
     # Required (non-optional) tasks and their types.
@@ -1184,6 +1314,7 @@ def check_objectives_wiring(json_data, base_dir)
       next if event_completed_tasks.include?(tid)          # eventMapping fallback exists
       next if taskonko_tasks.include?(tid)                 # some NPC's taskOnKO covers it
       next if sources.any? { |s| s[:taskonko_match] }      # a completing NPC has taskOnKO for it
+      next if sources.any? { |s| ko_immune_ids.include?(s[:npc_id]) } # a completing NPC can't be KO'd (koImmune)
       # every completing NPC has a KO-triggered phone conversation whose ink also completes the task
       next if sources.all? { |s| ko_phone_ink[s[:npc_id]].any? { |c| c.include?("complete_task:#{tid}") } }
 
@@ -1595,6 +1726,164 @@ def check_lock_credentials(json_data)
   issues
 end
 
+# ─────────────────────────────────────────────────────────────
+# PIN locks the pad can't open. The PIN pad (minigames/pin/pin-minigame.js)
+# has digit keys only and takes exactly `pinLength` digits, 4 if none is sent.
+# The PIN never reaches the client, so the server sends its length as
+# pinLength (Game.set_pin_length!), overriding an authored pinLength. So:
+#   - a PIN with anything but digits can never be typed;
+#   - an authored pinLength that disagrees with the PIN is wrong (the server
+#     ignores it; before Game.set_pin_length! it made the lock unsolvable);
+#   - a locked PIN lock with no PIN is checked against "" and never opens,
+#     unless something else (an unlock_door event, a flag reward) opens it.
+# ─────────────────────────────────────────────────────────────
+def check_pin_locks(json_data)
+  issues = []
+  walk = lambda do |node, path|
+    case node
+    when Array then node.each_with_index { |n, i| walk.call(n, "#{path}[#{i}]") }
+    when Hash
+      if node['lockType'] == 'pin'
+        where = "'#{path}'#{node['name'] ? " (#{node['name']})" : ''}"
+        pin = node['requires']
+        declared = node['pinLength']
+        if pin.nil? || pin.to_s.empty?
+          if node['locked']
+            issues << "⚠️ WARNING: #{where} is a locked PIN lock with no 'requires' PIN. The server checks guesses " \
+                      "against an empty PIN, so the pad never opens it; only an unlock_door event or flag reward can."
+          end
+        elsif !pin.is_a?(String) && !pin.is_a?(Integer)
+          issues << "❌ INVALID: #{where} PIN lock 'requires' must be a string of digits, got #{pin.class}."
+        elsif pin.to_s !~ /\A\d+\z/
+          issues << "❌ INVALID: #{where} PIN '#{pin}' has characters other than digits. The PIN pad has keys 0-9 " \
+                    "only, so it can never be entered. Use lockType 'password' for letters, or a digits-only PIN."
+        elsif !declared.nil? && declared != pin.to_s.length
+          issues << "❌ INVALID: #{where} has pinLength #{declared.inspect} but its PIN is #{pin.to_s.length} digits. " \
+                    "The server sends the PIN's own length, so remove pinLength (it is not needed) or fix the PIN."
+        end
+      end
+      node.each { |k, v| walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}") }
+    end
+  end
+  walk.call(json_data, '')
+  issues
+end
+
+# ─────────────────────────────────────────────────────────────
+# Patrol legs the re-target timer cuts short, and lockpick catches that name a lock
+# the NPC can't see being picked (m02 Val and Gary).
+#
+# 1. npc-behavior.js parseConfig: patrol.speed defaults to 100 px/s and
+#    patrol.changeDirectionInterval to 3000 ms. Waypoints are room-relative TILES
+#    (world = room origin + x * TILE_SIZE, TILE_SIZE 32; validateWaypoints). An engine that
+#    re-targets every interval cuts a leg longer than speed * interval short, so the NPC never
+#    arrives or dwells (m02 Val: 3.6 s legs against the 3 s default). The current engine
+#    exempts waypoint patrols (_isWaypointPatrol: only a stall of one whole interval
+#    re-targets), so this only fires when that exemption is missing from npc-behavior.js
+#    (pass engine_cuts_legs: true to force it). Legs are straight lines between consecutive
+#    waypoints of one room (wrapping last to first in sequential mode); the walked path is
+#    never shorter. Random mode picks any waypoint next, so every pair counts.
+# 2. A lockpick_used_in_view mapping whose condition tests
+#    data.lockable.scenarioData.id === 'x' needs a lock with that id that can actually be
+#    picked (locked, lockType 'key'), inside the NPC's own room: the catch gate only watches
+#    the player's room and the lock's room (lockpick-catch.js lockpickWatchRooms), and a
+#    container's room is the one it loaded in. Whether the NPC's room has any pickable lock
+#    at all is check_recurring_bugs.
+# ─────────────────────────────────────────────────────────────
+PATROL_DEFAULT_SPEED = 100
+PATROL_DEFAULT_INTERVAL = 3000
+PATROL_TILE_PX = 32
+PATROL_LEG_MARGIN = 0.9
+
+def check_npc_patrol_and_catch_locks(json_data, repo_root = nil, engine_cuts_legs: nil)
+  issues = []
+  rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+
+  if engine_cuts_legs.nil?
+    behavior_js = repo_root && File.join(repo_root, 'public/break_escape/js/systems/npc-behavior.js')
+    engine_cuts_legs = !!(behavior_js && File.exist?(behavior_js) && !File.read(behavior_js).include?('_isWaypointPatrol'))
+  end
+
+  each_npc = lambda do |&blk|
+    rooms.each do |rid, room|
+      next unless room.is_a?(Hash)
+      Array(room['npcs']).each_with_index { |npc, i| blk.call(rid, i, npc) if npc.is_a?(Hash) }
+    end
+  end
+
+  # --- 1. patrol legs longer than the re-target interval -------------------------------------
+  if engine_cuts_legs
+    each_npc.call do |rid, i, npc|
+      patrol = npc.dig('behavior', 'patrol')
+      next unless patrol.is_a?(Hash) && patrol['enabled'] != false
+      speed = patrol['speed'].is_a?(Numeric) && patrol['speed'] > 0 ? patrol['speed'] : PATROL_DEFAULT_SPEED
+      interval = patrol['changeDirectionInterval'].is_a?(Numeric) && patrol['changeDirectionInterval'] > 0 ? patrol['changeDirectionInterval'] : PATROL_DEFAULT_INTERVAL
+      random_mode = patrol['waypointMode'] == 'random'
+      lists = []
+      lists << [Array(patrol['waypoints']), "rooms/#{rid}/npcs[#{i}]"] if patrol['waypoints'].is_a?(Array)
+      if patrol['multiRoom'] && patrol['route'].is_a?(Array)
+        patrol['route'].each_with_index { |seg, si| lists << [Array(seg['waypoints']), "rooms/#{rid}/npcs[#{i}]/route[#{si}]"] if seg.is_a?(Hash) }
+      end
+      lists.each do |wps, where|
+        wps = wps.select { |w| w.is_a?(Hash) && w['x'].is_a?(Numeric) && w['y'].is_a?(Numeric) }
+        next if wps.length < 2
+        pairs = if random_mode
+                  (0...wps.length).to_a.combination(2).to_a
+                else
+                  (0...wps.length).map { |k| [k, (k + 1) % wps.length] }.uniq { |a, b| [a, b].sort }
+                end
+        pairs.each do |a, b|
+          px = Math.hypot(wps[b]['x'] - wps[a]['x'], wps[b]['y'] - wps[a]['y']) * PATROL_TILE_PX
+          ms = px / speed * 1000
+          next unless ms > interval * PATROL_LEG_MARGIN
+          issues << "⚠️ WARNING: '#{where}' (#{npc['id']}) patrol leg waypoint #{a} (#{wps[a]['x']},#{wps[a]['y']}) to " \
+                    "waypoint #{b} (#{wps[b]['x']},#{wps[b]['y']}) is #{px.round} px, #{(ms / 1000.0).round(1)} s at speed #{speed}, " \
+                    "but changeDirectionInterval is #{(interval / 1000.0).round(1)} s. The re-target timer fires before " \
+                    "the NPC arrives, so it never reaches or dwells at that waypoint (m02 Val). Raise changeDirectionInterval " \
+                    "to at least #{((ms * 1.25) / 500.0).ceil * 500} ms, shorten the leg or raise the speed."
+        end
+      end
+    end
+  end
+
+  # --- 2. catch conditions that name a lock the NPC can't see picked --------------------------
+  # id => [[room, locked_key?]] for every object, nested contents included
+  objects_by_id = Hash.new { |h, k| h[k] = [] }
+  collect = lambda do |list, rid|
+    Array(list).each do |o|
+      next unless o.is_a?(Hash)
+      objects_by_id[o['id']] << [rid, o['locked'] == true && o['lockType'] == 'key'] if o['id'].is_a?(String)
+      collect.call(o['contents'], rid)
+    end
+  end
+  rooms.each { |rid, room| collect.call(room['objects'], rid) if room.is_a?(Hash) }
+
+  each_npc.call do |rid, i, npc|
+    Array(npc['eventMappings']).each_with_index do |m, mi|
+      next unless m.is_a?(Hash) && m['eventPattern'] == 'lockpick_used_in_view' && m['condition'].is_a?(String)
+      cond = m['condition']
+      ids = cond.scan(/data\.lockable\.scenarioData\.id\s*={2,3}\s*['"]([^'"]+)['"]/).flatten
+      next if ids.empty?
+      mpath = "rooms/#{rid}/npcs[#{i}]/eventMappings[#{mi}]"
+      ids.uniq.each do |id|
+        found = objects_by_id[id]
+        if found.empty?
+          issues << "⚠️ WARNING: '#{mpath}' (#{npc['id']}) only catches a pick of the lock with id '#{id}', but no object in " \
+                    "the scenario has that id, so the condition is never true and the catch never fires. Fix the id."
+        elsif found.none? { |r, _| r == rid }
+          issues << "⚠️ WARNING: '#{mpath}' (#{npc['id']}) only catches a pick of '#{id}', which is in #{found.map(&:first).uniq.map { |r| "'#{r}'" }.join(', ')}, " \
+                    "not '#{rid}'. The catch gate watches only the player's room and the lock's room, so an NPC in '#{rid}' " \
+                    "never sees it picked. Move the NPC, or the lock."
+        elsif found.none? { |r, pickable| r == rid && pickable }
+          issues << "⚠️ WARNING: '#{mpath}' (#{npc['id']}) only catches a pick of '#{id}', but that object isn't a locked " \
+                    "lockType 'key' lock, so the lockpick minigame never opens on it and the catch never fires."
+        end
+      end
+    end
+  end
+  issues
+end
+
 def check_common_issues(json_data, valid_item_types = nil)
   issues = []
 
@@ -1758,7 +2047,9 @@ def check_common_issues(json_data, valid_item_types = nil)
     aim_path = "objectives/#{aim['aimId']}"
     next unless aim['missionConclusion']
     if aim['conclusionScreen'].nil?
-      issues << "⚠️ WARNING: #{aim_path} has missionConclusion:true but no conclusionScreen — the player will see no end-of-mission overlay."
+      issues << "⚠️ WARNING: #{aim_path} has missionConclusion:true but no conclusionScreen — the player will see no end-of-mission overlay. " \
+                "Choose one per scenario: { \"type\": \"bond_visualiser\" } for a story mission (the credits, rolled from a music event), " \
+                "or { \"type\": \"success\", \"title\": \"...\" } for a short training episode (see the ending convention in README_scenario_design.md)."
     end
     Array(aim.dig('concludeRequires', 'tasksCompleted')).each do |task_id|
       unless all_task_ids.include?(task_id)
@@ -2167,6 +2458,21 @@ def check_common_issues(json_data, valid_item_types = nil)
             has_hostile_npcs = true
           end
 
+          # koImmune: the player can't fight or knock out this NPC (npc-hostile.js isNPCKOImmune)
+          if npc.key?('koImmune')
+            if npc['koImmune'] != true && npc['koImmune'] != false
+              issues << "❌ INVALID: '#{path}' koImmune must be true or false (got #{npc['koImmune'].inspect})."
+            elsif npc['koImmune'] == true
+              dead = %w[taskOnKO globalVarOnKO].select { |k| npc[k] }
+              if dead.any?
+                issues << "⚠️ WARNING: '#{path}' has koImmune: true, so it can never be knocked out and its #{dead.join(' and ')} never fires. Drop #{dead.length == 1 ? 'it' : 'them'}, or drop koImmune."
+              end
+              if npc['behavior'].is_a?(Hash) && npc['behavior']['hostile']
+                issues << "⚠️ WARNING: '#{path}' has koImmune: true and behavior.hostile: it would attack the player and can't be hit back. Drop one of them."
+              end
+            end
+          end
+
           # Track and cross-reference globalVarOnKO
           if npc['globalVarOnKO']
             has_global_var_on_ko = true
@@ -2306,9 +2612,10 @@ def check_common_issues(json_data, valid_item_types = nil)
                   # Event mappings that produce no visible effect are likely broken/incomplete.
                   # phone-chat trigger mappings are self-evidently visible (they open the chat), so skip that check.
                   has_effect = phone_chat_trigger || mapping['setGlobal'] || mapping['sendTimedMessage'] ||
-                               mapping['completeTask'] || mapping['unlockTask'] || mapping['unlockAim']
+                               mapping['completeTask'] || mapping['unlockTask'] || mapping['unlockAim'] ||
+                               mapping['unlockDoor'] || mapping['bark']
                   unless has_effect
-                    issues << "⚠️ WARNING: '#{mapping_path}' is a phone NPC event mapping with no visible effect (no setGlobal, sendTimedMessage, completeTask, unlockTask, or unlockAim). Use 'sendTimedMessage' to notify the player, and 'setGlobal' to flag that a new hub option is available. Example: { \"eventPattern\": \"...\", \"onceOnly\": true, \"setGlobal\": { \"flag_var\": true }, \"sendTimedMessage\": { \"delay\": 1000, \"message\": \"...\" } }"
+                    issues << "⚠️ WARNING: '#{mapping_path}' is a phone NPC event mapping with no visible effect (no setGlobal, sendTimedMessage, completeTask, unlockTask, unlockAim, unlockDoor, bark or phone-chat trigger). Use 'sendTimedMessage' to notify the player, and 'setGlobal' to flag that a new hub option is available. Example: { \"eventPattern\": \"...\", \"onceOnly\": true, \"setGlobal\": { \"flag_var\": true }, \"sendTimedMessage\": { \"delay\": 1000, \"message\": \"...\" } }"
                   end
                 end
               end
@@ -2455,6 +2762,19 @@ def check_common_issues(json_data, valid_item_types = nil)
     end
   end
 
+  # Headless NPC records (social.characters.*.emailRecord) are phone NPCs with no
+  # room: the same phoneId and storyPath checks as a room phone NPC. They are not
+  # phone contacts, so the phone-contact suggestions leave them out.
+  headless_npc_records(json_data).each do |npc, path|
+    all_npc_ids.add(npc['id'])
+    unless npc['phoneId']
+      issues << "❌ INVALID: '#{path}' (phone NPC) missing required 'phoneId' field - phone NPCs must specify which phone they appear on (e.g., 'player_phone')"
+    end
+    unless npc['storyPath']
+      issues << "❌ INVALID: '#{path}' (headless NPC record) missing required 'storyPath' field - a headless record must have a path to its Ink story JSON file"
+    end
+  end
+
   # Check phoneNPCs section - this is the OLD/INCORRECT format
   if json_data['phoneNPCs']
     json_data['phoneNPCs'].each_with_index do |npc, idx|
@@ -2539,8 +2859,9 @@ def check_common_issues(json_data, valid_item_types = nil)
               end
             end
 
-            # Validate background for person-chat cutscenes
-            unless mapping['background']
+            # Validate background for person-chat cutscenes. The engine falls back to the
+            # room's chatBackground (person-chat-background.js), so that counts too.
+            unless mapping['background'] || room['chatBackground']
               issues << "⚠️ WARNING: '#{mapping_path}' is a person-chat cutscene but has no 'background' property. Person-chat cutscenes should have a background image for better visual presentation (e.g., 'assets/backgrounds/hq1.png')"
             end
 
@@ -2565,6 +2886,18 @@ def check_common_issues(json_data, valid_item_types = nil)
           end
         end
       end
+    end
+  end
+
+  # The same phone-globals check for headless records (social.characters.*.emailRecord)
+  headless_npc_records(json_data).each do |npc, path|
+    next unless npc['storyPath'] && npc['eventMappings'].is_a?(Array)
+
+    cutscene_event_mappings = npc['eventMappings'].select do |m|
+      m['sendTimedMessage']&.key?('targetKnot') || m['sendTimedMessage']&.key?('conversationMode')
+    end
+    if cutscene_event_mappings.any?
+      mission_ending_phone_candidates << "💡 BEST PRACTICE: '#{path}' appears to be a mission-ending phone NPC with sendTimedMessage. Consider using event-driven cutscene architecture instead: 1) Add #set_global:variable_name:true tag in Ink story, 2) Add #exit_conversation tag to close phone, 3) Create separate person NPC with eventMapping listening for global_variable_changed:variable_name. See scenarios/m01_first_contact/scenario.json.erb for reference implementation"
     end
   end
 
@@ -3413,9 +3746,9 @@ def check_recurring_bugs(json_data, repo_root)
                   end
                   [v.is_a?(Hash) ? v['image'] : nil, "chatBackground[#{i}] image"]
                 end
-              else
+    else
                 [[val, 'chatBackground']]
-              end
+    end
     entries.each do |img, label|
       if !img.is_a?(String) || img.strip.empty?
         issues << "⚠️ WARNING: 'rooms/#{rid}' #{label} should be an image path such as 'assets/backgrounds/rooms/<name>.png'."
@@ -3435,6 +3768,136 @@ def check_recurring_bugs(json_data, repo_root)
       if !val.is_a?(String) || val.strip.empty? || !asset_exists.call(val)
         issues << "⚠️ WARNING: 'rooms/#{rid}/npcs[#{i}]' (#{npc['id']}) chatBackground '#{val}' is not an existing image under public/break_escape/."
       end
+    end
+  end
+
+  # NPC portraitVariants: alternative dialogue portraits (utils/portrait-variants.js), e.g. m05 Torres
+  # knocked out. Each picks by a globalVars condition and/or ko, or by name from a `# portrait:` tag.
+  declared_globals = (json_data['globalVariables'] || {}).keys
+  portrait_names = {}   # npc id => variant names, for the ink tag check below
+  known_variant_fields = %w[name condition ko spriteTalk spriteVisemes avatar _comment]
+  all_npcs.each do |rid, i, npc|
+    next unless npc.key?('portraitVariants')
+    path = "rooms/#{rid}/npcs[#{i}]"
+    list = npc['portraitVariants']
+    unless list.is_a?(Array)
+      issues << "⚠️ WARNING: '#{path}' (#{npc['id']}) portraitVariants should be a list of { condition/ko, spriteTalk, spriteVisemes, avatar }."
+      next
+    end
+    names = []
+    list.each_with_index do |v, j|
+      where = "'#{path}' (#{npc['id']}) portraitVariants[#{j}]"
+      unless v.is_a?(Hash)
+        issues << "⚠️ WARNING: #{where} should be an object."
+        next
+      end
+      (v.keys - known_variant_fields).each do |k|
+        issues << "⚠️ WARNING: #{where} has unknown field '#{k}' (known: #{known_variant_fields.join(', ')})."
+      end
+      if v.key?('name')
+        if !v['name'].is_a?(String) || v['name'] !~ /\A\w+\z/
+          issues << "⚠️ WARNING: #{where} name should be a word such as \"ko\" (letters, digits, _), so a # portrait:<name> tag can name it."
+        elsif v['name'] == 'base'
+          issues << "⚠️ WARNING: #{where} name 'base' is reserved: # portrait:base means the NPC's own fields."
+        elsif names.include?(v['name'])
+          issues << "⚠️ WARNING: #{where} name '#{v['name']}' is used twice; a # portrait tag picks the first."
+        else
+          names << v['name']
+        end
+      end
+      if v.key?('ko') && ![true, false].include?(v['ko'])
+        issues << "⚠️ WARNING: #{where} ko should be true (knocked out) or false."
+      end
+      cond = v['condition']
+      unless cond.nil?
+        if !cond.is_a?(String) || cond !~ /globalVars\.\w+/
+          issues << "⚠️ WARNING: #{where} condition should be a string such as \"globalVars.torres_ko === true\"."
+        else
+          cond.scan(/globalVars\.(\w+)/).flatten.uniq.each do |gv|
+            next if declared_globals.include?(gv)
+            issues << "⚠️ WARNING: #{where} condition uses globalVars.#{gv}, which is not in globalVariables, so the variant never shows."
+          end
+        end
+      end
+      if cond.nil? && !v.key?('ko') && !v.key?('name')
+        issues << "⚠️ WARNING: #{where} has no condition, ko or name, so nothing can ever select it."
+      end
+      fields = %w[spriteTalk spriteVisemes avatar].select { |f| v.key?(f) }
+      if fields.empty?
+        issues << "⚠️ WARNING: #{where} sets none of spriteTalk, spriteVisemes or avatar, so it changes nothing."
+      end
+      fields.each do |f|
+        val = v[f]
+        if !val.is_a?(String) || val.strip.empty?
+          issues << "⚠️ WARNING: #{where} #{f} should be an image path under public/break_escape/."
+        elsif !asset_exists.call(val)
+          issues << "⚠️ WARNING: #{where} #{f} '#{val}' does not exist under public/break_escape/, so the portrait falls back."
+        end
+      end
+    end
+    portrait_names[npc['id']] = names
+  end
+  # NPC spriteStyle: a see-through / glowing / flickering look over the frames, e.g. m08's ATHENA
+  # hologram (systems/npc-sprite-style.js). The engine clamps values; flag what it would ignore.
+  known_style_fields = %w[alpha glow glowStrength flicker light _comment]
+  all_npcs.each do |rid, i, npc|
+    next unless npc.key?('spriteStyle')
+    where = "'rooms/#{rid}/npcs[#{i}]' (#{npc['id']}) spriteStyle"
+    st = npc['spriteStyle']
+    unless st.is_a?(Hash)
+      issues << "⚠️ WARNING: #{where} should be an object such as { \"alpha\": 0.8, \"glow\": \"#7fe8ff\", \"flicker\": true }."
+      next
+    end
+    (st.keys - known_style_fields).each do |k|
+      issues << "⚠️ WARNING: #{where} has unknown field '#{k}' (known: #{known_style_fields.join(', ')})."
+    end
+    if st.key?('alpha') && (!st['alpha'].is_a?(Numeric) || st['alpha'] < 0.3 || st['alpha'] > 1)
+      issues << "⚠️ WARNING: #{where} alpha should be a number from 0.3 to 1 (lower is clamped to 0.3, so the NPC stays visible and clickable)."
+    end
+    hex = /\A#?[0-9a-fA-F]{6}\z/
+    if st.key?('glow') && !(st['glow'].is_a?(String) && st['glow'] =~ hex)
+      issues << "⚠️ WARNING: #{where} glow should be a colour such as \"#7fe8ff\"; anything else draws no glow."
+    end
+    if st.key?('glowStrength') && (!st['glowStrength'].is_a?(Numeric) || st['glowStrength'] < 0.5 || st['glowStrength'] > 6)
+      issues << "⚠️ WARNING: #{where} glowStrength should be a number from 0.5 to 6."
+    end
+    if st.key?('flicker') && ![true, false].include?(st['flicker'])
+      issues << "⚠️ WARNING: #{where} flicker should be true or false."
+    end
+    if st.key?('light')
+      l = st['light']
+      if !st.key?('glow')
+        issues << "⚠️ WARNING: #{where} light has no effect without a glow colour."
+      elsif l.is_a?(Hash)
+        (l.keys - %w[radius intensity color]).each do |k|
+          issues << "⚠️ WARNING: #{where} light has unknown field '#{k}' (known: radius, intensity, color)."
+        end
+        if l.key?('color') && !(l['color'].is_a?(String) && l['color'] =~ hex)
+          issues << "⚠️ WARNING: #{where} light color should be a colour such as \"#7fe8ff\"."
+        end
+      elsif ![true, false].include?(l)
+        issues << "⚠️ WARNING: #{where} light should be true, false or { radius, intensity, color }."
+      end
+    end
+    if (st.keys - ['_comment']).empty? || (st['alpha'].nil? || st['alpha'] == 1) && !st.key?('glow') && st['flicker'] != true
+      issues << "⚠️ WARNING: #{where} changes nothing (set alpha below 1, a glow colour or flicker)."
+    end
+  end
+
+  # `# portrait:<name>` / `# portrait:<npc_id>:<name>` in an NPC's ink must name one of the variants.
+  all_npcs.each do |rid, i, npc|
+    sp = npc['storyPath']
+    next unless sp.is_a?(String)
+    ink_path = File.join(repo_root, sp.sub(/\.json\z/, '.ink'))
+    next unless File.exist?(ink_path)
+    code = File.readlines(ink_path).reject { |l| l.strip.start_with?('//') }.join
+    code.scan(/#\s*portrait:\s*([\w:]+)/).flatten.uniq.each do |arg|
+      parts = arg.split(':')
+      target, name = parts.size == 2 ? parts : [npc['id'], parts[0]]
+      next if name == 'base'
+      next if (portrait_names[target] || []).include?(name)
+      issues << "⚠️ WARNING: #{sp.sub(/\.json\z/, '.ink')}: # portrait:#{arg} names no portraitVariants entry " \
+                "#{name.inspect} on #{target}, so the tag does nothing."
     end
   end
 
@@ -3508,6 +3971,8 @@ def check_recurring_bugs(json_data, repo_root)
     # 8. a VAR the ink reads but nothing ever sets: its condition is dead (m06 recruitment_accepted)
     code.scan(/^\s*VAR\s+(\w+)\s*=\s*(.+?)\s*$/).each do |var, default|
       next if globals.include?(var) || RECURRING_SYNCED_INK_VARS.include?(var)
+      # The pretext card writes these from the chosen blank (06 §5). The ink only reads them.
+      next if var.match?(/\Apretext_[A-Za-z0-9_]+_(?:name|value)\z/)
       next unless ['false', '0', '""'].include?(default.strip)
       assigned = code =~ /~\s*#{var}\s*(?:=|\+\+|--|\+=|-=)/ || code =~ /#\s*set_(?:variable|global):#{var}\b/
       next if assigned
@@ -3637,7 +4102,7 @@ def check_globals_never_read(json_data, repo_root)
           next
         elsif PASS4C_SET_KEYS_HASH.include?(k) && v.is_a?(Hash)
           v.each_key { |name| setters[name] ||= "#{path}/#{k}" }
-        elsif (k =~ /\AsetGlobal/ || k == 'globalVarOnKO') && v.is_a?(String)
+        elsif k != 'setGlobalPrefix' && (k =~ /\AsetGlobal/ || k == 'globalVarOnKO') && v.is_a?(String)
           setters[v] ||= "#{path}/#{k}"
         elsif k == 'setGlobal' && v.is_a?(String)
           setters[v] ||= "#{path}/#{k}"
@@ -3793,7 +4258,7 @@ def check_ink_global_collisions(json_data, repo_root)
         next if k == 'globalVariables'
         if PASS4C_SET_KEYS_HASH.include?(k) && v.is_a?(Hash)
           v.each_key { |name| scenario_writers[name] << "#{path}/#{k}" }
-        elsif (k == 'setGlobal' || k == 'globalVarOnKO' || k =~ /\AsetGlobal/) && v.is_a?(String)
+        elsif k != 'setGlobalPrefix' && (k == 'setGlobal' || k == 'globalVarOnKO' || k =~ /\AsetGlobal/) && v.is_a?(String)
           scenario_writers[v] << "#{path}/#{k}"
         else
           walk.call(v, "#{path}/#{k}")
@@ -3862,6 +4327,400 @@ def check_ink_global_collisions(json_data, repo_root)
                 "the scenario's global, say so in a comment on the VAR's line or directly above it (e.g. \"// Synced scenario global\")."
     end
   end
+  issues
+end
+
+# ============================================================================
+# CARRY-OVER: importGlobals / exportGlobals (docs/agents/CARRY_OVER_PLAN.md 2.8)
+# A reading mission imports another mission's exported globals as read-only
+# values, fixed when the game is created. Both ends are checked here.
+# ============================================================================
+
+CARRY_OVER_NAME_RE = /\A[a-z][a-z0-9]*_[a-z0-9_]+\z/.freeze
+CARRY_OVER_STRUCTURAL_MAPPING_KEYS = %w[setVisible completeTask unlockAim unlockTask skipTask emitEvent].freeze
+$carry_over_source_cache = {}
+
+# A triage set writes camelCase result globals (<setGlobalPrefix>reportRate), and a post check
+# imports the pre check's. Those names are set by the set's prefix, not chosen, so the lower_snake_case
+# rule does not apply to them: the prefix with {stage} filled by pre or post (or left as is) plus a
+# result suffix, the comparison.prePrefix, and the fixed baseline names the comparison reads.
+CARRY_OVER_PRE_NAMES = %w[triage_pre_percent triage_pre_reportRate triage_pre_done].freeze
+CARRY_OVER_RESULT_NAME_RE = /\A[A-Za-z_][A-Za-z0-9_]*\z/.freeze
+
+def carry_over_triage_result_name?(json_data, name)
+  return false unless name.is_a?(String) && name.match?(CARRY_OVER_RESULT_NAME_RE)
+  return true if CARRY_OVER_PRE_NAMES.include?(name)
+
+  sets = json_data.is_a?(Hash) ? json_data.dig('social', 'triageSets') : nil
+  return false unless sets.is_a?(Array)
+
+  sets.any? do |set|
+    next false unless set.is_a?(Hash)
+
+    prefixes = []
+    prefix = set.dig('outcome', 'setGlobalPrefix')
+    if prefix.is_a?(String) && !prefix.empty?
+      prefixes += prefix.include?('{stage}') ? %w[pre post training mission].map { |st| prefix.gsub('{stage}', st) } : [prefix]
+    end
+    pre = set.dig('comparison', 'prePrefix')
+    prefixes << pre if pre.is_a?(String) && !pre.empty?
+    prefixes.any? { |pf| TRIAGE_RESULT_SUFFIXES.any? { |suf| name == "#{pf}#{suf}" } }
+  end
+end
+
+# The name an import is known by in this mission (Game CarryOver.import_name).
+def carry_over_import_name(entry)
+  return nil unless entry.is_a?(Hash)
+  return entry['completed'].to_s if entry.key?('completed')
+  return entry['as'].to_s if entry['as'].is_a?(String) && !entry['as'].empty?
+
+  prefix = entry['from'].to_s[/\A((?:m|sis)\d\d)_/, 1]
+  prefix && entry['var'].is_a?(String) ? "#{prefix}_#{entry['var']}" : nil
+end
+
+# Before the other checks run: the imports become declared globals (with their
+# defaults), so every "is this global declared?" check accepts them. Returns the
+# original import list.
+def prepare_carry_over_globals(json_data)
+  imports = json_data['importGlobals']
+  return [] unless imports.is_a?(Array)
+
+  json_data['globalVariables'] = {} unless json_data['globalVariables'].is_a?(Hash)
+  imports.each do |entry|
+    name = carry_over_import_name(entry)
+    next if name.nil? || json_data['globalVariables'].key?(name)
+
+    json_data['globalVariables'][name] = entry.key?('completed') ? false : entry['default']
+  end
+  imports
+end
+
+def carry_over_ink_files(json_data, repo_root)
+  queue = []
+  walk = lambda do |node|
+    case node
+    when Hash
+      node.each do |k, v|
+        if k == 'storyPath' && v.is_a?(String)
+          queue << File.join(repo_root, v.sub(/\.json\z/, '.ink'))
+        else
+          walk.call(v)
+        end
+      end
+    when Array then node.each { |v| walk.call(v) }
+    end
+  end
+  walk.call(json_data)
+  files = []
+  until queue.empty?
+    f = queue.shift
+    next if files.include?(f) || !File.exist?(f)
+    files << f
+    File.readlines(f, encoding: 'UTF-8').each { |l| queue << File.expand_path($1, File.dirname(f)) if l =~ /^\s*INCLUDE\s+(\S+)/ }
+  end
+  files
+end
+
+# name => [[where, value-or-nil], ...] for every write in the scenario JSON.
+def carry_over_json_writes(json_data)
+  writes = Hash.new { |h, k| h[k] = [] }
+  walk = lambda do |node, path|
+    case node
+    when Hash
+      if node['type'] == 'set_global' && node['key'].is_a?(String)
+        writes[node['key']] << ["#{path} (applyActions set_global)", node['value']]
+      end
+      node.each do |k, v|
+        next if %w[globalVariables importGlobals exportGlobals].include?(k)
+        if PASS4C_SET_KEYS_HASH.include?(k) && v.is_a?(Hash)
+          v.each { |name, val| writes[name] << ["#{path}/#{k}", val] }
+        elsif k != 'setGlobalPrefix' && (k == 'setGlobal' || k == 'globalVarOnKO' || k =~ /\AsetGlobal/) && v.is_a?(String)
+          writes[v] << ["#{path}/#{k}", nil]
+        else
+          walk.call(v, "#{path}/#{k}")
+        end
+      end
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]") }
+    end
+  end
+  walk.call(json_data, '')
+  # A triage set's four result globals are written by the starter, not by ink or a
+  # scenario setter (05 N5). {stage} is filled the way the starter does: the
+  # workstation's stage, else the set's stage, else mission.
+  carry_over_record_triage_writes(json_data, writes)
+  writes
+end
+
+# Records <setGlobalPrefix>percent, reportRate, done and pass as writes.
+TRIAGE_RESULT_SUFFIXES = %w[percent reportRate done pass].freeze
+
+def carry_over_record_triage_writes(json_data, writes)
+  sets = json_data.is_a?(Hash) ? json_data.dig('social', 'triageSets') : nil
+  return unless sets.is_a?(Array)
+
+  by_id = {}
+  sets.each_with_index do |set, i|
+    by_id[set['id']] = i if set.is_a?(Hash) && set['id'].is_a?(String)
+  end
+
+  launches = Hash.new { |h, k| h[k] = [] }
+  each_obj = lambda do |obj|
+    return unless obj.is_a?(Hash)
+
+    if obj['type'] == 'triage-workstation'
+      md = obj['minigameData'].is_a?(Hash) ? obj['minigameData'] : {}
+      sid = md['triageSetId']
+      launches[sid] << md['stage'] if sid.is_a?(String) && by_id.key?(sid)
+    end
+    %w[contents itemsHeld].each { |k| Array(obj[k]).each { |child| each_obj.call(child) } }
+  end
+  rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+  rooms.each_value do |room|
+    next unless room.is_a?(Hash)
+
+    Array(room['objects']).each { |obj| each_obj.call(obj) }
+    Array(room['npcs']).each do |npc|
+      next unless npc.is_a?(Hash)
+
+      Array(npc['itemsHeld']).each { |obj| each_obj.call(obj) }
+    end
+  end
+  Array(json_data['startItemsInInventory']).each { |obj| each_obj.call(obj) }
+
+  sets.each_with_index do |set, i|
+    next unless set.is_a?(Hash)
+
+    prefix = set.dig('outcome', 'setGlobalPrefix')
+    next unless prefix.is_a?(String) && !prefix.empty?
+    next if prefix.gsub('{stage}', '') =~ /[{}]/
+
+    stages = if prefix.include?('{stage}')
+               found = set['id'].is_a?(String) ? launches[set['id']] : []
+               (found.empty? ? [nil] : found).map do |stage|
+                 if stage.is_a?(String) && !stage.empty?
+                   stage
+                 elsif set['stage'].is_a?(String) && !set['stage'].empty?
+                   set['stage']
+                 else
+                   'mission'
+                 end
+               end.uniq
+             else
+               [nil]
+             end
+    where = "/social/triageSets[#{i}] (triage starter)"
+    stages.each do |stage|
+      resolved = stage ? prefix.gsub('{stage}', stage) : prefix
+      TRIAGE_RESULT_SUFFIXES.each do |suffix|
+        name = "#{resolved}#{suffix}"
+        writes[name] << [where, nil] if name.match?(/\A[A-Za-z_][A-Za-z0-9_]*\z/)
+      end
+    end
+  end
+end
+
+# name => [[where, value-or-nil], ...] for every write in the mission's ink.
+def carry_over_ink_writes(ink_files, repo_root)
+  writes = Hash.new { |h, k| h[k] = [] }
+  ink_files.each do |f|
+    rel = f.sub("#{repo_root}/", '')
+    File.readlines(f, encoding: 'UTF-8').each_with_index do |raw, i|
+      line = raw.sub(%r{(^|\s)//.*$}, '\1')
+      if line =~ /^\s*~\s*(\w+)\s*=\s*(.+?)\s*$/
+        var, lit = $1, $2
+        writes[var] << ["#{rel}:#{i + 1}", lit[/\A"(.*)"\z/, 1]]
+      elsif line =~ /^\s*~\s*(\w+)\s*(?:\+\+|--|\+=|-=)/
+        writes[$1] << ["#{rel}:#{i + 1}", nil]
+      end
+      line.scan(/#\s*set_global:(\w+):([^\s#]*)/) { |n, v| writes[n] << ["#{rel}:#{i + 1}", v] }
+      line.scan(/#\s*set_variable:(\w+)(?:=([^\s#]*))?/) { |n, v| writes[n] << ["#{rel}:#{i + 1}", v] }
+    end
+  end
+  writes
+end
+
+def carry_over_load_source(scenarios_dir, from)
+  return $carry_over_source_cache[[scenarios_dir, from]] if $carry_over_source_cache.key?([scenarios_dir, from])
+
+  dir = File.join(scenarios_dir, from)
+  erb = File.join(dir, 'scenario.json.erb')
+  plain = File.join(dir, 'scenario.json')
+  data = if File.exist?(erb)
+           render_erb_to_json(erb)
+         elsif File.exist?(plain)
+           JSON.parse(File.read(plain))
+         end
+  $carry_over_source_cache[[scenarios_dir, from]] = data
+rescue StandardError => e
+  $carry_over_source_cache[[scenarios_dir, from]] = { '__error' => e.message.lines.first.to_s.strip }
+end
+
+# imports: the list prepare_carry_over_globals returned. own_globals: this
+# mission's globalVariables before the imports were merged in.
+def check_carry_over(json_data, repo_root, mission_name, scenarios_dir, imports, own_globals)
+  issues = []
+  imports = Array(imports)
+  exports = json_data['exportGlobals']
+  return issues if imports.empty? && exports.nil?
+
+  ink_files = carry_over_ink_files(json_data, repo_root)
+  ink_writes = carry_over_ink_writes(ink_files, repo_root)
+  json_writes = carry_over_json_writes(json_data)
+  own_globals = own_globals.is_a?(Hash) ? own_globals : {}
+
+  # ---- exports (this mission as a source) ----
+  unless exports.nil?
+    if !exports.is_a?(Array) || !exports.all? { |e| e.is_a?(String) }
+      issues << "❌ ERROR: exportGlobals must be a list of global names."
+    else
+      imported_names = imports.map { |e| carry_over_import_name(e) }.compact.reject { |n| own_globals.key?(n) }
+      exports.each do |name|
+        if imported_names.include?(name)
+          issues << "❌ ERROR: exportGlobals lists '#{name}', which this mission imports. Imports never pass on second-hand; " \
+                    "a later mission imports from the original source."
+        elsif !own_globals.key?(name)
+          issues << "❌ ERROR: exportGlobals lists '#{name}', which is not in this mission's globalVariables."
+        elsif ink_writes[name].empty? && json_writes[name].empty?
+          issues << "⚠️ WARNING: exported global '#{name}' is never written in this mission (no ink assignment, tag or " \
+                    "scenario setter), so every mission that imports it always sees the default."
+        end
+      end
+    end
+  end
+
+  # ---- imports (this mission as a reader) ----
+  names_seen = {}
+  imports.each_with_index do |entry, i|
+    at = "importGlobals[#{i}]"
+    unless entry.is_a?(Hash) && entry['from'].is_a?(String) && !entry['from'].empty?
+      issues << "❌ ERROR: #{at} needs a \"from\" (the source mission's folder name)."
+      next
+    end
+    from = entry['from']
+    name = carry_over_import_name(entry)
+    completed_form = entry.key?('completed')
+
+    if from == mission_name
+      issues << "❌ ERROR: #{at} imports from this mission itself (#{from})."
+      next
+    end
+    if completed_form && (entry.key?('var') || entry.key?('as') || entry.key?('default'))
+      issues << "❌ ERROR: #{at}: the \"completed\" form takes only \"from\" and \"completed\" (no var, as or default)."
+    end
+    if !completed_form && !entry['var'].is_a?(String)
+      issues << "❌ ERROR: #{at} needs a \"var\" (a global the source exports) or a \"completed\" name."
+      next
+    end
+    if name.nil?
+      issues << "❌ ERROR: #{at}: \"as\" is required when \"from\" (#{from}) doesn't start with an mNN_ or sisNN_ prefix."
+      next
+    end
+    if (name !~ CARRY_OVER_NAME_RE && !carry_over_triage_result_name?(json_data, name)) || name.start_with?('global_')
+      issues << "❌ ERROR: #{at}: imported name '#{name}' must be lower_snake_case with a prefix (e.g. m06_assets_seized), " \
+                "and must not start with global_."
+    end
+    if own_globals.key?(name)
+      issues << "❌ ERROR: #{at}: imported name '#{name}' collides with this mission's own globalVariables."
+      next
+    end
+    if names_seen.key?(name)
+      issues << "❌ ERROR: #{at}: imported name '#{name}' is already used by #{names_seen[name]}."
+    end
+    names_seen[name] = at
+
+    source = carry_over_load_source(scenarios_dir, from)
+    if source.nil?
+      issues << "❌ ERROR: #{at}: source mission '#{from}' not found (no #{from}/scenario.json.erb next to this mission)."
+    elsif source['__error']
+      issues << "❌ ERROR: #{at}: source mission '#{from}' failed to render: #{source['__error']}"
+    elsif !completed_form
+      var = entry['var']
+      sglobals = source['globalVariables'].is_a?(Hash) ? source['globalVariables'] : {}
+      if !entry.key?('default')
+        issues << "❌ ERROR: #{at}: '#{name}' needs a \"default\", the value used when the player never finished #{from}."
+      end
+      if !sglobals.key?(var)
+        issues << "❌ ERROR: #{at}: '#{var}' is not a global in #{from}'s globalVariables."
+      else
+        unless Array(source['exportGlobals']).include?(var)
+          issues << "❌ ERROR: #{at}: #{from} does not list '#{var}' in its exportGlobals. Add it there, so a rename in " \
+                    "#{from} is caught."
+        end
+        if entry.key?('default') && ink_global_value_type(entry['default']) != ink_global_value_type(sglobals[var])
+          issues << "❌ ERROR: #{at}: default #{entry['default'].inspect} for '#{name}' is not the same type as " \
+                    "#{from}'s own default for '#{var}' (#{sglobals[var].inspect})."
+        end
+        # String values this mission compares against that the source never assigns.
+        if sglobals[var].is_a?(String)
+          src_ink = carry_over_ink_writes(carry_over_ink_files(source, repo_root), repo_root)
+          src_json = carry_over_json_writes(source)
+          known = ([sglobals[var]] + (src_ink[var] + src_json[var]).map(&:last)).compact.map(&:to_s)
+          compared = []
+          ink_files.each do |f|
+            File.read(f, encoding: 'UTF-8').scan(/\b#{Regexp.escape(name)}\s*(?:==|!=)\s*"([^"]*)"/) { |(v)| compared << v }
+          end
+          json_strings = []
+          sw = lambda do |n|
+            case n
+            when Hash then n.each { |k, v| sw.call(v) unless k == 'importGlobals' }
+            when Array then n.each { |v| sw.call(v) }
+            when String then json_strings << n
+            end
+          end
+          sw.call(json_data)
+          json_strings.each do |s|
+            s.scan(/globalVars\.#{Regexp.escape(name)}\s*(?:===|!==|==|!=)\s*['"]([^'"]*)['"]/) { |(v)| compared << v }
+          end
+          (compared.uniq - known).each do |v|
+            issues << "⚠️ WARNING: '#{name}' is compared with \"#{v}\", a value #{from} never assigns to '#{var}' " \
+                      "(it assigns #{known.uniq.map(&:inspect).join(', ')})."
+          end
+        end
+      end
+    end
+
+    # Read-only: nothing in this mission may write an import.
+    (ink_writes[name] + json_writes[name]).each do |where, _|
+      issues << "❌ ERROR: imported global '#{name}' is written at #{where}. Imports are read-only: the server drops the " \
+                "write, and the value would differ from what was carried in."
+    end
+  end
+
+  # Solvability: the mission must be finishable with every import at its default.
+  imported = names_seen.keys
+  unless imported.empty?
+    Array(json_data['objectives']).each do |aim|
+      next unless aim.is_a?(Hash)
+      Array(aim.dig('concludeRequires', 'globals')).each do |g|
+        issues << "❌ ERROR: aim '#{aim['aimId']}' concludeRequires.globals uses imported '#{g}'. A player who never finished the " \
+                  "source could not end this mission." if imported.include?(g)
+      end
+    end
+    uc_walk = lambda do |node, path|
+      case node
+      when Hash
+        if node['unlockCondition'].is_a?(Hash) && imported.include?(node['unlockCondition']['globalVariable'])
+          issues << "❌ ERROR: #{path}/unlockCondition gates on imported '#{node['unlockCondition']['globalVariable']}'. " \
+                    "The mission must be solvable with every import at its default."
+        end
+        if node['eventPattern'].is_a?(String) && node['condition'].is_a?(String)
+          hit = imported.find { |g| node['condition'] =~ /(?<![\w])#{Regexp.escape(g)}(?!\w)/ }
+          structural = CARRY_OVER_STRUCTURAL_MAPPING_KEYS.select { |k| node.key?(k) }
+          if hit && structural.any?
+            issues << "⚠️ WARNING: #{path}: eventMapping on #{node['eventPattern']} has a condition on imported '#{hit}' and " \
+                      "changes the game (#{structural.join(', ')}). Check in a design review that the mission is still " \
+                      "solvable with every import at its default."
+          end
+        end
+        node.each { |k, v| uc_walk.call(v, "#{path}/#{k}") unless %w[importGlobals globalVariables].include?(k) }
+      when Array
+        node.each_with_index { |v, i| uc_walk.call(v, "#{path}[#{i}]") }
+      end
+    end
+    uc_walk.call(json_data, '')
+  end
+
   issues
 end
 
@@ -4149,6 +5008,100 @@ def unsupported_condition_syntax(condition, allow_includes:)
   problems.empty? ? nil : problems.join(' and ')
 end
 
+# R29 (VM integration review): every VM flag a mission's stations accept must be
+# load-bearing for the ending. A flag counts when the server can't conclude
+# without it: a submit_flags task matching it is in the conclusion aim's
+# concludeRequires.tasksCompleted, a flag lock taking it completes such a task
+# (completesTask), or its reward / launch choice sets a global listed in
+# concludeRequires.globals (for a launch device both choices must set it).
+# A flag that is none of these can be dropped from the critical path by a later
+# edit without anything noticing (m01 flag_3 was load-bearing only through the
+# finale's launch aim). Warning level: an optional or bonus flag is a valid
+# design, and says so in the message. hintOnlyFlags are not accepted, so they are
+# skipped. Scenarios with no concludeRequires are covered by the gate check.
+def check_vm_flags_load_bearing(json_data)
+  issues = []
+  aim = Array(json_data['objectives']).find { |a| a.is_a?(Hash) && a['missionConclusion'] }
+  return issues unless aim && aim['concludeRequires'].is_a?(Hash)
+
+  gate_tasks = Array(aim['concludeRequires']['tasksCompleted'])
+  gate_globals = Array(aim['concludeRequires']['globals'])
+  tasks = Array(json_data['objectives']).flat_map { |a| Array(a.is_a?(Hash) ? a['tasks'] : nil) }
+  gate_targets = tasks.select { |t| t['type'] == 'submit_flags' && gate_tasks.include?(t['taskId']) }
+                      .flat_map { |t| Array(t['targetFlags']) }
+
+  # Literal flag value -> "vm:flag_N", from the top-level flags block (vm_flags_json)
+  literal_refs = {}
+  (json_data['flags'].is_a?(Hash) ? json_data['flags'] : {}).each do |vm, by_n|
+    next unless by_n.is_a?(Hash)
+    by_n.each { |n, value| literal_refs[value.to_s.downcase] = "#{vm}:#{n}" if value.is_a?(String) }
+  end
+  ref_of = ->(entry) { entry.to_s.match?(/\A[\w.-]+:flag_\d+\z/) ? entry.to_s : literal_refs[entry.to_s.downcase] }
+
+  sets_gate_global = lambda do |hash|
+    hash.is_a?(Hash) && hash.any? { |k, v| gate_globals.include?(k) && v }
+  end
+
+  stations = []
+  locks = []
+  walk = lambda do |obj, path|
+    return unless obj.is_a?(Hash)
+    if %w[flag-station flag_station launch-device].include?(obj['type']) && obj['flags'].is_a?(Array)
+      stations << [obj, path]
+    elsif obj['lockType'] == 'flag' && obj['requires'].is_a?(String) && !obj['requires'].empty?
+      locks << [obj, path]
+    end
+    Array(obj['itemsHeld']).each_with_index { |i, idx| walk.call(i, "#{path}/itemsHeld[#{idx}]") }
+    Array(obj['contents']).each_with_index { |i, idx| walk.call(i, "#{path}/contents[#{idx}]") }
+  end
+  (json_data['rooms'] || {}).each do |room_id, room|
+    next unless room.is_a?(Hash)
+    Array(room['objects']).each_with_index { |o, i| walk.call(o, "rooms/#{room_id}/objects[#{i}]") }
+    Array(room['npcs']).each_with_index { |n, i| walk.call(n, "rooms/#{room_id}/npcs[#{i}]") }
+  end
+
+  stations.each do |obj, path|
+    vm = Array(obj['acceptsVms']).first
+    key = obj['id'].to_s.empty? ? obj['name'] : obj['id']
+    choice_ok = obj['type'] == 'launch-device' &&
+                sets_gate_global.call(obj.dig('onLaunch', 'setGlobal')) &&
+                sets_gate_global.call(obj.dig('onAbort', 'setGlobal'))
+    obj['flags'].each_with_index do |entry, i|
+      ids = []
+      ids << "#{vm}-flag#{i + 1}" if vm
+      ids << "#{key}:#{vm}-flag#{i + 1}" if vm && key
+      ref = ref_of.call(entry)
+      ids << ref if ref
+      next if (ids & gate_targets).any? || choice_ok
+
+      reward = obj['flagRewards'].is_a?(Array) ? obj['flagRewards'][i] : nil
+      next if reward.is_a?(Hash) && reward['type'] == 'set_global' && gate_globals.include?(reward['key'])
+
+      label = ref || "#{vm}-flag#{i + 1}"
+      issues << "⚠️ WARNING: '#{path}' (#{obj['name'] || key}) accepts VM flag #{label}, but nothing the " \
+                "conclusion aim's concludeRequires needs depends on it: no submit_flags task in " \
+                "tasksCompleted targets it (#{ids.map { |x| "\"#{x}\"" }.join(' or ')}), and it sets no " \
+                "concludeRequires global. The mission can conclude without it, and a later edit could drop " \
+                "it from the critical path unnoticed (R29). Add its task to concludeRequires.tasksCompleted, " \
+                "or leave it out only if this flag is meant to be optional."
+    end
+  end
+
+  locks.each do |obj, path|
+    ref = ref_of.call(obj['requires']) || obj['requires']
+    next if gate_targets.include?(ref)
+    next if obj['completesTask'] && gate_tasks.include?(obj['completesTask'])
+    next if Array(obj['flagRewards']).any? { |r| r.is_a?(Hash) && r['type'] == 'set_global' && gate_globals.include?(r['key']) }
+
+    issues << "⚠️ WARNING: '#{path}' (#{obj['name'] || obj['id']}) is a flag lock taking #{ref}, but the " \
+              "conclusion aim's concludeRequires doesn't depend on it (no gate task targets it or is its " \
+              "completesTask). The mission can conclude without this VM flag (R29). Add its task to " \
+              "concludeRequires.tasksCompleted, or leave it out only if the flag is meant to be optional."
+  end
+
+  issues
+end
+
 def check_engine_limits(json_data)
   issues = []
   rooms = json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
@@ -4169,7 +5122,7 @@ def check_engine_limits(json_data)
       mp = "#{holder_path}/eventMappings[#{i}]"
       if (bad = unsupported_condition_syntax(m['condition'], allow_includes: true))
         issues << "❌ INVALID: '#{mp}' condition \"#{m['condition']}\" uses #{bad}. npc-manager.js " \
-                  "safeEvaluateCondition supports only '&&'-joined simple terms (value/data.x/globalVars.x " \
+                  "safeEvaluateCondition supports only '&&'-joined simple terms (value/data.x[.y]/globalVars.x " \
                   "with ===, !==, >, <, >=, <=, '!' or .includes('…')), so this evaluates to false and the " \
                   "mapping never fires. Split it into simpler mappings, one per '||' branch."
       end
@@ -4264,6 +5217,65 @@ def check_engine_limits(json_data)
   end
   walk.call(json_data.reject { |k, _| k == 'objectives' }, '', nil)
 
+  issues.concat(check_or_in_global_conditions(json_data))
+  issues
+end
+
+# '||' (and parentheses) in the conditions the &&-only evaluators read, beyond the
+# eventMappings, timers and text/sprite/observation variants checked above (m04 L3):
+# lighting (scenario and room blocks, their variants, emitter variants), NPC
+# behavior.torch, chatBackground views and gameClock anchors all go through conditional-text.js
+# evaluateGlobalCondition, which splits on '&&' only and reads the first globalVars
+# name of a term, so "globalVars.a || globalVars.b" is just "globalVars.a".
+# Skipped: music events and credits (run as JS by scenario-music-events.js) and
+# command-board timeline/statusRows and NPC portraitVariants (global-condition.js, which supports '||').
+# Any other condition with '||' gets a softer warning naming its path.
+def check_or_in_global_conditions(json_data)
+  issues = []
+  checked_elsewhere = /(\A|\/)(eventMappings|timers|observationVariants|spriteVariants|textVariants)(\[|\/|\z)/
+  walk = nil
+  walk = lambda do |node, path, ctx|
+    case node
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{path}[#{i}]", ctx) }
+    when Hash
+      cond = node['condition']
+      if cond.is_a?(String) && !path.match?(checked_elsewhere)
+        case ctx
+        when :lighting, :torch, :chat_background, :clock
+          if (bad = unsupported_condition_syntax(cond, allow_includes: false))
+            where = { lighting: 'lighting', torch: 'NPC torch', chat_background: 'chatBackground', clock: 'gameClock anchor' }[ctx]
+            issues << "❌ INVALID: '#{path}' #{where} condition \"#{cond}\" uses #{bad}. conditional-text.js " \
+                      "evaluateGlobalCondition supports only '&&'-joined terms, so '||' is mis-read (each term " \
+                      "reads its first globalVars name: \"globalVars.a || globalVars.b\" is just globalVars.a). " \
+                      "Use one variant per '||' branch, or a global that the story sets for either case."
+          end
+        when :js, :or_ok
+          if ctx == :or_ok && cond.match?(/[()]/)
+            issues << "⚠️ WARNING: '#{path}' condition \"#{cond}\" uses parentheses. global-condition.js " \
+                      "supports '&&' and '||' (|| binds looser) but not parentheses."
+          end
+        else
+          if cond.include?('||')
+            issues << "⚠️ WARNING: '#{path}' condition \"#{cond}\" uses '||'. Most scenario condition " \
+                      "evaluators support only '&&' (music events, credits and command-board timelines are the " \
+                      "exceptions). Check which evaluator reads this field before relying on '||'."
+          end
+        end
+      end
+      node.each do |k, v|
+        child_ctx = ctx
+        child_ctx = :js if path.empty? && k == 'music'
+        child_ctx = :clock if path.empty? && k == 'gameClock'
+        child_ctx = :lighting if k == 'lighting' && ctx.nil?
+        child_ctx = :torch if k == 'torch' && ctx.nil?
+        child_ctx = :chat_background if k == 'chatBackground' && ctx.nil?
+        child_ctx = :or_ok if %w[timeline statusRows portraitVariants].include?(k) && ctx.nil?
+        walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}", child_ctx)
+      end
+    end
+  end
+  walk.call(json_data.reject { |k, _| k == 'objectives' }, '', nil)
   issues
 end
 
@@ -4304,7 +5316,8 @@ def main
     output_json: false,
     no_graph: false,
     skip_ink: false,
-    no_lint: false
+    no_lint: false,
+    strict_social: false
   }
 
   OptionParser.new do |opts|
@@ -4328,6 +5341,10 @@ def main
 
     opts.on('--skip-ink', 'Skip ink file compilation validation (faster, but less thorough)') do
       options[:skip_ink] = true
+    end
+
+    opts.on('--strict-social', 'Exit 1 when a social lint (scripts/validate_social.rb) reports an error; a scenario with no `social` key always exits 0') do
+      options[:strict_social] = true
     end
 
     opts.on('--no-lint', 'Skip the DIALOGUE LINT section (dialoguelint.mjs over the mission folder)') do
@@ -4388,6 +5405,10 @@ def main
     json_data, rendered_json = render_erb_to_json(erb_path, {}, include_rendered: true)
     puts "✓ ERB rendered successfully"
     puts
+
+    # Carry-over: imported globals count as declared for every later check.
+    own_globals = (json_data['globalVariables'] || {}).dup
+    carry_imports = prepare_carry_over_globals(json_data)
 
     # Output JSON if requested
     if options[:output_json]
@@ -4474,6 +5495,12 @@ def main
     # Check objective task completion wiring
     puts "Checking objective task wiring..."
     wiring_issues = check_objectives_wiring(json_data, repo_root)
+    begin
+      scoring_mission = JSON.parse(File.read(File.join(File.dirname(erb_path), 'mission.json')))
+      wiring_issues.concat(check_mission_scoring(scoring_mission, json_data))
+    rescue StandardError
+      # mission.json problems were already reported by the directory check
+    end
     if wiring_issues.any? { |i| i.start_with?("❌") }
       puts "✗ Objective wiring check found #{wiring_issues.count { |i| i.start_with?('❌') }} error(s):"
       puts
@@ -4536,10 +5563,25 @@ def main
     puts "Checking for common issues..."
     common_issues = check_common_issues(json_data, valid_item_types)
     common_issues += check_lock_credentials(json_data)
+    common_issues += check_pin_locks(json_data)
+    common_issues += check_npc_patrol_and_catch_locks(json_data, repo_root)
     common_issues += check_engine_limits(json_data)
+    common_issues += check_vm_flags_load_bearing(json_data)
     common_issues += check_recurring_bugs(json_data, repo_root)
     common_issues += check_unheard_room_triggers(json_data, repo_root)
     common_issues += check_tooling_pass4c(json_data, repo_root)
+    common_issues += check_carry_over(json_data, repo_root, File.basename(File.dirname(erb_path)),
+                                      File.dirname(File.dirname(erb_path)), carry_imports, own_globals)
+
+    # Social-engineering lints (scripts/validate_social.rb). Two lints (aim unlockCondition
+    # keys, object id uniqueness) apply to every scenario; the rest need a `social` key.
+    social_issues = ValidateSocial.check(json_data, repo_root: repo_root, valid_item_types: valid_item_types,
+                                                   imports: carry_imports, raw: rendered_json)
+    # Schema errors under /social are social errors: listed with the lints, and fatal under
+    # --strict-social like them (MECHANICS_AUDIT M3). Every other schema error still fails the run.
+    social_schema, errors = ValidateSocial.split_schema_errors(errors)
+    social_issues = social_schema + social_issues
+    common_issues += social_issues
 
     # Check for recommended fields
     puts "Checking recommended fields..."
@@ -4607,6 +5649,12 @@ def main
         end
         puts
       end
+    end
+
+    # --strict-social: a social lint error fails the run (only for scenarios with a `social` key)
+    if options[:strict_social] && json_data.key?('social') && ValidateSocial.errors(social_issues).any?
+      puts "✗ --strict-social: #{ValidateSocial.errors(social_issues).length} social lint error(s)"
+      exit 1
     end
 
     # Exit with success (warnings don't cause failure)

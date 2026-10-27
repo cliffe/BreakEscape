@@ -70,9 +70,11 @@ export class NPCGameBridge {
      * Unlock a door to a specific room
      * Calls server API to validate NPC unlock permission, then updates door sprites
      * @param {string} roomId - The ID of the room to unlock
+     * @param {string|null} [npcIdOverride] - the NPC to unlock as, when no conversation
+     *   is open (an eventMapping's unlockDoor); defaults to the conversation's NPC
      * @returns {Promise<Object>} Result object with success status
      */
-    async unlockDoor(roomId) {
+    async unlockDoor(roomId, npcIdOverride = null) {
         if (!roomId) {
             const result = { success: false, error: 'No roomId provided' };
             this._logAction('unlockDoor', { roomId }, result);
@@ -81,8 +83,8 @@ export class NPCGameBridge {
 
         console.log(`🔓 NPCGameBridge: Attempting to unlock door to ${roomId}`);
         
-        // Get the current NPC ID from conversation context
-        const npcId = window.currentConversationNPCId;
+        // Get the current NPC ID from conversation context (or the mapping's NPC)
+        const npcId = npcIdOverride || window.currentConversationNPCId;
         if (!npcId) {
             const result = { success: false, error: 'No NPC context available for unlock' };
             this._logAction('unlockDoor', { roomId, npcId }, result);

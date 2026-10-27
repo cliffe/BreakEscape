@@ -64,7 +64,7 @@ VAR night_answer_quiet = false
 - else:
     Ffion Rees: Anyway. Sign in when you're ready.
 }
-* [Thanks. Where do I sign?]
+* [Where do I sign?]
     #give_item:id_badge:visitor_badge
     ~ badge_received = true
     ~ receptionist_influence = receptionist_influence + 5
@@ -180,6 +180,8 @@ Ffion Rees: First time at a place like this, is it?
     -> ask_building_layout
 + {mission_phase != "act2_infiltration" && badge_received && not reception_badge_cloned && (conference_reader_tried or cloner_explained)} [Lean in by her lanyard and let the cloner read her badge.]
     -> clone_badge_opportunity
+// A4 fix pass: the topic knots' back-to-hub options no longer start with "Thanks",
+// so this leave option is the only one that does.
 + {mission_phase != "act2_infiltration"} [Thanks. I'll head through.]
     Ffion Rees: Go on, then. Shout if you need anything.
     ~ hub_quiet = true
@@ -211,7 +213,7 @@ Ffion Rees: Oh, she's brilliant. Does the big conferences, gets quoted in the pa
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> hub
-+ [Thanks.]
++ [Good to know.]
     -> hub
 
 === ask_danny ===
@@ -238,7 +240,7 @@ Ffion Rees: Really nice bloke. Always brings doughnuts in on a Friday.
     Ffion Rees: The executive wing -- off to the right from the main hallway. His is the door on the south side.
     Ffion Rees: He's usually out at client sites in the day, mind. He comes back in the evening to write up.
     -> hub
-+ [Thanks.]
++ [I'll look out for him.]
     -> hub
 
 === ask_company_history ===
@@ -263,7 +265,7 @@ Ffion Rees: Says so on the plaque, there, look. "Security Through Economics."
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> hub
-+ [Thanks.]
++ [Fair enough.]
     -> hub
 
 === ask_building_layout ===
@@ -289,7 +291,7 @@ Ffion Rees: And Ms. Sterling's office is in the executive wing, east off the mai
     ~ receptionist_influence = receptionist_influence + 5
     # influence_increased
     -> hub
-+ [That's helpful, thanks.]
++ [That helps.]
     -> hub
 
 === clone_badge_opportunity ===

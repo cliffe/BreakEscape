@@ -1,0 +1,11 @@
+Make portrait for ENTROPY Operative Relay
+A Black Scottish woman in her late thirties from Edinburgh, dark brown skin tone, an ENTROPY operative posing as a site technician, cool, confident and almost friendly, nothing about the night frightens her: a calm, composed face with steady dark eyes and high cheekbones, natural black coily hair pulled back into a neat low bun, small gold stud earrings. Wearing a dark charcoal grey zip-up technician's fleece with no logos and no lettering, half zipped over a black base layer, a black two-way radio clipped high on the fleece's chest strap, a plain ID card on a lanyard, dark olive work trousers with cargo pockets and a black belt with a second radio pouch on it.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention). Concept c01 of the m04 pass-5 set (2026-10-13), picked by the user.
+# No reference image (stand-in hacker-red). Dark fleece: check the outline at the bust stage. Canon: voice style 'ENTROPY operative, late thirties ... Scottish (Edinburgh)'; m04_npc_operative_relay.ink 'one hand resting on the radio', 'clips the radio back on her belt'.

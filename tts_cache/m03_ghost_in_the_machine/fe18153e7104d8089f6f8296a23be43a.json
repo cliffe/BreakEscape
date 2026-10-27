@@ -1,0 +1,13 @@
+{
+  "key": "fe18153e7104d8089f6f8296a23be43a",
+  "npc": "narrator",
+  "text": "Eleven o'clock that night, you're back. The staff entrance takes the receptionist's badge without a murmur.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:13:42Z"
+}

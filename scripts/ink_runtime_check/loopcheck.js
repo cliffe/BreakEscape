@@ -28,6 +28,7 @@ const STEPS = 200;
 
 function run(pick, label) {
   const s = new Story(fs.readFileSync(file, 'utf8'));
+  s.allowExternalFunctionFallbacks = true;   // as InkEngine.loadStory (00 S1)
   let err = null;
   s.onError = (m) => { err = m; };
   for (const n of EXTERNALS) { try { s.BindExternalFunction(n, () => 'Alex'); } catch (e) {} }

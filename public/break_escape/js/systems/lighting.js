@@ -22,9 +22,13 @@
  *       "alarm_panel": [                   // first variant whose condition holds wins; none: the EMITTERS entry
  *         { "condition": "globalVars.alarm", "color": "#ff5050", "radius": 24, "intensity": 0.5, "effect": "pulse" },
  *         { "color": "#7dffa0" }
- *       ]                                  // also: offsetX, offsetY (px from the object's centre), ledColor, ledAlpha (0 hides LEDs), floorTint (0-1: tint
+ *       ]                                  // also: offsetX, offsetY (px from the object's centre), ledColor, ledAlpha (0 hides LEDs),
+ *                                          // leds (rack-style blinking status LEDs on the object's face, 0-1 density; 0 none), floorTint (0-1: tint
  *                                          // a lit floor with the glow's colour), above (true: stays above the light
- *                                          // map in a lit room, for small indicators); effect null|screen|blink|pulse|breathe
+ *                                          // map in a lit room, for small indicators, keeping its hue there unless
+ *                                          // hueKeep: false); effect null|screen|blink|pulse|breathe|fire
+ *                                          // (fire: an irregular warm flicker plus small rising flame tongues; flames: tongue
+ *                                          // count, default 6, 0 none; steady under prefers-reduced-motion)
  *     },
  *     "variants": [                        // the room block changes with game state (e.g. day and night):
  *       { "condition": "globalVars.night === true", "mode": "dark", "ambient": "#808aa0" }
@@ -46,6 +50,7 @@
 
 import { TILE_SIZE, LIGHT_DEPTH, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY } from '../utils/constants.js';
 import { evaluateGlobalCondition } from '../utils/conditional-text.js';
+import { spriteStyleLight } from './npc-sprite-style.js';
 
 const LIGHT_TEX = 'be_light_soft';
 const LIGHT_TEX_SIZE = 128;
@@ -95,6 +100,13 @@ const FLOOR_TINT_MIX = 0.45;
 const PANEL_HEADROOM = 0.8;
 // Ceiling light: the lit ambient's hue, blended this far towards white.
 const PANEL_WHITE_MIX = 0.35;
+// Hue-preserving `above` glows in a lit room: ADD alone turns a red glow on pale art
+// pink-white, so the glow's own hue (this far from white) is first multiplied into the
+// light map under it, holding the other channels down, and the ADD then reads as its
+// colour. Scales with the room's light level; saturated colours only change much.
+const HUE_KEEP_MIX = 0.7;
+// The multiply patch covers this share of the glow's radius.
+const HUE_KEEP_RADIUS = 0.75;
 
 function luma(c) {
   return (0.2126 * ((c >> 16) & 255) + 0.7152 * ((c >> 8) & 255) + 0.0722 * (c & 255)) / 255;
@@ -124,6 +136,39 @@ const STRIKE_SEQUENCE = [[0, 0], [60, 0.7], [160, 0.12], [420, 0.12], [460, 1]];
 const FADE_MS = 400;
 const DIP_MS = 90;
 const DIP_LEVEL = 0.55;
+
+// Fire (effect "fire"): the glow flickers irregularly and shifts towards yellow, and
+// small flame tongues rise and fade across its width. Flash-safe: the glow's only
+// large swing is under 1 Hz, the faster wobble stays under a 10% change, each tongue
+// rises once per FIRE_TONGUE_MIN_MS or slower, and everything holds still under
+// prefers-reduced-motion.
+const FIRE_FLAMES = 6;
+const FIRE_MAX_FLAMES = 12;
+const FIRE_TONGUE_MIN_MS = 650;
+const FIRE_TONGUE_MAX_MS = 1250;
+const FIRE_YELLOW = 0xffc84a;
+
+/**
+ * The fire glow at a moment: k scales its intensity, mix how far its colour leans
+ * towards yellow. Slow swell (0.83 Hz) plus a small, quicker wobble.
+ */
+export function fireFlicker(time, phase = 0) {
+  const s = time / 1000;
+  const k = 0.84 + 0.1 * Math.sin(2 * Math.PI * 0.83 * s + phase)
+    + 0.03 * Math.sin(2 * Math.PI * 2.1 * s + phase * 1.7)
+    + 0.015 * Math.sin(2 * Math.PI * 2.7 * s + phase * 2.3);
+  const mix = 0.25 + 0.2 * Math.sin(2 * Math.PI * 0.55 * s + phase * 0.5);
+  return { k, mix };
+}
+
+/**
+ * One flame tongue's place in its cycle: it rises `rise` (0..1 of its travel) while
+ * it swells and fades, once per `period` ms. `still` freezes it part-way up.
+ */
+export function fireTongue(time, period, offset, still = false) {
+  const t = still ? 0.4 : ((time + offset) % period) / period;
+  return { rise: t, alpha: Math.sin(Math.PI * t), scale: 1 - 0.55 * t };
+}
 
 function prefersReducedMotion() {
   try { return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true; } catch (e) { return false; }
@@ -187,6 +232,7 @@ function normaliseVariant(v) {
   const out = { ...v };
   if ('color' in out) out.color = parseColor(out.color, 0xffffff);
   if ('ledColor' in out) out.ledColor = parseColor(out.ledColor, null);
+  if ('leds' in out) out.leds = Math.max(0, Math.min(1, Number(out.leds) || 0));
   return out;
 }
 
@@ -483,7 +529,7 @@ export class LightingSystem {
   }
 
   buildEmitters(state, objs) {
-    state.emitters.forEach(e => { e.glow?.destroy(); e.leds?.forEach(l => l.img.destroy()); });
+    state.emitters.forEach(e => { e.glow?.destroy(); e.leds?.forEach(l => l.img.destroy()); e.flames?.forEach(f => f.img.destroy()); });
     state.emitters = [];
     for (const obj of objs) {
       const key = obj?.texture?.key;
@@ -495,10 +541,15 @@ export class LightingSystem {
       const glow = this.scene.add.image(0, 0, LIGHT_TEX)
         .setBlendMode(Phaser.BlendModes.ADD)
         .setVisible(false);
+      // LEDs for the densest setting any state asks for (a room emitter can give a
+      // mission's own rack art `leds`); the current state's `leds` shows a share of them.
+      const ledsMax = Math.max(base?.leds || 0, ...variants.map(v => Number(v.leds) || 0));
       state.emitters.push({
         obj, key, base, variants, def: null, variantIdx: -2, glow,
         phase: Math.random() * Math.PI * 2,
-        leds: base ? this.createLeds(obj, base) : [],
+        leds: ledsMax > 0 ? this.createLeds(obj, { leds: ledsMax }) : [],
+        ledsMax,
+        flames: this.createFlames([base, ...variants]),
         glowK: 1, stampK: 1,
       });
     }
@@ -554,6 +605,29 @@ export class LightingSystem {
     });
   }
 
+  /** Flame tongues for an emitter any of whose states uses the fire effect. */
+  createFlames(defs) {
+    const fire = defs.filter(d => d && d.effect === 'fire');
+    if (!fire.length) return [];
+    const count = Math.max(...fire.map(d => Math.max(0, Math.min(FIRE_MAX_FLAMES,
+      Math.round(Number(d.flames ?? FIRE_FLAMES)) || 0))));
+    const flames = [];
+    for (let i = 0; i < count; i++) {
+      const img = this.scene.add.image(0, 0, LIGHT_TEX)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setVisible(false);
+      flames.push({
+        img,
+        // Spread evenly across the fire's width, with a little jitter
+        dx: count === 1 ? 0 : (i / (count - 1) - 0.5) + (Math.random() - 0.5) * 0.12,
+        period: FIRE_TONGUE_MIN_MS + Math.random() * (FIRE_TONGUE_MAX_MS - FIRE_TONGUE_MIN_MS),
+        offset: Math.random() * FIRE_TONGUE_MAX_MS,
+        size: 0.8 + Math.random() * 0.4,
+      });
+    }
+    return flames;
+  }
+
   /** Status LEDs scattered over the face of a rack, each blinking at its own rate. */
   createLeds(obj, def) {
     if (!def.leds) return [];
@@ -570,9 +644,11 @@ export class LightingSystem {
       leds.push({
         img,
         color,
-        // Offsets from the sprite's top-left, kept to the front panel.
+        // Offsets from the sprite's top-left, kept to the front panel. Racks are drawn
+        // in a slight 3/4 view, so the top ~40% is the cabinet's top surface: LEDs sit on
+        // the front face below it (lower ~55%), not scattered up onto the lid.
         dx: Math.round(3 + Math.random() * Math.max(1, w - 6)),
-        dy: Math.round(4 + Math.random() * Math.max(1, h * 0.7 - 4)),
+        dy: Math.round(h * 0.42 + Math.random() * Math.max(1, h * 0.5)),
         period: 150 + Math.random() * 1800,
         duty: Math.random() < 0.3 ? 1 : 0.2 + Math.random() * 0.6,
         offset: Math.random() * 2000,
@@ -861,7 +937,7 @@ export class LightingSystem {
       this.refreshEmitters(state, time);
       state.level = this.roomLevel(state);
       if (rx > view.right || ry > view.bottom || rx + rw < view.x || ry + rh < view.y) {
-        state.emitters.forEach(e => { e.glow.setVisible(false); e.leds.forEach(l => l.img.setVisible(false)); });
+        state.emitters.forEach(e => { e.glow.setVisible(false); e.leds.forEach(l => l.img.setVisible(false)); e.flames.forEach(f => f.img.setVisible(false)); });
         continue;
       }
       visible.push(state);
@@ -920,13 +996,15 @@ export class LightingSystem {
         const obj = e.obj;
         const def = e.def;
         const alive = obj?.active && obj.visible && def;
-        if (!alive) { e.glow.setVisible(false); e.leds.forEach(l => l.img.setVisible(false)); continue; }
+        if (!alive) { e.glow.setVisible(false); e.leds.forEach(l => l.img.setVisible(false)); e.flames.forEach(f => f.img.setVisible(false)); continue; }
         const left = obj.x - obj.displayWidth * obj.originX;
         const top = obj.y - obj.displayHeight * obj.originY;
         const ledA = ledLevel * (def.ledAlpha ?? 1);
-        for (const l of e.leds) {
+        const ledsShown = e.ledsMax > 0 ? Math.round(e.leds.length * Math.min(1, (def.leds || 0) / e.ledsMax)) : 0;
+        for (let li = 0; li < e.leds.length; li++) {
+          const l = e.leds[li];
           const lx = left + l.dx, ly = top + l.dy;
-          const lit = ledA > 0.01 && (still || ((time + l.offset) % l.period) / l.period < l.duty)
+          const lit = li < ledsShown && ledA > 0.01 && (still || ((time + l.offset) % l.period) / l.period < l.duty)
             && !this.hiddenByFigure(lx, ly, obj.depth, figures);
           l.img.setPosition(lx, ly).setVisible(lit).setAlpha(ledA);
         }
@@ -943,8 +1021,15 @@ export class LightingSystem {
           else if (def.effect === 'pulse') k = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(time / 300 + e.phase));
           else if (def.effect === 'breathe') k = 0.75 + 0.25 * Math.sin(time / 700 + e.phase);
         }
+        let glowColor = def.color;
+        if (def.effect === 'fire') {
+          const f = still ? { k: 0.9, mix: 0.25 } : fireFlicker(time, e.phase);
+          k = f.k;
+          glowColor = lerpColor(def.color, FIRE_YELLOW, f.mix);
+          e.glow.setTint(glowColor);
+        }
         const radius = def.ransom ? def.radius + (RANSOM_LIT_RADIUS - def.radius) * state.level : def.radius;
-        stamp(x, y, radius, def.color, def.intensity * k * e.stampK);
+        stamp(x, y, radius, glowColor, def.intensity * k * e.stampK);
         // In a dark room (and for ransom screens) the glow draws above the light map so
         // it blooms, and fades when a character stands in front of it: screens when the
         // figure covers their centre (so the screen you're using stays lit), racks when
@@ -963,6 +1048,27 @@ export class LightingSystem {
         const fade = (def.ransom || def.above) ? 0.6 : glowFade;
         e.glow.setPosition(x, y).setDepth(above ? LIGHT_DEPTH + 1 : obj.depth + 0.01).setVisible(true)
           .setAlpha(Math.min(1, def.intensity * k * e.glowK * fade * (above ? e.fade : GLOW_BOOST)));
+        // Keep an `above` glow's hue in a lit room (reds stayed red, not pink): multiply
+        // its colour into the map under it first. Ransom screens have their own tint.
+        if (def.above && !def.ransom && def.hueKeep !== false && this.preserveHue !== false && state.level > 0.05) {
+          multOpts.tint = lerpColor(0xffffff, lightColorFor(glowColor), HUE_KEEP_MIX);
+          multOpts.alpha = Math.min(1, state.level * Math.min(1, def.intensity * k) * e.fade);
+          multOpts.scale = (radius * HUE_KEEP_RADIUS * RES) / (LIGHT_TEX_SIZE / 2);
+          rt.stamp(LIGHT_TEX, null, (x - ox) * RES, (y - oy) * RES, multOpts);
+        }
+        // Flame tongues: small yellow-orange blooms rising across the fire's width
+        const burning = def.effect === 'fire';
+        for (const fl of e.flames) {
+          if (!burning) { fl.img.setVisible(false); continue; }
+          const tg = fireTongue(time, fl.period, fl.offset, still);
+          const tr = radius * 0.22 * fl.size * tg.scale;
+          fl.img.setPosition(x + fl.dx * radius * 0.9, y + radius * 0.15 - tg.rise * radius * 0.45)
+            .setTint(lerpColor(FIRE_YELLOW, def.color, tg.rise))
+            .setScale(tr / (LIGHT_TEX_SIZE / 2))
+            .setDepth(above ? LIGHT_DEPTH + 1 : obj.depth + 0.02)
+            .setAlpha(Math.min(1, def.intensity * 0.9 * tg.alpha * (above ? e.fade : GLOW_BOOST)))
+            .setVisible(true);
+        }
         // ADD can't colour a near-white light map, so in a lit room an emitter with
         // floorTint (ransom screens; racks in a server room) also multiplies its colour
         // into the map: red round a ransom screen, green on the floor in front of a rack.
@@ -976,9 +1082,10 @@ export class LightingSystem {
       }
       if (state === here) this.stampTorch(rt, stamp, ox, oy, here, player);
       this.stampNpcTorches(rt, stamp, ox, oy, state, ambient, time);
+      this.stampNpcGlows(stamp, state);
     }
     // Spill goes on after every fill, since it is meant to cross the doorway.
-    for (const state of visible) this.stampDoorSpill(state, stamp);
+    for (const state of visible) this.stampDoorSpill(state, stamp, rt, ox, oy);
     // Phaser 3.60: a batch whose last stamp is a MULTIPLY one (an emitter's floorTint)
     // is lost at endDraw and the whole map comes out white (every room unlit). Ending
     // on an ADD stamp avoids it; a black ADD adds nothing.
@@ -1052,6 +1159,30 @@ export class LightingSystem {
     }
   }
 
+  /**
+   * NPCs with a glowing spriteStyle (npc-sprite-style.js, e.g. ATHENA's hologram) light
+   * the map round them in their glow colour. The ADD lifts the MULTIPLY map over the
+   * figure, so a hologram isn't darkened in a dim room, and casts a soft pool on the
+   * floor. Drawn with their room, like torches, so darker neighbours cover any leak.
+   */
+  stampNpcGlows(stamp, state) {
+    const npcs = window.npcManager?.npcs;
+    if (!npcs) return;
+    let areas = null;
+    for (const npc of npcs.values()) {
+      const sp = npc._sprite;
+      if (!sp?._spriteStyle) continue;
+      const l = spriteStyleLight(sp, { knockedOut: !!window.npcHostileSystem?.isNPCKO?.(npc.id) });
+      if (!l) continue;
+      areas = areas || this.fillAreas(state.roomId);
+      if (!areas.some(a => l.x >= a.x && l.x <= a.x + a.w && l.y >= a.y && l.y <= a.y + a.h)) continue;
+      stamp(l.x, l.y, l.radius, l.color, l.intensity);
+      // A tighter, brighter core over the figure itself, so in a dark room she reads
+      // clearly while the wider pool stays soft on the floor.
+      stamp(l.x, l.y - 12, l.radius * 0.6, l.color, Math.min(1, l.intensity * 1.6));
+    }
+  }
+
   /** A torch: a faint pool at (px, py) and a beam along `angle`, cut short at the wall it points at. */
   stampBeam(rt, stamp, ox, oy, room, px, py, angle, k, color) {
     const rad = Phaser.Math.DegToRad(angle);
@@ -1105,14 +1236,46 @@ export class LightingSystem {
    * it was opened from keeps the open door: when that is the darker room, the
    * brighter one's light is drawn back through it here.
    */
-  stampDoorSpill(state, stamp) {
+  stampDoorSpill(state, stamp, rt, ox, oy) {
     const room = window.rooms?.[state.roomId];
     const myLevel = state.drawLevel ?? state.level;
+    const stripOpts = this.stripOpts || (this.stripOpts = { blendMode: Phaser.BlendModes.ADD, skipBatch: true });
     for (const door of room?.doorSprites || []) {
       const props = door.doorProperties;
-      if (!props?.open) continue;
+      if (!props) continue;
       const other = this.rooms.get(props.connectedRoom);
       const otherLevel = other ? (other.drawLevel ?? other.level) : 0;
+      // Closed door into a brighter room: a thin strip of light leaks through the gap along
+      // the edge of the doorway that faces this (darker) room. Drawn only from the darker
+      // room's side (where it's seen). The brighter room's intended light is read from the
+      // scenario when it isn't loaded yet, so an always-lit room glows at the door before
+      // the player reaches it.
+      if (!props.open) {
+        const src = this.connectedRoomLight(props.connectedRoom);
+        const leak = (src?.level ?? 0) - myLevel;
+        if (!src || leak <= 0.08) continue;
+        const long = TILE_SIZE * 0.5, thin = 5;
+        let sx, sy, halfW, halfH;
+        if (props.isSideDoor) {
+          // E/W door: it sits in a side wall, so the gap faces into the room, away from
+          // that wall. A vertical strip on the door's inner (room-facing) edge.
+          const away = props.direction === 'east' ? -1 : 1; // toward this room, off the wall
+          sx = door.x + away * (TILE_SIZE / 2 - 2);
+          sy = door.y;
+          halfW = thin; halfH = long;
+        } else {
+          // N/S door: two tiles tall; the gap is along the bottom of the doorway.
+          sx = door.x;
+          sy = door.y + TILE_SIZE - 2;
+          halfW = long; halfH = thin;
+        }
+        stripOpts.tint = src.panelColor;
+        stripOpts.alpha = Math.min(1, 0.5 * leak);
+        stripOpts.scaleX = (halfW * RES) / (LIGHT_TEX_SIZE / 2);
+        stripOpts.scaleY = (halfH * RES) / (LIGHT_TEX_SIZE / 2);
+        rt.stamp(LIGHT_TEX, null, (sx - ox) * RES, (sy - oy) * RES, stripOpts);
+        continue;
+      }
       const push = { north: [0, -1], south: [0, 1], east: [1, 0], west: [-1, 0] }[props.direction] || [0, 0];
       const d = TILE_SIZE * 1.2;
       let diff = myLevel - otherLevel;
@@ -1131,6 +1294,27 @@ export class LightingSystem {
     }
   }
 
+  /**
+   * A room's intended lit level (0..1) and panel colour, for light leaking from it.
+   * Uses the live lighting state when the room is loaded; otherwise falls back to the
+   * scenario's lighting config, so a closed door into an always-lit (or NPC-occupied)
+   * room still glows underneath before the room itself has been loaded.
+   */
+  connectedRoomLight(roomId) {
+    const other = this.rooms.get(roomId);
+    if (other) return { level: other.level, panelColor: other.panelColor };
+    // Room not loaded yet: derive its intended light from the lazy-load metadata (the room's
+    // lighting block and a `hasPresentNpc` flag the server sends, since NPCs are stripped). A
+    // motion room with nobody in it is dark, so no light leaks under a door into it.
+    const data = window.gameScenario?.rooms?.[roomId];
+    if (!data) return null;
+    const { cfg } = resolveRoomLighting(data.lighting || {}, window.gameState?.globalVariables || {});
+    const mode = cfg.mode || this.defaultMode;
+    const on = mode === 'on' || (mode === 'motion' && data.hasPresentNpc && cfg.startOn !== false);
+    const litAmbient = parseColor(cfg.ambient, parseColor(this.config.ambient, DEFAULT_LIT_AMBIENT));
+    return { level: on ? 1 : 0, panelColor: panelColorFor(litAmbient) };
+  }
+
   /** Whether a room still holds its own open door into another (it then spills through it itself). */
   hasOpenDoorTo(roomId, toRoomId) {
     return (window.rooms?.[roomId]?.doorSprites || [])
@@ -1140,7 +1324,7 @@ export class LightingSystem {
   destroy() {
     this.lightMap?.destroy();
     for (const state of this.rooms.values()) {
-      state.emitters.forEach(e => { e.glow?.destroy(); e.leds?.forEach(l => l.img.destroy()); });
+      state.emitters.forEach(e => { e.glow?.destroy(); e.leds?.forEach(l => l.img.destroy()); e.flames?.forEach(f => f.img.destroy()); });
     }
     this.rooms.clear();
   }

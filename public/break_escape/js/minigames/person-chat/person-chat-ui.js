@@ -13,6 +13,9 @@
 
 import PersonChatPortraits from './person-chat-portraits.js';
 import { displayDashes } from '../../utils/display-dashes.js';
+import { portraitFor } from '../../utils/portrait-variants.js';
+import { cameraViewFor } from './person-chat-camera.js';
+import { ChatInfluence } from '../../ui/pretext-chrome.js';
 
 export default class PersonChatUI {
     /**
@@ -63,6 +66,10 @@ export default class PersonChatUI {
         // Notification stack container (created on first use)
         this._notificationContainer = null;
         this.charactersWithParallax = new Set(); // Track which characters have already had parallax animation
+        // NPCs in the order they first spoke: picks each one's camera shot (person-chat-camera.js)
+        this.npcCameraSlots = new Map();
+        // `# portrait:<name>` choices for this conversation, by NPC id (utils/portrait-variants.js)
+        this.portraitOverrides = new Map();
         // The portrait opens hidden while the story loads, so a conversation that
         // opens on a scene shot (Background[...] / Narrator[none]) doesn't flash the
         // NPC first. The first line or choices bring the character in (revealPortrait).
@@ -217,13 +224,17 @@ export default class PersonChatUI {
             // Pass the actual NPC object so it has all properties including spriteTalk
             this.portraitRenderer = new PersonChatPortraits(
                 this.game,
-                this.npc,
+                this.resolvePortraitCharacter(this.npc),
                 this.elements.portraitContainer,
                 this.background // Optional background image path
             );
             // Hidden until the first content (see awaitingFirstContent). Set before
-            // init() so its first deferred render draws the background only.
+            // init() so its first deferred render draws nothing (black): we don't yet
+            // know whether the opening is a scene shot (cover background) or a line
+            // (zoomed NPC), so holding on black avoids flashing the full-scene
+            // background before the view zooms to the NPC.
             this.portraitRenderer._characterHidden = true;
+            this.portraitRenderer._holdingForContent = true;
             this.portraitRenderer.init();
             
             console.log('✅ Portrait initialized');
@@ -328,7 +339,12 @@ export default class PersonChatUI {
         if (!(isNarrator && narratorCharacter === 'none')) {
             this.revealPortrait();
         } else {
+            // Opening on a scene shot: end the black hold and draw the (cover) background.
             this.awaitingFirstContent = false;
+            if (this.portraitRenderer) {
+                this.portraitRenderer._holdingForContent = false;
+                this.portraitRenderer.render();
+            }
         }
         
         console.log(`📝 showDialogue called with character: ${characterId}, text length: ${text?.length || 0}, narrator: ${isNarrator}`);
@@ -423,7 +439,12 @@ export default class PersonChatUI {
     revealPortrait() {
         if (!this.awaitingFirstContent) return;
         this.awaitingFirstContent = false;
-        this.portraitRenderer?.setCharacterHidden(false);
+        if (this.portraitRenderer) {
+            // End the black hold before revealing, so the single render draws the
+            // zoomed NPC directly rather than the full-scene cover background first.
+            this.portraitRenderer._holdingForContent = false;
+            this.portraitRenderer.setCharacterHidden(false);
+        }
     }
 
     /**
@@ -458,11 +479,13 @@ export default class PersonChatUI {
                     spriteConfig: character.spriteConfig || {}
                 };
             } else {
-                // Use NPC character object
-                this.portraitRenderer.npc = character;
+                // Use NPC character object, with any portraitVariants that hold now
+                this.portraitRenderer.npc = this.resolvePortraitCharacter(character);
             }
             
             this.portraitRenderer.setupSpriteInfo();
+            this.portraitRenderer.view = this.cameraViewForSpeaker(
+                characterId === 'player' ? 'player' : (character.id || characterId));
             
             // Reset parallax animation only for characters we haven't seen before
             const speakerId = characterId || character.id;
@@ -477,6 +500,56 @@ export default class PersonChatUI {
         }
     }
     
+    /**
+     * The camera shot for a speaker: the player on the left of the room, the first NPC
+     * to speak on the right, and each later NPC in a middle shot of its own.
+     * @param {string} speakerId
+     * @returns {{pan:number, zoom:number, shift:number}}
+     */
+    cameraViewForSpeaker(speakerId) {
+        if (speakerId === 'player') return cameraViewFor(true);
+        if (!this.npcCameraSlots.has(speakerId)) {
+            this.npcCameraSlots.set(speakerId, this.npcCameraSlots.size);
+        }
+        return cameraViewFor(false, this.npcCameraSlots.get(speakerId));
+    }
+
+    /**
+     * The NPC as its portrait should look now: the first of its portraitVariants whose
+     * condition / KO gate holds, or the one a `# portrait:` tag picked, laid over its
+     * spriteTalk / spriteVisemes / avatar (utils/portrait-variants.js).
+     * @param {Object} character - NPC data
+     * @returns {Object} the same object, or a shallow copy with the variant's fields
+     */
+    resolvePortraitCharacter(character) {
+        if (!character || character.id === 'player') return character;
+        try {
+            return portraitFor(character, this.portraitOverrides.get(character.id) ?? null);
+        } catch (error) {
+            console.warn('⚠️ portraitVariants failed, using the base portrait:', error);
+            return character;
+        }
+    }
+
+    /**
+     * `# portrait:<name>` / `# portrait:<npc_id>:<name>`: use that variant for the rest of
+     * this conversation ('base' = the NPC's own fields). Redraws at once if that NPC is showing.
+     * @param {string|null} npcId - null for the conversation's NPC
+     * @param {string} name
+     */
+    setPortraitVariant(npcId, name) {
+        const id = npcId || this.npc?.id;
+        if (!id || !name) return;
+        this.portraitOverrides.set(id, name);
+        const shown = this.portraitRenderer?.npc;
+        if (!shown || shown.id !== id) return;
+        const base = this.characters[id] || (id === this.npc?.id ? this.npc : null);
+        if (!base) return;
+        this.portraitRenderer.npc = this.resolvePortraitCharacter(base);
+        this.portraitRenderer.setupSpriteInfo();
+        this.portraitRenderer.render();
+    }
+
     /**
      * Display choice buttons
      * @param {Array} choices - Array of choice objects {text, index}
@@ -604,7 +677,31 @@ export default class PersonChatUI {
             this.portraitRenderer.destroy();
             this.portraitRenderer = null;
         }
+        this._chatInfluence?.destroy();
+        this._chatInfluence = null;
     }
+
+    /**
+     * Influence bar and tells for a social character (06 N4, P4-E).
+     * A non-social NPC, which is every m01 to m08 conversation, mounts nothing.
+     */
+    _social() {
+        if (!this._chatInfluence) {
+            this._chatInfluence = new ChatInfluence({
+                parent: () => this.elements?.talkRightArea || null,
+                mount: 'person-chat',
+                place: 'start',
+                headerClass: 'person-chat-header',
+                onBand: (band) => this.portraitRenderer?.setInfluenceBand?.(band)
+            });
+        }
+        return this._chatInfluence;
+    }
+
+    mountInfluenceBar(npcId) { return this._social().mountBar(npcId); }
+    mountPretext(opts) { return this._social().mountPretext(opts); }
+    refreshPretext() { return this._social().refresh(); }
+    socialHeaderState() { return this._chatInfluence ? this._chatInfluence.state() : null; }
 
     /**
      * Show a notification message with auto-fade

@@ -185,6 +185,7 @@ export class RFIDDataManager {
                     { label: 'Card', value: cardNumber },
                     { label: 'DEZ 8', value: this.toDEZ8(hex) }
                 ];
+                displayData.securityNote = 'No encryption: ID read in clear. Nothing to crack.';
                 break;
 
             case 'MIFARE_Classic_Weak_Defaults':
@@ -203,9 +204,9 @@ export class RFIDDataManager {
 
                 // Add security note
                 if (protocol === 'MIFARE_Classic_Weak_Defaults') {
-                    displayData.securityNote = 'Uses factory default keys';
+                    displayData.securityNote = 'Sectors encrypted with factory default keys';
                 } else {
-                    displayData.securityNote = 'Uses custom encryption keys';
+                    displayData.securityNote = 'Sectors encrypted with custom keys';
                 }
                 break;
 

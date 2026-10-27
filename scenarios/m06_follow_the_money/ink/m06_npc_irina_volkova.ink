@@ -41,17 +41,21 @@
 //   (E20/E22). A detained Irina gives nothing.
 // ===========================================
 
-VAR irina_trust = 0              // -50 to 100 scale
+VAR irina_trust = 0              // -50 to 100 scale  Synced scenario global (scenario design R1, M1: survives a reload)
+// Pass 5 A3: synced scenario global, written with #set_variable so HaX's
+// conversation_closed mapping can see it. Left true when her first
+// conversation closes, it strains the cover (cover_strained).
 VAR irina_suspicious = false
-VAR moral_conflict_revealed = false
-VAR shown_casualties = false
-VAR shown_architects_fund = false
-VAR recruitment_offered = false
-VAR recruitment_refused = false
-VAR badge_discussion = false
-VAR exec_badge_turn = -1   // TURNS() at the last hand-over
-VAR asked_research = false
-VAR asked_paperwork = false
+VAR moral_conflict_revealed = false  // Synced scenario global (scenario design R1, M1: survives a reload)
+VAR shown_casualties = false  // Synced scenario global (scenario design R1, M1: survives a reload)
+VAR shown_architects_fund = false  // Synced scenario global (scenario design R1, M1: survives a reload)
+VAR recruitment_offered = false  // Synced scenario global (scenario design R1, M1: survives a reload)
+VAR recruitment_refused = false  // Synced scenario global (scenario design R1, M1: survives a reload)
+VAR badge_discussion = false  // Synced scenario global (scenario design R1, M1: survives a reload)
+VAR exec_badge_turn = -1   // TURNS() at the last hand-over; cleared on every reopen (dialogue C1, D6-41: TURNS() resets on a page reload)
+VAR shown_signature = false  // Dialogue C1 (D6-2): she has seen the fund's authorisation line, and only that
+VAR asked_research = false  // Synced scenario global (scenario design R1, M1: survives a reload)
+VAR asked_paperwork = false  // Synced scenario global (scenario design R1, M1: survives a reload)
 VAR first_meeting = true
 
 // Synced from scenario globals / inventory
@@ -68,8 +72,11 @@ VAR irina_exec_badge_given = false // set by the pickup mappings (lesson 26)
 VAR read_irina_notes = false       // onPickup of her research notes (P10)
 VAR architect_identity_found = false // safe opened (PASS 4 fix 3)
 VAR read_settlement_log = false      // settlement log picked up (round 2, M3)
-VAR given_time = false
-VAR asked_passwords = false   // playtest D1: the second ask always succeeds
+VAR exchange_infiltrated = false // Synced scenario global: set by HaX when her first chat closes (M1)
+VAR slot_checked_visit = false // Synced scenario global (puzzle chains M1 / R2 M-R2-1): one slot check per visit to the console; HaX's room_entered:data_center mapping clears it, so a reload doesn't
+VAR cover_strained = false   // Pass 5 A3: synced; the floor has a reason to ring the FCA
+VAR given_time = false  // Synced scenario global (scenario design R1, M1: survives a reload)
+VAR asked_passwords = false   // playtest D1: the second ask always succeeds  Synced scenario global (scenario design R1, M1: survives a reload)
 VAR wordlist_handed = false   // playtest D4: menu latch, same conversation
 VAR badge_handed = false
 // Final round (m03 pattern): set by every exit, so the resting knot's re-entry
@@ -82,42 +89,54 @@ VAR hub_quiet = false
 
 === start ===
 #speaker:irina_volkova
+~ exec_badge_turn = -1
 {irina_fate_decided:
     -> after_choice
 }
 // Playtest D1: the openers used to sit inside {first_meeting:} with no divert,
 // so they fell through into the hub and all seven options showed at once. A
 // first pick from the hub discarded the openers and capped trust at 10.
-{first_meeting:
+// Scenario design R1 (M1): ink-local state is lost on a page reload, so the
+// first meeting is keyed on the synced exchange_infiltrated (set by HaX when
+// her first chat closes), and her trust and once-only topics are synced
+// globals of the same names.
+{first_meeting and not exchange_infiltrated:
     -> first_meeting_scene
 }
+~ first_meeting = false
 Dr. Irina Volkova: Back again. What do you need?
 ~ hub_quiet = true
 -> hub
 
 === first_meeting_scene ===
 #speaker:irina_volkova
-~ first_meeting = false
+// Engine robustness audit (m01-m08): the met flag is set in each opening choice, not
+// before the opening, so an Esc (this knot owns the choices, so a reopen re-runs it) or a
+// reload at these choices brings the opening back instead of skipping to the hub.
 // Review M1: the only other route to this task was taskOnKO.
 #complete_task:meet_irina
 Narrator: A sharp-eyed woman in her mid-thirties looks up from three monitors of transaction graphs.
 
-Dr. Irina Volkova: You must be the FCA. Dr. Irina Volkova, Chief Technology Officer.
+Dr. Irina Volkova: You must be the FCA. Dr Irina Volkova, Chief Technology Officer.
 
 Dr. Irina Volkova: A supervisory visit. Always a pleasure, I'm sure.
 
 + [Thanks for making the time, Dr Volkova. I know these visits are a nuisance.]
+    ~ first_meeting = false
     ~ irina_trust += 15
     #influence_increased
     -> professional_response
 
 + [Let's be quick. I need your servers, your logs and your wallets.]
+    ~ first_meeting = false
     ~ irina_trust -= 5
     #influence_decreased
     ~ irina_suspicious = true
+    #set_variable:irina_suspicious=true
     -> suspicious_response
 
 + [Thirty-seven papers and nearly three thousand citations. I've read some of your work.]
+    ~ first_meeting = false
     ~ irina_trust += 25
     #influence_increased
     -> academic_response
@@ -136,7 +155,6 @@ Dr. Irina Volkova: Eager, aren't you?
 
 Dr. Irina Volkova: Supervisors start with paperwork. Customer checks, anti-laundering. You went straight for the machines.
 
-~ irina_suspicious = true
 -> audit_discussion
 
 === academic_response ===
@@ -181,20 +199,23 @@ Dr. Irina Volkova: So what does the FCA want to see? Our customer checks are com
 === hub ===
 { hub_quiet:
     ~ hub_quiet = false
+    ~ exec_badge_turn = -1
 - else:
     Dr. Irina Volkova: {&Go on.|What else?|Yes?}
 }
-+ {not found_password_lists and not wordlist_handed} [I'll need to test your password strength. What do people here actually use?]
-    -> request_passwords
+// Dialogue C1 (D6-6): newest topics first, so the choice that matters now
+// sits at the top. Order only; conditions unchanged.
++ {recruitment_offered and not irina_recruited and not recruitment_refused} [I need an answer, Dr Volkova.]
+    -> recruitment_decision
 
-+ {not asked_research} [What's the post-quantum work on your second screen?]
-    -> research_topic
++ {found_architects_fund and not recruitment_offered} [I'm not from the FCA. I'm SAFETYNET, and your exchange banks ENTROPY.]
+    -> reveal_identity
 
-+ {irina_suspicious and not asked_paperwork} [Let's start again, properly. Walk me through your anti-laundering procedures.]
-    -> paperwork_topic
++ {irina_trust >= 20 and found_blockchain_evidence and not shown_casualties} [There's something you need to see, Dr Volkova.]
+    -> show_blockchain_evidence
 
-+ {not badge_discussion} [Tell me about your door access.]
-    -> discuss_badges
++ {found_architects_fund and not irina_exec_badge_given and TURNS() > exec_badge_turn} [Satoshi's wing. You've a badge for it.]
+    -> exec_badge_handover
 
 + {badge_discussion and not irina_badge_obtained and not badge_handed and not irina_badge_cloned} [I need to check your office reader. Can I borrow your badge?]
     -> badge_followup
@@ -202,17 +223,17 @@ Dr. Irina Volkova: So what does the FCA want to see? Our customer checks are com
 + {not irina_badge_obtained and not badge_handed and not irina_badge_cloned} [(Let the cloner read her badge while she talks.)]
     -> clone_badge
 
-+ {found_architects_fund and not irina_exec_badge_given and TURNS() > exec_badge_turn} [Satoshi's wing. You've a badge for it.]
-    -> exec_badge_handover
++ {not found_password_lists and not wordlist_handed} [I'll need to test your password strength. What do people here actually use?]
+    -> request_passwords
 
-+ {irina_trust >= 20 and found_blockchain_evidence and not shown_casualties} [There's something you need to see, Dr. Volkova.]
-    -> show_blockchain_evidence
++ {irina_suspicious and not asked_paperwork} [Let's start again, properly. Walk me through your anti-laundering procedures.]
+    -> paperwork_topic
 
-+ {found_architects_fund and not recruitment_offered} [I'm not from the FCA. I'm SAFETYNET, and your exchange banks ENTROPY.]
-    -> reveal_identity
++ {not badge_discussion} [Tell me about your door access.]
+    -> discuss_badges
 
-+ {recruitment_offered and not irina_recruited and not recruitment_refused} [I need an answer, Dr. Volkova.]
-    -> recruitment_decision
++ {not asked_research} [What's the post-quantum work on your second screen?]
+    -> research_topic
 
 + [That's all for now.]
     #speaker:irina_volkova
@@ -282,6 +303,7 @@ Dr. Irina Volkova: It's the part of this job I'm still proud of.
 ~ irina_trust += 10
 #influence_increased
 ~ irina_suspicious = false
+#set_variable:irina_suspicious=false
 
 Dr. Irina Volkova: Now that's a supervisor's question.
 
@@ -305,17 +327,28 @@ Dr. Irina Volkova: Satoshi is paranoid about doors and careless about passwords.
 
 === badge_followup ===
 #speaker:irina_volkova
-{irina_trust >= 25:
+// Pass 5 A3: with the cover strained she wants more before she lends it; the
+// cloner route is unchanged.
+{(irina_trust >= 25 and not cover_strained) or irina_trust >= 35:
     ~ irina_trust += 5
     #influence_increased
     ~ badge_handed = true
-    #give_item:keycard:cto_access_badge
-    Dr. Irina Volkova: *unclips it* Bring it back. And don't tell facilities I handed it over, they'll write a memo about it.
+    #give_item:keycard:m06_cto_badge
+    Dr. Irina Volkova: *unclips it* Bring it back. And don't tell facilities I handed it over; they'll write a memo about it.
 
     Dr. Irina Volkova: West door. Try not to judge the whiteboard.
     -> hub
 - else:
-    Dr. Irina Volkova: My badge stays on my neck for a visitor I met an hour ago. Nothing personal.
+    // Round 2 (R2-m2): her own suspicion comes first, at any trust. (Trust 25
+    // can't be reached with the suspicion unrepaired: the repair topic clears it.)
+    {
+    - irina_suspicious:
+        Dr. Irina Volkova: You came in asking for my wallets before my paperwork. My badge stays on my neck.
+    - cover_strained and irina_trust >= 25:
+        Dr. Irina Volkova: There's been talk about you tonight. Until it stops, my badge stays on my neck.
+    - else:
+        Dr. Irina Volkova: My badge stays on my neck for a visitor I met an hour ago. Nothing personal.
+    }
 
     Narrator: Her lanyard hangs open at her collar, well within a cloner's range.
     -> hub
@@ -361,12 +394,17 @@ Narrator: She keeps talking.
     Narrator: The spare executive badge is in her top drawer, under a reader-install manual. You take it.
     -> after_choice
 }
-{not shown_architects_fund:
-    ~ shown_architects_fund = true
+// Dialogue C1 (D6-2): the signature only. The casualty line is saved for the
+// evidence scene or the reveal, so she reads the deaths once and reacts once.
+{not shown_signature and not shown_architects_fund:
+    ~ shown_signature = true
     #speaker:narrator
-    Narrator: You put the fund allocation in front of her. She reads the per-cell lines, then the casualty line, then the signature.
+    Narrator: You show her the authorisation line on the fund page, and nothing else.
     #speaker:irina_volkova
     Dr. Irina Volkova: Satoshi's Ghost. He signs the money with that name. He thinks it's funny.
+    {not recruitment_offered:
+        Dr. Irina Volkova: *quietly* You're not from the FCA. ...No. Don't tell me yet.
+    }
 }
 #give_item:keycard:executive_access_badge
 Dr. Irina Volkova: I put the readers in on his floor. Facilities lent me a spare to do it and never asked for it back. Here.
@@ -383,7 +421,7 @@ Dr. Irina Volkova: His wing is east of the data centre. He'll be at his desk; he
 === show_blockchain_evidence ===
 #speaker:narrator
 ~ shown_casualties = true
-Narrator: You lay Priya's write-up on her desk. Money in from the cells, money back out, all of it through the mixer she wrote.
+Narrator: You lay Priya's write-up on her desk. Money in from the cells, money back out.
 
 #speaker:irina_volkova
 Dr. Irina Volkova: Where did you get our internal analysis?
@@ -396,14 +434,18 @@ Dr. Irina Volkova: Where did you get our internal analysis?
 
 === evidence_pivot ===
 #speaker:irina_volkova
-{found_architects_fund:
+// Dialogue C1: after a direct reveal she has already read the casualty line.
+{
+- found_architects_fund and shown_architects_fund:
+    ~ irina_trust += 15
+    #influence_increased
+    Dr. Irina Volkova: The hospital money as well. All of it through my mixer, and all of it to that page.
+- found_architects_fund:
     Narrator: You put the fund allocation beside it, open at the casualty projection.
     ~ shown_architects_fund = true
     ~ irina_trust += 15
     #influence_increased
     Dr. Irina Volkova: They costed the deaths. They put a number in a cell and moved on.
-
-    Dr. Irina Volkova: I told myself this was about privacy. Financial freedom. Not... this.
 - else:
     ~ irina_trust += 15
     #influence_increased
@@ -411,6 +453,11 @@ Dr. Irina Volkova: Where did you get our internal analysis?
     Dr. Irina Volkova: I told myself it was about privacy. I am finding that harder to say out loud than I used to.
 }
 ~ moral_conflict_revealed = true
+// Dialogue C1: after a direct reveal the evidence can still be shown (it was
+// never marked shown); go to her answer, not a second reveal.
+{recruitment_offered:
+    -> recruitment_decision
+}
 -> reveal_identity
 
 // ===========================================
@@ -422,7 +469,19 @@ Dr. Irina Volkova: Where did you get our internal analysis?
 ~ recruitment_offered = true
 Narrator: You put your SAFETYNET credentials on the desk.
 
-Dr. Irina Volkova: My work. Used to kill people.
+// Dialogue C2 (D6-55): pays off "Don't tell me yet." from the badge scene.
+{shown_signature:
+    Dr. Irina Volkova: I asked you not to tell me.
+}
+// Dialogue C1 (D6-1): on the direct route she hasn't seen the evidence yet.
+{shown_casualties or shown_architects_fund:
+    Dr. Irina Volkova: My work. Used to kill people.
+- else:
+    ~ shown_architects_fund = true
+    ~ moral_conflict_revealed = true   // Dialogue C3 (D6-67): she has read the projection
+    Narrator: Then the fund allocation, open at the casualty line.
+    Dr. Irina Volkova: *reads it twice* I wrote the mixer so nobody could see where money went. Not so nobody could see this.
+}
 
 + [You built it believing in it. They turned it. Help us take it apart.]
     ~ irina_trust += 10
@@ -440,9 +499,14 @@ Dr. Irina Volkova: My work. Used to kill people.
 {irina_trust >= 35:
     -> recruit_accept
 - else:
-    Dr. Irina Volkova: I won't turn on Satoshi on the strength of one conversation and a graph.
+    // Dialogue C1 (D6-9): true on both routes in, and different on a return.
+    {given_time:
+        Dr. Irina Volkova: I said I'd think. I'm thinking. It's slower than you'd like.
+    - else:
+        Dr. Irina Volkova: I won't turn on Satoshi because a stranger put a badge on my desk.
 
-    Dr. Irina Volkova: Financial privacy is a right. If people abuse it, that is on them.
+        Dr. Irina Volkova: Financial privacy is a right. If people abuse it, that is on them.
+    }
 
     + [Then you're complicit. You're detained until the police arrive.]
         ~ recruitment_refused = true
@@ -451,6 +515,13 @@ Dr. Irina Volkova: My work. Used to kill people.
     + {read_irina_notes} [You wrote "What have I become?" I read it in your office.]
         -> notes_leverage
     // Review minor 1: a real alternative. Giving her time can turn her.
+    // Scenario design R2 (n2): once she's had time, the player can still back
+    // out, so "I need an answer" never leaves detention as the only choice.
+    + {given_time} [Then I'll leave you to it. For now.]
+        Dr. Irina Volkova: Don't take too long. He notices when I'm quiet.
+        ~ hub_quiet = true
+        #exit_conversation
+        -> hub
     + {not given_time} [Think about it. I'll come back before anyone else does.]
         ~ given_time = true
         ~ irina_trust += 10
@@ -506,11 +577,9 @@ Dr. Irina Volkova: And thank you for treating this as a choice.
 #set_variable:irina_arrested=true
 #set_variable:irina_fate_decided=true
 
-{moral_conflict_revealed:
-    Dr. Irina Volkova: *offers her wrists* I really did think I was building something good.
-- else:
-    Dr. Irina Volkova: This is the state overreach we warned people about.
-}
+// Dialogue C3 (D6-67): every route here has shown her the projection, so the
+// defiant "state overreach" line could no longer play anywhere it fits.
+Dr. Irina Volkova: *offers her wrists* I really did think I was building something good.
 
 Dr. Irina Volkova: All those papers. For this.
 ~ hub_quiet = true
@@ -533,6 +602,8 @@ Dr. Irina Volkova: Which one?
 + [5093.]
     -> slot_wrong
 + [6120.]
+    ~ slot_checked_visit = true
+    #set_variable:slot_checked_visit=true
     Dr. Irina Volkova: I told you. That's the one he shows auditors.
     -> after_choice
 + [8846.]
@@ -542,11 +613,16 @@ Dr. Irina Volkova: Which one?
 
 === slot_wrong ===
 #speaker:irina_volkova
+~ slot_checked_visit = true
+#set_variable:slot_checked_visit=true
 Dr. Irina Volkova: No. Take my cut off each deposit, then check the times against my hold.
+Dr. Irina Volkova: Work it through before you ask me again.
 -> after_choice
 
 === slot_right ===
 #speaker:irina_volkova
+~ slot_checked_visit = true
+#set_variable:slot_checked_visit=true
 #set_variable:irina_confirmed_slot=true
 Dr. Irina Volkova: Yes. Every deposit I cleared ended up there.
 -> after_choice
@@ -559,17 +635,40 @@ Dr. Irina Volkova: Yes. Every deposit I cleared ended up there.
 #speaker:irina_volkova
 { hub_quiet:
     ~ hub_quiet = false
+    ~ exec_badge_turn = -1
 - else:
     {irina_recruited:
-        Dr. Irina Volkova: What else do you need?
+        Dr. Irina Volkova: {&What else do you need?|Ask, then.|Quickly. He calls down at odd hours.}
     - else:
-        Narrator: She sits very still at her desk, waiting for the police, and doesn't look up.
+        Narrator: She sits very still at her desk and doesn't look up. The police are on their way up for her, and she knows it.
     }
 }
 + {found_architects_fund and not irina_exec_badge_given and TURNS() > exec_badge_turn} [Satoshi's wing. You've a badge for it.]
     -> exec_badge_handover
-+ {irina_recruited and not found_architects_fund and read_settlement_log} [I've read the settlement log. Check a slot for me.]
+// Pass 5 puzzle chains (M1, D1; R2 M-R2-1): one check per visit to the
+// console, so she confirms the player's reasoning rather than doing it for
+// them. The latch is synced and clears on entering the data centre.
++ {irina_recruited and not found_architects_fund and read_settlement_log and not slot_checked_visit} [I've read the settlement log. Check a slot for me.]
     -> slot_check
+// Pass 5 puzzle chains (M2): turned or detained before she handed over the
+// wordlist, it was lost for good and a required task stayed open.
++ {irina_recruited and not found_password_lists and not wordlist_handed} [I still need that wordlist.]
+    ~ wordlist_handed = true
+    #give_item:text_file:m06_password_dictionary
+    Dr. Irina Volkova: Of course. Here.
+    -> after_choice
++ {irina_arrested and not found_password_lists and not wordlist_handed} [(Take the wordlist from her desk.)]
+    ~ wordlist_handed = true
+    #speaker:narrator
+    #give_item:text_file:m06_password_dictionary
+    Narrator: Her audit wordlist is in the top tray, under a mug. She watches you take it and says nothing.
+    -> after_choice
+// Pass 5 puzzle chains (m9): a turned Irina can still lend her office badge.
++ {irina_recruited and not irina_badge_obtained and not irina_badge_cloned and not badge_handed} [Can I borrow your office badge?]
+    ~ badge_handed = true
+    #give_item:keycard:m06_cto_badge
+    Dr. Irina Volkova: Take it. There's nothing in there I'm proud of any more.
+    -> after_choice
 + [Nothing. Carry on.]
     {irina_recruited:
         Dr. Irina Volkova: Then be careful up there.

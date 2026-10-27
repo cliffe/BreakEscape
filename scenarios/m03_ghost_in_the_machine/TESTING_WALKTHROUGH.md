@@ -49,7 +49,7 @@ On screen: "Map the training network and submit the scan flag", "Pull the FTP in
 ---
 
 ## Aim: Search Sterling's Office (`search_executive_office`) *(optional; not required for conclusion)*
-[Unlocks on the first night entry to the executive wing (`exec_wing_night`), or, for a day office-raider, at the night turn (a `closing_debrief` mapping opens it if `exec_office_entered` is already set). On screen: "Crack Victoria's office computer", "Recover Sterling's client roster", and optional "Decide Danny Foster's fate".]
+[Unlocks on the first night entry to the executive wing (`exec_wing_night`), or, for a day office-raider, at the night turn (a `closing_debrief` mapping opens it if `exec_office_entered` is already set). On screen: "Crack Victoria's office computer", "Take Sterling's client roster", and optional "Talk to the consultant, Danny Foster".]
 
 11. **Executive Wing Hallway → Executive Office door (north)** — Key lock → lockpick.
 12. **Executive Computer** — Password `Sterling2010` (IT reset slip on the monitor: "Surname + year founded (e.g. Smith1999)" + plaque 2010; case-sensitive) → **access_victoria_computer** (`unlock_object`). Take the hex **Client Roster**.
@@ -74,7 +74,7 @@ On screen: "Map the training network and submit the scan flag", "Pull the FTP in
 ---
 
 ## Aim: Settle Accounts (`moral_choices`) *(mission conclusion)*
-[Unlocks on `night_confrontation_ready` (all four flags), set live by the flag mapping. On screen: "Settle Victoria's fate in the conference room", "Report back to Agent HaX". Danny's task is in the office aim. `concludeRequires.tasksCompleted`: the four flag tasks.]
+[Unlocks on `night_confrontation_ready` (all four flags), set live by the flag mapping. On screen: "Face Sterling in the conference room", "Report back to Agent HaX". Danny's task is in the office aim. `concludeRequires.tasksCompleted`: the four flag tasks.]
 
 18. **Danny's Office — Danny Foster** *(optional task)* — A live **Danny Foster** NPC. Talk to him for the confrontation (his open PC also holds the readable hospital-recon folder and his personal notes). Choose **protect / expose / leave** → `#set_global:danny_fate:<x>` + **`#complete_task:danny_choice_made`**. KO backstop: `taskOnKO` completes the task, and the HaX handler sets `danny_fate: ko`.
 19. **Return to Victoria (after hours)** — (pass 4) Before all four flags are in, talking to her at night plays `night_on_call` (she's on the phone, back to the door; you back out) and her idle choice reads "[Look in on Sterling]". `night_confrontation_ready` is set by the HaX handler once **all four** flags are in (each flag sets its own `flag_*_submitted` global; whichever arrives last passes the all-four check). Her `start` then diverts to `nighttime_confrontation`. Choose a fate: **cold-recruit / arrest / escape** → `#set_global:victoria_fate:<x>` + `victoria_<x>` + **`#set_global:victoria_choice_made:true`** + **`#complete_task:victoria_choice_made`**.
@@ -158,14 +158,14 @@ Reconciliation is clean: every Puzzle Graph node maps to a walkthrough step (ser
 - [ ] Safe catalogue: credits show "IN SAFETYNET HANDS" (buyers line suppressed if recruited) or "NOT RECOVERED" / "SEIZED WITH THE MARKETPLACE" (arrested)
 - [ ] Recruited ending: "ZERO DAY SYNDICATE: COMPROMISED — from the inside"; debrief says "Zero Day doesn't know it's been read"
 - [ ] Never entering Sterling's office: no Perfect Stealth; HaX "you never gave him the chance"
-- [ ] Guard catches a pick: a warning conversation opens ("Oi. Away from the door."); a cover story or "Wrong door" de-escalates; only "Shove past him", standing your ground on a second catch, or a third catch starts a fight. In a fight he chases at 100 and hits for 10
-- [ ] (3b) Caught once, then try again from the same spot: "I can still see you, you know…", no second strike. Leave the corridor and come back: the next catch counts
+- [ ] Guard catches a pick in his view (`lockpick_used_in_view`): he turns hostile at once, with one line ("Picks. Right. We're done talking.") and no choices. In a fight he chases at 100 and hits for 10
+- [ ] (pass 2 blind fixes 2) The one-strike grace is removed: there is no "still here" retry line and no second-strike rule; every pick caught in his cone makes him hostile, and `guard_attacking` keeps a chasing guard from re-opening the catch
 - [ ] (pass 5, R1-20) The guard stands at his post at (6,3) looking at the office door for 2 s, then walks west with his back to it and stands at (3,4) for 5 s before coming back. Start the pick as he turns away: about 7.5 s of a 12 s loop is safe (LOS is checked once, when the pick starts). Picking while he stands at his post is caught
-- [ ] (pass 5, R1-21) After a catch and "Wrong door", a second try in his sight plays "I can still see you" and the narrator's "Step back from the door. Wait until his back's turned…" (true at his post or walking away); he keeps walking his loop, and a try once his back is turned goes through
-- [ ] (3b) Wall safe sits high on the west wall, clearly apart from the filing cabinet; each opens its own minigame
+- [ ] (pass 2 blind fixes 2) There is no retry dialogue after a catch: a pick started in his sight is caught outright and turns him hostile (no "Wrong door" / "I can still see you" lines any more). Pick safely only by starting while his back is turned (the window in R1-20 above)
+- [ ] (3b) Wall safe sits on the back wall (room dressing cycle 1), clearly apart from the filing cabinet; each opens its own minigame
 - [ ] (3b) Safe hunt: whiteboard ("…MAILING THE NEW ONE FROM HER OFFICE…") → Sterling's PC → "Unsent email to the night team" → From Base64 → 5829
 - [ ] (3c) Close the flipper before Save on either clone: no task tick; the clone option comes back (receptionist hub / Victoria "Lean back towards the whiteboard"); saving then completes the task
-- [ ] (3c/3e) Guard no longer stops to face you at the door. Loop (13 s): dwell at the west end facing east towards the door (seen), walk east under the door (seen until he is past it), dwell at the east end facing down, walk west, short step up and east (all safe). Start the pick once he has passed the door and turned down: about 8 s window
+- [ ] (pass 5, R1-20 supersedes the earlier 3c/3e loop) Guard no longer stops to face you at the door; his patrol is the three-waypoint loop in the R1-20 check above ((6,3) post → (3,4) → (5,3), about 12 s). Start the pick as he turns away from the door for the safe window
 - [ ] (3e) Enter `Sterling2010`: the PC's file list stays open; HaX's "You're into her machine" call arrives when you open the email or the roster
 - [ ] (3e) The CyberChef laptop sits on the west small desk, the drop-site on the east desk; interacting with each opens its own thing
 - [ ] (3c) Enter 5829: the PIN result is not covered by a phone call; HaX's catalogue call arrives when you read the catalogue
@@ -186,7 +186,11 @@ Reconciliation is clean: every Puzzle Graph node maps to a walkthrough step (ser
 - [ ] Danny, without opening his folder first: "You're here about the hospital. Aren't you."
 - [ ] Debrief, drive never opened: the search team recovered it and HaX gives its substance, then the Architect section plays (as for a found drive); final assessment says the drive was left "for the search team"
 - [ ] Debrief "For the report, here's what let you in": MIFARE line only if you cloned a badge, password line only if you opened a file on her PC, distcc line always, encoding line only if you opened an encoded item
-- [ ] Debrief "You called it murder with an invoice. Now we have the invoice." only if you picked that briefing choice
+- [ ] Debrief "In the briefing you said they'd put a price on it being a hospital. Now we can prove they knew." only if you picked that briefing choice ("So they knew it was a hospital, and put a price on that.")
+- [ ] (A4 fix pass) The debrief's final assessment names the briefing approach in one line ("You told me you'd be thorough…", "You said you'd move fast…", "You said you'd stay flexible…"); the credits list an APPROACH line and a STERLING'S NHS QUESTION line
+- [ ] (A4 fix pass) Sterling's night opener calls back the cloner's light if she saw it during the read (`cloner_glimpsed`), worded by the reply that followed
+- [ ] (A4 fix pass) Terry's "What's your route?" gets three replies: two back to his hub, one ends the chat
+- [ ] (A4 fix pass) At night, the first walk into reception gets one bark from Ffion about her charger, before she speaks
 - [ ] Recruited ending: "Whether she stays turned is anyone's guess." (no promise of later missions)
 - [ ] Phone hint menu: every topic is still on offer after you've read it once
 

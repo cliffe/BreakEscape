@@ -147,6 +147,7 @@ def is_floor_plant(name: str) -> bool:
         name.startswith("plant-large11")
         or name.startswith("plant-large12")
         or name.startswith("plant-large13")
+        or name.startswith("planter-fig1-top-ani")   # fig with sway frames (m08 lobby, 2026-10-16)
     )
 
 
@@ -250,6 +251,7 @@ def tile_layer(name: str, layer_id: int, width: int, height: int, data: list, vi
 
 
 ROOM6_FIRSTGID = 701
+ROOM18_FIRSTGID = 601  # room18's slot in TILESETS; AES_WIDE_SHEETS put the east half of a hall there
 ROOM6_SHEET_COLS = 10
 
 
@@ -302,8 +304,20 @@ def room_tilesets(name: str) -> list[dict]:
             if ts.get("name") == "room6":
                 ts["name"] = floor
                 ts["image"] = ts["image"].replace("room6.png", f"{floor}.png")
-    elif name in UNI_FLOOR_SHEETS or name in ZDS_FLOOR_SHEETS:
-        floor = UNI_FLOOR_SHEETS.get(name) or ZDS_FLOOR_SHEETS[name]
+    elif name in AES_WIDE_SHEETS:
+        # a 20-wide sheet in two halves: west on room6's gids, east on room18's (unused by builder maps)
+        west, east = AES_WIDE_SHEETS[name]
+        for ts in tilesets:
+            if ts.get("name") == "room6":
+                ts["name"] = west
+                ts["image"] = ts["image"].replace("room6.png", f"{west}.png")
+            elif ts.get("name") == "room18":
+                ts["name"] = east
+                ts["image"] = ts["image"].replace("room18.png", f"{east}.png")
+    elif name in UNI_FLOOR_SHEETS or name in ZDS_FLOOR_SHEETS or name in AES_FLOOR_SHEETS or name in HCE_FLOOR_SHEETS \
+            or name in QDC_FLOOR_SHEETS or name in PNW_FLOOR_SHEETS:
+        floor = (UNI_FLOOR_SHEETS.get(name) or ZDS_FLOOR_SHEETS.get(name) or AES_FLOOR_SHEETS.get(name)
+                 or HCE_FLOOR_SHEETS.get(name) or QDC_FLOOR_SHEETS.get(name) or PNW_FLOOR_SHEETS[name])
         for ts in tilesets:
             if ts.get("name") == "room6":
                 ts["name"] = floor
@@ -346,6 +360,66 @@ ZDS_FLOOR_SHEETS = {
     "room_zds_servers": "room_zds_raised",       # raised access floor, two cold aisles
     "room_zds_hall": "room_zds_hall",            # the lobby's stone, no decals
     "room_zds_hall_exec": "room_zds_hall_exec",  # carpet with a burgundy runner
+}
+
+# Albion Energy Storage (m04): room6 repainted by room_gen/make_aes_tileset.py,
+# cream office walls with a green brand line; grey blockwork with a yellow band
+# for the plant side.
+AES_FLOOR_SHEETS = {
+    "room_aes_reception": "room_aes_lobby",      # terrazzo, Albion bolt inlay at the spawn
+    "room_aes_ops": "room_aes_carpet",           # blue-grey carpet, kitchenette vinyl NE
+    "room_aes_security": "room_aes_security",    # charcoal carpet
+    "room_aes_control": "room_aes_control",      # anti-static vinyl tiles
+    "room_aes_workshop": "room_aes_workshop",    # sealed concrete, hazard line round the bench
+    "room_aes_plant": "room_aes_plant",          # green epoxy, red-hatched box at the ESD
+    "room_aes_dock": "room_aes_dock",            # concrete, bay lines, threshold stripes
+}
+# HashChain Exchange (m06): room6 repainted by room_gen/make_hce_tileset.py,
+# midnight navy walls with a bitcoin-amber line front of house, pale grey in the
+# back offices, petrol blue with a cyan line in the server room and data centre.
+HCE_FLOOR_SHEETS = {
+    "room_hce_trading": "room_hce_trading",      # blue-grey carpet tiles, a lighter aisle
+    "room_hce_lobby": "room_hce_lobby",          # marble, gold hex-chain inlay
+    "room_hce_hall": "room_hce_hall",            # marble (checkpoint)
+    "room_hce_office": "room_hce_office",        # taupe carpet (Irina)
+    "room_hce_lab": "room_hce_lab",              # grey vinyl, trunking
+    "room_hce_servers": "room_hce_servers",      # raised floor, cold aisles
+    "room_hce_vault": "room_hce_vault",          # darker raised floor, custody cage line
+    "room_hce_exec_hall": "room_hce_exec_hall",  # smoked oak, navy runner
+    "room_hce_ceo": "room_hce_ceo",              # smoked oak, amber rug
+}
+# Quantum Dynamics Corporation (m05): room6 repainted by room_gen/make_qdc_tileset.py,
+# lilac-grey walls with a quantum-violet line front of house, white in the lab, sage
+# in the break room, graphite in the server side, a red line in the key vault.
+QDC_FLOOR_SHEETS = {
+    "room_qdc_lobby": "room_qdc_lobby",              # pale stone, violet Bloch-sphere inlay
+    "room_qdc_hall": "room_qdc_hall",                # slate carpet tiles (main corridor)
+    "room_qdc_server_hall": "room_qdc_server_hall",  # grey vinyl, trunking
+    "room_qdc_break": "room_qdc_break",              # wood-effect vinyl, kitchen strip
+    "room_qdc_open": "room_qdc_open",                # blue-grey carpet, lighter walkway
+    "room_qdc_security": "room_qdc_security",        # plum carpet (Patricia)
+    "room_qdc_torres": "room_qdc_torres",            # oak, blue rug
+    "room_qdc_lab": "room_qdc_lab",                  # white anti-static tiles, hatched boxes
+    "room_qdc_servers": "room_qdc_servers",          # raised floor, cold aisles
+    "room_qdc_vault": "room_qdc_vault",              # dark raised floor, red two-person line
+}
+# Pacific Northwest Regional Grid Control (m07): room6 repainted by
+# room_gen/make_pnw_tileset.py, an evergreen line on every wall: pale grey at the
+# checkpoint, dark slate on the ops floor, teal-graphite in the server hall, plum
+# with a red line in SCADA control, sage blockwork in the generator hall (a wide
+# sheet, AES_WIDE_SHEETS), board-marked concrete with a yellow line in the vault.
+PNW_FLOOR_SHEETS = {
+    "room_pnw_checkpoint": "room_pnw_checkpoint",  # grey terrazzo, fir-and-bolt inlay, walk-off mat
+    "room_pnw_ops": "room_pnw_ops",                # dark blue carpet, lighter aisle, supervisor's dais
+    "room_pnw_servers": "room_pnw_servers",        # raised floor, a perforated cold aisle
+    "room_pnw_scada": "room_pnw_scada",            # dark anti-static tiles
+    "room_pnw_vault": "room_pnw_vault",            # wet concrete, cable trench, sump
+}
+# 20x10 halls whose floor is one 640px sheet cut in two (west half, east half).
+AES_WIDE_SHEETS = {
+    "room_aes_hall1": ("room_aes_hall1_w", "room_aes_hall1_e"),
+    "room_aes_hall2": ("room_aes_hall2_w", "room_aes_hall2_e"),
+    "room_pnw_genhall": ("room_pnw_genhall_w", "room_pnw_genhall_e"),  # m07 backup generation hall
 }
 
 
@@ -844,6 +918,191 @@ WALL_MOUNTED_EXTRAS = {
     "magazine_cover",
     "private_sign",
     "restricted_sign",
+    "aes_esd_station",
+    "aes_beacon",
+    "aes_cable_tray",
+    "aes_esd_button",
+    "aes_dial_thermometer",
+    "aes_h2_detector",
+    "aes_vent_fan",
+    "aes_ppe_rack",
+    "aes_status_display",
+    "aes_first_aid",
+    "aes_emergency_phone",
+    "aes_breaker_panel",
+    "aes_pegboard",
+    "aes_cctv",
+    "aes_lockout_station",
+    "aes_hose_reel",
+    "aes_radio_charger",
+    "aes_hv_sign",
+    "aes_bank_c_sign",
+    "aes_bank_a_sign",
+    "aes_bank_b_sign",
+    "aes_esd_sign",
+    "aes_inverter_sign",
+    "aes_dock_sign",
+    "aes_ppe_sign",
+    "aes_hv_danger",
+    "aes_process_diagram",
+    "aes_procedures_sign",
+    "aes_round_terminal",
+    "aes_logo_sign",
+    "aes_gas_detector",
+    "aes_hivis_hook",
+    "aes_shutter_ctrl",
+    "aes_mimic_board",
+    "hce_logo_sign",
+    "hce_logo_small",
+    "hce_ticker",
+    "hce_world_clocks",
+    "hce_chart_screen",
+    "hce_press_clipping",
+    "hce_whiteboard_maths",
+    "hce_whiteboard_graph",
+    "hce_whitepaper_frame",
+    "hce_custody_sign",
+    "hce_exec_sign",
+    "hce_staff_sign",
+    "hce_server_sign",
+    "hce_lab_sign",
+    "hce_block_screen",
+    "hce_phd_frame",
+    "hce_sconce",
+    "hce_art_canvas",
+    "qdc_logo_sign",
+    "qdc_logo_small",
+    "qdc_lab_sign",
+    "qdc_server_sign",
+    "qdc_vault_sign",
+    "qdc_security_sign",
+    "qdc_it_sign",
+    "qdc_lab_rules",
+    "qdc_badge_hook",
+    "qdc_laser_warning",
+    "qdc_whiteboard_lattice",
+    "qdc_whiteboard_net",
+    "qdc_suspects_board",
+    "qdc_dispatch_screen",
+    "qdc_kid_drawing",
+    "qdc_poster_secure",
+    "qdc_poster_ready",
+    "qdc_poster_team",
+    "qdc_it_notice",
+    "qdc_whiteboard_keys",
+    "qdc_two_person_sign",
+    "pnw_logo_sign",
+    "pnw_evac_board",
+    "pnw_nerc_notice",
+    "pnw_muster_sign",
+    "pnw_video_wall",
+    "pnw_substation_map",
+    "pnw_countdown",
+    "pnw_mimic",
+    "notes_plantlog",
+    "pnw_genplate_one",
+    "pnw_genplate_two",
+    "pnw_genplate_three",
+    "pnw_ear_sign",
+    "pnw_cable_ladder",
+    "pnw_splice",
+    "pnw_ops_sign",
+    "pnw_server_sign",
+    "pnw_scada_sign",
+    "pnw_genhall_sign",
+    "pnw_vault_sign",
+    "pnw_security_sign",
+    "pnw_hose_reel",
+    "hq_logo_sign",
+    "hq_logo_small",
+    "hq_memorial",
+    "hq_alert_screen",
+    "hq_ops_board",
+    "hq_tactical_board",
+    "hq_evidence_wall",
+    "hq_disposition",
+    "hq_one_way_mirror",
+    "hq_recording",
+    "hq_badge_reader",
+    "hq_poster_postit",
+    "hq_poster_ears",
+    "hq_poster_red",
+    "hq_cipher_board",
+    "hq_ops_sign",
+    "hq_intel_sign",
+    "hq_crypto_sign",
+    "hq_server_sign",
+    "hq_break_sign",
+    "hq_director_sign",
+    "hq_archive_sign",
+    "hq_interview_sign",
+    "qdc_first_aid_cabinet",
+    "m09_logo_sign",
+    "m09_sign_reading",
+    "m09_sign_restricted",
+    "m09_sign_staff",
+    "m09_sign_tape",
+    "m09_sign_salvage",
+    "m09_sign_bay",
+    "m09_sign_director",
+    "m09_sign_series_r",
+    "m09_sign_stacks",
+    "m09_bay_plate",
+    "m09_sign_returns",
+    "m09_shelf_legend",
+    "m09_keypad",
+    "m09_door_controller",
+    "m09_drop_screen",
+    "m09_county_map",
+    "m09_sign_silence",
+    "m09_sign_personnel",
+    "m10_sign_fallout",
+    "m10_sign_security",
+    "m10_sign_workshop",
+    "m10_sign_plant",
+    "m10_sign_ops",
+    "m10_sign_gallery",
+    "m10_sign_level",
+    "m10_sign_keepclear",
+    "m10_sign_post",
+    "m10_sign_batteries",
+    "m10_caged_lamp",
+    "m10_readout",
+    "m10_readout_side",
+    "m10_door_panel",
+    "m10_load_board",
+    "m10_bakelite_panel",
+    "m10_slit_window",
+    "m10_plotting_board",
+    "m10_wall_ladder",
+    "m10_hatch",
+    "m10_keypad_plate",
+    "m10_service_door",
+    "m10_map_board",
+    "m10_bypass_panel",
+    "m10_wall_screen",
+    "m10_portal_head",
+    "m10_blast_leaf",
+    "m10_key_isolator",
+    "m10_wall_phone",
+    "m10_coat_hooks",
+    "m10_sign_core",
+    "m10_fire_buckets",
+    "se_logo_sign",
+    "se_sign_engagement",
+    "se_sign_recon",
+    "se_sign_ops",
+    "se_sign_blueteam",
+    "aw_logo_brightwell",
+    "aw_logo_tarrowby",
+    "aw_logo_quayholt",
+    "aw_logo_merrin_sallow",
+    "aw_poster_report_brightwell",
+    "aw_poster_report_tarrowby",
+    "aw_poster_report_quayholt",
+    "aw_poster_report_merrin_sallow",
+    "aw_brightwell_range",
+    "aw_quayholt_queue",
 }
 
 
@@ -2080,6 +2339,13 @@ class _Uni:
             place_on_table(table, name, x_frac=x_frac, surface_frac=surface_frac, obj_id=self._next())
         )
 
+    def solid(self, name, x, y, layer="items", inset=2, depth=10):
+        """An item that blocks the player: the sprite plus an invisible collision strip
+        along its base (items-layer sprites get no physics body of their own)."""
+        self.item(name, x, y, layer=layer)
+        w = lookup("objects", name)["w"]
+        self.collision(x + inset, y - depth, w - 2 * inset, depth)
+
     def collision(self, x, y_top, w, h):
         """An invisible blocking rectangle (room pixels; y is the TOP edge)."""
         self.collisions.append({
@@ -2096,6 +2362,11 @@ class _Uni:
             kw = {"room_override": [hall[row * 10 + COLS_20[col]] for row in range(6) for col in range(20)]}
         elif template_key == "20x10":
             kw = {"room_override": [ROOM6_FIRSTGID + row * ROOM6_SHEET_COLS + COLS_20[col]
+                                    for row in range(10) for col in range(20)]}
+        elif template_key == "20x10_wide":
+            # AES_WIDE_SHEETS: cols 0-9 from the west half (room6's gids), 10-19 from the east (room18's)
+            template_key = "20x10"
+            kw = {"room_override": [(ROOM6_FIRSTGID if col < 10 else ROOM18_FIRSTGID) + row * ROOM6_SHEET_COLS + col % 10
                                     for row in range(10) for col in range(20)]}
         if self.collisions:
             kw["collisions"] = self.collisions
@@ -2864,6 +3135,1546 @@ def room_zds_hall_exec():
     return r.build("room_zds_hall_exec", "10x6_hall")
 
 
+# ---------------------------------------------------------------------------
+# Albion Energy Storage (m04 "Critical Failure"): a 200 MWh grid battery site on
+# a night shift. Walls and floors: room_gen/make_aes_tileset.py; hand-drawn signs
+# and the shutter: room_gen/make_aes_props.py; plant (racks, inverters,
+# switchgear, generator, BMS cabinet, ESD station, dial thermometer, gas
+# detector...): PixelLab, aes_* objects. These maps are m04's own, so the shared
+# room_battery_hall, room_it, room_control_1x2gu, room_office, room_reception and
+# small_room_1x1gu (used by sis02, m01 and others) are untouched.
+# Coordinates: x = left edge, y = feet.
+# ---------------------------------------------------------------------------
+
+def _rack_row(r, x0, feet, count):
+    """A row of the original dark battery stacks (batrack, 32x72, drawn from photos;
+    user, 2026-10-13: kept in preference to new art) from x0, with one collision strip
+    along the row's base so the row is solid (a batrack's own table body is only 12 px
+    wide, which left 20 px gaps a player could slip through). The stack above the base
+    is walk-behind. Returns the x after the row."""
+    for i in range(count):
+        r.table("batrack", float(x0 + 32 * i), float(feet), kind="objects")
+    r.collision(float(x0 + 2), float(feet - 16), float(32 * count - 4), 16.0)
+    return x0 + 32 * count
+
+
+def _rack_block(r, x0, rows, count):
+    """Overlapping rows of batrack from x0 at the given feet. The stacks are drawn
+    walk-behind, but the block is solid from the first row's base to the last row's
+    (cycle 4, review F2: 20 px corridors between overlapping rows read as a bug), so
+    the only walk-behind lane is the one in front of the block's top."""
+    for feet in rows:
+        _rack_row(r, x0, feet, count)
+    r.collision(float(x0 + 2), float(rows[0] - 16), float(32 * count - 4), float(rows[-1] - rows[0] + 16))
+
+
+def room_aes_hall1():
+    """
+    4×2 GU (20×10) Battery Hall 1: Rack Bank C, packed blocks of the original dark
+    battery stacks (batrack). Grey epoxy floor with trunking, drains, door wear, a
+    yellow line along the back-wall kit and hatched keep-clear borders
+    (room_aes_hall1_w/_e).
+    Doors: W and E on row 2 (y 64-100), S in the SW corner (x 32-64); the workshop
+    covers cols 0-9 below y 256.
+    Cycle 3 (user: fill the door row too; stacks collide only at the base, so the
+    player can walk behind them): low kit stands along the back wall (feet 84-88) in
+    the gaps between the readable fixtures; the west block (x 108-300) and the east
+    block (x 456-584) start at feet 166, so their tops (y 94) overhang the lane along
+    the back wall and a player walking it is half hidden behind the stacks. The lane
+    y 88-148 is walkable wall to wall.
+    Kept clear for Cipher (operative_cipher): his waypoints (12,7), (12,3), (13,3),
+    (10,3) (sprite centres x 320-416) are on open floor x 300-456 from the back wall
+    to y 256; nothing overhangs them, so he stays in view for timing the crossing.
+    Kept clear for reading: the floor under the dial (x 56-100), the status display
+    (x 218-264), the H2 detector (x 378-412) and the process diagram (x 462-524).
+    Kept clear for walking: the W and E door mouths, the S-door lane x 32-64.
+    Slots (as-type): aes_dial_thermometer, aes_status_display, aes_gas_detector,
+    aes_process_diagram, aes_round_terminal.
+    """
+    r = _Uni()
+    # rack blocks (72 tall): west 3 rows of 6, east 4 rows of 4
+    _rack_block(r, 108, (166, 202, 238), 6)           # Rack Bank C, x 108-300
+    _rack_block(r, 456, (166, 202, 238, 278), 4)      # x 456-584
+    # back wall
+    r.item("aes_ppe_sign1", 38.0, 52.0)
+    r.item("aes_dial_thermometer1", 66.0, 56.0)       # top-left 66,33
+    r.item("aes_bank_c_sign1", 104.0, 34.0)
+    r.item("aes_vent_fan1", 186.0, 48.0)
+    r.item("aes_status_display1", 228.0, 54.0)        # top-left 228,34
+    r.item("aes_hv_danger1", 272.0, 50.0)
+    r.item("aes_gas_detector2", 386.0, 58.0)          # top-left 386,31 (cycle 6 swap; was aes_h2_detector1 at 388,34)
+    r.item("aes_vent_fan1", 410.0, 48.0)              # the ventilation outlet over the open floor
+    r.item("aes_process_diagram1", 470.0, 52.0)
+    r.item("aes_cctv1", 556.0, 32.0)
+    r.item("aes_beacon1", 586.0, 44.0)
+    # low kit along the back wall, in the gaps between the fixtures a player reads
+    r.solid("aes_spill_cabinet1", 106.0, 86.0)
+    r.solid("aes_combiner2", 132.0, 86.0)
+    r.solid("aes_drum1", 156.0, 86.0)
+    r.solid("aes_ppe_cabinet1", 178.0, 88.0)
+    r.solid("aes_air_mover1", 268.0, 88.0)
+    r.solid("aes_spill_kit1", 528.0, 88.0)
+    # west pocket between the S-door lane and the block
+    r.solid("aes_suppression1", 64.0, 238.0)
+    # the open floor's west edge, clear of Cipher's x 368-400
+    r.solid("aes_junction_box1", 304.0, 202.0)       # DC junction box fed from the block
+    r.solid("aes_cabinet_dark1", 306.0, 244.0)
+    # east edge strip and the SE corner
+    r.solid("aes_bms_tower1", 586.0, 196.0)
+    r.solid("aes_ladder1", 586.0, 236.0)
+    r.solid("aes_bollard1", 594.0, 300.0)
+    r.solid("aes_cable_drum1", 420.0, 304.0)
+    # side walls
+    r.item("aes_round_terminal1", 12.0, 176.0)        # west wall, below the door row
+    r.item("fire_extinguisher1", 14.0, 136.0)
+    r.item("aes_emergency_phone1", 610.0, 140.0)      # east wall, below the door row
+    return r.build("room_aes_hall1", "20x10_wide")
+
+
+def room_aes_hall2():
+    """
+    4×2 GU (20×10) Battery Hall 2 / inverter room: rack banks A and B (batrack),
+    the BMS cabinet the bypass module is fitted in, a row of string inverters along
+    the back wall's east end and a second inverter row in front of it, behind a
+    red-hatched HV keep-clear box (room_aes_hall2_w/_e).
+    Doors: W on row 2, S in the SW corner (x 32-64); the plant room and the loading
+    dock cover the bottom two rows, so floor is y 64-256.
+    Relay (operative_relay) patrols row 7 between tiles 5 and 15 (sprite centres
+    x 160-480, feet about 240): y 206-256 stays clear from x 100 to 520.
+    Kept clear: the W door mouth and a lane x 32-96 down to the S door; a lane along
+    the back wall y 88-148 behind the banks (walk-behind), reaching the procedures
+    sign and the BMS cabinet.
+    Slots (as-type): aes_procedures_sign (Emergency Procedures), aes_bypass_module
+    (BMS Interlock-Bypass Module, an overlay on the cabinet), aes_clipboard (Rack Bank Maintenance Manifest, on the
+    west wall by the door).
+    """
+    r = _Uni()
+    _rack_block(r, 136, (166, 202), 4)                # Rack Bank A, x 136-264
+    _rack_block(r, 296, (166, 202), 4)                # Rack Bank B, x 296-424
+    # inverters: a back row against the wall and a front row
+    for x in (440.0, 496.0, 552.0):
+        r.table("aes_inverter1", x, 120.0, kind="objects")
+    r.collision(442.0, 104.0, 164.0, 16.0)
+    for x in (452.0, 484.0, 516.0, 548.0):
+        r.table("aes_inverter2", x, 202.0, kind="objects")
+    r.collision(454.0, 186.0, 124.0, 16.0)
+    # back wall
+    r.item("aes_gas_detector2", 40.0, 56.0)
+    r.item("aes_vent_fan1", 62.0, 48.0)
+    r.item("aes_procedures_sign1", 140.0, 56.0)       # Emergency Procedures, read in place
+    # BMS cabinet A/B, door open, the bypass module: in the open beside bank A, fully in
+    # view and reachable from the floor (cycle 4, review F1: it stood behind the racks)
+    # The cabinet is decor in the tables layer; the scenario object claims a crop of its
+    # own bypass module laid exactly over it (aes_bypass_module1), so when the engine
+    # removes a read note from the scene only the overlay goes and the cabinet stays
+    # (cycle 5 walk: the whole cabinet vanished after one read).
+    r.table("aes_bms_bypass1", 86.0, 120.0, kind="objects")
+    r.collision(88.0, 108.0, 43.0, 12.0)
+    r.conditional_table_items.append(make_obj("objects", "aes_bypass_module1", 86.0 + 6, 63.0 + 36, r._next()))
+    r.item("aes_bank_a_sign1", 196.0, 34.0)
+    r.item("power_panel1", 256.0, 52.0)
+    r.item("aes_bank_b_sign1", 296.0, 34.0)
+    r.item("aes_hv_danger1", 360.0, 52.0)
+    r.solid("aes_combiner2", 392.0, 86.0)
+    r.item("aes_inverter_sign1", 470.0, 26.0)
+    r.item("aes_cctv1", 586.0, 30.0)
+    # west wall: the manifest on a clipboard hook by the door, an extinguisher
+    r.item("aes_clipboard1", 12.0, 150.0)
+    r.item("fire_extinguisher1", 14.0, 200.0)
+    # floor kit east of Relay's beat
+    r.solid("aes_chiller1", 522.0, 254.0, depth=14)  # the inverter room's cooling unit
+    r.solid("aes_gas_cylinders1", 586.0, 250.0)
+    r.solid("aes_cable_drum1", 270.0, 200.0)          # in the gap between the banks
+    return r.build("room_aes_hall2", "20x10_wide")
+
+
+def room_aes_plant():
+    """
+    2×2 GU inverter / plant room, the finale: green epoxy, a red-hatched keep-clear
+    box in front of the ESD (room_aes_plant). Back wall: the EMERGENCY SHUTDOWN plate
+    over the ESD station (fixed, x 160), HV switchgear either side; east wall a breaker
+    panel and the lockout station; a transformer and the standby generator along the
+    south; the plant-room bench on the west side with the Coordination Log; Critical
+    Mass's folding table with the command laptop and the marked blueprints east.
+    Doors: N in the NW corner (x 32-64), E on row 2. Nothing to the south.
+    Static (4,7) and Voltage (7,7) stand on clear floor at x 112-240, y 190-256.
+    Slots (as-type): aes_esd_station (ESD pushbutton), laptop (ENTROPY Command
+    Laptop); notes1/notes3 on the bench (Coordination Log, Operation Log) and notes4
+    on the folding table (Blueprints), top-lefts 32 px+ apart (array order matches the
+    scenario's object order).
+    """
+    r = _Uni()
+    # back wall: ESD at the centre, switchgear either side, kept clear in front
+    r.item("aes_esd_sign1", 148.0, 30.0)
+    r.item("aes_esd_station1", 160.0, 58.0)           # top-left 160,33; the red-hatched box below
+    r.table("aes_inverter2", 100.0, 116.0, kind="objects")  # the PCS inverter feeding the banks
+    r.collision(102.0, 104.0, 27.0, 12.0)
+    r.table("aes_switchgear1", 198.0, 116.0, kind="objects")
+    r.collision(200.0, 104.0, 58.0, 12.0)
+    r.item("aes_hv_danger1", 106.0, 44.0)
+    r.item("exit_sign1", 66.0, 28.0)                 # over the way out, by the N door
+    # east wall below the door row
+    r.item("aes_breaker_panel1", 266.0, 54.0)  # back wall, by the E door
+    # west: the plant-room bench (steel), Static's side
+    bench = r.table("zds_desk1", 34.0, 186.0, kind="objects")  # x 34-112, top 147
+    r.solid("aes_toolbox1", 40.0, 214.0)
+    # east: Critical Mass's folding table, Voltage's command post
+    camp = r.table("aes_trestle1", 196.0, 178.0, kind="objects")  # a steel trestle and a folding table: Voltage's command post
+    camp2 = r.table("smalldesk2", 250.0, 178.0)
+    r.solid("aes_pcs_cabinet1", 118.0, 300.0, depth=14)  # PCS control cabinet
+    # south: transformer and generator
+    r.solid("aes_transformer1", 34.0, 300.0, depth=14)
+    r.solid("aes_hv_sign1", 92.0, 252.0)
+    r.solid("aes_generator1", 200.0, 300.0, depth=14)
+    r.solid("aes_gas_cylinders1", 266.0, 300.0)
+    r.item("fire_extinguisher1", 14.0, 140.0)
+    # array order decides which paper lands where (scenario order: Blueprints, Coordination Log, Operation Log)
+    r.on(camp2, "notes4", 0.5, 0.45, layer="conditional_table_items")   # Facility Blueprints (Marked)
+    r.on(camp, "laptop6", 0.30, 0.35, layer="conditional_table_items")  # ENTROPY Command Laptop, 32 px+ from the plans
+    r.on(bench, "notes1", 0.22, 0.40, layer="conditional_table_items")   # Coordination Log
+    r.on(bench, "aes_battery_module1", 0.55, 0.30)
+    r.on(bench, "notes3", 0.86, 0.40, layer="conditional_table_items")   # Voltage's Operation Log
+    return r.build("room_aes_plant")
+
+
+def room_aes_workshop():
+    """
+    2×2 GU engineering workshop: sealed concrete, a hazard line round the module
+    test bench (room_aes_workshop). Back wall: pegboard of tools, the OT network
+    diagram, a clock; the OT comms rack and the BMS jump server's rack against it.
+    The terminal bench (steel) with the jump-server terminal and the drop-site
+    terminal; a parts bench and an electronics bench; the network monitoring cart;
+    spare battery modules, a tool trolley, lockers, a cable drum. The OptiGrid tool
+    case is shoved under the terminal bench's end.
+    Door: N in the NW corner (x 32-64). Nothing to the south.
+    Slots: pc10 on the terminal bench (as-type:pc, BMS Jump Server Terminal),
+    flag-station on it (Drop-Site Terminal), kvm_cart1 (as-type:kvm_cart, Network
+    Monitoring Station), notes3 on the parts bench (Workshop Access Log),
+    briefcase-yellow-1 (as-type, OptiGrid Tool Case).
+    """
+    r = _Uni()
+    r.item("pegboard_tools1", 100.0, 58.0)
+    r.item("network_architecture", 160.0, 52.0)
+    r.item("wall_clock1", 236.0, 38.0)
+    r.item("aes_ppe_sign1", 266.0, 44.0)
+    r.table("network_rack1", 222.0, 112.0, kind="objects")
+    r.table("server_rack1", 258.0, 110.0, kind="objects")
+    r.collision(224.0, 96.0, 64.0, 16.0)
+    # terminal bench, west of the middle
+    term = r.table("zds_desk1", 100.0, 160.0, kind="objects")   # x 100-178, top 121
+    r.item("chair-darkgray-1", 112.0, 184.0)         # in front of the terminal bench
+    # module test bench inside the hazard line (90,186)-(230,262)
+    r.table("it_workbench2", 104.0, 246.0, kind="objects")
+    r.table("electronics_bench2", 166.0, 246.0, kind="objects")
+    r.solid("aes_battery_module1", 214.0, 256.0)
+    # parts bench along the east wall
+    parts = r.table("desk3", 238.0, 200.0)
+    r.item("kvm_cart1", 250.0, 270.0, layer="conditional_items")  # Network Monitoring Station
+    r.collision(252.0, 258.0, 33.0, 12.0)
+    r.solid("aes_lockers_grey1", 34.0, 300.0, depth=12)
+    r.solid("supply_shelves1", 34.0, 222.0, depth=12)
+    r.item("aes_tool_trolley1", 92.0, 300.0)       # rolls and spins when pushed (2026-10-16): no static box under it
+    r.solid("aes_cable_drum1", 124.0, 300.0)
+    r.item("fire_extinguisher1", 14.0, 140.0)
+    r.item("briefcase-yellow-1", 180.0, 186.0, layer="conditional_items")  # a yellow hard case by the bench's end, 32 px+ from the drop-site terminal  # OptiGrid Tool Case, under the bench's end
+    r.on(term, "pc10", 0.22, 0.45, layer="conditional_table_items")
+    r.on(term, "flag-station", 0.86, 0.45, layer="conditional_table_items")   # 37 px clear of the PC (cycle 6, review F1)
+    r.on(parts, "notes3", 0.50, 0.40, layer="conditional_table_items")
+    r.on(parts, "cable_tangle1", 0.5, 0.95)
+    return r.build("room_aes_workshop")
+
+
+def room_aes_security():
+    """
+    2×2 GU security office: charcoal carpet (room_aes_security). Back wall: the
+    camera wall over the console desk, the key cabinet, the radio charger; the
+    equipment lockers; a desk with the logs and the access-control printout; a
+    kettle and mugs on a side unit; the guard's hi-vis on hooks.
+    Door: N in the NW corner (x 32-64). Nothing to the south.
+    Slots (as-type): cctv_monitors (Security Camera Monitors), filing_cabinet_locked
+    (Security Equipment Locker); notes on the console and the side desk (Camera System
+    Logs, Access Control Export).
+    """
+    r = _Uni()
+    r.item("cctv_monitors1", 98.0, 50.0)
+    r.item("cctv_monitors2", 146.0, 50.0)
+    r.item("key_cabinet1", 196.0, 46.0)
+    r.item("aes_radio_charger1", 218.0, 46.0)
+    r.item("rota_board1", 238.0, 44.0)               # guard rota
+    r.item("aes_hivis_hook1", 66.0, 56.0)            # the guard's hi-vis, hard hat and radio, by the door
+    console = r.table("desk1", 104.0, 118.0)          # x 104-182, under the camera wall
+    access = r.table("desk2", 182.0, 118.0)           # the console runs on: access control
+    r.item("chair-grey-1", 132.0, 148.0)
+    r.solid("filing_cabinet_locked1", 240.0, 122.0, depth=12)  # the equipment locker, padlocked
+    side = r.table("desk3", 60.0, 200.0)              # the printer desk, west
+    r.table("smalldesk2", 236.0, 236.0)               # tea station, east
+    r.item("fire_alarm_point1", 14.0, 140.0)
+    r.solid("filing_cabinet_steel1", 258.0, 300.0)
+    r.solid("bin8", 118.0, 204.0)
+    r.solid("undercounter_fridge1", 212.0, 238.0)
+    r.solid("photocopier1", 214.0, 300.0)            # printer for the access-control exports
+    r.item("chair-grey-2", 76.0, 230.0)              # at the printer desk
+    r.solid("aes_dvr1", 252.0, 210.0)                # the CCTV recorder
+    r.on(console, "pc8", 0.25, 0.40)
+    r.on(console, "notes1", 0.78, 0.45, layer="conditional_table_items")   # Camera System Logs
+    r.on(console, "phone4", 0.55, 0.42)
+    r.on(access, "security_monitor1", 0.45, 0.40)
+    r.on(side, "notes3", 0.30, 0.42, layer="conditional_table_items")      # Access Control Export
+    r.on(side, "binders1", 0.80, 0.30)
+    r.on(r.tables[-1], "kettle1", 0.3, 0.30)
+    r.on(r.tables[-1], "mugs_tray1", 0.75, 0.40)
+    return r.build("room_aes_security")
+
+
+def room_aes_ops():
+    """
+    2×2 GU operations office (Robert Vance's, the duty engineer): blue-grey carpet,
+    a vinyl patch under the night-shift kitchenette (room_aes_carpet). Back wall: a
+    site plan, the shift rota board, blinds, the kitchenette (sink, fridge, kettle,
+    microwave). Vance's desk with the BMS terminal and his work orders; a second
+    desk with the budget memo; the noticeboard with the layout map on the back wall;
+    filing cabinets; a coat stand with a hi-vis; the night-shift sofa.
+    Doors: N in the NW corner (x 32-64), E on row 2 (y 64-100), S in the SW corner;
+    the security office covers the bottom two rows (floor y 64-256).
+    Vance (robert_vance) stands at (5,7), sprite centre (160,224): clear floor x
+    136-184, y 190-256.
+    Slots: pc8 on Vance's desk (BMS Monitoring Terminal), notes1 on it (Work
+    Orders), notes3 on the second desk (Budget Cut Memo), notes4 pinned on the
+    noticeboard (Facility Layout Map).
+    """
+    r = _Uni()
+    r.item("notice_board1", 104.0, 45.0)              # noticeboard, the layout map pinned on it (raised to match the POV, user 2026-10-16)
+    r.item("year_planner1", 204.0, 44.0)              # shift rota, over the kitchenette (raised clear of the kettle)
+    # kitchenette back against the wall, as in the POV background (user 2026-10-16)
+    counter = r.table("kitchen_counter_sink1", 196.0, 92.0, kind="objects")
+    fridge = r.table("undercounter_fridge1", 243.0, 92.0, kind="objects")
+    r.collision(198.0, 80.0, 66.0, 12.0)
+    desk = r.table("desk1", 196.0, 176.0)             # Vance's desk, x 196-274
+    r.item("chair-grey-1", 226.0, 200.0)             # in front of the desk, facing it
+    desk2 = r.table("desk3", 60.0, 176.0)             # the day engineer's desk, x 60-111
+    # cabinets stand against the back wall, base just below the wall foot (POV, user 2026-10-16)
+    r.solid("filing_cabinet", 66.0, 70.0, depth=12)
+    r.solid("filing_cabinet", 152.0, 70.0, depth=12)
+    r.solid("coat_stand1", 262.0, 150.0)
+    r.solid("uni_sofa2", 210.0, 252.0, depth=12)     # the night-shift sofa
+    r.solid("bin8", 114.0, 176.0)
+    r.item("wall_clock1", 266.0, 44.0)
+    r.on(counter, "kettle1", 0.3, 0.25)
+    r.on(fridge, "aes_microwave1", 0.5, 0.15)
+    r.on(desk, "pc8", 0.35, 0.40)
+    r.on(desk, "notes1", 0.90, 0.45, layer="conditional_table_items")
+    r.on(desk, "office-misc-cup", 0.62, 0.40)
+    # array order decides which paper lands where (scenario order: Work Orders, Layout Map, Budget Memo)
+    r.conditional_table_items.append(make_obj("objects", "notes4", 112.0, 39.0, r._next()))  # pinned on the noticeboard
+    r.on(desk2, "notes3", 0.50, 0.42, layer="conditional_table_items")
+    r.on(desk2, "binders1", 0.12, 0.30)
+    return r.build("room_aes_ops")
+
+
+def room_aes_reception():
+    """
+    2×2 GU gatehouse reception: terrazzo with the Albion bolt inlay (room_aes_lobby).
+    Back wall: the ALBION ENERGY STORAGE sign over the security counter, a site
+    safety board, CCTV; a PPE station by the door (hard hats, hi-vis), the visitor
+    seating, a water cooler.
+    Door: S in the SW corner (x 32-64); the operations office covers the bottom two
+    rows (floor y 64-256).
+    The guard (security_guard) stands at (7.3,4): feet (234,128), sprite centre about
+    (234,97), at the east end of the sign-in counter. Two limits pin the spot: his centre
+    must be within 96 px of the player's spawn (160,144) (facePlayerDistance), or he
+    never turns to face it and his opening challenge doesn't fire (at (7.8,4), 101 px, it
+    didn't); and his 80 px tap frame (x 194-274) must stay off the Procedures paper (at
+    (7.1,4) it swallowed it into a pick-one menu). Here: 88 px, and the paper sits at
+    x 176-190 (cycle 7).
+    Slots: notes1 and notes3 on the counter (Visitor Sign-In Log, Security Desk
+    Procedures), top-lefts 32 px+ apart.
+    """
+    r = _Uni()
+    # the gatehouse desk (grey security desk with its monitors) and a steel sign-in
+    # counter beside it (cycle 6, review F3: the salmon counter read as a hotel lobby)
+    r.table("aes_security_desk1", 96.0, 112.0, kind="objects")   # x 96-157, top 57
+    counter = r.table("zds_desk3", 158.0, 112.0, kind="objects")  # x 158-209, the sign-in counter
+    gatehouse = r.tables[-2]
+    r.collision(96.0, 64.0, 114.0, 48.0)             # nobody gets behind the desks (cycle 7 walk: a gap let the player in)
+    r.item("aes_logo_sign1", 124.0, 36.0)
+    r.item("aes_cctv1", 274.0, 30.0)
+    r.item("aes_ppe_sign1", 40.0, 50.0)
+    r.item("aes_ppe_rack1", 62.0, 56.0)              # visitors' hard hats and hi-vis
+    r.item("hospital_chart_board1", 200.0, 44.0)     # site safety board: permits and the induction sheet
+    r.item("aed_cabinet1", 248.0, 56.0)
+    r.item("fire_alarm_point1", 292.0, 132.0)
+    r.solid("water_cooler1", 264.0, 200.0)          # east side, clear of the guard's spot
+    # visitor seating in the SE corner, a check-in kiosk by the door lane
+    r.solid("leather_sofa1", 196.0, 252.0, depth=12)
+    r.table("glass_coffee_table1", 200.0, 212.0, kind="objects")  # in front of the sofa
+    r.solid("planter_fig1", 264.0, 250.0, depth=12)
+    r.solid("checkin_kiosk1", 40.0, 140.0)           # visitor check-in, inside the door lane's top
+    r.item("aes_speed_gate1", 96.0, 222.0)           # speed gates on the way in (walk-through)
+    # array order follows the scenario's (Sign-In Log, then Procedures)
+    r.on(gatehouse, "notes1", 0.65, 0.55, layer="conditional_table_items")  # Visitor Sign-In Log, on the gatehouse desk
+    r.on(counter, "notes3", 0.50, 0.45, layer="conditional_table_items")    # Security Desk Procedures, on the sign-in counter
+    return r.build("room_aes_reception")
+
+
+def room_aes_control():
+    """
+    2×1 GU (10×6) SCADA control room: anti-static vinyl (room_aes_control). The
+    console of HMI screens across the back wall on two operator desks, the network
+    architecture diagram, an alarm panel, two operator chairs, a printer stand with
+    the parameter log, a filing cabinet, an extinguisher.
+    Doors: W and E on row 2. Nothing to the south.
+    Slots: screens on the console (as-type:screens, SCADA HMI Main Display); notes1
+    on the side table (Thermal & Charge Parameters Log), notes3 on the console's
+    east end (Emergency Shutdown Procedure).
+    """
+    r = _Uni()
+    d1 = r.table("desk1", 64.0, 90.0)
+    d2 = r.table("desk3", 142.0, 90.0)
+    r.items.append(make_obj("objects", "screens", 64.0, 86.0, r._next()))
+    r.item("aes_mimic_board1", 104.0, 46.0)          # the site's single-line mimic board over the console
+    r.item("network_architecture", 236.0, 46.0)
+    r.item("wall_clock1", 206.0, 40.0)
+    r.solid("filing_cabinet_steel1", 40.0, 176.0)
+    r.solid("aes_ups1", 262.0, 176.0)
+    r.item("alarm_panel", 40.0, 50.0)
+    r.item("chair-grey-2", 92.0, 124.0)
+    r.item("chair-grey-2", 156.0, 124.0)
+    side = r.table("desk1", 200.0, 150.0)             # the printer table: log and procedure, 46 px apart
+    r.item("fire_extinguisher1", 14.0, 150.0)
+    r.on(side, "notes1", 0.2, 0.40, layer="conditional_table_items")
+    r.on(side, "notes3", 0.8, 0.40, layer="conditional_table_items")
+    return r.build("room_aes_control", "10x6_hall")
+
+
+def room_aes_dock():
+    """
+    2×2 GU loading dock: concrete with bay lines and a striped threshold at the
+    shutter (room_aes_dock). Back wall: the roller shutter (x 112-208) under the
+    LOADING BAY 1 sign and a beacon, bollards either side, the delivery clipboard on
+    the wall; pallets of modules, a pallet truck, cones; the go-bag dumped by the
+    shutter, the escape plan dropped beside it.
+    Door: W on row 2. Nothing to the south.
+    Slots (as-type): aes_clipboard (Loading Dock Schedule, read in place);
+    suitcase8 (Go-Bag); notes2 on the floor by the shutter (Voltage's Escape Plan).
+    """
+    r = _Uni()
+    r.item("aes_roller_shutter1", 112.0, 64.0)
+    r.item("aes_dock_sign1", 130.0, 12.0 + 11.0)
+    r.item("aes_beacon1", 214.0, 34.0)
+    r.item("aes_clipboard1", 236.0, 52.0)             # delivery schedule
+    r.solid("aes_bollard1", 96.0, 88.0)
+    r.solid("aes_bollard1", 212.0, 88.0)
+    r.item("suitcase8", 140.0, 100.0, layer="conditional_items")   # the go-bag, by the shutter
+    r.item("notes2", 190.0, 98.0, layer="conditional_items")       # the escape plan, dropped
+    # returns, west: pallets of spent modules
+    r.solid("aes_pallet1", 40.0, 200.0)
+    r.item("aes_battery_module1", 43.0, 186.0)
+    r.solid("aes_pallet1", 40.0, 260.0)
+    r.solid("aes_pallet1", 40.0, 296.0)
+    r.solid("aes_pallet1", 72.0, 296.0)
+    r.item("aes_battery_module1", 75.0, 282.0)
+    # the bay: tyre marks and a dock plate in the floor sheet, a barrier at its mouth
+    r.solid("aes_barrier1", 146.0, 262.0)
+    r.solid("aes_pallet_truck1", 110.0, 300.0)
+    # deliveries in, east
+    r.solid("aes_pallet1", 228.0, 200.0)
+    r.solid("aes_pallet1", 256.0, 200.0)
+    r.item("aes_battery_module1", 231.0, 186.0)
+    r.solid("aes_compressor1", 262.0, 120.0)
+    r.solid("aes_spill_kit1", 266.0, 252.0)
+    r.solid("cylinder_rack1", 222.0, 252.0)
+    r.item("aes_shutter_ctrl1", 86.0, 54.0)          # shutter up/down control, beside the shutter
+    r.item("exit_sign1", 36.0, 40.0)
+    r.solid("aes_cones1", 250.0, 300.0)
+    r.item("fire_extinguisher1", 292.0, 140.0)
+    return r.build("room_aes_dock")
+
+
+# ---------------------------------------------------------------------------
+# HashChain Exchange (m06 "Follow the Money"): the Crypto Anarchists' exchange,
+# a slick fintech front at night. Walls and floors: room_gen/make_hce_tileset.py;
+# hand-drawn signs, ticker and screens: room_gen/make_hce_props.py (hce_*).
+# Furniture is the photo-based house set where it exists. These maps are m06's
+# own, so the shared room_reception, hall_1x2gu, room_office, room_servers and
+# room_ceo are untouched. Coordinates: x = left edge, y = feet.
+# ---------------------------------------------------------------------------
+
+def _trading_desk(r, x, feet, monitors, extras=(), chairs=True, chair="chair-grey-4"):
+    """A steel trading desk (zds_desk1, 78x39) with its monitors and clutter on it
+    (name, x_frac, surface_frac; the first in `monitors` is placed first, so a
+    scenario pc claims it), and two mesh chairs seen from behind, tucked in at the
+    front edge (the traders face their screens). The desk body is a table, so it
+    collides; the chairs are walk-behind decor."""
+    d = r.table("zds_desk1", float(x), float(feet), kind="objects")
+    for name, xf, sf, *layer in monitors:
+        r.on(d, name, xf, sf, layer=layer[0] if layer else "table_items")
+    for name, xf, sf, *layer in extras:
+        r.on(d, name, xf, sf, layer=layer[0] if layer else "table_items")
+    if chairs:
+        dy = 12 if chair in ("chair-grey-4", "chair-darkgray-1") else 18
+        r.item(chair, float(x + 12), float(feet + dy))
+        r.item(chair, float(x + 44), float(feet + dy))
+    return d
+
+
+def room_hce_trading():
+    """
+    2×2 GU trading floor: the exchange's shop window. Blue-grey carpet with a
+    lighter aisle (x 114-180) down the middle (room_hce_trading). Back wall: the
+    LED price ticker over a wall of market monitors, and world clocks (London, New
+    York, Tokyo) beside the N door. Five steel trading desks in two banks of three
+    rows, each with two or three screens and two mesh chairs tucked in, facing the
+    screens; the west bank's third row is the photocopier and coffee point.
+    Doors: W and E on row 2 (the row y 64-104 stays clear wall to wall), N (NE
+    corner, x 256-288), S (SE corner). The east lane x 258-288 runs clear from the
+    N and E doors down to the S door. The checkpoint covers the bottom two rows,
+    so feet stay at y 256 or above.
+    NPCs: Irina at (5,5) and the trader at (5,7) (sprite centres x 160) stand in
+    the aisle, which stays clear from y 104 down; her dropped things land there.
+    Slots: pc10 on the east bank's front desk (base pc, Trading Workstation; the
+    only pc10 and the first pc in table_items), notes3 on the west bank's back
+    desk (Daily Trading Report), 70 px+ apart.
+    """
+    r = _Uni()
+    # back wall
+    r.item("hce_ticker1", 28.0, 21.0)                # LED ticker, top 12
+    r.item("screens", 28.0, 58.0)                    # the market wall, top 21
+    r.item("hce_world_clocks1", 212.0, 42.0)         # LDN / NYC / TKY, west of the N door
+    # three rows a bank (feet 138, 190, 242); the east bank's front desk goes first: its pc10
+    # is the Trading Workstation
+    _trading_desk(r, 180, 138, [("pc10", 0.36, 0.42), ("pc6", 0.76, 0.42)],   # pc10 clear of Irina's tap frame (c2 TR-2)
+                  [("phone1", 0.95, 0.40), ("coffee_cups1", 0.06, 0.38)])
+    _trading_desk(r, 36, 138, [("pc8", 0.24, 0.40), ("pc11", 0.56, 0.40), ("laptop1", 0.86, 0.44)],
+                  [("energy_cans1", 0.04, 0.30)])
+    _trading_desk(r, 36, 190, [("pc6", 0.28, 0.42), ("pc8", 0.66, 0.40)],
+                  [("notes3", 0.92, 0.42, "conditional_table_items"), ("office-misc-headphones", 0.06, 0.34)])
+    _trading_desk(r, 180, 190, [("pc11", 0.24, 0.40), ("pc6", 0.62, 0.42)],
+                  [("phone3", 0.92, 0.40), ("office-misc-cup", 0.04, 0.34)])
+    # the head trader's six-screen station closes the east bank (cycle 2, TR-1)
+    r.table("hce_trading_station1", 194.0, 246.0, kind="objects")   # x 194-254: 8 px further from the trader (c5 walk F3)
+    # bins at the desk ends on the aisle side
+    r.item("bin1", 116.0, 138.0)
+    r.item("bin4", 116.0, 190.0)                     # (not at the east desks: the trader stands at x 144-176)
+    # the west bank's third row is the coffee and print point
+    r.item("photocopier1", 36.0, 244.0)
+    r.item("coffee_station1", 74.0, 242.0)
+    r.item("mini_fridge1", 100.0, 240.0)
+    # side walls, below the door row
+    r.item("fire_extinguisher1", 14.0, 140.0)
+    r.item("fire_alarm_point1", 292.0, 136.0)
+    return r.build("room_hce_trading")
+
+
+def room_hce_lobby():
+    """
+    2×2 GU HashChain lobby (reception_lobby, the start room): pale marble with the
+    gold hex-chain inlay in front of the counter (room_hce_lobby), navy walls with
+    the amber line. Back wall: the HASHCHAIN wordmark over the curved reception
+    desk, a candlestick screen, an exit sign by the N door; a bitcoin ATM in the NE
+    corner, a visitor kiosk beside the desk. A gold-coin pedestal and a display
+    case (a hardware wallet under glass) flank the inlay; a lounge of two club
+    chairs and a glass table along the south, fig planters in the corners, a
+    brochure rack on the east side.
+    Doors: N (NW corner, x 32-64): the lane x 32-70 stays clear down to y 140.
+    Nothing to the south, so the floor runs to y 300. The spawn and the inlay
+    (x 120-200, y 120-220) stay clear.
+    Slots: notes3 on the reception desk (HashChain Exchange Brochure).
+    """
+    r = _Uni()
+    r.item("exit_sign1", 70.0, 34.0)
+    r.item("hce_logo_sign1", 122.0, 36.0)            # over the desk
+    r.item("hce_sconce1", 106.0, 42.0)               # either side of the wordmark (cycle 3)
+    r.item("hce_sconce1", 192.0, 42.0)
+    r.item("hce_chart_screen1", 208.0, 54.0)
+    desk = r.table("hce_reception_desk1", 129.0, 112.0, kind="objects")   # x 129-191, top 62
+    r.on(desk, "notes3", 0.30, 0.30, layer="conditional_table_items")
+    r.on(desk, "pc11", 0.66, 0.24)
+    r.solid("hce_kiosk1", 204.0, 112.0)              # visitor sign-in kiosk
+    r.solid("hce_crypto_atm1", 252.0, 92.0)          # NE corner
+    r.solid("hce_price_board1", 32.0, 176.0)         # live price board below the N-door lane (cycle 2, LOB-1)
+    r.solid("hce_display_case1", 94.0, 196.0)        # a hardware wallet under glass
+    r.solid("hce_coin_pedestal1", 214.0, 196.0)
+    r.solid("brochure_rack1", 242.0, 252.0)
+    # the lounge, south
+    r.solid("club_chair_e1", 92.0, 290.0)
+    r.table("glass_coffee_table1", 130.0, 288.0, kind="objects")
+    r.solid("club_chair_w1", 184.0, 290.0)
+    r.solid("planter_fig1", 34.0, 300.0)
+    r.solid("planter_fig1", 254.0, 186.0)
+    r.solid("water_cooler1", 36.0, 236.0)
+    # side walls
+    r.item("fire_extinguisher1", 14.0, 200.0)
+    r.item("fire_alarm_point1", 292.0, 150.0)
+    return r.build("room_hce_lobby")
+
+
+def room_hce_hall():
+    """
+    2×1 GU (10×6) security checkpoint: the lobby's marble, navy walls
+    (room_hce_hall). The lobby covers the bottom two rows, so the floor is y 64-128
+    and everything stands against the back wall or hangs on it: a STAFF ONLY plate
+    and a camera by the N door, the noticeboard with the IT checklist pinned on it,
+    the guard's desk with his monitors, a water cooler.
+    Doors: S (SW corner, x 32-64), N (NE corner, x 256-288).
+    Kept clear for the guard (checkpoint_guard, waypoints (4,4) and (3,4), sprite
+    centres x 96-128): x 80-150 below y 90. Kept clear for the pick window: the
+    floor x 200-288 (the player's centre x 209-279 within 64 px of the N door).
+    Slots: notes4 pinned on the noticeboard (IT New Starter Checklist).
+    """
+    r = _Uni()
+    r.item("key_cabinet1", 38.0, 36.0)               # over the cooler (cycle 2, CP-3)
+    r.solid("water_cooler1", 36.0, 84.0)             # NW corner, clear of the noticeboard (cycle 2, CP-1)
+    r.item("notice_board1", 70.0, 52.0)              # x 70-112, top 21
+    r.conditional_items.append(make_obj("objects", "notes4", 78.0, 44.0, r._next()))   # pinned on it
+    r.item("fire_action_notice1", 116.0, 52.0)
+    r.item("hce_logo_small1", 142.0, 23.0)
+    r.solid("aes_security_desk1", 140.0, 90.0)       # x 140-201: the guard's desk and monitors
+    r.item("hce_staff_sign1", 194.0, 28.0)
+    r.item("cctv_camera1", 230.0, 52.0)
+    return r.build("room_hce_hall", "10x6_hall")
+
+
+def room_hce_office():
+    """
+    2×2 GU Irina Volkova's office (the CTO, a cryptographer): taupe carpet, pale
+    grey walls with the amber line (room_hce_office). Bookcases and a steel filing
+    cabinet along the back wall, her elliptic-curve whiteboard and the framed
+    bitcoin white paper; her desk facing the room with a banker's lamp, journals
+    piled beside it; a reading corner (club chair, side table with the research
+    notes) south-west; a printer table with the Architect's email south-east; a
+    coat stand by the door.
+    Doors: E on row 2 (x 240-288, y 64-110 kept clear). Nothing to the south: the
+    floor runs to y 300.
+    Slots: pc11 on her desk (base pc, Irina's Secure Workstation), notes3 on the
+    reading table (Cryptography Research Notes), notes1 on the printer table
+    (Email: From The Architect); 32 px+ apart, scenario order.
+    """
+    r = _Uni()
+    r.solid("bookcase", 36.0, 84.0)
+    r.solid("bookcase", 80.0, 84.0)
+    r.item("hce_whiteboard_maths1", 130.0, 54.0)
+    r.item("hce_phd_frame1", 184.0, 44.0)            # her doctorate (cycle 2, OFF-1: the white paper is Satoshi's)
+    r.solid("filing_cabinet_steel1", 208.0, 86.0)
+    r.item("wall_clock1", 240.0, 42.0)
+    # her desk, facing the room
+    r.item("exec_chair_black1", 136.0, 140.0)
+    desk = r.table("exec_desk1", 112.0, 172.0, kind="objects")    # x 112-192, top 126
+    r.on(desk, "pc11", 0.40, 0.30)
+    r.on(desk, "bankers_lamp1", 0.12, 0.26)
+    r.on(desk, "coffee_cups1", 0.80, 0.30)
+    r.solid("book_pile1", 84.0, 170.0)
+    r.solid("bin2", 64.0, 172.0)
+    r.item("chair-grey-4", 128.0, 208.0)             # two visitor chairs facing her desk (c3 OFF-2)
+    r.item("chair-grey-4", 160.0, 208.0)
+    r.item("book_trolley1", 136.0, 296.0)            # the room's one angled prop; rolls when pushed (2026-10-16)
+    r.solid("journal_stack1", 178.0, 296.0)          # (c3 OFF-3: was caught behind the shelves)
+    r.solid("magazine_rack2", 120.0, 254.0)          # journals by the reading corner
+    # reading corner, SW
+    r.solid("club_chair_e1", 38.0, 252.0)
+    side = r.table("smalldesk2", 80.0, 250.0)
+    r.on(side, "notes3", 0.5, 0.30, layer="conditional_table_items")
+    r.solid("fig_plant1", 36.0, 300.0)
+    # printer table, SE
+    pt = r.table("smalldesk1", 220.0, 250.0)
+    r.on(pt, "notes1", 0.30, 0.34, layer="conditional_table_items")
+    r.on(pt, "office-misc-hdd6", 0.78, 0.30)
+    r.solid("shredder1", 270.0, 252.0)
+    r.solid("binder_shelves1", 210.0, 200.0)
+    r.solid("coat_stand1", 262.0, 160.0)
+    r.item("fire_alarm_point1", 14.0, 150.0)
+    return r.build("room_hce_office")
+
+
+def room_hce_lab():
+    """
+    2×2 GU blockchain lab (chain analysis): grey vinyl with floor trunking, pale
+    grey walls with the amber line (room_hce_lab). Back wall: CHAIN ANALYSIS plate,
+    the analysts' transaction-graph whiteboard, two screens (wallet-flow graph and
+    order book). Mining rigs and a node shelf down the east side with an air mover;
+    two analyst desks in the middle; a Pi-cluster bench and a beanbag west.
+    Doors: W on row 2 (x 32-80, y 64-110 kept clear). Nothing to the south.
+    Priya (blockchain_analyst) at (6,4) since cycle 3: sprite x 176-208, y 96-160, on clear floor.
+    Slots: pc10 on the front desk (base pc, Blockchain Analysis Workstation);
+    notes3 and notes1 at either end of the back desk (Network Analysis, Mixing
+    Analysis; 50 px+ apart), scenario order.
+    """
+    r = _Uni()
+    r.item("threat_map1", 40.0, 56.0)                # flows of money across the map (cycle 2, LAB-1)
+    r.item("hce_lab_sign1", 132.0, 24.0)
+    r.item("hce_whiteboard_graph1", 128.0, 56.0)
+    r.item("hce_chart_screen3", 180.0, 54.0)
+    r.item("hce_chart_screen2", 234.0, 54.0)
+    # east: the rigs
+    r.solid("hce_mining_rig2", 232.0, 140.0, depth=14)
+    r.solid("hce_node_shelf1", 232.0, 200.0, depth=14)
+    r.solid("hce_mining_rig1", 226.0, 270.0, depth=14)
+    r.solid("aes_air_mover1", 200.0, 290.0)          # blowing at the rigs
+    # Priya (blockchain_analyst) at (6,4), moved from (3,3) out of the W door's walk-in line
+    # (cycle 2, LAB-2, approved): the floor x 168-216, y 90-172 stays clear for her.
+    # the workstation desk, west, below the W-door row
+    _trading_desk(r, 40, 166, [("pc10", 0.32, 0.42), ("pc8", 0.72, 0.40)],
+                  [("energy_cans1", 0.94, 0.30)], chair="chair-darkgray-1")   # the lab's own back-view chairs (c3 LAB-3, c5 LAB-4)
+    # the analysis table: Priya's two papers at either end, 90 px apart (cycle 2, LAB-1)
+    t = r.table("zds_conference_table1", 100.0, 240.0, kind="objects")   # x 100-226
+    r.on(t, "notes3", 0.10, 0.30, layer="conditional_table_items")
+    r.on(t, "laptop3", 0.36, 0.28)
+    r.on(t, "pc6", 0.58, 0.30)
+    r.on(t, "coffee_cups1", 0.74, 0.28)
+    r.on(t, "notes1", 0.90, 0.30, layer="conditional_table_items")
+    r.item("chair-darkgray-1", 128.0, 252.0)         # back view, facing the table (c5 LAB-4)
+    r.item("chair-darkgray-1", 178.0, 252.0)
+    # west: the hardware bench and the beanbags
+    r.table("it_workbench1", 36.0, 244.0, kind="objects")
+    r.solid("beanbag1", 40.0, 292.0)
+    r.solid("pizza_boxes1", 88.0, 294.0)
+    r.item("fire_extinguisher1", 292.0, 170.0)
+    return r.build("room_hce_lab")
+
+
+def room_hce_servers():
+    """
+    2×2 GU server room (the exchange's backend): raised floor with two perforated
+    cold aisles, petrol-blue walls with a cyan line (room_hce_servers). A back row
+    of racks under a cable tray, the long row of blue servers across the middle,
+    an ops bench with the SAFETYNET drop and the rack sheet, the backend console
+    desk, a precision air-con unit and the UPS.
+    Doors: S (SE corner) and N (NE corner): the east lane x 256-288 runs clear from
+    door to door. The trading floor covers the bottom two rows (feet <= 256).
+    Slots: pc8 on the console desk (as-type:pc, HashChain Backend Server Terminal),
+    flag-station and notes3 on the bench, 32 px+ apart.
+    """
+    r = _Uni()
+    r.item("cable_tray1", 36.0, 27.0)
+    r.solid("server_rack1", 36.0, 86.0)
+    r.solid("network_rack1", 68.0, 88.0)
+    r.solid("server_rack2", 104.0, 88.0)
+    r.solid("storage_array1", 136.0, 88.0)
+    r.solid("hce_comms_cabinet1", 166.0, 90.0)       # (cycle 2, VLT-2: unlike the data centre's kit)
+    r.item("hce_server_sign1", 194.0, 26.0)
+    r.solid("aes_ups1", 216.0, 88.0)
+    r.table("servers", 34.0, 170.0, kind="objects")  # x 34-255
+    # console desk and bench, south
+    con = r.table("zds_desk3", 172.0, 240.0, kind="objects")   # x 172-223
+    r.on(con, "pc8", 0.45, 0.42, layer="conditional_table_items")
+    r.item("chair-grey-4", 186.0, 252.0)
+    bench = r.table("zds_desk1", 40.0, 240.0, kind="objects")  # x 40-118
+    r.on(bench, "flag-station", 0.22, 0.38, layer="conditional_table_items")
+    r.on(bench, "notes3", 0.80, 0.40, layer="conditional_table_items")
+    r.solid("kvm_cart1", 126.0, 246.0)
+    r.solid("aircon_unit1", 224.0, 252.0)
+    r.item("suppression_panel1", 14.0, 210.0)
+    return r.build("room_hce_servers")
+
+
+def room_hce_vault():
+    """
+    2×2 GU data centre, the custody core: darker raised floor, petrol-blue walls
+    with a cyan line (room_hce_vault). The custody cage across the NW: mesh panels
+    and a cage door along a hatched floor line (y 150), HSM cabinets and the
+    hardware-wallet cabinet inside under a CUSTODY VAULT / TWO-PERSON RULE plate.
+    The custody console on its own steel desk in front of the cage door, with the
+    cold-storage procedure; the transaction server's terminal beside a block of
+    black racks east; EXECUTIVE SUITE plate over the E door's end of the wall
+    (the executive wing is through here); gas suppression, supply boxes, tape
+    library, UPS.
+    Doors: E on row 2, S (SE corner): the east lane x 256-288 stays clear from the E
+    door down to the S door (the rack block x 186-250 stands against the back wall,
+    west of it). The server room covers the bottom two rows. (Precision cooling is
+    the server room's; the custody core has gas suppression, tape library and UPS.)
+    Slots (scenario order): pc6 on the server desk (Financial Transaction Server),
+    pc10 on the console desk (Custody Console), notes3 on the console desk's far
+    end (Cold Storage Procedure, 40 px+ from the console).
+    """
+    r = _Uni()
+    r.item("hce_custody_sign1", 60.0, 30.0)
+    r.item("aes_cctv1", 134.0, 34.0)                 # watching the cage door (cycle 2, VLT-3)
+    r.solid("hce_hsm1", 36.0, 112.0, depth=12)
+    r.solid("server_rack1", 80.0, 110.0)             # (cycle 2, VLT-1: one angled HSM fewer)
+    r.solid("hce_wallet_cabinet1", 122.0, 112.0, depth=12)
+    # the cage front (y 150): panels either side of the door
+    r.solid("hce_cage_panel1", 32.0, 152.0, inset=0, depth=8)
+    r.item("hce_cage_door1", 85.0, 152.0)            # the door, shut (walk-behind decor)
+    r.collision(85.0, 144.0, 36.0, 8.0)
+    r.solid("hce_cage_panel1", 121.0, 152.0, inset=0, depth=8)
+    # east: the rack block and the transaction server
+    r.item("hce_exec_sign1", 214.0, 30.0)
+    r.solid("server_rack2", 186.0, 90.0)
+    r.solid("storage_array1", 218.0, 90.0)
+    srv = r.table("zds_desk3", 196.0, 168.0, kind="objects")   # x 196-247
+    r.on(srv, "pc6", 0.45, 0.42)                     # a standing terminal in the core (c3 VLT-5: no chair)
+    # the custody console, in front of the cage door
+    con = r.table("zds_desk1", 64.0, 210.0, kind="objects")    # x 64-142
+    r.on(con, "pc10", 0.30, 0.42)
+    r.on(con, "notes3", 0.90, 0.40, layer="conditional_table_items")
+    r.item("chair-grey-4", 82.0, 222.0)
+    r.solid("supply_boxes1", 140.0, 252.0)
+    r.solid("tape_library1", 172.0, 250.0)
+    r.solid("ups_cabinet1", 206.0, 248.0)
+    r.solid("suppression_cylinders1", 34.0, 252.0)
+    r.item("suppression_panel1", 14.0, 220.0)
+    return r.build("room_hce_vault")
+
+
+def room_hce_exec_hall():
+    """
+    2×1 GU (10×6) executive wing corridor: smoked oak with a navy and amber runner
+    (room_hce_exec_hall), navy walls. The framed press clipping hangs on the back
+    wall between two sconces, beside an abstract canvas; a HASHCHAIN plate over a
+    console table with an orchid, a trophy cabinet, a PRIVATE plate by the N door, a
+    fire point on the west wall, a leather bench against the south wall at the west
+    end. Nothing to the south: the floor is y 64-160.
+    Doors: W on row 2 (the mouth x 32-60, y 64-100 clear), N (NE corner, x 256-288).
+    Kept clear for Kemal (satoshi_minder): his beat (8,4) <-> (4,4), sprite centres
+    x 128-256, y 128, so x 112-272 below y 92 stays open; the back-wall furniture
+    stands at feet 84-86 and the bench is west of x 104.
+    Slots (as-type): hce_press_clipping (Framed Press Clipping).
+    """
+    r = _Uni()
+    r.item("hce_art_canvas1", 36.0, 48.0)            # (cycle 3: a gallery wall, not scenery prints)
+    r.item("hce_sconce1", 84.0, 42.0)
+    r.item("hce_press_clipping1", 98.0, 54.0)        # top-left 98,24, between two sconces
+    r.item("hce_sconce1", 128.0, 42.0)
+    r.item("hce_logo_small1", 138.0, 23.0)
+    r.solid("hce_console_table1", 136.0, 86.0, depth=8)
+    r.solid("trophy_cabinet1", 198.0, 86.0, depth=8)  # industry awards (c3 EXW-3: the gold coin is the lobby's)
+    r.item("private_sign1", 216.0, 23.0)
+    r.item("fire_alarm_point1", 14.0, 150.0)
+    r.solid("hce_bench1", 40.0, 158.0, depth=10)
+    return r.build("room_hce_exec_hall", "10x6_hall")
+
+
+def room_hce_ceo():
+    """
+    2×2 GU Satoshi's office: smoked oak with an amber and black rug under the desk
+    (room_hce_ceo), navy walls. The desk is room_ceo's (desk-ceo2 at x 118, feet
+    147) and his chair behind it, so the Signing Case keeps its pinned spot on the
+    desk's front edge (3.6, 3.35, elevation 32); two visitor chairs face it. Back
+    wall: a block-height screen and the framed bitcoin white paper; the executive
+    safe alone in the NE corner (pinned at (8,2)). A hardware wallet in a display
+    case and a drinks cabinet west; a black leather sofa, glass table and a fig SW;
+    a bar cart, his side table with the manifesto and a laptop east; a floor globe SE.
+    Doors: S (SE corner, the lane x 256-288 from y 196 clear). The executive wing
+    covers the bottom two rows (feet <= 256). Satoshi at (5,6): x 144-176,
+    y 160-224 clear.
+    Slots: briefcase11 and safe2 (conditional, claimed then pinned by the
+    scenario), notes3 on the side table (Crypto Anarchist Manifesto).
+    """
+    r = _Uni()
+    r.item("hce_block_screen1", 40.0, 52.0)          # his own screen: the chain's block height (cycle 2, CEO-1)
+    r.item("hce_whitepaper_frame1", 150.0, 48.0)
+    r.item("chair-exec-rotate1", 142.0, 128.0)
+    r.table("desk-ceo2", 118.0, 147.0)
+    r.conditional_items.append(make_obj("objects", "briefcase11", 121.0, 150.0, r._next()))
+    r.conditional_items.append(make_obj("objects", "safe2", 229.0, 66.0, r._next()))
+    r.solid("hce_display_case1", 36.0, 130.0)
+    r.solid("drinks_cabinet1", 70.0, 112.0)
+    r.solid("leather_sofa1", 36.0, 214.0)
+    r.table("glass_coffee_table1", 42.0, 250.0, kind="objects")
+    # visitor chairs facing the desk, either side of Satoshi (x 144-176 clear) (cycle 2, CEO-2)
+    r.item("chair-exec-rotate5", 102.0, 200.0)
+    r.item("chair-exec-rotate5", 182.0, 200.0)
+    r.solid("floor_globe1", 196.0, 254.0)
+    side = r.table("smalldesk1", 228.0, 180.0)
+    r.on(side, "notes3", 0.25, 0.30, layer="conditional_table_items")
+    r.on(side, "exec_laptop1", 0.75, 0.26)
+    r.solid("bar_cart1", 200.0, 140.0)
+    r.solid("planter_fig1", 104.0, 254.0)            # SW, off the safe in the NE corner (c3 CEO-4)
+    r.item("fire_alarm_point1", 14.0, 160.0)
+    return r.build("room_hce_ceo")
+
+
+# ---------------------------------------------------------------------------
+# Quantum Dynamics Corporation (m05 "Insider Trading"): a quantum-cryptography
+# research firm in a working day, during the insider hunt. Walls and floors:
+# room_gen/make_qdc_tileset.py; hand-drawn signs, notices and screens:
+# room_gen/make_qdc_props.py (qdc_*); lab, vault and kitchen kit from PixelLab
+# (qdc_*). Furniture is the photo-based house set where it exists. These maps are
+# m05's own, so the shared room_reception, hall_1x2gu, room_break, room_IT,
+# room_lab, room_office, room_servers and room_ceo are untouched. Coordinates:
+# x = left edge, y = feet.
+# ---------------------------------------------------------------------------
+
+def room_qdc_lab():
+    """
+    2×2 GU Dr Halloran's Heisenberg lab: white anti-static tiles, white walls with
+    the violet line (room_qdc_lab). Back wall: HEISENBERG LAB plate over the
+    cryostat prototype (a hatched keep-clear box round it, a helium dewar beside),
+    its control rack under a LASER warning, a fume hood, the lattice whiteboard and
+    the laminated LAB RULES notice by the door end of the wall. The laser bench
+    (QKD optics) on its own hatched box west, a trolley of optics (rolls and spins
+    when pushed); the safety shower and eyewash plumbed into the NE corner, the
+    first-aid cabinet on the east wall and a glovebox east; the long lab bench along the south (an instrument
+    bench and a steel desk, gloves boxes on it, stools tucked in) and Halloran's
+    own small desk below where she stands; the visitor-badge hook on the east wall by the door, empty (a
+    prop only: the visitor spare is Halloran's to hand over, never a pickup here).
+    Everything square to the walls (cycle 2: the angled PixelLab kit regenerated).
+    Doors: E on row 2 (the mouth x 230-288, y 64-118 clear). The break room covers
+    the bottom two rows, so feet stay at y 256 or above.
+    NPC: Halloran at (6,6), sprite x 176-208, feet ~187: x 160-226, y 116-196 clear,
+    and the column x 160-226 open up to the door row, so she is reached from the door.
+    Slots: qdc_lab_rules1 (as-type, Lab Rules) on the back wall with clear floor
+    under it; notes1 on the bench by a monitor (Conference Lanyard), 100 px+ apart.
+    """
+    r = _Uni()
+    # back wall
+    r.item("qdc_lab_sign1", 34.0, 26.0)              # over the cryostat
+    r.item("qdc_laser_warning1", 100.0, 24.0)
+    r.solid("qdc_cryostat1", 40.0, 104.0, depth=12)  # in the hatched box x 34-100, y 68-116
+    r.solid("qdc_instrument_rack1", 96.0, 90.0)      # its control electronics
+    r.solid("qdc_dewar1", 100.0, 128.0, depth=12)    # helium for the fridge
+    r.solid("qdc_fume_hood1", 134.0, 88.0)
+    r.item("qdc_whiteboard_lattice1", 192.0, 54.0)
+    r.item("qdc_lab_rules1", 242.0, 54.0)            # Lab Rules, readable from the door row
+    # safety shower and eyewash plumbed into the NE corner of the back wall (user 2026-10-16: the
+    # free-standing station looked strange); a plain item, no collision, so the E door row stays open
+    r.item("qdc_safety_shower1", 268.0, 72.0)
+    # west: the laser bench on its hatched box (x 34-124, y 140-188), a trolley of optics
+    r.solid("qdc_optical_bench1", 50.0, 180.0, depth=14)
+    r.item("instrument_trolley1", 124.0, 190.0)      # rolls and spins when pushed (user 2026-10-16): no static box
+    # east: the first-aid cabinet on the east wall below the door, the glovebox, clear of Halloran
+    r.item("qdc_first_aid_cabinet1", 289.0, 176.0)
+    r.solid("qdc_glovebox1", 232.0, 214.0, depth=12)
+    r.item("qdc_badge_hook1", 292.0, 136.0)          # the empty visitor-badge hook, by the door
+    r.item("fire_extinguisher1", 292.0, 210.0)
+    r.item("qdc_poster_secure1", 14.0, 128.0)
+    # the long lab bench along the south: an instrument bench and a steel desk
+    lb = r.table("qdc_lab_desk1", 36.0, 250.0, kind="objects")   # x 36-94, its scope and probes on it
+    r.on(lb, "test_tube_rack1", 0.86, 0.30)          # (c3 Q8: was on the floor)
+    b2 = r.table("zds_desk1", 98.0, 250.0, kind="objects")    # x 98-176
+    r.on(b2, "pc8", 0.40, 0.42)
+    r.on(b2, "notes1", 0.72, 0.30, layer="conditional_table_items")   # the lanyard, over the monitor's corner
+    r.on(b2, "gloves_box1", 0.92, 0.30)
+    r.on(b2, "gloves_box1", 0.06, 0.30)
+    for x in (60.0, 108.0):
+        r.item("hospital_chair_south", x, 218.0)     # lab stools facing the bench. Not "chair-*": those roll
+        # when pushed and are tap candidates, and one shoved along the bench raised a menu on the
+        # lanyard (c5 walk); these stay put
+    # Halloran's own corner, SE
+    d = r.table("smalldesk1", 180.0, 254.0)          # x 180-230, below Halloran (c3 Q7)
+    r.on(d, "laptop3", 0.30, 0.30)
+    r.on(d, "office-misc-cup2", 0.72, 0.32)
+    r.solid("book_pile1", 244.0, 254.0)
+    return r.build("room_qdc_lab")
+
+
+def room_qdc_lobby():
+    """
+    2×2 GU QDC reception (reception_lobby, the start room): pale stone with the
+    violet Bloch-sphere inlay at the spawn (room_qdc_lobby), lilac-grey walls with
+    the violet line. Back wall: the QUANTUM DYNAMICS wordmark over the security
+    reception counter (the staff directory on it), a camera, the 999-readiness
+    poster and the dispatch-rollout screen. A sanitiser stand west of the counter;
+    the Heisenberg chip in a display case east; a waiting area on a violet rug SE
+    (black leather sofa, glass table, club chair, the room's angled piece); a row of
+    waiting seats beside a fig, and a brochure rack, SW.
+    Doors: N (NW corner, x 32-64): the lane x 32-72 stays clear down to y 140.
+    E on row 2 (x 230-288, y 64-118 clear). Nothing to the south: the floor runs
+    to y 300. The spawn and the inlay (x 120-200, y 140-230) stay clear.
+    Slots: notes3 on the counter (Building Directory).
+    """
+    r = _Uni()
+    r.item("qdc_poster_ready1", 80.0, 50.0)
+    r.item("qdc_logo_sign1", 122.0, 34.0)            # over the counter
+    r.item("cctv_camera1", 204.0, 30.0)
+    r.item("qdc_dispatch_screen1", 232.0, 56.0)      # the 999 rollout, the firm's proudest contract
+    desk = r.table("reception_counter1", 104.0, 112.0, kind="objects")   # x 104-214
+    r.on(desk, "notes3", 0.22, 0.30, layer="conditional_table_items")
+    r.on(desk, "pc11", 0.52, 0.24)
+    r.on(desk, "phone1", 0.70, 0.30)
+    r.on(desk, "office-misc-smallplant4", 0.90, 0.28)
+    r.solid("sanitizer_stand1", 82.0, 112.0)
+    r.solid("display_case3", 214.0, 186.0)           # the Heisenberg chip under glass
+    # waiting area, SE, on the rug (x 196-290, y 234-300)
+    r.solid("leather_sofa1", 214.0, 256.0)
+    r.table("glass_coffee_table1", 218.0, 292.0, kind="objects")
+    r.solid("club_chair_e1", 178.0, 296.0)
+    # south-west: a row of waiting seats, periodicals, a fig
+    r.solid("lecture_seat_row1", 72.0, 246.0)        # facing the room, clear of the fig (c3 Q5)
+    r.solid("planter_fig1", 36.0, 250.0)
+    r.solid("brochure_rack1", 36.0, 300.0)           # front-on (c3 Q4: the periodicals rack was three-quarter)
+    r.item("fire_alarm_point1", 14.0, 160.0)
+    r.item("fire_extinguisher1", 14.0, 210.0)
+    r.item("qdc_poster_secure1", 292.0, 160.0)
+    return r.build("room_qdc_lobby")
+
+
+def room_qdc_hall():
+    """
+    2×1 GU (10×6) main corridor: slate carpet tiles, lilac-grey walls with the
+    violet line (room_qdc_hall). The lobby covers the bottom two rows, so the floor
+    is y 64-128 and everything stands against the back wall or hangs on it: a QDC
+    plate, a water cooler, the staff noticeboard with Lisa's collection flyer pinned
+    on it, a fire action notice, a drinks machine, the Heisenberg team poster, a bin.
+    Doors: S (SW corner, x 32-64, the walk-in from the lobby: x 30-72 kept empty),
+    W and E on row 2 (y 92-128 open wall to wall), N (NE corner, x 250-290 clear).
+    Slots: notes4 pinned on the noticeboard (Noticeboard Flyer), floor under it clear.
+    """
+    r = _Uni()
+    r.item("qdc_logo_small1", 74.0, 28.0)
+    r.solid("water_cooler1", 76.0, 86.0, depth=8)
+    r.item("notice_board1", 112.0, 54.0)             # x 112-154, top 23
+    r.conditional_items.append(make_obj("objects", "notes4", 120.0, 46.0, r._next()))   # the flyer, pinned on it
+    r.item("fire_action_notice1", 160.0, 52.0)
+    r.solid("drinks_vending1", 184.0, 88.0, depth=8)
+    r.item("qdc_poster_team1", 230.0, 50.0)
+    r.item("bin1", 230.0, 88.0)
+    return r.build("room_qdc_hall", "10x6_hall")
+
+
+def room_qdc_server_hall():
+    """
+    2×1 GU (10×6) server hallway behind the badge reader: grey vinyl with floor
+    trunking, graphite walls with the violet line (room_qdc_server_hall). Patricia's
+    office covers the bottom two rows, so the floor is y 64-128. A cable tray over a
+    rack, the UPS and boxed kit, a tool trolley by the W door; RESTRICTED and a
+    camera by the server-room door, and IT's printed notice taped on the wall
+    beside it, nothing standing in front of it.
+    Doors: W on row 2 (the mouth x 32-92, y 64-110 kept clear), N (NE corner, x 250-290).
+    Slots: qdc_it_notice1 (as-type, IT Notice: Server Room Access) on the wall
+    beside the N door, the floor under it clear.
+    """
+    r = _Uni()
+    r.item("cable_tray1", 40.0, 26.0)                # x 40-190, clear of the sign and camera
+    r.solid("server_rack1", 100.0, 86.0, depth=8)
+    r.solid("ups_cabinet1", 134.0, 86.0, depth=8)
+    r.solid("supply_boxes1", 172.0, 88.0, depth=8)
+    r.item("restricted_sign1", 192.0, 24.0)
+    r.item("fire_extinguisher1", 204.0, 90.0)
+    r.item("qdc_it_notice1", 228.0, 54.0)            # IT's notice, taped by the door (cycle 2: its own sprite)
+    r.item("cctv_camera1", 248.0, 30.0)
+    r.item("aes_tool_trolley1", 104.0, 126.0)        # under the rack, out of the W-door mouth (c5 R3)
+    return r.build("room_qdc_server_hall", "10x6_hall")
+
+
+def room_qdc_break():
+    """
+    2×2 GU break room: warm wood-effect vinyl with a kitchen strip along the back,
+    sage walls with the violet line (room_qdc_break). Back wall: a white kitchen
+    counter (sink, microwave), an under-counter fridge with the collection tin and a
+    kettle on it (the tin Lisa's flyer mentions), a wall TV over the gap where Lisa
+    stands, the espresso machine with the TalentStack leaflet dropped at its foot, a
+    clock. A fridge-freezer on the west wall; two cafe tables with plain chairs;
+    a snack machine east; a sofa and two beanbags SW, a foosball table, a magazine
+    rack, the recycling bins (paper, glass, general) and a tall plant along the south.
+    Everything that lines a wall is square to it (cycle 2).
+    Doors: E on row 2 (x 230-288, y 64-118 clear). Nothing to the south.
+    NPC: Lisa at (4,4), sprite x 112-144, feet ~123: nothing stands on the floor in
+    x 112-156 behind her, and the door row reaches her.
+    Slots: notes3 on the floor at the espresso machine's foot (TalentStack Leaflet).
+    """
+    r = _Uni()
+    r.table("qdc_kitchenette1", 32.0, 96.0, kind="objects")       # x 32-86
+    uc = r.table("undercounter_fridge1", 88.0, 96.0, kind="objects")   # x 88-110
+    r.on(uc, "qdc_collection_tin1", 0.30, 0.40)
+    r.on(uc, "kettle1", 0.80, 0.40)
+    r.item("uni_tv1", 114.0, 50.0)                   # the news on the wall
+    r.solid("qdc_espresso1", 158.0, 96.0, depth=10)  # x 158-202
+    r.conditional_items.append(make_obj("objects", "notes3", 202.0, 104.0, r._next()))   # the leaflet, at its foot
+    r.item("wall_clock1", 212.0, 42.0)
+    r.solid("qdc_fridge1", 34.0, 160.0, depth=12)   # west wall
+    # two cafe tables, plain chairs either side
+    for x in (84.0, 160.0):
+        t = r.table("smalldesk1", x, 196.0)
+        r.on(t, "office-misc-cup2" if x < 100 else "mugs_tray1", 0.35, 0.34)
+        for dx in (8.0, 28.0):
+            r.item("hospital_chair_south", x + dx, 164.0)   # north side, facing the table
+            r.item("hospital_chair_north", x + dx, 218.0)   # south side, facing it
+    # east
+    r.solid("vending_machine1", 244.0, 196.0)
+    # south
+    r.solid("beanbag_teal1", 40.0, 250.0)
+    r.solid("beanbag_orange1", 76.0, 252.0)
+    r.solid("uni_sofa2", 36.0, 296.0)
+    r.solid("foosball_table2", 116.0, 294.0)
+    r.solid("magazine_rack1", 170.0, 298.0)
+    r.solid("qdc_recycling_bins1", 190.0, 258.0)
+    r.solid("plant-large11", 248.0, 298.0)
+    r.item("fire_extinguisher1", 292.0, 160.0)
+    return r.build("room_qdc_break")
+
+
+def room_qdc_open():
+    """
+    2×2 GU open-plan office: blue-grey carpet with a lighter walkway (x 226-288)
+    from the S door to the N door, lilac-grey walls with the violet line
+    (room_qdc_open). Back wall: Owen's network whiteboard in the NW, his IT
+    workbench under the IT SUPPORT plate, a comms cabinet, the team's key-rotation
+    year planner. Two desk banks with monitors and clutter, chairs tucked in; a
+    photocopier, a filing cabinet and a bin SW; cables where IT works.
+    Doors: W on row 2 (x 32-90, y 64-118 clear), N (NE corner) and S (SE corner):
+    the walkway x 226-288 is clear end to end (it is the route between the two
+    doors). The corridor covers the bottom two rows, so feet stay at y 256 or above.
+    NPC: Owen at (6,4), sprite x 176-208, feet ~123: the floor x 160-226, y 92-136
+    stays clear (bank A moved down in cycle 2), so he is reached from the door row
+    and from the walkway.
+    No scenario objects (Owen hands everything over in person).
+    """
+    r = _Uni()
+    r.item("qdc_whiteboard_net1", 36.0, 54.0)
+    r.item("qdc_it_sign1", 100.0, 24.0)
+    r.table("it_workbench2", 92.0, 88.0, kind="objects")   # x 92-144
+    r.item("comms_cabinet1", 148.0, 56.0)            # on the wall face (c3 Q10)
+    r.item("year_planner1", 178.0, 54.0)             # key-rotation windows by region
+    r.item("cable_tangle1", 120.0, 104.0)
+    # desk bank A (row 1), clear of Owen's feet
+    for x, mon, extra in ((40, "pc8", "office-misc-cup"), (120, "pc11", "phone3")):
+        d = r.table("zds_desk1", float(x), 178.0, kind="objects")
+        r.on(d, mon, 0.30, 0.42)
+        r.on(d, extra, 0.78, 0.36)
+        r.on(d, "office-misc-smallplant2" if x < 100 else "picture13", 0.58, 0.30)
+        r.item("chair-darkgray-1", float(x + 14), 190.0)
+        r.item("chair-darkgray-1", float(x + 46), 190.0)
+    # desk bank B (row 2) and the print point SW
+    d = r.table("zds_desk1", 120.0, 240.0, kind="objects")
+    r.on(d, "pc6", 0.30, 0.42)
+    r.on(d, "laptop1", 0.75, 0.40)
+    r.on(d, "office-misc-smallplant5", 0.95, 0.30)
+    r.item("chair-darkgray-1", 134.0, 252.0)
+    r.item("chair-darkgray-1", 170.0, 252.0)
+    r.solid("photocopier1", 40.0, 248.0)
+    r.solid("qdc_filing_steel1", 78.0, 250.0)
+    r.item("bin3", 108.0, 250.0)
+    r.item("fire_alarm_point1", 292.0, 150.0)
+    r.item("fire_extinguisher1", 292.0, 210.0)
+    r.item("sanitiser_dispenser1", 14.0, 160.0)
+    return r.build("room_qdc_open")
+
+
+def room_qdc_torres():
+    """
+    2×2 GU David Torres' office (the cryptography lead): oak boards with a worn blue
+    rug under the desk, lilac-grey walls with the violet line (room_qdc_torres).
+    Back wall: two bookcases, his son's crayon drawing pinned up, a certificate, his
+    key-rotation whiteboard, a steel filing cabinet, a clock. His mahogany desk on
+    the rug facing the room, chair and lamp behind (the Mug on its front-right, a
+    monitor, a family photo); the scuffed briefcase on the floor at the desk's left
+    end; two visitor chairs facing the desk; a sideboard, a book trolley (the
+    room's angled prop), a pink reading armchair with journals, a bin, a fig.
+    Doors: S (SE corner): the lane x 240-288 from y 140 down stays clear. The open
+    office covers the bottom two rows (feet <= 256).
+    Slots: office-misc-cup on the desk (the Mug, first in table_items, on the desk
+    top), briefcase1 by the desk (as-type:briefcase, Torres' Briefcase), 80 px apart.
+    """
+    r = _Uni()
+    r.solid("bookcase", 36.0, 84.0)
+    r.solid("bookcase", 80.0, 84.0)
+    r.item("qdc_kid_drawing1", 128.0, 46.0)          # Miguel's drawing; 'WORLD'S BEST DAD' is on the mug
+    r.item("uni_certificate1", 154.0, 40.0)
+    r.item("qdc_whiteboard_keys1", 174.0, 54.0)      # the key-rotation calendar (cycle 2)
+    r.solid("filing_cabinet", 226.0, 86.0)            # wooden, front-on (c3 Q1)
+    r.item("wall_clock1", 260.0, 44.0)
+    desk = r.table("exec_desk_mahogany1", 130.0, 172.0, kind="objects")   # x 130-190, its chair and lamp built in
+    r.on(desk, "office-misc-cup", 0.86, 0.66)        # the Mug, front-right, first: the scenario claims it
+    r.on(desk, "pc11", 0.40, 0.56)
+    r.on(desk, "picture2", 0.62, 0.58)               # the family photo
+    r.item("briefcase1", 104.0, 178.0)               # the briefcase, at the desk's left end
+    r.item("chair-darkgray-1", 150.0, 222.0)         # visitor chairs, facing the desk, 32 px+ from the
+    r.item("chair-darkgray-1", 184.0, 222.0)         # Mug and the briefcase (chairs are tap candidates)
+    r.solid("sideboard1", 36.0, 150.0)
+    r.item("book_trolley1", 214.0, 150.0)            # rolls when pushed (2026-10-16)
+    r.solid("sofa1", 36.0, 252.0)                    # the reading armchair
+    r.solid("journal_stack1", 92.0, 252.0)
+    r.solid("bin2", 120.0, 252.0)
+    r.solid("fig_plant1", 196.0, 254.0)
+    r.item("fire_alarm_point1", 14.0, 160.0)
+    return r.build("room_qdc_torres")
+
+
+def room_qdc_security():
+    """
+    2×2 GU Patricia Morgan's office (Chief Security Officer): plum carpet,
+    lilac-grey walls with the violet line (room_qdc_security). Back wall: her
+    suspects board (eight badge photos, two strung to a note) in the NW, the
+    SECURITY plate, the vetting binders, a steel filing cabinet and the locked one
+    behind her desk, a key cabinet. Her desk mid-room (the incident log, a monitor,
+    a phone), her chair, two plain visitor chairs; the CCTV desk SE with its chair;
+    a small meeting table SW with four chairs; a coat stand, a wooden cabinet, a
+    shredder, a tall plant. No decoy safe (cycle 2: the one lock here is the cabinet).
+    Doors: W on row 2 (x 32-126, y 64-118 clear: Patricia stands just inside).
+    Nothing to the south: the floor runs to y 300.
+    NPC: Patricia at (3,3), sprite x 80-112, feet ~91: x 70-130 clear to y 130.
+    Slots: notes3 on her desk (Security Incident Log), filing_cabinet_locked2
+    (as-type:filing_cabinet_locked, Locked Filing Cabinet; hand-drawn front-on),
+    90 px+ apart.
+    """
+    r = _Uni()
+    r.item("qdc_suspects_board1", 32.0, 54.0)
+    r.item("qdc_security_sign1", 140.0, 24.0)
+    r.solid("binder_shelves1", 136.0, 88.0)
+    r.solid("qdc_filing_steel1", 188.0, 90.0)
+    r.solid("filing_cabinet_locked2", 220.0, 90.0)   # the locked one, behind her desk (front-on, c3 Q2)
+    r.item("key_cabinet1", 258.0, 44.0)
+    r.item("exec_chair_black1", 174.0, 138.0)
+    desk = r.table("exec_desk1", 150.0, 172.0, kind="objects")   # x 150-230
+    r.on(desk, "notes3", 0.18, 0.40, layer="conditional_table_items")
+    r.on(desk, "pc8", 0.54, 0.24)
+    r.on(desk, "phone2", 0.86, 0.30)
+    r.item("chair-grey-1", 166.0, 216.0)             # visitor chairs, facing her desk (c5 R4), 32 px+
+    r.item("chair-grey-1", 200.0, 216.0)             # from the incident log
+    r.solid("credenza1", 146.0, 300.0)               # against the south wall (c5 R2)
+    r.table("qdc_cctv_desk1", 222.0, 250.0, kind="objects")   # x 222-282
+    r.item("hospital_chair_north", 244.0, 276.0)
+    r.solid("shredder1", 268.0, 150.0)
+    # meeting table SW
+    mt = r.table("display_table1", 60.0, 262.0, kind="objects")   # x 60-138, clear of the plant (c5 R1)
+    r.on(mt, "binders1", 0.20, 0.30)
+    r.on(mt, "coffee_cups1", 0.55, 0.34)
+    r.on(mt, "laptop1", 0.82, 0.36)
+    for x in (72.0, 110.0):
+        r.item("hospital_chair_south", x, 230.0)
+        r.item("hospital_chair_north", x, 288.0)
+    r.solid("coat_stand1", 36.0, 124.0)               # by the door, clear of the plant (c4)
+    r.solid("plant-large12", 34.0, 210.0)            # against the west wall (c3 Q13)
+    r.item("fire_extinguisher1", 292.0, 120.0)
+    return r.build("room_qdc_security")
+
+
+def room_qdc_servers():
+    """
+    2×2 GU server room: raised floor with perforated cold aisles, graphite walls
+    with the violet line (room_qdc_servers). A back row of racks under a cable tray,
+    SERVER ROOM plate, UPS; a long row of servers across the middle; the research
+    network terminal on its own desk and the SAFETYNET drop on a steel bench to
+    the south; a precision air-con unit; gas suppression panel.
+    Doors: S (SE corner) and N (NE corner): the east lane x 256-288 runs clear from
+    door to door. The server hallway covers the bottom two rows (feet <= 256).
+    Slots: vm-launcher on the terminal desk (Bludit CMS Server Terminal),
+    flag-station on the bench (SAFETYNET Drop-Site Terminal), 80 px apart.
+    """
+    r = _Uni()
+    r.item("cable_tray1", 36.0, 26.0)
+    r.solid("server_rack1", 36.0, 86.0)
+    r.solid("server_rack2", 68.0, 88.0)
+    r.solid("storage_array1", 100.0, 88.0)
+    r.solid("server_rack1", 132.0, 86.0)
+    r.solid("qdc_rack_black1", 164.0, 90.0)
+    r.item("qdc_server_sign1", 192.0, 26.0)
+    r.solid("ups_cabinet1", 210.0, 88.0)
+    r.table("servers", 34.0, 170.0, kind="objects")    # x 34-255, the east lane x 256-288 stays open
+    term = r.table("zds_desk3", 40.0, 240.0, kind="objects")   # x 40-91
+    r.on(term, "vm-launcher", 0.30, 0.42)            # a standing terminal: no chair (a chair here is a tap candidate)
+    bench = r.table("zds_desk1", 120.0, 240.0, kind="objects")   # x 120-198
+    r.on(bench, "flag-station", 0.30, 0.38)
+    r.on(bench, "laptop3", 0.78, 0.40)
+    r.solid("aircon_unit1", 212.0, 250.0)
+    r.item("suppression_panel1", 14.0, 210.0)
+    r.item("fire_extinguisher1", 14.0, 150.0)
+    return r.build("room_qdc_servers")
+
+
+def room_qdc_vault():
+    """
+    2×2 GU key vault (data_center): dark raised floor, darker graphite walls with a
+    red security line (room_qdc_vault). Back wall: KEY VAULT / HEISENBERG LEADS ONLY
+    over the wall of key safes and the secure key cabinet, behind a red hatched
+    two-person line; a camera; TWO-PERSON RULE over the racks and the tape library
+    east. Two front-on HSM racks against the east wall; the upload terminal on
+    its steel desk mid-room, where Torres works (he stands at its front, (5,7)); a
+    second bench west with his printed schedule and manifest; gas suppression; the
+    vault access log on a clipboard on the east wall.
+    Doors: S (SE corner). The player walks in up x 256-288 and west along y 200-256
+    to Torres: nothing stands there (feet of the east-wall kit <= 190), so he is
+    reached straight from the door (browser check N3: the old map had a desk by
+    the door, which left the player 36 px from him). The server room covers the
+    bottom two rows (feet <= 256).
+    Slots (scenario order): pc10 on the upload desk (Exfiltration Upload Terminal),
+    notes3 at the desk's far end (Sealed TalentStack Envelope, 50 px+ from the
+    terminal), notes1 and notes4 at either end of the west bench (Upload Schedule,
+    Data Package Manifest, 37 px from the schedule's centre).
+    """
+    r = _Uni()
+    r.item("qdc_vault_sign1", 40.0, 30.0)
+    r.solid("qdc_key_lockers1", 40.0, 98.0, depth=12)
+    r.solid("qdc_key_cabinet1", 102.0, 98.0, depth=12)
+    r.item("aes_cctv1", 146.0, 30.0)
+    r.item("qdc_two_person_sign1", 176.0, 26.0)
+    r.solid("server_rack2", 176.0, 90.0)
+    r.solid("qdc_rack_black1", 208.0, 92.0)
+    r.solid("tape_library1", 250.0, 90.0)
+    r.solid("qdc_hsm1", 252.0, 186.0)                # an HSM rack against the east wall (c3 Q12)
+    r.solid("qdc_hsm1", 218.0, 186.0)
+    r.item("aes_clipboard1", 292.0, 150.0)           # the vault access log, on the east wall
+    up = r.table("zds_desk1", 120.0, 176.0, kind="objects")   # x 120-198, top 137
+    r.on(up, "pc10", 0.40, 0.42)
+    r.on(up, "notes3", 0.95, 0.40, layer="conditional_table_items")
+    r.on(up, "office-misc-hdd4", 0.08, 0.36)
+    bench = r.table("zds_desk1", 36.0, 236.0, kind="objects")  # x 36-114
+    r.on(bench, "notes1", 0.15, 0.36, layer="conditional_table_items")
+    r.on(bench, "notes4", 0.80, 0.40, layer="conditional_table_items")   # 37 px from the schedule (c3 Q11)
+    r.solid("suppression_cylinders1", 34.0, 176.0)
+    r.item("suppression_panel1", 14.0, 210.0)
+    return r.build("room_qdc_vault")
+
+
+# ---------------------------------------------------------------------------
+# Pacific Northwest Regional Grid Control (m07 "The Architect's Gambit"): a public
+# utility's grid control facility outside Portland, at night, mid-evacuation.
+# Walls and floors: room_gen/make_pnw_tileset.py; hand-drawn signs, boards, screens,
+# the plant log, the cable ladder and the splice: room_gen/make_pnw_props.py
+# (pnw_*, notes_*); gensets, transfer switch, control cabinets, consoles, x-ray,
+# arch, batteries, day tank: PixelLab (pnw_*). These maps are m07's own, so the
+# shared room_security, room_office, room_servers, room_control_1x2gu,
+# room_battery_hall and room_archive_1x2gu are untouched.
+# Coordinates: x = left edge, y = feet.
+# ---------------------------------------------------------------------------
+
+def room_pnw_checkpoint():
+    """
+    2×2 GU security checkpoint, the start room: grey terrazzo with the PNW
+    fir-and-bolt inlay at the spawn, a walk-off mat in the east door mouth
+    (room_pnw_checkpoint). Back wall: the PACIFIC NORTHWEST REGIONAL GRID CONTROL
+    wordmark over the guard counter, the NERC escort notice and the muster sign under
+    it, the evacuation muster board (clear floor under it), the CCTV monitors, a
+    camera. The guard counter NW with the badge station, a phone, the radio charger
+    and the open visitor ledger; a drinks machine below the E door; two plastic waiting
+    seats on the west wall; the screening lane along the south (x-ray, the arch standing
+    on the yellow queue line, stanchions); grey lockers SE; extinguisher and call point.
+    Doors: E (row 2). The spawn (the inlay, about 160,160) and Hollis's patrol
+    (x 96-224, feet 208-245) are clear floor; the E-door mouth (x 232-288,
+    y 64-112) is clear.
+    Slots (as-type): pnw_badge_printer1 (Contractor Badge Station: a card printer with
+    the uncollected badge in its tray) and notes_ledger1 (Audited Visitor Log) on the
+    counter, 50 px+ apart; pnw_evac_board1 (as-type, Evacuation Status Board).
+    """
+    r = _Uni()
+    r.item("pnw_logo_sign1", 36.0, 34.0)
+    r.item("pnw_nerc_notice1", 38.0, 56.0)
+    r.item("pnw_muster_sign1", 110.0, 58.0)
+    r.item("pnw_evac_board1", 156.0, 56.0)
+    r.item("cctv_monitors1", 214.0, 54.0)
+    r.item("cctv_camera1", 264.0, 34.0)
+    desk = r.table("reception_counter1", 34.0, 122.0, kind="objects")   # x 34-144, top 78
+    r.on(desk, "pnw_badge_printer1", 0.20, 0.36, layer="conditional_table_items")   # Contractor Badge Station (as-type; cycle 2 m10)
+    r.on(desk, "phone1", 0.44, 0.34)
+    r.on(desk, "aes_radio_charger1", 0.58, 0.34)
+    r.on(desk, "notes_ledger1", 0.84, 0.36, layer="conditional_table_items")  # Audited Visitor Log
+    r.solid("drinks_vending1", 244.0, 174.0)                         # below the E door mouth (cycle 2 m11: not the ops floor's cooler)
+    r.item("hospital_chair2", 36.0, 200.0)                           # two plastic waiting seats facing east (static)
+    r.item("hospital_chair2", 36.0, 232.0)
+    r.item("fire_alarm_point1", 14.0, 140.0)
+    r.item("fire_extinguisher1", 14.0, 176.0)
+    # the screening lane along the south wall
+    r.solid("pnw_xray1", 36.0, 300.0, depth=12)
+    r.solid("pnw_arch1", 108.0, 262.0, depth=8)                      # standing in the lane on the queue line (cycle 2 m12)
+    r.solid("stanchions1", 142.0, 296.0, depth=8)
+    r.solid("aes_lockers_grey1", 224.0, 302.0, depth=12)
+    r.item("aes_ppe_cabinet1", 290.0, 166.0)                        # PPE cabinet on the east wall below the door
+    r.solid("coat_stand1", 262.0, 244.0, depth=6)                   # (cycle 3 m-G)
+    r.item("bin1", 196.0, 300.0)
+    return r.build("room_pnw_checkpoint")
+
+
+def room_pnw_ops():
+    """
+    2×2 GU operations floor, the setting's signature room: dark blue carpet tiles, a
+    lighter aisle door to door along the top, a raised grey dais at the back for the
+    shift supervisor (room_pnw_ops). Back wall: the 147-substation wall map (red
+    rings) and the amber situation video wall, five screens wide. Two rows
+    of three operator consoles facing the wall, a 32 px gangway between the second
+    and third in each row; position 3 (front row, east) is the abandoned workstation,
+    its chair pushed back. On the dais the supervisor's desk with the plant key and
+    the handover sheet in the tray, a laptop and a phone, his chair shoved aside.
+    Coffee station and water cooler SW, binder shelves SE, sanitiser and call point west,
+    extinguisher east.
+    Doors: W and E (row 2): the aisle y 64-112 runs clear door to door.
+    Slots: pnw_substation_map1 (as-type, 147-Substation Wall Map), pnw_video_wall1
+    (as-type, Grid Situation Board), pnw_console_pos1 (as-type, Abandoned Operator
+    Workstation), key and notes3 on the supervisor's desk (Plant Maintenance Key,
+    Shift Handover Sheet) 40 px+ apart. Only the static, angled chair stands near
+    position 3 (rolling chairs are tap candidates).
+    """
+    r = _Uni()
+    r.item("pnw_substation_map1", 36.0, 56.0)
+    r.item("pnw_video_wall1", 114.0, 58.0)                          # x 114-273: wall-sized (cycle 2 m4)
+    # front row (feet 156): A, B, gangway, position 3
+    # every console carries a muted position plate 1-6 (user review 2026-10-16: a lone "3" read as a marker)
+    con_a = r.table("pnw_console2_p1", 40.0, 156.0, kind="objects")
+    r.table("pnw_console1_p2", 104.0, 156.0, kind="objects")
+    r.solid("pnw_console_pos1", 200.0, 156.0, depth=12)        # Abandoned Operator Workstation (items layer: as-type only searches item layers)
+    r.item("chair-grey-1", 60.0, 178.0)
+    r.item("chair-grey-1", 124.0, 178.0)
+    r.item("aes_office_chair1", 236.0, 204.0)                    # pushed well back; static, one of the room's two angled pieces
+    # position 3's mug is drawn into pnw_console_pos1 (a separate sprite drew behind the console: cycle 3 m-A)
+    r.on(con_a, "office-misc-headphones", 0.30, 0.55)              # a headset dropped on console A
+    # back row (feet 236)
+    r.table("pnw_console1_p4", 40.0, 236.0, kind="objects")
+    r.table("pnw_console2_p5", 104.0, 236.0, kind="objects")
+    r.table("pnw_console1_p6", 200.0, 236.0, kind="objects")
+    r.item("chair-grey-1", 60.0, 258.0)
+    # back-row chair F removed (lighting stage, dressing c5 m-1: it sat half behind the binder shelves); console E's chair went in cycle 2
+    # the supervisor's dais (x 96-224, y 248-306 on the sheet)
+    sup = r.table("desk1", 118.0, 304.0)                          # x 118-196, top 265 (cycle 2 m1: clear of back-row chair E)
+    r.on(sup, "key", 0.14, 0.40, layer="conditional_table_items")       # Plant Maintenance Key
+    r.on(sup, "laptop1", 0.46, 0.36)
+    r.on(sup, "phone2", 0.64, 0.34)
+    r.on(sup, "notes3", 0.86, 0.40, layer="conditional_table_items")    # Shift Handover Sheet
+    r.item("pnw_office_chair_m1", 86.0, 306.0)                      # shoved aside; static, so it never rolls into the tray (cycle 2 m1)
+    r.solid("coffee_station1", 34.0, 300.0)
+    r.solid("water_cooler1", 60.0, 300.0)
+    r.solid("binder_shelves1", 238.0, 300.0)                     # front-on (the photocopier was three-quarter: cycle 3 m-B)
+    r.item("sanitiser_dispenser1", 14.0, 204.0)
+    r.item("fire_alarm_point1", 14.0, 150.0)
+    r.item("fire_extinguisher1", 292.0, 170.0)
+    return r.build("room_pnw_ops")
+
+
+def room_pnw_servers():
+    """
+    2×2 GU server hall: raised floor with a perforated cold aisle, teal-graphite
+    walls with the evergreen line (room_pnw_servers). Back wall: a cable tray over a
+    row of seven racks (rack 4 has the cabling survey note clipped to its door),
+    SERVER HALL / RESTRICTED. A middle row of racks ending in the SCADA backup server
+    (its own blue rack with a red BKP tag). Two desks to the south: the VM terminal
+    and the SAFETYNET relay. Extinguisher and suppression panel on the west wall.
+    Doors: W (row 2), N (NW corner) and S (SW corner): all on the west side, so the
+    west lane x 32-76 runs clear from door to door and the kit fills the east.
+    The generator hall covers the bottom two rows (feet <= 256). Elena (3,7.5)
+    stands on clear floor west of the desks.
+    Slots: notes_clip1 (as-type) on rack 4 (Cabling Survey Note), pnw_backup_server1
+    (as-type, SCADA Backup Server), vm-launcher (VM Access Terminal) and flag-station (SAFETYNET Relay
+    Terminal) on their desks, 60 px+ apart; no chairs (tap candidates).
+    """
+    r = _Uni()
+    r.item("cable_tray1", 80.0, 26.0)
+    r.item("pnw_server_sign1", 236.0, 32.0)
+    for i, rack in enumerate(("server_rack1", "server_rack2", "storage_array1", "server_rack1",
+                              "tape_library1", "ups_cabinet1", "server_rack2")):
+        r.solid(rack, 76.0 + 30 * i, 94.0 if rack != "ups_cabinet1" else 92.0)
+    r.item("notes_clip1", 172.0, 96.0, layer="conditional_items")    # clipped to rack 4's door (x 166-196): paper at y 70-84, feet in front of the rack
+    for i in range(5):
+        r.solid("server_rack1", 106.0 + 30 * i, 170.0)
+    r.solid("pnw_backup_server1", 256.0, 170.0)                     # SCADA Backup Server (as-type; front-on, cycle 3 M-1)
+    r.solid("kvm_cart1", 110.0, 200.0, depth=10)                    # Elena's rack terminal, pulled up to the row (cycle 2 M3)
+    r.item("pnw_backup_tag1", 259.0, 171.0)
+    r.item("aes_toolbox1", 232.0, 194.0)                            # left in the aisle when the alarm went (cycle 3 m-I)
+    term = r.table("zds_desk3", 140.0, 248.0, kind="objects")       # x 140-191, 36 px from Elena (cycle 2)
+    r.on(term, "vm-launcher", 0.36, 0.42)                           # standing terminal, no chair
+    relay = r.table("zds_desk1", 208.0, 248.0, kind="objects")      # x 208-286
+    r.on(relay, "flag-station", 0.30, 0.40)
+    r.on(relay, "office-misc-hdd2", 0.78, 0.36)
+    r.item("fire_extinguisher1", 14.0, 150.0)
+    r.item("suppression_panel1", 14.0, 206.0)
+    return r.build("room_pnw_servers")
+
+
+def room_pnw_scada():
+    """
+    2×1 GU (10×6) SCADA control: dark anti-static tiles, plum-slate walls with a red
+    line (room_pnw_scada). Back wall: the countdown display over the operator console
+    (west, so Mercer no longer hides it: cycle 2), the PNW 147 mimic board, SCADA
+    CONTROL / AUTHORISED ONLY behind Mercer. The charcoal master desk with the cascade
+    control position and the signed projection at its east end, beside Mercer. No
+    chair (it stood in the walk-in band).
+    Doors: S (SW corner, x 32-64). The server room covers rows 4-5, so the floor is
+    y 64-128; the band y 104-128 runs clear from the door to Mercer (7,3).
+    Slots: scada_historian (via the object's sprite, Cascade Control System) and
+    notes3 (Signed Casualty Projection) on the master desk; centre taps unique; pnw_countdown1 (as-type, Cascade Countdown Display).
+    """
+    r = _Uni()
+    r.item("pnw_countdown1", 30.0, 46.0)                            # over the operator console, clear of Mercer (cycle 2 M1)
+    r.item("pnw_mimic1", 110.0, 44.0)                               # lighting stage (walk F1): up 8 px so the historian monitor no longer hides its lamps
+    r.item("pnw_scada_sign1", 212.0, 30.0)                          # decor: Mercer may stand in front of it
+    r.table("pnw_console2", 40.0, 100.0, kind="objects")            # x 40-104
+    master = r.table("pnw_master_desk1", 112.0, 104.0, kind="objects")   # x 112-190, top 65; charcoal (cycle 2 M2)
+    r.on(master, "scada_historian", 0.34, 0.50, layer="conditional_table_items")
+    r.solid("pnw_desk_return1", 190.0, 104.0)                       # the desk reaches Mercer's spot (cycle 3 m-D)
+    r.on(master, "notes3", 0.97, 0.42, layer="conditional_table_items")   # clear of the historian's bounds (cycle 2 m6)
+    r.item("fire_extinguisher1", 14.0, 112.0)
+    r.item("alarm_panel", 290.0, 104.0)
+    return r.build("room_pnw_scada", "10x6_hall")
+
+
+def room_pnw_genhall():
+    """
+    4×2 GU (20×10) backup generation hall: blue-grey epoxy, sage blockwork with the
+    evergreen line (room_pnw_genhall_w/_e). West: the N-door to S-door lane x 32-84
+    behind a yellow walkway line. Back wall at the west end, in a hatched keep-clear
+    box: BACKUP GENERATION HALL, the automatic transfer switch ATS-1, the plant log
+    chained to the wall beside it, the genset control panel. Three yellow gensets in
+    hatched boxes across the middle (GEN 1-3 plates on their skids), starter batteries,
+    an engine cabinet and a junction box along the back wall; the red fuel day tank
+    in its bund at the east end with the hose reel over it; fuel trunking to the sets.
+    A steel trestle (radios) and a tool chest west of GEN 1; ATS-1's cover propped against the wall; a cable trolley, a transformer, a spill kit
+    and drums along the south of the east half.
+    Doors: N and S (NW and SW corners). The cable vault covers rows 8-9 of the west
+    half (feet <= 256 for x < 320).
+    Slots (as-type): pnw_ats (Backup Power Transfer Switch), pnw_genset_panel (Genset
+    Control Panel), notes_plantlog (Plant Maintenance Log). rooms.js reads notes_* as
+    its own base type, not notes, so each needs as-type. Top-lefts 36 px+ from
+    each other's centres.
+    """
+    r = _Uni()
+    r.item("pnw_genhall_sign1", 96.0, 30.0)
+    r.solid("pnw_ats1", 100.0, 104.0)                    # ATS-1, top-left 100,50
+    r.item("notes_plantlog1", 138.0, 56.0, layer="conditional_items")   # chained beside the switch (cycle 2 m14: clear of the panel)
+    r.item("pnw_ats_cover1", 156.0, 90.0)                           # its cover off, propped on the skirting (cycle 3 m-F; c5 m-2: feet 100 -> 90)
+    r.solid("pnw_genset_panel1", 186.0, 104.0)           # x 186-221
+    r.item("aes_hv_danger1", 240.0, 52.0)
+    # back wall kit east of the box
+    r.solid("pnw_batteries1", 270.0, 100.0)
+    r.solid("pnw_engine_cabinet1", 330.0, 100.0)
+    r.solid("pnw_batteries1", 376.0, 100.0)
+    r.solid("pnw_junction_box1", 436.0, 96.0)
+    r.solid("pnw_batteries1", 480.0, 100.0)
+    r.item("aes_hivis_hook1", 300.0, 44.0)                          # a hi-vis vest left on its hook
+    r.item("pnw_ear_sign1", 412.0, 44.0)
+    # the gensets in their hatched boxes (x 240-320, 344-424, 448-528; y 140-214)
+    for x, plate in ((249.0, "pnw_genplate_one1"), (353.0, "pnw_genplate_two1"), (457.0, "pnw_genplate_three1")):
+        r.solid("pnw_genset1", x, 206.0, depth=14)
+        r.item(plate, x + 18.0, 207.0)                              # on the set's skid (cycle 3 m-E: they hung over the batteries)
+    # fuel day tank in its bund (536-604, 66-140), the hose reel on the wall above
+    r.solid("pnw_day_tank1", 541.0, 126.0, depth=12)
+    r.item("pnw_hose_reel1", 566.0, 56.0)
+    # west of GEN 1: a steel bench with the radio charger
+    bench = r.table("aes_trestle2", 116.0, 226.0, kind="objects")   # x 116-168, a steel trestle (cycle 2 m16)
+    r.solid("aes_tool_chest1", 180.0, 230.0)
+    r.on(bench, "aes_radio_charger1", 0.30, 0.34)
+    r.on(bench, "office-misc-cup", 0.70, 0.40)
+    # south of the east half (visible down to y 306)
+    r.solid("pnw_cable_trolley1", 372.0, 298.0)
+    r.solid("pnw_transformer1", 470.0, 300.0, depth=12)
+    r.item("aes_spill_kit1", 540.0, 296.0)
+    r.item("aes_drum1", 572.0, 298.0)
+    r.item("aes_drum1", 588.0, 300.0)
+    r.item("fire_alarm_point1", 14.0, 140.0)
+    r.item("fire_extinguisher1", 14.0, 176.0)
+    return r.build("room_pnw_genhall", "20x10_wide")
+
+
+def room_pnw_vault():
+    """
+    2×1 GU (10×6) underground cable vault: wet concrete with damp patches, a
+    chequer-plate cable trench along the back wall, a sump grate (room_pnw_vault).
+    Board-marked concrete walls with a yellow line. Back wall: CABLE VAULT /
+    CONFINED SPACE, a cable ladder loaded with the trunk runs across the wall, the
+    splice on it (resin joint, site tape, a small grey device nobody registered), a
+    gas detector. The Tomb Gamma printout is wedged in the cable ladder by the
+    splice; Park's trestle east with a battery printer and the intercept; one trench
+    plate lifted where Park works (laid on the floor, cones beside it); a ladder, a
+    cable drum, a ventilation air mover.
+    Doors: N (NW corner): the lane x 32-72, y 64-112 is clear. Nothing to the south;
+    floor y 64-180. Park (4.5,4.5) stands on clear floor between the splice and his
+    trestle.
+    Slots: pnw_splice1 (as-type, Trunk Cable Runs); notes_tucked1 (as-type, Tomb Gamma)
+    in the ladder and notes1 on the trestle (Intercepted Mail); centre taps unique.
+    """
+    r = _Uni()
+    r.item("pnw_vault_sign1", 72.0, 30.0)
+    r.item("pnw_cable_ladder1", 80.0, 54.0)
+    r.item("pnw_splice1", 150.0, 58.0)                   # top-left 150,34
+    r.item("aes_gas_detector2", 262.0, 44.0)
+    r.item("notes_tucked1", 104.0, 52.0, layer="conditional_items")   # wedged in the cable ladder by the splice (cycle 2 m17)
+    r.solid("aes_cones1", 96.0, 102.0, depth=6)                     # round the lifted trench plate
+    bench = r.table("aes_trestle1", 200.0, 120.0, kind="objects")   # x 200-252
+    r.on(bench, "pnw_portable_printer1", 0.28, 0.30)
+    r.on(bench, "notes1", 0.76, 0.34, layer="conditional_table_items")
+    r.item("aes_ladder1", 266.0, 112.0)
+    r.solid("aes_cable_drum1", 196.0, 176.0)
+    r.solid("aes_air_mover1", 84.0, 172.0, depth=8)                 # confined-space ventilation (cycle 2 m19)
+    r.item("fire_extinguisher1", 14.0, 150.0)
+    return r.build("room_pnw_vault", "10x6_hall")
+
+
 def main():
     # Hand-maintained (do not regenerate — edit .tmj in Tiled, then export JSON):
     #   room_hospital_office, room_hospital_cto_office, room_hospital_meeting
@@ -2871,6 +4682,12 @@ def main():
     #   (copies of room_hospital_office, edited with scripts/room_gen/room_edit.py)
     # room_hospital_reception's .json has also been hand-edited since it was
     # generated (45 objects vs the builder's 34) — regenerating it loses that.
+    #   room_se_engagement, room_se_recon, room_se_ops, room_se_blueteam
+    #   (lab_social_engineering; copies of room_zds_conference, room_zds_office,
+    #   room_qdc_open and room_aes_security, edited with room_edit.py)
+    #   room_aw_brightwell, room_aw_tarrowby, room_aw_quayholt, room_aw_merrin_sallow
+    #   (awareness training rooms; copies of room_uni_seminar, edited with room_edit.py;
+    #   sheets from room_gen/make_aw_tileset.py, signs from room_gen/make_aw_props.py)
     builders = {
         "small_office_room4_1x1gu": room_small_office_4,
         "room_security": room_security,
@@ -2901,7 +4718,51 @@ def main():
         "room_zds_servers": room_zds_servers,
         "room_zds_hall": room_zds_hall,
         "room_zds_hall_exec": room_zds_hall_exec,
+        "room_aes_hall1": room_aes_hall1,
+        "room_aes_hall2": room_aes_hall2,
+        "room_aes_plant": room_aes_plant,
+        "room_aes_workshop": room_aes_workshop,
+        "room_aes_security": room_aes_security,
+        "room_aes_ops": room_aes_ops,
+        "room_aes_reception": room_aes_reception,
+        "room_aes_control": room_aes_control,
+        "room_aes_dock": room_aes_dock,
+        "room_hce_trading": room_hce_trading,
+        "room_hce_lobby": room_hce_lobby,
+        "room_hce_hall": room_hce_hall,
+        "room_hce_office": room_hce_office,
+        "room_hce_lab": room_hce_lab,
+        "room_hce_servers": room_hce_servers,
+        "room_hce_vault": room_hce_vault,
+        "room_hce_exec_hall": room_hce_exec_hall,
+        "room_hce_ceo": room_hce_ceo,
+        "room_qdc_lab": room_qdc_lab,
+        "room_qdc_lobby": room_qdc_lobby,
+        "room_qdc_hall": room_qdc_hall,
+        "room_qdc_server_hall": room_qdc_server_hall,
+        "room_qdc_break": room_qdc_break,
+        "room_qdc_open": room_qdc_open,
+        "room_qdc_torres": room_qdc_torres,
+        "room_qdc_security": room_qdc_security,
+        "room_qdc_servers": room_qdc_servers,
+        "room_qdc_vault": room_qdc_vault,
+        "room_pnw_checkpoint": room_pnw_checkpoint,
+        "room_pnw_ops": room_pnw_ops,
+        "room_pnw_servers": room_pnw_servers,
+        "room_pnw_scada": room_pnw_scada,
+        "room_pnw_genhall": room_pnw_genhall,
+        "room_pnw_vault": room_pnw_vault,
     }
+    # m08's SAFETYNET HQ rooms (room_hq_*) live in room_gen/hq_rooms.py.
+    sys.path.insert(0, str(REF_DIR))
+    import hq_rooms
+    builders.update(hq_rooms.register(sys.modules[__name__]))
+    # m09's Mountain States Records & Retention rooms (room_m09_*) live in room_gen/m09_rooms.py.
+    import m09_rooms
+    builders.update(m09_rooms.register(sys.modules[__name__]))
+    # m10's Tomb Gamma rooms (room_m10_*) live in room_gen/m10_rooms.py.
+    import m10_rooms
+    builders.update(m10_rooms.register(sys.modules[__name__]))
     # Optionally restrict to specific rooms (argv) so already-updated rooms are
     # not clobbered, e.g.  python3 scripts/generate_rooms.py room_hospital_hall
     requested = sys.argv[1:]

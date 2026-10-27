@@ -3,6 +3,26 @@ import { ASSETS_PATH } from '../../config.js';
 import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 
+/**
+ * The keypad's line after a wrong password. A near miss (right apart from letter
+ * case, which only the server can tell) says passwords are case-sensitive.
+ */
+export function incorrectPasswordMessage(attemptsRemaining, caseMismatch = false) {
+    const left = `${attemptsRemaining} attempt${attemptsRemaining === 1 ? '' : 's'} remaining.`;
+    return caseMismatch
+        ? `Incorrect password. Passwords are case-sensitive. ${left}`
+        : `Incorrect password. ${left}`;
+}
+
+/**
+ * The line over the password field: the keypad title when it names the lock
+ * ("Enter password: SCADA Control"), else the plain "Password:".
+ */
+export function passwordFieldLabel(title) {
+    const t = typeof title === 'string' ? title.trim() : '';
+    return t && t !== 'Enter password' && t !== 'Password Entry' ? t : 'Password:';
+}
+
 export class PasswordMinigame extends MinigameScene {
     constructor(container, params) {
         super(container, params);
@@ -55,7 +75,7 @@ export class PasswordMinigame extends MinigameScene {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
             notebookBtn.id = 'minigame-notebook-postit';
-            notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes-sm.png" alt="Notepad" class="icon-small"> Add to Notepad';
+            notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
             // Insert before the cancel button (first child in controls)
             this.controlsElement.insertBefore(notebookBtn, this.controlsElement.firstChild);
         }
@@ -89,6 +109,10 @@ export class PasswordMinigame extends MinigameScene {
         };
         
         const imageData = getImageData();
+
+        // Name the lock over the field, as the PIN keypad does ("Enter PIN: Cable
+        // Vault"); the framework hides the header, so it read just "Password:" (m07 #5)
+        const fieldLabel = passwordFieldLabel(this.params.title);
         
         this.gameContainer.innerHTML = `
             <div class="password-minigame-area">
@@ -106,7 +130,7 @@ export class PasswordMinigame extends MinigameScene {
                 <div class="monitor-bezel">
                     <div class="monitor-screen">
                         <div class="password-input-container">
-                            <label for="password-field">Password:</label>
+                            <label for="password-field">${displayDashes(fieldLabel)}</label>
                             <div class="password-field-wrapper">
                                 <input type="${this.gameData.showPassword ? 'text' : 'password'}" 
                                        id="password-field" 
@@ -482,13 +506,13 @@ export class PasswordMinigame extends MinigameScene {
                 this.serverResponse = response;
                 this.passwordCorrect();
             } else {
-                this.passwordIncorrect();
+                this.passwordIncorrect({ caseMismatch: response?.caseMismatch === true });
             }
         } catch (error) {
             console.error('Server validation error:', error);
             // api-client sets err.status; a wrong password comes back 422 and is a real attempt.
             if (error?.status === 422 || error?.message?.includes('422')) {
-                this.passwordIncorrect();
+                this.passwordIncorrect({ caseMismatch: error?.body?.caseMismatch === true });
             } else {
                 this.showFailure("Network error. Please try again.", false, 1500);
                 // Decrease attempts counter since this wasn't a real attempt
@@ -512,12 +536,14 @@ export class PasswordMinigame extends MinigameScene {
         };
     }
     
-    passwordIncorrect() {
+    passwordIncorrect({ caseMismatch = false } = {}) {
+        const remaining = this.gameData.maxAttempts - this.gameData.attempts;
+        this.emitPasswordFailed(caseMismatch, Math.max(remaining, 0));
         if (this.gameData.attempts >= this.gameData.maxAttempts) {
-            this.passwordFailed();
+            this.passwordFailed({ caseMismatch });
         } else {
             if (window.playUISound) window.playUISound('reject');
-            this.showFailure(`Incorrect password. ${this.gameData.maxAttempts - this.gameData.attempts} attempts remaining.`, false, 1500);
+            this.showFailure(incorrectPasswordMessage(remaining, caseMismatch), false, caseMismatch ? 3000 : 1500);
             
             // Clear the password field
             this.passwordField.value = '';
@@ -526,10 +552,45 @@ export class PasswordMinigame extends MinigameScene {
         }
     }
     
-    passwordFailed() {
+    /**
+     * Tell missions about a wrong password: password_failed (and
+     * password_failed:<targetId>) for any target, and door_unlock_failed through the
+     * unlock system's onRefused for a door. caseMismatch is true when the entry was
+     * right apart from letter case.
+     */
+    emitPasswordFailed(caseMismatch, attemptsRemaining) {
+        const lockable = this.params.lockable || this.params.sprite;
+        const targetType = this.params.type || 'object';
+        const targetId = targetType === 'door'
+            ? (lockable?.doorProperties?.connectedRoom || lockable?.doorProperties?.roomId || null)
+            : (lockable?.scenarioData?.id || lockable?.objectId || null);
+        const payload = {
+            targetType,
+            targetId,
+            name: lockable?.scenarioData?.name || null,
+            lockType: 'password',
+            caseMismatch,
+            attemptsRemaining
+        };
+        try {
+            window.eventDispatcher?.emit('password_failed', payload);
+            if (targetId) window.eventDispatcher?.emit(`password_failed:${targetId}`, payload);
+            if (typeof this.params.onRefused === 'function') {
+                this.params.onRefused(caseMismatch ? 'wrong_password_case' : 'wrong_password');
+            }
+        } catch (e) {
+            console.warn('password_failed listeners threw', e);
+        }
+    }
+
+    passwordFailed({ caseMismatch = false } = {}) {
         this.cleanup();
         if (window.playUISound) window.playUISound('reject');
-        this.showFailure("Maximum attempts exceeded. Access denied.", true, 1500);
+        this.showFailure(
+            caseMismatch
+                ? "Maximum attempts exceeded. Access denied. Passwords are case-sensitive."
+                : "Maximum attempts exceeded. Access denied.",
+            true, caseMismatch ? 2500 : 1500);
         
         this.gameResult = {
             success: false,

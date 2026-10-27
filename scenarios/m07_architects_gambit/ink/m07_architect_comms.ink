@@ -38,6 +38,9 @@ VAR heard_t10 = false
 VAR heard_t5 = false
 VAR heard_t1 = false
 VAR heard_signoff = false
+VAR late_first_contact = false // PASS 5 design r1 (m4), r2 (N1): a later taunt came before T-30 and opened as first contact
+VAR t1_first_contact = false // PASS 5 design r2 (N1): T-1 was the first call heard
+VAR t20_folded = false // Phase 4 dialogue C1 (D7-3): T-20 was unheard when T-10 played; T-10 carries its naming line
 
 === start ===
 // PASS 2 playtest D2: after the win he is done. Synced global, so a reset
@@ -57,7 +60,10 @@ VAR heard_signoff = false
 {architect_t10_played and not heard_t10 and not architect_t5_played:
     -> taunt_t10
 }
-{architect_t20_played and not heard_t20:
+// PASS 5 design r2 (N1): T-20 retires once T-5 has played, as T-10 does, so a
+// player who left his calls unread doesn't hear them newest first.
+// Phase 4 dialogue C1 (D7-3): and once T-10 has played (T-10 folds in its line).
+{architect_t20_played and not heard_t20 and not architect_t10_played and not architect_t5_played:
     -> taunt_t20
 }
 // PASS 2 review M3 (lesson 36): the phone preloads this contact's start knot
@@ -126,24 +132,38 @@ Narrator: The line drops. Your handset reports no call in the log.
 
 === taunt_t20 ===
 ~ heard_t20 = true
-Narrator: The handset cuts across the facility alarm. Same voice, same absence of hurry.
+// PASS 5 scenario design r1 (m4): a player held at the checkpoint for ten
+// minutes gets T-20 before first contact. Open as T-30 does and skip T-30;
+// t20_close carries T-30's echo line, so the teacher thread isn't lost.
+{not heard_t30:
+    ~ heard_t30 = true
+    ~ late_first_contact = true
+    Narrator: Your handset lights without ringing. The call is already connected, and has been for some seconds.
+- else:
+    Narrator: The handset cuts across the facility alarm. Same voice, same absence of hurry.
+}
 
 You've sent your team.
 
 {team_assignment == "fracture":
     Washington. A hundred and eighty-seven million records, and a great deal of shouting afterwards about legitimacy.
-    Which leaves the software vendors, and it leaves San Francisco. Twelve companies. Eighty to a hundred and forty people, tonight, on your clock.
+    // Phase 4 dialogue C1 (D7-19): the deaths come over the week, as briefed.
+    Which leaves the software vendors, and it leaves San Francisco. Twelve companies. Eighty to a hundred and forty people this week, starting on your clock.
 - else:
     {team_assignment == "trojan_horse":
-        The update pipeline. Interesting. Almost nobody picks the one with no bodies in the brief.
-        So Washington goes unanswered, and San Francisco goes unanswered. A hundred and eighty-seven million records. Eighty to a hundred and forty dead by morning.
-    - else:
-        {team_assignment == "meltdown":
-            San Francisco. Of course. The number was largest and it was tonight.
-            Washington stands open. So does the vendor pipeline. Nobody will notice the second one for a while.
+        // Phase 4 dialogue C1 (D7-11): a redirect before minute 10. The direct
+        // wording echoes Netherton's commit line (m08 pays it off): keep it.
+        {team_redirected:
+            You moved them already. You read the column nobody reads, and the one you chose first goes dark with the other.
         - else:
-            Or you haven't. The clock does not care either way, and neither, particularly, do I.
+            The update pipeline. Interesting. Almost nobody picks the one with no bodies in the brief.
         }
+        So Washington goes unanswered, and San Francisco goes unanswered. A hundred and eighty-seven million records. Eighty to a hundred and forty dead this week.
+    - else:
+        // PASS 5 alignment r2 (m9): T-20 starts only on a commit, so the
+        // uncommitted line that sat here could never play.
+        San Francisco. Of course. The number was largest and it was tonight.
+        Washington stands open. So does the vendor pipeline. Nobody will notice the second one for a while.
     }
 }
 
@@ -155,14 +175,17 @@ You've sent your team.
     Then you'll have spent it on something.
     -> t20_close
 + [Say what you want to say.]
-    I have.
+    // Phase 4 dialogue C1 (D7-15): he goes on talking, so not "I have."
+    Nearly.
     -> t20_close
 
 === t20_close ===
-{team_assigned:
-    Answer honestly. I'll know either way. Did you decide with a number, or with your stomach?
-- else:
-    Choose slowly. I have all evening.
+// PASS 5 alignment r2 (m9): T-20 needs a commit, so the uncommitted "Choose
+// slowly" branch is gone.
+Answer honestly. I'll know either way. Did you decide with a number, or with your stomach?
+{late_first_contact and not architect_echo_heard:
+    ~ architect_echo_heard = true
+    Let it hurt afterwards, not during. I expect you've been told that.
 }
 
 Narrator: Dead air, then the ordinary hiss of a handset that thinks it has been idle for twenty minutes.
@@ -172,19 +195,52 @@ Narrator: Dead air, then the ordinary hiss of a handset that thinks it has been 
 
 // ===========================================
 // T-10 -- the redirect window. Reads redirect_window_closed (boolean only).
+// PASS 5 alignment r1 (M4): its own timer now, 30 minutes after the commit and
+// ten before the window shuts, so the open branches play. Closed here means a
+// flag 3 login before minute 30.
 // ===========================================
 
 === taunt_t10 ===
 ~ heard_t10 = true
-Narrator: Your screen wakes on its own. Nothing else on it moves.
-
-{redirect_window_closed:
-    Whatever you have just learnt, you've learnt it too late to move anybody. That happens.
+// Phase 4 dialogue C1 (D7-3): T-20 retires here. If it went unheard, its one
+// essential line (which two are left) is folded into this call.
+{architect_t20_played and not heard_t20:
+    ~ heard_t20 = true
+    ~ t20_folded = true
+}
+// PASS 5 design r2 (N1): any taunt can be the first call heard; open as T-30 does.
+{not heard_t30:
+    ~ heard_t30 = true
+    ~ late_first_contact = true
+    Narrator: Your screen wakes on its own. The call is already connected, and has been for some seconds.
 - else:
-    {projection_revised:
-        You've found the discrepancy. Good. Now watch how long it takes you to act on it.
+    Narrator: Your screen wakes on its own. Nothing else on it moves.
+}
+
+// PASS 5 alignment r2 (A1): the login line keys on cascade_armed, not on the
+// window, because the call can be opened late (after minute 40) by a player
+// who never logged in. A redirect is named first, whatever happened after it.
+{
+- team_redirected:
+    You moved them. I had wondered whether you would.
+- cascade_armed:
+    You logged in. The door closed behind you.
+- redirect_window_closed:
+    Forty minutes. Your team is committed now, wherever you left it.
+// Phase 4 dialogue C1 (D7-20): a direct Trojan player has heard "no bodies in
+// the brief" twice already. (D7-14): the bark says "ten minutes"; the line doesn't.
+- team_assignment == "trojan_horse":
+    You sent them to Austin. I'd like to know what you saw in it.
+- projection_revised:
+    You've found the discrepancy. Good. Now watch how long it takes you to act on it.
+- else:
+    The beauty of entropy is that it doesn't require me to win. It only requires you to wait.
+}
+{t20_folded and not team_redirected and team_assignment != "trojan_horse":
+    {team_assignment == "fracture":
+        Washington, then. San Francisco and the vendors are on your clock.
     - else:
-        The beauty of entropy is that it doesn't require me to win.
+        San Francisco, then. Washington and the vendors stand open.
     }
 }
 
@@ -202,10 +258,15 @@ Stop this, and something else fails. Someone else dies. You simply won't be in t
     -> t10_close
 
 === t10_close ===
-{redirect_window_closed:
+{redirect_window_closed or team_assignment == "trojan_horse":
     Doors close. It's the one thing they reliably do.
 - else:
     You still have a door open. I'd hurry, but that's your business.
+}
+
+{late_first_contact and not architect_echo_heard:
+    ~ architect_echo_heard = true
+    Let it hurt afterwards, not during. I expect you've been told that.
 }
 
 Narrator: The call ends mid-syllable.
@@ -219,9 +280,19 @@ Narrator: The call ends mid-syllable.
 
 === taunt_t5 ===
 ~ heard_t5 = true
-Narrator: Five minutes on the display. The handset opens the line without asking.
+// Phase 4 dialogue C1 (D7-3): T-20 retires on T-5 as well.
+~ heard_t20 = true
+// PASS 5 design r2 (N1): first-contact opener if T-30 never played.
+{not heard_t30:
+    ~ heard_t30 = true
+    ~ late_first_contact = true
+    Narrator: Your handset lights without ringing. The call is already connected, and has been for some seconds.
+- else:
+    Narrator: The handset opens the line without asking.
+}
 
-Mercer would give you his figure and defend it to your face. I respect that, even when the figure is monstrous.
+// Phase 4 dialogue C1 (D7-16): the player may not know Mercer's name yet.
+The man in your control room would give you his figure and defend it to your face. I respect that, even when it's monstrous.
 
 {team_assignment == "fracture":
     You covered the records. Say the other two out loud. Trojan Horse. Meltdown.
@@ -241,7 +312,10 @@ Mercer would give you his figure and defend it to your face. I respect that, eve
 
 // PASS 3 (E13): choices-only, so a re-navigation replays none of the text above.
 === taunt_t5_choices ===
-+ [I made a call. I'll carry it.]
++ {team_assignment != ""} [I made a call. I'll carry it.]
+    Noted.
+    -> t5_close
++ {team_assignment == ""} [I didn't make one. I'll carry that too.]
     Noted.
     -> t5_close
 + [I'm not doing this with you.]
@@ -249,7 +323,11 @@ Mercer would give you his figure and defend it to your face. I respect that, eve
     -> t5_close
 
 === t5_close ===
-Do you believe in yours enough to name them? You will have to, eventually, to somebody with a tablet.
+{team_assignment == "": You'll have to name all three, eventually, to somebody with a tablet.|Do you believe in yours enough to name them? You will have to, eventually, to somebody with a tablet.}
+{late_first_contact and not architect_echo_heard:
+    ~ architect_echo_heard = true
+    Let it hurt afterwards, not during. I expect you've been told that.
+}
 
 Narrator: Static. Then nothing.
 
@@ -262,12 +340,23 @@ Narrator: Static. Then nothing.
 
 === taunt_t1 ===
 ~ heard_t1 = true
-Narrator: One minute. The handset is warm in your hand and the line is already open.
+// PASS 5 design r2 (N1): T-1 retires T-5, so T-5 doesn't follow it on the
+// next open; first-contact opener if T-30 never played. The narration no
+// longer says "One minute" when the call is opened after the clock ran out.
+~ heard_t5 = true
+{not heard_t30:
+    ~ heard_t30 = true
+    ~ late_first_contact = true
+    ~ t1_first_contact = true
+    Narrator: {countdown_expired:The countdown has run out. }Your handset lights without ringing. The call is already connected, and has been for some seconds.
+- else:
+    Narrator: {countdown_expired:The countdown has run out. }The handset is warm in your hand and the line is already open.
+}
 
 {countdown_expired:
     Late. I did wonder.
 - else:
-    Impressive. Genuinely. You've moved faster than the file suggested.
+    Closer than the file suggested. Not close enough to be comfortable.
 }
 
 But the grid was never the point.
@@ -284,7 +373,15 @@ But the grid was never the point.
     -> t1_close
 
 === t1_close ===
-Narrator: He hangs up first. He has hung up first every time.
+{late_first_contact and not architect_echo_heard:
+    ~ architect_echo_heard = true
+    Let it hurt afterwards, not during. I expect you've been told that.
+}
+{t1_first_contact:
+    Narrator: He hangs up first.
+- else:
+    Narrator: He hangs up first. He has hung up first every time.
+}
 
 #exit_conversation
 -> parked
@@ -361,7 +458,7 @@ Narrator: A carrier tone on a channel that should not have one. Nobody on it. He
     -> start
 }
 // PASS 3: a taunt that arrived while this menu was open goes through, as parked does.
-{(architect_t1_played and not heard_t1) or (architect_t5_played and not heard_t5) or (architect_t10_played and not heard_t10 and not architect_t5_played) or (architect_t20_played and not heard_t20):
+{(architect_t1_played and not heard_t1) or (architect_t5_played and not heard_t5) or (architect_t10_played and not heard_t10 and not architect_t5_played) or (architect_t20_played and not heard_t20 and not architect_t10_played and not architect_t5_played):
     -> start
 }
 + [Hang up.]
@@ -382,7 +479,7 @@ Narrator: A carrier tone on a channel that should not have one. Nobody on it. He
 {grid_saved:
     -> sign_off
 }
-{(architect_t1_played and not heard_t1) or (architect_t5_played and not heard_t5) or (architect_t10_played and not heard_t10 and not architect_t5_played) or (architect_t20_played and not heard_t20):
+{(architect_t1_played and not heard_t1) or (architect_t5_played and not heard_t5) or (architect_t10_played and not heard_t10 and not architect_t5_played) or (architect_t20_played and not heard_t20 and not architect_t10_played and not architect_t5_played):
     -> start
 }
 + [Check the line.]

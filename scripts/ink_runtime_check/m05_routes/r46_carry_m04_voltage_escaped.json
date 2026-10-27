@@ -1,0 +1,35 @@
+{
+ "imports": {
+  "m04_voltage_escaped": true
+ },
+ "steps": [
+  {
+   "note": "R46 (carry-over, 2026-10-17): m04 finished with the player choosing the button and Voltage out through the dock."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Bought with what",
+    "I'm ready"
+   ]
+  },
+  {
+   "said": [
+    "Voltage is at large. You chose the button over him",
+    "Bought with what"
+   ],
+   "notSaid": [
+    "Voltage is in custody, because you took him alive",
+    "Task Force Null is three people and a whiteboard so far. Every cell we've hit bought something. This time it's bought a person. I want to know how."
+   ]
+  },
+  {
+   "set": {
+    "briefing_played": true
+   }
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

@@ -94,8 +94,9 @@ VAR challenge_is_first_meeting = false
 -> friendly_return
 
 === first_encounter ===
-~ warned_player = true
-#set_global:val_met:true
+// Engine robustness audit (m01-m08): the met flag is set in each opening choice, not
+// before the opening, so an Esc and a reload at these choices bring the opening back
+// instead of skipping to the hub.
 
 Narrator: A security officer walks a slow beat along the main corridor, past the door marked Security Office. She clocks you before you're halfway along.
 
@@ -106,11 +107,15 @@ Val Okonkwo: That door behind me is restricted. And yes, I know the readers are 
 Val Okonkwo: So. Who are you and who says you're allowed?
 
 * [Emergency security consultant. Dr. Kim called me in at one this morning.]
+    ~ warned_player = true
+    #set_global:val_met:true
     ~ influence += 15
     # influence_increased
     -> claim_consultant
 
 * [I'm working the incident. There are forty-seven people on generators.]
+    ~ warned_player = true
+    #set_global:val_met:true
     ~ influence += 5
     # influence_increased
     Val Okonkwo: I know how many there are. I walked past every one of them on my first round.
@@ -119,6 +124,8 @@ Val Okonkwo: So. Who are you and who says you're allowed?
     -> hub
 
 * [I'd rather not get into it.]
+    ~ warned_player = true
+    #set_global:val_met:true
     ~ influence -= 20
     # influence_decreased
     Val Okonkwo: *the smile goes* Right.

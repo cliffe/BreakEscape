@@ -7,17 +7,26 @@
 // option so it can be asked again. Her write-up no longer names the fund.
 // ===========================================
 
-VAR analyst_talked = false
 VAR topic_forensics = false
 VAR topic_patterns = false
 VAR topic_concerns = false
 VAR first_meeting = true
+VAR analyst_spoken = false // Synced scenario global (scenario design R1, m12): set when her first chat closes
 // Final round (m03 pattern): set by every exit, so the resting knot's re-entry
 // line shows on a reopen and never in the same batch as a goodbye.
 VAR hub_quiet = false
+// Dialogue C1 (D6-5): the latest thing about Irina Priya has reacted to (1 detained, 2 knocked down)
+VAR irina_news = 0
 
 // External variables
 VAR player_name = "Agent 0x00"
+// Dialogue C1 (D6-5): synced; Priya is next door to the trading floor
+VAR irina_arrested = false
+VAR irina_ko = false
+// Blind run A (2026-10-16, R3): synced. After Satoshi, the player can keep the
+// promise and tell her what she was drawing; the debrief reads analyst_told.
+VAR satoshi_confronted = false
+VAR analyst_told = false
 
 // ===========================================
 // INITIAL MEETING
@@ -26,15 +35,26 @@ VAR player_name = "Agent 0x00"
 === start ===
 #speaker:analyst
 
-{first_meeting:
+{first_meeting and not analyst_spoken:
     ~ first_meeting = false
 
     #speaker:narrator
     Narrator: An analyst is bent over a wall-sized monitor, dragging nodes around a transaction graph and muttering at it.
 
-    Priya Raghavan: *doesn't look up* If you're here about the flagged transactions, talk to Irina.
+    // Dialogue C2 (D6-53): a first meeting after Irina's fate is settled.
+    {
+    - irina_arrested or irina_ko:
+        {irina_ko:
+            ~ irina_news = 2
+        - else:
+            ~ irina_news = 1
+        }
+        Priya Raghavan: If you're here about Irina, I just draw the pictures.
+    - else:
+        Priya Raghavan: *doesn't look up* If you're here about the flagged transactions, talk to Irina.
 
-    Priya Raghavan: I just draw the pictures. She decides what they mean.
+        Priya Raghavan: I just draw the pictures. She decides what they mean.
+    }
 
     + [That's quite a setup. I'm FCA. I'd like to see how you work.]
         Priya Raghavan: Oh. The regulator. Right, yeah.
@@ -43,12 +63,22 @@ VAR player_name = "Agent 0x00"
     + [What transactions are you analysing?]
         -> transaction_work
 
-    + [I'll find Dr Volkova, then.]
+    + {not irina_arrested and not irina_ko} [I'll find Dr Volkova, then.]
+        Priya Raghavan: Cheers.
+        ~ hub_quiet = true
+        #exit_conversation
+        -> hub
+
+    + {irina_arrested or irina_ko} [I'll leave you to it.]
         Priya Raghavan: Cheers.
         ~ hub_quiet = true
         #exit_conversation
         -> hub
 - else:
+    // Dialogue C1 (D6-5): news about Irina comes first (the hub prints it).
+    {(irina_ko and irina_news < 2) or (irina_arrested and not irina_ko and irina_news < 1):
+        -> hub
+    }
     Priya Raghavan: Need something?
     ~ hub_quiet = true
     -> hub
@@ -73,7 +103,7 @@ Priya Raghavan: It flags anything that looks like laundering or sanctions dodgin
 Priya Raghavan: Big money through our mixer. Big round sums, always late in the evening.
 
 + [That sounds suspicious.]
-    Priya Raghavan: Yeah. Very.
+    Priya Raghavan: Yeah. I've stopped pretending it isn't.
     -> suspicious_patterns
 
 + [Show me.]
@@ -85,8 +115,16 @@ Priya Raghavan: Big money through our mixer. Big round sums, always late in the 
 // ===========================================
 
 === hub ===
-{ hub_quiet:
+// Dialogue C1 (D6-5): word of Irina reaches the lab, once per change.
+{
+- hub_quiet:
     ~ hub_quiet = false
+- irina_ko and irina_news < 2:
+    ~ irina_news = 2
+    Priya Raghavan: Someone said Irina's out cold on the trading floor. Was that to do with my graph?
+- irina_arrested and not irina_ko and irina_news < 1:
+    ~ irina_news = 1
+    Priya Raghavan: Someone said Irina's been detained. Was it the graph? Was it my graph?
 - else:
     Priya Raghavan: {&What else?|Go on.|Anything else?}
 }
@@ -102,6 +140,9 @@ Priya Raghavan: Big money through our mixer. Big round sums, always late in the 
 
 + [How would you follow money through a mixer?]
     -> mixer_matching
+
++ {satoshi_confronted and not analyst_told} [It's over upstairs. You should know what you've been drawing.]
+    -> told_what_she_drew
 
 + [Thanks for your time.]
     #speaker:analyst
@@ -138,7 +179,7 @@ Priya Raghavan: But we're the door either side of it. Bitcoin in, Monero in the 
 Priya Raghavan: The chain can't see the middle. Our own logs can.
 
 + [So your logs can see what the chain can't?]
-    Priya Raghavan: Pretty much.
+    Priya Raghavan: Every hop of it.
     -> internal_logs_value
 
 + [Then whoever has your logs has everything.]
@@ -192,7 +233,7 @@ Priya Raghavan: Anything odd goes to Irina. She decides what gets reported.
 === suspicious_patterns ===
 #speaker:analyst
 
-Priya Raghavan: Big round sums, late evening, straight into the mixer. Same habit every time.
+Priya Raghavan: Same habit every time. In, mixed, and gone by midnight.
 
 Priya Raghavan: Three of them have names on. Another twelve million or so since January hasn't.
 
@@ -402,5 +443,30 @@ Priya Raghavan: And I think Satoshi cares more about his ideas than what they co
 
 ~ hub_quiet = true
 
+#exit_conversation
+-> hub
+
+// ===========================================
+// THE PROMISE KEPT (blind run A, R3)
+// ===========================================
+
+=== told_what_she_drew ===
+#speaker:analyst
+~ analyst_told = true
+
+Priya Raghavan: Go on, then.
+
+Narrator: You tell her what the round sums were: ENTROPY's money, washed through the mixer and out to their cells.
+
+Priya Raghavan: The big round sums. Every evening. I drew them as dots and gave them nice colours.
+
+Priya Raghavan: And Irina signed every one off.
+
++ [Your graph is how we found it.]
+    Priya Raghavan: Doesn't feel like much, from this side. Ta for telling me yourself, though.
++ [You flagged it. She buried it.]
+    Priya Raghavan: I flagged it to the one person paid to bury it. I'll be thinking about that for a while.
+-
+~ hub_quiet = true
 #exit_conversation
 -> hub

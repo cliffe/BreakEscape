@@ -10,7 +10,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "test:js": "node test/js/lip-sync.test.mjs"
+    "test:js": "bin/test-js",
+    "test:social": "bin/test-js test/js/validator-*.test.mjs test/js/social-*.test.mjs"
   },
   "repository": {
     "type": "git",
@@ -24,6 +25,7 @@
   },
   "homepage": "https://github.com/cliffe/BreakEscape#readme",
   "devDependencies": {
+    "jsdom": "^26.1.0",
     "playwright": "^1.49.1"
   }
 }

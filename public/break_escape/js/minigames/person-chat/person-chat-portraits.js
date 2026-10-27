@@ -10,6 +10,8 @@
 
 import { ASSETS_PATH } from '../../config.js';
 import { textToVisemes, scaleTimeline, holdTimeline, visemeAt, buildVisemeColumnMap, isBlinking, seedFrom } from './lip-sync.js';
+import { influenceTintFilter } from '../../ui/pretext-chrome.js';
+import { backgroundRect, portraitRect } from './person-chat-camera.js';
 
 // Sprite sheets with no derivable portrait (e.g. prop sprites like hospital beds).
 // Remembered after the first failed lookup so later conversations skip the 404s.
@@ -110,6 +112,7 @@ export default class PersonChatPortraits {
         this.talkImageSrc = null; // Resolved path: explicit spriteTalk or derived from spriteSheet
         this.useSpriteTalk = false; // Whether to use spriteTalk instead of spriteSheet
         this.flipped = false; // Whether to flip the sprite horizontally
+        this.view = null; // Camera shot for the speaker (person-chat-camera.js); null = by side
         this.facingDirection = npc.id === 'player' ? 'right' : 'left';
 
         // TTS mouth animation
@@ -118,12 +121,14 @@ export default class PersonChatPortraits {
         this._lastRenderedTalkFrame = -1;  // Sentinel – forces first render
         this._narratorMode = false; // When true, suppress mouth animation (narrator lines)
         this._characterHidden = false; // When true, draw the background only (a scene shot)
+        this._holdingForContent = false; // Initial hold while the first line loads: draw nothing (black), so a normal chat doesn't flash the full-scene cover background before zooming to the NPC
 
         // Lip-sync mode (optional spriteVisemes sheet; replaces the 2×2 talk cycle when loaded)
         this.visemeSheet = null;      // Loaded sheet for the current speaker, or null
         this._visemesPending = false; // Sheet still loading: hold rendering so the talk image doesn't flash
         this._visemeTimeline = null;  // Cached timeline for the line now playing
         this._visemeTimelineKey = null;
+        this._influenceBand = 0; // 0 calm, 1 wary, 2 refusing, 3 reported, 4 locked (06 N4 tint)
         
         console.log(`🖼️ Portrait renderer created for NPC: ${npc.id}${background ? ` with background: ${background}` : ''}`);
     }
@@ -633,7 +638,8 @@ export default class PersonChatPortraits {
     /**
      * Draw background image at same pixel scale as character sprite
      * Fills the canvas while maintaining sprite's pixel scale (may extend beyond canvas if larger)
-     * Aligns based on speaker position: right edge for NPCs (flipped), left edge for player (not flipped)
+     * Framed by the speaker's camera shot (this.view); without one, right edge for NPCs
+     * (flipped) and left edge for the player
      * @param {number} spriteScale - The scale factor used for the sprite (must match sprite scale exactly)
      */
     drawBackground(spriteScale) {
@@ -644,46 +650,16 @@ export default class PersonChatPortraits {
         const imgWidth = this.backgroundImage.width;
         const imgHeight = this.backgroundImage.height;
         
-        // Use the exact same scale as the sprite
-        let scale = spriteScale;
-        
-        // Calculate scaled dimensions using the sprite's scale
-        let scaledWidth = imgWidth * scale;
-        let scaledHeight = imgHeight * scale;
-        
-        // If background is smaller than canvas, scale it up to fill (cover style)
-        // This ensures the background always fills the canvas while maintaining aspect ratio
-        if (scaledWidth < canvasWidth || scaledHeight < canvasHeight) {
-            const fillScaleX = canvasWidth / imgWidth;
-            const fillScaleY = canvasHeight / imgHeight;
-            const fillScale = Math.max(fillScaleX, fillScaleY); // Cover style to fill canvas
-            scale = fillScale;
-            scaledWidth = imgWidth * scale;
-            scaledHeight = imgHeight * scale;
-        }
-        
-        // Position based on speaker alignment to fill canvas:
-        // - NPC (flipped, appears on right): align right edge to canvas right edge
-        // - Player (not flipped, appears on left): align left edge to canvas left edge
-        let x;
-        if (this.flipped) {
-            // NPC on right: align background's right edge to canvas right edge
-            x = canvasWidth - scaledWidth;
-        } else {
-            // Player on left: align background's left edge to canvas left edge
-            x = 0;
-        }
-        
-        // Fill canvas vertically - center if larger, align to top if exactly filling
-        let y;
-        if (scaledHeight > canvasHeight) {
-            // Background larger than canvas: center vertically (will extend above/below)
-            y = (canvasHeight - scaledHeight) / 2;
-        } else {
-            // Background fills or is exactly canvas height: align to top
-            y = 0;
-        }
-        
+        // Fill the canvas at the sprite's scale (cover style if the image is too small)
+        const scale = Math.max(spriteScale, canvasWidth / imgWidth, canvasHeight / imgHeight);
+
+        // The speaker's camera shot: the player sees the left of the room, the first
+        // NPC the right, and later NPCs a pushed-in middle shot (person-chat-camera.js).
+        // Scene shots and the PiP ignore it and keep the side-aligned framing.
+        const view = this._cameraView() || { pan: this.flipped ? 1 : 0, zoom: 1 };
+        let { x, y, w: scaledWidth, h: scaledHeight } =
+            backgroundRect(view, scale, imgWidth, imgHeight, canvasWidth, canvasHeight);
+
         // Calculate subtle parallax effect - move background towards sprite once and stop
         const elapsed = (Date.now() - this.parallaxStartTime) / 1000; // Time in seconds
         const parallaxDuration = 1.0; // Duration of movement in seconds
@@ -728,6 +704,11 @@ export default class PersonChatPortraits {
             // Clear canvas
             this.ctx.fillStyle = '#000';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            // Initial hold while the first line loads: stay black until we know whether
+            // the opening is a scene shot (cover background) or a line (zoomed NPC), so a
+            // normal chat never flashes the full-scene background before zooming in.
+            if (this._holdingForContent) return;
 
             // Scene shot (after a Background[...] line, or Narrator[none]): no character
             if (this._characterHidden) {
@@ -808,20 +789,15 @@ export default class PersonChatPortraits {
                 this.drawBackground(scale);
             }
             
-            // Calculate position to center the sprite
-            const scaledWidth = spriteWidth * scale;
-            const scaledHeight = spriteHeight * scale;
-            let x = (canvasWidth - scaledWidth) / 2;
-            const y = (canvasHeight - scaledHeight) / 2;
-            
-            // Shift sprite 20% away from the direction they're facing
-            // Shifting left works for both flipped and non-flipped due to coordinate transform
-            // NPCs (flipped) appear on right, Player (not flipped) appears on left
-            const shiftAmount = this.noShift ? 0 : canvasWidth * 0.2;
-            x -= shiftAmount;
+            // Centre the sprite (zoomed with the background in a close-up), then shift it
+            // away from the way it faces. Shifting left works for both flipped and
+            // non-flipped due to coordinate transform: NPCs (flipped) appear on the right.
+            const { x, y, w: scaledWidth, h: scaledHeight } = portraitRect(this._cameraView(),
+                spriteWidth, spriteHeight, canvasWidth, canvasHeight, this._lookAwayShift());
             
             // Draw the sprite frame scaled to fill canvas with optional flip
             this.ctx.imageSmoothingEnabled = false;
+            this._setBandFilter();
             
             if (this.flipped) {
                 // Save current state, flip horizontally, draw, restore
@@ -846,8 +822,10 @@ export default class PersonChatPortraits {
                     scaledWidth, scaledHeight // Destination size (scaled)
                 );
             }
+            this._clearBandFilter();
             
         } catch (error) {
+            this._clearBandFilter();
             console.error('❌ Error rendering portrait:', error);
             this.renderPlaceholder();
         }
@@ -977,6 +955,24 @@ export default class PersonChatPortraits {
     }
 
     /**
+     * Share of the canvas width the portrait moves away from the way it faces:
+     * 0.2 normally, 0 for a middle shot (person-chat-camera.js) and the PiP self-view.
+     * @private
+     */
+    _lookAwayShift() {
+        if (this.noShift) return 0;
+        return this.view?.shift ?? 0.2;
+    }
+
+    /**
+     * The speaker's camera shot, or null for a scene shot (no character) and the default framing.
+     * @private
+     */
+    _cameraView() {
+        return this._characterHidden ? null : this.view;
+    }
+
+    /**
      * Draw a source rectangle of a portrait image (talk sheet frame or viseme column)
      * contain-fitted to the canvas, shifted and flipped for the speaker's side.
      * @param {HTMLImageElement} img
@@ -992,18 +988,14 @@ export default class PersonChatPortraits {
             const canvasWidth = this.canvas.width;
             const canvasHeight = this.canvas.height;
 
-            // Scale the frame to fit the canvas (contain style)
-            const scale = Math.min(canvasWidth / srcW, canvasHeight / srcH);
-            const scaledWidth = srcW * scale;
-            const scaledHeight = srcH * scale;
-
-            // Center, then shift 20% away from the direction the character faces
+            // Fit the frame to the canvas (zoomed with the background in a close-up),
+            // centre it, then shift it away from the way the character faces
             // (skipped for the PiP self-view so the face stays centred in its small box)
-            const shift = this.noShift ? 0 : canvasWidth * 0.2;
-            let x = (canvasWidth - scaledWidth) / 2 - shift;
-            const y = (canvasHeight - scaledHeight) / 2;
+            const { x, y, w: scaledWidth, h: scaledHeight } = portraitRect(this._cameraView(),
+                srcW, srcH, canvasWidth, canvasHeight, this._lookAwayShift());
 
             this.ctx.imageSmoothingEnabled = false;
+            this._setBandFilter();
 
             if (this.flipped) {
                 this.ctx.save();
@@ -1018,10 +1010,35 @@ export default class PersonChatPortraits {
                     srcX, srcY, srcW, srcH,                  // source crop
                     x, y, scaledWidth, scaledHeight);         // dest
             }
+            this._clearBandFilter();
         } catch (error) {
+            this._clearBandFilter();
             console.error('❌ Error drawing spriteTalk image:', error);
             this.renderPlaceholder();
         }
+    }
+
+    /**
+     * Influence band tint (06 N4). Calm and the player portrait are left as drawn.
+     * The filter applies only to the drawImage that follows, not the room background.
+     */
+    setInfluenceBand(band) {
+        const next = (typeof band === 'number' && band > 0) ? band : 0;
+        if (this._influenceBand === next) return;
+        this._influenceBand = next;
+        if (this.canvas) this.render();
+    }
+
+    _setBandFilter() {
+        if (!this.ctx) return;
+        try {
+            this.ctx.filter = influenceTintFilter(this._influenceBand, this.npc?.id === 'player');
+        } catch (e) { /* a canvas without filter support draws untinted */ }
+    }
+
+    _clearBandFilter() {
+        if (!this.ctx) return;
+        try { this.ctx.filter = 'none'; } catch (e) { /* ignore */ }
     }
     
     /**

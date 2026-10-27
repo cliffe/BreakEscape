@@ -1,0 +1,127 @@
+{
+ "steps": [
+  {
+   "note": "R7 (r2, A1/m9): commit Fracture, deduce and redirect with the window open, log in at minute 22 (T-5 lands at 32, so T-10 still plays at 30). The bark keys on the login; the call names the redirect first."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Understood. Talk to me",
+    "I've made the call",
+    "Fracture"
+   ]
+  },
+  {
+   "expect": {
+    "team_assignment": "fracture"
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Understood. Let"
+   ]
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "read": "shift_handover_sheet"
+  },
+  {
+   "pickup": "printed_contractor_badge"
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "event": "object_interacted",
+   "data": {
+    "objectType": "vm-launcher"
+   }
+  },
+  {
+   "flag": 1
+  },
+  {
+   "read": "coordination_extract"
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Their schedule doesn't match",
+    "Trojan",
+    "The dormancy"
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "I want the team moved",
+    "Move them"
+   ]
+  },
+  {
+   "expect": {
+    "team_redirected": true
+   }
+  },
+  {
+   "flag": 2
+  },
+  {
+   "enter": "scada_control"
+  },
+  {
+   "advance": 22
+  },
+  {
+   "flag": 3
+  },
+  {
+   "expect": {
+    "cascade_armed": true
+   }
+  },
+  {
+   "advance": 8
+  },
+  {
+   "expect": {
+    "architect_t10_played": true,
+    "architect_t5_played": false
+   }
+  },
+  {
+   "said": [
+    "A word about doors, Agent 0x00."
+   ],
+   "notSaid": [
+    "A word about Austin",
+    "Ten minutes before"
+   ]
+  },
+  {
+   "talk": "architect",
+   "picks": [
+    "Then I'll be in this one"
+   ]
+  },
+  {
+   "said": [
+    "You moved them. I had wondered whether you would."
+   ],
+   "notSaid": [
+    "The door closed behind you",
+    "You've sent your team.",
+    "Almost nobody picks the one with no bodies in the brief"
+   ]
+  },
+  {
+   "note": "Phase 4 dialogue C1: no conversation runs more than nine lines without a choice."
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

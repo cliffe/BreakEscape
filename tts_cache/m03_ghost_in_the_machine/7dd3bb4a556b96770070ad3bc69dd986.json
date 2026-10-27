@@ -1,0 +1,13 @@
+{
+  "key": "7dd3bb4a556b96770070ad3bc69dd986",
+  "npc": "danny_foster",
+  "text": "I'm not going anywhere. You know where to find me.",
+  "voice": "Iapetus",
+  "style": "Security consultant in his late thirties, exhausted and frightened. Speak with a consistent East Midlands (Nottingham) accent throughout -- do not shift to any other accent. Mid-range pitch that tightens and rises under stress; quiet, quick pace. Quick to explain himself, close to tears without ever quite getting there.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:38:54Z"
+}

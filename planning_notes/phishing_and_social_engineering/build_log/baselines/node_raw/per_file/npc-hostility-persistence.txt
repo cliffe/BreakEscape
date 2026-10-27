@@ -1,0 +1,71 @@
+TAP version 13
+# ✅ NPC hostile system initialized
+# ⚔️ NPC guard hostile: false → true
+# ⚔️ Emitting NPC_HOSTILE_CHANGED for guard (isHostile=true)
+# ⚔️ NPC clerk hostile: false → true
+# ⚔️ Emitting NPC_HOSTILE_CHANGED for clerk (isHostile=true)
+# ⚔️ NPC clerk hostile: true → false
+# ⚔️ Emitting NPC_HOSTILE_CHANGED for clerk (isHostile=false)
+# ⚔️ NPC boxer hostile: false → true
+# ⚔️ Emitting NPC_HOSTILE_CHANGED for boxer (isHostile=true)
+# NPC boxer HP: 100 → 0
+# ⚔️ Restored hostility for 3 NPC(s)
+# ⚔️ NPC probe_npc hostile: false → true
+# ⚔️ Emitting NPC_HOSTILE_CHANGED for probe_npc (isHostile=true)
+# ⚔️ NPC control_npc hostile: false → true
+# ⚔️ Emitting NPC_HOSTILE_CHANGED for control_npc (isHostile=true)
+# ⚔️ NPC hurt_npc hostile: false → true
+# ⚔️ Emitting NPC_HOSTILE_CHANGED for hurt_npc (isHostile=true)
+# ⚔️ NPC agent_off_duty hostile: false → true
+# ⚔️ Emitting NPC_HOSTILE_CHANGED for agent_off_duty (isHostile=true)
+# NPC agent_off_duty HP: 100 → 30
+# ⚔️ Restored hostility for 3 NPC(s)
+# Subtest: nothing is recorded until an NPC turns
+ok 1 - nothing is recorded until an NPC turns
+  ---
+  duration_ms: 1.663765
+  ...
+# Subtest: turning hostile, calming down and a KO are recorded for the save
+ok 2 - turning hostile, calming down and a KO are recorded for the save
+  ---
+  duration_ms: 1.16925
+  ...
+# Subtest: restore applies saved hostility and KO before NPCs load, without an event
+ok 3 - restore applies saved hostility and KO before NPCs load, without an event
+  ---
+  duration_ms: 0.409534
+  ...
+# Subtest: the behavior takes its restored entry once, in place of startHostile
+ok 4 - the behavior takes its restored entry once, in place of startHostile
+  ---
+  duration_ms: 0.140654
+  ...
+# Subtest: a restored hostile is announced with the behavior attack damage; a KO is not
+ok 5 - a restored hostile is announced with the behavior attack damage; a KO is not
+  ---
+  duration_ms: 0.223617
+  ...
+# Subtest: wiring: state sync saves it, game.js restores it, the behavior applies it
+ok 6 - wiring: state sync saves it, game.js restores it, the behavior applies it
+  ---
+  duration_ms: 2.595507
+  ...
+# Subtest: turning hostile applies the configured damage even if a state already exists
+ok 7 - turning hostile applies the configured damage even if a state already exists
+  ---
+  duration_ms: 0.846045
+  ...
+# Subtest: a hurt NPC saves its HP with its hostility, and a reload restores it
+ok 8 - a hurt NPC saves its HP with its hostility, and a reload restores it
+  ---
+  duration_ms: 0.470005
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 166.236186

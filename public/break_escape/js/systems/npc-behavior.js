@@ -23,6 +23,12 @@
 
 import { TILE_SIZE } from '../utils/constants.js';
 import { NPCPathfindingManager } from './npc-pathfinding.js';
+import { COMBAT_CONFIG } from '../config/combat-config.js';
+import { hostileMayChase, resolveChaseRange, shouldCloseInDirectly, CLOSE_IN_MARGIN } from './npc-chase-leash.js';
+import { resolveFightStyle, pickFleeHeading } from './fight-styles.js';
+
+// How long an NPC's "can I see the player to turn to them" answer is reused (canSeePlayerToFace)
+const FACE_SIGHT_MS = 150;
 
 /**
  * NPCBehaviorManager - Manages all NPC behaviors
@@ -82,6 +88,17 @@ export class NPCBehaviorManager {
      * Main update loop (called from game.js update())
      */
     update(time, delta) {
+        // R13: while the player is on the VM (vm-context-pause.js), NPCs hold still.
+        // Read through window so this file keeps no extra import.
+        if (typeof window !== 'undefined' && window.isVmContextActive?.()) {
+            if (!this._vmPaused) {
+                this._vmPaused = true;
+                this.freezeAll();
+            }
+            return;
+        }
+        this._vmPaused = false;
+
         // Throttle updates to every 50ms for performance
         if (time - this.lastUpdate < this.updateInterval) {
             return;
@@ -103,6 +120,29 @@ export class NPCBehaviorManager {
         for (const [npcId, behavior] of this.behaviors) {
             behavior.update(time, delta, playerPos);
         }
+    }
+
+    /**
+     * Stand every NPC still: velocity 0 and the idle animation. Skipping behaviour
+     * updates alone leaves each NPC with its last velocity, and it slides on.
+     * @returns {number} how many NPCs were stopped
+     */
+    freezeAll() {
+        let n = 0;
+        for (const behavior of this.behaviors.values()) {
+            const sprite = behavior?.sprite;
+            if (!sprite?.body || sprite.destroyed) continue;
+            try {
+                sprite.body.setVelocity(0, 0);
+                behavior.isMoving = false;
+                const ko = window.npcHostileSystem?.isNPCKO?.(behavior.npcId);
+                if (!ko && behavior.direction) behavior.playAnimation('idle', behavior.direction);
+                n++;
+            } catch (err) {
+                // one bad sprite must not stop the rest
+            }
+        }
+        return n;
     }
 
     /**
@@ -220,6 +260,8 @@ class NPCBehavior {
         } else {
             this.roomId = npcData.roomId;
         }
+        // The room the NPC belongs to: a stationary NPC's chase leash is tied to it (7.1a)
+        this.homeRoomId = this.roomId;
 
         // Verify sprite reference matches stored sprite
         if (npcData && npcData._sprite && npcData._sprite !== this.sprite) {
@@ -254,6 +296,9 @@ class NPCBehavior {
         this.lastPlayerPosition = null;  // Track player position for path recalculation
         this.chasePathPending = false;   // True while EasyStar is computing a path (prevents flood)
         this.chaseDebugGraphics = null;  // Graphics overlay showing current chase path
+        this._chaseAnchor = null;        // The post the chase leash is measured from (7.1a)
+        this._lastChaseAt = 0;           // When the NPC last chased (ms)
+        this._gaveUpChase = false;       // Past the leash: logged once per give-up
 
         // Patrol debug visualization
         this.patrolDebugGraphics = null; // Graphics overlay showing patrol path and waypoints
@@ -358,7 +403,19 @@ class NPCBehavior {
                 fleeSpeed: config.hostile?.fleeSpeed || 180,
                 aggroDistance: config.hostile?.aggroDistance || 160,
                 attackDamage: config.hostile?.attackDamage || 10,
-                pauseToAttack: config.hostile?.pauseToAttack !== undefined ? config.hostile.pauseToAttack : true
+                // Optional per-NPC combat numbers (7.1e); undefined falls back to
+                // combat-config.js in npc-hostile.js createHostileState
+                maxHP: config.hostile?.maxHP,
+                attackCooldown: config.hostile?.attackCooldown,
+                attackRange: config.hostile?.attackRange,
+                // Chase leash (7.1a): px from the NPC's post, and whether it
+                // follows the player out of its room (npc-chase-leash.js)
+                chaseRange: resolveChaseRange(config.hostile?.chaseRange, COMBAT_CONFIG.npc.chaseRange),
+                chaseAcrossRooms: config.hostile?.chaseAcrossRooms === true,
+                pauseToAttack: config.hostile?.pauseToAttack !== undefined ? config.hostile.pauseToAttack : true,
+                // How it fights (fight-styles.js): brawler (default), guarded,
+                // slugger or cower
+                fightStyle: typeof config.hostile?.fightStyle === 'string' ? config.hostile.fightStyle : undefined
             }
         };
 
@@ -690,13 +747,41 @@ class NPCBehavior {
             return 'idle';
         }
 
-        // Priority 5: Chase (hostile + in range)
+        // Priority 5: Chase (hostile + in range), on a leash (7.1a): past
+        // chaseRange from its post, or once the player leaves its room, the NPC
+        // gives up and falls through to going home or its patrol
         if (isHostile && distanceSq < this.config.hostile.aggroDistanceSq) {
-            return 'chase';
+            if (!this._chaseAnchor) this._chaseAnchor = this._chasePost();
+            if (hostileMayChase({
+                playerPos,
+                playerRoomId: window.currentPlayerRoom || null,
+                anchor: this._chaseAnchor,
+                chaseRange: this.config.hostile.chaseRange,
+                acrossRooms: this.config.hostile.chaseAcrossRooms
+            })) {
+                this._lastChaseAt = Date.now();
+                this._gaveUpChase = false;
+                return 'chase';
+            }
+            if (!this._gaveUpChase) {
+                this._gaveUpChase = true;
+                this.chasePath = [];
+                this.chasePathIndex = 0;
+                console.log(`🪢 [${this.npcId}] Gave up the chase (past its leash), returning to its post`);
+            }
+        } else {
+            this._releaseChaseAnchor(isHostile);
+        }
+
+        // A hostile that gave up walks back (home or patrol) rather than
+        // stopping to stare at the player across the door
+        if (isHostile && this._gaveUpChase && this.config.patrol.enabled) {
+            return 'patrol';
         }
 
         // Priority 3: Maintain Personal Space
-        if (this.config.personalSpace.enabled && distanceSq < this.config.personalSpace.distanceSq) {
+        // (none of the turn-to-player states fire through a wall: canSeePlayerToFace)
+        if (this.config.personalSpace.enabled && distanceSq < this.config.personalSpace.distanceSq && this.canSeePlayerToFace(playerPos)) {
             return 'maintain_space';
         }
 
@@ -705,19 +790,41 @@ class NPCBehavior {
             // Check if player is in interaction range - if so, face player instead (configurable).
             // A scripted goToAndStay move (patrolOverride) never pauses: a nurse answering
             // an alarm must reach the bed even when the player is standing beside it.
-            if (this.config.patrol.pauseForPlayer && !this._stopOnArrival && distanceSq < this.config.facePlayerDistanceSq && this.config.facePlayer) {
+            if (this.config.patrol.pauseForPlayer && !this._stopOnArrival && distanceSq < this.config.facePlayerDistanceSq && this.config.facePlayer && this.canSeePlayerToFace(playerPos)) {
                 return 'face_player';
             }
             return 'patrol';
         }
 
         // Priority 1: Face Player
-        if (this.config.facePlayer && distanceSq < this.config.facePlayerDistanceSq) {
+        if (this.config.facePlayer && distanceSq < this.config.facePlayerDistanceSq && this.canSeePlayerToFace(playerPos)) {
             return 'face_player';
         }
 
         // Priority 0: Idle
         return 'idle';
+    }
+
+    /**
+     * Where the chase leash is measured from (7.1a): a stationary NPC's home
+     * spot in its own room; for a patroller, where it was when the chase began.
+     */
+    _chasePost() {
+        const stationary = !this.config.patrol.enabled || this.returningHome;
+        if (stationary && this.homePosition) {
+            return { x: this.homePosition.x, y: this.homePosition.y, roomId: this.homeRoomId };
+        }
+        const { x, y } = this.npcBodyPos();
+        return { x, y, roomId: this.roomId };
+    }
+
+    /** Forget the leash post once the NPC is calm, or has stopped chasing for a while. */
+    _releaseChaseAnchor(isHostile) {
+        if (!this._chaseAnchor) return;
+        if (!isHostile || Date.now() - this._lastChaseAt > 8000) {
+            this._chaseAnchor = null;
+            this._gaveUpChase = false;
+        }
     }
 
     executeState(state, time, delta, playerPos) {
@@ -777,8 +884,34 @@ class NPCBehavior {
         return { x: this.sprite.x, y: this.sprite.y };
     }
 
+    /**
+     * May this NPC turn towards the player? Not through a wall. An NPC with an
+     * los block uses its sight occlusion (walls, closed doors and tall props;
+     * los.occlusion: false sees through all of it); any other NPC only the
+     * walls-and-closed-doors test. Both from npc-sight-occlusion.js, feet to
+     * feet. Cached for FACE_SIGHT_MS.
+     */
+    canSeePlayerToFace(playerPos) {
+        const occ = window.npcSightOcclusion;
+        if (!occ || !playerPos) return true;
+        const now = Date.now();
+        if (this._faceSightAt !== undefined && now - this._faceSightAt < FACE_SIGHT_MS) return this._faceSightClear;
+        const los = window.npcManager?.getNPC?.(this.npcId)?.los;
+        const from = this.npcBodyPos();
+        let clear = true;
+        if (los && typeof los === 'object') {
+            if (los.occlusion !== false && typeof occ.isClearBetween === 'function') clear = occ.isClearBetween(from, playerPos);
+        } else if (typeof occ.isWallClearBetween === 'function') {
+            clear = occ.isWallClearBetween(from, playerPos);
+        }
+        this._faceSightAt = now;
+        this._faceSightClear = clear;
+        return clear;
+    }
+
     facePlayer(playerPos) {
         if (!this.config.facePlayer || !playerPos) return;
+        if (!this.canSeePlayerToFace(playerPos)) return; // wall between
 
         const { x: nx, y: ny } = this.npcBodyPos();
         const dx = playerPos.x - nx;
@@ -832,7 +965,7 @@ class NPCBehavior {
             const pathfindingManager = this.pathfindingManager || window.pathfindingManager;
             if (pathfindingManager) {
                 const { x: rnx, y: rny } = this.npcBodyPos();
-                const rSnapped = pathfindingManager.findNearestWalkableWorldCell(rnx, rny)
+                const rSnapped = pathfindingManager.findNearestWalkableStartCell(rnx, rny)
                                  || { x: rnx, y: rny };
                 pathfindingManager.findWorldPath(
                     rSnapped.x,
@@ -1075,7 +1208,7 @@ class NPCBehavior {
         console.log(`🗺️ [${this.npcId}] New waypoint target at (${wpDest.x}, ${wpDest.y}), dwell: ${nextWaypoint.dwellTime}ms`);
 
         const { x: wpnx, y: wpny } = this.npcBodyPos();
-        const wpSnapped = pathfindingManager.findNearestWalkableWorldCell(wpnx, wpny)
+        const wpSnapped = pathfindingManager.findNearestWalkableStartCell(wpnx, wpny)
                           || { x: wpnx, y: wpny };
         this._pathfindingInProgress = true;
         pathfindingManager.findWorldPath(
@@ -1180,7 +1313,7 @@ class NPCBehavior {
         }
 
         const { x: mrnx, y: mrny } = this.npcBodyPos();
-        const mrSnapped = pathfindingManager.findNearestWalkableWorldCell(mrnx, mrny)
+        const mrSnapped = pathfindingManager.findNearestWalkableStartCell(mrnx, mrny)
                           || { x: mrnx, y: mrny };
         pathfindingManager.findWorldPath(
             mrSnapped.x,
@@ -1276,7 +1409,7 @@ class NPCBehavior {
 
         // Request pathfinding from current position to target
         const { x: rndnx, y: rndny } = this.npcBodyPos();
-        const rndSnapped = pathfindingManager.findNearestWalkableWorldCell(rndnx, rndny)
+        const rndSnapped = pathfindingManager.findNearestWalkableStartCell(rndnx, rndny)
                            || { x: rndnx, y: rndny };
         pathfindingManager.findWorldPath(
             rndSnapped.x,
@@ -1352,6 +1485,8 @@ class NPCBehavior {
         const attackRange = window.npcHostileSystem ?
             window.npcHostileSystem.getState(this.npcId)?.attackRange || 32 : 32;
 
+        const style = resolveFightStyle(this.config.hostile.fightStyle);
+
         // If in attack range, try to attack
         if (distance <= attackRange) {
             // Stop moving and clear chase path
@@ -1360,9 +1495,13 @@ class NPCBehavior {
             this.chasePath = [];
             this.chasePathIndex = 0;
 
-            // Face player
+            // Face player: in guard if its style guards and it isn't swinging
             this.direction = this.calculateDirection(dx, dy);
-            this.playAnimation('idle', this.direction);
+            if (window.npcCombat?.isGuarding?.(this.npcId)) {
+                this.showGuardPose();
+            } else {
+                this.playAnimation('idle', this.direction);
+            }
 
             // Attempt attack
             if (window.npcCombat) {
@@ -1372,7 +1511,30 @@ class NPCBehavior {
             return true;
         }
 
-        // Always pathfind to chase the player — never walk directly (avoids wall-walking).
+        // A cowering fighter keeps its distance and only jabs when caught
+        if (style.flees) {
+            return this.updateCowerBehavior(dx, dy, distance, style, pathfindingManager);
+        }
+
+        // Just out of reach (a knockback, a step back) with a clear line: walk
+        // straight in, since a path over a cell or two can come back empty or
+        // already reached, and the NPC then stood off (m04 confirmation N2)
+        if (pathfindingManager && distance <= attackRange + CLOSE_IN_MARGIN &&
+            shouldCloseInDirectly({
+                distance,
+                attackRange,
+                lineOfSight: pathfindingManager.hasWorldPhysicsLineOfSight(hnx, hny, playerPos.x, playerPos.y)
+            })) {
+            this.chasePath = [];
+            this.chasePathIndex = 0;
+            this.sprite.body.setVelocity((dx / distance) * chaseSpeed, (dy / distance) * chaseSpeed);
+            this.direction = this.calculateDirection(dx, dy);
+            this.playAnimation('walk', this.direction);
+            this.isMoving = true;
+            return true;
+        }
+
+        // Otherwise pathfind to chase the player — never walk directly (avoids wall-walking).
         // LOS only tunes how often we refresh the path.
         const currentTime = Date.now();
 
@@ -1448,6 +1610,76 @@ class NPCBehavior {
     }
 
     /**
+     * A cowering hostile (fightStyle "cower"): runs from the player while the
+     * player is within its flee distance, along the open heading that points
+     * most directly away and stays in its room. Cornered, or once far enough,
+     * it stops and watches the player. It jabs only when the player is in
+     * reach (the in-range branch of updateHostileBehavior).
+     * @param {number} dx - player x minus NPC x (body centres)
+     * @param {number} dy - player y minus NPC y
+     */
+    updateCowerBehavior(dx, dy, distance, style, pathfindingManager) {
+        this.chasePath = [];
+        this.chasePathIndex = 0;
+        const fleeDistance = style.fleeDistance || 112;
+        const speed = this.config.hostile.fleeSpeed || 180;
+
+        let heading = null;
+        if (distance < fleeDistance) {
+            const { x: nx, y: ny } = this.npcBodyPos();
+            const room = window.rooms?.[this.roomId];
+            const bounds = room?.position && room?.map ? {
+                left: room.position.x + 32, right: room.position.x + room.map.widthInPixels - 32,
+                top: room.position.y + 64, bottom: room.position.y + room.map.heightInPixels - 32
+            } : null;
+            const look = 40;
+            heading = pickFleeHeading(-dx, -dy, (ux, uy) => {
+                const tx = nx + ux * look;
+                const ty = ny + uy * look;
+                if (bounds && (tx < bounds.left || tx > bounds.right || ty < bounds.top || ty > bounds.bottom)) return false;
+                return pathfindingManager?.hasWorldPhysicsLineOfSight
+                    ? pathfindingManager.hasWorldPhysicsLineOfSight(nx, ny, tx, ty)
+                    : true;
+            });
+        }
+
+        if (heading) {
+            this.sprite.body.setVelocity(heading.x * speed, heading.y * speed);
+            this.direction = this.calculateDirection(heading.x, heading.y);
+            this.playAnimation('walk', this.direction);
+            this.isMoving = true;
+            return true;
+        }
+
+        // Far enough, or cornered: stand and watch the player
+        this.sprite.body.setVelocity(0, 0);
+        this.isMoving = false;
+        this.direction = this.calculateDirection(dx, dy);
+        this.playAnimation('idle', this.direction);
+        return true;
+    }
+
+    /**
+     * Hold the guard pose: the first frame of the NPC's lead-jab in the way it
+     * faces (fists up, knees bent). Sprites without a jab keep their idle.
+     */
+    showGuardPose() {
+        const jab = this.scene?.anims?.get(`npc-${this.npcId}-jab-${this.direction}`);
+        const frame = jab?.frames?.[0];
+        if (!frame) {
+            this.playAnimation('idle', this.direction);
+            return;
+        }
+        if (this.sprite.anims.isPlaying) this.sprite.anims.stop();
+        if (this.sprite.frame?.name !== frame.textureFrame || this.sprite.texture?.key !== frame.textureKey) {
+            this.sprite.setTexture(frame.textureKey, frame.textureFrame);
+        }
+        this.sprite.setFlipX(false);
+        // Next playAnimation call always restarts its animation
+        this.lastAnimationKey = null;
+    }
+
+    /**
      * Request a new pathfinding calculation to chase the player.
      * Uses the unified world EasyStar grid — mirrors what the player's click-to-move does.
      * A chasePathPending flag prevents flooding EasyStar while a result is in-flight.
@@ -1469,7 +1701,7 @@ class NPCBehavior {
         // Snap both positions to walkable cells — EasyStar cannot path from/to blocked cells.
         // This is the same strategy player.js uses in movePlayerToPoint.
         const { x: csnx, y: csny } = this.npcBodyPos();
-        const npcSnapped  = pathfindingManager.findNearestWalkableWorldCell(csnx, csny)
+        const npcSnapped  = pathfindingManager.findNearestWalkableStartCell(csnx, csny)
                             || { x: csnx, y: csny };
         const destSnapped = pathfindingManager.findNearestWalkableWorldCell(playerPos.x, playerPos.y)
                             || { x: playerPos.x, y: playerPos.y };
@@ -1631,7 +1863,8 @@ class NPCBehavior {
     playAnimation(state, direction) {
         // Don't interrupt attack animations (red tint placeholder)
         const currentAnim = this.sprite.anims?.currentAnim?.key || '';
-        if (currentAnim.includes('attack') || currentAnim.includes('punch')) {
+        if ((currentAnim.includes('attack') || currentAnim.includes('punch') || currentAnim.includes('-jab-')) &&
+            this.sprite.anims.isPlaying) {
             return;
         }
         

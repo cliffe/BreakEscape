@@ -280,6 +280,15 @@ hung on blocked audio.
 It also appears in `blockingUi`, whose `hint` changes to say so rather than
 telling you to dismiss it.
 
+`kind` says which ending is up: `"credits"` (above) or `"success"`, the simple
+success screen of a scenario whose `conclusionScreen` is `success` (short
+training episodes). The success screen reports `creditsShowing: false`,
+`successScreen: true`, `closable: true`, its `title`, and its text in
+`creditsText`. It always has a working "Close"; its other button, "Return to
+missions", leaves the game. It shows once per page load, so a reload of a
+concluded game shows it again. The playtest harness's `bootstrap` stops on
+either kind (`ended: true`) without clicking anything.
+
 **It does not mean the mission concluded.** That is a server fact, decided by
 `check_mission_conclusion` from persisted `concludeRequires` tasks. The two can
 disagree — a game can reach the credits with a task whose write was lost, and
@@ -536,6 +545,31 @@ that changes what a character says while leaving the choice list intact.
 **Choice tags.** `dialogue.choices[].tags` carries the Ink tags on each option. Where an
 author has tagged a choice, that is the one handle that survives any rewording — but
 tags are currently rare (1 of 167 choices in m02), so patterns are the practical default.
+
+---
+
+## Driving the social overlays
+
+The social-engineering overlays all extend `SocialOverlayScene`, so each is a normal minigame: `waitFor {kind:"minigame", id:"<scene>"}`, then read `window.MinigameFramework.currentMinigame.getTestState()` (the same object `mg getState` returns) with an `eval`. Besides the generic `controls` list, each adds one block of its own, and every one adds `overlay: { sceneType, layers, closeMode, suspended, returnsTo }`. `returnsTo` is the scene a child overlay will go back to (the board opened from the OSINT browser reports `osint-browser`). The overlays own the keyboard: Space, E, WASD and arrows do nothing while one is open, and Escape closes the innermost layer first (properties panel, chip sheet, header panel) before the overlay itself.
+
+Drive them with `mg clickText` (case-insensitive substring of the control's label), `mg clickSelector` for anything without a stable label, and `mg type` for text fields. Assert with `eval` lines that return a boolean. `tools/playtest/se/check-bridge.mjs` fails on any eval that is not exactly `true`. Worked scripts are in `tools/playtest/se/` (`bridge-p9.jsonl` for mail, `bridge-3*.jsonl` and `bridge-board-indicators.jsonl` for the board, `bridge-m5-*.jsonl` and `bridge-p7-channels.jsonl` for channels). Toast text, such as "Locked" or a landed-phish notice, is read with the session's `toasts` command.
+
+| Scene id | Block | What it exposes | Useful controls |
+|---|---|---|---|
+| `mail-client` | `mail` | `account` (id, address, mailbox), `accounts`, `switcher` (options, value), `unreadByAccount`, `burned`, `creatable`, `createOpen`/`createMenu`/`createChoice`, `folder`, `selectedId`, `detailsOpen`, `linkNote`, `messages`, `highlights` (ids of saved evidence spans), `followup` (the open reply's one expectation), `contacts`/`contactsOpen`, `sentThisSession`, `notice`, `narrow` | Click a subject line with `clickText` to open it. Click a highlightable span's text to save it as evidence (`highlights` gains its id and the intel global flips). `Message details`, `Compose`, `Contacts`, `Close`. The account switcher is a `<select>`: use `eval` to set its value and dispatch `change`. `window.mailState.mailboxes.<box>.messages` shows timed (`deliverAt`) arrivals. |
+| `intel-board` | `board` | `mode` (`recon`, `engagement` or `defender`), `title`, `osintDone`, `ready`/`newlyReady`, `targets` (id, `identified`, role, address, status, `facts`, `emptySlots`, `slots`, `fromCall`), `company` (`facts`, `stale`, `fromCall`), `contacts`, `influence` bars, `live` (the aria-live text), `scopeNote`. Engagement mode adds `engagement` (`complete`, `done`/`total`, `steps`, `items` with `placed`/`picked`/`options`). Defender mode adds `defender` (`facts`, `indicators` with `shown`/`marked`/`done`). | Cards and slots are buttons: `clickText` on the fact or target name, then on the slot. `.ob-case` is the Case file button inside the OSINT browser; closing the board returns there. |
+| `osint-browser` | `osint` | `profile`, `view`, `location`, `siteId`, `pageId`, `address`, `sites` (id, type, url), `pages` visible now, `visited`, `blocks` (id, kind, `fact`, `noted`), `collected`, `held` (facts held in globals), `propertiesOpen`, `openCards`, `tools` (`available`, `locked`, `picked`, `toolsOn`), `last`, `live`, `caseFile`, `typedInputs` | Type into the address bar with `mg type`, follow links with `clickText`. Click a block to note a fact (`noted`, then `collected`). Properties panel and tools view are separate `view` values. `typedInputs` of 0 means nothing needs typing. |
+| `inbox-triage` | `triage` | `step` (`brief`, the round, `result`), `setId`, `stage`, `scoringProfile`, `feedbackMode`, `verifyEnabled`, `total`/`answered`, `skipped`, `selectedId`, `headerState`, `surface`, `messages` (id, kind, action, who, address, subject, `unread`, `playerSent`, `verdict`), `verdictButtons`, `actionButtons`, `sheet` (open, messageId, `chips` with `checked`), `review.cards` (`caught`/`missed`/`falseClaims`), `result` (percent, pass, `phishCaught`/`phishTotal`, `falseAlarms`, `perFactor`), `comparison` | Select a message with `clickText` on its subject. Verdict buttons carry `data-verdict` and `data-action`: use `clickSelector` (`.tri-verdict[data-verdict="phish"]`). Flag chips are `.tri-chip` and are included in `controls`, so `clickText` works. `Confirm` locks the verdict, `Finish` ends the round. Escape closes the chip sheet before the overlay. A `playerSent` row is skipped until the player has sent something. |
+| `pretext-prep` | `pretext` | `callId`, `character`, `npcId`, `scene`, `startKnot`, `canCall`, `gate` (why the call is refused), `picker` (fact being filled), `held`, `blanks` (the payload sent to the call), `facts` (factId, `slot`, `options` as value/label/kind, `chosen`) | Pick a blank, then an option by label with `clickText`; `canCall` flips true once the gate passes. The Call control opens the `scene` (usually `person-chat`) at `startKnot` with `blanks` passed in. |
+| `landing-page-builder` | `builder` | `pageId`, `targetId`, `firstName`, `profile`, `step`, `editableRows`, `choices`, `scored` (credibility, `meetsThreshold`, `gatesPassed`, `verdict`, `tells`), `stale`, `attachAvailable`/`attachLabel`/`attached`, `canInspect`/`inspecting`/`inspectionComplete`, `inspect` (`found`, `presentIds`, `linkRevealed`, `blocked`), `recordBuilt`, `recordCredibility`, `recordTellsFound`, `builtGlobal`, `domainGlobal`, `previewForbidden`, `typedInputs` | Choose each option by label, then `Attach to email` (or `Attach anyway` under the threshold). `scored` is null until all rows are set, and `stale` goes true if a choice changes afterwards. `previewForbidden` must stay 0: the preview pane holds no links, forms or scripts. |
+| `engagement-report` | `report` | `title`, `complete`, `live`, `steps` (id, done), `results.mail` (target, `sent`, `failed`, `landed`, `firstTryLanded`), `results.pages` (`sent`, `visited`, `submitted`, `noticed`, `line`), `results.calls` (`done`, `reported`, `outcome`, `lowest`, `failedAttempts`), `items` (`confirmed`), `findings` (`cause`, `control`, `causeDone`, `controlDone`, and the `why`/`blame` text of each pick) | Confirm each item with `clickText`, then pick a cause and a control per finding. `complete` goes true when every step is done. |
+
+Notes that have cost runs:
+
+- Pretext calls hand over to `person-chat`. Once the call opens, drive it with the dialogue commands (`converse`, `mg choose`), and the report's `results.calls` fills in when it ends.
+- The overlay that opened a child is suspended, not closed (`overlay.suspended`). Close the child and `currentMinigame` is the parent again, with its `getTestState()` intact.
+- `getTestState()` is read-only and plain JSON. Do not call a scene's own methods from `eval` to move state along; click the control, so the checks cover the real path.
+- The tables above are read from the code in `public/break_escape/js/minigames/<scene>/`. If a field is missing from a live `getTestState()`, trust the live object and fix this table.
 
 ---
 

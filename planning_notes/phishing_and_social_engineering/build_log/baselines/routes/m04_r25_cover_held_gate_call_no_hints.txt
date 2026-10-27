@@ -1,0 +1,115 @@
+
+## R25 (phase 4 dialogue C2, D6-7/D6-8/D6-12): a player who holds the cover, opens HaX's phone at the gate and never asks for a hint. The briefing's objectives say what the reading is for; the gate reply still points at Hall 1; the guard's Bristol marker reaches a first-time admission; Vance never learns the truth, and the phone never names the dial unasked.
+
+--- briefing ---
+  Narrator: A SAFETYNET operations room. Director Netherton is already on his feet; Agent HaX is patching in the technical desk.
+  Director Magnus Netherton: Agent 0x00. ENTROPY used to steal. Now they break the things people can't live without.
+  Director Magnus Netherton: I want my best in the room and my best on the wire. Nightshade has read the control systems. HaX has the rest.
+  Agent 0x47 'Nightshade': The physics doesn't lie and neither do I. If they reach the safety interlocks, this stops being a hack and starts being a body count.
+  Agent 0x47 'Nightshade': Get me a real reading off that floor, and I'll tell you how much time we actually have.
+  Director Magnus Netherton: HaX. Go.
+  Agent HaX: A grid battery site, and ENTROPY are inside it.
+  Agent HaX: Worse than Ransomware Incorporated. This lot don't want paying.
+     (3 options)
+ > Go ahead. I'm listening.
+  Agent HaX: Albion Energy Storage. Two hundred megawatt-hours of grid batteries.
+  Agent HaX: A cell called Critical Mass got in as maintenance contractors, under the name OptiGrid Solutions.
+  Agent HaX: They own the SCADA network now, the control system that runs the battery racks.
+  Agent HaX: Two hundred and forty thousand people get their power through that site.
+     (5 options)
+ > I've got what I need. What are my orders?
+  Agent HaX: The Zero Day job left us one line. "Zero Day supplies, Critical Mass executes. Grid storage, this winter."
+  Agent HaX: Well, it's winter, and this is the site.
+  Agent HaX: Social Fabric are standing by to amplify the panic. Strikes across the region, all timed for eight o'clock.
+  Agent HaX: One mind behind it, the one the directive named: The Architect. Voltage answers up that chain. Take him, and we're closer to whoever's setting the clock on all of it.
+     (2 options)
+ > So this is the attack the directive warned us about.
+  Agent HaX: The same one. Stop it, take Voltage if you can, and bring out anything that names the next target.
+  Agent HaX: So. Get in on the regulator cover and find Vance.
+  Agent HaX: Then prove how they took the control network. Their jump server's in the engineering workshop. Whatever you pull off it goes into the drop-site terminal.
+  Agent HaX: The plant room has a hardwired Emergency Shutdown button, the ESD. No network path, so it's the one control they couldn't take.
+  Agent HaX: Press it and the banks isolate, once grid control believes you. They'll believe Nightshade, if you get a real reading off those racks.
+  Agent HaX: And the operatives. Voltage alive, if you can.
+  Agent HaX: Kit: your picks, the cloner from the WhiteHat job, and a laptop with CyberChef on it. No PIN cracker. We have one, it's ENTROPY's, and it isn't leaving the lab.
+     (3 options)
+ > Got it. I'm on my way.
+  Agent HaX: Go carefully. They've had three days to get ready for you.
+  Agent HaX: The site's twenty minutes out. The gate will want your credentials.
+  Agent HaX: Show them the regulator badge. You're a routine audit that came early.
+  Agent HaX: Stay alert. They're expecting somebody.
+  Agent HaX: Good luck. Find Vance first.
+  [end]
+   [PASS] said: "Press it and the banks isolate, once grid control believes you. They'll believe Nightshade, if you get a real reading off those racks."
+   [PASS] said: "Get me a real reading off that floor"
+   {set {"briefing_played":true}}
+
+--- phone ---
+  Agent, status check. Are you inside the facility?
+ > Not yet. I'm at the gate.
+  Then the badge. Routine audit, came early. Once you're past him: Vance, then something in Hall 1 that isn't on their feed.
+  [chat closes]
+   [PASS] said: "Once you're past him: Vance, then something in Hall 1 that isn't on their feed."
+   [PASS] not said: "Call me once you're past him"
+   [PASS] not said: "dial thermometer"
+
+--- guard ---
+  Narrator: The guard looks up from the desk as you approach.
+  Security Guard: Morning. Bit early for visitors.
+     (3 options)
+ > Grid-safety regulator. I'm here for the audit.
+  Narrator: He turns your badge over, glances at the clipboard, hands it back.
+  Security Guard: Regulator, is it.
+  Security Guard: Alright, sign in here. Mr Vance said there was an audit today. He's not happy about it, fair warning.
+     (2 options)
+ > I'll keep that in mind. Thank you.
+      [set_global guard_admitted=true]
+  Security Guard: Go on through, my lover. Operations office is straight down the hall.
+  [chat closes]
+   [PASS] said: "Go on through, my lover."
+   [PASS] not said: "Still need you at the desk"
+   [PASS] guard_admitted = true (expected true)
+
+--- vance ---
+      [task: meet_robert_vance]
+      [set_global vance_spoken=true]
+  A grid-safety audit at four in the morning. You regulator lot keep strange hours.
+     (3 options)
+ > Just doing the job, Mr Vance.
+  Right. I run a tight ship here, on a tighter budget.
+  Tick your boxes and let's be quick about it. I've a plant to keep running.
+     (2 options)
+ > I'll need the staff records.
+  Staff records? Fine. We've nothing to hide.
+  Auditors get escorted, not carded. When the shift settles I'll walk you round myself.
+  The workshop's on the contractors' cards. The plant room's high-voltage, authorised persons only.
+     (3 options)
+ > Thank you. I'll start on the staff records.
+  Anything else, I'm at the ops desk. Watching the screens.
+  [chat closes]
+   [PASS] vance_is_ally = false (expected false)
+   [PASS] vance_met = true (expected true)
+
+--- vance ---
+  Robert Vance: Something else?
+     (3 options)
+ > A few more questions about the facility.
+  Robert Vance: Quickly, then. Three banks, nine on the module swap in Hall 2, and one of me.
+  Robert Vance: Yes?
+     (3 options)
+ > That's all for now.
+  Robert Vance: Right. I'll be at the ops desk.
+  [chat closes]
+   [PASS] said: "Three banks, nine on the module swap in Hall 2, and one of me."
+   {set {"checkpoint_passed":true}}
+
+--- phone ---
+     (4 options)
+ > Nothing right now.
+  Line's open. Call it in when you have something.
+  [chat closes]
+   [PASS] said: "How do I prove the screens are lying?"
+   [PASS] not said: "dial thermometer"
+   [PASS] not said: "Rack Bank C"
+
+[stats] spoken/narrated lines 48, choices 13, longest run without a choice 8 (briefing); runs>=6: briefing:8, briefing:7
+[result] all expectations met

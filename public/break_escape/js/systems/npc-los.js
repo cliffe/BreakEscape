@@ -61,8 +61,17 @@ export function isInLineOfSight(npc, target, losConfig = {}) {
   // Calculate angular difference (shortest arc)
   const angleDiff = shortestAngularDistance(normalizedFacing, normalizedTarget);
   const maxAngle = angle / 2; // Half angle on each side
-  
-  return Math.abs(angleDiff) <= maxAngle;
+
+  if (Math.abs(angleDiff) > maxAngle) return false;
+
+  // Walls, closed doors and tall props block the view (npc-sight-occlusion.js,
+  // reached through window so this module stays import-free). los.occlusion: false
+  // turns it off for one NPC.
+  if (losConfig.occlusion !== false) {
+    const occ = (typeof window !== 'undefined') ? window.npcSightOcclusion : null;
+    if (occ && typeof occ.isSightClear === 'function' && !occ.isSightClear(npc, target)) return false;
+  }
+  return true;
 }
 
 /**
@@ -209,6 +218,66 @@ function shortestAngularDistance(from, to) {
  * @param {number} color - Hex color for cone (default 0x00ff00)
  * @param {number} alpha - Alpha value for cone (default 0.2)
  */
+/**
+ * True when an NPC's vision cone or sight circle should not be drawn (7.1j;
+ * m06, m08 E9): the NPC is hidden (isVisible: false, or its sprite is hidden,
+ * inactive or destroyed) or knocked out. A cone round a man on the floor, or
+ * round someone who isn't there yet, looked like a bug.
+ * @param {object} npc - NPC entry from the NPC manager
+ * @param {boolean} [isKO=false] - npcHostileSystem.isNPCKO(npc.id)
+ */
+export function losVisualSuppressed(npc, isKO = false) {
+  if (!npc) return true;
+  if (isKO) return true;
+  if (npc.isVisible === false) return true;
+  const sprite = npc._sprite || npc.sprite;
+  if (sprite && (sprite.visible === false || sprite.active === false || sprite.destroyed)) return true;
+  return false;
+}
+
+/**
+ * True when an NPC's cone should not be drawn because the NPC stands in a room
+ * other than the player's: the cone isn't clipped at walls, so a checkpoint
+ * guard's cone was painted across the next room (m06 R5, m08 blind M2). A
+ * hostile NPC keeps its cone wherever it is (the player needs to see a chaser).
+ * @param {object} npc - NPC entry (npc.roomId)
+ * @param {string|null} playerRoomId - the player's room (last known)
+ * @param {boolean} [isHostile=false]
+ */
+export function losVisualOutOfRoom(npc, playerRoomId, isHostile = false) {
+  if (isHostile || !npc || !npc.roomId || !playerRoomId) return false;
+  return npc.roomId !== playerRoomId;
+}
+
+/**
+ * True when an NPC's sight circle has nothing left to warn about (m08 E9): its
+ * only use of sight is catching a lockpick (one or more lockpick_used_in_view
+ * person-chat mappings, no los.challengeOnSight), and none of those mappings
+ * would fire now: a once-only catch already spent, maxTriggers reached, or its
+ * condition off (m08's off-duty agent after the naming). A mapping that is only
+ * on cooldown still counts as live. Hostile NPCs keep their cone.
+ * @param {object} npc - NPC entry (eventMappings, los)
+ * @param {Function} wouldFire - (mapping, index) => { fire, reason } from npc-manager _mappingWouldFire
+ * @param {boolean} [isHostile=false]
+ */
+export function losCatchSpent(npc, wouldFire, isHostile = false) {
+  if (isHostile || !npc || typeof wouldFire !== 'function') return false;
+  if (npc.los?.challengeOnSight) return false;
+  const maps = Array.isArray(npc.eventMappings) ? npc.eventMappings : [];
+  const catches = [];
+  maps.forEach((mapping, index) => {
+    if (mapping?.eventPattern === 'lockpick_used_in_view' && mapping.conversationMode === 'person-chat') {
+      catches.push({ mapping, index });
+    }
+  });
+  if (catches.length === 0) return false;
+  return catches.every(({ mapping, index }) => {
+    const r = wouldFire(mapping, index) || {};
+    if (r.fire) return false;
+    return !(typeof r.reason === 'string' && r.reason.startsWith('on cooldown'));
+  });
+}
+
 export function drawLOSCone(scene, npc, losConfig = {}, color = 0x00ff00, alpha = 0.2) {
   const {
     range = 200,
@@ -242,144 +311,78 @@ export function drawLOSCone(scene, npc, losConfig = {}, color = 0x00ff00, alpha 
   const npcFacing = getNPCFacingDirection(npc);
   // console.log(`   NPC facing: ${npcFacing.toFixed(0)}°`);
   
-  // Offset cone origin to eye level (30% higher on the NPC sprite)
-  const coneOriginY = npcPos.y - (npc._sprite?.height ?? 32) * 0.3;
-  const coneOrigin = { x: npcPos.x, y: coneOriginY };
-  // console.log(`   Cone origin at eye level: (${coneOrigin.x.toFixed(0)}, ${coneOrigin.y.toFixed(0)})`);
-  
+  // The cone sits on the floor at the NPC's feet (body centre), where sight is
+  // tested (npc-sight-occlusion.js), so it stops at the foot of a wall or rack.
+  // No body yet: the sprite centre.
+  const feet = npc?._sprite?.body?.center || npc?.sprite?.body?.center;
+  const coneOrigin = (feet && Number.isFinite(feet.x) && Number.isFinite(feet.y))
+    ? { x: feet.x, y: feet.y }
+    : { x: npcPos.x, y: npcPos.y };
+
   const npcFacingRad = Phaser.Math.DegToRad(npcFacing);
   const halfAngleRad = Phaser.Math.DegToRad(angle / 2);
-  
-  // Create graphics object for the cone
-  const graphics = scene.add.graphics();
-  // console.log(`   📊 Graphics object created - checking properties:`, {
-  //   graphicsExists: !!graphics,
-  //   hasScene: !!graphics.scene,
-  //   sceneKey: graphics.scene?.key,
-  //   canAdd: typeof graphics.add === 'function'
-  // });
-  
-  // Draw outer range circle (light, semi-transparent)
-  graphics.lineStyle(1, color, 0.2);
-  graphics.strokeCircle(coneOrigin.x, coneOrigin.y, scaledRange);
-  // console.log(`   ⭕ Range circle drawn at (${coneOrigin.x}, ${coneOrigin.y}) radius: ${scaledRange}`);
-  
-  // Draw the cone fill with radial transparency gradient
-  graphics.lineStyle(2, color, 0.2);
-  
-  // Draw the cone shape with gradient opacity (transparent near center, opaque at edges)
-  const conePoints = [];
-  
-  // Left edge of cone
   const leftAngle = npcFacingRad - halfAngleRad;
-  const leftPoint = new Phaser.Geom.Point(
-    coneOrigin.x + scaledRange * Math.cos(leftAngle),
-    coneOrigin.y + scaledRange * Math.sin(leftAngle)
-  );
-  conePoints.push(leftPoint);
-  
-  // Arc from left to right (approximate with segments)
-  const segments = Math.max(12, Math.floor(angle / 5));
-  for (let i = 1; i < segments; i++) {
-    const t = i / segments;
-    const currentAngle = npcFacingRad - halfAngleRad + (angle * Math.PI / 180) * t;
-    conePoints.push(new Phaser.Geom.Point(
-      coneOrigin.x + scaledRange * Math.cos(currentAngle),
-      coneOrigin.y + scaledRange * Math.sin(currentAngle)
-    ));
-  }
-  
-  // Right edge of cone
   const rightAngle = npcFacingRad + halfAngleRad;
-  const rightPoint = new Phaser.Geom.Point(
-    coneOrigin.x + scaledRange * Math.cos(rightAngle),
-    coneOrigin.y + scaledRange * Math.sin(rightAngle)
+  const segments = Math.max(12, Math.floor(angle / 5));
+
+  // Ray fan clipped by walls, closed doors and tall props (unless los.occlusion is false)
+  const occ = (typeof window !== 'undefined' && losConfig.occlusion !== false) ? window.npcSightOcclusion : null;
+  const fanAngles = [];
+  for (let i = 0; i <= segments; i++) fanAngles.push(leftAngle + (rightAngle - leftAngle) * (i / segments));
+  const fan = (occ && typeof occ.clipFan === 'function')
+    ? occ.clipFan(coneOrigin, fanAngles, scaledRange)
+    : fanAngles.map(() => scaledRange);
+  const pointAt = (i, radius) => new Phaser.Geom.Point(
+    coneOrigin.x + Math.min(radius, fan[i]) * Math.cos(fanAngles[i]),
+    coneOrigin.y + Math.min(radius, fan[i]) * Math.sin(fanAngles[i])
   );
-  conePoints.push(rightPoint);
-  
-  // Draw radiating slices from center to outer edge with gradient opacity
+
+  const graphics = scene.add.graphics();
+
+  // Outer range outline (light), clipped the same way
+  graphics.lineStyle(1, color, 0.2);
+  if (occ && typeof occ.clipFan === 'function') {
+    const ringSteps = 48;
+    const ringAngles = [];
+    for (let i = 0; i < ringSteps; i++) ringAngles.push((i / ringSteps) * Math.PI * 2);
+    const ring = occ.clipFan(coneOrigin, ringAngles, scaledRange);
+    graphics.strokePoints(ringAngles.map((a, i) => new Phaser.Geom.Point(
+      coneOrigin.x + ring[i] * Math.cos(a), coneOrigin.y + ring[i] * Math.sin(a))), true);
+  } else {
+    graphics.strokeCircle(coneOrigin.x, coneOrigin.y, scaledRange);
+  }
+
+  // Cone fill in rings, fading in from the centre; each ray stops at its occluder
   const numRadii = Math.max(8, Math.floor(segments / 2));
   for (let r = 0; r < numRadii; r++) {
-    const radiusT = r / numRadii; // 0 to 1
-    const outerRadius = scaledRange * radiusT;
-    const nextOuterRadius = scaledRange * ((r + 1) / numRadii);
-    
-    // Opacity gradient: 0 at center, full at outer edge
-    const alpha1 = coneAlpha * radiusT;
-    const alpha2 = coneAlpha * ((r + 1) / numRadii);
-    
-    // Draw slice from left to right at this radius
+    const innerRadius = scaledRange * (r / numRadii);
+    const outerRadius = scaledRange * ((r + 1) / numRadii);
+    // Nothing of this ring is in view
+    if (!fan.some(d => d > innerRadius)) break;
     const slicePoints = [];
-    
-    // Left inner point
-    slicePoints.push(new Phaser.Geom.Point(
-      coneOrigin.x + outerRadius * Math.cos(leftAngle),
-      coneOrigin.y + outerRadius * Math.sin(leftAngle)
-    ));
-    
-    // Arc at this radius
-    for (let i = 1; i < segments; i++) {
-      const t = i / segments;
-      const currentAngle = npcFacingRad - halfAngleRad + (angle * Math.PI / 180) * t;
-      slicePoints.push(new Phaser.Geom.Point(
-        coneOrigin.x + outerRadius * Math.cos(currentAngle),
-        coneOrigin.y + outerRadius * Math.sin(currentAngle)
-      ));
-    }
-    
-    // Right inner point
-    slicePoints.push(new Phaser.Geom.Point(
-      coneOrigin.x + outerRadius * Math.cos(rightAngle),
-      coneOrigin.y + outerRadius * Math.sin(rightAngle)
-    ));
-    
-    // Right outer point
-    slicePoints.push(new Phaser.Geom.Point(
-      coneOrigin.x + nextOuterRadius * Math.cos(rightAngle),
-      coneOrigin.y + nextOuterRadius * Math.sin(rightAngle)
-    ));
-    
-    // Arc at outer radius (backwards)
-    for (let i = segments - 1; i > 0; i--) {
-      const t = i / segments;
-      const currentAngle = npcFacingRad - halfAngleRad + (angle * Math.PI / 180) * t;
-      slicePoints.push(new Phaser.Geom.Point(
-        coneOrigin.x + nextOuterRadius * Math.cos(currentAngle),
-        coneOrigin.y + nextOuterRadius * Math.sin(currentAngle)
-      ));
-    }
-    
-    // Left outer point
-    slicePoints.push(new Phaser.Geom.Point(
-      coneOrigin.x + nextOuterRadius * Math.cos(leftAngle),
-      coneOrigin.y + nextOuterRadius * Math.sin(leftAngle)
-    ));
-    
-    // Draw this slice with gradient opacity
-    graphics.fillStyle(color, alpha2);
+    for (let i = 0; i <= segments; i++) slicePoints.push(pointAt(i, innerRadius));
+    for (let i = segments; i >= 0; i--) slicePoints.push(pointAt(i, outerRadius));
+    graphics.fillStyle(color, coneAlpha * ((r + 1) / numRadii));
     graphics.fillPoints(slicePoints, true);
   }
-  
-  // Draw a line showing the facing direction (to front of cone)
+
+  // Facing line
   graphics.lineStyle(3, color, 0.1);
-  const dirLength = scaledRange * 0.4;
+  const mid = Math.floor(segments / 2);
+  const dirLength = Math.min(scaledRange * 0.4, fan[mid]);
   graphics.lineBetween(
     coneOrigin.x,
     coneOrigin.y,
     coneOrigin.x + dirLength * Math.cos(npcFacingRad),
     coneOrigin.y + dirLength * Math.sin(npcFacingRad)
   );
-  
-  // Draw angle wedge markers
+
+  // Edge markers
   graphics.lineStyle(1, color, 0.5);
-  graphics.lineBetween(coneOrigin.x, coneOrigin.y, 
-    coneOrigin.x + scaledRange * Math.cos(leftAngle),
-    coneOrigin.y + scaledRange * Math.sin(leftAngle)
-  );
-  graphics.lineBetween(coneOrigin.x, coneOrigin.y, 
-    coneOrigin.x + scaledRange * Math.cos(rightAngle),
-    coneOrigin.y + scaledRange * Math.sin(rightAngle)
-  );
+  const leftEdge = pointAt(0, scaledRange);
+  const rightEdge = pointAt(segments, scaledRange);
+  graphics.lineBetween(coneOrigin.x, coneOrigin.y, leftEdge.x, leftEdge.y);
+  graphics.lineBetween(coneOrigin.x, coneOrigin.y, rightEdge.x, rightEdge.y);
   
   // On top of other objects, and above the light map when lighting is on, so a night
   // room doesn't dim the cone the player has to read. Same rule as overlayDepth() in

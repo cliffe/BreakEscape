@@ -8,7 +8,9 @@ import TTSManager from './tts-manager.js';
 import { phoneBarkText } from '../minigames/phone-chat/phone-chat-speaker.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { releaseHeldBarks } from './bark-release-policy.js';
+import { workstationPopupOpen, phoneThreadOpenFor, openPhoneThread, threadTextKey } from '../utils/overlay-open.js';
 import { barkLifetimeMs, barksToTrim, BARK_RESUME_MIN_MS } from './bark-lifetime.js';
+import { inventoryBlockedByForcedMinigame } from './forced-minigame-guard.js';
 
 export default class NPCBarkSystem {
   constructor(npcManager) {
@@ -143,13 +145,20 @@ export default class NPCBarkSystem {
   showBark(payload = {}) {
     if (!this.container) this.init();
 
+    // A bark repeating a line the open phone thread already shows adds nothing
+    // (m06 confirmation R4 M2)
+    if (this._shownInOpenThread(payload)) {
+      console.debug('[barks] dropped, already in the open thread:', payload.text || payload.message);
+      return null;
+    }
+
     // HOLD POLICY (code in bark-release-policy.js; README_scenario_design.md "Bark notifications").
     // While a person-chat or another full-screen minigame is open, hold the bark (it covered
     // the panel, D5). On release: first in, first out; each bark's conditions are re-checked
     // (payload.stillValid) and stale ones dropped; one every ~2.5 s; more than 3 waiting drops
     // the oldest ones that also sit in a phone thread. Drops are logged with console.debug.
     // A bark arriving mid-release joins the end of the line, so it can't jump the queue.
-    if (this._shouldDefer() || this.isDrainingDeferred || this.deferredBarkQueue.length > 0) {
+    if (this._shouldDefer(payload) || this.isDrainingDeferred || this.deferredBarkQueue.length > 0) {
       console.log('💬 conversation/minigame open — deferring bark:', payload.text || payload.message);
       this.deferredBarkQueue.push(payload);
       if (!this._shouldDefer()) this.drainDeferredBarks();
@@ -163,15 +172,59 @@ export default class NPCBarkSystem {
     return null; // Return null since we're processing async
   }
 
-  _shouldDefer() {
+  _shouldDefer(payload) {
     if (window.currentConversationMinigameType === 'person-chat') return true;
-    return !!window.MinigameFramework?.holdsBarks?.();
+    // The CyberChef and lab-sheet popups aren't minigames; a bark covered the
+    // workstation's operations list (m04 F7). They drain the queue on close.
+    if (workstationPopupOpen()) return true;
+    if (window.MinigameFramework?.holdsBarks?.()) return true;
+    // The phone keeps other contacts' barks on top, but a bark from the contact whose
+    // thread is open waits until the phone closes (m04 confirmation N1). With no
+    // payload (the drain's check), hold while any queued bark is from that contact.
+    if (payload) return phoneThreadOpenFor(payload.npcId);
+    return this.deferredBarkQueue.some(p => phoneThreadOpenFor(p && p.npcId));
   }
 
   /**
    * Is this bark's text also in a phone thread the player can reopen? Only phone NPCs'
    * threads are saved and shown; a person NPC's bark has no copy that outlasts the toast.
    */
+  /** True when the bark's text is a line drawn in the open phone thread. */
+  _shownInOpenThread(payload, thread = openPhoneThread()) {
+    if (!thread || thread.keys.size === 0) return false;
+    const raw = String(payload?.text || payload?.message || '');
+    const contact = (payload?.npcId && this.npcManager?.getNPC?.(payload.npcId))
+      || { id: payload?.npcId, displayName: payload?.npcName };
+    let stripped = raw;
+    try { stripped = phoneBarkText(raw, contact); } catch (e) { /* keep raw */ }
+    return [raw, stripped].some(t => {
+      const k = threadTextKey(t);
+      return !!k && thread.keys.has(k);
+    });
+  }
+
+  /**
+   * Close toasts already on screen that point at the thread just opened: any from
+   * that contact, and any whose text the thread now shows. HaX's fight text barked
+   * before the phone opened stayed beside her open thread (m06 confirmation R4 M2):
+   * the hold only covers barks that arrive while the thread is open.
+   */
+  dismissBarksForOpenThread() {
+    if (!this.container) return 0;
+    const thread = openPhoneThread();
+    if (!thread) return 0;
+    let n = 0;
+    for (const el of this.container.querySelectorAll('.npc-bark')) {
+      if (el._removing) continue;
+      if (el._npcId === thread.npcId
+          || this._shownInOpenThread({ text: el._barkText, npcId: el._npcId }, thread)) {
+        this._removeBark(el);
+        n++;
+      }
+    }
+    return n;
+  }
+
   _hasPersistentCopy(payload) {
     // main.js builds the bark system before the NPC manager and never links them back,
     // so fall back to the global manager rather than waking the other this.npcManager paths
@@ -317,6 +370,11 @@ export default class NPCBarkSystem {
     const contact = (npcId && this.npcManager?.getNPC?.(npcId)) || { id: npcId, displayName: npcName };
     const text = phoneBarkText(payload.text || payload.message || '', contact);
     if (!text) return null;
+    // Checked again here: a queued or released bark can reach this after its thread opened
+    if (this._shownInOpenThread(payload)) {
+      console.debug('[barks] dropped, already in the open thread:', text);
+      return null;
+    }
     const duration = ('duration' in payload) ? payload.duration : 5000;
     const playSound = payload.playSound !== false; // Default true
     
@@ -376,6 +434,8 @@ export default class NPCBarkSystem {
     this._addSwipeGesture(el);
 
     if (typeof payload.stillValid === 'function') el._stillValid = payload.stillValid;
+    el._npcId = npcId || null;
+    el._barkText = payload.text || payload.message || '';
 
     this.container.appendChild(el);
     this.activeBarkCount++;
@@ -392,6 +452,9 @@ export default class NPCBarkSystem {
     } else if (payload.openPhone !== false && npcId) {
       // Default: clicking bark opens phone chat with this NPC
       el.addEventListener('click', () => {
+        // A forced call (disableClose) is not replaced by another contact's thread;
+        // the text is in that thread for later (finale F14)
+        if (inventoryBlockedByForcedMinigame()) return;
         this.openPhoneChat(payload);
         this._removeBark(el);
       });

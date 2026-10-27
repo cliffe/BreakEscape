@@ -3643,6 +3643,2442 @@
       "w": 42,
       "h": 45,
       "gid": 1039
+    },
+    "aes_esd_station1": {
+      "id": 239,
+      "w": 20,
+      "h": 25,
+      "gid": 1040
+    },
+    "aes_esd_button2": {
+      "id": 240,
+      "w": 22,
+      "h": 22,
+      "gid": 1041
+    },
+    "aes_dial_thermometer1": {
+      "id": 241,
+      "w": 24,
+      "h": 23,
+      "gid": 1042
+    },
+    "aes_h2_detector1": {
+      "id": 242,
+      "w": 14,
+      "h": 22,
+      "gid": 1043
+    },
+    "aes_vent_fan1": {
+      "id": 243,
+      "w": 22,
+      "h": 22,
+      "gid": 1044
+    },
+    "aes_ppe_rack1": {
+      "id": 244,
+      "w": 26,
+      "h": 25,
+      "gid": 1045
+    },
+    "aes_status_display1": {
+      "id": 245,
+      "w": 26,
+      "h": 20,
+      "gid": 1046
+    },
+    "aes_first_aid1": {
+      "id": 246,
+      "w": 22,
+      "h": 20,
+      "gid": 1047
+    },
+    "aes_emergency_phone1": {
+      "id": 247,
+      "w": 18,
+      "h": 23,
+      "gid": 1048
+    },
+    "aes_breaker_panel1": {
+      "id": 248,
+      "w": 20,
+      "h": 32,
+      "gid": 1049
+    },
+    "aes_pegboard1": {
+      "id": 249,
+      "w": 27,
+      "h": 19,
+      "gid": 1050
+    },
+    "aes_cctv1": {
+      "id": 250,
+      "w": 23,
+      "h": 18,
+      "gid": 1051
+    },
+    "aes_lockout_station1": {
+      "id": 251,
+      "w": 25,
+      "h": 22,
+      "gid": 1052
+    },
+    "aes_hose_reel1": {
+      "id": 252,
+      "w": 21,
+      "h": 24,
+      "gid": 1053
+    },
+    "aes_hose_reel2": {
+      "id": 253,
+      "w": 21,
+      "h": 25,
+      "gid": 1054
+    },
+    "aes_radio_charger1": {
+      "id": 254,
+      "w": 16,
+      "h": 20,
+      "gid": 1055
+    },
+    "aes_hv_sign1": {
+      "id": 255,
+      "w": 18,
+      "h": 25,
+      "gid": 1056
+    },
+    "aes_barrier1": {
+      "id": 256,
+      "w": 27,
+      "h": 22,
+      "gid": 1057
+    },
+    "aes_battery_module1": {
+      "id": 257,
+      "w": 24,
+      "h": 22,
+      "gid": 1058
+    },
+    "aes_battery_rack1": {
+      "id": 258,
+      "w": 33,
+      "h": 63,
+      "gid": 1059
+    },
+    "aes_battery_rack2": {
+      "id": 259,
+      "w": 30,
+      "h": 63,
+      "gid": 1060
+    },
+    "aes_beacon1": {
+      "id": 260,
+      "w": 20,
+      "h": 21,
+      "gid": 1061
+    },
+    "aes_bms_bypass1": {
+      "id": 261,
+      "w": 47,
+      "h": 57,
+      "gid": 1062
+    },
+    "aes_bms_bypass2": {
+      "id": 262,
+      "w": 43,
+      "h": 57,
+      "gid": 1063
+    },
+    "aes_bollard1": {
+      "id": 263,
+      "w": 10,
+      "h": 24,
+      "gid": 1064
+    },
+    "aes_cable_drum1": {
+      "id": 264,
+      "w": 27,
+      "h": 24,
+      "gid": 1065
+    },
+    "aes_chiller1": {
+      "id": 265,
+      "w": 60,
+      "h": 55,
+      "gid": 1066
+    },
+    "aes_clipboard1": {
+      "id": 266,
+      "w": 17,
+      "h": 24,
+      "gid": 1067
+    },
+    "aes_compressor1": {
+      "id": 267,
+      "w": 24,
+      "h": 23,
+      "gid": 1068
+    },
+    "aes_cones1": {
+      "id": 268,
+      "w": 26,
+      "h": 24,
+      "gid": 1069
+    },
+    "aes_control_panel1": {
+      "id": 269,
+      "w": 57,
+      "h": 60,
+      "gid": 1070
+    },
+    "aes_drum1": {
+      "id": 270,
+      "w": 17,
+      "h": 24,
+      "gid": 1071
+    },
+    "aes_gas_cylinders1": {
+      "id": 271,
+      "w": 20,
+      "h": 25,
+      "gid": 1072
+    },
+    "aes_generator1": {
+      "id": 272,
+      "w": 61,
+      "h": 54,
+      "gid": 1073
+    },
+    "aes_generator2": {
+      "id": 273,
+      "w": 62,
+      "h": 51,
+      "gid": 1074
+    },
+    "aes_inverter1": {
+      "id": 274,
+      "w": 56,
+      "h": 56,
+      "gid": 1075
+    },
+    "aes_inverter2": {
+      "id": 275,
+      "w": 31,
+      "h": 58,
+      "gid": 1076
+    },
+    "aes_junction_box1": {
+      "id": 276,
+      "w": 37,
+      "h": 52,
+      "gid": 1077
+    },
+    "aes_microwave1": {
+      "id": 277,
+      "w": 19,
+      "h": 23,
+      "gid": 1078
+    },
+    "aes_pallet1": {
+      "id": 278,
+      "w": 30,
+      "h": 26,
+      "gid": 1079
+    },
+    "aes_pallet_truck1": {
+      "id": 279,
+      "w": 28,
+      "h": 28,
+      "gid": 1080
+    },
+    "aes_suppression1": {
+      "id": 280,
+      "w": 41,
+      "h": 63,
+      "gid": 1081
+    },
+    "aes_switchgear1": {
+      "id": 281,
+      "w": 62,
+      "h": 59,
+      "gid": 1082
+    },
+    "aes_switchgear2": {
+      "id": 282,
+      "w": 28,
+      "h": 61,
+      "gid": 1083
+    },
+    "aes_toolbox1": {
+      "id": 283,
+      "w": 23,
+      "h": 21,
+      "gid": 1084
+    },
+    "aes_tool_trolley1": {
+      "id": 284,
+      "w": 26,
+      "h": 23,
+      "gid": 1085
+    },
+    "aes_transformer1": {
+      "id": 285,
+      "w": 53,
+      "h": 60,
+      "gid": 1086
+    },
+    "aes_bank_c_sign1": {
+      "id": 286,
+      "w": 51,
+      "h": 11,
+      "gid": 1087
+    },
+    "aes_bank_a_sign1": {
+      "id": 287,
+      "w": 51,
+      "h": 11,
+      "gid": 1088
+    },
+    "aes_bank_b_sign1": {
+      "id": 288,
+      "w": 51,
+      "h": 11,
+      "gid": 1089
+    },
+    "aes_esd_sign1": {
+      "id": 289,
+      "w": 43,
+      "h": 17,
+      "gid": 1090
+    },
+    "aes_inverter_sign1": {
+      "id": 290,
+      "w": 63,
+      "h": 11,
+      "gid": 1091
+    },
+    "aes_dock_sign1": {
+      "id": 291,
+      "w": 59,
+      "h": 11,
+      "gid": 1092
+    },
+    "aes_ppe_sign1": {
+      "id": 292,
+      "w": 20,
+      "h": 27,
+      "gid": 1093
+    },
+    "aes_hv_danger1": {
+      "id": 293,
+      "w": 26,
+      "h": 27,
+      "gid": 1094
+    },
+    "aes_process_diagram1": {
+      "id": 294,
+      "w": 46,
+      "h": 30,
+      "gid": 1095
+    },
+    "aes_procedures_sign1": {
+      "id": 295,
+      "w": 28,
+      "h": 34,
+      "gid": 1096
+    },
+    "aes_round_terminal1": {
+      "id": 296,
+      "w": 18,
+      "h": 24,
+      "gid": 1097
+    },
+    "aes_logo_sign1": {
+      "id": 297,
+      "w": 69,
+      "h": 19,
+      "gid": 1098
+    },
+    "aes_roller_shutter1": {
+      "id": 298,
+      "w": 96,
+      "h": 52,
+      "gid": 1099
+    },
+    "aes_spill_kit1": {
+      "id": 299,
+      "w": 20,
+      "h": 27,
+      "gid": 1100
+    },
+    "aes_spill_cabinet1": {
+      "id": 300,
+      "w": 23,
+      "h": 26,
+      "gid": 1101
+    },
+    "aes_ladder1": {
+      "id": 301,
+      "w": 22,
+      "h": 29,
+      "gid": 1102
+    },
+    "aes_combiner1": {
+      "id": 302,
+      "w": 19,
+      "h": 31,
+      "gid": 1103
+    },
+    "aes_combiner2": {
+      "id": 303,
+      "w": 20,
+      "h": 26,
+      "gid": 1104
+    },
+    "aes_floor_tray1": {
+      "id": 304,
+      "w": 28,
+      "h": 20,
+      "gid": 1105
+    },
+    "aes_air_mover1": {
+      "id": 305,
+      "w": 23,
+      "h": 27,
+      "gid": 1106
+    },
+    "aes_condenser1": {
+      "id": 306,
+      "w": 24,
+      "h": 27,
+      "gid": 1107
+    },
+    "aes_bms_tower1": {
+      "id": 307,
+      "w": 19,
+      "h": 28,
+      "gid": 1108
+    },
+    "aes_ppe_cabinet1": {
+      "id": 308,
+      "w": 18,
+      "h": 28,
+      "gid": 1109
+    },
+    "aes_cabinet_dark1": {
+      "id": 309,
+      "w": 18,
+      "h": 26,
+      "gid": 1110
+    },
+    "aes_floor_grate1": {
+      "id": 310,
+      "w": 28,
+      "h": 16,
+      "gid": 1111
+    },
+    "aes_trestle1": {
+      "id": 311,
+      "w": 52,
+      "h": 43,
+      "gid": 1112
+    },
+    "aes_trestle2": {
+      "id": 312,
+      "w": 52,
+      "h": 45,
+      "gid": 1113
+    },
+    "aes_ups1": {
+      "id": 313,
+      "w": 34,
+      "h": 57,
+      "gid": 1114
+    },
+    "aes_lockers_grey1": {
+      "id": 314,
+      "w": 58,
+      "h": 59,
+      "gid": 1115
+    },
+    "aes_shelving1": {
+      "id": 315,
+      "w": 52,
+      "h": 63,
+      "gid": 1116
+    },
+    "aes_pcs_cabinet1": {
+      "id": 316,
+      "w": 52,
+      "h": 59,
+      "gid": 1117
+    },
+    "aes_elec_cabinet1": {
+      "id": 317,
+      "w": 50,
+      "h": 57,
+      "gid": 1118
+    },
+    "aes_console1": {
+      "id": 318,
+      "w": 57,
+      "h": 51,
+      "gid": 1119
+    },
+    "aes_skip1": {
+      "id": 319,
+      "w": 50,
+      "h": 53,
+      "gid": 1120
+    },
+    "aes_tool_chest1": {
+      "id": 320,
+      "w": 48,
+      "h": 48,
+      "gid": 1121
+    },
+    "aes_gas_detector2": {
+      "id": 321,
+      "w": 18,
+      "h": 27,
+      "gid": 1122
+    },
+    "aes_hivis_hook1": {
+      "id": 322,
+      "w": 30,
+      "h": 25,
+      "gid": 1123
+    },
+    "aes_shutter_ctrl1": {
+      "id": 323,
+      "w": 20,
+      "h": 27,
+      "gid": 1124
+    },
+    "aes_bypass_module1": {
+      "id": 324,
+      "w": 21,
+      "h": 16,
+      "gid": 1125
+    },
+    "aes_mimic_board1": {
+      "id": 325,
+      "w": 96,
+      "h": 32,
+      "gid": 1126
+    },
+    "aes_speed_gate1": {
+      "id": 326,
+      "w": 51,
+      "h": 53,
+      "gid": 1127
+    },
+    "aes_security_desk1": {
+      "id": 327,
+      "w": 61,
+      "h": 55,
+      "gid": 1128
+    },
+    "aes_dvr1": {
+      "id": 328,
+      "w": 36,
+      "h": 56,
+      "gid": 1129
+    },
+    "aes_office_chair1": {
+      "id": 329,
+      "w": 33,
+      "h": 54,
+      "gid": 1130
+    },
+    "hce_logo_sign1": {
+      "id": 330,
+      "w": 64,
+      "h": 17,
+      "gid": 1131
+    },
+    "hce_logo_small1": {
+      "id": 331,
+      "w": 48,
+      "h": 11,
+      "gid": 1132
+    },
+    "hce_ticker1": {
+      "id": 332,
+      "w": 184,
+      "h": 9,
+      "gid": 1133
+    },
+    "hce_world_clocks1": {
+      "id": 333,
+      "w": 44,
+      "h": 19,
+      "gid": 1134
+    },
+    "hce_chart_screen1": {
+      "id": 334,
+      "w": 48,
+      "h": 30,
+      "gid": 1135
+    },
+    "hce_chart_screen2": {
+      "id": 335,
+      "w": 48,
+      "h": 30,
+      "gid": 1136
+    },
+    "hce_chart_screen3": {
+      "id": 336,
+      "w": 48,
+      "h": 30,
+      "gid": 1137
+    },
+    "hce_mining_rig1": {
+      "id": 337,
+      "w": 60,
+      "h": 54,
+      "gid": 1138
+    },
+    "hce_mining_rig2": {
+      "id": 338,
+      "w": 54,
+      "h": 58,
+      "gid": 1139
+    },
+    "hce_cage_panel1": {
+      "id": 339,
+      "w": 53,
+      "h": 54,
+      "gid": 1140
+    },
+    "hce_cage_door1": {
+      "id": 340,
+      "w": 36,
+      "h": 60,
+      "gid": 1141
+    },
+    "hce_console_table1": {
+      "id": 341,
+      "w": 52,
+      "h": 54,
+      "gid": 1142
+    },
+    "hce_bench1": {
+      "id": 342,
+      "w": 60,
+      "h": 31,
+      "gid": 1143
+    },
+    "hce_crypto_atm1": {
+      "id": 343,
+      "w": 32,
+      "h": 61,
+      "gid": 1144
+    },
+    "hce_node_shelf1": {
+      "id": 344,
+      "w": 54,
+      "h": 49,
+      "gid": 1145
+    },
+    "hce_wallet_cabinet1": {
+      "id": 345,
+      "w": 51,
+      "h": 58,
+      "gid": 1146
+    },
+    "hce_price_board1": {
+      "id": 346,
+      "w": 53,
+      "h": 55,
+      "gid": 1147
+    },
+    "hce_trading_station1": {
+      "id": 347,
+      "w": 60,
+      "h": 57,
+      "gid": 1148
+    },
+    "hce_comms_cabinet1": {
+      "id": 348,
+      "w": 46,
+      "h": 59,
+      "gid": 1149
+    },
+    "hce_kiosk1": {
+      "id": 349,
+      "w": 30,
+      "h": 58,
+      "gid": 1150
+    },
+    "hce_hsm1": {
+      "id": 350,
+      "w": 40,
+      "h": 60,
+      "gid": 1151
+    },
+    "hce_hsm2": {
+      "id": 351,
+      "w": 42,
+      "h": 60,
+      "gid": 1152
+    },
+    "hce_coin_sculpture1": {
+      "id": 352,
+      "w": 38,
+      "h": 59,
+      "gid": 1153
+    },
+    "hce_coin_pedestal1": {
+      "id": 353,
+      "w": 24,
+      "h": 60,
+      "gid": 1154
+    },
+    "hce_display_case1": {
+      "id": 354,
+      "w": 30,
+      "h": 60,
+      "gid": 1155
+    },
+    "hce_reception_desk1": {
+      "id": 355,
+      "w": 62,
+      "h": 50,
+      "gid": 1156
+    },
+    "hce_press_clipping1": {
+      "id": 356,
+      "w": 26,
+      "h": 30,
+      "gid": 1157
+    },
+    "hce_whiteboard_maths1": {
+      "id": 357,
+      "w": 46,
+      "h": 30,
+      "gid": 1158
+    },
+    "hce_whiteboard_graph1": {
+      "id": 358,
+      "w": 46,
+      "h": 30,
+      "gid": 1159
+    },
+    "hce_whitepaper_frame1": {
+      "id": 359,
+      "w": 20,
+      "h": 26,
+      "gid": 1160
+    },
+    "hce_custody_sign1": {
+      "id": 360,
+      "w": 67,
+      "h": 17,
+      "gid": 1161
+    },
+    "hce_exec_sign1": {
+      "id": 361,
+      "w": 67,
+      "h": 11,
+      "gid": 1162
+    },
+    "hce_staff_sign1": {
+      "id": 362,
+      "w": 47,
+      "h": 11,
+      "gid": 1163
+    },
+    "hce_server_sign1": {
+      "id": 363,
+      "w": 59,
+      "h": 11,
+      "gid": 1164
+    },
+    "hce_lab_sign1": {
+      "id": 364,
+      "w": 63,
+      "h": 11,
+      "gid": 1165
+    },
+    "hce_block_screen1": {
+      "id": 365,
+      "w": 48,
+      "h": 30,
+      "gid": 1166
+    },
+    "hce_phd_frame1": {
+      "id": 366,
+      "w": 24,
+      "h": 19,
+      "gid": 1167
+    },
+    "hce_sconce1": {
+      "id": 367,
+      "w": 10,
+      "h": 16,
+      "gid": 1168
+    },
+    "hce_art_canvas1": {
+      "id": 368,
+      "w": 40,
+      "h": 26,
+      "gid": 1169
+    },
+    "qdc_cryostat1": {
+      "id": 369,
+      "w": 50,
+      "h": 64,
+      "gid": 1170
+    },
+    "qdc_dewar1": {
+      "id": 370,
+      "w": 34,
+      "h": 61,
+      "gid": 1171
+    },
+    "qdc_key_lockers1": {
+      "id": 371,
+      "w": 54,
+      "h": 58,
+      "gid": 1172
+    },
+    "qdc_key_cabinet1": {
+      "id": 372,
+      "w": 36,
+      "h": 60,
+      "gid": 1173
+    },
+    "qdc_fume_hood1": {
+      "id": 373,
+      "w": 50,
+      "h": 62,
+      "gid": 1174
+    },
+    "qdc_glovebox1": {
+      "id": 374,
+      "w": 56,
+      "h": 57,
+      "gid": 1175
+    },
+    "qdc_optical_bench1": {
+      "id": 375,
+      "w": 56,
+      "h": 44,
+      "gid": 1176
+    },
+    "qdc_kitchenette1": {
+      "id": 376,
+      "w": 54,
+      "h": 49,
+      "gid": 1177
+    },
+    "qdc_espresso1": {
+      "id": 377,
+      "w": 44,
+      "h": 54,
+      "gid": 1178
+    },
+    "qdc_fridge1": {
+      "id": 378,
+      "w": 36,
+      "h": 61,
+      "gid": 1179
+    },
+    "qdc_recycling_bins1": {
+      "id": 379,
+      "w": 58,
+      "h": 32,
+      "gid": 1180
+    },
+    "qdc_instrument_rack1": {
+      "id": 380,
+      "w": 30,
+      "h": 62,
+      "gid": 1181
+    },
+    "qdc_rack_black1": {
+      "id": 381,
+      "w": 38,
+      "h": 59,
+      "gid": 1182
+    },
+    "qdc_collection_tin1": {
+      "id": 382,
+      "w": 10,
+      "h": 12,
+      "gid": 1183
+    },
+    "qdc_logo_sign1": {
+      "id": 383,
+      "w": 76,
+      "h": 19,
+      "gid": 1184
+    },
+    "qdc_logo_small1": {
+      "id": 384,
+      "w": 32,
+      "h": 13,
+      "gid": 1185
+    },
+    "qdc_lab_sign1": {
+      "id": 385,
+      "w": 63,
+      "h": 11,
+      "gid": 1186
+    },
+    "qdc_server_sign1": {
+      "id": 386,
+      "w": 51,
+      "h": 11,
+      "gid": 1187
+    },
+    "qdc_vault_sign1": {
+      "id": 387,
+      "w": 91,
+      "h": 17,
+      "gid": 1188
+    },
+    "qdc_security_sign1": {
+      "id": 388,
+      "w": 39,
+      "h": 11,
+      "gid": 1189
+    },
+    "qdc_it_sign1": {
+      "id": 389,
+      "w": 47,
+      "h": 11,
+      "gid": 1190
+    },
+    "qdc_lab_rules1": {
+      "id": 390,
+      "w": 22,
+      "h": 28,
+      "gid": 1191
+    },
+    "qdc_badge_hook1": {
+      "id": 391,
+      "w": 14,
+      "h": 22,
+      "gid": 1192
+    },
+    "qdc_laser_warning1": {
+      "id": 392,
+      "w": 34,
+      "h": 11,
+      "gid": 1193
+    },
+    "qdc_whiteboard_lattice1": {
+      "id": 393,
+      "w": 46,
+      "h": 30,
+      "gid": 1194
+    },
+    "qdc_whiteboard_net1": {
+      "id": 394,
+      "w": 46,
+      "h": 30,
+      "gid": 1195
+    },
+    "qdc_suspects_board1": {
+      "id": 395,
+      "w": 46,
+      "h": 30,
+      "gid": 1196
+    },
+    "qdc_dispatch_screen1": {
+      "id": 396,
+      "w": 48,
+      "h": 30,
+      "gid": 1197
+    },
+    "qdc_kid_drawing1": {
+      "id": 397,
+      "w": 22,
+      "h": 17,
+      "gid": 1198
+    },
+    "qdc_poster_secure1": {
+      "id": 398,
+      "w": 16,
+      "h": 21,
+      "gid": 1199
+    },
+    "qdc_poster_ready1": {
+      "id": 399,
+      "w": 16,
+      "h": 21,
+      "gid": 1200
+    },
+    "qdc_poster_team1": {
+      "id": 400,
+      "w": 16,
+      "h": 21,
+      "gid": 1201
+    },
+    "qdc_it_notice1": {
+      "id": 401,
+      "w": 18,
+      "h": 24,
+      "gid": 1202
+    },
+    "qdc_whiteboard_keys1": {
+      "id": 402,
+      "w": 46,
+      "h": 30,
+      "gid": 1203
+    },
+    "qdc_two_person_sign1": {
+      "id": 403,
+      "w": 67,
+      "h": 11,
+      "gid": 1204
+    },
+    "qdc_kitchenette2": {
+      "id": 404,
+      "w": 56,
+      "h": 59,
+      "gid": 1205
+    },
+    "qdc_cctv_desk1": {
+      "id": 405,
+      "w": 60,
+      "h": 51,
+      "gid": 1206
+    },
+    "qdc_eyewash1": {
+      "id": 406,
+      "w": 40,
+      "h": 48,
+      "gid": 1207
+    },
+    "qdc_lab_desk1": {
+      "id": 407,
+      "w": 58,
+      "h": 43,
+      "gid": 1208
+    },
+    "qdc_filing_steel1": {
+      "id": 408,
+      "w": 29,
+      "h": 60,
+      "gid": 1209
+    },
+    "filing_cabinet_locked2": {
+      "id": 409,
+      "w": 29,
+      "h": 60,
+      "gid": 1210
+    },
+    "qdc_hsm1": {
+      "id": 410,
+      "w": 32,
+      "h": 58,
+      "gid": 1211
+    },
+    "pnw_logo_sign1": {
+      "id": 411,
+      "w": 103,
+      "h": 19,
+      "gid": 1212
+    },
+    "pnw_evac_board1": {
+      "id": 412,
+      "w": 52,
+      "h": 34,
+      "gid": 1213
+    },
+    "pnw_nerc_notice1": {
+      "id": 413,
+      "w": 67,
+      "h": 17,
+      "gid": 1214
+    },
+    "pnw_muster_sign1": {
+      "id": 414,
+      "w": 30,
+      "h": 23,
+      "gid": 1215
+    },
+    "pnw_video_wall1": {
+      "id": 415,
+      "w": 159,
+      "h": 42,
+      "gid": 1216
+    },
+    "pnw_substation_map1": {
+      "id": 416,
+      "w": 72,
+      "h": 38,
+      "gid": 1217
+    },
+    "pnw_countdown1": {
+      "id": 417,
+      "w": 76,
+      "h": 32,
+      "gid": 1218
+    },
+    "pnw_mimic1": {
+      "id": 418,
+      "w": 96,
+      "h": 30,
+      "gid": 1219
+    },
+    "notes_plantlog1": {
+      "id": 419,
+      "w": 16,
+      "h": 26,
+      "gid": 1220
+    },
+    "pnw_genplate_one1": {
+      "id": 420,
+      "w": 25,
+      "h": 9,
+      "gid": 1221
+    },
+    "pnw_genplate_two1": {
+      "id": 421,
+      "w": 25,
+      "h": 9,
+      "gid": 1222
+    },
+    "pnw_genplate_three1": {
+      "id": 422,
+      "w": 25,
+      "h": 9,
+      "gid": 1223
+    },
+    "pnw_ear_sign1": {
+      "id": 423,
+      "w": 24,
+      "h": 22,
+      "gid": 1224
+    },
+    "pnw_cable_ladder1": {
+      "id": 424,
+      "w": 200,
+      "h": 22,
+      "gid": 1225
+    },
+    "pnw_splice1": {
+      "id": 425,
+      "w": 30,
+      "h": 24,
+      "gid": 1226
+    },
+    "pnw_ops_sign1": {
+      "id": 426,
+      "w": 47,
+      "h": 11,
+      "gid": 1227
+    },
+    "pnw_server_sign1": {
+      "id": 427,
+      "w": 51,
+      "h": 17,
+      "gid": 1228
+    },
+    "pnw_scada_sign1": {
+      "id": 428,
+      "w": 67,
+      "h": 17,
+      "gid": 1229
+    },
+    "pnw_genhall_sign1": {
+      "id": 429,
+      "w": 67,
+      "h": 17,
+      "gid": 1230
+    },
+    "pnw_vault_sign1": {
+      "id": 430,
+      "w": 63,
+      "h": 17,
+      "gid": 1231
+    },
+    "pnw_security_sign1": {
+      "id": 431,
+      "w": 39,
+      "h": 11,
+      "gid": 1232
+    },
+    "pnw_hose_reel1": {
+      "id": 432,
+      "w": 36,
+      "h": 39,
+      "gid": 1233
+    },
+    "pnw_genset1": {
+      "id": 433,
+      "w": 62,
+      "h": 48,
+      "gid": 1234
+    },
+    "pnw_ats1": {
+      "id": 434,
+      "w": 34,
+      "h": 54,
+      "gid": 1235
+    },
+    "pnw_switch_cabinet1": {
+      "id": 435,
+      "w": 33,
+      "h": 59,
+      "gid": 1236
+    },
+    "pnw_genset_panel1": {
+      "id": 436,
+      "w": 35,
+      "h": 58,
+      "gid": 1237
+    },
+    "pnw_engine_cabinet1": {
+      "id": 437,
+      "w": 38,
+      "h": 56,
+      "gid": 1238
+    },
+    "pnw_day_tank1": {
+      "id": 438,
+      "w": 58,
+      "h": 48,
+      "gid": 1239
+    },
+    "pnw_console1": {
+      "id": 439,
+      "w": 64,
+      "h": 49,
+      "gid": 1240
+    },
+    "pnw_console2": {
+      "id": 440,
+      "w": 64,
+      "h": 49,
+      "gid": 1241
+    },
+    "pnw_console_pos1": {
+      "id": 441,
+      "w": 64,
+      "h": 49,
+      "gid": 1242
+    },
+    "pnw_xray1": {
+      "id": 442,
+      "w": 60,
+      "h": 54,
+      "gid": 1243
+    },
+    "pnw_arch1": {
+      "id": 443,
+      "w": 30,
+      "h": 58,
+      "gid": 1244
+    },
+    "pnw_batteries1": {
+      "id": 444,
+      "w": 52,
+      "h": 53,
+      "gid": 1245
+    },
+    "pnw_cable_trolley1": {
+      "id": 445,
+      "w": 40,
+      "h": 46,
+      "gid": 1246
+    },
+    "pnw_transformer1": {
+      "id": 446,
+      "w": 51,
+      "h": 55,
+      "gid": 1247
+    },
+    "pnw_junction_box1": {
+      "id": 447,
+      "w": 35,
+      "h": 52,
+      "gid": 1248
+    },
+    "notes_ledger1": {
+      "id": 448,
+      "w": 20,
+      "h": 12,
+      "gid": 1249
+    },
+    "notes_clip1": {
+      "id": 449,
+      "w": 11,
+      "h": 26,
+      "gid": 1250
+    },
+    "pnw_backup_tag1": {
+      "id": 450,
+      "w": 23,
+      "h": 7,
+      "gid": 1251
+    },
+    "pnw_portable_printer1": {
+      "id": 451,
+      "w": 16,
+      "h": 11,
+      "gid": 1252
+    },
+    "pnw_master_desk1": {
+      "id": 452,
+      "w": 78,
+      "h": 39,
+      "gid": 1253
+    },
+    "pnw_badge_printer1": {
+      "id": 453,
+      "w": 28,
+      "h": 20,
+      "gid": 1254
+    },
+    "pnw_ats_cover1": {
+      "id": 454,
+      "w": 16,
+      "h": 30,
+      "gid": 1255
+    },
+    "notes_tucked1": {
+      "id": 455,
+      "w": 12,
+      "h": 14,
+      "gid": 1256
+    },
+    "pnw_backup_server1": {
+      "id": 456,
+      "w": 30,
+      "h": 55,
+      "gid": 1257
+    },
+    "pnw_office_chair_m1": {
+      "id": 457,
+      "w": 33,
+      "h": 54,
+      "gid": 1258
+    },
+    "pnw_desk_return1": {
+      "id": 458,
+      "w": 18,
+      "h": 39,
+      "gid": 1259
+    },
+    "hq_logo_sign1": {
+      "id": 459,
+      "w": 82,
+      "h": 21,
+      "gid": 1260
+    },
+    "hq_logo_small1": {
+      "id": 460,
+      "w": 30,
+      "h": 13,
+      "gid": 1261
+    },
+    "hq_memorial1": {
+      "id": 461,
+      "w": 50,
+      "h": 32,
+      "gid": 1262
+    },
+    "hq_alert_screen1": {
+      "id": 462,
+      "w": 48,
+      "h": 30,
+      "gid": 1263
+    },
+    "hq_ops_board1": {
+      "id": 463,
+      "w": 98,
+      "h": 34,
+      "gid": 1264
+    },
+    "hq_tactical_board1": {
+      "id": 464,
+      "w": 62,
+      "h": 32,
+      "gid": 1265
+    },
+    "hq_evidence_wall1": {
+      "id": 465,
+      "w": 64,
+      "h": 32,
+      "gid": 1266
+    },
+    "hq_disposition1": {
+      "id": 466,
+      "w": 34,
+      "h": 26,
+      "gid": 1267
+    },
+    "hq_one_way_mirror1": {
+      "id": 467,
+      "w": 96,
+      "h": 30,
+      "gid": 1268
+    },
+    "hq_recording1": {
+      "id": 468,
+      "w": 48,
+      "h": 11,
+      "gid": 1269
+    },
+    "hq_badge_reader1": {
+      "id": 469,
+      "w": 8,
+      "h": 12,
+      "gid": 1270
+    },
+    "hq_poster_postit1": {
+      "id": 470,
+      "w": 16,
+      "h": 21,
+      "gid": 1271
+    },
+    "hq_poster_ears1": {
+      "id": 471,
+      "w": 16,
+      "h": 21,
+      "gid": 1272
+    },
+    "hq_poster_red1": {
+      "id": 472,
+      "w": 16,
+      "h": 21,
+      "gid": 1273
+    },
+    "hq_cipher_board1": {
+      "id": 473,
+      "w": 46,
+      "h": 30,
+      "gid": 1274
+    },
+    "hq_ops_sign1": {
+      "id": 474,
+      "w": 47,
+      "h": 11,
+      "gid": 1275
+    },
+    "hq_intel_sign1": {
+      "id": 475,
+      "w": 55,
+      "h": 11,
+      "gid": 1276
+    },
+    "hq_crypto_sign1": {
+      "id": 476,
+      "w": 55,
+      "h": 11,
+      "gid": 1277
+    },
+    "hq_server_sign1": {
+      "id": 477,
+      "w": 51,
+      "h": 11,
+      "gid": 1278
+    },
+    "hq_break_sign1": {
+      "id": 478,
+      "w": 47,
+      "h": 11,
+      "gid": 1279
+    },
+    "hq_director_sign1": {
+      "id": 479,
+      "w": 39,
+      "h": 11,
+      "gid": 1280
+    },
+    "hq_archive_sign1": {
+      "id": 480,
+      "w": 67,
+      "h": 17,
+      "gid": 1281
+    },
+    "hq_interview_sign1": {
+      "id": 481,
+      "w": 51,
+      "h": 11,
+      "gid": 1282
+    },
+    "hq_flowers1": {
+      "id": 482,
+      "w": 16,
+      "h": 18,
+      "gid": 1283
+    },
+    "hq_locker_a1": {
+      "id": 483,
+      "w": 20,
+      "h": 52,
+      "gid": 1284
+    },
+    "hq_locker_b1": {
+      "id": 484,
+      "w": 20,
+      "h": 52,
+      "gid": 1285
+    },
+    "hq_locker_c1": {
+      "id": 485,
+      "w": 20,
+      "h": 52,
+      "gid": 1286
+    },
+    "hq_badge_printer1": {
+      "id": 486,
+      "w": 22,
+      "h": 16,
+      "gid": 1287
+    },
+    "hq_confidential_bin1": {
+      "id": 487,
+      "w": 22,
+      "h": 32,
+      "gid": 1288
+    },
+    "notes_postit1": {
+      "id": 488,
+      "w": 9,
+      "h": 9,
+      "gid": 1289
+    },
+    "notes_legalpad1": {
+      "id": 489,
+      "w": 14,
+      "h": 16,
+      "gid": 1290
+    },
+    "hq_interview_table1": {
+      "id": 490,
+      "w": 56,
+      "h": 41,
+      "gid": 1291
+    },
+    "hq_xray1": {
+      "id": 491,
+      "w": 60,
+      "h": 40,
+      "gid": 1292
+    },
+    "hq_enigma1": {
+      "id": 492,
+      "w": 36,
+      "h": 61,
+      "gid": 1293
+    },
+    "hq_mobile_stack1": {
+      "id": 493,
+      "w": 42,
+      "h": 61,
+      "gid": 1294
+    },
+    "hq_archive_shelf1": {
+      "id": 494,
+      "w": 42,
+      "h": 61,
+      "gid": 1295
+    },
+    "hq_security_container1": {
+      "id": 495,
+      "w": 34,
+      "h": 59,
+      "gid": 1296
+    },
+    "hq_green_safe1": {
+      "id": 496,
+      "w": 36,
+      "h": 60,
+      "gid": 1297
+    },
+    "hq_camera_tripod1": {
+      "id": 497,
+      "w": 24,
+      "h": 50,
+      "gid": 1298
+    },
+    "hq_detector_arch1": {
+      "id": 498,
+      "w": 32,
+      "h": 60,
+      "gid": 1299
+    },
+    "hq_console1": {
+      "id": 499,
+      "w": 52,
+      "h": 41,
+      "gid": 1300
+    },
+    "hq_rack1": {
+      "id": 500,
+      "w": 32,
+      "h": 60,
+      "gid": 1301
+    },
+    "hq_desk_safe1": {
+      "id": 501,
+      "w": 24,
+      "h": 30,
+      "gid": 1302
+    },
+    "notes_notebook1": {
+      "id": 502,
+      "w": 14,
+      "h": 12,
+      "gid": 1303
+    },
+    "hq_recorder1": {
+      "id": 503,
+      "w": 16,
+      "h": 9,
+      "gid": 1304
+    },
+    "qdc_safety_shower1": {
+      "id": 504,
+      "w": 21,
+      "h": 48,
+      "gid": 1305
+    },
+    "qdc_first_aid_cabinet1": {
+      "id": 505,
+      "w": 19,
+      "h": 22,
+      "gid": 1306
+    },
+    "pnw_console2_p1": {
+      "id": 506,
+      "w": 64,
+      "h": 49,
+      "gid": 1307
+    },
+    "pnw_console1_p2": {
+      "id": 507,
+      "w": 64,
+      "h": 49,
+      "gid": 1308
+    },
+    "pnw_console1_p4": {
+      "id": 508,
+      "w": 64,
+      "h": 49,
+      "gid": 1309
+    },
+    "pnw_console2_p5": {
+      "id": 509,
+      "w": 64,
+      "h": 49,
+      "gid": 1310
+    },
+    "pnw_console1_p6": {
+      "id": 510,
+      "w": 64,
+      "h": 49,
+      "gid": 1311
+    },
+    "planter-fig1-top-ani1": {
+      "id": 511,
+      "w": 40,
+      "h": 61,
+      "gid": 1312
+    },
+    "m09_logo_sign1": {
+      "id": 512,
+      "w": 98,
+      "h": 19,
+      "gid": 1313
+    },
+    "m09_sign_reading1": {
+      "id": 513,
+      "w": 55,
+      "h": 11,
+      "gid": 1314
+    },
+    "m09_sign_restricted1": {
+      "id": 514,
+      "w": 75,
+      "h": 11,
+      "gid": 1315
+    },
+    "m09_sign_staff1": {
+      "id": 515,
+      "w": 47,
+      "h": 11,
+      "gid": 1316
+    },
+    "m09_sign_tape1": {
+      "id": 516,
+      "w": 47,
+      "h": 11,
+      "gid": 1317
+    },
+    "m09_sign_salvage1": {
+      "id": 517,
+      "w": 35,
+      "h": 11,
+      "gid": 1318
+    },
+    "m09_sign_bay2": {
+      "id": 518,
+      "w": 27,
+      "h": 11,
+      "gid": 1319
+    },
+    "m09_sign_director1": {
+      "id": 519,
+      "w": 39,
+      "h": 11,
+      "gid": 1320
+    },
+    "m09_sign_series_r1": {
+      "id": 520,
+      "w": 39,
+      "h": 11,
+      "gid": 1321
+    },
+    "m09_sign_stacks1": {
+      "id": 521,
+      "w": 67,
+      "h": 17,
+      "gid": 1322
+    },
+    "m09_sign_returns1": {
+      "id": 522,
+      "w": 59,
+      "h": 17,
+      "gid": 1323
+    },
+    "m09_shelf_legend1": {
+      "id": 523,
+      "w": 32,
+      "h": 28,
+      "gid": 1324
+    },
+    "m09_keypad1": {
+      "id": 524,
+      "w": 9,
+      "h": 13,
+      "gid": 1325
+    },
+    "m09_door_controller1": {
+      "id": 525,
+      "w": 14,
+      "h": 22,
+      "gid": 1326
+    },
+    "m09_bay_plate10": {
+      "id": 526,
+      "w": 29,
+      "h": 9,
+      "gid": 1327
+    },
+    "m09_bay_plate11": {
+      "id": 527,
+      "w": 29,
+      "h": 9,
+      "gid": 1328
+    },
+    "m09_bay_plate12": {
+      "id": 528,
+      "w": 29,
+      "h": 9,
+      "gid": 1329
+    },
+    "m09_bay_label1": {
+      "id": 529,
+      "w": 26,
+      "h": 18,
+      "gid": 1330
+    },
+    "m09_rubber_stamp1": {
+      "id": 530,
+      "w": 16,
+      "h": 11,
+      "gid": 1331
+    },
+    "m09_hatch_counter1": {
+      "id": 531,
+      "w": 22,
+      "h": 104,
+      "gid": 1332
+    },
+    "m09_mesh_low1": {
+      "id": 532,
+      "w": 48,
+      "h": 24,
+      "gid": 1333
+    },
+    "m09_crate_alpha1": {
+      "id": 533,
+      "w": 32,
+      "h": 24,
+      "gid": 1334
+    },
+    "m09_crate_beta1": {
+      "id": 534,
+      "w": 32,
+      "h": 24,
+      "gid": 1335
+    },
+    "m09_box_taped1": {
+      "id": 535,
+      "w": 16,
+      "h": 14,
+      "gid": 1336
+    },
+    "m09_box_open1": {
+      "id": 536,
+      "w": 16,
+      "h": 14,
+      "gid": 1337
+    },
+    "m09_degausser1": {
+      "id": 537,
+      "w": 28,
+      "h": 24,
+      "gid": 1338
+    },
+    "case-file": {
+      "id": 538,
+      "w": 40,
+      "h": 27,
+      "gid": 1339
+    },
+    "safetynet_flag_terminal1": {
+      "id": 539,
+      "w": 23,
+      "h": 24,
+      "gid": 1340
+    },
+    "m09_reel_deck1": {
+      "id": 540,
+      "w": 54,
+      "h": 59,
+      "gid": 1341
+    },
+    "m09_microfiche1": {
+      "id": 541,
+      "w": 34,
+      "h": 59,
+      "gid": 1342
+    },
+    "m09_box_trolley1": {
+      "id": 542,
+      "w": 42,
+      "h": 46,
+      "gid": 1343
+    },
+    "m09_reel_shelf1": {
+      "id": 543,
+      "w": 42,
+      "h": 58,
+      "gid": 1344
+    },
+    "m09_tape_cabinet1": {
+      "id": 544,
+      "w": 54,
+      "h": 61,
+      "gid": 1345
+    },
+    "m09_drop_screen1": {
+      "id": 545,
+      "w": 36,
+      "h": 26,
+      "gid": 1346
+    },
+    "m09_sign_bay1": {
+      "id": 546,
+      "w": 27,
+      "h": 11,
+      "gid": 1347
+    },
+    "m09_deck_controller1": {
+      "id": 547,
+      "w": 18,
+      "h": 14,
+      "gid": 1348
+    },
+    "m09_county_map1": {
+      "id": 548,
+      "w": 30,
+      "h": 22,
+      "gid": 1349
+    },
+    "m09_sign_silence1": {
+      "id": 549,
+      "w": 63,
+      "h": 11,
+      "gid": 1350
+    },
+    "m09_sign_personnel1": {
+      "id": 550,
+      "w": 43,
+      "h": 11,
+      "gid": 1351
+    },
+    "m09_shelves_white1": {
+      "id": 551,
+      "w": 50,
+      "h": 60,
+      "gid": 1352
+    },
+    "m09_shelves_red1": {
+      "id": 552,
+      "w": 50,
+      "h": 60,
+      "gid": 1353
+    },
+    "m09_shelves_half1": {
+      "id": 553,
+      "w": 50,
+      "h": 60,
+      "gid": 1354
+    },
+    "m09_shelves_flip1": {
+      "id": 554,
+      "w": 50,
+      "h": 60,
+      "gid": 1355
+    },
+    "m09_mesh_rail1": {
+      "id": 555,
+      "w": 48,
+      "h": 12,
+      "gid": 1356
+    },
+    "m09_hatch_screen1": {
+      "id": 556,
+      "w": 8,
+      "h": 124,
+      "gid": 1357
+    },
+    "m09_hatch_counter2": {
+      "id": 557,
+      "w": 16,
+      "h": 104,
+      "gid": 1358
+    },
+    "m09_rubber_stamp2": {
+      "id": 558,
+      "w": 20,
+      "h": 14,
+      "gid": 1359
+    },
+    "m09_strip_sack1": {
+      "id": 559,
+      "w": 18,
+      "h": 20,
+      "gid": 1360
+    },
+    "m09_folder1": {
+      "id": 560,
+      "w": 26,
+      "h": 18,
+      "gid": 1361
+    },
+    "m10_sign_fallout1": {
+      "id": 561,
+      "w": 62,
+      "h": 19,
+      "gid": 1362
+    },
+    "m10_sign_security1": {
+      "id": 562,
+      "w": 39,
+      "h": 11,
+      "gid": 1363
+    },
+    "m10_sign_workshop1": {
+      "id": 563,
+      "w": 39,
+      "h": 11,
+      "gid": 1364
+    },
+    "m10_sign_plant1": {
+      "id": 564,
+      "w": 47,
+      "h": 11,
+      "gid": 1365
+    },
+    "m10_sign_ops1": {
+      "id": 565,
+      "w": 47,
+      "h": 11,
+      "gid": 1366
+    },
+    "m10_sign_gallery1": {
+      "id": 566,
+      "w": 35,
+      "h": 11,
+      "gid": 1367
+    },
+    "m10_sign_level1": {
+      "id": 567,
+      "w": 35,
+      "h": 11,
+      "gid": 1368
+    },
+    "m10_sign_level2": {
+      "id": 568,
+      "w": 35,
+      "h": 11,
+      "gid": 1369
+    },
+    "m10_sign_keepclear1": {
+      "id": 569,
+      "w": 47,
+      "h": 11,
+      "gid": 1370
+    },
+    "m10_sign_post1": {
+      "id": 570,
+      "w": 47,
+      "h": 11,
+      "gid": 1371
+    },
+    "m10_sign_batteries1": {
+      "id": 571,
+      "w": 43,
+      "h": 11,
+      "gid": 1372
+    },
+    "m10_caged_lamp1": {
+      "id": 572,
+      "w": 10,
+      "h": 12,
+      "gid": 1373
+    },
+    "m10_readout1": {
+      "id": 573,
+      "w": 26,
+      "h": 18,
+      "gid": 1374
+    },
+    "m10_readout_side1": {
+      "id": 574,
+      "w": 16,
+      "h": 22,
+      "gid": 1375
+    },
+    "m10_door_panel1": {
+      "id": 575,
+      "w": 18,
+      "h": 26,
+      "gid": 1376
+    },
+    "m10_load_board1": {
+      "id": 576,
+      "w": 66,
+      "h": 30,
+      "gid": 1377
+    },
+    "m10_bakelite_panel1": {
+      "id": 577,
+      "w": 34,
+      "h": 28,
+      "gid": 1378
+    },
+    "m10_slit_window1": {
+      "id": 578,
+      "w": 74,
+      "h": 14,
+      "gid": 1379
+    },
+    "m10_plotting_board1": {
+      "id": 579,
+      "w": 112,
+      "h": 30,
+      "gid": 1380
+    },
+    "m10_wall_ladder1": {
+      "id": 580,
+      "w": 20,
+      "h": 30,
+      "gid": 1381
+    },
+    "m10_hatch1": {
+      "id": 581,
+      "w": 34,
+      "h": 30,
+      "gid": 1382
+    },
+    "m10_keypad_plate1": {
+      "id": 582,
+      "w": 12,
+      "h": 18,
+      "gid": 1383
+    },
+    "m10_service_door1": {
+      "id": 583,
+      "w": 18,
+      "h": 70,
+      "gid": 1384
+    },
+    "m10_map_board1": {
+      "id": 584,
+      "w": 40,
+      "h": 28,
+      "gid": 1385
+    },
+    "m10_field_screen1": {
+      "id": 585,
+      "w": 24,
+      "h": 18,
+      "gid": 1386
+    },
+    "m10_breaching_case1": {
+      "id": 586,
+      "w": 26,
+      "h": 14,
+      "gid": 1387
+    },
+    "m10_kit_crate1": {
+      "id": 587,
+      "w": 32,
+      "h": 20,
+      "gid": 1388
+    },
+    "m10_gate_hut1": {
+      "id": 588,
+      "w": 48,
+      "h": 62,
+      "gid": 1389
+    },
+    "m10_gate_hut_dark1": {
+      "id": 589,
+      "w": 48,
+      "h": 62,
+      "gid": 1390
+    },
+    "m10_key_console1": {
+      "id": 590,
+      "w": 52,
+      "h": 36,
+      "gid": 1391
+    },
+    "m10_cracker_rack1": {
+      "id": 591,
+      "w": 34,
+      "h": 50,
+      "gid": 1392
+    },
+    "m10_van1": {
+      "id": 592,
+      "w": 117,
+      "h": 60,
+      "gid": 1393
+    },
+    "m10_van2": {
+      "id": 593,
+      "w": 111,
+      "h": 50,
+      "gid": 1394
+    },
+    "m10_van3": {
+      "id": 594,
+      "w": 101,
+      "h": 70,
+      "gid": 1395
+    },
+    "m10_bypass_panel1": {
+      "id": 595,
+      "w": 30,
+      "h": 30,
+      "gid": 1396
+    },
+    "m10_wall_screen1": {
+      "id": 596,
+      "w": 36,
+      "h": 24,
+      "gid": 1397
+    },
+    "m10_plans1": {
+      "id": 597,
+      "w": 28,
+      "h": 14,
+      "gid": 1398
+    },
+    "m10_field_screen_dark1": {
+      "id": 598,
+      "w": 24,
+      "h": 18,
+      "gid": 1399
+    },
+    "m10_console_controls1": {
+      "id": 599,
+      "w": 30,
+      "h": 14,
+      "gid": 1400
+    },
+    "m10_cupboard1": {
+      "id": 600,
+      "w": 30,
+      "h": 40,
+      "gid": 1401
+    },
+    "m10_locker1": {
+      "id": 601,
+      "w": 22,
+      "h": 42,
+      "gid": 1402
+    },
+    "m10_gate_post1": {
+      "id": 602,
+      "w": 80,
+      "h": 62,
+      "gid": 1403
+    },
+    "m10_gate_post_dark1": {
+      "id": 603,
+      "w": 80,
+      "h": 62,
+      "gid": 1404
+    },
+    "m10_van_step1": {
+      "id": 604,
+      "w": 20,
+      "h": 8,
+      "gid": 1405
+    },
+    "m10_van_step2": {
+      "id": 605,
+      "w": 20,
+      "h": 8,
+      "gid": 1406
+    },
+    "m10_work_lamp1": {
+      "id": 606,
+      "w": 18,
+      "h": 50,
+      "gid": 1407
+    },
+    "m10_generator1": {
+      "id": 607,
+      "w": 34,
+      "h": 26,
+      "gid": 1408
+    },
+    "m10_portal_head1": {
+      "id": 608,
+      "w": 64,
+      "h": 46,
+      "gid": 1409
+    },
+    "m10_blast_leaf1": {
+      "id": 609,
+      "w": 18,
+      "h": 64,
+      "gid": 1410
+    },
+    "m10_key_isolator1": {
+      "id": 610,
+      "w": 24,
+      "h": 28,
+      "gid": 1411
+    },
+    "m10_wall_phone1": {
+      "id": 611,
+      "w": 14,
+      "h": 24,
+      "gid": 1412
+    },
+    "m10_coat_hooks1": {
+      "id": 612,
+      "w": 16,
+      "h": 36,
+      "gid": 1413
+    },
+    "m10_sign_core1": {
+      "id": 613,
+      "w": 23,
+      "h": 11,
+      "gid": 1414
+    },
+    "m10_fire_buckets1": {
+      "id": 614,
+      "w": 24,
+      "h": 22,
+      "gid": 1415
+    },
+    "m10_tool_roll1": {
+      "id": 615,
+      "w": 26,
+      "h": 12,
+      "gid": 1416
+    },
+    "m10_steel_stand1": {
+      "id": 616,
+      "w": 30,
+      "h": 36,
+      "gid": 1417
+    },
+    "se_logo_sign1": {
+      "id": 617,
+      "w": 64,
+      "h": 19,
+      "gid": 1418
+    },
+    "se_sign_engagement1": {
+      "id": 618,
+      "w": 47,
+      "h": 11,
+      "gid": 1419
+    },
+    "se_sign_recon1": {
+      "id": 619,
+      "w": 27,
+      "h": 11,
+      "gid": 1420
+    },
+    "se_sign_ops1": {
+      "id": 620,
+      "w": 47,
+      "h": 11,
+      "gid": 1421
+    },
+    "se_sign_blueteam1": {
+      "id": 621,
+      "w": 43,
+      "h": 11,
+      "gid": 1422
+    },
+    "m10_steel_bench1": {
+      "id": 622,
+      "w": 51,
+      "h": 39,
+      "gid": 1423
+    },
+    "m10_steel_chair1": {
+      "id": 623,
+      "w": 16,
+      "h": 26,
+      "gid": 1424
+    },
+    "m10_field_screen_curve1": {
+      "id": 624,
+      "w": 24,
+      "h": 18,
+      "gid": 1425
+    },
+    "aw_logo_brightwell1": {
+      "id": 625,
+      "w": 64,
+      "h": 19,
+      "gid": 1426
+    },
+    "aw_logo_tarrowby1": {
+      "id": 626,
+      "w": 64,
+      "h": 19,
+      "gid": 1427
+    },
+    "aw_logo_quayholt1": {
+      "id": 627,
+      "w": 64,
+      "h": 19,
+      "gid": 1428
+    },
+    "aw_logo_merrin_sallow1": {
+      "id": 628,
+      "w": 64,
+      "h": 19,
+      "gid": 1429
+    },
+    "aw_poster_report_brightwell1": {
+      "id": 629,
+      "w": 16,
+      "h": 21,
+      "gid": 1430
+    },
+    "aw_poster_report_tarrowby1": {
+      "id": 630,
+      "w": 16,
+      "h": 21,
+      "gid": 1431
+    },
+    "aw_poster_report_quayholt1": {
+      "id": 631,
+      "w": 16,
+      "h": 21,
+      "gid": 1432
+    },
+    "aw_poster_report_merrin_sallow1": {
+      "id": 632,
+      "w": 16,
+      "h": 21,
+      "gid": 1433
+    },
+    "kiosk": {
+      "id": 633,
+      "w": 27,
+      "h": 60,
+      "gid": 1434
+    },
+    "aw_brightwell_oatbox1": {
+      "id": 634,
+      "w": 14,
+      "h": 13,
+      "gid": 1435
+    },
+    "aw_hard_hat1": {
+      "id": 635,
+      "w": 14,
+      "h": 10,
+      "gid": 1436
+    },
+    "aw_chair_south_slate1": {
+      "id": 636,
+      "w": 16,
+      "h": 32,
+      "gid": 1437
+    },
+    "aw_chair_north_slate1": {
+      "id": 637,
+      "w": 16,
+      "h": 26,
+      "gid": 1438
+    },
+    "aw_chair_w_slate1": {
+      "id": 638,
+      "w": 17,
+      "h": 32,
+      "gid": 1439
+    },
+    "aw_pc_off1": {
+      "id": 639,
+      "w": 34,
+      "h": 22,
+      "gid": 1440
+    },
+    "aw_studio_chair_s1": {
+      "id": 640,
+      "w": 32,
+      "h": 32,
+      "gid": 1441
+    },
+    "aw_studio_chair_n1": {
+      "id": 641,
+      "w": 32,
+      "h": 32,
+      "gid": 1442
+    },
+    "aw_brightwell_range1": {
+      "id": 642,
+      "w": 30,
+      "h": 24,
+      "gid": 1443
+    },
+    "aw_quayholt_queue1": {
+      "id": 643,
+      "w": 48,
+      "h": 30,
+      "gid": 1444
+    },
+    "aw_chairs_stacked_slate1": {
+      "id": 644,
+      "w": 20,
+      "h": 45,
+      "gid": 1445
     }
   }
 }

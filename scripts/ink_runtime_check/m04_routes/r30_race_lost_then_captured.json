@@ -1,0 +1,23 @@
+{
+"steps": [
+{"note": "R30 (struggling run A, F3): reachable without assists. The player fights Voltage with Static still up, loses the trigger race (bank B vents with the crew in Hall 2), then puts Voltage down, so he's captured, and presses the ESD. The debrief tells it in order (he reached the laptop, then you put him down) on both openers, and the credits carry exactly one headline."},
+{"set": {"briefing_played": true, "guard_admitted": true, "vance_met": true, "vance_spoken": true, "vance_provided_keycard": true, "vance_card_cloned": true, "vance_is_ally": true, "vance_trust_level": 60, "anomaly_detected": true}},
+{"set": {"server_room_reached": true, "plant_reader_seen": true, "fingerprint_kit_found": true, "flag_network_scan_submitted": true, "flag_ftp_intel_submitted": true, "flag_distcc_exploit_submitted": true, "flag_privesc_submitted": true, "all_flags_in": true, "attack_mechanism_known": true, "crew_hint_texted": true, "plant_room_entered": true}},
+{"talk": "static", "picks": ["not here for you"]},
+{"talk": "voltage", "picks": ["You're not burning", "take that laptop", "taking you down"]},
+{"expect": {"voltage_fight_started": true}},
+{"advance": 1},
+{"expect": {"racks_vented": true, "vented_by_trigger": true, "crew_lost": true}},
+{"ko": "operative_static"},
+{"ko": "voltage"},
+{"expect": {"voltage_captured": true, "voltage_neutralised": true}},
+{"set": {"esd_authorized": true, "attack_prevented": true}},
+{"talk": "phone", "picks": ["Bring me in", "Bring me in", "On my way"]},
+{"talk": "debrief", "picks": ["He reached the laptop before I put him down", "Tell me we came out", "how did they get in", "And the network", "goes in the report", "The Architect", "I'm in", "Say there was an incident", "sorry about your people"]},
+{"said": ["He reached the laptop before I put him down. Shutdown held A and C.", "And you've got Voltage.", "The night crew were still in Hall 2 when Bank B went. Nine of them."], "notSaid": ["before I reached him", "before you got to him"]},
+{"talk": "debrief", "reload": "page", "picks": ["Voltage is in custody", "Tell me we came out", "how did they get in", "fix first", "goes in the report", "How far", "I'm in", "Keep it classified", "sorry about your people"]},
+{"said": ["The banks are isolated, but he reached the laptop before you put him down, and Bank B went with it."], "notSaid": ["before you got to him"]},
+{"credits": true},
+{"said": ["COSTLY SUCCESS", "MISSION 4: CRITICAL FAILURE", "RACK BANK B LOST — he reached the laptop before you put him down", "VOLTAGE: CAPTURED", "CLASSIFIED — filed as an industrial accident"], "notSaid": ["MISSION COMPLETE", "THERMAL RUNAWAY AVERTED", "maintenance fault", "VOLTAGE: ESCAPED"]}
+]
+}

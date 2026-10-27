@@ -174,12 +174,13 @@ module BreakEscape
       assert_equal MAYA_VOICE, maya.voice
     end
 
-    test "skips a co-speaker line the endpoint would refuse" do
+    test "lists a co-speaker line under the co-speaker even when their own story lacks it" do
       extractor = TtsLineExtractor.new('walker_test', scenario(maya_story: MAYA_STORY))
       entries = extractor.entries.map { |e| [e.npc_id, e.text] }
-      refute(entries.any? { |_, text| text == "I'm the co-speaker here." })
+      assert_includes entries, ['maya_chen', "I'm the co-speaker here."]
       assert_includes entries, ['maya_chen', 'Something else entirely.']
-      assert(extractor.notes.any? { |n| n.reason.include?('endpoint refuses') })
+      refute(extractor.notes.any? { |n| n.reason.include?('endpoint refuses') })
+      assert_equal MAYA_VOICE, extractor.entries.find { |e| e.text == "I'm the co-speaker here." }.voice
     end
 
     test "drops narrator lines when the scenario has no narrator voice" do
@@ -188,6 +189,144 @@ module BreakEscape
       extractor = TtsLineExtractor.new('walker_test', data)
       refute(extractor.entries.any? { |e| e.npc_id == 'narrator' })
       assert(extractor.notes.any? { |n| n.reason.include?('no voice config for narrator') })
+    end
+  end
+
+  # Vance speaks in HaX's debrief (m04): by prefix and by #speaker tag, while
+  # his own story holds other lines.
+  class TtsLineExtractorCoSpeakerTest < ActiveSupport::TestCase
+    HOST = 'test/fixtures/files/ink_line_walker/cospeaker_host.json'.freeze
+    VANCE_OWN = 'test/fixtures/files/ink_line_walker/cospeaker_vance_own.json'.freeze
+    HAX_VOICE = { 'name' => 'Aoede', 'style' => 'Calm handler.', 'language' => 'en-GB' }.freeze
+    VANCE_VOICE = { 'name' => 'Charon', 'style' => 'Tired engineer.', 'language' => 'en-GB' }.freeze
+
+    def scenario
+      {
+        'rooms' => {
+          'control' => {
+            'npcs' => [
+              { 'id' => 'agent_0x99_debrief', 'displayName' => 'Agent HaX', 'npcType' => 'person',
+                'voice' => HAX_VOICE, 'storyPath' => HOST },
+              { 'id' => 'robert_vance', 'displayName' => 'Robert Vance', 'npcType' => 'person',
+                'voice' => VANCE_VOICE, 'storyPath' => VANCE_OWN }
+            ]
+          }
+        }
+      }
+    end
+
+    test "attributes prefixed and #speaker-tagged co-speaker lines to the co-speaker's voice" do
+      extractor = TtsLineExtractor.new('walker_test', scenario)
+      service = TtsService.new
+      ['Nobody gets to call it an accident.', "It'll hurt us. People should still know."].each do |text|
+        entry = extractor.entries.find { |e| e.text == text }
+        assert entry, "missing: #{text}"
+        assert_equal 'robert_vance', entry.npc_id
+        assert_equal VANCE_VOICE, entry.voice
+        assert_equal service.cache_key_for(text, 'Charon', 'Tired engineer.', 'en-GB'), entry.key
+      end
+      assert_equal 'agent_0x99_debrief', extractor.entries.find { |e| e.text == 'You made the disclosure call.' }.npc_id
+    end
+
+    test "spoken_by? matches a line only for the speaker it is attributed to" do
+      extractor = TtsLineExtractor.new('walker_test', scenario)
+      assert extractor.spoken_by?('robert_vance', 'Nobody gets to call it an accident.')
+      assert extractor.spoken_by?('robert_vance', "it'll hurt us people should still know")
+      refute extractor.spoken_by?('robert_vance', 'You made the disclosure call.')
+      refute extractor.spoken_by?('agent_0x99_debrief', 'Nobody gets to call it an accident.')
+      refute extractor.spoken_by?('robert_vance', 'Words nobody wrote.')
+    end
+
+    test "expands an inline conditional whose rejoin divert is an absolute path" do
+      walker = InkLineWalker.from_file(Engine.root.join(HOST).to_s)
+      raws = walker.lines.map(&:raw)
+      assert_includes raws, 'Agent HaX: They spent years on this. Tonight you turned it round.'
+      assert_includes raws, 'Agent HaX: They spent years on this. Tonight you took it off them.'
+      assert_empty walker.unresolved
+    end
+  end
+
+  # A phone contact's story is voiced only when a call is marked `voiced` (F17),
+  # and then as the phone voices it: no narration, no player lines.
+  class TtsLineExtractorVoicedCallTest < ActiveSupport::TestCase
+    CALL = 'test/fixtures/files/ink_line_walker/phone_call_host.json'.freeze
+    HUB_CALL = 'test/fixtures/files/ink_line_walker/phone_call_hub.json'.freeze
+    HAX_VOICE = { 'name' => 'Aoede', 'style' => 'Calm handler.', 'language' => 'en-GB' }.freeze
+    DIRECTOR_VOICE = { 'name' => 'Charon', 'style' => 'Weary director.', 'language' => 'en-GB' }.freeze
+    NARRATOR_VOICE = { 'name' => 'Algenib', 'style' => 'Noir.', 'language' => 'en-GB' }.freeze
+
+    def scenario(mapping: {}, timed: nil, story: CALL, current: nil)
+      hax = { 'id' => 'agent_0x99', 'displayName' => 'Agent HaX', 'npcType' => 'phone',
+              'voice' => HAX_VOICE, 'storyPath' => story,
+              'eventMappings' => [{ 'eventPattern' => 'game_loaded', 'conversationMode' => 'phone-chat',
+                                    'targetKnot' => 'call' }.merge(mapping)] }
+      hax['currentKnot'] = current if current
+      hax['timedConversation'] = timed if timed
+      {
+        'narrator' => { 'id' => 'narrator', 'voice' => NARRATOR_VOICE },
+        'rooms' => {
+          'office' => {
+            'npcs' => [
+              hax,
+              { 'id' => 'director_netherton', 'displayName' => 'Director Netherton', 'npcType' => 'phone',
+                'voice' => DIRECTOR_VOICE }
+            ]
+          }
+        }
+      }
+    end
+
+    def entries_for(data)
+      TtsLineExtractor.new('walker_test', data).entries.map { |e| [e.npc_id, e.text] }
+    end
+
+    test "a phone story with no voiced call is not voiced" do
+      assert_empty entries_for(scenario)
+      assert_empty entries_for(scenario(mapping: { 'voiced' => true, 'conversationMode' => 'person-chat' }))
+    end
+
+    test "a voiced phone-chat mapping voices the contact's and the co-speaker's lines" do
+      entries = entries_for(scenario(mapping: { 'voiced' => true }))
+      assert_equal [
+        ['agent_0x99', "Don't hang up."],
+        ['director_netherton', "Put her on when she's done."],
+        ['agent_0x99', 'Stay on the line.']
+      ], entries
+    end
+
+    test "a voiced timedConversation counts too, and the endpoint accepts the co-speaker's line" do
+      extractor = TtsLineExtractor.new('walker_test', scenario(timed: { 'targetKnot' => 'call', 'voiced' => true }))
+      assert_equal 3, extractor.entries.size
+      assert extractor.spoken_by?('director_netherton', "Put her on when she's done.")
+      refute extractor.spoken_by?('agent_0x99', 'The line crackles.')
+      refute extractor.spoken_by?('narrator', 'The line crackles.')
+      service = TtsService.new
+      entry = extractor.entries.find { |e| e.npc_id == 'director_netherton' }
+      assert_equal service.cache_key_for("Put her on when she's done.", 'Charon', 'Weary director.', 'en-GB'), entry.key
+    end
+
+    # F20: only the call's own knots, up to the contact's home knot (currentKnot)
+    test "a voiced call voices only its own knots: the hub reply and a hub topic are left out" do
+      data = scenario(mapping: { 'voiced' => true }, story: HUB_CALL, current: 'hub')
+      extractor = TtsLineExtractor.new('walker_test', data)
+      assert_equal [
+        ['agent_0x99', "Don't hang up."],
+        ['agent_0x99', 'Here is the plan.'],
+        ['agent_0x99', 'Back to your desk.']
+      ], extractor.entries.map { |e| [e.npc_id, e.text] }
+      refute extractor.spoken_by?('agent_0x99', 'Nothing yet.')
+      refute extractor.spoken_by?('agent_0x99', 'The vault is sealed.')
+      ink = JSON.parse(File.read(Engine.root.join(HUB_CALL)))
+      assert_equal Set.new(%w[call briefing]), TtsLineExtractor.call_knots(data.dig('rooms', 'office', 'npcs', 0), ink)
+    end
+
+    test "the call boundary is the home knot: with home 'start' the hub is reached, and no targetKnot voices nothing" do
+      entries = entries_for(scenario(mapping: { 'voiced' => true }, story: HUB_CALL))
+      assert_includes entries, ['agent_0x99', 'Nothing yet.']
+      assert_includes entries, ['agent_0x99', 'The vault is sealed.']
+      extractor = TtsLineExtractor.new('walker_test', scenario(mapping: { 'voiced' => true, 'targetKnot' => nil }, story: HUB_CALL, current: 'hub'))
+      assert_empty extractor.entries
+      assert(extractor.notes.any? { |n| n.reason.include?('no targetKnot') })
     end
   end
 end

@@ -976,6 +976,13 @@ const bridge = {
             return result;
         }
 
+        // "koImmune": true NPCs can't be knocked out in play, so neither here
+        if (npc.koImmune === true) {
+            const result = fail('ko-immune', { npcId });
+            logAction('debugKO', { npcId }, result);
+            return result;
+        }
+
         // isNPCHostile and isNPCKO read the state map without creating an
         // entry, so they are safe to call here; a declared-hostile NPC that has
         // not yet engaged still qualifies.

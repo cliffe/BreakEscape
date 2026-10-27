@@ -1,4 +1,13 @@
-A woman spy with long dark brown hair under a brown fedora, light tan skin, a long brown trench coat worn open over a dark navy waistcoat and white shirt, a brown belt with a gold buckle, dark trousers and brown boots.
-Arms relaxed at her sides, both hands visible.
+Make portrait for Agent HaX
+Keep the woman in the reference image as the same person, with the same face, features, skin tone, blue eyes and long dark brown hair, but change her costume and restyle the whole image using the instructions below, including the dramatic lighting and gritty realism, with textured shading and deep shadows rather than flat colour. Not pixel art.
+A woman spy in her late thirties with light tan skin, blue eyes and long dark brown hair worn loose, in a charcoal-brown felt trilby with a narrow brim and a dark band, and a stylish but well-worn tailored double-breasted camel wool overcoat, creased and weathered from long nights, knee length, with wide lapels and a tied belt, worn over a dark navy waistcoat and white shirt, dark trousers. No lettering or logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
 
-# Saved 2026-10-12 from tmp/pixellab/female_spy_v2/concept.png (the concept the pipeline used)
+# Gemini edit of the old agent_hax art (concept h01, made 2026-10-13, picked by the user); output mirrored so she faces right (cast convention), not cropped.
+# The previous agent_hax_nonpixelart.png was really a PixelLab bust; it is kept as agent_hax_bust_v1_legacy.png.
+# PixelLab bust prompt: this text without line 2 (the 'Keep the woman in the reference image ... Not pixel art.' edit instruction).

@@ -58,7 +58,12 @@ export function briefPopupBlocked() {
 /** Run show() once nothing would be displaced by it (polls; gives up after 10 minutes). */
 export function showBriefWhenClear(show, { firstDelay = BRIEF_FIRST_DELAY_MS, poll = BRIEF_POLL_MS, maxWait = BRIEF_MAX_WAIT_MS } = {}) {
     const started = Date.now();
+    // The popup is certain to open, so toasts raised until then (the room-entry task
+    // on a start room) wait for it. Shown now they were pulled back when it opened and
+    // shown again on close: "Task Complete" twice at the start (F24).
+    const expectBrief = () => window.expectPanelWithin?.(Math.max(firstDelay, poll) + 400);
     const attempt = () => {
+        expectBrief();
         if (briefPopupBlocked()) {
             if (Date.now() - started >= maxWait) {
                 console.log('📋 Mission Brief popup skipped: the screen never cleared (it is in the notepad)');
@@ -69,6 +74,8 @@ export function showBriefWhenClear(show, { firstDelay = BRIEF_FIRST_DELAY_MS, po
         }
         show();
     };
+    window.holdRecentNotifications?.();
+    expectBrief();
     setTimeout(attempt, firstDelay);
 }
 

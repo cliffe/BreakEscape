@@ -543,3 +543,62 @@
     margin: 4px 0;
     font-size: 0.85em;
 }
+
+/* Under a refusal or notice: why it happened (rfid-minigame.js _showDenial) */
+.flipper-error-detail {
+    margin-top: 10px;
+    max-width: 90%;
+    font-size: 14px;
+    line-height: 1.3;
+    font-family: 'GNF', monospace;
+    color: #ddd;
+    text-align: center;
+}
+
+/* "Nothing happened" rather than "refused": amber, no cross */
+.flipper-notice .flipper-error-icon {
+    font-size: 56px;
+    color: #FFA500;
+}
+
+.flipper-notice .flipper-error-message {
+    color: #FFA500;
+}
+
+/* Whether the card's data is encrypted (getReadProfile in rfid-protocols.js) */
+.rfid-crypto-line {
+    margin: 8px 0;
+    padding: 4px 8px;
+    text-align: center;
+    font-size: 14px;
+    font-family: 'GNF', monospace;
+    border: 1px solid currentColor;
+}
+
+.rfid-crypto-open {
+    color: #00FF00;
+}
+
+.rfid-crypto-locked {
+    color: #FFA500;
+}
+
+/* MIFARE Classic 1K: 16 sectors, lit when the key is known */
+.rfid-sector-grid {
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+    margin: 6px 0;
+}
+
+.rfid-sector {
+    width: 12px;
+    height: 12px;
+    background: #222;
+    border: 1px solid #FFA500;
+}
+
+.rfid-sector-open {
+    background: #00FF00;
+    border-color: #00FF00;
+}

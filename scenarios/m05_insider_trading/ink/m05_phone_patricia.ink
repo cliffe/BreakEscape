@@ -24,11 +24,12 @@
 // as in person. phone_who is choices-only; every naming knot re-checks
 // torres_identified and patricia_ko at its top.
 // PASS 4 (dialogue): her own lines carry no prefix (phone convention). The
-// case summary is her reading back her notes, not scripted player lines.
+// case is stated by the player (struggling run A, D3), not read back by her.
 // ===========================================
 
 // Synced from scenario globals
 VAR player_name = "Agent 0x00"
+VAR proof_given = false // Fixes round 3 (2026-10-17): local; the front-door reason completed the proof in phone_log_reason_right, so phone_case_why's right answer is the naming
 VAR patricia_ko = false
 VAR patricia_phone_available = false
 VAR torres_identified = false // Synced scenario global: Torres named on motive and exfil; also set by HaX (m05_phone_agent_0x99) and Patricia in person (m05_npc_patricia_morgan)
@@ -58,12 +59,18 @@ VAR halloran_accused = false // Synced scenario global: Halloran suspended on th
 VAR halloran_questioned = false
 VAR door_log_reasoned = false // Synced scenario global: the player has read the badge-log pattern; also set by HaX (m05_phone_agent_0x99) and Patricia in person (m05_npc_patricia_morgan)
 VAR it_notice_read = false
+VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
+VAR owen_refused_password = false // Synced scenario global (pass 5 puzzle R1, P6): Owen has been asked for the server-room password and wanted a reason; set by Owen. Patricia's sign-off waits for it
+VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wrong reason or a wrong name was tried; also set by HaX and Patricia's phone/in person. Excludes the early-naming reward
 
 === function has_motive()
 ~ return found_medical_bills or found_torres_journal or found_vetting_file
 
 === function has_exfil()
-~ return flag3_submitted or found_manifest or found_upload_schedule
+// Post-engine follow-ups (2026-10-16, D1): the VM's flag-3 manifest now shows
+// only badge #4471, so flag 3 counts only once the door log has tied that spare
+// to his front-door swipe (door_log_reasoned): the deduction, not the VM, names him.
+~ return found_upload_schedule or ((flag3_submitted or found_manifest) and door_log_reasoned) // E9 (2026-10-17): the printed manifest shows badge #4471, not his name
 
 === function all_flags_in()
 ~ return flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted
@@ -103,7 +110,8 @@ VAR it_notice_read = false
     ~ patricia_authorised_office = true
     I'll message Owen now. On my authority. If it's nothing, it was a routine audit.
     -> hub
-+ {(server_door_seen or it_notice_read) and not server_password_obtained and not patricia_authorised_server} [Owen won't give me the server-room password.]
+// Puzzle R1 (P6): only once Owen has actually refused.
++ {(server_door_seen or it_notice_read) and owen_refused_password and not server_password_obtained and not patricia_authorised_server} [Owen won't give me the server-room password.]
     ~ patricia_authorised_server = true
     I sign the access log; IT holds the password. I'll tell Owen it's on my authority.
     -> hub
@@ -131,8 +139,12 @@ Go on, then. Who?
 {torres_identified: -> hub}
 + {found_door_log and not halloran_accused} [Dr Ruth Halloran.]
     -> phone_accuse_halloran
+// Struggling run A (D3, M3): a wrong name ends the call; her own facts.
 + {found_door_log} [Ben Ashworth.]
-    Thursday at eight? The transfers run two till four, and he logged it with Owen. Try again.
+    ~ torres_reason_guessed = true
+    Ben's on that log one night, at eight on a Thursday evening. The transfers I flagged run between two and four in the morning.
+    Don't throw names at me. Ring back when you're sure.
+    #exit_conversation
     -> hub
 + {found_door_log or torres_suspected or has_motive() or has_exfil()} [David Torres.]
     -> phone_name_torres
@@ -145,7 +157,11 @@ Go on, then. Who?
 {halloran_accused or torres_identified: -> hub}
 #speaker:patricia_morgan
 {found_halloran_alibi:
-    Halloran was in Zurich the night that badge first went in. You've seen that. Try again.
+    // Puzzle R1 (P2): striking a cleared decoy is a guess too.
+    ~ torres_reason_guessed = true
+    Halloran was in Zurich the night that badge first went in. You've seen that.
+    Don't throw names at me. Ring back when you're sure.
+    #exit_conversation
     -> hub
 }
 Ruth. Her spare, at two in the morning. All right. I'll suspend her access and keep her in the lab for the police.
@@ -158,10 +174,21 @@ If you're wrong, that's her career. And whoever it really is has just watched Se
 {patricia_ko: -> no_answer}
 {torres_identified: -> hub}
 #speaker:patricia_morgan
+// Struggling run A (D3): with both halves, the player states the case.
 {has_motive() and has_exfil():
-    -> phone_significant_findings
+    {torres_reason_guessed:
+        Again? Fine. I'm writing this down. Why him?
+    - else:
+        David. Slowly, I'm writing this down. Why?
+    }
+    -> phone_case_why
 }
-David. Why?
+// PASS 5 R2 (B2): the retry is allowed, and noticed.
+{torres_reason_guessed:
+    Again? Fine. Convince me this time.
+- else:
+    David. Why?
+}
 -> phone_torres_why
 
 // Round 3: the shared reason menu (see m05_npc_patricia_morgan.ink,
@@ -171,25 +198,28 @@ David. Why?
 {patricia_ko: -> no_answer}
 {torres_identified: -> hub}
 + {found_door_log} [His own badge is on the server hallway those nights.]
+    ~ torres_reason_guessed = true
     Read it again. His badge never touches the server hallway. Hers does.
     #exit_conversation
     -> hub
 + [He's been under strain. His wife's ill.]
+    ~ torres_reason_guessed = true
     Half this building has someone ill at home. That's not evidence.
     #exit_conversation
     -> hub
-+ {halloran_questioned} [Halloran says he's in her lab after hours, where the spare hangs.]
++ {halloran_questioned} [Halloran puts him in her lab after hours, and the spare is the lab's.]
     Her word, about her own badge. It's enough to look, not to act.
     -> phone_partial_naming
-+ {found_door_log} [Check who comes in the front door just before the spare is used.]
++ {found_door_log} [His badge comes in the front door six minutes before her spare. Every night.]
     -> phone_log_reason_right
 + {has_motive()} [Money. He's hiding how much he owes.]
     That's why he might. It isn't proof that he did. Show me it leaving the building.
     -> phone_partial_naming
-+ {has_exfil()} [The staging is under his name.]
++ {has_exfil()} [The staging traces back to him.]
     That's how. I need why. People don't do this for nothing.
     -> phone_partial_naming
 + [He's the cryptography lead. He'd know how.]
+    ~ torres_reason_guessed = true
     So would seven other people. That's not evidence either.
     #exit_conversation
     -> hub
@@ -198,11 +228,28 @@ David. Why?
 {patricia_ko: -> no_answer}
 #speaker:patricia_morgan
 ~ door_log_reasoned = true
-...His badge at the front door, then Ruth's spare six minutes on. Every night. And Ruth's own badge never comes in after seven.
+~ door_log_reasoned_first = true
+// Phase 4 dialogue C1 (D5-3): the player has said the pattern; she checks it.
+...Every night. And Ruth's own badge never comes in after seven.
+I sign that log off every Monday. I never once read the front door.
 {halloran_accused:
     And Ruth's sitting in her lab, suspended on your word. That's on both of us now.
 }
-That's a pattern. It's not a reason, and it's not proof the data's going anywhere.
+// Fixes round 3 (2026-10-17, blind B findings 3 and 4): as in person
+// (m05_npc_patricia_morgan.ink, log_reason_right). With the proof now complete
+// and a motive in hand she asks for the why, and a right answer is the naming.
+{has_motive() and has_exfil():
+    ~ torres_suspected = true
+    ~ proof_given = true
+    That's a pattern. Put it with the {found_upload_schedule:upload schedule|staging manifest} and it's proof. Now tell me why he'd do it.
+    -> phone_case_why
+}
+// D1 (2026-10-16): with flag 3 in, the pattern ties the manifest's badge 4471 to him.
+{flag3_submitted or found_manifest or found_upload_schedule:
+    That's a pattern, and it ties him to the package. That's how. I still don't know why.
+- else:
+    That's a pattern. It puts him at the door. It doesn't tell me why, and it doesn't show me the data leaving.
+}
 -> phone_partial_naming
 
 === phone_partial_naming ===
@@ -213,30 +260,59 @@ That's a pattern. It's not a reason, and it's not proof the data's going anywher
 }
 -> hub
 
+// Struggling run A (D3): the full case, stated by the player (see
+// m05_npc_patricia_morgan.ink, case_why). Choices-only knots that re-check
+// state for a re-navigation; a wrong answer ends the call.
+=== phone_case_why ===
+{patricia_ko: -> no_answer}
+{torres_identified: -> hub}
++ [He's the cryptography lead. He'd know how.]
+    ~ torres_reason_guessed = true
+    That's how anyone on that team could. I asked why him.
+    #exit_conversation
+    -> hub
++ {found_medical_bills or found_vetting_file} [Money. His wife's treatment isn't covered, and he's borrowed against the house.]
+    {proof_given:
+        Money. And you've shown me how. That's both.
+        -> phone_significant_findings
+    }
+    Money. All right. And the proof it's leaving?
+    -> phone_case_proof
++ [He's been distracted for months.]
+    ~ torres_reason_guessed = true
+    So has half this building. That's a mood, not a motive.
+    #exit_conversation
+    -> hub
++ {found_torres_journal} [His own journal. He knows what it costs, and he's doing it anyway.]
+    {proof_given:
+        In his own hand. And you've shown me how. That's both.
+        -> phone_significant_findings
+    }
+    In his own hand. All right. And the proof it's leaving?
+    -> phone_case_proof
+
+=== phone_case_proof ===
+{patricia_ko: -> no_answer}
+{torres_identified: -> hub}
++ {found_door_log} [His own badge is on the server hallway those nights.]
+    ~ torres_reason_guessed = true
+    Read it again. His badge never touches the server hallway. Hers does.
+    #exit_conversation
+    -> hub
++ {(flag3_submitted or found_manifest) and found_door_log} [The staging manifest. Badge 4471 staged it, and his swipe lets that spare in.]
+    -> phone_significant_findings
++ [He's been in late, and nobody else has.]
+    ~ torres_reason_guessed = true
+    Late isn't leaving. I need the data going out, under his name.
+    #exit_conversation
+    -> hub
++ {found_upload_schedule} [The upload schedule. He's the operator, on site, tonight.]
+    -> phone_significant_findings
+
 === phone_significant_findings ===
 {torres_identified: -> hub}
 #speaker:patricia_morgan
-Slowly. I'm writing this down.
-{found_medical_bills or found_vetting_file:
-    Money. His wife's treatment isn't covered, and he's borrowed against the house.
-}
-{found_torres_journal:
-    His own journal. He knows what it costs, and he's doing it anyway.
-}
-{flag3_submitted:
-    The staging manifest on the research portal, in his name.
-- else:
-    {found_manifest:
-        A staging manifest in the data centre. "Staged by: D. Torres."
-    }
-    {found_upload_schedule:
-        The upload schedule names him as operator, on site. Tonight, half past eight.
-    }
-}
-{found_pamphlet:
-    And a firm called TalentStack ringing his desk.
-}
-...Damn. I sat three desks from him at the Christmas party.
+...Damn. His kids drew on the tablecloth at our Christmas party.
 {halloran_accused:
     And I'll have Ruth's access back on tonight. You can do your own apologising.
 }
@@ -264,9 +340,9 @@ Whatever you decide in front of him, ring me when it's done.
 
 === phone_significant_findings_choices ===
 {patricia_ko: -> no_answer}
-+ {found_door_log and not door_log_reasoned} [And the badge log. Look at the main-entrance times.]
++ {found_door_log and not door_log_reasoned} [And the badge log. He comes in the front door six minutes before her spare.]
     ~ door_log_reasoned = true
-    ...Six minutes before her spare, every night. You did read it properly.
+    ...Every night. I sign that log off every Monday, and I never once read the front door.
     -> phone_significant_findings_choices
 + [On my way.]
     #exit_conversation
@@ -275,7 +351,8 @@ Whatever you decide in front of him, ring me when it's done.
 === phone_hold_him ===
 {final_choice != "": -> hub}
 #speaker:patricia_morgan
-I know. Ring me when it's done.
+I know. I'm watching his badge on the vault log. He hasn't moved.
+Ring me when it's done.
 -> phone_hold_him_choices
 
 === phone_hold_him_choices ===

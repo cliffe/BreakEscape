@@ -38,39 +38,114 @@ VAR accused_nightshade = false
 // PASS 4 (fixes 1, 11)
 VAR nightshade_print_lifted = false
 VAR asked_cracker = false
+// PASS 5 (M3, m6): a tipped-off mole tidied his locker; the triple agent's first payment.
+VAR nightshade_tidied = false
+VAR triple_agent_first_payment = false
+// Puzzle chains C2 (N1, N2): why he tidied, when no accusation did it.
+VAR locker_seen_picked = false // Synced scenario global: seen picking a locker
+VAR offduty_agent_ko = false // Synced scenario global: the off-duty agent knocked out
+VAR analyst_ko = false // Synced scenario global (design C1, m6): the junior analyst knocked out
+VAR athena_ko = false // Synced scenario global (design C1, m6): ATHENA's avatar knocked out
+// PASS 5 (alignment C2, J2, J4): an accusation of either innocent man tips him
+// off too; the go-bag's contents are known only once he is named.
+VAR accused_vector = false
+VAR accused_phantom = false
+VAR go_bag_lining_known = false
+// Design C2 (N2): the first tip-off's cause, recorded when it happened
+// ("accused_vector", "accused_phantom", "accused_nightshade", "locker",
+// "offduty", "analyst", "athena", "director"). N3: punched in his lab and left standing.
+VAR tipoff_source = "" // Synced scenario global (design C2, N2): the first tip-off's cause
+VAR nightshade_hostile = false
+// Phase 4 dialogue C1 (D8-11): the Director punched and left standing.
+VAR netherton_hostile = false // Synced scenario global
+// Phase 4 dialogue C1 (D8-9): after_choice's line is the re-entry line, so the
+// walk-out batch skips it once (the quiet-flag pattern).
+VAR after_quiet = false
+// Blind run A fixes (finding 4): the scene opens on entering the suite, so the
+// evidence wall gets an optional beat here. Since the post-engine follow-ups
+// (2026-10-16) the scene opens 6 s after entry (delayMs), and this beat stays
+// as the case recap. Synced scenario global, the wall's own condition.
+VAR found_nightshade_profile = false
 
 === start ===
 { fate_decided: -> after_choice }
 #complete_task:confront_nightshade
 Narrator: The interrogation room records everything. Nightshade stands at the table with both hands flat on it. He doesn't sit.
+Narrator: Behind him the evidence wall is lit. He follows your eyes to it and waits.
++ [(Read the wall first.)] -> wall
++ [(Face him.)] -> opening
 
+=== wall ===
+Narrator: The case runs down the wall in order. The repository, opened with no password. Credentials left in its history. Mail to the Architect.
+Narrator: Root, and forty-seven minutes on the Portland plan from Cryptography Lab terminal 03.
+{ found_nightshade_profile:
+    Narrator: Under it, Okafor's evaluation, with the Director's seal across the recommendation.
+}
+Narrator: Pinned beside it, the door audit. One row ringed in red: 0x47, in at 10:15, out at 11:43.
+Narrator: Nightshade lets you finish. He has read it already.
++ [(Turn back to him.)] -> opening
+
+=== opening ===
 Agent 0x47 'Nightshade': You found it. Forty-seven minutes on the Portland plan, two days before you deployed. My account, my terminal, my mail.
-Agent 0x47 'Nightshade': The name they stripped off that intercept in the cable vault was mine.
-Agent 0x47 'Nightshade': I could have scrubbed every trace years ago. You're wondering why I didn't.
+Agent 0x47 'Nightshade': The name they stripped off that intercept in the cable vault was mine. I could have scrubbed it years ago.
 { nightshade_suspected:
-    Agent 0x47 'Nightshade': Because you'd already decided. I watched you do it, across my desk in the lab.
+    Agent 0x47 'Nightshade': You're wondering why I didn't. Because you'd already decided. I watched you do it, across my desk in the lab.
     Agent 0x47 'Nightshade': Some part of me wanted it to be you who closed the loop. My student. You never did trust the quiet.
 - else:
-    Agent 0x47 'Nightshade': Because some part of me wanted to be caught by someone who'd understand. I misjudged that, I think.
+    Agent 0x47 'Nightshade': You're wondering why I didn't. Some part of me wanted to be caught by someone who'd understand. I misjudged that, I think.
     Agent 0x47 'Nightshade': You look at me like a stranger. Fair enough.
 }
 // PASS 3 (impl review M2): after his answer to "Why didn't you?", so the
 // question keeps its meaning.
-{ nightshade_ko:
+{
+- nightshade_ko:
     Agent 0x47 'Nightshade': You put me on the floor of my own lab. I've had worse from people I liked less.
+- nightshade_hostile:
+    // Design C2 (N3): punched and left standing.
+    Agent 0x47 'Nightshade': You hit me in my own lab and walked away. I've been deciding ever since whether that was nerves or a message.
 }
 { named_on_evidence:
     Agent 0x47 'Nightshade': The door log. I walked past that reader every morning for fifteen years and never once thought of it as a witness.
 }
 // PASS 4 (fix 10): its own block, so it plays alongside the door-log line.
-// The accusation is only on offer before flag 4, so this is always early.
-{ accused_nightshade:
-    Agent 0x47 'Nightshade': You said it to my face before you could prove it.
-    Agent 0x47 'Nightshade': I had the whole night to tidy up after that, and I didn't. Think about why.
+// The accusation is only on offer before he is named, so this is always early.
+// PASS 5 (M3): a tip-off now has a cost. If the locker was still untouched he
+// cleared it (nightshade_tidied); if the player had been in first, there was
+// nothing left to clear.
+// Design C2 (N2): the tidy's reason is the first tip-off's cause
+// (tipoff_source, written once, when it happened), not a fixed order over
+// globals that can be set later (a KO after the naming, an accusation after a
+// KO). The empty case is a game saved before the source was recorded.
+{
+- nightshade_tidied and tipoff_source == "accused_nightshade":
+    Agent 0x47 'Nightshade': You said it to my face before you could prove it. So I tidied the bag and the stick. Not well enough, it seems.
+- nightshade_tidied and (tipoff_source == "accused_vector" or tipoff_source == "accused_phantom"):
+    // Alignment C3 (browser R3): both innocents accused.
+    Agent 0x47 'Nightshade': You put it on {accused_vector and accused_phantom:Vector and Phantom both|{accused_vector:Vector|Phantom}} in front of the floor. Walls are thin here. So I tidied. Not well enough, it seems.
+// Puzzle chains C2 (N1, N2): the off-duty agent's catch and his KO.
+- nightshade_tidied and tipoff_source == "locker":
+    Agent 0x47 'Nightshade': Somebody saw you at the lockers in the break room. On this floor that reaches me before the kettle boils. So I tidied. Not well enough, it seems.
+- nightshade_tidied and tipoff_source == "offduty":
+    Agent 0x47 'Nightshade': You left a man out cold in the break room. That was round the building before he woke. So I tidied. Not well enough, it seems.
+// Design C1 (m6): the analyst's and ATHENA's KOs.
+- nightshade_tidied and tipoff_source == "analyst":
+    Agent 0x47 'Nightshade': You knocked a junior analyst out at her desk, in front of the whole floor. So I tidied. Not well enough, it seems.
+- nightshade_tidied and tipoff_source == "athena":
+    Agent 0x47 'Nightshade': You put ATHENA's avatar on the floor, and ATHENA logs to everyone with planning access. Including me. So I tidied. Not well enough, it seems.
+- nightshade_tidied and tipoff_source == "director":
+    Agent 0x47 'Nightshade': The Director went asking questions on my floor. I can count. So I tidied. Not well enough, it seems.
+- nightshade_tidied:
+    Agent 0x47 'Nightshade': Word reached me before you did. So I tidied. Not well enough, it seems.
+- accused_nightshade:
+    Agent 0x47 'Nightshade': You said it to my face before you could prove it. By then you'd been through my locker, so there was nothing left to tidy.
 }
 // PASS 4 (fix 1): the thumbprint lifted off the USB stick.
 { nightshade_print_lifted:
-    Agent 0x47 'Nightshade': And you printed the stick. Of course you did. I'd have told you nobody planted it, if you'd asked.
+    { nightshade_tidied:
+        Agent 0x47 'Nightshade': And you printed the stick. I wiped the file and forgot my own thumb. Fifteen years, and I forgot my thumb.
+    - else:
+        Agent 0x47 'Nightshade': And you printed the stick. Of course you did. I'd have told you nobody planted it, if you'd asked.
+    }
 }
 -> the_case
 
@@ -105,13 +180,13 @@ Agent 0x47 'Nightshade': I could have scrubbed every trace years ago. You're won
 + { not asked_taught } [Netherton told me to learn mole-catching from you.]
     ~ asked_taught = true
     Agent 0x47 'Nightshade': He did. Every word I taught you was true. I just never said where I'd learned it.
-    Agent 0x47 'Nightshade': If anyone ever used it on me, I wanted it to be you. Vanity, I know. It's the last one I've got.
+    Agent 0x47 'Nightshade': I'm glad it was my own lesson that caught me. Vanity, I know. It's the last one I've got.
     -> hub
-+ { found_go_bag and not asked_bag } [You had a flight to Montana the morning after Portland. Why are you still here?]
++ { go_bag_lining_known and not nightshade_tidied and not asked_bag } [You had a flight to Montana the morning after Portland. Why are you still here?]
     ~ asked_bag = true
-    Agent 0x47 'Nightshade': Because I wanted to see who they would send. I hoped it would be you.
+    Agent 0x47 'Nightshade': Because a man who runs has confessed. I preferred to make you prove it.
     { asked_architect:
-        Agent 0x47 'Nightshade': You have the coordinates now. Montana was always where I was going. I just wanted to see your face first.
+        Agent 0x47 'Nightshade': You have the coordinates now. Montana was always where I was going. It seems you'll get there first.
     - else:
         Agent 0x47 'Nightshade': Montana. Work out what Portland was really for, and where it went, and you'll have your Montana.
     }
@@ -134,7 +209,7 @@ Agent 0x47 'Nightshade': I could have scrubbed every trace years ago. You're won
 + { not asked_architect } [Enough talk. What happens to you now.] -> the_choice
 
 === the_choice ===
-Narrator: The disposition screen behind you takes one entry per detainee, and {netherton_ko:the Director will countersign it when he is back on his feet|the Director countersigns whatever goes in}. Nightshade is watching you.
+Narrator: The disposition screen behind you takes one entry per detainee, and {netherton_ko:the Director will countersign it when he is back on his feet|{netherton_hostile:the Director, who will not see you tonight, countersigns whatever goes in|the Director countersigns whatever goes in}}. Nightshade is watching you.
 Agent 0x47 'Nightshade': So. What does SAFETYNET do with a man who thinks he was right?
 + [No deals. The police get the file. You answer for those two names in court.]
     #complete_task:decide_the_fate
@@ -147,10 +222,10 @@ Agent 0x47 'Nightshade': So. What does SAFETYNET do with a man who thinks he was
     #complete_task:decide_the_fate
     ~ nightshade_triple_agent = true
     -> lock_in ->
-    Narrator: A long pause.
+    ~ triple_agent_first_payment = true
     Agent 0x47 'Nightshade': You've grown a ruthless streak since I taught you. I approve, which should frighten you more than it does.
-    Agent 0x47 'Nightshade': I'll be your ghost inside their machine, for exactly as long as it suits me.
-    Agent 0x47 'Nightshade': Never forget I told you that part.
+    Agent 0x47 'Nightshade': First payment, then. Tomb Gamma's defences were chosen out of our own threat database. I know which entries. Ask me when you're standing at the door.
+    Agent 0x47 'Nightshade': I'll be your ghost inside their machine, for exactly as long as it suits me. Never forget I told you that part. #set_global:triple_agent_first_payment:true
     -> aftermath
 
 // PASS 2 playtest D1 found End Conversation ignoring disableClose; the engine
@@ -174,19 +249,27 @@ Agent 0x47 'Nightshade': So. What does SAFETYNET do with a man who thinks he was
 - else:
     Agent 0x47 'Nightshade': Take the coordinates to Netherton. Tomb Gamma won't wait for you to grieve me.
 }
-{ netherton_ko:
+{
+- netherton_ko:
     Narrator: You type the entry. The countersignature field stays empty. The Director is still with the medic.
+- netherton_hostile:
+    Narrator: You type the entry. The countersignature arrives a minute later, from an office that won't open its door to you.
 - else:
     Narrator: You type the entry. The Director's countersignature appears before you've looked away.
 }
 // PASS 4 (dialogue): the teacher's line from m07, unexplained.
 Agent 0x47 'Nightshade': And 0x00. Let it hurt afterwards, not during.
 Narrator: You hold his eye a moment longer than you mean to. Then you go.
+~ after_quiet = true
 #exit_conversation
 -> after_choice
 
 === after_choice ===
-Agent 0x47 'Nightshade': {nightshade_triple_agent: Go on. They'll be expecting you upstairs.|Go on. I'll still be here when the police come.}
+{ not after_quiet:
+    Agent 0x47 'Nightshade': {nightshade_triple_agent: Go on. They'll be expecting you upstairs.|Go on. I'll still be here when the police come.}
+}
+~ after_quiet = false
 + [Leave him.]
+    ~ after_quiet = true
     #exit_conversation
     -> after_choice

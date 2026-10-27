@@ -25,7 +25,8 @@
  * conditions hold, the event is emitted once with { npcId, roomId, playerPosition,
  * timestamp }. It doesn't fire again until the player has left his sight and come
  * back, and the cooldown has passed. Nothing is checked while a minigame or
- * conversation is open. The scenario decides what the event does through
+ * conversation is open, or while the tutorial prompt is open (or waiting to
+ * appear); a sighting that still holds when it closes fires then. The scenario decides what the event does through
  * eventMappings (a person-chat knot, setGlobal, a bark, a cutscene event).
  * Cooldown and sighting state are per session: a reload starts them fresh.
  */
@@ -99,6 +100,8 @@ export class SightChallengeWatcher {
         }
         // A conversation or minigame is open: the player isn't walking about
         if (window.MinigameFramework?.currentMinigame) return [];
+        // Nor while the tutorial prompt (plain DOM, not a minigame) is up
+        if (window.getTutorialManager?.()?.isPromptOpen?.()) return [];
 
         const playerRoom = window.currentPlayerRoom;
         const player = window.player;
