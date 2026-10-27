@@ -228,6 +228,9 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         this.banner.hidden = false;
         this.root?.classList.add('auth-approved');
         this._renderOutcome();
+        // The content can be taller than a short screen, so bring the approval and the outcome
+        // (the takeaway of the stage) into view rather than leaving them below the fold (M-1).
+        try { this.banner?.scrollIntoView?.({ block: 'start' }); } catch (e) { /* scroll is a nicety */ }
         // The outcome is now on screen, so Esc/Close become a normal exit to the flip.
         if (this._removeChoiceLayer) { this._removeChoiceLayer(); this._removeChoiceLayer = null; }
     }
