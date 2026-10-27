@@ -13,7 +13,7 @@ Data / dialogue     ██████████  0/0/0       C1-C5 closed (C5
 Playtest            ██████████  0/0/0       P6 and P7 done; fixes in; closing check running
 Fun changes         ██████████  -           aw1-aw9 in; aw7 -> organiser guidance + two seeded courses (Hacktivity f8b4ad9e)
 Training rooms      ██████████  0/0/0       C1-C3 closed
-POV backgrounds     ██████████  -           four made and wired (34c7a94d8, 622effe18)
+POV backgrounds     ██████████  -           four made and wired (34c7a94d8, 622effe18); approved by the user 2026-10-27
 Puzzle-chain pass   ██████████  0/0/0       light pass closed (C1: 0/0/2, both settled)
 Host art            ░░░░░░░░░░  -           19 concepts approved (Joanne Pell replaces the Brightwell Farah); PixelLab after 3 Nov
 Timing              ██░░░░░░░░  -           estimates from agent runs; human runs postponed; wording now "about 15 minutes"
