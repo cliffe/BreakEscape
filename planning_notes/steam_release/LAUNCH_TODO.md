@@ -63,8 +63,9 @@ land; keep each line short and say where the detail lives.
 - [ ] Phone landscape layout pass (shell pages 2-2.3 screens tall at 915x412; Mission Brief Continue
       overlaps text; pause menu scrolls): in progress.
 - [ ] Hyphenated handles break the in-game name save on the character page: in progress.
-- [ ] Steam packages (STEAM_PLAN.md): S1, S2, S5b, S7, S8, S9a, S10 done; S3 in review; S5a, S6,
-      S9b building; S4 and S14 wait for the owner's answers (S14 scope, admin revoke).
+- [ ] Steam packages (STEAM_PLAN.md): S1, S2, S3, S5a, S5b, S6, S7, S8, S9a, S9b, S10 done and
+      reviewed; S4 and S14 wait for the owner's answers (S14 scope, admin revoke); then S11 (end to
+      end on the fakes), S2p (Playtest).
 - [ ] Windows build of the desktop app (needs wine or a Windows machine).
 - [ ] Backlog from reviews: in-page consent dialog instead of `window.confirm`; remember a declined
       restore per account; show "already owned" during restore; fix the pre-existing
