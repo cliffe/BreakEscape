@@ -1530,3 +1530,54 @@ change made this round.
   recommendation).
 - Bridges not run (not in this round's checks). Flag for the playtest: the E5 compose now offers only the
   portal-name reference in `{portal}`, so a bridge that picked the migration value there needs updating.
+
+## P6 data follow-up (2026-10-27, data fixer, opus48) — after engine round 2 (db44cc919)
+
+Engine round 2 added the hooks for P6-2/P5-8, N-14 and P6-5. Data follow-up, same rules (E3 untouched,
+fragment + erb in parity, regen the affected defend shell, validate).
+
+### P6-2 / P5-8 (minor, E5 Hana) — DONE (data). Per-cause link-miss replies.
+Confirmed the brand ids match before wiring: the E5 target's `expectedLink.brandId` is "quayholt" and the
+Quayholt landing-page brand's `id` is "quayholt" (the only other brand is "docshare"), so the engine's
+`linkCauseOf` returns `wrongService` for a DocShare page and `wrongAddress` for a too-far Quayholt address.
+Set the three cause replies on `sso_staff.replies` (the engine reads them when `firstFail === 'linkCredible'`
+via `MISS_KEY`), keeping the generic `missed` as the fallback:
+- missNoPage: "There was nothing to sign in to behind that link, so I just closed it."
+- missWrongService: "That's a DocShare page, and I don't use DocShare for Quayholt, so I didn't sign in."
+  (names the service — closes P5-8.)
+- missWrongAddress: "The address wasn't Quayholt's own sign-in, so I didn't put my password in. I'll go to
+  the portal the normal way."
+Files: `e5/attack.json`, `awareness_e5_signin_pages/scenario.json.erb` (attack-only; no generated shell).
+Validator `--strict-social` on the E5 full erb: clean (the replies.* keys are accepted).
+
+### N-14 (minor, E6 barrier notice) — BLOCKED by the validator; reverted, handed back.
+The engine runtime (round 2, `chipIdsFor`) now offers an authored email factor on a channel item, so the
+intended data change was: add `urgencyCalibrated` to `e6_parking_permit.truth.flags` with a perFlagNote.
+Made it (fragment + full erb + regen E6 defend shell), then validated. The social validator rejects it:
+`social.triageSets[e6_phone_messages].messages[e6_parking_permit].truth.flags: 'urgencyCalibrated' is an
+email factor; a qr message offers only the set's channel tells as chips, so it could never be ticked`
+(exit non-zero, `--strict-social`). The lint in `scripts/validate_social/triage.rb` is out of sync with the
+round-2 `chipIdsFor`. Per instruction I did not edit the validator; reverted the three E6 files to HEAD
+(regenerated the defend shell from the reverted fragment, byte-identical to HEAD). Hand back to the engine
+fixer: update the triage social lint to allow an authored email factor in a channel message's `truth.flags`
+(mirroring the `chipIdsFor` rule: a factor the message is scored on is always tickable). Once that lands I
+will re-apply the one-line flag + perFlagNote.
+Intended perFlagNote (for when it is re-applied): "'Vehicles not set up may be clamped', from Monday, is
+there to make you scan now rather than stop to check where the code goes."
+
+### P6-5 (trivial, E6 result noun) — WITHDRAWN (engine default is fine) / schema gap noted.
+Tried `realLabel: "Real texts and notices"` on `e6_phone_messages` (the set's real items are a text and a
+QR notice, no genuine email, so it reads more accurately than the mixed default). The schema rejects it:
+`schema: The property '#/social/triageSets/0' contains additional properties ["realLabel"] outside of the
+schema when none are allowed` (`scenario-schema.json` has no `realLabel` on a triageSet, additionalProperties
+false). Reverted. The engine default `realNounFor` already gives "Real texts, notices and emails" for this
+mixed queue, which closes the original "Real mail" finding, so leaving the default is acceptable and P6-5 is
+withdrawn as a data change. If the override is wanted later, the engine fixer needs to add `realLabel` to the
+triageSet schema; then it is a one-line set field.
+
+### Checks
+- `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs`: 1843/1843 pass, parity green.
+- Validator `--strict-social --no-graph --skip-ink`: E5 full erb clean. The two E6 shells failed only while
+  N-14/P6-5 were applied (errors above); after the revert both are back to HEAD and clean.
+- Committed only the E5 per-cause replies (fragment + full erb). E6 left at HEAD pending the validator/schema
+  updates. Bridges not run.

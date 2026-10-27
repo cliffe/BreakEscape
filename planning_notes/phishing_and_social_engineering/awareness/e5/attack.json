@@ -231,7 +231,7 @@
           "redFlag": null
         }
       },
-      "replies": { "landed": "Thanks, I'll sign in through that link.", "missed": "That link didn't take me to Quayholt's own sign-in, so I didn't put my password in. I'll go to the portal the normal way." },
+      "replies": { "landed": "Thanks, I'll sign in through that link.", "missNoPage": "There was nothing to sign in to behind that link, so I just closed it.", "missWrongService": "That's a DocShare page, and I don't use DocShare for Quayholt, so I didn't sign in.", "missWrongAddress": "The address wasn't Quayholt's own sign-in, so I didn't put my password in. I'll go to the portal the normal way.", "missed": "That link didn't take me to Quayholt's own sign-in, so I didn't put my password in. I'll go to the portal the normal way." },
       "hints": [
         "Which address do Quayholt staff already trust for IT notices? Put that in the From line.",
         "What change were staff told about, so an unexpected sign-in prompt reads as expected?",
