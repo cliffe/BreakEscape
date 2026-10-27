@@ -340,6 +340,12 @@ module ValidateSocial
 
     # ---- non-email kinds (05 N1, N10) ---------------------------------------
 
+    CHANNEL_REFUSED_FACTORS = %w[senderTrust senderAuth addressedTo attachmentPlausible].freeze
+    CHANNEL_REFUSED_FACTORS_WHY = {
+      'senderTrust' => 'email From line', 'senderAuth' => 'header panel',
+      'addressedTo' => 'greeting line', 'attachmentPlausible' => 'attachment'
+    }.freeze
+
     def self.kind_field_checks(m, k, mw)
       issues = []
       own = KIND_FIELDS[k] || []
@@ -350,9 +356,12 @@ module ValidateSocial
       end
       return issues unless NON_EMAIL_KINDS.include?(k)
 
-      factors = Mail.list(m.dig('truth', 'flags')).select { |f| FACTORS.include?(f) }
-      factors.each do |f|
-        issues << err("#{mw}.truth.flags: '#{f}' is an email factor; a #{k} message offers only the set's channel tells as chips, so it could never be ticked")
+      # An email factor a channel message is scored on is offered as a chip (chipIdsFor adds the
+      # message's own authored factors, N-14: pressure on a QR barrier notice). Pressure, relevance
+      # and the link check read something a text, notice, call or prompt really has. The sender,
+      # header, greeting and attachment checks read parts it does not, so they stay refused.
+      Mail.list(m.dig('truth', 'flags')).select { |f| CHANNEL_REFUSED_FACTORS.include?(f) }.each do |f|
+        issues << err("#{mw}.truth.flags: '#{f}' is an email factor; a #{k} message has no #{CHANNEL_REFUSED_FACTORS_WHY[f]} to read it from, so ticking it would mean nothing (pressure, relevance and link checks are allowed)")
       end
       who = !blank?(m.dig('from', 'name')) || !blank?(m.dig('from', 'address')) || (m['from'].is_a?(String) && !m['from'].empty?)
       case k

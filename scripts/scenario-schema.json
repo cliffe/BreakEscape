@@ -2048,6 +2048,7 @@
         "headerPanel": {"type": "string", "enum": ["collapsed", "open", "off"]},
         "glossary": {"type": "string", "enum": ["closed", "open", "off"]},
         "chipStyle": {"type": "string", "enum": ["plain", "technical", "character"]},
+        "realLabel": {"type": "string", "minLength": 1, "description": "The noun for the genuine items in the result grid (\"Real texts and notices\"); default follows the queue's channels."},
         "flagPlayerSent": {"type": ["string", "boolean"], "description": "Opt-in (inbox-triage-minigame.js): marks the player's own sends on the review flip; a string is the line shown, true uses a default"},
         "verifyVerdict": {"type": "boolean"},
         "genuineFeedback": {"type": "boolean", "description": "false hides the result screen's and debrief's lines on the real items (which were trusted, what made a flagged one safe). Default on."},
