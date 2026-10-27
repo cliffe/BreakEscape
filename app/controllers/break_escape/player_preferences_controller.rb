@@ -48,7 +48,7 @@ module BreakEscape
 
         respond_to do |format|
           format.html do
-            flash.now[:alert] = 'Please select a character sprite.'
+            flash.now[:alert] = @player_preference.errors.full_messages.to_sentence.presence || 'Please select a character sprite.'
             @avatar_menu = @player_preference.avatar_menu
             @back_url = back_url_for(@game_for_scenario)
             render :show, status: :unprocessable_entity
@@ -56,7 +56,7 @@ module BreakEscape
           format.json do
             render json: {
               success: false,
-              error: 'Please select a character sprite.',
+              error: @player_preference.errors.full_messages.to_sentence.presence || 'Please select a character sprite.',
               errors: @player_preference.errors.full_messages
             }, status: :unprocessable_entity
           end

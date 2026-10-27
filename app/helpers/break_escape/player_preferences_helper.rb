@@ -6,10 +6,16 @@ module BreakEscape
     def suggested_in_game_name(preference)
       name = preference.in_game_name
       if (name.blank? || name == 'Zero') && current_player.respond_to?(:handle) && current_player.handle.present?
-        current_player.handle
+        BreakEscape::PlayerPreference.sanitise_name(current_player.handle)
       else
         name
       end
+    end
+
+    # Validation messages for one field of the preference form, for display next to it.
+    def preference_field_errors(preference, field)
+      label = field == :in_game_name ? 'Code name' : field.to_s.humanize
+      preference.errors[field].map { |msg| "#{label} #{msg}" }
     end
 
     # Menu label for a sprite key; the _v2 suffix is an asset detail, not part of the name.

@@ -22,6 +22,9 @@
                          maxlength: 20,
                          placeholder: 'Zero' %>
         <small>1-20 characters (letters, numbers, spaces, underscores only)</small>
+        <% preference_field_errors(@player_preference, :in_game_name).each do |msg| %>
+          <p class="field-error" role="alert"><%= msg %></p>
+        <% end %>
       </div>
 
       <!-- Sprite Selection -->

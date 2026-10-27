@@ -216,6 +216,30 @@ module BreakEscape
       assert_equal false, json['success']
     end
 
+    test 'update re-renders the form with the code name error' do
+      patch configuration_url,
+            params: { player_preference: { selected_sprite: 'female_hacker_hood_v2', in_game_name: 'wave1-p10' } }
+
+      assert_response :unprocessable_entity
+      assert_select 'p.field-error', /Code name only allows letters, numbers, spaces, and underscores/
+    end
+
+    test 'update JSON error names the code name problem' do
+      patch configuration_url,
+            params: { player_preference: { selected_sprite: 'female_hacker_hood_v2', in_game_name: 'wave1-p10' } },
+            headers: { 'Accept' => 'application/json' }
+
+      assert_response :unprocessable_entity
+      assert_match(/In game name/, JSON.parse(response.body)['error'])
+    end
+
+    test 'suggested code name from a hyphenated handle is sanitised' do
+      @preference.update!(in_game_name: 'Zero')
+      @player.update!(handle: 'wave1-p10')
+      get configuration_url
+      assert_select 'input[name="player_preference[in_game_name]"][value=?]', 'wave1_p10'
+    end
+
     test 'update does not persist invalid data on failure' do
       original_sprite = @preference.selected_sprite
 

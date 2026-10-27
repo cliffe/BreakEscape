@@ -783,3 +783,11 @@ body.shell-picker {
   .shell-picker .pk-bar { gap: 10px 8px; }
   .shell-picker .pk-bar .btn { padding: 4px 8px; }
 }
+
+/* Validation message under a form field (e.g. an invalid code name) */
+.field-error {
+  margin: 6px 0 0;
+  color: #b3261e;
+  font-weight: bold;
+}
+.shell-picker .field-error { color: var(--ui-danger); }
