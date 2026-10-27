@@ -278,6 +278,9 @@ Source: `playtests/R20.md` (scripted Haiku run, game 4570). A Haiku "major" only
   the checklist (the pointer hits `.mail-checklist`, not Send), and a Compose click while it is open is a
   no-op, which is what the run saw. After Done, Compose opens blank (no attachment, no pretext, empty
   blanks). A keyboard Tab past the checklist to the covered Send is the only remaining way to a sent form.
+  Hardened 2026-10-27 (89df2949e): the checklist makes the composer `inert` until Edit & resend. Live, game
+  4640: 15 trusted Tabs never entered the composer on a miss, 5 on a landing; Edit & resend gave the filled
+  form back; Done then Compose showed none of the sent message.
 - **F20-5:** accepted (hidden `.ob-live` status region), no action.
 
 Shared-code changes made in the same pass for the awareness course (inbox-triage owner this round):
