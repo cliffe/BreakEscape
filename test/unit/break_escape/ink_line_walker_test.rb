@@ -337,6 +337,46 @@ module BreakEscape
       assert_includes TtsLineExtractor.call_knots(npc, ink), 'call'
     end
 
+    # A pretext call's authored goodbye (social.pretextNpcs outcomes.<id>.line) is spoken on
+    # finalise, outside the ink: it is voiced when the call's phone NPC is voiced.
+    def pretext_scenario(voiced: true, line: "Sorry, I'm going to stop you there.")
+      data = scenario(story: HUB_CALL, current: 'call')
+      npc = data['rooms']['office']['npcs'][0]
+      npc.delete('eventMappings')
+      npc['voiced'] = true if voiced
+      data['social'] = {
+        'characters' => { 'dev' => { 'displayName' => 'Dev', 'channels' => { 'phone' => 'agent_0x99' } } },
+        'pretextNpcs' => [{ 'character' => 'dev', 'callId' => 'c',
+                            'outcomes' => { 'got_it' => {}, 'reported' => { 'line' => line, 'setGlobal' => { 'x' => true } },
+                                            'walked_away' => {} } }]
+      }
+      data
+    end
+
+    test "a pretext outcome line is voiced with the voiced phone NPC's voice and accepted by the endpoint" do
+      extractor = TtsLineExtractor.new('walker_test', pretext_scenario)
+      entry = extractor.entries.find { |e| e.text.start_with?('Sorry, ') }
+      assert entry, 'outcome line should be listed'
+      assert_equal 'agent_0x99', entry.npc_id
+      assert_equal HAX_VOICE, entry.voice
+      assert_equal TtsService.new.cache_key_for("Sorry, I'm going to stop you there.", 'Aoede', 'Calm handler.', 'en-GB'), entry.key
+      assert extractor.spoken_by?('agent_0x99', "Sorry, I'm going to stop you there!")
+      refute extractor.spoken_by?('director_netherton', "Sorry, I'm going to stop you there.")
+      refute extractor.spoken_by?('agent_0x99', 'Something else entirely.')
+    end
+
+    test "a pretext outcome line is not voiced when the call is not voiced" do
+      extractor = TtsLineExtractor.new('walker_test', pretext_scenario(voiced: false))
+      assert_empty extractor.entries.select { |e| e.text.start_with?('Sorry, ') }
+      refute extractor.spoken_by?('agent_0x99', "Sorry, I'm going to stop you there.")
+    end
+
+    test "the endpoint cache stamp changes when an outcome line is edited" do
+      a = TtsLineExtractor.new('walker_test', pretext_scenario).cache_stamp
+      b = TtsLineExtractor.new('walker_test', pretext_scenario(line: 'Different words.')).cache_stamp
+      refute_equal a, b
+    end
+
     test "voiced: true on a contact with no currentKnot starts at start" do
       npc = { 'voiced' => true }
       assert TtsLineExtractor.voiced_call?(npc)

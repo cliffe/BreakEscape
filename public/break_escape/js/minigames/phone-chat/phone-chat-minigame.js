@@ -19,7 +19,7 @@ import { classifyPhoneLine, displayPhoneLine, phoneStepLines } from './phone-cha
 import { choiceIndexFromKey } from './phone-chat-choices.js';
 import { whenSessionOverlayClosed } from '../../utils/session-overlay-pause.js';
 import { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS } from './phone-call-lock.js';
-import { isVoicedCall, phoneLineVoice, PhoneCallVoice, voicedCallKnots, callStartKnots, callHomeKnot } from './phone-call-voice.js';
+import { isVoicedCall, phoneLineVoice, outcomeLineVoice, PhoneCallVoice, voicedCallKnots, callStartKnots, callHomeKnot } from './phone-call-voice.js';
 import TTSManager from '../../systems/tts-manager.js';
 
 export class PhoneChatMinigame extends MinigameScene {
@@ -870,6 +870,25 @@ export class PhoneChatMinigame extends MinigameScene {
         await whenSessionOverlayClosed();
         await this._callVoice?.speak(voice.speakerId, voice.text, this.npcManager.getNPC(voice.speakerId)?.voice?.fx || null);
         if (mine !== null && run === this._typeoutRun && this._pendingNpcMessages === pending) pending.unshift(mine);
+    }
+
+    /**
+     * Voice a pretext call's authored outcome line (shown on finalise) when the call is voiced.
+     * Not awaited by the caller: the debrief opens while the clip plays, and closing it stops
+     * the clip. A keyless server only loses the voice.
+     * @param {string} text - the outcome's `line`
+     */
+    async speakOutcomeLine(text) {
+        try {
+            const contact = this.npcManager.getNPC(this.currentNPCId);
+            const voice = outcomeLineVoice(text, this.params, contact, this.npcManager.npcs);
+            if (!voice) return;
+            if (!this._callVoice) {
+                this._callVoice = new PhoneCallVoice(new TTSManager());
+                this.addEventListener(this.ui.elements.messagesContainer, 'click', () => this._callVoice?.skip());
+            }
+            await this._callVoice.speak(voice.speakerId, voice.text, this.npcManager.getNPC(voice.speakerId)?.voice?.fx || null);
+        } catch (e) { console.warn('⚠️ outcome line voice failed:', e?.message); }
     }
 
     /**

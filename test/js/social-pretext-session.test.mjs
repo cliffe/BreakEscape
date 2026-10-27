@@ -334,6 +334,34 @@ test('influence does not carry between calls: a fresh call resets to the start (
     assert.equal(service.getInfluence('dev'), -10, 'a new call starts fresh at the character start');
 });
 
+test('finalise on a reported call hands the outcome line to the chat to speak (voiced call)', async () => {
+    const { service } = setup({ start: -10 });
+    globals()[`pretext_${CALL}_state`] = null;
+    const engine = { story: { variablesState: { _defaultGlobalVariables: new Map(), $() {} }, BindExternalFunction() {}, bindExternalFunction() {} }, bindExternalFunction() {} };
+    const spoken = [];
+    const shown = [];
+    const minigame = { params: { pretextCallId: CALL, blanks: { ...CARD } }, inkEngine: engine, npcId: 'dev_service_desk',
+        ui: { addMessage: (who, text) => shown.push([who, text]) }, complete() {}, gameResult: {},
+        speakOutcomeLine: (text) => spoken.push(text) };
+    const handle = await quiet(() => P.attachPretext(minigame, { chat: 'phone', judge }));
+    handle.session.reportedThisCall = true;
+    quiet(() => { try { handle.finish(); } catch (e) { /* the debrief needs a DOM; the line was handed over first */ } });
+    assert.deepEqual(shown, [['npc', 'I will check with my manager. Goodbye.']]);
+    assert.deepEqual(spoken, ['I will check with my manager. Goodbye.'], 'the same line is spoken');
+});
+
+test('finalise without an authored outcome line speaks nothing (got_it)', async () => {
+    const { service } = setup({ start: -10 });
+    globals()[`pretext_${CALL}_state`] = null;
+    const engine = { story: { variablesState: { _defaultGlobalVariables: new Map(), $() {} }, BindExternalFunction() {}, bindExternalFunction() {} }, bindExternalFunction() {} };
+    const spoken = [];
+    const minigame = { params: { pretextCallId: CALL, blanks: { ...CARD } }, inkEngine: engine, npcId: 'dev_service_desk',
+        ui: { addMessage() {} }, complete() {}, gameResult: {}, speakOutcomeLine: (t) => spoken.push(t) };
+    const handle = await quiet(() => P.attachPretext(minigame, { chat: 'phone', judge }));
+    quiet(() => { try { handle.finish(); } catch (e) { /* no DOM */ } });
+    assert.deepEqual(spoken, [], 'walked away has no line');
+});
+
 test('soft refusals reach maxRefusals and force a report with its threshold effects', () => {
     const { service, grantFact, clock } = setup({ start: -15 });
     const session = new P.PretextSession({ callId: CALL, character: 'dev' });
