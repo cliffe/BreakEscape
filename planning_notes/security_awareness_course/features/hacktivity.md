@@ -2,14 +2,56 @@
 
 The platform features the awareness course needs from Hacktivity, so that a customer organisation can give the course to its staff, see who has done it, chase the people who haven't, and show the evidence to an auditor. Each feature is described by what it does, who uses it, the data it keeps, its screens and flows, and how it connects to the game. This file is about features only: it says nothing about how Hacktivity is built inside.
 
-Every feature has the same headings: **Priority and size** (as in `README.md`: MVP, P2 or P3; S is days, M a few weeks, L a month or more, for one developer), **Why**, **What exists today**, **Design**, **Acceptance criteria**, **Depends on**, and **Risks and open questions**. The ids are fixed. The assessment model these features carry is in `assessment_and_evidence.md`. The requirements they answer are in `../02_COMPLIANCE_MAPPING.md`, and its short references ("PCI DSS 12.6.3", "NCSC CAF B6.b") are used here.
+Every feature has the same headings: **Priority and size** (now "Next", P2 or P3 against the built product, see Build status; the plan used MVP, P2 or P3 as in `README.md`; S is days, M a few weeks, L a month or more, for one developer), **Why**, **What exists today**, **Design**, **Acceptance criteria**, **Depends on**, and **Risks and open questions**. The ids are fixed. The assessment model these features carry is in `assessment_and_evidence.md`. The requirements they answer are in `../02_COMPLIANCE_MAPPING.md`, and its short references ("PCI DSS 12.6.3", "NCSC CAF B6.b") are used here.
+
+## Build status
+
+**Read this first.** This file was written before main built an awareness product. The build wins (`../04_BUILT_SO_FAR.md`, R8), so everything below this section is a **wish list**, and every HA id is **Not built**. No Hacktivity change happens without the user's go-ahead.
+
+### How the course runs on Hacktivity today (Built)
+
+- **Ordinary missions in the `training` collection.** Each episode (E1 to E7), each defend-only variant and each of the 24 pre and post check missions is a normal Break Escape mission. An organiser adds them to a course like any other mission and puts them in order.
+- **The organiser does the ordering.** The organiser places a role's pre-check first, the episodes in the middle and the post-check last, and puts half the cohort on the AB pair and half on the BA pair. The platform does not order missions or assign pairs.
+- **The post-check reads the pre-check.** The post-check mission picks up the learner's pre-check percent, report rate and done flag from their newest finished run of the paired pre mission, using the platform's existing way of carrying values between missions. No platform change was needed.
+- **Completion and score come back as for any mission,** and show on the course's existing progress page.
+- **The game reads a customer reporting-route value.** Every debrief has a "how to report here" box. The game takes its text from a value the host page can supply, falling back to the scenario's own route and then a generic line. Today that value comes from the scenario, so every customer sees the same route unless the scenario is edited.
+- **What stays in the game.** The awareness-measure records (one block per check or defend round: ids, verdicts, chips, scores, times, the stage and variant, and the discrimination figure) live with the learner's game. They hold no free text and no learner identity. Nothing sends them to a platform report yet.
+
+### The only platform change proposed: the reporting-route setting
+
+At feature level (from the build's route proposal):
+
+- **What it is.** A plain-text "how to report suspicious messages here" setting, with an optional heading and a length cap, shown in the debrief of every awareness episode and check.
+- **Who sets it.** Organisers set it on their own course. Administrators can set an organisation default.
+- **Which one wins.** It is resolved live each time a game opens: the course's value, then the course's organisation's default, then (an open choice) the player's own organisation. If none is set, the game falls back to the scenario's route and then the generic line. A changed value shows from the next page load, including for games already started.
+- **It travels with the course.** Copying a course copies its route.
+- **Safety.** It is plain text only, never markup, and each customer only ever sees the route for the course being played.
+- **Status: waiting on the user.** The user chose "a Hacktivity setting" and was sent an options form, which is unanswered. Nothing is built on the platform side.
+
+### Re-prioritised against the built product
+
+The old MVP list assumed the platform carried the whole course. It doesn't: the built product already runs as ordinary missions. Priorities are now relative to the built product, and all are wish list.
+
+| Tier | Ids | Why now |
+|---|---|---|
+| **Next** (once the user agrees) | HA-11, as the reporting-route setting only | The one platform change proposed; it is what makes each debrief end on the customer's own route |
+| **P2** (if the awareness product is offered to organisations) | HA-05, HA-09, HA-14, HA-03, HA-15, HA-19, HA-23, HA-01 | HA-05, HA-09 and HA-14 build on the awareness-measure records and the discrimination figure, which already exist in the game. HA-03 replaces the organiser's manual ordering and AB/BA split. HA-15 must come before any staff data is loaded. HA-19 versions the episodes for records. HA-23 is the platform half of accessibility. HA-01 adds the groups the aggregate views need |
+| **P3** | HA-02, HA-04, HA-06, HA-07, HA-08, HA-10, HA-12, HA-13, HA-16, HA-17, HA-18, HA-20, HA-21, HA-22, HA-24, HA-25, HA-26 | Useful at scale, not needed to run the built product. HA-13 builds on the runner's existing facilitated flag; HA-21 would schedule defend-only variants as drills; HA-10 and HA-22 build on records already shaped for xAPI; HA-20 is kept only if a module ever needs video (the build has none) |
+
+**How the three evidence features build on the build:**
+
+- **HA-05** starts from the awareness-measure blocks, not from a new in-game event log: a completion record per learner per path cycle, holding the pre and post results and the episodes completed, with the learner's identity added by the platform, never by the game.
+- **HA-09** shows organisers cohort pre and post change, report rate and the **discrimination figure, for organisers only**, in aggregate above the privacy threshold. Learners never see the discrimination figure; they get detailed feedback on the genuine items instead. No league tables.
+- **HA-14** starts from the built pre and post checks as its level 2 measure, adds the surveys and behaviour measures, and keeps the build's rule: **no effectiveness claims**, only a before and after change on matched items for a cohort.
+
+The ids, headings and designs below are unchanged except where they named the retired world or pathway names: the course is **Incident Simulations: Critical Cases**, settings use the brand-set companies, and "the new-starter path" means a role's pre-check, the general and role episodes, and the post-check.
 
 ## What Hacktivity already gives the course
 
 Hacktivity runs hands-on cyber security courses for universities and organisations. Much of what mandatory training needs is already there (see `../research/current_state_hacktivity.md`):
 
 - **Organisations with seats.** An organisation has a name, a number of seats and a subscription end date. Seats are bought by card through Stripe or set by an administrator, and access stops when a seat is removed.
-- **Courses as templates.** A template course can be copied into an organisation's own course with its dates shifted, which is close to "give this organisation the Induction Essentials path".
+- **Courses as templates.** A template course can be copied into an organisation's own course with its dates shifted, which is close to "give this organisation the new-starter path".
 - **Break Escape missions in courses.** A course lists missions in order, with release dates and score weights. Starting a mission resumes the learner's game or starts a new one, and the game's status, score and completion time come back to the platform as they change.
 - **Progress tracking.** Training staff see a progress page per course, with each person's progress per item, inactivity flags and a CSV export. The page is accessible (screen reader labels, focus handling, AA contrast, reduced motion), which is the pattern for the new dashboards.
 - **Sign-in with MFA.** Every sign-in needs a second factor (an emailed code or an authenticator app).
@@ -34,7 +76,7 @@ Hacktivity runs hands-on cyber security courses for universities and organisatio
 |---|---|---|---|---|
 | 1. Buy and set up | The buyer, who becomes the first organisation admin | Signs the order form and the data processing agreement; creates the organisation; uploads the logo; fills in the organisation profile (the name of the Report button, the service desk number, the policies); chooses the pathways | HA-18, HA-15, HA-01, HA-11, HA-07 | MVP (billing by hand until HA-18) |
 | 2. Bring in staff | Organisation admin, or the customer's IT team | Uploads a CSV of staff with departments, managers, job roles and start dates; later, single sign-on and automatic provisioning keep the list current and suspend leavers | HA-01, HA-02 | CSV in MVP; directory sync in P2 |
-| 3. Assign | Organisation admin | Sets rules: Induction Essentials within 14 days of starting; the annual refresher every 12 months; role paths by job role; exemptions with reasons | HA-03, HA-19 | MVP |
+| 3. Assign | Organisation admin | Sets rules: the new-starter path within 14 days of starting; the annual refresher every 12 months; role paths by job role; exemptions with reasons | HA-03, HA-19 | MVP |
 | 4. Play | Staff | Get an invitation, open "My training", play each module (in the browser, or from their own LMS), finish with the debrief, the check, the reference card and any policy to acknowledge, and get a certificate | HA-17, HA-07, HA-06, HA-23, HA-10, HA-20 | MVP (LMS in P2) |
 | 5. Chase | Managers and admins | Reminders go out before and after due dates; managers see their team's status and can nudge; overdue cases escalate | HA-04, HA-09 | Dashboards MVP; reminders P2 |
 | 6. Prove | Internal and external auditors | Read-only access to records, rules, exemptions and acknowledgements; an audit pack for a period and a framework; certificates that can be checked online | HA-05, HA-06, HA-15, HA-19 | MVP |
@@ -43,7 +85,7 @@ Hacktivity runs hands-on cyber security courses for universities and organisatio
 ## Principles for every platform feature
 
 1. **The customer is the controller; the Hacktivity operator is its processor.** Every feature helps the customer meet its own duties: telling staff what is recorded, limiting who sees it, deleting it on time (HA-15).
-2. **Two kinds of data, kept apart.** *Compliance data* (assigned, due, completed, which version, the check result, acknowledgements) is for chasing and auditing and is seen by name. *Learning data* (what the learner did in the game, per-outcome ratings, the hook baseline) is for the learner, and reaches the organisation only in aggregate above a privacy threshold. Managers never see an individual's decisions, and learning data is never used for discipline (HA-09, `assessment_and_evidence.md`).
+2. **Two kinds of data, kept apart.** *Compliance data* (assigned, due, completed, which version, the check result, acknowledgements) is for chasing and auditing and is seen by name. *Learning data* (what the learner did in the game, per-outcome ratings, the pre-check baseline) is for the learner, and reaches the organisation only in aggregate above a privacy threshold. Managers never see an individual's decisions, and learning data is never used for discipline (HA-09, `assessment_and_evidence.md`).
 3. **Evidence is append-only.** Records are added, never edited. A correction is a new entry that points at the one it corrects (HA-05).
 4. **A pilot needs nothing from the customer's IT team.** CSV import and email invitations work before single sign-on.
 5. **Everything an administrator does to people or records is logged** (HA-15).
@@ -70,38 +112,38 @@ Today each account has one site-wide role (free user, paid seat holder, training
 
 | Id | Feature | Priority | Size | Today | Depends on |
 |---|---|---|---|---|---|
-| HA-01 | Organisations, departments and roles | MVP | L | Partly: organisations and seats; no departments, managers or scoped roles | HA-15, HA-23 |
-| HA-02 | Single sign-on and provisioning | P2 | L | None: email and password accounts, invitations | HA-01, HA-03, HA-15 |
-| HA-03 | Learning paths and assignments | MVP | L | Partly: courses, release dates, enrolment; no per-person due dates, recurrence or exemptions | HA-01, HA-05, HA-19 |
-| HA-04 | Reminders and escalation | P2 (part MVP) | M | Partly: email and a daily scheduler; no due-date reminders | HA-01, HA-03, HA-11, HA-17 |
-| HA-05 | Completion records and audit evidence | MVP (part P2) | L | Partly: status, score and times per game; no version, outcomes, sealed records or audit pack | BE-01, MG-20, HA-03, HA-15, HA-19 |
-| HA-06 | Certificates and badges | MVP | S | None | HA-05, HA-11, HA-23 |
-| HA-07 | Policy library and acknowledgement | MVP | M | None | HA-01, HA-03, HA-05, BE-09 |
-| HA-08 | Question banks | P2 | M | None | MG-20, BE-13, HA-19 |
-| HA-09 | Organisation dashboards | MVP | M | Partly: a progress page per course | HA-01, HA-03, HA-05, HA-15 |
-| HA-10 | LMS interoperability | P2 | L | None | HA-05, HA-18, HA-19, BE-14, HA-22 |
-| HA-11 | Organisation profile and branding | MVP | M | None | BE-05, BE-09, BE-20, HA-07 |
-| HA-12 | Phishing simulation and report-button data | P3 | M | None | HA-09, HA-14, HA-15, BE-07 |
-| HA-13 | Facilitated sessions | P2 | M | None | BE-15, HA-01, HA-05 |
-| HA-14 | Evaluation and surveys | P3 | M | Partly: ratings and comments after a mission | HA-09, HA-12, HA-15 |
-| HA-15 | Data protection and platform trust | MVP | L | Partly: MFA, UK hosting | HA-01, HA-05, HA-09 |
-| HA-16 | Platform localisation | P3 | M | None: English only | BE-06, HA-04, HA-06, HA-11 |
-| HA-17 | Learner home | MVP | M | Partly: a dashboard with "continue where you left off" | HA-03, HA-05, HA-06, HA-07 |
-| HA-18 | Licensing and billing | P3 | M | Mostly: Stripe seats, trials, renewals | HA-01, HA-10, HA-15 |
-| HA-19 | Content versioning and release notes | P2 | S | None, though each game keeps the scenario it was built from | HA-03, HA-05, BE-13 |
-| HA-20 | Video hosting, captions and transcripts | P2 | S | Partly: video links on missions, not tracked | HA-19, HA-23, MG-21 |
-| HA-21 | Microlearning schedule | P2 | M | None | BE-07, BE-13, HA-03, HA-04 |
-| HA-22 | Learning record store | P2 | M | None | BE-14, HA-05, HA-15 |
-| HA-23 | Accessible platform and lab sheet theme | MVP | M | Partly: the progress page is accessible | BE-04 |
-| HA-24 | Public API and webhooks | P2 | M | None: records leave only as files | HA-01, HA-05, HA-09, HA-15 |
-| HA-25 | Partner role | P3 | M | None: roles are scoped to one organisation | HA-01, HA-09, HA-11, HA-15, HA-18 |
-| HA-26 | Setup checklist | MVP | S | None | HA-01, HA-03, HA-05, HA-06, HA-07, HA-11, HA-15 |
+| HA-01 | Organisations, departments and roles | Wish list: P2 (was MVP) | L | Partly: organisations and seats; no departments, managers or scoped roles | HA-15, HA-23 |
+| HA-02 | Single sign-on and provisioning | Wish list: P3 (was P2) | L | None: email and password accounts, invitations | HA-01, HA-03, HA-15 |
+| HA-03 | Learning paths and assignments | Wish list: P2 (was MVP) | L | Partly: courses, release dates, enrolment; no per-person due dates, recurrence or exemptions | HA-01, HA-05, HA-19 |
+| HA-04 | Reminders and escalation | Wish list: P3 (was P2, part MVP) | M | Partly: email and a daily scheduler; no due-date reminders | HA-01, HA-03, HA-11, HA-17 |
+| HA-05 | Completion records and audit evidence | Wish list: P2 (was MVP, part P2) | L | Partly: status, score and times per game; no version, outcomes, sealed records or audit pack | BE-01, MG-20, HA-03, HA-15, HA-19 |
+| HA-06 | Certificates and badges | Wish list: P3 (was MVP) | S | None | HA-05, HA-11, HA-23 |
+| HA-07 | Policy library and acknowledgement | Wish list: P3 (was MVP) | M | None | HA-01, HA-03, HA-05, BE-09 |
+| HA-08 | Question banks | Wish list: P3 (was P2) | M | None | MG-20, BE-13, HA-19 |
+| HA-09 | Organisation dashboards | Wish list: P2 (was MVP) | M | Partly: a progress page per course | HA-01, HA-03, HA-05, HA-15 |
+| HA-10 | LMS interoperability | Wish list: P3 (was P2) | L | None | HA-05, HA-18, HA-19, BE-14, HA-22 |
+| HA-11 | Organisation profile and branding | Wish list: Next (was MVP) | M | None | BE-05, BE-09, BE-20, HA-07 |
+| HA-12 | Phishing simulation and report-button data | Wish list: P3 (was P3) | M | None | HA-09, HA-14, HA-15, BE-07 |
+| HA-13 | Facilitated sessions | Wish list: P3 (was P2) | M | None | BE-15, HA-01, HA-05 |
+| HA-14 | Evaluation and surveys | Wish list: P2 (was P3) | M | Partly: ratings and comments after a mission | HA-09, HA-12, HA-15 |
+| HA-15 | Data protection and platform trust | Wish list: P2 (was MVP) | L | Partly: MFA, UK hosting | HA-01, HA-05, HA-09 |
+| HA-16 | Platform localisation | Wish list: P3 (was P3) | M | None: English only | BE-06, HA-04, HA-06, HA-11 |
+| HA-17 | Learner home | Wish list: P3 (was MVP) | M | Partly: a dashboard with "continue where you left off" | HA-03, HA-05, HA-06, HA-07 |
+| HA-18 | Licensing and billing | Wish list: P3 (was P3) | M | Mostly: Stripe seats, trials, renewals | HA-01, HA-10, HA-15 |
+| HA-19 | Content versioning and release notes | Wish list: P2 (was P2) | S | None, though each game keeps the scenario it was built from | HA-03, HA-05, BE-13 |
+| HA-20 | Video hosting, captions and transcripts | Wish list: P3 (was P2) | S | Partly: video links on missions, not tracked | HA-19, HA-23, MG-21 |
+| HA-21 | Microlearning schedule | Wish list: P3 (was P2) | M | None | BE-07, BE-13, HA-03, HA-04 |
+| HA-22 | Learning record store | Wish list: P3 (was P2) | M | None | BE-14, HA-05, HA-15 |
+| HA-23 | Accessible platform and lab sheet theme | Wish list: P2 (was MVP) | M | Partly: the progress page is accessible | BE-04 |
+| HA-24 | Public API and webhooks | Wish list: P3 (was P2) | M | None: records leave only as files | HA-01, HA-05, HA-09, HA-15 |
+| HA-25 | Partner role | Wish list: P3 (was P3) | M | None: roles are scoped to one organisation | HA-01, HA-09, HA-11, HA-15, HA-18 |
+| HA-26 | Setup checklist | Wish list: P3 (was MVP) | S | None | HA-01, HA-03, HA-05, HA-06, HA-07, HA-11, HA-15 |
 
 The features below are in id order.
 
 ### HA-01: Organisations, departments and roles
 
-**Priority and size:** MVP, L.
+**Priority and size:** Not built, wish list. P2 (the plan said MVP), L.
 
 **Why:** Assignment rules (HA-03), reminders (HA-04) and dashboards (HA-09) all work by department, location, manager and job role. Frameworks expect training to reach everyone, in a way that fits their job: ISO 27001 A.6.3 ("as relevant for their job function"), NIST AT-3 (role-based training), NCSC CAF B6.b (no team without training, "from executives to the most junior"), DSPT 3.2.1 (staff, directors, trustees and volunteers). Contractors and temporary staff must be in scope too (`02_COMPLIANCE_MAPPING.md` section 5). Auditors need read-only access that expires.
 
@@ -147,7 +189,7 @@ The features below are in id order.
 
 ### HA-02: Single sign-on and provisioning
 
-**Priority and size:** P2, L.
+**Priority and size:** Not built, wish list. P3 (the plan said P2), L.
 
 **Why:** Organisations of more than a few hundred people won't keep a separate list of passwords for training, and their IT teams expect joiners and leavers to flow from the directory. Joiners need their induction from day one (PCI DSS 12.6.3 on hire; the ICO training toolkit asks for induction training before access to personal data and within a month of starting). Leavers must lose access and stop counting in seats and dashboards. Provisioning also supplies the start dates, departments, managers and job roles that HA-03's rules need.
 
@@ -186,11 +228,11 @@ The features below are in id order.
 
 ### HA-03: Learning paths and assignments
 
-**Priority and size:** MVP, L.
+**Priority and size:** Not built, wish list. P2 (the plan said MVP), L.
 
 **Why:** This is the centre of mandatory training. The rules come straight from the requirements:
 
-- **On joining.** PCI DSS 12.6.3 (on hire); CIS 14.1 (at hire); ICO training toolkit (before access to personal data and within one month of starting); NIST AT-2 (on joining); DSPT 2.1.1 (induction). The course's Induction Essentials path is due within the first two weeks, with the window set by the organisation (`00_COURSE_OVERVIEW.md`).
+- **On joining.** PCI DSS 12.6.3 (on hire); CIS 14.1 (at hire); ICO training toolkit (before access to personal data and within one month of starting); NIST AT-2 (on joining); DSPT 2.1.1 (induction). The course's new-starter path (a role's pre-check, the general and role episodes, the post-check) is due within the first two weeks, with the window set by the organisation (`00_COURSE_OVERVIEW.md`).
 - **On a change of role.** NIST AT-3 (before access or duties); NIS2 IR 8.2 (when staff move into security-relevant roles); PCI DSS 12.6.3 guidance (moving into a role that can affect card data).
 - **Every 12 months.** PCI DSS 12.6.3; CIS 14.1; NYDFS 500.14(a)(3); DSPT 3.2.1 (95% trained in the last twelve months).
 - **Exemptions with reasons.** Auditors ask why anyone in scope wasn't trained, and a reason recorded at the time is the answer.
@@ -201,8 +243,8 @@ The features below are in id order.
 
 - **Concepts.**
   - *Module:* a catalogue item with versions (HA-19).
-  - *Path:* an ordered set of modules with optional sequencing (core_00 first in Induction Essentials; the rest in any order) and "organisation's choice" slots (the one or two spotlight modules in the annual refresher). The course provides the standard paths; organisations can build their own from the catalogue.
-  - *Assignment rule:* who (an audience: everyone, or filters on unit, location, job role, worker type and tags, with exclusions), what (a path or modules), when (a trigger), the due offset, recurrence, and options (test-out allowed, whether the check pass mark differs from the organisation default).
+  - *Path:* an ordered set of modules with optional sequencing (the pre-check first and the post-check last in the new-starter path, which is the order organisers set by hand today; the episodes in any order) and "organisation's choice" slots (the one or two spotlight modules in the annual refresher). The course provides the standard paths; organisations can build their own from the catalogue.
+  - *Assignment rule:* who (an audience: everyone, or filters on unit, location, job role, worker type and tags, with exclusions), what (a path or modules), when (a trigger), the due offset, recurrence, and options (test-out allowed, an optional pass mark on the post-check; there is none by default).
   - *Assignment:* one person, one module or path, the rule that created it, assigned date, due date, cycle number, status (not started, in progress, complete, overdue, exempt, paused, cancelled, superseded) and the completion record that closed it.
 - **Triggers.**
 
@@ -238,7 +280,7 @@ The features below are in id order.
 
 **Acceptance criteria:**
 
-- A rule "Induction Essentials, employees and contractors, within 14 days of start date" gives a person imported with a start date six assignments, due on the right day in the organisation's time zone. Changing the start date moves the due dates and logs the change.
+- A rule "new-starter path, employees and contractors, within 14 days of start date" gives a person imported with a start date one assignment per mission in the path, due on the right day in the organisation's time zone. Changing the start date moves the due dates and logs the change.
 - A rolling annual rule creates the next assignment 30 days before the previous completion expires and marks it overdue the day after it is due.
 - Moving a person into Finance assigns role_02 due in 30 days, unless they completed it in the last 12 months.
 - An exemption can't be saved without its required fields; an "equivalent training" exemption can't be saved without evidence; the audit pack lists every exemption in its period.
@@ -258,7 +300,7 @@ The features below are in id order.
 
 ### HA-04: Reminders and escalation
 
-**Priority and size:** P2, M.
+**Priority and size:** Not built, wish list. P3 (the plan said P2), M.
 
 **Why:** Completion depends on reminders. The ICO training toolkit expects completion to be monitored and non-completers followed up; NCSC CAF B6.b expects each person's training to be tracked and refreshed. Managers need to chase without spreadsheets, and the chasing itself is evidence that the programme is run.
 
@@ -281,7 +323,7 @@ The features below are in id order.
 | Certificate ready | Learner | On completion (HA-06) |
 | This month's drill | Learner | Monthly, if drills are on (HA-21) |
 
-- **Settings per organisation.** Each notification on or off, its timings, quiet hours, working days (no weekend sends by default), the time zone, and the sender name ("Larkspur Security Team, via Hacktivity"). Never more than one email to a person in a day: anything else waits for tomorrow's or is folded into the digest.
+- **Settings per organisation.** Each notification on or off, its timings, quiet hours, working days (no weekend sends by default), the time zone, and the sender name (for example "Brightwell Foods Security Team, via Hacktivity"). Never more than one email to a person in a day: anything else waits for tomorrow's or is folded into the digest.
 - **Service messages, not marketing.** Reminders for required training are service messages. Learners can switch from separate emails to one weekly digest, but can't turn required reminders off. Organisation learners never receive Hacktivity's newsletters or marketing.
 - **Reminders that practise what the course teaches.** A training reminder that looks like a phish teaches the wrong habit. Reminders never ask for a password or a code, use the same sender every time, have no shortened links, name the organisation's training admin, and tell the learner they can always go to "My training" from their own bookmark instead of the link. Customers get a short note for their IT team on allowing the sender.
 - **Content.** Plain text first, with an accessible HTML version; branding from HA-11; no open-tracking pixels. Escalations name people and their status only, never scores or outcomes.
@@ -307,11 +349,13 @@ The features below are in id order.
 
 ### HA-05: Completion records and audit evidence
 
-**Priority and size:** MVP, M.
+**Priority and size:** Not built, wish list. P2 (the plan said MVP), M.
 
 **Why:** Auditors ask for records, and the frameworks are specific about it: ISO 27001 cl. 7.2 (documented information as evidence of competence); NIST AT-4 (individual training records, kept for a period the organisation sets); NCSC CAF B6.b (training records lacking or incomplete means "Not achieved", and each individual's training tracked and refreshed means "Achieved"); the ICO training toolkit (records of completed training, assessment results, completion rates); PCI DSS 12.6.3 (attendance records and acknowledgements); HIPAA 164.316(b) (documentation kept for six years); DSPT 3.2.1 (the share of staff trained in the last twelve months). See `02_COMPLIANCE_MAPPING.md` section 5, "Training records".
 
-**What exists today:** for each game, a status (in progress, completed, abandoned), start and completion times, a score out of 100 (70% tasks, 30% aims) and task and aim counts. A learner can play a listing several times and the best score counts. Per-course progress pages export progress percentages and scores as CSV, without completion dates or status, and a results page can be printed from the browser. Nothing records the module version, time on task, outcome results or acknowledgements, and records can change after the fact (a best score is recalculated).
+**Builds on the build:** the awareness-measure records already hold one block per check or defend round (set, form, stage, variant, verdicts, chips, scores, times and the discrimination figure), with no free text and no identity. A completion record for the awareness product is built from those blocks, with the learner's identity added by the platform. It does not need the in-game event log (BE-01) or the knowledge check (MG-20) the design below assumes; those become extensions (`assessment_and_evidence.md`, sections 3, 4 and 6).
+
+**What exists today:** for each game, a status (in progress, completed, abandoned), start and completion times, a score out of 100 (70% tasks, 30% aims) and task and aim counts. A learner can play a listing several times and the best score counts. Per-course progress pages export progress percentages and scores as CSV, without completion dates or status, and a results page can be printed from the browser. Nothing records the module version, time on task, outcome results or acknowledgements, and the score kept is the best of several plays rather than a fixed record of each.
 
 **Design:**
 
@@ -326,12 +370,12 @@ The features below are in id order.
   - why it was due: the assignment, the rule that created it, the due date, the cycle;
   - how: route (game, text route, test-out, facilitated, LMS, imported), language;
   - when: first started, completed, sittings, active minutes, completed on time or late;
-  - results: knowledge check score, the pass mark in force, attempts; a rating per learning outcome (Secure, Developing, Not yet); each critical behaviour as shown, shown after practice, or not applicable; the hook and Apply ratings for the before and after;
+  - results: knowledge check score, the pass mark in force if the organisation set one (none by default), attempts; a rating per learning outcome (Secure, Developing, Not yet); each critical behaviour as shown, shown after practice, or not applicable; the pre-check and post-check results for the before and after (built today);
   - linked evidence: policy acknowledgements, whether the reference card was opened, the certificate id, the attempt id;
   - integrity: a fingerprint of the record and of the previous record for the organisation, and the server time it was written.
 - **Results are worked out on the server.** The game sends the events (what was decided, when); the server applies the module's evidence rules to rate outcomes and decide completion, as today's scoring is already worked out on the server. A learner's browser never sends a final rating.
 - **Tamper evidence.** Each organisation's records form a chain: every record carries a fingerprint of its own content and of the record before it. The latest fingerprint is printed in every audit pack, so changing or removing an old record afterwards shows up when the chain is checked. When retention rules (HA-15) remove personal data, the record is redacted rather than deleted: the names go, the fingerprint and the outcome stay, and a deletion entry is added to the chain.
-- **Questions it must answer quickly.** Who completed module X (any version, or version Y) between two dates? Who was current for each annual requirement on a given date? Which joiners finished Induction Essentials within their window? Who is in scope but neither complete nor exempt?
+- **Questions it must answer quickly.** Who completed module X (any version, or version Y) between two dates? Who was current for each annual requirement on a given date? Which joiners finished the new-starter path within their window? Who is in scope but neither complete nor exempt?
 - **Exports.**
   - *CSV:* one row per record or per person and module, with a data dictionary.
   - *Person transcript (PDF):* everything one person has completed, for HR files, leavers and subject access requests.
@@ -367,7 +411,7 @@ The features below are in id order.
 
 ### HA-06: Certificates and badges
 
-**Priority and size:** MVP, S.
+**Priority and size:** Not built, wish list. P3 (the plan said MVP), S.
 
 **Why:** Learners, HR files and some auditors want a certificate. Contractors working for several clients need to show their training to each one. Some organisations want digital badges.
 
@@ -375,7 +419,7 @@ The features below are in id order.
 
 **Design:**
 
-- A certificate for every module completion record and every completed path ("Induction Essentials", "Annual refresher 2026 to 2027").
+- A certificate for every module completion record and every completed path ("New-starter path: finance", "Annual refresher 2026 to 2027").
 - **Content:** learner name, organisation, module or path title and version, completion date, valid until (for annual requirements), certificate id, and a verification link and QR code. No scores or outcome ratings, by default.
 - **Format:** a tagged, accessible PDF (reading order, text alternatives, real text rather than an image), printable on A4 and US Letter, with the organisation's logo (HA-11). The wording says "completed", never "certified".
 - **Verification page:** opening the link shows the same facts as the certificate and its status (valid, expired, or revoked if the record was voided by a correction). Certificate ids can't be guessed. An organisation can turn public verification off, or ask the verifier to type the learner's surname first.
@@ -396,7 +440,7 @@ The features below are in id order.
 
 ### HA-07: Policy library and acknowledgement
 
-**Priority and size:** MVP, M.
+**Priority and size:** Not built, wish list. P3 (the plan said MVP), M.
 
 **Why:** PCI DSS 12.6.3 requires personnel to acknowledge, at least every 12 months, that they have read and understood the security policy and procedures. ISO 27001 cl. 7.3, DORA RTS Art 19 and CMMC AT.L2-3.2.1 require staff to know the policies that apply to them, and ISO/IEC 27001:2022 control A.5.1 expects policies to be acknowledged by relevant personnel (wording to verify; A.5.1 is not yet in `02_COMPLIANCE_MAPPING.md`). The course's own completion rule says a module isn't complete until any policy attached to it is acknowledged (`00_COURSE_OVERVIEW.md`). core_16 (Small Print) is built around this, and the intranet terminal in the game (BE-09) is where the policies sit.
 
@@ -437,7 +481,7 @@ The features below are in id order.
 
 ### HA-08: Question banks
 
-**Priority and size:** P2, M.
+**Priority and size:** Not built, wish list. P3 (the plan said P2), M.
 
 **Why:** A retake needs fresh questions, or the check measures memory of the last attempt. Organisations want to add questions about their own policies and procedures. Weak questions should be found from the data and retired. The ICO training toolkit expects an assessment at the end of training, possibly with a pass mark. MG-20 (the knowledge check) needs somewhere to draw its items from.
 
@@ -470,11 +514,13 @@ The features below are in id order.
 
 ### HA-09: Organisation dashboards
 
-**Priority and size:** MVP, M.
+**Priority and size:** Not built, wish list. P2 (the plan said MVP), M.
 
 **Why:** Managers and admins chase completion; the ICO training toolkit expects completion monitored at all levels; DSPT 3.2.1 sets a 95% figure for many health and care organisations; boards are asked to gain assurance "using suitable metrics" (Cyber Governance Code C4); NCSC CAF B6.b says measuring only how many people were reached is not enough. Per-outcome results by department show where the next year's effort should go.
 
 The same data can do harm. Decision data for a small team identifies individuals. Used for discipline, it would destroy the reporting culture the course exists to build: the NCSC's phishing guidance says plainly that "blaming users for clicking on links doesn't work" and that "employees who are afraid for their jobs will not report mistakes" ([NCSC, Phishing attacks: defending your organisation](https://www.ncsc.gov.uk/guidance/phishing)). The ICO's guidance on monitoring workers says employers must be clear about the purpose of monitoring and tell workers about it, and lists monitoring that may result in financial loss, such as performance management, as an example of high-risk processing that needs a DPIA ([ICO, Employment practices and data protection: monitoring workers](https://ico.org.uk/for-organisations/uk-gdpr-guidance-and-resources/employment/monitoring-workers/)).
+
+**Builds on the build:** the first learning-insight view is the built measurement: cohort pre and post percent and report rate per role pair, and the **discrimination figure, shown to organisers only** and never as blame (aw3). Learners never see it; they get detailed feedback on genuine items instead. Per-outcome distributions come later, once items carry outcome ids. The privacy thresholds below apply to all of it.
 
 **What exists today:** a progress page per course for training staff, with each person's progress per item, inactivity flags and CSV export, built accessibly. No organisation-wide, department or manager views, no overdue or compliance reports, no scheduled reports.
 
@@ -486,7 +532,7 @@ The same data can do harm. Decision data for a small team identifies individuals
 |---|---|---|---|
 | **Compliance** | Organisation admin, compliance viewer, auditor | Percentage current for each requirement (induction within its window, annual refresher, policy acknowledgements), by department and location; overdue and exempt counts; trends; a "trained in the last 12 months" figure with a target line (for example DSPT's 95%); drill-down to named people for chasing | Outcome ratings or decisions |
 | **My team** | Manager | Each report's assignments with status and due dates; a reminder button | Scores, outcome ratings, decisions, practice assignments |
-| **Learning insight** | Organisation admin (and a security team role the organisation can grant) | Per-outcome distributions (Secure, Developing, Not yet) per module and department; the hook-to-Apply change; the most-missed behaviours; the organisation's own question statistics; all above the privacy threshold | Names, or any group below the threshold |
+| **Learning insight** | Organisation admin (and a security team role the organisation can grant) | Per-outcome distributions (Secure, Developing, Not yet) per module and department; the pre-check to post-check change and the discrimination figure (built today, organisers only); the most-missed behaviours; the organisation's own question statistics; all above the privacy threshold | Names, or any group below the threshold |
 | **Board report** | Generated for the organisation admin | A one-page quarterly PDF: completion and overdue, outcome trends, the reporting-culture measures where HA-12 and HA-14 supply them, and a text box for the security lead's commentary | Names |
 
 - **Privacy thresholds** (for learning insight and every other aggregate of learning, survey or simulation data):
@@ -528,7 +574,7 @@ The same data can do harm. Decision data for a small team identifies individuals
 
 ### HA-10: LMS interoperability
 
-**Priority and size:** P2, L.
+**Priority and size:** Not built, wish list. P3 (the plan said P2), L.
 
 **Why:** Many customers already run a learning management system (LMS) and want to assign the course there, alongside their other mandatory training, and see completions in the reports they already use. The plan pilots in Hacktivity first and adds LMS delivery before wider sales (`DECISIONS_PENDING.md`, D4).
 
@@ -561,7 +607,7 @@ Sources: [cmi5 specification (Quartz)](https://github.com/AICC/CMI-5_Spec_Curren
 - **Identity without a second sign-in.** A learner launched from an LMS never sees a Hacktivity sign-in. Hacktivity creates a learner for each (organisation, LMS learner id), named from the LMS, who counts as a seat and gets records with the source "LMS". An admin can link them to HA-01 people by employee id or email when the LMS passes one.
 - **Licence control.** Each package carries an organisation-specific key; launches with an unknown or revoked key are refused with a clear message; seats are counted as distinct learners per licence year (HA-18).
 - **LTI 1.3:** Hacktivity as an LTI tool, registered per LMS platform; Deep Linking to add modules or paths to an LMS course; Assignment and Grade Services to send the score (0 to 100) with activity progress Completed and grading progress FullyGraded at completion; Names and Role Provisioning Services (optional) to read the class list for reminders.
-- **cmi5:** a course structure file per module, pointing at the unit on Hacktivity, with moveOn CompletedAndPassed and a masteryScore taken from the organisation's pass mark. The launcher meets the unit's obligations (fetch the token, then initialized, completed, passed, terminated). Per-outcome "cmi5 allowed" statements from BE-14 go to the customer's learning record store only if the organisation turns that on, with the same caution as SCORM objectives.
+- **cmi5:** a course structure file per module, pointing at the unit on Hacktivity, with moveOn Completed by default (there is no pass mark by default), or CompletedAndPassed with a masteryScore if the organisation set a pass mark. The launcher meets the unit's obligations (fetch the token, then initialized, completed, passed, terminated). Per-outcome "cmi5 allowed" statements from BE-14 go to the customer's learning record store only if the organisation turns that on, with the same caution as SCORM objectives.
 
 **Recommended order:**
 
@@ -578,7 +624,7 @@ Before building, check each pilot customer's LMS and which of these it supports;
 - A learner launched from an LMS never sees a Hacktivity sign-in, and their completion record appears in HA-05 with the source "LMS".
 - Revoking a package's key stops new launches with a clear message.
 - LTI: a Moodle course adds core_01 through Deep Linking, and the score appears in its gradebook after completion.
-- cmi5: a cmi5 LMS marks the unit satisfied under moveOn CompletedAndPassed.
+- cmi5: a cmi5 LMS marks the unit satisfied under its moveOn rule (Completed by default).
 
 **Depends on:** HA-05, HA-19, HA-18 (licence keys and seats), HA-15 (the data agreement covers LMS data), HA-11, BE-12 (resume); BE-14 and HA-22 for cmi5 and richer data.
 
@@ -591,15 +637,17 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 ### HA-11: Organisation profile and branding
 
-**Priority and size:** MVP, M.
+**Priority and size:** Not built, wish list. Next (the reporting-route setting only; the rest of the profile P2) (the plan said MVP), M.
 
 **Why:** The game must show each organisation's own details: the name and place of its Report button, its service desk number, its simulation policy, its approved way to sign in (BE-05; each module's "Organisation-specific content" lists them, as core_01's does). Several requirements ask for training that reflects the organisation's own policies and risks: NYDFS 500.14(a)(3) and FTC 314.4(e) (the risk assessment), PCI DSS 12.6.3.2 (its acceptable use policies), ISO 27001 cl. 7.3 (its own policy). Buyers also expect their logo and colours.
 
 **What exists today:** nothing per customer: no logo, colours, domain, email sender or organisation values.
 
+**Builds on the build:** the game already reads a customer reporting-route value for every awareness debrief, with the scenario's route as the fallback (see Build status). **HA-11 starts there.** Its first and only proposed step is the reporting-route setting described in Build status: plain text, set by organisers per course, with an organisation default, waiting on the user's answer. The game's debrief also already accepts a rule-of-thumb and team-size value from the same source, so those are the natural next slots; the rule of thumb stays word for word unless the user decides otherwise. Everything else in this design (the full slot list, branding, versions, preview) is wish list and comes later.
+
 **Design:**
 
-- **Profile slots.** A typed list built from every module's "Organisation-specific slots" table in its `concepts.md`. Each slot has an id, a label, help text, a type (text, phone number, email, link, image, choice, short rich text), the Larkspur default, validation (phone format, secure links only), a maximum length (so it fits on screen), whether it is required, and the modules that use it. Examples: the Report button's name and where it is on desktop and mobile; the security team's contact; the service desk number and hours; how to report a lost device; the payment verification rule; whether the organisation runs simulated phishing, and its policy text; the external sender banner wording; the approved way to sign in to company systems; the password manager's name; the DPO's contact; and the customer's own incident-plan headings, crisis roles and contacts (role_01's own-plan version, Cyber Governance Code D2), held as short rich-text slots.
+- **Profile slots.** A typed list built from every module's "Organisation-specific slots" table in its `concepts.md`. Each slot has an id, a label, help text, a type (text, phone number, email, link, image, choice, short rich text), the scenario's default (today, the route each awareness scenario authors), validation (phone format, secure links only), a maximum length (so it fits on screen), whether it is required, and the modules that use it. Examples: the Report button's name and where it is on desktop and mobile; the security team's contact; the service desk number and hours; how to report a lost device; the payment verification rule; whether the organisation runs simulated phishing, and its policy text; the external sender banner wording; the approved way to sign in to company systems; the password manager's name; the DPO's contact; and the customer's own incident-plan headings, crisis roles and contacts (role_01's own-plan version, Cyber Governance Code D2), held as short rich-text slots.
 - **Voiced lines stay generic.** Slot values appear on screen, in documents, on the intranet and on reference cards, never in voiced lines (the voice cache is keyed on exact text; see `01_LEARNING_DESIGN.md` and BE-05).
 - **Branding.** Logo (with alt text), one accent colour (checked for AA contrast before it is accepted), display name, the email sender name, a welcome message, and the logo on the course's title screen (BE-20).
 - **Module selection.** Which modules and paths are offered, and switches for optional parts (dropping core_01's simulation question when the organisation runs no simulations).
@@ -620,12 +668,12 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 **Risks and open questions:**
 
-- **Renaming Larkspur or the cast.** Customers may ask. *Recommendation:* no. The fictional world and its voices are fixed; the customer's name appears on screen where the learner's own organisation is meant ("Report it the way we do at [organisation name]").
+- **Renaming the brand-set companies or their staff.** Customers may ask. *Recommendation:* no. The invented companies (Brightwell Foods, Tarrowby Logistics, Quayholt Insurance, Merrin & Sallow Architects) and their voices are fixed; the customer's name appears on screen where the learner's own organisation is meant ("Report it the way we do at [organisation name]").
 - **Values that change.** Phone numbers and procedures change. Versioning keeps old evidence accurate; a yearly "check your profile" reminder to the admin keeps it current.
 
 ### HA-12: Phishing simulation and report-button data
 
-**Priority and size:** P3, L.
+**Priority and size:** Not built, wish list. P3 (the plan said P3), L.
 
 **Why:**
 
@@ -679,7 +727,7 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 ### HA-13: Facilitated sessions
 
-**Priority and size:** P2, M.
+**Priority and size:** Not built, wish list. P3 (the plan said P2), M.
 
 **Why:** A team can play a module together on one screen with a facilitator, pausing to discuss (`01_LEARNING_DESIGN.md`, delivery modes). This is how staff who rarely use a computer get trained (`02_COMPLIANCE_MAPPING.md` section 5, "Everyone can complete it"), how boards exercise together (role_01; Cyber Governance Code D2), and how security champions run team events (core_01's "Inbox Defence"). Attendance has to be recorded as evidence.
 
@@ -709,16 +757,18 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 ### HA-14: Evaluation and surveys
 
-**Priority and size:** P3, M.
+**Priority and size:** Not built, wish list. P2 (the plan said P3), M.
 
 **Why:** Programmes are expected to show that training works, not just that it happened: NCSC CAF B6.b (routinely evaluated for reach and effectiveness), NIS2 IR 8.1 (tested for effectiveness), DSPT 3.1.3 (evaluation), Cyber Governance Code C4 (suitable metrics), NIST SP 800-50r1 (metrics and evaluation). The levels are set out in `assessment_and_evidence.md`.
+
+**Builds on the build:** level 2 already exists in the game: role-based pre and post checks on parallel forms (AB and BA pairs), a report rate, and the discrimination figure for organisers. HA-14 reports them and adds the surveys and behaviour measures. It keeps the build's rule: no effectiveness claims, only a before and after change on matched items for a cohort, with the caveats printed alongside. No pilot is planned.
 
 **What exists today:** a 1 to 5 rating and comments after a mission or lab, visible to administrators.
 
 **Design:**
 
 - **After each module (Kirkpatrick level 1):** at most three questions, skippable: how relevant this was to my job (1 to 5); how confident I am that I know what to do (1 to 5); one free-text "What would make this better?".
-- **Confidence before and after (level 2):** an optional single confidence question before the hook and again after the debrief.
+- **Confidence before and after (level 2):** an optional single confidence question with the pre-check and again with the post-check.
 - **Annual culture pulse (level 3 indicators):** six to eight statements about reporting and help-seeking, aligned with NCSC CAF B6.a ("I know how to report something suspicious"; "If I clicked a phishing link I'd report it straight away"; "I'd feel safe reporting a mistake").
 - **Behaviour data (level 3):** report-button and simulation data (HA-12); security-related service desk tickets; password manager and MFA take-up from the customer's own systems, entered as monthly figures or imported by CSV.
 - **Results (level 4):** incidents and their causes, and fraud attempts stopped, entered by the security team with a short note.
@@ -739,7 +789,7 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 ### HA-15: Data protection and platform trust
 
-**Priority and size:** MVP, M.
+**Priority and size:** Not built, wish list. P2 (the plan said MVP), M.
 
 **Why:** For the course, each customer organisation is the controller of its staff's training data, and the operator of Hacktivity is its processor. UK GDPR Art 28 (the same article number in EU GDPR) sets what the contract between them must say, and that a processor may use another processor only with the controller's prior written authorisation, specific or general, with notice of changes so the controller can object. Art 30(2) requires the processor to keep records of its processing; Art 32 requires security appropriate to the risk; Art 33(2) requires the processor to notify the controller "without undue delay after becoming aware of a personal data breach"; Art 5(1)(e) requires personal data to be kept no longer than necessary ([UK GDPR on legislation.gov.uk](https://www.legislation.gov.uk/eur/2016/679/contents)). Customers' procurement and security teams ask for a data processing agreement, a sub-processor list, the hosting location, a retention schedule, deletion and export on request, and an audit log, before any staff data is loaded.
 
@@ -818,7 +868,7 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 ### HA-16: Platform localisation
 
-**Priority and size:** P3, M.
+**Priority and size:** Not built, wish list. P3 (the plan said P3), M.
 
 **Why:** Multinational customers, EU customers under NIS2 and DORA, and staff whose first language isn't English need the platform in their language, alongside the game's own localisation (BE-06).
 
@@ -847,7 +897,7 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 ### HA-17: Learner home
 
-**Priority and size:** MVP, M.
+**Priority and size:** Not built, wish list. P3 (the plan said MVP), M.
 
 **Why:** Staff need one page that tells them what is due and lets them start or carry on in one click. Modules are short and can be split over sittings (BE-12), so resuming has to be effortless. The reference cards, certificates and policies need a home.
 
@@ -884,7 +934,7 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 ### HA-18: Licensing and billing
 
-**Priority and size:** P3, M.
+**Priority and size:** Not built, wish list. P3 (the plan said P3), M.
 
 **Why:** The course is sold to organisations per seat: pilots need free trials, and larger customers pay against an invoice and a purchase order rather than by card. Seats used through an LMS (HA-10) have to be counted too.
 
@@ -914,7 +964,7 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 ### HA-19: Content versioning and release notes
 
-**Priority and size:** P2, S.
+**Priority and size:** Not built, wish list. P2 (the plan said P2), S.
 
 **Why:** Each record must show which version of a module a learner took (HA-05). Content has to be reviewed and kept current: PCI DSS 12.6.2 (review at least every 12 months), CIS 14.1, NIST AT-2 (keep content current), NIS2 IR 8.1 (planned intervals). Auditors ask what changed and when. core_17 gets a new edition each year (BE-13).
 
@@ -947,7 +997,7 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 ### HA-20: Video hosting, captions and transcripts
 
-**Priority and size:** P2, S.
+**Priority and size:** Not built, wish list. P3 (the plan said P2), S.
 
 **Why:** Explainer videos (EX-02, EX-03) play in the game (MG-21) and on the learner's pages. WCAG 2.2 AA needs captions for prerecorded video (1.2.2) and audio description (1.2.5); the transcript is the equivalent for anyone who prefers to read. Watching needs a record when a video is part of a module.
 
@@ -975,7 +1025,7 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 ### HA-21: Microlearning schedule
 
-**Priority and size:** P2, M.
+**Priority and size:** Not built, wish list. P3 (the plan said P2), M.
 
 **Why:** One sitting a year is quickly forgotten; spaced practice works better (Cepeda and others, 2006, in `01_LEARNING_DESIGN.md`). Frameworks ask for reminders through the year: HIPAA 164.308(a)(5)(ii)(A) (security reminders), NCSC CAF B6 (ongoing reminders and top-up training), NIS2 IR 8.1 (activities repeated over time). The course's monthly drills pathway needs a schedule.
 
@@ -1005,7 +1055,7 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 ### HA-22: Learning record store
 
-**Priority and size:** P2, M.
+**Priority and size:** Not built, wish list. P3 (the plan said P2), M.
 
 **Why:** The game's evidence, as standard xAPI statements (BE-14), needs somewhere to live: for reporting and analysis, for learners launched through cmi5 from a customer's LMS (HA-10), and for customers who want it in their own learning record store.
 
@@ -1037,7 +1087,7 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 ### HA-23: Accessible platform and lab sheet theme
 
-**Priority and size:** MVP, M.
+**Priority and size:** Not built, wish list. P2 (the plan said MVP), M.
 
 **Why:** The course commits to WCAG 2.2 AA (`DECISIONS_PENDING.md`, D9). Mandatory training has to be completable by everyone (DSPT 3.2.1's 95% includes directors, trustees and volunteers; NCSC CAF B6.b "from executives to the most junior"). UK public sector customers must meet the [Public Sector Bodies (Websites and Mobile Applications) (No. 2) Accessibility Regulations 2018](https://www.gov.uk/guidance/accessibility-requirements-for-public-sector-websites-and-apps), which cover intranets and extranets and require an accessibility statement; content they pay for is not exempt as third-party content.
 
@@ -1067,7 +1117,7 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 ### HA-24: Public API and webhooks
 
-**Priority and size:** P2, M.
+**Priority and size:** Not built, wish list. P3 (the plan said P2), M.
 
 **Why:** Larger customers run HR, governance, risk and compliance (GRC) and identity systems that want the training record without someone exporting a file every month. They also want to act the moment something changes: open a case when a module goes overdue, or hold access when a refresher lapses (the open question at the end of HA-03). Keyed access the customer's own systems can read, and events they can subscribe to, make the training record something the rest of their tooling can use.
 
@@ -1097,7 +1147,7 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 ### HA-25: Partner role
 
-**Priority and size:** P3, M.
+**Priority and size:** Not built, wish list. P3 (the plan said P3), M.
 
 **Why:** Resellers and managed service providers (MSPs) run the course for several client organisations and want one place to set them up and support them, without a separate sign-in per client and without seeing each client's staff by name. HA-01 keeps every customer's data apart; a partner role lets one trusted outside party work across several of them within limits the customer sets. HA-01 already notes this as a P3 extension.
 
@@ -1128,7 +1178,7 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 ### HA-26: Organisation setup checklist
 
-**Priority and size:** MVP, S.
+**Priority and size:** Not built, wish list. P3 (the plan said MVP), S.
 
 **Why:** The first time an organisation goes live, several things must be in place before staff are invited, or the first learners meet an empty profile, a missing policy or a rule that assigns the wrong people. A short go-live checklist that holds invitations until each step is done stops a botched launch, and gives the admin (or the partner in HA-25) one page that says what is left.
 
@@ -1161,17 +1211,12 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 ## Build order
 
-The MVP slice that lets a first customer run Induction Essentials with real staff:
+Replaces the old MVP slice. The built product already runs on Hacktivity as ordinary missions, so nothing here blocks it.
 
-1. **HA-15** (the DPA, retention defaults and the audit log), because staff data can't be loaded without it, and other features write to the audit log.
-2. **HA-01** (organisations, departments, roles, CSV import) and **HA-11** (the profile the game needs).
-3. **HA-05** (records, with a version stamp from HA-19) alongside the engine's BE-01 and MG-20, since nothing else can be checked without them.
-4. **HA-03** (rules and due dates), with the basic emails from HA-04 brought forward.
-5. **HA-17**, **HA-07**, **HA-06** and **HA-09**, so learners, managers and auditors each have their view.
-6. **HA-26** (the go-live checklist), so a first customer can't invite staff before the profile, policies, paths, records and a test learner are in place.
-7. **HA-23** throughout, with an audit before the pilot.
-
-Then, for wider sales (P2): HA-02, HA-10, HA-04 in full, HA-19, HA-08, HA-22, HA-20, HA-21 and HA-13. Then P3: HA-12, HA-14, HA-16, HA-18.
+1. **Nothing, until the user says so.** No Hacktivity change happens without the user's go-ahead.
+2. **Next: the reporting-route setting** (the first step of HA-11), once the user answers the route options form. It is small, the game side is already built, and it makes every debrief end on the customer's own route.
+3. **If the awareness product is offered to organisations (P2):** HA-15 first (before any staff data is loaded), then HA-01 and HA-03 (groups, and assignment that replaces the organiser's manual ordering and AB/BA split), HA-19 (episode versions), HA-05 (completion records built from the awareness-measure blocks), HA-09 and HA-14 (organiser views of pre and post change, report rate and the discrimination figure, in aggregate, with no effectiveness claims), and HA-23 throughout.
+4. **Then, at scale (P3):** HA-02, HA-04, HA-06, HA-07, HA-08, HA-10, HA-12, HA-13, HA-16, HA-17, HA-18, HA-20, HA-21, HA-22, HA-24, HA-25 and HA-26.
 
 ## Proposed additions to the catalogue
 

@@ -4,6 +4,40 @@ How the awareness course makes sure every member of staff can complete every mod
 
 Paths: `JS/` is `public/break_escape/js/`. Engine features are in `features/break_escape_engine.md`. Sources checked in October 2026 are listed at the end. This is a plan, not legal advice.
 
+## Build status
+
+The awareness product on main (Incident Simulations: Critical Cases: episodes E1 to E7, seven defend-only variants and 24 check missions) is built on the social-engineering overlays, so its accessibility today is what those overlays give. The rest of this file stays as the plan. Where it and the build disagree, the build wins (`../04_BUILT_SO_FAR.md`).
+
+**Built: what the social overlays already do.** Every overlay the awareness product uses (the episode runner and its step strip, the OSINT browser, the mail client, the landing-page builder, inbox triage with its call, voicemail, push, page, text and QR cards, the flip view and the debrief) follows the social build's conventions:
+
+- every action reachable by keyboard, with its own Close button and Esc to close; drag-to-link has a pick-and-confirm alternative;
+- `aria-live="polite"` on score and "noted" regions;
+- no motion under `prefers-reduced-motion`;
+- ticks, crosses and marks always paired with words; teaching notes behind a visible button as well as on hover;
+- 44 pixel touch targets, and a single column below about 700 pixels;
+- voicemail items shown as transcripts (the only text-alternative content today);
+- the game menu's Display page: theme, HUD size and zoom.
+
+**Built: the readable face is Source Sans 3** (decision X). Every string the player reads or compares (mail, address bars, OSINT pages, the builder, triage, the board) is set in Source Sans 3, self-hosted under the SIL OFL 1.1, with Latin and Cyrillic. It was chosen over Atkinson Hyperlegible Next, which has no Cyrillic, so a look-alike domain cannot give itself away by falling back to another font. Look-alike domains are drawn as typed. This replaces the unnamed "readable sans-serif" in section 4.5, and Atkinson is not used.
+
+**Built: the chosen avatar always wins (aw9).** The player's chosen avatar is used in every awareness shell and the portrait follows it. The default hooded fallback stays for a player who has not chosen. This settles the plan's "no hooded hackers" point for avatars (section 5.4) in the player's favour: the course does not override a learner's own choice. Episode hosts and staff are ordinary office characters at the brand-set companies.
+
+**Built: no blame and no fear.** Every debrief ends with the habit to keep, the customer's reporting route and a no-blame line; reporting a genuine item is never penalised (sections 5.2 and 5.3).
+
+**Missing (New):**
+
+| Gap | Feature | Status |
+|---|---|---|
+| The text route: every episode, defend-only variant and check playable as text, with the same records | BE-03 | Not built. The episode runner's stages are HTML overlays already, which makes a text route mostly a matter of the training room and host conversation, not the scored parts |
+| Accessibility checks in CI (axe-core on every overlay, contrast of tokens, reduced-motion lint) | BE-26 | Not built. CI runs the social tests and the social validator only |
+| A full screen-reader audit of the awareness product | BE-04 | Not done; listed as "later" in the build's own plan |
+| Settings beyond Display: captions, text size, timers off, dialogue pace, voice | BE-04 | Not built |
+| Pause that also stops the clock | BE-23 | Only a scene pause today |
+| Unicode name entry (Siobhán, O'Neill, Wiśniewski) | BE-25 | Not built |
+| An authorable title screen and tutorial, so the course does not open on another product's welcome | BE-20 | Not built |
+
+Order: BE-03 and BE-26 come first, with the screen-reader audit before any customer pilot, because WCAG 2.2 AA through a conforming alternate version (section 3) depends on the text route. They are among the engine gaps every new episode needs (`../04_BUILT_SO_FAR.md` section 4).
+
 ## Who this is for
 
 Mandatory training reaches everyone, so the course meets most kinds of need in any organisation of a few hundred people:
@@ -46,7 +80,7 @@ What it means for the course:
 
 ### Public Sector Bodies (Websites and Mobile Applications) (No. 2) Accessibility Regulations 2018
 
-SI 2018/952, in force from 23 September 2018. Larkspur's own customers (councils, NHS sites, schools, care homes) are the kind of body these regulations cover, and so are many organisations that will buy the course.
+SI 2018/952, in force from 23 September 2018. Many organisations that will buy the course (councils, NHS sites, schools, care homes) are the kind of body these regulations cover.
 
 - **The duty.** Public sector bodies "must comply with the accessibility requirement" (regulation 6), which is to make a website or app accessible "by making it perceivable, operable, understandable and robust" (regulation 3). A body may claim disproportionate burden only after an assessment (regulation 7), and must publish an accessibility statement (regulation 8).
 - **The standard.** A site is presumed to conform if it meets the Level A and AA success criteria of WCAG "as amended from time to time" (regulation 9). No version is fixed, so the current version applies.
@@ -267,7 +301,7 @@ The engine does have good foundations to copy: an accessible interaction menu (`
 
 - `lang="en-GB"` on every page (and per locale later, BE-06).
 - The canvas is hidden from assistive technology and replaced, for screen reader purposes, by:
-  - a **location region** ("Operations office. Leo is at the next desk. Your desk, a printer, a notice board."), from a short description authored per room plus the places list, announced politely on entering a room;
+  - a **location region** ("Training room at Brightwell Foods. Adaeze Okafor is by the kiosk. A kiosk, a poster, a window."), from a short description authored per room plus the places list, announced politely on entering a room;
   - the **places and people list** (4.2).
 - **Conversations** become a log (`role="log"`) where each line is announced with the speaker's name; choices are a numbered list of buttons, and when they appear their count is announced ("Three choices").
 - **Minigames** are labelled dialogs whose state changes are announced through a polite status region, as the dusting minigame does.
@@ -307,7 +341,7 @@ The engine does have good foundations to copy: an accessible interaction menu (`
 **Change:**
 
 - All HTML interface text in `rem`, scaled by the text size setting from 100% to 200% without loss of content or function.
-- A readable sans-serif font for anything longer than a short label (dialogue, documents, emails, questions), with the pixel fonts kept for headings and short labels. "Readable font" in settings switches every text to the sans-serif.
+- **Built in the social overlays:** Source Sans 3 for every string the player reads or compares (see Build status). **New:** extend it to anything else longer than a short label (dialogue, documents, questions), with the pixel fonts kept for headings and short labels. "Readable font" in settings switches every text to Source Sans 3.
 - Line height of about 1.5 for paragraphs, left-aligned text, no justified text, no long passages in capitals or italics.
 - The dialogue panel, documents, menus and minigames reflow at 320 CSS pixels wide and tolerate the WCAG text spacing overrides.
 - Reading support for dyslexia following the British Dyslexia Association's advice for training materials: plain language without acronyms or metaphors, one point at a time, materials available in advance (the reference card), and time to respond.
@@ -466,7 +500,7 @@ People are the organisation's best detection system, not its weakest link (desig
 | "You fell for it." / "You failed." | "That one fooled lots of people. Here's how to spot the next one." |
 | "Human error was to blame." / "People are the weakest link." | "It was built to look normal. Reporting it fast is what made the difference." |
 | "Careless", "should have known" | Describe the situation: "busy, and expecting that email" |
-| Any hint of discipline for reporting | "Thanks for telling me." (Ama's first words, `03_WORLD_AND_CAST.md`) |
+| Any hint of discipline for reporting | "Thanks for telling me." **Built:** every debrief has a no-blame line, such as E1's "A miss here just shows where to look next time." |
 
 In the story, the person who reports their own mistake is thanked. Outcomes turn on how fast something was reported, not on the click. Over-reporting is never marked down (core_01's C01-B9 has no "Not yet").
 
@@ -486,14 +520,14 @@ The OpenIDEO Cybersecurity Visuals Challenge, run with the William and Flora Hew
 
 For this course:
 
-- **Ordinary attackers.** Attackers are shown as ordinary and businesslike, mostly as voices, messages and websites (`03_WORLD_AND_CAST.md`, "Attackers"). Jo Fairweather, the ethical tester, is a funny, candid professional.
+- **Ordinary attackers.** Attackers are shown as ordinary and businesslike, mostly as voices, messages and websites. In the built episodes the learner plays the attacker in the attack half, as an ordinary person writing an ordinary-looking message from templates, never as a villain.
 - **No villain imagery:** no hoodies, balaclavas, skulls, green code, falling "matrix" characters or glowing padlocks anywhere in a module, its posters (EX-04, EX-08) or its videos. The visual language is people, offices, phones and emails.
 - **Engine defaults to change:**
   - the avatar menu previews `female_hacker_hood_v2` before a player has chosen (`app/models/break_escape/player_preference.rb`, line 44);
   - retired avatars fall back to `male_hacker_hood_v2` (line 40), and so does the game page's default sprite (`show.html.erb`, line 188);
   - the avatar list includes hooded hackers, a spy and a "nerd" (lines 10 to 25).
 
-  Course scenarios limit avatars with `validSprites` to office avatars, and a course avatar set is proposed in `break_escape_engine.md`.
+  **Settled by the build (aw9):** the player's chosen avatar always wins and the portrait follows it; the default hooded fallback stays for a player who has not chosen. The course does not restrict a learner's choice. What changes is the default and the offer: an office avatar set (5.6), offered first when a player chooses, as proposed in `break_escape_engine.md`.
 - **The credits visualiser's matrix mode** and the `cyber` theme's padlock logo (`README_scenario_design.md`, line 206) are replaced by the workplace style (BE-02, BE-20).
 - **Generic sprites:** the "hooded hacker" and "spy" character sprites are not used for anyone in the course (`research/current_state_break_escape.md`, "Art").
 
@@ -519,7 +553,7 @@ For this course:
   - ages from 20s to 60s, a range of skin tones;
   - head coverings (hijab, turban), a wheelchair user, hearing aids, glasses;
   - described by appearance, not labelled "male" or "female";
-  - no default that is a hooded hacker.
+  - offered first, so few players reach the hooded fallback; the player's own choice still wins (aw9).
 - **Names:**
   - The name field accepts only `[a-zA-Z0-9_ ]`, 1 to 20 characters (`player_preference.rb`, lines 61 to 62), so Siobhán, O'Neill, Anne-Marie and Wiśniewski can't be typed.
   - Allow letters from any script, apostrophes, hyphens and spaces, and a longer limit.
@@ -528,7 +562,7 @@ For this course:
 
 ### 5.7 Neurodivergent learners
 
-- **Literal and predictable:** literal instructions, a predictable structure (the seven beats are always in the same order), and a clear end to each beat.
+- **Literal and predictable:** literal instructions, a predictable structure (every episode runs brief, attack, flip, defend, debrief, and the step strip shows where the learner is), and a clear end to each stage.
 - **No trick questions** ("no gotchas" is already a design rule).
 - **Sensory controls:** music, ambience, voice and motion, with no sudden loud sounds (BE-21).
 - **The text route** for anyone who finds a busy 2D world tiring.

@@ -67,6 +67,11 @@ Each has a working answer in the plan; confirm or change.
 | Defend-only for every role episode | Recommendation: yes, every episode ships a defend-only variant, as E1 to E7 do (the overview still says "none" for role_01 and role_07) | `00_COURSE_OVERVIEW.md` |
 | Secure / Developing / Not yet | Recommendation: drop them as reported bands; keep as descriptive columns only, since the build reports per-item results, not bands | `MODULE_TEMPLATE.md`, assessment files |
 | Company picks for E8 to E13 | Quayholt (E8), Merrin & Sallow (E9), Tarrowby (E10), Cobbleford Care (E11, proposed), Brightwell (E12), Lintgate Communications (E13, proposed) | `03_WORLD_AND_CAST.md` |
+| Verify in the check forms | The finance, executive, helpdesk and mobile check forms turn Verify on, but `BRAND_SET.md` §6 says the checks measure Trust, Report and Delete only. Confirm which is intended, then update the other (a build question, not plan) | `../phishing_and_social_engineering/awareness/BRAND_SET.md` |
+| Platform priorities | Next: HA-11 (the route setting only); P2: HA-05, 09, 14, 03, 15, 19, 23, 01; P3: the rest, including HA-06, 07, 17 and 26 (were MVP) | `features/hacktivity.md` |
+| Name of the new-starter path | "the new-starter path" for now (was Induction Essentials) | overview, hacktivity |
+| Outcome-rating bands, if ever reported | Starting point only: bands at 80 and 50; pre-check weight 0, post-check weight 2 | `features/assessment_and_evidence.md` |
+| "Delivered today" compliance claims | Check they are not overstated before any customer sees them | `02_COMPLIANCE_MAPPING.md` |
 | Kids game verdicts and habit | Kids sorter verdicts "Trust" and "Tell a grown-up" (a third, "Leave it", open); fix the kids habit word for word as the adult rule is | `../kids_cyber_game/` |
 
 ## Module-level open questions
