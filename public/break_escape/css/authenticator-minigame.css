@@ -26,7 +26,8 @@
     display: inline-block; padding: 2px 10px; background: var(--auth-accent); color: #fff;
     border-radius: 3px; font-weight: 800; letter-spacing: 0.14em; font-size: 14px;
 }
-.auth-intro { margin: 0 0 12px; font-size: 15px; line-height: 1.4; color: var(--auth-dim); }
+/* The intro sits on the dark overlay (not the light card), so it needs a light tone to read (T7-2). */
+.auth-intro { margin: 0 0 12px; font-size: 15px; line-height: 1.4; color: #d7dde6; }
 
 /* decision mode: when and how many (E3-11).
    The panel is a light surface so its dark ink reads against the dark overlay (M-2). */
@@ -42,7 +43,11 @@
 .auth-choice-radio { margin: 2px 0 0; flex: none; }
 .auth-choice-opt-label { color: var(--auth-ink); }
 .auth-confirm { align-self: flex-start; padding: 8px 18px; font: inherit; font-weight: 700; }
-.auth-confirm:disabled { opacity: 0.5; cursor: default; }
+/* Keep the disabled label legible rather than pale-on-pale (T7-2). The `.auth-choice` prefix
+   outranks the ui theme's `[data-ui-theme] .minigame-button { background: none }` (which ties a
+   bare `.auth-confirm:disabled` and would leave the label on a transparent button over the light
+   card). Dark text on a light-grey fill reads whether or not that fill lands. */
+.auth-choice .auth-confirm:disabled { opacity: 1; background: #d3dae2; border-color: #b9c2cd; color: #3a4452; cursor: default; }
 
 /* the collapsed tail of a large burst */
 .auth-feed-more { margin: 2px 0 0; text-align: center; font-size: 13px; font-style: italic; color: #c3ccd6; }

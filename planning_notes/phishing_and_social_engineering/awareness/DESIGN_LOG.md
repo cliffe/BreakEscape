@@ -313,3 +313,11 @@ Live (keyless :3001, own games): the host chat in the E1-E4 defend shells resolv
   authored subject. Test in `social-engine-r4-triage`.
 - Live (keyless :3001, own games 4615 and 4617): E6 defend's Parceline card title reads without dots;
   E5 defend at 92% with Padlock myth and Secrecy on zero reads "Getting there".
+
+### E3 MFA decision — P7 leftovers (2026-10-27)
+
+PLAYTEST_P7_E1_E4.md left two E3 items.
+- **m-4/m-5 residue.** The full episode's conceptPanel heading still read "Why the call and the prompts worked", false after a refused call (stage skipped, no prompts). The body was already technique-general from P6, so the fix is the heading: now "Why the call and the prompts are hard to stop", which holds whether or not the MFA stage ran. Chose the wording route over an engine outcome-variant: a single neutral heading reads correctly in every outcome and needs no change to debrief-view (engine, and near other fixers). The defend-only fragment keeps its own defender-framed heading ("Why these are hard to catch"); conceptPanel is already value-exempt in the parity test, so no fragment change and no defend-shell regen.
+- **T7-2 contrast.** The choice-panel intro was mid-grey (`--auth-dim`) on the near-black overlay, and the disabled Confirm was pale-on-pale. The intro is now a light tone (#d7dde6) for the dark overlay. The disabled Confirm is dark text on a light-grey fill (#3a4452 on #d3dae2, ~7:1). Root cause of the earlier washed-out button: `ui-themes.css` has `[data-ui-theme] .minigame-button { background: none }` at specificity (0,2,0), which tied a bare `.auth-confirm:disabled` and won on order, leaving white-on-transparent over the light card; the rule is now `.auth-choice .auth-confirm:disabled` (0,3,0) with dark text so it reads even if the fill is overridden.
+
+Live (keyless :3001, fresh game, 1400x1000): one full run 24/24 PASS — the whole E3 flow plus the choice-panel contrast (intro rgb(215,221,230); disabled Confirm rgb(58,68,82) on rgb(211,218,226), still disabled) and the debrief conceptPanel heading "Why the call and the prompts are hard to stop". E3 parity green; both E3 shells validate `--strict-social`.
