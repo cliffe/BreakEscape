@@ -736,6 +736,20 @@ owner sets the build live on the default branch at release.
 - **Proof:** dev :3000: delete a throwaway account with and without the password; S11 step 4 proves
   the marker once S3 exists.
 
+### S15. Hacktivity: account suspension (owner answer 7; Opus review)
+
+- **Why:** the owner chose no manual revoke of Steam rows; an admin suspends the account instead.
+- **Build:** `users.suspended_at` and `suspended_reason` (admin-only), set and lifted from the
+  Administrate user page, both audited (who, when, why). A suspended user can't sign in by any route
+  (password, emailed token, Steam ticket, Play app); Devise `active_for_authentication?` false with a
+  plain message; existing sessions end at their next request (Warden hook). Suspension changes no
+  entitlement row, so lifting it restores everything. The admin revoke action for `steam` rows is
+  removed (UI and controller refuse it); S2's interim rule for old admin-revoked Steam rows stays.
+  Staff can't suspend themselves; suspending an admin needs another admin. The anonymiser keeps the
+  columns (classified).
+- **Tests:** each sign-in route refused while suspended; a live session ends; lifting restores
+  access with rows untouched; Steam admin revoke refused; audit rows written.
+
 ## 3. Testing without a Steam app id or key
 
 | Layer | Fake | Where | What it proves |
@@ -846,16 +860,18 @@ they differ. 1 demo Steam sign-in: yes. 2 account-wide access in the demo: keep 
 rules first (STORE_POLICY.md: ask Valve through a Steamworks support ticket; the demo's Steam
 sign-in stays off until Valve answers). 3 refuse admin, account_manager and vip. 4 refuse the role
 change until support unlinks. 5 family-shared, free weekends and site licences: no entitlement.
-6 reopen the same row, keep the history. 7 admin revoke: **not decided** (the owner rejected both
-"a hold with Release" and "next sign-in restores it"; follow-up pending). 8 support unlink revokes
+6 reopen the same row, keep the history. 7 admin revoke (answered later the same day): **no manual
+revoke of a Steam row**; Steam ownership stays Steam's to decide. For abuse, an admin **suspends the
+account** instead (a new, small suspension feature: sign-in blocked on every platform, sessions
+ended; see S15). 8 support unlink revokes
 that account's Steam access. 9 accept one emailed token per new Steam player. 10 Playtest counts as
 the full game while it lasts. 11 persona from Steam's Web API on the server. 12 if the sandbox
 fails: relaunch with --no-sandbox plus the extra guards. 13 launch unsigned; sign if warnings
 appear. 14 restartAppIfNecessary in packaged builds. 15 no Steam sign-in on the website for now.
 16 no remember-me; each launch signs in by ticket. 17 Web API down: normal sign-in page with a
 short note. 18 overlay on the Deck only, browser elsewhere. 19 STEAM+X now, automatic keyboard
-later. 20 achievements: a later plan. S14 (password before deletion and MFA-off for everyone):
-pending the owner's answer.
+later. 20 achievements: a later plan. S14 (password before deletion and MFA-off): **everyone**,
+on the website and in every app, as written in S14.
 
 1. **Steam sign-in in the demo app.** Recommendation: yes, once question 2 is answered, by setting the
    demo's app id; the code is built either way (S8, S10) and stays off while the id is null.
