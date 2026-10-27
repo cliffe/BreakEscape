@@ -6,7 +6,7 @@ import { initializePathfinder } from './pathfinding.js';
 import { initializeInventory, processInitialInventoryItems } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
 import { wallClearFrom, findClearStandPoint, sameRoomFrom, playerFeet } from '../systems/interaction-walls.js';
-import { aimX } from '../systems/interaction-reach.js';
+import { aimX, withoutChairsIfOthers } from '../systems/interaction-reach.js';
 import '../systems/door-gaps.js'; // registers open-doorway lookup for combat reach
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
 import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu } from '../ui/interaction-menu.js';
@@ -2036,7 +2036,7 @@ export async function create() {
         // reach (e.g. a memo lying right next to an NPC), don't guess — show a
         // disambiguation menu listing each by its observation text. This fixes the
         // "can't pick up items next to characters" problem, especially on touch.
-        const nearbyInteractables = gatherInteractablesNearClick(worldX, worldY);
+        const nearbyInteractables = withoutChairsIfOthers(gatherInteractablesNearClick(worldX, worldY));
         if (nearbyInteractables.length > 1) {
             const nativeEvent = pointer.event || {};
             showInteractionMenu(nearbyInteractables, nativeEvent.clientX, nativeEvent.clientY);
@@ -2505,6 +2505,7 @@ function gatherInteractablesNearClick(worldX, worldY) {
                     label: name,
                     detail,
                     icon,
+                    isChair: !!obj.isSwivelChair,
                     onSelect: () => {
                         facePlayerToward(aimX(obj), obj.y); // the object's centre, as the E key faces it
                         if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();

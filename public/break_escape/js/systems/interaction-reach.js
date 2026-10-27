@@ -55,3 +55,16 @@ export function aimX(sprite) {
     if (!(w > 0)) return sprite.x;
     return sprite.x - (sprite.originX ?? 0.5) * w + w / 2;
 }
+
+/**
+ * Drop swivel chairs from a tap's pick list when anything else was gathered with
+ * them: a chair pushed under a desk shouldn't turn "the keyboard" into a
+ * "Mail Workstation / chair" menu. Chairs on their own are left as they are.
+ *
+ * @param {Array<{isChair?:boolean}>} candidates
+ * @returns {Array} candidates without chairs, or all of them if only chairs
+ */
+export function withoutChairsIfOthers(candidates) {
+    const others = candidates.filter(c => !c.isChair);
+    return others.length ? others : candidates;
+}
