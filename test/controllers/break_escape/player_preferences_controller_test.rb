@@ -24,6 +24,25 @@ module BreakEscape
 
     # ─── GET /configuration ──────────────────────────────────────────────────
 
+    # Mounted in a host with nobody signed in: current_user is nil, so the page
+    # must turn the visitor away instead of raising "Player must exist".
+    test 'show signed out in a host redirects (html) or 403s (json) without creating a preference' do
+      was_standalone = BreakEscape.configuration.standalone_mode
+      BreakEscape.configuration.standalone_mode = false
+      ApplicationController.send(:define_method, :current_user) { nil }
+      begin
+        assert_no_difference 'PlayerPreference.count' do
+          get configuration_url
+          assert_response :redirect
+          get configuration_url, headers: { 'Accept' => 'application/json' }
+          assert_response :forbidden
+        end
+      ensure
+        ApplicationController.send(:remove_method, :current_user)
+        BreakEscape.configuration.standalone_mode = was_standalone
+      end
+    end
+
     test 'show returns 200 and renders the configuration page' do
       get configuration_url
       assert_response :success

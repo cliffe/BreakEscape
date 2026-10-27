@@ -68,6 +68,10 @@ module BreakEscape
     private
 
     def set_player_preference
+      # Signed out in the host (no current_user): same answer as any other engine page
+      # (redirect for HTML, 403 for JSON) instead of building a preference with no player
+      raise Pundit::NotAuthorizedError, 'sign in required' if defined?(Pundit) && current_player.nil?
+
       @player_preference = current_player_preference || create_default_preference
       Rails.logger.info "[BreakEscape] set_player_preference: #{@player_preference.inspect}"
     end

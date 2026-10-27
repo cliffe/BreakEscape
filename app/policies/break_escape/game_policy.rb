@@ -14,6 +14,10 @@ module BreakEscape
       show?
     end
 
+    def scenario_map?
+      show?
+    end
+
     def ink?
       show?
     end
