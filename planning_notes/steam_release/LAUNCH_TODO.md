@@ -63,9 +63,19 @@ land; keep each line short and say where the detail lives.
 - [ ] Phone landscape layout pass (shell pages 2-2.3 screens tall at 915x412; Mission Brief Continue
       overlaps text; pause menu scrolls): in progress.
 - [ ] Hyphenated handles break the in-game name save on the character page: in progress.
-- [ ] Steam packages (STEAM_PLAN.md): S1, S2, S3, S5a, S5b, S6, S7, S8, S9a, S9b, S10 done and
-      reviewed; S4 and S14 wait for the owner's answers (S14 scope, admin revoke); then S11 (end to
-      end on the fakes), S2p (Playtest).
+- [ ] Steam packages (STEAM_PLAN.md): S1–S3, S2p, S5a, S5b, S6–S10, S14, S15 done and reviewed;
+      S4 review fixes (incl. a fresh Steam check before Link) in progress; S11 run: 12 scenarios
+      plus S4's 6 passed on the fakes (S11 scenario 4, a copied cookie, proven by tests only).
+- [ ] S15 live admin check (suspend and lift from the admin page): needs the owner's OK for a
+      throwaway dev admin, or a dev admin login.
+- [ ] Owner questions from S15: should suspension pause billing or free the org seat; should it
+      power off the user's VMs (the VNC console and VMs keep running today).
+- [ ] Restart the :3000 dev server: S14 throttles (rack_attack) and the web app's engine hook
+      (config/initializers/break_escape.rb). Re-auth lockout counts need `bin/rails dev:cache` in dev.
+- [ ] Bugs found on the way: `/break_escape/games/:id/scenario_map` raises (GamePolicy has no
+      `scenario_map?`); a signed-out request to `/break_escape/configuration` raises "Player must
+      exist" instead of redirecting; Hacktivity loads the engine twice (the Gemfile path
+      `../BreakEscape` also holds the `BreakEscape-merge` worktree).
 - [ ] Windows build of the desktop app (needs wine or a Windows machine).
 - [ ] Backlog from reviews: in-page consent dialog instead of `window.confirm`; remember a declined
       restore per account; show "already owned" during restore; fix the pre-existing
