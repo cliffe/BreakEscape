@@ -841,6 +841,22 @@ desktop builds nobody outside development has.
 
 ## 7. Open questions
 
+**Owner answers (2026-10-27).** Taken as decisions; they override the recommendations below where
+they differ. 1 demo Steam sign-in: yes. 2 account-wide access in the demo: keep it, check Valve's
+rules first (STORE_POLICY.md: ask Valve through a Steamworks support ticket; the demo's Steam
+sign-in stays off until Valve answers). 3 refuse admin, account_manager and vip. 4 refuse the role
+change until support unlinks. 5 family-shared, free weekends and site licences: no entitlement.
+6 reopen the same row, keep the history. 7 admin revoke: **not decided** (the owner rejected both
+"a hold with Release" and "next sign-in restores it"; follow-up pending). 8 support unlink revokes
+that account's Steam access. 9 accept one emailed token per new Steam player. 10 Playtest counts as
+the full game while it lasts. 11 persona from Steam's Web API on the server. 12 if the sandbox
+fails: relaunch with --no-sandbox plus the extra guards. 13 launch unsigned; sign if warnings
+appear. 14 restartAppIfNecessary in packaged builds. 15 no Steam sign-in on the website for now.
+16 no remember-me; each launch signs in by ticket. 17 Web API down: normal sign-in page with a
+short note. 18 overlay on the Deck only, browser elsewhere. 19 STEAM+X now, automatic keyboard
+later. 20 achievements: a later plan. S14 (password before deletion and MFA-off for everyone):
+pending the owner's answer.
+
 1. **Steam sign-in in the demo app.** Recommendation: yes, once question 2 is answered, by setting the
    demo's app id; the code is built either way (S8, S10) and stays off while the id is null.
 2. **Account-wide access in the free demo app.** A subscriber or Play buyer gets the whole game in
