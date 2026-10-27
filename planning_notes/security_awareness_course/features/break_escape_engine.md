@@ -78,7 +78,7 @@ Paths: `JS/` is `public/break_escape/js/`. `game.rb` is `app/models/break_escape
 | BE-41 | Role swap | Built | Built |  |  |  |
 | BE-42 | Readable font | Built | Built |  |  |  |
 
-Build order now follows `../04_BUILT_SO_FAR.md` §4. First, the built product is finished from its own resume plan (`../../phishing_and_social_engineering/awareness/HANDOVER.md` §3); nothing here starts while it is on hold unless the user says so. Then the engine gaps every new episode needs: BE-19, BE-20, BE-23, BE-25 (name entry) and BE-30, with BE-03, BE-04 and BE-26 running alongside, because every new screen has to work in both routes. Then what E8 to E13 need, as each episode is designed: BE-16's consequence flip for E11, and BE-10 and BE-28 if E12's design uses them. The P2 items land with the remaining core topics and role extensions.
+Build order now follows `../04_BUILT_SO_FAR.md` §4. First, the built product is finished from its own resume plan (`../../phishing_and_social_engineering/awareness/HANDOVER.md` §3; the product resumed on 2026-10-27, and host art, human timing runs and the course facilitator guide remain). Then the engine gaps every new episode needs: BE-19, BE-20, BE-23, BE-25 (name entry) and BE-30, with BE-03, BE-04 and BE-26 running alongside, because every new screen has to work in both routes. Then what E8 to E13 need, as each episode is designed: BE-16's consequence flip for E11, and BE-10 and BE-28 if E12's design uses them. The P2 items land with the remaining core topics and role extensions.
 
 ### BE-01: Assessed decisions
 
@@ -763,9 +763,9 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 
 **Priority and size:** P2 (was MVP), S for what is left.
 
-**Build status:** **Partly built**, by per-episode state (`episode_<id>_state`, which resumes at the stage left when the kiosk reopens), persisted mail state and drafts (BE-35), landing-page drafts and the triage first-attempt guard. An episode is about 13 minutes (E3 about 17), a defend-only variant about 8 and a check 4 to 5, so the slot is met (R12). The plan entry now asks only for checkpoints inside a stage if playtests show the need. The design below assumes a multi-room module and BE-24; in the one-room frame neither is needed.
+**Build status:** **Partly built**, by per-episode state (`episode_<id>_state`, which resumes at the stage left when the kiosk reopens), persisted mail state and drafts (BE-35), landing-page drafts and the triage first-attempt guard. An episode is about 15 minutes (E6 and E7 about 16), a defend-only variant about 8 and a check about 9, so the slot is met (R12). The plan entry now asks only for checkpoints inside a stage if playtests show the need. The design below assumes a multi-room module and BE-24; in the one-room frame neither is needed.
 
-**Why:** The course was planned "in sittings of 10 to 20" minutes (`00_COURSE_OVERVIEW.md`); the built episodes are about 13 minutes (R12), and many staff work on phones between jobs. A learner must be able to stop at a natural break and come back to the same place, quickly, on another device, without replaying what they have done or losing evidence.
+**Why:** The course was planned "in sittings of 10 to 20" minutes (`00_COURSE_OVERVIEW.md`); the built episodes are about 15 minutes (R12), and many staff work on phones between jobs. A learner must be able to stop at a natural break and come back to the same place, quickly, on another device, without replaying what they have done or losing evidence.
 
 **What exists today:**
 
@@ -944,7 +944,7 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 
 **Risks and open questions:**
 
-- On a shared screen the facilitator must read out or describe what is shown for anyone who can't see it; the facilitator notes should say so.
+- On a shared screen the facilitator must read out or describe what is shown for anyone who can't see it; the facilitator guide should say so (one guide for the course, written last; per-episode notes are at most an extension).
 - Group records must not be read as individual evidence.
 - Open: phone voting from the audience? Recommendation: later, with HA-13, once the basic mode has been run with real teams.
 

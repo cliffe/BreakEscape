@@ -464,7 +464,7 @@ Each step gets one line of feedback. Items get harder: a plain domain; a decorat
 
 **Priority and size:** MVP, M.
 
-**Build status:** Partly built, differently. The mock `authenticator` (`minigames/authenticator/`; `awarenessEpisode.mfa`) is an attacker-side demonstration: a scripted push stream on a timeline where the target taps Approve at a set time and the learner can send more pushes, unscored, watched from the attacker's side (E3). On the defence side, the triage `push` kind offers approve, deny and deny_report. What the build lacks is the learner-side set-up and sign-in, number matching, one-time codes and the passkey step. The plan adds those over the built `authenticator` and the triage `push` kind.
+**Build status:** Partly built, differently. The mock `authenticator` (`minigames/authenticator/`; `awarenessEpisode.mfa`) is an attacker-side run with a learner decision: the learner picks how many pushes to send and when (for example late at night), unscored, from the attacker's side, and the E3 debrief explains why fatigue works. On the defence side, the triage `push` kind offers approve, deny and deny_report. What the build lacks is the learner-side set-up and sign-in, number matching, one-time codes and the passkey step. The plan adds those over the built `authenticator` and the triage `push` kind.
 
 **Used for:** core_03 (enrolling, number matching, the 02:13 prompt storm and the "IT" chat asking the player to accept); core_00 (approving the first prompt, lightly); core_04 (a prompt the player didn't start, as a sign something is wrong); core_14 (a 02:10 prompt storm as one short decision); core_17.
 

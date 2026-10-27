@@ -9,7 +9,7 @@
 | Prerequisites | core_00 recommended (introduces the reporting route) |
 | Full episode | about 10 minutes (short consequence flip) |
 | Defend-only variant | about 6 to 7 minutes (defend-only shell) |
-| Pre and post check | 4 to 5 minutes each (general role forms) |
+| Pre and post check | about 9 minutes each (general role forms) |
 | Priority | MVP (proposed episode E17) |
 | Build size | S. Reuses inbox triage, the consequence flip and the organisation answer key; no write-a-phish beat |
 
@@ -21,7 +21,7 @@
 
 **Policy acknowledgement is a later platform option, not part of this episode.** The build records measurement, not policy signatures, and the only platform change proposed for the product is the customer reporting-route setting (`../../04_BUILT_SO_FAR.md` §1.7, still awaiting the user). So **C16-LO6** (acknowledging a policy after reading it) is kept as a plan item and marked **later platform option**: the episode can point to where the organisation records the acknowledgement, but the recording itself is not built here.
 
-The episode is proposed as a short episode, a defend-only shell and new general check items. It is not yet built: the awareness product is on hold.
+The episode is proposed as a short episode, a defend-only shell and new general check items. It is not yet built (the awareness product resumed on 2026-10-27).
 
 ## Why this module
 
@@ -70,13 +70,13 @@ One short training-room mission, with the pre-check and post-check as the bracke
 
 | Stage | What happens | Minutes |
 |---|---|---|
-| Pre-check (separate mission) | 10-item general check form, before the episodes | 4 to 5 |
+| Pre-check (separate mission) | 10-item general check form, before the episodes | about 9 |
 | Brief and scope note | "Authorised exercise at Marrowdale Facilities (fictional). Everyday 'can I?' moments, answered from the rules." | 1 |
 | The choices (sandbox) | A handful of everyday moments: install a free app from a client's meeting link, forward a file to personal email, look up a record with no work reason. The learner makes each choice; unscored | 2 to 3 |
 | Flip: the consequence | A short montage shows where each choice led (a fake meeting app, a lost file, a recorded lookup) | 1 |
 | Defend | The "can I?" set: situations sorted Allowed / Not allowed / Ask first against the organisation's answer key, with the reason on screen; plus the two triage items that map onto Report (the app-install link, the data-lookup request); scored | 3 |
 | Debrief | Per-item reasoning, feedback on the genuine items, the team-protected tally, the habit, the "On Monday" card, the reporting route and the no-blame line; where to read and acknowledge the policy | 1 |
-| Post-check (separate mission) | The parallel general check form, after the episodes; shows the change | 4 to 5 |
+| Post-check (separate mission) | The parallel general check form, after the episodes; shows the change | about 9 |
 
 ## Setting and host
 

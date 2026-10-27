@@ -7,9 +7,9 @@
 |---|---|
 | Audience | All staff |
 | Prerequisites | core_00 is the first-play brief in the kiosk frame; none required |
-| Full episode | About 13 minutes (E9); the MFA stage is built inside E3 (about 17 minutes) |
+| Full episode | About 15 minutes (E9); the MFA stage is built inside E3 (about 15 minutes) |
 | Defend-only variant | About 8 minutes |
-| Pre and post check | 4 to 5 minutes each (the helpdesk form carries the MFA push item), no pass mark |
+| Pre and post check | about 9 minutes each (the helpdesk form carries the MFA push item), no pass mark |
 | Text route | A gap in the build (BE-03), still to come |
 | Priority | Built (the E3 MFA stage); E9 passwords and password managers is new |
 | Build size | Built for MFA fatigue; the new work is E9, in the built shape |
@@ -27,7 +27,7 @@
 | C03-LO5 recognise an unrequested prompt or code; deny and report | **E3 MFA stage**: the attacker push run and the defend push card (deny and report) | **Built (E3)** |
 | C03-LO6 refuse to use, share or write down passwords; get access properly | not yet taught | **New (E9)** |
 
-**What is built:** E3 (Quayholt Insurance, helpdesk) includes an MFA-fatigue stage. In the attack half the learner runs an attacker-side push flood in a mock authenticator and sees the target approve at 06:50; in the defend half (the role swap) one card is an unrequested push whose right move is deny and report, Verify on. That carries C03-LO5.
+**What is built:** E3 (Quayholt Insurance, helpdesk) includes an MFA-fatigue stage. In the attack half the learner runs an attacker-side push flood in a mock authenticator, choosing how many pushes to send and when (for example late at night), and the debrief explains why fatigue works; in the defend half (the role swap) one card is an unrequested push whose right move is deny and report, Verify on. That carries C03-LO5.
 
 **What is new:** E9 *passwords and password managers* (built shape, new), proposed at **Tarrowby Logistics** (the haulier's depot, where shared PCs, sticky notes and warehouse logins make the password habits concrete), host **Nilesh Solanki**, the Tarrowby IT service-desk analyst, both already in `BRAND_SET.md`. E9 carries LO1 to LO4 and LO6 and reuses the E3 authenticator demo for the prompt cards. Its place in the roadmap is `04_BUILT_SO_FAR.md` §4; its design is in `game_design.md`.
 
@@ -79,7 +79,7 @@ Measurement is the pre and post check pair (the helpdesk form carries the MFA pu
 
 ## Module flow
 
-The built episode shape. E9 is a full episode; the E3 MFA stage sits inside E3. A full episode is about 13 minutes; the defend-only variant is about 8 minutes.
+The built episode shape. E9 is a full episode; the E3 MFA stage sits inside E3. A full episode is about 15 minutes; the defend-only variant is about 8 minutes.
 
 | Stage | What happens | Scored |
 |---|---|---|

@@ -120,8 +120,8 @@ Shown on the built debrief view for each episode: per-item reasoning cards; genu
 
 ## Art and audio
 
-- **Rooms:** a new or redressed Stavely training room (room review and POV backgrounds are later in the build).
-- **Characters:** Darius Rahimi, Ines Carvalho, Sunil Mehta, the Stavely security analyst and DPO need art and voices; host art is held on PixelLab quota and the user's approval. Stav Assist uses core_15's robot avatar.
+- **Rooms:** a new or redressed Stavely training room (a new room needs its own review and POV background; the four built rooms already have theirs).
+- **Characters:** Darius Rahimi, Ines Carvalho, Sunil Mehta, the Stavely security analyst and DPO need art and voices; host art follows the PixelLab reset (3 Nov), with all 19 concepts approved. Stav Assist uses core_15's robot avatar.
 - **Voice:** text-to-speech only (no runtime language model; Stav Assist is scripted, authored data). Code, package names and the assistant's suggestions are on-screen text only. No voiced line prints a variable: file names, package names and counts are on screen, so the voice cache stays keyed on exact text.
 
 ## Pitfalls

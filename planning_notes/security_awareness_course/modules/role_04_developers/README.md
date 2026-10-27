@@ -10,9 +10,9 @@
 | Company | Stavely Software (`stavely.example`), **proposed, to add to `BRAND_SET.md`** |
 | New check pair | A developer check-form pair (`awareness_{pre,post}_developer_{ab,ba}`), **new** |
 | Prerequisites | core_00. core_15 (AI tools) and core_05 (personal data) recommended |
-| Full episode | About 13 minutes |
+| Full episode | About 15 minutes |
 | Defend-only variant | About 8 minutes |
-| Pre and post check | 4 to 5 minutes each (the new developer pair) |
+| Pre and post check | about 9 minutes each (the new developer pair) |
 | Priority | Phase 3 |
 | Build size | M. One new attack-first episode and one consequence-flip episode in the built shape, plus a new developer check pair. The code-review minigame is not built; depth is the technical labs |
 
@@ -21,7 +21,7 @@
 - **Built, this module reuses:** the episode runner, the OSINT browser and intel facts, the mail client in template mode, the flip view, inbox triage (email, `page` and OAuth-consent style cards), the debrief view, concept cards and awareness measurement. role_04 has **no built episode or check** of its own yet.
 - **New (this whole module):** a developer role, set at the proposed Stavely Software. It needs its **own check-form pair** (`awareness_{pre,post}_developer_{ab,ba}`), a new attack-first episode, and a consequence-flip episode for the topics with no live attacker (secrets, test data, code review).
 - **Depth lives in the technical labs, not here.** This is awareness level; the secure-coding recognition that PCI DSS 6.2.2 expects stays in Hacktivity's Web Security and Software Security courses and the Break Escape VM labs. The code-review minigame (MG-19) is not built and is not pursued here; it is a later idea in the `features/minigames.md` catalogue (build status "not built").
-- The awareness product is "Incident Simulations: Critical Cases", on hold since 2026-10-23 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). Nothing new here starts while it is on hold unless the user says so.
+- The awareness product is "Incident Simulations: Critical Cases", held from 2026-10-23 and resumed on 2026-10-27 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). The remaining built-product items are host character art after the PixelLab reset (3 Nov, all 19 concepts approved), human timing runs (postponed) and one facilitator guide for the course, written last.
 
 ## Why this module
 

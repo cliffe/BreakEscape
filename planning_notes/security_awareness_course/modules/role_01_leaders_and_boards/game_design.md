@@ -118,7 +118,7 @@ Shown on the built debrief view, with the facilitated additions when the flag is
 ## Variants
 
 - **Defend-only variant:** the board crisis as brief, defend, debrief (about 8 minutes), same defend set, for boards that object to the "write a phish" beat. The no-blame line moves into the debrief's `defendOnly` string.
-- **Facilitated session (the group mode):** the `facilitated` flag on the full episode, played on one screen with the pause panels above. A reverse-seniority rule in the facilitator notes asks the most junior person to answer first at each pause. The own-plan version loads the organisation's incident plan headings, crisis roles, contacts, ransom stance, insurer and clocks into the debrief cards (BE-05), so the session is the board's annual exercise of its own plan (Cyber Governance Code D2); run with Harbreck's plan it is training only. Facilitator notes and lab sheets are written last, after the product ships (build decision R).
+- **Facilitated session (the group mode):** the `facilitated` flag on the full episode, played on one screen with the pause panels above. A reverse-seniority rule in the facilitator guide (the built product will have one course guide, so per-episode notes would be an extension) asks the most junior person to answer first at each pause. The own-plan version loads the organisation's incident plan headings, crisis roles, contacts, ransom stance, insurer and clocks into the debrief cards (BE-05), so the session is the board's annual exercise of its own plan (Cyber Governance Code D2); run with Harbreck's plan it is training only. Facilitator notes and lab sheets are written last, after the product ships (build decision R).
 - **Text route:** each stage as text with the same options, the same records; a gap in the build (BE-03).
 - **Spaced practice:** the defend-only shell as a quarterly five-minute drill; the executive checks repeated each year.
 - **Replay:** the entry route and which data was taken can vary; the annual edition updates the law cards.
@@ -131,8 +131,8 @@ Shown on the built debrief view, with the facilitated additions when the flag is
 
 ## Art and audio
 
-- **Rooms:** the built `room_aw_merrin_sallow` for E4; a new or redressed Harbreck training room for the board crisis (room review and POV backgrounds are later cycles in the build).
-- **Characters:** E4's Thandiwe Moyo, Catherine Merrin, Tomás Carvalho and Yasmin Chaudhry use their awareness art. Harbreck's Ama Owusu, Anne-Marie Lambert, Gillian Marsh, Hassan Qureshi and Faisal Karim need art and voices; host art is held on PixelLab quota and the user's approval (`HANDOVER.md`).
+- **Rooms:** the built `room_aw_merrin_sallow` for E4; a new or redressed Harbreck training room for the board crisis (a new room needs its own review and POV background; the four built rooms already have theirs).
+- **Characters:** E4's Thandiwe Moyo, Catherine Merrin, Tomás Carvalho and Yasmin Chaudhry use their awareness art. Harbreck's Ama Owusu, Anne-Marie Lambert, Gillian Marsh, Hassan Qureshi and Faisal Karim need art and voices; host art follows the PixelLab reset (3 Nov), with all 19 concepts approved (`HANDOVER.md`).
 - **Voice:** text-to-speech only (no runtime language model). The fake voice note uses Gillian's voice with a flatter style; the debrief stresses that detection wasn't the defence, checking was. No voiced line prints a variable: times, counts, money and titles are on-screen text only, so the voice cache stays keyed on exact text.
 - **Music:** low and unhurried, no countdown sirens.
 

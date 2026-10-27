@@ -7,9 +7,9 @@
 |---|---|
 | Audience | All staff |
 | Prerequisites | core_00 is the first-play brief in the kiosk frame; none required |
-| Full episode | About 13 minutes (E8, built shape) |
+| Full episode | About 15 minutes (E8, built shape) |
 | Defend-only variant | About 8 minutes |
-| Pre and post check | 4 to 5 minutes each, no pass mark |
+| Pre and post check | about 9 minutes each, no pass mark |
 | Text route | A gap in the build (BE-03), still to come |
 | Priority | Built (the reporting furniture in every debrief); E8 after the click is new |
 | Build size | The new work is E8, which carries both core_04 and core_01 LO6, in the built shape |
@@ -76,7 +76,7 @@ Measurement is the pre and post check pair, not a per-module pass mark; see `ass
 
 ## Module flow
 
-The built episode shape, applied to E8. A full episode is about 13 minutes; the defend-only variant is about 8 minutes.
+The built episode shape, applied to E8. A full episode is about 15 minutes; the defend-only variant is about 8 minutes.
 
 | Stage | What happens | Scored |
 |---|---|---|

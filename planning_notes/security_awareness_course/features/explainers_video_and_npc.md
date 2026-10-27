@@ -42,7 +42,7 @@ The course explains things inside the episode, never as a slide bolted on the fr
 - **Feedback strings.** Each triage item's feedback, the per-item reasoning cards, feedback on genuine items, the "weakest skill" line and the header panel's SPF, DKIM and DMARC explainers (in the student lab and the check forms; episodes leave header jargon out).
 - **The debrief** (part of BE-31). The habit to keep, the "On Monday" card, the "How to report here" box, the no-blame line, and optional panels: E2's concept panel on macros, and E4's and E7's voice panel ("A voice is not proof").
 
-Alongside these, the training room teaches quietly: its "REPORT IT" poster and the company's wall logo plate (EX-04). A demonstration (EX-05) is the flip, or the mock authenticator showing an MFA prompt storm land on its target. The attacker view (EX-06) is the attack half itself.
+Alongside these, the training room teaches quietly: its "REPORT IT" poster and the company's wall logo plate (EX-04). A demonstration (EX-05) is the flip, or the mock authenticator, where the learner sends an MFA prompt storm and sees it land on its target. The attacker view (EX-06) is the attack half itself.
 
 ## When to use which
 
@@ -98,7 +98,7 @@ The hosts on main:
 | E5 sign-in pages, and defend-only | Quayholt Insurance | Niamh Doherty, IT trainer |
 | E6 texts and QR codes, and defend-only | Tarrowby Logistics | Chidi Okeke, fleet coordinator |
 | E7 cloned CEO voice, and defend-only | Brightwell Foods | Agnieszka Duda, payroll officer |
-| Pre and post checks | One company per role | Graham Whitfield and Farah Qureshi (finance), Jun Watanabe (hr, and the mobile BA checks), Anjali Rao (helpdesk), Yasmin Chaudhry (executive), Owen Treharne (general), Lerato Dlamini (mobile AB) |
+| Pre and post checks | One company per role | Graham Whitfield and Joanne Pell (finance), Jun Watanabe (hr, and the mobile BA checks), Anjali Rao (helpdesk), Yasmin Chaudhry (executive), Owen Treharne (general), Lerato Dlamini (mobile AB) |
 
 Names and backgrounds are in `../../phishing_and_social_engineering/awareness/BRAND_SET.md`, which is the roster for any new host. Host art is waiting on the build's own resume plan.
 
@@ -340,7 +340,7 @@ These two formats show an attack rather than describe it, which is what makes a 
 
 **Priority and size:** P2, S.
 
-**Build status:** **Partly built (differently).** Two built pieces demonstrate: the flip view (BE-32), where the learner's own attack lands on its receiver with the tells named, and the mock authenticator (MG-36), where the learner watches a prompt storm until the target taps Approve. There is no cutscene of an attack on a colleague. The rest is **New** and **builds on BE-32**.
+**Build status:** **Partly built (differently).** Two built pieces demonstrate: the flip view (BE-32), where the learner's own attack lands on its receiver with the tells named, and the mock authenticator (MG-36), where the learner chooses how many pushes to send and when, and the debrief explains why fatigue works. There is no cutscene of an attack on a colleague. The rest is **New** and **builds on BE-32**.
 
 The shape, as it now fits the episode:
 
@@ -455,7 +455,7 @@ Hosts for proposed episodes are **proposals**, drawn from each company's cast in
 | role_04, role_06, role_07 | Later role episodes, each with its own check form pair | to decide | to decide | To design | New |
 | sector_01 | Later | A healthcare company, proposed, to add to `BRAND_SET.md` on a `.example` domain | The plan's information governance lead, Dev Kapoor, as host (see the open questions) | To design | New |
 
-Lengths: an episode is about 13 minutes (E3 about 17), a defend-only variant about 8, and a check 4 to 5 (R12). A host's lines take well under a minute in all.
+Lengths: an episode is about 15 minutes (E6 and E7 about 16), a defend-only variant about 8, and a check about 9 (R12). A host's lines take well under a minute in all.
 
 ## Open questions and proposals
 

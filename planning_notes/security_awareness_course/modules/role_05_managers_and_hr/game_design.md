@@ -121,8 +121,8 @@ Shown on the built debrief view for each episode: per-item reasoning cards; genu
 
 ## Art and audio
 
-- **Rooms:** `room_aw_tarrowby` (room review cycle 1 done; further cycles and POV backgrounds are later in the build).
-- **Characters:** Tarrowby's Fatima Begum, Colin Mather, Jun Watanabe, Roseanne Wadsworth and Nilesh Solanki use their awareness art; host art is held on PixelLab quota and the user's approval. The fake candidate needs a portrait for the video call (a profile photo plus a plain on-camera frame); any freeze or blur is generic call-quality dressing, not specific to them.
+- **Rooms:** `room_aw_tarrowby` (training-room review cycles C1 to C3 are closed and the POV conversation backgrounds are made, wired and approved).
+- **Characters:** Tarrowby's Fatima Begum, Colin Mather, Jun Watanabe, Roseanne Wadsworth and Nilesh Solanki use their awareness art; host art follows the PixelLab reset (3 Nov), with all 19 concepts approved. The fake candidate needs a portrait for the video call (a profile photo plus a plain on-camera frame); any freeze or blur is generic call-quality dressing, not specific to them.
 - **Voice:** text-to-speech only (no runtime language model). The fake candidate and the genuine awkward candidate use clearly different voices. No voiced line prints a variable: names, counts and percentages are on screen only, so the voice cache stays keyed on exact text.
 
 ## Pitfalls

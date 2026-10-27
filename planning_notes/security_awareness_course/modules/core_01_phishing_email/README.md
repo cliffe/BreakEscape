@@ -7,9 +7,9 @@
 |---|---|
 | Audience | All staff. Built as finance (E1), HR (E2), executive and PA (E4) and general-staff (E5) episodes |
 | Prerequisites | core_00 is the first-play brief in the kiosk frame; no module is locked behind another |
-| Full episode | About 13 minutes (brief, attack, flip, defend, debrief) |
+| Full episode | About 15 minutes (brief, attack, flip, defend, debrief) |
 | Defend-only variant | About 8 minutes (brief, defend, debrief) |
-| Pre and post check | 4 to 5 minutes each, per role, no pass mark |
+| Pre and post check | about 9 minutes each, per role, no pass mark |
 | Text route | A gap in the build: an equivalent text route and a WCAG 2.2 AA statement are still to come |
 | Priority | Built (E1, E2, E4, E5); the after-the-click addition is new (E8) |
 | Build size | Built. The new work is E8 (LO6) and extra defend items, in the built shape |
@@ -68,7 +68,7 @@ The measurement for this coverage is the pre and post check pair, not a per-modu
 
 ## Module flow
 
-The built episode shape, the same for E1, E2, E4 and E5. A full episode is about 13 minutes; the defend-only variant drops the attack and flip and runs about 8 minutes.
+The built episode shape, the same for E1, E2, E4 and E5. A full episode is about 15 minutes; the defend-only variant drops the attack and flip and runs about 8 minutes.
 
 | Stage | What happens | Scored |
 |---|---|---|
@@ -120,4 +120,4 @@ No runtime language model is used anywhere: the pretext judge, the defender repl
 
 1. **E8 company and host.** E8 *after the click* is proposed at Quayholt Insurance with host Anjali Rao, the information security analyst who receives reports, so the general-staff thread from E5 carries on. *Recommendation: confirm Quayholt and Anjali Rao, both already in `BRAND_SET.md`.*
 2. **Extra defend items.** The plan still wants more defend items that place the threat inside a real work task. *Recommendation: add them to the existing E1, E2, E4 and E5 defend sets and the check forms, keeping the matched-flag balance the social validator checks.*
-3. **The attacker half for customers who object.** Already answered by the build: the defend-only variant is the opt-out, and the no-blame line moves into its debrief. (Candidate for DECISIONS_PENDING: whether E6 and E7 should be defend-only by default, which the user put on hold as aw7.)
+3. **The attacker half for customers who object.** Already answered by the build: the defend-only variant is the opt-out, and the no-blame line moves into its debrief. (Decided as aw7: the full and defend-only versions of E6 and E7 both stay listed, with organiser guidance. Two courses are seeded in Hacktivity, one with the defend-only episodes and one with both versions.)

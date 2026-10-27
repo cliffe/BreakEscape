@@ -124,8 +124,8 @@ Shown on the built debrief view for each episode:
 
 ## Art and audio
 
-- **Rooms:** `room_aw_brightwell` (room review cycle 1 done; further cycles and POV backgrounds are later in the build).
-- **Characters:** Brightwell's Adaeze Okafor, Agnieszka Duda, Tom Reilly, Ravinder Sandhu and Mei Lin Chau use their awareness art; host art is held on PixelLab quota and the user's approval.
+- **Rooms:** `room_aw_brightwell` (training-room review cycles C1 to C3 are closed and the POV conversation backgrounds are made, wired and approved).
+- **Characters:** Brightwell's Adaeze Okafor, Agnieszka Duda, Tom Reilly, Ravinder Sandhu and Mei Lin Chau use their awareness art; host art follows the PixelLab reset (3 Nov), with all 19 concepts approved.
 - **Voice:** text-to-speech only (no runtime language model). E7's voicemail uses the chief executive's own course voice, lightly phone-filtered: the lesson is that it sounds exactly like them. No voiced line prints a variable: amounts, payee names, account details and the learner's name stay on screen, so the voice cache stays keyed on exact text.
 - **Props:** the card photo in any item is a plainly fictional design with most digits masked; never a real or published test card number.
 

@@ -9,9 +9,9 @@
 | Built foundation | Episode E2 (CV and recruitment lures) and the hr check pair, at Tarrowby Logistics |
 | Company | Tarrowby Logistics (`tarrowby.example`); E2 host Fatima Begum |
 | Prerequisites | core_00; core_01 and core_04 recommended (the phishing and reporting basics a manager gets asked about) |
-| Full episode | About 13 minutes (E2) |
+| Full episode | About 15 minutes (E2) |
 | Defend-only variant | About 8 minutes |
-| Pre and post check | 4 to 5 minutes each (the hr pair) |
+| Pre and post check | about 9 minutes each (the hr pair) |
 | Priority | Phase 3 |
 | Build size | M. The recruitment-lure half is built (E2, the hr checks); the role extension (recruitment fraud, joiners-movers-leavers access, no-blame culture) is one new attack-first episode, one consequence-flip episode and concept cards |
 
@@ -20,7 +20,7 @@
 - **Built, this module builds on it:** episode **E2 *CV and recruitment lures*** (`scenarios/awareness_e2_cv_lures`), Tarrowby Logistics, host Fatima Begum. The learner researches, composes one job application with an attachment chosen from labels (a malicious CV or a "enable content" document), sees it flipped, then defends the recruitment inbox (6 emails, 2 phish, 4 genuine, no Verify) with a short macro concept panel. The **hr check pair** (`awareness_{pre,post}_hr_{ab,ba}`) measures the skill. Covers R05-LO4 in part (malicious CVs, portfolio links, "enable content").
 - **Builds on E2 and the hr checks:** malicious attachments, portfolio links and "enable content" lures aimed at recruiters are taught and measured today.
 - **New (role extension this plan adds):** recruitment fraud by borrowed identities and proxies (R05-LO4, the other half); joiners, movers and leavers access (R05-LO1, LO2, LO3); and the no-blame culture and HR data on a need-to-know basis (R05-LO5, LO6). Delivered as one new attack-first episode (recruitment fraud), one consequence-flip episode (access that outlives the job), and concept cards; see `game_design.md`.
-- The awareness product is "Incident Simulations: Critical Cases", on hold since 2026-10-23 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). Nothing new here starts while it is on hold unless the user says so.
+- The awareness product is "Incident Simulations: Critical Cases", held from 2026-10-23 and resumed on 2026-10-27 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). The remaining built-product items are host character art after the PixelLab reset (3 Nov, all 19 concepts approved), human timing runs (postponed) and one facilitator guide for the course, written last.
 
 ## Why this module
 

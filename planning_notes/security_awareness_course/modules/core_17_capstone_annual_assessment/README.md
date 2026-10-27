@@ -7,7 +7,7 @@
 |---|---|
 | Audience | All staff, every 12 months (the annual refresher) |
 | Mixed edition | about 20 to 30 minutes, in one sitting or two |
-| Pre and post check | 4 to 5 minutes each (the learner's role forms, AB or BA) |
+| Pre and post check | about 9 minutes each (the learner's role forms, AB or BA) |
 | Priority | Phase 2 |
 | Build size | M as a mixed edition built from existing shells; L for the proposed single-day and team-event extensions |
 
@@ -23,7 +23,7 @@
 
 **There is no default pass mark** (R6). The checks already author `passPercent` 0; an organisation may set a pass mark on the post-check percent as a later option, through the platform.
 
-The capstone is not yet built as an edition: the awareness product is on hold.
+The capstone is not yet built as an edition (the awareness product resumed on 2026-10-27).
 
 ## Why this module
 
@@ -79,11 +79,11 @@ The mixed edition is a sequence of built missions an organiser places in one eve
 
 | Stage | What happens | Minutes |
 |---|---|---|
-| Pre-check (separate mission) | The learner's role pre-check form (A or B, per the AB/BA pairing); the baseline | 4 to 5 |
+| Pre-check (separate mission) | The learner's role pre-check form (A or B, per the AB/BA pairing); the baseline | about 9 |
 | Brief: what changed this year | A short "year in three changes" brief, rewritten each year; a neutral proctor hosts | 3 |
 | Mixed run | A selection of the year's defend sets (from E1 to E7 and their defend-only variants), mixed across channels and companies; each is the built inbox-triage defender under the `awareness` profile | 10 to 15 |
 | Debrief | Per-item reasoning across the run, feedback on the genuine items, the team-protected tally, the habit, the "On Monday" card, the reporting route and the no-blame line | 3 to 4 |
-| Post-check (separate mission) | The paired role post-check form; imports the pre-check and shows the change; no pass mark | 4 to 5 |
+| Post-check (separate mission) | The paired role post-check form; imports the pre-check and shows the change; no pass mark | about 9 |
 
 ## Setting and host
 

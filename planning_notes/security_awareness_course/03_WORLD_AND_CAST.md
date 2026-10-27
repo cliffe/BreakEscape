@@ -14,7 +14,7 @@ Status key: **Built** (on main), **Builds on E# / system X** (extends something 
 
 **Built.** Every scenario is one training room at a client company:
 
-- **The room.** One room per company: `room_aw_brightwell`, `room_aw_tarrowby`, `room_aw_quayholt` and `room_aw_merrin_sallow`. There are no doors, no combat and no VMs. Room dressing, lighting and POV backgrounds are still in progress (`awareness/TRAINING_ROOM_PLAN.md`, `HANDOVER.md` §3).
+- **The room.** One room per company: `room_aw_brightwell`, `room_aw_tarrowby`, `room_aw_quayholt` and `room_aw_merrin_sallow`. There are no doors, no combat and no VMs. The POV conversation backgrounds are made, wired and approved, and the training-room review cycles C1 to C3 are closed (`awareness/TRAINING_ROOM_PLAN.md`, `HANDOVER.md` §3).
 - **The kiosk.** The training kiosk opens the episode runner, which steps through the stages with a step strip: brief, attack, flip, defend, debrief. A check mission runs one triage form at the same kiosk.
 - **The host.** One NPC per scenario, a member of the company's staff "minding the training", who welcomes the learner and points them at the kiosk. The host is not a mentor who follows the learner across episodes; the teaching sits in the scope note, the per-item feedback, the concept panels and the debrief.
 - **The learner.** The player's display name is "Learner", and they take the role the episode names (finance, hr, helpdesk, executive, general, mobile, or everyone in E7). The chosen avatar always wins and the portrait follows (aw9); the default hooded fallback stays.
@@ -27,7 +27,7 @@ Status key: **Built** (on main), **Builds on E# / system X** (extends something 
 | Brightwell Foods, `room_aw_brightwell` | E1 and E1 defend-only | Adaeze Okafor | Finance manager |
 | | E7 and E7 defend-only | Agnieszka Duda | Payroll officer |
 | | Finance checks, AB pair | Graham Whitfield | Check host (early 60s, white British, Halifax) |
-| | Finance checks, BA pair | Farah Qureshi | Check host (early 30s, British Pakistani, Leicester) |
+| | Finance checks, BA pair | Joanne Pell | Check host (late forties, white British) |
 | Tarrowby Logistics, `room_aw_tarrowby` | E2 and E2 defend-only | Fatima Begum | Recruitment lead |
 | | E6 and E6 defend-only | Chidi Okeke | Fleet coordinator |
 | | HR checks, AB pair | Jun Watanabe | HR assistant |
@@ -44,7 +44,7 @@ Status key: **Built** (on main), **Builds on E# / system X** (extends something 
 | | Executive checks, AB pair | Yasmin Chaudhry | Finance controller |
 | | Executive checks, BA pair | Julian Sallow | Co-founding partner |
 
-Host art is held until the PixelLab quota resets and the user approves the scope; today the hosts use placeholder sprites (`HANDOVER.md` §2).
+Host art follows the PixelLab reset (3 Nov), with all 19 concepts approved; today the hosts use placeholder sprites (`HANDOVER.md` §2).
 
 **Note on a doc mismatch.** `HANDOVER.md` §1 lists E7 at Merrin & Sallow. The scenario files put E7 (and its defend-only shell) in `room_aw_brightwell` at Brightwell Foods, reusing E1's emails, as `BRAND_SET.md` §2 says. The scenario files win.
 
@@ -160,7 +160,7 @@ Checked on 2026-10-27 against the built awareness cast (hosts, BRAND_SET and eve
 
 | Plan name | Clashes with | Suggested fix |
 |---|---|---|
-| Hassan Qureshi | Farah Qureshi, finance BA check host (Brightwell); also a Qureshi in m10 | New surname |
+| Hassan Qureshi | The remaining clash is with m10's Qureshi (m10 has its own Farah Qureshi). The Brightwell finance check host is now Joanne Pell, so that clash no longer applies | New surname |
 | Owain Jenkins | Ifan Jenkins, Castell Fruit (E1 form B); Owen Treharne, a Welsh general check host (Owain and Owen read alike) | New given name and surname |
 | Mei Lin Zhou | Mei Lin Chau, Brightwell procurement buyer (E1) | New given name |
 | Darius Rahimi | Hamid Rahimi, Dunmore Dairy (E1 form A); Darius Petrauskas, E2 candidate | New name |

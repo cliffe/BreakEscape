@@ -32,7 +32,7 @@ All people and companies are fictional; every domain ends `.example`.
 **E3 help-desk reset and MFA fatigue** (`research/built_episodes_vs_plan.md` §1.2):
 
 1. **Brief and scope note.** Darren Price welcomes the learner to the Quayholt training room.
-2. **Attack half (unscored).** A pretext call to the service desk as a locked-out manager, on the influence score: the learner picks lines, and the influence bar shows how each one moves it and which verification question the agent skipped. Then a short attacker-side MFA push run in a mock authenticator, with the target approving at 06:50.
+2. **Attack half (unscored).** A pretext call to the service desk as a locked-out manager, on the influence score: the learner picks lines, and the influence bar shows how each one moves it and which verification question the agent skipped. Then a short attacker-side MFA push run in a mock authenticator, where the learner chooses how many pushes to send and when (for example late at night) and the debrief explains why fatigue works.
 3. **Flip.** The learner becomes the service-desk agent.
 4. **Defend half (scored, role swap).** Three calls (two impostor, one genuine and awkward) plus one unrequested push, as `call` and `push` cards. The taught move is the verification script: call back on the number on file, get manager approval, never read out a reset code, and offer the safe route to the genuine caller too. Verify is on. "Refuse everything" loses points, because the genuine caller also needs the safe route.
 5. **Debrief.** Reasoning cards, genuine-item feedback, the tally, the habit to keep, the "On Monday" card, the report route, the no-blame line.
@@ -101,7 +101,7 @@ The built debrief view: a reasoning card per item, genuine-item feedback, the te
 
 - **Defend-only variant:** E3 and E6 each have one (about 8 minutes): brief, defend, debrief, same defend set. The opt-out for customers who object to the attack beat, and the micro-drill.
 - **Text route:** not yet built (BE-03), kept as a gap.
-- **Facilitated session:** the `facilitated` flag exists; no shipped shell sets it. Facilitator notes scheduled last.
+- **Facilitated session:** the `facilitated` flag exists; no shipped shell sets it. The built product will have one facilitator guide for the whole course, written last; per-episode notes are at most an extension.
 - **Replay and randomisation:** matched items with disjoint phish slots across the A and B check forms; invented, varied numbers and names.
 
 ## Alternative concepts

@@ -17,7 +17,7 @@ What is already built, and how this plan was reconciled with it, is in `04_BUILT
 
 - **Attack first, then defend.** **Built.** In each episode the learner looks at public sources, builds one attack from templates whose blanks only take facts they have found, then sees their own message land in a defender's inbox with its tells highlighted, before triaging a scored set of messages. Defend-only is the opt-out, for customers who object to the attack half.
 - **The habit to keep.** **Built.** Every debrief ends on the same rule of thumb, word for word: *"When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."* Reporting quickly, including after a mistake, is rewarded and never penalised, and every debrief shows the customer's own reporting route and a no-blame line.
-- **Short.** **Built.** About 13 minutes an episode (E3 about 17), 8 minutes defend-only, 4 to 5 minutes a check.
+- **Short.** **Built.** About 15 minutes an episode (E6 and E7 about 16), about 8 minutes defend-only (recommended for sessions under 30 minutes), about 9 minutes a check (finance checks about 8 to 10).
 - **Measured, not graded.** **Built.** Role-based pre and post checks on matched parallel forms, with no default pass mark. Records hold item ids, verdicts and times, never free text and never the learner's identity. The product makes no effectiveness claims.
 - **Accessible.** The build has a keyboard and plain-text baseline. An equivalent text route and a WCAG 2.2 AA commitment are **New** (BE-03, BE-04, BE-26).
 
@@ -27,47 +27,47 @@ A pathway is a role check pair (a pre-check and a post-check for one role) aroun
 
 | Pathway | Who | What it holds | Status | Time |
 |---|---|---|---|---|
-| **Role pair** | Anyone, by role | The role's pre-check, its episode (or the defend-only variant), then the post-check in the paired order (AB or BA). finance: E1 (and E7); hr: E2; helpdesk: E3; executive: E4; general: E5; mobile: E6 | **Built** (the organiser orders the missions by hand) | 21 to 26 minutes (E3 25 to 27) |
-| **Everyone episode** | All staff | E7 cloned CEO voice, optional, with no check of its own | **Built** | About 14 minutes |
-| **Defend-only route** | Customers or learners who opt out of the attack half | The defend-only variant of each episode in place of the full episode; the same defend set, so the measurement is unchanged | **Built** | 8 minutes each |
-| **Induction starter** | New starters, in the window the organisation sets | A first-play "how it works" brief (core_00), then the general pair with E5, then E1 or E6 as the organisation chooses | **Builds on** the general checks and E5; core_00 is **New** | About 40 minutes, in two sittings |
-| **Core library** | All staff over their first year, or as assigned | New episodes for the core topics with no episode yet (D15 order in the roadmap), each with a defend-only variant and new check items | **New** | About 13 minutes each |
+| **Role pair** | Anyone, by role | The role's pre-check, its episode (or the defend-only variant), then the post-check in the paired order (AB or BA). finance: E1 (and E7); hr: E2; helpdesk: E3; executive: E4; general: E5; mobile: E6 | **Built** (the organiser orders the missions by hand) | About 33 minutes (about 34 with E6 or E7) |
+| **Everyone episode** | All staff | E7 cloned CEO voice, optional, with no check of its own | **Built** | About 16 minutes |
+| **Defend-only route** | Customers or learners who opt out of the attack half | The defend-only variant of each episode in place of the full episode; the same defend set, so the measurement is unchanged | **Built** (E6 and E7 keep both versions listed, with organiser guidance; two courses are seeded in Hacktivity, one with the defend-only episodes and one with both versions) | About 8 minutes each |
+| **Induction starter** | New starters, in the window the organisation sets | A first-play "how it works" brief (core_00), then the general pair with E5, then E1 or E6 as the organisation chooses | **Builds on** the general checks and E5; core_00 is **New** | About 53 minutes, in two sittings |
+| **Core library** | All staff over their first year, or as assigned | New episodes for the core topics with no episode yet (D15 order in the roadmap), each with a defend-only variant and new check items | **New** | About 15 minutes each |
 | **Spaced drills** | All staff, optional, set by the organisation | Defend-only shells spaced through the year | **Builds on** the defend-only variants | 8 minutes each |
 | **Annual refresher** | All staff every 12 months | core_17: a mixed edition built from the existing defend sets, with the role's post-check | **Builds on** the defend sets and post-checks | About 20 minutes |
-| **Later roles and sectors** | Developers, customer-facing staff, procurement, healthcare | Each needs its own episode and its own check form pair | **New** | 21 to 26 minutes per pair |
+| **Later roles and sectors** | Developers, customer-facing staff, procurement, healthcare | Each needs its own episode and its own check form pair | **New** | About 33 minutes per pair |
 
 ## Module catalogue
 
-Minutes are episode-shaped targets: **Full** is the full episode (brief, attack or consequence half, flip, defend, debrief) and **Defend-only** is the 8 minute variant. Checks (4 to 5 minutes) sit around the episodes and are not counted here. **Built** gives the episodes and checks that already cover the module, from `04_BUILT_SO_FAR.md` §3.
+Minutes are episode-shaped targets: **Full** is the full episode (brief, attack or consequence half, flip, defend, debrief) and **Defend-only** is the variant of about 8 minutes, recommended for sessions under 30 minutes. Checks (about 9 minutes each) sit around the episodes and are not counted here. **Built** gives the episodes and checks that already cover the module, from `04_BUILT_SO_FAR.md` §3.
 
 | Id | Module | Working game title | Audience | Built | Full | Defend-only | Priority | Size |
 |---|---|---|---|---|---|---|---|---|
 | core_00 | First play: how the episodes work, and the habit to keep | First Day | All staff | None (every shell has a brief, scope note and host welcome) | 5 | none | MVP | S |
-| core_01 | Phishing emails | Inbox Zero | All staff | **Large**: E1, E2, E4, E5 and every check | 13 | 8 | MVP | L |
-| core_02 | Social engineering by phone, text, QR code and in person | The Caller | All staff | Part: E3, E6, E4 and E7 voicemail; helpdesk and mobile checks | 13 | 8 | P2 | M |
-| core_03 | Passwords, passphrases and MFA | Keys to the Kingdom | All staff | Narrow: E3 MFA stage; helpdesk checks | 13 | 8 | MVP | M |
-| core_04 | Spotting and reporting incidents | The Golden Hour | All staff | Part: report button, tally, route box and no-blame line in every debrief | 13 | 8 | MVP | M |
-| core_05 | Data protection and privacy | Personal Effects | All staff | None | 13 | 8 | MVP | M |
-| core_06 | Handling information: classification, sharing, sending and disposal | Need to Know | All staff | None | 13 | 8 | P2 | M |
-| core_07 | Malware, ransomware and updates | Zero Hour | All staff | Touch: E2 macro panel | 13 | 8 | P2 | M |
-| core_08 | Safe web browsing and downloads | The Download | All staff | Part: E5 address bar and padlock myth; general checks | 13 | 8 | P2 | L |
-| core_09 | Remote and mobile working | On the Move | All staff | Touch: E6; mobile checks | 13 | 8 | P2 | L |
-| core_10 | Physical security | Tailgate | All staff | None | 13 | 8 | P2 | M |
-| core_11 | Payment fraud and business email compromise | Change of Details | All staff | **Large**: E1, E7, E4; finance checks | 13 | 8 | P2 | M |
-| core_12 | Social media and oversharing | Open Book | All staff | Part: OSINT "reduce" notes in every attack half; E2 and E4 posts | 13 | 8 | P3 | M |
-| core_13 | Removable media, cloud storage and shadow IT | Workaround | All staff | None | 13 | 8 | P3 | M |
-| core_14 | Insider risk | Notice Period | All staff | None | 13 | 8 | P3 | M |
-| core_15 | Generative AI and deepfakes | The Assistant | All staff | Narrow: E7, E4 voice | 13 | 8 | P2 | M |
-| core_16 | Acceptable use and your responsibilities | Small Print | All staff | None | 13 | 8 | MVP | S |
+| core_01 | Phishing emails | Inbox Zero | All staff | **Large**: E1, E2, E4, E5 and every check | 15 | 8 | MVP | L |
+| core_02 | Social engineering by phone, text, QR code and in person | The Caller | All staff | Part: E3, E6, E4 and E7 voicemail; helpdesk and mobile checks | 15 | 8 | P2 | M |
+| core_03 | Passwords, passphrases and MFA | Keys to the Kingdom | All staff | Narrow: E3 MFA stage; helpdesk checks | 15 | 8 | MVP | M |
+| core_04 | Spotting and reporting incidents | The Golden Hour | All staff | Part: report button, tally, route box and no-blame line in every debrief | 15 | 8 | MVP | M |
+| core_05 | Data protection and privacy | Personal Effects | All staff | None | 15 | 8 | MVP | M |
+| core_06 | Handling information: classification, sharing, sending and disposal | Need to Know | All staff | None | 15 | 8 | P2 | M |
+| core_07 | Malware, ransomware and updates | Zero Hour | All staff | Touch: E2 macro panel | 15 | 8 | P2 | M |
+| core_08 | Safe web browsing and downloads | The Download | All staff | Part: E5 address bar and padlock myth; general checks | 15 | 8 | P2 | L |
+| core_09 | Remote and mobile working | On the Move | All staff | Touch: E6; mobile checks | 15 | 8 | P2 | L |
+| core_10 | Physical security | Tailgate | All staff | None | 15 | 8 | P2 | M |
+| core_11 | Payment fraud and business email compromise | Change of Details | All staff | **Large**: E1, E7, E4; finance checks | 15 | 8 | P2 | M |
+| core_12 | Social media and oversharing | Open Book | All staff | Part: OSINT "reduce" notes in every attack half; E2 and E4 posts | 15 | 8 | P3 | M |
+| core_13 | Removable media, cloud storage and shadow IT | Workaround | All staff | None | 15 | 8 | P3 | M |
+| core_14 | Insider risk | Notice Period | All staff | None | 15 | 8 | P3 | M |
+| core_15 | Generative AI and deepfakes | The Assistant | All staff | Narrow: E7, E4 voice | 15 | 8 | P2 | M |
+| core_16 | Acceptable use and your responsibilities | Small Print | All staff | None | 15 | 8 | MVP | S |
 | core_17 | Capstone: the annual mixed edition | Year End | All staff | Touch: post-checks | 20 | none | P2 | L |
-| role_01 | Leaders and boards | Crisis Room | Directors, senior leaders, trustees | Touch: E4; executive checks | 13 | none | P2 | M |
-| role_02 | Finance and payments | Payment Run | Finance, payroll, accounts payable | Part: E1, E7; finance checks | 13 | 8 | P2 | M |
-| role_03 | IT administrators and service desk | Reset Request | IT staff, privileged users | **Large** (service desk half): E3 role swap; helpdesk checks | 13 | 8 | P3 | M |
-| role_04 | Developers | Ship It | Developers, technical staff | None | 13 | 8 | P3 | M |
-| role_05 | People managers and HR | Joiners, Movers, Leavers | Line managers, HR | Part: E2; hr checks | 13 | 8 | P3 | M |
-| role_06 | Customer-facing and contact centre staff | Who's Calling? | Contact centre, reception, account managers | Touch: E3's verification pattern | 13 | 8 | P3 | M |
-| role_07 | Procurement and supplier management | Due Diligence | Procurement, contract owners | Touch: E1 supplier impersonation | 13 | none | P3 | M |
-| sector_01 | Healthcare staff | Ward Round | Clinical and admin staff in health and care | None | 13 | 8 | P3 | M |
+| role_01 | Leaders and boards | Crisis Room | Directors, senior leaders, trustees | Touch: E4; executive checks | 15 | none | P2 | M |
+| role_02 | Finance and payments | Payment Run | Finance, payroll, accounts payable | Part: E1, E7; finance checks | 15 | 8 | P2 | M |
+| role_03 | IT administrators and service desk | Reset Request | IT staff, privileged users | **Large** (service desk half): E3 role swap; helpdesk checks | 15 | 8 | P3 | M |
+| role_04 | Developers | Ship It | Developers, technical staff | None | 15 | 8 | P3 | M |
+| role_05 | People managers and HR | Joiners, Movers, Leavers | Line managers, HR | Part: E2; hr checks | 15 | 8 | P3 | M |
+| role_06 | Customer-facing and contact centre staff | Who's Calling? | Contact centre, reception, account managers | Touch: E3's verification pattern | 15 | 8 | P3 | M |
+| role_07 | Procurement and supplier management | Due Diligence | Procurement, contract owners | Touch: E1 supplier impersonation | 15 | none | P3 | M |
+| sector_01 | Healthcare staff | Ward Round | Clinical and admin staff in health and care | None | 15 | 8 | P3 | M |
 
 Topics with no natural attacker (core_05, core_06, core_16) use the **consequence flip**: the learner makes the everyday mistake in a safe sandbox and the flip shows where it led (R3, `01_LEARNING_DESIGN.md`). They can also use the defend-only shape (D13).
 
@@ -114,7 +114,7 @@ The evidence an organisation gets:
 
 This replaces the old phased roadmap (`04_BUILT_SO_FAR.md` §4).
 
-1. **Finish the built product first.** Follow the `HANDOVER.md` resume plan: P6 playtest, fix rounds, dialogue cycles 4 and 5, rooms and POV backgrounds, host art and timing. This is not this plan's work, but nothing below should start while it is on hold unless the user says so.
+1. **Finish the built product first.** The product resumed on 2026-10-27 (`HANDOVER.md`). Playtests P6 and P7, dialogue review cycles C1 to C5, training-room review cycles C1 to C3, the light puzzle-chain pass and the POV conversation backgrounds are done. The remaining items are host character art after the PixelLab reset (3 Nov, all 19 concepts approved), human timing runs (postponed) and one facilitator guide for the course, in the lab-sheet system, written last. This is not this plan's work.
 2. **Close the engine gaps that every new episode needs.** These are the open catalogue items in `features/README.md` with build status "Not built" and priority MVP:
    - BE-03 text route;
    - BE-04 and BE-26 accessibility beyond the social overlays;

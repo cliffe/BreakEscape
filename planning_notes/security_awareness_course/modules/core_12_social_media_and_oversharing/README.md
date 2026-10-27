@@ -7,9 +7,9 @@
 |---|---|
 | Audience | All staff (built role: general) |
 | Prerequisites | core_00 recommended; lands best after core_01 and core_02 |
-| Full episode | about 13 minutes |
+| Full episode | about 15 minutes |
 | Defend-only variant | about 8 minutes |
-| Pre and post check | 4 to 5 minutes each (general role forms) |
+| Pre and post check | about 9 minutes each (general role forms) |
 | Priority | Phase 3 (proposed episode E14) |
 | Build size | M. Reuses the OSINT browser, intel board, template composer and inbox triage; new work is the privacy-settings surface and the feed drill |
 
@@ -26,7 +26,7 @@
 - fake profiles and fake recruiters as triage items, and an impersonation of a senior leader, for **C12-LO4**;
 - who speaks for the organisation, for **C12-LO5**.
 
-The episode is proposed as a full attack-then-defend episode in the built shape, at a brand-set company, with a defend-only variant and new items for the general check forms. It is not yet built: the awareness product is on hold (see `../../04_BUILT_SO_FAR.md` §1).
+The episode is proposed as a full attack-then-defend episode in the built shape, at a brand-set company, with a defend-only variant and new items for the general check forms. It is not yet built: the awareness product resumed on 2026-10-27 (see `../../04_BUILT_SO_FAR.md` §1).
 
 ## Why this module
 
@@ -66,14 +66,14 @@ The episode is one training-room mission: the learner taps the kiosk and the epi
 
 | Stage | What happens | Minutes |
 |---|---|---|
-| Pre-check (separate mission) | 10-item general check form, played before the episodes | 4 to 5 |
+| Pre-check (separate mission) | 10-item general check form, played before the episodes | about 9 |
 | Brief and scope note | "Authorised exercise at Merrin & Sallow Architects (fictional). In scope: Oskar's public posts and your own profile." | 1 |
 | Attack: OSINT | On a stripped-down OSINT page, pin a staff member's public posts; the intel board ticks each fact, and each carries its reduce note | 3 to 4 |
 | Attack: write | Compose one pretext message from a template whose blanks take only facts just found; red-flag meter on; one send | 2 to 3 |
 | Flip | The learner's own pretext arrives in a colleague's inbox with its tells highlighted | under 1 |
 | Defend | Triage a feed and a short inbox: posts to post, tweak or hold; a fake recruiter; a fake senior profile; and tighten the privacy settings that close each found fact | 3 to 4 |
 | Debrief | Per-item reasoning, feedback on the genuine items, the team-protected tally, the habit, the "On Monday" card, the reporting route and the no-blame line | 1 to 2 |
-| Post-check (separate mission) | The parallel general check form, played after the episodes; shows the change from the pre-check | 4 to 5 |
+| Post-check (separate mission) | The parallel general check form, played after the episodes; shows the change from the pre-check | about 9 |
 
 ## Setting and host
 

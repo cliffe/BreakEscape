@@ -7,9 +7,9 @@
 |---|---|
 | Audience | All staff (built role: general) |
 | Prerequisites | core_00 recommended (introduces the reporting route) |
-| Full episode | about 13 minutes |
+| Full episode | about 15 minutes |
 | Defend-only variant | about 8 minutes |
-| Pre and post check | 4 to 5 minutes each (general role forms) |
+| Pre and post check | about 9 minutes each (general role forms) |
 | Priority | Phase 3 (proposed episode E16) |
 | Build size | M. Reuses inbox triage (email, call and push cards), the influence global and the consequence flip; new work is a "raise a concern" fact-chip form |
 
@@ -21,7 +21,7 @@ The episode is designed in the built shape. Because the learner's own habits are
 
 **Covers:** C14-LO1 to LO6, all new.
 
-The episode is proposed as a full episode, a defend-only variant and new general check items. It is not yet built: the awareness product is on hold.
+The episode is proposed as a full episode, a defend-only variant and new general check items. It is not yet built (the awareness product resumed on 2026-10-27).
 
 ## Why this module
 
@@ -71,13 +71,13 @@ One training-room mission, with the pre-check and post-check as the bracketing m
 
 | Stage | What happens | Minutes |
 |---|---|---|
-| Pre-check (separate mission) | 10-item general check form, before the episodes | 4 to 5 |
+| Pre-check (separate mission) | 10-item general check form, before the episodes | about 9 |
 | Brief and scope note | "Authorised exercise at Quayholt Insurance (fictional). It's a leaver's last week. In scope: your own choices and what you notice." | 1 |
 | The week (sandbox) | The everyday choices arrive inside ordinary work: a colleague wants your login, an outside offer lands, a leaver asks a favour, the office floats a theory about someone. The learner makes each choice; unscored | 4 to 5 |
 | Flip: the chain | A short montage shows where a shared login or an engaged offer led, and where a kind word and a fair concern led instead | 1 to 2 |
 | Defend | Triage a set: an offer message (Report), a shared-login request (decline and route), unexpected sign-in prompts (Deny and report), a leaver's favour, and a "raise a concern" step that rewards facts over conclusions; scored under the `awareness` profile | 3 to 4 |
 | Debrief | Per-item reasoning, feedback on the genuine items, the team-protected tally, the habit, the "On Monday" card, the reporting route and the no-blame line; the fair-concern line lands here | 1 to 2 |
-| Post-check (separate mission) | The parallel general check form, after the episodes; shows the change | 4 to 5 |
+| Post-check (separate mission) | The parallel general check form, after the episodes; shows the change | about 9 |
 
 ## Setting and host
 

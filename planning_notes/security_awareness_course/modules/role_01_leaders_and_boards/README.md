@@ -10,9 +10,9 @@
 | Company (built) | Merrin & Sallow Architects (`merrinsallow.example`), host Thandiwe Moyo |
 | Company (new episode) | Harbreck Facilities Group (`harbreck.example`), **proposed, to add to `BRAND_SET.md`** |
 | Prerequisites | None required. core_04 (reporting incidents) and core_07 (ransomware) are useful background. The executive episode E4 is the built starting point |
-| Board crisis episode | About 13 minutes solo; longer as a facilitated group session with pause panels |
+| Board crisis episode | About 15 minutes solo; longer as a facilitated group session with pause panels |
 | Defend-only variant | About 8 minutes |
-| Pre and post check | 4 to 5 minutes each (the executive pair) |
+| Pre and post check | about 9 minutes each (the executive pair) |
 | Priority | Phase 2 |
 | Build size | M. The board crisis is a new facilitated episode in the built episode-runner shape; the governance content is carried in pause panels and debrief cards, not a new minigame |
 
@@ -21,7 +21,7 @@
 - **Built, this module builds on it:** episode E4 *Executive whaling* (`scenarios/awareness_e4_exec_whaling`) and the executive pre and post check pair (`awareness_{pre,post}_executive_{ab,ba}`), both at Merrin & Sallow Architects. E4 puts the learner in the PA's seat against an "about to board, pay this" email and two voicemails in the managing partner's name, with Verify on and a voice concept panel. The executive checks mix emails and voicemails, 5 phish in 10, Verify on, and already carry "Larkspur Travel" as a supplier name (genuine and look-alike) in `ea_larkspur_bank` and `ea_larkspur_invoice`. That supplier name stays; only the old Larkspur Group world is retired.
 - **Builds on E4 and the executive checks:** R01-LO6 (verify an urgent instruction that claims to come from a leader) is taught and measured today by E4's PA defend set and the executive checks.
 - **New (role extension this plan adds):** a facilitated **board crisis** episode in the built shape, at the proposed Harbreck Facilities Group, covering the board decisions E4 does not touch (R01-LO1 to LO5). It uses the episode runner's `facilitated` flag (BE-15), which exists but no shipped shell sets yet.
-- The awareness product is "Incident Simulations: Critical Cases". Development is on hold since 2026-10-23 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). Nothing new here starts while it is on hold unless the user says so.
+- The awareness product is "Incident Simulations: Critical Cases". Development is held from 2026-10-23 and resumed on 2026-10-27 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). The remaining built-product items are host character art after the PixelLab reset (3 Nov, all 19 concepts approved), human timing runs (postponed) and one facilitator guide for the course, written last.
 
 ## Why this module
 

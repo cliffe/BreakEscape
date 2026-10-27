@@ -115,8 +115,8 @@ Shown on the built debrief view for each episode: per-item reasoning cards; genu
 
 ## Art and audio
 
-- **Rooms:** `room_aw_brightwell` (room review cycle 1 done; further cycles and POV backgrounds are later in the build).
-- **Characters:** Brightwell's Mei Lin Chau and Gwen Pritchard and a Brightwell DPO use their awareness art; host art is held on PixelLab quota and the user's approval. The three bidders' representatives are video-call portraits for the consequence-flip episode.
+- **Rooms:** `room_aw_brightwell` (training-room review cycles C1 to C3 are closed and the POV conversation backgrounds are made, wired and approved).
+- **Characters:** Brightwell's Mei Lin Chau and Gwen Pritchard and a Brightwell DPO use their awareness art; host art follows the PixelLab reset (3 Nov), with all 19 concepts approved. The three bidders' representatives are video-call portraits for the consequence-flip episode.
 - **Voice:** text-to-speech only (no runtime language model). No voiced line prints a variable: amounts, dates and the learner's name stay on screen; lines that depend on the chosen bidder pick between fixed strings, which the voice cache allows.
 
 ## Pitfalls

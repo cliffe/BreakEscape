@@ -7,9 +7,9 @@
 |---|---|
 | Audience | All staff (built role: general) |
 | Prerequisites | core_00 recommended. core_06 covers sharing settings in depth; core_05 covers the law on personal data |
-| Full episode | about 13 minutes |
+| Full episode | about 15 minutes |
 | Defend-only variant | about 8 minutes |
-| Pre and post check | 4 to 5 minutes each (general role forms) |
+| Pre and post check | about 9 minutes each (general role forms) |
 | Priority | Phase 3 (proposed episode E15) |
 | Build size | M. Reuses the mail client, inbox triage and the "six months later" consequence flip; new work is the sharing-settings surface and the swap drill |
 
@@ -21,7 +21,7 @@ It is designed in the built shape, using the **consequence flip** (R3): the topi
 
 **Covers:** C13-LO1 to LO5, all new.
 
-The episode is proposed as a full episode, a defend-only variant and new general check items. It is not yet built: the awareness product is on hold.
+The episode is proposed as a full episode, a defend-only variant and new general check items. It is not yet built (the awareness product resumed on 2026-10-27).
 
 ## Why this module
 
@@ -67,13 +67,13 @@ One training-room mission, with the pre-check and post-check as the bracketing m
 
 | Stage | What happens | Minutes |
 |---|---|---|
-| Pre-check (separate mission) | 10-item general check form, before the episodes | 4 to 5 |
+| Pre-check (separate mission) | 10-item general check form, before the episodes | about 9 |
 | Brief and scope note | "Authorised exercise at Tarrowby Logistics (fictional). A pack is due at a client by Monday, and the share has slowed to a crawl." | 1 |
 | The shortcuts (sandbox) | Four interruptions arrive while the learner works: personal email, a free transfer site, a posted USB stick, and a rota in a free app on a former temp's account. The learner can take each shortcut or the approved route; unscored | 4 to 5 |
 | Flip: "Where are they now?" | A "six months later" montage shows where each shortcut led, with the learner's own choices marked | 1 to 2 |
 | Defend | "Swap Shop": match each shortcut to its approved swap; plus found-media cards (a posted stick, a giveaway stick) triaged with Report or Verify; scored under the `awareness` profile | 3 to 4 |
 | Debrief | Per-item reasoning, feedback on the genuine items, the team-protected tally, the habit, the "On Monday" card, the reporting route and the no-blame line; the USB-drop test revealed | 1 to 2 |
-| Post-check (separate mission) | The parallel general check form, after the episodes; shows the change | 4 to 5 |
+| Post-check (separate mission) | The parallel general check form, after the episodes; shows the change | about 9 |
 
 ## Setting and host
 

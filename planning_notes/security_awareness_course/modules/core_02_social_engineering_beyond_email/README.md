@@ -7,9 +7,9 @@
 |---|---|
 | Audience | All staff. Built as helpdesk (E3, calls and MFA) and mobile (E6, texts and QR) episodes, with voicemails in E4 and E7 |
 | Prerequisites | core_00 is the first-play brief in the kiosk frame; pairs with core_01 |
-| Full episode | About 13 minutes (E3 about 17, accepted by the user) |
+| Full episode | About 15 minutes (E6 and E7 about 16; E3 is about 15, durationTargetMin 15) |
 | Defend-only variant | About 8 minutes |
-| Pre and post check | 4 to 5 minutes each (helpdesk and mobile forms), no pass mark |
+| Pre and post check | about 9 minutes each (helpdesk and mobile forms), no pass mark |
 | Text route | A gap in the build (BE-03), still to come |
 | Priority | Built (E3, E6; E4 and E7 voicemails); the in-person, chat-app and remote-access additions are new |
 | Build size | Built. The new work is extra defend items and the UK personal-scam routes, plus the visitor episode (E12) in the roadmap |
@@ -27,7 +27,7 @@
 | C02-LO5 decide on a QR code before scanning | E6 QR cards (`qr` card kind) | **Built** |
 | C02-LO6 report at work; 7726, 159 and Report Fraud at home | the report verdict in every defend set | **Built** for the work route; **New** for 7726, 159 and Report Fraud (in no shell yet) |
 
-**What the built episodes are:** E3 help-desk reset by phone then MFA fatigue (Quayholt Insurance, helpdesk), which uses the pretext call on the influence score, an attacker-side MFA push run, then the role swap in which the learner is the service-desk agent triaging three calls (two impostor, one genuine) and one unrequested push, Verify on. E6 texts and QR codes (Tarrowby Logistics, mobile), a work-phone inbox of three texts, two QR notices and one email, Verify on. E4 and E7 carry voicemail cards. Item counts are from the scenario files.
+**What the built episodes are:** E3 help-desk reset by phone then MFA fatigue (Quayholt Insurance, helpdesk), which uses the pretext call on the influence score, an attacker-side MFA push run (the learner chooses how many pushes and when), then the role swap in which the learner is the service-desk agent triaging three calls (two impostor, one genuine) and one unrequested push, Verify on. E6 texts and QR codes (Tarrowby Logistics, mobile), a work-phone inbox of three texts, two QR notices and one email, Verify on. E4 and E7 carry voicemail cards. Item counts are from the scenario files.
 
 **What is new:** in-person approaches, chat-app impersonation, remote-access scams, and the UK personal-scam routes (7726, 159, Report Fraud), which appear in no shell today. The in-person approach is carried by the proposed visitor episode **E12 the visitor and the tailgater** (core_10, with person-chat in the training room; `04_BUILT_SO_FAR.md` §4). Chat-app and remote-access defend items, and the home routes on the reference card, are new items added to the E3 and E6 sets and the helpdesk and mobile checks, in the built shape.
 
@@ -69,12 +69,12 @@ Measurement is the helpdesk and mobile pre and post check pair, not a per-module
 
 ## Module flow
 
-The built episode shape. E3 adds a pretext-call and an MFA stage in the attack half and a role swap in the defend half; E6 uses the phone layout. A full episode is about 13 minutes (E3 about 17); the defend-only variant is about 8 minutes.
+The built episode shape. E3 adds a pretext-call and an MFA stage in the attack half and a role swap in the defend half; E6 uses the phone layout. A full episode is about 15 minutes (E6 and E7 about 16; E3 about 15); the defend-only variant is about 8 minutes.
 
 | Stage | What happens | Scored |
 |---|---|---|
 | Brief and scope note | The host welcomes the learner and names the exercise as authorised, at a fictional company | no |
-| Attack | E3: a pretext call to the service desk as a locked-out manager (an influence bar shows how each line moved it), then an attacker-side MFA push run approved at an odd hour. E6: compose one "scan this code" message to depot staff. Unscored, one artefact | no |
+| Attack | E3: a pretext call to the service desk as a locked-out manager (an influence bar shows how each line moved it), then an attacker-side MFA push run where the learner chooses how many pushes to send and when (for example late at night). E6: compose one "scan this code" message to depot staff. Unscored, one artefact | no |
 | Flip | The learner's own pretext arrives on the receiving end: E3 flips to the agent's seat, E6 to the work phone | no |
 | Defend | E3: triage three calls (two impostor, one genuine) plus one unrequested push, Verify on. E6: a work phone of texts, QR notices and an email, Verify on. New chat-app and remote-access items added here | yes |
 | Debrief | Reasoning cards, genuine-item feedback, the team-protected tally, the habit to keep, the "On Monday" card, the customer report route, the no-blame line, and (new) the home routes 7726, 159 and Report Fraud | no |
@@ -118,4 +118,4 @@ No runtime language model is used: the pretext judge, the caller and messenger r
 
 1. **In-person approach.** Carried by the proposed E12 (the visitor and the tailgater), which needs person-chat in the training room. *Recommendation: build E12 for core_10 and share its visitor defend item here; keep core_02's in-person content to the conversation (the story, the jargon, the ask) and point to core_10 for the physical rules.*
 2. **Home routes on the card.** 7726, 159 and Report Fraud appear in no shell. *Recommendation: add them to the E3 and E6 debrief reference cards and as a check item, since they are the personal-scam half of LO6.*
-3. **Defend-only by default for E6.** The user put "E6 and E7 defend-only by default" (aw7) on hold. *Recommendation: leave it as a user decision; both episodes already have defend-only variants. (Candidate for DECISIONS_PENDING.)*
+3. **Defend-only by default for E6.** Decided (aw7): the full and defend-only versions of E6 and E7 both stay listed, with organiser guidance. Two courses are seeded in Hacktivity, one with the defend-only episodes and one with both versions.

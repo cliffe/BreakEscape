@@ -25,7 +25,7 @@ Status labels: **Built** (on main today), **Builds on E# / system X** (an extens
 - **Six check roles:** finance, hr, helpdesk, executive, general and mobile. Each role's check uses the company and channels of that role's episode: finance at Brightwell Foods; hr and mobile at Tarrowby Logistics; helpdesk and general at Quayholt Insurance; executive at Merrin & Sallow Architects.
 - **Two parallel forms per role, A and B,** of 10 items each. The forms are matched on the number of phish (4 in 10, 5 for executive), the multiset of red flags and the difficulty mix. A and B share no phish slots, which was audited across all six roles.
 - **AB and BA pairs.** Each role has an AB pair (pre uses A, post uses B) and a BA pair (the reverse): `awareness_{pre,post}_<role>_{ab,ba}`, 24 check missions in all. The organiser puts half the cohort on each pair, which counterbalances any difference between the forms without assigning anything at launch.
-- **Each check is its own mission**, 4 to 5 minutes, one kiosk, one triage set, feedback at the end (`feedbackMode: "end"`).
+- **Each check is its own mission**, about 9 minutes (finance checks about 8 to 10), one kiosk, one triage set, feedback at the end (`feedbackMode: "end"`).
 - **How pre reaches post.** The pre-check exports its percent, report rate and a done flag. The post-check imports them from the learner's newest concluded run of the paired pre mission. The post screen shows the change only when a baseline exists, and says plainly when there is none.
 - **Ordering is the organiser's job.** The organiser places the pre-check first and the post-check last in the course. A second play of the pre-check replaces the baseline, because the newest concluded run counts. Product copy claims nothing stricter.
 - **Scope.** A role pair covers the learner's primary role. Episodes from other roles are extras with no check of their own.
@@ -39,11 +39,11 @@ Each of E1 to E7, and each defend-only variant, ends its main play with a triage
 | A phish | 60 | 30 | 0 |
 | Genuine | 60 | 30 | 60 |
 
-In sets with **Verify** (E1, E3, E4, E6 and E7, and the finance, executive, helpdesk and mobile check forms), Verify scores as Report and is counted separately, and the debrief quotes it. The episode score is the mean of its items. The full episode and its defend-only variant use the same defend set, so their records are comparable; the record says which variant produced it.
+In sets with **Verify** (E1, E3, E4, E6 and E7, and the finance, executive, helpdesk and mobile check forms), Verify scores as Report and is counted separately, and the debrief quotes it. The episode score is the mean of its items. Two zero skills cap the grade at "Getting there", so a learner cannot reach a higher grade while scoring zero on two skills. The full episode and its defend-only variant use the same defend set, so their records are comparable; the record says which variant produced it.
 
 ### 2.3 Mirror pairs (Built, aw5)
 
-Every defend set holds a **mirror pair**: a genuine item that looks suspicious, and a phish that looks normal. It stops a learner scoring well by distrusting everything, and it gives the debrief its strongest teaching moment. E7 keeps its existing voicemail mirror (`FUN_DECISIONS.md`, e7_mirror). Every new defend set and check form needs one.
+Every defend set holds a **mirror pair**: a genuine item that looks suspicious, and a phish that looks normal. It stops a learner scoring well by distrusting everything, and it gives the debrief its strongest teaching moment. E7's mirror pair is closed: the existing voicemail mirror stays (`FUN_DECISIONS.md`, e7_mirror). Every new defend set and check form needs one.
 
 ### 2.4 First answer wins (Built)
 

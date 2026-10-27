@@ -113,7 +113,7 @@ All folders below are under `public/break_escape/js/` unless they start with `sc
 | MG-33 | Landing-page builder | Assemble a look-alike sign-in page from authored choices, score it, then inspect it as the victim; never a working page | Built: `minigames/landing-page-builder/` | Built | |
 | MG-34 | Pretext prep and template composer | A pretext card and mail templates whose blanks take only held facts; accounts, devices, drafts and judged replies | Built: `minigames/pretext-prep/`, `minigames/mail-client/` | Built | |
 | MG-35 | Inbox triage | The scored defend round: Trust, Report, Delete, Verify; email, call, voicemail, push, page, SMS and QR cards; red-flag chips; mirror pairs | Built: `minigames/inbox-triage/` | Built | |
-| MG-36 | Mock authenticator | A scripted push stream that ends with the target approving; an unscored demonstration | Built: `minigames/authenticator/` | Built | |
+| MG-36 | Mock authenticator | An unscored attacker-side push run in which the learner chooses how many pushes to send and when; the debrief explains why fatigue works | Built: `minigames/authenticator/` | Built | |
 | MG-37 | Engagement report | The student lab's closing report: results and root causes paired with controls | Built: `minigames/engagement-report/` | Built | |
 
 ## Explainers (EX)

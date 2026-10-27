@@ -121,8 +121,8 @@ Spoken lines say "the hospital" and "the ward", never the organisation's name, s
 
 ## Art and audio
 
-- **Rooms:** a new or redressed Beckside training room (room review and POV backgrounds are later in the build).
-- **Characters:** Dev Kapoor (host) and Rodel Bautista need art and voices; Dr Mulligan needs a portrait for his concept card; Joy, Kayleigh, the patients and the callers need art or voices as the episode uses them. The facilities contractor is a Harbreck Facilities engineer. Host art is held on PixelLab quota and the user's approval.
+- **Rooms:** a new or redressed Beckside training room (a new room needs its own review and POV background; the four built rooms already have theirs).
+- **Characters:** Dev Kapoor (host) and Rodel Bautista need art and voices; Dr Mulligan needs a portrait for his concept card; Joy, Kayleigh, the patients and the callers need art or voices as the episode uses them. The facilities contractor is a Harbreck Facilities engineer. Host art follows the PixelLab reset (3 Nov), with all 19 concepts approved.
 - **Voice:** text-to-speech only (no runtime language model). No voiced line prints a variable: never the player's name, the organisation's name, a count or a ward number that changes per play, so the voice cache stays keyed on exact text.
 
 ## Pitfalls

@@ -10,9 +10,9 @@
 | Company | Quayholt Insurance (`quayholt.example`), host a contact-centre team leader |
 | New check pair | A customer-verification check-form pair (`awareness_{pre,post}_customer_{ab,ba}`), **new** |
 | Prerequisites | core_00; core_02 recommended (calls, texts and people at the door in general) |
-| Full episode | About 13 minutes |
+| Full episode | About 15 minutes |
 | Defend-only variant | About 8 minutes |
-| Pre and post check | 4 to 5 minutes each (the new customer pair) |
+| Pre and post check | about 9 minutes each (the new customer pair) |
 | Priority | Phase 3 |
 | Build size | M. One new attack-first, role-swap episode in the built shape plus a new customer check pair; it reuses E3's role-swap mechanics |
 
@@ -20,7 +20,7 @@
 
 - **Built, this module reuses:** the **E3 role-swap pattern** (`episode-runner/role-swap.js`): the learner plays the attacker, then the role swaps and the learner is the agent, triaging `call` cards (and here `sms` and `page`) with the Verify verdict, the claimed facts shown by label. Plus the episode runner, OSINT browser, pretext prep and the influence bar, flip view, debrief view, concept cards and awareness measurement. role_06 has **no built episode or check** of its own yet.
 - **New (this whole module):** a customer-facing role at Quayholt Insurance (the contact centre verifies customers; role_03's service desk at the same company verifies colleagues). It needs its **own customer-verification check-form pair** (`awareness_{pre,post}_customer_{ab,ba}`) and a new attack-first, role-swap episode.
-- The awareness product is "Incident Simulations: Critical Cases", on hold since 2026-10-23 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). Nothing new here starts while it is on hold unless the user says so.
+- The awareness product is "Incident Simulations: Critical Cases", held from 2026-10-23 and resumed on 2026-10-27 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). The remaining built-product items are host character art after the PixelLab reset (3 Nov, all 19 concepts approved), human timing runs (postponed) and one facilitator guide for the course, written last.
 
 ## Why this module
 

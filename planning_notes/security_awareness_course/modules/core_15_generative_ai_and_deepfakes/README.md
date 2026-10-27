@@ -7,9 +7,9 @@
 |---|---|
 | Audience | All staff (built role: general / everyone) |
 | Prerequisites | core_00 recommended; core_01 helpful (phishing basics) |
-| Full episode | about 13 to 14 minutes |
+| Full episode | about 15 minutes |
 | Defend-only variant | about 8 minutes |
-| Pre and post check | 4 to 5 minutes each (general role forms) |
+| Pre and post check | about 9 minutes each (general role forms) |
 | Priority | Phase 2 (proposed episode E13 in the build's own order) |
 | Build size | M. Reuses the voicemail player, the video-call mode, inbox triage and the flip; new work is the authored AI-assistant surface |
 
@@ -27,7 +27,7 @@ This episode is the planned **E13, the authored AI assistant** (`../../04_BUILT_
 - prompt injection as a triage item, for **C15-LO4**;
 - the full verify-another-way habit, for **C15-LO5** and **LO6**.
 
-The episode is proposed as a full episode, a defend-only variant and new general check items. It is not yet built: the awareness product is on hold.
+The episode is proposed as a full episode, a defend-only variant and new general check items. It is not yet built (the awareness product resumed on 2026-10-27).
 
 ## Why this module
 
@@ -80,14 +80,14 @@ One training-room mission, with the pre-check and post-check as the bracketing m
 
 | Stage | What happens | Minutes |
 |---|---|---|
-| Pre-check (separate mission) | 10-item general check form, before the episodes | 4 to 5 |
+| Pre-check (separate mission) | 10-item general check form, before the episodes | about 9 |
 | Brief and scope note | "Authorised exercise at Brightwell Foods (fictional). Use the new assistant for real work; some of today is a test." | 1 |
 | The assistant (what goes in) | Prepare a document for the authored assistant: strike out a password and a child's health detail before pasting; the assistant answers from authored data | 2 |
 | The assistant (what comes out) | The assistant drafts a report with one invented figure and one unsupported claim; "Check source" against the document | 2 |
 | The demo (announced) | A video call "from the host" asks for a sign-in code; the real host leans round the screen: same face, same voice, made from a public talk. "You don't need to spot a deepfake. You need to check another way." | 1 |
 | Defend | Triage: a supplier email with hidden instructions for the assistant, a cloned-voice voicemail, a deepfake video call from the CEO, and a colleague pasting into a public tool; scored under the `awareness` profile | 3 to 4 |
 | Debrief | Per-item reasoning, feedback on the genuine items, the team-protected tally, the habit, the "On Monday" card, the reporting route and the no-blame line; "where the fakes came from", names not steps | 1 to 2 |
-| Post-check (separate mission) | The parallel general check form, after the episodes; shows the change | 4 to 5 |
+| Post-check (separate mission) | The parallel general check form, after the episodes; shows the change | about 9 |
 
 ## Setting and host
 

@@ -22,6 +22,8 @@ The checks are separate missions that bracket the run; the run is scored under t
 
 ### Pre-check (separate mission, 4 to 5 minutes)
 
+The check itself now takes about 9 minutes.
+
 The learner's role pre-check form (A or B, per the AB/BA pairing). It exports the baseline the post-check will import.
 
 ### Brief: what changed this year (3 minutes)
@@ -49,6 +51,8 @@ The built debrief view, across the run:
 7. The no-blame line.
 
 ### Post-check (separate mission, 4 to 5 minutes)
+
+The check itself now takes about 9 minutes.
 
 The paired role post-check form. It imports the newest pre-check result and shows the change; it shows "no baseline" if the pre-check was not concluded. There is no pass mark.
 

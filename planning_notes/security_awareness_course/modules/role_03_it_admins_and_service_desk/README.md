@@ -9,18 +9,18 @@
 | Built foundation | Episode E3 (help-desk reset by phone, then MFA fatigue, with a role swap) and the helpdesk check pair, at Quayholt Insurance |
 | Company | Quayholt Insurance (`quayholt.example`); E3 host Darren Price, with Leila Nassar as the phone NPC the attacker reaches |
 | Prerequisites | core_00. core_02 (callers and pretexts) and core_03 (passwords and MFA) recommended |
-| Full episode | About 13 minutes (E3 runs to about 17, accepted by the user) |
+| Full episode | About 15 minutes (E3 is about 15, durationTargetMin 15) |
 | Defend-only variant | About 8 minutes |
-| Pre and post check | 4 to 5 minutes each (the helpdesk pair) |
+| Pre and post check | about 9 minutes each (the helpdesk pair) |
 | Priority | Phase 3 |
 | Build size | M. The service desk half is built (E3's role swap and the helpdesk checks); the role extension (least privilege, consent, post-reset alerts) is one new episode in the built shape plus concept cards |
 
 ## Build status
 
-- **Built, this module builds on it:** episode **E3 *Help-desk reset by phone, then MFA fatigue*** (`scenarios/awareness_e3_helpdesk_reset`), Quayholt Insurance, host Darren Price. The learner first plays the attacker: a pretext call to the service desk as a locked-out manager (on the influence bar), then an attacker-side MFA push run that the target approves. Then the **role swap** (`episode-runner/role-swap.js`) puts the learner in the service desk agent's seat (Leila Nassar's): three calls (2 impostor, 1 genuine) and one unrequested push, triaged with Verify on, the claimed facts shown by label so the learner checks the facts they used as the attacker. The **helpdesk check pair** (`awareness_{pre,post}_helpdesk_{ab,ba}`) mixes emails, calls, a voicemail and a push, 4 phish in 10, Verify on in the scenario files.
+- **Built, this module builds on it:** episode **E3 *Help-desk reset by phone, then MFA fatigue*** (`scenarios/awareness_e3_helpdesk_reset`), Quayholt Insurance, host Darren Price. The learner first plays the attacker: a pretext call to the service desk as a locked-out manager (on the influence bar), then an attacker-side MFA push run in which the learner chooses how many pushes to send and when (for example late at night) and the debrief explains why fatigue works. Then the **role swap** (`episode-runner/role-swap.js`) puts the learner in the service desk agent's seat (Leila Nassar's): three calls (2 impostor, 1 genuine) and one unrequested push, triaged with Verify on, the claimed facts shown by label so the learner checks the facts they used as the attacker. The **helpdesk check pair** (`awareness_{pre,post}_helpdesk_{ab,ba}`) mixes emails, calls, a voicemail and a push, 4 phish in 10, Verify on in the scenario files.
 - **Builds on E3 and the helpdesk checks:** facts prove nothing, the call back on the number on record, not being talked round, and never reading out a code (R03-LO1, LO2, LO6) are taught and measured today.
 - **New (role extension this plan adds):** least privilege and separate admin accounts (R03-LO3), risky app consent and remote tooling (R03-LO4), and acting on the alerts that follow a reset (R03-LO5). Delivered as one new episode in the built shape plus concept cards; see `game_design.md`.
-- The awareness product is "Incident Simulations: Critical Cases", on hold since 2026-10-23 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). Nothing new here starts while it is on hold unless the user says so.
+- The awareness product is "Incident Simulations: Critical Cases", held from 2026-10-23 and resumed on 2026-10-27 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). The remaining built-product items are host character art after the PixelLab reset (3 Nov, all 19 concepts approved), human timing runs (postponed) and one facilitator guide for the course, written last.
 
 ## Why this module
 
@@ -75,7 +75,7 @@ The built E3, played in the episode shape (the attack half and the role swap are
 | Stage | What happens | Scored? | Minutes |
 |---|---|---|---|
 | Brief and scope note | Darren Price welcomes the learner to an authorised exercise at Quayholt's service desk | no | under 1 |
-| Attack half | A pretext call to the service desk as a locked-out manager (on the influence bar), then an attacker-side MFA push run the target approves | no | about 5 |
+| Attack half | A pretext call to the service desk as a locked-out manager (on the influence bar), then an attacker-side MFA push run where the learner picks how many pushes to send and when | no | about 5 |
 | Flip | The learner's own pretext call and push run shown from the desk's side, tells named | no | 1 |
 | Defend half (role swap) | The learner is the service desk agent: 3 calls (2 impostor, 1 genuine) and 1 unrequested push, Verify on, mirror pairs; the claimed facts shown by label | yes | about 7 |
 | Debrief | Per-item cards, genuine-item feedback, the team tally, **the habit to keep**, an "On Monday" card, the reporting route, no blame | no | about 2 |

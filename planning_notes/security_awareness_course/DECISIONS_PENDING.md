@@ -61,7 +61,7 @@ Each has a working answer in the plan; confirm or change.
 
 | Item | Working answer | Where |
 |---|---|---|
-| Induction starter pathway | core_00, then the general check pair with E5, then E1 or E6; about 40 minutes | `00_COURSE_OVERVIEW.md` |
+| Induction starter pathway | core_00, then the general check pair with E5, then E1 or E6; about 53 minutes now that episodes run about 15 and checks about 9 | `00_COURSE_OVERVIEW.md` |
 | Facilitated session length | Partly answered: the user chose one facilitator guide for the whole course, written last (FUN_DECISIONS q_facil). Still open: the session length the guide recommends; working answer 30 to 45 minutes | `01_LEARNING_DESIGN.md` |
 | core_00 and core_17 targets | core_00 about 5 minutes, no defend-only variant; core_17 about 20 minutes (mixed defend set plus the post-check) | `00_COURSE_OVERVIEW.md` |
 | Defend-only for every role episode | Recommendation: yes, every episode ships a defend-only variant, as E1 to E7 do (the overview still says "none" for role_01 and role_07) | `00_COURSE_OVERVIEW.md` |

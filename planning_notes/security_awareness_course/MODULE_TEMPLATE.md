@@ -31,7 +31,7 @@ Ids: core modules are `core_NN`, role modules `role_NN`, sector modules `sector_
 | Audience | <all staff / role / sector> |
 | Prerequisites | <usually core_00; anything else> |
 | Company and host | <a brand-set company (Brightwell Foods, Tarrowby Logistics, Quayholt Insurance, Merrin & Sallow Architects) and its host NPC, or a new invented company marked "proposed, to add to BRAND_SET.md" with a `.example` domain> |
-| Full module | <full episode minutes, about 13> |
+| Full module | <full episode minutes, about 15> |
 | Micro-drill | <defend-only variant minutes, about 8, or "none"> |
 | Text route | <minutes; New until BE-03 is built> |
 | Priority | <MVP / Phase 2 / Phase 3> |
@@ -61,7 +61,7 @@ Ids: core modules are `core_NN`, role modules `role_NN`, sector modules `sector_
 | Flip | <the learner's own artefact in a defender's inbox with its tells highlighted, or where the mistake led> | Flip view | 1 |
 | Defend | <the triage set: channels, items, phish and genuine counts, Verify on or off; scored, with a mirror pair> | Inbox triage | 4 to 5 |
 | Debrief | <reasoning cards, genuine-item feedback, team-protected tally, the habit to keep, the "On Monday" card, the reporting route, the no-blame line> | Debrief view | 2 |
-| Checks | <the role check pair this episode sits inside, and the new items it adds to forms A and B> | Pre and post check missions | 4 to 5 each |
+| Checks | <the role check pair this episode sits inside, and the new items it adds to forms A and B> | Pre and post check missions | about 9 each |
 | Defend-only variant | <brief, defend, debrief with the same defend set> | Episode runner | about 8 |
 
 ## Reuse from existing Break Escape content
@@ -134,7 +134,7 @@ Ids: core modules are `core_NN`, role modules `role_NN`, sector modules `sector_
 <The reasoning card per item, the genuine-item feedback, the team-protected tally, the habit to keep (quoted exactly), this episode's "On Monday" card, the reporting route and the no-blame line.>
 
 ## Variants
-- **Micro-drill:** <the defend-only variant, about 8 minutes: brief, defend, debrief>
+- **Micro-drill:** <the defend-only variant, about 8 minutes, recommended for sessions under 30 minutes: brief, defend, debrief>
 - **Text route:** <how the module plays without the 2D world>
 - **Facilitated session:** <how a team would play it together, with pause points>
 - **Replay and randomisation:** <what changes between plays and between years>

@@ -103,7 +103,7 @@ The built debrief view, in order: a reasoning card per item; detailed feedback o
 
 - **Defend-only variant:** every episode (E1, E2, E4, E5 and E8) has one, about 8 minutes: brief, defend, debrief, with the same defend set so the measurement is unchanged. It is the opt-out for customers who object to the attack beat, and the micro-drill through the year.
 - **Text route:** not yet built. An equivalent text route and a WCAG 2.2 AA statement are kept as a gap (`04_BUILT_SO_FAR.md` §5; BE-03, BE-04, BE-26).
-- **Facilitated session:** the episode runner has a `facilitated` flag (prompts, no per-learner score on the shared screen) that no shipped shell sets yet. Facilitator notes are scheduled last.
+- **Facilitated session:** the episode runner has a `facilitated` flag (prompts, no per-learner score on the shared screen) that no shipped shell sets yet. The built product will have one facilitator guide for the whole course, in the lab-sheet system, written last; per-episode notes are at most an extension.
 - **Replay and randomisation:** the defend sets and check forms carry matched items with disjoint phish slots across the A and B forms; look-alike domains and names are invented and varied per set. An annual mixed edition can be built from the existing defend sets (core_17).
 
 ## Alternative concepts
@@ -112,8 +112,8 @@ The built attack-then-defend shape is settled; alternative framings are closed. 
 
 ## Art and audio
 
-- **Rooms:** the four awareness rooms, dressed per company; room review cycle 1 is done, cycles 2 to 5 and the four POV conversation backgrounds are not started.
-- **Hosts:** Adaeze Okafor (E1), Fatima Begum (E2), Thandiwe Moyo (E4), Niamh Doherty (E5), Anjali Rao (E8). Host art is waiting on PixelLab quota and the user's approval.
+- **Rooms:** the four awareness rooms, dressed per company; training-room review cycles C1 to C3 are closed and the four POV conversation backgrounds are made, wired and approved.
+- **Hosts:** Adaeze Okafor (E1), Fatima Begum (E2), Thandiwe Moyo (E4), Niamh Doherty (E5), Anjali Rao (E8). Host art follows the PixelLab reset (3 Nov), with all 19 concepts approved.
 - **Voice:** text to speech for the voicemails and host lines. No voiced line prints a variable: counts, the company name and the report route are on screen only.
 - **No video.**
 

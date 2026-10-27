@@ -4,7 +4,7 @@
 
 This module is the built episode E3 plus one new episode, in the "Incident Simulations: Critical Cases" frame: a training room at Quayholt Insurance with a kiosk and a host, no doors, no combat, no VMs.
 
-- **Built foundation.** E3 teaches the habit the NCSC asked every service desk to review in 2025: verify through a route the caller doesn't control, however senior or urgent they are. The learner plays the attacker first (a pretext call to the desk as a locked-out claims manager, on the influence bar, then an MFA push run the target approves), then the role swaps: the learner is the service desk agent, taking three calls and an unrequested push, checking the very facts they used as the attacker. The helpdesk check pair measures the skill before and after.
+- **Built foundation.** E3 teaches the habit the NCSC asked every service desk to review in 2025: verify through a route the caller doesn't control, however senior or urgent they are. The learner plays the attacker first (a pretext call to the desk as a locked-out claims manager, on the influence bar, then an MFA push run where the learner chooses how many pushes to send and when), then the role swaps: the learner is the service desk agent, taking three calls and an unrequested push, checking the very facts they used as the attacker. The helpdesk check pair measures the skill before and after.
 - **New role extension.** One new episode in the same built shape covers what E3 does not: least privilege and separate admin accounts, risky app consent and remote tooling, and the alerts that follow a reset.
 
 The story a learner takes away is E3's: the impostor knows every security answer, and the only thing that catches him is the call back on a number he doesn't control. The role swap makes it land, because the learner just made the same call themselves.
@@ -22,7 +22,7 @@ The old Larkspur service desk, its MG-17 caller verification queue, its `log-fil
 
 ### Built foundation: E3 and the helpdesk checks
 
-Already built; summarised so this module reads whole. Brief and scope note (an authorised exercise at Quayholt's desk); attack half (a pretext call to the desk as Gordon McLeish, locked out, on the influence bar, then an attacker-side MFA push run the target approves at 06:50); flip (the learner's own call and push run from the desk's side, tells named); defend half as a role swap (the learner is the agent: three calls, two impostor and one genuine, plus one unrequested push, Verify on, the claimed facts shown by label so the learner checks the facts they used); debrief (per-item cards, genuine-item feedback, the team tally, the habit, an "On Monday" card, the reporting route, no blame). The helpdesk AB and BA checks bracket it. This evidences R03-LO1, LO2 and LO6. Do not redesign it.
+Already built; summarised so this module reads whole. Brief and scope note (an authorised exercise at Quayholt's desk); attack half (a pretext call to the desk as Gordon McLeish, locked out, on the influence bar, then an attacker-side MFA push run where the learner chooses how many pushes to send and when, for example late at night, and the debrief explains why fatigue works); flip (the learner's own call and push run from the desk's side, tells named); defend half as a role swap (the learner is the agent: three calls, two impostor and one genuine, plus one unrequested push, Verify on, the claimed facts shown by label so the learner checks the facts they used); debrief (per-item cards, genuine-item feedback, the team tally, the habit, an "On Monday" card, the reporting route, no blame). The helpdesk AB and BA checks bracket it. This evidences R03-LO1, LO2 and LO6. Do not redesign it.
 
 ### New episode: least privilege and consent
 
@@ -112,8 +112,8 @@ Shown on the built debrief view for each episode: per-item reasoning cards; genu
 
 ## Art and audio
 
-- **Rooms:** `room_aw_quayholt` (room review cycle 1 done; further cycles and POV backgrounds are later in the build).
-- **Characters:** Quayholt's Darren Price, Leila Nassar, Gordon McLeish, Anjali Rao, Helen Achterberg and Patrick Kerrigan use their awareness art; host art is held on PixelLab quota and the user's approval.
+- **Rooms:** `room_aw_quayholt` (training-room review cycles C1 to C3 are closed and the POV conversation backgrounds are made, wired and approved).
+- **Characters:** Quayholt's Darren Price, Leila Nassar, Gordon McLeish, Anjali Rao, Helen Achterberg and Patrick Kerrigan use their awareness art; host art follows the PixelLab reset (3 Nov), with all 19 concepts approved.
 - **Voice:** text-to-speech only (no runtime language model). The impostor caller uses a different voice from the genuine manager, with phone ambience through the voice filter; the lesson is that the voice and the answers prove nothing either way. No voiced line prints a variable: names, numbers and account details are on the caller card, not in speech. Phone numbers on screen come from Ofcom's drama range.
 
 ## Pitfalls

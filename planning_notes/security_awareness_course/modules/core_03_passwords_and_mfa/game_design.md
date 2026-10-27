@@ -23,7 +23,7 @@ Tarrowby fits E9: a haulier's depot has shared PCs, sticky notes and warehouse l
 
 Inside E3 (`research/built_episodes_vs_plan.md` §1.2):
 
-- **Attack half:** an attacker-side push flood in the mock authenticator; the target approves at 06:50.
+- **Attack half:** an attacker-side push flood in the mock authenticator; the learner chooses how many pushes to send and when (for example late at night), and the debrief explains why fatigue works.
 - **Defend half (role swap):** one card is an unrequested push; the right move is deny and report, Verify on.
 - This carries C03-LO5. The helpdesk check form includes the push item.
 

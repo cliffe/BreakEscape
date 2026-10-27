@@ -26,13 +26,13 @@ In the awareness episodes the lab sheet is not the main learning activity. Its j
 | **Concept cards** | Short explanations shown during the episode (for example macros in E2, voice in E4 and E7) | Inside the episode runner | **Built**; new modules add their own |
 | **Field guide** | The longer explanation behind each key message, with examples | A HacktivityLabSheets page linked from the mission | **New** (the build schedules lab sheets last) |
 | **Text route** | The episode as an accessible interactive story with the same decisions and the same measurement | The text-only story player (BE-03) | **New** |
-| **Facilitator notes** | Timings, pause points and discussion questions for running an episode with a team | A HacktivityLabSheets page, like the SIS facilitator notes | **New**; builds on the runner's `facilitated` flag |
+| **Facilitator notes** | Timings, pause points and discussion questions for running an episode with a team | A HacktivityLabSheets page, like the SIS facilitator notes | **New**; builds on the runner's `facilitated` flag. The built product will have one facilitator guide for the whole course, in the lab-sheet system, written last; per-episode notes are at most an extension of it |
 
 Staged hints are not needed: episodes are short, the host and per-item feedback do the hinting, and the attack half is unscored. The intranet terminal (BE-09) is no longer needed for the episode format; it drops to "if a module needs it".
 
 ## The episode shape
 
-Every full episode follows the same shape (**Built**). A full episode takes about 13 minutes (E3 about 17).
+Every full episode follows the same shape (**Built**). A full episode takes about 15 minutes (E6 and E7 about 16). The stage minutes below are the original per-stage targets; the built episodes now run to about 15 minutes in all.
 
 | Stage | Purpose | Built format | Minutes |
 |---|---|---|---|
@@ -42,9 +42,9 @@ Every full episode follows the same shape (**Built**). A full episode takes abou
 | **Defend half** | Triage a set of messages, calls or pages with Trust, Report, Delete or Verify, with immediate feedback. Scored | Inbox triage | 4 to 5 |
 | **Debrief** | A reasoning card per item, feedback on the genuine items, a "team protected" tally, the habit to keep, an "On Monday" card, the customer's reporting route and a no-blame line | Debrief view | 2 |
 
-**Around the episodes (Built):** role-based pre and post checks, each a mission of its own of 10 items taking 4 to 5 minutes, bracket one or more episodes.
+**Around the episodes (Built):** role-based pre and post checks, each a mission of its own of 10 items taking about 9 minutes (finance checks about 8 to 10), bracket one or more episodes.
 
-**Defend-only variant (Built):** brief, defend, debrief, about 8 minutes, with the same defend set, company, room and host as the full episode, so the measurement is unchanged. It exists for customers who object to the attack half.
+**Defend-only variant (Built):** brief, defend, debrief, about 8 minutes (recommended for sessions under 30 minutes), with the same defend set, company, room and host as the full episode, so the measurement is unchanged. It exists for customers who object to the attack half.
 
 ### How the old seven beats map
 
@@ -79,9 +79,9 @@ Each module is designed once and delivered in several ways.
 
 | Mode | Length | When it is used | Status |
 |---|---|---|---|
-| **Full episode** | About 13 minutes (E3 about 17) | Induction, annual assignment, role training | **Built** |
-| **Defend-only variant** | About 8 minutes | Customers who opt out of the attack half; spaced drills through the year; a "spotlight" when a new scam is in the news | **Built** |
-| **Pre and post checks** | 4 to 5 minutes each | Around any set of episodes, per role | **Built** |
+| **Full episode** | About 15 minutes (E6 and E7 about 16) | Induction, annual assignment, role training | **Built** |
+| **Defend-only variant** | About 8 minutes; recommended for sessions under 30 minutes | Customers who opt out of the attack half; spaced drills through the year; a "spotlight" when a new scam is in the news | **Built** |
+| **Pre and post checks** | About 9 minutes each (finance about 8 to 10) | Around any set of episodes, per role | **Built** |
 | **Text route** | About 10 minutes | Accessibility, low-spec devices, personal preference | **New** (BE-03) |
 | **Facilitated session** | 30 to 45 minutes | A team plays together on one screen with a facilitator, pausing at marked points to discuss (the sis01 pattern) | **New**; builds on the runner's `facilitated` flag (prompts, no per-learner score on the shared screen) |
 
@@ -98,7 +98,7 @@ These apply to every module. Reviews check against them.
 3. **No blame.** People are the organisation's best detection system, not its weakest link (Adams and Sasse, 1999). A learner who falls for something and reports it quickly is shown as having done well. Reporting is never penalised, and every debrief carries a no-blame line (**Built**).
 4. **Threats arrive inside real work.** In real life a phishing email arrives while you are busy with something else. The defend half is a role's own inbox, phone or call queue with genuine items mixed in (**Built**). A fuller work task around the defend half is **New** where a module needs it.
 5. **Process over cues.** Spotting errors and odd addresses helps, but well-made attacks have none. Each module teaches the cues as hints and the process as the defence: the habit to keep, *"When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."*, then report. Large studies of phishing in organisations found that simulated phishing with click-through training pages barely changed behaviour, while easy reporting worked well (Lain, Kostiainen and Čapkun, 2022; Ho and others, 2025). We build for reporting.
-6. **Short and respectful of time.** About 13 minutes per episode, 8 minutes defend-only and 4 to 5 minutes per check, with a clear core path and optional depth.
+6. **Short and respectful of time.** About 15 minutes per episode, about 8 minutes defend-only (recommended for sessions under 30 minutes) and about 9 minutes per check, with a clear core path and optional depth.
 7. **Spaced, not crammed.** One annual sitting is forgotten quickly. Defend-only drills through the year use spaced practice (Cepeda and others, 2006).
 8. **Realistic, current and local.** Threats look like the ones staff actually receive this year, at invented companies on `.example` domains with no real brands. UK first (NCSC, ICO, Report Fraud, which replaced Action Fraud in December 2025, and 7726 for scam texts), with organisation details filled in and other countries handled as localisations. Scotland differs in places (fraud is reported to Police Scotland on 101), so modules say "in England, Wales and Northern Ireland" where it matters.
 9. **Plain English.** Short sentences, everyday words, technical terms explained the first time. Aim for a reading age of about 11 to 12 in the core modules.

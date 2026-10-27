@@ -9,9 +9,9 @@
 | Built foundation | Episodes E1 (invoice and bank-detail fraud) and E7 (cloned CEO voice), and the finance check pair, all at Brightwell Foods |
 | Company | Brightwell Foods (`brightwellfoods.example`); E1 host Adaeze Okafor, E7 host Agnieszka Duda |
 | Prerequisites | core_11 recommended: this module assumes its basics and goes deeper |
-| Full episode (each) | About 13 minutes (E1, E7) |
+| Full episode (each) | About 15 minutes (E1), about 16 (E7) |
 | Defend-only variant | About 8 minutes |
-| Pre and post check | 4 to 5 minutes each (the finance pair) |
+| Pre and post check | about 9 minutes each (the finance pair) |
 | Priority | Phase 2 |
 | Build size | S to M. Most is built (E1, E7, the finance checks); the role extension is one new episode in the built shape plus concept cards and defend items |
 
@@ -23,7 +23,7 @@
   - **Finance check pair** (`awareness_{pre,post}_finance_{ab,ba}`): 10 items, 4 phish, matched flag multisets, look-alike bank changes paired with the real supplier's invoice (mirror pairs). The scenario files set Verify on in these forms, which differs from `BRAND_SET.md` §6 ("Verify is off"); the scenario file wins, so Verify is on.
 - **Builds on E1, E7 and the finance checks:** supplier bank-change fraud, chief executive fraud, a genuine-looking sender proving nothing, and ring-back on the number held are all taught and measured today.
 - **New (role extension this plan adds):** payroll diversion, Confirmation of Payee, PCI card data handling and the first hour after a suspected fraud. Delivered as one new finance episode in the built shape plus concept cards and defend items; see `game_design.md`.
-- The awareness product is "Incident Simulations: Critical Cases", on hold since 2026-10-23 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). Nothing new here starts while it is on hold unless the user says so.
+- The awareness product is "Incident Simulations: Critical Cases", held from 2026-10-23 and resumed on 2026-10-27 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). The remaining built-product items are host character art after the PixelLab reset (3 Nov, all 19 concepts approved), human timing runs (postponed) and one facilitator guide for the course, written last.
 
 ## Why this module
 

@@ -10,9 +10,9 @@
 | Company | Beckside Hospitals NHS Trust (`beckside.example`), **proposed, to add to `BRAND_SET.md`**; host Dev Kapoor (information governance manager) |
 | New check pair | A healthcare check-form pair (`awareness_{pre,post}_healthcare_{ab,ba}`), **new** |
 | Prerequisites | core_00; core_01, core_04 and core_05 recommended |
-| Full episode | About 13 minutes |
+| Full episode | About 15 minutes |
 | Defend-only variant | About 8 minutes |
-| Pre and post check | 4 to 5 minutes each (the new healthcare pair) |
+| Pre and post check | about 9 minutes each (the new healthcare pair) |
 | Priority | Phase 3 |
 | Build size | M. One new attack-first episode (phone enquiries and a ward-mailbox phish) and one consequence-flip episode (snooping, smartcards, downtime), plus a new healthcare check pair |
 
@@ -21,7 +21,7 @@
 - **Built, this module reuses:** the episode runner, the inbox-triage `call`, `sms`, `page` and email cards with the Verify verdict (the E3 phone-triage pattern), the flip view, the debrief view, concept cards and awareness measurement. sector_01 has **no built episode or check** of its own yet.
 - **New (this whole module):** a healthcare sector role at the proposed Beckside Hospitals NHS Trust. It needs its **own healthcare check-form pair** (`awareness_{pre,post}_healthcare_{ab,ba}`), a new attack-first episode (phone enquiries and a ward-mailbox phish) and a consequence-flip episode (need-to-know and snooping, smartcards, downtime workarounds).
 - **No video.** The build uses concept cards, feedback strings and text to speech, not video (R9). The old plan's Dr Mulligan "duty to share" video becomes a concept card delivered by the Caldicott Guardian, not an engine-recorded video.
-- The awareness product is "Incident Simulations: Critical Cases", on hold since 2026-10-23 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). Nothing new here starts while it is on hold unless the user says so.
+- The awareness product is "Incident Simulations: Critical Cases", held from 2026-10-23 and resumed on 2026-10-27 (`../phishing_and_social_engineering/awareness/HANDOVER.md`). The remaining built-product items are host character art after the PixelLab reset (3 Nov, all 19 concepts approved), human timing runs (postponed) and one facilitator guide for the course, written last.
 
 ## Why this module
 

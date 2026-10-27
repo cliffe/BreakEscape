@@ -105,8 +105,8 @@ Shown on the built debrief view: per-item reasoning cards with the caller's tact
 
 ## Art and audio
 
-- **Rooms:** `room_aw_quayholt` redressed for the contact centre (headset desks, a calls-waiting display); room review and POV backgrounds are later in the build.
-- **Characters:** Shauna Campbell (new; needs art and voice, pre-ship checked), Anjali Rao (built E3 cast); generic office sprites with headsets as other advisers; callers are voices only. Host art is held on PixelLab quota and the user's approval.
+- **Rooms:** `room_aw_quayholt` redressed for the contact centre (headset desks, a calls-waiting display); the built training rooms already have their POV conversation backgrounds, and a redressed room would need a new one.
+- **Characters:** Shauna Campbell (new; needs art and voice, pre-ship checked), Anjali Rao (built E3 cast); generic office sprites with headsets as other advisers; callers are voices only. Host art follows the PixelLab reset (3 Nov), with all 19 concepts approved.
 - **Voice:** text-to-speech only (no runtime language model). The impostor callers must sound clearly different from the genuine ones: this module is about procedure, not voice-matching, which is core_15's ground. No voiced line prints a variable: account numbers, amounts and codes are on screen only, and codes are never spoken, so the voice cache stays keyed on exact text.
 
 ## Pitfalls

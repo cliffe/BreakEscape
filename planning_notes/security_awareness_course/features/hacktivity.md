@@ -731,7 +731,7 @@ Before building, check each pilot customer's LMS and which of these it supports;
 
 **Why:** A team can play a module together on one screen with a facilitator, pausing to discuss (`01_LEARNING_DESIGN.md`, delivery modes). This is how staff who rarely use a computer get trained (`02_COMPLIANCE_MAPPING.md` section 5, "Everyone can complete it"), how boards exercise together (role_01; Cyber Governance Code D2), and how security champions run team events (core_01's "Inbox Defence"). Attendance has to be recorded as evidence.
 
-**What exists today:** nothing for this. Some `mission.json` files hold facilitator notes, which Hacktivity doesn't read.
+**What exists today:** nothing for this. Some `mission.json` files hold facilitator notes, which Hacktivity doesn't read. The built awareness product will have one facilitator guide for the whole course, in the lab-sheet system, written last; per-episode notes are at most an extension.
 
 **Design:**
 
