@@ -200,3 +200,41 @@ than a full review.
   never goes dark in play.
 - Assumption: m1 (W as H) is graded minor, one step below C1's M2, because context carries the word more readily.
 - Assumption: Tarrowby's cones and Merrin having no refreshments were judged in keeping and not raised.
+
+## In-game pass
+
+Run 2026-10-27 on keyless :3001, one game at a time, after the awareness bridges had finished. Games: Brightwell
+`awareness_e1_invoice_fraud_defend` 4485, Tarrowby `awareness_e2_cv_lures_defend` 4488, Quayholt
+`awareness_e3_helpdesk_reset_defend` 4490, Merrin Sallow `awareness_e4_exec_whaling_defend` 4491. Tours by
+`lighting-tour.sh <shell> <out> --close-intro --check --player training_room:6,6:up`, with the lit shot as
+`training_room-a.png` and the dark shot as `training_room-player-dark.png`. Judgements on the shots are visual; no pixel
+measurements were taken.
+
+Shots: `playtests/ROOMS_C2_screenshots/game_{brightwell,tarrowby,quayholt,merrin_sallow}.png` (lit) and
+`game_<co>_dark.png` (dark). The `--check` output read `mode=on` and a lit ambient in all four, with the player
+shot showing the kiosk torch.
+
+| # | Item | Result | Evidence |
+|---|---|---|---|
+| 1 | Lit and dark tours, four defend shells | PASS | Games 4485, 4488, 4490, 4491; eight shots copied |
+| 2 | C1 m4: no white halo from `info_screen1` on the Quayholt plate | PASS | Lit shot shows no halo on the plate |
+| 3 | C1 m5: warm pool under Brightwell's window; Brightwell and Quayholt no longer alike | PASS, with minor m5a | Pools and colours differ, Brightwell cream and Quayholt blue-purple. The pool under the window is faint, see m5a |
+| 4 | Merrin window light does not wash out the kiosk glow | PASS | The kiosk glow is the first thing read in the dark shot. No change to `training_room_lighting.json` |
+| 5 | Host at y 3.8: head clear of skirting, under the plate, in all four | PASS | Host stands clear of the skirting and below the plate in all four lit shots |
+| 6a | Kiosk opens with one tap, no menu | PASS | Bridge: one `interact` on `training_kiosk` opened `episode-runner`; `interactionMenu` null, in all four games (2/2 assertions each) |
+| 6b | Host opens `person-chat` with no menu | PASS | Bridge: one `interact` on the host opened `person-chat`; `interactionMenu` null, in all four games (2/2 assertions each) |
+| 6c | Taps on Quayholt PC, headset and screens, oat box, hard hat, Merrin chairs do nothing | NOT RUN | These props are map art with no scenario or map object behind them, so there is no id to tap and no heal toast or push to check. "Does nothing" holds by construction, not by observation |
+| 7 | Copy shots to `ROOMS_C2_screenshots/` as `game_<co>.png` and `game_<co>_dark.png` | PASS | Eight files |
+
+### New findings
+
+- **m5a (minor).** The warm pool under Brightwell's window is faint in the lit shot. It reads, but the window-side
+  light could be a step warmer or wider to carry the difference from Quayholt by light as well as colour. Fix is in
+  `training_room_lighting.json`, then `apply_training_room.py --refresh`.
+- **t4 (trivial).** Merrin's desk lamp is the second-brightest point in the dark shot, close to the kiosk glow. The
+  kiosk still reads first. Left as it is.
+
+### Summary
+
+Eight of nine rows PASS. Row 6c was not run in game (no tappable object). The walk-and-tap bridge scripts are in
+`/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw-checks2/tap/`, not committed.
