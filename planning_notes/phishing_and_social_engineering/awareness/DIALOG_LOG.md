@@ -1596,3 +1596,29 @@ in the shells, a no-change regen of `gen_e6_e7_shells.py` still reproduced every
 to HEAD (the POV `chatBackground` comes through the generator), so regenerating preserves it; after the edits
 only the E6 defend `scenario.json.erb` differed, by exactly these two changes.
 Checks: both E6 shells `--strict-social --no-graph --skip-ink` exit 0; node suite 1843/1843 pass, parity green.
+
+### P7-3 (minor, E5) — a wrong-service page no longer lands on Hana — DONE (data)
+P7 found that a DocShare page (the wrong service) still landed on Hana at 60/100 even though the builder
+said "FAIL Brand: Hana doesn't use that service", so the wrong-service/wrong-address replies were
+unreachable and the lesson that she signs in only on her own service didn't hold. The lever is the landing
+page's per-target `brandGate`: `landingPages[0].targets.sso_staff` had `brandGate: false`, so the brand gate
+was never added to the page's land decision and only the credibility threshold (55) mattered. Set it to
+`true`. In `landing-page-model.js scorePage`, `brandGate !== false` adds the brand gate, which passes only
+when the chosen brand equals the pretext brand ("quayholt"); a failed gate makes `meetsThreshold` false, and
+`phish-rules.js judgeLink` lands the email only when `linkInfo.meetsThreshold === true`. So a wrong-brand
+page now fails to land, and `linkCauseOf` returns `wrongService`.
+Tested with the scoring functions (the live reply path P7-1 was still in flight; it has since landed as
+0c3f6379d):
+- DocShare, best page (tier-2 domain, padlock, crisp logo): credibility 67 but gatesPassed=false ->
+  meetsThreshold=false -> linkState=fail, cause=wrongService. Wrong service now misses.
+- Quayholt quaybolt (tier-1 look-alike), no padlock: credibility 65, gate passes, meetsThreshold=true ->
+  lands. The close-look-alike landing is KEPT: E5's lesson is that a convincing look-alike is exactly what
+  gets people, so a believable Quayholt address should still fool Hana.
+- Quayholt best page: credibility 87, lands (the intended solution still works).
+Decision: data-only, `brandGate: true`. No engine gate needed (the key already exists and is honoured). The
+wrong-address reply is reachable only for a genuinely weak Quayholt page (credibility below 55); a strong
+look-alike is meant to land, so that is by design, not a gap.
+Files: `e5/attack.json`, `awareness_e5_signin_pages/scenario.json.erb` (attack-only; no generated shell).
+Checks: E5 full erb `--strict-social` exit 0; node suite 1850/1850 pass (count rose from 1843 with the P7-1
+engine tests in 0c3f6379d; one load-flaky run showed 4 unrelated triage-band failures that a clean re-run
+did not reproduce), parity green.

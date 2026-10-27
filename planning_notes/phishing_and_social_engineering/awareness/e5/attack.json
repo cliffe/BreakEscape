@@ -131,7 +131,7 @@
       "fields": ["email", "password", "one_time_code"],
       "extraSensitiveFields": ["card_number", "ni_number"],
       "targets": {
-        "sso_staff": { "linkThreshold": 55, "brandGate": false }
+        "sso_staff": { "linkThreshold": 55, "brandGate": true }
       },
       "brands": [
         {
