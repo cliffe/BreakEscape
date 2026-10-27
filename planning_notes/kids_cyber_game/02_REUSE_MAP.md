@@ -66,7 +66,18 @@ For children, only the defend-only shape is used: **brief, defend, debrief**. Ev
 | BE-28 | Take an item from the player | Not built | **Reuse** | Hand the "found" thing to a grown-up, return a borrowed device |
 | BE-29 | NPC guide behaviour | Not built | **Reuse** | The mascot walks ahead and waits; natural for a guide character |
 | BE-30 | Video call options | Not built | **Adapt** | A kid-safe video-call skin for "is it really them?", no deepfake tells |
-| BE-31 onwards | The built systems with no earlier id (episode runner, flip view, intel facts, influence, channels, mail scheduler, report button, measurement, concept cards, look-alike guard, social validator, readable font) | Built | See section 0 | Ids follow `features/README.md` as it is extended. Kids use: episode runner, report button, measurement, concept cards, look-alike guard, social validator (re-pointed at a kids brand set) and the readable font. **Avoid:** influence (as a manipulation meter) and the flip view of the learner's own attack |
+| BE-31 | Episode runner | Built | **Reuse** | The kids beat runner: defend-only variant (brief, defend, debrief) with the step strip |
+| BE-32 | Flip view | Built | **Avoid / adapt gently** | No flip of a child's own attack; at most a gentle "what happened next" for no-attacker topics |
+| BE-33 | Influence service | Built | **Avoid** | Not used as a manipulation meter for children |
+| BE-34 | Channels and synced globals | Built | **Reuse** | Same message in a game chat and from a "friend" stays consistent |
+| BE-35 | Mail scheduler and mail runner | Built | **Adapt** | Timed arrivals of pretend messages; no real messaging |
+| BE-36 | Awareness-measure records | Built | **Reuse** | No free text, no identity: fits the no-child-data rule; teacher view aggregate only |
+| BE-37 | Look-alike NPC guard and player avatar | Built | **Reuse** | The child's chosen avatar always wins |
+| BE-38 | Social validator and CI | Built | **Adapt** | Re-pointed at a kids brand set, plus a reading-age check |
+| BE-39 | Intel facts and readiness | Built | **Avoid (mostly)** | Only for "what can a stranger learn about you", defender framing |
+| BE-40 | Phish rules engine and pretext judge | Built | **Avoid** | Judges attacks the child would write; not in the kids game |
+| BE-41 | Role swap | Built | **Avoid** | No playing the other side for young children |
+| BE-42 | Readable font | Built | **Reuse** | Source Sans 3, at a larger size |
 
 Almost every MVP engine gap the awareness product still has is also a gap here, so **closing them once serves two products.** BE-19 (a real opener from ink), BE-03 (text and audio route), BE-04 and BE-26 (accessibility), BE-20 (an authorable shell), BE-23 (a pause that stops the clock) and BE-25 (avatars and name entry) are the shared backlog. BE-01, BE-02 and the episode runner are already there.
 
@@ -75,6 +86,8 @@ Almost every MVP engine gap the awareness product still has is also a gap here, 
 | Id | Minigame | Built on main | For kids | Kid reskin |
 |---|---|---|---|---|
 | MG-35 | Inbox triage | Built | **Adapt** | The core "is it real?" sorter (section 0): Trust and Tell a grown-up, no Verify, picture trick cards |
+| MG-36 | Mock authenticator | Built | **Adapt** | "Two keys are better than one": a gentle demo of a second check, no fatigue attack |
+| MG-37 | Engagement report | Built (student lab only) | **Avoid** | An attacker's report; not for children |
 | MG-01 | Inbox | Built differently (split into the attacker mail client and the defender triage, MG-35) | **Adapt via MG-35** | A kid message panel (game invites, prize messages) as triage cards; the attacker composer is not used |
 | MG-05 | Messaging apps | Partly built (triage `sms` card, phone layout) | **Adapt** | Prize texts via the `sms` card now; a pretend group chat for kindness and "do not pass it on" is **New** |
 | MG-06 | QR code scanner | Built differently (a decorative QR notice that encodes nothing) | **Reuse** | A sticker QR on a poster; encoding nothing is exactly right for children |
@@ -110,6 +123,7 @@ The cheapest, highest-value piece is already built: the triage sorter (MG-35) wi
 | EX-06 Attacker-view interludes | Built differently (the attack half of every full episode) | **Avoid** | Not for young children; kids use the defend-only shape |
 | EX-07 Glossary and tooltips | Partly built differently (concept cards behind "What is this?") | **Reuse** | Kid-friendly word helper on the same cards; no hover-only text |
 | EX-08 Poster and briefing pack | Not built | **Reuse (when built)** | Classroom posters and a parent one-pager |
+| EX-09 Concept cards | Built | **Reuse** | The guide's picture cards behind a "What is this?" button |
 | HA-01 Organisations | Not built | **Adapt** | Schools, not companies |
 | HA-03 Assignments | Not built (the build uses ordinary missions in a collection, ordered by the organiser) | **Adapt** | A teacher orders the worlds for the class, as organisers order episodes and checks today |
 | HA-05 Records, HA-06 Certificates | Not built (records stay in game) | **Adapt** | Badges and a printable certificate; the record belongs to teacher or parent, not a child account |
