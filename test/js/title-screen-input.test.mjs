@@ -11,7 +11,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '../../public/break_escape/js/minigames/title-screen/title-screen-input.js');
 const dir = mkdtempSync(join(tmpdir(), 'title-screen-input-'));
 writeFileSync(join(dir, 'input.mjs'), readFileSync(src, 'utf8'));
-const { isContinueKey, attachContinueHandlers } = await import(pathToFileURL(join(dir, 'input.mjs')).href);
+const { isContinueKey, attachContinueHandlers, startDesktopHold, DESKTOP_HOLD_MS } = await import(pathToFileURL(join(dir, 'input.mjs')).href);
 
 function target() {
     const t = new EventTarget();
@@ -57,4 +57,50 @@ test('the title screen uses the shared continue handlers', () => {
     const ts = readFileSync(join(here, '../../public/break_escape/js/minigames/title-screen/title-screen-minigame.js'), 'utf8');
     assert.match(ts, /attachContinueHandlers\(this\.container, document,/);
     assert.match(ts, /Click, or press Space or Enter/);
+});
+
+function fakeTimers() {
+    const t = { pending: new Map(), next: 1 };
+    t.setTimeout = (fn, ms) => { const id = t.next++; t.pending.set(id, { fn, ms }); return id; };
+    t.clearTimeout = (id) => { t.pending.delete(id); };
+    t.fire = () => { for (const [id, { fn }] of [...t.pending]) { t.pending.delete(id); fn(); } };
+    return t;
+}
+
+test('desktop hold: proceeds once after the hold with no input', () => {
+    const c = target(); const d = target(); const t = fakeTimers();
+    let calls = 0;
+    startDesktopHold(c, d, DESKTOP_HOLD_MS, () => calls++, t);
+    assert.equal(DESKTOP_HOLD_MS, 1200);
+    assert.equal([...t.pending.values()][0].ms, 1200);
+    assert.equal(calls, 0);
+    t.fire();
+    assert.equal(calls, 1);
+    c.dispatchEvent(new Event('click'));
+    assert.equal(calls, 1);
+});
+
+for (const [name, fire] of [
+    ['click', (c, d) => c.dispatchEvent(new Event('click'))],
+    ['Space', (c, d) => d.dispatchEvent(key(' ', { code: 'Space' }))],
+    ['Enter', (c, d) => d.dispatchEvent(key('Enter', { code: 'Enter' }))],
+]) {
+    test(`desktop hold: ${name} skips the hold, once, and clears the timer`, () => {
+        const c = target(); const d = target(); const t = fakeTimers();
+        let calls = 0;
+        startDesktopHold(c, d, 1200, () => calls++, t);
+        fire(c, d);
+        assert.equal(calls, 1);
+        assert.equal(t.pending.size, 0);
+        t.fire(); fire(c, d);
+        assert.equal(calls, 1);
+    });
+}
+
+test('desktop hold: cancel stops it', () => {
+    const c = target(); const d = target(); const t = fakeTimers();
+    let calls = 0;
+    const cancel = startDesktopHold(c, d, 1200, () => calls++, t);
+    cancel(); t.fire(); c.dispatchEvent(new Event('click'));
+    assert.equal(calls, 0);
 });

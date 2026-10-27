@@ -42,3 +42,30 @@ export function attachContinueHandlers(container, doc, onContinue) {
     doc?.addEventListener?.('keydown', onKey);
     return detach;
 }
+
+/** How long the desktop app holds the finished mission name on screen so it can be read. */
+export const DESKTOP_HOLD_MS = 1200;
+
+/**
+ * Desktop app: no "Continue?" wait. Call onProceed once, after holdMs or as soon as the player
+ * clicks / presses Space or Enter, whichever comes first.
+ * @returns {Function} cancel, which clears the timer and removes the listeners
+ */
+export function startDesktopHold(container, doc, holdMs, onProceed, timers = globalThis) {
+    let done = false;
+    let timer = null;
+    let detach = () => {};
+    const cancel = () => {
+        done = true;
+        if (timer !== null) { timers.clearTimeout(timer); timer = null; }
+        detach();
+    };
+    const proceed = () => {
+        if (done) return;
+        cancel();
+        onProceed();
+    };
+    detach = attachContinueHandlers(container, doc, proceed);
+    timer = timers.setTimeout(proceed, holdMs);
+    return cancel;
+}

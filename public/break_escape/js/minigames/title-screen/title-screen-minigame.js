@@ -1,5 +1,6 @@
 import { MinigameScene } from '../framework/base-minigame.js';
-import { attachContinueHandlers } from './title-screen-input.js';
+import { attachContinueHandlers, startDesktopHold, DESKTOP_HOLD_MS } from './title-screen-input.js';
+import { isDesktopApp } from '../../utils/desktop-app.js';
 
 // Load title screen CSS
 const titleScreenCSS = document.createElement('link');
@@ -14,8 +15,12 @@ if (!document.getElementById('title-screen-css')) {
  * Title Screen Minigame
  * Phase 1: Hacktivity logo fades in, zooms to 200%, fades out.
  * Phase 2: Mission display_name typed out terminal-style with blinking cursor.
- * Phase 3: "Click to continue" prompt — player gesture required before closing.
+ * Phase 3: "Continue?" prompt — player gesture required before closing.
  *          This also satisfies the browser's autoplay policy for audio.
+ *          In the Hacktivity desktop app (isDesktopApp) there is no prompt: the player has just
+ *          clicked "Start mission" in the shell and the app lifts the autoplay policy, so the name
+ *          is held for DESKTOP_HOLD_MS and the card closes once game_loaded has fired (typing
+ *          "Loading..." meanwhile). A click, Space or Enter skips the hold.
  */
 export class TitleScreenMinigame extends MinigameScene {
     constructor(container, params) {
@@ -134,6 +139,22 @@ export class TitleScreenMinigame extends MinigameScene {
 
     _onTypingComplete(promptEl) {
         this._typingDone = true;
+
+        if (isDesktopApp()) {
+            this._detachContinue = startDesktopHold(this.container, document, DESKTOP_HOLD_MS, () => {
+                this._detachContinue = null;
+                this._playerClicked = true;
+                if (this._gameLoaded) {
+                    this.complete(true);
+                } else {
+                    promptEl.style.animation = 'none';
+                    promptEl.style.visibility = 'visible';
+                    this._typeLoadingPrompt(promptEl);
+                }
+            });
+            return;
+        }
+
         promptEl.style.visibility = 'visible';
 
         // A click anywhere, Space or Enter continues (title-screen-input.js).
