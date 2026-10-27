@@ -77,7 +77,13 @@ land; keep each line short and say where the detail lives.
       `client-platform.js` and `client-purchase.js`); deploy engine and Hacktivity together.
 - [ ] Push all four repos (Hacktivity, BreakEscape, hacktivity-desktop, hacktivity-android; the
       Android repo has no remote yet).
-- [ ] Run migrations (`deleted_at`, `play_purchase_intents`, `app_settings`).
+- [ ] Run migrations (`deleted_at`, `play_purchase_intents`, `app_settings`, `desktop_min_version`,
+      `users_steam_not_staff` check, `steam_sign_in_attempts` and its persona column).
+- [ ] Restart `hacktivity_resque_pool` and `hacktivity_resque_scheduler` (`restart_services.sh`): new
+      `steam_recheck_queue` worker and the new scheduled jobs (Play voided poll and sweep, intent and
+      sign-in-attempt prune, Steam ownership recheck).
+- [ ] After the first Steam recheck has run, point an uptime monitor at `https://hacktivity.co.uk/job_status`
+      and keyword-check `"status":"ok"` (catches a dead scheduler).
 - [ ] Code signing for Windows; desktop app version bumps.
 
 ## Dev data to clean up (ask before deleting)
