@@ -14,7 +14,7 @@ with exactly those fields changed:
   * top-level lighting              inserted before rooms
   * rooms.training_room.lighting    inserted after door_sign
 
-chatBackground stays out until the POV backgrounds exist (room_fields omits it).
+chatBackground (the room-wide POV background) is spliced by --refresh, after door_sign.
 
 Usage: python3 apply_training_room.py           # patch the 7 shells in the repo
        python3 apply_training_room.py <outdir>  # write patched copies to <outdir>
@@ -23,7 +23,8 @@ Refresh (shells already wired, all 38 awareness shells): re-splice the fields th
 come from training_room.py and training_room_lighting.json after either changes,
 leaving everything else in the file byte for byte:
 
-  * top-level lighting, rooms.training_room.lighting, the host's position
+  * top-level lighting, rooms.training_room.lighting, the host's position,
+    rooms.training_room.chatBackground (inserted after door_sign if absent)
 
        python3 apply_training_room.py --refresh           # in place
        python3 apply_training_room.py --refresh <outdir>  # patched copies to <outdir>
@@ -167,14 +168,33 @@ def refresh_text(text):
         text = text[:a] + _indented(value, base) + text[b:]
     a, b = _value_span(text, '          "position": ')
     text = text[:a] + _indented(copy.deepcopy(training_room.HOST_POSITION), 10) + text[b:]
+    if 'chatBackground' in rf:
+        if '\n      "chatBackground": ' in text:
+            a, b = _value_span(text, '      "chatBackground": ')
+            text = text[:a] + json.dumps(rf['chatBackground']) + text[b:]
+        else:
+            anchor = '      "door_sign": "Training Room",\n'
+            assert text.count(anchor) == 1, 'door_sign anchor not unique'
+            text = text.replace(anchor, anchor + f'      "chatBackground": {json.dumps(rf["chatBackground"])},\n', 1)
     # the result must equal the old shell with exactly those three fields replaced
     exp = copy.deepcopy(old)
     exp['lighting'] = training_room.scenario_lighting(company)
     exp['rooms']['training_room']['lighting'] = rf['lighting']
+    if 'chatBackground' in rf:
+        # same key order as the generators: type, door_sign, chatBackground, lighting
+        tr = exp['rooms']['training_room']
+        rebuilt = {}
+        for k, v in tr.items():
+            if k == 'chatBackground':
+                continue
+            rebuilt[k] = v
+            if k == 'door_sign':
+                rebuilt['chatBackground'] = rf['chatBackground']
+        exp['rooms']['training_room'] = rebuilt
     hosts = [n for n in exp['rooms']['training_room']['npcs'] if 'position' in n]
     assert len(hosts) == 1, 'expected one positioned host'
     hosts[0]['position'] = copy.deepcopy(training_room.HOST_POSITION)
-    assert json.loads(text) == exp, 'refresh changed more than the three fields'
+    assert json.loads(text) == exp, 'refresh changed more than the four fields'
     return text
 
 
