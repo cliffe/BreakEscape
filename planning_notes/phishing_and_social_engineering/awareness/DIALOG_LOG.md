@@ -1581,3 +1581,18 @@ triageSet schema; then it is a one-line set field.
   N-14/P6-5 were applied (errors above); after the revert both are back to HEAD and clean.
 - Committed only the E5 per-cause replies (fragment + full erb). E6 left at HEAD pending the validator/schema
   updates. Bridges not run.
+
+### P6 data follow-up, part 2 (after engine round 3, bd60b83ea + POV wiring 622effe18) — N-14 and P6-5 re-applied
+The round-3 validator now allows `urgencyCalibrated` on a channel message and has `realLabel` in the
+triageSet schema, so both items that were blocked above are now in.
+- N-14: added `urgencyCalibrated` to `e6_parking_permit.truth.flags` with perFlagNote "'Vehicles not set up
+  may be clamped', from Monday, is there to make you scan now rather than stop to check where the code goes".
+- P6-5: set `realLabel: "Real texts and notices"` on `e6_phone_messages` (the set's genuine items are a text
+  and a QR notice, no real email, so this reads more accurately than the mixed default "Real texts, notices
+  and emails").
+Files: `e6/defend.json`, `awareness_e6_texts_and_qr/scenario.json.erb`, and the regenerated
+`awareness_e6_texts_and_qr_defend/scenario.json.erb`. Baseline check first: with POV wiring (622effe18) now
+in the shells, a no-change regen of `gen_e6_e7_shells.py` still reproduced every e6/e7 shell byte-identically
+to HEAD (the POV `chatBackground` comes through the generator), so regenerating preserves it; after the edits
+only the E6 defend `scenario.json.erb` differed, by exactly these two changes.
+Checks: both E6 shells `--strict-social --no-graph --skip-ink` exit 0; node suite 1843/1843 pass, parity green.
