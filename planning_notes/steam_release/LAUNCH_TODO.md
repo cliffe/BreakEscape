@@ -72,11 +72,11 @@ land; keep each line short and say where the detail lives.
       power off the user's VMs (the VNC console and VMs keep running today).
 - [ ] Restart the :3000 dev server: S14 throttles (rack_attack) and the web app's engine hook
       (config/initializers/break_escape.rb). Re-auth lockout counts need `bin/rails dev:cache` in dev.
-- [ ] Bugs found on the way: `/break_escape/games/:id/scenario_map` raises (GamePolicy has no
-      `scenario_map?`); a signed-out request to `/break_escape/configuration` raises "Player must
-      exist" instead of redirecting; Hacktivity loads the engine twice (the Gemfile path
-      `../BreakEscape` also holds the `BreakEscape-merge` worktree).
-- [ ] Windows build of the desktop app (needs wine or a Windows machine).
+- [x] Bugs found on the way, fixed: `scenario_map` policy and signed-out `/break_escape/configuration`
+      (engine bf0af2854); engine loaded twice, fixed with a gemspec glob (Hacktivity 5f655cce, eb7ee578,
+      1b385989; works whether `../BreakEscape` is the engine or its parent folder).
+- [ ] Windows installer of the desktop app: owner installs wine (`sudo apt install wine wine64`,
+      `wineboot --init`), then `npm run build:full:win`. Linux AppImage rebuilt 2026-10-27.
 - [ ] Backlog from reviews: in-page consent dialog instead of `window.confirm`; remember a declined
       restore per account; show "already owned" during restore; fix the pre-existing
       `subscription_flow_test.rb:143` and Stripe webhook test failures. (The older throttles' `req.ip`
