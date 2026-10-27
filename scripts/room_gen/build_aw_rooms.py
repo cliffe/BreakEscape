@@ -67,7 +67,7 @@ COMPANY_OPS = {
     "brightwell": [
         ("move", 2, 36, 50), ("move", 17, 43, 59),
         ("delete", 3),                       # t3: no year planner; the range poster takes its place
-        ("sprite", 4, "whiteboard2"), ("move", 4, 216, 50),
+        ("sprite", 4, "whiteboard2"), ("move", 4, 226, 50),
         ("delete", 18, 19, 22),
         ("move", 14, 262, 296),
         ("add", "items", "coffee_station1", 232, 296),
@@ -138,7 +138,7 @@ COMPANY_OPS = {
         ("add", "items", "plan_chest2", 36, 72),
         ("sprite", 3, "hce_art_canvas1"), ("move", 3, 96, 46),
         ("move", 4, 220, 50), ("move", 18, 227, 59),
-        ("add", "items", "planter_fig1", 34, 176),   # m2: planted against the west wall, below the report poster
+        ("add", "items", "planter_fig1", 34, 166),   # m2: planted against the west wall, below the report poster
         ("add", "table_items", "m10_plans1", 133, 236),
         ("add", "table_items", "bankers_lamp1", 44, 236),
         ("add", "items", "leather_sofa1", 216, 300),
