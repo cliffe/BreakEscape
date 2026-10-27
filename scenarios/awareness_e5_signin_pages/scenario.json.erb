@@ -379,6 +379,7 @@
         "provides": [
           {
             "type": "reference",
+            "about": "portal",
             "value": "sso_portal_name",
             "label": "Quayholt SSO",
             "kind": "distinctive"
@@ -454,11 +455,12 @@
       },
       "e5_pretext_reauth": {
         "part": "pretext",
-        "text": "We are moving {portal} to a new provider and your session has expired. Please sign in again to keep your access.",
+        "text": "We are moving the {portal} to a new provider and your session has expired. Please sign in again to keep your access.",
         "slots": [
           {
             "id": "portal",
             "type": "reference",
+            "about": "portal",
             "label": "which sign-on system"
           }
         ],
@@ -472,11 +474,12 @@
       },
       "e5_pretext_reauth_calm": {
         "part": "pretext",
-        "text": "We are moving {portal} to a new provider this month, so you may be asked to sign in again. When you have a moment, please sign in to confirm your access.",
+        "text": "We are moving the {portal} to a new provider this month, so you may be asked to sign in again. When you have a moment, please sign in to confirm your access.",
         "slots": [
           {
             "id": "portal",
             "type": "reference",
+            "about": "portal",
             "label": "which sign-on system"
           }
         ],
@@ -893,9 +896,9 @@
           },
           "urgencyCalibrated": {
             "pass": "✓ The pressure reads as believable",
-            "fail": "'Sign in before the end of the day' is the kind of deadline that gets someone to sign in before they stop to check the address.",
+            "fail": "A deadline to sign in quickly is the kind of pressure that gets someone to sign in before they stop to check the address.",
             "failMissed": "",
-            "redFlag": "The 'before the end of the day' line pushes you to sign in before you check the address in the bar."
+            "redFlag": "This pushes you to sign in quickly, before you stop to check the address in the bar."
           },
           "senderAuth": {
             "pass": "✓ Sender authentication would pass",
@@ -905,7 +908,7 @@
         },
         "replies": {
           "landed": "Thanks, I'll sign in through that link.",
-          "missed": "That page wasn't Quayholt's own sign-in — the address was wrong, and it isn't where I log in — so I didn't put my password in. I'll go to the portal the normal way."
+          "missed": "That link didn't take me to Quayholt's own sign-in, so I didn't put my password in. I'll go to the portal the normal way."
         },
         "hints": [
           "Which address do Quayholt staff already trust for IT notices? Put that in the From line.",

@@ -50,7 +50,8 @@
   "templates": {
     "ms_from": { "part": "from", "text": "{sender_name} <{sender_address}>",
       "slots": [ { "id": "sender_name", "type": "name", "about": "sender", "label": "sender's name" },
-                 { "id": "sender_address", "type": "address", "label": "sender's address" } ] },
+                 { "id": "sender_address", "type": "address", "label": "sender's address",
+                   "stuck": "Her own staff page lists only her normal work address. Look at the events and speaker pages for the address she uses while she's travelling." } ] },
     "ms_greet": { "part": "greeting", "text": "Tomás,", "slots": [] },
     "ms_pretext_pay_now": { "part": "pretext",
       "text": "I'm about to board for {trip} and I'll have no signal for a few hours. There's a contractor invoice that has to be settled today or we lose the slot. Can you push it through from the practice account? Keep it between us for now, no need to trouble finance, and I'll square it with them when I land.",

@@ -13,7 +13,7 @@
       "text": "Quayholt staff sign in to every system once, through a single sign-on page at quayholt.example. Staff call it the Quayholt SSO.",
       "subject": "hana", "source": "blk_sso",
       "provides": [
-        { "type": "reference", "value": "sso_portal_name", "label": "Quayholt SSO", "kind": "distinctive" }
+        { "type": "reference", "about": "portal", "value": "sso_portal_name", "label": "Quayholt SSO", "kind": "distinctive" }
       ],
       "reduceNote": "Naming the sign-on system and its address on the public site tells an attacker exactly what page to clone and what staff expect to see."
     },
@@ -48,16 +48,16 @@
                  { "id": "sender_address", "type": "address", "label": "sender's address" } ] },
     "e5_greet": { "part": "greeting", "text": "Hello,", "slots": [] },
     "e5_pretext_reauth": { "part": "pretext",
-      "text": "We are moving {portal} to a new provider and your session has expired. Please sign in again to keep your access.",
-      "slots": [ { "id": "portal", "type": "reference", "label": "which sign-on system" } ],
+      "text": "We are moving the {portal} to a new provider and your session has expired. Please sign in again to keep your access.",
+      "slots": [ { "id": "portal", "type": "reference", "about": "portal", "label": "which sign-on system" } ],
       "urgency": "high" },
     "e5_pretext_newsletter": { "part": "pretext",
       "text": "Here is this month's staff newsletter with news from around Quayholt.",
       "slots": [],
       "urgency": "low" },
     "e5_pretext_reauth_calm": { "part": "pretext",
-      "text": "We are moving {portal} to a new provider this month, so you may be asked to sign in again. When you have a moment, please sign in to confirm your access.",
-      "slots": [ { "id": "portal", "type": "reference", "label": "which sign-on system" } ],
+      "text": "We are moving the {portal} to a new provider this month, so you may be asked to sign in again. When you have a moment, please sign in to confirm your access.",
+      "slots": [ { "id": "portal", "type": "reference", "about": "portal", "label": "which sign-on system" } ],
       "urgency": "medium" },
     "e5_ask": { "part": "ask", "text": "Follow the link to sign in before the end of the day.", "slots": [],
       "urgency": "medium" },
@@ -224,14 +224,14 @@
         "senderTrust": { "pass": "✓ From the IT service desk she acts on", "fail": "She does not recognise this sender. IT notices reach her from the service desk address.", "redFlag": "The From line carries the service desk's real address, so it reads as the IT notice Hana trusts, but it was forged: the service desk never sent it." },
         "linkCredible": { "pass": "✓ The sign-in link looked like her own", "fail": "The link's address is not Quayholt's own sign-on; she would not type her password into it.", "redFlag": null },
         "pretextRelevant": { "pass": "✓ Matches the SSO move she was told about", "fail": "No change she can match this to, so no reason to sign in again.", "redFlag": null },
-        "urgencyCalibrated": { "pass": "✓ The pressure reads as believable", "fail": "'Sign in before the end of the day' is the kind of deadline that gets someone to sign in before they stop to check the address.", "failMissed": "", "redFlag": "The 'before the end of the day' line pushes you to sign in before you check the address in the bar." },
+        "urgencyCalibrated": { "pass": "✓ The pressure reads as believable", "fail": "A deadline to sign in quickly is the kind of pressure that gets someone to sign in before they stop to check the address.", "failMissed": "", "redFlag": "This pushes you to sign in quickly, before you stop to check the address in the bar." },
         "senderAuth": {
           "pass": "✓ Sender authentication would pass",
           "fail": "This did not really come from the address it claims, so it fails the domain's alignment check. Quayholt publishes p=none, so a receiver would still deliver it.",
           "redFlag": null
         }
       },
-      "replies": { "landed": "Thanks, I'll sign in through that link.", "missed": "That page wasn't Quayholt's own sign-in — the address was wrong, and it isn't where I log in — so I didn't put my password in. I'll go to the portal the normal way." },
+      "replies": { "landed": "Thanks, I'll sign in through that link.", "missed": "That link didn't take me to Quayholt's own sign-in, so I didn't put my password in. I'll go to the portal the normal way." },
       "hints": [
         "Which address do Quayholt staff already trust for IT notices? Put that in the From line.",
         "What change were staff told about, so an unexpected sign-in prompt reads as expected?",
