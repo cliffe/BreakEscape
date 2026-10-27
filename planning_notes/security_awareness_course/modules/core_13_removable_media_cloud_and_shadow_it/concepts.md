@@ -99,16 +99,16 @@ Use these as background and inspiration only. Game content uses fictional names.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+| Slot | Default (example) |
 |---|---|
-| Approved storage | The team drives and "Larkspur Files" (the file-sharing service, as in core_06) |
-| Sending big files outside | A Larkspur Files link to specific people with an end date (core_06: 30 days at most for Confidential), with a notice when it's opened |
-| Working from elsewhere | The work laptop with "Larkspur Connect" (remote access), or Larkspur Files in a browser on an approved device |
-| Company chat | "Larkspur Chat", on desktop and phone |
+| Approved storage | The team drives and the file-sharing service (as in core_06) |
+| Sending big files outside | A file-sharing-service link to specific people with an end date (core_06: 30 days at most for Confidential), with a notice when it's opened |
+| Working from elsewhere | The work laptop with remote access, or the file-sharing service in a browser on an approved device |
+| Company chat | The company chat tool, on desktop and phone |
 | Removable media policy | "No personal USB sticks or drives. Encrypted company sticks from the service desk, for a named job only." |
 | Found media | Hand it to the IT service desk, or to reception, who pass it straight to IT |
-| Requesting a new tool | The "Request a tool" form on The Lark; a reply within two working days |
-| Personal data in a personal account | The usual reporting route (the security team on extension 4444, or the Report an incident form); it reaches the DPO, Tomasz Wiśniewski |
+| Requesting a new tool | The "Request a tool" form on the intranet; a reply within two working days |
+| Personal data in a personal account | The usual reporting route (the security team, or the Report an incident form); it reaches the DPO |
 | Personal phones | Work email and chat only through the approved apps |
 
 ## Glossary

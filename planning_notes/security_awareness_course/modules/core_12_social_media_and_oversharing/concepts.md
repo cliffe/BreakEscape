@@ -25,7 +25,7 @@ Open-source intelligence (OSINT) is just information that is already public, gat
 ### How it is used
 
 - **Spear phishing (core_01):** an email that names your manager, your project and your system, and lands while you are expecting something like it, is far more convincing than a generic one.
-- **Pretext calls (core_02):** a caller who knows the right names and jargon sounds like an insider. "Leo asked me to sort the access before he's back from his holiday" works because the holiday and the names were public.
+- **Pretext calls (core_02):** a caller who knows the right names and jargon sounds like an insider. "Oskar asked me to sort the access before he's back from his leave" works because the leave and the names were public.
 - **Impersonation:** a fake profile copying a real colleague or senior leader can connect to staff, ask for favours, or lend weight to a scam.
 - **Recruitment scams and fake recruiters:** a "recruiter" with a tempting role asks for "an overview of your company's systems", an org chart, or who runs IT, as "background for the application". That is reconnaissance, not recruitment.
 - **Account takeover:** security-question answers harvested from posts help an attacker reset a password or pass a phone check.
@@ -94,9 +94,9 @@ Use as background and inspiration only. Game content uses fictional names.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+| Slot | Default (example) |
 |---|---|
-| Social media policy summary | "Don't post badges, screens, whiteboards or system names; don't post from secure areas or client sites; the communications team speaks for Larkspur" |
+| Social media policy summary | "Don't post badges, screens, whiteboards or system names; don't post from secure areas or client sites; the communications team speaks for the organisation" |
 | Who speaks for the organisation | The communications team; pass media questions to them |
 | Report a fake profile or recruiter | The security team on extension 4444; the Report route for a suspicious message |
 | Rule on connecting accounts | "Keep work and personal accounts separate; don't reuse passwords (see core_03)" |

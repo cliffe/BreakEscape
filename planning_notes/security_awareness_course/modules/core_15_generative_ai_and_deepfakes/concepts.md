@@ -18,7 +18,7 @@ Generative AI tools produce text, images, audio or video from a request (a "prom
 
 ### Approved tools and public tools
 
-- **An approved tool** is provided by the organisation under a contract: you sign in with your work account, the contract says what happens to what you type (for example, that it isn't used to train the provider's models and is deleted after a set time), it has been checked by the security team, and its use is logged. At Larkspur, this is Lark Assist.
+- **An approved tool** is provided by the organisation under a contract: you sign in with your work account, the contract says what happens to what you type (for example, that it isn't used to train the provider's models and is deleted after a set time), it has been checked by the security team, and its use is logged. At Brightwell, this is Brightwell Assist.
 - **A public tool** is anything else: free chatbot websites, personal accounts on paid services, "AI" buttons inside free apps, browser extensions, meeting note-takers someone has invited to a call. Its terms may let the provider keep what you type, use it to improve its service, and let its staff review it.
 - The NCSC's advice (2023) on public tools: queries are visible to the provider, are stored, and will almost certainly be used to develop the service at some point; stored queries could be hacked, leaked or accidentally made public. So don't include sensitive information, and don't submit queries that would cause problems if they were made public.
 - **Unapproved AI is shadow IT** (core_13): the fix is to ask for an approved tool, not to work round the rules.
@@ -26,9 +26,9 @@ Generative AI tools produce text, images, audio or video from a request (a "prom
 
 ### What can go in
 
-What may go into which tool is an organisation setting (BE-05). Larkspur's defaults:
+What may go into which tool is an organisation setting (BE-05). Brightwell's defaults:
 
-| Information | Approved tool (Lark Assist) | Public tool |
+| Information | Approved tool (Brightwell Assist) | Public tool |
 |---|---|---|
 | Public (published material, a press release) | Yes | Yes |
 | Internal (meeting notes, routine emails) | Yes | No |
@@ -97,7 +97,7 @@ As the reference card shows it:
 
 **What goes in**
 
-1. Use the approved tool (Lark Assist). Never put Larkspur information into a public one.
+1. Use the approved tool (Brightwell Assist). Never put Brightwell information into a public one.
 2. Never paste passwords, codes, keys or card numbers into any AI tool.
 3. Take out what the task doesn't need: names, health details, account numbers, codes.
 4. Something went in that shouldn't have? Report it now. If it was a password, change it.
@@ -146,16 +146,16 @@ Use these as background and inspiration only. Game content uses fictional names.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+| Slot | Default (Brightwell) |
 |---|---|
-| Approved AI tool(s) | Lark Assist, signed in with your Larkspur account |
-| What each tool may be used for | Public, Internal and Confidential (only what's needed) in Lark Assist; nothing of Larkspur's in public tools |
+| Approved AI tool(s) | Brightwell Assist, signed in with your Brightwell account |
+| What each tool may be used for | Public, Internal and Confidential (only what's needed) in Brightwell Assist; nothing of Brightwell's in public tools |
 | Never in any tool | Restricted information, special category personal data, passwords and secrets, card numbers |
-| AI policy | "Using AI at Larkspur" on The Lark |
+| AI policy | "Using AI at Brightwell" on the intranet |
 | Reporting an AI slip or a deepfake attempt | The Report button, or the security team on extension 4444 |
 | Verification rule for unusual requests | Call back on the directory number; a second person for anything involving money or data |
 | Executive verification phrase | Not used by default (organisation option) |
-| Meeting platform | Larkspur Meet; people from outside Larkspur are labelled "External" |
+| Meeting platform | Brightwell Meet; people from outside Brightwell are labelled "External" |
 | EU AI Act scope | Organisation to confirm |
 | Personal fraud reporting | Report Fraud (England, Wales and Northern Ireland); Police Scotland on 101; 7726 for scam texts |
 

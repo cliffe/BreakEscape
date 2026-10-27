@@ -1,6 +1,6 @@
 # core_16 concepts: Acceptable use and your responsibilities
 
-This file is the source of truth for the module. The game show, the explainers, the knowledge check and the reference card must all match it. Where an answer depends on the organisation's own policy, this file gives Larkspur's default and the game uses the organisation's answer key (HA-11). Each topic's detail stays in its own module; this one is about responsibilities, reasons and acknowledgement.
+This file is the source of truth for the module. The game show, the explainers, the knowledge check and the reference card must all match it. Where an answer depends on the organisation's own policy, this file gives an example default and the game uses the organisation's answer key (HA-11). Each topic's detail stays in its own module; this one is about responsibilities, reasons and acknowledgement.
 
 ## Key messages
 
@@ -23,7 +23,7 @@ This file is the source of truth for the module. The game show, the explainers, 
 
 ### What it usually covers
 
-The ten headings on Owain's card (BE-08), each with the module that teaches the detail:
+The ten headings on the host's card (BE-08), each with the module that teaches the detail:
 
 | Heading | In plain words | Detail in |
 |---|---|---|
@@ -61,8 +61,8 @@ Footer of the card: **Not sure? Ask first.** and the contacts (organisation slot
 ### Personal use
 
 - Policies differ: many allow reasonable personal use of work devices and the internet; some don't. **This is an organisation slot**, and the game uses the organisation's own answer.
-- **Larkspur default:** reasonable personal use is allowed in your own time (breaks, before and after work), as long as it doesn't affect your work or anyone else's, costs the organisation nothing, isn't illegal or offensive, and doesn't put systems at risk (no unapproved software, no personal files on shared drives).
-- **The reasons behind the limits:** risky sites bring malware; heavy streaming slows shared connections (at Larkspur, the warehouse scanners share the Wi-Fi); the organisation's name is on everything that leaves its network; and personal browsing on a work device shows up in security logs (see monitoring).
+- **Example default:** reasonable personal use is allowed in your own time (breaks, before and after work), as long as it doesn't affect your work or anyone else's, costs the organisation nothing, isn't illegal or offensive, and doesn't put systems at risk (no unapproved software, no personal files on shared drives).
+- **The reasons behind the limits:** risky sites bring malware; heavy streaming slows shared connections (for example, a depot's scanners may share the Wi-Fi); the organisation's name is on everything that leaves its network; and personal browsing on a work device shows up in security logs (see monitoring).
 
 ### Monitoring and your privacy
 
@@ -76,19 +76,19 @@ Footer of the card: **Not sure? Ask first.** and the contacts (organisation slot
   Covert monitoring is justified only in exceptional circumstances, such as a suspected crime: it needs senior authorisation and a data protection impact assessment, and must be targeted and time-limited (ICO guidance on monitoring workers).
 - **Intercepting communications** on an organisation's own systems is governed by the Investigatory Powers Act 2016 and the business monitoring regulations made under it (SI 2018/356), which allow monitoring or recording of business-relevant communications on the business's own system, under conditions. Keep this to one line in the game; it's background for writers.
 - **The limits are real.** In February 2024 the ICO ordered Serco Leisure and related trusts to stop using face and fingerprint scans to check staff attendance at 38 leisure centres: the employers hadn't shown it was necessary or proportionate, and staff weren't offered an alternative.
-- **What this means for staff:** expect work systems to be monitored for security, and expect to be told how (The Lark's monitoring page). It isn't someone reading messages for fun. If something about monitoring worries you, ask the DPO.
-- **Messages are records.** Anything written at work about a person can be part of what they receive if they make a subject access request (core_05), and messages can be disclosed in legal proceedings. Public bodies can be asked for information they hold under freedom of information law, which can include what suppliers like Larkspur send them. Tomasz's rule: *write every message as if the person it's about could read it.*
+- **What this means for staff:** expect work systems to be monitored for security, and expect to be told how (the intranet's monitoring page). It isn't someone reading messages for fun. If something about monitoring worries you, ask the DPO.
+- **Messages are records.** Anything written at work about a person can be part of what they receive if they make a subject access request (core_05), and messages can be disclosed in legal proceedings. Public bodies can be asked for information they hold under freedom of information law, which can include what a supplier sends them. The rule to teach: *write every message as if the person it's about could read it.*
 
 ### Software, apps and AI tools
 
 - Install and use only approved software, from the organisation's software portal or app store, or ask the service desk first. That includes free online tools (file converters, transcription sites, file transfer services), browser extensions and AI assistants.
 - **Why:** unknown software can carry malware (core_07, core_08); a free online tool puts the file on another company's servers with no contract, no control and no way to get it back (core_13); unapproved AI tools may keep and learn from what's pasted in (core_15); and the organisation must know what it runs so it can update it.
-- **Larkspur default:** "Ask first" for anything not in the software portal; the service desk answers most requests the same day.
+- **Example default:** "Ask first" for anything not in the software portal; the service desk answers most requests the same day.
 
 ### Your own devices
 
 - **Organisation slot.** Some organisations allow work email and chat on personal phones, some issue work phones only.
-- **Larkspur default:** work email and chat on your own phone only through the company apps, which keep work data in a separate work profile. IT can manage or wipe the work profile, not your photos or personal apps. No work files in personal apps or personal cloud storage. A lost phone with work apps on it is reported straight away (core_09).
+- **Example default:** work email and chat on your own phone only through the company apps, which keep work data in a separate work profile. IT can manage or wipe the work profile, not your photos or personal apps. No work files in personal apps or personal cloud storage. A lost phone with work apps on it is reported straight away (core_09).
 - Background: the NCSC's guidance on bring your own device warns that full management of a personally owned device effectively turns it into a work device, which is why work profiles exist.
 
 ### Email, chat and calls
@@ -122,25 +122,25 @@ Reporting is a duty in almost every acceptable use policy, not a favour: suspici
 
 - **Honest mistakes, reported quickly, are fixed and learnt from,** and the person who reports is thanked (core_00; NCSC CAF B6.a). A mistake you tell someone about is not misconduct.
 - **Deliberate or reckless misuse is different:** looking up someone's data for personal reasons, sharing a login to dodge a control, copying data to take to a new job, using work systems for illegal or abusive content. It's handled through the organisation's disciplinary process (ISO 27001 includes a control for a formal disciplinary process) and sometimes the law (see above).
-- **The difference is intent and openness.** ISO 27001 cl. 7.3 asks that everyone knows what follows if they don't follow the rules; this is how to say it fairly. Mei Lin's version: *"Mistakes, you report and we fix together. Doing it on purpose is different, and the policy says what happens."*
+- **The difference is intent and openness.** ISO 27001 cl. 7.3 asks that everyone knows what follows if they don't follow the rules; this is how to say it fairly. Put plainly: *"Mistakes, you report and we fix together. Doing it on purpose is different, and the policy says what happens."*
 
 ### Where to ask
 
-| Question about | Ask | Larkspur default |
+| Question about | Ask | Example default |
 |---|---|---|
 | Software, devices, access, "is this tool OK?" | The service desk | 24/7 service desk line, or the software portal's request form |
 | Anything suspicious; security questions | The security team | Extension 4444 |
-| Personal data: sharing it, a request for it, a mistake with it | The DPO | Tomasz Wiśniewski, through the same route |
-| How your team does things; priorities; time | Your manager | Lena Fischer (Operations) |
-| Conduct, social media, HR policies | HR | Mei Lin Zhou, HR Business Partner |
-| The policy itself, or a rule that doesn't work | The policy owner | Named on the policy page on The Lark |
+| Personal data: sharing it, a request for it, a mistake with it | The DPO | The organisation's DPO, through the same route |
+| How your team does things; priorities; time | Your manager | Your line manager |
+| Conduct, social media, HR policies | HR | Your HR Business Partner |
+| The policy itself, or a rule that doesn't work | The policy owner | Named on the policy page on the intranet |
 
 ### Acknowledging a policy
 
 - **What it means:** you've read it (at least the summary), you understand it, and you'll follow it. It records that the organisation told you. It doesn't take away your own rights, such as your data protection rights.
 - **Why it's asked:** PCI DSS 12.6.3 requires an acknowledgement at least every 12 months; ISO 27001 cl. 7.3 requires awareness of the policy; NIST PL-4 asks for one before access and again when the rules change.
 - **How it's recorded:** who, which policy, which version, when, and from where (in the game, the text route or the learner home), by the platform (HA-07, HA-05).
-- **When you'll be asked again:** within 14 days of a significant change to the policy (one that changes what people must do), with a short "what changed" note, and once a year (organisation setting; Larkspur default 12 months). Minor changes such as a new phone number don't need a new acknowledgement (HA-07).
+- **When you'll be asked again:** within 14 days of a significant change to the policy (one that changes what people must do), with a short "what changed" note, and once a year (organisation setting; Example default 12 months). Minor changes such as a new phone number don't need a new acknowledgement (HA-07).
 - **If something's unclear:** ask first, then acknowledge. "I have a question first" sends your question to the policy owner and keeps the acknowledgement open.
 
 ### When a rule gets in your way
@@ -151,18 +151,18 @@ A rule that stops people doing their job gets worked round, and a workaround is 
 
 As the reference card shows it, under **Small print, big reasons**:
 
-1. **Can I?** Check the five-point summary, or search the policy on The Lark.
+1. **Can I?** Check the five-point summary, or search the policy on the intranet.
 2. **Still not sure? Ask first:** the service desk for software and devices, the security team for anything suspicious, the DPO for personal data, your manager for how your team works.
 3. **Made a mistake?** Report it now. Honest mistakes reported quickly are fixed, not punished.
 4. **Rule in your way?** Tell the policy owner. Don't work round it.
 
-Larkspur's five-point summary (the default for HA-11):
+An example five-point summary (the default):
 
 1. Work kit and accounts are for work. Reasonable personal use in your own time is fine.
 2. Your passwords, codes, logins and badge are yours alone. Never share them.
 3. Use approved software, devices and storage. Not on the list? Ask first.
 4. Look at and share only the information your job needs, and handle it by its label.
-5. Report anything suspicious, and your own mistakes, straight away. Work systems are monitored for security; The Lark says how.
+5. Report anything suspicious, and your own mistakes, straight away. Work systems are monitored for security; the intranet says how.
 
 ## Misconceptions and outdated advice
 
@@ -189,21 +189,21 @@ Use these as background only. The game uses fictional names and organisations.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+| Slot | Default (example) |
 |---|---|
-| Name and version of the acceptable use policy | "Larkspur Acceptable Use Policy", version 4.2 |
+| Name and version of the acceptable use policy | The organisation's Acceptable Use Policy, version 4.2 (example) |
 | Other policies acknowledged here | Information Security Policy |
 | Five-point summary | As above |
-| Answer key for the show's bank | Larkspur defaults in `game_design.md`; the organisation confirms or edits each one, except the six locked answers |
+| Answer key for the show's bank | Example defaults in `game_design.md`; the organisation confirms or edits each one, except the six locked answers |
 | Personal use rule | Reasonable personal use in your own time, within the conditions above |
 | Monitoring statement | "We check email and web traffic for threats, keep sign-in and access records, and protect data leaving our systems. We don't read the content of your messages except in exceptional circumstances, and we'd tell you first." |
-| Software route | The software portal on The Lark; otherwise ask the service desk |
+| Software route | The software portal on the intranet; otherwise ask the service desk |
 | Personal devices | Work apps in a work profile only; no work files in personal apps |
-| Social media guidance | Don't speak for Larkspur; nothing confidential; no photos of screens, whiteboards or badges |
+| Social media guidance | Don't speak for the organisation; nothing confidential; no photos of screens, whiteboards or badges |
 | Lock-screen shortcut | The organisation's own, shown on the reference card (the game shows a generic padlock key) |
 | What happens if rules are broken | "Honest mistakes reported quickly are fixed together. Deliberate or reckless misuse is handled under the disciplinary policy." |
 | Contacts by question type | As in "Where to ask" |
-| Policy owner | Ama Owusu (Acceptable Use Policy); Tomasz Wiśniewski (Data Protection Policy) |
+| Policy owner | A named owner for each policy (the Acceptable Use Policy and the Data Protection Policy) |
 | Acknowledgement wording | "I have read and understood the Acceptable Use Policy, version 4.2, and I will follow it." (HA-07's default form) |
 | Re-acknowledgement | Every 12 months, and within 14 days of a significant change (HA-07) |
 | Route for "this rule doesn't work" | "I have a question first" on the policy page |

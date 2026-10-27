@@ -1,17 +1,27 @@
 # core_14: Insider risk
 
 **Working game title:** Notice Period
-**Pitch:** Ross from Sales leaves on Friday, Samira from Operations is having a strange week, and the office already has a theory. Spend the week noticing, staying fair, and passing what you see to the people whose job it is.
+**Pitch:** An account manager leaves on Friday, a colleague is having a strange week, and the office already has a theory. Spend the week noticing, staying fair, and passing what you see to the people whose job it is.
 
 | | |
 |---|---|
-| Audience | All staff |
-| Prerequisites | core_00 recommended (introduces the cast and the reporting route) |
-| Full module | 15 to 16 minutes |
-| Micro-drill | 3 minutes ("Fact or Feeling?") |
-| Text route | 11 minutes |
-| Priority | Phase 3 |
-| Build size | M, driven by a five-day structure of time skips, three new characters, and a "raise a concern" mode for the incident report form (MG-09); it uses existing office rooms |
+| Audience | All staff (built role: general) |
+| Prerequisites | core_00 recommended (introduces the reporting route) |
+| Full episode | about 13 minutes |
+| Defend-only variant | about 8 minutes |
+| Pre and post check | 4 to 5 minutes each (general role forms) |
+| Priority | Phase 3 (proposed episode E16) |
+| Build size | M. Reuses inbox triage (email, call and push cards), the influence global and the consequence flip; new work is a "raise a concern" fact-chip form |
+
+## Build status
+
+**New episode, consequence-flip and defend shape.** Nothing in the built product covers insider risk (`../../04_BUILT_SO_FAR.md` §3; `research/built_episodes_vs_plan.md` §2 marks core_14 "None"). An insider-risk case for the same product line is designed in `../../../phishing_and_social_engineering/designs/12_deduction_board.md` (use case B, "Night shift insider"), but that is a deduction-board design, not an awareness episode, and is not built. Every learning outcome here is new.
+
+The episode is designed in the built shape. Because the learner's own habits are most of the topic, the attack beat is a **consequence flip** (R3): the learner makes the everyday slip (lending a login, nibbling at an outside offer) in a safe sandbox, and the flip shows the chain it started. The defend half reuses the **inbox-triage** defender with its `call`, `push` and email cards (as E3 and E6 do), plus a short "raise a concern" step. The night-shift deduction board in design 12 use case B is noted as a **later, richer version** for this product line, not built here.
+
+**Covers:** C14-LO1 to LO6, all new.
+
+The episode is proposed as a full episode, a defend-only variant and new general check items. It is not yet built: the awareness product is on hold.
 
 ## Why this module
 
@@ -44,69 +54,62 @@ After this module, staff can:
 Contributes to (short references from `02_COMPLIANCE_MAPPING.md`, section 2):
 
 - **NIST AT-2** and **NIST AT-2(2)** (recognising and reporting potential signs of insider threat).
-- **CMMC AT.L2-3.2.3** (awareness training on recognising and reporting potential indicators of insider threat), for US defence supply chain customers. The mapping records that this module meets the awareness content.
+- **CMMC AT.L2-3.2.3** (awareness training on insider threat indicators), for US defence supply chain customers.
 - **ISO 27001 cl. 7.3**, **ISO 27001 A.6.3** and **ISO 27001 A.6.8** (a route for reporting what you observe).
-- **CIS 14.3** (authentication best practices, including credential handling) and **CIS 14.6** (recognising and reporting incidents).
+- **CIS 14.3** (credential handling) and **CIS 14.6** (recognising and reporting incidents).
 - **NCSC CAF B6.a** (people know how to raise a concern, and those who report are treated positively) and **NCSC CAF B6.b**.
 - **NIS2 Art 21(2)(g)** and **NIS2 IR 10.1** (human resources security).
-- **DORA Art 13(6)** and **DORA RTS Art 19** (staff know the channels for reporting anomalous behaviour, including whistleblowing channels).
-- **UK GDPR Art 32(4)** (people with access to personal data process it only on instructions); the module also tells staff that taking personal data without the employer's consent can be an offence under section 170 of the Data Protection Act 2018.
+- **DORA Art 13(6)** and **DORA RTS Art 19** (channels for reporting anomalous behaviour, including whistleblowing).
+- **UK GDPR Art 32(4)**; the module also tells staff that taking personal data without the employer's consent can be an offence under section 170 of the Data Protection Act 2018.
 - **SOC 2 CC2.2**.
 - **PCI DSS 12.6.1** and **DSPT 3.2.1 (categories 3 and 4)**, as part of the wider programme.
 - The organisation's **whistleblowing policy**: the module explains the routes it offers; it does not replace the policy or legal advice.
 
 ## Module flow
 
-| Beat | What happens | Format | Minutes |
-|---|---|---|---|
-| Hook | Monday 08:55. Leo's password has expired, the reset link won't work, and his client report is due at ten: "Can I just use yours?" Whatever the player does is the baseline | Game | 1.5 |
-| Learn | "Coffee with Security" in the kitchen: Ama on what insider risk really looks like, logins and outside offers; Mei Lin on noticing, noting the facts and passing them on, and on a kind word first | NPC explainer (EX-01, BE-08) | 2.5 |
-| Practise | "Fact or Feeling?": Ama's card game of eight short situations; pick the facts, then the right response (security team, manager or HR, a kind word, help them to the proper route, or nothing to report) | Minigame (MG-20 practice mode) | 2.5 |
-| Apply | Tuesday to Friday of Ross's notice period: Samira's strange week and Craig's theory, a copy running on Ross's screen, a "talent partner" with an offer and a night of sign-in prompts, Ross's favour, and his last-day request for the player's login | Game (BE-16, BE-18, MG-05, MG-07, MG-09) | 6 |
-| Debrief | "Seen, said, true": for each thread, what the player saw, what the office said, what was really happening, what they did and what followed; the rumour map | Debrief screen (BE-02) and Ama, Mei Lin, Tomasz | 1.5 |
-| Check | Six scenario questions | Quiz (MG-20) | 1.5 |
-| Reference | Reference card on The Lark: your login is you; report offers; facts to the right person; a kind word first | Intranet (BE-09) | under 1 |
+One training-room mission, with the pre-check and post-check as the bracketing missions.
 
-## Reuse from existing Break Escape content
+| Stage | What happens | Minutes |
+|---|---|---|
+| Pre-check (separate mission) | 10-item general check form, before the episodes | 4 to 5 |
+| Brief and scope note | "Authorised exercise at Quayholt Insurance (fictional). It's a leaver's last week. In scope: your own choices and what you notice." | 1 |
+| The week (sandbox) | The everyday choices arrive inside ordinary work: a colleague wants your login, an outside offer lands, a leaver asks a favour, the office floats a theory about someone. The learner makes each choice; unscored | 4 to 5 |
+| Flip: the chain | A short montage shows where a shared login or an engaged offer led, and where a kind word and a fair concern led instead | 1 to 2 |
+| Defend | Triage a set: an offer message (Report), a shared-login request (decline and route), unexpected sign-in prompts (Deny and report), a leaver's favour, and a "raise a concern" step that rewards facts over conclusions; scored under the `awareness` profile | 3 to 4 |
+| Debrief | Per-item reasoning, feedback on the genuine items, the team-protected tally, the habit, the "On Monday" card, the reporting route and the no-blame line; the fair-concern line lands here | 1 to 2 |
+| Post-check (separate mission) | The parallel general check form, after the episodes; shows the change | 4 to 5 |
 
-- **Rooms:** `room_office` (Operations and a Sales pod), `room_break` (the kitchen, for the coffee session, Craig's theory and the leaving drinks), `room_meeting` (Mei Lin's quiet room), `hall_1x2gu` (the stairwell where Samira takes calls). The Wednesday night scene is phone-only, or uses core_09's home office if it has been built.
-- **Conversations:** `person-chat` for the cast; `phone-chat` for the "talent partner" (until the MG-05 messaging skin), Kai's messages and Lena's tasks. The pattern of an outsider messaging the player's phone with an offer has a precedent in `scenarios/m05_insider_trading/ink/m05_phone_recruiter.ink`; its tone (a thriller villain) is not reused.
-- **Ideas, not tone, from the campaign's insider missions:**
-  - m05's red herring and the cost of a wrong accusation: a scientist suspended on a misread badge log and later cleared (`halloran_accused` in `scenarios/m05_insider_trading/scenario.json.erb`).
-  - m08's two innocent suspects whose odd behaviour has a proper explanation: odd hours on a classified project, and a private hunt of his own (`scenarios/m08_the_mole/scenario.json.erb`).
-  - m08's note that every earlier leak "was an accident or an outsider" (the prior leak investigations sheet).
-  - m05's recruiter leaflet ("Feeling undervalued?"), as the idea of an approach that targets people who feel unappreciated.
-  - The campaign's art doesn't suit an ordinary office (spy headquarters and a research lab), so no rooms are borrowed.
-- **Systems:** the game clock (`gameClock`) and timers for the week; event mappings, `setGlobal` and `onceOnly`; NPC influence (`docs/NPC_INFLUENCE.md`) for how Samira and Ross feel about the player; the Notepad (`notes`) for the player's own record of facts.
+## Setting and host
 
-## New features needed
+- **Company:** Quayholt Insurance (`quayholt.example`, brand set), a commercial insurer whose staff hold customer data and whose service desk resets access, so insider access and offers fit. It already hosts E3 and E5.
+- **Host:** Anjali Rao, information security analyst (the Quayholt analyst who receives reports), who welcomes the learner and takes the concern.
+- **Cast (proposed, consistent with `BRAND_SET.md`, surname clash check before release):** the leaver (an account manager, passed over, joining a competitor, who has talked himself into "my contacts"); the false lead (a colleague having a hard week, whose father is in hospital); the rumour-spreader (a likeable colleague who loves a theory); the login-borrower (a colleague locked out); an HR partner and a DPO as concern routes. The "talent partner" is an unknown contact on a messaging app, text only, no art.
 
-- **BE-16 Time skips:** the five days, the 02:10 prompts, and the "two months later" consequence.
-- **BE-18 Work task and interruptions:** the player's ordinary week in Operations, inside which everything happens.
-- **MG-09 Incident report form, in a "raise a concern" mode:** the same what, when, where and who fields, built from fact chips the player noted during the week, with feedback that flags conclusions ("Ross is stealing") and rewards facts, and a choice of route.
-- **MG-20 Knowledge check:** "Fact or Feeling?" in practice mode with instant feedback, the Learn check question, and the final spot check.
-- **MG-05 Messaging apps:** the "talent partner" message from an unknown contact.
-- **MG-07 MFA prompts and authenticator:** the 02:10 prompt storm (one short decision; core_03 teaches it in full).
-- **BE-01, BE-02, BE-08, BE-09, BE-05, EX-01:** the record, the debrief board, the visual aids, The Lark's "Raise a concern" page, the organisation's own routes, and the explainer pattern.
-- **MG-27 Work desktop:** the player's PC, with The Lark, the customer portal's export screen and the team chat in one place.
-- **BE-19 Open minigames from conversations:** Mei Lin opening the concern form with the player (`#trigger_minigame:incident_report|c14_concern`), and Mei Lin's check question in Learn.
-- **Fix the `#add_note` ink tag** (stubbed today, per `research/current_state_break_escape.md`) so a conversation can add a dated fact to the player's Notepad.
-- **MG-26 Incident spread map**, in a rumour skin: the office floor with the desks that Craig's theory reached lit up day by day, driven by globals set in conversations, then the truth beside it. It needs a mode where the spread is driven by the player's choices rather than game time.
+## Systems reused
+
+- **inbox triage** with `call`, `push` and email cards, Report always visible, Verify where it fits;
+- the **influence global** and its thresholds, for how the leaver and the false lead respond to the learner;
+- the **consequence flip** (the chain montage) in place of the attack-then-flip beat;
+- the **MFA authenticator** demo (the night-time prompt storm, one decision; core_03 teaches it in full);
+- **awareness-measure** records.
+
+New: a "raise a concern" fact-chip form (what, when, where, who; conclusions allowed but flagged in feedback; a route picker). It is a small extension of the triage surface. The deduction board of design 12 use case B is a separate, later, richer build.
 
 ## Organisation-specific content
 
-- The routes for raising a concern, and what each is for: the security team, line managers, HR, the Speak Up line (its provider, number and whether it is anonymous), and the DPO.
-- The name and link of the whistleblowing policy, and the regulator ("prescribed person") most relevant to the organisation.
-- The leaver process: when access ends, what leavers may take (personal files) and who helps.
+- The routes for raising a concern: the security team, line managers, HR, the Speak Up line (its provider, number and whether it is anonymous), and the DPO.
+- The name and link of the whistleblowing policy, and the regulator most relevant to the organisation.
+- The leaver process: when access ends, what leavers may take, and who helps.
 - The rule on sending work to personal email or cloud storage.
 - The employee assistance programme or other wellbeing support.
-- What the organisation monitors and how staff are told (its monitoring notice), so the module never implies covert watching.
-- How to report an outside approach (the security team's address or button).
+- What the organisation monitors and how staff are told, so the module never implies covert watching.
+- How to report an outside approach (fills `slot:customer_report_route`).
 
 ## Open questions
 
-1. **How much to say about monitoring.** Tools such as data loss prevention may have spotted Ross's copy too. *Recommendation: one line from Ama ("our tools see files moving, but not why; people see the why"), with the organisation's own monitoring notice on the reference card. Never imply staff are watched covertly.*
-2. **Samira's reason.** A parent in hospital is gentle but sensitive. *Recommendation: keep it, told lightly and with no medical detail; the bank holds other innocent reasons for replays (a second job cleared with HR, planning Ross's leaving collection, a medical appointment).*
-3. **How much the player learns about the outcome.** HR matters are confidential. *Recommendation: a short, discreet resolution ("it's been dealt with; the copies are gone"), which models the confidentiality staff should expect when they raise a concern.*
-4. **The prompt storm.** It repeats core_03. *Recommendation: keep it as a single decision, because it is exactly what happened after the 2025 BBC approach, and link to core_03.*
-5. **Real cases in the game.** *Recommendation: none named in dialogue; Ama says "it happens to people at big companies". The field guide, generated from `concepts.md`, names them.*
+1. **How much to say about monitoring.** One line ("our tools see files moving, but not why; people see the why"), with the organisation's own monitoring notice on the reference card. Never imply covert watching.
+2. **The false lead's reason.** A parent in hospital, told lightly and with no medical detail; the bank holds other innocent reasons for replays (a second job cleared with HR, a medical appointment).
+3. **How much the learner learns about the outcome.** A short, discreet resolution ("it's been dealt with; the copies are gone"), modelling the confidentiality staff should expect.
+4. **The prompt storm.** Kept as a single decision, because it is exactly what happened after the 2025 BBC approach; link to core_03.
+5. **Real cases in the game.** None named in dialogue; the field guide, generated from `concepts.md`, names them.
+6. **A richer version.** The night-shift insider of design 12 use case B (one of four staff let an intruder in; evidence from logs; a report verdict) is a strong later build on a deduction board, noted but not built here.

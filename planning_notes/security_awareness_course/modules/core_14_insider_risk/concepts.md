@@ -88,7 +88,7 @@ Ransomware gangs and fraud groups buy access from staff. They make contact throu
 - People have hard weeks: illness, caring for someone, bereavement, money worries, a relationship ending, a grievance at work. It shows as arriving early or late, private calls, visits to HR, distraction, tears.
 - **The right first response is human:** a kind word, a cup of tea, "I'm around if you want to talk". Point them to the employee assistance programme if there is one. If you're worried about their wellbeing, tell their manager or HR privately.
 - **Support is also good security.** People under pressure are the people criminals target, and people who feel supported are less likely to be pushed into a bad decision.
-- **Rumours are not evidence.** Don't start them, add to them or pass them on. If someone shares a theory with you, a fair answer is "If you've actually seen something, tell Ama or your manager. Not the kitchen."
+- **Rumours are not evidence.** Don't start them, add to them or pass them on. If someone shares a theory with you, a fair answer is "If you've actually seen something, tell the security team or your manager. Not the kitchen."
 
 ### Whistleblowing or leaking
 
@@ -162,17 +162,17 @@ Use these as background and inspiration only. Game content uses fictional names.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+| Slot | Default (example) |
 |---|---|
-| Security team contact | Ama's team: extension 4444, or the Report button for messages |
+| Security team contact | The security team, or the Report button for messages |
 | Service desk | The 24/7 service desk line |
-| HR contact | Your HR Business Partner (Mei Lin Zhou at Larkspur) |
-| Speak Up line | "Larkspur Speak Up", run by an independent provider, by phone or web, anonymous if you prefer |
-| DPO | Tomasz Wiśniewski |
-| Whistleblowing policy | "Speaking Up at Larkspur" on The Lark |
+| HR contact | Your HR Business Partner |
+| Speak Up line | A "Speak Up" line run by an independent provider, by phone or web, anonymous if you prefer |
+| DPO | The organisation's Data Protection Officer |
+| Whistleblowing policy | The organisation's "Speaking Up" policy on the intranet |
 | Regulator most relevant to the organisation | The ICO for data protection; others by sector |
 | Leaver process | Access ends at 12:00 on the last day; HR helps leavers collect personal files |
-| Personal email and cloud | Not to be used for Larkspur information |
+| Personal email and cloud | Not to be used for the organisation's information |
 | Wellbeing support | The employee assistance programme, 24 hours, confidential |
 | Monitoring notice | "Our systems log access to customer data and large file transfers. Here's what we monitor and why." |
 | Outside approaches | Screenshot and send to the security team's address, or press Report |

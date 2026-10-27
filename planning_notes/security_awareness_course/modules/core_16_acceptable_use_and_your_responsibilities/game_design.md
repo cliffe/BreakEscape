@@ -2,208 +2,145 @@
 
 ## Concept
 
-Lunchtime at Larkspur. The acceptable use policy has just been updated, everyone has to sign it off again, and Ama knows that most people will click "I agree" without reading a word. So she and Owain have hijacked Owain's monthly kitchen quiz: this month it's a game show, **Allowed, Not Allowed, or Ask First?**, with three novelty buzzers, a whiteboard scoreboard and a cardboard Golden Lanyard on top of the fridge. The player is pulled in as a contestant alongside Leo, Martin and Kev.
+The frame is the built one: a short training-room mission at Marrowdale Facilities (fictional), a kiosk and a host. The scope note: *"Authorised exercise. Everyday 'can I?' moments, answered from our own rules. Ask first is never the wrong answer."*
 
-The module teaches the rules through everyday "can I?" questions, and the reasons through the banter: Martin buzzes "Allowed" for everything ("It is if nobody finds out"), Kev buzzes "Not allowed" for anything with a computer in it and wins the questions about people, and Leo finds out mid-round that his office photo had the whiteboard in it. Every answer comes from the organisation's own policy (HA-11), so the same show teaches a council's rules to the council and a retailer's to the retailer. Back at the desk, two situations the show didn't cover turn up without warning. Then the player reads the five-point summary of the real policy on The Lark and signs it off, or asks a question first, and the platform records it (HA-07).
-
-The thing a player would tell someone at lunch: "Ask first is never the wrong answer. It's worth points."
+Acceptable use has no single attacker, so this is a **consequence-flip** episode (and ships equally well as a **defend-only shell**). The learner meets a handful of ordinary moments, makes a choice, and the flip shows where it led. Then a short defend set drills the everyday "can I?" judgements, each sorted Allowed, Not allowed or Ask first against the organisation's own answer key, with the reason on screen. The thing a learner takes away: *"Ask first is never the wrong answer."* The policy itself is read and acknowledged where the organisation records it; that recording is a later platform option, not built here.
 
 ## Setting and cast
 
-- **Rooms:** the player's desk on the Operations floor (`room_office`) and the kitchen (`room_break`), dressed for the show: tables pushed back, the whiteboard as a scoreboard, three buzzers on a table (green **Allowed**, red **Not allowed**, amber **Ask first**, each with a label and an icon as well as a colour), bunting, and the Golden Lanyard. No new rooms.
-- **Hosts:** **Ama Owusu** (warm, precise, points to the policy section on the whiteboard, never reads it out, because it differs by organisation) and **Owain Jenkins** (relaxed, dad jokes, works the audience).
-- **Contestants:**
-  - **Leo Brennan:** wants everything to be allowed; learns live that his "new office" photo showed the whiteboard.
-  - **Martin Fletcher** (Sales Director, king of workarounds): buzzes Allowed on everything and is a good sport about it. He comes round by the end.
-  - **Kev Sutcliffe** (Warehouse Supervisor, hearing aids): buzzes Not allowed on anything with a computer, wins the "Who do you ask?" round. The buzzers light up as well as sound, and the show is captioned; Owain: *"Light's on for you, Kev."* Nobody makes anything of it.
-- **Guest adjudicators:** **Tomasz Wiśniewski** (DPO) for "Fact or myth?" on monitoring, and **Mei Lin Zhou** (HR Business Partner) for one card on mistakes and misuse.
-- **By chat or email:** Lena Fischer (the player's manager); Anjali Mistry, business manager at Hollins Lane Primary School, a Larkspur client (new minor character: 40s, British Indian; email only, so no art needed).
-- **The audience:** staff with sandwiches, generic office sprites, with barks ("Ooh!", "He's never getting that one").
+- **Room:** the Marrowdale training room (a brand-set room type once the company is added), with the kiosk and the host spot. The desktop, the sort surface and the montage are overlays; no new room.
+- **Company:** Marrowdale Facilities, proposed for `BRAND_SET.md` (`marrowdale.example`; look-alikes, accent and cast to be set on addition; pre-ship web search). A facilities firm with a mixed, non-technical workforce.
+- **Host:** a proposed Marrowdale coordinator or service-desk lead, who welcomes the learner and gives the reason behind each answer (named on addition to `BRAND_SET.md`).
+- **Cast (proposed):** a colleague who guesses "allowed" for everything and comes round; a colleague who guesses "not allowed" for anything with a computer in it; a client contact whose email carries a meeting-link app install. Minimal cast, all proposed and varied in age and background.
+
+Larkspur and its cast (Ama Owusu, Owain Jenkins, Martin Fletcher, Kev Sutcliffe, Leo Brennan, Tomasz Wiśniewski, Mei Lin Zhou, Lena Fischer, Anjali Mistry) are retired or remapped onto the proposed Marrowdale cast. The lunchtime game show survives as a facilitated and team-event option, not the core shape. The intranet is generic.
 
 ## Structure
 
-The critical path is marked **(CP)**. Everything else is optional depth.
+The sandbox is unscored; only the defend half is scored, under the `awareness` profile.
 
-### 1. Hook: "Can I stream the match?" (1 minute)
+### Brief and scope note (1 minute)
 
-- **(CP)** 12:25 at the desk. Leo swivels round: *"There's a match on at one. Can I stream it on my work laptop? You've read the policy, right?"*
-- The player answers before anyone has told them anything:
-  - *"Course you can. It's lunch."*
-  - *"No way. Not on a work laptop."*
-  - *"No idea. Let's check The Lark."*
-  - *"Ask Owain. He'll know."*
-- **Let's check:** The Lark's policy search opens on the personal use line from the organisation's summary (Larkspur: reasonable personal use in your own time is fine). Leo: *"Result. Hang on, does the warehouse share our Wi-Fi?"* **Ask Owain:** Owain, passing: *"Fine at lunch. Just not in HD on the warehouse Wi-Fi."* The two guesses get a shrug from Leo: *"Reckon you're right."*
-- Whatever they said is the **baseline** for C16-B1: did they check or ask, or guess? Then Owain calls across the floor: *"Quiz in the kitchen in five! This month: the small print. There's a prize."*
+The host welcomes the learner and states the scope. A short line: *"Three answers: Allowed, Not allowed, Ask first. When you're not sure, ask first."*
 
-### 2. Learn: Owain's warm-up (1 minute)
+### The choices (sandbox, 2 to 3 minutes)
 
-- **(CP)** In the kitchen, Owain to the audience (EX-01, aid BE-08: the card of ten headings from `concepts.md`, stepping through them):
-  - *"The policy's twelve pages. You don't need to learn it."*
-  - *"You need to know what's in it, why, and who to ask."*
-  - *"Three buzzers. Allowed. Not allowed. Ask first."*
-- Ama: *"Ask first is never the wrong answer. It always scores. Remember that."*
-- The card's last step shows the five responsibilities. Ama: *"And five things are yours to do, whatever the policy says."* One line each, on the aid, not read out in full.
-- **Skip:** a player who says *"I know our policy"* gets Owain's *"Then you'll walk it,"* and goes straight to the show, which is the practice anyway.
+Three everyday moments, inside ordinary work:
 
-### 3. Practise: the show (4 minutes)
+- **The meeting link.** A client emails a meeting invitation that wants an app installed. The learner can install it, ask the service desk, suggest the organisation's own meeting tool, or ignore it.
+- **Personal email.** Under a deadline, the learner can forward a file to their personal address to finish at home, or use the approved remote access.
+- **The lookup.** A colleague asks the learner to look up a contact's mobile number in a system "for a personal thing". The learner can look it up or decline and suggest another way.
 
-- **(CP)** **Allowed, Not Allowed, or Ask First?** runs in MG-20's game show presentation, mostly with "sort into groups" items (`features/minigames.md`). For each card: Owain reads the situation; the player locks in an answer with a buzzer (click, or keys 1, 2, 3); the contestants' answers flip up; the hosts reveal the organisation's answer with a voiced reaction (*"Allowed!"*, *"Not allowed!"*, *"Ask first!"*), and the one-line reason and the policy section appear on the whiteboard (on screen, from the answer key). There is no timer and speed scores nothing.
-- **Scoring:** 2 points for the organisation's answer. "Ask first" scores 1 when the answer was "Not allowed" or "Allowed", because asking would have got you there. Nothing scores below zero.
-- **(CP) Round 1, "Buzz":** five cards from the bank (below), with at least one of each answer.
-- **(CP) Round 2, "Why?":** three cards where the answer is shown and the player picks the best reason from three. The wrong reasons are gently silly ("Because badges are expensive"), the right one names the real harm ("Everything done with your badge looks like you did it, and it lets in someone who might not be allowed").
-- **(CP) Round 3, "Who do you ask?":** three "Ask first" situations. The player picks the service desk, the security team, the DPO, their manager or HR. Kev, who never touches a computer, wins this round: *"You just ask the person who'd know. Always worked for me."*
-- **(CP) "Fact or myth?" with Tomasz** (C16-LO4): three statements about monitoring from the bank. Tomasz rules on each with one line and The Lark's monitoring page as his aid. His closing line: *"Write every message as if the person it's about could read it. One day they might."*
-- **Mei Lin's card** (C16-LO5), no buzzers: *"Two people. One clicked a dodgy link and owned up straight away. One looked up a celebrity's address in a customer system. Same treatment?"* The player says yes or no; Mei Lin: *"Mistakes, you report and we fix together. Doing it on purpose is different, and the policy says what happens."*
-- **The jackpot** (C16-LO6): put four steps in order before signing a policy: read the summary; open the full policy for anything you're unsure of; ask about anything unclear; then acknowledge.
-- **Prize-giving.** The Golden Lanyard goes to the top score. Every contestant gets something: "Best Reasons", "Most Improved", and Martin's "Most Honest Answer" for *"It is if nobody finds out."* Leo: *"I'm framing this lanyard."* The record shows the real per-outcome result; the show makes sure nobody leaves as the loser.
+### Flip: the consequence (1 minute)
 
-The comic beats are written into specific cards so they always land:
+A short montage shows where each choice led: a fake meeting app that was a way in; a file lost outside the organisation's protection; a lookup recorded with no work task behind it, which the system flagged. Each ends with the approved route.
 
-| Card | Beat |
-|---|---|
-| Forward a client spreadsheet to your personal email | Martin buzzes Allowed. Owain: *"Not allowed, Martin."* Martin: *"It is if nobody finds out."* Ama: *"That's not one of the buzzers, Martin."* |
-| Lend your badge to a colleague | Kev slams Not allowed: *"I wouldn't lend my badge to my own mother."* |
-| Use the company's AI assistant to summarise a public report | Kev: Not allowed, *"Robots."* Owain: *"Allowed, Kev. It's the approved one."* Kev: *"Hmph."* |
-| Post a photo of the team's new office | Leo gets it right, then goes pale: *"Is the whiteboard in mine?"* Ama: *"We'll have a look after. Together."* |
+### Defend (3 minutes)
 
-#### The card bank (Larkspur defaults)
+Scored under the `awareness` profile:
 
-Each card carries an id, the situation, the default answer, the reason, the policy section and, for "Ask first" cards, who to ask. The organisation confirms or edits each card's answer and reason in HA-11; cards it hasn't confirmed are never drawn. **Locked** cards can't be changed (see Pitfalls).
+- **The "can I?" set:** everyday situations sorted Allowed, Not allowed or Ask first against the organisation's answer key, with the reason on screen. The card bank below (Marrowdale defaults) supplies them; the organisation confirms or edits each one, and locked cards cannot be changed.
+- **The two triage items** that map onto a verdict: the app-install meeting link (Report or Verify through the service desk) and the data-lookup request (decline and route). These use the inbox-triage surface.
+
+### Debrief (1 minute)
+
+The built debrief view:
+
+1. A per-item reasoning card for each item, with the answer, the reason and the policy section (on screen, from the answer key).
+2. Feedback on the genuine items (the real client, a genuinely fine personal-use case).
+3. The **team protected** tally.
+4. **The habit to keep:** *"When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."* (The debrief adds the plain line: *"Not sure? Ask first. Made a mistake? Report it."*)
+5. The **"On Monday"** card: the one person you'd ask when you're unsure.
+6. The reporting route (`slot:customer_report_route`).
+7. The no-blame line: honest mistakes reported quickly are fixed, not punished.
+
+Then the host points to where the policy is read and acknowledged (the later platform option): the summary first, the full policy one click away, and "I have a question first".
+
+## The card bank (example defaults)
+
+Each card carries an id, the situation, the default answer, the reason and, for "Ask first" cards, who to ask. The organisation confirms or edits each one; cards it hasn't confirmed are never drawn. **Locked** cards cannot be changed.
 
 | Id | Situation | Default answer | Reason (on screen) | Locked |
 |---|---|---|---|---|
-| S01 | Stream the football on your work laptop at lunch | Allowed | Reasonable personal use in your own time is fine; keep it off the warehouse Wi-Fi | |
+| S01 | Stream the football on your work laptop at lunch | Allowed | Reasonable personal use in your own time is fine | |
 | S02 | Check your own bank account on the work laptop at lunch | Allowed | Personal use in your own time; type the bank's address yourself | |
-| S03 | Install a free PDF editor you found online, to finish a report | Ask first (service desk) | There's an approved one in the software portal; unknown software can carry malware | |
-| S04 | Lend your badge to a colleague who left theirs at home | Not allowed | Everything done with your badge looks like you; Reception issues day passes | Yes |
+| S03 | Install a free PDF editor you found online | Ask first (service desk) | There's an approved one; unknown software can carry malware | |
+| S04 | Lend your badge to a colleague who left theirs at home | Not allowed | Everything done with your badge looks like you; reception issues day passes | Yes |
 | S05 | Use your work email to sign up to a personal shopping site | Not allowed | Work accounts are for work; if the shop leaks, your work address gets the scams | |
-| S06 | Forward a client spreadsheet to your personal email to finish at home | Not allowed | It leaves the organisation's protection; use the approved remote access (core_13) | |
-| S07 | Post a photo of the team's new office on social media | Allowed | As long as no screens, whiteboards or badges are in shot, and you don't speak for us (core_12) | |
-| S08 | Use the company's AI assistant to summarise a public report | Allowed | It's approved, and public information is fine to use (core_15) | |
-| S09 | Paste a customer's complaint into a free public chatbot to tidy the wording | Not allowed | Personal data would go to a company we have no contract with; use the approved assistant without names (core_15) | |
+| S06 | Forward a client file to your personal email to finish at home | Not allowed | It leaves the organisation's protection; use approved remote access (core_13) | |
+| S07 | Post a photo of the team's new office on social media | Allowed | As long as no screens, whiteboards or badges are in shot (core_12) | |
+| S08 | Use the company's AI assistant to summarise a public report | Allowed | It's approved, and public information is fine (core_15) | |
+| S09 | Paste a customer's complaint into a free public chatbot | Not allowed | Personal data to a firm we have no contract with; use the approved assistant without names (core_15) | |
 | S10 | Connect your own phone to the guest Wi-Fi | Allowed | That's what the guest network is for | |
-| S11 | Plug in a USB stick a supplier handed you at a trade fair | Not allowed | Hand it to IT to check; unknown sticks can carry malware (core_13) | |
-| S12 | Take your work laptop on holiday abroad | Ask first (your manager, then the service desk) | Some countries and some data need extra care (core_09) | |
-| S13 | Use the team chat to moan about a colleague | Not allowed | Messages are records and the colleague could one day read it; talk to your manager | |
+| S11 | Plug in a USB stick a supplier handed you at a fair | Not allowed | Hand it to IT to check (core_13) | |
+| S12 | Take your work laptop on holiday abroad | Ask first (manager, then service desk) | Some countries and some data need extra care (core_09) | |
+| S13 | Use the team chat to moan about a colleague | Not allowed | Messages are records and the colleague could read it; talk to your manager | |
 | S14 | Install a game on your work phone | Ask first (service desk) | Only apps from the company app store go on work devices | |
-| S15 | Set an out-of-office saying you're in Tenerife for a fortnight | Allowed | Fine, but say less: your return date and who to contact, not where you are (core_12) | |
-| S16 | Log in as a colleague who's off sick, with their permission, to send their report | Not allowed | It hides who did what and gets round access controls; the service desk can give you access | Yes |
-| S17 | Read out the code from your phone to "IT" on a call | Not allowed | IT never asks for codes. Hang up and ring the service desk (core_03) | Yes |
-| S18 | Turn off the antivirus because it slows your laptop down | Not allowed | It's there to stop malware; ask the service desk to fix the slowness | Yes |
-| S19 | Look up a famous customer's address in the customer portal, just to see | Not allowed | Looking without a work reason can be a crime (Data Protection Act 2018, section 170) | Yes |
-| S20 | Use your own laptop for work while yours is being repaired | Ask first (service desk) | Only through the remote desktop service, set up by IT | |
-| S21 | You think you've sent a file to the wrong customer | Report it (the card shows the report route instead of buzzers) | Reporting suspected incidents is a duty; the sooner, the better (core_04) | Yes |
-| S22 | Tell a colleague your password so they can watch your inbox while you're on leave | Not allowed | Ask the service desk to set up shared access; your password is yours alone (core_03) | Yes |
-
-"Fact or myth?" statements (C16-LO4): "IT can read anyone's messages whenever they fancy" (myth); "Our email is scanned for threats, and The Lark says how" (fact, from the organisation's monitoring statement); "If someone asks for their data, emails about them can be part of what they get" (fact); "Work chat is private between you and the person you sent it to" (myth); "The organisation can't check anything without asking each of us first" (myth: it can check for legitimate reasons, but it must tell you).
-
-### 4. Apply: back at the desk (1.5 minutes)
-
-- **(CP)** Two situations arrive, unannounced, in a random order:
-  - **The meeting link** (C16-LO2, LO3). An email from Anjali Mistry at Hollins Lane Primary, a real client: *"Can we catch up at 2 about the cleaning rota? Here's the link. You'll need to download MeetFlow first."* (A fictional video app Larkspur doesn't use; check the name isn't a real product before build, like every name in the game.) The player can install it from the link (a `confirm_action` dialog), ask the service desk in chat, reply suggesting the organisation's own meeting tool, or ignore it. Asking gets Owain within seconds: *"You can join that one in the browser, no install. Or send her one of ours."* Installing gets a friendly note from Owain a minute later: *"Saw MeetFlow go on your laptop. It's a real app, no harm done. Next time ask first: fake meeting apps are a favourite way in."*
-  - **Martin's favour** (C16-LO2, LO5). Martin perches on the desk: *"Quick one. Can you look up the business manager at Moorfield Primary in the portal? Her mobile. Old friend, personal thing."* The player can decline and say why, decline and suggest he asks her another way, say they'll check with Tomasz, or look it up. If Martin pushes (*"Oh, come on. It's just a number."*), the player gets a second chance to hold the line. If they look it up, the portal shows a banner, *"Access recorded"*, and ten minutes later Tomasz drops by: *"The portal flagged a lookup with no work task behind it. Anything you want to tell me?"* Owning up gets *"Thanks for telling me. I'll have a word with Martin."* Martin, later, sheepish: *"Fair cop. I'll message her myself."*
-- **(CP)** Lena's chat when both are done (on screen): *"The updated policy's on The Lark. Can you sign it off before 3? Everyone has to."*
-
-### 5. Debrief (30 seconds)
-
-- **(CP)** The debrief screen (BE-02), then one line from Ama.
-
-### 6. Check (1 minute)
-
-- **(CP)** Five items from the bank in `assessment.md`, answered from the organisation's answer key (MG-20), opened on The Lark.
-
-### 7. Reference: the policy and the acknowledgement (1 minute)
-
-- **(CP)** The Lark's policy page (BE-09, showing the HA-07 record):
-  - the policy's name, version, date and owner, and, on a re-acknowledgement, "What changed in this version";
-  - the five-point summary (HA-11);
-  - **Read the full policy** (accessible HTML inside The Lark, or in a new tab);
-  - two buttons of equal size: **I have read and understood the Acceptable Use Policy, version 4.2, and I will follow it** (HA-07's statement, with the organisation's policy name and version) and **I have a question first**. No pre-ticked box, no timer, no forced scrolling.
-- **Acknowledge:** a confirmation shows what was recorded (policy, version, date and time) and when it will be asked again (in a year, or sooner if the policy changes). The platform keeps the record (HA-07, HA-05).
-- **I have a question first:** a short form (which section, and the question) goes to the policy owner. The acknowledgement stays open; the learner can come back from The Lark or the learner home (HA-17) when it's answered, with reminders (HA-04). The module completes when the policy is acknowledged.
-- If the organisation attaches more than one policy (for example its information security policy), each has its own summary and its own acknowledgement.
-- **(CP)** The reference card, **Small print, big reasons**, stays pinned: the procedure, the five-point summary and the contacts by question type.
+| S15 | Set an out-of-office saying you're away for a fortnight | Allowed | Fine, but say less: your return date and who to contact, not where you are (core_12) | |
+| S16 | Log in as a colleague who's off sick, with their permission | Not allowed | It hides who did what; the service desk can give you access | Yes |
+| S17 | Read out the code from your phone to "IT" on a call | Not allowed | IT never asks for codes; hang up and ring the service desk (core_03) | Yes |
+| S18 | Turn off the antivirus because it slows your laptop | Not allowed | It's there to stop malware; ask the service desk to fix the slowness | Yes |
+| S19 | Look up a famous customer's address, just to see | Not allowed | Looking without a work reason can be a crime (Data Protection Act 2018, s.170) | Yes |
+| S20 | Use your own laptop for work while yours is repaired | Ask first (service desk) | Only through the remote desktop service | |
+| S21 | You think you've sent a file to the wrong customer | Report it | Reporting suspected incidents is a duty; the sooner the better (core_04) | Yes |
+| S22 | Tell a colleague your password to watch your inbox while you're off | Not allowed | Ask the service desk for shared access; your password is yours alone (core_03) | Yes |
 
 ## Decisions and consequences
 
 | Decision | Options | Learning outcome | How the consequence is shown |
 |---|---|---|---|
-| Leo's question (Hook) | Check The Lark / ask Owain / guess allowed / guess not allowed | LO2, LO3 (baseline) | Leo's reaction; the answer appears either way |
-| Buzz cards | Allowed / Not allowed / Ask first | LO2 | The reveal, the reason and the section on the whiteboard; points |
-| Why? cards | Three reasons | LO2, LO5 | The right reason named; bonus point |
-| Who do you ask? cards | Service desk / security team / DPO / manager / HR | LO3 | Kev's commentary; points |
-| Fact or myth? | Fact / myth | LO4 | Tomasz's one-line ruling |
-| Mei Lin's card | Same treatment / different | LO5 | Mei Lin's line |
-| The meeting link (Apply) | Ask the service desk / suggest our own tool / install it / ignore it | LO2, LO3 | Owain's quick answer; or his friendly note after an install; Anjali's meeting happens either way |
-| Martin's favour (Apply) | Decline and explain / decline and suggest another way / check with Tomasz / look it up | LO2, LO5 | Martin takes no for an answer; or the "Access recorded" banner and Tomasz's visit, with credit for owning up |
-| The policy (Reference) | Acknowledge / ask a question first | LO6 | The record shown on screen; or the question sent and the acknowledgement held open |
+| The meeting link | Ask the service desk / suggest our own tool / install it / ignore it | LO2, LO3 | The service desk's quick answer; or the fake-app montage |
+| Personal email | Approved remote access / forward to personal | LO2 | The lost-file montage |
+| The lookup | Decline and suggest another way / look it up | LO2, LO5 | The recorded-lookup montage; credit for owning up |
+| "Can I?" cards | Allowed / Not allowed / Ask first | LO2 | The answer, reason and section on screen |
+| The two triage items | Report / Verify / decline | LO2, LO3 | Per-item reasoning and the awareness score |
 
-No option shames the player. Looking up the number ends with Tomasz thanking them for being straight with him and Martin taking it on the chin; installing the app ends with Owain saying "no harm done".
+No option shames the player. "Ask first" always scores at least a point, because punishing caution stops people asking.
 
-## Minigames
+## Minigames and systems
 
-| Minigame | Status | Use here |
+| System | Status | Use here |
 |---|---|---|
-| **MG-20 Knowledge check** | new (MVP) | The show's cards and the final check, from one bank keyed to the organisation's answer key (HA-11) |
-| MG-20's game show presentation | planned in `features/minigames.md` | Hosts, buzzers with labels and icons, "sort into groups" items. This module also needs: contestants' answers revealed after the player locks in, the whiteboard scoreboard, rounds, prize-giving, and "Ask first" scoring at least one point. No speed scoring. Keys 1, 2 and 3 for the buzzers |
-| `warranty-checklist` | existing (sis03), needs generalising | Fallback for the Buzz round before the game show presentation exists: one row per card with three verdict buttons. Its labels, globals and alert text are hard-coded today. MG-20's plain spot check look is the other fallback |
-| `person-chat` | existing | The hosts, contestants, Tomasz and Mei Lin as multi-speaker scenes; Leo and Martin at the desk |
-| `phone-chat` | existing | Lena and Owain in the team chat |
-| MG-01 Inbox | new (MVP) | Anjali's email with the meeting link |
-| `confirm_action` (`systems/apply-actions.js`) | existing | The "Install MeetFlow?" dialog, and the portal search in Martin's favour |
-| BE-09 and HA-07 | new (MVP) | The policy page, the acknowledgement and "I have a question first"; `notes` and a `lab-workstation` page until they exist |
+| Inbox triage (`awareness` profile) | built | The app-install link and the data-lookup request; Report always visible |
+| Consequence flip (montage) | built | Where each sandbox choice led |
+| Organisation answer key | built (organisation profile) | The "can I?" answers and reasons |
+| Awareness-measure records | built | Per-item id, verdict, chips, score, stage and time |
+| Three-way "sort" surface | new (small) | Allowed / Not allowed / Ask first for the card items |
 
-## Explainers
+## Concept panels
 
-| Explainer | Who | Length | Aids (BE-08) | Followed by |
-|---|---|---|---|---|
-| The small print on one card | Owain, with Ama (EX-01) | 45 seconds | The ten headings, then the five responsibilities | "Which answer is never wrong?" (MG-20 single item) |
-| The reveals | Ama and Owain | 5 seconds a card | The whiteboard: answer, reason, policy section | The next card |
-| Fact or myth? Monitoring | Tomasz | 45 seconds | The Lark's monitoring page, and three ticks: tell staff, have a purpose, be necessary | His closing line |
-| Mistakes and misuse | Mei Lin | 20 seconds | none | none |
-| Rules that don't work | Ama (optional, in the debrief) | 15 seconds | The policy page's "I have a question first" button | none |
+- A short panel on the **three answers** and **five responsibilities**.
+- A short panel on **monitoring and its limits** (what's checked, why, and the limits that protect staff).
 
-## Debrief
-
-Shown on BE-02, then one line from Ama:
-
-1. **The scoreboard and the awards,** with the player's points by round.
-2. **Before and after:** Leo's question in the Hook beside the meeting link in Apply. Did the player check or ask both times?
-3. **The two Apply situations,** each with what the player did and what good looks like: ask the service desk (or use the organisation's own tool); say no to Martin kindly, and if he pushes, point him to Tomasz.
-4. **The five responsibilities,** each ticked where the player showed it during the module.
-5. **Per-outcome results** (Secure, Developing, Not yet).
-6. **The line to remember:** *"Not sure? Ask first. Made a mistake? Report it."* Ama, voiced: *"Small print, big reasons. And if a rule doesn't work, tell us."*
+No video. No runtime language model. The approved AI assistant in card S08 is the authored one from core_15.
 
 ## Variants
 
-- **Micro-drill:** none. When the organisation changes its policy, though, the cards tied to the changed sections can be sent as an optional three-minute refresher with the re-acknowledgement (BE-07, HA-07).
-- **Text route:** the show as a text quiz: Owain's card, three labelled answer buttons, the contestants' answers shown after the player locks in, then the answer and reason as text. The Apply situations are text choices; the policy page is accessible HTML with the same two buttons. Same record. About 7 minutes.
-- **Facilitated session, "Policy Launch Live":** a real lunchtime quiz for a team (BE-15, HA-13), on a presenter screen, about 30 minutes. Teams hold up coloured cards instead of buzzers; the facilitator reveals the organisation's answers and asks, for each surprise, "Would this rule work in your team?" The answers to that go to the policy owner. Pause points: after Buzz ("Which answer surprised you?"), after "Fact or myth?" ("What would you like to know about monitoring here?"), after Mei Lin's card ("What makes someone hide a mistake?"). Everyone acknowledges on their own device at the end, so each acknowledgement is individual.
-- **Replay and randomisation:** each play draws from the confirmed cards (22 in the Larkspur bank), at least one of each answer per round. When the policy changes, cards linked to the changed sections are drawn first with a "New" badge, and the policy page shows what changed. The annual re-acknowledgement goes through HA-07, and core_17 offers it at the end of its day.
+- **Defend-only shell** (`variant: "defendOnly"`, about 6 to 7 minutes): brief, defend (the "can I?" set and the two triage items), debrief. The simplest form, and the recommended default if a consequence flip is more than the organisation wants.
+- **Pre and post checks:** general role forms (AB and BA). Acceptable-use items (install an app, a data lookup, a shared login, monitoring fact-or-myth) join the general check pool as mirror pairs; see `assessment.md`.
+- **Facilitated session, "Policy Launch Live":** the lunchtime game show (Allowed / Not allowed / Ask first, buzzers or coloured cards), on a presenter screen, for launching a new or changed policy. Pause points: "Which answer surprised you?", "What would you like to know about monitoring?", "Would this rule work in your team?" Answers go to the policy owner.
+- **Replay:** each play draws from the confirmed cards, at least one of each answer; when the policy changes, cards linked to the changed sections are drawn first with a "new" badge.
 
 ## Alternative concepts
 
-1. **The Small Print Detective.** Colleagues leave "Can I...?" sticky notes on the player's monitor. For each, the player searches the real policy on The Lark, finds the section that answers it and highlights it, then replies to the colleague. A final note asks something the policy doesn't cover, and the right move is to ask the service desk. It teaches the real skill of finding answers in your own policy, but it's quieter and less social than the show.
-2. **Rule Rewrite.** The player joins the policy review group with Ama, Mei Lin, Owain and Martin. Anonymous staff feedback shows which rules people break and why. For each, the group decides: keep it and explain it better, change it, or make the right way easier. It teaches the reasons behind the rules and the NCSC's idea of usable rules, and the learner's own suggestions can be sent to the organisation (HA-14). It would also suit role_05 and role_01.
-3. **Desk Inspection.** A spot-the-risk sweep of the Operations floor (BE-10) where every risk (a password on a sticky note, a personal USB stick, an unapproved app on a screen, an unlocked laptop) is tagged with the policy heading it breaks and fixed. Visual and quick, but it overlaps core_10's clean desk sweep.
+1. **The Small Print Detective.** "Can I...?" sticky notes on the learner's monitor; for each, they find the answering section in the real policy and reply. Teaches the real skill of finding answers, but quieter than the sort.
+2. **Rule Rewrite.** The learner joins the policy review group: for each rule people break, keep and explain, change, or make the right way easier. Teaches the reasons and the NCSC's usable-rules idea; also suits role_05 and role_01.
+3. **Desk Inspection.** A spot-the-risk sweep of the floor, each risk tagged with the policy heading it breaks. Visual and quick, but overlaps core_10's clean-desk sweep.
 
 ## Art and audio
 
-- **Room dressing:** the kitchen as a game show set: whiteboard scoreboard, three buzzers that light and sound (new props), bunting, the cardboard Golden Lanyard (new prop), audience extras with sandwiches. The rooms themselves exist.
-- **Characters:** Ama, Owain, Leo, Martin, Kev, Tomasz and Mei Lin from the recurring cast; generic office extras for the audience. Anjali appears by email only.
-- **New UI:** the game show overlay (cards, buzzers, scoreboard, contestants' answers), and the policy page in The Lark (BE-09).
-- **Voice:** about 12 lines for Owain, 10 for Ama, 8 for Martin, 6 each for Kev and Leo, 5 for Tomasz and 2 for Mei Lin. The reveal lines (*"Allowed!"*, *"Not allowed!"*, *"Ask first!"*, *"Lock it in."*, *"Let's see what the policy says."*) are fixed and voiced once per host, then reused. **No voiced line prints a variable:** card reasons, policy sections, scores and the organisation's answers are on screen only, because organisations change them. Owain voices the situations on the course's own cards, whose text is fixed; cards an organisation adds (HA-08) appear as text, read by Owain's on-screen speech bubble without audio.
-- **Sound:** three distinct buzzer tones, always paired with a light, a label and an icon (tick, cross, question mark), so colour and sound are never the only cue. Applause and the workplace music set (BE-21).
+- **Room:** the Marrowdale training room (a brand-set room type once the company is added); no new room.
+- **UI:** the three-way sort surface, the montage title cards.
+- **Characters:** the host and the proposed cast need Marrowdale cast art (CSS wordmark and placeholder sprites until the company is added and PixelLab art is approved).
+- **Voice:** text to speech. No voiced line prints a variable: card answers, reasons, policy sections and the organisation's details are on screen only, because organisations change them.
 
 ## Pitfalls
 
-- **Teaching a rule the organisation doesn't have.** Only cards the organisation has confirmed are drawn, and at least 12 must be confirmed before the module can be assigned (an item on the setup checklist, HA-26). The Larkspur defaults are suggestions, not answers.
-- **Letting an organisation teach something harmful.** Seven cards are locked, covering the six locked rules in `README.md` (open question 3): S17 and S22 (passwords and codes), S16 (someone else's login), S04 (badges), S19 (data without a work reason), S18 (security software) and S21 (reporting). No organisation can make any of these "Allowed", or make reporting optional.
-- **Policy trivia.** Cards are everyday situations, never "what does section 4.3 say?". The policy section is shown as a pointer, not asked for.
-- **Punishing caution.** "Ask first" always scores. People who are afraid of being wrong stop asking.
-- **Making monitoring sound sinister, or harmless.** Tomasz's round covers both the checks and the limits that protect staff.
-- **Blurring mistakes and misuse.** Mei Lin's card keeps the line clear, and nothing in the module suggests that a slip reported quickly leads to discipline.
-- **A coerced acknowledgement.** No forced scrolling, no countdown, no pre-ticked box. The summary is on the page, the full policy is one click away, and "I have a question first" is as big as "I agree".
-- **Speed pressure.** Buzzers lock in an answer; speed scores nothing; every control works by keyboard.
-- **Martin as a villain.** His favour is the kind of thing nice people ask. He takes no for an answer, and he comes round.
-- **Running long.** The show is four minutes. If an organisation adds its own cards (HA-08), they replace cards, they don't add rounds.
+- **Teaching a rule the organisation doesn't have.** Only confirmed cards are drawn; the defaults are suggestions, not answers.
+- **Letting an organisation teach something harmful.** Seven cards are locked (S04, S16, S17, S18, S19, S21, S22). No organisation can make any of these "Allowed", or make reporting optional.
+- **Policy trivia.** Cards are everyday situations, never "what does section 4.3 say?". The section is a pointer, not asked for.
+- **Punishing caution.** "Ask first" always scores.
+- **Making monitoring sound sinister, or harmless.** The monitoring panel covers both the checks and the limits that protect staff.
+- **Blurring mistakes and misuse.** The debrief keeps the line clear: honest mistakes reported quickly are fixed; deliberate misuse is handled differently.
+- **A coerced acknowledgement.** When the acknowledgement platform option is built, no forced scrolling, no countdown, no pre-ticked box; the summary on the page, the full policy one click away, and "I have a question first" as prominent as "I agree".
+- **No real brands.** Marrowdale and every tool name are fictional, with `.example` domains; check before build.

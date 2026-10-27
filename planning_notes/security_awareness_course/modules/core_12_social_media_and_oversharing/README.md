@@ -1,21 +1,36 @@
 # core_12: Social media and oversharing
 
 **Working game title:** Open Book
-**Pitch:** Help an ethical tester turn a colleague's public posts into the perfect scam, then turn it around and lock the door she just walked through, on his profile and on yours.
+**Pitch:** Play the attacker who turns a colleague's public posts into the perfect scam, then flip and close the door you just walked through, on their settings and on yours.
 
 | | |
 |---|---|
-| Audience | All staff |
+| Audience | All staff (built role: general) |
 | Prerequisites | core_00 recommended; lands best after core_01 and core_02 |
-| Full module | 12 minutes |
-| Micro-drill | 3 minutes ("Post or Not?") |
-| Text route | 10 minutes |
-| Priority | Phase 3 |
-| Build size | M, driven by the social media and OSINT board minigame (MG-13) |
+| Full episode | about 13 minutes |
+| Defend-only variant | about 8 minutes |
+| Pre and post check | 4 to 5 minutes each (general role forms) |
+| Priority | Phase 3 (proposed episode E14) |
+| Build size | M. Reuses the OSINT browser, intel board, template composer and inbox triage; new work is the privacy-settings surface and the feed drill |
+
+## Build status
+
+**Builds on the OSINT browser and E2 / E4.** Every built attack half already runs an OSINT look-around with a "reduce" note per fact found (the note that tells the learner what to leave off a post), and the intel board records the typed intel facts. E2 (Tarrowby Logistics) uses a social post asking people to email CVs, and E4 (Merrin & Sallow Architects) uses a partner's public diary and travel posts. Against this module, that built work covers:
+
+- **C12-LO1** (what an attacker learns from public posts), through the OSINT stage and reduce notes;
+- **C12-LO2** (spotting risky content), through the same stage, E2's social post and E4's diary and travel.
+
+**New in this module:**
+
+- the privacy-settings surface (the defender side of the attack: tighten a profile and watch each found fact close), for **C12-LO3**;
+- fake profiles and fake recruiters as triage items, and an impersonation of a senior leader, for **C12-LO4**;
+- who speaks for the organisation, for **C12-LO5**.
+
+The episode is proposed as a full attack-then-defend episode in the built shape, at a brand-set company, with a defend-only variant and new items for the general check forms. It is not yet built: the awareness product is on hold (see `../../04_BUILT_SO_FAR.md` §1).
 
 ## Why this module
 
-Attackers do their homework, and most of it is free. Public posts tell them who works where and for whom, what systems a company runs (job adverts are a gift), when someone is on holiday, what their manager is called, and the answers to common security questions (a pet's name, a first school, a birthday). A badge in a selfie, a screen in the background of an office photo, a whiteboard behind a team shot: each is a small gift to someone building a convincing phishing email (core_01) or a pretext call (core_02). None of it needs hacking. The defence is equally ordinary: think before you post about work, tighten your privacy settings, keep security-question answers private, and treat strangers who ask about your workplace with care.
+Attackers do their homework, and most of it is free. Public posts tell them who works where and for whom, what systems a company runs (job adverts are a gift), when someone is away, what their manager is called, and the answers to common security questions (a pet's name, a first school, a birthday). A badge in a selfie, a screen in the background of an office photo, a whiteboard behind a team shot: each is a small gift to someone building a convincing phishing email (core_01) or a pretext call (core_02). None of it needs hacking. The defence is equally ordinary: think before you post about work, tighten your privacy settings, keep security-question answers private, and treat strangers who ask about your workplace with care.
 
 Two cases show the range. In 2017 and 2018, a public fitness-app heatmap was found to trace the perimeters and jogging routes of military bases around the world, because individuals' location data added up to something nobody meant to publish. And national security bodies run the "Think Before You Link" campaign after thousands of people in the UK were approached by fake profiles on professional networking sites. Oversharing is rarely one careless post; it is the pattern that builds up, and the stranger who is paid to notice it.
 
@@ -47,40 +62,46 @@ Contributes to:
 
 ## Module flow
 
-| Beat | What happens | Format | Minutes |
-|---|---|---|---|
-| Hook | Leo's "first day with the new kit" post appears, with his badge, screen and a whiteboard in shot; the player's response is the baseline | Game | 1 |
-| Learn | With Jo, on an authorised test, the player builds an OSINT board from Leo's public posts and sees it become a pretext | Attacker-view interlude (EX-06, BE-11, MG-13) | 3 to 4 |
-| Practise | "Post or Not?": a feed of draft posts and photos to mark as safe, tweak or don't post | Minigame (MG-13, BE-10) | 2 to 3 |
-| Apply | Lock down Leo's profile and the player's own, and handle a fake recruiter asking about company systems | Game (MG-13) | 3 to 4 |
-| Debrief | The board shown again, now with each thread cut by a setting changed or a post removed; Jo's "what would have stopped me" | Debrief screen (BE-02), NPCs | 1 to 2 |
-| Check | Five scenario questions | Quiz (MG-20) | 1 to 2 |
-| Reference | Reference card on The Lark: think before you post, privacy settings, who speaks for the organisation | Intranet (BE-09) | under 1 |
+The episode is one training-room mission: the learner taps the kiosk and the episode runner steps through the stages. The pre-check and post-check are two further missions that an organiser places before and after any run of episodes.
 
-## Reuse from existing Break Escape content
+| Stage | What happens | Minutes |
+|---|---|---|
+| Pre-check (separate mission) | 10-item general check form, played before the episodes | 4 to 5 |
+| Brief and scope note | "Authorised exercise at Merrin & Sallow Architects (fictional). In scope: Oskar's public posts and your own profile." | 1 |
+| Attack: OSINT | On a stripped-down OSINT page, pin a staff member's public posts; the intel board ticks each fact, and each carries its reduce note | 3 to 4 |
+| Attack: write | Compose one pretext message from a template whose blanks take only facts just found; red-flag meter on; one send | 2 to 3 |
+| Flip | The learner's own pretext arrives in a colleague's inbox with its tells highlighted | under 1 |
+| Defend | Triage a feed and a short inbox: posts to post, tweak or hold; a fake recruiter; a fake senior profile; and tighten the privacy settings that close each found fact | 3 to 4 |
+| Debrief | Per-item reasoning, feedback on the genuine items, the team-protected tally, the habit, the "On Monday" card, the reporting route and the no-blame line | 1 to 2 |
+| Post-check (separate mission) | The parallel general check form, played after the episodes; shows the change from the pre-check | 4 to 5 |
 
-- **Rooms:** `room_office` (the player's desk), `room_break` (where Leo is), `room_security` (Jo and Ama's debrief). The social feeds and the OSINT board are overlays, so the module is light on rooms. No new rooms.
-- **Conversations:** `person-chat` for Jo, Ama and Leo; `phone-chat` or a chat-app skin (MG-05, from core_02) for the recruiter's direct message.
-- **Patterns:** the attacker-view framing and Jo's "what would have stopped me" close are shared with core_02 and core_10; the pretext call that the OSINT board produces nods to core_02's call-back lesson. m05 and m08 have insider and recruiter material (a recruiter leaflet, a spreadsheet of staff with a pressure column): reuse the idea of a profile built from scraps, not the spy tone.
+## Setting and host
 
-## New features needed
+- **Company:** Merrin & Sallow Architects (`merrinsallow.example`, brand set), whose partners travel and speak at events, so their diaries are partly public. This extends E4's public-diary and travel OSINT at the same company.
+- **Host:** Tomás Carvalho (the E4 inbox owner), who welcomes the learner at the kiosk.
+- **OSINT subject:** Oskar Berglund, a junior architect who posts a lot (reuse of the E4 cast; his oversharing detail is proposed, consistent with `BRAND_SET.md`).
+- **Impersonated senior:** Catherine Merrin (the managing partner impersonated in E4), for the fake-profile item.
 
-- **MG-13 Social media profile and OSINT board**: connect public posts into an attacker's picture of a person (a corkboard with string), then flip to the privacy-settings side and tighten a profile.
-- **BE-11 Role switch**: shadow Jo for the OSINT build, then return to the player to lock things down.
-- **EX-06 Attacker-view interlude**: the OSINT board and the pretext it produces, kept at "this is what was already public", never a how-to.
-- **BE-10 Spot-the-risk mode**: "Post or Not?" marking risks in a feed.
-- **BE-01 Assessed decisions**, **BE-02 Debrief**, **MG-20 Knowledge check**, **BE-09 Intranet terminal**, **BE-05 Organisation profile** (the social media policy and reporting route), **BE-19 Open minigames from conversations and events**.
-- **MG-05 Messaging apps** (shared with core_02) for the recruiter DM, if built.
+## Systems reused
+
+- the **OSINT browser** and **intel board** with typed intel facts and reduce notes (all built attack halves);
+- the **template composer** and **phish rules engine** for the one pretext message, with the red-flag meter;
+- the **flip view**;
+- **inbox triage** (the feed and the fake-profile and recruiter cards) under the `awareness` scoring profile, with Report always visible;
+- **awareness-measure** records;
+- the **look-alike NPC guard** for the fake senior profile.
+
+New: a privacy-settings surface (tighten a profile; each change closes a found fact on the board) and a feed drill ("Post or Not?"). Both are overlays, so the episode needs no new room beyond the training room.
 
 ## Organisation-specific content
 
 - The social media policy: what staff may and may not post about work, and who is authorised to speak for the organisation.
-- The reporting route for a fake profile, a suspicious recruiter or an information-gathering approach.
+- The reporting route for a fake profile, a suspicious recruiter or an information-gathering approach (fills `slot:customer_report_route`).
 - Any rule on connecting work accounts to personal ones, and on posting from client sites.
 - Guidance on profile photos that show badges, passes or secure areas.
 
 ## Open questions
 
-1. **Real platforms or a generic feed.** Should MG-13 mimic known social networks or use a generic feed and a generic professional network? *Recommendation: generic and legible, with no real brand, so the lesson transfers to whatever the learner uses, and so the module does not date.*
-2. **Using a named colleague (Leo).** Is it fair to build the OSINT board on Leo? *Recommendation: yes, with consent in the fiction (Jo's test is authorised and Leo is in on the debrief and thanked), because Leo is the course's likeable "posts everything, reports fast" role model, and it keeps the player from building a board on a real person.*
-3. **Overlap with core_14 (insider recruitment).** The fake recruiter can shade into insider recruitment. *Recommendation: keep it to information-gathering and recruitment scams here, and point to core_14 for someone being recruited to act against their employer.*
+1. **Real platforms or a generic feed.** A generic, legible feed and professional network, with no real brand, so the lesson transfers and the episode does not date. (Matches the brand-set rule: invented services only.)
+2. **Using a named colleague as the subject.** The subject is the fictional Oskar Berglund, with consent in the fiction (the exercise is authorised and stated in the scope note, and Oskar is thanked in the debrief), never a real person or the player's real accounts.
+3. **Overlap with core_14 (insider recruitment).** Keep this episode to information-gathering and recruitment scams; point to core_14 for someone being recruited to act against their employer.
