@@ -514,6 +514,12 @@ Start once the scaffold agent has made its first commit; read its README first.
 
 ### P11a. Hacktivity: account deletion that anonymises and keeps every record
 
+**Owner answers (2026-10-27), these override anything below:** the owner checks production for
+existing `deleted<digits>` usernames before the reservation rule ships (give them the exact
+command); a deleted account **keeps counting as an organisation seat** until an admin removes it;
+`events.eligible_emails` and `contacts.email` are **not rewritten** (the "no linked row keeps the old
+email" test covers rows linked by user id only).
+
 Owner spec (2026-10-27): deleting an account removes the personal data on the user row and keeps
 **every** linked record (entitlements, games, scores, results, feedback with its text, team and
 organisation memberships, invitations, email logs, everything with a `user_id`). Nothing linked is
