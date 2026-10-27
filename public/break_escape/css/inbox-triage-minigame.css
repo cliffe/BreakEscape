@@ -214,7 +214,9 @@
     gap: 8px;
     width: min(560px, 92%);
     max-height: 86%;
-    overflow-y: auto;
+    /* The tick list scrolls on its own between the title and the Confirm/Back bar, so the
+       bar never sits over a row (lab R16 N8). */
+    overflow: hidden;
     padding: 16px;
     box-sizing: border-box;
     font-family: var(--se-font-readable);
@@ -225,7 +227,8 @@
 }
 .tri-sheet-title { margin: 0; font-size: 20px; }
 .tri-sheet-chosen { margin: 0; font-size: 15px; color: var(--ui-text-dim, #c3ccdf); }
-.tri-chips { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 4px; }
+.tri-chips { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 4px; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.tri-chips > * { flex: none; }
 .tri-chip {
     display: flex;
     align-items: center;
@@ -242,7 +245,7 @@
     background: color-mix(in srgb, var(--ui-accent, #ffcc44) 14%, transparent);
 }
 .tri-chip-none { margin-top: 6px; }
-.tri-sheet-bar { display: flex; gap: 8px; justify-content: flex-end; position: sticky; bottom: -16px; padding-top: 8px; }
+.tri-sheet-bar { display: flex; gap: 8px; justify-content: flex-end; flex: none; padding-top: 8px; }
 
 .triage-client button:focus-visible,
 .triage-client select:focus-visible,

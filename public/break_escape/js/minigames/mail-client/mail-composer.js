@@ -918,6 +918,14 @@ export class MailComposer {
         row.appendChild(select);
     }
 
+    /** The collapsed "Stuck?" disclosure naming where to look, never the value. */
+    _stuckPointer(text) {
+        const stuck = el('details', 'mail-blank-stuck');
+        stuck.append(el('summary', 'mail-blank-stuck-summary', 'Stuck? Show me where to look'),
+            el('span', 'mail-blank-stuck-text', text));
+        return stuck;
+    }
+
     _renderPartBlanks(part) {
         const tpl = templateOf(this.templates, this.choice[part]);
         const slots = arr(tpl && tpl.slots);
@@ -944,18 +952,22 @@ export class MailComposer {
                 // Optional where-to-look pointer from the template slot (lab R15 N5), behind
                 // the same "Stuck?" disclosure the Case file board uses. It names a source,
                 // never the value, so the gate line itself stays neutral.
-                if (isStr(slot.stuck) && slot.stuck.trim()) {
-                    const stuck = el('details', 'mail-blank-stuck');
-                    stuck.append(el('summary', 'mail-blank-stuck-summary', 'Stuck? Show me where to look'),
-                        el('span', 'mail-blank-stuck-text', slot.stuck));
-                    field.appendChild(stuck);
-                }
+                if (isStr(slot.stuck) && slot.stuck.trim()) field.appendChild(this._stuckPointer(slot.stuck));
             } else {
                 btn.textContent = chosenOpt ? `${blankLabel}: ${chosenOpt.label}` : `${blankLabel}: choose…`;
                 btn.dataset.chosen = chosen || '';
                 btn.setAttribute('aria-haspopup', 'listbox');
                 btn.addEventListener('click', () => this.openPicker(slot, btn));
                 field.appendChild(btn);
+                // A blank that already offers only the wrong options (lab R16 N9): the slot's
+                // stuckUntil { target, value, text } shows a pointer for that target until the
+                // option that earns the right sender is held.
+                const su = slot.stuckUntil;
+                if (isObject(su) && isStr(su.text) && su.text.trim() && isStr(su.value)
+                    && (!isStr(su.target) || (this.target && this.target.id === su.target))
+                    && !options.some((o) => o.value === su.value)) {
+                    field.appendChild(this._stuckPointer(su.text));
+                }
             }
             wrap.appendChild(field);
         }

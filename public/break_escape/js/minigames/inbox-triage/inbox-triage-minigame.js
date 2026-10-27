@@ -574,8 +574,11 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         sheet.appendChild(Object.assign(el('h3', 'tri-sheet-title', 'What made you say that?'), { id: 'tri-sheet-title' }));
         sheet.appendChild(el('p', 'tri-sheet-chosen', `You chose: ${this._actionLabel(rec, { verdict, action })}. Tick anything you noticed.`));
 
-        const fs = el('fieldset', 'tri-chips');
-        fs.appendChild(el('legend', 'mail-sr-only', 'What made you say that?'));
+        // A div group, not a fieldset: a fieldset will not reliably clip its own scroll area, and
+        // the tick list must scroll above the Confirm/Back bar (lab R16 N8).
+        const fs = el('div', 'tri-chips');
+        fs.setAttribute('role', 'group');
+        fs.setAttribute('aria-label', 'What made you say that?');
         const inputs = new Map();
         const addChip = (id) => {
             const label = el('label', `tri-chip${id === NONE_ID ? ' tri-chip-none' : ''}`);

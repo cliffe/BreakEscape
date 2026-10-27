@@ -626,7 +626,12 @@ function socialChannelLocked(id, channel) {
     // (00 §8), so without a reason the toast just reads as a dead end (F6-F10).
     const act = channel === 'email' ? 'read your mail' : 'talk to you';
     const who = name || 'That contact';
-    const text = `${who} flagged the last attempt and won't ${act} for now — give it a while, then try again more carefully.`;
+    // The wait is the lockout's own remaining time (lab R16 T8; Dev's is two minutes), rounded up.
+    const left = svc.getLockoutState?.(id)?.remainingMs;
+    const wait = Number.isFinite(left) && left > 0
+        ? (left > 60000 ? `about ${Math.ceil(left / 60000)} more minutes` : 'a minute or less')
+        : 'a couple of minutes';
+    const text = `${who} flagged the last attempt and won't ${act} for now. Wait ${wait}, then try again more carefully.`;
     (window.gameAlert || window.showNotification)?.(text, 'warning', '', 3500);
     return true;
 }
