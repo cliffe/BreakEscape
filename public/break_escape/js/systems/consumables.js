@@ -19,7 +19,14 @@
  *
  * Using one heals by its amount (capped at max HP), shows a toast and uses it
  * up: an inventory item leaves the inventory (and the server's copy), a world
- * object leaves the room. At full health nothing is used up.
+ * object leaves the room. At full health a snack or first aid kit is kept.
+ *
+ * Coffee and tea (user, 2026-10-27: "coffee cups should always be drunk, with
+ * a gulp sound, whether or not you're damaged or the mission has combat") are
+ * always drunk: a sound, the cup used up, and the heal applied if it helps. In
+ * a scenario with "disableAttacks" the message says nothing about health.
+ * There is no gulp clip in the assets, so DRINK_SOUND is the closest existing
+ * item-interaction sound.
  *
  * Kept free of imports so it can be tested in isolation.
  */
@@ -36,6 +43,9 @@ export const DEFAULT_HEAL_BY_TYPE = [
   [/^(first_aid|medkit|bandage)/, 40]
 ];
 export const GENERIC_HEAL = 15;
+
+// No gulp clip exists; this is the short item-interaction sound (sound-manager.js)
+export const DRINK_SOUND = 'item_interact_2';
 
 // Cups of coffee or tea in rooms (user, 2026-10-22: "any coffee cups in rooms
 // are consumed for health"), by sprite name: what the hover says and the heal.
@@ -91,6 +101,17 @@ export function markObjectConsumed(objectId, globals) {
   if (!list.includes(objectId)) g[CONSUMED_GLOBAL] = [...list, objectId];
 }
 
+/** True for coffee and tea: a cup sprite or a coffee/tea item type. */
+export function isDrinkable(data) {
+  if (!data) return false;
+  return !!drinkableCupName(data.type) || /^(coffee|tea)/.test(String(data.type || '').toLowerCase());
+}
+
+/** True when the loaded scenario has combat switched off. */
+export function isNoCombat() {
+  return typeof window !== 'undefined' && window.gameScenario?.disableAttacks === true;
+}
+
 function defaultHealForType(type) {
   const t = String(type || '').toLowerCase();
   const hit = DEFAULT_HEAL_BY_TYPE.find(([re]) => re.test(t));
@@ -131,7 +152,7 @@ export function shouldConsumeOnInteract(sprite, inventoryItems = []) {
  * Use a consumable: heal, toast, and use it up.
  * @param {object} sprite - inventory item or world object sprite
  * @param {object} [deps] - overridable for tests
- * @returns {number} HP healed (0 if nothing happened)
+ * @returns {number} HP healed (0 if nothing healed; a drink is still used up)
  */
 export function useConsumable(sprite, deps = {}) {
   const w = typeof window !== 'undefined' ? window : {};
@@ -139,26 +160,38 @@ export function useConsumable(sprite, deps = {}) {
   const notify = deps.notify ?? w.showNotification ?? (() => {});
   const inventoryItems = deps.inventoryItems ?? w.inventory?.items ?? [];
   const data = sprite?.scenarioData;
-  if (!data || !health || health.isKO?.()) return 0;
+  if (!data || health?.isKO?.()) return 0;
 
   const inInventory = inventoryItems.includes(sprite);
   const amount = consumableHealAmount(data, { inInventory });
   if (amount <= 0) return 0;
+  const drink = isDrinkable(data);
+  if (!health && !drink) return 0;
 
-  const hp = health.getHP();
-  const maxHP = health.getMaxHP();
+  const hp = health ? health.getHP() : 0;
+  const maxHP = health ? health.getMaxHP() : 0;
   const name = data.name || 'It';
-  if (hp >= maxHP) {
+  const noCombat = deps.noCombat ?? isNoCombat();
+  const hurt = !!health && hp < maxHP;
+  if (!hurt && !drink) {
     notify(`You're not hurt. Keep the ${name.toLowerCase()} for later.`, 'info', '', 2500);
     return 0;
   }
 
-  const healed = Math.min(amount, maxHP - hp);
-  health.heal(amount);
-  notify(`${name}: +${healed} HP`, 'success', '', 2500);
-  // A green +N over the player and a green flash on the sprite
+  const healed = hurt ? Math.min(amount, maxHP - hp) : 0;
+  if (hurt) health.heal(amount);
+  if (drink) {
+    const playSound = deps.playSound ?? ((n) => w.soundManager?.play?.(n));
+    try { playSound(DRINK_SOUND); } catch (err) { console.warn('Could not play drink sound:', err); }
+  }
+  if (noCombat || (drink && !healed)) {
+    notify(`You drink the ${name.toLowerCase()}.`, 'success', '', 2500);
+  } else {
+    notify(`${name}: +${healed} HP`, 'success', '', 2500);
+  }
+  // A green +N over the player and a green flash on the sprite (combat only)
   const player = w.player;
-  if (player) {
+  if (player && healed > 0 && !noCombat) {
     w.damageNumbers?.show?.(player.x, player.y - 30, healed, 'heal');
     w.spriteEffects?.flashTint?.(player, 0x66ff66, 300);
   }

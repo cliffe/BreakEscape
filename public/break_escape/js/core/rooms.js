@@ -2721,7 +2721,9 @@ export function createRoom(roomId, roomData, position) {
                         if (cupName) {
                             Object.assign(sprite.scenarioData, {
                                 name: cupName, type: imageName, decor: true,
-                                observations: `${cupName}, still warm. Drink it to get some energy back.`
+                                observations: window.gameScenario?.disableAttacks === true
+                                    ? `${cupName}, still warm.`
+                                    : `${cupName}, still warm. Drink it to get some energy back.`
                             });
                             if (isObjectConsumed(sprite.objectId)) {
                                 sprite.scenarioData.consumed = true;

@@ -17,7 +17,7 @@ writeFileSync(join(dir, 'consumables.mjs'), readFileSync(join(js, 'systems/consu
 const emitted = [];
 globalThis.window = { eventDispatcher: { emit: (name, data) => emitted.push({ name, data }) } };
 const { consumableHealAmount, shouldConsumeOnInteract, useConsumable,
-        drinkableCupName, hasScenarioRole, isObjectConsumed, markObjectConsumed, CUP_HEAL, CONSUMED_GLOBAL } =
+        drinkableCupName, hasScenarioRole, isDrinkable, DRINK_SOUND, isObjectConsumed, markObjectConsumed, CUP_HEAL, CONSUMED_GLOBAL } =
     await import(pathToFileURL(join(dir, 'consumables.mjs')).href);
 
 function health(hp, maxHP = 100) {
@@ -90,8 +90,8 @@ test('the toast shows what was actually healed near full health', () => {
     assert.equal(notes[0][0], 'First Aid Kit: +10 HP');
 });
 
-test('at full health nothing is used up', () => {
-    const cup = { scenarioData: { type: 'coffee', name: 'Coffee', takeable: false } };
+test('at full health a first aid kit is kept', () => {
+    const cup = { scenarioData: { type: 'first_aid_kit', name: 'First Aid Kit', takeable: false } };
     const notes = []; const usedUp = [];
     assert.equal(useConsumable(cup, { playerHealth: health(100), notify: (...a) => notes.push(a),
                                       inventoryItems: [cup], useUp: (s) => usedUp.push(s) }), 0);
@@ -155,4 +155,51 @@ test('wiring: rooms.js makes map cups drinkable and hides ones drunk before', ()
     assert.match(rooms, /import \{ drinkableCupName, isObjectConsumed \} from '\.\.\/systems\/consumables\.js'/);
     assert.match(rooms, /const cupName = drinkableCupName\(imageName\)/);
     assert.match(rooms, /isObjectConsumed\(sprite\.objectId\)/);
+});
+
+test('coffee is always drunk with a gulp: full health, combat mission', () => {
+    const cup = { scenarioData: { type: 'office-misc-cup2', name: 'Mug of coffee', decor: true } };
+    const notes = [], sounds = [], usedUp = [];
+    useConsumable(cup, { playerHealth: health(100), notify: (...a) => notes.push(a), noCombat: false,
+                         inventoryItems: [], useUp: (s) => usedUp.push(s), playSound: (n) => sounds.push(n) });
+    assert.deepEqual(sounds, [DRINK_SOUND]);
+    assert.deepEqual(usedUp, [cup], 'used up even at full health');
+    assert.equal(notes[0][0], 'You drink the mug of coffee.');
+});
+
+test('coffee when hurt in a combat mission still heals and shows the HP', () => {
+    const cup = { scenarioData: { type: 'coffee', name: 'Coffee', takeable: false } };
+    const h = health(50); const notes = [], sounds = [];
+    assert.equal(useConsumable(cup, { playerHealth: h, notify: (...a) => notes.push(a), noCombat: false,
+                                      inventoryItems: [cup], useUp: () => {}, playSound: (n) => sounds.push(n) }), 15);
+    assert.equal(notes[0][0], 'Coffee: +15 HP');
+    assert.equal(sounds.length, 1);
+});
+
+test('coffee in a no-combat mission is drunk without talking about health, even when hurt', () => {
+    const cup = { scenarioData: { type: 'office-misc-cup', name: 'Cup of coffee', decor: true } };
+    for (const hp of [100, 40]) {
+        const notes = [], sounds = [], usedUp = [];
+        useConsumable(cup, { playerHealth: health(hp), notify: (...a) => notes.push(a), noCombat: true,
+                             inventoryItems: [], useUp: (s) => usedUp.push(s), playSound: (n) => sounds.push(n) });
+        assert.equal(notes[0][0], 'You drink the cup of coffee.');
+        assert.doesNotMatch(notes[0][0], /HP|health|energy/i);
+        assert.equal(sounds.length, 1);
+        assert.equal(usedUp.length, 1);
+    }
+});
+
+test('a KO player drinks nothing; other consumables keep their full-health rule', () => {
+    const cup = { scenarioData: { type: 'coffee', name: 'Coffee' } };
+    const sounds = [];
+    assert.equal(useConsumable(cup, { playerHealth: health(0), notify: () => {}, noCombat: true,
+                                      inventoryItems: [cup], useUp: () => {}, playSound: (n) => sounds.push(n) }), 0);
+    assert.equal(sounds.length, 0);
+    assert.equal(isDrinkable({ type: 'snack' }), false);
+    assert.equal(isDrinkable({ type: 'mugs_tray1' }), true);
+});
+
+test('the drink sound is a clip the sound manager loads', () => {
+    const sm = readFileSync(join(js, 'systems/sound-manager.js'), 'utf8');
+    assert.match(sm, new RegExp(`load\\.audio\\('${DRINK_SOUND}'`));
 });
