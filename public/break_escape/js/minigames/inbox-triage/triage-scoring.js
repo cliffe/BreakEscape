@@ -62,7 +62,8 @@ export const CRITICAL_PENALTY = 15;
 export const CRITICAL_WHAT = Object.freeze({
     push: "approving a sign-in you didn't start",
     call: 'doing what an impostor asked on a call',
-    email: 'trusting a phish email'
+    email: 'trusting a phish email',
+    voicemail: 'acting on a spoofed voicemail'
 });
 
 /** Verdict points (out of 60) by profile, truth and verdict. Verify scores like Report. */

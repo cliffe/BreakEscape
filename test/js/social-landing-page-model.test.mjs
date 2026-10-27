@@ -179,7 +179,7 @@ test('linkInfoFor reports missing until built, then carries the domain fields', 
   const info = linkInfoFor(built, pageDef, 'kit_payroll_page');
   assert.deepEqual(info, {
     kitId: 'kit_payroll_page', pageId: 'payroll_login', domainId: 'd_word',
-    domain: 'ledgerwell-hr.example', credibility: 87, gatesPassed: true, meetsThreshold: true
+    domain: 'ledgerwell-hr.example', credibility: 87, gatesPassed: true, meetsThreshold: true, brand: 'ledgerwell'
   });
 });
 

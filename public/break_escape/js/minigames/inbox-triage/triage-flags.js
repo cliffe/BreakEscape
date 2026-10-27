@@ -169,6 +169,13 @@ export function chipIdsFor(set, kind = 'email', message = null, opts = {}) {
     if (email && message) {
         ids = ids.filter((id) => keep.has(id) || !EMAIL_TELL_NEEDS[id] || EMAIL_TELL_NEEDS[id](message));
     }
+    // N-14: a text, notice or other channel item can author an email factor it carries (pressure on
+    // a QR barrier notice: truth.flags has urgencyCalibrated). Offer it as a chip so it can be
+    // ticked and scored. Only the message's own authored factors are added, never the whole list.
+    if (!email && message) {
+        const extra = FACTOR_ORDER.filter((id) => keep.has(id) && !ids.includes(id));
+        if (extra.length) ids = [...extra, ...ids];
+    }
     if (opts.hideHeaderTells) ids = ids.filter((id) => !HEADER_TELLS.includes(id));
     return ids;
 }

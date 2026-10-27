@@ -50,7 +50,7 @@ import {
 } from './triage-flags.js';
 import {
     kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, KIND_LABEL,
-    CALL_ACTIONS, PUSH_ACTIONS, shortTitle
+    CALL_ACTIONS, PUSH_ACTIONS, shortTitle, realNounFor
 } from './triage-kinds.js';
 import { comparisonFor, comparisonText } from './triage-comparison.js';
 
@@ -345,7 +345,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const kinds = this.messages.map((m) => kindOf(m));
         const every = (allow) => kinds.length > 0 && kinds.every((k) => allow.includes(k));
         if (kinds.some((k) => k === 'email' || k === 'playerSent')) {
-            return { label: 'Inbox check', item: ['message', 'messages'], real: 'Real mail',
+            return { label: 'Inbox check', item: ['message', 'messages'], real: realNounFor(kinds, this.set),
                 reportLabel: 'Reported rather than just deleted', dropLegend: false };
         }
         if (every(['call'])) return { label: 'Service desk queue', item: ['call', 'calls'], real: 'Real callers',

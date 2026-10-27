@@ -137,6 +137,20 @@ export function shortTitle(msg) {
     return strip(subject || who);
 }
 
+/**
+ * The noun for the genuine items of a queue that holds email (P6-5). A set can name it
+ * (`realLabel`). A queue that mixes email with texts, notices or other channels names what it
+ * holds ("Real texts, notices and emails"); a pure mail queue keeps "Real mail".
+ */
+export function realNounFor(kinds, set) {
+    if (isStr(set?.realLabel)) return set.realLabel;
+    const others = [...new Set((kinds || []).filter((k) => k !== 'email' && k !== 'playerSent'))];
+    if (!others.length) return 'Real mail';
+    const word = { sms: 'texts', qr: 'notices', voicemail: 'voicemails', page: 'pages', call: 'calls', push: 'prompts' };
+    const names = [...others.map((k) => word[k] || 'messages'), 'emails'];
+    return `Real ${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
 /** A list subject for a kind that has none of its own. */
 export function defaultSubject(msg) {
     const kind = kindOf(msg);

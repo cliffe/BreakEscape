@@ -420,6 +420,18 @@ function selectFactorHint(target, fail, header) {
   return isStr(h) ? h : null;
 }
 
+/** Why a link failed ('' when it did not): noPage, wrongService or wrongAddress (P6-2). */
+function linkCauseOf(target, message, linkState) {
+  if (linkState === 'none') return 'noPage';
+  if (linkState !== 'fail') return '';
+  const brand = target && target.expectedLink && target.expectedLink.brandId;
+  const used = message.linkInfo && message.linkInfo.brand;
+  if (isStr(brand) && isStr(used) && used !== brand) return 'wrongService';
+  return 'wrongAddress';
+}
+
+const MISS_KEY = Object.freeze({ noPage: 'missNoPage', wrongService: 'missWrongService', wrongAddress: 'missWrongAddress' });
+
 /**
  * evaluateMessage(target, message, ctx) -> EvalResult (00 section 3).
  */
@@ -549,6 +561,10 @@ export function evaluateMessage(target, message, ctx) {
     tells,
     templateFlags,
     firstFail: failedRequired.length ? failedRequired[0].id : '',
+    // P6-2 / P5-8: why the link failed, for a reply that names the cause: noPage (nothing
+    // attached), wrongService (a page for a different brand than the target uses) or
+    // wrongAddress (the right service on an address that is not the target's own).
+    linkCause: linkCauseOf(target, message, linkState),
     failCount: failedRequired.length,
     attachment: attachmentState,
     link: linkState
@@ -606,6 +622,10 @@ export function dataOnlyReply(target, result) {
   let text;
   if (result.landed) {
     text = pick(target && target.replies && target.replies.landed, 'Thanks, received.');
+  } else if (target && target.replies && result.firstFail === 'linkCredible' &&
+             isStr(target.replies[MISS_KEY[result.linkCause]])) {
+    // P6-2 / P5-8: a reply for the cause of the link miss, ahead of the one generic decline.
+    text = target.replies[MISS_KEY[result.linkCause]];
   } else if (target && target.replies && isStr(target.replies.missed)) {
     text = target.replies.missed; // an in-voice decline, in place of the factor's line (P3 N4)
   } else {

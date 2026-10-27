@@ -23,7 +23,7 @@ for (const rel of ['systems/phish-rules.js',
     'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js',
     'minigames/landing-page-builder/landing-page-model.js',
     'systems/global-writer.js', 'systems/social-influence.js', 'ui/influence-bar.js',
-    'minigames/inbox-triage/triage-scoring.js', 'minigames/inbox-triage/triage-kinds.js']) {
+    'minigames/inbox-triage/triage-scoring.js', 'minigames/inbox-triage/triage-kinds.js', 'minigames/inbox-triage/triage-flags.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));
 }
@@ -122,4 +122,69 @@ test('P6-6: a trusted phish voicemail is counted as critical only when the set m
     assert.equal(scoring.scoreTriage({ messages: [vm, em], answers: [trust('vm'), trust('em')] }).criticalMisses.length, 1);
     vm.truth.critical = true;
     assert.equal(scoring.scoreTriage({ messages: [vm, em], answers: [trust('vm'), trust('em')] }).criticalMisses.length, 2);
+});
+
+// ── Engine round 2 ────────────────────────────────────────────────────────────
+
+test('P6-5: a mixed text, notice and email queue is not "Real mail"; a set can name it', async () => {
+    const kinds = await import(pathToFileURL(join(dir, 'minigames/inbox-triage/triage-kinds.js')));
+    assert.equal(kinds.realNounFor(['email', 'email'], {}), 'Real mail');
+    assert.equal(kinds.realNounFor(['sms', 'qr', 'sms', 'email'], {}), 'Real texts, notices and emails');
+    assert.equal(kinds.realNounFor(['sms', 'email'], {}), 'Real texts and emails');
+    assert.equal(kinds.realNounFor(['sms', 'qr', 'email'], { realLabel: 'Real texts and notices' }), 'Real texts and notices');
+});
+
+test('N-14: pressure is offered on a QR or text item that authors urgencyCalibrated, and only there', async () => {
+    const flags = await import(pathToFileURL(join(dir, 'minigames/inbox-triage/triage-flags.js')));
+    const set = { channelTells: ['unexpected_qr', 'smish_shortlink_urgency'] };
+    const plain = { kind: 'qr', truth: { isPhish: true, flags: ['unexpected_qr'] } };
+    const pressed = { kind: 'qr', truth: { isPhish: true, flags: ['unexpected_qr', 'urgencyCalibrated'] } };
+    assert.equal(flags.chipIdsFor(set, 'qr', plain).includes('urgencyCalibrated'), false);
+    const ids = flags.chipIdsFor(set, 'qr', pressed);
+    assert.equal(ids.includes('urgencyCalibrated'), true);
+    assert.equal(flags.chipIdsFor(set, 'sms', { kind: 'sms', truth: { flags: ['urgencyCalibrated'] } }).includes('urgencyCalibrated'), true);
+    assert.equal(flags.skillName('urgencyCalibrated'), 'Pressure');
+    // It scores: ticking it credits the item, leaving it out is a missed tell.
+    const msg = { ...pressed, id: 'q' };
+    const hit = scoring.scoreTriage({ messages: [msg], answers: [{ id: 'q', verdict: 'report', flags: ['unexpected_qr', 'urgencyCalibrated'] }] });
+    const miss = scoring.scoreTriage({ messages: [msg], answers: [{ id: 'q', verdict: 'report', flags: ['unexpected_qr'] }] });
+    assert.ok(hit.percent > miss.percent);
+    assert.equal(miss.perFactor.urgencyCalibrated.missed, 1);
+});
+
+test('P6-2 / P5-8: the data-only reply names the cause of a link miss, falling back to replies.missed', async () => {
+    const rules = await import(pathToFileURL(join(dir, 'systems/phish-rules.js')));
+    const target = {
+        id: 'hana', address: 'h@q.example', displayName: 'Hana',
+        requiredFactors: ['linkCredible'], advisoryFactors: [],
+        primedFor: { trusts: ['*'] }, interests: { topics: [] },
+        expectedLink: { brandId: 'quayholt', realDomain: 'quayholt.example' },
+        replies: { landed: 'ok', missed: 'generic', missNoPage: 'no page', missWrongService: 'wrong service', missWrongAddress: 'wrong address' }
+    };
+    const base = { account: { id: 'g', address: 'g@x.example', spoofsFrom: true }, fromAccount: 'g', to: 'h@q.example',
+        templates: {}, slots: {}, headerFrom: { account: true } };
+    const run = (over, t = target) => {
+        const r = rules.evaluateMessage(t, { ...base, ...over }, { account: base.account, people: {}, templates: {} });
+        return { r, reply: rules.dataOnlyReply(t, { ...r, landed: false }) };
+    };
+    assert.equal(run({}).r.linkCause, 'noPage');
+    assert.equal(run({}).reply.text, 'no page');
+    const attached = (brand, meets) => ({ link: 'kit', linkInfo: { state: 'ok', brand, domain: 'x.example', meetsThreshold: meets } });
+    assert.equal(run(attached('docshare', false)).r.linkCause, 'wrongService');
+    assert.equal(run(attached('docshare', false)).reply.text, 'wrong service');
+    assert.equal(run(attached('quayholt', false)).reply.text, 'wrong address');
+    // No per-cause key: the single generic reply, as before.
+    const old = { ...target, replies: { landed: 'ok', missed: 'generic' } };
+    assert.equal(run({}, old).reply.text, 'generic');
+});
+
+test('P6-6: CRITICAL_WHAT names a trusted voicemail', () => {
+    assert.equal(scoring.CRITICAL_WHAT.voicemail, 'acting on a spoofed voicemail');
+    assert.equal(scoring.criticalWhat(['voicemail', 'email']), 'acting on a spoofed voicemail, or trusting a phish email');
+});
+
+test('P6-2: linkInfoFor records the brand the page imitates', async () => {
+    const lp = await import(pathToFileURL(join(dir, 'minigames/landing-page-builder/landing-page-model.js')));
+    const info = lp.linkInfoFor({ built: true, choices: { brand: 'docshare', domainId: 'd1' }, credibility: 10 }, { brands: [] }, 'k');
+    assert.equal(info.brand, 'docshare');
 });

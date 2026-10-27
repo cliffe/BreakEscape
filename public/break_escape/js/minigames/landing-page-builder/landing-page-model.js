@@ -514,6 +514,8 @@ export function linkInfoFor(record, pageDef, kitId) {
     meetsThreshold: record.meetsThreshold === true
   };
   if (option && option.browserDomain != null) out.browserDomain = option.browserDomain;
+  // Which service (brand) the page imitates, so a miss can say "that's the wrong service".
+  if (record.choices && typeof record.choices.brand === 'string' && record.choices.brand) out.brand = record.choices.brand;
   return out;
 }
 
