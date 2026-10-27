@@ -575,6 +575,45 @@ Later, optional:    W6 sign-in under the scope     W7 offline page     W8 Eldrit
    in the app window with the out-of-scope strip?
 9. **Short name:** a new `app_short_name` field, or derive it from the title ("Licence to Hack")?
 
+### Owner answers (2026-10-27)
+
+The owner accepted the note's recommendations ("That all sounds good. Go ahead"). Applied while
+building W1 to W4:
+
+1. **Go-ahead and timing:** build now, ahead of S4 and S14. Accepted.
+2. **Mission URL:** the mission page moves to `/hacktivities/<event id>/play/mission/<game id>` for Game
+   events, and `/break_escape/games/<id>` keeps working. Accepted. Start, resume and restart redirect to
+   the new address.
+3. **Sign-in in v1:** accept the thin out-of-scope strip, add route aliases (W6) later, no modal. Accepted;
+   nothing built.
+4. **Android:** Android players are sent to the Play app (`related_applications` plus
+   `prefer_related_applications`, only for a game with a package in `AndroidApps`). The title screen shows
+   "Get it on Google Play" on Android for such a game, never the install button. Accepted.
+5. **Offline page:** none in v1, and no service worker at all. Accepted.
+6. **iPhone:** agent's choice, owner may change. The instructions show on iPad (and iPadOS in desktop
+   mode) only. iPhone shows nothing until the phone and touch work in ANDROID.md Q5 is done. One
+   constant, `OFFER_ON_IPHONE` in `public/break_escape/js/pwa-install.js`, turns it on.
+7. **Button wording, placement and GA4:** agent's choice, owner may change.
+   - Wording: "Install the app" where the browser offers the install (Chromium), "How to install" where
+     it only has instructions (iPad: Share, Add to Home Screen; macOS Safari 17+: File, Add to Dock),
+     "Get it on Google Play" on Android for a game with a Play app.
+   - Placement: in the title menu, above "Exit to Hacktivity", with `data-gs-nav` so the arrow keys reach it.
+   - GA4: a `pwa_installed` event goes through `gtag` on `appinstalled` when the page has `gtag`. The game
+     shell loads no analytics, so nothing is recorded from there today. Recording installs needs a decision
+     (for example a server-side beacon to `Ga4Service`).
+8. **Pricing inside the installed app:** payment links (pricing, plans, subscriptions, checkout) open in a
+   browser tab (`window.open` with `noopener`). Accepted.
+9. **Short name:** agent's choice, owner may change. A new `events.app_short_name` column (max 30
+   characters, on the event form); blank derives it from the title without a "SAFETYNET: " prefix. Opt-in is
+   `events.pwa_enabled` (default false).
+
+Build notes (W1 to W4): the manifest route is sessionless (a request carrying a session cookie once got a
+`Set-Cookie` back; found in the live proof, fixed). The link tag is in the shell layout only. The ownership
+check for the scoped mission page is in the engine (`GamesController#require_game_in_host_event`); the
+note's `script_name` fix was not needed, because engine route helpers keep `/break_escape` when the engine's
+controller is routed from the host. `pwa-app` is never chosen when the URL carried `?source=play` or the
+referrer is an `android-app://` address, and on Android it needs the `?source=pwa` marker.
+
 ## Sources
 
 - web.dev, install criteria (updated 2024-09-19): https://web.dev/articles/install-criteria
