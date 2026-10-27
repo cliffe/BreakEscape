@@ -30,27 +30,30 @@ Comparable products to learn from and differ from: Google and Parent Zone's **Be
 
 ## The one habit
 
-The awareness course teaches adults *Pause. Check. Report.* The children's version keeps the same shape, with "report" expressed as the thing a child can actually do:
+The awareness product on main has no motto. Every debrief ends on the same rule of thumb, under the heading "The habit to keep":
+
+> When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do.
+
+The children's version mirrors it. "Stop and check through a route you already trust" becomes the thing a child can actually do, because for a child the trusted route is a person:
 
 > **Stop. Think. Check with a grown-up you trust.**
 
-Everything rewards stopping, thinking and telling a trusted adult, and nothing ever makes a child feel stupid for having clicked, shared or believed something. Telling someone is always the hero move, exactly as reporting is for adults.
+It goes in the same place as the adult line: word for word at the end of every kids debrief, under the same "The habit to keep" heading. Everything rewards stopping, thinking and telling a trusted adult, and nothing ever makes a child feel stupid for having clicked, shared or believed something. Telling someone is always the hero move, exactly as reporting is for adults (the built Report verdict is never penalised).
 
 ## The learning design (reused, re-pitched)
 
-The awareness course's seven-beat module pattern (`../security_awareness_course/01_LEARNING_DESIGN.md`) works for children with gentler names and shorter beats:
+The awareness product's built episode shape (`../security_awareness_course/04_BUILT_SO_FAR.md`, R3) is brief, attack, flip, defend, debrief, with a defend-only variant (brief, defend, debrief) and pre and post checks around the episodes. The kids game uses **only the defend-only shape**: no attack half, no flip of the child's own attack. Each world is a short run of defend-only shells, with gentler names:
 
-| Adult beat | Kids beat | Minutes |
-|---|---|---|
-| Hook | **Something happens** (a message, a pop-up, a new "friend") and the child chooses | under 1 |
-| Learn | **The guide explains** in one short, voiced idea with a picture | 1 to 2 |
-| Practise | **Have a go** (a small minigame) | 2 to 3 |
-| Apply | **Your turn for real** inside a normal play session, with the test arriving unannounced | 3 to 5 |
-| Debrief | **What happened** (kind, never a telling-off) | 1 |
-| Check | **Quick quiz** for a badge | 1 |
-| Reference | **A badge and a poster** to keep | under 1 |
+| Built stage | Kids beat | What happens | Minutes |
+|---|---|---|---|
+| Brief | **Something happens** | The guide mascot greets the child in the den, says what is going on (a message, a pop-up, a new "friend") and shows one short, voiced idea on a picture card ("What is this?") | 1 to 2 |
+| Defend | **Have a go** | The "is it real?" sorter: a handful of picture cards (texts, game invites, a prize page, a voicemail, a sticker QR), each sorted as Trust or Tell a grown-up, with kind feedback straight away. Real and tricky items are paired, as in the built defend sets | 3 to 5 |
+| Debrief | **What happened** | A picture card per item (kind, never a telling-off), the "squad protected" tally, the habit, a **"Next time"** card (the build's "On Monday" card), "who you can tell", and the no-blame line. Ends with a badge and a poster to keep | 1 to 2 |
+| Pre and post check | **Before and after** (optional, for teachers) | A short picture sorter before the first world and after the last, aggregate only, no pass mark; the child just sees "well done" | 3 to 4 each |
 
-The learning-design principles carry over almost unchanged and matter even more for children: pair every scare with a doable action; never blame; no fear without a response; practice in context; process over cues ("you cannot always tell, so stop and ask" rather than "spot the bad spelling"). Assessment stays evidence-centred underneath (the engine's assessed decisions), but the child only ever sees **badges and belts**, never "developing" or "not yet".
+A world shell comes to about 6 to 8 minutes, in line with the built 8-minute defend-only variant. The old "your turn for real", where a test arrives unannounced inside normal play, needs engine work the build does not have yet (BE-18) and is a later stretch, not the first build.
+
+The learning-design principles carry over almost unchanged and matter even more for children: pair every scare with a doable action; never blame; no fear without a response; practice in context; process over cues ("you cannot always tell, so stop and ask" rather than "spot the bad spelling"). Assessment uses the built machinery underneath (triage scoring in the defend round only, mirror pairs, awareness-measure records with no free text and no identity), but the child only ever sees **badges and belts**, never a score, "developing" or "not yet".
 
 ## Safeguarding and data protection come first
 
