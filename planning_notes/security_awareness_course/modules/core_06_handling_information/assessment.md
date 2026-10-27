@@ -33,17 +33,32 @@ The remediation loop follows `features/assessment_and_evidence.md`, section 4. I
 
 C06-B4 (the rival's price list) and C06-B7 (hidden content) are assessed and shown in the debrief but are not critical. A learner rated Not yet on either sees the matching consequence scene and the fix, and the organisation sees the result on its dashboard.
 
+## Check and defend items (mirror pairs)
+
+core_06 is delivered with core_05 as **E11** (new), a **consequence-flip** episode (R3): the learner mishandles information in a safe sandbox (the bin, the share dialog, the hidden content) and the flip shows what it exposed, then a scored **defend half** of label-and-route and send-or-share decisions. Only the defend half and the pre and post checks are scored (`passPercent` 0). The assessed behaviours and the question pool below map onto defend items and check items, each critical behaviour a **mirror pair** (aw5) tested by matched items across forms A and B. The checks use the **general** role, or the proposed all-staff data-handling check pair (**New**).
+
+| Behaviour or item | Defend item (E11, scored) | Check mirror pair (matched A ↔ B) |
+|---|---|---|
+| C06-B1 ↔ C06-B10 dispose of Confidential paper | the hook bin (consequence) and the clear-out | drafts-to-bin item ↔ a second Confidential-disposal item (the built before and after) |
+| C06-B2 / C06-B3 share with named people; fix an over-shared link | the Glassmere share and the old CV link | "anyone with the link" share ↔ an external share with no end date |
+| C06-B4 information received by mistake | the rival price list | a competitor's file ↔ another client's contract |
+| C06-B5 / C06-B6 keep Confidential out of personal accounts | the pricing-to-Martin autocomplete | a personal-email request ↔ a personal-cloud request |
+| C06-B7 hidden content | the final-checks task | a hidden worksheet ↔ a tracked-change or covered-up field |
+| C06-B11 labelling | "Label It" items | matched labelling items split across the two forms |
+
+The question bank below is the source pool for these items. Reporting is never penalised. The discrimination figure goes to organisers only; learners see per-item feedback on the genuine items.
+
 ## Knowledge check bank
 
-Six items per sitting, drawn so that every learning outcome is covered; at least two items per outcome, so a retake can draw a fresh set. Stems are short workplace situations. Labels are Larkspur's defaults; they change with the organisation's profile (BE-05).
+A pool of candidate items for the E11 defend set and the check forms, at least two per learning outcome so a retake draws a fresh set. Stems are short workplace situations. Labels are the company's defaults; they change with the organisation's profile (BE-05).
 
 ### C06-Q1 (C06-LO1, single choice)
 
-A council sends Larkspur a site plan marked OFFICIAL-SENSITIVE. How do you handle it?
+A council sends Carrholme a site plan marked OFFICIAL-SENSITIVE. How do you handle it?
 
 - A. As Public: it's the council's document, not ours. *Feedback: The marking means the council wants it handled with extra care.*
 - **B. As at least Confidential, following any handling instructions the council gave.** *Feedback: Right. Follow the owner's marking.*
-- C. As Internal: anyone at Larkspur can see it. *Feedback: Only the people working on that site need it.*
+- C. As Internal: anyone at Carrholme can see it. *Feedback: Only the people working on that site need it.*
 - D. Ask the council to remove the marking so it's easier to share. *Feedback: The marking is there for a reason. Handle it as marked.*
 
 ### C06-Q2 (C06-LO1, single choice)
@@ -51,8 +66,8 @@ A council sends Larkspur a site plan marked OFFICIAL-SENSITIVE. How do you handl
 You've put together a spreadsheet of your team's names and their sickness absence for your manager. Which label does it get?
 
 - A. Internal: it's only going to your manager. *Feedback: It holds health data about named people. That needs more than Internal.*
-- B. Confidential. *Feedback: Personal data is at least Confidential, but health data is special category, which Larkspur labels Restricted.*
-- **C. Restricted.** *Feedback: Right. Special category data is Restricted at Larkspur.*
+- B. Confidential. *Feedback: Personal data is at least Confidential, but health data is special category, which Carrholme labels Restricted.*
+- **C. Restricted.** *Feedback: Right. Special category data is Restricted at Carrholme.*
 - D. No label: it's a working file. *Feedback: Label it when you create it, working file or not.*
 
 (C06-Q2 depends on the organisation's label definitions. It is rewritten from the organisation profile (BE-05), or dropped where special category data has no label of its own.)
@@ -89,7 +104,7 @@ Your manager asks you to send the bid pack to his personal email so he can work 
 You're sharing a folder with a partner firm for one week of work. Which settings?
 
 - A. Anyone with the link, can edit. *Feedback: Anyone the link is forwarded to could open and change it.*
-- B. Everyone at Larkspur. *Feedback: That's the wrong group, and it doesn't include the partner.*
+- B. Everyone at Carrholme. *Feedback: That's the wrong group, and it doesn't include the partner.*
 - **C. Specific people, can comment, ending in a week.** *Feedback: Right: named people, the least access that works, and an end date.*
 - D. Specific people, can edit, no end date. *Feedback: Closer, but more access, for longer, than they need.*
 
@@ -104,7 +119,7 @@ You notice a folder of staff CVs from an old bid is still shared with "anyone wi
 
 ### C06-Q8 (C06-LO4, multiple select)
 
-Before a spreadsheet leaves Larkspur, what do you check for? Choose all that apply.
+Before a spreadsheet leaves Carrholme, what do you check for? Choose all that apply.
 
 - **A. Hidden worksheets, rows and columns.** *Feedback: Right. Hidden isn't removed.*
 - **B. Comments and tracked changes.** *Feedback: Right. They travel with the file.*
@@ -125,7 +140,7 @@ A colleague has "redacted" a phone number in a PDF by drawing a black box over i
 You're clearing old drafts of the bid pricing off your desk. Where do they go?
 
 - A. The paper recycling. *Feedback: Anyone handling the recycling can read them.*
-- B. The strip-cut shredder by the printer. *Feedback: Strips can be pieced back together. At Larkspur that shredder is for Internal paper only.*
+- B. The strip-cut shredder by the printer. *Feedback: Strips can be pieced back together. At Carrholme that shredder is for Internal paper only.*
 - **C. The locked confidential waste console.** *Feedback: Right.*
 - D. Take them home to recycle. *Feedback: Confidential paper doesn't leave the building to be thrown away.*
 
@@ -155,7 +170,7 @@ You find someone else's printout in the printer tray. The cover sheet says "HR: 
 ## Completion and pass rules
 
 - **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour or been taken back through the practice for it (at most two loops), passed the knowledge check, and opened the reference card. If the organisation attaches its information handling or classification policy (HA-07), acknowledging it is part of completion.
-- **Pass mark:** 5 of 6 (the organisation can change it; 80% is the default).
+- **No default pass mark.** The pre and post checks are `passPercent` 0: no pass or fail, and the missions are completion-scored. The post-check shows the change from the newest pre-check. A pass mark or certificate is a later organisation option set on the post-check percent, not a default.
 - **Retakes:** a failed check draws six new items. After two fails, Ama replays the Learn beat (her part, not the bin audit) before the third attempt.
 - **Test-out** (where the organisation allows it): the Apply beat and the check without Learn and Practise. Passing (the check passed and every critical behaviour shown first time) records the module as complete; otherwise the learner goes through the full module, with no "failed" label.
 

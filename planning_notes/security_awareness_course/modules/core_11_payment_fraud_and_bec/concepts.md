@@ -42,7 +42,7 @@ Spotting differences (a mobile number where the record has a landline, a bank th
 
 ### Calling back: what counts as "a number already on record"
 
-- **Use:** the number in the supplier record (Larkspur: Ledger) or the company directory, a number from an earlier invoice or contract you already held, or, for a colleague, the staff directory or the company chat with their known account. The NCSC gives the same advice to organisations worried about their banking details: use a phone number or email address you have found yourself, rather than one sent to you in the email.
+- **Use:** the number in the supplier record (Brightwell: Ledger) or the company directory, a number from an earlier invoice or contract you already held, or, for a colleague, the staff directory or the company chat with their known account. The NCSC gives the same advice to organisations worried about their banking details: use a phone number or email address you have found yourself, rather than one sent to you in the email.
 - **Don't use:** any number, email address or link in the request or its attachment; a number the caller gives you; a reply to the same email.
 - **Speak to someone you know** there if you can. Ask them to confirm what they sent, rather than reading your details out to them.
 - **If the number on record was itself changed recently,** treat it with suspicion and use an older one (role_02 goes deeper).
@@ -69,7 +69,7 @@ Spotting differences (a mobile number where the record has a landline, a bank th
 ### If money may have gone
 
 - **Speed is everything.** A bank can try to freeze or recover money only while it is still in the account it was sent to. Take Five: contact your bank immediately if you think you've been scammed. The FBI: if you discover a fraudulent transfer, "time is of the essence"; in 2025 its recovery team helped freeze US$679 million of the US$1.16 billion at stake in the cases it took on (IC3, *2025 Internet Crime Report*).
-- **At work, Finance rings the bank.** Tell Finance at once (Larkspur: the Finance Manager, or the 24/7 service desk out of hours) so they can call the bank's fraud line on its known number. Then tell the security team: a mailbox may be compromised, and others may be targeted. Keep the emails; don't delete or forward them.
+- **At work, Finance rings the bank.** Tell Finance at once (Brightwell: the Finance Manager, or the 24/7 service desk out of hours) so they can call the bank's fraud line on its known number. Then tell the security team: a mailbox may be compromised, and others may be targeted. Keep the emails; don't delete or forward them.
 - **Report it to the police.** In England, Wales and Northern Ireland, Report Fraud (run by the City of London Police since 4 December 2025, when it replaced Action Fraud) at reportfraud.police.uk or 0300 123 2040; in Scotland, Police Scotland on 101. At work, Finance or the security team usually makes this report for the organisation.
 - **Tell the real supplier,** on the number on record. Their mailbox may be compromised, and they are still owed their money.
 - **Gift cards:** contact the gift card company straight away and keep the cards and receipts (US Federal Trade Commission).
@@ -126,14 +126,14 @@ Use these as background and inspiration only. Game content uses fictional names.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+| Slot | Default (Brightwell) |
 |---|---|
 | Payment change procedure | "Finance verifies every supplier bank change by phone on the number held in Ledger, and a second person approves it in Ledger." |
 | Two-person rule and thresholds | "Every payment run needs two approvers. Payments over £10,000 need the Financial Controller." |
 | Urgent contact if money may have gone | The Finance Manager; out of hours, the 24/7 service desk |
 | Who approves invoices, and what they confirm | "The budget holder confirms the goods or service was ordered and received." |
-| Staff bank detail changes | "Only in the HR system, signed in from The Lark. Payroll never changes bank details from an email." (matches core_00) |
-| Gift cards | "Larkspur never asks staff to buy gift cards by email, text or chat. Gifts go through procurement." |
+| Staff bank detail changes | "Only in the HR system, signed in from the staff intranet. Payroll never changes bank details from an email." (matches core_00) |
+| Gift cards | "Brightwell never asks staff to buy gift cards by email, text or chat. Gifts go through procurement." |
 | Out-of-office wording | "Away until Monday. For urgent matters, call the main office." (no names or payment roles) |
 | Reporting route | Report suspicious button; the security team on 4444 |
 | Police reporting route | Report Fraud (England, Wales, Northern Ireland); Police Scotland on 101 |

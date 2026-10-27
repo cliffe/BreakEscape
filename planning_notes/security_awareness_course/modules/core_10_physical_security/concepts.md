@@ -100,7 +100,7 @@ Use as background and inspiration only. Game content uses fictional names.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+| Slot | Default (Merrin & Sallow) |
 |---|---|
 | Badge rule | "Wear it inside, hide it outside, never lend it; report a lost badge to facilities at once" |
 | Report a physical concern | Facilities and building security; the security team on extension 4444; the 24/7 service desk line |

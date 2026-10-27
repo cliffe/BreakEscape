@@ -1,8 +1,16 @@
 # core_10 game design: Tailgate
 
+## Built shape and episode mapping
+
+This module is **not built** (`research/built_episodes_vs_plan.md` §2). It is delivered as **E12** (new): the visitor and the tailgater, covering core_10 with **person-chat in the training room**, at **Merrin & Sallow Architects**. The attacker view (Red Team Day) is the attack-first half; the day of friendly challenges is the scored defend half; then the built debrief view carries the shared "habit to keep".
+
+E12 uses the built person-chat for the face-to-face moments, the awareness-measure records, the concept cards and the debrief view, and reuses the campaign's RFID and lockpicking minigames for the optional attacker view. It has a defend-only variant and feeds a proposed physical-security check role with mirror pairs (`assessment.md`).
+
+The detailed "Tailgate" design below is retained as the episode's content, reparented from the retired Larkspur world to Merrin & Sallow Architects. The explainer is the episode host, not a recurring course mentor.
+
 ## Concept
 
-The module is built as a mirror. In the first half the player sees the building through the eyes of Jo Fairweather, an ethical social engineer whom Larkspur's facilities team has hired to test the place, on an authorised "Red Team Day". In the second half, the next day, the player works the building as themselves, covering reception with Maureen and walking the floor with Precious, and meets the same kinds of weakness Jo exploited, now as things to put right. Seeing how easily Jo gets in makes the small defences feel worth doing, and seeing them work the next day makes the point that security here is ordinary, social and within everyone's reach.
+The module is built as a mirror. In the first half the player sees the building through the eyes of Jo Fairweather, an ethical social engineer whom Merrin & Sallow's facilities team has hired to test the place, on an authorised "Red Team Day". In the second half, the next day, the player works the building as themselves, covering reception with Maureen and walking the floor with Precious, and meets the same kinds of weakness Jo exploited, now as things to put right. Seeing how easily Jo gets in makes the small defences feel worth doing, and seeing them work the next day makes the point that security here is ordinary, social and within everyone's reach.
 
 The hook puts the player on the receiving end before they know a test is on. They arrive at the propped side door by the smoking shelter, and a cheerful stranger balancing two coffees and a box asks them to grab the door, "my badge is in my pocket somewhere". Whatever the player does is the baseline. Then the stranger introduces herself: Jo, from Northlight Security, hired by facilities, and she has a signed authorisation letter. "You just let me in. Fancy seeing how the rest of my morning would have gone?" The player steps into her shoes for Red Team Day.
 
@@ -12,7 +20,7 @@ The hook puts the player on the receiving end before they know a test is on. The
 - **Jo Fairweather** (ethical social engineer, Northlight Security) leads the attacker view. Authorised test only; she carries and shows her authorisation; she ends every step with what would have stopped her; nothing she does is explained as a how-to.
 - **Precious Adeyemi** (Facilities and Building Security Manager, wheelchair user) leads the defender half: badges, visitors, secure areas, clear desk, doors.
 - **Maureen Gallagher** (receptionist) covers the desk with the player and models the friendly challenge.
-- **Ama Owusu** (mentor) gives the key messages and the reporting route at the end.
+- **The episode host** (a Merrin & Sallow facilities or front-of-house staff member) gives the key messages and the reporting route at the end; there is no recurring course mentor (the recurring mentor Ama Owusu is retired).
 - **Kev Sutcliffe** (warehouse supervisor) appears briefly: his team keep propping the side door, and he is sharp about people even though he distrusts computers.
 - **New minor character (voice and generic sprite only):** a visitor who claims to be a fire safety inspector; generic contractor sprite.
 
@@ -35,7 +43,7 @@ The critical path is marked **(CP)**. Everything else is optional depth.
   3. **The simple cabinet.** A small unlocked-looking cabinet in a quiet corner; Jo picks it (`lockpicking`, difficulty `easy`, 3 pins) in a few seconds. Jo: *"Cheap lock, no clear desk, nobody about. A proper lock and a tidy desk and I've got nothing."* (The defence: lock things away, clear the desk.)
 - **On the critical path, no player is blocked by dexterity (BE-04).** The `rfid` and `lockpicking` steps here sit on the critical path, which must never require fast reactions or fine motor control. So on the critical path Jo performs the badge read and the cabinet pick in a non-interactive cutscene; where a player is instead handed the tool, the minigame offers an assist, auto-complete or skip that plays it out for them. The point is always the defence Jo names, never the player's hands.
 - Jo's running list, "What would have stopped me", builds on screen as she goes. It becomes the debrief checklist.
-- The player switches back to themselves. Ama meets them: *"Tomorrow you're on the other side of that. Let's see if we can give Jo a worse day."*
+- The player switches back to themselves. The host meets them: *"Tomorrow you're on the other side of that. Let's see if we can give Jo a worse day."*
 - **Skip:** experienced players can fast-forward Jo's narration; the "what would have stopped me" list still shows.
 
 ### 3. Practise: "Spot the way in" (2 to 3 minutes)
@@ -76,11 +84,11 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 
 ### 6. Check (2 minutes)
 
-- **(CP)** Precious's spot check on The Lark (MG-20): six items from the bank in `assessment.md`, at least one per learning outcome.
+- **(CP)** Precious's spot check on the staff intranet (MG-20): six items from the bank in `assessment.md`, at least one per learning outcome.
 
 ### 7. Reference
 
-- **(CP)** The Lark reference card (BE-09): challenge, badge, clear desk and screen, doors, report, with the organisation's own badge rule, reporting route and secure areas (BE-05).
+- **(CP)** The staff intranet reference card (BE-09): challenge, badge, clear desk and screen, doors, report, with the organisation's own badge rule, reporting route and secure areas (BE-05).
 
 ## Decisions and consequences
 
@@ -116,16 +124,18 @@ No option shames the player. Missing a challenge leads to a calm "here is what t
 | Red Team Day | Jo (EX-06, BE-11) | 3 to 4 minutes across three steps | The propped door; the badge on the table; the cabinet; the "what would have stopped me" list | none (assessed in Apply) |
 | Badges, doors and desks | Precious (EX-01) | 60 seconds | A badge (inside and outside); a locked screen; a wedged fire door with a red cross | "A visitor wants into the comms room: what do you check?" |
 | The friendly challenge | Maureen (EX-01) | 30 seconds | The model line on screen | none |
-| Report and no blame | Ama (EX-01) | 30 seconds | The reporting route | none |
+| Report and no blame | The episode host | 30 seconds | The reporting route | none |
 
 ## Debrief
 
-Shown on BE-02, then spoken by Precious and Jo:
+Shown on the built debrief view, then spoken by Precious and Jo:
 
 1. Jo's "what would have stopped me" list, ticked or crossed by the player's day.
 2. Each moment: what it was, the clue, what the player did, the fix.
 3. The hook (held door) against the tailgater, as before and after.
-4. Per-outcome results and the line to remember.
+4. Per-outcome results.
+5. The shared **habit to keep**, quoted word for word as in every awareness debrief: *"When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."*
+6. The "On Monday" card and this module's line: *"If you don't know them, help them: 'Can I help you find someone? I'll walk you to reception.'"*, then the reporting route and the no-blame line.
 
 ## Variants
 
@@ -143,7 +153,7 @@ Shown on BE-02, then spoken by Precious and Jo:
 ## Art and audio
 
 - **Rooms:** existing reception, office, canteen, comms room and security office, plus a small new exterior set for the car park and smoking shelter (shared with core_02 and core_13). The exterior set is the main new art; propose it as one tile set.
-- **Characters:** Jo, Precious, Maureen, Ama and Kev need their own art (shared across modules). Precious is a wheelchair user, 40s, Black British (Nigerian heritage); her desk and the routes must suit that (an accessibility point the art and room layout should respect). The inspector is a generic contractor sprite.
+- **Characters:** Jo, Precious, Maureen, the host and Kev need their own art. Precious is a wheelchair user, 40s, Black British (Nigerian heritage); her desk and the routes must suit that (an accessibility point the art and room layout should respect). The inspector is a generic contractor sprite.
 - **New UI art:** MG-25 the document inspector (work order, ID, list side by side with "mark the mismatch"); the spot-the-risk markers and summary.
 - **Voice:** about 25 lines for Jo, 20 for Precious, 10 for Maureen, 8 for Ama, a few for Kev and the inspector. No voiced line prints a variable: the "what it prevented" counts and the inspector's details are on-screen text. Jo's Red Team Day narration is a fixed, non-instructional script.
 

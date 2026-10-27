@@ -22,25 +22,25 @@ Boundaries: what personal data is, people's rights, and what counts as a persona
 
 ### Classification and labels
 
-Larkspur uses four labels. Customers can rename them and set their own definitions (BE-05).
+Carrholme uses four labels. Customers can rename them and set their own definitions (BE-05).
 
 | Label | What it means | Examples | Handling in one line |
 |---|---|---|---|
 | **Public** | Approved for anyone to see | The brochure, published tender notices, job adverts, the website | Publish only the approved version |
-| **Internal** | For Larkspur staff and trusted contractors; little harm if it got out | The canteen menu, most procedures, the internal phone list | Keep it inside Larkspur; don't post it publicly |
-| **Confidential** | Would harm Larkspur, its clients or people if it got out; need to know only | Pricing and bids, contracts, most personal data (customer claims, staff records), incident reports | Named people only; secure send outside Larkspur; secure print; locked confidential waste |
+| **Internal** | For Carrholme staff and trusted contractors; little harm if it got out | The canteen menu, most procedures, the internal phone list | Keep it inside Carrholme; don't post it publicly |
+| **Confidential** | Would harm Carrholme, its clients or people if it got out; need to know only | Pricing and bids, contracts, most personal data (customer claims, staff records), incident reports | Named people only; secure send outside Carrholme; secure print; locked confidential waste |
 | **Restricted** | Serious harm if it got out; a few named people | Board papers on a takeover, special category data and large sets of personal data, security details (alarm codes, network diagrams), HR investigations | A named list; the approved secure route only; avoid printing; never off site without approval |
 
 - **Who labels?** The person who creates the information labels it when they create it, and anyone who receives unlabelled information labels it when they save it. Labels go in the header or footer, in the email subject or sensitivity label, and in the file name where that helps.
 - **No label?** Judge it by what's in it. Anything with personal data is at least Confidential. If unsure, ask the owner, and in the meantime treat it as the higher label.
 - **Don't over-label.** If everything is Restricted, the label stops meaning anything and people start working around it.
-- **Public sector clients use the government's own scheme** (OFFICIAL, SECRET and TOP SECRET). OFFICIAL information can carry a "-SENSITIVE" marking, which means extra controls and stricter need to know (Government Security Classifications, "Working at OFFICIAL"). Follow the client's marking and any handling instructions; at Larkspur, treat OFFICIAL-SENSITIVE as at least Confidential.
+- **Public sector clients use the government's own scheme** (OFFICIAL, SECRET and TOP SECRET). OFFICIAL information can carry a "-SENSITIVE" marking, which means extra controls and stricter need to know (Government Security Classifications, "Working at OFFICIAL"). Follow the client's marking and any handling instructions; at Carrholme, treat OFFICIAL-SENSITIVE as at least Confidential.
 
 ### Need to know
 
 - Share with people who need the information for their work, only what they need, and only for as long as they need it.
 - Need isn't rank. A director without a reason doesn't need the HR file; the person returning a cardigan does need the room number.
-- It applies inside the organisation too: not everyone at Larkspur needs the bid pricing.
+- It applies inside the organisation too: not everyone at Carrholme needs the bid pricing.
 - Holding back what a colleague genuinely needs is a failure too. The aim is the right information to the right people.
 
 ### Sending
@@ -48,7 +48,7 @@ Larkspur uses four labels. Customers can rename them and set their own definitio
 - **Check every recipient before you press send.** The usual slips are autocomplete picking the wrong person, reply-all, a long thread with outsiders copied in, and a forwarded chain with old messages underneath.
 - **Use the safety features your mail client has.** The Information Commission (the ICO), the UK data protection regulator, suggests organisations consider turning off autocomplete for recipients, adding a short delay before emails leave so mistakes can be caught, and warning people when they use the CC field. Many mail systems can also flag outside recipients. Where these exist, don't switch them off.
 - **Emails to a group.** Addresses in To or CC are visible to everyone. Bcc hides them, but it is easy to forget, and the ICO says it is "not enough on its own" to protect people's information. For mailings to many people, or where being on the list says something about a person (patients of a clinic, families of care home residents), use the bulk email tool or mail merge so each person gets their own email.
-- **Confidential outside Larkspur:** use the "Send securely" option (encryption) or the approved file-sharing service. **Restricted:** only by the approved secure route.
+- **Confidential outside Carrholme:** use the "Send securely" option (encryption) or the approved file-sharing service. **Restricted:** only by the approved secure route.
 - **Password-protected files:** send the password another way (a phone call or a text), never in the same email. A key sent with the lock protects nothing; the ICO's encryption guidance makes the same point about keeping keys apart from the data.
 - **Personal accounts:** never send work information to a personal email or personal cloud account, even your own (core_13 covers the reasons and the approved alternatives).
 - **Send only what's needed.** Take out what the recipient doesn't need before it goes (core_05).
@@ -57,7 +57,7 @@ Larkspur uses four labels. Customers can rename them and set their own definitio
 
 - **Choose "specific people", not "anyone with the link".** A link works for whoever has it, and links get forwarded.
 - **Give the lowest permission that works:** view or comment rather than edit.
-- **Set an end date** for anything shared outside Larkspur.
+- **Set an end date** for anything shared outside Carrholme.
 - **Sharing a folder shares everything in it,** including files added later.
 - **Review what you've shared.** Remove access when the work ends. If you find a link that's open to anyone and holds Confidential information or personal data, close it and report it.
 
@@ -86,7 +86,7 @@ Files carry more than you can see. The ICO's guidance on disclosing documents se
 ### Disposal and retention
 
 - **Paper:** everything marked Internal or above goes in the locked confidential waste consoles, which an approved contractor collects and destroys. Never put it in ordinary recycling, which anyone handling the bins can read. Only Public paper goes in the recycling.
-- **Shredders:** shredded paper can be pieced back together (see the real cases). At Larkspur the strip-cut shredder by the printer may also take Internal paper; Confidential and Restricted paper always goes in the locked console.
+- **Shredders:** shredded paper can be pieced back together (see the real cases). At Carrholme the strip-cut shredder by the printer may also take Internal paper; Confidential and Restricted paper always goes in the locked console.
 - **Devices:** old laptops, phones, tablets and memory sticks go back to IT, which wipes or destroys them properly. Deleting files isn't enough: the NCSC's guidance on sanitising storage media says "Simply hitting the 'Delete' key isn't enough." Never bin, sell or give away a work device.
 - **Files:** delete what you no longer need when the retention schedule says, including your own copies in downloads, on the desktop and in email attachments.
 - **Whiteboards** in meeting rooms are wiped after use (core_10).
@@ -106,7 +106,7 @@ As the reference card shows it, with the organisation's own labels and tools fil
 
 1. **Label it** when you create it: Public, Internal, Confidential or Restricted. If something you receive has no label, judge it by what is in it, and ask the owner.
 2. **Need to know.** Share with the named people who need it, only what they need, for as long as they need it.
-3. **Check before you send.** Check every recipient, especially after autocomplete or reply-all. Send group mailings with the bulk email tool or mail merge, not To or CC. Send Confidential information outside Larkspur with "Send securely". Give a password by phone or text, never in the same email. Never send work information to a personal account.
+3. **Check before you send.** Check every recipient, especially after autocomplete or reply-all. Send group mailings with the bulk email tool or mail merge, not To or CC. Send Confidential information outside Carrholme with "Send securely". Give a password by phone or text, never in the same email. Never send work information to a personal account.
 4. **Share with names, not links.** Choose specific people, the lowest permission that works, and an end date. Remove access when the work ends.
 5. **Check it is really gone.** Before a file leaves, look for hidden worksheets, rows and columns, comments, tracked changes and covered-up text. Redact with the redaction tool, on a copy, and check the result.
 6. **Print and collect.** Use secure print, and collect your printing at once. Return someone else's printout to them unread.
@@ -140,21 +140,21 @@ Use these as background and inspiration only. Game content uses fictional names,
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+| Slot | Default (Carrholme) |
 |---|---|
 | Label names, colours and definitions | Public (green), Internal (blue), Confidential (amber), Restricted (red), as in the table above |
 | Where personal data sits | Most personal data Confidential; special category data and large sets of personal data Restricted |
-| Handling rules per label | The handling grid on The Lark (store, send, share, print, dispose for each label) |
-| Approved file-sharing service and default link | "Larkspur Files"; new links default to "specific people, can view" |
+| Handling rules per label | The handling grid on the staff intranet (store, send, share, print, dispose for each label) |
+| Approved file-sharing service and default link | "Carrholme Files"; new links default to "specific people, can view" |
 | External sharing | Confidential: specific people with an end date of 30 days at most. Restricted: only with the information owner's approval |
-| Secure send | The "Send securely" button in the mail client, for Confidential and Restricted going outside Larkspur |
+| Secure send | The "Send securely" button in the mail client, for Confidential and Restricted going outside Carrholme |
 | Group mailings | The bulk email tool (Communications team) or mail merge; Bcc only for small, routine, non-sensitive groups |
 | Mail safety features | External recipient warning on; 30-second send delay on |
 | Printing | Secure print on all multifunction printers; release with your badge |
 | Confidential waste | Locked grey consoles by every printer and in the archive room; emptied weekly by the approved contractor |
 | Office shredders | Strip-cut shredders for Internal paper only |
-| Returning devices | Hand them to the IT service desk, or book a collection on The Lark |
-| Retention schedule | "Retention schedule" page on The Lark |
+| Returning devices | Hand them to the IT service desk, or book a collection on the staff intranet |
+| Retention schedule | "Retention schedule" page on the staff intranet |
 | Information received by mistake | Tell the sender; report to the security team on extension 4444 (it reaches the DPO if personal data is involved) |
 | Personal email and cloud accounts | Not allowed for work information (core_13) |
 

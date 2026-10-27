@@ -1,8 +1,14 @@
 # core_05 game design: Personal Effects
 
+## Built shape and episode mapping
+
+This module is **not built** (`research/built_episodes_vs_plan.md` §2). It is delivered as **E11** (new), a **consequence-flip** episode (R3) shared with core_06, at the **proposed new company Carrholme Services** (`carrholme.example`; proposed, to add to `BRAND_SET.md`). Data protection has no natural attacker, so in place of the attack half the learner makes the everyday mistake in a safe sandbox, and the flip shows where it led. The episode then follows the built shape: a scored defend half (routing requests, complaints, breaches and disclosures), then the built debrief view with the shared "habit to keep". It uses the built inbox-triage defender, the awareness-measure records and the concept cards; it has a defend-only variant and feeds new items into the check forms with mirror pairs (`assessment.md`).
+
+The detailed "Personal Effects" design below is retained as the episode's content, reparented from the retired Larkspur world to Carrholme Services. The explainer is the episode host (a Carrholme DPO), not a recurring course mentor.
+
 ## Concept
 
-It is a Tuesday morning at Larkspur. Two of Shauna Campbell's contact centre team are on a training day, so the player is covering the **Care Laundry desk** until 12:30. Care Laundry collects, washes and returns the name-taped clothing of residents at forty care homes; its desk handles lost-item claims from care homes and families, collection changes and the odd invoice query. The player's job is to clear the queue. Almost every item in it is about a person: a resident, a worried son, a Larkspur cleaner, a van driver.
+It is a Tuesday morning at Carrholme. Two of Shauna Campbell's contact centre team are on a training day, so the player is covering the **Care Laundry desk** until 12:30. Care Laundry collects, washes and returns the name-taped clothing of residents at forty care homes; its desk handles lost-item claims from care homes and families, collection changes and the odd invoice query. The player's job is to clear the queue. Almost every item in it is about a person: a resident, a worried son, a Carrholme cleaner, a van driver.
 
 The title is a double meaning. Residents' clothes are their personal effects, and every choice at this desk has an effect on a person. The module's signature is Tomasz's line, *"Behind every row in a spreadsheet is a person"*, made literal: the debrief is a **people board** showing everyone whose data passed through the player's hands that morning, and how each of them fared.
 
@@ -14,10 +20,10 @@ The tests arrive inside the work, unannounced: a caller who wants to know where 
 - **Tomasz Wiśniewski** (DPO) is the explainer: precise, kind, dry. He is doing his monthly drop-in at the contact centre, so he is at the next desk when the player needs him.
 - **Shauna Campbell** (Contact Centre Team Leader) hands over the desk, comes back for her bag after the first call, and sets two of the queue tasks by chat.
 - **Martin Fletcher** (Sales Director) appears by chat and in person with a marketing idea.
-- **Voices and messages only** (minor, new, no art needed): Carol, a caller who says she is a cleaner's sister; "DC Hendry", a caller who says he is a police officer; Gareth Hale, the son of a resident at Hollinsbrook House care home, by email; Sam Whitfield, manager of Hollinsbrook House, by email; Sam Whitaker, Larkspur Payroll Officer, by email.
-- **People in the data** (names on screen only): Edna Hale (87, Hollinsbrook House, Room 12), whose cardigan is missing; Albert Finch and Pauline Grant, residents named in an incident report; Bernadette Lyons, a Larkspur cleaner; Lee Corrigan and Marcus Webb, Care Laundry van drivers; nine contact centre staff on an overtime sheet.
+- **Voices and messages only** (minor, new, no art needed): Carol, a caller who says she is a cleaner's sister; "DC Hendry", a caller who says he is a police officer; Gareth Hale, the son of a resident at Hollinsbrook House care home, by email; Sam Whitfield, manager of Hollinsbrook House, by email; Sam Whitaker, Carrholme Payroll Officer, by email.
+- **People in the data** (names on screen only): Edna Hale (87, Hollinsbrook House, Room 12), whose cardigan is missing; Albert Finch and Pauline Grant, residents named in an incident report; Bernadette Lyons, a Carrholme cleaner; Lee Corrigan and Marcus Webb, Care Laundry van drivers; nine contact centre staff on an overtime sheet.
 
-All care homes, people and domains are fictional; names are checked as for Larkspur itself (`DECISIONS_PENDING.md`, D2). Email addresses use the reserved `.example` domain in this plan; the game generates its domains per play, as core_01 does.
+All care homes, people and domains are fictional; names are checked as for Carrholme itself (`DECISIONS_PENDING.md`, D2). Email addresses use the reserved `.example` domain in this plan; the game generates its domains per play, as core_01 does.
 
 ## Structure
 
@@ -44,8 +50,8 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 ### 2. Learn: "You, after one week" (3 to 4 minutes)
 
 - **(CP)** Tomasz explains at the desk (EX-01) in four chunks, each with one visual aid in the conversation panel (BE-08).
-  1. **Your file (60 seconds).** He opens a tabbed viewer (`forensic-data-platform`) titled "Larkspur file: new starter": HR (address, bank details, emergency contact, a health form note "asthma: inhaler in desk drawer"), Building (this week's badge swipes, a CCTV still of the player at reception), IT (sign-in times), Email (Lena's message calling the new coordinator "a quick learner"), Kitchen (an order slip: "oat milk"). *"All of that is personal data about you. Even the oat milk."* Then the identifiable idea: *"No name needed. Badge swipes and a desk number would find you just as well."* **Check question** (MG-20, one item): *"Which of these is special category data?"* bank details / the asthma note / badge swipes / the CCTV still. Answer: the asthma note (health). Feedback on bank details: *"Worth protecting, but not on the special category list."*
-  2. **Five habits (45 seconds).** Five cards: use it for the reason we have it; use only what's needed; keep it right; keep it only as long as needed; keep it safe. *"Seven principles in the law. At a desk, they come down to five habits."* Then the motto: *"Behind every row in a spreadsheet is a person."*
+  1. **Your file (60 seconds).** He opens a tabbed viewer (`forensic-data-platform`) titled "Carrholme file: new starter": HR (address, bank details, emergency contact, a health form note "asthma: inhaler in desk drawer"), Building (this week's badge swipes, a CCTV still of the player at reception), IT (sign-in times), Email (Lena's message calling the new coordinator "a quick learner"), Kitchen (an order slip: "oat milk"). *"All of that is personal data about you. Even the oat milk."* Then the identifiable idea: *"No name needed. Badge swipes and a desk number would find you just as well."* **Check question** (MG-20, one item): *"Which of these is special category data?"* bank details / the asthma note / badge swipes / the CCTV still. Answer: the asthma note (health). Feedback on bank details: *"Worth protecting, but not on the special category list."*
+  2. **Five habits (45 seconds).** Five cards: use it for the reason we have it; use only what's needed; keep it right; keep it only as long as needed; keep it safe. *"Seven principles in the law. At a desk, they come down to five habits."* Then this module's line, carried on the "On Monday" card: *"Behind every row in a spreadsheet is a person."* (The shared rule of thumb, "the habit to keep", is quoted in the debrief as in every awareness episode.)
   3. **Requests come in all shapes (45 seconds).** A collage: an email ("send me everything"), a phone note ("she wants to know what we've written about her"), a social media post, a solicitor's letter, "please stop emailing me", "I'm not happy you gave my number to the care home". *"None of these says 'subject access request'. All of them come to me the same day."* / *"The law gives us about a month, and the clock starts when it reaches anyone here."*
   4. **When it goes wrong (60 seconds).** A strip of four pictures (wrong recipient, papers on a bus, a folder open to everyone, a locked claims system), then a 72-hour clock: *you notice, you report, I assess, the ICO if needed*. *"Most breaches aren't hackers. They're Tuesday mornings. Every hour you wait comes off my seventy-two."* **Check question** (MG-20, multi-select): which are personal data breaches? A claims list emailed to the wrong care home; a route sheet with residents' names left on a bus; ransomware locks the claims system for a day; an email to the right person with the right file. Answer: the first three.
 - **Skip:** the player can say *"I've done GDPR training before."* Tomasz: *"Splendid. Then two questions and you're free."* Both check questions still run; a wrong answer brings back that chunk.
@@ -53,10 +59,10 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 
 ### 3. Practise (3 minutes)
 
-- **(CP) "Down to One"** (about 60 seconds; **proposed** board). A grid of sixteen Larkspur staff faces (generic office sprites) and one spreadsheet row with the name column deleted: *Wakefield depot | van driver | started 2019 | nights | five-a-side captain*. Each detail the player reveals flips down the faces it rules out, until one face is left. Tomasz: *"No name. Still one person. That's personal data."* A faster second round uses sixty field staff and just two details (home postcode district and year of birth) and lands on one person again. The clues are ordinary work facts, never health or other special category details.
+- **(CP) "Down to One"** (about 60 seconds; **proposed** board). A grid of sixteen Carrholme staff faces (generic office sprites) and one spreadsheet row with the name column deleted: *Wakefield depot | van driver | started 2019 | nights | five-a-side captain*. Each detail the player reveals flips down the faces it rules out, until one face is left. Tomasz: *"No name. Still one person. That's personal data."* A faster second round uses sixty field staff and just two details (home postcode district and year of birth) and lands on one person again. The clues are ordinary work facts, never health or other special category details.
 - **(CP) "Pass It On?"** (about 2 minutes; MG-20 in practice mode, instant feedback). Ten short situations, one at a time. For each the player picks a route: **Handle it now**, **Pass to the DPO today**, **Report it now**, or **Check who's asking first**. Feedback shows the right route and one line of why.
   1. A family member asks to update their phone number on a claim. (Handle it now: correcting data is a right, and here it's normal work.)
-  2. A post on Larkspur's social media page: "I want copies of every recording of my calls with you." (Pass to the DPO: a valid request.)
+  2. A post on Carrholme's social media page: "I want copies of every recording of my calls with you." (Pass to the DPO: a valid request.)
   3. "Please stop sending me your newsletter." (Handle it now: stop the marketing straight away, the usual way.)
   4. A laundry route sheet with residents' names is missing from a van. (Report it now.)
   5. A caller "from the council" wants a list of residents at a care home. (Check who's asking: take details, pass it to the DPO.)
@@ -76,7 +82,7 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 | **The request** | Gareth Hale emails: "Mum's cardigan has gone missing for the third time. I want everything you've got on Mum and me. Every note, every email, every call." | Recognising a request in ordinary words, inside a complaint | Pass the request to Tomasz now, send the holding reply, and carry on with the cardigan complaint as normal work |
 | **The redaction** | Shauna's chat: "Can you send Mr Hale a copy of the incident report for his complaint?" The report (MG-12) names Edna's item and the date (fine to send), but also Albert Finch, Room 14, whose bag the cardigan went into, with a note about his continence care; Pauline Grant, Room 9; and driver Marcus Webb's personal mobile number | Data minimisation and special category data | Remove the other residents, the care note and the mobile number; send the rest |
 | **The "detective"** | A call: "DC Hendry, North Pennine Police. I need Lee Corrigan's mobile number and his route this afternoon. Road traffic matter. It's urgent." | Disclosure to an official-sounding caller | Give nothing; take his name, collar number and force switchboard number; say the DPO handles police requests and will be quick; pass it to Tomasz |
-| **The marketing idea** | Martin by chat, then at the desk: "We're launching Larkspur Home, cleaning for families. Export the family contacts from the claims system and I'll send them a discount." | Purpose limitation | "Those were given to sort out claims. Let's ask Tomasz first." |
+| **The marketing idea** | Martin by chat, then at the desk: "We're launching Carrholme Home, cleaning for families. Export the family contacts from the claims system and I'll send them a discount." | Purpose limitation | "Those were given to sort out claims. Let's ask Tomasz first." |
 | **The breach** | Shauna's chat: "Can you send this month's overtime sheet to Sam in Payroll?" The sheet lists nine staff, their hours and a notes column ("hospital appointment", "back injury", "union meeting"). In compose (MG-01), typing "Sam" offers **Sam Whitfield (Hollinsbrook House)** first, because the player emailed her an hour ago, and **Sam Whitaker (Payroll)** second. Choosing the external one shows an "External recipient" chip | Reporting a breach, including your own | Check the address before sending. If it went to the wrong Sam: report it now and ask her to delete it, as Tomasz advises |
 
 - **How the tests play out:**
@@ -84,10 +90,10 @@ The critical path is marked **(CP)**. Everything else is optional depth.
   - **The redaction.** MG-12 shows the one-page report. The player selects what to remove; the tool removes it properly (this module doesn't test the black-box trap; core_06 does). Feedback is held back until the debrief, so the player isn't corrected mid-task.
   - **The "detective".** If the player hesitates, he presses: *"This is urgent. Are you refusing to help the police?"* The model answer is offered as a choice: *"I'm not refusing. Our Data Protection Officer handles police requests, and can do it quickly."* If the player asks for proof, he reads out a "warrant number"; the debrief explains that a number on the phone proves nothing, and that real police expect organisations to check and usually put requests in writing.
   - **The marketing idea.** Martin argues: *"We're not selling the list. They know us. Everyone loves a discount."* The player can push back with what Tomasz taught (the sis01 pattern): *"They gave us their details to sort out a lost cardigan, not to hear about offers."* Martin, after a beat: *"Fair. Ask him. If it's a no, we'll put a sign-up box on the claim form and do it properly."* If the player exports the list, Martin thanks them and the consequence comes later.
-  - **The breach, if the player sends it to the wrong Sam.** Two game-minutes later Sam Whitfield replies: *"Hi, I think this was meant for someone else? It's your staff's overtime with some health notes. I haven't opened it further or forwarded it."* The player chooses: report it now (ext 4444, the "Report an incident" form on The Lark (MG-09), or Tomasz at the next desk all count); reply "Sorry, please delete it" and carry on; recall the message and say nothing; or leave it until the queue is clear. Tomasz, after a quick report: *"Thank you. That was quick, and quick is everything."* He asks the player to write to Sam asking her to delete it and confirm, then says: *"I'll record it. I doubt the ICO needs telling. That's my call, and I can only make it because you told me."*
+  - **The breach, if the player sends it to the wrong Sam.** Two game-minutes later Sam Whitfield replies: *"Hi, I think this was meant for someone else? It's your staff's overtime with some health notes. I haven't opened it further or forwarded it."* The player chooses: report it now (ext 4444, the "Report an incident" form on the staff intranet (MG-09), or Tomasz at the next desk all count); reply "Sorry, please delete it" and carry on; recall the message and say nothing; or leave it until the queue is clear. Tomasz, after a quick report: *"Thank you. That was quick, and quick is everything."* He asks the player to write to Sam asking her to delete it and confirm, then says: *"I'll record it. I doubt the ICO needs telling. That's my call, and I can only make it because you told me."*
   - **The breach, if the player picks the right Sam.** Nothing is said at the time. Five game-minutes later the breach slot fills with its other form: Kestrel Court care home emails the week's laundry list, but the attachment is its full residents' care summary (names, conditions, medicines). The best response: don't open it further or forward it; tell the sender; report it to Tomasz; delete it when he says so. Tomasz: *"Their mistake, our problem too. We're holding data we shouldn't. Thank you."*
 - **Consequences** play out inside the module as short time skips (BE-16), each followed straight away by what would have prevented it:
-  - **Wrong Sam, not reported:** "Thursday". Hollinsbrook's manager mentions the email in passing to Larkspur's account manager, and Tomasz hears about it two days late. *"It ended well: she'd deleted it. But I found out on Thursday. If she'd been the wrong person, Thursday would have been far too late."*
+  - **Wrong Sam, not reported:** "Thursday". Hollinsbrook's manager mentions the email in passing to Carrholme's account manager, and Tomasz hears about it two days late. *"It ended well: she'd deleted it. But I found out on Thursday. If she'd been the wrong person, Thursday would have been far too late."*
   - **The "detective" given the details:** "Two weeks later". Lee tells Shauna a man was waiting for him at his last drop: a debt collector who had told us he was police. Tomasz: *"Police requests come to me, and I check where they really came from. Every time."*
   - **The family contacts exported:** "A month later". Three families complain and one writes to the ICO. Martin, sheepish: *"Turns out people don't love a discount the week they've lost their mum's cardigan."*
   - **The request not passed on:** "Five weeks later". Gareth complains to the ICO that he has heard nothing; Tomasz apologises and rushes the response. *"It came in on a Tuesday. I heard about it from the regulator."*
@@ -103,11 +109,11 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 
 ### 6. Check (2 minutes)
 
-- **(CP)** Tomasz's "two-minute quiz" on The Lark (MG-20): six items drawn from the bank in `assessment.md`, at least one per learning outcome.
+- **(CP)** Tomasz's "two-minute quiz" on the staff intranet (MG-20): six items drawn from the bank in `assessment.md`, at least one per learning outcome.
 
 ### 7. Reference
 
-- **(CP)** The Lark opens the personal data reference card (BE-09) with the organisation's own DPO, reporting route and request route (BE-05), and asks for the data protection policy acknowledgement if the organisation has attached one (HA-07).
+- **(CP)** The staff intranet opens the personal data reference card (BE-09) with the organisation's own DPO, reporting route and request route (BE-05), and asks for the data protection policy acknowledgement if the organisation has attached one (HA-07).
 
 ## Decisions and consequences
 
@@ -133,8 +139,8 @@ No option shames the player. A player who gives out Bernadette's whereabouts hel
 | **MG-20 Knowledge check** | new (MVP) | Tomasz's two check questions, opened from his conversation with `#trigger_minigame:knowledge_check\|<configKey>` (BE-19), his next line branching on the result; "Pass It On?" in practice mode as sort-into-groups items (instant feedback, the four routes as the groups); the final six-item check |
 | **MG-09 Incident report form** | new (MVP) | One of three ways to report the breach, with "personal data involved?" set to yes; scores completeness and speed |
 | **"Down to One" board** | **proposed** | Round one: a 4 by 4 grid of faces with clue cards that flip faces down. Round two: sixty small faces and a shrinking count. No score, just the reveal |
-| **MG-27 Work desktop** | new (MVP) | The Care Laundry desk computer: the inbox, the rota, the claims notes and The Lark, with queue arrivals as notifications |
-| `forensic-data-platform` | existing | "Larkspur file: new starter", five tabs using `log-table` and `document-excerpt` blocks; no confirm step needed |
+| **MG-27 Work desktop** | new (MVP) | The Care Laundry desk computer: the inbox, the rota, the claims notes and the staff intranet, with queue arrivals as notifications |
+| `forensic-data-platform` | existing | "Carrholme file: new starter", five tabs using `log-table` and `document-excerpt` blocks; no confirm step needed |
 | `phone-chat` | existing | Team chat with Shauna and Martin; the two calls as phone NPC conversations until MG-04 |
 | `person-chat` | existing | Tomasz at the desk, Shauna at handover, Martin at the desk |
 | `notes`, `text-file` | existing | The cleaners' rota, the claim notes, the holding-reply template, the retention schedule extract |
@@ -149,7 +155,7 @@ No option shames the player. A player who gives out Bernadette's whereabouts hel
 | Requests come in all shapes | Tomasz (EX-01) | 45 seconds | The request collage | none (assessed in Practise and Apply) |
 | When it goes wrong | Tomasz (EX-01) | 60 seconds | Four breach pictures; the 72-hour clock | "Which are personal data breaches?" |
 | Optional topics | Tomasz (EX-01) | under a minute each | none, or one card | none |
-| Optional video: "Behind every row" | Recorded in engine (EX-02) | 60 seconds | Plays on The Lark (MG-21) | Linked from the reference card |
+| Optional video: "Behind every row" | Recorded in engine (EX-02) | 60 seconds | Plays on the staff intranet (MG-21) | Linked from the reference card |
 
 ## Debrief
 
@@ -157,9 +163,10 @@ Shown on BE-02, then spoken by Tomasz at his pinboard:
 
 1. The people board: each person or group, the card's colour, what the player did, and what good looks like.
 2. The before and after: Carol and "DC Hendry" side by side.
-3. The breach: how long it took from the slip (or the arrival) to Tomasz, and what that time bought him.
+3. The breach: how long it took from the slip (or the arrival) to the DPO, and what that time bought him.
 4. Per-outcome results.
-5. The line to remember: *"Behind every row is a person. If it goes wrong, tell me straight away."*
+5. The shared **habit to keep**, quoted word for word as in every awareness debrief: *"When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."*
+6. The "On Monday" card and this module's line: *"Behind every row is a person. If it goes wrong, tell me straight away."*, then the reporting route and the no-blame line.
 
 ## Variants
 
@@ -171,7 +178,7 @@ Shown on BE-02, then spoken by Tomasz at his pinboard:
 ## Alternative concepts
 
 1. **Everything About Edna (data hunt).** Tomasz asks the player to help find every copy of one resident's data for a subject access request. The player explores the building: the claims system, emails, a printed route sheet in a van, a photo of a name-tagged bag in the drivers' chat group, a 2019 spreadsheet on the shared drive that should have been deleted, a sticky note on the laundry cage. Each find teaches something (minimisation, retention, unofficial copies, the right to see notes written about you). The lunchtime line is "we found her in eleven places". Strong on exploration and the 2D world; weaker on breaches.
-2. **The Other Side of the Desk (data subject view).** The player starts as Gareth (BE-11 role switch), trying to find out what a company knows about his mother: he is fobbed off, asked why he wants it, and finally sent someone else's data. Then the player switches back to Larkspur staff and handles the same request properly. Builds empathy for the person behind the request; needs two sets of locations.
+2. **The Other Side of the Desk (data subject view).** The player starts as Gareth (BE-11 role switch), trying to find out what a company knows about his mother: he is fobbed off, asked why he wants it, and finally sent someone else's data. Then the player switches back to Carrholme staff and handles the same request properly. Builds empathy for the person behind the request; needs two sets of locations.
 3. **72 Hours (behind the scenes).** The player sits with Tomasz for a compressed three days while staff reports land on his desk: a misdirected email on Friday at 16:50, a lost phone, a folder open to everyone, a report that arrives two days late. A wall clock shows how much of each 72 hours is left when the report reaches him. Teaches why fast reporting matters by showing the DPO's side. Best as a facilitated session or for role_05 and sector_01.
 
 ## Art and audio

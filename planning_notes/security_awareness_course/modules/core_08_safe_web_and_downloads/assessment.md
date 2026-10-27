@@ -33,9 +33,24 @@ To complete the module the learner must, at least once:
 
 A learner who misses a critical behaviour goes through the remediation loop (`features/assessment_and_evidence.md`, section 4). Owain says what happened without blame, replays the matching Learn chunk ("Four tricks" or "Where software comes from") with the related Practise screens, and a fresh page of the same kind appears in a short replay of the Apply beat: a fake check in a new style, a new lookalike, a new alarm. Shown: recorded as "shown after practice", and the linked outcome is capped at Developing for this sitting. Not shown: a second loop with a different page and a more direct prompt. After two loops the learner goes on to the check; the record says "practised, not yet shown", a private practice drill is scheduled two to four weeks later (HA-03, HA-21), and the learner is offered help from the organisation's training contact. Nobody else is told by name. Every attempt is kept in the record.
 
+## Check and defend items (mirror pairs)
+
+core_08 is **part built**. Reading a web address, look-alike domains and the padlock myth (C08-LO2) are covered by **E5** `awareness_e5_signin_pages` (its page-triage defend set) and the **general** check forms. The downloads, fake "verify you are human" pages, browser warnings and extensions (C08-LO1, LO3, LO4, LO5) are delivered by **E10** (new, with core_07), which **extends E5**. Only the defend half and the pre and post checks are scored (`passPercent` 0). The assessed behaviours and the question pool below map onto defend items and check items, each critical behaviour a **mirror pair** (aw5) tested by matched items across forms A and B.
+
+| Behaviour or item | Built (E5) or new (E10) | Check mirror pair (matched A ↔ B) |
+|---|---|---|
+| C08-B8 read a web address; padlock myth | **built**, E5 page triage and general checks | a look-alike-domain page ↔ a sub-domain-trick page |
+| C08-B1 ↔ C08-B2 start from a trusted place | **new**, E10 | the hook converter ↔ reaching a supplier site (the built before and after) |
+| C08-B3 the fake "verify you are human" page | **new**, E10 defend set | a fake check on a search result ↔ a fake check on a trusted site |
+| C08-B4 full-screen scam alarm | **new**, E10 | a scam alarm with a number ↔ a fake "call support" error |
+| C08-B5 extension or notification permission | **new**, E10 | an all-site-access extension ↔ a notification-permission grab |
+| C08-B9 sort browser screens | "Real or Rigged?" | matched screen items split across the two forms |
+
+The question bank below is the source pool. Reporting is never penalised. The discrimination figure goes to organisers only.
+
 ## Knowledge check bank
 
-Six items per sitting, drawn so that every learning outcome is covered. Stems are short workplace situations.
+A pool of candidate items for the E5 and E10 defend sets and the check forms, covering every learning outcome. Stems are short workplace situations.
 
 ### C08-Q1 (LO1, single choice)
 
@@ -152,7 +167,7 @@ You need to convert a confidential PDF into a spreadsheet. A free online convert
 ## Completion and pass rules
 
 - **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour or been taken through the remediation loop for it (at most two loops), passed the knowledge check, and opened the reference card.
-- **Pass mark:** 5 of 6 (the organisation can change it; 80% is the default).
+- **No default pass mark.** The pre and post checks are `passPercent` 0: no pass or fail, and the missions are completion-scored. The post-check shows the change from the newest pre-check. A pass mark or certificate is a later organisation option set on the post-check percent, not a default.
 - **Retakes:** a failed check draws six new items. After two fails, Owain replays the Learn beat before the third attempt.
 - **Test-out** (where the organisation allows it): the Apply beat and the check without Learn and Practise. Passing records the module as complete; missing a critical behaviour sends the learner through the full module.
 

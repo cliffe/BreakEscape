@@ -53,17 +53,30 @@ Contributes to (short references from `02_COMPLIANCE_MAPPING.md`, section 2):
 - **FTC 314.4(e)**, for US customers under the Safeguards Rule.
 - **PCI DSS 12.6.3.2** (acceptable use of end-user technologies, which include laptops, tablets, phones and wireless networks). It is not yet in the mapping's row for core_09, and should be added when the matrix is reconciled with this plan.
 
+## Build status
+
+**Company and host:** Tarrowby Logistics (`BRAND_SET.md`), the company of the built E6, whose drivers and depot staff travel. Host Chidi Okeke, fleet coordinator (the E6 defend-only host). There is no recurring course mentor.
+
+**Touch only** (`research/built_episodes_vs_plan.md` §2: E6 covers phone-borne lures). This module **builds on E6**.
+
+- **Built (touch):** **E6** `awareness_e6_texts_and_qr` (Tarrowby, mobile) covers lures that reach a work phone, and the **mobile** check role.
+- **New (builds on E6):** screens overlooked in public, overheard calls, public Wi-Fi pages, lost devices and home video calls (C09-LO1 to LO6), delivered either as a **defend-set extension of E6 with new items** or as a later standalone episode. A full standalone would need four new places; see Open questions.
+- **Builds on built systems:** the inbox-triage defender (with its SMS, QR and page card kinds), the awareness-measure records, the concept cards and the debrief view, plus the new Wi-Fi picker.
+- **Checks:** the **mobile** role, gaining matched items, with mirror pairs (`assessment.md`).
+
 ## Module flow
 
-| Beat | What happens | Format | Minutes |
+Recast in the built episode shape. Pre and post checks bracket the episode; only the defend half and the checks are scored. Where a topic has no attacker (an overlooked screen) the attack half is a **consequence** half; the fake Wi-Fi page is **attack-first**.
+
+| Stage | What happens | Format | Scored |
 |---|---|---|---|
-| Hook | On the 07:42 to Haverbridge, Lena asks for a quick check of the client's site survey. The only free seat has a passenger behind it. Whether the player opens the Confidential residents list where he can read it is the baseline | Game (overlooked check) | 1.5 |
-| Learn | Zainab's four "road rules" across the train table (screens, voices, networks, devices), with a carriage diagram of who can see what; Ama's one message by chat: report a lost device at once, any hour | NPC explainer (EX-01, BE-08) | 2 |
-| Practise | "Who's Watching?": pick the seat nobody can see in a carriage with sight cones showing, spot the risks on a café table, and choose the right network four times | Minigame (sight cones, BE-10, MG-14) | 2.5 |
-| Apply | The café (two networks with nearly the same name, a client asking for a door code by phone, a laptop to mind, everything back in the bag), the hotel (the laptop at dinner, a missing tablet), home the next morning (a nephew who needs a laptop, a video call with a whiteboard behind you) | Game (BE-18, BE-16, MG-14) | 6 |
-| Debrief | "Through their eyes": what each bystander could see or hear at each place; Owain's device console for the tablet; per-outcome results | Debrief screen (BE-02) and NPCs | 1.5 |
-| Check | Six scenario questions | Quiz (MG-20) | 2 |
-| Reference | Reference card on The Lark: out of sight, out of earshot; with you or locked away; check the network; lost it, report it now | Intranet (BE-09) | under 1 |
+| Pre-check | The mobile role check: one 10-item spot-the-item form, no pass mark | Check mission (built) | Measured, not scored |
+| Brief and scope | "Authorised exercise at Tarrowby Logistics (fictional)." The host welcomes the learner | Episode runner | No |
+| Attack / consequence half | Consequence for the overlooked screen and overheard call; attack-first for the look-alike Wi-Fi page | Overlooked check, MG-14 Wi-Fi picker | No |
+| Flip | The flip shows who could see or hear: the passenger, the café, the camera behind you; the fake network's sign-in landing | Flip / "through their eyes" view | No |
+| Defend half | Decide seat and screen, handle a call, pick a network, mind a device, report a loss, set up a video call | Inbox and page triage, MG-14 | Scored |
+| Debrief | Per-item reasoning cards, "through their eyes", the device console, the shared habit to keep, the "On Monday" card, the lost-device route, the no-blame line | Debrief view | Debrief |
+| Post-check | The other mobile form; shows the change from the pre-check | Check mission | Measured |
 
 ## Reuse from existing Break Escape content
 
@@ -76,8 +89,8 @@ Contributes to (short references from `02_COMPLIANCE_MAPPING.md`, section 2):
 
 ## New features needed
 
-- **MG-14 Wi-Fi and VPN picker** (P2), built as a panel of MG-23: the module's main new minigame, in the Practise drill and at the café. Its VPN step needs both behaviours: "connects by itself" (Larkspur's default) and "switch it on" (organisations without an automatic VPN).
-- **MG-27 Work desktop:** the player's laptop as one launcher (the survey files, network settings, chat, The Lark), in place of the `container` desktop.
+- **MG-14 Wi-Fi and VPN picker** (P2), built as a panel of MG-23: the module's main new minigame, in the Practise drill and at the café. Its VPN step needs both behaviours: "connects by itself" (Tarrowby's default) and "switch it on" (organisations without an automatic VPN).
+- **MG-27 Work desktop:** the player's laptop as one launcher (the survey files, network settings, chat, the staff intranet), in place of the `container` desktop.
 - **BE-10 Spot-the-risk mode:** the café table snapshot, the hotel room before dinner, and the camera view before the video call.
 - **BE-16 Time skips:** the train journey, the hotel turndown, the tablet's lock and wipe, the next morning.
 - **BE-18 Work task and interruptions:** the survey, the café tasks, the morning call.

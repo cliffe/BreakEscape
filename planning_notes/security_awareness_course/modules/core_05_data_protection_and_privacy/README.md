@@ -52,17 +52,29 @@ Contributes to (short references from `02_COMPLIANCE_MAPPING.md`, section 2):
 
 EU customers cite "EU GDPR Art ..." with the same numbers. The 2025 and 2026 UK changes described in `concepts.md` (the complaints duty, the Information Commission) don't apply to them.
 
+## Build status
+
+**Company and host:** a **proposed new company, Carrholme Services** (`carrholme.example`), a facilities and care-support services firm (cleaning, grounds and a care-laundry line for care homes), marked **proposed, to add to `BRAND_SET.md`**. The four brand-set companies (food, haulage, insurance, architects) do not fit the care-laundry and facilities-bid world this module shares with core_06, so a new company is proposed rather than forced. Host: the DPO (a Carrholme data protection officer; the retired recurring mentor is dropped).
+
+**None built** (`research/built_episodes_vs_plan.md` §2: core_05 None). This module is delivered as **E11** (new), a **consequence-flip** episode (R3) shared with core_06: the learner makes an everyday data mistake in a safe sandbox and the flip shows where it led, because data protection has no natural attacker.
+
+- **New (whole episode):** E11, with a defend-only variant and new items for the check forms, at Carrholme Services.
+- **Builds on built systems:** the inbox-triage defender, the awareness-measure records, the concept cards, the debrief view and the shared "habit to keep". It does not use the OSINT or write systems (the consequence half replaces the attack half).
+- **Checks:** the **general** role, or a proposed all-staff data-handling check pair (**New**), with mirror pairs (`assessment.md`).
+
 ## Module flow
 
-| Beat | What happens | Format | Minutes |
+Recast in the built episode shape, using the **consequence-flip** variant (R3). Pre and post checks are separate missions that bracket the episode; only the defend half and the checks are scored.
+
+| Stage | What happens | Format | Scored |
 |---|---|---|---|
-| Hook | A friendly caller asks which school a cleaner is working at today; the player's answer is the baseline | Game (phone call) | 1 |
-| Learn | Tomasz shows the player "your file after one week", then personal data, five habits, requests and complaints, and breaches | NPC explainer with visual aids (EX-01, BE-08) | 3 to 4 |
-| Practise | "Down to One": how a few details single out a person; then "Pass It On?": ten situations to route | Minigames (proposed board; MG-20 practice mode) | 3 |
-| Apply | Clear the Care Laundry queue by 12:30 while a request for "everything", a redaction, a "police" caller, a marketing idea and an email to the wrong Sam arrive among ordinary work | Game (MG-01, MG-12, BE-18) | 6 to 7 |
-| Debrief | The people board: everyone whose data passed through the player's hands, and how each of them fared | Debrief screen (BE-02) and Tomasz | 2 |
-| Check | Six scenario questions | Quiz (MG-20) | 2 |
-| Reference | The personal data card on The Lark, with the organisation's own DPO and reporting route | Intranet (BE-09) | under 1 |
+| Pre-check | The role check: one 10-item spot-the-item form, no pass mark | Check mission | Measured, not scored |
+| Brief and scope | "Authorised exercise at Carrholme Services (fictional). Scope: this desk, these people." The host welcomes the learner | Episode runner | No |
+| Consequence half | The learner makes the everyday mistake in a safe sandbox: gives out a person's whereabouts, misdirects an email, over-shares a record | Sandbox (MG-01, MG-12) | No |
+| Flip | The flip shows where the mistake led: the person it reached, the breach clock, the complaint | Flip / consequence view | No |
+| Defend half | Route requests, complaints, breaches and disclosures (Handle / Pass to the DPO / Report / Check who's asking) | Inbox triage | Scored |
+| Debrief | Per-item reasoning cards, the people board, the shared habit to keep, the "On Monday" card, the reporting route, the no-blame line | Debrief view | Debrief |
+| Post-check | The other form; shows the change from the pre-check | Check mission | Measured |
 
 ## Reuse from existing Break Escape content
 
@@ -77,12 +89,12 @@ EU customers cite "EU GDPR Art ..." with the same numbers. The 2025 and 2026 UK 
 
 - **MG-12 Redaction,** configured with the mark and remove tools only: the player decides what to remove, the tool removes it properly, and the score is held back. The "draw a box" trap and the hidden content step are used in core_06, which teaches the technique.
 - **MG-01 Inbox:** the casework queue, and compose with recipient autocomplete and an "external recipient" warning.
-- **MG-27 Work desktop:** the Care Laundry desk computer, opening the inbox, the rota, the claims notes and The Lark, and showing the queue's arrivals as notifications.
+- **MG-27 Work desktop:** the Care Laundry desk computer, opening the inbox, the rota, the claims notes and the staff intranet, and showing the queue's arrivals as notifications.
 - **MG-20 Knowledge check:** Tomasz's two check questions (opened from his conversation with `#trigger_minigame:knowledge_check|<configKey>`, BE-19), "Pass It On?" in practice mode as sort-into-groups items, and the final check.
 - **MG-09 Incident report form,** with a "personal data involved?" field that alerts the DPO.
 - **BE-01 Assessed decisions** and **BE-02 Debrief screen:** every row in `assessment.md`.
 - **BE-08 Visual aids:** "your file", the five habits, the request collage, the 72-hour clock.
-- **BE-09 Intranet terminal:** The Lark, the reference card and the data protection policy.
+- **BE-09 Intranet terminal:** the staff intranet, the reference card and the data protection policy.
 - **BE-05 Organisation profile:** the DPO's name and contact, the reporting route, the request route.
 - **BE-18 Work task and interruptions:** the queue and its scheduled arrivals.
 - **BE-19 Open minigames from conversations and events:** Tomasz's check questions; the redaction opening from a case.
@@ -97,7 +109,7 @@ EU customers cite "EU GDPR Art ..." with the same numbers. The 2025 and 2026 UK 
 ## Organisation-specific content
 
 - The DPO (or data protection lead): name, contact, and how staff reach them.
-- The route for reporting a personal data breach, and whether it is the same as the security reporting route (Larkspur: the same route, which alerts the DPO).
+- The route for reporting a personal data breach, and whether it is the same as the security reporting route (Carrholme: the same route, which alerts the DPO).
 - Where rights requests and complaints go, and the holding reply staff may send.
 - How the organisation handles requests from the police and other official bodies.
 - Which personal data front-line staff may update directly (a new phone number, say).
@@ -107,8 +119,8 @@ EU customers cite "EU GDPR Art ..." with the same numbers. The 2025 and 2026 UK 
 
 ## Open questions
 
-1. **A Care Laundry service line.** *Resolved:* Care Laundry is already in `03_WORLD_AND_CAST.md` (service lines): Larkspur collects, washes and returns care home residents' name-taped clothing, and its customer desk handles lost-item claims. It gives the module its people and its title.
+1. **A Care Laundry service line.** *Resolved:* Care Laundry is already in `03_WORLD_AND_CAST.md` (service lines): Carrholme collects, washes and returns care home residents' name-taped clothing, and its customer desk handles lost-item claims. It gives the module its people and its title.
 2. **Can the player avoid the misdirected email?** *Recommendation: yes. The autocomplete is visible and catchable. A player who catches it is thanked, and the breach slot fills with a different breach (personal data received by mistake), so everyone practises reporting one.*
-3. **Who explains?** Ama is the course's usual mentor, but data protection is Tomasz's field. *Recommendation: Tomasz explains here and Ama doesn't appear. The reporting route he gives is the same one Ama teaches in core_04, so the two voices never disagree.*
+3. **Who explains?** There is no recurring course mentor in the built product; each episode's host carries the teaching. *Recommendation: the host here is a Carrholme data protection officer. The reporting route must match the one core_04 teaches, so the voices never disagree.*
 4. **How much law on screen?** *Recommendation: none beyond "one month" and "72 hours". Article numbers stay in `concepts.md` for writers and auditors.*
 5. **Recognising a complaint.** Since 19 June 2026, organisations must acknowledge data protection complaints within 30 days. *Recommendation: teach complaints alongside requests (same route, same day) rather than as a separate topic.*

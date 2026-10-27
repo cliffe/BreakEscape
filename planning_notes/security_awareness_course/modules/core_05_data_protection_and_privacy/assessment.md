@@ -30,16 +30,30 @@ To complete the module the learner must, at least once, show each of these or be
 
 The remediation loop follows `features/assessment_and_evidence.md`, section 4. If a critical behaviour wasn't shown, the debrief says so without blame and Tomasz offers to go over it (*"That one catches a lot of people. Let's try it once more."*). He replays the matching "Pass It On?" items with the explanation, then a fresh instance of the same slot arrives from the bank in a short replay of the Apply beat: a different request wording, a different breach, a different caller (BE-13). Shown after practice, the linked outcome is capped at Developing for this sitting. Not shown, a second loop follows with a more direct prompt. After two loops the learner goes on to the check anyway: the record says "practised, not yet shown", a private "Pass It On?" drill is scheduled two to four weeks later (HA-03, HA-21), and the organisation's training contact offers help. Nobody else is told by name, and every attempt is kept.
 
+## Check and defend items (mirror pairs)
+
+core_05 and core_06 are delivered together as **E11** (new), a **consequence-flip** episode (R3): the learner makes an everyday data mistake in a safe sandbox and the flip shows where it led, then a scored **defend half** routes requests, breaches and disclosures with Handle / Pass to the DPO / Report / Check who's asking. Only the defend half and the pre and post checks are scored (`passPercent` 0). The assessed behaviours and the question pool below map onto defend items and check items. Each critical behaviour becomes a **mirror pair** (aw5): the same judgement is tested by a matched item in form A and form B, so a pre score and a post score compare like with like. The checks use the **general** role; a dedicated all-staff data-handling check pair is proposed as a **New** check role, each form needing its own matched items.
+
+| Behaviour or item | Defend item (E11, scored) | Check mirror pair (matched A ↔ B) |
+|---|---|---|
+| C05-B1 ↔ C05-B2 caller wants a person's whereabouts or contact details | the hook (consequence) and the "detective" call | friendly-caller item ↔ official-caller item (the built before and after) |
+| C05-B3 recognise and route a request in ordinary words | the "everything you've got" email | request-by-email ↔ request-by-post or social media |
+| C05-B6 report a personal data breach, including your own | the wrong-Sam / inbound-attachment slot | misdirected-email breach ↔ inbound-attachment breach |
+| C05-B4 / C05-B8 personal data and special category data; minimise | the redaction task | an over-full share ↔ a hidden-worksheet share |
+| C05-B9 route situations (help, pass, report, check) | "Pass It On?" items | matched routing items split across the two forms |
+
+The question bank below is the source pool for these items, two per learning outcome. Reporting is never penalised. The organiser-only discrimination figure and the learner's per-item feedback on genuine items follow the built model.
+
 ## Knowledge check bank
 
-Six items per sitting, drawn so that every learning outcome is covered. Stems are short workplace situations.
+A pool of candidate items for the E11 defend set and the check forms, with coverage of every learning outcome. Stems are short workplace situations.
 
 ### C05-Q1 (C05-LO1, multiple select)
 
 Which of these are personal data? Choose all that apply.
 
 - **A. A spreadsheet row with the name deleted: "Wakefield depot, van driver, started 2019, nights".** *Feedback: Right. A few ordinary details can single out one person.*
-- B. Larkspur's turnover last year. *Feedback: Information about a company isn't personal data.*
+- B. Carrholme's turnover last year. *Feedback: Information about a company isn't personal data.*
 - **C. `sam.whitaker@larkspur.example`.** *Feedback: Right. A name in a work email address is personal data.*
 - **D. A case note saying "Mr Hale can be difficult".** *Feedback: Right. Opinions about someone are personal data about them, and he could ask to see it.*
 
@@ -54,7 +68,7 @@ Which of these is special category data?
 
 ### C05-Q3 (C05-LO3, single choice)
 
-You're looking after Larkspur's social media page this week. A woman posts: "I want copies of every recording of my calls with you." What do you do?
+You're looking after Carrholme's social media page this week. A woman posts: "I want copies of every recording of my calls with you." What do you do?
 
 - A. Reply asking her to write to head office instead. *Feedback: A post is a valid way to ask. Don't add hurdles; pass it on.*
 - B. Ignore it: requests on social media don't count. *Feedback: They do. A request can arrive by any channel.*
@@ -148,7 +162,7 @@ It's 16:50 on a Friday. You realise an attachment you sent at lunchtime had othe
 ## Completion and pass rules
 
 - **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour or been taken back through the practice for it (at most two loops), passed the knowledge check, opened the reference card, and acknowledged the organisation's data protection policy if one is attached (HA-07).
-- **Pass mark:** 5 of 6 (the organisation can change it; 80% is the default). The ICO's training toolkit suggests an end-of-training assessment, possibly with a minimum pass mark; this check is that assessment.
+- **No default pass mark.** The pre and post checks are `passPercent` 0: no pass or fail, and the missions are completion-scored. The post-check shows the change from the newest pre-check. A pass mark or certificate is a later organisation option set on the post-check percent, not a default. The ICO's training toolkit suggests an end-of-training assessment; this measured check is that assessment, scored without a mandatory pass mark.
 - **Retakes:** a failed check draws six new items. After two fails, Tomasz replays the Learn beat before the third attempt.
 - **Test-out** (where the organisation allows it): the Apply beat and the check without Learn and Practise. Passing (the check passed and every critical behaviour shown first time) records the module as complete; otherwise the learner goes through the full module, with no "failed" label. Because this is an induction module, test-out is recommended only for annual renewals, not for a new starter's first sitting.
 - **Timing:** for staff who will handle personal data, the organisation should set this module due before they get access, and within one month of starting at the latest (the ICO's expectation; see `02_COMPLIANCE_MAPPING.md`, section 5). The default Induction Essentials window (the first two weeks) sits inside that month.

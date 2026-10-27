@@ -46,17 +46,29 @@ Contributes to:
 - **PCI DSS v4.0.1** 9.x (physical access to areas with cardholder data) and 9.5.1.3 (staff at card terminals spot tampering and substitution), for customers who take card payments on site.
 - **NIS2** Article 21(2)(g); **NCSC CAF** B6 (awareness) and B2 (identity and access, where badges gate secure areas).
 
+## Build status
+
+**Company and host:** Merrin & Sallow Architects (`BRAND_SET.md`), a London practice with a reception, a studio and visiting clients and contractors. Host: a Merrin & Sallow facilities or front-of-house staff member. There is no recurring course mentor.
+
+**None built** (`research/built_episodes_vs_plan.md` §2: core_10 None; E6's printed QR code is a phishing channel, not building security). This module is delivered as **E12** (new): the visitor and the tailgater, covering core_10 with **person-chat in the training room**.
+
+- **New (whole episode):** E12, with a defend-only variant and new check items, at Merrin & Sallow.
+- **Builds on built systems:** person-chat (for the face-to-face challenges), the awareness-measure records, the concept cards and the debrief view; the attacker-view "Red Team Day" interlude reuses the campaign's RFID and lockpicking minigames and is optional depth.
+- **Checks:** a **physical-security** check role is proposed as **New**, with mirror pairs (`assessment.md`).
+
 ## Module flow
 
-| Beat | What happens | Format | Minutes |
+Recast in the built episode shape. Pre and post checks bracket the episode; only the defend half and the checks are scored. The attacker view (Red Team Day) is the attack-first half; the day of challenges is the defend half.
+
+| Stage | What happens | Format | Scored |
 |---|---|---|---|
-| Hook | A friendly stranger with two coffees asks the player to hold the propped side door; the response is the baseline, and the stranger turns out to be the tester Jo | Game | 1 to 2 |
-| Learn | On "Red Team Day", the player shadows Jo on her authorised test (tailgate, a badge left on a table, a simple cabinet); each step ends with what would have stopped her | Attacker-view interlude (EX-06, BE-11) | 3 to 4 |
-| Practise | "Spot the way in": a short drill marking the risks in one scene (propped door, badge on a desk, unlocked screen, confidential printout) | Minigame (BE-10) | 2 to 3 |
-| Apply | The next day, the player covers reception with Maureen and walks the floor with Precious, meeting a tailgater, an unescorted visitor, a "fire safety inspector", unlocked screens, printouts, a lost badge and a propped door | Game (BE-18, MG-25, BE-10) | 5 to 6 |
-| Debrief | Each moment replayed with the clue and the fix; Jo's "what would have stopped me" list, now ticked off by the player's day | Debrief screen (BE-02), NPCs | 2 |
-| Check | Six scenario questions | Quiz (MG-20) | 2 |
-| Reference | Reference card on The Lark: challenge, badge, clear desk and screen, doors, report | Intranet (BE-09) | under 1 |
+| Pre-check | The role check: one 10-item spot-the-item form, no pass mark | Check mission | Measured, not scored |
+| Brief and scope | "Authorised exercise at Merrin & Sallow Architects (fictional)." The host welcomes the learner | Episode runner | No |
+| Attack half | Red Team Day: shadow the authorised tester as she tailgates, reads a badge left on a table and opens a simple cabinet, each step ending with what would have stopped her | Attacker-view interlude (reuses RFID and lockpicking) | No |
+| Flip | "What would have stopped me": the tester's list of ways in, now the learner's checklist for the next day | Flip / checklist view | No |
+| Defend half | Work the building: challenge a tailgater, verify a contractor, deal with a lost-badge request, lock screens, clear the desk, unprop a door, using person-chat for the face-to-face moments | Person-chat and decision triage | Scored |
+| Debrief | Per-item reasoning cards, the "what would have stopped me" list ticked off, the shared habit to keep, the "On Monday" card, the reporting route, the no-blame line | Debrief view | Debrief |
+| Post-check | The other form; shows the change from the pre-check | Check mission | Measured |
 
 ## Reuse from existing Break Escape content
 

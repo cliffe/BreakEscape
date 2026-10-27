@@ -29,9 +29,24 @@ Checked at the end of the Apply beat (BE-01). The hook is a baseline and never c
 
 The remediation loop follows `features/assessment_and_evidence.md` section 4. If a critical behaviour wasn't shown, the debrief says what happened without blame and Hassan offers to go over it: *"That one catches a lot of people. Let's try it once more."* He replays the matching Practise items with the explanation (one to two minutes), then a fresh request of the same kind arrives in a short replay of the Apply beat, drawn from the bank (a different supplier's letter, a different senior name, a different colleague's slip). If it still isn't shown, a second loop runs with another fresh request and a more direct prompt. After two loops the learner goes on to the check anyway: the record says "practised, not yet shown", the linked outcome is capped at Developing for this sitting, and a private practice drill ("Change or No Change?" on the same behaviour) is scheduled for two to four weeks later (HA-03, HA-21). Nobody else is told by name. Every attempt is kept in the record.
 
+## Check and defend items (mirror pairs)
+
+The built product scores only two things: the episode's **defend half** (the E1 payments-inbox triage, Verify on, immediate feedback) and the **pre and post checks** (the finance forms, Verify off, feedback at the end, `passPercent` 0). The assessed behaviours and the question bank below map onto these as the pool of candidate items. Each critical behaviour becomes a **mirror pair** (aw5): the same tell is tested by item *n* in form A and item *n* in form B, so a pre score and a post score compare like with like.
+
+| Behaviour or item | Built defend item (E1 set, scored) | Built check items (finance forms A and B, mirror pair) |
+|---|---|---|
+| C11-B2 / C11-B6 bank-detail change (look-alike) | `e1_lookalike_bank` | `fa_pennine_bank` ↔ `fb_castell_bank` |
+| C11-B3 chief-executive payment | `e1_ceo_wire` | `fa_ceo_transfer` ↔ `fb_fd_vouchers` |
+| C11-B8 genuine items, no over-caution | `e1_harlow_invoice`, `e1_po_pennine`, `e1_bank_confirmed` | `fa_pennine_invoice` ↔ `fb_castell_invoice`; the routine genuine rows |
+| spoofed sender, reply-to differs | (attack-side in E1) | `fa_remittance_spoof` ↔ `fb_creditors_spoof` |
+| C11-B5 Confirmation of Payee (**new**, C11-LO5) | add a "no match" / "close match" payee result to the defend set | add a CoP mirror pair to each form |
+| C11-B7 what to do once money has gone (**new**, C11-LO6) | debrief ordered card | a "money has gone, first steps" ordered mirror pair |
+
+The question bank below is the source pool for these items; Q1 to Q12 are candidate stems, not a separate scored quiz. Reporting is never penalised, in the defend half or the checks. The discrimination figure (hits on phish against false alarms on genuine items) goes to organisers only; learners see per-item feedback on the genuine items instead.
+
 ## Knowledge check bank
 
-Six items per sitting, one per learning outcome, from a bank of twelve with two items for every outcome. Stems are short workplace situations; names, amounts and suppliers are filled per play (BE-13).
+A pool of candidate items for the finance check forms and the E1 defend set, with two items for every learning outcome. Stems are short workplace situations; names, amounts and suppliers are filled per play (BE-13).
 
 ### C11-Q1 (C11-LO3, single choice)
 
@@ -145,8 +160,8 @@ A fake change of bank details was stopped before anything was paid. What now?
 ## Completion and pass rules
 
 - **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour or been taken through the remediation loop for it (at most two loops), passed the knowledge check, and opened the reference card.
-- **Pass mark:** 5 of 6 (the organisation can change it; 80% is the default).
-- **Outcome ratings** follow the default rule in `features/assessment_and_evidence.md` section 3: Apply evidence counts double, the hook counts nothing, and an outcome whose critical behaviour was shown only after remediation is at most Developing.
+- **No default pass mark.** The checks are `passPercent` 0: there is no pass or fail, and the missions are completion-scored. The post-check shows the change from the newest pre-check. A pass mark or certificate is a later organisation option set on the post-check percent, not a default.
+- **Outcome ratings** follow the default rule in `features/assessment_and_evidence.md` section 3: the defend half counts, the attack half is never scored or ranked, and an outcome whose critical behaviour was shown only after remediation is at most Developing.
 - **Retakes:** a failed check draws six new items. After two fails, Hassan replays the Learn beat before the third attempt.
 - **Test-out** (where the organisation allows it): the Apply beat and the check, without Learn and Practise. It passes only if the check is passed and every critical behaviour is shown first time; otherwise the learner goes through the full module, with no "failed" label.
 

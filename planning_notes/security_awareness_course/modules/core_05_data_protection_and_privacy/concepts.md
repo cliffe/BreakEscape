@@ -75,9 +75,9 @@ People have rights over their personal data: to be told how it is used; to get a
 The law defines a personal data breach as a breach of security leading to the accidental or unlawful destruction, loss, alteration, unauthorised disclosure of, or access to, personal data. In plain words: **personal data goes somewhere it shouldn't, is seen by someone who shouldn't see it, or is lost, changed, destroyed or locked away.**
 
 - **The ICO's examples:** sending personal data to the wrong recipient; devices with personal data lost or stolen; personal data changed without permission; personal data becoming unavailable.
-- **At Larkspur that looks like:** an email to the wrong Sam; a laundry route sheet with residents' names left on a bus; a spreadsheet that went out with an extra worksheet; a shared folder open to everyone; ransomware locking the claims system for a day; a colleague looking up a neighbour's records; a caller talked into giving out an address.
+- **At Carrholme that looks like:** an email to the wrong Sam; a laundry route sheet with residents' names left on a bus; a spreadsheet that went out with an extra worksheet; a shared folder open to everyone; ransomware locking the claims system for a day; a colleague looking up a neighbour's records; a caller talked into giving out an address.
 - **Most breaches are not hacks.** The ICO's guidance says human error is the leading cause of reported data breaches. Being careful helps (core_06 teaches the checks); reporting fast is what limits the harm.
-- **What the organisation must do,** and the DPO decides: record every breach, whether or not it is reported; tell the ICO without undue delay and, where feasible, within 72 hours of becoming aware of it, unless it is unlikely to result in a risk to people; tell the people affected without undue delay if it is likely to put them at high risk. When Larkspur handles data for a client (as a processor), it must tell that client without undue delay, and the client decides about the ICO.
+- **What the organisation must do,** and the DPO decides: record every breach, whether or not it is reported; tell the ICO without undue delay and, where feasible, within 72 hours of becoming aware of it, unless it is unlikely to result in a risk to people; tell the people affected without undue delay if it is likely to put them at high risk. When Carrholme handles data for a client (as a processor), it must tell that client without undue delay, and the client decides about the ICO.
 - **Why speed matters.** The 72 hours include nights and weekends. In that time the DPO has to find out what happened, contain it, judge the risk and decide who to tell, and the sooner they start, the more of the harm they can stop (a deleted email, a closed link, a warned customer). Every hour you wait to report is an hour the DPO doesn't have, so don't leave a Friday slip until Monday.
 - **Don't wait to be sure.** Staff don't decide whether something is a breach or whether it is serious. If you think it might be, report it.
 - **Near misses count too.** The wrong file nearly sent, a folder found open to everyone that nobody seems to have looked at: report them. The ICO's guidance asks organisations to build a culture where staff feel able to report near misses.
@@ -89,7 +89,7 @@ The DPO (with the security team where systems are involved) contains the breach:
 
 ### No blame
 
-Mistakes with personal data happen to careful people, usually when they are busy. What turns a mistake into harm is silence. Nobody at Larkspur is in trouble for reporting a breach, including their own, and people who report are thanked. Fines are for organisations that fail to protect data, not for staff who make an honest slip and say so. Deliberate misuse is different (see section 170 above).
+Mistakes with personal data happen to careful people, usually when they are busy. What turns a mistake into harm is silence. Nobody at Carrholme is in trouble for reporting a breach, including their own, and people who report are thanked. Fines are for organisations that fail to protect data, not for staff who make an honest slip and say so. Deliberate misuse is different (see section 170 above).
 
 ### Other countries and personal life
 
@@ -138,17 +138,17 @@ The ICO's breach guidance also gives a general picture: human error is the leadi
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+| Slot | Default (Carrholme) |
 |---|---|
-| DPO (or data protection lead) | Tomasz Wiśniewski, Data Protection Officer; the DPO mailbox on The Lark |
-| Breach reporting route | The usual route: the security team on extension 4444 or the 24/7 service desk; say it involves personal data and it reaches the DPO. Or the "Report an incident" form on The Lark (MG-09) |
-| Where requests and complaints go | The DPO mailbox, the same day; phone and in-person requests noted on the "Request received" form on The Lark |
+| DPO (or data protection lead) | Tomasz Wiśniewski, Data Protection Officer; the DPO mailbox on the staff intranet |
+| Breach reporting route | The usual route: the security team on extension 4444 or the 24/7 service desk; say it involves personal data and it reaches the DPO. Or the "Report an incident" form on the staff intranet (MG-09) |
+| Where requests and complaints go | The DPO mailbox, the same day; phone and in-person requests noted on the "Request received" form on the staff intranet |
 | Holding reply staff may send | "Thank you. I've passed your request to our Data Protection Officer, who will be in touch." |
 | Requests from the police and other official bodies | "Take the caller's name, organisation and switchboard number; tell them our DPO handles these requests; pass it to the DPO. Nothing is given out by phone." |
 | Data front-line staff may update directly | Contact details on a claim, when the customer asks |
 | Approval for a new use of personal data | The DPO, before anything is sent or built |
-| Safeguarding concerns | The safeguarding lead, through the safeguarding route on The Lark |
-| Retention schedule | "Retention schedule" page on The Lark |
+| Safeguarding concerns | The safeguarding lead, through the safeguarding route on the staff intranet |
+| Retention schedule | "Retention schedule" page on the staff intranet |
 | Data protection policy | Uploaded through HA-07 and acknowledged at the end of the module |
 | Who the organisation acts for | "For some services we handle personal data for our clients. The DPO works out who must be told what." |
 | Support route (with the content note and on the reference card) | The organisation's employee assistance service or other support, as the organisation names it. The course never names a support service it has not checked |

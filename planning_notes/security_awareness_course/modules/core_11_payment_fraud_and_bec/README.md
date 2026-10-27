@@ -55,22 +55,44 @@ Contributes to (short references from `02_COMPLIANCE_MAPPING.md`, section 2; thi
 
 The module also gives staff outside Finance awareness of the organisation's segregation of duties (ISO 27001 A.5.3). That is a control, not a training requirement, so it is not listed in the mapping.
 
+## Build status
+
+**Company and host:** Brightwell Foods, a food manufacturer (`BRAND_SET.md`). Host Adaeze Okafor, finance manager (the built E1 host). The executive strand runs at Merrin & Sallow Architects. There is no recurring course mentor: each episode's host and its debrief carry the teaching.
+
+This module is **largely built**. Its core is delivered by three shipped episodes in the attack-then-defend shape, plus the six finance pre and post check forms (`research/built_episodes_vs_plan.md` §2, and the scenario files under `scenarios/awareness_*`):
+
+- **Built, E1** `awareness_e1_invoice_fraud` (Brightwell, finance): invoice and bank-detail fraud. Covers C11-LO1 to LO4: the warning pattern of money plus pressure, why a genuine-looking sender proves nothing, calling back on the number on record, and keeping to the controls. Its defend set `e1_payments_inbox` and the finance check forms (`finance_form_a`, `finance_form_b`) are the measured items.
+- **Built, E7** `awareness_e7_voice_ceo` (Brightwell, everyone): the cloned-CEO-voice email beside the finance line. Reinforces LO1 and LO4 and the "verify, do not trust the ear" point (shared with core_15).
+- **Built, E4** `awareness_e4_exec_whaling` (Merrin & Sallow, executive): the "about to board, pay this" whaling email. Reinforces LO1 and LO4 from the PA's side.
+- **Built, checks:** `awareness_{pre,post}_finance_{ab,ba}`, four phish in ten, matched A and B forms (mirror pairs), `passPercent` 0, Verify off; the executive forms add the voicemail items.
+
+**New (builds on E1 and the finance checks):** this plan adds only two things the build lacks, in the built shape:
+
+- **Confirmation of Payee** (C11-LO5): read "no match" as stop and check, and "match" as the name only, added as defend items and check items with mirror pairs.
+- **What to do once money has gone** (C11-LO6): the first steps (ring the bank first, then security, then Report Fraud), delivered as a short ordered debrief card and as check items.
+
+The deeper finance treatment (the payment verification desk, two-person approval, the recovery scene) remains as plan for **role_02**, not as a separate all-staff module.
+
 ## Module flow
 
-| Beat | What happens | Format | Minutes |
+Recast in the built episode shape. The pre and post checks are separate finance check missions that bracket whichever episodes an organiser sets between them; only the defend half and the checks are scored.
+
+| Stage | What happens | Format | Scored |
 |---|---|---|---|
-| Hook | At the player's Operations desk, "Dawn at Northbeck" emails new bank details and asks the player to pass them to accounts before this week's run. Their response is the baseline | Game (MG-27, MG-01, MG-04) | 1 to 2 |
-| Learn | Hassan takes the email apart, tells his near miss, and gives the rule: call back on the number on record, two people approve, report; Confirmation of Payee; if money's gone, ring the bank | NPC explainer with visual aids (EX-01, BE-08) | 2 to 3 |
-| Practise | "Change or No Change?": six requests at the verification desk, getting harder | Minigame (MG-15, MG-25) | 2 to 3 |
-| Apply | Holiday cover in Finance: prepare the afternoon's payment list while another supplier's bank change, an urgent "chief executive" payment and Lena's message about an invoice she shouldn't have approved arrive | Game (BE-18, MG-01, MG-15, MG-25, MG-04) | 5 to 6 |
-| Debrief | Each request, the clue, what checking looked like, what happened; the real chief executive says thank you | Debrief screen (BE-02), Hassan and Ama | 1 to 2 |
-| Check | Six scenario questions | Quiz (MG-20) | 2 |
-| Reference | "Change of details? Call the number you already have." card on The Lark | Intranet (BE-09) | under 1 |
+| Pre-check | The finance role check: one parallel form of 10 spot-the-item messages, no pass mark | Check mission (built) | Measured, not scored |
+| Brief and scope | "Authorised exercise at Brightwell Foods (fictional). Scope: this inbox, these people." Host Adaeze Okafor welcomes the learner | Episode runner | No |
+| Attack half | Look at two public sources, then compose one email "from" a known supplier asking to change bank details on an open invoice, blanks filled only from the facts found; red-flag meter on | OSINT browser, mail client in template mode | No (one artefact, capped) |
+| Flip | The learner's own message arrives in a payments inbox with its tells highlighted | Flip view | No |
+| Defend half | Triage the payments inbox with Trust, Report, Delete and Verify; the Confirmation of Payee results and the "money has gone" steps are the extension this plan adds | Inbox triage (awareness profile) | Scored |
+| Debrief | Per-item reasoning cards, the team-protected tally, the shared habit to keep, the "On Monday" card, the customer reporting route, the no-blame line | Debrief view | Debrief |
+| Post-check | The other finance form; shows the change from the pre-check | Check mission | Measured |
+
+E7 and E4 are sibling episodes delivering the same outcomes with cloned voice and executive whaling.
 
 ## Reuse from existing Break Escape content
 
 - **Rooms:** `room_office` (the Operations desk, shared with core_01); `small_office_room2_1x1gu` redressed as the finance office (behind the badge door described in `03_WORLD_AND_CAST.md`), shared with role_02; `room_ceo` seen through the glass, empty, because the chief executive is at a conference.
-- **Conversations:** `person-chat` for Hassan and Ama; `phone-chat` for the team chat, Lena's message and the company chat with the chief executive; `person-chat` video-call mode (`person-chat-ui.js`) for Eleni approving remotely and the real Gillian's thank-you. Its status bar says "SECURE VIDEO LINK" (hard-coded at `person-chat-ui.js:253`) and needs to read "Larkspur Meet" or similar.
+- **Conversations:** `person-chat` for Hassan and Ama; `phone-chat` for the team chat, Lena's message and the company chat with the chief executive; `person-chat` video-call mode (`person-chat-ui.js`) for Eleni approving remotely and the real Gillian's thank-you. Its status bar says "SECURE VIDEO LINK" (hard-coded at `person-chat-ui.js:253`) and needs to read "Brightwell Meet" or similar.
 - **Documents:** `notes` and `text-file` for the supplier directory, Hassan's desk card, the payment list and the delivery notes.
 - **The existing `dual-auth` minigame** (`public/break_escape/js/minigames/dual-auth/`): two named approver panels and an AUTHORISE button, used here as the payment run's two-person approval, which the player watches Hassan and Eleni complete. It exists but is not registered in `minigames/index.js` or dispatched, and sis01's only object for it is commented out. Today it takes a PIN on each panel, writes sis01's globals (`network_isolation_authorised`, `network_isolated` and others) and runs a fixed five-minute countdown; its labels can already be set through `minigameData` (`dual-auth-text.js`). This module relies on the rework in `features/minigames.md` section 4 (see New features needed).
 - **`forensic-data-platform`**: tabs of typed blocks with a gated confirm (`confirmGateTab`, `confirmLabel`, `confirmedVar`). Until MG-15 exists it can show a change request as "The email", "The letter", "Supplier record" and "Change history" tabs, with "Hold this change and report it" enabled once the record tab has been read.
@@ -92,20 +114,20 @@ The module also gives staff outside Finance awareness of the organisation's segr
 - **BE-18 Work task and interruptions:** the payment list and its timed arrivals.
 - **BE-19 Open minigames from conversations and events:** Hassan opens his check question (`#trigger_minigame:knowledge_check|c11_q_which_number`) and the drill (the same tag naming MG-15's scene) from his explanation.
 - **BE-07 Micro-drill launcher:** "Change or No Change?" (P2).
-- **MG-27 Work desktop:** the player's computer at both desks, launching the inbox, Ledger (MG-15), the company chat and The Lark.
+- **MG-27 Work desktop:** the player's computer at both desks, launching the inbox, Ledger (MG-15), the company chat and the staff intranet.
 - **The `dual-auth` rework** (`features/minigames.md` section 4; it has no id): register and dispatch the existing minigame, named approver panels with a checklist instead of PINs, globals from data, and no timer by default. This module also needs the second panel to complete on the approver's own event (Eleni signing off on her video call), since the player never approves here.
 
 ## Organisation-specific content
 
 - The payment change procedure: who verifies, how, and who approves.
 - Approval rules: the two-person rule and any thresholds.
-- Who staff tell if money may have gone (Larkspur: the Finance Manager, or the 24/7 service desk out of hours). Staff don't need the bank's number: Finance holds it.
-- How staff change their own bank details for pay (Larkspur: only in the HR system, signed in from The Lark).
-- Whether staff ever buy gift cards for work, and how (Larkspur: never because of an email or message; only through procurement).
-- Who can approve invoices, and what they must check (Larkspur: the budget holder confirms the goods or service was ordered and received).
+- Who staff tell if money may have gone (Brightwell: the Finance Manager, or the 24/7 service desk out of hours). Staff don't need the bank's number: Finance holds it.
+- How staff change their own bank details for pay (Brightwell: only in the HR system, signed in from the staff intranet).
+- Whether staff ever buy gift cards for work, and how (Brightwell: never because of an email or message; only through procurement).
+- Who can approve invoices, and what they must check (Brightwell: the budget holder confirms the goods or service was ordered and received).
 - The reporting route (Report suspicious button; security team on 4444) and the police route by nation: Report Fraud in England, Wales and Northern Ireland; Police Scotland on 101.
 
-These belong in the organisation's HA-26 setup checklist, so the reference card never shows Larkspur's defaults to a customer's staff by mistake.
+These belong in the organisation's HA-26 setup checklist, so the reference card never shows Brightwell's defaults to a customer's staff by mistake.
 
 ## Open questions
 

@@ -51,17 +51,29 @@ Contributes to (short references from `02_COMPLIANCE_MAPPING.md`, section 2):
 
 It also supports the organisation's own handling controls, which are not in the mapping yet. **Proposed additions** for `02_COMPLIANCE_MAPPING.md` (wording to verify against the standards): ISO 27001 A.5.12 (classification of information), A.5.13 (labelling of information), A.5.14 (information transfer), A.7.10 (storage media), A.7.14 (secure disposal or re-use of equipment) and A.8.10 (information deletion); PCI DSS 9.4.6 (destroying hard-copy materials that hold card data).
 
+## Build status
+
+**Company and host:** the **proposed new company Carrholme Services** (`carrholme.example`), shared with core_05 and marked **proposed, to add to `BRAND_SET.md`**; here it is the facilities bidder for a council contract. The four brand-set companies do not fit this bid-and-handling world, so a new company is proposed. Host: an information security lead (a Carrholme staff member; the retired recurring mentor is dropped).
+
+**None built** (`research/built_episodes_vs_plan.md` §2: core_06 None). This module is delivered with core_05 as **E11** (new), a **consequence-flip** episode (R3): handling information has no natural attacker, so the learner mishandles information in a safe sandbox (the bin, the share dialog, the hidden content) and the flip shows what it exposed.
+
+- **New (shares E11 with core_05):** a defend half of label-and-route and send-or-share decisions, a defend-only variant, and new items for the check forms.
+- **Builds on built systems:** the inbox-triage defender, the awareness-measure records, the concept cards and the debrief view. The "bin audit" attacker-view interlude is optional depth, not the signature; the consequence flip is.
+- **Checks:** the **general** role, or the proposed all-staff data-handling check pair (**New**), with mirror pairs (`assessment.md`).
+
 ## Module flow
 
-| Beat | What happens | Format | Minutes |
+Recast in the built episode shape, using the **consequence-flip** variant (R3). Pre and post checks bracket the episode; only the defend half and the checks are scored.
+
+| Stage | What happens | Format | Scored |
 |---|---|---|---|
-| Hook | Martin asks the player to clear the old drafts of the bid pricing off their desk; which bin they use is the baseline | Game | 1 |
-| Learn | That evening, the player joins Jo Fairweather's authorised bin audit and rebuilds a shredded page; next morning Ama explains the four labels, need to know and the handling grid | Attacker view (EX-06, BE-11), then NPC explainer (EX-01, BE-08) | 3 |
-| Practise | "Label It": ten documents to label and route, and two over-shared links to fix | Minigames (MG-10, MG-11) | 2.5 |
-| Apply | Bid week: share with a partner, a competitor's price list arrives by mistake, pricing sign-off with a tricky autocomplete, Martin's personal email, final checks for hidden content, printing, and the clear-out | Game (MG-11, MG-01, MG-12, BE-18) | 5.5 |
-| Debrief | Jo's haul: what she could have collected this week, against what she actually got | Debrief screen (BE-02), Jo and Ama | 1 |
-| Check | Six scenario questions | Quiz (MG-20) | 2 |
-| Reference | The handling card on The Lark, with the organisation's own labels and rules | Intranet (BE-09) | under 1 |
+| Pre-check | The role check: one 10-item spot-the-item form, no pass mark | Check mission | Measured, not scored |
+| Brief and scope | "Authorised exercise at Carrholme Services (fictional). Scope: this bid, these files." The host welcomes the learner | Episode runner | No |
+| Consequence half | The learner mishandles information in a safe sandbox: the wrong bin, "anyone with the link", a file with hidden content | Sandbox (MG-10, MG-11, MG-12) | No |
+| Flip | The flip shows what it exposed: the shredded page rebuilt, the strangers on the open link, the comment the client could read | Flip / consequence view | No |
+| Defend half | Label and route documents, and decide send-or-share and received-by-mistake cases | Inbox triage | Scored |
+| Debrief | Per-item reasoning cards, the "what an outsider could have had" board, the shared habit to keep, the "On Monday" card, the reporting route, the no-blame line | Debrief view | Debrief |
+| Post-check | The other form; shows the change from the pre-check | Check mission | Measured |
 
 ## Reuse from existing Break Escape content
 
@@ -78,7 +90,7 @@ It also supports the organisation's own handling controls, which are not in the 
 - **MG-11 Sharing settings:** a share dialog (who, permission, end date), the access list, and a "Shared by you" view for spotting over-shared links.
 - **MG-01 Inbox:** compose with recipient autocomplete, an "External recipient" chip, a prompt when a Confidential attachment goes outside, a "Send securely" option, and attachment previews.
 - **MG-12 Redaction,** with its Hidden step and both redaction tools ("Redact and remove" and "Draw a box"): find hidden worksheets, comments, tracked changes and covered-up text, remove them properly, and check the result. core_05 uses the same minigame with the mark and remove tools only.
-- **MG-27 Work desktop:** the player's computer, opening the inbox, the file-sharing service, the hidden content check and The Lark, with Martin's messages as notifications.
+- **MG-27 Work desktop:** the player's computer, opening the inbox, the file-sharing service, the hidden content check and the staff intranet, with Martin's messages as notifications.
 - **EX-06 Attacker-view interludes** and **BE-11 Role switch:** the bin audit with Jo.
 - **BE-16 Time skips** and **BE-24 Place-player action:** the evening audit (moving the player to the bin store and back) and the consequence scenes.
 - **BE-23 Pause and time scale:** the Friday deadline can be paused or slowed, and the upload happens whatever the player did.
@@ -104,8 +116,8 @@ It also supports the organisation's own handling controls, which are not in the 
 
 ## Open questions
 
-1. **Office shredders.** Should the default allow strip-cut shredders for any paper? *Recommendation: make it an organisation slot. Larkspur's default: the strip-cut shredder is for Internal paper only; Confidential and Restricted go in the locked console.*
+1. **Office shredders.** Should the default allow strip-cut shredders for any paper? *Recommendation: make it an organisation slot. Carrholme's default: the strip-cut shredder is for Internal paper only; Confidential and Restricted go in the locked console.*
 2. **The Bcc rule.** *Recommendation: follow the ICO. Bcc is "not enough on its own"; for large or sensitive mailings, use the bulk email tool or mail merge, and keep Bcc for small, routine, non-sensitive groups.*
 3. **The competitor's price list.** It is the module's twist, and it teaches what to do with information you shouldn't have. *Recommendation: keep it on the critical path.*
 4. **The redaction split with core_05.** *Recommendation: core_06 owns technique (covered-up text, hidden content, how to remove it); core_05 owns judgement (which personal data to remove). Both use MG-12.*
-5. **Where personal data sits in the labels.** *Recommendation: Larkspur default: most personal data is Confidential; special category data and large sets of personal data are Restricted. Customers set their own.*
+5. **Where personal data sits in the labels.** *Recommendation: Carrholme default: most personal data is Confidential; special category data and large sets of personal data are Restricted. Customers set their own.*

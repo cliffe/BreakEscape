@@ -1,8 +1,16 @@
 # core_09 game design: On the Move
 
+## Built shape and episode mapping
+
+This module is a **touch** in the build (`research/built_episodes_vs_plan.md` §2): the built **E6** `awareness_e6_texts_and_qr` (Tarrowby Logistics, mobile) covers phone-borne lures. The rest is delivered either as a **defend-set extension of E6 with new items** (an overlooked-screen item, an overheard-call item, a fake Wi-Fi page, a lost-device report, a home video-call item) or as a **later standalone episode** at Tarrowby. **Do not redesign the built E6 parts.**
+
+Whichever route, it follows the built shape: a consequence half for the topics with no attacker (the overlooked screen, the overheard call) and an attack-first half for the look-alike Wi-Fi page, a flip ("through their eyes"), a scored defend half, then the built debrief view with the shared "habit to keep". It uses the built inbox-triage defender (with SMS, QR and page cards), the awareness-measure records and concept cards, has a defend-only variant, and feeds new mobile check items with mirror pairs (`assessment.md`).
+
+The detailed "On the Move" design below is retained as the episode's content, reparented from the retired Larkspur world to Tarrowby Logistics. The on-the-road explainer is the episode host (Zainab Hussain / Chidi Okeke), not a recurring course mentor.
+
 ## Concept
 
-Larkspur has won the facilities contract for Wrenfield Care, a group of care homes in Haverbridge, two hours away by train. The player, an operations coordinator, goes with field engineer Zainab Hussain to survey the first home and agree the start of the infection-control cleans. That means two days with the job on a laptop and a tablet: the 07:42 train, a café between visits, a night in a hotel, and a morning call from the player's own kitchen table.
+Tarrowby has won the facilities contract for Wrenfield Care, a group of care homes in Haverbridge, two hours away by train. The player, an operations coordinator, goes with field engineer Zainab Hussain to survey the first home and agree the start of the infection-control cleans. That means two days with the job on a laptop and a tablet: the 07:42 train, a café between visits, a night in a hotel, and a morning call from the player's own kitchen table.
 
 The module teaches through the people around you. Every place has bystanders who are ordinary and harmless: a student nurse in the row behind, a friendly illustrator at the next café table, a housekeeper, an eleven-year-old nephew. None of them is a villain, and that is the point: client information reaching people who have no reason to see it is the harm, whoever they are. The debrief shows the two days "through their eyes": what each of them could see and hear because of the player's choices. Alongside them sit the two things that do involve someone with bad intent, and both are handled with a habit rather than fear: a lookalike Wi-Fi network with a page that wants a work password, and a tablet left behind that needs reporting before anyone finds it.
 
@@ -15,10 +23,10 @@ The module teaches through the people around you. Every place has bystanders who
 - **Haverbridge Lodge, room 214** (`room_hotel`, proposed, 1x1 or 2x1 GU; a dressed `small_room_1x1gu` as the cheap option): bed, desk, wardrobe with a room safe, kettle, TV, and a "Do not disturb" hanger on the door.
 - **Home** (`room_home_office`, proposed, 2x1 GU): the player's kitchen-diner, with a table desk, a whiteboard on the wall, a shelf with a smart speaker, the router on the windowsill, family photos and a small printer.
 
-**Recurring cast** (from `03_WORLD_AND_CAST.md`):
+**Cast** (Tarrowby staff; the plan's names are reused as company staff, not as a single recurring workplace, and there is no recurring course mentor):
 
 - **Zainab Hussain** (Field Service Engineer): the on-the-road explainer. Eight years of working from vans, cafés and trains, and full of practical tricks. She once left a tablet on a train herself and says so.
-- **Ama Owusu** (Information Security Manager): one chat message on the train, then on the video call from home and in the debrief.
+- **An information security colleague** (the retired recurring mentor Ama Owusu is dropped; use a Tarrowby security staff member): one chat message on the train, then on the video call from home and in the debrief.
 - **Owain Jenkins** (IT Service Desk Lead): on call on the hotel night; locks and wipes the tablet.
 - **Lena Fischer** (Operations Manager): sets the work by chat.
 - **Kai Murray** (security analyst): a chat message if the player signs in on the fake Wi-Fi page.
@@ -121,11 +129,11 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 
 ### 6. Check (2 minutes)
 
-- **(CP)** Ama's spot check on The Lark (MG-20): six items drawn from the bank in `assessment.md`, at least one per learning outcome.
+- **(CP)** Ama's spot check on the staff intranet (MG-20): six items drawn from the bank in `assessment.md`, at least one per learning outcome.
 
 ### 7. Reference
 
-- **(CP)** The Lark opens the reference card (BE-09) with the organisation's lost-device number, VPN name and Wi-Fi rule (BE-05).
+- **(CP)** The staff intranet opens the reference card (BE-09) with the organisation's lost-device number, VPN name and Wi-Fi rule (BE-05).
 
 ## Decisions and consequences
 
@@ -148,12 +156,12 @@ No option shames the player. Bystanders are never shown stealing or misusing any
 
 | Minigame | Status | Use here |
 |---|---|---|
-| **MG-14 Wi-Fi and VPN picker** | new (P2), a panel of MG-23 | Practise round 3 and the café. Config per situation, following its spec: `networks[] {ssid, secured, genuine, signal, page}` (the page is "terms only", "terms and email", "asks for work password" or none), `hotspot`, `vpn {required, label}` (Larkspur's connects by itself), and `askNpc` (the barista knows the real name; the chalkboard shows it too). Events `wifi_joined:<ssid>`, `wifi_hotspot_used`, `wifi_vpn_on` and `wifi_page_signin:<pageId>` set C09-B2; anything typed is pre-filled, never real. A Report button sends the fake network to Kai |
+| **MG-14 Wi-Fi and VPN picker** | new (P2), a panel of MG-23 | Practise round 3 and the café. Config per situation, following its spec: `networks[] {ssid, secured, genuine, signal, page}` (the page is "terms only", "terms and email", "asks for work password" or none), `hotspot`, `vpn {required, label}` (Tarrowby's connects by itself), and `askNpc` (the barista knows the real name; the chalkboard shows it too). Events `wifi_joined:<ssid>`, `wifi_hotspot_used`, `wifi_vpn_on` and `wifi_page_signin:<pageId>` set C09-B2; anything typed is pre-filled, never real. A Report button sends the fake network to Kai |
 | **BE-10 Spot-the-risk** | new | Practise round 2 (café table), the hotel room before dinner, and the camera preview before the video call. Each has risks, harmless details and a found and missed summary; timer off by default |
 | **Sight cones** (`systems/npc-los.js`) | existing | The hook (Jerome's cone, via the sight challenge or the proposed overlooked check) and Coach C (`los.visualize: true`, a patrolling trolley attendant) |
 | `person-chat` | existing | Zainab, Jerome, Bryony, Ellis; the video call in its video-call mode with the proposed workplace skin |
 | `phone-chat` | existing | Lena, Ama, Kai, Zainab's message about her tablet; Grace's call and the service desk until MG-04 exists |
-| **MG-27 Work desktop** (`container` and `text-file` until it exists) | new (MVP) | The laptop: the survey files, network settings (MG-23 and MG-14), chat and The Lark from one desktop, with notifications that can show over the player's shoulder |
+| **MG-27 Work desktop** (`container` and `text-file` until it exists) | new (MVP) | The laptop: the survey files, network settings (MG-23 and MG-14), chat and the staff intranet from one desktop, with notifications that can show over the player's shoulder |
 | **MG-04 Voice calls** | new (P2) | Grace's call (with the call-back option) and ringing the service desk |
 | **MG-09 Incident report form** | new (MVP) | The lost-device report through the service desk's online form: category "lost or stolen device", evidence chips (last seen at the café at 13:10; signed in to the survey app), the time noticed |
 | **MG-23 Device settings** | new (P2) | The optional pre-trip check; the micro-drill |
@@ -172,13 +180,14 @@ No option shames the player. Bystanders are never shown stealing or misusing any
 
 ## Debrief
 
-Shown on BE-02, then talked through by Ama and Zainab:
+Shown on the built debrief view, then talked through by the host:
 
-1. **Through their eyes.** One panel per place, drawn from the bystander's position with their cone or earshot shown: what Jerome could read on the train, what the café heard and saw, what the housekeeper saw at 20:05, what Ellis did, what Grace could see behind the player. Each panel says what good looked like.
-2. **The tablet.** Owain's device console: when it was last used, when it was reported, when it was locked and wiped, and the gap between them.
+1. **Through their eyes.** One panel per place, drawn from the bystander's position with their cone or earshot shown: what the passenger could read on the train, what the café heard and saw, what the housekeeper saw at 20:05, what the family member did, what the client could see behind the player. Each panel says what good looked like.
+2. **The tablet.** The device console: when it was last used, when it was reported, when it was locked and wiped, and the gap between them.
 3. **Before and after.** The hook (who could read the residents list on the train) beside the camera check (who could see client details behind the player).
-4. **Per-outcome results:** Secure, Developing or Not yet (see `assessment.md`).
-5. **The line to remember:** *"Out of sight, out of earshot, never out of reach. Lost it? Report it now."*
+4. **Per-outcome results.**
+5. The shared **habit to keep**, quoted word for word as in every awareness debrief: *"When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."*
+6. The "On Monday" card and this module's line: *"Out of sight, out of earshot, never out of reach. Lost it? Report it now."*, then the lost-device route and the no-blame line.
 
 ## Variants
 
@@ -189,7 +198,7 @@ Shown on BE-02, then talked through by Ama and Zainab:
 
 ## Alternative concepts
 
-1. **Jo's Commute (attacker view).** Jo Fairweather, Larkspur's hired ethical tester, rides the 07:42 on an authorised test to see how much she can learn about Larkspur in one journey without touching anything: a screen in the row in front, a phone call on the platform, a badge on a lanyard, a laptop left at the café while its owner queued. The player rides with her and simply notices what she notices, building a picture of the company in twenty minutes (EX-06, BE-11). Then the player makes the same journey as themselves the next day. It teaches by showing how little effort it takes, with no technique beyond looking and listening.
+1. **Jo's Commute (attacker view).** Jo Fairweather, Tarrowby's hired ethical tester, rides the 07:42 on an authorised test to see how much she can learn about Tarrowby in one journey without touching anything: a screen in the row in front, a phone call on the platform, a badge on a lanyard, a laptop left at the café while its owner queued. The player rides with her and simply notices what she notices, building a picture of the company in twenty minutes (EX-06, BE-11). Then the player makes the same journey as themselves the next day. It teaches by showing how little effort it takes, with no technique beyond looking and listening.
 2. **Lost Property (rewind).** The module opens at the end: a survey tablet in a café's lost property box, with a sticky note saying *found 13:15*. The player rewinds the day in chapters (BE-16 in reverse), finding each moment where things could have gone differently: who saw the screen, who heard the call, when the tablet was left, and how long until anyone reported it. Each rewind lets the player try the other choice and watch the ending change. A strong shape for a facilitated session.
 3. **Field Desk (advising others).** The player is back at head office, covering the field team's support chat. Four engineers message from the road (MG-05): *"The hotel Wi-Fi wants my work password"*, *"I left my phone on the bus"*, *"The client wants the door code read out over the phone"*, *"My son's laptop is broken, can he borrow mine for homework?"* The player gives advice against a gentle clock, and each engineer's day plays out from it. Teaching others is a strong way to learn, and it suits the micro-drill.
 

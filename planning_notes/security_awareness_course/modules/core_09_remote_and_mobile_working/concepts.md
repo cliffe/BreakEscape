@@ -35,7 +35,7 @@ Shoulder surfing is reading someone's screen or papers over their shoulder, on p
 A phone call in a queue, on a platform or in a café is a broadcast to everyone nearby. Names, room numbers, door codes, addresses, account details and "the thing we can't tell the client yet" are all things people say on the phone without thinking.
 
 - **"I'll call you back in ten minutes" is a complete answer.** Then call from somewhere private: outside, a meeting room, the car.
-- **Never read out codes, passwords or account numbers in public.** Send them through the approved secure route instead (Larkspur's client portal), never by ordinary text message.
+- **Never read out codes, passwords or account numbers in public.** Send them through the approved secure route instead (Tarrowby's client portal), never by ordinary text message.
 - **Headphones help you hear the other person; they don't stop others hearing you.**
 - **Video calls in public** show your screen to the people behind you and play the other side's voice to the room unless you wear headphones.
 
@@ -73,12 +73,12 @@ Away from the office, the device's own protections matter more. Most are set up 
 
 Advice on public Wi-Fi has changed, and older training overstates the risk.
 
-- **What has changed:** most websites and work apps now encrypt what you send, so the old warning that "anyone on the café Wi-Fi can read your email" is mostly out of date. Larkspur's laptops also send their traffic through a VPN (a virtual private network: an encrypted tunnel back to the company) that connects by itself. The NCSC's device guidance recommends exactly this kind of automatic VPN that traffic can't bypass.
+- **What has changed:** most websites and work apps now encrypt what you send, so the old warning that "anyone on the café Wi-Fi can read your email" is mostly out of date. Tarrowby's laptops also send their traffic through a VPN (a virtual private network: an encrypted tunnel back to the company) that connects by itself. The NCSC's device guidance recommends exactly this kind of automatic VPN that traffic can't bypass.
 - **What is still a risk:** you can't easily tell who runs a hotspot, or prove it belongs to who you think it does (NCSC small business guide, 2020). Someone can set up a network with the same or a similar name as the venue's (an "evil twin") and show a fake login page that asks for your work email and password, or your card details.
 - **What the venue's page should ask for:** accepting terms, sometimes an email address or a room number and surname. Never your work password.
 - **The rules:**
   1. Check the network's name with staff or on the venue's sign. If two look alike, ask.
-  2. On the venue's login page, accept the terms and nothing more. The NCSC notes that forced VPNs and these "captive portal" pages can clash; Larkspur's laptops show the page in a safe helper window first.
+  2. On the venue's login page, accept the terms and nothing more. The NCSC notes that forced VPNs and these "captive portal" pages can clash; Tarrowby's laptops show the page in a safe helper window first.
   3. Wait for the VPN to show it's connected before you open work.
   4. If a Wi-Fi page asks for your work password or card details, close it, disconnect, use your phone's hotspot, and report it.
   5. Not sure, or the VPN won't connect? Use your phone's hotspot: the NCSC's 2020 guide called using the mobile network instead of unknown hotspots "the simplest precaution".
@@ -91,7 +91,7 @@ Advice on public Wi-Fi has changed, and older training overstates the risk.
 - **Lock it when you step away,** even at home: housemates, visitors and children walk past.
 - **Before a video call, check what's behind you.** Whiteboards, wall planners, printouts, sticky notes and screens in the background all show up on camera. The NCSC advises checking your surroundings before joining and considering background blur or an image (2026). Close the door, wear headphones for confidential calls, and mute when you're not speaking.
 - **Share a window, not your whole screen,** so chat pop-ups, other documents and your inbox stay private.
-- **Smart speakers and voice assistants** listen for a wake word and sometimes mishear it and start recording. Larkspur's default rule: mute them or move away from them during confidential calls.
+- **Smart speakers and voice assistants** listen for a wake word and sometimes mishear it and start recording. Tarrowby's default rule: mute them or move away from them during confidential calls.
 - **Home Wi-Fi:** use the router's Wi-Fi password, keep the router up to date, change its default admin password if it still has one, and don't connect work devices to a neighbour's or an open network. (CIS safeguard 14.8 includes securing home networks.)
 - **Printing at home:** avoid printing Confidential documents at home. If you must, keep the printouts safe and bring them back to the office for confidential waste; never the household recycling (core_06).
 - **Not everyone has a quiet room.** Headphones, background blur, choosing when to take a confidential call, or coming into the office for it are all fine answers.
@@ -158,22 +158,22 @@ Use these as background and inspiration only. Game content uses fictional names.
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+| Slot | Default (Tarrowby) |
 |---|---|
 | Lost or stolen device line | The 24/7 service desk line (shown on the reference card and the back of the badge) |
 | What to tell them | What it was, when and where last seen, what was on it or signed in, whether it was locked |
 | Privacy screens | Issued with every laptop; replacements from the service desk |
-| VPN name and behaviour | "Larkspur Connect", connects by itself and shows a padlock in the corner |
-| Public Wi-Fi rule | Venue Wi-Fi with Larkspur Connect, or your phone's hotspot; never type your Larkspur password into a Wi-Fi page |
+| VPN name and behaviour | "Tarrowby Connect", connects by itself and shows a padlock in the corner |
+| Public Wi-Fi rule | Venue Wi-Fi with Tarrowby Connect, or your phone's hotspot; never type your Tarrowby password into a Wi-Fi page |
 | Stricter Wi-Fi rule (optional) | Phone hotspot only |
 | Travel rule | Keep devices with you; if you can't, lock them in the room safe, shut down |
 | Papers out of the office | Only what the job needs; bring them back for confidential waste |
 | Family use of work devices | Not allowed |
 | Printing at home | Avoid for Confidential; bring printouts back for confidential waste |
 | Smart speakers | Mute or move away during confidential calls |
-| Video call background | Blur or the Larkspur background for client calls |
-| Personal devices for work | Larkspur's work app only, with a screen lock |
-| Remote lock and wipe | Every Larkspur laptop, phone and tablet is managed and can be locked or wiped |
+| Video call background | Blur or the Tarrowby background for client calls |
+| Personal devices for work | Tarrowby's work app only, with a screen lock |
+| Remote lock and wipe | Every Tarrowby laptop, phone and tablet is managed and can be locked or wiped |
 
 ## Glossary
 

@@ -1,5 +1,18 @@
 # core_11 game design: Change of Details
 
+## Built shape and episode mapping
+
+This module is **built**. It is delivered in the awareness product's attack-then-defend shape by three shipped episodes, and this plan only extends them. **Do not redesign the built parts.**
+
+- **E1** `awareness_e1_invoice_fraud` (Brightwell Foods, finance) is the core: OSINT, then compose one templated "change our bank details" email with blanks from found facts, flip, then triage the payments inbox (`e1_payments_inbox`), then the debrief. The brand-set cast owns it: Adaeze Okafor (finance manager and host), Ravinder Sandhu (chief executive, impersonated), Tom Reilly, Mei Lin Chau, and the supplier Harlow Packaging.
+- **E7** `awareness_e7_voice_ceo` (Brightwell) carries the cloned-CEO-voice email beside the finance line.
+- **E4** `awareness_e4_exec_whaling` (Merrin & Sallow) carries the executive-whaling email from the PA's side.
+- Measurement is the E1 defend set plus the finance (and executive) check forms, with mirror pairs; see `assessment.md`.
+
+**What this plan adds, in the built shape:** two gaps the build lacks (`research/built_episodes_vs_plan.md` §2): **Confirmation of Payee** (C11-LO5) as new defend and check items with mirror pairs, and **what to do once money has gone** (C11-LO6) as a short ordered debrief card and check items. Both attach to the E1 finance defend set and the finance checks; neither needs a new episode.
+
+The detailed "Change of Details" design below (the payment verification desk, two-person approval watched, the recovery scene) is retained as the **deeper finance treatment for role_02**, reparented from the retired Larkspur world to Brightwell Foods. Its cast names (Hassan Qureshi, Gillian Marsh, Eleni Markou, Lena Fischer) are **to be remapped to the brand-set Brightwell cast** when role_02 is built, because Brightwell's finance manager is Adaeze Okafor and its chief executive is Ravinder Sandhu; the finance-manager and chief-executive name overlap is a candidate decision for `DECISIONS_PENDING.md`. The explainer is the episode host, not a recurring course mentor.
+
 ## Concept
 
 It's the last Thursday of the month, which means payment-run day, and half of Finance is away for half-term. Hassan Qureshi, the Finance Manager, has borrowed the player for the afternoon: as an operations coordinator they know the suppliers and the deliveries, so they can match this week's invoices to delivery notes and build the list for Hassan's 15:30 payment run. The morning starts at the player's own desk, where Dawn from Northbeck Supplies sends new bank details with a polite request to pass them on. The afternoon brings the same trick in a different costume, an urgent payment "from" the chief executive, and the player's own manager worrying about an invoice she approved on her phone between meetings.
@@ -12,8 +25,8 @@ The module teaches through how ordinary these requests feel. None of them needs 
   - The Operations area of the open-plan office (`room_office`): the player's desk and monitor, as in core_01.
   - The finance office (`small_office_room2_1x1gu`, redressed) behind the badge door: two desks, a locked cabinet, a wall planner reading "PAYMENT RUN THU 15:30", and Hassan's desk card: "Change of details? Call the number on record."
   - The chief executive's office (`room_ceo`), seen through its glass wall, empty: Gillian is at a conference, which she posted about publicly.
-- **Hassan Qureshi** (Finance Manager) is this module's mentor: calm, methodical, tells his near miss.
-- **Ama Owusu** (Information Security Manager) appears briefly: one optional explainer and the debrief.
+- **Hassan Qureshi** (Finance Manager) is this module's host and explainer (to be remapped to Adaeze Okafor for the Brightwell build): calm, methodical, tells his near miss. There is no recurring course mentor.
+- **An information security colleague** appears briefly for one optional explainer and the debrief (the retired recurring mentor Ama Owusu is dropped; use a Brightwell security staff member).
 - **Lena Fischer** (Operations Manager, the player's manager) appears by chat. She is the colleague who slips (she approved a fake invoice on her phone) and reports it quickly. Chat only, so she still needs no art.
 - **Gillian Marsh** (Chief Executive) is impersonated by email; the real Gillian answers on the company chat and thanks the player by video call in the debrief.
 - **Eleni Markou** (new; Financial Controller, the second approver) joins the 15:30 run by video call. 50s, Greek Cypriot British, dark hair with grey streaks held in a clip, reading glasses on a cord, navy cardigan, walks with a stick. Brisk, dry and kind. Shared with role_02, where she is on screen.
@@ -27,8 +40,8 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 ### 1. Hook: "Please pass this on" (1 to 2 minutes)
 
 - **(CP)** 09:10 at the player's desk. On the desk computer (MG-27), the inbox (MG-01) shows Lena's note ("Hassan's borrowing you this afternoon for the payment run, 13:00 in Finance. Thank you!"), the canteen menu, and an email from **Dawn (Northbeck Supplies)**: "New bank details: please pass to your accounts team". Per play (BE-13) it comes either from Dawn's real address (her mailbox has been taken over) or from a lookalike domain. Attached is a letter on Northbeck letterhead, signed by Northbeck's "Finance Director", with new bank details and "Any questions, call our finance office" on a mobile number.
-- The email: *"Hi! You're my main contact at Larkspur, so I hope you don't mind me sending this your way. We've moved banks and the new details are on the letter. Could you pass it to whoever pays us? It needs to be in place before your payment run this week, as the old account closes on Friday. Thanks so much, Dawn"*
-- The player can: forward it to Finance with a note of their choice ("It's from Dawn at Northbeck, it's genuine" / "Received this, I haven't checked it" / no note); reply to ask if it's really her; ring the number on the letter; ring Northbeck on the number in the supplier directory on The Lark (MG-04); report it; or delete or ignore it. Their response is the **baseline** for C11-B1.
+- The email: *"Hi! You're my main contact at Brightwell, so I hope you don't mind me sending this your way. We've moved banks and the new details are on the letter. Could you pass it to whoever pays us? It needs to be in place before your payment run this week, as the old account closes on Friday. Thanks so much, Dawn"*
+- The player can: forward it to Finance with a note of their choice ("It's from Dawn at Northbeck, it's genuine" / "Received this, I haven't checked it" / no note); reply to ask if it's really her; ring the number on the letter; ring Northbeck on the number in the supplier directory on the staff intranet (MG-04); report it; or delete or ignore it. Their response is the **baseline** for C11-B1.
 - **Rings the directory number:** Dawn answers: *"Northbeck, Dawn speaking. New bank details? No, love. We've been with the same bank for twenty years."* Then, in the real-domain play: *"Has someone got into my email? I'll ring our IT people now. Thanks for checking."* (In the lookalike play: *"That's not even our address. Thanks for checking."*) If the player doesn't report it next, Dawn adds: *"You'll want to tell your security lot too."*
 - **Rings the number on the letter:** *"Northbeck finance, Rob speaking. Yes, that's right, we've moved banks. Dawn said she'd send it over. Anything else I can help with?"* Smooth and friendly. The player may then forward it as "verified by phone".
 - **Replies to the email:** "Dawn" answers within a minute: *"Yes, it's me! Sorry for the rush. Could you get it to accounts today?"*
@@ -80,7 +93,7 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 |---|---|---|---|---|
 | 13:50 | **Bank change by letter** (the hook's "after") | Brackenfold Hygiene, a cleaning-chemicals supplier, emails a letter on its letterhead: new bank, "please update before today's run", and a mobile for "our finance manager". From Brackenfold's real domain or a lookalike (BE-13) | C11-LO2, C11-LO3 | Compare it with the Ledger record (MG-25: a mobile where the record has a landline, a new bank, the deadline). Ring Brackenfold on the record number (MG-04): Lorna in accounts says they've changed nothing. Put it on Hassan's desk marked "Rang our record number: not them" and report it |
 | 14:10 | **A colleague's slip** | Lena on chat: *"Bit embarrassing. I approved an invoice on my phone this morning, a 'directory listing renewal'. Now I can't remember us ever using them. Is it in today's run?"* | C11-LO4, C11-LO6 | Find it in the list (£1,180, approved by L. Fischer), hold it, tell Hassan, report it, and thank Lena |
-| 14:40 | **The boss in a hurry** | "Gillian Marsh", from a lookalike Larkspur domain and "sent from my phone", to the Finance inbox: £18,450 to "Brightwater Advisory LLP" today, a confidential deposit, *"I've cleared it with Eleni. Please don't discuss it. If it needs splitting to get through, do that."* | C11-LO1, C11-LO4 | Don't add it and don't split it. Check with Gillian on the company chat (her known account): *"Not me! About to go on stage. Please report it."* Tell Hassan; report it |
+| 14:40 | **The boss in a hurry** | "Gillian Marsh", from a lookalike Brightwell domain and "sent from my phone", to the Finance inbox: £18,450 to "Brightwater Advisory LLP" today, a confidential deposit, *"I've cleared it with Eleni. Please don't discuss it. If it needs splitting to get through, do that."* | C11-LO1, C11-LO4 | Don't add it and don't split it. Check with Gillian on the company chat (her known account): *"Not me! About to go on stage. Please report it."* Tell Hassan; report it |
 | 15:30 | **The run** | Hassan reviews the list; Ledger checks the names of new payees (Confirmation of Payee); Hassan signs off on his panel; Eleni signs off on hers from a video call (`dual-auth`, watched) | C11-LO5 | Read the results: Tarnside's close match is its registered name (fine); any no match is held |
 
 - **Who decides what.** The player never changes bank details or approves a payment. They prepare, check, leave honest notes and report. Hassan and Eleni are the controls, and the game lets the player see them work.
@@ -104,11 +117,11 @@ The critical path is marked **(CP)**. Everything else is optional depth.
 
 ### 6. Check (2 minutes)
 
-- **(CP)** Kai's "spot check" on The Lark (MG-20): six items drawn from the bank in `assessment.md`, at least one per learning outcome.
+- **(CP)** Kai's "spot check" on the staff intranet (MG-20): six items drawn from the bank in `assessment.md`, at least one per learning outcome.
 
 ### 7. Reference
 
-- **(CP)** The Lark opens the reference card (BE-09): the six-step procedure from `concepts.md`, the organisation's own change procedure and urgent Finance contact (BE-05), and the police reporting route for the learner's nation.
+- **(CP)** The staff intranet opens the reference card (BE-09): the six-step procedure from `concepts.md`, the organisation's own change procedure and urgent Finance contact (BE-05), and the police reporting route for the learner's nation.
 
 ## Decisions and consequences
 
@@ -136,7 +149,7 @@ No option shames the player. The worst branches (vouching for a fake change, wav
 | `forensic-data-platform` | existing | Stand-in for MG-15 in Apply and in the text route: tabs "Email", "Letter", "Ledger record", "Change history"; `confirmGateTab` set to the record tab; `confirmLabel` "Hold this change and report it"; `confirmedVar` `brackenfold_change_held`. The other choices (pass it on, pass it on as verified) run in Hassan's desk-tray conversation in ink |
 | `phone-chat` | existing | The team chat, Lena, and the company chat with the real Gillian |
 | `person-chat` | existing | Hassan and Ama; video-call mode for Eleni and the real Gillian |
-| `notes` / `text-file` | existing | The supplier directory on The Lark, Hassan's desk card, the payment list, the delivery notes |
+| `notes` / `text-file` | existing | The supplier directory on the staff intranet, Hassan's desk card, the payment list, the delivery notes |
 
 ## Explainers
 
@@ -151,13 +164,15 @@ No option shames the player. The worst branches (vouching for a fake change, wav
 
 ## Debrief
 
-Shown on BE-02, then spoken by Hassan and Ama:
+Shown on the built debrief view, then spoken by the finance host:
 
-1. The four requests (Dawn, Brackenfold, Lena's invoice, "Gillian"), each with what it was, the clue, what the player did, what checking looked like and the outcome.
+1. The four requests (Dawn, Brackenfold, the slipped invoice, the chief-executive payment), each with what it was, the clue, what the player did, what checking looked like and the outcome.
 2. The before and after: Dawn's email against Brackenfold's letter.
-3. Any call the player made to a number from a letter, replayed, with Hassan's line.
-4. Lena's outcome, and the real Gillian's thank-you.
-5. Per-outcome results, and the line to remember: *"Change of details or an odd payment? Call the number you already have."*
+3. Any call the player made to a number from a letter, replayed, with the host's line.
+4. The colleague's outcome, and the real chief executive's thank-you.
+5. The shared **habit to keep**, quoted word for word as in every awareness debrief and enforced by a test: *"When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."*
+6. The "On Monday" card and this module's line: *"Change of details or an odd payment? Call the number you already have."*
+7. The customer reporting route and the no-blame line.
 
 ## Variants
 
@@ -169,7 +184,7 @@ Shown on BE-02, then spoken by Hassan and Ama:
 ## Alternative concepts
 
 1. **Follow the Money (detective board).** After the fact: Northbeck rings to chase a payment that never arrived. On a corkboard (MG-13's board), the player reconstructs how a change of bank details got through: an out-of-office reply naming who covers payments, a taken-over mailbox, a call to the number on the letter, a rushed approval. Each pin reveals where one check would have stopped it, and Hassan rings the bank as the board fills in. Strong on the chain and the stopping points; less practice of the in-the-moment habit.
-2. **The Long Con (attacker view, EX-06, BE-11).** Jo Fairweather runs an authorised fraud test for Larkspur and shows the player what is already public: a council's published spending list naming Larkspur's suppliers, the chief executive's conference post, an out-of-office reply. The player predicts which request would land with whom, then switches back to Finance as Jo's test arrives. It shows how little a fraudster needs, never how to do it.
+2. **The Long Con (attacker view, EX-06, BE-11).** Jo Fairweather runs an authorised fraud test for Brightwell and shows the player what is already public: a council's published spending list naming Brightwell's suppliers, the chief executive's conference post, an out-of-office reply. The player predicts which request would land with whom, then switches back to Finance as Jo's test arrives. It shows how little a fraudster needs, never how to do it.
 3. **Groundhog Thursday (time loop).** The same payment-run afternoon replays three times. Each loop the fraudster adapts to the player's last defence (a lookalike domain, then the real mailbox, then a friendly call to "confirm"), until the player's process (ring the number on record, two people, report) beats every version. Memorable and squarely "process over cues", but longer to build and to play.
 
 ## Art and audio

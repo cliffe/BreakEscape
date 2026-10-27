@@ -27,9 +27,23 @@ To complete the module the learner must, at least once:
 
 A learner who misses a critical behaviour is taken back to it: Precious replays the relevant spot-the-risk items with the explanation, then a fresh moment of the same kind arrives in a short replay of the Apply beat. The record keeps both attempts.
 
+## Check and defend items (mirror pairs)
+
+core_10 is delivered as **E12** (new): the visitor and the tailgater, covering core_10 with person-chat in the training room. The attacker view (Red Team Day) is the attack-first half; the defend half is the day of friendly challenges and checks. Only the defend half and the pre and post checks are scored (`passPercent` 0). The assessed behaviours and the question pool below map onto defend items and check items, each critical behaviour a **mirror pair** (aw5) tested by matched items across forms A and B. A physical-security check role is proposed as **New**, each form needing its own matched items.
+
+| Behaviour or item | Defend item (E12, scored) | Check mirror pair (matched A ↔ B) |
+|---|---|---|
+| C10-B1 ↔ C10-B2 let an unknown person through | the propped-door hook (consequence) and the tailgater | a held-door item ↔ a tailgater-at-the-gate item (the built before and after) |
+| C10-B3 verify a contractor before access | the "fire safety inspector" | an inspector with wrong paperwork ↔ a contractor not on the day's list |
+| C10-B5 badge rules | the lost-badge request | a "lend me your badge" item ↔ a "badge left on a desk" item |
+| C10-B4 / C10-B7 clear screen and desk | the unlocked screens and printout | an unlocked-screen item ↔ a confidential-printout item |
+| C10-B6 fire and secure doors | the propped fire door | a wedged fire door ↔ a propped secure door |
+
+The question bank below is the source pool. Reporting is never penalised. Authorised physical tests are framed as finding gaps, never catching individuals; the discrimination figure goes to organisers only.
+
 ## Knowledge check bank
 
-Six items per sitting, covering every learning outcome. Stems are short workplace situations.
+A pool of candidate items for the E12 defend set and the check forms, covering every learning outcome. Stems are short workplace situations.
 
 ### C10-Q1 (LO1, single choice)
 
@@ -140,7 +154,7 @@ You take card payments at a reception desk. At the start of your shift the card 
 ## Completion and pass rules
 
 - **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour (with remediation if needed), passed the knowledge check, and opened the reference card.
-- **Pass mark:** 5 of 6 (the organisation can change it; 80% default).
+- **No default pass mark.** The pre and post checks are `passPercent` 0: no pass or fail, and the missions are completion-scored. The post-check shows the change from the newest pre-check. A pass mark or certificate is a later organisation option set on the post-check percent, not a default.
 - **Retakes:** a failed check draws six new items. After two fails, Precious replays the Learn or Practise beat before the third attempt.
 - **Test-out** (where allowed): the Apply beat and the check without Red Team Day and the drill. A pass records the module complete; missing a critical behaviour sends the learner through the full module.
 

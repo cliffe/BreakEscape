@@ -42,9 +42,24 @@ Signing in on the fake Wi-Fi page (C09-B2 at Not yet) is not a critical behaviou
 
 Every attempt is kept in the record.
 
+## Check and defend items (mirror pairs)
+
+core_09 **builds on E6** `awareness_e6_texts_and_qr` (Tarrowby, mobile), which already covers phone-borne lures and the **mobile** check role. The rest (screens overlooked in public, overheard calls, public Wi-Fi pages, lost devices, home video calls) is delivered either as a **defend-set extension of E6 with new items** or as a later standalone episode; the mobile check forms gain matched items for it. Only the defend half and the pre and post checks are scored (`passPercent` 0). The assessed behaviours and the question pool below map onto defend items and check items, each critical behaviour a **mirror pair** (aw5) tested by matched items across forms A and B.
+
+| Behaviour or item | Built (E6) or new | Check mirror pair (matched A ↔ B) |
+|---|---|---|
+| C09-B1 ↔ C09-B9 keep client details out of others' sight | new (overlooked check; camera check) | a screen-in-public item ↔ a camera-in-shot item (the built before and after) |
+| C09-B2 choose a network / fake Wi-Fi page | **builds on** E6's channel items; new Wi-Fi item | a "wants your work password" page ↔ a look-alike network item |
+| C09-B3 handle a call in public | new | an overheard-code call ↔ a code-readout request |
+| C09-B4 / C09-B6 keep devices with you or locked away | new | a laptop-left-in-a-café item ↔ a device-in-a-hotel-room item |
+| C09-B7 report a lost or stolen device the same evening | new (incident report) | a lost-tablet first-steps item ↔ a lost-phone first-steps item |
+| C09-B11 seats, risks and networks | "Who's Watching?" | matched spot-the-risk items split across the two forms |
+
+The question bank below is the source pool. Reporting is never penalised. The discrimination figure goes to organisers only.
+
 ## Knowledge check bank
 
-Six items per sitting, drawn so that every learning outcome is covered. Stems are short workplace situations.
+A pool of candidate items for the E6 extension (or a later episode) and the mobile check forms, covering every learning outcome. Stems are short workplace situations.
 
 ### C09-Q1 (C09-LO1, hotspot, easy)
 
@@ -161,7 +176,7 @@ You need to show a client one document on a video call. You have your inbox and 
 ## Completion and pass rules
 
 - **Complete** when the learner has played through all beats (or the text route), shown each critical behaviour or been taken through the remediation loop for it, passed the knowledge check, and opened the reference card.
-- **Pass mark:** 5 of 6 (the organisation can change it; 80% is the default).
+- **No default pass mark.** The pre and post checks are `passPercent` 0: no pass or fail, and the missions are completion-scored. The post-check shows the change from the newest pre-check. A pass mark or certificate is a later organisation option set on the post-check percent, not a default.
 - **Retakes:** a failed check draws six new items. After two fails, Zainab replays the Learn beat before the third attempt.
 - **Test-out** (where the organisation allows it, off by default): the Apply beat and the check without Learn and Practise. It passes when the check is passed and every critical behaviour is shown first time; otherwise the learner goes through the full module, with no "failed" label. Recommended for annual renewals rather than a first sitting.
 

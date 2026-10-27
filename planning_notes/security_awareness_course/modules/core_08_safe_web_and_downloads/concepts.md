@@ -112,14 +112,14 @@ Use these as background and inspiration only. Game content uses fictional names 
 
 ## Organisation-specific slots
 
-| Slot | Default (Larkspur) |
+| Slot | Default (Quayholt) |
 |---|---|
-| Software portal name and location | "Larkspur Apps", linked from The Lark's home page and the browser's bookmarks bar |
-| How to request software or an extension | The "Request something else" form in Larkspur Apps; answered within one working day |
-| Approved browser and extensions | Larkspur's managed browser; extensions only from the approved list in Larkspur Apps |
-| How to report a website | The Report button on the browser toolbar, the "Report an incident" form on The Lark, or the security team on extension 4444 |
-| Approved document converter | "DocShift", in Larkspur Apps |
-| Bookmarks for key sites | The Lark's "Bookmarks" page: Ledger, supplier portals, the HR system |
+| Software portal name and location | "Quayholt Apps", linked from the staff intranet's home page and the browser's bookmarks bar |
+| How to request software or an extension | The "Request something else" form in Quayholt Apps; answered within one working day |
+| Approved browser and extensions | Quayholt's managed browser; extensions only from the approved list in Quayholt Apps |
+| How to report a website | The Report button on the browser toolbar, the "Report an incident" form on the staff intranet, or the security team on extension 4444 |
+| Approved document converter | "DocShift", in Quayholt Apps |
+| Bookmarks for key sites | the staff intranet's "Bookmarks" page: Ledger, supplier portals, the HR system |
 | After pasting, downloading or calling | Call the security team on extension 4444, or the 24/7 service desk out of hours; follow the device instruction (core_04) |
 
 ## Glossary
