@@ -410,8 +410,15 @@ function substituteFlags(node, at) {
         if (/tutorial/i.test(bl.classes) || /tutorial/i.test(bl.text)) {
           pick = labels.find(l => tutorial === 'accept' ? /yes/i.test(l) : /no|figure/i.test(l));
         } else if (/resume|session/i.test(bl.id || '') || /RESUME SESSION/i.test(bl.text)) {
-          const want = { resume: /^resume$/i, restart: /restart/i, new: /new session/i }[resume];
-          pick = labels.find(l => want.test(l));
+          // The overlay's own button can carry an icon or arrow ("▶ Resume"), so match the word,
+          // not the whole label; "Resume session" headings are not buttons. Never paginate the
+          // OTHER SESSIONS list (Prev/Next): that is what looped for minutes after a reload.
+          const want = { resume: /\bresume\b/i, restart: /\brestart\b/i, new: /new session/i }[resume];
+          pick = labels.find(l => want.test(l) && !/prev|next|load session/i.test(l));
+          if (!pick) {
+            throw new Error(`bootstrap: the resume overlay has no "${resume}" button (buttons: ${labels.join(' | ')}). `
+              + `Click it with dismiss or eval, then call bootstrap again.`);
+          }
         }
         // NEVER fall back to a "Load session #N" entry: those are links to
         // other games, and clicking one abandons the game under test.

@@ -119,6 +119,24 @@ export function kindVerdictLine(kind, isPhish, verdict) {
     return null;
 }
 
+/**
+ * A short, clean name for an item inside a sentence (the result's "You trusted the real ones"
+ * line). A text, call, voicemail, notice or prompt is named by who it came from; an email by its
+ * subject. A title that was cut short with trailing dots loses them, so no quote closes on "..."
+ * (P6-7, P5-6).
+ */
+export function shortTitle(msg) {
+    const strip = (t) => String(t || '').replace(/\s*(?:\.{3,}|\u2026)\s*$/, '').replace(/[,;:\s]+$/, '').trim();
+    const from = isObj(msg?.from) ? msg.from : null;
+    const who = from ? (from.name || '') : (typeof msg?.from === 'string' ? msg.from : '');
+    const subject = isStr(msg?.subject) ? msg.subject : '';
+    if (isNonEmail(msg)) {
+        const caller = isStr(msg?.callerId) ? msg.callerId : who;
+        return strip(caller || subject || defaultSubject(msg));
+    }
+    return strip(subject || who);
+}
+
 /** A list subject for a kind that has none of its own. */
 export function defaultSubject(msg) {
     const kind = kindOf(msg);

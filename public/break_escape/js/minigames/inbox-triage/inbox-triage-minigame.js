@@ -50,7 +50,7 @@ import {
 } from './triage-flags.js';
 import {
     kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, KIND_LABEL,
-    CALL_ACTIONS, PUSH_ACTIONS
+    CALL_ACTIONS, PUSH_ACTIONS, shortTitle
 } from './triage-kinds.js';
 import { comparisonFor, comparisonText } from './triage-comparison.js';
 
@@ -1143,7 +1143,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         if (this.set?.genuineFeedback === false) return null;
         return genuineFeedback({
             messages: this.messages, answers: this._answerList(), profile: this.profile,
-            titleOf: (m) => this._cardTitle(m), actionLabel: (m, a) => this._actionLabel(m, a)
+            titleOf: (m) => shortTitle(m) || this._cardTitle(m), actionLabel: (m, a) => this._actionLabel(m, a)
         });
     }
 
