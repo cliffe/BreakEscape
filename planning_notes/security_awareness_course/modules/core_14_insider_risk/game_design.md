@@ -89,7 +89,7 @@ The built debrief view:
 
 No option shames the player. Ross is not a monster and Craig is not malicious; Samira is never punished for being suspected, and the learner is never punished for an honest concern that turns out to be nothing. The only behaviours the game marks down are the ones that harm people: sharing access, engaging with criminals, investigating colleagues and spreading rumours.
 
-## Minigames and systems
+## Minigames
 
 | System | Status | Use here |
 |---|---|---|
@@ -102,12 +102,16 @@ No option shames the player. Ross is not a monster and Craig is not malicious; S
 
 The night-shift insider deduction board of design 12 use case B is a separate, later, richer build on the intel board, not part of this episode.
 
-## Concept panels
+## Explainers
 
 - A short panel on the **spectrum of intent** (accidental, careless, deliberate), with three examples.
 - A short panel on **whistleblowing or leaking** (protected routes against leaking), opened also by Ross's "I'm a whistleblower" claim.
 
 No video. No runtime language model. The offer message, the replies and the feedback are authored data or ink.
+
+## Debrief
+
+The built episode debrief, as set out under "Structure" above: a reasoning card per item, feedback on the genuine items, the "team protected" tally, the habit to keep, the "On Monday" card, the customer's reporting route and the no-blame line.
 
 ## Variants
 

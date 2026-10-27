@@ -4,7 +4,9 @@ The built product scores the **defend half** (the `awareness` profile: 60 for th
 
 This file maps the module's behaviours and question items onto **defend items** (Swap Shop and the found-media cards) and **check items** (in the general check forms), as **mirror pairs**.
 
-## Assessed behaviours as defend and check items
+## Assessed behaviours
+
+Each behaviour below is now measured as defend and check items.
 
 | Id | Behaviour | Learning outcome | Evidenced by |
 |---|---|---|---|
@@ -18,7 +20,9 @@ This file maps the module's behaviours and question items onto **defend items** 
 
 **Before and after.** The matched measure is the pre-check against the post-check on the removable-media and shadow-IT items, plus the first-answer records in the defend half. Within the episode, the consequence montage shows the contrast between an unknown stick before the lesson (in the sandbox) and after it (the posted-stick card).
 
-## Critical behaviours as mirror pairs
+## Critical behaviours
+
+Each critical behaviour is now a mirror pair (aw5).
 
 - **C13-CB1 Not plug in an unexpected USB stick:** the posted-stick card is paired with a genuine delivery the learner can accept, so "never plug in" is distinguished from refusing everything.
 - **C13-CB2 Not send work files to a personal account:** the personal-email item is paired with a genuine "work from home" need met by the approved route.
@@ -26,7 +30,9 @@ This file maps the module's behaviours and question items onto **defend items** 
 
 No loop-back and no default pass mark: a learner who misses an item meets a similar one next, and the first answer is recorded.
 
-## Item pool: check forms and defend set
+## Knowledge check bank
+
+Item pool: check forms and defend set.
 
 The question bank is kept as a pool of candidate items, written as mirror pairs. Stems are short workplace situations.
 
@@ -134,7 +140,7 @@ You'd like to sync the shared drive to your personal cloud so you can read files
 - "Which tool at work is slow or awkward enough that you've worked round it? Who have you told?"
 - For facilitated sessions: "What's living in a personal account or a free app in our team right now, and how would we move it?"
 
-## Completion
+## Completion and pass rules
 
 A run is complete when the learner has played the episode (or the defend-only variant, or the text route). Scoring lives only in the defend half and the checks; there is no default pass mark. An organisation may set a pass mark on the post-check percent later, through the platform.
 

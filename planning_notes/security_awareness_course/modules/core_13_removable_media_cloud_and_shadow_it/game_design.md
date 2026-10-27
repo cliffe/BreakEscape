@@ -83,7 +83,7 @@ Then Nilesh reveals the test: *"That stick in the post was ours. Authorised test
 
 No option shames the player or Colin. The montage shows what the shortcuts cost without making anyone a fool, and Colin is the one who asks "why did nobody tell me it was this easy?"
 
-## Minigames and systems
+## Minigames
 
 | System | Status | Use here |
 |---|---|---|
@@ -95,12 +95,16 @@ No option shames the player or Colin. The montage shows what the shortcuts cost 
 | Swap drill | new | Match a shortcut to its approved swap |
 | Sharing-settings surface variations | new (small) | The departed-owner, "anyone with the link" states |
 
-## Concept panels
+## Explainers
 
 - A short panel on the **four "no"s** of unapproved tools (no contract, no control, no backup, no off switch).
 - A short panel on **found media** (don't plug it in; hand it to IT).
 
 No video beyond the montage (a built device). No runtime language model.
+
+## Debrief
+
+The built episode debrief, as set out under "Structure" above: a reasoning card per item, feedback on the genuine items, the "team protected" tally, the habit to keep, the "On Monday" card, the customer's reporting route and the no-blame line.
 
 ## Variants
 

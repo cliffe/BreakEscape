@@ -80,7 +80,7 @@ The board is shown again, most found facts now closed, each annotated with the s
 
 Scoring is the built `awareness` profile (60 for the verdict, 40 for naming the real flags; reporting is never penalised, so an unsure learner who reports loses nothing). No option shames the player.
 
-## Minigames and systems
+## Minigames
 
 | System | Status | Use here |
 |---|---|---|
@@ -93,12 +93,16 @@ Scoring is the built `awareness` profile (60 for the verdict, 40 for naming the 
 | Privacy-settings surface | new | Tighten a profile; each change closes a found fact |
 | Feed drill ("Post or Not?") | new | Mark draft posts Post, Tweak or Hold |
 
-## Concept panels
+## Explainers
 
 - A short panel on **privacy settings** (who sees posts, tags, connections, location, old posts) in the defend half.
 - A short panel on **who speaks for the organisation**, from the organisation profile.
 
 No video. No runtime language model. The pretext message, the flip line, the feedback strings and any assistant text are authored data or ink.
+
+## Debrief
+
+The built episode debrief, as set out under "Structure" above: a reasoning card per item, feedback on the genuine items, the "team protected" tally, the habit to keep, the "On Monday" card, the customer's reporting route and the no-blame line.
 
 ## Variants
 

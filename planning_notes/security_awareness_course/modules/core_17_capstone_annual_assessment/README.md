@@ -90,7 +90,7 @@ The mixed edition is a sequence of built missions an organiser places in one eve
 - **Companies:** the brand-set companies whose defend sets the edition draws on (Brightwell, Tarrowby, Quayholt, Merrin & Sallow), so the mix is realistic and cross-channel.
 - **Host:** a neutral proctor for the brief and debrief; Graham Whitfield (an existing check-mission host) is the default. The proctor says one line of welcome and carries the event mapping that completes the shell once the result has synced.
 
-## Systems reused
+## Reuse from existing Break Escape content
 
 - the seven episodes' **defend sets** and their defend-only variants, under the `awareness` profile;
 - the six roles' **pre and post check forms** (AB and BA), with the platform's carry-over that shows the change;
@@ -98,6 +98,11 @@ The mixed edition is a sequence of built missions an organiser places in one eve
 - the **episode runner** and step strip.
 
 New (for the mixed edition): the edition definition (which defend sets, in which order) and the "what changed this year" brief. The single-day narrative, the chain view, the private year profile and spotlights, and the team event are **proposed, later** extensions on top of this.
+
+## New features needed
+
+See the items marked New in "Build status" above.
+
 
 ## Organisation-specific content
 

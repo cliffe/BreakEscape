@@ -4,7 +4,9 @@ The capstone measures with the built tools: the **pre and post check forms** (th
 
 This file maps the capstone's behaviours and question items onto **defend items** (drawn from the year's episodes) and **check items** (the role forms and the capstone's own pool), as **mirror pairs**. The year profile and spotlights are a **proposed, later** extension that reads these same records; they are not built in the first edition.
 
-## Assessed behaviours as defend and check items
+## Assessed behaviours
+
+Each behaviour below is now measured as defend and check items.
 
 Each behaviour id is kept and tied to the capstone's own outcome and the core-module outcomes it re-tests. Each is now evidenced by a defend item in the mixed run or by a check item, not by a Secure / Developing / Not yet rubric; partial flag scores and the Verify verdict carry the middle ground.
 
@@ -31,7 +33,9 @@ Each behaviour id is kept and tied to the capstone's own outcome and the core-mo
 
 C17-B14 and C17-B15 depend on the proposed single-day narrative and are not measured by the mixed edition; they are noted for the later extension.
 
-## Critical behaviours as mirror pairs
+## Critical behaviours
+
+Each critical behaviour is now a mirror pair (aw5).
 
 - **C17-CB1 Never giving away a login or a code, or letting a stranger connect:** the shared-login, kiosk-call and MFA items are each paired with a genuine counterpart of the same channel, so declining-and-routing is distinguished from refusing everything.
 - **C17-CB2 Never approving or vouching for a change of bank details without a call-back on the number on record:** the bank-change item is paired with a genuine invoice.
@@ -39,7 +43,9 @@ C17-B14 and C17-B15 depend on the proposed single-day narrative and are not meas
 
 No loop-back and no default pass mark: a learner who misses an item meets a similar one in the mix; the first answer is recorded.
 
-## Item pool: the capstone's own check items
+## Knowledge check bank
+
+Item pool: the capstone's own check items.
 
 The role check forms supply most of each edition's check items. The capstone's own pool below adds items that test the capstone's outcomes (chains, busy days, helping a colleague). Written as mirror pairs. Stems are short workplace situations.
 
@@ -144,7 +150,7 @@ You realise something you did earlier might have been a mistake, and it's nearly
 - "Which item today felt most like your real job? On your next busy day, where would a chain like today's start?"
 - For a team event: "Where did your table disagree, and who changed whose mind?"
 
-## Completion
+## Completion and pass rules
 
 A run is complete when the learner has played the mixed edition (or the text route, or the team event plus their individual check where the organisation allows it) and taken the pre and post checks. Scoring lives only in the defend items and the checks; **there is no default pass mark**. An organisation may set a pass mark on the post-check percent as a later option, through the platform. Test-out is not offered: the capstone is the annual assessment.
 

@@ -97,7 +97,7 @@ Each card carries an id, the situation, the default answer, the reason and, for 
 
 No option shames the player. "Ask first" always scores at least a point, because punishing caution stops people asking.
 
-## Minigames and systems
+## Minigames
 
 | System | Status | Use here |
 |---|---|---|
@@ -107,12 +107,16 @@ No option shames the player. "Ask first" always scores at least a point, because
 | Awareness-measure records | built | Per-item id, verdict, chips, score, stage and time |
 | Three-way "sort" surface | new (small) | Allowed / Not allowed / Ask first for the card items |
 
-## Concept panels
+## Explainers
 
 - A short panel on the **three answers** and **five responsibilities**.
 - A short panel on **monitoring and its limits** (what's checked, why, and the limits that protect staff).
 
 No video. No runtime language model. The approved AI assistant in card S08 is the authored one from core_15.
+
+## Debrief
+
+The built episode debrief, as set out under "Structure" above: a reasoning card per item, feedback on the genuine items, the "team protected" tally, the habit to keep, the "On Monday" card, the customer's reporting route and the no-blame line.
 
 ## Variants
 

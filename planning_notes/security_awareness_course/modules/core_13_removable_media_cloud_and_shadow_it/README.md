@@ -81,7 +81,7 @@ One training-room mission, with the pre-check and post-check as the bracketing m
 - **Host:** Nilesh Solanki, Tarrowby IT service desk analyst, who welcomes the learner, supplies the quick yes, and reveals the authorised USB-drop test in the debrief.
 - **Cast:** Colin Mather (warehouse manager, from E2) offers the shortcuts, likeable and in a hurry; Shauna Lofthouse (depot, from E6) rings about the rota. The client contact and the departed agency temp are phone-only or off-screen (proposed, consistent with `BRAND_SET.md`).
 
-## Systems reused
+## Reuse from existing Break Escape content
 
 - the **mail client** with a recipient check (the "Me (personal)" trap in autocomplete);
 - a **share** from the approved file-sharing service (named recipient, an end date, a notice when opened), as in core_06, and a free app's sharing panel ("anyone with the link can edit"; an owner who has left);
@@ -89,7 +89,11 @@ One training-room mission, with the pre-check and post-check as the bracketing m
 - the **consequence flip** ("six months later" montage) in place of the attack-then-flip beat;
 - **awareness-measure** records.
 
-New: a sharing-settings surface and the swap drill (match a shortcut to its approved swap). Both are overlays; the episode needs no new room.
+## New features needed
+
+A sharing-settings surface and the swap drill (match a shortcut to its approved swap). Both are overlays; the episode needs no new room.
+
+
 
 ## Organisation-specific content
 

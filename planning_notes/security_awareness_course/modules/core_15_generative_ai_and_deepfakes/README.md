@@ -96,7 +96,7 @@ One training-room mission, with the pre-check and post-check as the bracketing m
 - **The deepfakes reuse the real cast:** Ravinder Sandhu (the CEO cloned in E7) on the video call; Adaeze Okafor (finance manager) alongside him; Tom Reilly (accounts payable clerk) as the cloned-voice voicemail. Separate NPC ids with identical art and voice settings, so nothing gives them away but the request and the channel.
 - **The assistant:** "Brightwell Assist", a friendly pixel robot, chat avatar and text only, so it never sounds like a person. Authored data only, no runtime language model.
 
-## Systems reused
+## Reuse from existing Break Escape content
 
 - the **voicemail player** (the cloned-voice voicemail, with a transcript);
 - the **video-call mode** with the workplace skin (the demo and the Project Heron call), with a Leave button and participant tags;
@@ -104,7 +104,11 @@ One training-room mission, with the pre-check and post-check as the bracketing m
 - the **flip**/announced-demo empathy beat;
 - **awareness-measure** records.
 
-New: the authored AI-assistant surface (a chat window with a paste panel to strike out lines before sending, classification tags, a "Check source" action on each claim, and a "summarise my emails" mode). All its replies are authored, with no runtime language model.
+## New features needed
+
+The authored AI-assistant surface (a chat window with a paste panel to strike out lines before sending, classification tags, a "Check source" action on each claim, and a "summarise my emails" mode). All its replies are authored, with no runtime language model.
+
+
 
 ## Organisation-specific content
 

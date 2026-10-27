@@ -4,7 +4,9 @@ The built product scores the **defend half** (the `awareness` profile) and the *
 
 This file maps the module's behaviours and question items onto **defend items** (the "can I?" set and the two triage items) and **check items**, as **mirror pairs**. The policy acknowledgement is a **later platform option** and is not scored.
 
-## Assessed behaviours as defend and check items
+## Assessed behaviours
+
+Each behaviour below is now measured as defend and check items.
 
 | Id | Behaviour | Learning outcome | Evidenced by |
 |---|---|---|---|
@@ -21,14 +23,18 @@ This file maps the module's behaviours and question items onto **defend items** 
 
 **Before and after.** The matched measure is the pre-check against the post-check on the acceptable-use items, plus the first-answer records in the defend half. The sandbox's meeting-link choice and the defend half's app-install card are the same judgement before and after the lesson.
 
-## Critical behaviours as mirror pairs
+## Critical behaviours
+
+Each critical behaviour is now a mirror pair (aw5).
 
 - **C16-CB1 Not installing unapproved software without asking:** the app-install meeting link is paired with a genuine client meeting the learner can join in a browser, so "ask first" is distinguished from refusing the client.
 - **C16-CB2 Not looking at personal data without a work reason:** the lookup request is paired with a genuine, work-reasoned lookup, so declining-the-personal-one is the measured behaviour.
 
 No loop-back and no default pass mark: a learner who misses an item meets a similar one next; the first answer is recorded. **The acknowledgement** is not rated and never a fail; it is a later platform option, recorded by the platform when built.
 
-## Item pool: check forms and defend set
+## Knowledge check bank
+
+Item pool: check forms and defend set.
 
 The question bank is kept as a pool of candidate items. **Org** items take their answer from the organisation's answer key (example defaults shown); **locked** items are the same everywhere. Written as mirror pairs. Stems are short workplace situations.
 
@@ -138,7 +144,7 @@ A rule stops you doing an important part of your job. What's the best move?
 - "Which rule at work have you followed without knowing why? Who could you ask?"
 - For facilitated sessions: "Which of our rules is hardest to follow in your team, and what would make the right way easier?"
 
-## Completion
+## Completion and pass rules
 
 A run is complete when the learner has played the episode (or the defend-only shell, or the text route). Scoring lives only in the defend half and the checks; there is no default pass mark. **The policy acknowledgement is a later platform option:** when built, it is recorded by the platform with the policy and its version; a pending question is recorded as pending, never as a fail.
 

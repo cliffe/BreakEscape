@@ -85,7 +85,7 @@ One training-room mission, with the pre-check and post-check as the bracketing m
 - **Host:** Anjali Rao, information security analyst (the Quayholt analyst who receives reports), who welcomes the learner and takes the concern.
 - **Cast (proposed, consistent with `BRAND_SET.md`, surname clash check before release):** the leaver (an account manager, passed over, joining a competitor, who has talked himself into "my contacts"); the false lead (a colleague having a hard week, whose father is in hospital); the rumour-spreader (a likeable colleague who loves a theory); the login-borrower (a colleague locked out); an HR partner and a DPO as concern routes. The "talent partner" is an unknown contact on a messaging app, text only, no art.
 
-## Systems reused
+## Reuse from existing Break Escape content
 
 - **inbox triage** with `call`, `push` and email cards, Report always visible, Verify where it fits;
 - the **influence global** and its thresholds, for how the leaver and the false lead respond to the learner;
@@ -93,7 +93,11 @@ One training-room mission, with the pre-check and post-check as the bracketing m
 - the **MFA authenticator** demo (the night-time prompt storm, one decision; core_03 teaches it in full);
 - **awareness-measure** records.
 
-New: a "raise a concern" fact-chip form (what, when, where, who; conclusions allowed but flagged in feedback; a route picker). It is a small extension of the triage surface. The deduction board of design 12 use case B is a separate, later, richer build.
+## New features needed
+
+A "raise a concern" fact-chip form (what, when, where, who; conclusions allowed but flagged in feedback; a route picker). It is a small extension of the triage surface. The deduction board of design 12 use case B is a separate, later, richer build.
+
+
 
 ## Organisation-specific content
 

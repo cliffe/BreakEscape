@@ -84,14 +84,18 @@ One short training-room mission, with the pre-check and post-check as the bracke
 - **Host:** a proposed Marrowdale host (an office coordinator or the service-desk lead), who welcomes the learner and gives the reason behind each answer. Named when the company is added to `BRAND_SET.md`.
 - Alternatively, to avoid a new company, the episode can be hosted at any existing brand-set company; Marrowdale is the recommended demonstration of the "proposed new company" path (brief, R2).
 
-## Systems reused
+## Reuse from existing Break Escape content
 
 - **inbox triage** for the two items that map onto a verdict (the app-install meeting link, a request to look up a record), Report always visible;
 - the **consequence flip** (the montage) in place of the attack-then-flip beat;
 - the **organisation answer key** (the "can I?" items read the organisation's own answer and reason);
 - **awareness-measure** records.
 
-New: a three-way "sort" surface for the Allowed / Not allowed / Ask first items (a small extension of the triage set), and the answer-key binding. Both are overlays; no new room.
+## New features needed
+
+A three-way "sort" surface for the Allowed / Not allowed / Ask first items (a small extension of the triage set), and the answer-key binding. Both are overlays; no new room.
+
+
 
 ## Organisation-specific content
 

@@ -72,6 +72,8 @@ Each has a working answer in the plan; confirm or change.
 | Name of the new-starter path | "the new-starter path" for now (was Induction Essentials) | overview, hacktivity |
 | Outcome-rating bands, if ever reported | Starting point only: bands at 80 and 50; pre-check weight 0, post-check weight 2 | `features/assessment_and_evidence.md` |
 | "Delivered today" compliance claims | Check they are not overstated before any customer sees them | `02_COMPLIANCE_MAPPING.md` |
+| Companies for E8 to E13 disagree between files | The module designs say E8 Quayholt, E9 Tarrowby, E10 Quayholt, E11 Carrholme Services (proposed), E12 Merrin & Sallow, E13 Brightwell; `03_WORLD_AND_CAST.md` and `features/explainers_video_and_npc.md` give a different set. Recommendation: adopt the module designs (they hold the detail) and align the other two files. Asked on the build review page | modules, 03, explainers |
+| Proposed new names to add to `BRAND_SET.md` after a web search | Carrholme Services (E11), Cobbleford Care and Lintgate Communications (03 alternatives), Marrowdale Facilities (core_16), Harbreck Facilities Group (role_01 board crisis), Stavely Software (role_04), Beckside Hospitals NHS Trust (sector_01), "Deskmate" (the authored AI assistant), `brightwell-support.example` | modules, minigames |
 | Kids game verdicts and habit | Kids sorter verdicts "Trust" and "Tell a grown-up" (a third, "Leave it", open); fix the kids habit word for word as the adult rule is | `../kids_cyber_game/` |
 
 ## Module-level open questions

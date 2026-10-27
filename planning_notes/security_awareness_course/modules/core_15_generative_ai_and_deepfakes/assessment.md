@@ -4,7 +4,9 @@ The built product scores the **defend half** (the `awareness` profile: 60 for th
 
 This file maps the module's behaviours and question items onto **defend items** (the supplier email, the voicemail, the video call, the colleague's paste) and the **assistant beats**, plus **check items**, as **mirror pairs**.
 
-## Assessed behaviours as defend and check items
+## Assessed behaviours
+
+Each behaviour below is now measured as defend and check items.
 
 | Id | Behaviour | Learning outcome | Evidenced by |
 |---|---|---|---|
@@ -20,7 +22,9 @@ This file maps the module's behaviours and question items onto **defend items** 
 
 **Before and after.** The matched measure is the pre-check against the post-check on the AI and deepfake items, plus the first-answer records in the defend half. Within the episode, the announced demo call (C15-B2) and the unannounced video call (C15-B8) are a second, in-episode before-and-after on the same verify-another-way habit.
 
-## Critical behaviours as mirror pairs
+## Critical behaviours
+
+Each critical behaviour is now a mirror pair (aw5).
 
 - **C15-CB1 Keep passwords and Restricted information out of AI tools:** the strike-out beats pair a document that needs trimming with one that is fine to paste whole, so trimming is the measured behaviour.
 - **C15-CB2 Check AI output before sending it:** the draft pairs an invented figure with a true figure of the same shape, so checking is distinguished from a blanket distrust of the tool.
@@ -28,7 +32,9 @@ This file maps the module's behaviours and question items onto **defend items** 
 
 No loop-back and no default pass mark: a learner who misses an item meets a similar one next; the first answer is recorded.
 
-## Item pool: check forms and defend set
+## Knowledge check bank
+
+Item pool: check forms and defend set.
 
 The question bank is kept as a pool of candidate items, written as mirror pairs. Stems are short workplace situations. Tool names come from the organisation profile.
 
@@ -140,7 +146,7 @@ A colleague tells you they pasted a customer spreadsheet into a free chatbot yes
 - "What's one thing you'd now take out before pasting into an AI tool, and one request you'd now check another way?"
 - For facilitated sessions: "What would make it feel normal here to ring a senior leader back to check it's really them?"
 
-## Completion
+## Completion and pass rules
 
 A run is complete when the learner has played the episode (or the defend-only variant, or the text route). Scoring lives only in the defend half and the checks; there is no default pass mark.
 

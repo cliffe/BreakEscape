@@ -77,7 +77,7 @@ Then "where the fakes came from", in a concept panel: a wall of public material 
 
 No option shames the player. The demo fools nearly everyone and is announced; Mei Lin is shown coming round; every branch where something went wrong ends with a report that still helps, credited in the debrief.
 
-## Minigames and systems
+## Minigames
 
 | System | Status | Use here |
 |---|---|---|
@@ -88,7 +88,7 @@ No option shames the player. The demo fools nearly everyone and is announced; Me
 | Awareness-measure records | built | Per-item id, verdict, chips, score, stage and time |
 | Authored AI-assistant surface | new | A chat window with a strike-out paste panel, classification tags, a "Check source" action and a "summarise my emails" mode; authored replies only, no runtime language model |
 
-## Concept panels
+## Explainers
 
 - The **approved-or-public** panel (two tools side by side with their small print).
 - The **traffic-light** panel (what goes into which tool, by information class).
@@ -96,6 +96,10 @@ No option shames the player. The demo fools nearly everyone and is announced; Me
 - "**Where the fakes came from**" (sources, not steps), in the debrief.
 
 No video beyond the in-call footage. No runtime language model anywhere.
+
+## Debrief
+
+The built episode debrief, as set out under "Structure" above: a reasoning card per item, feedback on the genuine items, the "team protected" tally, the habit to keep, the "On Monday" card, the customer's reporting route and the no-blame line.
 
 ## Variants
 

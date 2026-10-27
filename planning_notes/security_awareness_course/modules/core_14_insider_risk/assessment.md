@@ -4,7 +4,9 @@ The built product scores the **defend half** (the `awareness` profile: 60 for th
 
 This file maps the module's behaviours and question items onto **defend items** (the offer, shared-login, prompt and favour cards, and the "raise a concern" step) and **check items**, as **mirror pairs**.
 
-## Assessed behaviours as defend and check items
+## Assessed behaviours
+
+Each behaviour below is now measured as defend and check items.
 
 | Id | Behaviour | Learning outcome | Evidenced by |
 |---|---|---|---|
@@ -21,7 +23,9 @@ This file maps the module's behaviours and question items onto **defend items** 
 
 **Before and after.** The matched measure is the pre-check against the post-check on the insider-risk items, plus the first-answer records in the defend half. The sandbox's login request and the defend half's shared-login card are the same request before and after the lesson.
 
-## Critical behaviours as mirror pairs
+## Critical behaviours
+
+Each critical behaviour is now a mirror pair (aw5).
 
 - **C14-CB1 Not share their login:** the shared-login card is paired with a genuine locked-out colleague, so declining-and-routing is distinguished from refusing everything.
 - **C14-CB2 Report the outside offer:** the offer card is paired with a genuine recruiter or benefits message of the same shape, so Report is distinguished from deleting a real message.
@@ -29,7 +33,9 @@ This file maps the module's behaviours and question items onto **defend items** 
 
 No loop-back and no default pass mark: a learner who misses an item meets a similar one next; the first answer is recorded.
 
-## Item pool: check forms and defend set
+## Knowledge check bank
+
+Item pool: check forms and defend set.
 
 The question bank is kept as a pool of candidate items, written as mirror pairs. Stems are short workplace situations.
 
@@ -145,7 +151,7 @@ On his last day, a leaver asks you to send him "his" customer contacts, because 
 - "What would make you hesitate to raise a concern here, and what would make it easier?"
 - For facilitated sessions: "Where's the line between looking out for each other and keeping tabs on each other?"
 
-## Completion
+## Completion and pass rules
 
 A run is complete when the learner has played the episode (or the defend-only variant, or the text route). Scoring lives only in the defend half and the checks; there is no default pass mark. Individual choices in this module are learning records, not conduct records: the organisation sees them only in aggregate, and they are never used to judge an individual's character.
 

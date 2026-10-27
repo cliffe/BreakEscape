@@ -82,7 +82,7 @@ The episode is one training-room mission: the learner taps the kiosk and the epi
 - **OSINT subject:** Oskar Berglund, a junior architect who posts a lot (reuse of the E4 cast; his oversharing detail is proposed, consistent with `BRAND_SET.md`).
 - **Impersonated senior:** Catherine Merrin (the managing partner impersonated in E4), for the fake-profile item.
 
-## Systems reused
+## Reuse from existing Break Escape content
 
 - the **OSINT browser** and **intel board** with typed intel facts and reduce notes (all built attack halves);
 - the **template composer** and **phish rules engine** for the one pretext message, with the red-flag meter;
@@ -91,7 +91,11 @@ The episode is one training-room mission: the learner taps the kiosk and the epi
 - **awareness-measure** records;
 - the **look-alike NPC guard** for the fake senior profile.
 
-New: a privacy-settings surface (tighten a profile; each change closes a found fact on the board) and a feed drill ("Post or Not?"). Both are overlays, so the episode needs no new room beyond the training room.
+## New features needed
+
+A privacy-settings surface (tighten a profile; each change closes a found fact on the board) and a feed drill ("Post or Not?"). Both are overlays, so the episode needs no new room beyond the training room.
+
+
 
 ## Organisation-specific content
 

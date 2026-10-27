@@ -4,7 +4,9 @@ The built product scores two things: the **defend half** of the episode (the `aw
 
 This file maps the module's behaviours and question items onto **defend items** (in the episode's defend set) and **check items** (in the general check forms), with **mirror pairs** so that a pre-check item has a matched post-check item of the same shape.
 
-## Assessed behaviours as defend and check items
+## Assessed behaviours
+
+Each behaviour below is now measured as defend and check items.
 
 The behaviour ids are kept. Each is now evidenced by a defend item or a check item, not by a Secure / Developing / Not yet rubric; the "developing" ground is covered by partial flag scores and by the Verify verdict where a set uses it.
 
@@ -20,7 +22,9 @@ The behaviour ids are kept. Each is now evidenced by a defend item or a check it
 
 **Before and after.** The matched measure for each learner is the pre-check against the post-check on the social-media items (the same judgement, before and after the episode), plus the first-answer records inside the defend half. The pre-check is a separate mission played before the episodes; the post-check, after, shows the change.
 
-## Critical behaviours as mirror pairs
+## Critical behaviours
+
+Each critical behaviour is now a mirror pair (aw5).
 
 The built checks pair items (aw5): a phish and its matched genuine item, and an A-form item and its B-form mirror of the same shape and difficulty. The module's critical behaviours become paired items rather than loop-backs:
 
@@ -30,7 +34,9 @@ The built checks pair items (aw5): a phish and its matched genuine item, and an 
 
 There is no loop-back and no default pass mark. A learner who misses an item meets a *similar* item next (the author places one), not a retry of the same one; the first answer is the one recorded.
 
-## Item pool: check forms and defend set
+## Knowledge check bank
+
+Item pool: check forms and defend set.
 
 The question bank is kept as a pool of candidate items. Each becomes a defend item, a check item, or both, and items are written as **mirror pairs** (an A item and a matched B item). Stems are short workplace situations.
 
@@ -124,7 +130,7 @@ Why can a "we're away for two weeks" holiday post be a problem for work?
 - "If someone spent ten minutes looking at your public posts, what could they learn about where you work and how to reach your colleagues?"
 - For facilitated sessions: "Where is the line, for us, between a normal life online and giving an attacker a head start?"
 
-## Completion
+## Completion and pass rules
 
 A run is complete when the learner has played the episode (or the defend-only variant, or the text route). Scoring lives only in the defend half and in the checks. There is no default pass mark; an organisation may set a pass mark on the post-check percent as a later option, through the platform, not in this plan.
 

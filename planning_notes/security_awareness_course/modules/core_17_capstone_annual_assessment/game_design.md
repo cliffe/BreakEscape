@@ -56,7 +56,7 @@ The paired role post-check form. It imports the newest pre-check result and show
 
 Each defend item is the built `awareness` scoring: 60 for the verdict, 40 for naming the real flags, and reporting is never penalised, so the Report verdict is also the "I'm not sure" path. The debrief's per-item reasoning explains each. No item shames the learner; a late report in a chain-flavoured item is still credited as the right move. The decisions are the built verdicts (Trust, Report, Delete, and Verify where the set uses it) on the items the edition draws in; the module adds no scoring of its own.
 
-## Minigames and systems
+## Minigames
 
 | System | Status | Use here |
 |---|---|---|
@@ -74,6 +74,10 @@ Each defend item is the built `awareness` scoring: 60 for the verdict, 40 for na
 - The **debrief** per-item reasoning and the "where to report here" box.
 
 No video. No runtime language model. The brief and the feedback are authored data or ink.
+
+## Debrief
+
+The built episode debrief, as set out under "Structure" above: a reasoning card per item, feedback on the genuine items, the "team protected" tally, the habit to keep, the "On Monday" card, the customer's reporting route and the no-blame line.
 
 ## Variants
 
@@ -99,6 +103,10 @@ These build on the mixed edition and are not part of the first build:
 - **A team event** ("Year End Live"): tables play the same edition, decisions are table votes, reporting is literally how you leave an escape-room layer, and teams (never people) are ranked. It needs a facilitator console and the team-play surfaces.
 
 Each is a worthwhile later build; none is needed for the capstone to run as a measured annual assessment.
+
+## Alternative concepts
+
+None beyond the variants above.
 
 ## Art and audio
 
