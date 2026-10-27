@@ -1,6 +1,16 @@
 # Break Escape engine features (BE)
 
-The engine and in-game UI work the awareness course needs, one section per feature in `features/README.md` (BE-01 to BE-30). The ids are fixed. Each section says why the course needs the feature, what the engine already has (with paths), a design concrete enough to estimate, acceptance criteria, dependencies, and risks.
+The engine and in-game UI work the awareness course needs, one section per feature in `features/README.md` (BE-01 to BE-42). The ids are fixed. Each section says why the course needs the feature, what the engine already has (with paths), a design concrete enough to estimate, acceptance criteria, dependencies, and risks.
+
+**Build status, 2026-10-27.** This file was written before main built the social-engineering engine and the awareness product "Incident Simulations: Critical Cases" (`../04_BUILT_SO_FAR.md`). Where a design below and the build disagree, the build wins. Each BE section now opens with a **Build status** line: what exists, how the plan entry now extends it, or that it has dropped to P3. BE-31 to BE-42 are new ids for built systems the plan had no id for; their sections, at the end, describe them as they are. Per-id evidence: `../research/current_state_social_engineering_build.md`.
+
+How to read the older designs:
+
+- **Shape.** The seven beats are replaced by the built episode shape: brief, attack, flip, defend, debrief, with a defend-only variant and pre and post checks around the episodes (R3). Where a design says Hook read brief plus attack; Learn, the flip plus concept cards; Practise and Apply, the defend half; Check, the post-check; Reference, the "On Monday" card and the habit.
+- **World.** Larkspur Group is retired as a setting (R2). Each episode is a training room at a brand-set company (Brightwell Foods, Tarrowby Logistics, Quayholt Insurance, Merrin & Sallow Architects) with a host NPC. Organisation defaults are the episode's company. The mentor is replaced by the host (EX-01).
+- **Habit.** Every debrief carries the built rule of thumb word for word (R4): *"When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."*
+- **Assessment.** Pre and post checks with no default pass mark, scored only in the defend half and the checks, with mirror pairs (R6). Secure, Developing and Not yet ratings, critical-behaviour loop-backs and certificates are not defaults.
+- **No language model at runtime** (R10), and no video unless marked optional (R9).
 
 Paths: `JS/` is `public/break_escape/js/`. `game.rb` is `app/models/break_escape/game.rb`, `mission.rb` is `app/models/break_escape/mission.rb`, and "the controller" is `app/controllers/break_escape/games_controller.rb`. Line numbers are as found in October 2026.
 
@@ -13,46 +23,68 @@ Paths: `JS/` is `public/break_escape/js/`. `game.rb` is `app/models/break_escape
 5. **Accessible by default.** New UI is semantic HTML with keyboard support, focus handling, text equivalents and no time pressure, following `features/accessibility_and_inclusion.md`. BE-04 fixes the existing shell; it does not excuse new work.
 6. **Reuse before building.** Each design names the existing system it extends. Several features are mostly wiring: BE-19 generalises the `#clone_keycard` return-to-conversation pattern, BE-01 copies the command board's grow-only log, BE-13 uses the ERB randomisation every scenario already has.
 
+**Build status of these rules.**
+
+- Rule 1 is **built differently**: the one record is the awareness-measure record (BE-36). It holds ids, verdicts, chips, scores and times, never free text and never the learner's identity, and the first answer wins. It lives in game globals and reaches the platform only through the normal state sync and carry-over. Any richer record extends BE-36.
+- Rule 2 is **not built**: the judges (BE-40) and triage scoring run in the client and are deterministic. The build's convention is that awareness scoring reported to anyone else must be computed on a server path; that path is **New** and waits until the product is offered that way.
+- Rules 3 and 5 stand. The social overlays already follow the build's accessibility conventions (BE-04); the text route (BE-03) is still to build.
+- Rule 4 stands, and the built shells follow it.
+- Rule 6 now starts from the built systems: a new episode reuses BE-31 to BE-42 and MG-31 to MG-37 before anything here.
+
 ## Summary
 
-| Id | Feature | Priority | Size | Depends on | Modules that drive it |
-|---|---|---|---|---|---|
-| BE-01 | Assessed decisions | MVP | M | none (MG-20 for check items) | Every module; the model is core_01's C01-B1 to C01-B9 |
-| BE-02 | Debrief screen | MVP | M | BE-01 | Every module; core_01's threat-by-threat debrief |
-| BE-03 | Text route player | MVP | L | BE-01, BE-19, BE-08, BE-12 | Every module (10 to 15 minute text route) |
-| BE-04 | Accessibility baseline | MVP | L | BE-23 | Every module |
-| BE-05 | Organisation profile in game | MVP | M | HA-11 | core_00, core_01, core_04, core_05, core_06, core_16 and every reference card |
-| BE-06 | Localisation | P3 | L | BE-05, BE-13 | All modules, later |
-| BE-07 | Micro-drill launcher | P2 | M | BE-01, BE-13, BE-19, BE-03 shell | core_01 "Phish or Fine?" and every micro-drill in the catalogue |
-| BE-08 | Visual aids in conversations | MVP | M | BE-05 (cards) | EX-01 in every module; core_01's annotated hook email |
-| BE-09 | Intranet terminal | MVP | M | BE-05, BE-01, HA-07 | core_00, core_01, core_16, every Reference beat |
-| BE-10 | Spot-the-risk mode | P2 | M | BE-01, BE-04 | core_10, core_06, core_09, sector_01 |
-| BE-11 | Role switch | P2 | M | BE-24 | EX-06 interludes: core_01 alternative, core_02, core_10, core_12 |
-| BE-12 | Short sessions and resume | MVP | M | BE-01, BE-24 | Every module; field staff on phones |
-| BE-13 | Content banks and randomisation | P2 | M | BE-01 | core_01 email bank, core_17 annual edition, MG-20 banks, BE-07 |
-| BE-14 | xAPI statements | P2 | M | BE-01 | HA-10, HA-22 |
-| BE-15 | Facilitated group mode | P2 | M | BE-01, BE-23 | Every facilitated version; role_01 |
-| BE-16 | Time skips and consequence scenes | P2 | S | BE-23 | core_01, core_07, core_11 |
-| BE-17 | Cross-module memory | P3 | M | BE-01 | core_17, core_04 |
-| BE-18 | Work task and interruptions | MVP | M | BE-01, BE-19, BE-13 | core_01 (10:00 schedule), core_02, core_09, core_11, role_02 |
-| BE-19 | Open minigames from conversations and events | MVP | S | none | core_01 hook and check question; every EX-01 check |
-| BE-20 | Authorable tutorial, title screen and end screen | MVP | M | BE-05, BE-02, BE-04 | Every module; core_00 carries the full tutorial |
-| BE-21 | Workplace music and sound | P2 | S | BE-04 (sound captions) | Every module |
-| BE-22 | Tactic spotter card | P2 | S | BE-01, BE-02, BE-18 | core_02 (the social engineer bingo card) |
-| BE-23 | Pause and time scale | MVP | M | none | BE-04, BE-15, BE-16, BE-18; every module with timed pressure |
-| BE-24 | Place-player action | P2 | S | none | BE-11, BE-12, BE-16 |
-| BE-25 | Course avatars and inclusive name entry | MVP | S (engine), M (art) | none | Every module (inclusive content) |
-| BE-26 | Accessibility checks in CI | MVP | S | BE-03, BE-04, HA-23 | Every module |
-| BE-27 | Plain English lint | P2 | S | none | Every module |
-| BE-28 | Take an item from the player | P2 | S | none (BE-19 for handovers) | core_07 and physical-security beats |
-| BE-29 | NPC guide behaviour | P2 | S | BE-23, BE-24 | core_00 tour; escorting visitors |
-| BE-30 | Video call options | P2 | S | BE-08 | core_15 deepfake call; role_01 briefings |
+| Id | Feature | Build status | Priority | Size | Depends on | What drives it now |
+|---|---|---|---|---|---|---|
+| BE-01 | Assessed decisions | Built differently, by BE-40, triage scoring and BE-36 | P2 (was MVP) | S | BE-36 | Every episode and check |
+| BE-02 | Debrief screen | Built differently, by the episode debrief (BE-31) and flip view (BE-32) | P2 (was MVP) | S | BE-31, BE-01 extension | Every episode; core_17 chain view; role_06 call replay |
+| BE-03 | Text route player | Not built | MVP | L | BE-31, BE-36, BE-19 | Every episode and check |
+| BE-04 | Accessibility baseline | Partly built, by the social overlay conventions | MVP | M | BE-23 | Every episode |
+| BE-05 | Organisation profile in game | Partly built, by `social.awareness` and the brand wordmark | P2 (was MVP) | S | HA-11 (waits on the user) | Every debrief's report box |
+| BE-06 | Localisation | Not built | P3 | L | BE-05, BE-13 | All episodes, later |
+| BE-07 | Micro-drill launcher | Partly built, by check missions and defend-only shells | P2 | M | BE-13 | Spaced drills |
+| BE-08 | Visual aids in conversations | Not built | P2 (was MVP) | M | BE-19 | Only if an episode's host needs an image |
+| BE-09 | Intranet terminal | Not built; moot | P3 (was MVP) | M | BE-05, HA-07 | Only if a module needs it |
+| BE-10 | Spot-the-risk mode | Not built | P2 | M | BE-04 | E12 candidate; core_06, core_09 |
+| BE-11 | Role switch | Built differently, by the E3 role swap (BE-41) | P3 (done) | S | none | Later role swaps |
+| BE-12 | Short sessions and resume | Partly built, by per-stage episode state | P2 (was MVP) | S | BE-31 | Every episode |
+| BE-13 | Content banks and randomisation | Partly built, by forms A and B in AB and BA pairs | P2 | M | BE-36 | core_17 annual edition, BE-07 |
+| BE-14 | xAPI statements | Partly built, by `toXapi` (unused) | P2 | S | BE-36 | HA-10, HA-22 (wish list) |
+| BE-15 | Facilitated group mode | Partly built, by the `facilitated` flag | P2 | M | BE-23 | Facilitated versions; role_01 |
+| BE-16 | Time skips and consequence scenes | Not built | MVP (for E11) | S | BE-32 | E11 consequence flip; core_05, core_06, core_16 |
+| BE-17 | Cross-module memory | Partly built, by carry-over | P3 | M | BE-36 | Moot without a recurring cast |
+| BE-18 | Work task and interruptions | Partly built, by the mail scheduler (BE-35) | P2 (was MVP) | M | BE-35 | Only if an episode needs timed arrivals |
+| BE-19 | Open minigames from conversations and events | Partly built, by return-to-parent and the runner | MVP | S | none | Host conversations; E12 person-chat |
+| BE-20 | Authorable tutorial, title screen and end screen | Not built | MVP | M | BE-04 | Every episode; core_00 first-play brief |
+| BE-21 | Workplace music and sound | Not built | P2 | S | BE-04 | Every episode |
+| BE-22 | Tactic spotter card | Built differently, by red-flag chips and tells | P3 (was P2) | S | none | core_02 (through chips) |
+| BE-23 | Pause and time scale | Partly built, by the Esc menu's scene pause | MVP | M | none | BE-04, BE-15; every timed stage |
+| BE-24 | Place-player action | Not built; mostly moot | P3 (was P2) | S | none | Only multi-room modules |
+| BE-25 | Course avatars and inclusive name entry | Partly built, by the avatar rule and BE-37 | MVP (name entry) | S | none | Every episode |
+| BE-26 | Accessibility checks in CI | Not built | MVP | S | BE-38's CI job | Every episode |
+| BE-27 | Plain English lint | Not built | P2 | S | BE-38 | Every episode |
+| BE-28 | Take an item from the player | Not built | P2 | S | BE-19 | E12 candidate; core_07 |
+| BE-29 | NPC guide behaviour | Not built | P3 (was P2) | S | BE-23 | Only multi-room modules |
+| BE-30 | Video call options | Not built | MVP (was P2) | S | none | core_15 and E13; E7 follow-ups |
+| BE-31 | Episode runner | Built | Built |  |  |  |
+| BE-32 | Flip view | Built | Built |  |  |  |
+| BE-33 | Influence service | Built | Built |  |  |  |
+| BE-34 | Channels and synced globals | Built | Built |  |  |  |
+| BE-35 | Mail scheduler and mail runner | Built | Built |  |  |  |
+| BE-36 | Awareness-measure records | Built | Built |  |  |  |
+| BE-37 | Look-alike NPC guard and player avatar | Built | Built |  |  |  |
+| BE-38 | Social validator and CI | Built | Built |  |  |  |
+| BE-39 | Intel facts and readiness | Built | Built |  |  |  |
+| BE-40 | Phish rules engine and pretext judge | Built | Built |  |  |  |
+| BE-41 | Role swap | Built | Built |  |  |  |
+| BE-42 | Readable font | Built | Built |  |  |  |
 
-Suggested build order for Phase 0: BE-19 and BE-01 first (they unlock the mentor's check question and every record), then BE-05, BE-08 and BE-09 (the Learn and Reference beats), BE-20 and BE-18 (the opening and the Apply beat), BE-12 and BE-02, with BE-03 and BE-04 running alongside from the start because every new screen has to work in both routes. BE-23 (pause and time scale) comes with BE-04, because BE-04, BE-15, BE-16 and BE-18 all depend on it, and BE-24 (place-player) comes with BE-12. BE-25, BE-26 and BE-27 run alongside as course-wide groundwork: the office avatar set, the CI accessibility gate and the plain English lint. BE-28, BE-29 and BE-30 land with the modules that need them: BE-28 and BE-29 for first-day and physical-security beats, BE-30 for the core_15 deepfake call.
+Build order now follows `../04_BUILT_SO_FAR.md` §4. First, the built product is finished from its own resume plan (`../../phishing_and_social_engineering/awareness/HANDOVER.md` §3); nothing here starts while it is on hold unless the user says so. Then the engine gaps every new episode needs: BE-19, BE-20, BE-23, BE-25 (name entry) and BE-30, with BE-03, BE-04 and BE-26 running alongside, because every new screen has to work in both routes. Then what E8 to E13 need, as each episode is designed: BE-16's consequence flip for E11, and BE-10 and BE-28 if E12's design uses them. The P2 items land with the remaining core topics and role extensions.
 
 ### BE-01: Assessed decisions
 
-**Priority and size:** MVP, M (the top end of M: a client recorder, a server table and endpoint, validator checks and the per-outcome summary).
+**Priority and size:** P2 (was MVP), S for the extension. The design below is kept as reference; where it conflicts with the build (a server table and endpoint, ratings, ink assess tags), the build wins.
+
+**Build status:** **Built differently**, by per-mechanic deterministic scoring (the phish rules engine and pretext judge, BE-40, and triage scoring in `JS/minigames/inbox-triage/triage-scoring.js`) and the awareness-measure records (BE-36): one record per triage round with item id, verdict, chips, score, time, stage and variant, ids only, first answer wins. The plan entry now **builds on BE-36**: add an optional outcome id (the module's LO and behaviour ids) to each record, so a check item or defend item can be traced to a learning outcome. No free text, no learner identity. Secure, Developing and Not yet ratings and critical-behaviour loop-backs are not defaults (R6); a pass mark is a later organisation option on the post-check percent.
 
 **Why:** The course sells on evidence. Every module's `assessment.md` lists assessed behaviours (core_01 has nine, C01-B1 to C01-B9), each tied to learning outcomes and rated Secure, Developing or Not yet, plus critical behaviours that must be shown before the module counts as complete. The debrief (BE-02), the learner's record (HA-05), the organisation dashboard (HA-09), the text route (BE-03) and the xAPI feed (BE-14) all need the same per-decision data. Today nothing records a decision as such.
 
@@ -203,9 +235,11 @@ The weights and cut-offs are read from the module's `assessment` block, so a mod
 
 ### BE-02: Debrief screen
 
-**Priority and size:** MVP, M.
+**Priority and size:** P2 (was MVP), S for the extensions.
 
-**Why:** The Debrief beat is where a simulation's learning is made explicit (`01_LEARNING_DESIGN.md`). core_01's debrief shows each threat with a thumbnail, what it was, the clue, what the player did, what checking another way would have looked like and what happened, then the hook and the expected-sender phish side by side as a before and after, then per-outcome results, then the line to remember, before Ama and Kai talk it through (`modules/core_01_phishing_email/game_design.md`, "5. Debrief"). Every module repeats that shape, and the facilitated version needs it on a shared screen.
+**Build status:** **Built differently**, by the episode debrief in the runner (`JS/minigames/episode-runner/debrief-view.js`, part of BE-31): a reasoning card per item, feedback on the genuine items, a "team protected" tally, the rule of thumb word for word, an "On Monday" card, the customer's reporting-route box, a no-blame line, and optional concept and voice panels. The flip view (BE-32) shows the learner's own attack from the receiving side. The plan entry now **builds on the episode debrief**: the chain view (core_17) and the call replay (role_06) become optional debrief panels, and a per-outcome view follows once BE-01 adds outcome ids. The spoken mentor debrief below is replaced by the host's closing line; the credits-based design is reference only.
+
+**Why:** The Debrief beat is where a simulation's learning is made explicit (`01_LEARNING_DESIGN.md`). core_01's debrief shows each threat with a thumbnail, what it was, the clue, what the player did, what checking another way would have looked like and what happened, then the hook and the expected-sender phish side by side as a before and after, then per-outcome results, then the line to remember, before a colleague talks it through (the plan as first written; the host now closes the episode) (`modules/core_01_phishing_email/game_design.md`, "5. Debrief"). Every module repeats that shape, and the facilitated version needs it on a shared screen.
 
 **What exists today:**
 
@@ -227,7 +261,7 @@ The weights and cut-offs are read from the module's `assessment` block, so a mod
     "clue": "northbeck-supplies.co is not northbeck.co.uk.",
     "good": "Report it, then wait for the real file or ask Dawn by phone.",
     "options": {
-      "reported":  { "youDid": "You reported it.", "next": "Kai pulled it from 38 inboxes." },
+      "reported":  { "youDid": "You reported it.", "next": "The security team pulled it from 38 inboxes." },
       "ignored":   { "youDid": "You left it alone.", "next": "It stayed in other people's inboxes." },
       "signed_in": { "youDid": "You signed in on the fake page.", "next": "Your account sent the same email to colleagues until it was reported." }
     }
@@ -243,11 +277,11 @@ Lines that are not tied to one behaviour use the credits shape with one new cond
 2. **Before and after:** the `pairs` from the assessment block side by side (core_01: the hook and the expected-sender phish).
 3. **How you did:** each learning outcome as a sentence tied to what the learner did ("You rang Northbeck on the directory number before doing anything. That's exactly it."), with Secure, Developing or Not yet in words and an icon. For Developing and Not yet, the one thing to do differently and a link to practise. No numbers except the knowledge check score, as `assessment_and_evidence.md`, section 3, "What each person sees", sets out. An outcome the module couldn't rate says so plainly. Critical behaviours are shown as done or still to practise.
 4. **The line to remember:** the module's key message.
-5. **Next:** "Talk it through with Ama", "Go to the spot check" (MG-20), and, when a critical behaviour is missing, "One more thing to practise", which starts the module's remediation loop (`assessment.critical[].remediation`; at most two loops, `assessment_and_evidence.md`, section 4).
+5. **Next:** "Talk it through with the host", "Go to the spot check" (MG-20), and, when a critical behaviour is missing, "One more thing to practise", which starts the module's remediation loop (`assessment.critical[].remediation`; at most two loops, `assessment_and_evidence.md`, section 4).
 
 *Data.* The screen renders `GET /games/:id/assessment` (BE-01), the same summary the server stores and Hacktivity shows, so the learner sees exactly what is recorded. Opening it writes a `debrief_viewed` milestone. After a remediation loop the summary is fetched again: the critical behaviour shows "shown after practice", and the outcomes it links to are at most Developing for this sitting (section 3, rule 5 of that document).
 
-*The spoken debrief stays ink.* Ama and Kai walk through the highlights in an ink conversation that branches on the `assess_*` globals BE-01 mirrors, asks one reflective question per section and confirms or corrects the answer, then sets `debrief_complete`, as sis01 does. Voiced lines never print a count: "You reported both of those" is chosen with an inline conditional, never "You reported {n}".
+*The spoken debrief stays ink.* The host walks through the highlights in an ink conversation that branches on the `assess_*` globals BE-01 mirrors, asks one reflective question per section and confirms or corrects the answer, then sets `debrief_complete`, as sis01 does. Voiced lines never print a count: "You reported both of those" is chosen with an inline conditional, never "You reported {n}".
 
 *Credits.* A module that wants closing credits builds them from the same debrief lines, with a new `creditsTheme: "workplace"` that has no matrix mode, stamp or threat map. Most modules will not need credits at all.
 
@@ -273,7 +307,9 @@ Lines that are not tied to one behaviour use the credits shape with one new cond
 
 ### BE-03: Text route player
 
-**Priority and size:** MVP, L for the player, plus one to two days per module to write its spine and scene descriptions.
+**Priority and size:** MVP, L. Smaller than first sized, because the episode runner and its stages are already DOM overlays.
+
+**Build status:** **Not built.** Voicemail items show as transcripts, which is the only text alternative today. The plan entry stands and is **New**, retargeted at the built shells: play an episode or check shell (brief, attack stages, flip, defend items, debrief) as an accessible text route that writes the same awareness-measure records (BE-36). The gap is the room, the host conversation and the walk to the kiosk; the runner's overlays can be reused rather than re-implemented.
 
 **Why:** Mandatory training must be completable by every member of staff, including screen reader users, people with motor or vestibular conditions and people on locked-down thin clients (`01_LEARNING_DESIGN.md`, "Giving everyone a route through"). The overview promises that every module "can be taken as a text route with the same decisions and the same record", in 10 to 15 minutes. It is also how the course meets WCAG 2.2 AA for a canvas game: WCAG allows a page to conform through a **conforming alternate version**, which must itself conform, provide all the same information and functionality, be as up to date, and be reachable from the non-conforming version through an accessibility-supported mechanism (WCAG 2.2, conformance requirement 1 and the glossary, https://www.w3.org/TR/WCAG22/). The text route is that version, so it has to be equivalent in substance, not a summary.
 
@@ -312,7 +348,7 @@ The spine sets the same globals the game's events and timers set (for example `a
 - No auto-advance, no timers, nothing that moves.
 - `aria-live` is used only for short status messages ("Saved", "Report sent"), so the narrative is not read twice.
 - Earlier scenes collapse under their headings to keep the page short.
-- A "What should I do now?" link is always present: the current objective and the mentor's sticky answer (EX-01).
+- A "What should I do now?" link is always present: the current objective and the host's sticky answer (EX-01).
 - Optional "Play the voice" per line, using the cached TTS clips (identical text hits the same cache). Off by default.
 - Text size, font and theme follow the BE-04 settings. Number-key shortcuts for choices are available but can be turned off (WCAG 2.1.4, character key shortcuts).
 
@@ -343,7 +379,9 @@ The spine sets the same globals the game's events and timers set (for example `a
 
 ### BE-04: Accessibility baseline
 
-**Priority and size:** MVP, L. L holds only if the scope is the game shell plus the minigames this course uses; making all 42 registered minigames accessible would be much larger.
+**Priority and size:** MVP, M for what is left (the shell and dialogue), since the social overlays already follow the conventions.
+
+**Build status:** **Partly built**, by the social overlay conventions (keyboard reachable, own Close, Esc, `aria-live="polite"`, reduced motion, words beside every mark, 44 px targets, a single column under about 700 px, Source Sans 3 (BE-42)) and the game menu's Display page (theme, HUD size, zoom). The plan entry now **extends those conventions** to the game shell and dialogue: a screen reader route for conversations, captions, text size, voice settings and timers that can be turned off. Where the design below names another typeface, Source Sans 3 replaces it (decision X).
 
 **Why:** Principle 10 of `01_LEARNING_DESIGN.md` sets WCAG 2.2 AA for every interface, captions and transcripts for every spoken line, and no required fast reactions. Employers owe disabled staff reasonable adjustments in training (Equality Act 2010, sections 20 and 39), and public sector buyers will expect WCAG 2.2 AA. The text route (BE-03) gives everyone a conforming route, but the game itself must still be as usable as possible and must meet the WCAG requirements that apply to all content, even when an alternative exists (non-interference: audio control, no keyboard trap, pause, stop and hide, and three flashes). The full baseline, standards and tests are in `features/accessibility_and_inclusion.md`; this section is the engine work list.
 
@@ -387,9 +425,11 @@ The spine sets the same globals the game's events and timers set (for example `a
 
 ### BE-05: Organisation profile in game
 
-**Priority and size:** MVP, M.
+**Priority and size:** P2 (was MVP), S for more keys; the platform half waits on the user.
 
-**Why:** Staff must leave knowing their own organisation's route: the name of their Report button, their service desk number, their DPO, their classification labels and policy names. Every module has an "Organisation-specific content" list (core_01: the Report button's name and location, the service desk contact for "I clicked", whether the organisation runs simulated phishing). Larkspur's values are the defaults (`03_WORLD_AND_CAST.md`, "Organisation profile"). HA-11 stores the customer's values; this feature puts them into the game without breaking the voice cache.
+**Build status:** **Partly built**, by `social.awareness` (`reportRoute`, `ruleOfThumb`, `teamSize`), overridden key by key by the host page's configuration, and the episode's `brand` (`name`, `logoText`, `accent`) drawn as a CSS wordmark. The plan entry now **builds on `social.awareness`**: add keys only as episodes need them, and keep voiced lines generic. The defaults are the episode's brand-set company, not Larkspur. The rule of thumb slot must carry the built wording (R4). Making the reporting route a platform setting is decided in principle but waits for the user's go-ahead (HA-11).
+
+**Why:** Staff must leave knowing their own organisation's route: the name of their Report button, their service desk number, their DPO, their classification labels and policy names. Every module has an "Organisation-specific content" list (core_01: the Report button's name and location, the service desk contact for "I clicked", whether the organisation runs simulated phishing). The defaults are the episode's brand-set company (`../../phishing_and_social_engineering/awareness/BRAND_SET.md`), not Larkspur, which is retired (R2). HA-11 stores the customer's values; this feature puts them into the game without breaking the voice cache.
 
 **What exists today:**
 
@@ -403,26 +443,26 @@ The spine sets the same globals the game's events and timers set (for example `a
 
 **Design:**
 
-*The profile.* A flat, versioned set of keys with Larkspur defaults:
+*The profile.* A flat, versioned set of keys, defaulting to the episode's brand-set company (Brightwell Foods shown):
 
-| Key | Larkspur default | Used by |
+| Key | Default (Brightwell Foods, E1) | Used by |
 |---|---|---|
-| `org.name`, `org.shortName`, `org.logo` | Larkspur Group | Title screen, intranet header, reference card, documents |
+| `org.name`, `org.shortName`, `org.logo` | Brightwell Foods (the `BRIGHTWELL` wordmark) | Title screen, intranet header, reference card, documents |
 | `report.buttonName`, `report.buttonWhereDesktop`, `report.buttonWhereMobile` | "Report suspicious", in the mail toolbar | MG-01, reference card |
 | `serviceDesk.phone`, `serviceDesk.hours`, `security.contact` | The 24/7 service desk line; the security team on extension 4444 | Reference card, MG-09, documents |
 | `dpo.name`, `dpo.contact` | Tomasz Wiśniewski | core_05 documents, reference card |
 | `classification.labels` | Public, Internal, Confidential, Restricted | MG-10, document headers |
-| `policies.<id>.name`, `.version`, `.url` | Larkspur's acceptable use policy and others | BE-09, HA-07 |
+| `policies.<id>.name`, `.version`, `.url` | Brightwell's acceptable use policy and others | BE-09, HA-07 |
 | `phishSim.enabled`, `externalBanner.text`, `access.route` | Not set until the organisation says (items that need them are left out, as core_01 does with Q11) | core_01 items and the knowledge check bank |
 | `jurisdiction` | England | Fraud reporting wording (Police Scotland on 101 in Scotland) |
 
-*Getting it in.* The host supplies the profile through a new configuration hook, `BreakEscape.configuration.org_profile_for_game` (beside `on_game_complete` in `lib/break_escape.rb`), which Hacktivity answers from HA-11; standalone mode uses the Larkspur defaults. An organisation fills in its profile as part of the go-live checklist (HA-26), which includes playing a module as a test learner to see the values in place before staff are invited; a partner who runs several organisations (HA-25) sets each one's profile separately. At game creation the engine snapshots the profile and its version into the game (so a running module never changes under the learner, and the record can say which profile it ran with), and exposes it three ways:
+*Getting it in.* The host supplies the profile through a new configuration hook, `BreakEscape.configuration.org_profile_for_game` (beside `on_game_complete` in `lib/break_escape.rb`), which Hacktivity answers from HA-11; standalone mode uses the episode's brand-set defaults. An organisation fills in its profile as part of the go-live checklist (HA-26), which includes playing a module as a test learner to see the values in place before staff are invited; a partner who runs several organisations (HA-25) sets each one's profile separately. At game creation the engine snapshots the profile and its version into the game (so a running module never changes under the learner, and the record can say which profile it ran with), and exposes it three ways:
 
 1. **ERB helpers** in `ScenarioBinding` (and the validator's copy): `org_text('report.buttonName')` returns the value escaped for use inside a JSON string, `org_json('classification.labels')` returns JSON. Used in documents, intranet pages, minigame configs, objectives text and phone texts that are not voiced.
 2. **Runtime:** `window.breakEscapeConfig.org`, for minigame UIs and the title screen.
 3. **Ink:** an external function `org(key)` for player choices, player lines and phone texts that are not voiced. The dialogue lint already reports `{org("x")}` in a voiced line, because it reports any printed function value.
 
-*Where organisation values may appear.* Only in text that is never voiced: documents, intranet pages, the reference card, minigame screens, objectives, chat messages without "voice:", player choices and player lines, the debrief screen, and BE-08 visual aid cards. When a voiced character needs to give the route, they say it generically and a card shows the detail: Ama says "Use the Report button. I'll pop the details up for you," and the conversation panel shows a card reading, for example, "At Larkspur Group: Report suspicious, in the mail toolbar. On your phone: the three dots menu, then Report."
+*Where organisation values may appear.* Only in text that is never voiced: documents, intranet pages, the reference card, minigame screens, objectives, chat messages without "voice:", player choices and player lines, the debrief screen, and BE-08 visual aid cards. When a voiced character needs to give the route, they say it generically and a card shows the detail: the host says "Use the Report button. I'll pop the details up for you," and the conversation panel shows a card reading, for example, "At Brightwell Foods: Report suspicious, in the mail toolbar. On your phone: the three dots menu, then Report."
 
 *Classification labels.* Voiced lines never name a label, because a customer may rename "Confidential". They say "the label on it" or "one of the top two levels", and the screen shows the organisation's words.
 
@@ -434,7 +474,7 @@ The spine sets the same globals the game's events and timers set (for example `a
 
 **Acceptance criteria:**
 
-- Starting core_01 with a test profile shows that profile's Report button name in MG-01, on The Lark and on the reference card, and the Larkspur values nowhere.
+- Starting core_01 with a test profile shows that profile's Report button name in MG-01, and on the debrief's report box, and the brand-set defaults nowhere.
 - No voiced line in any course module changes between two profiles (validator double render), and the TTS cache for a module is identical for every customer.
 - Changing the profile in Hacktivity affects new games only; a game in progress keeps the snapshot, and its records name the profile version.
 - An organisation in Scotland sees the Scotland wording for reporting fraud wherever the module shows it.
@@ -450,7 +490,9 @@ The spine sets the same globals the game's events and timers set (for example `a
 
 ### BE-06: Localisation
 
-**Priority and size:** P3, L, plus translation, review and voice generation per language.
+**Priority and size:** P3, L, plus translation, review and voice generation per language. Unchanged.
+
+**Build status:** **Not built.** Strings are in data, not code, which keeps this open. No change to the plan entry.
 
 **Why:** Organisations with staff who work in other languages, or outside the UK, need the course in their language with local reporting routes and law (`00_COURSE_OVERVIEW.md`, Phase 3: BE-06 with HA-16). The course is built UK first, with other countries as localisations (`01_LEARNING_DESIGN.md`, principle 8).
 
@@ -486,7 +528,9 @@ The spine sets the same globals the game's events and timers set (for example `a
 
 ### BE-07: Micro-drill launcher
 
-**Priority and size:** P2, M (smaller if BE-03's page shell and BE-13 already exist).
+**Priority and size:** P2, M (smaller if BE-13 exists).
+
+**Build status:** **Partly built (differently)**, by the check missions (`stages: ["check"]`, one kiosk, one triage set) and the defend-only shells, which are the micro-drill today (R12). The plan entry now **builds on the defend-only shell**: a drill launcher that draws from a bank, once BE-13 exists.
 
 **Why:** Monthly 3 to 5 minute drills give spaced practice through the year (`01_LEARNING_DESIGN.md`, principle 7; the catalogue lists a micro-drill for most core modules, such as core_01's "Phish or Fine?": eight emails from the bank, an optional timer and a streak counter). HA-21 sends them on a schedule. A drill must start fast, on a phone, without walking through an office.
 
@@ -521,9 +565,11 @@ The spine sets the same globals the game's events and timers set (for example `a
 
 ### BE-08: Visual aids in conversations
 
-**Priority and size:** MVP, M.
+**Priority and size:** P2 (was MVP), M.
 
-**Why:** The mentor explains with something to look at (EX-01): core_01's "Anatomy of a phish" steps through four highlights on the hook email, then a web address with the real domain marked. Multimedia learning works best when words and pictures arrive together (Mayer, 2020, cited in `01_LEARNING_DESIGN.md`). Video calls need a shared screen (core_15's deepfake call, role_01's briefings), and BE-05 needs a card to show organisation values while the voice stays generic.
+**Build status:** **Not built.** Most of the need is met by concept cards behind a visible "What is this?" button (EX-09) and the debrief's concept and voice panels; the flip view (BE-32) shows tells on the learner's own message. Build this only when an episode's host needs an image or a shared screen inside a conversation (a candidate for E13's video call). The `#visual_aid` syntax below stays a proposal.
+
+**Why:** As first planned, the mentor explained with something to look at (EX-01, now the host): core_01's "Anatomy of a phish" steps through four highlights on the hook email, then a web address with the real domain marked. Multimedia learning works best when words and pictures arrive together (Mayer, 2020, cited in `01_LEARNING_DESIGN.md`). Video calls need a shared screen (core_15's deepfake call, role_01's briefings), and BE-05 needs a card to show organisation values while the voice stays generic.
 
 **What exists today:**
 
@@ -550,9 +596,9 @@ The spine sets the same globals the game's events and timers set (for example `a
   "core01_address": {
     "kind": "image",
     "src": "assets/aids/core01_address.png",
-    "alt": "A web address with its real domain, secure-login.info, marked.",
-    "longDescription": "The address reads larkspur.co.uk.secure-login.info/mail. Reading from the right-hand end, the real domain is secure-login.info.",
-    "steps": [ { "rect": [212, 40, 180, 28], "label": "1", "describe": "Highlighted: secure-login.info, the real domain." } ]
+    "alt": "A web address with its real domain, secure-login.example, marked.",
+    "longDescription": "The address reads quayholt.example.secure-login.example/mail. Reading from the right-hand end, the real domain is secure-login.example.",
+    "steps": [ { "rect": [212, 40, 180, 28], "label": "1", "describe": "Highlighted: secure-login.example, the real domain." } ]
   }
 }
 ```
@@ -599,9 +645,11 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 
 ### BE-09: Intranet terminal
 
-**Priority and size:** MVP, M.
+**Priority and size:** P3 (was MVP), M.
 
-**Why:** The intranet, The Lark, is where the Reference beat happens (`01_LEARNING_DESIGN.md`, "What lab sheets become"): the reference card with the organisation's own reporting details, the policies, the contacts, the survey list core_01 asks players to check, and the place a policy is acknowledged and recorded (core_16, HA-07). Opening the reference card is part of core_01's completion rule (`assessment.md`).
+**Build status:** **Not built, and made moot by the build.** The Reference beat is the debrief's "How to report here" box and "On Monday" card; policy acknowledgement is a platform matter (HA-07, wish list). Build only if a later module needs an intranet. The software portal extension (core_07, core_08, core_13) moves to a site in the OSINT browser (MG-31) or a triage `page` item for E10. The existing `lab-workstation` was not reused by the build.
+
+**Why:** As first planned, the intranet (named "The Lark" in the retired Larkspur world) was where the Reference beat happened (`01_LEARNING_DESIGN.md`, "What lab sheets become"): the reference card with the organisation's own reporting details, the policies, the contacts, the survey list core_01 asks players to check, and the place a policy is acknowledged and recorded (core_16, HA-07). Opening the reference card is part of core_01's completion rule (`assessment.md`).
 
 **What exists today:**
 
@@ -612,18 +660,18 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 
 **Design:**
 
-- **A new `intranet` object type** opens The Lark as a DOM overlay rendered by the engine, not an iframe, so module content can use BE-05 values and works the same in the text route. The overlay is branded with `org.name` and `org.logo`, has a navigation landmark, a skip link, headings and a search box over its own pages.
-- **Pages** are defined in the scenario: `"intranet": { "title": "The Lark", "home": "news", "pages": { "reference_card": { "title": "Report it: what to do", "markdown": "..." }, "surveys": { ... } } }`. Pages are written in the notes markdown subset, extended with images (alt text required), links between pages and a "print this page" action. Organisation values come in through the ERB helpers (BE-05). The reference card page is generated from the module's `concepts.md` key messages and the profile.
+- **A new `intranet` object type** opens the intranet as a DOM overlay rendered by the engine, not an iframe, so module content can use BE-05 values and works the same in the text route. The overlay is branded with `org.name` and `org.logo`, has a navigation landmark, a skip link, headings and a search box over its own pages.
+- **Pages** are defined in the scenario: `"intranet": { "title": "Staff intranet", "home": "news", "pages": { "reference_card": { "title": "Report it: what to do", "markdown": "..." }, "surveys": { ... } } }`. Pages are written in the notes markdown subset, extended with images (alt text required), links between pages and a "print this page" action. Organisation values come in through the ERB helpers (BE-05). The reference card page is generated from the module's `concepts.md` key messages and the profile.
 - **External pages:** the organisation's own policies (HA-07) open in the existing iframe popup, with the popup title set from the page (fixing the hard-coded "Lab Sheet"), the iframe given a `title`, and `?embedded` added for HacktivityLabSheets pages.
 - **Records:**
   - opening a page marked `"track": true` writes a BE-01 milestone (`reference_opened` for the card);
   - a policy page can carry an acknowledgement block, "I have read and understood the Acceptable Use Policy, version 3", with a checkbox and a button. Pressing it writes a `policy_ack` record with the policy id, version and a hash of the text shown;
   - the server passes the acknowledgement to the host through a new hook, `on_policy_acknowledged`, so HA-07 stores it against the person and the version.
-- **Reachable at any time:** The Lark opens from a HUD button and a key as well as from the in-world terminal, so the reference card is always one step away during a module.
+- **Reachable at any time:** the intranet opens from a HUD button and a key as well as from the in-world terminal, so the reference card is always one step away during a module.
 
 **Acceptance criteria:**
 
-- In core_01, The Lark shows the reference card with the test profile's Report button name and service desk number.
+- In core_01, the intranet shows the reference card with the test profile's Report button name and service desk number.
 - Opening the reference card writes one `reference_opened` milestone; acknowledging a policy writes one `policy_ack` record, and the host hook receives it with the policy version.
 - The overlay passes axe-core with no violations and works with keyboard and screen reader; the popup title and iframe title name the page being shown.
 - The same pages render in the text route.
@@ -639,6 +687,8 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 ### BE-10: Spot-the-risk mode
 
 **Priority and size:** P2, M.
+
+**Build status:** **Not built.** The nearest is the landing-page builder's Inspect step (MG-33), which finds each giveaway on a page in an overlay. A candidate for E12 (the visitor and the tailgater) inside the training room; decide in E12's design.
 
 **Why:** Several topics are about noticing what is wrong in a place: a clean desk sweep and a propped side door (core_10, Physical security), confidential waste in the wrong bin (core_06), a screen on show in a café (core_09), a ward's shared workstation left logged in (sector_01). A find-and-fix activity teaches noticing directly, and the found and missed list makes a strong debrief.
 
@@ -674,9 +724,11 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 
 ### BE-11: Role switch
 
-**Priority and size:** P2, M.
+**Priority and size:** P3 (done), S for reuse.
 
-**Why:** Attacker-view interludes (EX-06) let the learner briefly play Jo Fairweather's authorised tester to see how little an attacker needs: designing the phishing test in core_01's "Phish Tank" alternative, building a pretext in core_02 and core_12, tailgating in core_10. The game has to switch the player's character, kit and objectives for a few minutes, frame it clearly as an authorised test, and switch back.
+**Build status:** **Built differently**, by the E3 role swap (BE-41): attacker then defender is a stage change inside one runner, and the calls the learner made become `call` cards in the defend set, so the facts the learner used are the ones they now check. There is no change of character, kit or objectives, and defend-only variants are separate shells. The character-switch design below is retired; later attack-then-defend swaps reuse BE-41.
+
+**Why:** Attacker-view interludes (EX-06) let the learner briefly play an authorised tester (as first planned; the attack half of every episode now does this) to see how little an attacker needs: designing the phishing test in core_01's "Phish Tank" alternative, building a pretext in core_02 and core_12, tailgating in core_10. The game has to switch the player's character, kit and objectives for a few minutes, frame it clearly as an authorised test, and switch back.
 
 **What exists today:**
 
@@ -709,9 +761,11 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 
 ### BE-12: Short sessions and resume
 
-**Priority and size:** MVP, M.
+**Priority and size:** P2 (was MVP), S for what is left.
 
-**Why:** Induction Essentials is taken "in sittings of 10 to 20" minutes (`00_COURSE_OVERVIEW.md`), and many Larkspur staff work on phones between jobs. A learner must be able to stop at a natural break and come back to the same place, quickly, on another device, without replaying what they have done or losing evidence.
+**Build status:** **Partly built**, by per-episode state (`episode_<id>_state`, which resumes at the stage left when the kiosk reopens), persisted mail state and drafts (BE-35), landing-page drafts and the triage first-attempt guard. An episode is about 13 minutes (E3 about 17), a defend-only variant about 8 and a check 4 to 5, so the slot is met (R12). The plan entry now asks only for checkpoints inside a stage if playtests show the need. The design below assumes a multi-room module and BE-24; in the one-room frame neither is needed.
+
+**Why:** The course was planned "in sittings of 10 to 20" minutes (`00_COURSE_OVERVIEW.md`); the built episodes are about 13 minutes (R12), and many staff work on phones between jobs. A learner must be able to stop at a natural break and come back to the same place, quickly, on another device, without replaying what they have done or losing evidence.
 
 **What exists today:**
 
@@ -725,7 +779,7 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 
   ```json
   "checkpoints": [
-    { "id": "learn_start", "beat": "learn", "label": "Ama explains what gave it away",
+    { "id": "learn_start", "beat": "learn", "label": "The flip: what gave it away",
       "place": { "room": "operations", "tile": { "x": 7, "y": 5 } },
       "requires": "globalVars.hook_done === true",
       "apply": [ { "type": "set_global", "key": "inbox_open", "value": false } ] }
@@ -733,7 +787,7 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
   ```
 
   Reaching one (ink `#checkpoint:learn_start`, an event, or a task) writes a BE-01 milestone and stores the checkpoint id in the game.
-- **Resume** offers "Continue from: Ama explains what gave it away", places the player at the checkpoint's room and tile with BE-24 (the place-player action), applies the checkpoint's `apply` actions so the world is in a known state, and shows a short "So far" card built from BE-01 records (on-screen text only, for example "You reported the 'mailbox full' email").
+- **Resume** offers "Continue from: The flip: what gave it away", places the player at the checkpoint's room and tile with BE-24 (the place-player action), applies the checkpoint's `apply` actions so the world is in a known state, and shows a short "So far" card built from BE-01 records (on-screen text only, for example "You reported the 'mailbox full' email").
 - **Explicit save and exit** in the pause menu, so stopping feels safe. Hacktivity's learner home shows "Resume, about 8 minutes left", estimated from the beats still to do (HA-17).
 - **Time budget:** the scenario declares a target minutes figure for each beat, and BE-01 milestones measure the real times. A playtest report compares them, and the evaluation (HA-14) tracks them in live use.
 - **Both routes:** checkpoints are the points where a learner can switch between the game and the text route (BE-03).
@@ -755,6 +809,8 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 ### BE-13: Content banks and randomisation
 
 **Priority and size:** P2, M.
+
+**Build status:** **Partly built**, by parallel check forms A and B per role, counterbalanced by AB and BA mission pairs, with mirror pairs and a balance lint (BE-38). The plan entry now **builds on the forms**: a seeded draw from a bank and annual editions, keeping the matching rules. Fixed forms stay the default.
 
 **Why:** If every learner sees the same emails, colleagues pass on the answers and the hook stops being an honest baseline (core_01, open question 2). core_01 plans a bank of about 60 emails tagged by slot, lever and difficulty, with fictional domains generated per game. The knowledge check draws six items from a bank of eight to twelve. Drills (BE-07) need fresh content each month, and the capstone (core_17) needs a new edition every year.
 
@@ -806,7 +862,9 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 
 ### BE-14: xAPI statements
 
-**Priority and size:** P2, M.
+**Priority and size:** P2, S.
+
+**Build status:** **Partly built**, by `toXapi` in `JS/systems/awareness-measure.js` (actor passed in, answered and completed verbs), written but unused. The plan entry now **builds on BE-36**: emit those statements once a receiver exists (HA-22, wish list).
 
 **Why:** Customers with their own LMS or learning record store want standard learning records, not just complete and score (HA-10, HA-22). xAPI is the standard way to send "started, decided, completed, scored" from a game, and it carries the per-decision and per-outcome evidence the course is built on.
 
@@ -852,7 +910,9 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 
 ### BE-15: Facilitated group mode
 
-**Priority and size:** P2, M, with Hacktivity's facilitator console and attendance in HA-13. Phone voting from the audience would take it to L.
+**Priority and size:** P2, M. Phone voting from the audience would take it to L.
+
+**Build status:** **Partly built**, by `awarenessEpisode.facilitated: true` in the runner: a prompt per stage, the per-learner score hidden on the shared debrief, and a pause panel between stages. No shell uses it yet. The plan entry now asks for a presenter view; the defend round stays individual by design.
 
 **Why:** Every module has a facilitated version: a team plays on one screen with a facilitator, pausing at marked points to discuss (45 to 60 minutes; `01_LEARNING_DESIGN.md`, "Delivery modes"). core_01 names its pause points ("Who would have clicked? Be honest. Why?" after the hook), and role_01 is built for a board in a room together.
 
@@ -890,7 +950,9 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 
 ### BE-16: Time skips and consequence scenes
 
-**Priority and size:** P2, S.
+**Priority and size:** MVP (for E11), S.
+
+**Build status:** **Not built.** `gameClock.anchors` can jump the time of day, but there is no "three weeks later" scene. The plan entry is now the **consequence flip** (R3) and **builds on the flip view (BE-32)**: for topics with no natural attacker (E11, and later core_05, core_06 and core_16), the learner makes the everyday mistake in a safe sandbox, and the flip shows where it led, as a flip view variant rather than a time skip in a room.
 
 **Why:** Games can show consequences safely (`01_LEARNING_DESIGN.md`, "Why games"): core_01 shows the player's account sending the same phish twenty game-minutes after a sign-in, core_07 can show how far ransomware spreads before someone reports it, and core_11 can show what happens three weeks after a fraudulent payment.
 
@@ -929,6 +991,8 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 
 **Priority and size:** P3, M.
 
+**Build status:** **Partly built (existing)**, by platform carry-over of scalar globals, used to carry the pre-check result into the post-check. The "characters remember" half is moot without a recurring cast (R2): hosts belong to one company and one episode.
+
 **Why:** Shared characters make the course feel like a series (`03_WORLD_AND_CAST.md`). When Leo says in core_04 "You told me to report it straight away last time", the course feels continuous, and the capstone (core_17) can return to the learner's earlier decisions. The cast document makes this optional, and dialogue must not assume an order beyond core_00.
 
 **What exists today:** nothing. Each module is a separate `Game` with its own globals, and nothing carries across games.
@@ -954,7 +1018,9 @@ Highlights are drawn as a thick outline with a numbered marker and the step labe
 
 ### BE-18: Work task and interruptions
 
-**Priority and size:** MVP, M.
+**Priority and size:** P2 (was MVP), M.
+
+**Build status:** **Partly built**, by the mail scheduler (BE-35: text, seed and ink jobs on wall-clock deadlines) and existing NPC timed messages. The episode runner replaces the work-task module, and defend sets are scored rounds, not tests hidden among work. The plan entry now asks only for timed arrivals inside a triage round, if an episode needs them.
 
 **Why:** Design principle 4: threats arrive inside real work. The Apply beat always gives the learner a job to finish, and the security tests appear inside it, unannounced. core_01's Apply beat is "send the delivery schedule by 10:00" with a three-step task bar while about twelve messages arrive over six minutes of game time, four of them threats drawn one per slot from the bank. Other modules use phone calls, chat messages and visitors in the same way.
 
@@ -997,7 +1063,7 @@ Steps complete from globals or objective tasks, so the bar adds no new state. Th
 ]
 ```
 
-- Types: `email` (MG-01), `chat` (phone-chat), `call` (MG-04, or a phone NPC conversation until MG-04 exists), `visitor` (an NPC walks to the player and opens a conversation), `notice` (an intranet page or desk note). Emails and chats arrive as notifications on the work desktop (MG-27), the player's computer, which launches the inbox, browser, chat and The Lark.
+- Types: `email` (MG-01), `chat` (phone-chat), `call` (MG-04, or a phone NPC conversation until MG-04 exists), `visitor` (an NPC walks to the player and opens a conversation), `notice` (an intranet page or desk note). Emails and chats arrive as notifications on the work desktop (MG-27), the player's computer, which launches the inbox, browser and chat.
 - Times are game time, which the BE-04 time scale slows or stops. Anything else that moves with game time follows the same clock, such as an incident spreading on core_04's incident spread map (MG-26) until someone reports it.
 - **Busy gate:** an interruption that falls due while a conversation, a minigame or a dialog is open waits until it closes, and there is a minimum gap between interruptions (default 20 seconds of game time) so two never collide. This extends the logic barks already use.
 - **Assessment:** an interruption can carry an `assess` link, so ignoring it is recorded by BE-01's close rule rather than by the author.
@@ -1020,9 +1086,11 @@ Steps complete from globals or objective tasks, so the bar adds no new state. Th
 
 ### BE-19: Open minigames from conversations and events
 
-**Priority and size:** MVP, S, for the "close, run, return" behaviour that covers almost every use. Showing a single knowledge check question on top of a conversation without closing it is best built into MG-20 and adds a few days there.
+**Priority and size:** MVP, S, for the "close, run, return" behaviour.
 
-**Why:** Almost every module needs this (`features/README.md`, "Dependencies"): the inbox opening by itself at core_01's hook, the mentor's check question inside her explanation (EX-01), a colleague handing over a form (MG-09), a timer that makes the phone ring (BE-18), the debrief screen opened at the end of a conversation (BE-02). The work desktop (MG-27) is a launcher for other minigames, so it needs the same registry to open the inbox or The Lark from its icons and notifications.
+**Build status:** **Partly built (differently)**, by the framework's return-to-parent, the runner opening each stage's child, pretext prep handing over to a call, and `#compose_reply`. `#trigger_minigame` is still a notification-only stub, and there is no launcher registry or `open_minigame` action. The plan entry stands: make `#trigger_minigame` real, for a host conversation that opens a concept card or a triage item and for E12's person-chat. The MG-20 check-question use below is retired with MG-20 (P3).
+
+**Why:** Almost every module needs this (`features/README.md`, "Dependencies"): the inbox opening by itself at core_01's hook, a check question inside a host conversation (as first planned for EX-01), a colleague handing over a form (MG-09), a timer that makes the phone ring (BE-18), the debrief screen opened at the end of a conversation (BE-02). The work desktop (MG-27) is a launcher for other minigames, so it needs the same registry to open the inbox or The Lark from its icons and notifications.
 
 **What exists today:**
 
@@ -1071,7 +1139,7 @@ Authors put the tag on a short handover line ("Quick question for you.") followe
 
 **Acceptance criteria:**
 
-- In core_01's Learn beat, Ama's check question opens after her handover line, the result is recorded, and the conversation continues on the right branch for a right and a wrong answer.
+- In a host conversation, a check question opens after her handover line, the result is recorded, and the conversation continues on the right branch for a right and a wrong answer.
 - At core_01's hook the inbox opens by itself from a timer action, with no object clicked.
 - A `#trigger_minigame` from phone-chat returns to the same phone thread.
 - Reloading the page while the minigame is open returns the learner to the conversation's last saved point, with no duplicate record.
@@ -1090,6 +1158,8 @@ Authors put the tag on a short handover line ("Quick question for you.") followe
 ### BE-20: Authorable tutorial, title screen and end screen
 
 **Priority and size:** MVP, M.
+
+**Build status:** **Not built.** The title screen still shows the Hacktivity logo and the tutorial still says "Welcome to Hacktivity Games!"; episodes draw their own brief and step strip inside the runner. The plan entry stands, retargeted: an authorable title, tutorial and end screen in the general skin for Critical Cases, with the episode's brand-set company in place of the customer logo until HA-11 exists. core_00's first-play "how it works" brief sits inside the kiosk frame.
 
 **Why:** The course needs its own opening and close: the customer's logo and the module's title, a tutorial for staff who may never have played a computer game, the chance to set captions, text size and motion before anything plays, an equal offer of the text route, and an end screen that returns the learner to their training. Today all three are fixed and branded for Hacktivity's games, and the spy framing leaks in.
 
@@ -1168,6 +1238,8 @@ All new text comes from the locale files (BE-06).
 
 **Priority and size:** P2, S for the engine, plus the cost of licensing or commissioning music.
 
+**Build status:** **Not built.** The lab reuses existing playlists (SE decision Z) and the report sting is the generic confirm sound. No change to the plan entry.
+
 **Why:** The course's tone is a warm workplace drama, "calm, not scary" (`03_WORLD_AND_CAST.md`, "Tone"). The current music is spy-styled and would pull every module towards the campaign's thriller voice.
 
 **What exists today:**
@@ -1201,9 +1273,11 @@ All new text comes from the locale files (BE-06).
 
 ### BE-22: Tactic spotter card
 
-**Priority and size:** P2, S.
+**Priority and size:** P3 (was P2), S.
 
-**Why:** core_02 (The Caller) teaches the levers behind calls, texts, chat messages, QR codes and visitors (C02-LO1: authority, urgency, fear, helpfulness, flattery, insider jargon). In its Learn beat Ama hands the player a "social engineer bingo card": a grid of tactics including "new number", "wants a code", "wants remote access", "wants a payment", "QR code" and "keep it quiet". The player ticks each one as they hear it in the Apply beat, and the debrief shows the tactics spotted against the tactics actually used (`modules/core_02_social_engineering_beyond_email/game_design.md`, Learn and Debrief). Naming a lever while it is being used on you is what makes it easier to resist next time. The card could serve later modules about pressure too (core_11 payment fraud, role_06 callers), but core_02 is the only one that plans it today.
+**Build status:** **Built differently**, by triage red-flag chips (the learner names the tells on each item, scored), the pretext tells panel in the call overlay, and the flip view's list of tells with their canonical sentences. Tells are named per message after reading, not ticked on an overlay while listening. The bingo card below is retired; core_02 names its tactics through the chips.
+
+**Why:** core_02 (The Caller) teaches the levers behind calls, texts, chat messages, QR codes and visitors (C02-LO1: authority, urgency, fear, helpfulness, flattery, insider jargon). In its Learn beat (as first planned) the mentor hands the player a "social engineer bingo card": a grid of tactics including "new number", "wants a code", "wants remote access", "wants a payment", "QR code" and "keep it quiet". The player ticks each one as they hear it in the Apply beat, and the debrief shows the tactics spotted against the tactics actually used (`modules/core_02_social_engineering_beyond_email/game_design.md`, Learn and Debrief). Naming a lever while it is being used on you is what makes it easier to resist next time. The card could serve later modules about pressure too (core_11 payment fraud, role_06 callers), but core_02 is the only one that plans it today.
 
 **What exists today:**
 
@@ -1215,7 +1289,7 @@ All new text comes from the locale files (BE-06).
 
 **Design:**
 
-*The card* is defined in the scenario and handed over in ink (`#tactic_card:c02_bingo`, usually shown first as a BE-08 aid while Ama explains it):
+*The card* is defined in the scenario and handed over in ink (`#tactic_card:c02_bingo`, usually shown first as a BE-08 aid while the host explains it):
 
 ```json
 "tacticCards": {
@@ -1273,6 +1347,8 @@ The behaviour id is illustrative: core_02's `assessment.md` would add a row for 
 
 **Priority and size:** MVP, M.
 
+**Build status:** **Partly built**: the Esc game menu pauses the scene and keys, NPCs still under the VM context pause, and timed dialogue holds under the resume overlay. The clock, scenario timers, phone messages and mail jobs keep running, and `gameClock.rate` scales only the shown time. The plan entry stands, and must also hold the mail scheduler's wall-clock jobs (BE-35) and the authenticator's timeline (MG-36).
+
 **Why:** Several features need one clock they can stop or slow. BE-04 promises timers that can be turned off and no required fast reactions; BE-18's interruptions, BE-15's pause points and BE-16's time skips all have to stop game time cleanly; and anything else that moves with game time (an incident spreading on core_04's map, MG-26) has to follow the same clock. Today the game clock is wall time and cannot be paused, so timers and timed messages keep running while a learner reads a conversation, which is unfair to anyone who reads slowly or listens with a screen reader. This is the engine feature the accessibility baseline leans on most, so it must have an estimable design of its own rather than sit as a dependency the others assume.
 
 **What exists today:**
@@ -1305,7 +1381,9 @@ The behaviour id is illustrative: core_02's `assessment.md` would add a row for 
 
 ### BE-24: Place-player action
 
-**Priority and size:** P2, S.
+**Priority and size:** P3 (was P2), S.
+
+**Build status:** **Not built, and mostly moot**: every episode is one training room, so time skips, role switches and resumes need no move. Build only for a later multi-room module.
 
 **Why:** Time skips (BE-16), role switches (BE-11) and resumes (BE-12) all need to put the player in a particular room and spot, but today the player only ever starts or respawns in the start room. A small, shared action gives all three a reliable way to move the player and set a start position.
 
@@ -1336,7 +1414,9 @@ The behaviour id is illustrative: core_02's `assessment.md` would add a row for 
 
 ### BE-25: Course avatars and inclusive name entry
 
-**Priority and size:** MVP, S for the engine and the name field, M for the art.
+**Priority and size:** MVP (name entry), S. The avatar set is retired.
+
+**Build status:** **Partly built**, by the player avatar rule (the chosen avatar always wins and the portrait follows, aw9), the office sprites, and the look-alike guard (BE-37). The hooded fallback stays (R11, the user's "leave it"). The plan entry now asks only for **Unicode name entry**: accented letters, hyphens and apostrophes.
 
 **Why:** The player is a member of staff, not a hooded hacker, and staff have names the game must accept. The inclusive content rules (`accessibility_and_inclusion.md`, section 5.6) ask for a workplace avatar set and a name field that accepts accented letters, hyphens and apostrophes, so Siobhán, O'Neill, Anne-Marie and Wiśniewski can be typed.
 
@@ -1368,6 +1448,8 @@ The behaviour id is illustrative: core_02's `assessment.md` would add a row for 
 ### BE-26: Accessibility checks in CI
 
 **Priority and size:** MVP, S.
+
+**Build status:** **Not built.** CI already runs the social tests and the social validator over every social scenario (BE-38). The plan entry now **builds on that CI job**: add accessibility checks over the episode runner and the social overlays, then the text route when it exists.
 
 **Why:** The course commits to WCAG 2.2 AA and to keeping it (`accessibility_and_inclusion.md`, section 6). Automated checks on every change catch regressions that manual passes would miss between releases, and they are the first of the three testing layers that document promises.
 
@@ -1401,6 +1483,8 @@ The behaviour id is illustrative: core_02's `assessment.md` would add a row for 
 
 **Priority and size:** P2, S.
 
+**Build status:** **Not built.** The social lints (BE-38) check data and brands, not prose. The plan entry now **builds on BE-38**: a prose rule set beside `--strict-social`.
+
 **Why:** The course writes to a reading age of about 11 to 12 (`accessibility_and_inclusion.md`, section 5.5), following GOV.UK's rules on sentence length, paragraph length and plain words. A lint flags the sentences and words a human should look at, across ink, documents and bank items, alongside the dialogue lint that already runs.
 
 **What exists today:**
@@ -1430,6 +1514,8 @@ The behaviour id is illustrative: core_02's `assessment.md` would add a row for 
 
 **Priority and size:** P2, S.
 
+**Build status:** **Not built.** `removeFromInventory` exists inside the inventory system, but no ink tag or action uses it. A candidate for E12 (returning a visitor badge, handing a found USB stick to IT).
+
 **Why:** Some beats hand something back: giving a found USB stick to IT rather than plugging it in (core_07), returning a visitor's badge, handing over a form. Today ink can give the player an item but cannot take one, so these actions cannot be completed in the world.
 
 **What exists today:**
@@ -1457,9 +1543,11 @@ The behaviour id is illustrative: core_02's `assessment.md` would add a row for 
 
 ### BE-29: NPC guide behaviour
 
-**Priority and size:** P2, S.
+**Priority and size:** P3 (was P2), S.
 
-**Why:** Some beats need an NPC to lead: a tour of the office on the first day (core_00), escorting a visitor to a meeting room, walking a learner over to The Lark. The NPC should walk ahead to a destination and wait for the player to catch up.
+**Build status:** **Not built**, and mostly moot in the one-room frame. Build only if E12's design or a later multi-room module needs an escort.
+
+**Why:** Some beats need an NPC to lead: a tour of the office on the first day (core_00), escorting a visitor to a meeting room, walking a learner over to a terminal. The NPC should walk ahead to a destination and wait for the player to catch up.
 
 **What exists today:**
 
@@ -1487,7 +1575,9 @@ The behaviour id is illustrative: core_02's `assessment.md` would add a row for 
 
 ### BE-30: Video call options
 
-**Priority and size:** P2, S.
+**Priority and size:** MVP (was P2), S.
+
+**Build status:** **Not built.** "SECURE VIDEO LINK" is still hard-coded in person-chat. Promoted to MVP by 04 §4.2: configurable call labels are needed by every voice and video episode at a brand-set company. Call effects stay texture only.
 
 **Why:** Video-call scenes need two things the engine hard-codes today: a call bar label that can change (the deepfake call in core_15, the board briefings in role_01), and call effects for deepfake and poor-connection scenes. Today the call bar always reads "SECURE VIDEO LINK" and there are no call effects.
 
@@ -1518,11 +1608,138 @@ The behaviour id is illustrative: core_02's `assessment.md` would add a row for 
 - The effects are easy to misread as a detection cue; the core_15 rule above and a review check keep them as texture only.
 - Open: should blur and freeze be available outside deepfake scenes? Yes, for any poor-connection moment, which is the point: they are not special to fakes.
 
+## Built systems (BE-31 to BE-42)
+
+These ids were added on 2026-10-27 for systems main already has. Each section describes the system as it is, then how the plan uses it. Paths are under `JS/` unless they start with `scripts/` or `scenarios/`. The build's own documents are the source of truth for detail: `../../phishing_and_social_engineering/README.md` (decisions A to AA, "Conventions"), `designs/11_awareness_product_episodes.md` and `awareness/HANDOVER.md`.
+
+### BE-31: Episode runner
+
+**Priority and size:** Built.
+
+**Build status:** **Built**, in `JS/minigames/episode-runner/` and `JS/systems/episode-starter.js`, configured by `social.awarenessEpisode`.
+
+**What it is:** every awareness scenario is one training room with a kiosk and a host NPC. The kiosk opens one overlay that runs the episode's stages in order with a step strip. The stage ids are `brief`, `osint`, `build`, `write`, `mfa`, `flip`, `defend`, `debrief` and `check`. A full episode uses brief, then the attack stages it needs, then flip, defend and debrief. The `defendOnly` variant drops the attack stages; a check mission uses `stages: ["check"]`. The runner carries what the learner made into the flip, and saves progress in `episode_<id>_state`, so a reopen resumes at the stage left. The brief carries a scope note and the brand wordmark. The debrief (`debrief-view.js`) holds the per-item reasoning cards, the genuine-item feedback, the "team protected" tally, the rule of thumb word for word, the "On Monday" card, the "How to report here" box, the no-blame line and optional concept and voice panels. The host NPC carries the event mapping that completes the shell's one conclusion task once the defend or check result has synced. A `facilitated` flag adds stage prompts and a pause panel (BE-15).
+
+**How the plan uses it:** every new episode (E8 onwards) is a runner shell in this shape, with a full episode, a defend-only variant and new check items. The text route (BE-03), the consequence flip (BE-16) and the debrief extensions (BE-02) all build on it.
+
+### BE-32: Flip view
+
+**Priority and size:** Built.
+
+**Build status:** **Built**, in `JS/minigames/episode-runner/flip-view.js`.
+
+**What it is:** after the attack half, the learner's own sent email, built page (E5) or call (E3) is redrawn as its receiver sees it. Each tell is listed with its canonical red-flag sentence, and the learner's chosen template is quoted back. When the attempt did not land, the view says there is nothing to replay. The flip is the Learn beat of the built shape (R3).
+
+**How the plan uses it:** the consequence flip for topics with no natural attacker (BE-16) is a variant of this view. A call replay with tactics labelled (the role_06 extension to BE-02) builds on its call card.
+
+### BE-33: Influence service
+
+**Priority and size:** Built.
+
+**Build status:** **Built**, in `JS/systems/social-influence.js`, `JS/ui/influence-bar.js`, `JS/ui/npc-influence-pips.js` and `JS/ui/pretext-chrome.js`, configured by `social.characters` and `social.influenceDisplay`.
+
+**What it is:** one signed global per character (`<character>_influence`) with configurable thresholds: wary, refuses, reports, a lockout with an expiry, and an opt-in hostile state. Every change carries a reason. Ink moves it with `#influence:N`, `#influence_gained`, `#influence_lost` and `#report` (the character reports the caller and ends the conversation). It is shown as a bar with threshold marks, a pip over the character in the world, a tells panel and a portrait tint, configurable per character. There is no separate suspicion meter and no aggregate pretext score.
+
+**How the plan uses it:** any new pretext call (a later caller or visitor episode) uses this, not a new meter. It replaces BE-22's tactic checklist and MG-30's plausibility meter.
+
+### BE-34: Channels and synced globals
+
+**Priority and size:** Built.
+
+**Build status:** **Built**, in `JS/systems/global-writer.js` and `JS/systems/scenario-npc-records.js` (contract 00 section 9 in the build's designs).
+
+**What it is:** a character reached by phone, in person and by email has a separate ink story per channel. Shared state is scenario globals, kept in step with each story's variables by one writer. Email-only characters get headless records. The writer also offers sync-then-emit, so a done event fires only after the state has been saved.
+
+**How the plan uses it:** any character an episode reaches on more than one channel follows this rule. It replaces the plan's assumption of one conversation per NPC.
+
+### BE-35: Mail scheduler and mail runner
+
+**Priority and size:** Built.
+
+**Build status:** **Built**, in `JS/systems/mail-scheduler.js` and `JS/systems/mail-runner.js`, configured by `social.mailClient.seededMessages` and `deliverAt`.
+
+**What it is:** wall-clock jobs (text, seed and ink) that survive a reload, and a headless ink run per reply (the `on_email` knot) that writes the character's answer, moves influence and fires tags. `#mail_later` and `#compose_reply` are mail-only tags. Mail state is a persisted section of the game state.
+
+**How the plan uses it:** timed arrivals for any episode (the part of BE-18 still wanted) build on this. BE-23's pause must hold these jobs.
+
+### BE-36: Awareness-measure records
+
+**Priority and size:** Built.
+
+**Build status:** **Built**, in `JS/systems/awareness-measure.js` and `JS/minigames/inbox-triage/triage-comparison.js`, with the check missions `scenarios/awareness_pre_<role>_<ab|ba>` and `scenarios/awareness_post_<role>_<ab|ba>`.
+
+**What it is:** one record per triage round: item id, verdict, chips, score, time, stage, variant and discrimination. Ids, enums, numbers, booleans and a timestamp only; no free text and no learner identity (the caller adds the actor). The first answer wins. Records are kept in the global `se_awareness_records`. Six check roles (finance, hr, helpdesk, executive, general, mobile) each have two parallel 10-item forms, played in AB and BA order. The pre-check exports its result, the post mission imports it through platform carry-over, and the post screen shows the change only when a baseline exists. A discrimination figure (hits against false alarms) is stored for organisers only (aw3); learners get detailed feedback on genuine items instead. There is no default pass mark, and the product makes no effectiveness claims. `toXapi` shapes a record as an xAPI statement but is not yet used (BE-14).
+
+**How the plan uses it:** this is the evidence record. BE-01 (outcome ids), BE-13 (banks) and BE-14 (statements) extend it. Each module's question bank becomes a pool of candidate items for these forms and for defend sets, and critical behaviours become mirror pairs (R6). New check roles (developers, customer-facing staff, procurement, healthcare) each need a form pair once their episodes exist.
+
+### BE-37: Look-alike NPC guard and player avatar
+
+**Priority and size:** Built.
+
+**Build status:** **Built**, in `JS/utils/npc-lookalike.js` and `JS/utils/player-avatar.js`.
+
+**What it is:** the player's chosen avatar always wins, and the portrait follows it (aw9). When an NPC wears the same sprite, the NPC is swapped to another unused office sprite of the same set, and its stock portrait follows. The player's choice is never changed. The hooded fallback stays.
+
+**How the plan uses it:** replaces BE-25's avatar half (R11). New hosts and staff need no special handling.
+
+### BE-38: Social validator and CI
+
+**Priority and size:** Built.
+
+**Build status:** **Built**, in `scripts/validate_social.rb` and `scripts/validate_social/` (awareness, board, lab, landing, mail, options, osint, pretext and triage checks), run with `--strict-social`, and a CI job that runs the social tests and the validator over social scenarios.
+
+**What it is:** lints for templates, slots, influence globals, lockouts, ink fallbacks, brand names and `.example` domains, episode shells, host NPCs and the balance of paired check forms.
+
+**How the plan uses it:** every new episode passes it before review. The accessibility checks (BE-26) and the plain English lint (BE-27) are added to the same CI job and rule sets.
+
+### BE-39: Intel facts and readiness
+
+**Priority and size:** Built.
+
+**Build status:** **Built**, in `JS/systems/social-intel.js`, configured by `social.intelFacts` and the intel board's readiness slots, with the `grant_fact` action.
+
+**What it is:** one award path for typed facts found by browsing, calls or mail. A grant sets `target_ready_<id>` and `osint_done` at once and adds a note. Template blanks (MG-34) accept only facts the learner holds.
+
+**How the plan uses it:** every attack half that starts from public sources uses it. Attack content stays at the level of templates, pretexts and psychology.
+
+### BE-40: Phish rules engine and pretext judge
+
+**Priority and size:** Built.
+
+**Build status:** **Built**, in `JS/systems/phish-rules.js` and `JS/systems/pretext-judge.js`, configured by `social.phishTargets`, `social.templates` and `social.pretextNpcs`.
+
+**What it is:** two pure, deterministic judges, with no language model (R10). The phish rules engine reads slot value ids, never text. It scores a send on seven factors (sender trust, sender authentication, addressed to, pretext relevance, attachment, urgency and link credibility), with a pre-send gate that never names missing evidence and an escalating hint ladder. The pretext judge returns an influence change, a reason and a line for each call line and ask, catches mismatched claims, and handles repairs and verification.
+
+**How the plan uses it:** any new attack template or call is authored data for these judges. Free text, if switched on, is unscored flavour.
+
+### BE-41: Role swap
+
+**Priority and size:** Built.
+
+**Build status:** **Built**, in `JS/minigames/episode-runner/role-swap.js`, configured by `awarenessEpisode.defend.calls[]`.
+
+**What it is:** in E3 the learner makes a pretext call to the service desk, then takes the service desk seat. The calls become triage `call` cards in the defend set, scored by the triage scorer, with the claimed facts shown by label, so the facts the learner used are the ones they now check. The triage starter is the only writer of the episode's done global.
+
+**How the plan uses it:** replaces BE-11. role_03 and role_06 build on it, and any later swap reuses it.
+
+### BE-42: Readable font
+
+**Priority and size:** Built.
+
+**Build status:** **Built**, in `css/fonts.css` (`--se-font-readable`), under `public/break_escape/`.
+
+**What it is:** Source Sans 3, bundled for every string a player reads or compares. It was chosen because it covers the Cyrillic used in homograph examples; look-alike domains are drawn as typed (decision X). The awareness product uses no homographs.
+
+**How the plan uses it:** the readable face for all new episode text, in place of any other face named in `accessibility_and_inclusion.md`.
+
 ## Sizing notes on existing items
 
-BE-04 is L only if scoped to the shell and the minigames this course uses. BE-15 is M only while phone voting stays out. BE-19 is S for close, run and return; overlay questions belong in MG-20.
+BE-04 is now M, because the social overlays already follow the conventions; what is left is the shell and dialogue. BE-15 is M only while phone voting stays out. BE-19 is S for close, run and return. BE-03 is still L, but the runner's DOM overlays can be reused. BE-01, BE-02, BE-12 and BE-14 drop to S, because each now extends a built system.
 
 ## Notes for the other feature documents
+
+These notes were written before the build. Where they name MG-20, the intranet (BE-09) or check questions in a mentor conversation, read the build status of those ids first: MG-20 and BE-09 are P3, and evidence is the awareness-measure record (BE-36).
+
 
 - **`explainers_video_and_npc.md`:** its `#trigger_minigame:knowledge_check|<item_id>` form, and the `#visual_aid` and `#aid_step` tags, are the syntax BE-19 and BE-08 implement. Check questions should sit after a short handover line, with the result read in the next knot (BE-19).
 - **`minigames.md`:** every new minigame needs:

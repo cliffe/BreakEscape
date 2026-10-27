@@ -2,158 +2,226 @@
 
 Everything the awareness course needs that Break Escape and Hacktivity don't have yet, plus the existing features it builds on. Modules refer to features by id, so these ids are stable: add new ones at the end of a list, never renumber.
 
+**Read `../04_BUILT_SO_FAR.md` first.** Main now has a working social-engineering engine and an awareness product, "Incident Simulations: Critical Cases": seven full episodes (E1 to E7), seven defend-only variants and 24 pre and post check missions. Where this catalogue and the build disagree, the build wins. The per-id evidence is in `../research/current_state_social_engineering_build.md`.
+
 | Document | Covers |
 |---|---|
 | `break_escape_engine.md` | Engine and in-game UI features (BE) |
 | `minigames.md` | New minigames (MG) and how existing minigames are reused |
-| `explainers_video_and_npc.md` | How information is explained: NPC mentors, video, in-world documents, demonstrations, attacker views (EX) |
+| `explainers_video_and_npc.md` | How information is explained: the host NPC, concept cards, in-world documents, demonstrations, the attack half; video as an optional extra (EX) |
 | `hacktivity.md` | Platform features for running mandatory training for organisations (HA) |
 | `assessment_and_evidence.md` | The assessment model and the evidence trail, across engine and platform |
 | `accessibility_and_inclusion.md` | The accessible route and the accessibility and inclusion rules, across engine, platform and content |
 
-Priority: **MVP** is needed for the first sellable course (the Induction Essentials path); **P2** for the full core library and the first role modules; **P3** later. Size: **S** days, **M** a few weeks, **L** a month or more, for one developer, as a rough guide only.
+**Build status** (from the research file): **Built** (exists and does what the entry asks), **Built differently** (the need is met by another design, named), **Partly built** (part exists, named; the entry now asks only for the rest), **Not built** (nothing yet; a nearby base may be named in the feature document).
+
+**Priority** follows `04_BUILT_SO_FAR.md` §4:
+
+- **MVP** is what the next episodes need: the engine gaps every new episode needs (04 §4.2) and what E8 to E13 need (04 §4.3: E8 after the click, E9 passwords, E10 fake downloads and "verify you are human" pages, E11 misdirected and overshared data, E12 the visitor and the tailgater, E13 the AI assistant).
+- **P2** is the remaining core topics, the role extensions, sector_01 and the later check roles.
+- **P3** is later, or made moot by the build.
+- **Wish list** is a platform feature. No Hacktivity change happens without the user's go-ahead (R8).
+- **Built** marks the new ids for systems already on main.
+
+Size: **S** days, **M** a few weeks, **L** a month or more, for one developer, as a rough guide only. For a partly built entry the size is for what is left.
+
+All folders below are under `public/break_escape/js/` unless they start with `scripts/`, `scenarios/` or `public/`.
 
 ## Break Escape engine (BE)
 
-| Id | Feature | One line | Priority | Size |
-|---|---|---|---|---|
-| BE-01 | Assessed decisions | Tag ink choices, minigame results and events with a learning outcome and a rating; keep a per-game record and send it to the server | MVP | M |
-| BE-02 | Debrief screen | An end-of-module screen built from the BE-01 record: what happened, what you did, what good looks like, per-outcome results | MVP | M |
-| BE-03 | Text route player | Plays a module's ink, decisions and checks as an accessible text story, with the same records as the game | MVP | L |
-| BE-04 | Accessibility baseline | Keyboard play, screen reader support for menus and dialogue, transcripts, text size, reduced motion, no flashing, timers that can be turned off | MVP | L |
-| BE-05 | Organisation profile in game | Customer values (name, logo, reporting routes, contacts, labels) in on-screen text, documents and the intranet; voiced lines stay generic | MVP | M |
-| BE-06 | Localisation | Translatable UI and ink, per-language voices, locale-specific reference content | P3 | L |
-| BE-07 | Micro-drill launcher | Start one minigame on its own with randomised content as a 3 to 5 minute drill, with a result record | P2 | M |
-| BE-08 | Visual aids in conversations | Show an image, an annotated document or a diagram inside a conversation, step through highlights, and share a screen in a video call | MVP | M |
-| BE-09 | Intranet terminal | The company intranet in game (a reskinned lab workstation): reference cards, policies, contacts, and a policy acknowledgement that the platform records | MVP | M |
-| BE-10 | Spot-the-risk mode | Mark objects in a room or scene as risks; the player finds and fixes them, with an optional timer and a found and missed summary | P2 | M |
-| BE-11 | Role switch | Change the player's character, kit and objectives mid-module for an attacker-view interlude, then switch back | P2 | M |
-| BE-12 | Short sessions and resume | Checkpoints between beats, quick resume, and a module length that fits in a 15 to 20 minute slot | MVP | M |
-| BE-13 | Content banks and randomisation | Draw emails, callers, documents and questions from banks per play, and swap in annual editions | P2 | M |
-| BE-14 | xAPI statements | Emit standard learning records (started, decided, completed, scored) for an LRS or an LMS | P2 | M |
-| BE-15 | Facilitated group mode | Pause points with discussion prompts, a presenter view, and group decisions | P2 | M |
-| BE-16 | Time skips and consequence scenes | "Three weeks later" scenes that show where a decision led, then return | P2 | S |
-| BE-17 | Cross-module memory | Characters remember what the player did in earlier modules | P3 | M |
-| BE-18 | Work task and interruptions | A primary work task with visible progress, plus scheduled interruptions (an email lands, the phone rings, a visitor arrives) that carry the security tests | MVP | M |
-| BE-19 | Open minigames from conversations and events | An ink tag and an action that open any minigame (the inbox, a check question, a form) without the player clicking an object; today `#trigger_minigame` is a stub | MVP | S |
-| BE-20 | Authorable tutorial, title screen and end screen | Scenario-defined tutorial steps, the course's own title screen (with the customer's logo) and a non-spy end screen; today these are fixed | MVP | M |
-| BE-21 | Workplace music and sound | A music and ambience set for the workplace tone; today's playlists are spy-styled | P2 | S |
-| BE-22 | Tactic spotter card | A light overlay listing manipulation tactics (urgency, authority, flattery and so on) that the player ticks off as they hear them in play; becomes part of the debrief score | P2 | S |
-| BE-23 | Pause and time scale | Pause the whole game (clock, timers, timed messages) from a menu or a minigame, and slow or stop timed pressure for players who need it; today the game clock can't be paused | MVP | M |
-| BE-24 | Place-player action | A scenario action that moves the player to a room and spot, for time skips, role switches and resumes | P2 | S |
-| BE-25 | Course avatars and inclusive name entry | A workplace avatar set for this course (no hooded hackers), and a name field that accepts accented letters, hyphens and apostrophes | MVP | S (engine), M (art) |
-| BE-26 | Accessibility checks in CI | Automated accessibility tests over the game shell, the minigames' HTML and the text route on every change | MVP | S |
-| BE-27 | Plain English lint | A check over ink and documents for long sentences, jargon without explanation and banned filler words, alongside the dialogue lint | P2 | S |
-| BE-28 | Take an item from the player | An ink tag and action that take an item from the player's inventory (handing a found USB stick to IT, returning a badge); today ink can give items but not take them | P2 | S |
-| BE-29 | NPC guide behaviour | An NPC walks ahead to a destination and waits for the player to catch up (tours, escorting a visitor) | P2 | S |
-| BE-30 | Video call options | A configurable call bar label (today "SECURE VIDEO LINK" is hard-coded) and ink-driven call effects (freeze, blur, audio lag) for deepfake and poor-connection scenes | P2 | S |
+| Id | Feature | One line | Build status | Priority | Size |
+|---|---|---|---|---|---|
+| BE-01 | Assessed decisions | Now: add an optional outcome id to the awareness-measure records, ids only, first answer wins | Built differently, by the judges (BE-40), triage scoring and awareness-measure records (BE-36) | P2 (was MVP) | S |
+| BE-02 | Debrief screen | Now: extra panels on the episode debrief (a chain view, a call replay) and a per-outcome view once BE-01 adds outcome ids | Built differently, by the episode debrief in the runner (BE-31) and the flip view (BE-32) | P2 (was MVP) | S |
+| BE-03 | Text route player | Plays an episode or check shell as an accessible text route, writing the same awareness-measure records as the game | Not built (voicemail transcripts only) | MVP | L |
+| BE-04 | Accessibility baseline | Extend the social overlays' conventions to the game shell and dialogue: screen reader route, captions, text size, timers that can be turned off | Partly built, by the social overlay conventions and the game menu Display page | MVP | M |
+| BE-05 | Organisation profile in game | Now: the reporting route, rule of thumb slot and team size, with more keys only as episodes need them | Partly built, by `social.awareness` and the episode brand wordmark | P2 (was MVP); the platform setting waits on the user | S |
+| BE-06 | Localisation | Translatable UI and ink, per-language voices, locale-specific reference content | Not built (strings already sit in data) | P3 | L |
+| BE-07 | Micro-drill launcher | A drill drawn from a bank; the defend-only shell is the drill today (R12) | Partly built, by check missions and defend-only shells | P2 | M |
+| BE-08 | Visual aids in conversations | An image or annotated document inside a conversation, and a shared screen in a video call | Not built (concept cards (EX-09) and debrief panels cover most uses) | P2 (was MVP) | M |
+| BE-09 | Intranet terminal | The company intranet in game, with reference pages and policies | Not built; made moot by the debrief's report box and "On Monday" card | P3 (was MVP) | M |
+| BE-10 | Spot-the-risk mode | Mark objects in a room or scene as risks; the player finds and fixes them | Not built (nearest: the landing-page builder's Inspect step) | P2; a candidate for E12 | M |
+| BE-11 | Role switch | Now: reuse the E3 role swap for any later attack-then-defend swap | Built differently, by the E3 role swap (BE-41) | P3 (done) | S |
+| BE-12 | Short sessions and resume | Now: checkpoints inside a stage, only if playtests show the need | Partly built, by per-stage episode state, persisted mail state and drafts | P2 (was MVP) | S |
+| BE-13 | Content banks and randomisation | A seeded draw from a bank and annual editions, keeping mirror pairs and the balance lint | Partly built, by parallel forms A and B in AB and BA pairs | P2 | M |
+| BE-14 | xAPI statements | Emit the awareness-measure records as xAPI statements | Partly built, by `toXapi` in awareness-measure (written, unused) | P2 | S |
+| BE-15 | Facilitated group mode | Now: a presenter view; the defend round stays individual | Partly built, by the runner's `facilitated` flag | P2 | M |
+| BE-16 | Time skips and consequence scenes | Now: the consequence flip (R3) for E11 and the no-attacker topics, as a flip view variant | Not built (nearest: the flip view (BE-32)) | MVP (for E11) | S |
+| BE-17 | Cross-module memory | Characters remember the player; moot without a recurring cast (R2) | Partly built, by platform carry-over of scalar globals | P3 | M |
+| BE-18 | Work task and interruptions | Timed arrivals inside a triage round, only if an episode needs them | Partly built, by the mail scheduler (BE-35) and NPC timed messages | P2 (was MVP) | M |
+| BE-19 | Open minigames from conversations and events | A real `#trigger_minigame` and an `open_minigame` action, for host conversations and E12's person-chat | Partly built, by the framework's return-to-parent and the runner opening each stage | MVP | S |
+| BE-20 | Authorable tutorial, title screen and end screen | Scenario-defined tutorial, title and end screen in the general skin; today they show Hacktivity and spy text | Not built | MVP | M |
+| BE-21 | Workplace music and sound | A music and ambience set for the workplace tone | Not built (the lab reuses existing playlists) | P2 | S |
+| BE-22 | Tactic spotter card | Name the tactics in play; done per message instead of on an overlay | Built differently, by triage red-flag chips, the pretext tells panel and the flip view's tell list | P3 (was P2) | S |
+| BE-23 | Pause and time scale | Pause that also stops the clock, scenario timers, phone messages and mail jobs, plus a timers-off setting | Partly built, by the Esc menu's scene pause | MVP | M |
+| BE-24 | Place-player action | A scenario action that moves the player to a room and spot | Not built; mostly moot in a one-room frame | P3 (was P2) | S |
+| BE-25 | Course avatars and inclusive name entry | Now: Unicode name entry (accented letters, hyphens, apostrophes); the chosen avatar always wins (R11) | Partly built, by the player avatar rule and the look-alike guard (BE-37) | MVP | S |
+| BE-26 | Accessibility checks in CI | Automated accessibility tests over the runner and the social overlays, added to the existing social CI job | Not built (CI runs the social tests and validator, BE-38) | MVP | S |
+| BE-27 | Plain English lint | A prose check over ink and strings, beside `--strict-social` | Not built | P2 | S |
+| BE-28 | Take an item from the player | An ink tag and action that take an item (a visitor badge, a found USB stick) | Not built (`removeFromInventory` exists internally) | P2; a candidate for E12 | S |
+| BE-29 | NPC guide behaviour | An NPC walks ahead and waits for the player | Not built | P3 (was P2) | S |
+| BE-30 | Video call options | Configurable call labels (today "SECURE VIDEO LINK" is hard-coded), and call effects as texture only | Not built | MVP (was P2) | S |
+| BE-31 | Episode runner | The kiosk overlay that runs an episode's stages with a step strip, then the debrief | Built: `minigames/episode-runner/`, `systems/episode-starter.js` | Built | |
+| BE-32 | Flip view | Shows the learner's own email, page or call as its receiver sees it, with its tells | Built: `minigames/episode-runner/flip-view.js` | Built | |
+| BE-33 | Influence service | One signed influence global per character, with thresholds, reasons, a bar and a pip | Built: `systems/social-influence.js`, `ui/influence-bar.js`, `ui/npc-influence-pips.js`, `ui/pretext-chrome.js` | Built | |
+| BE-34 | Channels and synced globals | One ink story per channel per character, with shared state in synced globals | Built: `systems/global-writer.js`, `systems/scenario-npc-records.js` | Built | |
+| BE-35 | Mail scheduler and mail runner | Wall-clock mail jobs that survive a reload, and a headless ink run per reply | Built: `systems/mail-scheduler.js`, `systems/mail-runner.js` | Built | |
+| BE-36 | Awareness-measure records | Per-round records (ids, verdicts, times), pre and post comparison, discrimination figure for organisers | Built: `systems/awareness-measure.js`, `minigames/inbox-triage/triage-comparison.js`, `scenarios/awareness_pre_*`, `scenarios/awareness_post_*` | Built | |
+| BE-37 | Look-alike NPC guard and player avatar | The chosen avatar always wins; an NPC wearing the same sprite is swapped | Built: `utils/npc-lookalike.js`, `utils/player-avatar.js` | Built | |
+| BE-38 | Social validator and CI | Lints for templates, slots, influence, brands, `.example` domains, episode shells and hosts; a CI job | Built: `scripts/validate_social.rb`, `scripts/validate_social/`, `--strict-social` | Built | |
+| BE-39 | Intel facts and readiness | One award path for typed facts from browsing, calls or mail, with readiness globals | Built: `systems/social-intel.js` | Built | |
+| BE-40 | Phish rules engine and pretext judge | Pure, deterministic judges for a sent message (seven factors) and for each call line | Built: `systems/phish-rules.js`, `systems/pretext-judge.js` | Built | |
+| BE-41 | Role swap | E3's calls turned into triage call cards, so the learner checks the facts they just used | Built: `minigames/episode-runner/role-swap.js` | Built | |
+| BE-42 | Readable font | Source Sans 3 for every string a player reads or compares | Built: `public/break_escape/css/fonts.css` (`--se-font-readable`) | Built | |
 
 ## Minigames (MG)
 
-| Id | Minigame | One line | Priority | Size |
-|---|---|---|---|---|
-| MG-01 | Inbox | A mail client: read, hover links, inspect senders, open attachments, reply, forward, compose with recipient checks, and Report | MVP | L |
-| MG-02 | Web browser | An address bar and simple fake sites: logins, downloads, search ads, warnings, extension prompts, fake CAPTCHA instructions | P2 | L |
-| MG-03 | Link and domain drill | Read a web address and pick out the real domain, with an optional timer (the inline version used by core_01 is MVP) | MVP | S |
-| MG-04 | Voice calls | Incoming and outgoing calls with a ringing phone, a directory for calling back, hold and transfer | P2 | M |
-| MG-05 | Messaging apps | SMS and chat-app skins on the existing phone chat, with links and unknown numbers | P2 | S |
-| MG-06 | QR code scanner | Scan a code in the world, see where it really goes, choose to open it or not | P2 | S |
-| MG-07 | MFA prompts and authenticator | Push approvals with number matching, one-time codes, a prompt storm at night | MVP | M |
-| MG-08 | Password manager and passphrase builder | Build a passphrase, see how long it would take to guess, store and fill it with a manager | MVP | M |
-| MG-09 | Incident report form | Report what, when, where and who; feedback on completeness and speed | MVP | S |
-| MG-10 | Classification sorter | Label documents with the organisation's classes, with reasons | P2 | S |
-| MG-11 | Sharing settings | Choose who can see a file or link, and spot over-shared ones | P2 | S |
-| MG-12 | Redaction | Remove personal data before sending, including the fake redaction that only hides the text | MVP | M |
-| MG-13 | Social media profile and OSINT board | Connect public posts into an attacker's picture of a person, then fix the privacy settings | P3 | M |
-| MG-14 | Wi-Fi and VPN picker | Choose a network, spot the lookalike, connect the VPN; best built as a panel of MG-23 | P2 | S |
-| MG-15 | Payment verification desk | Compare a change request with the supplier record, call back on the known number, approve or refuse with a second approver | P2 | M |
-| MG-16 | AI assistant chat | Decide what is safe to paste into an AI tool, and check its answers | P2 | M |
-| MG-17 | Caller verification desk | A queue of callers and a verification checklist, for service desks and contact centres | P3 | M |
-| MG-18 | Access review | A table of people and permissions; remove what is no longer needed | P3 | S |
-| MG-19 | Code review | Spot the security problem in a short code change | P3 | M |
-| MG-20 | Knowledge check | Scenario questions (single and multiple choice, hotspot, ordering) from a bank, with feedback and a recorded result | MVP | M |
-| MG-21 | Video player | Plays a video on an in-world screen with captions, transcript, chapters and a watched record | P2 | M |
-| MG-22 | Supplier assessment | Review a supplier's security answers and evidence, and spot the gaps | P3 | S |
-| MG-23 | Device settings | A phone or laptop settings panel: screen lock, updates, encryption, backups, app permissions, pop-up triage | P2 | S to M |
-| MG-24 | Crisis decision board | Extends the existing command board for board-level decisions with injects and an optional timer | P2 | M to L |
-| MG-25 | Document inspector | Compare a document (an invoice, a letter, an ID, a work order) with a trusted reference and mark what doesn't match | P2 | M |
-| MG-26 | Incident spread map | An office or network map where an incident spreads with game time until someone reports it, then shows what the report contained (core_04's "blast radius"); extends `network-segmentation-map` | MVP | M |
-| MG-27 | Work desktop | The player's computer as one launcher for the inbox, browser, chat, The Lark and settings, with notifications; extends the `container` desktop mode | MVP | S to M |
-| MG-28 | Secure payment line | A keypad overlay for taking a card payment by phone: the adviser sees only masked digits, the recording pauses, and card numbers typed into notes are flagged | P3 | S |
-| MG-29 | Patient record viewer | The existing `ehr-terminal` generalised: configurable header, search, admin and clinical views, a restricted-record warning, a session banner and an event per record opened | P3 | M |
-| MG-30 | Pretext workshop (attacker view) | A sandboxed, optional exercise where the learner plays an authorised tester and assembles a spear-phishing pretext from fictional public details and a vetted fragment bank; a readable rules-based judge rates how convincing the pretext is and why, then it flips into the learner's own inbox (MG-01) to catch. Pretext and psychology only: no payloads, no free-typed content, nothing can be sent | P3 | M |
+| Id | Minigame | One line | Build status | Priority | Size |
+|---|---|---|---|---|---|
+| MG-01 | Inbox | Now: compose with recipient checks for misdirected email (E11); defender reply and forward only if an episode needs them | Built differently, by the mail client (MG-34) and inbox triage (MG-35) over one read-only reader | MVP (the compose extension, for E11) | M |
+| MG-02 | Web browser | Now: downloads, browser warnings and fake "verify you are human" pages (E10) | Partly built, by the OSINT browser (MG-31) and the triage `page` kind | MVP (for E10) | M |
+| MG-03 | Link and domain drill | A stand-alone timed drill, as a defend-only shell | Partly built, by triage look-alike tells and the builder's domain menu | P2 | S |
+| MG-04 | Voice calls | Ringing phone, directory, hold and transfer | Partly built, by pretext calls and the triage `call` and `voicemail` cards | P2 | M |
+| MG-05 | Messaging apps | Chat-app skins on phone-chat | Partly built, by the triage `sms` kind and the phone layout | P2 | S |
+| MG-06 | QR code scanner | Judge a printed QR notice; the code encodes nothing | Built differently, by the triage `qr` kind | P3 | S |
+| MG-07 | MFA prompts and authenticator | Now: number matching and one-time codes on the defender side | Partly built, by the mock authenticator (MG-36) and the triage `push` kind | P2 | M |
+| MG-08 | Password manager and passphrase builder | Build a passphrase, see how long it would take to guess, store and fill it with a manager | Not built | MVP (for E9) | M |
+| MG-09 | Incident report form | Report what, when, where and who; feedback on completeness and speed | Not built (reporting is the one-click Report verdict) | MVP (for E8) | S |
+| MG-10 | Classification sorter | Label documents with the organisation's classes, with reasons | Not built | P2 | S |
+| MG-11 | Sharing settings | Choose who can see a file or link, and spot over-shared ones | Not built | MVP (for E11) | S |
+| MG-12 | Redaction | Remove personal data before sending, including the fake redaction that only hides the text | Not built | MVP (for E11) | M |
+| MG-13 | Social media profile and OSINT board | Connect public posts into an attacker's picture of a person, then pick mitigations | Built differently, by the OSINT browser (MG-31) and intel board (MG-32) | P3 (done) | S |
+| MG-14 | Wi-Fi and VPN picker | Choose a network, spot the look-alike, connect the VPN | Not built | P2 | S |
+| MG-15 | Payment verification desk | Compare with the supplier record, call back on the known number, second approver | Partly built, by E1's Verify verdict and genuine "confirmed by phone" item | P2 | M |
+| MG-16 | AI assistant chat | Decide what is safe to paste into an AI tool, and check its answers; authored, no language model at runtime (R10) | Not built | MVP (for E13) | M |
+| MG-17 | Caller verification desk | A queue of callers and a checklist panel | Partly built, by the E3 role swap's call cards (BE-41) | P3 | S |
+| MG-18 | Access review | A table of people and permissions; remove what is no longer needed | Not built | P3 | S |
+| MG-19 | Code review | Spot the security problem in a short code change | Not built | P3 | M |
+| MG-20 | Knowledge check | Now: each module's question bank is a pool of candidate check and defend items (R6) | Not built; built differently as the pre and post checks (BE-36) | P3 (was MVP) | M |
+| MG-21 | Video player | Plays a video on an in-world screen with captions and transcript | Not built | P3 (no video, R9) | M |
+| MG-22 | Supplier assessment | Review a supplier's security answers and evidence | Not built | P3 | S |
+| MG-23 | Device settings | Screen lock, updates, encryption, backups, app permissions, pop-up triage | Not built | P2 | S to M |
+| MG-24 | Crisis decision board | Extends the existing command board for board-level decisions | Not built | P2 | M to L |
+| MG-25 | Document inspector | Compare a document with a trusted reference and mark what doesn't match | Partly built, by the landing-page builder's Inspect step (MG-33) | P2 | M |
+| MG-26 | Incident spread map | Where an incident spreads until someone reports it (core_04's "blast radius") | Not built | P2 (was MVP); a candidate for E8's flip | M |
+| MG-27 | Work desktop | One launcher for the inbox, browser, chat and settings | Not built; made moot by the kiosk (BE-31) | P3 (was MVP) | S to M |
+| MG-28 | Secure payment line | A keypad overlay for taking a card payment by phone | Not built | P3 | S |
+| MG-29 | Patient record viewer | The existing `ehr-terminal` generalised | Not built | P3 | M |
+| MG-30 | Pretext workshop (attacker view) | Delivered as the attack half of every full episode | Built differently, by pretext prep and the composer (MG-34), the judges (BE-40), influence (BE-33) and the flip view (BE-32) | P3 (delivered) | |
+| MG-31 | OSINT browser | An in-world browser over authored sites; every pick grants a typed fact | Built: `minigames/osint-browser/` | Built | |
+| MG-32 | Intel board | A case file with recon, scope, plan and defender modes | Built: `minigames/intel-board/` | Built | |
+| MG-33 | Landing-page builder | Assemble a look-alike sign-in page from authored choices, score it, then inspect it as the victim; never a working page | Built: `minigames/landing-page-builder/` | Built | |
+| MG-34 | Pretext prep and template composer | A pretext card and mail templates whose blanks take only held facts; accounts, devices, drafts and judged replies | Built: `minigames/pretext-prep/`, `minigames/mail-client/` | Built | |
+| MG-35 | Inbox triage | The scored defend round: Trust, Report, Delete, Verify; email, call, voicemail, push, page, SMS and QR cards; red-flag chips; mirror pairs | Built: `minigames/inbox-triage/` | Built | |
+| MG-36 | Mock authenticator | A scripted push stream that ends with the target approving; an unscored demonstration | Built: `minigames/authenticator/` | Built | |
+| MG-37 | Engagement report | The student lab's closing report: results and root causes paired with controls | Built: `minigames/engagement-report/` | Built | |
 
 ## Explainers (EX)
 
-| Id | Feature | One line | Priority | Size |
-|---|---|---|---|---|
-| EX-01 | Mentor explainer pattern | A recurring colleague explains in short chunks with visual aids, asks a check question, and lets experienced players skip | MVP | S |
-| EX-02 | Engine-recorded video | Short explainer videos recorded from the engine with the course's own characters and voices | P2 | M |
-| EX-03 | Produced video | Presenter-led or animated videos made outside the engine, for openings and leaders' content | P3 | M |
-| EX-04 | In-world documents | Posters, intranet pages, security team emails and desk notices that carry the same messages | MVP | S |
-| EX-05 | Demonstration scenes | A short cutscene of an attack working on a colleague, then unpicked by the mentor | P2 | S |
-| EX-06 | Attacker-view interludes | The learner briefly plays an authorised tester to see how little an attacker needs | P2 | M |
-| EX-07 | Shared glossary and tooltips | One definition per term across the course, shown as tooltips and on reference cards | P2 | S |
-| EX-08 | Printable poster and briefing pack | Posters, desk cards and a short team briefing per module, branded with the organisation profile, for customers' own offices; helps meet PCI DSS 12.6.3's "multiple methods" | P2 | S |
+| Id | Feature | One line | Build status | Priority | Size |
+|---|---|---|---|---|---|
+| EX-01 | Host NPC and concept cards (was the mentor explainer) | A host at a brand-set company frames each episode; concept cards and the debrief explain | Partly built, by the host NPC in every shell (BE-31) and concept cards (EX-09) | MVP (authored per new episode) | S |
+| EX-02 | Engine-recorded video | Short videos recorded from the engine; optional | Not built | P3, optional | M |
+| EX-03 | Produced video | Presenter-led or animated videos made outside the engine; optional | Not built | P3, optional | M |
+| EX-04 | In-world documents | Posters and notices in the training room that carry the same messages | Partly built, by existing notes and text-file objects and the training room's "REPORT IT" poster | P2 | S |
+| EX-05 | Demonstration scenes | See an attack land, then see what would have stopped it | Partly built, by the flip view (BE-32) and the mock authenticator (MG-36) | P2 | S |
+| EX-06 | Attacker-view interludes | Delivered by attack-first: the attack half of every full episode | Built differently, by the episode runner's attack stages (BE-31) | P3 (delivered) | |
+| EX-07 | Shared glossary and tooltips | Now: one course-wide set of concept card texts, behind a visible button, never hover only | Partly built, by concept cards (EX-09), the triage header explainers and the canonical red-flag sentences | P2 | S |
+| EX-08 | Printable poster and briefing pack | Posters, desk cards and a short team briefing per episode, with the habit to keep and the customer's reporting route | Not built | P2 | S |
+| EX-09 | Concept cards | Short explainer cards behind a visible "What is this?" button, linted for real brand names | Built: `minigames/osint-browser/concept-card.js` (`social.conceptCards`) | Built | |
 
 ## Hacktivity (HA)
 
-| Id | Feature | One line | Priority | Size |
-|---|---|---|---|---|
-| HA-01 | Organisations, departments and roles | Customer organisations with departments, and org admin, manager, learner and auditor roles | MVP | L |
-| HA-02 | Single sign-on and provisioning | SAML and OIDC sign-in, SCIM or scheduled CSV provisioning, leavers removed automatically | P2 | L |
-| HA-03 | Learning paths and assignments | Role-based paths, due dates, automatic assignment on joining and on role change, annual recertification, exemptions | MVP | L |
-| HA-04 | Reminders and escalation | Email (and later chat) reminders before and after due dates, escalation to managers; the due-soon and overdue emails are MVP | P2 (part MVP) | M |
-| HA-05 | Completion records and audit evidence | An append-only record of who completed which version of what, when, with what result, exportable as an audit pack; the tamper-evident chain and framework views come in P2 | MVP (part P2) | L |
-| HA-06 | Certificates and badges | Completion certificates with a verification link, and optional open badges | MVP | S |
-| HA-07 | Policy library and acknowledgement | Upload versioned policies, require acknowledgement, re-request on change, keep the record | MVP | M |
-| HA-08 | Question banks | Manage knowledge check banks, add organisation questions, retire weak items; for the MVP each module ships its own items | P2 | M |
-| HA-09 | Organisation dashboards | Completion, overdue and per-outcome results by department, with privacy thresholds | MVP | M |
-| HA-10 | LMS interoperability | SCORM 1.2 and 2004 packages, cmi5, and LTI 1.3 so customers can assign modules from their own LMS | P2 | L |
-| HA-11 | Organisation profile and branding | The values the game and reference cards use (BE-05), plus logo, colours, module selection and custom content | MVP | M |
-| HA-12 | Phishing simulation and report-button data | Import the customer's own simulation results and report-button data, behind an ethics checklist; no sending engine | P3 | M |
-| HA-13 | Facilitated sessions | Run a module as a team session with a facilitator console and debrief slides | P2 | M |
-| HA-14 | Evaluation and surveys | Reaction and confidence surveys, before and after measures, behaviour metrics | P3 | M |
-| HA-15 | Data protection and platform trust | Processor terms, retention, deletion, data export, audit log, UK and EU hosting | MVP | L |
-| HA-16 | Platform localisation | Translatable Hacktivity UI for learners and admins | P3 | M |
-| HA-17 | Learner home | "My training": what is due, progress, resume, certificates, reference cards | MVP | M |
-| HA-18 | Licensing and billing | Per-seat organisation licences, trials, renewals | P3 | M |
-| HA-19 | Content versioning and release notes | Version every module, record which version each learner took, publish what changed; the version stamp on records is MVP | P2 (part MVP) | S |
-| HA-20 | Video hosting, captions and transcripts | Host explainer videos with caption files, transcripts and audio description | P2 | S |
-| HA-21 | Microlearning schedule | Send a short drill each month, spaced through the year | P2 | M |
-| HA-22 | Learning record store | Receive and store xAPI statements from the game (BE-14) and forward them | P2 | M |
-| HA-23 | Accessible platform and lab sheet theme | A WCAG 2.2 AA pass over Hacktivity's learner pages and the HacktivityLabSheets theme | MVP | M |
-| HA-24 | Public API and webhooks | Keyed API access and outgoing webhooks so customers can pull records into HR and GRC systems and react to completions | P2 | M |
-| HA-25 | Partner role | Resellers and managed service providers set up and support several customer organisations, without seeing learners' detailed results | P3 | M |
-| HA-26 | Setup checklist | A go-live checklist for a new organisation (profile, policies, paths, reporting routes, a test learner) that must be done before staff are invited | MVP | S |
+No HA feature is built. The awareness product runs as ordinary missions in the `training` collection, ordered by the organiser (R8). The only platform change proposed is the customer reporting-route setting, and it waits for the user's go-ahead. The rest of this list is a wish list, kept for later; "was" gives the priority the plan first gave it.
+
+| Id | Feature | One line | Build status | Priority | Size |
+|---|---|---|---|---|---|
+| HA-01 | Organisations, departments and roles | Customer organisations with departments, and org admin, manager, learner and auditor roles | Not built | Wish list (was MVP) | L |
+| HA-02 | Single sign-on and provisioning | SAML and OIDC sign-in, SCIM or scheduled CSV provisioning, leavers removed automatically | Not built | Wish list (was P2) | L |
+| HA-03 | Learning paths and assignments | Role-based paths, due dates, automatic assignment, recertification, exemptions | Not built (organisers order the missions by hand) | Wish list (was MVP) | L |
+| HA-04 | Reminders and escalation | Reminders before and after due dates, escalation to managers | Not built | Wish list (was P2, part MVP) | M |
+| HA-05 | Completion records and audit evidence | An append-only record of who completed which version of what, exportable as an audit pack | Not built (records stay in game globals) | Wish list (was MVP) | L |
+| HA-06 | Certificates and badges | Completion certificates with a verification link; a later organisation option, not a default (R6) | Not built | Wish list (was MVP) | S |
+| HA-07 | Policy library and acknowledgement | Versioned policies, acknowledgement, re-request on change | Not built | Wish list (was MVP) | M |
+| HA-08 | Question banks | Manage item banks, add organisation items, retire weak items | Not built (sets are authored per scenario) | Wish list (was P2) | M |
+| HA-09 | Organisation dashboards | Completion and results by department; the discrimination figure for organisers only | Not built | Wish list (was MVP) | M |
+| HA-10 | LMS interoperability | SCORM, cmi5 and LTI 1.3 | Not built | Wish list (was P2) | L |
+| HA-11 | Organisation profile and branding | The customer reporting route as a platform setting; logo and the rest later | Not built (the game reads a host-page override today) | Reporting route: waits on the user; the rest wish list (was MVP) | M |
+| HA-12 | Phishing simulation and report-button data | Import the customer's own simulation results, behind an ethics checklist | Not built | Wish list (was P3) | M |
+| HA-13 | Facilitated sessions | A facilitator console and debrief slides | Not built (the in-game `facilitated` flag exists, BE-15) | Wish list (was P2) | M |
+| HA-14 | Evaluation and surveys | Reaction and confidence surveys; no effectiveness claims | Not built (in-game pre and post checks, BE-36) | Wish list (was P3) | M |
+| HA-15 | Data protection and platform trust | Processor terms, retention, deletion, export, audit log, UK and EU hosting | Not built (hosting and learner privacy are out of scope for now) | Wish list (was MVP) | L |
+| HA-16 | Platform localisation | Translatable Hacktivity UI | Not built | Wish list (was P3) | M |
+| HA-17 | Learner home | "My training": what is due, progress, resume | Not built | Wish list (was MVP) | M |
+| HA-18 | Licensing and billing | Per-seat organisation licences, trials, renewals | Not built | Wish list (was P3) | M |
+| HA-19 | Content versioning and release notes | Version every episode and record which version each learner took | Not built | Wish list (was P2, part MVP) | S |
+| HA-20 | Video hosting, captions and transcripts | Host videos with captions and transcripts | Not built | Wish list (was P2); only if EX-02 or EX-03 is taken up | S |
+| HA-21 | Microlearning schedule | Send a short drill each month | Not built | Wish list (was P2) | M |
+| HA-22 | Learning record store | Receive xAPI statements from the game (BE-14) | Not built | Wish list (was P2) | M |
+| HA-23 | Accessible platform and lab sheet theme | A WCAG 2.2 AA pass over learner pages and the lab sheet theme | Not built | Wish list (was MVP) | M |
+| HA-24 | Public API and webhooks | Keyed API access and outgoing webhooks | Not built | Wish list (was P2) | M |
+| HA-25 | Partner role | Resellers and managed service providers | Not built | Wish list (was P3) | M |
+| HA-26 | Setup checklist | A go-live checklist for a new organisation | Not built | Wish list (was MVP) | S |
+
+## Built systems with no plan id
+
+The build added systems the plan had no id for. Each now has a new id at the end of its list (above), marked **Built**. The feature documents describe them as they are; the plan extends them rather than replacing them.
+
+| New id | System | Folder | Nearest old id |
+|---|---|---|---|
+| BE-31 | Episode runner: kiosk overlay, step strip, `full`, `defendOnly` and `check` variants, per-stage resume, host NPC and conclusion rule, the episode debrief | `minigames/episode-runner/`, `systems/episode-starter.js` | BE-02, BE-12, EX-06 |
+| BE-32 | Flip view | `minigames/episode-runner/flip-view.js` | MG-30, EX-05 |
+| BE-33 | Influence service, bar and pip | `systems/social-influence.js`, `ui/influence-bar.js`, `ui/npc-influence-pips.js`, `ui/pretext-chrome.js` | BE-22 |
+| BE-34 | Channels and synced globals | `systems/global-writer.js`, `systems/scenario-npc-records.js` | BE-17 |
+| BE-35 | Mail scheduler and mail runner | `systems/mail-scheduler.js`, `systems/mail-runner.js` | BE-18 |
+| BE-36 | Awareness-measure records and the pre and post comparison | `systems/awareness-measure.js`, `minigames/inbox-triage/triage-comparison.js` | BE-01, BE-13, HA-14 |
+| BE-37 | Look-alike NPC guard and player avatar | `utils/npc-lookalike.js`, `utils/player-avatar.js` | BE-25 |
+| BE-38 | Social validator and CI | `scripts/validate_social.rb`, `scripts/validate_social/` | BE-26, BE-27 |
+| BE-39 | Intel facts and readiness | `systems/social-intel.js` | BE-01 |
+| BE-40 | Phish rules engine and pretext judge | `systems/phish-rules.js`, `systems/pretext-judge.js` | MG-30 |
+| BE-41 | Role swap | `minigames/episode-runner/role-swap.js` | BE-11, MG-17 |
+| BE-42 | Readable font | `public/break_escape/css/fonts.css` | BE-04 |
+| MG-31 | OSINT browser | `minigames/osint-browser/` | MG-13, MG-02 |
+| MG-32 | Intel board | `minigames/intel-board/` | MG-13 |
+| MG-33 | Landing-page builder | `minigames/landing-page-builder/` | MG-25, MG-30 |
+| MG-34 | Pretext prep and template composer (with mail client accounts and devices) | `minigames/pretext-prep/`, `minigames/mail-client/` | MG-30, MG-01 |
+| MG-35 | Inbox triage, with the report button and Verify | `minigames/inbox-triage/` | MG-01, MG-09 |
+| MG-36 | Mock authenticator | `minigames/authenticator/` | MG-07, EX-05 |
+| MG-37 | Engagement report (student lab only) | `minigames/engagement-report/` | MG-09, MG-20 |
+| EX-09 | Concept cards | `minigames/osint-browser/concept-card.js` | EX-07 |
+
+Not given an id: the deduction board (design 12 in `planning_notes/phishing_and_social_engineering/`) is a proposal with no code.
 
 ## Extensions proposed by the module plans
 
-Smaller additions to existing features that module writers asked for. They are recorded here so the feature owners pick them up; none needs a new id.
+Smaller additions to existing features that module writers asked for. They are recorded here so the feature owners pick them up; none needs a new id. The status column says where each now lands.
 
-| Feature | Extension | Asked for by |
-|---|---|---|
-| BE-02 | A chain view: a timeline of linked moments showing how one decision led to the next | core_17 |
-| BE-02 | A call replay: the call's transcript with the caller's tactics labelled (BE-22) and the player's checks marked | role_06 |
-| BE-04 | A `timers_off` global so scenarios can advance timed events on task steps instead of the clock | core_04 |
-| BE-09 | A software portal page on The Lark: approved tools with an Install button and a "Request something else" form | core_07, core_08, core_13 |
-| MG-07 | A storm chat message that gives away the next prompt's number; a plain Approve or Deny prompt for a second service; options `approved_then_reported` and `unanswered`; with reading pauses on, the next prompt follows the player's answer | core_03 |
-| MG-09 | Match each report to an incident; evidence chips only for facts the player saw; check "what have you done" answers against globals; report speed as before the next event, later, or found late | core_04 |
-| MG-20 | A game show presentation (three answer buzzers, contestants, rounds, "Ask first" scoring) | core_16 |
-| MG-26 | Device and link state driven by globals; reveal rules so an unreported incident never shows; a step-through replay; a list view; a device update-status layer and a files layer | core_04, core_07 |
-| `ransomware-display` | A configurable icon, title, warning text and optional countdown, so the course can drop the skull | core_07 |
-| HA-03, HA-21 | A spotlight recommender: rules that turn a learner's year profile into private practice suggestions and organisation-wide spotlights | core_17 |
-| HA-07 | "I have a question first": holds the acknowledgement open and records the answer | core_16 |
-| HA-13 | An event leaderboard that ranks tables, never people | core_17 |
-| HA-17 | A private year profile: the learner's results by area across the year | core_17 |
+| Feature | Extension | Asked for by | Status |
+|---|---|---|---|
+| BE-02 | A chain view: a timeline of linked moments showing how one decision led to the next | core_17 | New: an optional panel on the episode debrief (BE-31) |
+| BE-02 | A call replay: the call's transcript with the caller's tactics labelled and the player's checks marked | role_06 | Builds on the flip view's call card (BE-32) |
+| BE-04 | A `timers_off` global so scenarios can advance timed events on task steps instead of the clock | core_04 | New, with BE-23 |
+| BE-09 | A software portal page: approved tools with an Install button and a "Request something else" form | core_07, core_08, core_13 | BE-09 is P3; for E10 this becomes a site in the OSINT browser (MG-31) or a triage `page` item (MG-35) |
+| MG-07 | A storm chat message that gives away the next prompt's number; a plain Approve or Deny prompt for a second service; options `approved_then_reported` and `unanswered` | core_03 | Builds on the mock authenticator (MG-36) and the triage `push` kind |
+| MG-09 | Match each report to an incident; evidence chips only for facts the player saw; check "what have you done" answers against globals; report speed | core_04 | New, for E8; reuses triage red-flag chips (MG-35) |
+| MG-20 | A game show presentation (three answer buzzers, contestants, rounds, "Ask first" scoring) | core_16 | New. MG-20 is P3; for core_16 this could become a defend set with an "Ask first" verdict in triage (MG-35), which would be a new verdict |
+| MG-26 | Device and link state driven by globals; reveal rules; a step-through replay; a list view; update-status and files layers | core_04, core_07 | P2 with MG-26 |
+| `ransomware-display` | A configurable icon, title, warning text and optional countdown, so the course can drop the skull | core_07 | P2 |
+| HA-03, HA-21 | A spotlight recommender for private practice suggestions | core_17 | Wish list |
+| HA-07 | "I have a question first": holds the acknowledgement open and records the answer | core_16 | Wish list |
+| HA-13 | An event leaderboard that ranks tables, never people | core_17 | Wish list |
+| HA-17 | A private year profile: the learner's results by area across the year | core_17 | Wish list |
 
 ## Dependencies
 
-- Nothing in the assessment trail works without **BE-01** (the record), **MG-20** (the knowledge check) and **HA-05** (the platform record). Build these first.
-- **BE-19** (open minigames from conversations and events) is needed by almost every module: the mentor's check question, the inbox opening at the hook, forms opened by a colleague. Build it with BE-01.
-- **BE-03** (text route) depends on BE-01 so both routes produce the same evidence.
-- **BE-05** and **HA-11** are two halves of one feature: the platform stores the organisation profile, the game reads it.
-- **HA-10** (LMS interoperability) and **HA-22** (LRS) depend on **BE-14** (xAPI statements) for anything richer than complete and score.
-- **BE-07** (micro-drills) and **HA-21** (schedule) go together, and depend on **BE-13** (content banks) so a monthly drill isn't the same drill every month.
-- **EX-02** (engine-recorded video) depends on **MG-21** (video player) or **HA-20** (hosting) to be shown anywhere. Its main risk is that Playwright records video without sound, so the voice clips have to be laid onto the recording at the logged line times: prove that with a short spike before any module schedules an engine-recorded video.
-- **EX-01** (the mentor explainer) is small as an authoring pattern, but it only works as designed once **BE-08** (visual aids), **BE-19** (opening the check question from the conversation) and **MG-20** (the knowledge check) exist. Budget those with it.
+- **Every new episode** is built on the episode runner (BE-31), the flip view (BE-32), inbox triage (MG-35), the awareness-measure records (BE-36) and the social validator (BE-38), at a brand-set company in `BRAND_SET.md`. New companies are added there as "proposed" with a `.example` domain and get a web search before release.
+- **The evidence trail** is the awareness-measure record (BE-36). Any richer record (BE-01's outcome id, BE-14's statements) extends it, never a separate bookkeeping. The platform record (HA-05) is a wish list item.
+- **BE-03** (text route) depends on BE-31 and BE-36, so both routes write the same records. Most of the runner is already DOM; the gap is the room, the host conversation and the kiosk walk.
+- **BE-19** (open minigames from conversations and events) is needed for a host conversation to open a concept card or a triage item, and for E12's person-chat in the training room.
+- **BE-23** (pause) must also hold the mail scheduler's wall-clock jobs (BE-35) and the authenticator's timeline (MG-36).
+- **BE-05** and **HA-11** are two halves of one feature: the platform would store the reporting route, the game reads it. The game half exists; the platform half waits on the user.
+- **BE-14**, **HA-10** and **HA-22** go together, all after the user's go-ahead on the platform.
+- **BE-07** (drills) and **HA-21** (schedule) depend on **BE-13** (banks) so a monthly drill isn't the same drill every month. Until then the defend-only shell is the drill.
+- **EX-01** now needs only built pieces: the host NPC (BE-31) and concept cards (EX-09). It no longer waits on BE-08 or MG-20.
+- **EX-02** and **EX-03** (video) depend on MG-21 or HA-20, and all four are P3. EX-02's main risk stays: Playwright records video without sound, so a spike comes before any episode schedules one.
+- **BE-16's consequence flip** (E11) builds on the flip view (BE-32).
