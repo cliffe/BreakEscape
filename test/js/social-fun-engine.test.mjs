@@ -144,6 +144,18 @@ test('aw6: teamProtectedOf counts reports and checks, not deletes; the summary k
     assert.equal(M.awarenessSettings({ awareness: { teamSize: 2.5 } }).teamSize, null);
 });
 
+test('aw7: the host config, as the server writes it, overrides the scenario for reportRoute, ruleOfThumb and teamSize', () => {
+    const social = { awareness: { reportRoute: 'Scenario route.', ruleOfThumb: 'Scenario rule.', teamSize: 8 } };
+    assert.deepEqual(M.awarenessSettings(social, undefined),
+        { reportRoute: { heading: '', text: 'Scenario route.' }, ruleOfThumb: { heading: '', text: 'Scenario rule.' }, teamSize: 8 });
+    const host = { awareness: { reportRoute: { heading: 'Report it', text: 'Host route.' }, ruleOfThumb: 'Host rule.', teamSize: 250 } };
+    assert.deepEqual(M.awarenessSettings(social, host),
+        { reportRoute: { heading: 'Report it', text: 'Host route.' }, ruleOfThumb: { heading: '', text: 'Host rule.' }, teamSize: 250 });
+    // a key the host leaves out falls back to the scenario, key by key
+    assert.deepEqual(M.awarenessSettings(social, { awareness: { teamSize: 40 } }),
+        { reportRoute: { heading: '', text: 'Scenario route.' }, ruleOfThumb: { heading: '', text: 'Scenario rule.' }, teamSize: 40 });
+});
+
 test('aw6: the debrief thanks the learner for phish kept from the team, with no denominator', () => {
     assert.equal(teamLine(0, 12), '');
     assert.equal(teamLine(1, null), 'Your reports and checks this round kept one phish away from the rest of your team.');
