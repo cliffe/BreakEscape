@@ -37,6 +37,30 @@ entitlement (G3); only Play buyers play in the Play app, and no Stripe purchase 
 9. **Phones at launch.** G2 says phones and tablets. If the phone playtest of a VM stage fails,
    would you launch on tablets only, or wait?
 
+### Owner answers (2026-10-27)
+
+1. Host: open, for discussion. The owner asked whether JavaScript can tell it is the app. It can, per
+   tab, though not from the User-Agent (a TWA's is plain Chrome): a `start_url` marker
+   (`?source=play`) kept in `sessionStorage`, which is per tab and so never leaks into the player's
+   normal Chrome tabs; `document.referrer` of `android-app://<package>/` on the launch page; the
+   `display-mode: standalone` media query; `getDigitalGoodsService` for billing. The server only
+   learns it from the client (a header or link parameter), which is fine for layout and not for access.
+   With answer 6, no access decision depends on it, so one host plus client-side detection may be
+   enough. Owner to confirm.
+2. Play Console: organisation account (D-U-N-S needed).
+3. Package id: `uk.co.hacktivity.licencetohack`, confirmed.
+4. Upload key: decide later (before the first Play upload).
+5. Business model: free app, one in-app purchase unlocks the full game.
+6. Access: **G4 is replaced for the Play app.** Any Hacktivity user has the same access in the app
+   as on the website (subscription, organisation, Steam or other entitlements, staff grants), plus
+   a Play purchase. No Play-only access rule is needed.
+7. Links out: keep them and open them outside the app. In a TWA, same-site links stay in the app, so
+   the client marks buy links to open in the browser. Check Play's anti-steering rules per region
+   before submission; this may force hiding them in some countries.
+8. Google sign-in: launch without it.
+9. Phones: wait for phones; one launch on phones and tablets after the phone pass and the phone VM
+   playtest.
+
 ## Q1. How Hacktivity knows a request comes from the Android app
 
 Today app mode is decided only by the desktop app's User-Agent token, parsed by `AppClient`
