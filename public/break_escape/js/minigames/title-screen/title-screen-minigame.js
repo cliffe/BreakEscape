@@ -57,6 +57,8 @@ export class TitleScreenMinigame extends MinigameScene {
         this.titleScreenContainer = this.container.querySelector('.title-screen-container');
         this._typingStarted = false;
         this._typingTimer = null;
+        this._phaseTimer = null;
+        this._ended = false;
         this._loadingTimer = null;
         this._typingDone = false;
         this._gameLoaded = false;
@@ -76,7 +78,9 @@ export class TitleScreenMinigame extends MinigameScene {
 
         // Phase 1 → 2: fixed timer matching the CSS animation duration.
         // animationend is unreliable when CSS loads async after the element is in the DOM.
-        setTimeout(() => {
+        this._phaseTimer = setTimeout(() => {
+            this._phaseTimer = null;
+            if (this._ended) return;
             logo.style.visibility = 'hidden';
             titleEl.style.visibility = 'visible'; // cursor blinks immediately
             this._startTyping(typedText, promptEl);
@@ -119,7 +123,7 @@ export class TitleScreenMinigame extends MinigameScene {
     }
 
     _startTyping(typedTextEl, promptEl) {
-        if (this._typingStarted) return;
+        if (this._ended || this._typingStarted) return;
         this._typingStarted = true;
 
         const name = window.breakEscapeConfig?.missionDisplayName ?? '';
@@ -138,6 +142,7 @@ export class TitleScreenMinigame extends MinigameScene {
     }
 
     _onTypingComplete(promptEl) {
+        if (this._ended) return;
         this._typingDone = true;
 
         if (isDesktopApp()) {
@@ -204,6 +209,8 @@ export class TitleScreenMinigame extends MinigameScene {
     }
 
     cleanup() {
+        this._ended = true;
+        if (this._phaseTimer) { clearTimeout(this._phaseTimer); this._phaseTimer = null; }
         if (this.autoCloseTimer) clearTimeout(this.autoCloseTimer);
         if (this._typingTimer) clearTimeout(this._typingTimer);
         if (this._onGameLoaded) {
