@@ -59,7 +59,7 @@ Training rooms      █████░░░░░  0/0/0 fixing  C1 reviewed an
 Puzzle-chain pass   ░░░░░░░░░░  –           light pass, not started
 Host art            ░░░░░░░░░░  –           waits for PixelLab quota (reset 3 Nov) and user approval
 Timing              ░░░░░░░░░░  –           human runs postponed by the user; E3 ~17 min accepted
-POV backgrounds     ░░░░░░░░░░  –           for the 4 training rooms, after room cycles; Gemini needs approval
+POV backgrounds     ░░░░░░░░░░  –           for the 4 training rooms, after room cycles (done and approved 2026-10-27, see status above)
 Game configuration  ██░░░░░░░░  –           options form sent to the user, not answered (§5)
 ```
 
@@ -71,7 +71,7 @@ Trend: P4 and P5 found no blockers or majors; remaining work is polish plus the 
 2. **P6 playtest**, two Sonnet agents (E1–E4; E5–E7 plus checks). Confirm every P5 finding (`playtests/PLAYTEST_P5_E1_E4.md`, `PLAYTEST_P5_E5_E7.md`) and the round-5/8 hooks: subjects that follow the pretext, template tells (secrecy, authority), the no-blame line rules, look-alike NPC sprite swap.
 3. **Fix rounds** until a playtest finds only trivials: engine fixer (general-purpose) and data fixer (opus48) in parallel, each owning its own files (§4).
 4. **Dialogue review cycles 4–5** (opus48 reviewer, then fixer).
-5. **Training rooms cycles 2–5** (review `ROOMS_REVIEW_C1.md` for the method; fixes go through `scripts/room_gen/build_aw_rooms.py`, the prop/tileset scripts and `training_room.py`, then `apply_training_room.py --refresh`). Then the four POV conversation backgrounds (skill `room-pov-background`; Gemini calls need the user's approval).
+5. **Training rooms cycles 2–5** (review `ROOMS_REVIEW_C1.md` for the method; fixes go through `scripts/room_gen/build_aw_rooms.py`, the prop/tileset scripts and `training_room.py`, then `apply_training_room.py --refresh`). Then the four POV conversation backgrounds (skill `room-pov-background`). Done and approved 2026-10-27; agy Gemini calls no longer need approval.
 6. **Light puzzle-chain pass** (skill `mission-puzzle-chains`, gating only).
 7. **Host art** after the PixelLab reset, with the user's approval of scope (skills `pixellab-character-pipeline`, `pixellab-character-animations`; bust picks via a review page).
 8. **Human timing runs** when the user asks; then any lab sheets or facilitator notes last.
