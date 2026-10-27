@@ -14,7 +14,7 @@ Seven short episodes, each played at a kiosk in a company training room. In the 
 | E4 | Executive whaling | Merrin & Sallow (`room_aw_merrin_sallow`) |
 | E5 | Fake sign-in pages | Quayholt |
 | E6 | Texts and QR codes | Tarrowby |
-| E7 | Cloned CEO voice | Merrin & Sallow |
+| E7 | Cloned CEO voice | Brightwell (`room_aw_brightwell`) |
 
 Scenario folders (38): `scenarios/awareness_e{1..7}_*` (full, hand-authored), `scenarios/awareness_e{1..7}_*_defend` (generated), `scenarios/awareness_{pre,post}_{finance,hr,helpdesk,executive,general,mobile}_{ab,ba}` (generated). Which company and room each uses: `BRAND_SET.md`.
 
