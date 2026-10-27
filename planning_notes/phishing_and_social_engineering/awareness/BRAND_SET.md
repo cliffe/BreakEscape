@@ -133,8 +133,10 @@ check forms (row 8 of each).
 Ten messages each (4 phish, 6 genuine), `awareness` profile, `feedbackMode: "end"`, header panel collapsed,
 `pairedWith` each other, prefix `triage_{stage}_`, `passPercent: 0`. Form A is authored as `pre` and form B as
 `post`; the BA pair launches them the other way round with `minigameData.stage`. Same chips as the episode
-set. Verify is off: the check forms measure Trust, Report and Delete only, so a pre and a post score compare
-like with like.
+set. Verify is on in both forms (as it is in the finance, executive, helpdesk and mobile check shells; the general
+and hr forms leave it off). Pre and post still compare like with like, because both forms of a pair offer the
+same verdicts. (Corrected 2026-10-27: this note said Verify was off; the user ruled that the scenario files are
+right.)
 
 Item *n* in A matches item *n* in B. Difficulty is the author's rating: **easy** (one plain tell, or nothing
 odd at all), **medium** (the tell needs one look at the address or link), **hard** (the From is right and the

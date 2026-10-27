@@ -70,25 +70,20 @@ Each company's look-alikes use only the shapes a learner can learn to check: a s
 
 Module plans that still say "Larkspur" should read as "the brand-set company the episode is set at". Fictional suppliers and products the modules name (Northbeck Supplies, Westmoor Council, DocShift and others) may be reused at a brand-set company, but each must be checked against BRAND_SET and given a `.example` domain before use.
 
-## Proposed new companies for E8 to E13 (New)
+## Companies for E8 to E13 (decided 2026-10-27)
 
-`04_BUILT_SO_FAR.md` §4 proposes E8 to E13. Most fit the four companies:
+The user chose the set the module designs use (build review page, D16-companies):
 
-| Episode | Fits | Why |
-|---|---|---|
-| E8 after the click | Quayholt Insurance | It has a security analyst who receives reports (Anjali Rao) and a service desk |
-| E9 passwords and password managers | Merrin & Sallow Architects | A small practice with shared logins and no IT department of its own gives the topic its reason |
-| E10 fake downloads and "verify you are human" pages | Tarrowby Logistics | Dispatch and yard staff on shared PCs; builds on E6's cast |
-| E12 the visitor and the tailgater | Brightwell Foods | A factory site with visitors, deliveries and a chilled unit (Lindiwe Mokoena's site) |
+| Episode | Company | Host | Why |
+|---|---|---|---|
+| E8 after the click | Quayholt Insurance | Anjali Rao, information security analyst | A security analyst who receives reports, and a service desk |
+| E9 passwords and password managers | Tarrowby Logistics | Nilesh Solanki, IT service desk analyst | Depot staff on shared PCs; builds on the E2 and E6 cast |
+| E10 fake downloads and "verify you are human" pages | Quayholt Insurance | Niamh Doherty (E5's host) with a Quayholt IT colleague | Extends E5 at the same company |
+| E11 misdirected and overshared data | Carrholme Services (new, `carrholme.example`) | Carrholme's data protection officer (to name) | A facilities and care-support firm, so a misdirected record has a real person behind it |
+| E12 the visitor and the tailgater | Merrin & Sallow Architects | A front-of-house staff member (to name) | Reception, a studio, visiting clients and contractors |
+| E13 the AI assistant | Brightwell Foods | Gwen Pritchard, IT service desk lead | Extends E7's voice work at the same company |
 
-Two do not fit, and get a new company each:
-
-| Proposed company | Domain | Look-alikes (learnable shapes) | Region and what it is | Episode | Status |
-|---|---|---|---|---|---|
-| Cobbleford Care | `cobblefordcare.example` | `cobblefordcare-hr.example` (added word), `cobb1efordcare.example` (swapped character) | A group of four care homes in Cumbria, holding residents' care records and family contacts, so a misdirected or overshared record has a real person behind it | E11 misdirected and overshared data (core_05 and core_06, consequence flip) | Proposed, add to BRAND_SET.md after a web search |
-| Lintgate Communications | `lintgate.example` | `lintgate-files.example` (added word), `1intgate.example` (swapped character) | A Glasgow PR and communications agency that drafts client copy with an AI writing tool, so data in prompts and an injected instruction in a client brief arise naturally | E13 the AI assistant (core_15, authored, no runtime model) | Proposed, add to BRAND_SET.md after a web search |
-
-"Cobbleford" and "Lintgate" had no hits in the repo on 2026-10-27. Each new company's cast follows the diversity rule below, and its names get the same repo check BRAND_SET used.
+Carrholme Services is the one new company: it needs a `BRAND_SET.md` entry (look-alikes, accent, a varied cast), a web search before release, and a fifth training room or a reuse of an existing room map (see `04_BUILT_SO_FAR.md` §6). Cobbleford Care and Lintgate Communications, proposed earlier as alternatives, are not used.
 
 ## The habit to keep (Built)
 

@@ -39,18 +39,18 @@ Questions for the user. Each has a recommendation; the plan follows the recommen
 3. **Exercising the customer's own incident plan.** Cyber Governance Code D2 asks boards to exercise their own plan at least annually. A role_01 board exercise would use a brand-set company's plan. *Recommendation:* let a facilitated version (the runner's unused `facilitated` flag) load the customer's plan headings and contacts from the organisation profile.
 4. **Advanced persistent threats.** NIST AT-2(5) is not covered. *Recommendation:* a short optional concept panel in a role_01 or role_03 episode, not an episode of its own.
 
-### D13. Topics with no attacker: consequence flip or defend-only?
+### D13. Topics with no attacker: consequence flip or defend-only? (decided 2026-10-27, see Decided)
 
 - **Background:** core_05 (data protection), core_06 (handling information) and core_16 (acceptable use) have no natural attacker for the attack half. R3 offers two shapes: a **consequence flip** (the learner makes the everyday mistake in a safe sandbox, such as an autocomplete to the wrong address, and the flip shows where it led), or the **defend-only** shape (brief, defend, debrief) on its own.
 - **Recommendation:** the consequence flip for E11 (core_05 and core_06), and for core_13 shadow IT later, since there is a natural everyday mistake to make and it keeps the built five-stage shape. core_16 uses defend-only plus check items, since its content is policy knowledge with no single mistake to replay. The consequence flip needs a runner change (an attack half with no target to judge), so it waits on the engine gaps in `04_BUILT_SO_FAR.md` §4 step 2.
 
-### D14. A short tagline alongside the rule of thumb?
+### D14. A short tagline alongside the rule of thumb? (decided 2026-10-27, see Decided)
 
 - **Background:** the plan's motto *Pause. Check. Report.* is replaced by the built rule of thumb, shown word for word in every debrief under "The habit to keep" (aw4, enforced by a test). The plan used the motto as a memorable three-word tag on reference cards.
 - **Options:** (a) no tagline; the heading "The habit to keep" and the rule of thumb are enough; (b) add a short tagline, set once in `awareness_deploy.py` next to the rule of thumb so every shell carries the same words.
 - **Recommendation:** (a). The rule of thumb already names the actions; a second phrase adds something to remember and something to keep in step. If the user wants one, it goes in `awareness_deploy.py`, never as plan-only text.
 
-### D15. The order of new episodes E8 to E13
+### D15. The order of new episodes E8 to E13 (decided 2026-10-27, see Decided)
 
 - **Background:** `04_BUILT_SO_FAR.md` §4 proposes E8 after the click (core_04, core_01 LO6), E9 passwords and password managers (core_03), E10 fake downloads and "verify you are human" pages (core_08, core_07), E11 misdirected and overshared data (core_05, core_06), E12 the visitor and the tailgater (core_10), E13 the AI assistant (core_15). Each is a full episode, a defend-only variant and new check items. The built product is on hold and its resume plan comes first.
 - **Recommendation:** keep that order. E8 fills the largest gap (what to do next, which every built episode leads into) and reuses the inbox and report systems as they are. E9 and E10 build on E3's MFA stage and E5's landing-page builder. E11 needs the consequence flip (D13), E12 needs person-chat in the training room, and E13 needs an authored assistant, so they come once those runner changes exist. Companies: `03_WORLD_AND_CAST.md` (E11 and E13 at proposed new companies).
@@ -94,6 +94,30 @@ These are the open questions raised inside individual module READMEs that a stak
 | role_06 | One-time codes: the rule of thumb tells everyone not to read back a code, yet many contact centres verify callers that way. Which rule wins? | The course default never asks a customer to read back a code (as every brand-set company does). Organisations that verify by read-back can switch it on; the episode then adds the safeguards and explains why their procedure differs from the rule of thumb. |
 
 ## Decided
+
+### Build review page answers (2026-10-27, https://claude.ai/artifact/KgNmWofGssh2LfPYpLuL3r)
+
+| Item | Verdict | User's note |
+|---|---|---|
+| WP-01 Finish and ship E1 to E7 | Later | Waits on the PixelLab reset for character art; continue with other features meanwhile, building on the foundation |
+| WP-02 Customer reporting route in Hacktivity | Go now | A list of pre-canned options seems useful |
+| WP-03 Engine gaps | Drop | No spy theme in the awareness courses; Hacktivity is the brand, so its name on the title screen does no harm. The offensive beat before the defence, and games-based learning, are possible USPs |
+| WP-04 Accessible route | Later | For discussion: how would a text route work? Fold into the lab-sheet walkthroughs? Make the existing more accessible? Maybe out of scope |
+| WP-05 to WP-10 (E8 to E13) | Go now | E12: swap the player's avatar to a hi-vis one in the attack half to gain influence; a held package as a PixelLab state; an NPC opening a door is a small add |
+| WP-11 E14 to E17 | Go now | |
+| WP-12 First-play brief and annual edition | Go now | |
+| WP-13 Role extensions | Later | |
+| WP-14 New roles | Later | |
+| WP-15 core_02 missing-channel defend items | Go now | |
+| WP-16 Spaced drills and session plans | Later | |
+| WP-17 Kids game prototype | Later | |
+| D13 | Consequence flip for E11 and shadow IT; defend-only for acceptable use | |
+| D14 | No tagline | |
+| D15 | Keep the order E8 to E13 | |
+| D16 companies | The module designs' set: E8 Quayholt, E9 Tarrowby, E10 Quayholt, E11 Carrholme Services (new), E12 Merrin & Sallow, E13 Brightwell | |
+| Verify in the check forms | The scenarios are right; update the brand-set notes | |
+| Seeding new episodes | Every new episode ships both versions and joins both seeded courses | |
+
 
 ### Decided on main since the first reconciliation (2026-10-27, `../phishing_and_social_engineering/FUN_DECISIONS.md`)
 

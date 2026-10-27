@@ -8,15 +8,17 @@
 
 ## 1. New episodes E8 to E13: from concept to episode design
 
-Each becomes an episode design in the built shape (brief, attack or consequence flip, flip, defend, debrief), a defend-only variant and new check items, at the company named in `03_WORLD_AND_CAST.md`. Order: D15.
+Each becomes an episode design in the built shape (brief, attack or consequence flip, flip, defend, debrief), a defend-only variant and new check items, at the company named in `03_WORLD_AND_CAST.md` (decided). Order: D15 (decided: E8 to E13 in that order). All six are Go now (build review page, 2026-10-27).
 
 - [ ] **E8 after the click** (core_04, core_01 LO6), at Quayholt Insurance.
-- [ ] **E9 passwords and password managers** (core_03), at Merrin & Sallow Architects.
-- [ ] **E10 fake downloads and "verify you are human" pages** (core_08, core_07), at Tarrowby Logistics; builds on E5's landing-page builder.
-- [ ] **E11 misdirected and overshared data** (core_05, core_06), consequence flip (D13), at the proposed Cobbleford Care.
-- [ ] **E12 the visitor and the tailgater** (core_10), person-chat in the training room, at Brightwell Foods.
-- [ ] **E13 the AI assistant** (core_15), authored, no runtime model, at the proposed Lintgate Communications.
-- [ ] Add Cobbleford Care and Lintgate Communications to `BRAND_SET.md` after a web search, with cast that follows the diversity rule.
+- [ ] **E9 passwords and password managers** (core_03), at Tarrowby Logistics.
+- [ ] **E10 fake downloads and "verify you are human" pages** (core_08, core_07), at Quayholt Insurance; builds on E5's landing-page builder.
+- [ ] **E11 misdirected and overshared data** (core_05, core_06), consequence flip (D13), at Carrholme Services (new company).
+- [ ] **E12 the visitor and the tailgater** (core_10), person-chat in the training room, at Merrin & Sallow Architects. User's notes: the attack half can swap the player's avatar to a hi-vis one to gain influence; carrying a package can be a PixelLab sprite state; an NPC opening a door is a small add (NPCs can already trigger events and unlock doors).
+- [ ] **E13 the AI assistant** (core_15), authored, no runtime model, at Brightwell Foods.
+- [ ] Add Carrholme Services to `BRAND_SET.md` after a web search, with cast that follows the diversity rule; decide its room (a fifth room, or reuse a map).
+- [ ] Also Go now: E14 to E17 (core_12, 13, 14, 16), core_00 first-play brief and the core_17 annual edition, and core_02's missing-channel defend items (WP-11, WP-12, WP-15).
+- [ ] Every new episode ships both versions and joins both seeded Hacktivity courses (D-seed).
 - [ ] Each design follows the existing loops in `AGENTS.md` and the build's file layout (fragments in `awareness/e*/`, generated shells).
 
 ## 2. Check items
