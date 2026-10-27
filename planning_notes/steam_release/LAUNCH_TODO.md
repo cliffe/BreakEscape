@@ -63,8 +63,8 @@ land; keep each line short and say where the detail lives.
 - [ ] Phone landscape layout pass (shell pages 2-2.3 screens tall at 915x412; Mission Brief Continue
       overlaps text; pause menu scrolls): in progress.
 - [ ] Hyphenated handles break the in-game name save on the character page: in progress.
-- [ ] Steam packages (STEAM_PLAN.md): S1–S3, S2p, S5a, S5b, S6–S10, S14, S15 done and reviewed;
-      S4 review fixes (incl. a fresh Steam check before Link) in progress; S11 run: 12 scenarios
+- [ ] Steam packages (STEAM_PLAN.md): S1–S10, S2p, S14, S15 done and reviewed (S4 with
+      a fresh Steam check before Link); left: S0 (app 480 with the owner's Steam client), S12, S13; S11 run: 12 scenarios
       plus S4's 6 passed on the fakes (S11 scenario 4, a copied cookie, proven by tests only).
 - [ ] S15 live admin check (suspend and lift from the admin page): needs the owner's OK for a
       throwaway dev admin, or a dev admin login.
