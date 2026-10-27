@@ -35,7 +35,7 @@ BRAND_SET's cast diversity is therefore not on screen at all yet.
 | `male_telecom_v2` | **neon yellow hi-vis shirt**, cap, tool belt | Tomasz, Darren Price, Chidi Okeke |
 | `female_telecom_v2` | **orange hi-vis vest**, ponytail, work boots | Niamh Doherty, Lerato Dlamini |
 | `female_blowse_v2` | long wavy black hair, blue blouse | Adaeze Okafor, Fatima Begum, Agnieszka Duda, Yasmin Chaudhry, Pauline Hendry, Sofia Marchetti |
-| `female_scientist_v2` | young East Asian woman, lab coat | Thandiwe Moyo, Farah Qureshi, Anjali Rao |
+| `female_scientist_v2` | young East Asian woman, lab coat | Thandiwe Moyo, Joanne Pell (was Farah Qureshi), Anjali Rao |
 | `male_nerd_v2` | young bearded man, glasses, red tee | Ibrahim Diallo |
 
 The hi-vis keys put IT, helpdesk and security staff in site-worker clothes, the stereotype `ROOMS_REVIEW_C1.md` flags for Tomasz.
@@ -79,7 +79,7 @@ host appears in both the pre and post shell.
 | Yasmin Chaudhry | executive checks (AB, pre and post) | `female_blowse_v2` | shared |
 | Julian Sallow | executive checks (BA) | `male_office_worker_v2` | shared |
 | Graham Whitfield | finance checks (AB) | `male_office_worker_v2` | shared |
-| Farah Qureshi | finance checks (BA) | `female_scientist_v2` | shared |
+| Joanne Pell (was Farah Qureshi) | finance checks (BA) | `female_scientist_v2` | shared |
 | Owen Treharne | general checks (AB) | `male_office_worker_v2` | shared |
 | Pauline Hendry | general checks (BA) | `female_blowse_v2` | shared |
 | Anjali Rao | helpdesk checks (AB) | `female_scientist_v2` | shared |

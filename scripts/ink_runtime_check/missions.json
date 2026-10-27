@@ -2636,9 +2636,9 @@
     },
     "npcs": [
       {
-        "id": "farah_qureshi",
+        "id": "joanne_pell",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_pre_finance_ba/ink/farah_pre.json",
+        "storyPath": "scenarios/awareness_pre_finance_ba/ink/joanne_pre.json",
         "currentKnot": "start",
         "room": "training_room"
       }
@@ -2653,9 +2653,9 @@
     },
     "npcs": [
       {
-        "id": "farah_qureshi",
+        "id": "joanne_pell",
         "npcType": "person",
-        "storyPath": "scenarios/awareness_post_finance_ba/ink/farah_post.json",
+        "storyPath": "scenarios/awareness_post_finance_ba/ink/joanne_post.json",
         "currentKnot": "start",
         "room": "training_room"
       }

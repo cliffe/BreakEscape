@@ -25,10 +25,10 @@ HOSTS = {
         'sprite': 'male_office_worker',
         'about': "Brightwell's finance training lead, early 60s, white, from Halifax; unhurried and kind. New for P7-J (not yet in BRAND_SET.md). Placeholder sprite until P7-Z3.",
     },
-    'farah': {
-        'id': 'farah_qureshi', 'displayName': 'Farah Qureshi',
+    'joanne': {
+        'id': 'joanne_pell', 'displayName': 'Joanne Pell',
         'sprite': 'female_scientist',
-        'about': "Brightwell's learning and development coordinator, early 30s, British Pakistani, from Leicester; brisk and friendly. New for P7-J (not yet in BRAND_SET.md). Placeholder sprite until P7-Z3.",
+        'about': "Brightwell's learning and development coordinator, late 40s, white British, from Leicester; brisk and friendly. Renamed from Farah Qureshi on 2026-10-27 (name clash with m10). Placeholder sprite until P7-Z3.",
     },
 }
 
@@ -269,7 +269,7 @@ def check(pair, stage):
             {'from': pre_mission, 'var': 'triage_pre_done', 'as': 'triage_pre_done', 'default': False},
             {'from': pre_mission, 'completed': 'pre_check_completed'},
         ]
-    host = HOSTS['graham' if pair == 'ab' else 'farah']
+    host = HOSTS['graham' if pair == 'ab' else 'joanne']
     letters = pair.upper()
     first, second = (letters[0], letters[1])
     if stage == 'pre':

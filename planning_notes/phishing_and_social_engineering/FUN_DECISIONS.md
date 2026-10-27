@@ -58,3 +58,15 @@ These are new work, not polish fixes. Within each track they slot in after the c
 | brief_reload | Lab Mission Brief popup after a reload | Leave it |
 | lab_audio | Generate the lab NPC audio | Not yet |
 | e7_mirror | E7 mirror pair (aw5) | Keep E7's existing voicemail mirror; revisit with aw7 |
+
+## Awareness resume decisions (2026-10-27, review page https://claude.ai/artifact/33qVP3ZuZpiXHxTVz3Pi9z)
+
+| Id | Question | Decision |
+|---|---|---|
+| host_concepts | 19 awareness host concepts | All approved. PixelLab characters wait for the 3 Nov quota reset; rooms and objects may use PixelLab now |
+| q_farah | The Brightwell Farah Qureshi (name shared with m10, look close to Fatima Begum) | Rename the Brightwell host and redo her concept with a different look |
+| q_pov | Gemini concepts for the four awareness POV backgrounds | Approved: make all four once the rooms stage closes. Gemini via agy needs no check from now on |
+| q_e3mfa | E3 MFA-fatigue demo has no learner decision (E3-11) | Add one decision: the learner picks how many pushes to send and when (e.g. late at night); the debrief explains why fatigue works |
+| q_aw7 | aw7: E6 and E7 defend-only by default | No answer: give more context in the next review page |
+| q_timing_runs | Human timing runs | Keep postponed; estimate times from the agent runs meanwhile |
+| q_facil | Facilitator notes | One facilitator guide for the course in HacktivityLabSheets (last stage) |
