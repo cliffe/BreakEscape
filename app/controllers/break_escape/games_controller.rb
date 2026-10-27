@@ -1749,6 +1749,15 @@ module BreakEscape
     # Items that are always allowed in inventory (core game mechanics)
     ALWAYS_ALLOWED_ITEMS = %w[notepad].freeze
 
+    # Cups of coffee or tea standing in a room are Tiled map decor, not scenario
+    # objects, so they are never "found in the scenario". The client picks one up
+    # with decor: true and its map object id, to drink later from the inventory
+    # (consumables.js DRINKABLE_CUPS: keep the two lists in step).
+    DECOR_CUP_TYPES = %w[
+      office-misc-cup office-misc-cup2 office-misc-cup3 office-misc-cup4
+      office-misc-cup5 coffee_cups1 mugs_tray1
+    ].freeze
+
     def validate_item_collectible(item, source_npc_id = nil)
       @collectible_location = nil
       item_type = item['type']
@@ -1761,6 +1770,12 @@ module BreakEscape
       # Always allow core game items like notepad
       if ALWAYS_ALLOWED_ITEMS.include?(item_type)
         Rails.logger.info "[BreakEscape] Item is always allowed: #{item_type}"
+        return nil
+      end
+
+      # A room-map cup picked up as decor has no scenario entry to check
+      if item['decor'] == true && DECOR_CUP_TYPES.include?(item_type) && item['id'].present?
+        Rails.logger.info "[BreakEscape] Item is a room-map decor cup: #{item_type} / #{item['id']}"
         return nil
       end
 

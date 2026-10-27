@@ -357,6 +357,35 @@ module BreakEscape
       assert_equal 1, @game.player_state['inventory'].length
     end
 
+    test 'inventory endpoint accepts a room-map decor cup, keeps it, and removes it by id' do
+      @game.player_state['inventory'] = []
+      @game.save!
+
+      cup = { type: 'office-misc-cup', name: 'Cup of coffee', id: 'reception_office-misc-cup_7', decor: true, takeable: true }
+      post inventory_game_url(@game), params: { action_type: 'add', item: cup }, as: :json
+      assert_response :success
+      assert_equal 1, @game.reload.player_state['inventory'].length
+
+      # A second cup of the same sprite elsewhere is a separate item
+      post inventory_game_url(@game), params: { action_type: 'add', item: cup.merge(id: 'office_office-misc-cup_9') }, as: :json
+      assert_response :success
+      assert_equal 2, @game.reload.player_state['inventory'].length
+
+      post inventory_game_url(@game), params: { action_type: 'remove', item: { id: 'reception_office-misc-cup_7' } }
+      assert_response :success
+      assert_equal ['office_office-misc-cup_9'], @game.reload.player_state['inventory'].map { |i| i['id'] }
+    end
+
+    test 'inventory endpoint refuses decor on anything that is not a cup' do
+      @game.player_state['inventory'] = []
+      @game.save!
+      post inventory_game_url(@game), params: {
+        action_type: 'add', item: { type: 'key', name: 'Master Key', id: 'master_x', decor: true, takeable: true }
+      }, as: :json
+      assert_response :unprocessable_entity
+      assert_empty @game.reload.player_state['inventory']
+    end
+
     # Ink endpoint tests
     test 'ink endpoint should require npc parameter' do
       get ink_game_url(@game)

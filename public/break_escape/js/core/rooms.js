@@ -80,6 +80,12 @@ import NPCSpriteManager from '../systems/npc-sprites.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { drinkableCupName, isObjectConsumed } from '../systems/consumables.js';
 
+// True when the saved inventory (restored on reload) holds this room-map item
+function heldInSavedInventory(id) {
+    const held = window.gameScenario?.playerInventory;
+    return !!id && Array.isArray(held) && held.some(i => i && i.id === id);
+}
+
 // Default hover text for decor: "drug_trolley1" -> "A drug trolley."
 // The site-set prefix on an asset name is dropped, so "aes_tool_trolley1" reads
 // "A tool trolley.", not "An aes tool trolley." (m04 engine regression F6).
@@ -2715,17 +2721,20 @@ export function createRoom(roomId, roomData, position) {
                         };
                         console.log(`Applied default properties to ${type} ${imageName} -> ${cleanName}`);
 
-                        // A cup of coffee or tea on the map can be drunk for HP
-                        // (consumables.js); one drunk before a reload stays gone
+                        // A cup of coffee or tea on the map is picked up like any
+                        // consumable, then drunk from the inventory (consumables.js).
+                        // Its object id is its stable item id, so the server's
+                        // inventory and the used-up global both know it by that.
                         const cupName = drinkableCupName(imageName);
                         if (cupName) {
                             Object.assign(sprite.scenarioData, {
-                                name: cupName, type: imageName, decor: true,
+                                id: sprite.objectId, name: cupName, type: imageName,
+                                decor: true, takeable: true,
                                 observations: window.gameScenario?.disableAttacks === true
                                     ? `${cupName}, still warm.`
-                                    : `${cupName}, still warm. Drink it to get some energy back.`
+                                    : `${cupName}, still warm. Pick it up, and drink it for some energy back.`
                             });
-                            if (isObjectConsumed(sprite.objectId)) {
+                            if (isObjectConsumed(sprite.objectId) || heldInSavedInventory(sprite.objectId)) {
                                 sprite.scenarioData.consumed = true;
                                 sprite.setVisible(false);
                                 sprite.active = false;
