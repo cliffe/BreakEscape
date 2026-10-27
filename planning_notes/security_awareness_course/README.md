@@ -2,26 +2,41 @@
 
 A plan for a cyber security awareness course for all staff, built from short Break Escape games and hosted in Hacktivity, designed to meet the training requirements of the common standards and laws while being something people would choose to play.
 
-**Status (October 2026):** planning, reviewed. All 26 module plans and the feature documents have been through a full accuracy and design review and reconciliation (see `TODO.md`); no blockers were found. Nothing here is built yet.
+**Status:** planning, reconciled with the built product (2026-10-27).
+
+The course extends a product line that is already built: **Incident Simulations: Critical Cases** (user decision F2), a line apart from SAFETYNET with a neutral corporate skin, delivered as missions in the Hacktivity `training` collection. Seven episodes (E1 to E7), seven defend-only variants and 24 role-based pre and post checks exist on main. Where this plan and the build disagree, the build wins, and the plan is written to extend it.
 
 ## Start here
 
-1. **`00_COURSE_OVERVIEW.md`**: who it's for, the pathways, the 26-module catalogue, topic boundaries and the build roadmap.
-2. **`01_LEARNING_DESIGN.md`**: how a module works (the seven beats), and the answer to "should every activity be a game?" (short version: every module is a game, but not every activity inside it is gameplay; lab sheets become reference cards, the accessible text route and facilitator notes).
-3. **`02_COMPLIANCE_MAPPING.md`**: which requirements in ISO 27001, NIST, CIS, PCI DSS, NIS2, DORA, UK GDPR, the NCSC CAF, the NHS DSPT and US rules the course helps meet, and the course-level features that meet the rest.
-4. **`03_WORLD_AND_CAST.md`**: Larkspur Group, the recurring cast, the places, the tone and the motto *Pause. Check. Report.*
-5. **`DECISIONS_PENDING.md`**: questions for you, each with a recommendation.
+1. **`04_BUILT_SO_FAR.md`**: what is built, how each conflict between the plan and the build was settled (R1 to R13), coverage by module and what comes next. Read this first.
+2. **`00_COURSE_OVERVIEW.md`**: who it's for, the pathways (role check pairs, episodes and defend-only drills), the 26-module catalogue with built coverage, topic boundaries and the roadmap.
+3. **`01_LEARNING_DESIGN.md`**: how an episode works (brief, attack, flip, defend, debrief, with pre and post checks), the consequence flip for topics with no natural attacker, and the answer to "should every activity be a game?".
+4. **`02_COMPLIANCE_MAPPING.md`**: which requirements in ISO 27001, NIST, CIS, PCI DSS, NIS2, DORA, UK GDPR, the NCSC CAF, the NHS DSPT and US rules the course helps meet, and the course-level features that meet the rest.
+5. **`03_WORLD_AND_CAST.md`**: the training-room frame, the brand-set companies and their hosts, and the tone.
+6. **`DECISIONS_PENDING.md`**: questions for you, each with a recommendation.
+
+## The build docs
+
+The built product has its own documents, which are the source of truth for anything already built. They live in `../phishing_and_social_engineering/`:
+
+- `README.md`: key decisions A to AA;
+- `designs/11_awareness_product_episodes.md`: the episode design;
+- `awareness/HANDOVER.md`: status and the resume plan (development on hold since 2026-10-23);
+- `awareness/BRAND_SET.md`: the four companies, their domains, look-alikes and casts;
+- `FUN_DECISIONS.md`: the aw decisions (debrief, rule of thumb, avatars and so on).
+
+The scenarios are `scenarios/awareness_*`. Where a design doc and a scenario file differ, the scenario file wins.
 
 ## The modules
 
 `modules/` has a folder per module, each with four files (see `MODULE_TEMPLATE.md`):
 
-- `README.md`: the module card (pitch, audience, outcomes, flow, reuse, features needed);
-- `concepts.md`: what to teach; the source of truth the game must match;
-- `game_design.md`: the game, its decisions and consequences, minigames, explainers, variants and alternative ideas;
-- `assessment.md`: assessed behaviours, critical behaviours, a knowledge check bank, pass rules and evidence.
+- `README.md`: the module card (pitch, audience, outcomes, build status, flow, reuse, features needed);
+- `concepts.md`: what to teach; the source of truth for new episodes and check items;
+- `game_design.md`: the episode, its attack (or consequence) and defend halves, the flip, the debrief, the defend-only variant and alternative ideas;
+- `assessment.md`: assessed behaviours, mirror pairs, candidate check items and evidence.
 
-`modules/core_01_phishing_email/` was written first as the model for the rest.
+`modules/core_01_phishing_email/` was written first as the model for the rest. Each module is now a plan for one or more episodes; `04_BUILT_SO_FAR.md` §3 says which are already covered by E1 to E7 and the checks.
 
 | Path | Modules |
 |---|---|
@@ -31,12 +46,12 @@ A plan for a cyber security awareness course for all staff, built from short Bre
 
 ## The features
 
-`features/README.md` is the catalogue, with stable ids that the modules cite:
+`features/README.md` is the catalogue, with stable ids that the modules cite. Each item carries a build status: several are now delivered by systems on main (the episode runner, the flip view, the OSINT browser, the mail client in template mode, inbox triage, awareness-measure records).
 
-- **BE**: Break Escape engine features (`features/break_escape_engine.md`), such as assessed decisions, the debrief screen, the text route, the organisation profile, visual aids in conversations and the intranet terminal.
-- **MG**: new minigames (`features/minigames.md`), such as the inbox, the knowledge check, MFA prompts, the password manager and the video player, plus the fixes existing minigames need for reuse.
-- **EX**: explainers (`features/explainers_video_and_npc.md`): the mentor NPC, engine-recorded and produced video, in-world documents, demonstrations and attacker-view interludes.
-- **HA**: Hacktivity platform features (`features/hacktivity.md`), such as organisations and departments, assignments and due dates, completion records, certificates, policy acknowledgement, dashboards and LMS interoperability.
+- **BE**: Break Escape engine features (`features/break_escape_engine.md`), such as the debrief screen, the text route, the organisation profile and accessibility checks.
+- **MG**: minigames (`features/minigames.md`), such as the inbox, MFA prompts and the password manager. MG-30, the pretext workshop, is delivered by the built attack half.
+- **EX**: explainers (`features/explainers_video_and_npc.md`): hosts, concept cards, feedback strings and in-world documents. No video.
+- **HA**: Hacktivity platform features (`features/hacktivity.md`). The only change proposed now is the customer reporting-route setting, which waits for the user's go-ahead; the rest is a later wish list.
 
 Two cross-cutting plans: `features/assessment_and_evidence.md` and `features/accessibility_and_inclusion.md`.
 
@@ -44,6 +59,8 @@ Two cross-cutting plans: `features/assessment_and_evidence.md` and `features/acc
 
 `research/` records what exists today, so the plans reuse it and list only real gaps:
 
+- `built_episodes_vs_plan.md`: the 38 awareness scenarios against the 26 planned modules;
+- `current_state_social_engineering_build.md`: every catalogue id against the code on main;
 - `current_state_break_escape.md`: the engine's minigames, systems, scenario format, gaps and art;
 - `current_state_hacktivity.md`: what the platform offers for mandatory training today (feature level);
 - `current_state_lab_sheets.md`: what lab sheets and field guides are and can do;
@@ -51,4 +68,4 @@ Two cross-cutting plans: `features/assessment_and_evidence.md` and `features/acc
 
 ## How this was made
 
-The orchestrator wrote the course-level documents, the research notes, the feature catalogue and the model module; module and feature writers worked from `docs/agents/AWARENESS_COURSE_BRIEF.md` and `docs/agents/AWARENESS_MODULE_SEEDS.md`; reviewers checked every module for accuracy, the template, topic boundaries, feature ids and style. Turning a module plan into a game follows the existing loops in `AGENTS.md`.
+The orchestrator wrote the course-level documents, the research notes, the feature catalogue and the model module; module and feature writers worked from `docs/agents/AWARENESS_COURSE_BRIEF.md` and `docs/agents/AWARENESS_MODULE_SEEDS.md`; reviewers checked every module for accuracy, the template, topic boundaries, feature ids and style. On 2026-10-27 the plan was reconciled with the built product (`04_BUILT_SO_FAR.md`). Turning a module plan into an episode follows the existing loops in `AGENTS.md`.
