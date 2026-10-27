@@ -1,6 +1,6 @@
 // ================================================
 // Awareness check, finance, before (BA): Joanne Pell (person, Training Room)
-// Brightwell's learning and development coordinator, early 30s, British Pakistani, from Leicester. Brisk and friendly.
+// Brightwell's learning and development coordinator, late forties, white British, from Leicester. Brisk and friendly.
 // One welcome line; the kiosk runs the check. Her record carries the
 // mapping that completes finish_check when triage_pre_done changes (11 S5.1).
 // Resting point is the hub (m03 hub_quiet pattern): the goodbye parks there
