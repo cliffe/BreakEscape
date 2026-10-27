@@ -11,7 +11,10 @@ if ! printf '%s' "$cmd" | grep -Eq '(^|[;&|(]|[[:space:]])git([[:space:]]+-C[[:s
 fi
 
 cd "${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel)}" || exit 0
-export LANG=C.UTF-8 LC_ALL=C.UTF-8 BUNDLE_FORCE_RUBY_PLATFORM=true
+export LANG=C.UTF-8 LC_ALL=C.UTF-8
+# Cloud containers need source-built gems (see session-start.sh); locally the
+# flag breaks bundler, so set it only there.
+[ "${CLAUDE_CODE_REMOTE:-}" = "true" ] && export BUNDLE_FORCE_RUBY_PLATFORM=true
 
 ruby_files() {
   grep -E '(\.(rb|rake|gemspec|ru)$|(^|/)(Gemfile|Rakefile)$)' || true
