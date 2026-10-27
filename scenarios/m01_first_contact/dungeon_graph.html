@@ -136,13 +136,13 @@
     </div>
     <table>
       <tr><th>Aims (story objectives)</th><td class="val">10</td></tr>
-      <tr><th>Total tasks</th><td class="val">28</td></tr>
-      <tr><th>Optional tasks</th><td class="val">3 / 28</td></tr>
-      <tr><th>VM flag challenges</th><td class="val">3</td></tr>
+      <tr><th>Total tasks</th><td class="val">29</td></tr>
+      <tr><th>Optional tasks</th><td class="val">3 / 29</td></tr>
+      <tr><th>VM flag challenges</th><td class="val">4</td></tr>
       <tr><th>AND-gate convergences</th><td class="val">3</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">13</td></tr>
       <tr><th>Rooms</th><td class="val">13</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">50 / 61</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">52 / 63</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">11 / 10</td></tr>
     </table>
   </div>
@@ -217,6 +217,8 @@
   vmfl_submit_linux_flag{"Linux Flag"}
   vmch_submit_sudo_flag["Submit encoded deployment intelligence"]
   vmfl_submit_sudo_flag{"Sudo Flag"}
+  vmch_submit_launch_code["Enter the launch authorisation code"]
+  vmfl_submit_launch_code{"Launch Code Flag"}
   hallway_east("Hallway East")
   conference_room("Conference Room")
   hallway_west("Hallway West")
@@ -276,6 +278,8 @@
   vmfl_submit_ssh_flag -.-> vmch_submit_linux_flag
   vmch_submit_sudo_flag --> vmfl_submit_sudo_flag
   vmfl_submit_linux_flag -.-> vmch_submit_sudo_flag
+  vmch_submit_launch_code --> vmfl_submit_launch_code
+  vmfl_submit_sudo_flag -.-> vmch_submit_launch_code
   server_room --> lock_vm_launcher_intro_linux
   storage_closet --> hallway_east
   break_room --> conference_room
@@ -289,8 +293,8 @@
   class reception_desk_phone,maintenance_checklist,my_passwords,maintenance_log_backup,anniversary_card,cyberchef_workstation,out_of_office_note,personal_notes_safe,encoded_note_1,encoded_note_2 item
   class npc_sarah_o_brien,main_office_key,npc_kevin_park,lock_pick_kit,server_room_keycard,derek_s_office_key key
   class andgate1,andgate2 gate
-  class vmch_submit_ssh_flag,vmch_submit_linux_flag,vmch_submit_sudo_flag vm
-  class vmfl_submit_ssh_flag,vmfl_submit_linux_flag,vmfl_submit_sudo_flag flag
+  class vmch_submit_ssh_flag,vmch_submit_linux_flag,vmch_submit_sudo_flag,vmch_submit_launch_code vm
+  class vmfl_submit_ssh_flag,vmfl_submit_linux_flag,vmfl_submit_sudo_flag,vmfl_submit_launch_code flag
 
   classDef optional stroke-dasharray:5 2
   class maintenance_checklist,maintenance_log_backup,anniversary_card,out_of_office_note optional
@@ -403,6 +407,8 @@
   vmfl_submit_linux_flag{"Linux Flag"}
   vmch_submit_sudo_flag["Submit encoded deployment intelligence"]
   vmfl_submit_sudo_flag{"Sudo Flag"}
+  vmch_submit_launch_code["Enter the launch authorisation code"]
+  vmfl_submit_launch_code{"Launch Code Flag"}
   hallway_east("Hallway East")
   conference_room("Conference Room")
   hallway_west("Hallway West")
@@ -473,6 +479,8 @@
   vmfl_submit_ssh_flag -.-> vmch_submit_linux_flag
   vmch_submit_sudo_flag --> vmfl_submit_sudo_flag
   vmfl_submit_linux_flag -.-> vmch_submit_sudo_flag
+  vmch_submit_launch_code --> vmfl_submit_launch_code
+  vmfl_submit_sudo_flag -.-> vmch_submit_launch_code
   server_room --> lock_vm_launcher_intro_linux
   storage_closet --> hallway_east
   break_room --> conference_room
@@ -508,14 +516,15 @@
   vmfl_submit_linux_flag -.-> aim_capture_technical_evidence
   vmfl_submit_sudo_flag -.-> aim_capture_technical_evidence
   lock_entropy_encrypted_archive -.-> aim_decrypt_entropy_intel
+  vmfl_submit_launch_code -.-> aim_deactivate_the_launch
 
   class door_main_office_area,door_it_room,door_derek_office,door_server_room,lock_main_filing_cabinet,lock_derek_storage_safe,lock_vm_launcher_intro_linux,lock_derek_computer,lock_derek_cabinet,lock_patricia_briefcase,lock_kevin_s_workstation,lock_derek_personal_safe,lock_entropy_encrypted_archive lock
   class main_office_area,it_room,derek_office,server_room,reception_area,storage_closet,break_room,manager_office,kevin_office,hallway_east,conference_room,hallway_west,maya_office room
   class reception_desk_phone,maintenance_checklist,my_passwords,maintenance_log_backup,anniversary_card,cyberchef_workstation,out_of_office_note,personal_notes_safe,encoded_note_1,encoded_note_2 item
   class npc_sarah_o_brien,main_office_key,npc_kevin_park,lock_pick_kit,server_room_keycard,derek_s_office_key key
   class andgate1,andgate2 gate
-  class vmch_submit_ssh_flag,vmch_submit_linux_flag,vmch_submit_sudo_flag vm
-  class vmfl_submit_ssh_flag,vmfl_submit_linux_flag,vmfl_submit_sudo_flag flag
+  class vmch_submit_ssh_flag,vmch_submit_linux_flag,vmch_submit_sudo_flag,vmch_submit_launch_code vm
+  class vmfl_submit_ssh_flag,vmfl_submit_linux_flag,vmfl_submit_sudo_flag,vmfl_submit_launch_code flag
   class aim_establish_access,aim_survey_offices,aim_build_the_case,aim_search_derek_office,aim_capture_technical_evidence,aim_decrypt_entropy_intel,aim_disrupt_the_cell,aim_deactivate_the_launch,aim_close_the_case,aim_andgate_close_the_case critical
   class aim_return_intel aim
 
@@ -682,7 +691,7 @@
   rc_obj74_74{"Social Fabric Manifesto"}
   rc_obj75_75{"Campaign Materials"}
   rc_obj76_76{"Derek's Calendar"}
-  rc_vm_launcher_intro_linux_77{"VM Access Terminal"}
+  rc_vm_launcher_intro_linux_77{"IT Audit Station (Kali)"}
   rc_flag_station_dropsite_78{"SAFETYNET Drop-Site Terminal"}
   rc_entropy_encrypted_archive_79[["ENTROPY Encrypted Archive"]]
   rc_obj80_80{"Operation Shatter: Architect's Authorization"}
