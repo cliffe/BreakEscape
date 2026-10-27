@@ -30,6 +30,8 @@
  *     purchases: [{ itemId, purchaseToken }],       // what listPurchases() returns
  *     nextToken: function (sku) {...},              // default 'fake-ok-<time>-<n>'
  *     rejectService: true,                          // getDigitalGoodsService rejects
+ *     noItem: true,                                 // getDetails returns nothing (not on sale)
+ *     failPayment: true,                            // the sheet fails (not a cancel)
  *     cancelPayment: true }                         // the player closes the sheet
  * or ?fake_play_billing=1 (remembered for the tab) for the defaults.
  *
@@ -53,7 +55,9 @@
     var TEXT = {
         signedOut: 'Sign in to buy.',
         sessionEnded: 'You have been signed out. Sign in again to continue.',
-        unavailable: 'Purchases aren’t available in this browser.',
+        unavailable: 'Purchases aren’t available in this version of the app or on this device.',
+        notOnSale: 'This item isn’t on sale in Google Play right now.',
+        tryRestore: 'If you’ve already bought it, close and reopen the app to restore it.',
         reload: 'Reload the page and try again.',
         network: 'We couldn’t reach Hacktivity. Check your connection and try again.',
         generic: 'Something went wrong. Please try again.',
@@ -72,6 +76,12 @@
             return el ? (el.getAttribute('content') || '') : '';
         } catch (e) { return ''; }
     }
+
+    // The game's title (meta hacktivity-app-event-name), or '' when the page has none.
+    function gameName() { return meta('hacktivity-app-event-name'); }
+
+    // sessionStorage keys carry the signed-in handle, so a second account in the same tab starts clean
+    function keyFor(base) { return base + '.' + (meta('hacktivity-signed-in-as') || ''); }
 
     function signedIn() { return meta('hacktivity-signed-in') === '1'; }
 
@@ -104,7 +114,7 @@
                 return resolve({
                     fake: fake,
                     getDetails: function (ids) {
-                        return Promise.resolve(ids.map(function (id) { return { itemId: id, title: id, price: price }; }));
+                        return Promise.resolve(fake.noItem ? [] : ids.map(function (id) { return { itemId: id, title: id, price: price }; }));
                     },
                     listPurchases: function () { return Promise.resolve((fake.purchases || []).slice()); }
                 });
@@ -194,8 +204,9 @@
 
     function askConsent() {
         var handle = meta('hacktivity-signed-in-as');
-        var text = 'There’s a purchase for this game on this Google account that isn’t linked to a Hacktivity account. Unlock it for ' +
-            (handle || 'this account') + '?';
+        var name = gameName() || 'this game';
+        var text = 'There’s a ' + (gameName() ? name + ' ' : '') + 'purchase on this Google account that isn’t linked to a Hacktivity account. Unlock ' +
+            name + ' for ' + (handle || 'this account') + '?';
         try { return !!win.confirm(text); } catch (e) { return false; }
     }
 
@@ -210,6 +221,11 @@
     }
 
     // Turn a server answer into { ok, code, message, reload, retryAsRestore, ask }.
+    function named(text) {
+        var n = gameName();
+        return n ? text.replace(/the full game/i, n) : text;
+    }
+
     function readAnswer(r) {
         var code = (r.body && r.body.status) || '';
         var msg = (r.body && r.body.message) || '';
@@ -218,10 +234,10 @@
         // a 401 signed_out and a 422 csrf at every step
         if (r.status === 401 || code === 'signed_out') return { ok: false, code: 'signed_out', message: TEXT.sessionEnded };
         if (code === 'csrf') return { ok: false, code: 'csrf', message: TEXT.reload };
-        if (code === 'granted') return { ok: true, code: code, message: TEXT.granted, reload: true };
-        if (code === 'owned') return { ok: true, code: code, message: TEXT.owned, reload: true };
+        if (code === 'granted') return { ok: true, code: code, message: named(TEXT.granted), reload: true };
+        if (code === 'owned') return { ok: true, code: code, message: named(TEXT.owned), reload: true };
         if (code === 'pending') return { ok: true, code: code, message: TEXT.pending };
-        if (code === 'already_owned') return { ok: true, code: code, message: TEXT.alreadyOwned };
+        if (code === 'already_owned') return { ok: true, code: code, message: named(TEXT.alreadyOwned) };
         if (code === 'claimed_elsewhere') return { ok: false, code: code, message: TEXT.claimedElsewhere };
         if (code === 'needs_support') return { ok: false, code: code, message: TEXT.needsSupport };
         if (code === 'unowned') return { ok: false, code: code, message: msg, ask: true };
@@ -252,6 +268,7 @@
     function sheetToken(svc, productId, price) {
         var fake = svc.fake;
         if (fake) {
+            if (fake.failPayment) return Promise.reject(new Error('fake: the sheet failed'));
             if (fake.cancelPayment) { var e = new Error('fake: cancelled'); e.name = 'AbortError'; return Promise.reject(e); }
             var tok = fake.nextToken ? fake.nextToken(productId) : 'fake-ok-' + Date.now().toString(36) + '-' + (++fakeCounter);
             return Promise.resolve(tok);
@@ -285,18 +302,30 @@
             var done = function (r) { if (near) { near.disabled = false; near.removeAttribute('aria-busy'); } return r; };
 
             return digitalGoods().then(function (svc) {
-                return postJson(PLAY_PURCHASES_URL + '/intents', { event_id: eventId }).then(function (res) {
-                    var code = (res.body && res.body.status) || '';
-                    if (code === 'intent' && res.body.intent_id) return { svc: svc, intentId: res.body.intent_id };
-                    return { answer: readAnswer(res) };
+                // no item or price from the store: refuse before creating an intent
+                return svc.getDetails([productId]).then(function (d) {
+                    var item = d && d[0];
+                    if (!item || !item.price) return { answer: { ok: false, code: 'not_on_sale', message: TEXT.notOnSale } };
+                    return postJson(PLAY_PURCHASES_URL + '/intents', { event_id: eventId }).then(function (res) {
+                        var code = (res.body && res.body.status) || '';
+                        if (code === 'intent' && res.body.intent_id) return { svc: svc, intentId: res.body.intent_id, price: item.price };
+                        // nothing_to_buy: the account already has the game, so treat it as owned
+                        if (code === 'nothing_to_buy') return { answer: { ok: true, code: code, message: named(TEXT.owned), reload: true } };
+                        return { answer: readAnswer(res) };
+                    });
+                }, function () {
+                    return { answer: { ok: false, code: 'unavailable', message: TEXT.unavailable } };
                 });
             }, function () {
                 return { answer: { ok: false, code: 'unavailable', message: TEXT.unavailable } };
             }).then(function (step) {
-                if (step.answer) return say(step.answer.code, step.answer.message, step.answer.ok);
+                if (step.answer) {
+                    var out = say(step.answer.code, step.answer.message, step.answer.ok);
+                    if (step.answer.reload) reloadPage();
+                    return out;
+                }
                 var svc = step.svc;
-                return svc.getDetails([productId]).then(function (d) { return d && d[0] && d[0].price; }, function () { return null; })
-                    .then(function (price) { return sheetToken(svc, productId, price); })
+                return Promise.resolve().then(function () { return sheetToken(svc, productId, step.price); })
                     .then(function (token) {
                         return claimAndFollow(eventId, productId, token, step.intentId).then(function (a) {
                             if (a.declined) return say('declined', '');
@@ -306,7 +335,13 @@
                         });
                     }, function (err) {
                         if (err && err.name === 'AbortError') return say('cancelled', TEXT.cancelled);
-                        return say('payment_failed', TEXT.generic);
+                        // the sheet failed for another reason (for example this Google account already owns
+                        // the item): look for the purchase and restore it, ignoring the once-per-launch flag
+                        return restoreNow(eventId).then(function (r) {
+                            var got = r && r.results && r.results.some(function (x) { return x.code === 'granted' || x.code === 'owned'; });
+                            if (got) return say('restored', named(TEXT.granted), true);
+                            return say('payment_failed', TEXT.tryRestore);
+                        });
                     });
             }).then(done, function () { return done(say('error', TEXT.generic)); });
         } catch (e) {
@@ -326,24 +361,29 @@
     }
 
     function readSent() {
-        try { var l = JSON.parse(win.sessionStorage.getItem(SENT_KEY) || '[]'); return Array.isArray(l) ? l : []; } catch (e) { return []; }
+        try { var l = JSON.parse(win.sessionStorage.getItem(keyFor(SENT_KEY)) || '[]'); return Array.isArray(l) ? l : []; } catch (e) { return []; }
     }
     function writeSent(list) {
-        try { win.sessionStorage.setItem(SENT_KEY, JSON.stringify(list.slice(-50))); } catch (e) { /* ignore */ }
+        try { win.sessionStorage.setItem(keyFor(SENT_KEY), JSON.stringify(list.slice(-50))); } catch (e) { /* ignore */ }
     }
 
     // Once per launch (the tab), for a signed-in Play app player on a game page: list the account's
     // purchases and post each token this tab has not sent. A token is only remembered when the
     // answer is final; pending and errors are tried again on the next launch.
-    function restore() {
+    function restore() { return restoreRun(false, null); }
+
+    // A forced restore (after a failed sheet) skips the once-per-launch flag.
+    function restoreNow(eventId) { return restoreRun(true, eventId); }
+
+    function restoreRun(force, forcedEvent) {
         try {
             if (P.store !== 'play') return Promise.resolve({ ok: false, reason: 'not-play' });
             if (!signedIn()) return Promise.resolve({ ok: false, reason: 'signed-out' });
-            var eventId = P.eventId;
+            var eventId = forcedEvent || P.eventId;
             if (!eventId) return Promise.resolve({ ok: false, reason: 'no-event' });
             try {
-                if (win.sessionStorage.getItem(RESTORE_RAN_KEY) === '1') return Promise.resolve({ ok: true, reason: 'already-ran' });
-                win.sessionStorage.setItem(RESTORE_RAN_KEY, '1');
+                if (!force && win.sessionStorage.getItem(keyFor(RESTORE_RAN_KEY)) === '1') return Promise.resolve({ ok: true, reason: 'already-ran' });
+                win.sessionStorage.setItem(keyFor(RESTORE_RAN_KEY), '1');
             } catch (e) { return Promise.resolve({ ok: false, reason: 'no-storage' }); } // cannot count: do not loop
             var results = [];
             return digitalGoods().then(function (svc) { return svc.listPurchases(); }).then(function (list) {
@@ -358,7 +398,8 @@
                                 if (settled) { sent.push(hash); writeSent(sent); }
                                 results.push({ code: a.code });
                                 if (a.code === 'claimed_elsewhere' || a.code === 'needs_support' || a.code === 'pending') showMessage(a.message, null);
-                                if (a.reload) reload = true;
+                                // only a new grant reloads; an owner who already has the game is not reloaded every launch
+                                if (a.code === 'granted') reload = true;
                             });
                         });
                     });

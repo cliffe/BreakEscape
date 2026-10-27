@@ -27,7 +27,7 @@ function load(opts = {}) {
     const metas = '<meta name="csrf-token" content="tok123">' +
         `<meta name="hacktivity-play-packages" content="${PKG}=licence-to-hack">` +
         '<meta name="hacktivity-app-event" content="42">' +
-        (opts.signedIn === false ? '' : '<meta name="hacktivity-signed-in" content="1"><meta name="hacktivity-signed-in-as" content="agent7">') +
+        (opts.signedIn === false ? '' : '<meta name="hacktivity-signed-in" content="1"><meta name="hacktivity-signed-in-as" content="agent7">' + (opts.named === false ? '' : '<meta name="hacktivity-app-event-name" content="Licence to Hack">')) +
         (opts.hooks === false ? '' : '<meta name="hacktivity-test-hooks" content="1">');
     const button = opts.buy === false ? '' :
         '<div><button type="button" data-play-buy data-product-id="game.full" data-event-id="42">Buy the full game <span data-play-price></span></button></div>';
@@ -85,14 +85,14 @@ test('a press creates the intent, then posts the token with the intent id and th
     assert.deepEqual(b.payload, { event_id: '42', product_id: 'game.full', purchase_token: 'fake-ok-t1', client: 'play-app', intent_id: 9 });
     assert.equal(b.headers['X-CSRF-Token'], 'tok123');
     assert.equal(w.reloads.length, 1, 'reloads on granted');
-    assert.match(msg(w), /full game is unlocked/);
+    assert.match(msg(w), /Licence to Hack is unlocked/);
 });
 
 test('owned reloads; pending, already_owned, claimed_elsewhere and needs_support show their wording and do not reload', async () => {
     const cases = [
-        [reply(200, { status: 'owned' }), /already own the full game on this account/, 1],
+        [reply(200, { status: 'owned' }), /already own Licence to Hack on this account/, 1],
         [reply(202, { status: 'pending' }), /^Purchase pending: it unlocks when Google confirms it\.$/, 0],
-        [reply(200, { status: 'already_owned' }), /extra purchase will be refunded automatically/, 0],
+        [reply(200, { status: 'already_owned' }), /You already own Licence to Hack; this extra purchase will be refunded automatically/, 0],
         [reply(409, { status: 'claimed_elsewhere' }), /different Hacktivity account\. Contact support to move it/, 0],
         [reply(409, { status: 'needs_support' }), /Contact Hacktivity support/, 0],
         [reply(403, { status: 'revoked', message: 'This purchase was refunded.' }), /refunded/, 0],
@@ -172,7 +172,7 @@ test('a rejecting Digital Goods service shows the unavailable line and posts not
     const r = await w.HacktivityPlatform.buy(button(w));
     assert.equal(r.code, 'unavailable');
     assert.equal(w.requests.length, 0);
-    assert.match(msg(w), /Purchases aren.t available in this browser/);
+    assert.match(msg(w), /Purchases aren.t available in this version of the app or on this device/);
     assert.equal(w.document.querySelector('[data-play-price]').textContent, '');
 });
 
@@ -232,10 +232,11 @@ test('restore posts each listed token once, remembers settled ones, and runs onc
     const w = load({ buy: false, fake: { purchases: list }, answers: [reply(200, { status: 'owned' }), reply(202, { status: 'pending' })] });
     await settle(w); await settle(w);
     assert.equal(w.requests.length, 2);
+    assert.equal(w.reloads.length, 0, 'an owner is not reloaded on every launch');
     assert.equal('intent_id' in w.requests[0].payload, false);
     assert.equal(w.requests[0].payload.purchase_token, 'fake-ok-a');
     assert.match(w.document.querySelector('[data-play-banner]').textContent, /Purchase pending/);
-    assert.equal(JSON.parse(w.sessionStorage.getItem('hacktivity.restoreSent')).length, 1, 'pending is not remembered');
+    assert.equal(JSON.parse(w.sessionStorage.getItem('hacktivity.restoreSent.agent7')).length, 1, 'pending is not remembered');
     const again = await w.HacktivityPlatform.restore();
     assert.equal(again.reason, 'already-ran');
     assert.equal(w.requests.length, 2);
@@ -244,7 +245,7 @@ test('restore posts each listed token once, remembers settled ones, and runs onc
 test('restore skips tokens already sent in this tab', async () => {
     // sha256 of "fake-ok-a"
     const hash = Buffer.from(await webcrypto.subtle.digest('SHA-256', new TextEncoder().encode('fake-ok-a'))).toString('hex');
-    const w = load({ buy: false, storage: { 'hacktivity.restoreSent': JSON.stringify([hash]) },
+    const w = load({ buy: false, storage: { 'hacktivity.restoreSent.agent7': JSON.stringify([hash]) },
         fake: { purchases: [{ itemId: 'game.full', purchaseToken: 'fake-ok-a' }] }, answers: [] });
     await settle(w); await settle(w);
     assert.equal(w.requests.length, 0);
@@ -255,7 +256,7 @@ test('restore asks before claiming an unlinked purchase, naming the account; yes
         answers: [reply(200, { status: 'unowned', message: 'x' }), GRANTED] });
     await settle(w); await settle(w);
     assert.equal(w.confirms.length, 1);
-    assert.match(w.confirms[0], /Unlock it for agent7\?/);
+    assert.equal(w.confirms[0], 'There’s a Licence to Hack purchase on this Google account that isn’t linked to a Hacktivity account. Unlock Licence to Hack for agent7?');
     assert.equal(w.requests[1].payload.consent, true);
     assert.equal(w.reloads.length, 1);
 });
@@ -267,7 +268,7 @@ test('restore: answering no sends nothing more and is not asked again this launc
     assert.equal(w.confirms.length, 1);
     assert.equal(w.requests.length, 1);
     assert.equal(w.reloads.length, 0);
-    assert.equal(JSON.parse(w.sessionStorage.getItem('hacktivity.restoreSent')).length, 1);
+    assert.equal(JSON.parse(w.sessionStorage.getItem('hacktivity.restoreSent.agent7')).length, 1);
 });
 
 test('restore shows claimed_elsewhere once', async () => {
@@ -300,20 +301,79 @@ test('web and steam never touch Digital Goods', async () => {
     }
 });
 
-test('?fake_play_billing=1 turns the default fake on only with the hooks meta', async () => {
-    const mk = (hooks) => {
-        const w = load({ hooks, buy: true, answers: [] });
+test('?fake_play_billing=1 turns the default fake on with the hooks meta, and not without it', async () => {
+    const page = async (hooks) => {
+        // the query string is read at load: build a page whose URL carries it
+        const dom = new JSDOM('<!doctype html><html><head>' + (hooks ? '<meta name="hacktivity-test-hooks" content="1">' : '') +
+            '<meta name="hacktivity-signed-in" content="1"></head><body><button data-play-buy data-product-id="game.full" data-event-id="42"><span data-play-price></span></button></body></html>',
+            { url: 'https://hacktivity.test/hacktivities/42/play?fake_play_billing=1', runScripts: 'outside-only', pretendToBeVisual: true });
+        const w = dom.window;
+        w.sessionStorage.setItem('hacktivity.platform', STORED);
+        w.Intl = Intl; w.TextEncoder = TextEncoder; Object.defineProperty(w, 'crypto', { value: webcrypto, configurable: true });
+        w.fetch = async () => { throw new Error('offline'); };
+        w.eval(src);
+        await settle(w);
         return w;
     };
-    // the query string is read at load: build a page whose URL carries it
-    const dom = new JSDOM('<!doctype html><html><head><meta name="hacktivity-test-hooks" content="1"><meta name="hacktivity-signed-in" content="1"></head><body><button data-play-buy data-product-id="game.full" data-event-id="42"><span data-play-price></span></button></body></html>',
-        { url: 'https://hacktivity.test/hacktivities/42/play?fake_play_billing=1', runScripts: 'outside-only', pretendToBeVisual: true });
-    const w = dom.window;
-    w.sessionStorage.setItem('hacktivity.platform', STORED);
-    w.Intl = Intl; w.TextEncoder = TextEncoder; Object.defineProperty(w, 'crypto', { value: webcrypto, configurable: true });
-    w.fetch = async () => { throw new Error('offline'); };
-    w.eval(src);
-    await settle(w);
+    let w = await page(true);
     assert.equal(w.document.querySelector('[data-play-price]').textContent, '£14.99');
-    assert.ok(mk);
+    w = await page(false);
+    assert.equal(w.document.querySelector('[data-play-price]').textContent, '', 'no meta: no fake, no price');
+    assert.equal(w.__hacktivityFakeDigitalGoods, undefined);
+    assert.equal(w.sessionStorage.getItem('hacktivity.fakeBilling'), null);
+});
+
+test('no item or price from getDetails: refused before an intent is created', async () => {
+    const w = load({ fake: { noItem: true }, answers: [] });
+    await settle(w);
+    const r = await w.HacktivityPlatform.buy(button(w));
+    assert.equal(r.code, 'not_on_sale');
+    assert.equal(w.requests.length, 0);
+    assert.equal(msg(w), 'This item isn’t on sale in Google Play right now.');
+});
+
+test('nothing_to_buy at the intent step is treated as owned: reload', async () => {
+    const w = load({ fake: {}, answers: [reply(422, { status: 'nothing_to_buy', message: 'x' })] });
+    await settle(w);
+    const r = await w.HacktivityPlatform.buy(button(w));
+    assert.equal(r.ok, true);
+    assert.equal(w.reloads.length, 1);
+    assert.equal(w.requests.length, 1);
+});
+
+test('the sheet failing (not a cancel) runs a restore for this press, ignoring the ran-once flag', async () => {
+    const list = [{ itemId: 'game.full', purchaseToken: 'fake-ok-g' }];
+    // restore already ran this launch (flag set); the press still looks for the purchase
+    let w = load({ fake: { failPayment: true, purchases: list }, storage: { 'hacktivity.restoreRan.agent7': '1' },
+        answers: [INTENT, reply(200, { status: 'unowned', message: 'x' }), GRANTED] });
+    await settle(w);
+    let r = await w.HacktivityPlatform.buy(button(w));
+    assert.equal(r.code, 'restored');
+    assert.equal(w.requests[1].payload.purchase_token, 'fake-ok-g');
+    assert.equal(w.reloads.length, 1);
+    // nothing to restore: the fallback line
+    w = load({ fake: { failPayment: true, purchases: [] }, storage: { 'hacktivity.restoreRan.agent7': '1' }, answers: [INTENT] });
+    await settle(w);
+    r = await w.HacktivityPlatform.buy(button(w));
+    assert.equal(r.code, 'payment_failed');
+    assert.equal(msg(w), 'If you’ve already bought it, close and reopen the app to restore it.');
+});
+
+test('restore flags are keyed by the signed-in handle', async () => {
+    const w = load({ buy: false, fake: { purchases: [{ itemId: 'game.full', purchaseToken: 'fake-ok-h' }] }, answers: [reply(200, { status: 'owned' })] });
+    await settle(w); await settle(w);
+    assert.equal(w.sessionStorage.getItem('hacktivity.restoreRan.agent7'), '1');
+    assert.equal(w.sessionStorage.getItem('hacktivity.restoreRan'), null);
+    assert.ok(w.sessionStorage.getItem('hacktivity.restoreSent.agent7'));
+});
+
+test('without the game name meta the prompt and messages say "this game" and "the full game"', async () => {
+    const w = load({ named: false, buy: false, fake: { purchases: [{ itemId: 'game.full', purchaseToken: 'fake-ok-n' }] },
+        answers: [reply(200, { status: 'unowned', message: 'x' }), GRANTED] });
+    await settle(w); await settle(w);
+    assert.equal(w.confirms[0], 'There’s a purchase on this Google account that isn’t linked to a Hacktivity account. Unlock this game for agent7?');
+    const g = load({ named: false, fake: {}, answers: [INTENT, GRANTED] });
+    await settle(g);
+    await g.HacktivityPlatform.buy(button(g));
+    assert.match(msg(g), /Thank you\. The full game is unlocked\./);
 });
