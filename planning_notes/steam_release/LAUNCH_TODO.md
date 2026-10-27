@@ -56,9 +56,15 @@ land; keep each line short and say where the detail lives.
 
 ## Engineering in progress or next (no account needed)
 
-- [ ] P7 review fixes (client purchase and restore), then commit.
-- [ ] P10: the Play app end to end on the emulator against the dev server (fake billing).
-- [ ] Steam plan, its review, then the Steam packages with stand-ins.
+- [x] P7 (client purchase and restore) and P10 (Play app end to end on the emulator, fake
+      billing: passed 2026-10-27; hacktivity-android 64b6d34).
+- [ ] Play the game canvas on a real Android phone or tablet: the emulators here show WebGL black
+      (Chrome 113) or freeze the compositor (Chrome 124), so P10 checked missions by game state only.
+- [ ] Phone landscape layout pass (shell pages 2-2.3 screens tall at 915x412; Mission Brief Continue
+      overlaps text; pause menu scrolls): in progress.
+- [ ] Hyphenated handles break the in-game name save on the character page: in progress.
+- [ ] Steam packages (STEAM_PLAN.md): S1, S2, S5b, S7, S8, S9a, S10 done; S3 in review; S5a, S6,
+      S9b building; S4 and S14 wait for the owner's answers (S14 scope, admin revoke).
 - [ ] Windows build of the desktop app (needs wine or a Windows machine).
 - [ ] Backlog from reviews: in-page consent dialog instead of `window.confirm`; remember a declined
       restore per account; show "already owned" during restore; fix the pre-existing
