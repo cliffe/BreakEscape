@@ -82,8 +82,11 @@ module BreakEscape
     end
 
     # A phone contact whose calls are voiced: a phone-chat eventMapping or its
-    # timedConversation has `voiced: true`.
+    # timedConversation has `voiced: true`, or the contact itself does (a call the
+    # player starts, such as a pretext call from a desk phone: its start knot is
+    # the contact's currentKnot).
     def self.voiced_call?(npc)
+      return true if npc['voiced'] == true
       return true if npc.dig('timedConversation', 'voiced') == true
 
       Array(npc['eventMappings']).any? do |m|
@@ -121,6 +124,7 @@ module BreakEscape
 
     def self.call_start_knots(npc)
       knots = []
+      knots << knot_name(npc['currentKnot'] || 'start') if npc['voiced'] == true
       timed = npc['timedConversation']
       knots << knot_name(timed['targetKnot']) if timed.is_a?(Hash) && timed['voiced'] == true && timed['targetKnot']
       Array(npc['eventMappings']).each do |m|

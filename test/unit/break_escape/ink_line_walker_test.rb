@@ -320,6 +320,30 @@ module BreakEscape
       assert_equal Set.new(%w[call briefing]), TtsLineExtractor.call_knots(data.dig('rooms', 'office', 'npcs', 0), ink)
     end
 
+    # A call the player starts (a desk phone's pretext call) has no event mapping: `voiced: true`
+    # on the contact marks it, and the contact's own knot is the call's start.
+    test "voiced: true on the contact voices the call from its currentKnot, not its narration" do
+      data = scenario(story: HUB_CALL, current: 'call')
+      data['rooms']['office']['npcs'][0].delete('eventMappings')
+      assert_empty entries_for(data)
+      data['rooms']['office']['npcs'][0]['voiced'] = true
+      extractor = TtsLineExtractor.new('walker_test', data)
+      assert_includes extractor.entries.map { |e| [e.npc_id, e.text] }, ['agent_0x99', "Don't hang up."]
+      assert_includes extractor.entries.map { |e| e.npc_id }.uniq, 'agent_0x99'
+      refute extractor.spoken_by?('narrator', 'The line crackles.')
+      npc = data['rooms']['office']['npcs'][0]
+      ink = JSON.parse(File.read(Engine.root.join(HUB_CALL)))
+      assert_equal ['call'], TtsLineExtractor.call_start_knots(npc)
+      assert_includes TtsLineExtractor.call_knots(npc, ink), 'call'
+    end
+
+    test "voiced: true on a contact with no currentKnot starts at start" do
+      npc = { 'voiced' => true }
+      assert TtsLineExtractor.voiced_call?(npc)
+      assert_equal ['start'], TtsLineExtractor.call_start_knots(npc)
+      refute TtsLineExtractor.voiced_call?({})
+    end
+
     test "the call boundary is the home knot: with home 'start' the hub is reached, and no targetKnot voices nothing" do
       entries = entries_for(scenario(mapping: { 'voiced' => true }, story: HUB_CALL))
       assert_includes entries, ['agent_0x99', 'Nothing yet.']

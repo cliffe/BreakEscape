@@ -247,6 +247,8 @@ export function callLaunch(spec, npc, npcId, blanks) {
         requiresKeyboardInput: true
     };
     if (isStr(npc.displayName)) params.title = npc.displayName;
+    // A phone contact marked `voiced: true` speaks its call lines through TTS (F17)
+    if (scene === 'phone-chat' && npc.voiced === true) params.voiced = true;
     return { scene, params };
 }
 

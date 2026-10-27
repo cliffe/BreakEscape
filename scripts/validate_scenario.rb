@@ -304,7 +304,7 @@ def check_unknown_fields(json_data)
   known_npc_fields = %w[
     id displayName npcType position spriteSheet spriteTalk spriteVisemes spriteConfig
     voice behavior globalVarOnKO restartOnRetalk reopenRefreshesHub livePreview taskOnKO koImmune storyPath callId currentKnot avatar
-    phoneId phoneTheme unlockable externalVariables persistentVariables
+    phoneId phoneTheme voiced unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
