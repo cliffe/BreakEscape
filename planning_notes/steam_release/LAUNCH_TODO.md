@@ -69,8 +69,10 @@ land; keep each line short and say where the detail lives.
 - [ ] Windows build of the desktop app (needs wine or a Windows machine).
 - [ ] Backlog from reviews: in-page consent dialog instead of `window.confirm`; remember a declined
       restore per account; show "already owned" during restore; fix the pre-existing
-      `subscription_flow_test.rb:143` and Stripe webhook test failures; rate-limit keys for the
-      older throttles behind Cloudflare (they use `req.ip`).
+      `subscription_flow_test.rb:143` and Stripe webhook test failures. (The older throttles' `req.ip`
+      keys behind Cloudflare: owner says Rack::Attack is already set up correctly; dropped.)
+- [ ] Installable web app per game (`PWA.md`): W1–W4 building; W5 visible-window and iPad/iPhone
+      checks need the owner's device time.
 
 ## At release
 
