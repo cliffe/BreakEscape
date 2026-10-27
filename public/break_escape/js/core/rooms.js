@@ -2731,8 +2731,8 @@ export function createRoom(roomId, roomData, position) {
                                 id: sprite.objectId, name: cupName, type: imageName,
                                 decor: true, takeable: true,
                                 observations: window.gameScenario?.disableAttacks === true
-                                    ? `${cupName}, still warm.`
-                                    : `${cupName}, still warm. Pick it up, and drink it for some energy back.`
+                                    ? `${cupName}, still warm. Take it with you and drink it whenever you like.`
+                                    : `${cupName}, still warm. Take it with you; drinking it gives back a little health.`
                             });
                             if (isObjectConsumed(sprite.objectId) || heldInSavedInventory(sprite.objectId)) {
                                 sprite.scenarioData.consumed = true;
