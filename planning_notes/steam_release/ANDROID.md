@@ -7,8 +7,9 @@ Status: design note, 2026-10-27. No code changed. Read with `README.md` ("Google
 
 Settled already: a Trusted Web Activity built with Bubblewrap (G1); Licence to Hack first, on phones
 and tablets (G2); a one-off Play Billing purchase per game, verified into a `google_play`
-entitlement (G3); only Play buyers play in the Play app, and no Stripe purchase can be made from it
-(G4).
+entitlement (G3); no Stripe purchase can be made from it (G4). G4's "only Play buyers" was replaced
+on 2026-10-27 by account-wide access (owner answer 6 below); the "G4" sections further down predate
+that and are kept for the record. The implementation plan is `ANDROID_PLAN.md`.
 
 ## Decisions for the owner
 
@@ -125,7 +126,7 @@ What E costs:
 
 The desktop app keeps its UA token; the two detections sit side by side in `AppClient`.
 
-### G4 is an access rule as well as a scope rule
+### G4 is an access rule as well as a scope rule (superseded 2026-10-27: access is account-wide)
 
 `AppMode`'s header comment says app mode "changes layout and scope only, never access". G4 needs more
 than that: in the Play app a subscriber or Steam owner must not get the full game. Today

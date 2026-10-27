@@ -136,7 +136,9 @@ an event they hold an entitlement for (D1). Anyone with several routes gets the 
 - **Steam demo:** the demo app id maps to the same event. No entitlement; the player is a free
   account and plays whichever slot has the free window.
 - **Play:** a verified purchase of `events.play_product_id` creates a `google_play` entitlement.
-  The Play app only unlocks with a Play entitlement (G4).
+  ~~The Play app only unlocks with a Play entitlement (G4).~~ Superseded 2026-10-27: access is
+  account-wide, so every entitlement (subscription, organisation, Steam, Play, staff) counts on
+  every platform; only the payment links follow the platform (`ANDROID.md`, "Owner answers").
 - **Single-game app mode:** the shell sends a header naming the app, its event and its build
   version. Hacktivity renders that one event without site navigation, refuses Stripe and billing
   pages for those requests, opens other links in the system browser, and refuses builds below the
