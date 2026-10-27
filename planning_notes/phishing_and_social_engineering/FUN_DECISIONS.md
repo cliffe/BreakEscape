@@ -70,3 +70,11 @@ These are new work, not polish fixes. Within each track they slot in after the c
 | q_aw7 | aw7: E6 and E7 defend-only by default | No answer: give more context in the next review page |
 | q_timing_runs | Human timing runs | Keep postponed; estimate times from the agent runs meanwhile |
 | q_facil | Facilitator notes | One facilitator guide for the course in HacktivityLabSheets (last stage) |
+
+## Awareness decisions, part two (2026-10-27, review page https://claude.ai/artifact/VeD7DYww5HqB1xZ8NiNoDU)
+
+| Id | Question | Decision |
+|---|---|---|
+| q_aw7 | aw7: E6 and E7 defend-only by default | Keep both versions listed and add organiser guidance. Also seed two courses in Hacktivity: one with the defend-only episodes, and one with both versions (user's note; this is the go-ahead for that seed edit) |
+| q_timing | Episode length against the 13-minute target | Say "about 15 minutes" (E6 and E7 "about 16") and recommend defend-only for sessions under 30 minutes; human timing runs later |
+| q_e7mirror | E7 mirror pair | Keep E7's voicemail mirror as it is; item closed |
