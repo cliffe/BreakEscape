@@ -256,7 +256,7 @@ test('clicking Launch twice quickly opens one child, not two', () => {
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief'] } });
     open(ep);
     const runner = cur();
-    const btn = runner.container.querySelector('.er-launch');
+    const btn = runner.container.querySelector('.epr-launch');
     btn.click();
     assert.equal(scene(), 'osint-browser');
     btn.click(); // the old button is gone with the runner's DOM; clicking a detached node must do nothing
@@ -268,7 +268,7 @@ test('a child that reports completion twice does not complete the next stage as 
     const ep = fullEpisode();
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief'] } });
     open(ep);
-    click('.er-launch');
+    click('.epr-launch');
     const child = cur();
     child.complete(true, {});
     assert.equal(M.readState(ep, stored(ep.id)).stage, 'write');
@@ -281,7 +281,7 @@ test('a triage round that completes twice is recorded once by the runner', () =>
     const ep = fullEpisode();
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
     open(ep);
-    click('.er-launch');
+    click('.epr-launch');
     const triage = cur();
     triage.gameResult = { setId: 'fixture_inbox', percent: 60, reportRate: 0.5, answers: [] };
     triage.complete(true);
@@ -295,7 +295,7 @@ test('the defend summary kept in state is numbers only, even if the triage resul
     const ep = fullEpisode();
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
     open(ep);
-    click('.er-launch');
+    click('.epr-launch');
     cur().gameResult = { setId: 'fixture_inbox', percent: '88', reportRate: NaN, verifyCount: undefined, answers: [{ id: 'm1', note: 'private' }] };
     cur().complete(true);
     assert.deepEqual(stored(ep.id).defend, { percent: 0, reportRate: 0, verifyCount: 0 });
@@ -309,7 +309,7 @@ test('a mail child that closes normally with no sent record for the target holds
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint'] } });
     stub.mailSend = false; // no record for the target in mailState
     open(ep);
-    click('.er-launch');
+    click('.epr-launch');
     closeChild();
     assert.equal(M.readState(ep, stored(ep.id)).sent, null);
 });
@@ -320,7 +320,7 @@ test('a sent record for a different target is never held for the flip', () => {
     stub.mailSend = false;
     window.mailState.mailboxes.analyst.messages.push({ id: 'other', folder: 'sent', targetId: 'someone_else', gameTime: 5, tells: ['senderTrust'] });
     open(ep);
-    click('.er-launch');
+    click('.epr-launch');
     closeChild();
     assert.equal(M.readState(ep, stored(ep.id)).sent, null);
 });
@@ -329,7 +329,7 @@ test('with window.mailState gone (a reload dropped it) closing the mail child do
     const ep = fullEpisode();
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint'] } });
     open(ep);
-    click('.er-launch');
+    click('.epr-launch');
     delete window.mailState;
     assert.doesNotThrow(() => closeChild());
     assert.equal(M.readState(ep, stored(ep.id)).sent, null);
@@ -340,7 +340,7 @@ test('Esc while a child is open closes the child, not the runner underneath', ()
     const ep = fullEpisode();
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief'] } });
     open(ep);
-    click('.er-launch');
+    click('.epr-launch');
     assert.equal(scene(), 'osint-browser');
     document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     assert.equal(scene(), 'episode-runner');
@@ -364,7 +364,7 @@ test('a throwing measure dep does not lose the stage: the round still completes 
     deps.measure = () => { throw new Error('store offline'); };
     try {
         open(ep);
-        click('.er-launch');
+        click('.epr-launch');
         cur().gameResult = { setId: 'fixture_inbox', percent: 50, reportRate: 0, answers: [] };
         cur().complete(true);
         assert.equal(epState().stage, 'debrief');
@@ -379,11 +379,11 @@ test('a launch whose child fails to start shows the notice and keeps the stage',
     const real = FW.startMinigame.bind(FW);
     FW.startMinigame = (name, ...rest) => (name === 'osint-browser' ? null : real(name, ...rest));
     try {
-        click('.er-launch');
+        click('.epr-launch');
     } finally { FW.startMinigame = real; }
     assert.equal(scene(), 'episode-runner');
     assert.equal(epState().stage, 'osint');
-    assert.ok(cur().container.querySelector('.er-notice').textContent.length > 0, 'the launch-failed notice is shown');
+    assert.ok(cur().container.querySelector('.epr-notice').textContent.length > 0, 'the launch-failed notice is shown');
 });
 
 test('an episode with an unusable stage list falls back to the default stages for its variant', () => {
@@ -399,6 +399,6 @@ test('a defendOnly episode that lists attack stages never launches them, even fr
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, stage: 'osint', done: [] } });
     open(ep);
     assert.equal(epState().stage, 'brief');
-    click('.er-start');
+    click('.epr-start');
     assert.equal(epState().stage, 'defend');
 });

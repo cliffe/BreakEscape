@@ -5,7 +5,7 @@
 
 .minigame-container[data-minigame="episode-runner"] .minigame-game-container { display: flex; flex-direction: column; min-height: 0; }
 
-.er-root {
+.epr-root {
     --aw-accent: #2f6f5e;
     --aw-ink: #1f2933;
     --aw-surface: #f6f8f7;
@@ -21,24 +21,24 @@
     box-sizing: border-box;
 }
 
-.er-bar {
+.epr-bar {
     display: flex;
     align-items: center;
     gap: 8px;
     background: #fff;
     border-bottom: 2px solid var(--aw-line);
 }
-.er-strip { flex: 1 1 auto; min-width: 0; }
-.er-strip .aw-strip { border-bottom: 0; }
-.er-bar .se-overlay-close { flex: 0 0 auto; margin: 6px 10px; }
+.epr-strip { flex: 1 1 auto; min-width: 0; }
+.epr-strip .aw-strip { border-bottom: 0; }
+.epr-bar .se-overlay-close { flex: 0 0 auto; margin: 6px 10px; }
 
-.er-body { flex: 1; min-height: 0; overflow-y: auto; }
+.epr-body { flex: 1; min-height: 0; overflow-y: auto; }
 
-.er-panel { padding: 16px; line-height: 1.45; }
-.er-heading { margin: 0 0 8px; font-size: 22px; color: var(--aw-accent); }
-.er-heading:focus { outline: none; }
-.er-text { margin: 0 0 12px; font-size: 16px; max-width: 60ch; }
-.er-scope {
+.epr-panel { padding: 16px; line-height: 1.45; }
+.epr-heading { margin: 0 0 8px; font-size: 22px; color: var(--aw-accent); }
+.epr-heading:focus { outline: none; }
+.epr-text { margin: 0 0 12px; font-size: 16px; max-width: 60ch; }
+.epr-scope {
     margin: 0 0 12px;
     padding: 8px 12px;
     max-width: 60ch;
@@ -46,10 +46,10 @@
     background: #fff;
     border-left: 4px solid var(--aw-accent);
 }
-.er-notice { margin: 0; font-size: 15px; color: #8a5a00; }
-.er-notice:empty { display: none; }
+.epr-notice { margin: 0; font-size: 15px; color: #8a5a00; }
+.epr-notice:empty { display: none; }
 
-.er-button {
+.epr-button {
     margin-top: 14px;
     padding: 8px 18px;
     font: inherit;
@@ -60,11 +60,11 @@
     border-radius: 4px;
     cursor: pointer;
 }
-.er-button:focus-visible { outline: 3px solid var(--aw-ink); outline-offset: 2px; }
+.epr-button:focus-visible { outline: 3px solid var(--aw-ink); outline-offset: 2px; }
 
 /* Facilitated mode (11 N5, P7-I): the group prompt and the pause between stages. Large
    enough to read from across a room on a shared screen. */
-.er-facilitator {
+.epr-facilitator {
     display: block;
     margin: 12px 16px 0;
     padding: 10px 14px;
@@ -74,12 +74,12 @@
     border: 2px dashed var(--aw-accent);
     border-radius: 4px;
 }
-.er-panel .er-facilitator { margin: 12px 0 0; }
-.er-facilitator-label { display: block; font-size: 14px; font-weight: 700; color: var(--aw-accent); }
-.er-facilitator-text { display: block; font-weight: 600; }
-.er-pause .er-text { font-size: 18px; }
+.epr-panel .epr-facilitator { margin: 12px 0 0; }
+.epr-facilitator-label { display: block; font-size: 14px; font-weight: 700; color: var(--aw-accent); }
+.epr-facilitator-text { display: block; font-weight: 600; }
+.epr-pause .epr-text { font-size: 18px; }
 
 @media (max-width: 767px) {
-    .er-bar { flex-wrap: wrap; }
-    .er-panel { padding: 12px; }
+    .epr-bar { flex-wrap: wrap; }
+    .epr-panel { padding: 12px; }
 }
