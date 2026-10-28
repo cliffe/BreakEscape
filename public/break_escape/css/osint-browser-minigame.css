@@ -1,7 +1,7 @@
 /* OSINT browser (design 02). Dark chrome on the --ui-* tokens, a light "page" area for the site
    content. Every string the player reads is DOM text. The chrome (address bar, sites strip) is
-   Source Sans 3 (--se-font-readable); the page area is the in-world site, in Pixelify Sans
-   (--se-font-pixel). Marks are always paired with words.
+   Source Sans 3 (--se-font-readable); the page area is the in-world site, in the pixel font
+   GNF (--se-font-pixel). Marks are always paired with words.
    The stylesheet <link> is added by the wiring packet (P2-W). */
 
 .osint-browser-container {
@@ -159,7 +159,7 @@
 
 .ob-main,
 .ob-main * {
-    font-family: var(--se-font-pixel, 'Pixelify Sans', 'Source Sans 3', sans-serif);
+    font-family: var(--se-font-pixel, 'GNF', 'Source Sans 3', sans-serif);
 }
 
 .ob-page { display: flex; flex-direction: column; gap: 12px; max-width: 760px; }

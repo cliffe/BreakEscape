@@ -208,7 +208,11 @@
     display: block;
     flex: 0 0 auto;
     padding: 18px;
-    font-family: var(--se-font-pixel, 'Pixelify Sans', 'Source Sans 3', sans-serif);
+}
+
+.lpb-preview .lpb-body,
+.lpb-preview .lpb-body * {
+    font-family: var(--se-font-pixel, 'GNF', 'Source Sans 3', sans-serif);
 }
 
 .lpb-logo { min-height: 36px; margin-bottom: 12px; }
