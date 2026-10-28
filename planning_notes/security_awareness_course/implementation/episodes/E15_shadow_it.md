@@ -49,7 +49,7 @@ Source of truth: `modules/core_13_removable_media_cloud_and_shadow_it/concepts.m
   N bins, so it folds into ENG-11; it is not a bespoke surface and not scored by the `awareness` profile.
 - **Check forms (no engine packet):** E15's topic (removable media, cloud, shadow IT, core_13) is a
   message-triage-friendly topic, so it feeds the shared **`general_v2`** pair built per
-  `10_CHECK_FORMS.md` (ruling 1), not a per-topic form. Do not edit the six built role forms. Section 14.
+  `10_CHECK_FORMS.md`, not a per-topic form. Do not edit the six built role forms. Section 14.
 
 ## 4. Owner models
 
@@ -149,11 +149,9 @@ choice", an untaken one framed "the version where it was taken instead". `person
 - `rota_app` / `ask_it`: "The version where the rota stayed in the free app: the departed temp could
   still edit it, and it was lost when the account was closed. IT moved it to the team space in minutes."
 
-`flipHeading` = "Six months later". `flipHeading` stays **in the fragment** (`defend.json` `strings`);
-the defend-only generator pops it with the other flip strings, and the full erb carries the same value,
-so parity passes with no allow-list entry. Only `flipMontageByChoice` is **erb-only** and added to the
-parity allow-list, exactly as E11 section 10a rules (02's ENG-04 adds only `flipMontageByChoice` to
-`STRINGS_ERB_ONLY_OK`, not `flipHeading`).
+`flipHeading` = "Six months later". For where `flipHeading` and `flipMontageByChoice` live (the heading
+in the `defend.json` fragment, only `flipMontageByChoice` erb-only and on the parity allow-list), see
+`E11` section 10a and `02` ENG-04; E15 follows the same rule.
 
 ## 11. Defend set
 
@@ -166,14 +164,14 @@ declared on E15's set with a short `flagChips` label (`found_media`: "Found or p
 `unapproved_tool`: "Unapproved tool or app"); the validator accepts a `channelTells` id that `flagChips`
 labels and that is not a factor (`triage.rb` `flag_universe`), so this needs **no** shared-library change.
 
-**`unapproved_tool` is local in both E15 and E17 (round 3 ruling 1).** The same id is also used by E17's
-set (`e17_acceptable_use_inbox`), but ruling 1 keeps a tell **local** unless a `10` check-form item scores
-it, even when two sets use the same id: the two sets are never merged, so each declares `unapproved_tool`
-with its own `flagChips` label on its own set, and nothing is appended to the shared `CHANNEL_TELLS` /
-`SKILL_NAMES`. No `10` item scores `unapproved_tool`, so it stays local. The full sentence for each
-flagging message is carried as `truth.factorStrings.<id>.redFlag` (for example, `unapproved_tool`: "a
-free app or online service with no contract, no control and no off switch"; `found_media`: "a found,
-posted or giveaway stick or device").
+`unapproved_tool` is also used by E17's set (`e17_acceptable_use_inbox`), but both tells stay
+scenario-local: a tell is shared only when a `10` check-form item scores it, and no `10` item scores
+`found_media` or `unapproved_tool`. The two sets are never merged, so each declares `unapproved_tool`
+with its own `flagChips` label and nothing is appended to the shared library (the tell table and this
+rule are in `02` ENG-08). The full sentence for each flagging message is carried as
+`truth.factorStrings.<id>.redFlag` (for example, `unapproved_tool`: "a free app or online service with
+no contract, no control and no off switch"; `found_media`: "a found, posted or giveaway stick or
+device").
 
 | # | Id | Kind / from | Subject or line | Tells and flags | Correct verdict | Reason text |
 |---|----|-------------|-----------------|-----------------|-----------------|-------------|
@@ -223,19 +221,19 @@ Own shell, id `e15_shadow_it_defend`, `variant: "defendOnly"`, same `defend.setI
 `episode_e15_shadow_it_defend_defend_`. Drops the sandbox and the montage; keeps the scored set and the
 ENG-11 Swap Shop drill, so measurement is unchanged. Ships alongside the full shell; both join the two
 seeded Hacktivity courses (full in the both-versions course, defend-only in the defend-only course)
-**through 01 P12** (ruling 8).
+**through 01 P12**.
 
 ## 14. Check-form items it feeds (`general_v2`; see `10_CHECK_FORMS.md`)
 
-Per round 1 ruling 1, there is no per-topic `shadowit_form_a/b` pair. E15's topic (removable media, cloud
-storage and shadow IT, core_13) is message-triage-friendly, so it feeds the shared **`general_v2`** pair
-(Quayholt, Verify off), defined and built in `10_CHECK_FORMS.md`. The earlier per-topic table is dropped.
-The six built role forms are the measured baseline and are not edited. (The trade-off the orchestrator
-reports to the user is that two broad pairs give no per-topic pre/post figure.)
+E15's topic (removable media, cloud storage and shadow IT, core_13) is message-triage-friendly, so it
+feeds the shared **`general_v2`** pair (Quayholt, Verify off), defined and built in `10_CHECK_FORMS.md`;
+there is no per-topic form. The six built role forms are the measured baseline and are not edited. (The
+trade-off the orchestrator reports to the user is that two broad pairs give no per-topic pre/post
+figure.)
 
-Do not add new flag ids to the check forms: `general_v2` scores only `00`-library tells, and E15's
-scenario-local tells (`found_media`, `unapproved_tool`) stay in E15's own defend set, never in a form (a
-tell scored in a form must be in the shared library, ruling 1).
+`general_v2` scores only `00`-library tells, so E15's scenario-local tells (`found_media`,
+`unapproved_tool`) stay in E15's own defend set, never in a form; the tell table and the shared-vs-local
+rule are in `02` ENG-08.
 
 E15's contribution is the core_13 rows of `10`'s `general_v2` pair (see `10`'s item list): the "ask IT,
 here's the approved way" / cloud how-to genuine item (`gva_approved_tools` / `gvb_cloud_howto`) and the

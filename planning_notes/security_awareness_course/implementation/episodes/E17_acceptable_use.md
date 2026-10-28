@@ -6,8 +6,8 @@ dashes.
 
 E17 is **defend-only by the user's decision**: acceptable use has no single attacker, so it ships only
 the defend-only shape, with no attack half, no consequence flip and no flip stage. It does **not** use
-ENG-04. Per round 1 ruling 2, E17 ships **one** defend-only shell, listed in **both** seeded courses
-(not two identical shells); section 13.
+ENG-04. E17 ships **one** defend-only shell, listed in **both** seeded courses (not two identical
+shells); section 13.
 
 ## 1. Goal and module(s)
 
@@ -49,8 +49,8 @@ Source of truth: `modules/core_16_acceptable_use_and_your_responsibilities/conce
   earns a point). ENG-11 is the one reusable sort surface; E14's "Post or Not?" feed drill is the sibling
   it also serves. Section 11a.
 - **Check forms (no engine packet):** E17's topic (acceptable use, core_16) is a judgement topic, so it
-  feeds the shared **`data_conduct`** pair built per `10_CHECK_FORMS.md` (ruling 1), not a per-topic
-  form. Do not edit the six built role forms. Section 14.
+  feeds the shared **`data_conduct`** pair built per `10_CHECK_FORMS.md`, not a per-topic form. Do not
+  edit the six built role forms. Section 14.
 
 ## 4. Owner models
 
@@ -173,17 +173,17 @@ the service desk is a real move), `feedbackMode: "immediate"`, `headerPanel: "of
 "episode_e17_acceptable_use_defend_defend_"` (the single defend-only shell's prefix, section 13),
 `passPercent: 0`. `channelTells`: `["secrecy_or_bypass"]` plus the scenario-local tell `unapproved_tool`.
 `lookalike_domain` is **not** declared: no item in this set flags it, so listing it would leave an unused
-tell (matching E8 §11's convention of not declaring a tell no item flags; round 3 R3_review m6).
+tell (matching E8 §11's convention of not declaring a tell no item flags).
 `secrecy_or_bypass` is a shared-library tell, already labelled in `CHANNEL_TELLS`.
 
-**`unapproved_tool` is local in both E17 and E15 (round 3 ruling 1).** It is a scenario-local tell
+**`unapproved_tool` is scenario-local in both E17 and E15.** It is a scenario-local tell
 declared on E17's set with a short `flagChips` label ("Unapproved tool or app"), which the validator
 accepts (`triage.rb` `flag_universe` allows a `channelTells` id that `flagChips` labels and that is not a
 factor), so no shared-library change is needed. The same id is also used by E15's set
-(`e15_shortcuts_inbox`), but ruling 1 keeps a tell **local** unless a `10` check-form item scores it,
+(`e15_shortcuts_inbox`), but a tell is shared only when a `10` check-form item scores it,
 even when two sets use the same id: the sets are never merged, each declares `unapproved_tool` on its own
 set, and nothing is appended to the shared `CHANNEL_TELLS` / `SKILL_NAMES`. No `10` item scores it, so it
-stays local in both. The full sentence per flagging message is carried as
+stays local in both (the tell table and this rule are in `02` ENG-08). The full sentence per flagging message is carried as
 `truth.factorStrings.unapproved_tool.redFlag` ("a free app or online service with no contract, handing
 the firm's data to a provider we haven't checked").
 
@@ -232,7 +232,7 @@ it), and there is no `defendOnly` flip string.
 
 ## 13. Defend-only variant (one shell, listed in both courses)
 
-Per round 1 ruling 2, E17 ships **one** defend-only shell and that one shell is listed in **both** seeded
+E17 ships **one** defend-only shell and that one shell is listed in **both** seeded
 Hacktivity courses. Acceptable use has no attack half, so there is nothing a "full" shell would add over
 the defend-only shape; two byte-identical shells would only add a second global prefix and a maintenance
 trap for no learner benefit. `00`, `01` and this spec all say the same: one shell.
@@ -241,7 +241,7 @@ trap for no learner benefit. `00`, `01` and this spec all say the same: one shel
   `e17_acceptable_use_defend`, `variant: "defendOnly"`, `stages: ["brief","defend","debrief"]`, set
   prefix `episode_e17_acceptable_use_defend_defend_` (the built double-suffix rule for an id ending
   `_defend`, matching the built E6 defend-only shell), defend set id `e17_acceptable_use_inbox`.
-- **Seeding (01 P12, ruling 8):** this one shell joins both courses, the defend-only course and the
+- **Seeding (01 P12):** this one shell joins both courses, the defend-only course and the
   both-versions course, through 01 P12. The user's "joins both seeded Hacktivity courses" decision is met
   by listing the single defend-only shell in both; there is no separate full shell.
 
@@ -251,16 +251,15 @@ not read it as an error.
 
 ## 14. Check-form items it feeds (`data_conduct`; see `10_CHECK_FORMS.md`)
 
-Per round 1 ruling 1, there is no per-topic `aup_form_a/b` pair. E17's topic (acceptable use, core_16) is
-a judgement topic, so it feeds the shared **`data_conduct`** pair (Carrholme, Verify on), defined and
-built in `10_CHECK_FORMS.md`. The earlier per-topic table is dropped. The six built role forms are the
-measured baseline and are not edited. (The trade-off the orchestrator reports to the user is that two
-broad pairs give no per-topic pre/post figure.)
+E17's topic (acceptable use, core_16) is a judgement topic, so it feeds the shared **`data_conduct`**
+pair (Carrholme, Verify on), defined and built in `10_CHECK_FORMS.md`; there is no per-topic form. The
+six built role forms are the measured baseline and are not edited. (The trade-off the orchestrator
+reports to the user is that two broad pairs give no per-topic pre/post figure.)
 
-Do not add new flag ids to the check forms: `data_conduct` scores only `00`-library tells, and E17's
-scenario-local tell (`unapproved_tool`) stays in E17's own defend set, never in a form (a tell scored in
-a form must be in the shared library, ruling 1). The fact-or-myth and Ask-first item kinds are taught by
-E17's own "can I?" sort (section 11a), not by check-form rows.
+`data_conduct` scores only `00`-library tells, so E17's scenario-local tell (`unapproved_tool`) stays in
+E17's own defend set, never in a form; the tell table and the shared-vs-local rule are in `02` ENG-08.
+The fact-or-myth and Ask-first item kinds are taught by E17's own "can I?" sort (section 11a), not by
+check-form rows.
 
 E17's contribution is the core_16 rows of `10`'s `data_conduct` pair (see `10`'s item list): the
 new-acceptable-use / annual-training genuine reminder (`dca_aup_reminder` / `dcb_training_reminder`) and
@@ -275,7 +274,7 @@ Implementer: `awareness/e17/defend.json` (the `triageSets` entry `e17_acceptable
 card bank wired to the organisation answer key with the locked set, the `awarenessEpisode`
 defend/debrief/strings/_defendOnly keys, by analogy with `e6/defend.json`; no attack fragment, since E17
 has no attack); **one** shell `scenarios/awareness_e17_acceptable_use_defend/` (defend-only, listed in
-both courses; ruling 2 and section 13), a one-room `room_aw_tarrowby` kiosk, host Nilesh, kiosk
+both courses; section 13), a one-room `room_aw_tarrowby` kiosk, host Nilesh, kiosk
 `{ episodeId }`; the "can I?" sort as ENG-11's `sortDrill` config (section 11a); the `unapproved_tool`
 scenario-local tell. No BRAND_SET entry (Tarrowby is built). The `data_conduct` check shells are built by
 `10`'s check generator, not here (section 14). Never run a generator into the repo.
@@ -321,9 +320,6 @@ are no flip or `mistake` keys to lint.
 
 ## 20. Open questions
 
-- **Shell count (resolved, ruling 2):** E17 ships **one** defend-only shell, listed in both seeded
-  courses (section 13); it does not ship a second identical full shell. `00`, `01` and this spec all say
-  one shell.
 - **Host and company reuse with E15:** E17 and E15 are both Tarrowby with host Nilesh Solanki. This is
   deliberate (it saves art, the stated reason for choosing an existing company), but if E15 and E17 ship
   in the same course the same host and company appear twice. If that is unwanted, give E17 a different

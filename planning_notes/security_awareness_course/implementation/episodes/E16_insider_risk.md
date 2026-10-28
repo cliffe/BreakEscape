@@ -59,8 +59,8 @@ Period").
   not fold into ENG-11. The route picker (security team, manager, HR, Speak Up line, DPO) is part of the
   form's guidance. Unscored teaching, not scored by the `awareness` profile. Section 11.
 - **Check forms (no engine packet):** E16's topic (insider risk, core_14) is a judgement topic, so it
-  feeds the shared **`data_conduct`** pair built per `10_CHECK_FORMS.md` (ruling 1), not a per-topic
-  form. Do not edit the six built role forms. Section 14.
+  feeds the shared **`data_conduct`** pair built per `10_CHECK_FORMS.md`, not a per-topic form. Do not
+  edit the six built role forms. Section 14.
 
 ## 4. Owner models
 
@@ -82,18 +82,16 @@ raise-a-concern form, check-form wiring) to general-purpose or Sonnet.
   - **Ross Garside**, senior account manager on his notice period (new). Liked, passed over last spring,
     joining a competitor; "they're my contacts". Not a villain.
   - **Samira Nawaz**, a long-serving colleague, the false lead, whose father is in hospital this week
-    (new). Renamed from the `game_design.md` default "Samira Haddad": **"Haddad" clashes** with a
-    character in the deduction sidecar fixture B (`planning_notes/.../deduction/.../fixture_B*`). "Samira
-    Nawaz" / "Nawaz" had no repo hits on 2026-10-27.
-  - **Craig Pickering**, a colleague who loves a theory (new); the rumour, not malicious. "Pickering" and
-    "Garside" had no repo hits on 2026-10-27.
+    (new). Use Nawaz, not the `game_design.md` default "Samira Haddad": "Haddad" clashes with a
+    character in the deduction sidecar fixture B (`planning_notes/.../deduction/.../fixture_B*`).
+  - **Craig Pickering**, a colleague who loves a theory (new); the rumour, not malicious.
   - **Reuben Ofori** (built Quayholt, from E3) as the locked-out colleague who asks to borrow a login.
   - An **HR partner** and the **DPO** as concern routes; a **line manager** who sets the week's work by
     chat; an unknown messaging contact for the offer (handle "Opportunities", a stock-style avatar, text
     only, never voiced, never a real brand). Keep the offer contact's handle distinct from E14's
     "Jordan Vale".
-  - **Name-clash check (2026-10-27):** Ross Garside, Samira Nawaz, Craig Pickering had no repo hits;
-    Anjali Rao and Reuben Ofori are built Quayholt cast. Pre-ship web search for the new names owed.
+  - **Names:** Ross Garside, Samira Nawaz and Craig Pickering are new; Anjali Rao and Reuben Ofori are
+    built Quayholt cast. Pre-ship web search for the new names owed.
 
 ### BRAND_SET.md additions (Quayholt Insurance)
 
@@ -193,11 +191,9 @@ text):
 - `samira` / `kind`: "A kind word, and a quiet word to her manager because you were worried: Samira's
   father was in hospital. Nobody was accused, and she got support. That is what good looks like."
 
-`flipHeading` = "A week later". `flipHeading` stays **in the fragment** (`defend.json` `strings`); the
-defend-only generator pops it with the other flip strings, and the full erb carries the same value, so
-parity passes with no allow-list entry. Only `flipMontageByChoice` is **erb-only** and added to the
-parity allow-list, exactly as E11 section 10a rules (02's ENG-04 adds only `flipMontageByChoice` to
-`STRINGS_ERB_ONLY_OK`, not `flipHeading`).
+`flipHeading` = "A week later". For where `flipHeading` and `flipMontageByChoice` live (the heading in
+the `defend.json` fragment, only `flipMontageByChoice` erb-only and on the parity allow-list), see `E11`
+section 10a and `02` ENG-04; E16 follows the same rule.
 
 ## 11. Defend set
 
@@ -260,19 +256,17 @@ Own shell, id `e16_insider_risk_defend`, `variant: "defendOnly"`, same `defend.s
 `episode_e16_insider_risk_defend_defend_`. Keeps the scored set and the ENG-12 "raise a concern" step, so
 measurement is unchanged; drops the week sandbox and the chain montage. Ships alongside the full shell;
 both join the two seeded Hacktivity courses (full in the both-versions course, defend-only in the
-defend-only course) **through 01 P12** (ruling 8).
+defend-only course) **through 01 P12**.
 
 ## 14. Check-form items it feeds (`data_conduct`; see `10_CHECK_FORMS.md`)
 
-Per round 1 ruling 1, there is no per-topic `insider_form_a/b` pair. E16's topic (insider risk, core_14)
-is a judgement topic, so it feeds the shared **`data_conduct`** pair (Carrholme, Verify on), defined and
-built in `10_CHECK_FORMS.md`. The earlier per-topic table is dropped. The six built role forms are the
-measured baseline and are not edited. (The trade-off the orchestrator reports to the user is that two
-broad pairs give no per-topic pre/post figure.)
+E16's topic (insider risk, core_14) is a judgement topic, so it feeds the shared **`data_conduct`** pair
+(Carrholme, Verify on), defined and built in `10_CHECK_FORMS.md`; there is no per-topic form. The six
+built role forms are the measured baseline and are not edited. (The trade-off the orchestrator reports to
+the user is that two broad pairs give no per-topic pre/post figure.)
 
-Do not add new flag ids to the check forms: `data_conduct` scores only `00`-library tells, and E16's
-scenario-local tell (`insider_offer`) stays in E16's own defend set, never in a form (a tell scored in a
-form must be in the shared library, ruling 1).
+`data_conduct` scores only `00`-library tells, so E16's scenario-local tell (`insider_offer`) stays in
+E16's own defend set, never in a form; the tell table and the shared-vs-local rule are in `02` ENG-08.
 
 E16's contribution is the core_14 rows of `10`'s `data_conduct` pair (see `10`'s item list): the
 "use your login / approve under your account" leaver-favour call (`dca_login_favour` /

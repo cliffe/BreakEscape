@@ -55,8 +55,8 @@ Source of truth: `modules/core_12_social_media_and_oversharing/concepts.md`. Sha
     `sortDrill` surface with its own `bins` (Post / Tweak / Hold), `scored: false` (teaching). It is not a
     bespoke surface and not a scoring row of its own. Section 11.
 - **Check forms (no engine packet):** E14's topic (social media and oversharing, core_12) is a judgement
-  topic, so it feeds the shared **`data_conduct`** pair built per `10_CHECK_FORMS.md` (ruling 1), not a
-  per-topic form. Do not edit the six built role forms. Section 14.
+  topic, so it feeds the shared **`data_conduct`** pair built per `10_CHECK_FORMS.md`, not a per-topic
+  form. Do not edit the six built role forms. Section 14.
 
 ## 4. Owner models
 
@@ -75,14 +75,6 @@ general-purpose or Sonnet.
   partner (built E4 cast; already hosts the E4 executive BA check pair, so his art exists), here
   welcoming the learner, carrying the per-item feedback and the debrief, and holding the conclusion
   `eventMappings`. Reuse of the built E4 cast; no new host art.
-  - **Host rename (round 1 ruling 7):** E14 formerly reused Tomás Carvalho (the E4 PA) as host, but
-    "Tomás" read as confusable with E11's "Tomasz" Wiśniewski if the two episodes ship in one course.
-    Ruling 7 renames E14's host. Rather than invent a new name (and new art), E14 now hosts with another
-    built M&S cast member, **Julian Sallow**, which clashes with nothing and still saves art: "Julian"
-    does not clash with "Tomasz"; `BRAND_SET.md` and `awareness/e4/defend.json` already carry Julian
-    Sallow, and the e4 `nameCheck` records "Sallow appears only in BRAND_SET". So E11 keeps Tomasz and
-    E14 keeps a built, art-ready host. Julian is otherwise unused in E14 (the subject is Dani, the
-    pretext target Yasmin, the impersonated senior Catherine Merrin), so there is no in-episode clash.
 - **OSINT subject: Dani Fenwick**, a junior architect at Merrin & Sallow, friendly and oversharing, in
   on the exercise and thanked at the end (`dani.fenwick@merrinsallow.example`; public profile on the
   invented professional network). Late 20s, mixed heritage, two years qualified.
@@ -93,20 +85,16 @@ general-purpose or Sonnet.
     subject must be an internal colleague (the learner tightens "his profile and yours"), and a client
     contact cannot be that. Per the WRITER_BRIEF rule that the code wins over `game_design.md`, Oskar
     stays a Brackenmoor client and E14 introduces a new internal junior, Dani Fenwick.
-  - **Name-clash check (corrected 2026-10-28; round 2 ruling 4).** The earlier claim "'Fenwick' had no
-    repo hits" was wrong. **"Fenwick" is already in the repo as Arthur Fenwick**, a patient / care-home
+  - **Name clash (Fenwick).** "Fenwick" also appears in the repo as Arthur Fenwick, a patient / care-home
     resident (bed-sprite-only background character, no sender, no email, no dialogue) in the **unbuilt**
     `modules/sector_01_healthcare/game_design.md` and `03_WORLD_AND_CAST.md`. **E14 keeps Dani Fenwick**:
     Arthur Fenwick is a different person (different first name), in a different company and a different,
     unbuilt sector module (a hospital patient, not an architecture-practice colleague), so a learner on
-    the core awareness course never meets both as the same name and the two cannot be confused. This is
-    acceptable (the two are in separate modules), and is stated here so the clash is on the record rather
-    than hidden behind a false "no hits" line. The other half of ruling 4 (E8's one-off client firm
-    `fenwick-brandt.example`, which had shared the surname) is already resolved by the E8 fixer, who
-    renamed it to **Marsden Holloway** (`marsden-holloway.example`), so there is no awareness-episode
-    Fenwick clash left. "Dani" is a first name only and does not clash as a surname. (Avoided "Doyle",
-    which has many repo hits.) Pre-ship web search for "Fenwick" as a real business is still owed where
-    it reads as a company (it does not here).
+    the core awareness course never meets both as the same name and the two cannot be confused. The E8
+    one-off client firm `marsden-holloway.example` carries no "Fenwick", so no awareness-episode Fenwick
+    clash remains. "Dani" is a first name only and does not clash as a surname. (Avoid "Doyle", which has
+    many repo hits.) Pre-ship web search for "Fenwick" as a real business is owed where it reads as a
+    company (it does not here).
 - **Impersonated senior: Catherine Merrin**, managing partner (built), as a **fake** connection request
   in the defend half, flagged by the look-alike NPC guard. Her real profile is genuine.
 - **Fake recruiter and the system-fishing stranger:** generic avatars, thin new accounts, no real
@@ -296,21 +284,19 @@ Own shell, id `e14_social_media_defend`, `variant: "defendOnly"`, same `defend.s
 `episode_e14_social_media_defend_defend_`. Drops the OSINT/write/flip beats; keeps the same scored set
 and the ENG-11 feed drill and the ENG-13 privacy panel, so measurement is unchanged. Ships alongside the
 full shell; both join the two seeded Hacktivity courses (full in the both-versions course, defend-only in
-the defend-only course) **through 01 P12** (ruling 8).
+the defend-only course) **through 01 P12**.
 
 ## 14. Check-form items it feeds (`data_conduct`; see `10_CHECK_FORMS.md`)
 
-Per round 1 ruling 1, there is no per-topic `social_form_a/b` pair. E14's topic (social media and
-oversharing, core_12) is a judgement topic, so it feeds the shared **`data_conduct`** pair (Carrholme,
-Verify on), defined and built in `10_CHECK_FORMS.md`. The earlier per-topic table is dropped. The six
-built role forms are the measured baseline and are not edited. (The trade-off the orchestrator reports to
-the user is that two broad pairs give no per-topic pre/post figure.)
+E14's topic (social media and oversharing, core_12) is a judgement topic, so it feeds the shared
+**`data_conduct`** pair (Carrholme, Verify on), defined and built in `10_CHECK_FORMS.md`; there is no
+per-topic form. The six built role forms are the measured baseline and are not edited. (The trade-off
+the orchestrator reports to the user is that two broad pairs give no per-topic pre/post figure.)
 
-Do not add new flag ids to the check forms: `data_conduct` scores only `00`-library tells, and E14's
-scenario-local tells (`fake_profile`, `recon_request`) stay in E14's own defend set, never in a form (a
-tell scored in a form must be in the shared library, ruling 1). The post-reading / "what does this give
-away" item kind (which the old row 4 used) is an in-episode drill, handled by the ENG-11 feed drill, not
-a check-form item.
+`data_conduct` scores only `00`-library tells, so E14's scenario-local tells (`fake_profile`,
+`recon_request`) stay in E14's own defend set, never in a form; the tell table and the shared-vs-local
+rule are in `02` ENG-08. The post-reading / "what does this give away" item kind is an in-episode drill,
+handled by the ENG-11 feed drill, not a check-form item.
 
 E14's contribution is the core_12 rows of `10`'s `data_conduct` pair (see `10`'s item list): the
 recruiter / fake-profile reconnaissance probe (`dca_recruiter_probe` / `dcb_journalist_probe`) and the
@@ -368,14 +354,7 @@ panel closes at least one found fact. `social.awareness.ruleOfThumb` byte-identi
 
 ## 20. Open questions
 
-- **Oskar vs Dani (resolved):** the OSINT subject is the new internal junior **Dani Fenwick**, because
-  built E4 fixes Oskar Berglund as a Brackenmoor client (section 5) and the code wins over
-  `game_design.md`. This is settled; keeping Oskar would require changing built E4 data, which is out of
-  E14's scope.
-- **Feed drill and privacy panel scoring:** kept unscored here (ENG-11 `scored: false`, ENG-13 view-only)
-  so the measured defend set is a standard six-item triage set with a mirror pair. If the product wants
-  the feed drill scored, that is a request to `05` and changes the measurement.
-- **Host first-name clash with E11 (resolved, ruling 7):** E14's host is renamed from Tomás Carvalho to
-  the built M&S partner **Julian Sallow** (section 5), so E11 keeps Tomasz Wiśniewski and there is no
-  first-name clash.
+- **Feed drill and privacy panel scoring:** kept unscored here (ENG-11 `scored: false`, ENG-13
+  view-only) so the measured defend set is a standard six-item triage set with a mirror pair. If the
+  product wants the feed drill scored, that is a request to `05` and changes the measurement.
 - The pre-ship web search for "Fenwick" (as a name) is owed.
