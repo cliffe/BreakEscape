@@ -113,7 +113,7 @@ ENG ids are packets in `02_ENGINE_WORK.md`. P ids are steps in `01_PIPELINE.md`.
 | ENG-10 brief-only episode + completion global | nothing (its schema/validator work is in the packet) | WP-12 core_00 first play | engine |
 | WP-12 | core_00 needs ENG-10; core_17 needs no packet (a `defendOnly` 8-message shell); plus its own file (`11_WP12_FIRST_PLAY_AND_ANNUAL.md`) | - | content |
 | WP-15 | its own file (`12_WP15_CORE02_ITEMS.md`) | - | content |
-| WP-02 | the user's explicit go-ahead for any Hacktivity edit | the debrief route box (aw1) | Hacktivity implementer |
+| WP-02 | the built Hacktivity awareness settings (on Hacktivity main); the user's sign-off on the option list | the debrief route box (aw1) | Hacktivity implementer |
 
 ## 6. Model routing
 
@@ -291,7 +291,7 @@ Scenario folder names and episode ids are fixed in each episode brief. Follow th
 | E14 full | No | | ENG-11, ENG-13 |
 | E15 full, E16 full | No | | ENG-04, plus ENG-11 (E15) or ENG-12 (E16) |
 | core_00 first-play brief (WP-12 Part A) | No | | ENG-10 |
-| WP-02 reporting route | Break Escape side is done; the rest needs Hacktivity | | a session with `cliffe/hacktivity` in scope, and the user's sign-off on the option list |
+| WP-02 reporting route | Free-text route built in both repos; the pre-canned options need Hacktivity | | a session with `cliffe/hacktivity` in scope, and the user's sign-off on the option list |
 
 Suggested first run: the engine packets ENG-01 and ENG-09b, then the E8 pilot end to end. Alongside them, run core_17, WP-15, the `general_v2` content and the defend-only shells that are ready.
 

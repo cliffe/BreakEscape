@@ -1,6 +1,8 @@
 # WP-02: the customer reporting route in Hacktivity (pre-canned options)
 
-Status: the user said **Go now** for WP-02 on 2026-10-27 (`../DECISIONS_PENDING.md`, row "WP-02 Customer reporting route in Hacktivity": "A list of pre-canned options seems useful"). This brief is the implementation plan. It covers both repositories, but this file is public, so Hacktivity is described at feature level only.
+Status: the user said **Go now** for WP-02 on 2026-10-27 (`../DECISIONS_PENDING.md`, row "WP-02 Customer reporting route in Hacktivity": "A list of pre-canned options seems useful"). This brief is the implementation plan.
+
+**Update 2026-10-28.** Hacktivity main now has the free-text version of this feature: awareness settings (reporting route, rule of thumb, team size) at organisation, course and listing level, resolved on each Break Escape play page, copied with a course only when the organiser chooses, plus the two seeded awareness courses. What remains is the pre-canned option list (steps 2 onward) on top of the built settings. It covers both repositories, but this file is public, so Hacktivity is described at feature level only.
 
 ## Goal
 
@@ -12,8 +14,6 @@ The Break Escape engine side is already built and tested (aw1). This package is 
 
 Break Escape (code level, all paths under `/home/user/BreakEscape`):
 
-- `planning_notes/phishing_and_social_engineering/awareness/HACKTIVITY_ROUTE_PROPOSAL.md`: the original scoping, the resolution order and the escaping layers. Its Hacktivity specifics are background only; check them against the Hacktivity code, which wins.
-- `planning_notes/phishing_and_social_engineering/awareness/AWARENESS_SETTINGS_REVIEW.md`: an adversarial review of an earlier, free-text-only, uncommitted Hacktivity pass at this feature. Its findings (M1 and m1 to m5) are requirements here. See step 1 for what to do if that earlier pass is in your checkout.
 - `planning_notes/phishing_and_social_engineering/FUN_DECISIONS.md`: `aw1` ("Render the customer's reporting route in the debrief", Do it) and `route_config` ("Hacktivity setting, concrete Hacktivity change to be confirmed with the user before editing").
 - `lib/break_escape.rb`: `Configuration#awareness_settings`, the host hook. Contract (from the comment in `initialize`): a callable `->(game) -> Hash or nil` returning `{ report_heading:, report_text:, rule_of_thumb:, team_size: }`, any of which may be nil or blank. It is resolved live on each play page load.
 - `app/helpers/break_escape/application_helper.rb`: `break_escape_awareness_config(game)`, `be_plain(value, max)`, `AWARENESS_TEXT_MAX = 600`, `AWARENESS_HEADING_MAX = 80`, `AWARENESS_INVISIBLE`. The engine whitelists keys, folds CRLF to LF, turns tabs into spaces, strips control, zero-width and bidi characters, trims and caps. A heading with no text is dropped. A hook that raises is logged and the key left out.
@@ -173,9 +173,8 @@ Hacktivity: the files you find in step 1. Do not record their paths in this repo
 
 ## Steps
 
-1. **Survey Hacktivity.** In a session with Hacktivity in scope, read how courses and organisations store and edit settings, how a course is copied, how the Break Escape hook is configured, and how a game finds its course. Check whether the earlier, uncommitted awareness-settings pass described in `AWARENESS_SETTINGS_REVIEW.md` is present in your checkout (a structured awareness settings store on courses and organisations, a shared form partial, an `awareness_settings` hook in the Break Escape initializer, and tests for isolation and forms).
-   - If it is present: build on it. Apply its review fixes (M1, m1 to m5) as part of this work, and replace its free-text-only route with the options design here, keeping free text as "Anything else". Keep any existing stored free text working: a stored route with no options is just "Anything else".
-   - If it is absent: start fresh, following the same shape (one structured settings value on courses and on organisations, so later keys need no further schema change).
+1. **Survey Hacktivity.** In a session with Hacktivity in scope, read how the built awareness settings are stored and edited at organisation, course and listing level, how a course copy carries them, how the Break Escape hook is configured, and how a game finds its course.
+   - Build on it: replace its free-text-only route with the options design here, keeping free text as "Anything else". Keep any existing stored free text working: a stored route with no options is just "Anything else".
    - Find how the two seeded awareness courses (the defend-only course and the both-versions course; `../phishing_and_social_engineering/awareness/HANDOVER.md` row "Fun changes") were created, for step 7.
 2. **Catalogue.** Add the option catalogue as one frozen constant in Hacktivity: id, organiser label, sentence template, and for each placeholder its name, kind, required flag and default. One place only; the form, the validation and the composer all read it.
 3. **Storage and validation.** Store heading, ordered option ids with their placeholder values, and "Anything else" for courses and organisations. Validate and normalise on save as in "Validation and escaping". Unknown or removed ids in old data are skipped at compose time, not an error on load.
@@ -238,7 +237,7 @@ Break Escape:
 
 ## Stop and ask if
 
-- The earlier uncommitted pass is present but differs from what `AWARENESS_SETTINGS_REVIEW.md` describes in a way that changes the design (for example, it resolves from the player's organisation).
+- The built awareness settings differ from this brief in a way that changes the design (for example, it resolves from the player's organisation).
 - Hacktivity has no clean way to tell a game's course, or the course's organisation, from the game being shown.
 - The seeded awareness courses cannot be found, or are not seeded in code.
 - The user wants an option that needs a link, an image or formatting (that would be an engine change, not this package).

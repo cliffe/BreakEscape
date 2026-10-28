@@ -99,7 +99,7 @@ From `../FUN_DECISIONS.md`:
 - Report sound: keep the generic confirm sound.
 - Discrimination figure: organisers only; learners get detailed feedback on genuine items instead (built, 1c8106fd1).
 - E7 mirror pair: keep the existing voicemail mirror; revisit with aw7.
-- Deployment-wide reporting route: the user chose a Hacktivity setting, then asked for options. A proposal is in `HACKTIVITY_ROUTE_PROPOSAL.md` (this folder) and an options form at https://claude.ai/artifact/HapRJMpb8yT88cKy63iYn2 (approaches A–F, which settings, scope, fallback). **Not answered yet. Any Hacktivity edit needs the user's explicit go-ahead.**
+- Deployment-wide reporting route: built on Hacktivity main (2026-10-27) as awareness settings at organisation, course and listing level (reporting route, rule of thumb, team size), with the two seeded courses. The remaining step is the pre-canned option list (WP-02, `planning_notes/security_awareness_course/implementation/13_WP02_REPORTING_ROUTE.md`). Any further Hacktivity edit needs the user's explicit go-ahead.
 
 ## 6. Loose ends at hand-over
 

@@ -8,7 +8,7 @@ Questions for the user. Each has a recommendation; the plan follows the recommen
 
 ### The customer's reporting route
 
-- **Background:** the debrief's "On Monday" card has a slot for the customer's own reporting route (`slot:customer_report_route`, aw1, built). The user chose to set it as a Hacktivity setting, then asked for options. A proposal (`../phishing_and_social_engineering/awareness/HACKTIVITY_ROUTE_PROPOSAL.md`) and an options form (linked from `awareness/HANDOVER.md` §5) set out approaches A to F, which settings, their scope and the fallback.
+- **Background:** the debrief's "On Monday" card has a slot for the customer's own reporting route (`slot:customer_report_route`, aw1, built). The user chose to set it as a Hacktivity setting, then asked for options. A proposal and an options form (linked from `awareness/HANDOVER.md` §5) set out approaches A to F, which settings, their scope and the fallback.
 - **Status:** not answered. No Hacktivity change happens without the user's explicit go-ahead (R8).
 - **Recommendation:** none added here; the options form is the place to answer. It is the only platform change the plan proposes for now.
 

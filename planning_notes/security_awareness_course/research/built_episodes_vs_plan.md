@@ -77,7 +77,7 @@ Each episode adds its own "On Monday" card and ends on the customer's reporting 
 
 ### 1.7 Hacktivity reporting-route proposal (feature level)
 
-Source: `awareness/HACKTIVITY_ROUTE_PROPOSAL.md`. The proposal is a per-course and per-organisation "how to report suspicious messages" setting. Organisers would set it on their own course, and administrators would set an organisation default. It is resolved live when a game opens, in this order: the course, then the course's organisation, then (optionally) the player's own organisation. If none is set, it falls back to the scenario's own route and then to a generic line. It would be plain text with a length cap, shown in every awareness debrief, and copied when a course is copied. The engine already reads this setting on the client side. The user chose "a Hacktivity setting" and was then sent an options form (approaches A to F), which has **not been answered**. No Hacktivity change happens without the user's explicit go-ahead (`HANDOVER.md` §5).
+The proposal is a per-course and per-organisation "how to report suspicious messages" setting. Organisers would set it on their own course, and administrators would set an organisation default. It is resolved live when a game opens, in this order: the course, then the course's organisation, then (optionally) the player's own organisation. If none is set, it falls back to the scenario's own route and then to a generic line. It would be plain text with a length cap, shown in every awareness debrief, and copied when a course is copied. The engine already reads this setting on the client side. **Update 2026-10-28:** since built on Hacktivity main as a free-text setting at organisation, course and listing level; the pre-canned options are WP-02.
 
 ### 1.8 Status (on hold since 2026-10-23)
 
@@ -167,7 +167,7 @@ The plan's role_04 developers, role_06 customer-facing, role_07 procurement and 
 | D12 Technical phishing lab | The technical product is `lab_social_engineering` ("Phishing and Social Engineering", `lab_games` collection, browser-only, no VM). The VM phishing plan is parked | `PHISHING_AND_SE_DECISIONS.md` (A2, A3, I1 to I5 superseded); lab `mission.json` |
 | core_00 "scam in the first minute"; the Jo Fairweather authorised-test reveals | Overtaken by the build: the frame is an openly authorised exercise ("Authorised exercise at ... a fictional company") stated in every scope note, so there are no hidden-test reveals | episode `scopeNote` strings |
 | core_17 "who sees the year profile" | Equivalent answered: scores go to the learner only, the discrimination figure to organisers only, never shown as blame; aggregates are out of scope for now (A4, A7) | `FUN_DECISIONS.md` aw3, disc_visible; `designs/11` §4.3 |
-| Customer's reporting details in the game (BE-05 organisation profile) | `slot:customer_report_route` is built (aw1). The deployment setting is to be a Hacktivity setting; the options are not yet answered | `FUN_DECISIONS.md` route_config; `HACKTIVITY_ROUTE_PROPOSAL.md` |
+| Customer's reporting details in the game (BE-05 organisation profile) | `slot:customer_report_route` is built (aw1). The Hacktivity setting is built (free text, organisation, course and listing level); pre-canned options are WP-02 | `FUN_DECISIONS.md` route_config |
 
 Still open in both: D6 (market order and localisation; the build is UK-flavoured with localisation later), D9 (an accessibility commitment; the build has a keyboard-and-plain-text baseline but no text route), D10 (where Hacktivity plans live), D11 (compliance gaps).
 
