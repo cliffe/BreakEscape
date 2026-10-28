@@ -111,6 +111,7 @@ module ValidateSocial
       issues.concat(outcome_checks(set, where, episode_set: episode_set_ids(ctx).include?(set['id'])))
       universe = flag_universe(set, where, issues)
       issues.concat(chip_checks(set, universe, where))
+      issues.concat(wording_checks(set, universe, where))
       issues.concat(band_checks(set, where))
       issues.concat(profile_checks(set, where))
       issues.concat(message_checks(ctx, set, universe, where))
@@ -234,6 +235,109 @@ module ValidateSocial
       chips.each do |k, v|
         issues << err("#{where}.flagChips.#{k} is empty; the chip would show a blank label") if blank?(v)
         issues << err("#{where}.flagChips has the key '#{k}', which is neither 'none', a factor, nor a tell this set enables") unless k == 'none' || universe.include?(k)
+      end
+      issues
+    end
+
+    LABEL_QUEUES = %w[inbox call push callPush voicemail page sms other].freeze
+    LABEL_KINDS = %w[email sms voicemail qr page call push].freeze
+
+    # The wording options (resultCopy, reportReplyFrom, skillNames, tellStrings, labels), and the
+    # scenario-local tells they exist for: a local tell (a channelTells id outside 00 section 2 that
+    # flagChips labels) needs a skill name for the result breakdown, and a message that flags it
+    # needs a red-flag sentence, or the learner would see the raw id.
+    def self.wording_checks(set, universe, where)
+      issues = []
+      if set.key?('resultCopy')
+        rc = set['resultCopy']
+        if rc.is_a?(Hash)
+          rc.each { |k, v| issues << err("#{where}.resultCopy.#{k} is empty") if %w[weakest noFlags].include?(k) && blank?(v) }
+        else
+          issues << err("#{where}.resultCopy must be an object { weakest?, noFlags? }")
+        end
+      end
+      issues << err("#{where}.reportReplyFrom must be a non-empty string") if set.key?('reportReplyFrom') && blank?(set['reportReplyFrom'])
+      %w[skillNames tellStrings].each do |key|
+        next unless set.key?(key)
+
+        h = set[key]
+        unless h.is_a?(Hash)
+          issues << err("#{where}.#{key} must be an object keyed by tell id")
+          next
+        end
+        h.each do |id, v|
+          issues << err("#{where}.#{key}.#{id} is empty") if blank?(v)
+          issues << warn_("#{where}.#{key} has the key '#{id}', which is not a factor or a tell this set enables; it is never read") unless universe.include?(id)
+        end
+      end
+      issues.concat(label_checks(set, where))
+
+      local = universe - FACTORS - CHANNEL_TELLS
+      names = set['skillNames'].is_a?(Hash) ? set['skillNames'] : {}
+      sentences = set['tellStrings'].is_a?(Hash) ? set['tellStrings'] : {}
+      local.each do |t|
+        issues << warn_("#{where}: the local tell '#{t}' has no skillNames entry; the result breakdown would show the raw id") if blank?(names[t])
+      end
+      Mail.hash_list(set['messages']).each do |m|
+        Mail.list(m.dig('truth', 'flags')).each do |f|
+          next unless local.include?(f)
+
+          own = m['factorStrings'].is_a?(Hash) && m['factorStrings'][f].is_a?(Hash) ? m['factorStrings'][f]['redFlag'] : nil
+          next unless blank?(sentences[f]) && blank?(own)
+
+          issues << warn_("#{where}.messages[#{m['id']}] flags the local tell '#{f}' but there is no tellStrings entry or factorStrings redFlag for it; the review card would show the raw id")
+        end
+      end
+      issues
+    end
+
+    def self.label_checks(set, where)
+      return [] unless set.key?('labels')
+
+      labels = set['labels']
+      return [err("#{where}.labels must be an object")] unless labels.is_a?(Hash)
+
+      issues = []
+      known = %w[kind verdict callActions pushActions smsHeading queue]
+      labels.each_key { |k| issues << err("#{where}.labels has the key '#{k}', which is not one of #{known.join(', ')}") unless known.include?(k) }
+      issues << err("#{where}.labels.smsHeading is empty") if labels.key?('smsHeading') && blank?(labels['smsHeading'])
+      group = lambda do |key, ids|
+        next unless labels.key?(key)
+
+        h = labels[key]
+        unless h.is_a?(Hash)
+          issues << err("#{where}.labels.#{key} must be an object")
+          next
+        end
+        h.each do |id, v|
+          if key == 'kind'
+            issues << err("#{where}.labels.kind.#{id} is empty") if blank?(v)
+          elsif !v.is_a?(Hash)
+            issues << err("#{where}.labels.#{key}.#{id} must be an object { label?, past?, hint? }")
+          else
+            v.each { |f, t| issues << err("#{where}.labels.#{key}.#{id}.#{f} is empty") if %w[label past hint].include?(f) && blank?(t) }
+          end
+          issues << warn_("#{where}.labels.#{key} has the key '#{id}', which is not one of #{ids.join(', ')}; it is never read") unless ids.include?(id)
+        end
+      end
+      group.call('kind', LABEL_KINDS)
+      group.call('verdict', %w[trust report delete verify])
+      group.call('callActions', %w[comply escalate refuse verify_callback])
+      group.call('pushActions', %w[approve deny deny_report])
+      if labels.key?('queue')
+        q = labels['queue']
+        if q.is_a?(Hash)
+          q.each do |id, v|
+            issues << warn_("#{where}.labels.queue has the key '#{id}', which is not one of #{LABEL_QUEUES.join(', ')}; it is never read") unless LABEL_QUEUES.include?(id)
+            if !v.is_a?(Hash)
+              issues << err("#{where}.labels.queue.#{id} must be an object { label?, item?, real?, reportLabel? }")
+            elsif v.key?('item') && !(v['item'].is_a?(Array) && v['item'].length == 2 && v['item'].none? { |w| blank?(w) })
+              issues << err("#{where}.labels.queue.#{id}.item must be [singular, plural]")
+            end
+          end
+        else
+          issues << err("#{where}.labels.queue must be an object")
+        end
       end
       issues
     end

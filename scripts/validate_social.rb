@@ -72,6 +72,7 @@ module ValidateSocial
     issues.concat(social_object_sprites(ctx))
     issues.concat(characters(ctx))
     AREAS.each { |area| issues.concat(area.check(ctx)) }
+    issues.concat(AuthenticatorDevice.check(ctx)) # a separate hook: the area list is pinned by a test
     issues
   end
 
@@ -599,4 +600,3 @@ ValidateSocial::AREAS << ValidateSocial::Awareness
 
 # Authenticator device room objects: the push stream and setGlobalPrefix on the object
 require_relative 'validate_social/authenticator_device'
-ValidateSocial::AREAS << ValidateSocial::AuthenticatorDevice

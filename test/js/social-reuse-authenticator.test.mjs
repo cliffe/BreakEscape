@@ -230,3 +230,12 @@ test('validator: the stream rules apply to the object, and the prefix globals mu
     const blank = lint(scenario({ ...SCRIPTED(), setGlobalPrefix: '' }));
     assert.ok(blank.some((s) => /setGlobalPrefix must be a non-empty string/.test(s)));
 });
+
+// ---- the episode runner forwards strings only when authored ------------------------------------
+
+test('episode mfa: strings are forwarded when authored and absent otherwise', async () => {
+    const M = await import(pathToFileURL(join(js, 'minigames/episode-runner/episode-model.js')).href);
+    assert.equal('strings' in M.childLaunch({ mfa: SCRIPTED() }, 'mfa').params, false);
+    const withStrings = M.childLaunch({ mfa: { ...SCRIPTED(), strings: STRINGS } }, 'mfa');
+    assert.deepEqual(withStrings.params.strings, STRINGS);
+});

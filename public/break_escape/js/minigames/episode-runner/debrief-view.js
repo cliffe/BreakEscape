@@ -102,10 +102,10 @@ function titleOf(msg, id) {
  * a call or sign-in prompt uses its action labels (Ring back, Escalate, Deny and report) and
  * its own review lines, not the email verdicts (D3).
  */
-function verdictWordAndLine(answer, msg, phish) {
+function verdictWordAndLine(answer, msg, phish, labels = null) {
     const kind = kindOf(msg);
     if (kind === 'call' || kind === 'push') {
-        const action = actionById(kind, answer.action, answer.verdict);
+        const action = actionById(kind, answer.action, answer.verdict, labels);
         return { word: action.label, line: kindVerdictLine(kind, phish, answer.verdict) || '' };
     }
     return { word: VERDICT_WORD[answer.verdict] || String(answer.verdict ?? ''),
@@ -146,7 +146,7 @@ function wrongVerdict(answer, msg, profile) {
     }
 }
 
-function buildCard(answer, msg) {
+function buildCard(answer, msg, set = null) {
     const truth = isObj(msg?.truth) ? msg.truth : { isPhish: false, flags: [] };
     const phish = truth.isPhish === true;
     const verdict = answer.verdict;
@@ -155,7 +155,7 @@ function buildCard(answer, msg) {
     const title = el('h3', 'aw-card-title', titleOf(msg, answer.id));
     title.tabIndex = -1;
     card.appendChild(title);
-    const { word, line } = verdictWordAndLine(answer, msg, phish);
+    const { word, line } = verdictWordAndLine(answer, msg, phish, set?.labels);
     card.appendChild(el('p', 'aw-card-verdict', `You chose ${word}. ${line}`.trim()));
 
     const picked = new Set(Array.isArray(answer.flags) ? answer.flags : []);
@@ -170,7 +170,7 @@ function buildCard(answer, msg) {
             const id = hit && unit.members.includes(hit) ? hit : unit.note;
             const li = el('li', `aw-flag ${caught ? 'aw-flag-caught' : 'aw-flag-missed'}`);
             li.dataset.flag = id;
-            const sentence = redFlagString(id, msg);
+            const sentence = redFlagString(id, msg, set);
             li.append(el('span', 'aw-flag-word', caught ? 'Spotted: ' : 'Look for: '),
                 el('span', 'aw-flag-text', typeof notes[id] === 'string' && notes[id] ? `${sentence} (${notes[id]})` : sentence));
             ul.appendChild(li);
@@ -326,7 +326,7 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     const answers = Array.isArray(result?.answers) ? result.answers.filter(isObj) : [];
     const reviewed = answers.filter((a) => reviewNeeded(a, messageFor(set, a.id)));
     const cards = el('div', 'aw-cards');
-    for (const a of reviewed) cards.appendChild(buildCard(a, messageFor(set, a.id)));
+    for (const a of reviewed) cards.appendChild(buildCard(a, messageFor(set, a.id), set));
     root.appendChild(cards);
 
     if (reviewed.length) {
@@ -334,7 +334,7 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
         if (weak && weak.missed > 0) {
             const ids = Array.isArray(weak.ties) && weak.ties.length ? weak.ties : [weak.id];
             const counts = `caught ${weak.caught} of ${weak.caught + weak.missed}`;
-            const names = ids.map(skillName);
+            const names = ids.map((id) => skillName(id, set));
             root.appendChild(el('p', 'aw-weakest', names.length === 1
                 ? `The tell most often missed: ${names[0]} (${counts}).`
                 : `The tells most often missed: ${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} (${counts} each).`));

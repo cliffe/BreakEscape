@@ -193,7 +193,7 @@ export function chipLabel(set, id) {
  * `factorStrings` (per-message override), its `attachments` (to pick the attachment
  * state) and nothing else.
  */
-export function redFlagString(id, message) {
+export function redFlagString(id, message, set = null) {
     const fs = isObj(message?.factorStrings) ? message.factorStrings[id] : null;
     if (id === 'attachmentPlausible') {
         const has = Array.isArray(message?.attachments) && message.attachments.length > 0;
@@ -204,11 +204,15 @@ export function redFlagString(id, message) {
     }
     if (isObj(fs) && isStr(fs.redFlag)) return fs.redFlag;
     if (CANONICAL[id] && isStr(CANONICAL[id].redFlag)) return CANONICAL[id].redFlag;
-    return CHANNEL_TELLS[id] || id;
+    // A scenario-local tell: the set's own sentence (set.tellStrings), before the raw id.
+    if (CHANNEL_TELLS[id]) return CHANNEL_TELLS[id];
+    return isObj(set?.tellStrings) && isStr(set.tellStrings[id]) ? set.tellStrings[id] : id;
 }
 
-export function skillName(id) {
-    return SKILL_NAMES[id] || id;
+/** The skill name for a tell id: the built-in table, else set.skillNames for a local tell, else the id. */
+export function skillName(id, set = null) {
+    if (SKILL_NAMES[id]) return SKILL_NAMES[id];
+    return isObj(set?.skillNames) && isStr(set.skillNames[id]) ? set.skillNames[id] : id;
 }
 
 // ── Header panel wording (05 "The header panel"; concept level, fictional) ───────────

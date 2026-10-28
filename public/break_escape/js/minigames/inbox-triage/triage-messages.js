@@ -12,18 +12,18 @@
 // nothing here computes them from anything the player typed.
 
 import { resolveAccounts, domainOf } from '../mail-client/mail-data.js';
-import { isNonEmail, defaultSubject, hostOf, KIND_LABEL } from './triage-kinds.js';
+import { isNonEmail, defaultSubject, hostOf, kindLabel } from './triage-kinds.js';
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 
 /** The list row's sender for a non-email message that names none. */
-function defaultWho(msg) {
+function defaultWho(msg, labels) {
     if (msg.kind === 'page' && isObj(msg.page) && isStr(msg.page.url)) return hostOf(msg.page.url);
     if (msg.kind === 'push' && isObj(msg.push) && isStr(msg.push.app)) return msg.push.app;
     if (msg.kind === 'call' && isStr(msg.callerId)) return msg.callerId;
     if (msg.kind === 'qr' && isObj(msg.qr) && isStr(msg.qr.location)) return msg.qr.location;
-    return KIND_LABEL[msg.kind] || '';
+    return kindLabel(msg.kind, labels);
 }
 
 /** The two tells only a spoofing account can raise (00 section 10a, 05 N9). */
@@ -33,14 +33,14 @@ export const SPOOF_TELLS = Object.freeze(['senderTrust', 'senderAuth']);
  * An authored triage message as a reader record. `text` on a link is accepted as
  * `linkText` (05's sample uses `text`; the reader reads `linkText`).
  */
-export function normaliseTriageMessage(msg) {
+export function normaliseTriageMessage(msg, labels = null) {
     const from = isObj(msg.from)
         ? { name: String(msg.from.name ?? ''), address: String(msg.from.address ?? '') }
         : { name: String(msg.from ?? ''), address: '' };
     const nonEmail = isNonEmail(msg.kind || 'email');
     // A non-email kind may have no sender or subject of its own (a printed notice, a web
     // page): the list row then shows a sensible stand-in instead of a blank line.
-    if (nonEmail && !from.name && !from.address) from.name = defaultWho(msg);
+    if (nonEmail && !from.name && !from.address) from.name = defaultWho(msg, labels);
     const links = (Array.isArray(msg.links) ? msg.links : []).filter(isObj).map((l) => ({
         ...l, linkText: l.linkText ?? l.text ?? l.destination ?? ''
     }));
@@ -49,7 +49,7 @@ export function normaliseTriageMessage(msg) {
         kind: msg.kind || 'email',
         from,
         to: msg.to ?? '',
-        subject: msg.subject || (nonEmail ? defaultSubject(msg) : (msg.subject ?? '')),
+        subject: msg.subject || (nonEmail ? defaultSubject(msg, labels) : (msg.subject ?? '')),
         time: msg.time ?? '',
         body: msg.body ?? '',
         links,
@@ -251,7 +251,7 @@ export function buildTriageMessages(set, ctx = {}) {
             else skipped.push({ id: entry.id, reason: out.skipped });
             continue;
         }
-        messages.push(normaliseTriageMessage(entry));
+        messages.push(normaliseTriageMessage(entry, set?.labels));
     }
     return { messages, skipped };
 }

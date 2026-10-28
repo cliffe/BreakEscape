@@ -49,8 +49,8 @@ import {
     FACTOR_ORDER, NONE_ID, chipIdsFor, chipLabel, redFlagString, skillName
 } from './triage-flags.js';
 import {
-    kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, KIND_LABEL,
-    CALL_ACTIONS, PUSH_ACTIONS, shortTitle, realNounFor
+    kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, kindLabel, verdictAction,
+    shortTitle, realNounFor
 } from './triage-kinds.js';
 import { comparisonFor, comparisonText } from './triage-comparison.js';
 
@@ -61,27 +61,19 @@ const STAGE_LABEL = { pre: 'Pre-assessment', post: 'Follow-up assessment', train
 const REPORT_THANKS = 'Thanks for reporting. That warns everyone else.';
 // P5-6: a report on a real item warns nobody of a phish, so it gets a neutral thank-you.
 const REPORT_THANKS_REAL = 'Thanks for reporting. A colleague will check it and let it through.';
-const VERDICT_LABEL = { trust: 'Trust', report: 'Report', delete: 'Delete', verify: 'Verify' };
-const VERDICT_PAST = { trust: 'Trusted', report: 'Reported', delete: 'Deleted', verify: 'Verified' };
 
 /**
  * "Weakest skill: Links (caught 0 of 1)." — or, when several skills tie on both counts, every
  * one of them: "Weakest skills: Greeting and Attachments (caught 0 of 1 each)." (P4-10: the
  * first zero used to win with no word about the others.)
  */
-export function weakestText(weak, one, many) {
+export function weakestText(weak, one, many, set = null) {
     const ids = Array.isArray(weak.ties) && weak.ties.length ? weak.ties : [weak.id];
     const counts = `caught ${weak.caught} of ${weak.caught + weak.missed}`;
-    if (ids.length === 1) return `${one}: ${skillName(ids[0])} (${counts}).`;
-    const names = ids.map(skillName);
+    if (ids.length === 1) return `${one}: ${skillName(ids[0], set)} (${counts}).`;
+    const names = ids.map((id) => skillName(id, set));
     return `${many}: ${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} (${counts} each).`;
 }
-const VERDICT_HINT = {
-    trust: "This is real. I'd open it or act on it.",
-    report: 'This is a phish. Send it to security.',
-    delete: 'This is junk. Bin it.',
-    verify: 'I would check this by ringing a number I already hold.'
-};
 const VERDICT_ICON = { trust: 'mark-tick', report: 'mark-exclamation', delete: 'mark-cross', verify: 'mark-question' };
 
 function el(tag, className, text) {
@@ -148,6 +140,11 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
     get verifyEnabled() {
         return this.set?.verifyVerdict === true && this.profile === 'awareness';
+    }
+
+    /** The set's wording overrides (`set.labels`, see triage-kinds.js), or null. */
+    get labels() {
+        return isObj(this.set?.labels) ? this.set.labels : null;
     }
 
     get passPercent() {
@@ -228,18 +225,18 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             detailsRenderer: (rec) => this._headerPanel(rec),
             afterBody: (rec, pane) => this._afterBody(rec, pane),
             // Non-email kinds (05 N1, N10) draw their own surface; email keeps the reader's layout.
-            paneRenderer: (rec, h) => (isNonEmail(rec) ? renderKindSurface(rec, h) : null),
+            paneRenderer: (rec, h) => (isNonEmail(rec) ? renderKindSurface(rec, h, this.labels) : null),
             // The kind tag, unless the row's subject already opens with it ("Voicemail (0:24)"
             // read "Voicemail Voicemail (0:24)", P3 N-16).
             rowTag: (rec) => {
                 if (!isNonEmail(rec)) return null;
-                const tag = KIND_LABEL[kindOf(rec)];
+                const tag = kindLabel(kindOf(rec), this.labels);
                 return String(rec.subject || '').toLowerCase().startsWith(String(tag).toLowerCase()) ? null : tag;
             },
             rowBadge: (rec) => {
                 const a = this.answers.get(rec.id);
                 if (!a) return null;
-                return isNonEmail(rec) ? actionById(kindOf(rec), a.action, a.verdict).past : VERDICT_PAST[a.verdict];
+                return actionById(isNonEmail(rec) ? kindOf(rec) : 'email', a.action, a.verdict, this.labels).past;
             },
             emptyText: 'There is nothing to sort in this round.',
             onOpen: (rec) => this._onOpen(rec)
@@ -344,24 +341,35 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     _queueInfo() {
         const kinds = this.messages.map((m) => kindOf(m));
         const every = (allow) => kinds.length > 0 && kinds.every((k) => allow.includes(k));
+        // set.labels.queue[key] is layered over the entry for that key (see triage-kinds.js).
+        const pick = (key, info) => {
+            const own = this.labels?.queue?.[key];
+            if (!isObj(own)) return info;
+            const out = { ...info };
+            if (typeof own.label === 'string' && own.label) out.label = own.label;
+            if (Array.isArray(own.item) && own.item.length === 2 && own.item.every((w) => typeof w === 'string' && w)) out.item = [...own.item];
+            if (typeof own.real === 'string' && own.real) out.real = own.real;
+            if (typeof own.reportLabel === 'string' && own.reportLabel) out.reportLabel = own.reportLabel;
+            return out;
+        };
         if (kinds.some((k) => k === 'email' || k === 'playerSent')) {
-            return { label: 'Inbox check', item: ['message', 'messages'], real: realNounFor(kinds, this.set),
-                reportLabel: 'Reported rather than just deleted', dropLegend: false };
+            return pick('inbox', { label: 'Inbox check', item: ['message', 'messages'], real: realNounFor(kinds, this.set),
+                reportLabel: 'Reported rather than just deleted', dropLegend: false });
         }
-        if (every(['call'])) return { label: 'Service desk queue', item: ['call', 'calls'], real: 'Real callers',
-            reportLabel: 'Escalated rather than just refused', dropLegend: true };
-        if (every(['push'])) return { label: 'Sign-in prompts', item: ['prompt', 'prompts'], real: 'Expected sign-ins',
-            reportLabel: 'Reported rather than just denied', dropLegend: true };
-        if (every(['call', 'push'])) return { label: 'Service desk queue', item: ['item', 'items'], real: 'Real callers',
-            reportLabel: 'Escalated or reported rather than just refused', dropLegend: true };
-        if (every(['voicemail'])) return { label: 'Voicemail', item: ['voicemail', 'voicemails'], real: 'Real voicemails',
-            reportLabel: 'Reported rather than just deleted', dropLegend: true };
-        if (every(['page'])) return { label: 'Pages to check', item: ['page', 'pages'], real: 'Real pages',
-            reportLabel: 'Reported rather than just deleted', dropLegend: false };
-        if (every(['sms', 'qr'])) return { label: 'Messages', item: ['message', 'messages'], real: 'Real messages',
-            reportLabel: 'Reported rather than just deleted', dropLegend: false };
-        return { label: 'Messages to check', item: ['message', 'messages'], real: 'Real messages',
-            reportLabel: 'Reported rather than just deleted', dropLegend: false };
+        if (every(['call'])) return pick('call', { label: 'Service desk queue', item: ['call', 'calls'], real: 'Real callers',
+            reportLabel: 'Escalated rather than just refused', dropLegend: true });
+        if (every(['push'])) return pick('push', { label: 'Sign-in prompts', item: ['prompt', 'prompts'], real: 'Expected sign-ins',
+            reportLabel: 'Reported rather than just denied', dropLegend: true });
+        if (every(['call', 'push'])) return pick('callPush', { label: 'Service desk queue', item: ['item', 'items'], real: 'Real callers',
+            reportLabel: 'Escalated or reported rather than just refused', dropLegend: true });
+        if (every(['voicemail'])) return pick('voicemail', { label: 'Voicemail', item: ['voicemail', 'voicemails'], real: 'Real voicemails',
+            reportLabel: 'Reported rather than just deleted', dropLegend: true });
+        if (every(['page'])) return pick('page', { label: 'Pages to check', item: ['page', 'pages'], real: 'Real pages',
+            reportLabel: 'Reported rather than just deleted', dropLegend: false });
+        if (every(['sms', 'qr'])) return pick('sms', { label: 'Messages', item: ['message', 'messages'], real: 'Real messages',
+            reportLabel: 'Reported rather than just deleted', dropLegend: false });
+        return pick('other', { label: 'Messages to check', item: ['message', 'messages'], real: 'Real messages',
+            reportLabel: 'Reported rather than just deleted', dropLegend: false });
     }
 
     _renderBrief() {
@@ -380,14 +388,14 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         if (!info.dropLegend) {
             const dl = el('dl', 'tri-brief-buttons');
             const verdicts = ['trust', 'report', 'delete', ...(this.verifyEnabled ? ['verify'] : [])];
-            for (const v of verdicts) dl.append(el('dt', null, VERDICT_LABEL[v]), el('dd', null, VERDICT_HINT[v]));
+            for (const v of verdicts) dl.append(el('dt', null, verdictAction(v, this.labels).label), el('dd', null, verdictAction(v, this.labels).hint));
             p.appendChild(dl);
         }
         // Calls and sign-in prompts have their own buttons (05 N10); say so before the round.
         const kinds = new Set(this.messages.map((m) => kindOf(m)));
-        for (const [kind, lead, actions] of [['call', 'On a call', CALL_ACTIONS], ['push', 'On a sign-in prompt', PUSH_ACTIONS]]) {
+        for (const [kind, lead] of [['call', 'On a call'], ['push', 'On a sign-in prompt']]) {
             if (!kinds.has(kind)) continue;
-            const shown = actions.filter((a) => kind !== 'call' || this.verifyEnabled || a.verdict !== 'verify');
+            const shown = actionsFor(kind, this.verifyEnabled, this.labels);
             p.appendChild(el('p', `tri-brief-kind tri-brief-${kind}`,
                 `${lead}: ${shown.map((a) => `${a.label} (${a.hint.replace(/\.$/, '').toLowerCase()})`).join('; ')}.`));
         }
@@ -501,7 +509,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             group.setAttribute('aria-label', 'Your verdict');
             // Email and most kinds: Trust, Report, Delete (and Verify). A call or a push has its
             // own actions, each scored through one of those verdict rows (05 N10).
-            for (const a of actionsFor(kindOf(rec), this.verifyEnabled)) {
+            for (const a of actionsFor(kindOf(rec), this.verifyEnabled, this.labels)) {
                 const v = a.verdict;
                 const reportSkin = this.awarenessSkin && v === 'report' ? ' aw-report-btn' : '';
                 const btn = el('button', `tri-verdict minigame-button verdict-${v}${reportSkin}`);
@@ -570,7 +578,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     /** The word for what the player did: the call or push action's label, else the verdict's. */
     _actionLabel(rec, ans) {
         if (!ans) return '';
-        return isNonEmail(rec) ? actionById(kindOf(rec), ans.action, ans.verdict).label : VERDICT_LABEL[ans.verdict];
+        return actionById(isNonEmail(rec) ? kindOf(rec) : 'email', ans.action, ans.verdict, this.labels).label;
     }
 
     _openSheet(rec, verdict, action = verdict) {
@@ -813,7 +821,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             const reply = truth.isPhish
                 ? (truth.reportReply || "Thanks. Confirmed as a phish, we've pulled it from the other inboxes.")
                 : null;
-            if (reply) card.appendChild(el('p', 'tri-it-reply', `IT Security: ${reply}`));
+            if (reply) card.appendChild(el('p', 'tri-it-reply', `${this._replyFrom()}: ${reply}`));
         }
         card.appendChild(el('p', 'tri-card-score', `Score for this message: ${per.score} of 100`));
         return card;
@@ -824,7 +832,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         li.dataset.flag = id;
         li.append(icon(caught ? 'mark-tick' : 'mark-cross'),
             el('span', 'tri-flag-word', caught ? 'Caught:' : 'Missed:'),
-            el('span', 'tri-flag-text', note ? `${redFlagString(id, rec)} (${note})` : redFlagString(id, rec)));
+            el('span', 'tri-flag-text', note ? `${redFlagString(id, rec, this.set)} (${note})` : redFlagString(id, rec, this.set)));
         return li;
     }
 
@@ -888,6 +896,15 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     _resultCopy(several = false) {
         // `several`: the weakest line names tied skills, so the nudge says "them", not "it".
         const it = several ? 'them' : 'it';
+        const copy = this._defaultResultCopy(it);
+        // set.resultCopy { weakest, noFlags } replaces either line; {it} in `weakest` becomes it/them.
+        const own = isObj(this.set?.resultCopy) ? this.set.resultCopy : {};
+        if (typeof own.weakest === 'string' && own.weakest) copy.weakest = own.weakest.split('{it}').join(it);
+        if (typeof own.noFlags === 'string' && own.noFlags) copy.noFlags = own.noFlags;
+        return copy;
+    }
+
+    _defaultResultCopy(it) {
         if (this.awarenessSkin || this.profile === 'awareness') {
             return {
                 weakest: this._awarenessWeakestLine(it),
@@ -898,6 +915,12 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             weakest: `Practise ${it} in the mail client, then look ${it} up in your lab sheet.`,
             noFlags: 'Tick what looks off next time, then check your lab sheet.'
         };
+    }
+
+    /** The prefix on the reply after a report: set.reportReplyFrom, else "IT Security". */
+    _replyFrom() {
+        const from = this.set?.reportReplyFrom;
+        return typeof from === 'string' && from ? from : 'IT Security';
     }
 
     /**
@@ -1042,7 +1065,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                     for (const id of order) {
                         const c = result.perFactor[id];
                         if (!c) continue;
-                        const li = el('li', 'tri-skill', `${skillName(id)}: caught ${c.caught} of ${c.caught + c.missed}`);
+                        const li = el('li', 'tri-skill', `${skillName(id, this.set)}: caught ${c.caught} of ${c.caught + c.missed}`);
                         li.dataset.factor = id;
                         ul.appendChild(li);
                     }
@@ -1051,7 +1074,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                     if (weak) {
                         const nudges = isObj(this.set.nudges) ? this.set.nudges : {};
                         p.appendChild(el('p', 'tri-weakest',
-                            `${weakestText(weak, 'Weakest skill', 'Weakest skills')} ` +
+                            `${weakestText(weak, 'Weakest skill', 'Weakest skills', this.set)} ` +
                             (nudges[weak.id] || this._resultCopy(Array.isArray(weak.ties) && weak.ties.length > 1).weakest)));
                     }
                 } else {

@@ -37,6 +37,39 @@ export const KIND_LABEL = Object.freeze({
     page: 'Web page', call: 'Call', push: 'Sign-in prompt'
 });
 
+/**
+ * Set-level wording over the defaults in this file (`set.labels`), all optional:
+ *   kind        { email, sms, voicemail, qr, page, call, push }: the short kind words (KIND_LABEL)
+ *   verdict     { trust|report|delete|verify: { label?, past?, hint? } }
+ *   callActions { comply|escalate|refuse|verify_callback: { label?, past?, hint? } }
+ *   pushActions { approve|deny|deny_report: { label?, past?, hint? } }
+ *   smsHeading  the "Text message" heading on a text and the fallback title of an untitled one
+ *   queue       { inbox|call|push|callPush|voicemail|page|sms|other: { label?, item?: [one, many],
+ *                 real?, reportLabel? } }: the brief's queue wording (read by the minigame)
+ * Anything not given keeps the default, so a set with no `labels` reads exactly as before.
+ */
+export function kindLabel(kind, labels) {
+    const own = labels?.kind?.[kind];
+    return isStr(own) ? own : (KIND_LABEL[kind] || '');
+}
+
+export function smsHeading(labels) {
+    return isStr(labels?.smsHeading) ? labels.smsHeading : 'Text message';
+}
+
+/** An action with the set's label, past and hint over it (shallow, text fields only). */
+function relabel(action, over) {
+    if (!isObj(over)) return action;
+    const out = { ...action };
+    for (const f of ['label', 'past', 'hint']) if (isStr(over[f])) out[f] = over[f];
+    return out;
+}
+
+/** One of the four email verdict actions, with `labels.verdict` layered on. */
+export function verdictAction(verdict, labels) {
+    return relabel(VERDICT_ACTIONS[verdict] || VERDICT_ACTIONS.trust, labels?.verdict?.[verdict]);
+}
+
 const VERDICT_ACTIONS = Object.freeze({
     trust: { id: 'trust', verdict: 'trust', label: 'Trust', past: 'Trusted', hint: "This is real. I'd open it or act on it." },
     report: { id: 'report', verdict: 'report', label: 'Report', past: 'Reported', hint: 'This is a phish. Send it to security.' },
@@ -63,20 +96,24 @@ export const PUSH_ACTIONS = Object.freeze([
  * The buttons under a message, in order. Email and the other kinds get the verdicts
  * (Verify only when the set enables it); `call` and `push` get their own actions.
  */
-export function actionsFor(kind, verifyEnabled = false) {
-    if (kind === 'call') return CALL_ACTIONS.filter((a) => verifyEnabled || a.verdict !== 'verify');
-    if (kind === 'push') return PUSH_ACTIONS;
-    const out = [VERDICT_ACTIONS.trust, VERDICT_ACTIONS.report, VERDICT_ACTIONS.delete];
-    if (verifyEnabled) out.push(VERDICT_ACTIONS.verify);
+export function actionsFor(kind, verifyEnabled = false, labels = null) {
+    if (kind === 'call') {
+        return CALL_ACTIONS.filter((a) => verifyEnabled || a.verdict !== 'verify').map((a) => relabel(a, labels?.callActions?.[a.id]));
+    }
+    if (kind === 'push') return PUSH_ACTIONS.map((a) => relabel(a, labels?.pushActions?.[a.id]));
+    const out = ['trust', 'report', 'delete'].map((v) => verdictAction(v, labels));
+    if (verifyEnabled) out.push(verdictAction('verify', labels));
     return out;
 }
 
 /** The action a player took, by id, else the verdict's own action. */
-export function actionById(kind, actionId, verdict) {
+export function actionById(kind, actionId, verdict, labels = null) {
     const all = [...CALL_ACTIONS, ...PUSH_ACTIONS, ...Object.values(VERDICT_ACTIONS)];
     const pool = kind === 'call' ? CALL_ACTIONS : kind === 'push' ? PUSH_ACTIONS : Object.values(VERDICT_ACTIONS);
-    return pool.find((a) => a.id === actionId) || pool.find((a) => a.verdict === verdict)
+    const found = pool.find((a) => a.id === actionId) || pool.find((a) => a.verdict === verdict)
         || all.find((a) => a.verdict === verdict) || VERDICT_ACTIONS.trust;
+    const over = pool === CALL_ACTIONS ? labels?.callActions : pool === PUSH_ACTIONS ? labels?.pushActions : labels?.verdict;
+    return relabel(found, over?.[found.id]);
 }
 
 /** Map an action id to the verdict it scores as. Throws on an action the kind does not have. */
@@ -152,7 +189,7 @@ export function realNounFor(kinds, set) {
 }
 
 /** A list subject for a kind that has none of its own. */
-export function defaultSubject(msg) {
+export function defaultSubject(msg, labels = null) {
     const kind = kindOf(msg);
     const first = (s) => {
         const t = String(s || '').replace(/\{\{link:[^}]*\}\}/g, '').replace(/\s+/g, ' ').trim();
@@ -166,7 +203,7 @@ export function defaultSubject(msg) {
         return `${(sp >= 15 ? cut.slice(0, sp) : cut).replace(/[,;:\s]+$/, '')}...`;
     };
     switch (kind) {
-    case 'sms': return first(msg.body) || 'Text message';
+    case 'sms': return first(msg.body) || smsHeading(labels);
     case 'voicemail': return isStr(msg.duration) ? `Voicemail (${msg.duration})` : 'Voicemail';
     case 'qr': return 'Printed notice';
     case 'page': return isObj(msg.page) && isStr(msg.page.heading) ? msg.page.heading : 'Web page';
@@ -268,9 +305,9 @@ function senderName(rec) {
     return rec?.from?.name || rec?.from?.address || '';
 }
 
-function sms(rec, h) {
+function sms(rec, h, labels) {
     const box = el('section', 'tri-kind tri-kind-sms tri-phone tri-phone-frame');
-    box.setAttribute('aria-label', 'Text message');
+    box.setAttribute('aria-label', smsHeading(labels));
     // 11 N14: a phone body (speaker slot, status bar) around the thread. Decoration only.
     const status = el('div', 'tri-phone-status');
     status.setAttribute('aria-hidden', 'true');
@@ -280,7 +317,7 @@ function sms(rec, h) {
     const top = el('div', 'tri-phone-top');
     top.append(heading(senderName(rec) || 'Unknown sender'));
     if (rec.from?.name && rec.from?.address) top.appendChild(el('p', 'tri-phone-number', rec.from.address));
-    top.appendChild(el('p', 'tri-kind-label', 'Text message'));
+    top.appendChild(el('p', 'tri-kind-label', smsHeading(labels)));
     box.appendChild(top);
     const thread = el('div', 'tri-sms-thread');
     for (const prior of Array.isArray(rec.earlier) ? rec.earlier : []) {
@@ -511,10 +548,10 @@ const SURFACES = { sms, voicemail, qr, page, call, push };
  * `h` holds the reader's helpers: bodyNode(rec) (the body with hover-able link chips),
  * showLink(dest) and showNote(text) (both write the pane's status line).
  */
-export function renderKindSurface(rec, h) {
+export function renderKindSurface(rec, h, labels = null) {
     const fn = SURFACES[kindOf(rec)];
     if (!fn) return null;
-    const node = fn(rec, h);
+    const node = fn(rec, h, labels);
     node.dataset.kindSurface = kindOf(rec);
     return node;
 }
