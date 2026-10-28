@@ -1057,3 +1057,50 @@ test('aw1/aw4/aw6: the debrief gets the report route, rule of thumb and team siz
         delete window.breakEscapeConfig;
     }
 });
+
+// ── reusability options: stage copy, step labels ───────────────────────────────
+test('strings.stages overrides a stage panel line by line and leaves the others alone', () => {
+    const ep = fullEpisode();
+    setup(ep);
+    open(ep);
+    click('.epr-start');
+    assert.equal(panelHeading(), 'Look around', 'default heading with no override');
+    assert.equal(cur().container.querySelector('.epr-launch').textContent, 'Open the browser');
+
+    const ep2 = { ...fullEpisode(), strings: { ...fullEpisode().strings,
+        stages: { osint: { heading: 'Recon', button: 'Open the map' } } } };
+    setup(ep2);
+    open(ep2);
+    click('.epr-start');
+    assert.equal(panelHeading(), 'Recon');
+    assert.equal(cur().container.querySelector('.epr-launch').textContent, 'Open the map');
+    assert.ok(panelText().includes('Open the browser and find out what you can'), 'text keeps its default');
+});
+
+test('strings.stepLabels reaches the step strip; no override leaves the labels undefined', () => {
+    const ep = fullEpisode();
+    setup(ep);
+    open(ep);
+    assert.equal(cur()._stripLabels(), undefined);
+    const ep2 = { ...fullEpisode(), strings: { ...fullEpisode().strings, stepLabels: { osint: 'Recon' } } };
+    setup(ep2);
+    open(ep2);
+    assert.deepEqual(cur()._stripLabels(), { osint: 'Recon' });
+});
+
+test('the defend and mfa stage copy is overridable through strings.stages', () => {
+    const ep = { ...fullEpisode(), strings: { stages: { defend: { heading: 'Your turn' } } } };
+    setup(ep);
+    open(ep);
+    assert.equal(cur()._stageCopy('defend').heading, 'Your turn');
+    assert.equal(cur()._stageCopy('defend').button, 'Open the inbox');
+    assert.ok(cur()._stageCopy('mfa').text.startsWith('You have the password'));
+});
+
+test('a null conclusionTaskId reaches the triage options as null (standalone beat)', () => {
+    const ep = { ...fullEpisode(), standalone: false };
+    delete ep.conclusionTaskId;
+    const o = M.childLaunch(ep, 'defend');
+    assert.equal(o.kind, 'triage');
+    assert.equal(o.options.conclusionTaskId, null);
+});

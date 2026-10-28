@@ -133,3 +133,11 @@ test('a scenario without the options raises none of these lints', { skip }, () =
   const issues = lint(json);
   assert.deepEqual(issues.filter((s) => /hintsByFactor|labelBy|checklistTiming|mirrorToBehavior|lockedHint/.test(s)), []);
 });
+
+test('a report-workstation with no social.engagement.report warns; with one it is quiet', { skip }, () => {
+  const json = load('checklist_timing');
+  json.rooms = { r1: { objects: [{ id: 'rw', name: 'Report desk', type: 'report-workstation' }] } };
+  has(lint(json).filter((s) => s.includes('report-workstation')), /⚠️.*Report desk.*no social\.engagement\.report/);
+  json.social.engagement = { report: { title: 'Report' } };
+  has(lint(json).filter((s) => s.includes('report-workstation')), /report-workstation/, 0);
+});
