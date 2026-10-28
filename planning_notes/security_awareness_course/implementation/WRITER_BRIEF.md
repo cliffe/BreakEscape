@@ -115,6 +115,7 @@ Write findings as **B** (blocker: the implementer would fail or break something)
 |---|---|---|
 | ENG-01 | Flip variant: the learner sits in the seat of the victim whose account is now in use | E8 |
 | ENG-02 | Passphrase and guessing stage | E9 |
+| ENG-02b | Organisation-scale guessing modes (spray, stuff) | E18 |
 | ENG-03 | Download and warning states, and a fake check page | E10 |
 | ENG-04 | Consequence-flip "mistake" stage: an attack half with no target to judge | E11, E14 to E16 |
 | ENG-05 | World-play attack stage | E12 |

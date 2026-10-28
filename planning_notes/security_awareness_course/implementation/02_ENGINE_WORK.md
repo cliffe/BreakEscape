@@ -39,6 +39,7 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
 |---|---|---|
 | ENG-01 flip aftermath: the victim's seat | E8, E9 | no (episode runner only) |
 | ENG-02 password guessing stage `guess` | E9 | no |
+| ENG-02b organisation-scale `guess` modes (`spray`, `stuff`) | E18 | no |
 | ENG-03a triage `page` states | E10, check forms | yes: `triage-kinds.js` (guarded by new optional keys) |
 | ENG-03b check-page builder | E10 | yes: the landing-page renderer (guarded by `pageType`) |
 | ENG-04 consequence-flip `mistake` stage + montage flip | E11, E15, E16 | no |
@@ -201,6 +202,319 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
 **How it is guarded.** New stage id (authored, never defaulted, `stagesFor` guard); new `childLaunch` branch that returns `null` without the key; new schema key under `additionalProperties: false`; a new validator `stage_orders` branch that adds the guess order and removes none. No built shell authors `guess`, so every existing path is byte-for-byte unchanged.
 
 **Stop and ask if.** The orchestrator wants the guesser in `build` after all (it would then clash with the landing-page builder; do not). Note the split for the E9 defend-only variant: it does not need ENG-02's `guess` stage (ENG-02 is attack-half only, and `guess` is dropped from a `defendOnly` shell), but it does need ENG-09a for the password cards.
+
+---
+
+## ENG-02b Organisation-scale guessing modes for the `guess` stage: spray and stuff (E18)
+
+**Goal.** E18's attack half is the organisation-scale version of E9: instead of guessing one colleague's
+password from his personal facts, the learner runs an authored campaign console against the **whole
+practice**. The console harvests a staff roster from public sources (the team page names plus the email
+address pattern), builds a candidate word list from the company's own website (project names, the
+practice motto, place names, plus the season and the year), then shows two org-scale techniques as
+authored, abstract models: **password spraying** (one likely password tried once against every account
+in the roster, so no single account locks) and **credential stuffing** (a breach list of address and
+password pairs tried automatically across many services, the ones that open being where a staff member
+reused a breached password at work). A three-random-words passphrase account is still holding out when
+the rig is switched off, to make the length-and-uniqueness point. Nothing typed is a password; every
+account, word and pair is authored data and the view shows no tool, no command and no method. A line on
+screen says so (`strings.guessNote`, as in ENG-02).
+
+This packet **extends** the `guess` stage that ENG-02 adds; it does not add a stage id, a child scene or
+a new stage order. It adds one optional selector, `guess.mode`, plus the `spray` and `stuff` config
+sub-blocks, and the two org-scale views in the `password-guesser` minigame. It is guarded so that E9's
+config, which carries no `mode`, is byte-for-byte unaffected (`mode` defaults to `target`, the E9 path).
+
+**Read first.** ENG-02 (this file, the `guess` stage, the `password-guesser` minigame, the
+`landedGlobal`/`cleanSent`/`_flipProps` wiring and all its line anchors); ENG-01 (`flipAftermath`, reused
+for E18's flip the same way E9 reuses it); ENG-08 (schema and validator collection); `episode-model.js`
+(`STAGE_IDS:27`, `ATTACK_STAGES:28`, `stagesFor:60`, `childLaunch:180`, `cleanSent:81`, `readState:129`,
+`completeStage:153`, all verified 2026-10-28); `episode-runner-minigame.js` (`STAGE_COPY:79`, `_launch:548`,
+`_completeWhileAway:656`, `watchCall:760`, `_flipProps:466`); `scripts/validate_social/awareness.rb`
+(`STAGES:18`, `STAGES_BY_VARIANT:19`, `stage_orders:157`, `attack_checks:182`); `scripts/scenario-schema.json`
+(`socialAwarenessEpisode` `additionalProperties: false` at `:31`/`:53`; the `guess` object is the one
+ENG-02 adds, so `mode`/`spray`/`stuff` are added to **that** object, not a new one); `episodes/E18_credential_attacks_at_scale.md`
+§9 (the content this config carries).
+
+**Depends on.** **ENG-02** (the `guess` stage, the minigame, the `landedGlobal` wiring, `cleanSent`'s
+`guess` branch; ENG-02b has nothing to build on without it). ENG-01 (E18's flip reuses `flipAftermath`,
+exactly as E9 does; no new flip engine). ENG-08 collects the schema/validator additions (listed in the
+"ENG-08 additions" block at the end of this draft; carry them here if ENG-08 has not landed).
+
+**Owner model.** `general-purpose`, `model: "sonnet"`.
+
+**Scope line.** ENG-02b owns the **attack-half** spray/stuff org-scale rig only, as two added render
+modes of ENG-02's `guess` stage. It does **not** touch the triage defender: E18's defend half is ordinary
+`email` and `page` triage cards (no `choice` kind), so ENG-02b does **not** depend on ENG-09a. It adds no
+new stage id and no new stage order (E18 authors the same stage list as E9, which ENG-08 already allows
+for ENG-02).
+
+**Content level (hard rule, carried from the user's decision).** The spray and stuff views are authored,
+abstract models at the build's level, exactly as ENG-02's single-target guesser is. **No real password
+list, no breach dump, no tool name, no command, no rule syntax, no lockout threshold or timing, and no
+working technique appears.** Spraying is explained only as the concept ("one likely password tried once
+on every account, so no single account locks"); stuffing only as the concept ("a list of address and
+password pairs from a breach of another site, tried automatically across many services"). Every candidate
+password is a game word or an authored string drawn from the collected OSINT facts; every breach-list row
+shows a masked password (`......`), never a value. The view shows no tool and no method.
+
+### Decision: a `mode` selector on the existing `guess` block, not a new stage
+
+ENG-02's `guess` stage renders one single-target guesser (E9). E18 needs the same stage to render an
+organisation-scale campaign. Rather than add a second stage id (which would need a new `STAGE_IDS` entry,
+a new `childLaunch` branch and a new validator stage order, all for the same conceptual stage), ENG-02b
+adds an optional `guess.mode` that selects the render:
+
+- `mode: "target"` (**default**, used by E9): the ENG-02 single-target guesser, **unchanged**. E9's
+  `guess` block carries no `mode`, so it resolves to `target` and runs byte-for-byte as ENG-02 built it.
+- `mode: "spray"` (used by E18): the org-scale campaign console (roster, word list, spray passes and the
+  credential-stuffing panel).
+- `mode: "stuff"`: a credential-stuffing-only console, for a future episode that wants stuffing without a
+  spray. **E18 does not use this standalone mode**: its one artefact is the `spray`-mode console, which
+  already shows the stuffing panel via `guess.stuff` (below), because the request groups spraying and
+  stuffing as the one organisation-scale attack. `mode: "stuff"` is defined for completeness and renders
+  the same `guess.stuff` panel on its own; building it is optional and E18 does not exercise it (mark it
+  "ship only if a later episode needs it" if the implementer prefers to defer it).
+
+The stage id stays `guess`; the child scene stays `password-guesser`; the stage order stays
+`brief osint guess flip defend debrief` (ENG-08 already added it for ENG-02). So E18 adds **no** new stage
+id and **no** new stage order: this packet is a render-mode extension only.
+
+### Current code
+
+- ENG-02 adds the `guess` stage to `STAGE_IDS`/`ATTACK_STAGES`, the `childLaunch` `guess` branch returning
+  `{ kind: 'guess', sceneType: 'password-guesser', params: { config: episode.guess ?? null } }`, the
+  `password-guesser` minigame that renders the single-target rig and writes `config.landedGlobal` on close,
+  the `cleanSent` `guess` branch (`if (raw.kind === 'guess') return { kind: 'guess' };`), the `_flipProps`
+  `sent?.kind === 'guess'` branch, the `STAGE_COPY.guess` launch panel, and the `guess` `stepLabels`
+  default. Verified 2026-10-28: none of this is in `main` yet (`STAGE_IDS` at `episode-model.js:27` is still
+  `['brief','osint','build','write','mfa','flip','defend','debrief','check']`, with no `guess`; `childLaunch`
+  at `:180` branches only osint/build/write-or-call/mfa; `awareness.rb` `STAGES` at `:18` has no `guess`).
+  So ENG-02 must land first; ENG-02b builds on its anchors.
+- Without ENG-02b, the `password-guesser` minigame has one render path (single target). A `guess` block with
+  `mode: "spray"` would have no renderer for the roster/word-list/spray/stuff panels.
+
+### Change
+
+1. **`guess.mode`, defaulting to `target`.** Where the `password-guesser` minigame reads `config` (the block
+   ENG-02 passes through `childLaunch`), resolve `const mode = config?.mode ?? 'target';`. When `mode ===
+   'target'` the minigame renders exactly the ENG-02 single-target rig and nothing in this packet runs. The
+   resolution is the only line ENG-02's render path gains; everything below is additive, in new branches.
+2. **`mode: "spray"` render (new branch).** The campaign console draws four authored panels in order, each a
+   static authored block, every string via `textContent`, no editable field anywhere (assert no password-type
+   `input`/`textarea`, as ENG-02's test does):
+   - **Roster.** From `guess.roster`: the staff list is assembled from the two OSINT facts it names
+     (`namesFactId`, the team-page names, and `patternFactId`, the address pattern), shown as a list of
+     `firstname.lastname@<domain>` built from `roster.sample` and `roster.domain`. The panel's reasoning text
+     (authored in `roster.note`) says the roster came from the public staff list and the address pattern, not
+     from any password. If either fact's `se_intel_<id>` global is false (not collected), that half of the
+     roster renders struck through as "not found", mirroring ENG-02's uncollected-fact behaviour.
+   - **Word list.** From `guess.wordList`: each `slots[]` entry reads **one** collected OSINT fact by `factId`
+     and interpolates the single brace token (named by the slot `id`, e.g. `{project}`) into its `template`,
+     exactly as ENG-02's `patternSlots` do (one fact per slot, no cross-slot tokens, fixed characters are
+     authored literals). The `seasonYear` strings are appended as authored literals (the season and year the
+     attacker always tries). The assembled list is the candidate passwords, shown as the words the site gave
+     up. `wordList.note` carries the on-screen line that these are built from the practice's own website words.
+   - **Spray.** From `guess.spray`: each `passes[]` entry is **one** candidate password (either `fromSlot`,
+     naming a word-list slot, or `literal`, an authored string such as a season-plus-year) tried **once**
+     against **every** roster account in that pass. The panel animates the pass as one row per account with
+     the single candidate, and marks `spray.opensCount` accounts as opening (authored; the accounts that used a
+     company-word password). The reasoning text (`spray.note`) says one candidate is tried once per account, so
+     no single account locks. No account is named as a careless person; the opened accounts are shown as a
+     count (no-blame, E18 §12).
+   - **Stuff.** From `guess.stuff`: an authored, abstract credential-stuffing panel. `stuff.rows[]` are masked
+     rows (`label` plus a masked password `......`), each flagged `opens: true|false`; the true rows are where a
+     staff member reused a breached password at work. The reasoning text (`stuff.note`) explains stuffing as a
+     concept (a breach list of address and password pairs tried automatically across many services) and names
+     the defence (a different password for every account). No real pair, address or password is shown.
+   - A passphrase hold-out, reused from ENG-02's `passphraseDemo` shape if `guess.passphraseDemo` is present:
+     a three-random-words account still being tried and never landing, to make the length-and-uniqueness point.
+3. **`mode: "stuff"` render (optional branch).** Draws the Stuff panel alone (same `guess.stuff` renderer as
+   spray mode, factored into one function). E18 does not use it; build it only if a later stuffing-only episode
+   is scheduled.
+4. **Landed global, reusing ENG-01 and ENG-02.** On a normal close the minigame writes
+   `config.landedGlobal = true` through the runner's write dep and records the stage with
+   `_completeWhileAway('guess', { sent: { kind: 'guess' } })`, exactly as ENG-02 does for the single target.
+   The "landed" test is `spray.opensCount > 0 || any guess.stuff.rows[].opens` (some account opened). ENG-02's
+   `cleanSent` `guess` branch, `_flipProps` `sent?.kind === 'guess'` branch and `flipAftermathFor(episode,
+   { landed })` are reused unchanged: E18's flip shows its `flipAftermath` only when the campaign landed, the
+   same path E9 uses. **No change to `cleanSent`, `_flipProps`, `watchCall` or the flip view is needed** beyond
+   what ENG-02 already built: ENG-02b only adds render branches inside the `password-guesser` minigame.
+5. **Step label and launch copy.** Reuse ENG-02's `STAGE_COPY.guess` and `guess` `stepLabels` default. E18 may
+   override the strip label through ENG-01's `stepLabels` (`{ guess: "Campaign" }`) if the single-target
+   "Guess list" label reads wrong for an org-scale console; the built shells author none, so nothing else
+   changes. `STAGE_COPY.guess` already exists (ENG-02); its launch-panel text is kind-neutral, so no new
+   `STAGE_COPY` entry is needed.
+6. **Schema and validator (in ENG-08, or carry here if ENG-08 has not landed).** See the "ENG-08 additions"
+   block below. In short: add `mode` (enum `target`/`spray`/`stuff`) and the `spray`/`stuff`/`roster`/`wordList`
+   sub-objects to the `guess` object the ENG-02 schema adds (all optional, under `additionalProperties: false`);
+   lint that `mode: "spray"` carries `roster`, `wordList` and `spray`; that `roster.namesFactId`,
+   `roster.patternFactId` and every `wordList.slots[].factId` name a declared `se_intel_*` fact; that each
+   `spray.passes[]` entry has exactly one of `fromSlot` (naming a real word-list slot) or `literal`; that
+   `landedGlobal` is a declared global; and that nothing in the block looks like a credential field (no
+   `password`/`secret` keys, and `stuff.rows[]` carry no password value, only a masked label). The existing
+   ENG-02 lints (`patternSlots`/`reuseStep`) apply only when `mode` is `target` or absent; the spray/stuff
+   lints apply only when `mode` is `spray`/`stuff`, so E9's block is linted exactly as ENG-02 lints it.
+
+### Tests to add
+
+`test/js/social-password-guesser-spray.test.mjs` (jsdom, copy the module-staging block from
+`test/js/social-password-guesser.test.mjs`, the file ENG-02 adds):
+
+- **E9 is unchanged:** a `guess` block with no `mode` (ENG-02's E9 fixture) renders exactly the single-target
+  rig; `getState()` matches ENG-02's fixture byte-for-byte (the guard: `mode` defaults to `target`).
+- the spray console renders the roster from the two named facts; a fact whose `se_intel_<id>` is false renders
+  its half of the roster struck through as "not found";
+- each word-list slot assembles from its one fact and interpolates only its own token; `seasonYear` literals
+  are appended;
+- a spray pass tries one candidate against every roster account and opens exactly `spray.opensCount`; the
+  console shows a count, never a named careless person;
+- the stuff panel renders masked rows and never a password value (assert no row shows an unmasked string from a
+  password field; assert `navigator.clipboard.writeText` is never called);
+- no editable password field exists anywhere in the spray or stuff surface;
+- the campaign writes `landedGlobal` true when any account opens and false when none does;
+- `mode: "stuff"` (if built) renders the stuff panel alone.
+
+Extend `test/js/social-episode-runner.test.mjs`: a full E18-shaped episode with `guess` + `mode: "spray"`
+advances `osint -> guess -> flip` and its flip shows `flipAftermath` only when `landedGlobal` is true (reusing
+ENG-01's `flipAftermathFor`); a `defendOnly` shell drops `guess` (it is an `ATTACK_STAGES` id, `stagesFor:68`).
+
+Extend `test/js/validator-social-awareness.test.mjs`: a clean `mode: "spray"` fixture; failing cases (a
+`mode: "spray"` block with no `roster`/`wordList`/`spray`; a `wordList.slots[].factId` that is not a declared
+fact; a `spray.passes[]` entry with both `fromSlot` and `literal`; a `stuff.rows[]` entry that carries a
+password value).
+
+### Acceptance
+
+The standard engine acceptance (the block at the top of `02_ENGINE_WORK.md`), plus
+`node --test test/js/social-password-guesser-spray.test.mjs test/js/social-password-guesser.test.mjs
+test/js/social-episode-runner.test.mjs test/js/validator-social-awareness.test.mjs`. Expected: all pass, and
+`git status --porcelain scenarios/` is empty. In particular ENG-02's own single-target test
+(`social-password-guesser.test.mjs`) passes unchanged, proving E9's config is byte-for-byte unaffected.
+
+### Episodes
+
+E18 (attack half only; `mode: "spray"`). E9 is unaffected (`mode` defaults to `target`). No other episode
+authors `guess.mode`.
+
+### Shared code paths
+
+The `password-guesser` child scene (ENG-02's, episode-runner only) and the awareness validator only. The lab,
+`test_social_*` and SAFETYNET never open the runner and never author `guess`, so they are untouched.
+
+### Do not break
+
+ENG-02's single-target guesser and its test (`social-password-guesser.test.mjs`); E9's `guess` config
+(must stay byte-for-byte: `mode` defaults to `target`); the frozen `STAGE_IDS` order for the built shells
+(no new id); `test_social_episode` (`p7-episode`); the lab bridges `6` and `r4-door`; ENG-01's `flipAftermath`
+(reused, not changed).
+
+### How it is guarded
+
+`guess.mode` is a new optional key defaulting to `target`; the spray/stuff renderers are new branches inside
+the `password-guesser` minigame that run only when `mode` is `spray`/`stuff`; the new schema keys are optional
+under `additionalProperties: false`; the new validator lints fire only for `mode: "spray"`/`"stuff"`. No built
+shell and no other episode authors `guess.mode`, so every existing path, including E9's, is byte-for-byte
+unchanged. No new stage id and no new stage order are introduced, so the `STAGE_IDS` freeze and the stage-order
+lint are untouched.
+
+### Stop and ask if
+
+- ENG-02 has not landed: ENG-02b cannot build (there is no `guess` stage or `password-guesser` minigame to
+  extend). Build ENG-02 first.
+- The orchestrator wants spraying and stuffing as **two separate attack artefacts** (two `guess` stages, or a
+  `guess` plus a second stage): do not; E18's brief is one attack artefact, and the `spray`-mode console shows
+  both techniques as panels of the one campaign.
+- A later episode wants a stuffing-only artefact: build the `mode: "stuff"` standalone branch then (it reuses
+  the `guess.stuff` renderer), and give it its own fixture.
+- The spray/stuff views are asked to be **scored**: do not; the attack half is unscored (as E9's guesser is),
+  and the measurement lives in the defend half.
+
+---
+
+## ENG-08 additions (stage order, schema keys and tell rows E18 needs)
+
+These are the schema, stage-order and tell rows E18 adds, written in the style of ENG-08's sections and
+following its tell rule. They are to be folded into ENG-08 (or carried in ENG-02b if ENG-08 has not landed).
+
+### Stage order
+
+- **None new.** E18 authors the full stage order `brief osint guess flip defend debrief`, which ENG-08 already
+  adds for ENG-02 (the `guess`-after-`osint`, no-`write` order). E18 reuses it unchanged. The defend-only shell
+  is `brief defend debrief`, the built `defendOnly` order (`guess` is an `ATTACK_STAGES` id, dropped by
+  `stagesFor:68`). So ENG-08 needs no new `stage_orders` branch for E18.
+
+### Schema keys (added to the `guess` object ENG-02 adds to `socialAwarenessEpisode`)
+
+The `guess` object is `additionalProperties: false` (it sits inside `socialAwarenessEpisode`, which is
+`additionalProperties: false` at `scenario-schema.json:31`/`:53`). Add, all optional:
+
+- `mode`: string, enum `["target", "spray", "stuff"]` (default `target`; E9 authors none).
+- `roster`: object `{ namesFactId (string), patternFactId (string), domain (string), sample (array of
+  string), note (string) }`, `additionalProperties: false`.
+- `wordList`: object `{ slots (array of { id, factId, template }, each `additionalProperties: false`),
+  seasonYear (array of string), note (string) }`, `additionalProperties: false`.
+- `spray`: object `{ passes (array of { id, fromSlot?, literal? }, each `additionalProperties: false`),
+  opensCount (number), note (string) }`, `additionalProperties: false`.
+- `stuff`: object `{ rows (array of { label (string), opens (boolean) }, each `additionalProperties: false`),
+  note (string) }`, `additionalProperties: false`.
+
+ENG-02's existing `guess` keys (`target`, `commonList`, `patternSlots`, `reuseStep`, `passphraseDemo`,
+`landedGlobal`, `note`) are unchanged; `mode` and the five objects above are added beside them. No credential
+field (`password`, `secret`, a password value on a `stuff.rows[]` entry) is allowed; the schema holds only the
+masked `label`/`opens` shape for `stuff.rows[]`.
+
+### Validator lints (`scripts/validate_social/awareness.rb`, in the `guess`-block check ENG-02 adds)
+
+Added to the `guess`-block lint, gated on `mode`:
+
+- when `mode` is absent or `"target"`: the ENG-02 lints run (a `guess` block exists for a `guess` stage;
+  `patternSlots[].factId` and `reuseStep.factId` name declared `se_intel_*` facts; `landedGlobal` is a declared
+  global; no credential key). Unchanged.
+- when `mode` is `"spray"`: require `roster`, `wordList` and `spray`; `roster.namesFactId`,
+  `roster.patternFactId` and every `wordList.slots[].factId` name a declared `se_intel_*` fact; every
+  `spray.passes[]` entry has exactly one of `fromSlot` (naming a real `wordList.slots[].id`) or `literal`;
+  `landedGlobal` is a declared global; no `stuff.rows[]` entry carries a password value (only `label`/`opens`).
+- when `mode` is `"stuff"`: require `stuff`; `landedGlobal` is a declared global; the same no-credential check.
+- the "nothing looks like a credential field" check (no `password`/`secret` keys anywhere in the block) applies
+  in every mode.
+
+### Tell rows (E18 defend set)
+
+E18's defend set (`e18_atscale_inbox`, E18 §11) scores five tells. Two are shared-library ids already present;
+three are **scenario-local**, by ENG-08's rule (a tell is shared only when a `10_CHECK_FORMS.md` check-form
+item actually scores it, and no `10` item scores any of these: `general_v2`'s scored flags are
+`lookalike_domain`, `padlock_myth`, `unrequested_mfa_push`, `senderTrust`, `linkCredible`, `reply_to_differs`,
+none of them E18's new ids). So **all three are local**, declared only in E18's set `channelTells` with a
+`flagChips` label and a `factorStrings.<id>.redFlag` sentence on each flagging message, with **no**
+`CHANNEL_TELLS`/`SKILL_NAMES` append in `phish-rules.js`/`triage.rb`/`triage-flags.js` and no library change.
+`channelTells` holds only channel-tell ids (never a factor); `factorStrings` sits at message level (a sibling
+of `truth`, never inside it); and a tell is local to this one set unless a `10` item scores it.
+
+| Id | Used by today | Shared or local | Reason |
+|---|---|---|---|
+| `fake_lockout_notice` | E18 (defend) only | **local** | one set; no `10` item scores it; close to a generic lure but means specifically a forced "your account is locked, unlock here" message, so keep the id distinct |
+| `fake_signin_alert` | E18 (defend) only | **local** | one set; no `10` item scores it; a sign-in alert that steers to a link or page to "review/confirm", distinct from `unrequested_mfa_push` (a prompt to approve, which E9 owns) |
+| `fake_breach_alert` | E18 (defend) only | **local** | one set; no `10` item scores it; a breach warning that asks for a password "to check", distinct from `secrecy_or_bypass` |
+
+E18 also flags the shared-library ids `lookalike_domain` and `secrecy_or_bypass` (in the twelve already); these
+need no change and are enabled per set through `channelTells`.
+
+Suggested `factorStrings.<id>.redFlag` wording (authored inline on each flagging message in E18's `defend.json`;
+these are the final sentences):
+
+- `fake_lockout_notice`: "A message saying your account is locked and giving you a link or number to unlock it."
+- `fake_signin_alert`: "A sign-in alert that asks you to confirm or reject it by signing in on a linked page."
+- `fake_breach_alert`: "A breach warning that asks you to type your password to check whether it has leaked."
+
+Short `flagChips` labels (noun phrases, as the built library labels are, not full sentences): `fake_lockout_notice`
+"Fake lockout message"; `fake_signin_alert` "Fake sign-in alert"; `fake_breach_alert` "Fake breach check".
+
+**Tests to add (tells): none**, because no id is promoted to shared (the two `CHANNEL_TELLS` loop tests,
+`social-triage-weakest.test.mjs:201` and `social-gap-triage-flags-comparison.test.mjs:89`, pass unchanged, as
+no `SKILL_NAMES` entry is added). When a later check item scores one of E18's three ids, promote it to the
+shared library by ENG-08's Rule then (append to both `CHANNEL_TELLS`, add a `SKILL_NAMES` entry, move the
+`redFlag` wording into `phish-rules.js`).
 
 ---
 
