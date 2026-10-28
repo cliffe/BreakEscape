@@ -213,12 +213,12 @@ last is a separate, later engine piece:
 ## Goal
 
 An annual mixed edition built from the existing defend sets: a mixed run of the year's threats across
-channels and companies, through the built inbox-triage defender. Per round 2 ruling 1, core_17 is a
+channels and companies, through the built inbox-triage defender. core_17 is a
 **`defendOnly` variant whose defend set holds 8 messages** (8 is the `EPISODE_MESSAGES` cap in
 `awareness.rb`). The annual sitting is that shell (about 8 to 10 minutes) **followed by the learner's
 existing role post-check** (about 9 minutes), so about 17 to 20 minutes in total. This shape validates
-under `--strict-social` with **no new engine packet**. The 17-message design is dropped. No new content
-systems; the only new work is the 8-message combined set and the "what changed this year" brief.
+under `--strict-social` with **no new engine packet**. No new content systems; the only new work is the
+8-message combined set and the "what changed this year" brief.
 
 ## Read first
 
@@ -261,7 +261,7 @@ Tarrowby), and include one mirror pair. Every id exists today (grep-confirmed 20
 That is 8 items (5 phish, 3 genuine) across email, call, voicemail, SMS, push and a sign-in page, and
 across Brightwell, Quayholt and Tarrowby: the year's channels and brands in one short sitting. Keep the
 three genuine items in (module pitfall "a gotcha festival"). **Channel coverage:** email (1, 2), call
-(4, 5), voicemail (8), SMS (7), push (3), plus a sign-in page (6), which is the ruling's email, call,
+(4, 5), voicemail (8), SMS (7), push (3), plus a sign-in page (6): email, call,
 voicemail, SMS-or-QR and push. **Mirror pair (aw5):** item 4 (the normal-looking impostor call) and item
 5 (the suspicious-looking genuine call), the two sides of Gordon's line.
 
@@ -291,11 +291,11 @@ are already triage `call` data; but prefer the episode calls so the Gordon mirro
   and a minimal `awarenessEpisode` block with the "what changed this year" brief strings). **Not
   `awareness/e17/`**: that folder is E17's (acceptable use), whose fragment follows the built
   `awareness/e${n}/defend.json` parity pattern; core_17 is not episode 17, so it gets its own
-  `core17/` folder (R3_sonnet m11).
+  `core17/` folder.
 - Create the shell `scenarios/awareness_core_17_annual_2027_defend/scenario.json.erb`, `mission.json`,
   `ink/`. A generator is optional (the set is hand-assembled); if you add one, model it on
   `gen_e3_e5_shells.py` and never run it into the repo.
-- Place the mission in both seeded courses as the year-end item, through **01 P12** (ruling 8); do not
+- Place the mission in both seeded courses as the year-end item, through **01 P12**; do not
   hand-edit Hacktivity or use `awareness_deploy.py`.
 
 ## The shell and the combined set
@@ -315,13 +315,13 @@ are already triage `call` data; but prefer the episode calls so the Gordon mirro
   for a defend host, so **copy the defend-host ink `ink/chidi_okeke.ink` from
   `scenarios/awareness_e6_texts_and_qr_defend/`**, rename it to `ink/graham_whitfield.ink` (knot
   `start`, `storyPath` pointing at the renamed file) and replace Chidi's Tarrowby lines with Graham's
-  generic proctor lines (R3_sonnet m12).
+  generic proctor lines.
 - The combined set `annual_2027_mixed`:
   - `scoringProfile: "awareness"`, `verifyVerdict: true` (it contains calls and a voicemail, which
     need the ring-back verdict), `feedbackMode: "immediate"` (matches how the learner met these items
     all year; `end` is an option if the user wants it exam-style), `headerPanel: "off"`,
     `glossary: "closed"`. (`reportAlwaysVisible` is a `defend`-block key, not a set key; put it on the
-    `awarenessEpisode.defend` block, below, not on the set, R3_sonnet t4.)
+    `awarenessEpisode.defend` block, below, not on the set.)
   - Set labels: `title: "The year in review"`, `brief: "A mixed run of the year's messages across
     email, calls, a voicemail, a text, a sign-in prompt and a page, from Brightwell, Quayholt and
     Tarrowby. Some are real; some are the year's scams. For each, decide and say why. The sitting moves
@@ -329,7 +329,7 @@ are already triage `call` data; but prefer the episode calls so the Gordon mirro
     `realLabel: "Real messages"` (the built E6 set uses "Real texts and notices"; this queue is mixed,
     so "Real messages" reads better). The brief's "moves you between seats" line is the note the
     general_staff learner needs, because items 1 and 2 are payments-team emails and items 4 and 5 are
-    service-desk calls (R3_sonnet m12).
+    service-desk calls.
   - Message order: each impostor before its genuine twin, which the §"item ids" table already does
     (item 4 impostor Gordon before item 5 real Gordon).
   - `channelTells`: the union of the channel tells the 8 copied items use, all `00`-library ids, so no
@@ -366,7 +366,7 @@ are already triage `call` data; but prefer the episode calls so the Gordon mirro
 
 ## The post-check that follows (no new shell)
 
-Per ruling 1, the annual sitting is this `defendOnly` shell **then the learner's existing role
+The annual sitting is this `defendOnly` shell **then the learner's existing role
 post-check**, about 9 minutes, so 17 to 20 minutes in total. The post-check is one of the built role
 check shells (the 24 built shells, and the two new pairs from `10_CHECK_FORMS.md` where a role uses
 them); **no new check shell is built for core_17**. The organiser places the learner's role post-check
@@ -386,7 +386,7 @@ minutes in all. Keep all three genuine items so the lesson is not "everything is
 Three short changes, from **`modules/core_17_capstone_annual_assessment/concepts.md` lines 66 to 70**
 ("The proctor's three headline changes for the 2027 brief"), each one aid, rewritten each year,
 authored into `strings.brief` (the built brief stage renders `strings.brief`; this is not the
-brief-only `briefCards` variant of Part A). The three, verbatim from that range (R3_sonnet m13):
+brief-only `briefCards` variant of Part A). The three, verbatim from that range:
 
 1. "Scams switch channels." A text, then a call, then an email. Check another way, every time.
 2. "A voice isn't proof." A voice note or call from someone you know can be faked. Call back on the
@@ -397,7 +397,7 @@ brief-only `briefCards` variant of Part A). The three, verbatim from that range 
 Spoken lines are generic; any figures are on screen only (no voiced line prints a variable). Keep it
 to three beats plus the habit; the dialogue reviewer polishes.
 
-### Strings to rewrite, missions.json, and the shell-count test (R3_sonnet m12)
+### Strings to rewrite, missions.json, and the shell-count test
 
 - **Strings copied from the E6 defend shell and rewritten.** The `awareness_e6_texts_and_qr_defend`
   shell carries `defendOnly`, `defendIntro`, `flipMissedHeading`, `flipLandedNoTells`, `noBlameLine`
@@ -453,7 +453,7 @@ to three beats plus the habit; the dialogue reviewer polishes.
   voicemails (dropping the E3 calls, and finding a different mirror pair): that is a valid lighter mix;
   confirm.
 - The user wants more than 8 items in one sitting: that needs an engine change to lift the
-  `EPISODE_MESSAGES` cap (a new packet), which ruling 1 declined; confirm before raising it.
+  `EPISODE_MESSAGES` cap (a new packet), which the 8-message design rules out; confirm before raising it.
 - The user wants the later extensions (single-day narrative, chain view, private year profile, team
   event): those are proposed, later, and need new engine and art (`core_17` game_design "Proposed,
   later extensions"); not this brief.

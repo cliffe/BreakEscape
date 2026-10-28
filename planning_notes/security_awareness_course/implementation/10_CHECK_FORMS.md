@@ -43,14 +43,13 @@ reuse the built shell machinery.
   (`TODO.md` section 1). If Carrholme is not ready, the fallback is to set `data_conduct` at
   Quayholt Insurance (see "Stop and ask if").
 - No form-building engine packet is required. Every scored flag in the item lists below is **an
-  existing id in the `00` library, or an id that ENG-08 adds to the shared library** (Round 1
-  ruling 1: "existing ids, or ids that ENG-08 adds to the shared library"). The two forms as
-  authored use existing library ids only, so they build with no ENG-08 change; where a slot is
+  existing id in the `00` library, or an id that ENG-08 adds to the shared library**. The two forms
+  as authored use existing library ids only, so they build with no ENG-08 change; where a slot is
   rebalanced to score one of the episode tells ENG-08 promotes to the shared library (for example
   E8's `unexpected_sent_item` / `unrequested_reset` / `ransomware_note`, or E10's `fake_check_paste`
   / `fake_update_prompt` / `dangerous_download`), that id must be in `CHANNEL_TELLS` in both
   `systems/phish-rules.js` and `scripts/validate_social/triage.rb` first. A check-form item never
-  scores a scenario-local tell; any tell a form scores must be in the shared library (ruling 1).
+  scores a scenario-local tell; any tell a form scores must be in the shared library.
 
 ## Owner model
 
@@ -105,7 +104,7 @@ tailgating and badges, so E12's main measurement stays in its own episode. One E
 item (a visitor or courier talking their way to access by message) sits in `general_v2`; the rest of
 E12 is not checked by a form, and that is deliberate.
 
-**This is the settled scheme (Round 1 ruling 1).** `general_v2` and `data_conduct` are the **only**
+**This is the settled scheme.** `general_v2` and `data_conduct` are the **only**
 new check forms for E8 to E17; the per-topic forms the episode specs once named (`data_form_a/b`,
 `social_form_a/b`, `shadowit_form_a/b`, `insider_form_a/b`, `aup_form_a/b`, and any "new
 physical-security form") are dropped. **These two item lists are the single home for every check
@@ -114,7 +113,7 @@ episode-to-form mapping is: E8 (core_04) and E9 (core_03) and E10 (core_08/07) a
 E15 (core_13) and one E12 (core_10) pretext item feed `general_v2`; E11 (core_05/06), E14 (core_12),
 E16 (core_14) and E17 (core_16) feed `data_conduct`.
 
-**The trade-off to put to the user (ruling 1).** Two broad pairs give the organiser no per-topic
+**The trade-off to put to the user.** Two broad pairs give the organiser no per-topic
 pre and post figure: the change is measured per form (`general_v2` and `data_conduct`), not per
 episode topic. If a per-topic pre/post figure is wanted, that is the only reason to keep more pairs;
 absent it, two pairs win (fewer, well-matched forms are easier to keep parallel, which is the
@@ -170,10 +169,10 @@ Everything here mirrors the built forms. Read a built pre and post shell alongsi
   hand (`new[i] = old[order[i]]`, lists of 10 indices):
   - form A `[1, 0, 3, 2, 5, 4, 7, 6, 9, 8]` puts the phish at output slots {1, 3, 5, 7} (indices
     0, 2, 4, 6), and form B `[0, 3, 2, 1, 4, 7, 6, 5, 8, 9]` puts them at output slots {2, 4, 6, 8}
-    (indices 1, 3, 5, 7). The two phish-slot sets are disjoint, so no slot is a phish in both. The
-    earlier draft (`[2, 0, 1, 4, 3, 6, 5, 9, 7, 8]` / `[7, 3, 0, 6, 1, 8, 5, 2, 9, 4]`) was **not**
-    disjoint (slots 4 and 6 are phish in both), so do not copy it. Still run the audit's disjointness
-    check (step 2) on whatever arrays you ship.
+    (indices 1, 3, 5, 7). The two phish-slot sets are disjoint, so no slot is a phish in both. Not
+    every pair of arrays is disjoint (for example `[2, 0, 1, 4, 3, 6, 5, 9, 7, 8]` /
+    `[7, 3, 0, 6, 1, 8, 5, 2, 9, 4]` leaves slots 4 and 6 phish in both), so run the audit's
+    disjointness check (step 2) on whatever arrays you ship.
 - Each pair becomes four shells, exactly as the built roles (`gen_e3_e5_shells.py` `check()` and
   `main()`): `pre_*_ab` carries form A at stage `pre`; `post_*_ab` carries form B at stage `post`;
   `pre_*_ba` carries form B at stage `pre`; `post_*_ba` carries form A at stage `post`. The form
@@ -204,7 +203,7 @@ same verdicts (so a pair is compared like with like), not that Verify be off.
 Both forms: `"scoringProfile": "awareness"`, `"feedbackMode": "end"`, `"headerPanel": "collapsed"`,
 `"glossary": "closed"`, `"outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 }`.
 
-`channelTells` holds **only channel-tell ids** (Round 3 ruling 2). The seven **factor** ids
+`channelTells` holds **only channel-tell ids**. The seven **factor** ids
 (`senderTrust`, `senderAuth`, `addressedTo`, `pretextRelevant`, `attachmentPlausible`,
 `urgencyCalibrated`, `linkCredible`; `triage.rb` `FACTORS`) are always in the flag universe and are
 scored through the factor path, so they are **never** listed in `channelTells`: `triage.rb`
@@ -306,7 +305,7 @@ needs `whyFine` (default plus any per-flag key). Quote the shapes from `e5/defen
 
 Phish at slots 2, 4, 6, 8 (before permute). Per-form flag multiset: `lookalike_domain` 1,
 `padlock_myth` 1, `unrequested_mfa_push` 1, `senderTrust` 2, `linkCredible` 1, `reply_to_differs` 1
-(7 scored flags). `channelTells` (channel-tell ids only, ruling 2): `["lookalike_domain",
+(7 scored flags). `channelTells` (channel-tell ids only): `["lookalike_domain",
 "padlock_myth", "unrequested_mfa_push", "reply_to_differs"]`. The two factors this form scores,
 `senderTrust` (items 6 and 8) and `linkCredible` (item 6), are scored through the factor path and are
 **not** listed in `channelTells` (they are always in `FACTORS`; `triage.rb` rejects a factor id there).
@@ -338,7 +337,7 @@ know" or "overshare" chip, that is a later `02_ENGINE_WORK.md` library addition,
 
 Phish at slots 2, 4, 6, 8 (before permute). Per-form flag multiset: `senderTrust` 3,
 `pretextRelevant` 2, `secrecy_or_bypass` 2, `vish_callback_pressure` 1, `reply_to_differs` 1 (9
-scored flags; counts identical in A and B). `channelTells` (channel-tell ids only, ruling 2):
+scored flags; counts identical in A and B). `channelTells` (channel-tell ids only):
 `["secrecy_or_bypass", "vish_callback_pressure", "reply_to_differs"]`. The two factors this form
 scores, `senderTrust` (items 2, 6, 8) and `pretextRelevant` (items 2, 6), are scored through the
 factor path and are **not** listed in `channelTells` (`triage.rb` rejects a factor id there). Item 4
@@ -380,8 +379,8 @@ Apply `CHECK_PARITY_AUDIT.md`'s method to each new pair:
 - Do not edit the six built role forms or their fragments, shells or `BRAND_SET.md` section 6.
 - Do not reuse the global names in a way that drops the explicit `importGlobals.from`; the post shell
   must import from its own pre mission by name.
-- Do not invent flag ids. Use the `00` section 2 library, or an id ENG-08 adds to the shared library
-  (ruling 1). A check-form item never scores a scenario-local tell. If a topic needs a new reusable
+- Do not invent flag ids. Use the `00` section 2 library, or an id ENG-08 adds to the shared
+  library. A check-form item never scores a scenario-local tell. If a topic needs a new reusable
   tell not yet in the shared library, stop and point to `02_ENGINE_WORK.md` (ENG-08).
 - Do not run the generator into the repo; regen into a scratch folder, confirm no-change parity,
   then copy only changed files (HANDOVER.md section 4).
