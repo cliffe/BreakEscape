@@ -1049,3 +1049,21 @@ Validator made runnable in the scratchpad: `json-schema` gem installed into
 - **Not scratch-validated (engine packets not built):** E12's `awarenessEpisode.world` block, lobby room
   type and locked `lobby`->`training_room` connection (need ENG-05a/ENG-08), and E17's ENG-11 `sortDrill`.
   Noted in each spec; validated when those packets land.
+
+## Round 5 results (final review round)
+
+| Review | B | M | m | t | Verdict |
+|---|---|---|---|---|---|
+| R5_review (cross-consistency) | 0 | 2 | 4 | 3 | ship-ready once M1 and M2 are fixed |
+| R5_sonnet (validator and engine runs) | 3 | 7 | 5 | 2 | not clean: 27 snippets built, most exit 0 |
+
+## Final fix pass (orchestrator rulings)
+
+1. Every fix is proved in scratch:
+   - JSON with the validator, as in `R3_sonnet.md`;
+   - generator metadata by running the generator in scratch, as in `01` P0, with no KeyError and the right output;
+   - send gates and blanks with the real engine functions R5_sonnet used (`optionsForSlot`, `preSendGate`).
+2. The generator `EPISODES` keys follow the real generator (`conclusion`, `defendIntro`, and every `HOSTS` entry). `01` P4 lists the required keys once. Each episode spec gives its filled entry.
+3. `factorStrings` sits at message level, never under `truth`.
+4. E12's badge door follows `02` ENG-05c: the lock keys sit on `rooms.training_room`, the room being entered.
+5. Anything still open after this pass goes into one "Known gaps" section in `00_README.md`. Nothing is left buried in the review files.
