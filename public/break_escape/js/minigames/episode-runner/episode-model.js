@@ -24,6 +24,8 @@
 // Stage order (P7-X lints it): osint -> build? -> write (mail or call) -> mfa? -> flip -> defend.
 // `mfa` may also sit straight after `flip`. `build` and `mfa` are attack stages.
 
+import { fieldLabel } from '../landing-page-builder/landing-page-model.js';
+
 export const STAGE_IDS = Object.freeze(['brief', 'osint', 'build', 'write', 'mfa', 'flip', 'defend', 'debrief', 'check']);
 export const ATTACK_STAGES = Object.freeze(['osint', 'build', 'write', 'mfa', 'flip']);
 /** The pretext call's outcome that counts as landed (06 N7). */
@@ -251,11 +253,6 @@ const labelOf = (list, id) => {
     return hit ? (hit.label ?? hit.text ?? hit.heading ?? null) : null;
 };
 
-const FIELD_LABELS = Object.freeze({
-    email: 'Email address', password: 'Password', one_time_code: 'One-time code',
-    card_number: 'Card number', ni_number: 'National Insurance number'
-});
-
 /**
  * The built look-alike page the flip shows (E5), from the builder's record
  * se_landing_pages[<attack.landingPageId>] and the page definition in social.landingPages.
@@ -288,7 +285,7 @@ export function flipPage(episode, social, globals) {
     if (!isStr(host) || !host) return null;
     const url = /^[a-z]+:\/\//i.test(host) ? host : `https://${host}/`;
     const heading = labelOf(def.purposes, choices.purpose) || (isStr(def.title) ? def.title : '');
-    const fields = (Array.isArray(choices.fields) ? choices.fields : []).filter(isStr).map((f) => FIELD_LABELS[f] || f);
+    const fields = (Array.isArray(choices.fields) ? choices.fields : []).filter(isStr).map((f) => fieldLabel(f, def, { flip: true }));
     const own = Array.isArray(rec.tells) ? rec.tells : (Array.isArray(rec.tellsFound) ? rec.tellsFound : []);
     // The button face is the purpose's `button` (default "Sign in"), as the builder draws it; the
     // purpose label is the page heading, never the button (P4-1: the flip read "Session expired"

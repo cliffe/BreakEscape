@@ -443,6 +443,12 @@ module ValidateSocial
 
     def self.conclusion_checks(ctx, ep, done)
       issues = []
+      # standalone: false makes the episode one beat in a bigger mission, so the mission owns its
+      # conclusion: only the done global has to exist.
+      if ep['standalone'] == false
+        issues << err("the done global '#{done}' is not declared in globalVariables") unless ctx.all_globals.key?(done)
+        return issues
+      end
       aims = Array(ctx.json['objectives']).select { |a| a.is_a?(Hash) && a['missionConclusion'] == true }
       aim = aims.first
       if aims.empty?

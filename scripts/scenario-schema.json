@@ -304,6 +304,7 @@
                 }
               },
               "fields": {"type": "array", "items": {"type": "string"}},
+              "fieldLabels": {"type": "object", "additionalProperties": {"type": "string"}, "description": "Field id to on-screen label overrides (landing-page-labels.js)"},
               "extraSensitiveFields": {"type": "array", "items": {"type": "string"}},
               "points": {
                 "type": "object",
@@ -494,6 +495,25 @@
                 "title": {"type": "string"},
                 "intro": {"type": "string"},
                 "unseenNote": {"type": "string"},
+                "results": {
+                  "type": "array",
+                  "items": {"type": "string", "enum": ["mail", "pages", "calls"]},
+                  "description": "Which result panels the report shows; default all three (report-model.js)"
+                },
+                "strings": {
+                  "type": "object",
+                  "description": "The report's fixed copy; each key defaults to the lab's wording (report-model.js DEFAULT_REPORT_STRINGS)",
+                  "properties": {
+                    "resultsHeading": {"type": "string"},
+                    "failedSendNote": {"type": "string"},
+                    "pretextCall": {"type": "string"},
+                    "blamingStaff": {"type": "string"},
+                    "findingsHint": {"type": "string"},
+                    "noLandingPage": {"type": "string"}
+                  },
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                },
                 "labelBy": {
                   "type": "string",
                   "enum": ["name", "role"],
@@ -857,6 +877,7 @@
         "id": {"type": "string"},
         "name": {"type": "string", "description": "Invented brand name; checked against the real-brand denylist"},
         "look": {"type": "string", "enum": ["generic", "parody"]},
+        "logo": {"type": "string", "description": "Path of the brand's logo image; default assets/social/landing/logo-<brandId>.png"},
         "realDomain": {"type": "string", "description": "A fictional .example host (00 S11 lint field list)"},
         "realFields": {"type": "array", "items": {"type": "string"}},
         "decoyWords": {
@@ -1787,6 +1808,7 @@
           "items": {"type": "string", "enum": ["brief", "osint", "build", "write", "flip", "defend", "debrief", "check", "mfa"]}
         },
         "conclusionTaskId": {"type": "string", "description": "The task the host NPC's mapping completes; passed to the triage starter"},
+        "standalone": {"type": "boolean", "description": "Default true. False makes the episode one beat in a bigger mission: awareness.rb then skips the missionConclusion, host-NPC and conclusionTaskId checks"},
         "attack": {
           "type": "object",
           "description": "Read only by a full episode",
@@ -1884,6 +1906,18 @@
             "flipPageIntro": {"type": "string", "description": "The flip's intro when it shows a built landing page"},
             "flipCallIntro": {"type": "string", "description": "The flip's intro when it shows a pretext call"},
             "continue": {"type": "string", "description": "The label of the Continue button"},
+            "stages": {
+              "type": "object",
+              "description": "Per-stage panel copy over the runner's fixed lines, keyed by stage id (brief, osint, build, write, mfa, flip, defend, debrief, check)",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {"heading": {"type": "string"}, "text": {"type": "string"}, "button": {"type": "string"}},
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "launchFailed": {"type": "string", "description": "The notice when a stage's tool does not open; default 'That did not open. Close this window and try the kiosk again.'"},
+            "stepLabels": {"type": "object", "description": "Step-strip labels keyed by stage id", "additionalProperties": {"type": "string"}},
             "facilitator": {
               "type": "object",
               "description": "Facilitator notes: one string per stage id (brief, osint, build, write, mfa, flip, defend, debrief, check) plus 'pause'",
@@ -2168,6 +2202,8 @@
         "id": {"type": "string", "description": "Older data only; use callId"},
         "character": {"type": "string"},
         "startKnot": {"type": "string"},
+        "doneGlobal": {"type": "string", "description": "The report reads this global as 'an ask was granted'. Default: the call's pretext_<callId>_outcome is got_it (or the lab's pretext_call_done)"},
+        "reportedGlobal": {"type": "string", "description": "The report reads this global as 'the contact reported it'. Default: the call's pretext_<callId>_outcome is reported (or the lab's <character>_reported)"},
         "knows": {
           "type": "object",
           "additionalProperties": {

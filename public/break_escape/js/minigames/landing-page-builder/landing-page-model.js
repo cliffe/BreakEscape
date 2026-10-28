@@ -121,8 +121,24 @@ export const DEFAULT_STRINGS = Object.freeze({
   tellFormOrigin: 'The form belongs to {shown}, not to {real}. Whoever owns that address receives what you type.',
   tellHoverMismatch: 'The link in the email says {linkText} but hovering shows {shown}.',
   padlockDecoy: 'Fine. But a padlock is on the fake page too. It only means the connection is private to whoever owns this address.',
-  blockedAddress: 'Blocked address'
+  blockedAddress: 'Blocked address',
+
+  // Builder chrome (landing-page-builder-minigame.js), overridable like the lines above.
+  lockedDomainNote: 'You don’t own this. Only the company does.',
+  blockBadSuffix: 'This address is not allowed in the lab. Pick one from the list of look-alike addresses.',
+  attachLabel: 'Attach to email',
+  attachAnywayLabel: 'Attach anyway',
+  padlockNote: 'A padlock means the connection is private to whoever owns the address. Fake sites can show one too.',
+  pretextNote: 'The page has to match the story the email told. Pick the service, the reason and the wording this ' +
+    'person is already expecting, or it will not ring true.'
 });
+
+/** One string: pageDef.strings[key] when it is a non-empty string, else the default. */
+export function pageString(pageDef, key) {
+  const over = pageDef && isObj(pageDef.strings) ? pageDef.strings[key] : undefined;
+  const s = (typeof over === 'string' && over.length) ? over : DEFAULT_STRINGS[key];
+  return typeof s === 'string' ? s : '';
+}
 
 // ------------------------------------------------------------------ helpers
 
@@ -567,4 +583,32 @@ export function betterVictim(existing, next) {
  */
 export function captureGranted(before, after) {
   return isObj(after) && after.submitted === true && !(isObj(before) && before.submitted === true);
+}
+
+// ── Form-field labels ─────────────────────────────────────────────────────────────
+// The labels for the form-field ids a page may ask for (07 §3 step 6, 00 §1). One map for the
+// builder's chips, the rendered page and the episode flip. A page overrides any of them with
+// pageDef.fieldLabels ({ <fieldId>: label }).
+
+export const FIELD_LABELS = Object.freeze({
+    email: 'Email',
+    password: 'Password',
+    one_time_code: 'One-time code',
+    card_number: 'Card number',
+    ni_number: 'National insurance number'
+});
+
+// The episode flip's text list has always read these two longer. Kept as its own layer so
+// the awareness flip shows what it did before; delete it to use the builder's wording there.
+export const FLIP_FIELD_LABELS = Object.freeze({
+    email: 'Email address',
+    ni_number: 'National Insurance number'
+});
+
+/** The label for a field id: pageDef.fieldLabels, then (flip only) the flip wording, then the shared map, then the id. */
+export function fieldLabel(id, pageDef, { flip = false } = {}) {
+    const own = pageDef && pageDef.fieldLabels && typeof pageDef.fieldLabels === 'object' ? pageDef.fieldLabels[id] : null;
+    if (typeof own === 'string' && own) return own;
+    if (flip && FLIP_FIELD_LABELS[id]) return FLIP_FIELD_LABELS[id];
+    return FIELD_LABELS[id] || id;
 }

@@ -392,6 +392,16 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
 
     /** The panel copy for a stage that opens another tool. */
     _stageCopy(stage) {
+        const copy = this._baseStageCopy(stage);
+        // strings.stages.<stageId> { heading, text, button } replaces any of the three lines.
+        const own = isObj(this.strings.stages) && isObj(this.strings.stages[stage]) ? this.strings.stages[stage] : null;
+        if (!own || !copy) return copy;
+        return { heading: isStr(own.heading) ? own.heading : copy.heading,
+            text: isStr(own.text) ? own.text : copy.text,
+            button: isStr(own.button) ? own.button : copy.button };
+    }
+
+    _baseStageCopy(stage) {
         if (stage === 'write' && writeKind(this.episode) === 'call') return CALL_COPY;
         if (stage === 'defend') {
             let set = null;
@@ -427,7 +437,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
      * email, so the 'flip' step reads "The call" rather than the default "Your message" (E3-6).
      */
     _stripLabels() {
-        return writeKind(this.episode) === 'call' ? { flip: 'The call' } : undefined;
+        const own = isObj(this.strings.stepLabels) ? this.strings.stepLabels : null;
+        const base = writeKind(this.episode) === 'call' ? { flip: 'The call' } : undefined;
+        return own ? { ...base, ...own } : base;
     }
 
     /**
@@ -594,7 +606,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             child = this._launchTriage(stage, spec.options);
         }
         this._launching = null;
-        if (!child && this.gameState.isActive && this.notice) this.notice.textContent = LAUNCH_FAILED;
+        if (!child && this.gameState.isActive && this.notice) this.notice.textContent = isStr(this.strings.launchFailed) ? this.strings.launchFailed : LAUNCH_FAILED;
     }
 
     // ── the pretext call (E3) ────────────────────────────────────────────────
