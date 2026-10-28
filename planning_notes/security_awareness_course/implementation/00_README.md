@@ -254,3 +254,45 @@ Check forms       ██░░░░░░░░  -           E8 items drafted
 | `episodes/E17_acceptable_use.md` | E17 brief (Tarrowby Logistics, defend-only) |
 
 Scenario folder names and episode ids are fixed in each episode brief. Follow the built pattern: folder `awareness_eN_<slug>`, episode id `eN_<slug>`, defend-only id `eN_<slug>_defend`.
+
+## 12. Readiness and known gaps (as of 2026-10-28)
+
+### What can start now
+
+"Proved" means a scratch shell was built from the brief's own JSON and the real validator (`--strict-social`) exited 0, or the real generator ran with no KeyError.
+
+| Work | Start now? | Proved | Blocked by |
+|---|---|---|---|
+| core_17 annual edition (WP-12 Part B) | **Yes** | shell validates | nothing |
+| WP-15 core_02 items (E3 and E6 swaps) | **Yes** | both copies validate | nothing |
+| Check forms `general_v2` (Quayholt) | **Yes** | 4 shells validate, generator runs, balance lint passes | the 20 items must be written as final JSON from `10`'s tables (content step) |
+| Check forms `data_conduct` | Yes, at the Quayholt fallback | 4 shells validate | Carrholme branding waits on P5b |
+| E8 defend-only | **Yes** | validates; generator builds it | nothing |
+| E12, E13, E14, E15, E16, E17 defend-only shells | **Yes** | validate; generator builds them | E17's "can I?" sort needs ENG-11 |
+| E8 full (the pilot) | After ENG-01, ENG-09b | the send gate passes with the real engine; the full shell validates without the two new keys | ENG-01, ENG-09b |
+| E9 | No | generator runs | ENG-02, ENG-09a, ENG-09b |
+| E10 | No | generator runs | ENG-03a, ENG-09b |
+| E11 (both shells) | No | generator keys resolve | ENG-04 and the Carrholme room (P5b) |
+| E12 full | No | calls validate | ENG-05a, b, c, ENG-08, the lobby map (P5c) and art |
+| E13 full | No | | ENG-06, ENG-07, ENG-08 |
+| E14 full | No | | ENG-11, ENG-13 |
+| E15 full, E16 full | No | | ENG-04, plus ENG-11 (E15) or ENG-12 (E16) |
+| core_00 first-play brief (WP-12 Part A) | No | | ENG-10 |
+| WP-02 reporting route | Break Escape side is done; the rest needs Hacktivity | | a session with `cliffe/hacktivity` in scope, and the user's sign-off on the option list |
+
+Suggested first run: the engine packets ENG-01 and ENG-09b, then the E8 pilot end to end. Alongside them, run core_17, WP-15, the `general_v2` content and the defend-only shells that are ready.
+
+### Known gaps
+
+- **Environment.** Node 24, jsdom and Bundler are not in the cloud container (see §8). Bridges and the jsdom suites cannot run there. The validator runs with a scratch `json-schema` install. Run the full checks on a machine that has the toolchain before merging.
+- **Content still to author.** Final JSON for the 20 items of each new check pair, written from `10`'s tables. All drafted host and debrief strings, which pass a dialogue review before shipping (the AGENTS.md dialogue loop).
+- **Art.**
+  - E12: the hi-vis courier costume, which carries the parcel, plus Delphine's portrait and the lobby map.
+  - Carrholme's room branding (P5b).
+  - Host art for E1 to E7 waits on the PixelLab reset (3 November).
+  - E12's Lorna Easton reuses a built sheet that the learner may also wear. This is cosmetic only.
+- **Pre-ship web searches.** New invented names must be searched against real businesses before release:
+  - companies and products: Carrholme Services, Marsden Holloway, RiverReach Angling, Pagewright, Fernside Catering, Ashby Supplies, Mossgate Cleaning Supplies, Hollinsbrook House, Kestrel Court, Kettlewick Talent;
+  - people: Delphine Arvanitis, Lorna Easton, Dani Fenwick, Samira Nawaz, Ross Garside, Craig Pickering.
+- **Measurement trade-off.** The two broad check pairs give no per-topic pre and post figure. If a buyer needs one, a topic pair can be added later without touching the six role forms.
+- **Line numbers.** Code citations were verified on 2026-10-28. Re-check any line number at the point of use, because main keeps moving.
