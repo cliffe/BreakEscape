@@ -5,7 +5,8 @@
 //   - Pixel layer: the brand logo and the padlock icon, as <img> scaled with
 //     image-rendering: pixelated (set in the builder CSS, P5-D).
 //   - Text layer: the address bar, the page's visible wording and the form-field label
-//     boxes, as inert DOM text set with textContent, at native resolution.
+//     boxes, as inert DOM text set with textContent, at native resolution. The address bar
+//     is in the readable font; the page's own text is in the pixel font (--se-font-pixel).
 //
 // Safety (07 §1, enforced by social-landing-page-render.test.mjs, not by convention):
 // the preview holds NO <form>, <input>, <textarea>, <select>, <a>, <button>, <iframe>
@@ -33,6 +34,7 @@ import { resolveDomainOption, isDomainBlocked } from './landing-page-model.js';
 export { resolveDomainOption, isDomainBlocked };
 
 const READABLE_FONT = 'var(--se-font-readable)';
+const PAGE_FONT = "var(--se-font-pixel, 'GNF', 'Source Sans 3', sans-serif)";
 const PADLOCK_ICON = '/break_escape/assets/icons/padlock_32.png';
 // Brand logos (LOGO1/LOGO4-6, OBJ/UI rows in ASSETS.md) are not generated yet; the <img>
 // points at the settled path and the builder CSS (P5-D) styles the slot so a pending asset
@@ -71,6 +73,12 @@ function makeFactory(doc) {
 // A text node that holds an authored domain/address/label: readable font, set raw.
 function readable(node) {
     node.style.fontFamily = READABLE_FONT;
+    return node;
+}
+
+// Text on the fake page itself: the in-world site's pixel font. The address bar stays readable.
+function pageText(node) {
+    node.style.fontFamily = PAGE_FONT;
     return node;
 }
 
@@ -223,9 +231,9 @@ export function renderLandingPage(options = {}) {
     // Purpose heading + wording (text layer).
     const purposeLabel = labelFromList(pageDef.purposes, choices.purpose);
     const wording = make('div', 'lpb-wording');
-    if (purposeLabel) wording.appendChild(readable(make('h3', 'lpb-purpose', purposeLabel)));
+    if (purposeLabel) wording.appendChild(pageText(make('h3', 'lpb-purpose', purposeLabel)));
     const copy = wordingText(pageDef, choices.wording);
-    if (copy) wording.appendChild(readable(make('p', 'lpb-copy', copy)));
+    if (copy) wording.appendChild(pageText(make('p', 'lpb-copy', copy)));
     body.appendChild(asRegion(wording, 'wording'));
     regions.wording = wording;
 
@@ -235,7 +243,7 @@ export function renderLandingPage(options = {}) {
     for (const field of fields) {
         const box = make('div', 'lpb-field');
         box.setAttribute('data-field', field);
-        box.appendChild(readable(make('span', 'lpb-field-label', FIELD_LABELS[field] || field)));
+        box.appendChild(pageText(make('span', 'lpb-field-label', FIELD_LABELS[field] || field)));
         // The input line is a plain, empty div — no <input>, nothing to type into.
         box.appendChild(make('div', 'lpb-field-input'));
         form.appendChild(box);

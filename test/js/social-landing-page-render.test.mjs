@@ -164,14 +164,14 @@ test('homograph domain and its punycode form render raw', () => {
     assert.ok(!text.includes('–'), 'no en dash in the address bar');
 });
 
-test('authored domain and field labels are set in the readable font (N8)', () => {
+test('the authored domain is in the readable font, the page text in the pixel font (N8)', () => {
     const { root } = renderLandingPage({ pageDef, choices: workedChoices, doc: freshDoc() });
     const addr = root.querySelector('.lpb-address-text');
     assert.match(addr.style.fontFamily, /se-font-readable/);
     const label = root.querySelector('.lpb-field-label');
-    assert.match(label.style.fontFamily, /se-font-readable/);
+    assert.match(label.style.fontFamily, /se-font-pixel/);
     const copy = root.querySelector('.lpb-copy');
-    assert.match(copy.style.fontFamily, /se-font-readable/);
+    assert.match(copy.style.fontFamily, /se-font-pixel/);
 });
 
 test('the renderer re-exports the model N6b guard (one source, P5-R)', () => {
