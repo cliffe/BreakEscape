@@ -25,7 +25,7 @@
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { writeGlobal } from '../../systems/global-writer.js';
-import { grantFact, readyToastText } from '../../systems/social-intel.js';
+import { grantFact, readyToastText, readyToastTitle } from '../../systems/social-intel.js';
 import { formatAddress } from './address-bar.js';
 import { createConceptCard } from './concept-card.js';
 import {
@@ -34,7 +34,9 @@ import {
 } from './osint-model.js';
 
 const ICON = '/break_escape/assets/icons/';
-const OSINT_ASSETS = '/break_escape/assets/osint/';
+// Block `src` and concept-card `image` are relative to assets/ (e.g. "social/osint/foo.png"); site `logo` to assets/logos/.
+const ASSETS = '/break_escape/assets/';
+const LOGOS = '/break_escape/assets/logos/';
 const CHARACTERS = '/break_escape/assets/characters/';
 const NOTHING = 'Nothing here you can use.';
 const HINT_ID = 'ob-hint-add';
@@ -149,8 +151,9 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         const title = h('h2', { class: 'ob-title', text: this.osint.title || 'Browser' });
         const buttons = h('div', { class: 'ob-head-buttons' });
         if (social.intelBoard) {
-            const caseBtn = h('button', { type: 'button', class: 'ob-case minigame-button', text: 'Case file',
-                'aria-label': 'Case file' });
+            const caseLabel = social.intelBoard.labels?.caseButton || 'Case file';
+            const caseBtn = h('button', { type: 'button', class: 'ob-case minigame-button', text: caseLabel,
+                'aria-label': caseLabel });
             this.addEventListener(caseBtn, 'click', (e) => {
                 e.preventDefault?.();
                 this.openCaseFile();
@@ -306,7 +309,7 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
     _siteHeader(site) {
         const head = h('div', { class: 'ob-site-head' });
         if (site.logo) {
-            head.appendChild(h('img', { class: 'ob-logo', src: OSINT_ASSETS + String(site.logo).replace(/^\/+/, ''),
+            head.appendChild(h('img', { class: 'ob-logo', src: LOGOS + String(site.logo).replace(/^\/+/, ''),
                 alt: site.logoAlt || '', 'aria-hidden': site.logoAlt ? false : 'true' }));
         }
         head.appendChild(h('p', { class: 'ob-site-title', text: site.name || site.title || site.id }));
@@ -389,6 +392,13 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
             width: 32, height: 32 });
         img.addEventListener('error', () => { img.replaceWith(this._defaultHeadshot()); });
         return img;
+    }
+
+    /** A post's poster (`author`, a social.people id): headshot and name, or nothing. */
+    _postAuthor(block) {
+        if (!block.author) return null;
+        return h('span', { class: 'ob-line ob-post-author' }, this._headshot({ person: block.author }),
+            h('span', { class: 'ob-profile-name', text: this._profileName({ person: block.author }) }));
     }
 
     _defaultHeadshot() {
@@ -524,7 +534,8 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         if (!card) return null;
         const c = createConceptCard(card, {
             open: this._openCards.has(card.id),
-            onToggle: (id, open) => { if (open) this._openCards.add(id); else this._openCards.delete(id); }
+            onToggle: (id, open) => { if (open) this._openCards.add(id); else this._openCards.delete(id); },
+            imageBase: ASSETS
         });
         c.button.setAttribute('data-focus', `card:${card.id}`);
         return c.el;
@@ -541,7 +552,7 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
             parent.appendChild(to ? h('p', { class: 'ob-linkline' }, this._link(block.text || block.to, to))
                 : h('p', { class: 'ob-linkline ob-dead', text: block.text || '' }));
         } else if (kind === 'image') {
-            parent.appendChild(h('img', { class: 'ob-image', src: OSINT_ASSETS + String(block.src || '').replace(/^\/+/, ''),
+            parent.appendChild(h('img', { class: 'ob-image', src: ASSETS + String(block.src || '').replace(/^\/+/, ''),
                 alt: block.alt || '', 'aria-hidden': block.alt ? false : 'true' }));
         } else if (kind === 'list') {
             const ul = h('ul', { class: 'ob-list' });
@@ -552,6 +563,9 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
             parent.appendChild(ul);
         } else if (block.id) {
             parent.appendChild(this._selectable(block, site));
+        } else if (kind === 'post' && block.author) {
+            parent.appendChild(h('div', { class: 'ob-item ob-post' }, this._postAuthor(block),
+                h('p', { class: 'ob-text', text: block.text || '' })));
         } else {
             parent.appendChild(h('p', { class: 'ob-text', text: block.text || '' }));
         }
@@ -578,7 +592,8 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
                 h('span', { class: 'ob-line ob-field-value ob-readable', text: block.value ?? '' })];
         }
         if (k === 'post') {
-            return [h('span', { class: 'ob-line ob-post-text ob-readable', text: block.text || '' }),
+            return [...(block.author ? [this._postAuthor(block)] : []),
+                h('span', { class: 'ob-line ob-post-text ob-readable', text: block.text || '' }),
                 block.date ? h('span', { class: 'ob-line ob-post-date', text: block.date }) : null];
         }
         return [h('span', { class: 'ob-line ob-block-text ob-readable', text: block.text || '' })];
@@ -631,7 +646,7 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
                 const newlyReady = res.readiness?.newlyReady || [];
                 if (newlyReady.length) {
                     window.gameAlert?.(readyToastText(newlyReady, this.params.social ? { social: this.params.social } : null),
-                        'success', 'Ready to approach', 6000);
+                        'success', readyToastTitle(this.params.social ? { social: this.params.social } : null), 6000);
                 }
             } else if (isHeld(this.globals, fact)) {
                 outcome = 'already';
