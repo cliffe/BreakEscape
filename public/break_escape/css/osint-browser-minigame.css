@@ -1,7 +1,7 @@
 /* OSINT browser (design 02). Dark chrome on the --ui-* tokens, a light "page" area for the site
-   content. Every string the player reads is DOM text. The chrome (address bar, sites strip) is
-   Source Sans 3 (--se-font-readable); the page area is the in-world site, in the pixel font
-   GNF (--se-font-pixel). Marks are always paired with words.
+   content. Every string the player reads is DOM text, in the pixel font GNF (--se-font-readable),
+   except domains, addresses and handles, which are Source Sans 3 (--se-font-address).
+   Marks are always paired with words.
    The stylesheet <link> is added by the wiring packet (P2-W). */
 
 .osint-browser-container {
@@ -26,23 +26,17 @@
     flex-direction: column;
     min-height: 0;
     height: 100%;
-    font-family: var(--se-font-readable, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
+    font-family: var(--se-font-readable, 'GNF', 'Source Sans 3', sans-serif);
     font-size: 16px;
     color: var(--ui-text, #eef1f8);
     outline: none;
 }
 
-.ob-readable,
-.ob-address-text,
-.ob-site-url,
-.ob-handle,
-.ob-tool-label,
-.ob-field-value,
-.ob-staff-address,
-.ob-post-text,
-.ob-block-text,
-.ob-bio {
-    font-family: var(--se-font-readable, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
+.ob-root .ob-address-text,
+.ob-root .ob-site-url,
+.ob-root .ob-handle,
+.ob-root .ob-staff-address {
+    font-family: var(--se-font-address, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
 }
 
 .ob-sr,
@@ -155,11 +149,6 @@
     background: #f4f1ea;
     color: #1f2430;
     outline: none;
-}
-
-.ob-main,
-.ob-main * {
-    font-family: var(--se-font-pixel, 'GNF', 'Source Sans 3', sans-serif);
 }
 
 .ob-page { display: flex; flex-direction: column; gap: 12px; max-width: 760px; }

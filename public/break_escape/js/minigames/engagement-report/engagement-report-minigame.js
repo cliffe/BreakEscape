@@ -23,7 +23,7 @@
 //
 // Closing is a normal exit (overlay rule): Close and Esc call complete(true), so a close never
 // emits minigame_failed. Task completion keys on the step/block globals, never on the completed
-// event. All text the player reads is set with textContent in Source Sans 3 (--se-font-readable).
+// event. All text the player reads is set with textContent in the pixel font (--se-font-readable).
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { writeGlobal } from '../../systems/global-writer.js';

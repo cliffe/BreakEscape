@@ -565,8 +565,8 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         const opts = domains.map((d) => ({
             value: d.id,
             lines: [
-                h('span', { class: 'lpb-chip-text lpb-readable', text: d.domain }),
-                d.browserDomain ? h('span', { class: 'lpb-chip-alt lpb-readable',
+                h('span', { class: 'lpb-chip-text lpb-readable lpb-addr', text: d.domain }),
+                d.browserDomain ? h('span', { class: 'lpb-chip-alt lpb-readable lpb-addr',
                     text: 'Some browsers show it as ' + d.browserDomain }) : null
             ].filter(Boolean)
         }));
@@ -574,7 +574,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         // The real domain is shown but locked: the lesson is that the attacker can never own it.
         if (brand && brand.realDomain) {
             const locked = h('div', { class: 'lpb-domain-locked' },
-                h('span', { class: 'lpb-readable lpb-locked-domain', text: brand.realDomain }),
+                h('span', { class: 'lpb-readable lpb-locked-domain lpb-addr', text: brand.realDomain }),
                 h('span', { class: 'lpb-locked-note', text: 'You don’t own this. Only the company does.' }));
             body.appendChild(locked);
         }

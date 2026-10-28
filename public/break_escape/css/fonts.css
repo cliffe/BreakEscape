@@ -57,8 +57,11 @@
 }
 
 :root {
-  --se-font-readable: 'Source Sans 3', 'Segoe UI', Arial, sans-serif;
-  /* In-world web pages. GNF over Pixelify Sans: Pixelify's C reads as O and 5 as S at page sizes.
-     GNF lacks Cyrillic ј and ѕ, which fall back to Source Sans 3. */
+  /* SE minigame text is pixel art: GNF, chosen over Pixelify Sans, whose C reads as O and 5 as S
+     at these sizes. GNF lacks Cyrillic ј and ѕ, which fall back to Source Sans 3. */
   --se-font-pixel: 'GNF', 'Source Sans 3', 'Segoe UI', Arial, sans-serif;
+  --se-font-readable: var(--se-font-pixel);
+  /* URLs, domains, email addresses and handles stay Source Sans 3, so look-alike letters
+     (Cyrillic е, rn for m) can be read the way a real browser or mail client shows them. */
+  --se-font-address: 'Source Sans 3', 'Segoe UI', Arial, sans-serif;
 }

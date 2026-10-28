@@ -20,8 +20,8 @@
 // Close and Esc are a normal exit (complete(true)), so a close never logs minigame_failed.
 // Scenarios drive tasks off the se_intel_* globals, never off this scene's event.
 //
-// Every authored string is set with textContent. Domains, addresses, handles, file names and
-// metadata values are Source Sans 3 (--se-font-readable) and never go through displayDashes.
+// Every authored string is set with textContent and never goes through displayDashes. Text is the
+// pixel font (--se-font-readable); domains, addresses and handles are Source Sans 3 (--se-font-address).
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { writeGlobal } from '../../systems/global-writer.js';

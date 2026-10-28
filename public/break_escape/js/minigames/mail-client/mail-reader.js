@@ -7,7 +7,8 @@
 //
 // Every string the player reads or compares (names, addresses, subjects,
 // bodies, file names, link text) goes in with textContent, never through
-// displayDashes, and the CSS sets them in var(--se-font-readable).
+// displayDashes. The CSS sets them in the pixel font var(--se-font-readable), and
+// addresses in var(--se-font-address).
 
 import { splitBody, linkDestination } from './mail-data.js';
 import { createInfluenceBar } from '../../ui/influence-bar.js';

@@ -40,8 +40,8 @@
 // the shared writer on the false-to-true flip, and again on open if the saved answers were complete but
 // the global never landed. A `confirm` item (Confirm button) is supported for the report's read-only step.
 //
-// All text the player reads is set with textContent in Source Sans 3
-// (--se-font-readable), never through innerHTML or displayDashes.
+// All text the player reads is set with textContent in the pixel font (--se-font-readable;
+// addresses in --se-font-address), never through innerHTML or displayDashes.
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { writeGlobal } from '../../systems/global-writer.js';
@@ -709,7 +709,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
                 h('img', { class: 'ib-pin', src: `${ICON}board-pushpin.png`, alt: '', 'aria-hidden': 'true',
                     width: 11, height: 14 }),
                 h('span', { class: 'ib-name', text: c.name }),
-                c.address ? h('span', { class: 'ib-meta', text: c.address }) : null));
+                c.address ? h('span', { class: 'ib-meta ib-address', text: c.address }) : null));
         }
         sec.appendChild(list);
         return sec;

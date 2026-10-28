@@ -195,6 +195,7 @@ ul.ib-contacts { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
 }
 
 .ib-meta { margin: 2px 0 8px; color: #4a3b2c; overflow-wrap: anywhere; }
+.ib-root .ib-address { font-family: var(--se-font-address); }
 
 .ib-icon {
     flex: 0 0 auto;

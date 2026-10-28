@@ -352,13 +352,13 @@ test('arrow keys move along the sites strip; every control is reachable by Tab (
     for (const el of s.container.querySelectorAll('button, a[href]')) assert.ok(!(el.tabIndex > 0));
 });
 
-test('the stylesheet puts domains in the readable face and has a narrow layout', () => {
+test('the stylesheet puts domains in the address face and has a narrow layout', () => {
     const css = readFileSync(join(js, '../css/osint-browser-minigame.css'), 'utf8');
     // Match within a single rule block (up to the next `{`, then the first declaration):
     // a loose [\s\S]*? would pass even if the font-family moved to a later, unrelated rule.
-    assert.match(css, /\.ob-address-text[^{]*\{[^}]*font-family:\s*var\(--se-font-readable/);
-    assert.match(css, /\.ob-post-text[^{]*\{[^}]*font-family:\s*var\(--se-font-readable/);
-    assert.match(css, /\.ob-bio[^{]*\{[^}]*font-family:\s*var\(--se-font-readable/);
+    assert.match(css, /\.ob-address-text[^{]*\{[^}]*font-family:\s*var\(--se-font-address/);
+    assert.match(css, /\.ob-staff-address[^{]*\{[^}]*font-family:\s*var\(--se-font-address/);
+    assert.match(css, /\.ob-handle[^{]*\{[^}]*font-family:\s*var\(--se-font-address/);
     assert.match(css, /@media \(max-width: 700px\)/);
     assert.match(css, /prefers-reduced-motion/);
     assert.doesNotMatch(css, /#0f0\b|#00ff00/i, 'nothing hard-coded green');

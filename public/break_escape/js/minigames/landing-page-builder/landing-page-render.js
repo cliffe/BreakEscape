@@ -6,7 +6,7 @@
 //     image-rendering: pixelated (set in the builder CSS, P5-D).
 //   - Text layer: the address bar, the page's visible wording and the form-field label
 //     boxes, as inert DOM text set with textContent, at native resolution. The address bar
-//     is in the readable font; the page's own text is in the pixel font (--se-font-pixel).
+//     is in the address font (--se-font-address); the page's own text is in the pixel font.
 //
 // Safety (07 §1, enforced by social-landing-page-render.test.mjs, not by convention):
 // the preview holds NO <form>, <input>, <textarea>, <select>, <a>, <button>, <iframe>
@@ -33,8 +33,8 @@ import { resolveDomainOption, isDomainBlocked } from './landing-page-model.js';
 
 export { resolveDomainOption, isDomainBlocked };
 
-const READABLE_FONT = 'var(--se-font-readable)';
-const PAGE_FONT = "var(--se-font-pixel, 'GNF', 'Source Sans 3', sans-serif)";
+const READABLE_FONT = 'var(--se-font-address)';
+const PAGE_FONT = 'var(--se-font-readable)';
 const PADLOCK_ICON = '/break_escape/assets/icons/padlock_32.png';
 // Brand logos (LOGO1/LOGO4-6, OBJ/UI rows in ASSETS.md) are not generated yet; the <img>
 // points at the settled path and the builder CSS (P5-D) styles the slot so a pending asset
@@ -70,13 +70,13 @@ function makeFactory(doc) {
     };
 }
 
-// A text node that holds an authored domain/address/label: readable font, set raw.
+// A text node that holds an authored domain or address: the address font, set raw.
 function readable(node) {
     node.style.fontFamily = READABLE_FONT;
     return node;
 }
 
-// Text on the fake page itself: the in-world site's pixel font. The address bar stays readable.
+// Text on the fake page itself: the pixel font. The address bar keeps the address font.
 function pageText(node) {
     node.style.fontFamily = PAGE_FONT;
     return node;

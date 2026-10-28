@@ -52,7 +52,7 @@
 }
 .mail-account { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 0 1 auto; margin-right: 8px; }
 /* The label shrinks and ellipses so the whole toolbar, Close included, stays on one row. */
-.mail-account-label { font-family: var(--se-font-readable); font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-account-label { font-family: var(--se-font-address); font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mail-folders { display: flex; gap: 4px; flex: none; }
 /* Toolbar buttons size to their label and never shrink, so Contacts, Compose and
    Close keep their whole label on one row; only the account label (min-width:0,
@@ -190,7 +190,7 @@
     background-color: var(--ui-slot-bg, rgba(66, 80, 118, 0.88));
 }
 .mail-chip-link { cursor: pointer; min-height: 44px; vertical-align: middle; text-decoration: underline; }
-.mail-link-status { min-height: 1.4em; margin: 4px 0; color: var(--ui-accent, #ffcc44); font-family: var(--se-font-readable); font-size: 15px; overflow-wrap: anywhere; }
+.mail-link-status { min-height: 1.4em; margin: 4px 0; color: var(--ui-accent, #ffcc44); font-family: var(--se-font-address); font-size: 15px; overflow-wrap: anywhere; }
 
 .mail-judged { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; font-family: var(--se-font-readable); font-size: 16px; }
 .mail-judged.landed { color: var(--ui-success, #6ee08f); }
@@ -300,7 +300,7 @@
     color: var(--ui-text-dim, #a8b2c8);
 }
 .mail-compose-value,
-.mail-compose-from-own { margin: 0; font-family: var(--se-font-readable); font-size: 16px; overflow-wrap: anywhere; }
+.mail-compose-from-own { margin: 0; font-family: var(--se-font-address); font-size: 16px; overflow-wrap: anywhere; }
 .mail-compose-fixed { flex: 1 1 auto; min-width: 180px; }
 .mail-compose-hint { color: var(--ui-text-dim, #a8b2c8); font-size: 14px; }
 .mail-burned { color: var(--ui-text-dim, #a8b2c8); text-decoration: line-through; }
@@ -581,3 +581,13 @@
 .mail-client--phone .mail-picker-list { width: 100%; min-width: 0; max-height: 60%; }
 .mail-client--phone .mail-account-select { width: 100%; }
 .mail-client--phone .mail-create-panel { inset: 8px; }
+
+/* Addresses keep Source Sans 3 so look-alike letters read as a real mail client shows them. */
+.mail-reader .mail-from-address,
+.mail-reader .mail-to,
+.mail-client select.mail-account-select,
+.mail-composer select.mail-compose-sendas-select,
+.mail-contact .mail-contact-addresses,
+.mail-create-option .mail-create-address {
+    font-family: var(--se-font-address);
+}
