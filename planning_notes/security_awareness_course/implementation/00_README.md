@@ -60,7 +60,7 @@ Copied from `WRITER_BRIEF.md`. Do not reopen them.
 ## 4. Work order
 
 1. **E8 pilot.** Run the whole pipeline once (`01_PIPELINE.md`) with ENG-01. Write down every place where the pipeline was wrong, and fix `01_PIPELINE.md` before E9 starts.
-2. **E9 with E10.** These are two episodes in parallel, each with its own engine packets: E9 needs ENG-02 and ENG-09a (its `choice` password cards), E10 needs ENG-03a and the optional ENG-03b.
+2. **E9 with E10.** These are two episodes in parallel, each with its own engine packets: E9 needs ENG-02 and ENG-09a (its `choice` password cards), E10 needs ENG-03a (defend browser screens) and ENG-03b (the attack-half fake-check builder), both required.
 3. **The consequence-flip stage and its defend-half surfaces.** ENG-04 is built once, then E11, E14, E15, E16 and E17 are written against it. E17 is defend-only and needs no sandbox. E14 uses the built `osint` and `write` stages and does **not** use ENG-04 (its spec and `02` agree). It is scheduled in this wave because it shares the sort drill (ENG-11) and the privacy panel (ENG-13); it uses the built `osint`/`write` triage and authors no `choice` card, so it does **not** depend on ENG-09a. Build the shared defend-half surfaces in the same wave: ENG-11 (the reusable sort drill for E14, E15 and E17), ENG-12 (E16's "raise a concern" fact-chip form) and ENG-13 (E14's privacy panel). Each is a new child scene gated on a new optional key, so they do not block the episodes that do not use them.
 4. **E12.** Its wiring prerequisites are ENG-05a, ENG-05b, ENG-05c and ENG-08's schema/validator work, plus host and costume art after the PixelLab reset. It does **not** need ENG-05e (the flip hand-back reuses `watchCall`) or ENG-09c (the reception items are the built `call` kind), and ENG-05d (the parcel sprite) is art only, not a wiring prerequisite. Build it after the consequence-flip wave, so that the riskiest engine work does not hold the others up.
 5. **E13.** It needs ENG-06 and ENG-07.
@@ -85,8 +85,8 @@ ENG ids are packets in `02_ENGINE_WORK.md`. P ids are steps in `01_PIPELINE.md`.
 | ENG-02b organisation-scale `guess` modes | ENG-02 | E18 | engine |
 | E18 | ENG-01, ENG-02, ENG-02b, ENG-08 (three scenario-local tells) | - | content |
 | ENG-03a triage page states | nothing | E10, check forms | engine |
-| ENG-03b check-page builder | ENG-03a (shared render strings) | E10 attack half | engine |
-| E10 | ENG-03a, ENG-03b | - | content |
+| ENG-03b fake-check builder mode (`pageType: "fakeCheck"`) | the built landing-page builder | E10 attack half (required) | engine |
+| E10 | ENG-03a, ENG-03b, ENG-09b | - | content |
 | New brand rooms (P5b) | nothing | E11 (Carrholme) | engine (room scripts) |
 | ENG-04 consequence sandbox stage | nothing | E11, E15, E16 | engine |
 | ENG-11 reusable sort drill | ENG-08 | E14 ("Post or Not?"), E15 (Swap Shop), E17 ("can I?" sort) | engine |
@@ -275,7 +275,7 @@ Scenario folder names and episode ids are fixed in each episode brief. Follow th
 | E12, E13, E14, E15, E16, E17 defend-only shells | **Yes** | validate; generator builds them | E17's "can I?" sort needs ENG-11 |
 | E8 full (the pilot) | After ENG-01, ENG-09b | the send gate passes with the real engine; the full shell validates without the two new keys | ENG-01, ENG-09b |
 | E9 | No | generator runs | ENG-02, ENG-09a, ENG-09b |
-| E10 | No | generator runs | ENG-03a, ENG-09b |
+| E10 | No | generator runs | ENG-03a, ENG-03b, ENG-09b |
 | E18 | No (not yet proved) | | ENG-01, ENG-02, ENG-02b, ENG-08 |
 | E11 (both shells) | No | generator keys resolve | ENG-04 and the Carrholme room (P5b) |
 | E12 full | No | calls validate | ENG-05a, b, c, ENG-08, the lobby map (P5c) and art |

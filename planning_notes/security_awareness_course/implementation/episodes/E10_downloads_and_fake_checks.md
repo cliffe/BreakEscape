@@ -1,6 +1,6 @@
 # E10 fake downloads and "verify you are human" pages (implementation spec)
 
-Status: draft for a Sonnet implementer. E10 is a new awareness episode at Quayholt Insurance that **extends the built E5**: same company, same host room, same look-alike-page builder for the attack half. The new work is a defend half of browser-screen triage (fake checks, fake updates, fake alarms, extension permissions, dangerous downloads, browser warnings), which needs **ENG-03a** (download and warning states, and a fake check page). The content is given in full here; ENG-03a owns the new browser surfaces.
+Status: draft for a Sonnet implementer. E10 is a new awareness episode at Quayholt Insurance that **extends the built E5**: same company, same host room, and the same landing-page builder for the attack half, now put in a new fake-check mode (**ENG-03b**) so the learner builds the "verify you are human" check the defend half then tests. The new work is both that attack-half build and a defend half of browser-screen triage (fake checks, fake updates, fake alarms, extension permissions, dangerous downloads, browser warnings), which needs **ENG-03a** (download and warning states, and a fake check page) and **ENG-03b** (the fake-check builder mode). The content is given in full here; ENG-03a owns the new browser surfaces and ENG-03b the builder mode.
 
 Writer: opus48 agent. Never run a generator into the repo. Never `git stash`. No attribution lines in commits.
 
@@ -24,8 +24,8 @@ Learning outcomes (from `modules/core_08_safe_web_and_downloads/`): LO1 (start f
 
 ## 3. Depends on
 
-- **ENG-03a** (triage `page` browser-screen states). The defend half's new browser screens (fake check with its clipboard reveal, download bar, extension-permission prompt, full-screen alarm, browser warning, relaunch bar) are new `page.state` values on the E5 `page` card, plus a `triageSet.verdictLabels` relabel. E10 cannot build its defend half without ENG-03a. §11 states the states and config needed. (ENG-03b, the fake-download build page, is optional and only if the attack half is changed, §9.)
-- **The E5 look-alike-page builder** (built, `designs/07`) for the attack half. Reuse it unchanged; E10 adds no attack-side engine work.
+- **ENG-03a** (triage `page` browser-screen states). The defend half's new browser screens (fake check with its clipboard reveal, download bar, extension-permission prompt, full-screen alarm, browser warning, relaunch bar) are new `page.state` values on the E5 `page` card, plus a `triageSet.verdictLabels` relabel. E10 cannot build its defend half without ENG-03a. §11 states the states and config needed.
+- **ENG-03b** (the fake-check builder) for the attack half. This is now **required** for E10, not optional: the attack half builds a fake "verify you are human" check in the landing-page builder's new `pageType: "fakeCheck"` mode (§9, §20 Q4 resolved). It reuses the built landing-page builder's overlay, send and flip wiring and its safety rules (`designs/07`), adding a persuasion-scored fake-check mode in place of the look-alike-domain scoring, which does not apply to a page on a genuine (compromised) site. E10 cannot build its attack half without ENG-03b.
 - **ENG-09b** (debrief panel list). E10's debrief shows several short concept cards (§12), and the built `strings.conceptPanel` is a single panel; ENG-09b adds the array form.
 - **ENG-08** for the new channel tells (§11). Every tell that only E10 uses today, and that no `10` check item scores, is **scenario-local**, so all five of E10's web tells (`fake_check_paste`, `fake_update_prompt`, `dangerous_download`, `fake_alarm_callback`, `browser_permission_grab`) are scenario-local to E10, not shared-library ids. (`10`'s `general_v2` web item scores `lookalike_domain`/`padlock_myth` on the built `page` shape, not these five, so none is a form-scored tell that would have to be shared; §14.) E10 lists all five in `channelTells` with a `flagChips` label and a `factorStrings.<id>.redFlag` sentence; the validator accepts a scenario-local `channelTells` id that `flagChips` labels and that is not a factor (`triage.rb` `flag_universe`), so no ENG-08 library change is needed for the tells. Only promote one to the shared library when a second set uses it or a check item scores it (then it also needs a `SKILL_NAMES` entry, ENG-08). The three-way browser verdict is **not** an ENG-08 verdict change: ENG-03a makes it a `verdictLabels` relabel of the existing ids (see §11).
 
@@ -59,9 +59,9 @@ All people and companies fictional; every domain `.example`; no homographs.
 |---|---|---|
 | brief | 1.0 | Niamh's welcome, scope note. |
 | osint | 2.0 | Light: find the portal and the vendor staff reach for software. (As E5's OSINT.) |
-| build (look-alike page, E5 builder) | 2.5 | Build one look-alike page (a fake software-download or sign-in page); reuse E5's builder. |
-| write | 2.0 | Send one email carrying the link (as E5). |
-| flip | 1.5 | The victim follows the link and meets the page; the clipboard reveal concept is previewed. |
+| build (fake-check page, ENG-03b builder) | 2.5 | Build one fake "verify you are human" check on a genuine (compromised) supplier portal; the fake-check mode of the landing-page builder (ENG-03b). |
+| write | 2.0 | Send one lure email (no page link; the check sits on the genuine portal), the E5 mail send. |
+| flip | 1.5 | The colleague opens the portal and meets the page; the clipboard-reveal concept is previewed. |
 | defend | 4.0 | About 6 to 7 browser screens (ENG-03a), immediate feedback. |
 | debrief | 2.0 | Reasoning cards, the module line, the habit, the "On Monday" card, the report route, the no-blame line. |
 
@@ -69,7 +69,7 @@ Defend-only variant: brief, defend, debrief, about 8 minutes.
 
 ## 7. Stages (runner stage ids)
 
-Full episode: `["brief", "osint", "build", "write", "flip", "defend", "debrief"]`. This is **identical to the built E5 stage list** (`awareness_e5_signin_pages`), which is what "extends E5" means: the attack half (osint, build, write, flip) is E5's, reused. The only new behaviour is in `defend`, where the triageSet carries ENG-03a's new browser-screen card states.
+Full episode: `["brief", "osint", "build", "write", "flip", "defend", "debrief"]`. The **stage ids are identical to the built E5 stage list** (`awareness_e5_signin_pages`), so the runner, the validator stage order and the defend-only drop of attack stages are all unchanged; no new stage id and no new stage order. The new behaviour sits inside existing stages: `build` and `flip` run ENG-03b's fake-check mode of the landing-page builder (a `pageType: "fakeCheck"` page, not E5's sign-in clone), and `defend` carries ENG-03a's new browser-screen card states.
 
 Defend-only: `["brief", "defend", "debrief"]`. **The defend-only variant needs ENG-03a** (the browser screens are the whole defend half), so it cannot ship before the packet, unlike E8's defend-only.
 
@@ -78,14 +78,14 @@ All ids from the frozen `STAGE_IDS`. E10 adds no new stage id.
 ## 8. Brief and scope note (host's draft lines)
 
 - **Episode id:** `e10_downloads_and_fake_checks`. Defend-only shell id: `e10_downloads_and_fake_checks_defend`.
-- **`strings.brief`:** "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: build a fake page from ready-made parts and send one email carrying its link, the way E5 did. Then you swap seats and work through a morning of web pages, the kind that try to get you to download, paste or call. Only the pages are scored. Nothing is built for real and nothing is collected."
+- **`strings.brief`:** "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: build a fake "verify you are human" check from ready-made parts on a supplier site, and send one email to bring a colleague to it. Then you swap seats and work through a morning of web pages, the kind that try to get you to download, paste or call. Only the pages are scored. Nothing is built for real and nothing is collected."
 - **`scopeNote`:** "Authorised exercise at Quayholt Insurance, a fictional company. In scope: one practice page from ready-made parts, and the web pages you meet in a morning's work. No real site is touched and nothing runs on your computer."
 - **Niamh's welcome (host ink):** "Welcome back to the Quayholt exercise. Last time it was sign-in pages; this time it's the whole web: fake downloads, 'verify you are human' boxes, pop-ups that want you to call. Leila from the service desk will show you the three habits, then the kiosk takes you through a morning of them."
 - **Leila's three-habits lines (carried in the concept panel and Niamh's framing, attributed to Leila; not a second NPC ink):** "Rule one: software comes from Quayholt Apps, not from adverts or search results. If it isn't there, ask us, we're quick. Rule two: read the address, from the right-hand end. A padlock means nobody can listen in; it doesn't make a site honest. Rule three: no real web page ever needs you to paste anything into your computer, to prove you're human or to fix an error. Ever. If you slipped, tell us straight away, don't restart, don't clear anything."
 
 ## 8b. Shell and generator metadata (every value final; no guessing)
 
-Every metadata value the shell wiring (01 P2/P3) and the generator (01 P4, `gen_e8_e17_shells.py`) need, as final strings. Copy the shapes from the built **E5** erb, `mission.json` and `gen_e3_e5_shells.py` (same company, room and host). The `opus48` content step fills §8b, §11's final JSON page items and §10/§12 before any Sonnet begins P2; the attack half is E5's, so it needs no new content.
+Every metadata value the shell wiring (01 P2/P3) and the generator (01 P4, `gen_e8_e17_shells.py`) need, as final strings. Copy the shapes from the built **E5** erb, `mission.json` and `gen_e3_e5_shells.py` (same company, room and host). The `opus48` content step fills §8b, §11's final JSON page items and §9/§10/§12 before any Sonnet begins P2. The attack half is a new fake-check build (§9), so its fragment is new content authored against ENG-03b; it reuses E5's erb shapes (OSINT, build, write, flip) but its own facts, page and target.
 
 ### Host and learner sprites
 
@@ -99,9 +99,9 @@ Every metadata value the shell wiring (01 P2/P3) and the generator (01 P4, `gen_
 |---|---|---|
 | `aimId` | `build_page_aim` | `browser_morning_aim` |
 | `title` | "Build and send the page" | "Work through the morning's web pages" |
-| `description` | "Build one look-alike page from ready-made parts and send one email carrying its link." | "Work through the browser screens at the training kiosk: decide whether to carry on, close and report, or go the trusted way." |
+| `description` | "Build one fake 'verify you are human' check from ready-made parts and send the lure email that leads a colleague to it." | "Work through the browser screens at the training kiosk: decide whether to carry on, close and report, or go the trusted way." |
 | `order` | 0 | 1 |
-| task `taskId` / `title` / `type` | `build_and_send_page` / "Send your email carrying the link" / `manual` | `work_browser_morning` / "Work through the web pages" / `custom` |
+| task `taskId` / `title` / `type` | `build_and_send_page` / "Send your lure email" / `manual` | `work_browser_morning` / "Work through the web pages" / `custom` |
 
 Aim 2 `concludeRequires.globals`: `["episode_e10_downloads_and_fake_checks_defend_done"]`. Aim 2 `conclusionScreen`: `{ "type": "success", "title": "Downloads and fake checks episode done", "body": "You built one page and sent its link, then worked through a morning of web pages, closing and reporting the ones that tried to drive your computer, so this episode is finished." }`.
 
@@ -114,7 +114,7 @@ Aim 2 `concludeRequires.globals`: `["episode_e10_downloads_and_fake_checks_defen
 ### Full-episode `mission.json` (copy the E5 mission.json shape)
 
 - `display_name`: "Awareness E10: Downloads and fake checks (full episode)"
-- `description`: "An awareness episode of about 15 minutes for all staff. On an authorised exercise at Quayholt Insurance, a fictional company, you first play the attacker: build a look-alike page from ready-made parts and send one email carrying its link. Then you swap seats and work through a morning of web pages, the kind that try to get you to download, paste, install or call. Only the pages are scored, and reporting when you're unsure is always fine and never marked down."
+- `description`: "An awareness episode of about 15 minutes for all staff. On an authorised exercise at Quayholt Insurance, a fictional company, you first play the attacker: build a fake 'verify you are human' check on a familiar supplier's own site and send a short lure email. Then you swap seats and work through a morning of web pages, the kind that try to get you to download, paste, install or call. Only the pages are scored, and reporting when you're unsure is always fine and never marked down."
 - `difficulty_level`: 1; `scoring`: "completion"; `secgen_scenario`: null; `collection`: "training"; `ui_theme`: "general"; `estimated_duration_minutes`: 15.
 - `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Phishing", "Safe web", "Malware", "Security awareness", "Usable security"] } ]`.
 
@@ -169,15 +169,41 @@ This `brief` is the same text as §13's defend-only brief (keep them identical).
 - **After the attack half** (on the kiosk hand-off into the defend half): "Good, the page is built and the link's away. Now take the other seat: here's a morning of the web the way it really turns up, and you sort it."
 - **On completion** (defend done): "That's both sides done. Leila's three rules are the whole of it: software from Quayholt Apps, read the address, and never let a page drive your computer. If you ever slip, tell us straight away."
 
-## 9. Attack half (reused from E5)
+## 9. Attack half (the fake-check builder, ENG-03b)
 
-Not scored. Reuse E5's attack half unchanged: OSINT finds the portal and the vendor; the look-alike-page builder (`designs/07`) builds one page; the mail client sends one email carrying the link. The only content difference is flavour: instead of a sign-in page, the learner builds a **fake software-download page** (or keeps the sign-in page; either works, because the builder judges the page by `linkCredible` and the look-alike domain the same way). To keep E10 truly "extends E5 with no attack-side engine work", **use the E5 sign-in-page build as-is** and let the defend half carry all the new material. If the orchestrator wants the attack half to build a fake-download page specifically, that is **ENG-03b** (a new `landingPages[].pageType: "download"`), noted as an optional choice.
+Not scored toward the episode (only the defend pages are scored, §3); the builder gives feedback as E5's does. The attack half now **matches** the defend half: on the authorised exercise the learner builds, in an authored and scored builder, the same kind of page the defend half's row 1 (`e10_fake_check`) then tests, before meeting one from the other seat. This resolves §20 Q4. The attack half no longer reuses E5's sign-in-page build; it builds a fake "verify you are human" check in the landing-page builder's new fake-check mode (**ENG-03b**, now required for E10, not optional).
 
-Reuse the E5 facts (`quayholt_sso_portal`, `quayholt_it_desk`, `quayholt_sso_migration`, `quayholt_staff_claims`), templates, `landingPages` (`sso_login`) and the `sso_staff` phishTarget from `e5/attack.json`, with the target renamed if the orchestrator wants a fresh victim. The one consequential choice the flip quotes (aw2) is the same as E5: the look-alike domain, the one thing the attacker can never make perfect.
+The stage ids are identical to E5's (`osint`, `build`, `write`, `flip`, §7); only the `build` content and the `flip` page change. No new stage id and no new stage order.
+
+**OSINT (light, the E5 awareness shape).** The learner finds, on Quayholt's own pages and a supplier's, that Quayholt places its weekly catering order through Fernside Catering's order portal, which staff keep bookmarked, and that Fernside is a small supplier running an out-of-date site. New facts, authored in `attack.json`:
+
+| factId | text (on the site) | subject | reduceNote |
+|---|---|---|---|
+| `quayholt_fernside_portal` | "Quayholt orders its catering through Fernside Catering's order portal at orders.fernside.example; the team keeps it bookmarked." | `fernside` | Naming the supplier portal staff already trust and bookmark tells an attacker which familiar site to aim at. |
+| `fernside_small_site` | "Fernside is a small family supplier; its order portal runs on an old website it has not kept up to date." | `fernside` | A small supplier's neglected site is the sort an attacker can misuse to borrow the trust staff place in it. |
+
+The OSINT teaches **borrowed trust**, not intrusion: no step, tool or technique for breaking into a site appears, here or in the builder. The facts state only that the trust is borrowable, never how a site is broken into.
+
+**Build (the fake-check builder, ENG-03b).** The `build` stage launches the built landing-page builder (`childLaunch` `build` branch, `episode-model.js:187`, unchanged: it forwards `attack.landingPageId` and `attack.target`) on a `social.landingPages` page whose new `pageType: "fakeCheck"` (ENG-03b) puts the builder in fake-check mode. The learner assembles, from ready-made parts, a "verify you are human" check that sits on Fernside's genuine (compromised) order portal. The builder scores **persuasion, not a look-alike domain** (there is none: the address is Fernside's own). Four authored choice rows at the awareness level (a few choices, the rest preset), each scored by ENG-03b's fake-check factors:
+
+- **Borrowed trust (the host).** Where the check sits: on Fernside's own portal (`orders.fernside.example`), broken into; on a look-alike the learner sets up (`orders-fernside.example`); or on an unrelated page. Sitting on the genuine site is the most convincing, because the visitor already trusts and bookmarks it. This is the inversion of E5's domain lesson: the strongest page borrows a real site's trust and needs no look-alike at all.
+- **Pretext.** Why the visitor should do the steps: "confirm you are human to continue to the order portal" (fits what they came to do); a generic "security update required"; or an off-topic "you have won a prize".
+- **Urgency.** A quiet "one quick step to continue" reads as a routine check; heavy pressure ("do this now or lose access") makes a careful visitor pause, so it scores lower.
+- **Step wording.** How the paste-and-run steps are worded: as a smooth, plausible accessibility check; or clumsily, so the demand to act on the computer stands out.
+
+The steps are shown as plain text with in-game buttons, never real shortcuts; the page's payload is only ever the one-line description `check.clipboardReveal` ("A hidden command that would run a program on your computer"), the same plain-words line the defend row 1 reveals. **No working command is shown, stored or written, and nothing touches the real clipboard** (ENG-03b carries the landing-page builder's safety rules, `designs/07` §1). Points, the convincing threshold and every string are authored on the page (ENG-03b); the builder's feedback meter and per-factor lines work as E5's do.
+
+**Write (one lure email, the E5 mail send).** The learner sends one email nudging the colleague to place this week's Fernside order. It carries **no page link** (the fake check sits on the genuine portal the colleague opens from their own bookmark, not on a link the attacker mails): the built `mail-client` write stage with an empty `payloadKit`. The flip's page comes from the build record, not the email, so no link is needed (`flipPage` reads `se_landing_pages`, §10). The phish target is judged on `senderTrust` and `pretextRelevant` only (no `linkCredible`, no `expectedLink`: there is no look-alike link to judge).
+
+**The one consequential choice the flip quotes (aw2).** Not the look-alike domain (E5's), which this page does not have, but the paste-and-run step itself: however genuine the site and however smooth the pretext, the page still has to tell the visitor to paste and run something, and that is the one thing the attacker cannot remove. It is exactly the tell (`fake_check_paste`) the defend half then scores.
 
 ## 10. Flip
 
-Reuse E5's `flipPage` flip: the victim follows the link and meets the built page, tells highlighted, with the scripted defender line. Add one E10 beat as a concept preview (not a new engine feature): the flip notes that a page like this can quietly copy a command to your clipboard, which the defend half's fake-check screen then shows in full. Author the flip strings in E5's voice (reuse E5's keys, adjust the victim/page wording). No new flip engine.
+Reuse E5's `flipPage` flip (`episode-model.js:266`), extended by ENG-03b with a `pageType: "fakeCheck"` branch: the colleague opens the Fernside portal and meets the page the learner built, drawn with the builder's own renderer (`renderLandingPage`, `flip-view.js:159`), the paste-step tell highlighted, with the scripted defender line. The host the flip shows is the authored genuine site (`check.host`), not a chosen look-alike: ENG-03b adapts `flipPage`'s host logic (`episode-model.js:278-288`, which today derives the host from the chosen domain option) for a fake-check page, where there is no domain option.
+
+Add the clipboard beat as a concept preview (not a new engine feature): the flip notes that a page like this can quietly copy a command to the clipboard, described in the one-line `clipboardReveal` wording, which the defend half's fake-check screen (row 1) then shows in full. Nothing is ever written to the real clipboard and no command is shown.
+
+Author the flip strings in E5's voice, reusing E5's keys with the page and victim wording adjusted (for example `flipPageIntro`: "This is the page you built, as your colleague sees it when they open the Fernside portal."). No new flip engine beyond ENG-03b's `pageType: "fakeCheck"` handling in `flipPage` and `renderLandingPage`.
 
 ## 11. Defend set
 
@@ -435,20 +461,20 @@ E10's topic (core_08/core_07) feeds the new **`general_v2`** check-form pair at 
 
 ## 15. Files to create or change
 
-- `planning_notes/phishing_and_social_engineering/awareness/e10/attack.json` (new): the attack fragment, reusing E5's facts, templates, `landingPages` and phishTarget (with the vendor/portal flavour). If the attack half is left identical to E5, this can be a thin copy that points at E5's shapes.
+- `planning_notes/phishing_and_social_engineering/awareness/e10/attack.json` (new): the fake-check attack fragment. It reuses E5's erb shapes (the `osint`, `landingPages`, `mailClient` and `phishTargets` keys) but authors E10's own content: the two Fernside OSINT facts (§9), one `landingPages` page with `pageType: "fakeCheck"` and its `check` config (host options for borrowed trust, pretext, urgency and step-wording menus, `clipboardReveal`, fake-check `points` and `strings`), an empty `payloadKit` (no page link), the lure templates, and one phish target judged on `senderTrust` and `pretextRelevant` (no `linkCredible`, no `expectedLink`). It is a full fragment, not a thin copy of E5. All keys the fake-check mode adds are owned by ENG-03b; author nothing the packet does not define.
 - `planning_notes/phishing_and_social_engineering/awareness/e10/defend.json` (new): the triageSet `e10_browser_morning` (the browser screens, with ENG-03a states), the `awarenessEpisode` block (`strings`, `_defendOnly`, `debrief`), and a `_brandAdditions` note for Pagewright, Fernside Catering, Ashby Supplies, and the Lena Fischer / Leo Brennan pool names if used.
-- `scenarios/awareness_e10_downloads_and_fake_checks/scenario.json.erb`, `mission.json`, `ink/niamh_doherty.ink` (new): the full-episode shell wired like E5. **Niamh is the only room NPC**: Leila Nassar is E3's phone NPC and is not placed in the training room; a second room NPC would change the room layout and the mission NPC block. Leila's three web-habit rules are delivered through the concept panel and Niamh's framing lines, not a second NPC ink, so there is no `ink/leila_nassar.ink`. Globals to declare: `episode_e10_downloads_and_fake_checks_state: {}`, `se_awareness_records: []`, `episode_e10_downloads_and_fake_checks_defend_{percent,reportRate,done,pass}`, `se_osint_state: {}`, the reused E5 `se_intel_*` facts, `se_landing_pages: {}`, `landing_*_built`, `landing_*_domain`, `phish_*_landed`, `phish_*_attempts`, plus any ENG-03a state globals the browser screens need. The host ink completes the attack task on the phish-attempts global and the conclusion task on `episode_e10_downloads_and_fake_checks_defend_done === true`.
+- `scenarios/awareness_e10_downloads_and_fake_checks/scenario.json.erb`, `mission.json`, `ink/niamh_doherty.ink` (new): the full-episode shell wired like E5. **Niamh is the only room NPC**: Leila Nassar is E3's phone NPC and is not placed in the training room; a second room NPC would change the room layout and the mission NPC block. Leila's three web-habit rules are delivered through the concept panel and Niamh's framing lines, not a second NPC ink, so there is no `ink/leila_nassar.ink`. Globals to declare: `episode_e10_downloads_and_fake_checks_state: {}`, `se_awareness_records: []`, `episode_e10_downloads_and_fake_checks_defend_{percent,reportRate,done,pass}`, `se_osint_state: {}`, E10's attack `se_intel_*` facts (the two Fernside facts, §9), `se_landing_pages: {}`, `landing_*_built`, `landing_*_domain` (for the fake-check page, the chosen host-option id), `phish_*_landed`, `phish_*_attempts`, plus any ENG-03a state globals the browser screens need. The host ink completes the attack task on the phish-attempts global and the conclusion task on `episode_e10_downloads_and_fake_checks_defend_done === true`.
 - **`playerSentAuth`** in the full erb: copy E5's `analyst` account block (the flip's auth read of the sent email), as E8 §9 does. Without it `player_sent_auth_checks` warns. (The E5 attack half E10 reuses is a mail-send-with-page, so the sent email needs the auth block.)
 - `scenarios/awareness_e10_downloads_and_fake_checks_defend/` (new): the defend-only shell.
 - The two seeded Hacktivity courses: add E10 (full) and E10 (defend-only) following
   **`01_PIPELINE.md` P12**, which holds the one seeding procedure at feature level.
   Do not use `awareness_deploy.py` for course seeding: it holds only the shared rule of thumb, not
   course logic. Describe at feature level only.
-- ENG-03a engine work (page states and `verdictLabels`): owned by the ENG-03a packet; ENG-03b (download build page) only if the attack half is changed (§9).
+- ENG-03a engine work (defend page states and `verdictLabels`): owned by the ENG-03a packet. ENG-03b engine work (the `pageType: "fakeCheck"` builder mode: the persuasion scorer, the fake-check render and the `flipPage` host adaptation): owned by the ENG-03b packet, now required for E10 (§9, §10).
 
 ## 16. Bridge script outline
 
-`tools/playtest/se/bridge-e10-full.jsonl` (and defend-only), modelled on `bridge-e5-full.jsonl` for the attack half and on whatever test hooks ENG-03a exposes for the browser screens. Steps: brief; OSINT; build the look-alike page (reuse E5's build steps); write and send; flip; defend works each screen on the critical path (Close and report the five phish screens, Carry on the genuine CAPTCHA and the genuine relaunch bar); conclude on `episode_e10_downloads_and_fake_checks_defend_done`. Run through `check-bridge.mjs` and `run-suite.sh`. Depends on ENG-03a's test bridge for the new states.
+`tools/playtest/se/bridge-e10-full.jsonl` (and defend-only), modelled on `bridge-e5-full.jsonl` for the attack half and on whatever test hooks ENG-03a and ENG-03b expose. Steps: brief; OSINT; build the fake-check page in the builder's fake-check mode (ENG-03b build steps: choose the genuine host, the fitting pretext, the calm urgency and the smooth step wording, Score, Attach); write and send the lure email (no page link); flip (meet the built fake-check page, the paste-step tell highlighted); defend works each screen on the critical path (Close and report the five phish screens, Carry on the genuine CAPTCHA and the genuine relaunch bar); conclude on `episode_e10_downloads_and_fake_checks_defend_done`. Run through `check-bridge.mjs` and `run-suite.sh`. Depends on ENG-03a's and ENG-03b's test bridges for the new states and the fake-check build.
 
 ## 17. Acceptance checks
 
@@ -457,7 +483,8 @@ E10's topic (core_08/core_07) feeds the new **`general_v2`** check-form pair at 
 - `node --test test/js/social-awareness-fragment-erb-parity.test.mjs` passes.
 - The shared rule-of-thumb test passes (habit string byte-identical).
 - The bridge suite passes including `bridge-e10-full.jsonl`.
-- Manual: no screen asks the learner to press real system shortcuts, and nothing writes to the real clipboard; the clipboard reveal is a harmless description and no working command is ever shown; the full-screen alarm is calm, always has a way out, and shows a hint after 30 seconds; every browser warning in the set is a true warning; the fake check on a familiar site is taught before it appears; the episode runs in about 15 minutes.
+- The fake-check builder (ENG-03b) scores persuasion (borrowed trust, pretext, urgency, step wording), not a look-alike domain, and its builder DOM-safety and network tests pass for `pageType: "fakeCheck"` as they do for a sign-in page (no form controls, no serialise, no `fetch`/`XMLHttpRequest`/`WebSocket`/`sendBeacon`).
+- Manual: no screen or build step asks the learner to press real system shortcuts, and nothing writes to the real clipboard; the clipboard reveal (defend) and the builder's `clipboardReveal` (attack) are harmless one-line descriptions and no working command is ever shown; the attack page sits on a genuine (compromised) site, so the builder offers no homograph and no look-alike is needed to score well; the full-screen alarm is calm, always has a way out, and shows a hint after 30 seconds; every browser warning in the set is a true warning; the fake check on a familiar site is both built in the attack half and taught in the brief before it appears in the defend half; the episode runs in about 15 minutes.
 
 ## 18. Do not
 
@@ -465,7 +492,7 @@ E10's topic (core_08/core_07) feeds the new **`general_v2`** check-form pair at 
 - Never show a working command; the clipboard reveal is a one-line description only.
 - Don't teach the padlock as a safety sign, or "the store is official so it's safe".
 - Don't make the alarm frightening (no sirens or flashing, always a way out), and don't teach people to ignore warnings (every warning in the set is true; "occasionally wrong" is made in words with "ask IT" as the action).
-- Don't redesign the built E5 attack half or its page-triage set; E10 extends it.
+- Don't edit the built E5 sign-in path or its page-triage set; E10 adds a new fake-check mode beside it.
 - Don't edit the six built role check forms, the generators, or the shared rule-of-thumb string.
 - Don't run a generator into the repo, `git stash`, or add attribution lines.
 - No real brands, people or non-`.example` domains (swap the module docs' `.com`/`.co.uk` vendor domains to `.example`); no homographs; no Hacktivity internals.
@@ -473,15 +500,18 @@ E10's topic (core_08/core_07) feeds the new **`general_v2`** check-form pair at 
 ## 19. Stop and ask if
 
 - ENG-03a is not available (both the full and defend-only variants need it).
+- ENG-03b is not available (the **full** episode needs it for the attack half; the defend-only variant has no `build` stage and does not).
+- ENG-03b cannot add a persuasion scorer to the landing-page builder (the look-alike-domain scorer does not fit a page on a genuine site, §9). If the builder cannot be put in a fake-check mode at all, stop: do not ship the attack half as an E5 sign-in clone, because the learner would then not build the page the defend half tests.
 - ENG-03a cannot carry out the `verdictLabels` relabel on the browser set (the decision is a label change, not a new verdict; if even the relabel is not possible, ship the set with the built Trust/Report/Delete labels and note it degraded).
 - The validator rejects any of the five scenario-local web tells declared in `channelTells` with a `flagChips` label (it should not; they are all local, so no ENG-08 append is needed for E10's tells).
-- The orchestrator wants the attack half to build a fake-download page specifically (ENG-03b) rather than reusing E5's sign-in-page build.
 
 ## 20. Open questions
 
 1. **The IT colleague.** This spec names Leila Nassar (built Quayholt IT service desk agent) as the explainer, to avoid reusing a host and the clashing pool name Owain Jenkins. Darren Price (service desk team lead, E3's host) is the alternative the old game_design implies. Confirm one.
 2. **Vendor domains.** The module docs use `pagewright.co.uk` / `pagewright-download.com`; the awareness rule forces `.example`, so this spec uses `pagewright.example` / `pagewright-download.example`. Confirm, and run the pre-ship web search on Pagewright, Fernside Catering and Ashby Supplies.
 3. **Named colleagues in cards.** Whether to attribute the manager's task chat and the extension recommendation to Lena Fischer and Leo Brennan (pool names) or leave them unattributed.
-4. **Attack half.** Left identical to E5 (a sign-in-page build) to keep E10 free of attack-side engine work; confirm, or ask for ENG-03b (a fake-download build page).
+4. **Attack half (resolved).** The attack half builds the fake "verify you are human" check in the landing-page builder's new fake-check mode (ENG-03b, §9, §10), so the learner builds the same kind of page the defend half's row 1 then tests. It is no longer E5's sign-in-page build, and ENG-03b is required for the full episode. The two decisions this created are items 7 and 8 below.
 5. **ENG-03a card shapes.** The browser-screen states and the clipboard reveal are this spec's content proposals; ENG-03a owns the final engine shapes. (The three-way browser verdict is a `verdictLabels` relabel, not a new verdict, §11.)
 6. **Item count.** Seven screens drafted (eight with the browser-warning item); the floor of six keeps both mirror pairs.
+7. **The lure carries no link.** §9 sends the lure email with an empty `payloadKit` (no page link): the fake check sits on the genuine portal the colleague opens from a bookmark, so the target is judged on `senderTrust`/`pretextRelevant`, not `linkCredible`. This keeps the mail client and `linkInfoFor` out of the fake-check work (`flipPage` reads the build record, not the email). The alternative, mailing a link to the genuine portal, would need a fake-check branch in `linkInfoFor` and the mail client. Confirm the no-link lure.
+8. **The fake-check factors and weighting.** §9 and ENG-03b propose four persuasion factors: borrowed trust 35, pretext 25, step wording 25, urgency 15 (summing to 100, with the host the strongest lever, inverting E5's 35-point domain factor). Confirm the factors and the weighting, or adjust them in ENG-03b's authored `points`.

@@ -41,7 +41,7 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
 | ENG-02 password guessing stage `guess` | E9 | no |
 | ENG-02b organisation-scale `guess` modes (`spray`, `stuff`) | E18 | no |
 | ENG-03a triage `page` states | E10, check forms | yes: `triage-kinds.js` (guarded by new optional keys) |
-| ENG-03b check-page builder | E10 | yes: the landing-page renderer (guarded by `pageType`) |
+| ENG-03b fake-check builder mode (`pageType: "fakeCheck"`) | E10 | yes: the landing-page model, renderer and `flipPage` (guarded by `pageType`) |
 | ENG-04 consequence-flip `mistake` stage + montage flip | E11, E15, E16 | no |
 | ENG-05a world-play modifier `world` (not a new stage id) | E12 | no |
 | ENG-05b costume | E12 | yes: `core/player.js`, `utils/player-avatar.js` (guarded: a new function, existing ones unchanged) |
@@ -524,7 +524,7 @@ shared library by ENG-08's Rule then (append to both `CHANNEL_TELLS`, add a `SKI
 
 **Read first.** `inbox-triage/triage-kinds.js` (`page()` `:364`, `renderKindSurface()` `:514`, `NON_EMAIL_KINDS` `:23`, `actionsFor()` `:66`, `VERDICT_ACTIONS` `:40`, `kindVerdictLine()` `:93`); `triage-flags.js` (`chipIdsFor` `:154`, `KIND_TELL_EXCLUDE` `:90`, `redFlagString` `:196`); the built E5 page items in `awareness/e5/defend.json`; E10 §11.
 
-**Depends on.** ENG-08 (the five new channel tells, §11 of E10, and the schema additions). ENG-03b (the attack-side fake-download build page) is independent and optional.
+**Depends on.** ENG-08 (the five new channel tells, §11 of E10, and the schema additions). ENG-03b (the attack-side fake-check builder) is independent of this packet: ENG-03b owns E10's attack half, ENG-03a its defend half, and neither blocks the other.
 
 **Owner model.** `general-purpose`, `model: "sonnet"`.
 
@@ -574,33 +574,102 @@ shared library by ENG-08's Rule then (append to both `CHANNEL_TELLS`, add a `SKI
 
 ---
 
-## ENG-03b Check-page builder purpose (E10, optional)
+## ENG-03b Fake-check builder mode `pageType: "fakeCheck"` (E10)
 
-**Goal.** Let the attack half build a **fake software-download page** instead of only a sign-in page, if the orchestrator wants E10's build to match its download theme (E10 §9, §20.4). E10 ships without this by reusing E5's sign-in-page build unchanged; ENG-03b is the addition only if the download build is wanted.
+**Goal.** E10's attack half builds, in a scored builder, the same "verify you are human" check its defend half then tests (E10 §9, §10; §20 Q4 resolved). The page sits on a genuine but **compromised** familiar site, so there is no look-alike domain to score: the lesson is the trust borrowed from the real site, not a typo-squat. This packet adds a **fake-check mode** to the built landing-page builder: a new `landingPages[].pageType: "fakeCheck"` that reuses the builder's overlay, step strip, preview, send and flip wiring and all its safety rules (`designs/07` §1), but swaps the seven-factor sign-in scorer for a four-factor **persuasion** scorer. It is **required** for E10's full episode (no longer optional). The defend-half browser screens are ENG-03a; this packet is the attack-half builder only.
 
-**Read first.** `landing-page-builder/landing-page-model.js` and `landing-page-render.js`; `designs/07_landing_page_builder.md`; the E5 `landingPages` entry `sso_login` in `awareness/e5/attack.json`; E10 §9.
+**Read first.** `landing-page-builder/landing-page-model.js` (`scorePage:332`, `guardDomain:195`, `findDomainOption:148`, `FACTOR_ORDER:38`, `CHOICE_KEYS:43`, `RECORD_KEYS:46`, `TELL_IDS:51`, `DEFAULT_POINTS:59`, `points():175`, `normChoices:415`, `buildRecord:450`, `applyScore:471`, all verified 2026-10-28); `landing-page-render.js` (`renderLandingPage({ pageDef, choices, mode }):117`, and the safety header: no form controls, no serialise, no `fetch`/`XMLHttpRequest`/`WebSocket`/`sendBeacon`); `episode-runner/episode-model.js` (`childLaunch` `build` branch `:187`, `flipPage:266`, its host derivation `:278-288`); `episode-runner/flip-view.js` (the `renderLandingPage` call `:159`); `inbox-triage/triage-kinds.js` `page()` for ENG-03a's `fakeCheck` surface, which this builder's preview should match; `designs/07_landing_page_builder.md` §1 (safety), §4 (the scorer shape), §6 (wiring); E10 §9, §10, §11 row 1.
 
-**Depends on.** Nothing new beyond the built builder. ENG-08 adds the schema key.
+**Depends on.** The built landing-page builder (`designs/07`, shipped). ENG-08 adds the schema and validator changes (collected in the "ENG-08 additions" block below; carry them here if ENG-08 has not landed). ENG-03a is independent (it owns the defend-half `page.state` surfaces); this builder's fake-check preview reuses ENG-03a's `fakeCheck` visual shape so the attack and defend halves draw the same page, but neither packet blocks the other.
 
 **Owner model.** `general-purpose`, `model: "sonnet"`.
 
-**Current code.** The builder judges a page by its parts and the look-alike domain (`linkCredible`, the look-alike host), the same way for every page purpose; `landingPages[].targets` aims it at a phish target. It has one visual purpose (a sign-in page). There is no "download page" purpose.
+### Decision: a new scorer mode, not a reskin of the sign-in scorer
 
-**Change.** Add an optional `landingPages[].pageType` (`signin` default, or `download`). `download` swaps the rendered body for a "Download {product}" call to action and a look-alike vendor host, judged by the same `linkCredible`/look-alike-domain logic (no scoring change). With `pageType` absent or `signin`, the render is exactly as today.
+`scorePage` (`landing-page-model.js:332`) scores a page on seven factors (`FACTOR_ORDER:38`: brand, purpose, domain, logo, wording, form, padlock), and `domain` (35 of 100 points, `DEFAULT_POINTS:59`) is the dominant one. `guardDomain` (`:195`) first refuses any page whose chosen domain is not a look-alike option on the authored menu. A fake check on a genuine compromised site has **no** look-alike domain: its address is the real one. So the sign-in scorer does not fit, and reusing it would teach the wrong lesson (that the giveaway is the address). ENG-03b therefore adds a parallel scorer selected by `pageDef.pageType === "fakeCheck"`, scoring the levers that actually make a fake check work:
 
-**Tests to add.** Extend `test/js/social-landing-page-render.test.mjs`: a `download` page renders the download call to action; a page with no `pageType` renders the sign-in page byte-for-byte as today; scoring is unchanged for both.
+- `borrowedTrust` (35): hosting on the familiar site's genuine (compromised) page scores full; a look-alike host scores partial; an unrelated page scores low. This is the inversion of the sign-in `domain` factor: borrowing a real site's trust beats any look-alike.
+- `pretext` (25): the check's reason fits what the visitor came to do ("continue to the order portal") full; a generic reason partial; an off-topic one zero.
+- `stepWording` (25): the paste-and-run steps read as a smooth, plausible check full; clumsy wording zero.
+- `urgency` (15): a calm one-step check full; heavy pressure scores lower (it makes a careful visitor pause).
 
-**Acceptance.** The standard engine acceptance, plus `node --test test/js/social-landing-page-render.test.mjs test/js/social-landing-page-model.test.mjs`.
+Points sum to 100 and are authored defaults (`check.points`), overridable per page. The one tell every fake check carries, however it scores, is `fake_check_paste`: the page must tell the visitor to paste and run something. It is surfaced in the step-6 inspection and the flip, with the `clipboardReveal` line, and it is the one consequential choice the flip quotes (aw2, E10 §9).
 
-**Episodes that depend on it.** E10 only, and only if the download build is chosen; otherwise skip this packet entirely.
+### Current code
 
-**Shared code paths.** The landing-page renderer, used by E5 and the lab. Guarded by `pageType` (absent = today).
+- `scorePage(pageDef, choices, target)` (`:332`) calls `guardDomain` first (`:333`), then scores the seven factors and returns `{ credibility, gatesPassed, meetsThreshold, factors[], gates[], tells[], verdict, gateLines[], blocked }`. There is no `pageType` branch.
+- `normChoices` (`:415`) emits exactly the seven sign-in choice keys (`CHOICE_KEYS:43`: brand, purpose, domainId, logo, wording, fields, padlock); `buildRecord`/`applyScore` run every record through it.
+- `renderLandingPage({ pageDef, choices, mode })` (`landing-page-render.js:117`) draws the sign-in preview; no fake-check body.
+- `flipPage` (`episode-model.js:266`) rebuilds the flip page from `episode.attack.landingPageId` and the `se_landing_pages` record, deriving the host from the chosen domain option (`:278-288`); it returns null when no host resolves, so a page with no look-alike domain would currently show no flip page.
+- `childLaunch` `build` branch (`:187`) forwards `{ landingPageId, targetId }` to the `landing-page-builder` scene unchanged; no change is needed there (the builder reads `pageType` from the page def).
+- The schema `landingPages` item (`scenario-schema.json:229`) is `additionalProperties: false` with `required: ["id", "targets", "brands"]` (`:234`); a fake-check page has no `brands`, so it fails today.
+- `validate_social/landing.rb` requires, for **every** page, a non-empty `brands` array (`:160`) and every `targets` key to be a phish target whose required factors include `linkCredible` (`targets_block:203`, `:214`); a fake-check page has neither, so it fails today.
 
-**Do not break.** E5's build (`e5-full`); the lab's builder scenes; the builder's scoring.
+### Change
 
-**How it is guarded.** New optional `pageType`; absent or `signin` is the current render. No scoring change.
+1. **New optional `landingPages[].pageType`** (`"signin"` default, or `"fakeCheck"`). Read once where the builder, model and renderer start. Absent or `"signin"` is the current path, byte-for-byte.
+2. **Model: a `fakeCheck` scorer branch in `scorePage`.** When `pageDef.pageType === "fakeCheck"`, return early (before `guardDomain`, which does not apply) from a new pure `scoreFakeCheck(pageDef, choices, target)` that returns the **same result shape** (`credibility`, `meetsThreshold`, `factors[]`, `tells[]`, `verdict`, plus `gatesPassed: true`, `gates: []`, `gateLines: []`, `blocked: false`), so the builder UI and the flip read it unchanged. It reads the choices from `choices.check` (point 3), scores the four factors above from `pageDef.check` menus (a menu entry's `trust`/`match`/`slips` flags decide full/partial/zero, mirroring how `scoreWording` reads `match`/`slips` at `:266`), sums against `check.points` (default `{ borrowedTrust: 35, pretext: 25, stepWording: 25, urgency: 15 }`), takes the convincing threshold from `targets[targetId].linkThreshold`, and appends the always-present `fake_check_paste` tell with its authored defender line. Factor and verdict strings come from `pageDef.check.strings` (optional overrides) with built defaults, exactly as the sign-in path reads `pageDef.strings` through `str()` (`:160`).
+3. **Model: fake-check choices.** Add an optional `check` sub-object to the choice shape, `{ hostId, pretextId, urgencyId, stepsId }`. `normChoices` (`:415`) emits `check` **only when it is present**, so a sign-in page's record is byte-identical (no `check` key, the N2 and parity tests unaffected). Add `check` to `CHOICE_KEYS` (`:43`) and to the N4 closed-choice-key guard (`designs/07` N4), so the persisted record keeps it. `scoreFakeCheck` and the fake-check render read `choices.check`.
+4. **Renderer: a `fakeCheck` preview.** In `renderLandingPage`, branch on `pageDef.pageType === "fakeCheck"` to draw the "verify you are human" panel over a faded copy of the genuine site, with the paste-and-run steps as **inert DOM text** (never real shortcuts) and the step-6 "What did this page copy?" reveal showing `pageDef.check.clipboardReveal` (one authored line; the command is never shown; nothing is written to the real clipboard). Match ENG-03a's `fakeCheck` surface so the attack and defend halves draw the same page. The safety constraints hold unchanged: no `<form>`/`<input>`/`<button>`/`<a>`/`<script>` element, no `contenteditable`, no serialise, no network. The existing `social-landing-page-render.test.mjs` DOM-safety and network greps must pass for a `fakeCheck` fixture as they do for a sign-in page.
+5. **Flip: a `fakeCheck` branch in `flipPage`.** When the built page's `pageDef.pageType === "fakeCheck"`, derive the host from `pageDef.check.host` (the authored genuine site) instead of a chosen domain option (`:278-288`), set `heading` from `check.heading`, pass `pageDef` and `choices` through so `flip-view.js` draws it with `renderLandingPage` (`:159`), and set `tells: ["fake_check_paste"]`. The flip's `flipPageIntro` and the paste-step defender line are authored on the page (E10 §10).
+6. **Schema and validator (ENG-08; both halves).** See the "ENG-08 additions" block below. In short: add `pageType` and the `check` object to the `landingPages` item; drop `brands` from the static `required` and move "a sign-in page needs `brands`" into `landing.rb`; gate the `linkCredible`-required-target check (`landing.rb:214`), the `brands` check (`:160`) and the `pretext.brandId` check (`pretext_block:187`) on `pageType !== "fakeCheck"`; add fake-check structure checks (a `fakeCheck` page needs a `check` block with `host`, the four menus and `clipboardReveal`; `check.host` passes the host-only `.example` and denylist lint; `clipboardReveal` is a non-empty plain description and must not contain shell metacharacters or look like a command).
 
-**Stop and ask if.** E10 §9 chooses to keep the sign-in build; then do not build ENG-03b.
+### Tests to add
+
+`test/js/social-landing-page-fakecheck.test.mjs` (jsdom, copy the staging block from `test/js/social-landing-page-model.test.mjs`):
+
+- a `fakeCheck` page scores the four persuasion factors from `choices.check`: the genuine host scores `borrowedTrust` full, a look-alike host partial, an unrelated host low; the fitting pretext/calm urgency/smooth steps score full, the off/pushy/clumsy ones low; the total matches `check.points`;
+- `meetsThreshold` reads `targets[tid].linkThreshold`; the result carries `fake_check_paste` in `tells` for every choice set, and `clipboardReveal` is surfaced as the one-line description, never a command (assert `navigator.clipboard.writeText` is never called, and no result string matches a shell command pattern);
+- a page with no `pageType` (or `"signin"`) scores exactly as today, and `normChoices` on a sign-in record emits no `check` key (byte-identity guard);
+- extend `test/js/social-landing-page-render.test.mjs`: a `fakeCheck` fixture renders the verify panel and the reveal, with no forbidden element and no network call; a sign-in page renders byte-for-byte as today;
+- extend `test/js/social-episode-views.test.mjs` (or the flip test): `flipPage` on a built `fakeCheck` page returns a page whose host is `check.host` and whose `tells` is `["fake_check_paste"]`; on a sign-in page the host still comes from the domain option.
+- extend `test/js/validator-landing-pages.test.mjs`: a clean `fakeCheck` fixture (no `brands`, a non-`linkCredible` target, a `check` block) passes; failing cases (a `fakeCheck` page with no `check`; a `check.host` that is not `.example`; a `clipboardReveal` holding a command-like string; a `signin` page with no `brands` still fails).
+
+### Acceptance
+
+The standard engine acceptance (the block at the top of this file), plus `node --test test/js/social-landing-page-fakecheck.test.mjs test/js/social-landing-page-model.test.mjs test/js/social-landing-page-render.test.mjs test/js/validator-landing-pages.test.mjs`. Expected: all pass, and `git status --porcelain scenarios/` is empty. In particular the sign-in model and render tests pass unchanged, proving E5's build and the lab's builder are byte-for-byte unaffected.
+
+### Episodes that depend on it
+
+E10 full episode (the attack half). E10's defend-only variant has no `build` stage and does **not** need ENG-03b. No other episode authors `pageType: "fakeCheck"`.
+
+### Shared code paths
+
+`landing-page-model.js`, `landing-page-render.js` and `episode-model.js` `flipPage`, used by E5 and the lab's builder scenes. Guarded: a page with no `pageType` (or `"signin"`) runs the current scorer, render and flip exactly as before.
+
+### Do not break
+
+E5's build and flip (bridges `e5-full`); the lab's builder scenes (bridges `6`, `r4-door`); the landing-page builder's sign-in scoring and its closed record (N2, N4); the DOM-safety and network tests (`social-landing-page-render.test.mjs`); the schema/validator for every built page (dropping `brands` from the static `required` must still fail a sign-in page that omits `brands`, via the `landing.rb` move).
+
+### How it is guarded
+
+`pageType` is a new optional key defaulting to `"signin"`; the fake-check scorer, render and flip branches run only when it is `"fakeCheck"`; the new schema keys are optional under `additionalProperties: false`; `brands` moves from the schema's static `required` to a `landing.rb` check that still fires for a sign-in page; the relaxed validator checks are gated on `pageType`. No built page and no other episode authors `pageType`, so every existing path, including E5's, is byte-for-byte unchanged.
+
+### Stop and ask if
+
+- The builder cannot be put in a fake-check mode at all (the overlay or the scorer cannot branch): stop and report. Do not ship E10's attack half as an E5 sign-in clone, because the learner would then not build the page the defend half tests (E10 §9, §19).
+- The orchestrator wants the fake check's persuasion factors scored differently from the four here (E10 §20.8): adjust `check.points` and the factor set in this packet, not in the episode.
+- The attack lure is asked to carry a page link (E10 §20.7): that needs a `fakeCheck` branch in `linkInfoFor` and the mail client; E10 avoids it by sending a link-less lure and reading the built page from the record in `flipPage`.
+
+### ENG-08 additions (schema keys and validator changes ENG-03b needs)
+
+Folded into ENG-08 (or carried here if ENG-08 has not landed). No new stage id, no new stage order (E10 authors the built E5 order `brief osint build write flip defend debrief`), and no new shared or scenario-local **check-form** tell: `fake_check_paste` is already the E10 defend-set scenario-local tell declared in ENG-08's table and the defend set's `channelTells` (E10 §11); the attack-side flip reuses that id with its defender line authored on the landing page, so no `CHANNEL_TELLS`/`SKILL_NAMES` append and no stage-order branch are made for ENG-03b.
+
+**Schema (`scripts/scenario-schema.json`, the `landingPages` item at `:229`).**
+
+- Add `pageType`: string, enum `["signin", "fakeCheck"]` (default `signin`; built pages author none).
+- Add `check`: object, `additionalProperties: false`, all optional, `{ host (string), heading (string), clipboardReveal (string), hosts (array of { id, label, trust }), pretexts (array of { id, label, match?, slips? }), urgencies (array of { id, label, match? }), steps (array of { id, label, match?, slips? }), points (object { borrowedTrust, pretext, stepWording, urgency }, numbers), strings (object, string values) }`.
+- **Remove `brands` from the item's static `required`** (`:234`, leaving `["id", "targets"]`); the "a sign-in page needs `brands`" rule moves to `landing.rb` (below), so a sign-in page with no `brands` still fails, and a fake-check page validates.
+
+**Validator (`scripts/validate_social/landing.rb`).**
+
+- In `page_checks` (`:153`), branch on `pg['pageType']`. For `"fakeCheck"`:
+  - do **not** run `brands_block` (`:160`) or `pretext_block` (`:176`); instead require a `check` block with `host`, the four menus (`hosts`, `pretexts`, `urgencies`, `steps`, each a non-empty array) and `clipboardReveal`;
+  - `check.host` passes the host-only `.example`, ASCII and denylist lint (reuse `Osint::HostLint`, as `realDomain` does);
+  - `clipboardReveal` is a non-empty string that is a plain description: reject a value containing shell metacharacters (`| & ; $ > < \`` backtick) or that reads as a command (a leading `curl`/`powershell`/`cmd`/`bash`/`mshta`/`/c ` token), so no working command can be authored;
+  - in `targets_block` (`:203`), accept a `targets` key that is a phish target **without** `linkCredible` when the page is `fakeCheck` (the `:214` requirement is gated on `pageType !== "fakeCheck"`); the `expected_link` cross-check (`:116`) already skips a target with no `linkCredible`/`expectedLink` (`requires_link_credible?:100`), so it needs no change.
+  - For a `"signin"` page (or none) every current check runs unchanged, including a new explicit "a sign-in page needs a non-empty `brands` array" error that replaces the schema `required` entry.
+- Lint that `pageType`, when present, is one of the two ids.
 
 ---
 
@@ -948,7 +1017,7 @@ ENG-08 collects every schema (`scripts/scenario-schema.json`) and validator (`sc
 
 ### New episode keys
 
-Add to `socialAwarenessEpisode` (all optional, `additionalProperties: false`): `flipAftermath` and `stepLabels` (ENG-01), `guess` (ENG-02), `mistake` and `flip` (object `{ mode }`, ENG-04), `world` (ENG-05a), `assistant` (ENG-06), `doneGlobal` and `oncePerLearner` (ENG-10), `sortDrill` (ENG-11), `concernForm` (ENG-12), `privacyPanel` (ENG-13). `flipAftermath` is `{ heading?, victimName?, intro?, items[], line? }` (ENG-01); `stepLabels` is a `{ <stageId>: string }` map. Add to `strings`: `flipMontageByChoice` (ENG-04), `briefCards`, `briefDone`, `alreadySeen` (ENG-10), `guessNote` (ENG-02). Add to a `call` triage message: `videoLabel`, `participantTag` (ENG-07), and the email-card `hiddenText` reveal (ENG-06). Add to a `page` triage message (ENG-03a): `state` (enum of the seven ids `fakeCheck`, `fakeUpdate`, `fullScreenAlarm`, `extensionPermission`, `downloadBar`, `browserWarning`, `relaunchBar`), `clipboardReveal` (string), `alarm` (`{ hintAfterMs }`), `permissions` (array of strings) and `download` (`{ filename }`); and **relax the `page.url` requirement** in both the schema and `triage.rb` (`page.url is missing`, `:393-395`) so `url` is required only for the web-page states (no `state`, `fakeCheck`, `fakeUpdate`, `downloadBar`, `browserWarning`) and optional for the chrome/overlay states (`relaunchBar`, `fullScreenAlarm`, `extensionPermission`). Add to `socialTriageSet`: `verdictLabels` (ENG-03a), `choice`-kind support (ENG-09a), `person`-kind support (ENG-09c). Add to `landingPages[]`: `pageType` (ENG-03b).
+Add to `socialAwarenessEpisode` (all optional, `additionalProperties: false`): `flipAftermath` and `stepLabels` (ENG-01), `guess` (ENG-02), `mistake` and `flip` (object `{ mode }`, ENG-04), `world` (ENG-05a), `assistant` (ENG-06), `doneGlobal` and `oncePerLearner` (ENG-10), `sortDrill` (ENG-11), `concernForm` (ENG-12), `privacyPanel` (ENG-13). `flipAftermath` is `{ heading?, victimName?, intro?, items[], line? }` (ENG-01); `stepLabels` is a `{ <stageId>: string }` map. Add to `strings`: `flipMontageByChoice` (ENG-04), `briefCards`, `briefDone`, `alreadySeen` (ENG-10), `guessNote` (ENG-02). Add to a `call` triage message: `videoLabel`, `participantTag` (ENG-07), and the email-card `hiddenText` reveal (ENG-06). Add to a `page` triage message (ENG-03a): `state` (enum of the seven ids `fakeCheck`, `fakeUpdate`, `fullScreenAlarm`, `extensionPermission`, `downloadBar`, `browserWarning`, `relaunchBar`), `clipboardReveal` (string), `alarm` (`{ hintAfterMs }`), `permissions` (array of strings) and `download` (`{ filename }`); and **relax the `page.url` requirement** in both the schema and `triage.rb` (`page.url is missing`, `:393-395`) so `url` is required only for the web-page states (no `state`, `fakeCheck`, `fakeUpdate`, `downloadBar`, `browserWarning`) and optional for the chrome/overlay states (`relaunchBar`, `fullScreenAlarm`, `extensionPermission`). Add to `socialTriageSet`: `verdictLabels` (ENG-03a), `choice`-kind support (ENG-09a), `person`-kind support (ENG-09c). Add to `landingPages[]`: `pageType` (enum `signin`/`fakeCheck`) and the `check` object, and **remove `brands` from the item's static `required`** (leaving `["id", "targets"]`), the "a sign-in page needs `brands`" rule moving to `landing.rb`; gate the `brands`, `pretext.brandId` and `linkCredible`-required-target checks in `landing.rb` on `pageType !== "fakeCheck"` (all ENG-03b, with the full list in that packet's "ENG-08 additions" block).
 
 ### New message kinds
 
