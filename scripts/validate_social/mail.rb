@@ -880,6 +880,9 @@ module ValidateSocial
         ids.each do |a|
           issues << err("#{path}: minigameData.accountIds names '#{a}', which is not a social.mailClient.accounts id") unless acct_ids.include?(a)
         end
+        issues << err("#{path}: minigameData.maxSends must be a whole number of 1 or more") if md.key?('maxSends') && !(md['maxSends'].is_a?(Integer) && md['maxSends'] >= 1)
+        issues << err("#{path}: minigameData.layout is #{md['layout'].inspect}; the only layout is \"phone\"") if md.key?('layout') && md['layout'] != 'phone'
+        issues << err("#{path}: minigameData.readOnly must be true or false") if md.key?('readOnly') && ![true, false].include?(md['readOnly'])
         d = md['defaultAccount']
         next if d.nil?
 

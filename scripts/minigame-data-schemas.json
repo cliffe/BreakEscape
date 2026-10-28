@@ -89,7 +89,7 @@
 
   "mail_terminal": {
     "required": [],
-    "optional": ["accountIds", "defaultAccount"]
+    "optional": ["accountIds", "defaultAccount", "maxSends", "layout", "readOnly"]
   },
 
   "case-file": {

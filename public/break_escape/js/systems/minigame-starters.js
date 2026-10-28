@@ -1143,6 +1143,10 @@ export function startMailClientMinigame(sprite, options = {}) {
         title: sprite?.scenarioData?.name || 'Mail',
         accountIds: data.accountIds,
         defaultAccount: data.defaultAccount,
+        // Optional: a send cap, the phone frame, a read-only mailbox (the client ignores absent ones).
+        maxSends: data.maxSends,
+        layout: data.layout,
+        readOnly: data.readOnly,
         onComplete: (success, result) => {
             if (typeof options.onComplete === 'function') options.onComplete(success, result);
         },
