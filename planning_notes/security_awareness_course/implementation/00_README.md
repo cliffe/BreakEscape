@@ -65,6 +65,7 @@ Copied from `WRITER_BRIEF.md`. Do not reopen them.
 4. **E12.** Its wiring prerequisites are ENG-05a, ENG-05b, ENG-05c and ENG-08's schema/validator work, plus host and costume art after the PixelLab reset. It does **not** need ENG-05e (the flip hand-back reuses `watchCall`) or ENG-09c (the reception items are the built `call` kind), and ENG-05d (the parcel sprite) is art only, not a wiring prerequisite. Build it after the consequence-flip wave, so that the riskiest engine work does not hold the others up.
 5. **E13.** It needs ENG-06 and ENG-07.
 6. **E18** (added 2026-10-28, after E17). It needs ENG-02b on top of E9's ENG-02, so build it after E9.
+7. **E19 and E20** (added 2026-10-28). Both are consequence flips, so write them in the ENG-04 wave (step 3) once ENG-04 is proved by E11; E20 also needs ENG-14.
 
 **Alongside, at any point:** WP-12 (`11_WP12_FIRST_PLAY_AND_ANNUAL.md`). Its **core_00 first-play** part needs **ENG-10** first: the brief-only episode, its multi-card brief, the once-per-learner gate and the completion global. Its **core_17 annual** part needs **no engine packet**: it is a `defendOnly` shell whose defend set holds 8 messages drawn from E1 to E7, which validates on the built `defendOnly` path. Also WP-15 (`12_WP15_CORE02_ITEMS.md`), the two new check-form pairs (`10_CHECK_FORMS.md`) and WP-02 (`13_WP02_REPORTING_ROUTE.md`). Episodes are pipelined, as in the AGENTS.md mission loop: one episode's playtests can run while the next is being written.
 
@@ -84,6 +85,9 @@ ENG ids are packets in `02_ENGINE_WORK.md`. P ids are steps in `01_PIPELINE.md`.
 | E9 | ENG-01, ENG-02, ENG-09a | - | content |
 | ENG-02b organisation-scale `guess` modes | ENG-02 | E18 | engine |
 | E18 | ENG-01, ENG-02, ENG-02b, ENG-08 (three scenario-local tells) | - | content |
+| E19 | ENG-04, ENG-09b, ENG-08, ENG-09d | - | content |
+| ENG-14 Wi-Fi list card state | ENG-08 (compatible with ENG-03a's `page.state`) | E20 defend half | engine |
+| E20 | ENG-04, ENG-09b, ENG-08, ENG-14 | - | content |
 | ENG-03a triage page states | nothing | E10, check forms | engine |
 | ENG-03b fake-check builder mode (`pageType: "fakeCheck"`) | the built landing-page builder | E10 attack half (required) | engine |
 | E10 | ENG-03a, ENG-03b, ENG-09b | - | content |
@@ -240,7 +244,7 @@ Check forms       ██░░░░░░░░  -           E8 items drafted
 | `WRITER_BRIEF.md` | the brief for the writers and reviewers of these files, and the user's decisions |
 | `00_README.md` | this index |
 | `01_PIPELINE.md` | the step-by-step new-episode pipeline, derived from how E1 to E7 were built |
-| `02_ENGINE_WORK.md` | engine packets ENG-01 to ENG-13 (plus ENG-02b), each self-contained |
+| `02_ENGINE_WORK.md` | engine packets ENG-01 to ENG-13 (plus ENG-02b and ENG-14), each self-contained |
 | `10_CHECK_FORMS.md` | the new check forms for the new topics |
 | `11_WP12_FIRST_PLAY_AND_ANNUAL.md` | WP-12: the core_00 first-play brief and the core_17 annual edition |
 | `12_WP15_CORE02_ITEMS.md` | WP-15: the core_02 defend items for the missing channels |
@@ -256,6 +260,8 @@ Check forms       ██░░░░░░░░  -           E8 items drafted
 | `episodes/E16_insider_risk.md` | E16 brief (Quayholt Insurance, consequence flip) |
 | `episodes/E17_acceptable_use.md` | E17 brief (Tarrowby Logistics, defend-only) |
 | `episodes/E18_credential_attacks_at_scale.md` | E18 brief (Merrin & Sallow Architects, password spraying and credential stuffing at organisation scale) |
+| `episodes/E19_malware_and_updates.md` | E19 brief (Quayholt Insurance, consequence flip: malware, macros, updates, app consent) |
+| `episodes/E20_remote_and_mobile_working.md` | E20 brief (Tarrowby Logistics, consequence flip: public Wi-Fi, "Not secure" pages, screen locking, lost devices) |
 
 Scenario folder names and episode ids are fixed in each episode brief. Follow the built pattern: folder `awareness_eN_<slug>`, episode id `eN_<slug>`, defend-only id `eN_<slug>_defend`.
 
@@ -277,6 +283,8 @@ Scenario folder names and episode ids are fixed in each episode brief. Follow th
 | E9 | No | generator runs | ENG-02, ENG-09a, ENG-09b |
 | E10 | No | generator runs | ENG-03a, ENG-03b, ENG-09b |
 | E18 | No (not yet proved) | | ENG-01, ENG-02, ENG-02b, ENG-08 |
+| E19 | No (not yet proved) | | ENG-04, ENG-09b |
+| E20 | No (not yet proved) | | ENG-04, ENG-09b, ENG-14 |
 | E11 (both shells) | No | generator keys resolve | ENG-04 and the Carrholme room (P5b) |
 | E12 full | No | calls validate | ENG-05a, b, c, ENG-08, the lobby map (P5c) and art |
 | E13 full | No | | ENG-06, ENG-07, ENG-08 |
@@ -297,7 +305,7 @@ Suggested first run: the engine packets ENG-01 and ENG-09b, then the E8 pilot en
   - Host art for E1 to E7 waits on the PixelLab reset (3 November).
   - E12's Lorna Easton reuses a built sheet that the learner may also wear. This is cosmetic only.
 - **Pre-ship web searches.** New invented names must be searched against real businesses before release:
-  - companies and products: Carrholme Services, Marsden Holloway, RiverReach Angling, Pagewright, Fernside Catering, Ashby Supplies, Mossgate Cleaning Supplies, Hollinsbrook House, Kestrel Court, Kettlewick Talent, Fenlow Managed IT, Calderbank Mills, Elmgate Pavilion, Verrow Street, the motto "Design that lasts";
-  - people: Delphine Arvanitis, Lorna Easton, Dani Fenwick, Samira Nawaz, Ross Garside, Craig Pickering, Ama Owusu.
+  - companies and products: Carrholme Services, Marsden Holloway, RiverReach Angling, Pagewright, Fernside Catering, Ashby Supplies, Mossgate Cleaning Supplies, Hollinsbrook House, Kestrel Court, Kettlewick Talent, Fenlow Managed IT, TidyDocs, Calderbank Mills, Elmgate Pavilion, Verrow Street, the motto "Design that lasts";
+  - people: Delphine Arvanitis, Lorna Easton, Dani Fenwick, Samira Nawaz, Ross Garside, Craig Pickering, Ama Owusu, Leo Brennan, Zainab Hussain.
 - **Measurement trade-off.** The two broad check pairs give no per-topic pre and post figure. If a buyer needs one, a topic pair can be added later without touching the six role forms.
 - **Line numbers.** Code citations were verified on 2026-10-28. Re-check any line number at the point of use, because main keeps moving.

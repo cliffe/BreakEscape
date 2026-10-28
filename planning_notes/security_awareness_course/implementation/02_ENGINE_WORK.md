@@ -59,6 +59,7 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
 | ENG-11 reusable sort drill (N bins + answer key) | E14 "Post or Not?", E15 Swap Shop, E17 "can I?" | no (a new overlay; built triage untouched) |
 | ENG-12 "raise a concern" fact-chip form | E16 | no (a new overlay) |
 | ENG-13 privacy-settings panel over the OSINT board | E14 | yes: osint-browser / intel-board (guarded by a new optional key) |
+| ENG-14 Wi-Fi network list card state (`page.state: "wifiList"`); draft in `episodes/E20_remote_and_mobile_working.md` "Engine needs", to move here after review | E20 | yes: `triage-kinds.js` (guarded by the new optional state) |
 
 ---
 
@@ -1054,6 +1055,9 @@ A tell id can come from three places:
 | `app_consent_grab` | E19 (defend) only | **local** | one set |
 | `macro_enable_content` | E19 (defend) only | **local** | one set |
 | `disable_security_software` | E19 (defend) only | **local** | one set |
+| `lookalike_network` | E20 (defend) only | **local** | one set |
+| `wifi_page_credentials` | E20 (defend) only | **local** | one set |
+| `found_device_lure` | E20 (defend) only | **local** | one set |
 | `hidden_instruction` | E13 (defend) only; E13 §14 proposes a general-pool check item later | **local** | one shipped set today; promote to shared when the general-pool AI item (E13 §14) is built |
 | `deepfake_request` | E13 (defend) only; E13 §14 and `general_v2` item 6 touch the topic | **local** | `general_v2` item 6 scores on `senderTrust`/`linkCredible`, not `deepfake_request`, so only E13 uses this id today; promote if a check item later scores on it |
 | `fake_profile` | E14 (defend) only | **local** | one set; `data_conduct` does not score it |
