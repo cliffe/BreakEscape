@@ -21,6 +21,9 @@
 //   decision: { mode, choice: { intro?, confirm?, timing: { legend, options:[{id,label,at,outcome}] },
 //                                count: { legend, options:[{id,label,n,note}] } },
 //               pushTemplate: { app, account, location, device }, defenderNote }
+//   strings (either mode, all optional): { intro, approved, send, confirm, wordmark, request }
+//               over the defaults below. In decision mode choice.intro and choice.confirm win over
+//               strings.intro and strings.confirm.
 // Result: { approvedAt, sent, mode } (decision mode also carries { timing, count }).
 //   approvedAt — the approvesAt value once the approval has played, else null;
 //   sent       — the number of prompt cards delivered (plus any the learner sent by hand).
@@ -47,6 +50,8 @@ const CHOICE_INTRO = 'You have the password, but the account still wants a tap o
 const APPROVED_LINE = 'The target tapped Approve. The attacker is now signed in — this is MFA fatigue.';
 const CONFIRM_LABEL = 'Start sending prompts';
 const SEND_LABEL = 'Send another push';
+const WORDMARK = 'AUTH';
+const REQUEST_LINE = 'Are you trying to sign in?';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -69,6 +74,7 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         this.mode = isStr(this.params.mode) ? this.params.mode : 'attacker';
         this.choice = isObj(this.params.choice) ? this.params.choice : null;
         this.pushTemplate = isObj(this.params.pushTemplate) ? this.params.pushTemplate : {};
+        this.strings = isObj(this.params.strings) ? this.params.strings : {};
         this.defenderNote = isStr(this.params.defenderNote) ? this.params.defenderNote : '';
         this.timeline = buildTimeline(this.params);  // empty in decision mode until a choice is made
         this.cursor = 0;        // next event to play
@@ -84,6 +90,11 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         this._removeChoiceLayer = null; // Esc/Close route to "back to choosing" until the outcome shows
     }
 
+    /** An authored string from params.strings, else the default. */
+    _str(key, fallback) {
+        return isStr(this.strings[key]) ? this.strings[key] : fallback;
+    }
+
     // ── lifecycle ──────────────────────────────────────────────────────────────
 
     init() {
@@ -96,11 +107,13 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         this.root = root;
 
         const bar = el('div', 'auth-bar');
-        bar.appendChild(el('span', 'auth-wordmark', 'AUTH'));
+        bar.appendChild(el('span', 'auth-wordmark', this._str('wordmark', WORDMARK)));
         this.mountCloseControl(bar, 'Close');
         root.appendChild(bar);
 
-        this.intro = el('p', 'auth-intro', this.choice ? (isStr(this.choice.intro) ? this.choice.intro : CHOICE_INTRO) : INTRO);
+        this.intro = el('p', 'auth-intro', this.choice
+            ? (isStr(this.choice.intro) ? this.choice.intro : this._str('intro', CHOICE_INTRO))
+            : this._str('intro', INTRO));
         root.appendChild(this.intro);
 
         // In decision mode the learner chooses before any prompt is drawn; the phone and the
@@ -129,7 +142,7 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         const controls = el('div', 'auth-controls');
         if (this.choice) controls.hidden = true;
         this.controlsEl = controls;
-        this.sendButton = el('button', 'auth-send minigame-button', SEND_LABEL);
+        this.sendButton = el('button', 'auth-send minigame-button', this._str('send', SEND_LABEL));
         this.sendButton.type = 'button';
         this.addEventListener(this.sendButton, 'click', (e) => {
             e.preventDefault?.();
@@ -224,7 +237,7 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
 
     _playApprove(event) {
         this.approvedAt = event.at ?? null;
-        this.banner.textContent = APPROVED_LINE;
+        this.banner.textContent = this._str('approved', APPROVED_LINE);
         this.banner.hidden = false;
         this.root?.classList.add('auth-approved');
         this._renderOutcome();
@@ -294,7 +307,7 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         if (count) panel.appendChild(count);
 
         this.confirmButton = el('button', 'auth-confirm minigame-button',
-            isStr(this.choice.confirm) ? this.choice.confirm : CONFIRM_LABEL);
+            isStr(this.choice.confirm) ? this.choice.confirm : this._str('confirm', CONFIRM_LABEL));
         this.confirmButton.type = 'button';
         this.confirmButton.disabled = true;
         this.addEventListener(this.confirmButton, 'click', (e) => {
@@ -378,7 +391,7 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
     _appendCard(event, manual = false) {
         const card = el('div', `auth-card${manual ? ' auth-card-manual' : ''}`);
         card.appendChild(el('p', 'auth-card-app', event.app || 'Authenticator'));
-        card.appendChild(el('p', 'auth-card-request', 'Are you trying to sign in?'));
+        card.appendChild(el('p', 'auth-card-request', this._str('request', REQUEST_LINE)));
         const dl = el('dl', 'auth-card-details');
         const add = (k, v) => { if (isStr(v)) dl.append(el('dt', null, k), el('dd', null, v)); };
         add('Account', event.account);

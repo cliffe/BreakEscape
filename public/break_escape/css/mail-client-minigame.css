@@ -20,7 +20,8 @@
     color: var(--ui-text, #eef1f8);
     background-color: var(--ui-surface, rgba(24, 30, 48, 0.94));
     border: 16px solid transparent;
-    border-image: url('/break_escape/assets/ui/social/mail-frame.png') 8 fill / 16px stretch;
+    /* A theme can swap the frame art by setting --se-frame-image: url(...) on an ancestor. */
+    border-image: var(--se-frame-image, url('/break_escape/assets/ui/social/mail-frame.png')) 8 fill / 16px stretch;
     image-rendering: pixelated;
 }
 
@@ -185,7 +186,8 @@
     font-family: var(--se-font-readable);
     font-size: 16px;
     border: 8px solid transparent;
-    border-image: url('/break_escape/assets/ui/social/mail-chip-attachment.png') 4 fill / 8px stretch;
+    /* --se-chip-image does the same for the attachment chip. */
+    border-image: var(--se-chip-image, url('/break_escape/assets/ui/social/mail-chip-attachment.png')) 4 fill / 8px stretch;
     image-rendering: pixelated;
     background-color: var(--ui-slot-bg, rgba(66, 80, 118, 0.88));
 }

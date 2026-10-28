@@ -20,6 +20,8 @@
 //   maxSends         number    episode cap: after this many sends this session Compose is disabled and a
 //                              line says the message has gone. Close carries on. Absent means no cap.
 //   layout           string    'phone' puts the narrow layout in a phone frame on any viewport (E6)
+//   readOnly         boolean   true hides Compose and Contacts (and refuses to open either): a mailbox to
+//                              read, not to send from. Absent or false keeps both.
 //   sentIds          string[]  set by returnParams() on a reopen: the record ids sent so far
 //   onComplete       function  (success, result) as for every minigame
 // The close result carries sentIds: this session's sent record ids, oldest first.
@@ -305,6 +307,10 @@ export class MailClientMinigame extends SocialOverlayScene {
         this.composeBtn.type = 'button';
         this.addEventListener(this.composeBtn, 'click', () => this.toggleCompose());
         this.actions.appendChild(this.composeBtn);
+        // readOnly: the buttons stay in the tree (other code reads them) but are not shown.
+        if (this.params.readOnly === true) {
+            for (const b of [this.contactsBtn, this.composeBtn]) { b.hidden = true; b.style.display = 'none'; }
+        }
         bar.append(acct, tabs, this.contactsBtn, this.actions);
         this.mountCloseControl(bar, 'Close');
         root.appendChild(bar);
@@ -634,7 +640,7 @@ export class MailClientMinigame extends SocialOverlayScene {
     }
 
     openContacts() {
-        if (this.contactsOpen) return;
+        if (this.contactsOpen || this.params.readOnly === true) return;
         this.contactsOpen = true;
         const panel = el('div', 'mail-contacts-panel');
         panel.setAttribute('role', 'dialog');
@@ -698,7 +704,7 @@ export class MailClientMinigame extends SocialOverlayScene {
      * threads the reply. A fresh crafted message passes nothing.
      */
     openCompose(extra = {}) {
-        if (this.composeOpen || !this.account || this._sendCapReached()) return;
+        if (this.composeOpen || !this.account || this._sendCapReached() || this.params.readOnly === true) return;
         this.composeOpen = true;
         const social = this.social;
         // A judged follow-up does not reuse the unsent draft of a fresh message.

@@ -2052,7 +2052,21 @@
               "patternProperties": {"^_": {}},
               "additionalProperties": false
             },
-            "defenderNote": {"description": "Decision mode: the defender's control, shown last in the outcome", "type": "string"}
+            "defenderNote": {"description": "Decision mode: the defender's control, shown last in the outcome", "type": "string"},
+            "strings": {
+              "type": "object",
+              "description": "Optional wording over the authenticator defaults (authenticator-minigame.js). In decision mode choice.intro and choice.confirm win over intro and confirm.",
+              "properties": {
+                "intro": {"type": "string", "description": "The line above the phone"},
+                "approved": {"type": "string", "description": "The banner when the target taps Approve"},
+                "send": {"type": "string", "description": "The send-another-push button"},
+                "confirm": {"type": "string", "description": "The decision-mode confirm button"},
+                "wordmark": {"type": "string", "description": "The app name in the title bar (default AUTH)"},
+                "request": {"type": "string", "description": "The question on each prompt card (default 'Are you trying to sign in?')"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            }
           },
           "dependencies": {
             "pushes": ["approvesAt"],
@@ -2066,6 +2080,13 @@
         },
         "facilitated": {"type": "boolean"}
       },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialTriageActionLabel": {
+      "type": "object",
+      "description": "Wording for one triage action: the button label, the past tense on the list badge, the button hint",
+      "properties": {"label": {"type": "string"}, "past": {"type": "string"}, "hint": {"type": "string"}},
       "patternProperties": {"^_": {}},
       "additionalProperties": false
     },
@@ -2092,6 +2113,47 @@
         "channelTells": {"type": "array", "items": {"type": "string"}},
         "flagChips": {"type": "object", "additionalProperties": {"type": "string"}},
         "nudges": {"type": "object", "additionalProperties": {"type": "string"}},
+        "resultCopy": {
+          "type": "object",
+          "description": "Replaces the result screen's two follow-up lines (default: the mail-client and lab-sheet wording, or the awareness wording). {it} in weakest becomes it or them.",
+          "properties": {
+            "weakest": {"type": "string", "description": "After 'Weakest skill: ...'"},
+            "noFlags": {"type": "string", "description": "When the learner named no flags"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "reportReplyFrom": {"type": "string", "minLength": 1, "description": "The prefix on the reply shown after a correct report (default 'IT Security')"},
+        "skillNames": {"type": "object", "additionalProperties": {"type": "string"}, "description": "Skill name per scenario-local tell id, for the result breakdown (built-in tells keep theirs)"},
+        "tellStrings": {"type": "object", "additionalProperties": {"type": "string"}, "description": "Red-flag sentence per scenario-local tell id, for the review card (built-in tells keep theirs; a message's factorStrings still win)"},
+        "labels": {
+          "type": "object",
+          "description": "Wording over the defaults (triage-kinds.js 'kindLabel'): any key left out keeps its default.",
+          "properties": {
+            "kind": {"type": "object", "description": "Short kind words by kind: email, sms, voicemail, qr, page, call, push", "additionalProperties": {"type": "string"}},
+            "verdict": {"type": "object", "description": "Email verdict buttons and brief legend by trust, report, delete, verify: { label?, past?, hint? }", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
+            "callActions": {"type": "object", "description": "By action id comply, escalate, refuse, verify_callback", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
+            "pushActions": {"type": "object", "description": "By action id approve, deny, deny_report", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
+            "smsHeading": {"type": "string", "description": "The 'Text message' heading on a text (default 'Text message')"},
+            "queue": {
+              "type": "object",
+              "description": "The brief's wording by queue: inbox, call, push, callPush, voicemail, page, sms, other",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "label": {"type": "string"},
+                  "item": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 2, "description": "[singular, plural]"},
+                  "real": {"type": "string"},
+                  "reportLabel": {"type": "string"}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            }
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
         "bands": {
           "type": "array",
           "items": {

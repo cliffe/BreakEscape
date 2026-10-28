@@ -16,6 +16,7 @@ import { startInboxTriageMinigame } from './triage-starter.js';
 import { withLockedHint } from '../utils/locked-hint.js';
 import { rejectionAlert } from '../utils/flag-wording.js';
 import { startEpisodeRunner } from './episode-starter.js';
+import { writeGlobal } from './global-writer.js';
 export { startInboxTriageMinigame, startEpisodeRunner };
 
 // Maps Phaser texture keys to their actual filenames (where key !== filename stem)
@@ -1142,6 +1143,10 @@ export function startMailClientMinigame(sprite, options = {}) {
         title: sprite?.scenarioData?.name || 'Mail',
         accountIds: data.accountIds,
         defaultAccount: data.defaultAccount,
+        // Optional: a send cap, the phone frame, a read-only mailbox (the client ignores absent ones).
+        maxSends: data.maxSends,
+        layout: data.layout,
+        readOnly: data.readOnly,
         onComplete: (success, result) => {
             if (typeof options.onComplete === 'function') options.onComplete(success, result);
         },
@@ -1265,6 +1270,29 @@ export function startAuthenticator(params = {}) {
     }));
 }
 window.startAuthenticator = startAuthenticator;
+
+// Authenticator device (a room object): the push stream is the object's minigameData
+// ({ pushes, approvesAt } or { choice, pushTemplate, defenderNote }, plus optional strings).
+// With setGlobalPrefix, closing the phone writes <prefix>approved (never cleared once true)
+// and <prefix>sent (the best count so far).
+export function startAuthenticatorDevice(sprite, options = {}) {
+    const { setGlobalPrefix, ...stream } = sprite?.scenarioData?.minigameData || {};
+    const prefix = typeof setGlobalPrefix === 'string' && setGlobalPrefix ? setGlobalPrefix : null;
+    startAuthenticator({
+        title: sprite?.scenarioData?.name || 'Authenticator',
+        ...stream,
+        onComplete: (success, result) => {
+            if (success && prefix && result && !result.aborted) {
+                const g = window.gameState?.globalVariables || {};
+                if (result.approvedAt !== null && result.approvedAt !== undefined) writeGlobal(`${prefix}approved`, true);
+                const sent = Number(result.sent) || 0;
+                writeGlobal(`${prefix}sent`, Math.max(sent, Number(g[`${prefix}sent`]) || 0));
+            }
+            if (typeof options.onComplete === 'function') options.onComplete(success, result);
+        }
+    });
+}
+window.startAuthenticatorDevice = startAuthenticatorDevice;
 
 // Pretext preparation (P4-T0). The callId branches in interactions.js call this
 // after the lockout check. socialOverlayParams sets requiresKeyboardInput and
