@@ -652,3 +652,18 @@ these three. Each fix was checked against the code in `/home/user/BreakEscape` o
 1. The round 2 `02` fixer reclassified every new tell as local, including E8's `unexpected_sent_item`, `unrequested_reset` and `ransomware_note`. In round 1, E8 was written to author them as shared. Check that E8 and every other spec agree with the `02` tell table.
 2. The E8 defend-only bridge (R2_sonnet m1) is still open. Either define it (the file, the run-suite JOBS entry and a skeleton), or drop it from E8 §16.
 3. The E11 two-aim variant needs ENG-04 to write a global when `mistake` completes. Either add that, or confirm that E11 ships the one-aim design.
+
+## Round 3 results
+
+| Review | B | M | m | t | Verdict |
+|---|---|---|---|---|---|
+| R3_review (cross-consistency) | 1 | 3 | 6 | 3 | not clean |
+| R3_sonnet (E12, E10, core_17, E8) | 3 | 8 | 15 | 4 | not clean; core_17 validated in scratch |
+
+## Round 3 rulings (orchestrator)
+
+1. **Tells (amends round 2 ruling 2).** A tell is **shared** only when a `10` check-form item scores it. Otherwise it is **local** to each set that uses it, even if two sets use the same id; sets never merge. E8's three tells are local, so E8 authors set-level `flagChips` labels and `factorStrings.<id>.redFlag` for them, following E9's and E10's pattern. Nothing is appended to the library. `unapproved_tool` is local in both E15 and E17. The `02` tell table records this rule and lists every new tell, E15 and E17 included.
+2. **`channelTells` in `10`.** It must hold only channel-tell ids. Factor ids such as `senderTrust`, `linkCredible` and `pretextRelevant` are scored through the factor path, never listed in `channelTells`. Copy exactly how a built check shell (`awareness_pre_general_ab`) declares its scored flags.
+3. **Prove the shapes.** Every fixer validates any JSON snippet it changes or adds by building a throwaway shell in the scratchpad and running the real validator. The method is in `R3_sonnet.md`: install `json-schema` into a scratch gem folder, run `ruby -I ... scripts/validate_scenario.rb <file> --strict-social --no-graph --skip-ink`, with `LANG=C.UTF-8`. Where a key needs an engine packet that does not exist yet, the brief says so and the scratch test is skipped. Record which snippets you validated.
+4. **E12 (R3_sonnet B1 and B2).** Make the door ask grantable through the facts the NPC `knows` (`pretext-judge.js` `judgeAsk`). Place the kiosk and set the start room so the learner can start the episode, and so that a failed con and a reload never strand them. Define the player's room move in ENG-05a. Decide all of this from the code.
+5. **Completeness, as round 2 ruling 5 required for E8.** E10 and E12 give every shell and generator metadata value, and write their items as final JSON. E8 adds its defend email bodies and `auth`/`to` rows.
