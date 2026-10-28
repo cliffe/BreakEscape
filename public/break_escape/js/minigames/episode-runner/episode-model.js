@@ -199,6 +199,7 @@ export function childLaunch(episode, stage) {
         if (isObj(mfa.choice)) params.choice = mfa.choice;
         if (isObj(mfa.pushTemplate)) params.pushTemplate = mfa.pushTemplate;
         if (isStr(mfa.defenderNote)) params.defenderNote = mfa.defenderNote;
+        if (isObj(mfa.strings)) params.strings = mfa.strings;
         return { kind: 'mfa', sceneType: 'authenticator', params };
     }
     if (stage === 'write' && writeKind(episode) === 'call') {

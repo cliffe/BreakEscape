@@ -40,7 +40,7 @@ module ValidateSocial
 
   # Object types introduced by the social build (00 §11 "Pointers"). `phone` already exists.
   SOCIAL_OBJECT_TYPES = %w[mail_terminal osint-workstation case-file triage-workstation
-                           page-builder report-workstation kiosk].freeze
+                           page-builder report-workstation kiosk authenticator-device].freeze
   AIM_UNLOCK_KEYS = %w[aimCompleted aimsCompleted globalVariable equals].freeze
   SYNC_TYPES = %i[bool number string].freeze
 
@@ -596,3 +596,7 @@ ValidateSocial::AREAS << ValidateSocial::Options
 # The awareness episode shell (Phase 7, P7-D): the kiosk, the stages, the defend set's binding, the host NPC
 require_relative 'validate_social/awareness'
 ValidateSocial::AREAS << ValidateSocial::Awareness
+
+# Authenticator device room objects: the push stream and setGlobalPrefix on the object
+require_relative 'validate_social/authenticator_device'
+ValidateSocial::AREAS << ValidateSocial::AuthenticatorDevice

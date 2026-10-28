@@ -1101,6 +1101,16 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // Authenticator device: a phone in the room that plays the push stream in its minigameData.
+    if (sprite.scenarioData.type === 'authenticator-device') {
+        if (window.startAuthenticatorDevice) {
+            window.startAuthenticatorDevice(sprite);
+        } else {
+            window.gameAlert('Authenticator unavailable.', 'error', 'Error', 3000);
+        }
+        return;
+    }
+
     // Awareness episode kiosk (P7-H): runs the episode named in minigameData.episodeId.
     if (sprite.scenarioData.type === 'kiosk') {
         if (window.startEpisodeRunner) {

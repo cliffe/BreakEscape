@@ -367,6 +367,7 @@ export function preload() {
     this.load.image('osint-workstation', 'objects/osint-workstation.png');
     this.load.image('triage-workstation', 'objects/triage-workstation.png');
     this.load.image('kiosk', 'objects/kiosk.png');
+    this.load.image('authenticator-device', 'objects/authenticator-device.png');
     this.load.image('aw_brightwell_oatbox1', 'objects/aw_brightwell_oatbox1.png');
     this.load.image('aw_hard_hat1', 'objects/aw_hard_hat1.png');
     this.load.image('aw_chair_south_slate1', 'objects/aw_chair_south_slate1.png');

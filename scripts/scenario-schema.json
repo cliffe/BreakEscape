@@ -2018,7 +2018,21 @@
               "patternProperties": {"^_": {}},
               "additionalProperties": false
             },
-            "defenderNote": {"description": "Decision mode: the defender's control, shown last in the outcome", "type": "string"}
+            "defenderNote": {"description": "Decision mode: the defender's control, shown last in the outcome", "type": "string"},
+            "strings": {
+              "type": "object",
+              "description": "Optional wording over the authenticator defaults (authenticator-minigame.js). In decision mode choice.intro and choice.confirm win over intro and confirm.",
+              "properties": {
+                "intro": {"type": "string", "description": "The line above the phone"},
+                "approved": {"type": "string", "description": "The banner when the target taps Approve"},
+                "send": {"type": "string", "description": "The send-another-push button"},
+                "confirm": {"type": "string", "description": "The decision-mode confirm button"},
+                "wordmark": {"type": "string", "description": "The app name in the title bar (default AUTH)"},
+                "request": {"type": "string", "description": "The question on each prompt card (default 'Are you trying to sign in?')"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            }
           },
           "dependencies": {
             "pushes": ["approvesAt"],
