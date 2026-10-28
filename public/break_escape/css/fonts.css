@@ -58,4 +58,6 @@
 
 :root {
   --se-font-readable: 'Source Sans 3', 'Segoe UI', Arial, sans-serif;
+  /* In-world web pages. Pixelify Sans lacks Cyrillic capital O, which falls back to Source Sans 3. */
+  --se-font-pixel: 'Pixelify Sans', 'Source Sans 3', 'Segoe UI', Arial, sans-serif;
 }

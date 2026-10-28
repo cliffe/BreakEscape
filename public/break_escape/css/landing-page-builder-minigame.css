@@ -203,10 +203,12 @@
 
 .lpb-body { /* note: inside .lpb-preview the renderer uses .lpb-body too */ }
 
+/* the page itself is the in-world site; the address bar above stays Source Sans 3 */
 .lpb-preview .lpb-body {
     display: block;
     flex: 0 0 auto;
     padding: 18px;
+    font-family: var(--se-font-pixel, 'Pixelify Sans', 'Source Sans 3', sans-serif);
 }
 
 .lpb-logo { min-height: 36px; margin-bottom: 12px; }

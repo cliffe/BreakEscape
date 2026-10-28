@@ -1,6 +1,7 @@
 /* OSINT browser (design 02). Dark chrome on the --ui-* tokens, a light "page" area for the site
-   content. Every string the player reads is DOM text; domains, addresses, handles, file names and
-   metadata are Source Sans 3 (--se-font-readable). Marks are always paired with words.
+   content. Every string the player reads is DOM text. The chrome (address bar, sites strip) is
+   Source Sans 3 (--se-font-readable); the page area is the in-world site, in Pixelify Sans
+   (--se-font-pixel). Marks are always paired with words.
    The stylesheet <link> is added by the wiring packet (P2-W). */
 
 .osint-browser-container {
@@ -156,10 +157,16 @@
     outline: none;
 }
 
+.ob-main,
+.ob-main * {
+    font-family: var(--se-font-pixel, 'Pixelify Sans', 'Source Sans 3', sans-serif);
+}
+
 .ob-page { display: flex; flex-direction: column; gap: 12px; max-width: 760px; }
 .ob-site-head { display: flex; align-items: center; gap: 12px; border-bottom: 2px solid #c9c2b2; padding-bottom: 8px; }
 .ob-site-title { margin: 0; font-size: 20px; font-weight: 700; }
-.ob-logo { width: 64px; height: 64px; image-rendering: pixelated; }
+/* logos are drawn 20px tall; shown at a whole-number scale */
+.ob-logo { height: 60px; width: auto; image-rendering: pixelated; }
 .ob-page-title { margin: 0; font-size: 22px; font-weight: 700; outline: none; }
 .ob-heading { margin: 8px 0 0; font-size: 17px; }
 .ob-empty { margin: 0; font-style: italic; color: #4a4f5c; }
@@ -325,5 +332,6 @@
     .ob-address { margin: 8px 8px 0; }
     .ob-head { padding: 8px; }
     .ob-title { font-size: 12px; }
+    .ob-logo { height: 40px; }
     .ob-tool { flex-basis: 100%; }
 }

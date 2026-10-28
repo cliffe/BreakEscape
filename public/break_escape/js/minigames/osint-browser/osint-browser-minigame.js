@@ -35,6 +35,7 @@ import {
 
 const ICON = '/break_escape/assets/icons/';
 const OSINT_ASSETS = '/break_escape/assets/osint/';
+const LOGOS = '/break_escape/assets/logos/';
 const CHARACTERS = '/break_escape/assets/characters/';
 const NOTHING = 'Nothing here you can use.';
 const HINT_ID = 'ob-hint-add';
@@ -306,10 +307,13 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
     _siteHeader(site) {
         const head = h('div', { class: 'ob-site-head' });
         if (site.logo) {
-            head.appendChild(h('img', { class: 'ob-logo', src: OSINT_ASSETS + String(site.logo).replace(/^\/+/, ''),
+            head.appendChild(h('img', { class: 'ob-logo', src: LOGOS + String(site.logo).replace(/^\/+/, ''),
                 alt: site.logoAlt || '', 'aria-hidden': site.logoAlt ? false : 'true' }));
         }
-        head.appendChild(h('p', { class: 'ob-site-title', text: site.name || site.title || site.id }));
+        // A logo with alt text is the site's wordmark, so it stands in for the title.
+        if (!(site.logo && site.logoAlt)) {
+            head.appendChild(h('p', { class: 'ob-site-title', text: site.name || site.title || site.id }));
+        }
         return head;
     }
 
