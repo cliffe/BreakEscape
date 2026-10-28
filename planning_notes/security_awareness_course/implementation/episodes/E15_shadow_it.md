@@ -161,8 +161,19 @@ parity allow-list, exactly as E11 section 10a rules (02's ENG-04 adds only `flip
 `verifyVerdict: true` (ringing the client / asking IT is a real move here), `feedbackMode: "immediate"`,
 `headerPanel: "off"`, `glossary: "closed"`. Set id `e15_shortcuts_inbox`. `outcome.setGlobalPrefix:
 "episode_e15_shadow_it_defend_"`, `passPercent: 0`. `channelTells`: `["lookalike_domain",
-"vish_callback_pressure"]` plus the scenario-local tells `found_media` ("a found, posted or giveaway
-stick or device") and `unapproved_tool` ("a free app or online service with no contract").
+"vish_callback_pressure"]` plus the scenario-local tells `found_media` and `unapproved_tool`. Both are
+declared on E15's set with a short `flagChips` label (`found_media`: "Found or posted media";
+`unapproved_tool`: "Unapproved tool or app"); the validator accepts a `channelTells` id that `flagChips`
+labels and that is not a factor (`triage.rb` `flag_universe`), so this needs **no** shared-library change.
+
+**`unapproved_tool` is local in both E15 and E17 (round 3 ruling 1).** The same id is also used by E17's
+set (`e17_acceptable_use_inbox`), but ruling 1 keeps a tell **local** unless a `10` check-form item scores
+it, even when two sets use the same id: the two sets are never merged, so each declares `unapproved_tool`
+with its own `flagChips` label on its own set, and nothing is appended to the shared `CHANNEL_TELLS` /
+`SKILL_NAMES`. No `10` item scores `unapproved_tool`, so it stays local. The full sentence for each
+flagging message is carried as `truth.factorStrings.<id>.redFlag` (for example, `unapproved_tool`: "a
+free app or online service with no contract, no control and no off switch"; `found_media`: "a found,
+posted or giveaway stick or device").
 
 | # | Id | Kind / from | Subject or line | Tells and flags | Correct verdict | Reason text |
 |---|----|-------------|-----------------|-----------------|-----------------|-------------|

@@ -58,12 +58,16 @@ built here; its content is reduced to one in-person pretext and a six-item recep
 | Packet | What E12 needs from it |
 |---|---|
 | **ENG-05a** (world-play attack modifier) | The whole attack half: the `world` modifier on the call `write` stage places the player in the lobby in the costume before the pretext and reverts on the flip, handing back through the built `watchCall` (02 ENG-05a has settled this; no `#trigger_minigame`). With ENG-05b (costume, aw9), ENG-05c (lobby, door, NPC door opening), ENG-05d (parcel sprite art). Precise needs in section 9.1. |
-| **ENG-08** (schema and validator) | Accept the `awarenessEpisode.world` block (`room`, `startRoom`, `costume`); accept a lobby room type and a locked connection between lobby and studio; keep the N16 host-NPC lint happy for a two-room shell. The four scenario-local tells (section 11) need **no** library change: the validator already accepts a `channelTells` id that `flagChips` labels and that is not a factor, so they are declared on the set, not added to ENG-08's shared library. |
+| **ENG-08** (schema and validator) | Accept the `awarenessEpisode.world` block (`room`, `startRoom`, `costume`); accept a lobby room type and a locked connection between `lobby` and `training_room`; keep the N16 host-NPC lint happy for a two-room shell. The four scenario-local tells (section 11) need **no** library change: the validator already accepts a `channelTells` id that `flagChips` labels and that is not a factor, so they are declared on the set, not added to ENG-08's shared library. |
 | **Check forms (no engine packet)** | E12 does not get its own check form. Its one message-triage-friendly pretext item sits in the shared `general_v2` pair (`10_CHECK_FORMS.md`, ruling 1); section 14. |
 | (existing) | The pretext call path (`write` stage with `attack.callId`, pretext-prep → person-chat), the influence service, the triage `call` kind, the host-NPC done-event mechanism (N16), and `watchCall` (`episode-runner-minigame.js:760`) for the flip hand-back. No change needed; cited so the implementer reuses, not rebuilds. |
 
-Build order: ENG-05a (with 05b to 05d) and ENG-08 land before E12 is wired. If ENG-05a slips, E12 cannot
-ship: the attack half has no fallback (unlike E3, whose phone pretext is already built).
+Build order (one sentence, to settle the cross-document disagreement, R3_sonnet m2): **E12 needs
+ENG-05a, ENG-05b, ENG-05c and ENG-08 before it is wired; it does not need ENG-05d (parcel art, baked into
+the costume sprite and not a wiring prerequisite), ENG-05e (the optional `#trigger_minigame`, since the
+hand-back reuses `watchCall`) or ENG-09c.** If ENG-05a slips, E12 cannot ship: the attack half has no
+fallback (unlike E3, whose phone pretext is already built). The parcel art (ENG-05d) can follow; E12 is
+wired and bridged with the stock costume sprite and gets the baked-in parcel later.
 
 ## 4. Owner models
 
@@ -71,6 +75,10 @@ ship: the attack half has no fallback (unlike E3, whose phone pretext is already
 - Engine packets ENG-05a (with 05b to 05d) and ENG-08: general-purpose or Sonnet. The check-form item
   E12 feeds is built as part of `10_CHECK_FORMS.md` (no E12-specific engine packet).
 - Shell wiring (this spec), ink, strings: Sonnet following this brief.
+- **Content gate (round 3 ruling 5 / R3_sonnet M7).** Section 8b (all shell and generator metadata),
+  section 11's six `call` items as final JSON, and the section 10 flip strings are the content the
+  `opus48` writer completes before any P2 shell wiring starts; a Sonnet implementer invents nothing from
+  them.
 
 ## 5. Company, room and host
 
@@ -124,15 +132,22 @@ ship: the attack half has no fallback (unlike E3, whose phone pretext is already
 - **Genuine visitors in the defend set** reuse one existing M&S client firm as a client and invent one
   `.example` contractor and one fire-safety firm (section 11). Pre-ship: web-search "Arvanitis",
   "Easton", "Northlight Security", and the invented firms for a real business of the same name.
-- **Rooms:** two.
-  - `studio` (the defend seat and the kiosk): map type `room_aw_merrin_sallow`, built by
-    `build_aw_rooms.py` and wired by `training_room.py` (`merrin_sallow` entry,
-    `chatBackground: assets/backgrounds/rooms/aw_merrin_sallow_blended.png`). Reuse unchanged.
-  - `lobby` (the attack world-play): a **new** reception/lobby map, `room_aw_merrin_lobby`, with a
-    reception desk, the entrance, and a badge door to `studio`. Added as a new entry in
-    `build_aw_rooms.py` (a fresh copy of `room_uni_seminar` dressed as a lobby, same pattern as the
-    four existing `room_aw_*` maps). Owned by ENG-05 (section 9.1). Cast diversity and props follow
-    `ROOMS_REVIEW` conventions.
+- **Rooms:** two. **The kiosk room is named `training_room`** (not `studio`), because every awareness
+  tool and bridge assumes `rooms.training_room` (for example `apply_training_room.py` reads
+  `rooms['training_room']['type']` unguarded, so `--refresh` crashes on a shell with no `training_room`
+  key, R3_sonnet M5), and the generated defend-only shell uses `training_room` too, so full and
+  defend-only must agree. The design-studio fiction is carried by the room's `door_sign` ("Studio"), not
+  by the room id.
+  - `training_room` (the design-studio room: the defend seat and the kiosk, and Lorna the kiosk host):
+    map type `room_aw_merrin_sallow`, built by `build_aw_rooms.py` and wired by `training_room.py`
+    (`merrin_sallow` entry, `chatBackground: assets/backgrounds/rooms/aw_merrin_sallow_blended.png`).
+    Reuse unchanged. **This is the scenario `startRoom`** (section 9.1 item 3), so the learner spawns at
+    the kiosk and can always start the episode.
+  - `lobby` (the attack world-play, where Delphine is): a **new** reception/lobby map,
+    `room_aw_merrin_lobby`, with a reception desk, the entrance, and a badge door to `training_room`.
+    Added as a new entry in `build_aw_rooms.py` (ENG-05c owns the build recipe, following 01 P5b's steps
+    for a new map type). Owned by ENG-05 (section 9.1). Cast diversity and props follow `ROOMS_REVIEW`
+    conventions.
 
 ## 6. Timing budget per stage (~15 minutes)
 
@@ -181,6 +196,131 @@ Defend-only variant: `"stages": ["brief","defend","debrief"]` (the runner drops 
 - Ethics line (pretext-prep brief, `brief.ethics`): "Authorised test only. You never deceive a real
   person, and the costume comes off the moment you're through."
 
+## 8b. Shell and generator metadata (every value final; no guessing)
+
+Every metadata value the shell wiring and the generator need, as final strings (round 3 ruling 5 /
+R3_sonnet M7), copying the two-aim call-attack shape from the built **E3** (`awareness_e3_helpdesk_reset`)
+and the generator shape from `gen_e3_e5_shells.py` (E12's defend-only shell is added to
+`gen_e8_e17_shells.py` with the same field shape). E12 is a **call-attack** episode like E3 (not a
+consequence flip), so it carries **two** aims.
+
+### NPC and costume sprites
+
+- **Delphine Arvanitis** (lobby pretext mark, `rooms.lobby.npcs[]`): `"id": "delphine_reception"`,
+  `"displayName": "Delphine Arvanitis"`, `"npcType": "person"`, `"unlockable": ["training_room"]`,
+  `"storyPath": "scenarios/awareness_e12_visitor_tailgater/ink/delphine_reception.json"`,
+  `"currentKnot": "start"`. She needs a **new** person-chat portrait/bust (the influence conversation);
+  world sprite and talk/viseme keys follow the E3 host-NPC shape (`<key>_v2` / `<key>_talk.png` /
+  `<key>_visemes.png`), placeholder until the PixelLab queue produces her art.
+- **Lorna Easton** (kiosk host, `rooms.training_room.npcs[]`): `"id": "lorna_easton"`,
+  `"displayName": "Lorna Easton"`, `"npcType": "person"`,
+  `"storyPath": "scenarios/awareness_e12_visitor_tailgater/ink/lorna_easton.json"`,
+  `"currentKnot": "start"`, carrying the N16 done-event `eventMappings`. **She reuses a built sprite**
+  (no influence bust needed): use a built Merrin & Sallow / office-worker host sprite and talk portrait
+  already in `assets/characters/` as her placeholder, for example `"spriteSheet": "male_office_worker_v2"`,
+  `"spriteTalk": "assets/characters/male_office_worker_talk.png"`,
+  `"spriteVisemes": "assets/characters/male_office_worker_visemes.png"` (confirm the chosen built sprite
+  with the art schedule; the name Lorna Easton stays either way). This saves one full character art set
+  (section 5).
+- **Hi-vis courier costume** (ENG-05b, under `world.costume`, section 9.1 item 1): sprite
+  `aw_hivis_courier_v2` (parcel baked into `walk`/`breathing-idle`), talk portrait
+  `assets/characters/aw_hivis_courier_talk.png`.
+- **Learner avatar** (full erb `player`, as E3): `"spriteSheet": "female_office_worker_v2"`,
+  `"spriteTalk": "assets/characters/female_office_worker_talk.png"`.
+
+### Full-episode objectives (full erb `objectives[]`, copy the E3 two-aim shape)
+
+| field | aim 1 (red team) | aim 2 (defend, `missionConclusion: true`) |
+|---|---|---|
+| `aimId` | `red_team_aim` | `reception_desk_aim` |
+| `title` | "Run the front-desk pretext" | "Cover the reception desk" |
+| `description` | "Put on the courier's hi-vis, carry the parcel, and try to talk the front desk into buzzing you through the badge door without a badge." | "Work through the visitors at the reception desk at the training kiosk." |
+| `order` | 0 | 1 |
+| task `taskId` / `title` / `type` | `run_front_desk_pretext` / "Approach the front desk as the courier" / `manual` | `work_reception_desk` / "Work through the reception desk" / `custom` |
+
+Aim 2 `concludeRequires.globals`: `["episode_e12_visitor_tailgater_defend_done"]`. Aim 2
+`conclusionScreen`: `{ "type": "success", "title": "Visitor and tailgater episode done", "body": "You've
+tried the front desk in a courier's hi-vis, then sat on reception and handled the visitors yourself, so
+this episode is finished." }`. `awarenessEpisode.conclusionTaskId: "work_reception_desk"`.
+
+### Full-episode training kiosk (full erb `rooms.training_room.objects[]` kiosk, copy the E3 shape)
+
+- `observations`: "A touch-screen training kiosk for the Merrin & Sallow visitor exercise: first the
+  red-team brief and the front-desk approach, then the visitors to handle on the reception seat."
+- `observationVariants[0]`: `{ "condition": "globalVars.episode_e12_visitor_tailgater_defend_done",
+  "value": "A touch-screen training kiosk for the Merrin & Sallow visitor exercise. The approach is done
+  and the reception desk is all handled." }`
+- `minigameData.episodeId`: `e12_visitor_tailgater`.
+
+### Full-episode `mission.json` (copy the E3 mission.json shape)
+
+- `display_name`: "Awareness E12: Visitor and tailgater (full episode)"
+- `description`: "An awareness episode of about 15 minutes for all staff. On an authorised exercise at
+  Merrin & Sallow Architects, a fictional architecture practice, you first play the red team: in a
+  courier's hi-vis you try to talk the front desk into buzzing you through a badge door. Then you swap
+  seats onto reception and handle the visitors yourself. Only the reception seat is scored, and checking
+  or reporting when you're unsure is always fine and never marked down."
+- `difficulty_level`: 1; `scoring`: "completion"; `secgen_scenario`: null; `collection`: "training";
+  `ui_theme`: "general"; `estimated_duration_minutes`: 15.
+- `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Physical security", "Social engineering", "Security awareness", "Tailgating"] } ]`.
+
+Top-level erb strings (copy E3's): `scenario_id` `awareness_e12_visitor_tailgater`; `scenario_name`
+"Visitor and tailgater: both sides"; `scenario_brief` = `strings.brief` (§8); `endGoal` "Run the
+front-desk pretext, then work the reception desk at the training kiosk."; `version` "1.0";
+`disableAttacks` true; `startRoom` `training_room` (section 9.1 item 3); `startPosition` as E3.
+
+### Defend-only shell: generator `EPISODES['e12']` entry (`gen_e8_e17_shells.py`, following the `gen_e3_e5_shells.py` `EPISODES` shape)
+
+```python
+'e12': {
+    'frag': f'{AW}/e12/defend.json',
+    'full_id': 'e12_visitor_tailgater',
+    'role_word': 'general',
+    'role_label': 'all staff',
+    'defend_set': 'e12_reception_desk',
+    'defend_host': 'lorna',
+    # No 'forms'/'check_hosts': E12 feeds one item into general_v2, built by 10's own generator (ruling 1, §14).
+    'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+               'keywords': ['Physical security', 'Social engineering', 'Security awareness', 'Tailgating']}],
+    'defend': {
+        'name': 'Visitor and tailgater: the reception desk',
+        'brief': "You're on an authorised exercise at Merrin & Sallow Architects, a fictional architecture practice. You're covering the reception desk, and visitors arrive one at a time: some are expected, some are not, and one or two are trying to talk their way in. Handle each one, and check or report anyone who pushes past a check. Checking or reporting when you're unsure is always fine and never marked down.",
+        'endGoal': 'Work the reception desk at the training kiosk.',
+        'aim': ('reception_desk_aim', 'Cover the reception desk', 'Work through the visitors at the reception desk at the training kiosk.'),
+        'task': ('work_reception_desk', 'Work through the reception desk'),
+        'kiosk': ("A touch-screen kiosk showing the Merrin & Sallow reception desk: a handful of visitors to handle.",
+         "A touch-screen kiosk showing the Merrin & Sallow reception desk. The visitors are all handled."),
+        'display': 'Awareness E12: Visitor and tailgater (defend only)',
+        'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Cover the reception desk at Merrin & Sallow Architects, a fictional architecture practice: some visitors are expected, some are not, and one or two are trying to talk their way in. Each answer is explained, and checking or reporting when you're unsure is always fine and never marked down.",
+        'minutes': 8,
+        'ending': ('Reception desk handled', "You've handled the visitors at the reception desk and finished this episode."),
+    },
+},
+```
+
+The defend-only shell id is `e12_visitor_tailgater_defend`, prefix
+`episode_e12_visitor_tailgater_defend_defend_` (§13). The defend-only `scopeNote`/`_defendOnly` strings
+are in the fragment (§13).
+
+### Defend-host lines: generator `LINES[('e12', 'defend')]` (the tuple `(before, after, choice, reply)`, Lorna's voice)
+
+```python
+('e12', 'defend'): (
+    "You're on reception this morning. Visitors come one at a time: some are on the list, some aren't, and one or two will try it on. Take each as it comes, sign people in and escort them, and check or report anyone who pushes past a check.",
+    "That's the desk cleared, thanks. The move that works for every pushy visitor is the same: check the list, escort them, and report anyone who won't be checked.",
+    'Thanks, Lorna.', 'Any time.'),
+```
+
+### Host spoken lines for the full shell (ink, Lorna, the kiosk host)
+
+- **Welcome** (at the kiosk): the §8 welcome framing (Jo sets the red-team scope in the seeded brief;
+  Lorna welcomes the learner to the kiosk and the reception seat).
+- **After the attack half** (on the hand-off into the defend half): "However that went at the door, now
+  you're the one being asked. Same visitors, your desk. Sign people in, walk them up, and if someone
+  won't be checked, that's your answer."
+- **On completion** (defend done): "That's the desk done. A busy front of house that signs people in and
+  walks them up stops nearly all of this; nobody's in trouble for slowing a pushy visitor down."
+
 ## 9. Attack half (the world-play pretext)
 
 The one attack artefact is an **in-person pretext conversation** on the influence bar. It reuses the
@@ -197,8 +337,29 @@ ENG-05 is the "world-play attack stage" packet. E12 needs, as configuration on t
    `player.spriteSheet`. aw9 ("the chosen avatar always wins") means the costume is a **temporary
    override**, not a new chosen avatar: ENG-05 stores the pre-attack sprite and restores it, and
    `syncScenarioPlayer` (`player-avatar.js:55`) is called with the restored key so person-chat's
-   self-view and the HUD agree. Config:
-   `"attack": { ..., "costume": { "sprite": "aw_hivis_courier_v2", "talk": "assets/characters/aw_hivis_courier_talk.png" } }`.
+   self-view and the HUD agree. **The costume lives under `awarenessEpisode.world.costume`, not under
+   `attack`** (02 ENG-05a change 1; the schema's `attack` is `additionalProperties: false` and has no
+   `costume` key, so a costume under `attack` would fail `--strict-social`). Author the full `world`
+   block and the call `attack` block once, as follows:
+
+   ```jsonc
+   "world": {
+     "room": "lobby",                 // where the runner places the player for the attack
+     "startRoom": "lobby",            // the player's placement when the world-play begins (item 3)
+     "costume": {
+       "sprite": "aw_hivis_courier_v2",
+       "talk": "assets/characters/aw_hivis_courier_talk.png"
+     }
+   },
+   "attack": {
+     "callId": "merrin_front_desk",   // makes writeKind return 'call' (section 7)
+     "siteIds": ["merrin_site", "merrin_social"],
+     "scored": false                  // the attack half is never scored (11 §4.1)
+   }
+   ```
+
+   The scenario's own top-level `startRoom` is `training_room` (the kiosk room), **not** the lobby
+   (item 3); `world.room`/`world.startRoom` only place the player in the lobby for the attack.
 2. **A parcel the player carries.** There is **no stock "carry" animation**: the six house templates are
    `breathing-idle, walk, cross-punch, lead-jab, taking-punch, falling-back-death`
    (`.claude/skills/pixellab-character-animations/SKILL.md`), and the pipeline forbids `action_description`
@@ -207,17 +368,36 @@ ENG-05 is the "world-play attack stage" packet. E12 needs, as configuration on t
    `breathing-idle` frames (made with the standard `pixellab_pipeline.py` route, parcel as part of the
    character, not as a separate animation state). This is an art note for ENG-05/PixelLab, not new
    engine code. (Hand edits go in `tools/pixellab_overrides/`, never on the atlas, CLAUDE.md.)
-3. **A lobby room and a door.** `rooms.lobby` (type `room_aw_merrin_lobby`, section 5) connected to
-   `rooms.studio` by a badge door that starts **locked**. `startRoom: "lobby"`.
+3. **A lobby room, a badge door, and the start-room flow (B2, decided from the code).** `rooms.lobby`
+   (type `room_aw_merrin_lobby`, section 5) connected to `rooms.training_room` (the kiosk room) by a
+   badge door that starts **locked**. The scenario's top-level `startRoom` is **`training_room`**, so the
+   learner always spawns at the kiosk and can start the brief; they never need to walk through the locked
+   door (defend is played at the kiosk, section 20.3). The `world` modifier (item 1) places the player in
+   `lobby` for the world-play attack only; **on any `write` outcome (`got_it`, `reported` or
+   `walked_away`) ENG-05a moves the player back to `training_room`** before `watchCall` reopens the runner
+   for the flip (item 5). So a failed con and a P13 reload both land the learner at the kiosk, never
+   stranded behind the locked door (this resolves R3_sonnet B2 and m15). The function that moves the
+   player between rooms is named and owned by **02 ENG-05a** (the room-move half of the world modifier);
+   E12 only authors `world.room`/`world.startRoom` and the top-level `startRoom`.
+
+   The locked badge door's keys follow the built m02 pattern (copy `m02_ransomed_trust` `it_department`,
+   `scenario.json.erb:2001-2004`): on the lobby room's connection to `training_room`,
+   `"locked": true, "lockType": "key", "requires": "merrin_studio_badge", "keyPins": [35, 45, 25, 55],
+   "difficulty": "easy"`. `requires` names a key id that **no object in the scenario holds**, so there is
+   no key to pick up; the only in-fiction opener is Delphine buzzing the door (item 4). The learner is
+   given no lockpick and never needs to traverse the door, so pickability does not matter here; the door
+   is the attack's success/empathy beat, not a traversal puzzle.
 4. **An NPC opening the door, reuse the existing mechanism, do not build a new one.** NPCs already open
-   doors: an ink line carrying the tag `# unlock_door:studio` is handled at
+   doors: an ink line carrying the tag `# unlock_door:training_room` is handled at
    `minigames/helpers/chat-helpers.js:71`, which calls `NPCGameBridge.unlockDoor(roomId)`
    (`systems/npc-game-bridge.js:77`); that server-validates the NPC's permission and then clears
-   `doorProperties.locked` on every door sprite to the room (lines 112,119) and emits
-   `door_unlocked_by_npc`. (`apply-actions.js:102` `unlock_door` is the action-list equivalent.) So on
-   a successful pretext the host's ink speaks a buzzed-in line tagged `# unlock_door:studio` and the
-   door opens. ENG-05 only needs to ensure the lobby door honours a locked connection and that the
-   host NPC has door-unlock permission; the opening itself is built.
+   `doorProperties.locked` on every door sprite to the room (`:117-118`) and emits
+   `door_unlocked_by_npc`. (`apply-actions.js:102` `unlock_door` is the action-list equivalent.) The
+   server only honours the tag if the NPC record carries `"unlockable": ["training_room"]` (copy the m02
+   guard's shape, `scenario.json.erb:3238` `"unlockable": ["security_office"]`); so **Delphine's NPC
+   record (`delphine_reception`) must declare `"unlockable": ["training_room"]`**. On a successful
+   pretext her ink speaks the buzzed-in line tagged `# unlock_door:training_room` and the door opens. The
+   opening itself is built; ENG-05c only needs the lobby room to honour the locked connection.
 5. **The flip hand-back (settled: `watchCall`, no `#trigger_minigame`).** 02 ENG-05a has decided the
    hand-back reuses `watchCall` (`episode-runner-minigame.js:760`), which already waits for
    `pretext_<callId>_outcome` to change and every overlay to close, then reopens the runner for the flip.
@@ -253,24 +433,44 @@ conversation).
 
 Pretext lines (ids, techniques, gating fact, draft text). `blanks`/`claims` as E3:
 
-| line id | technique / also | requires fact | draft text |
-|---|---|---|---|
-| `open_parcel` | (none) | `merrin_courier_routine` | "Parcel for the studio, needs a signature from someone up there." |
-| `name_drop_partner` | `authority_borrowed` | `merrin_partner_travel` | "It's the sample box for Catherine Merrin, she's expecting it today." |
-| `hands_full` | `deflect` | `merrin_badge_door` | "My hands are full and the badge is back in the van, could you just buzz me through?" |
-| `double_parked` | `urgency`, also `deflect` | (always) | "I'm double-parked with a full run on, any chance you can be quick?" |
-| `no_need_to_sign` | `deflect`, also `urgency` | (always) | "No need to sign me in, I'll be thirty seconds and straight back out." |
+| line id | technique / also | requires fact | claims (blank) | draft text |
+|---|---|---|---|---|
+| `open_parcel` | (none) | `merrin_courier_routine` | (none) | "Parcel for the studio, needs a signature from someone up there." |
+| `name_drop_partner` | `authority_borrowed` | `merrin_partner_travel` | `recipient` (blank `recipient`) | "It's the sample box for {recipient}, she's expecting it today." |
+| `hands_full` | `deflect` | `merrin_badge_door` | (none) | "My hands are full and the badge is back in the van, could you just buzz me through?" |
+| `double_parked` | `urgency`, also `deflect` | (always) | (none) | "I'm double-parked with a full run on, any chance you can be quick?" |
+| `no_need_to_sign` | `deflect`, also `urgency` | (always) | (none) | "No need to sign me in, I'll be thirty seconds and straight back out." |
 
-One ask, `buzz_door`: `verification: ["expected","escort"]` (the two checks Delphine should make, is
-this delivery expected on today's list, and will she escort rather than buzz blind), `pressure: -10`,
-`floor: 0`, `grants: { setGlobal: { delphine_buzzed_through: true } }`. The granting line in the ink is
-tagged `# unlock_door:studio` so the desk physically opens the door (section 9.1 item 4).
+**The ask is grantable through the fact Delphine `knows` (R3_sonnet B1, round 3 ruling 4).** Following
+the built E3 pattern (`asks.reset_password.verification: ["manager","staffId"]`, facts the agent `knows`
+and the caller claims through blanks, `scenario.json.erb:776-789`), Delphine `knows` the parcel's
+recipient, and the one ask gates on the courier naming that recipient correctly:
+
+- `knows`: `{ "recipient": { "value": "merrin_partner", "grade": "identity" } }`.
+  `labels`: `{ "merrin_partner": "Catherine Merrin" }`. (`merrin_partner` comes from the OSINT fact
+  `merrin_partner_travel`, section 9.2; a learner who skipped the recon has nothing to type in the
+  `recipient` blank and cannot clear the verification.)
+- The `name_drop_partner` line claims `recipient` from its `recipient` blank (`blanks: { "recipient":
+  "recipient" }`, `claims: [{ "fact": "recipient", "from": "blank:recipient" }]`), exactly as E3's
+  `give_manager` claims `manager`. When the learner fills in "Catherine Merrin" the fact matches
+  Delphine's `knows.recipient.value` and is **proven** (`pretext-judge.js` adds it to `provenFacts`).
+- One ask, `buzz_door`: `pressure: -10`, `floor: 0`, `verification: ["recipient"]`,
+  `grants: { setGlobal: { delphine_buzzed_through: true } }`. `judgeAsk` grants it once the pressure
+  leaves influence at or above the floor **and** `recipient` is in `provenFacts`
+  (`pretext-judge.js:366-390`); a courier who never names the partner leaves it `pending`, which is the
+  correct "she wants to know who it's for" beat, not a dead end. The granting line in the ink is tagged
+  `# unlock_door:training_room` so the desk physically opens the door (section 9.1 item 4).
+
+The two honest checks Delphine **should** make, is this delivery on today's expected list, and will she
+walk the courier up rather than buzz the door blind, are **not** verification facts (she cannot confirm
+either from what the courier says, which is the whole lesson). They live only in `defenderNotes` and the
+flip text (section 10), and they are the mirror to defend item 5. So the con works when the learner
+supplies a real partner's name and enough pressure, and the flip explains that the name proving nothing
+is exactly why the list-and-escort check is what a genuine courier never minds and this one could not
+survive.
 
 `susceptibility` (how far each technique moves her, E3 shape): `{ "authority_borrowed": -15,
-"urgency": -10, "deflect": -10 }`; `unverifiableCost: -10`. `knows` / `labels`: she can place
-`merrin_partner` (Catherine Merrin is a real partner) but **cannot** confirm a delivery is expected or
-who the courier is, so the honest checks (list + escort) are what separate this from a genuine
-courier, which is the whole lesson and the mirror to defend item 5.
+"urgency": -10, "deflect": -10 }`; `unverifiableCost: -10`.
 
 `outcomes`: `got_it` (buzzed through), `reported` (she stops and rings facilities), `walked_away`.
 `defenderNotes.buzz_door`: "The name on the parcel and the hurry were both easy to supply. A quick look
@@ -281,9 +481,10 @@ Ink: one new file `ink/delphine_reception.ink`, modelled line-for-line on
 `ink/leila_servicedesk.ink`, the two `EXTERNAL pretext_say/pretext_ask` fallbacks, the `se_intel_*`
 and `pretext_*` VAR declarations, a `desk` knot offering the fact-gated lines, a `reaction` knot that
 routes on band, and an `ask_reaction` knot where result `1` speaks the buzzed-in line **with the
-`# unlock_door:studio` tag**. This is Delphine's lobby ink only. The welcome/brief and the N16
-done-event `eventMappings` live on the **studio kiosk host (Lorna Easton)**, a separate NPC record in
-the studio (section 5, section 15), not on Delphine.
+`# unlock_door:training_room` tag** (and Delphine's NPC record carries `"unlockable": ["training_room"]`,
+section 9.1 item 4). This is Delphine's lobby ink only. The welcome/brief and the N16 done-event
+`eventMappings` live on the kiosk host **Lorna Easton**, a separate NPC record in the `training_room`
+(the studio room; section 5, section 15), not on Delphine.
 
 ### 9.4 Red-flag meter
 
@@ -296,17 +497,23 @@ surfaced by the `tells`/`defenderNotes`, exactly as E3 surfaces them.
 
 The pretext choice the flip shows is whether the learner **asked Delphine to skip signing them in and
 buzz the door** (`hands_full` + `no_need_to_sign` + `buzz_door`) versus a line that kept the normal
-process. The flip's `flipDefenderLineByChoice` names it (section 10).
+process. E12 does **not** use `flipDefenderLineByChoice` to name it: that key maps pretext **template**
+ids and is read from the saved send record, but a call attack's record is `{ kind: 'call', callId,
+outcome }` with no `templateId` (`episode-model.js`), so a by-choice line would never show (R3_sonnet
+m3). The choice is instead surfaced through the single `flipDefenderLine` plus the pretext
+`defenderNotes.buzz_door` (section 9.3), which name the skipped list-and-escort check in the landed case.
 
 ## 10. Flip
 
 `strings.flipHeading`: "Now you're the one on the desk". `flipIntro`: "This is how your approach looked
-from Delphine's side of the counter. The lines picked out below are what got the door open." A
-`flipDefenderLine` for the landed case (the courier got buzzed through), `flipNoSend` / `flipMissed` for
-the walked-away/reported cases, and `flipDefenderLineByChoice` keyed on the pretext line that carried it
-(`hands_full` / `name_drop_partner`). No-blame throughout (aw culture, 11 §4.3): "A full-handed courier
-in a hi-vis with the right name is exactly what a busy desk waves through; getting caught by one is no
-lapse of sense." The flip reverts the costume (section 9.1 item 1).
+from Delphine's side of the counter. The lines picked out below are what got the door open." A single
+`flipDefenderLine` for the landed case (the courier got buzzed through) and `flipNoSend` / `flipMissed`
+for the walked-away/reported cases; **no `flipDefenderLineByChoice`** (R3_sonnet m3, see section 9.5).
+`flipDefenderLine` carries the consequential-choice point in prose ("You asked her to skip the sign-in
+and buzz you through, and the name did the rest"), backed by `defenderNotes.buzz_door`. No-blame
+throughout (aw culture, 11 §4.3): "A full-handed courier in a hi-vis with the right name is exactly what
+a busy desk waves through; getting caught by one is no lapse of sense." The flip reverts the costume
+(section 9.1 item 1).
 
 ## 11. Defend set
 
@@ -321,25 +528,31 @@ All six items are `kind: "call"`, the built triage `call` surface (`triage-kinds
 (turn away), **Ring back = verify** (check the expected-visitors list / ring the host). This is the
 engine-true, scored, measurement-clean choice; person-chat is unscored so it is **not** used for the
 defend beat (same decision E3 took, 11 N15: "person-chat is not used for the defend beat"). Author each
-item directly as a `call` message in `triageSet.messages` (the way E7 authors voicemails inline), with
-`callerId`, `transcript`, `tells` and `truth` (`isPhish`, `flags`, `perFlagNote`, `ifTrusted`,
-`reportReply` for phish; `whyFine`, `falseAlarmCost` for genuine). The built `call` reasoning defaults
-(`triage-kinds.js:105-117`) back up the authored per-flag notes.
+item directly as a `call` message in `triageSet.messages` (the way E3 authors `ha_call_facilities`
+inline), with `id`, `kind: "call"`, `callerId`, `from { name, address }`, `time`, `transcript[{who,
+text}]` and `truth`. **A `call` message has no `tells` field; the flags live in `truth.flags`**
+(R3_sonnet m6), so read the "tells" column of the table below as `truth.flags`. `truth` carries `isPhish`,
+`flags`, `perFlagNote`, `ifTrusted`, `reportReply` for phish, and `isPhish: false`, `flags: []`,
+`whyFine`, `falseAlarmCost` for genuine. The built `call` reasoning defaults (`triage-kinds.js:105-117`)
+back up the authored per-flag notes. The six items are given as final JSON below ("Items as final JSON").
 
 `channelTells` for the set (the closed chip list): `["tailgating","no_escort","uniform_pretext",
 "not_expected","borrowed_authority","secrecy_or_bypass"]`. `borrowed_authority` and `secrecy_or_bypass`
-are the shared-library tells (`00` §2) reused in-person; the other four are **scenario-local tells**
-(11 §5.1 allows them; reusable ones later go to `00`). **No ENG-08 library change is needed for these
-four:** the validator already accepts a `channelTells` id when the set gives it a `flagChips` label and
-it is not a factor (`scripts/validate_social/triage.rb` `flag_universe`). So declare the four with
-`flagChips` labels on the set, using the canonical strings below as those labels; do not add them to the
-shared `CHANNEL_TELLS` library. (ENG-08 is still needed for the `world` block and the lobby room, not for
-the tells.) Canonical strings (the `flagChips` labels):
+are the shared-library tells (`00` §2) reused in-person, already labelled in `CHANNEL_TELLS`; the other
+four are **scenario-local tells** (11 §5.1; round 3 ruling 1). **No ENG-08 library change is needed for
+these four:** the validator accepts a `channelTells` id when the set gives it a `flagChips` label and it
+is not a factor (`scripts/validate_social/triage.rb` `flag_universe`; proven in scratch, section 17). So
+declare the four with **short `flagChips` labels** on the set (a chip label is a short noun phrase, like
+the built `CHANNEL_TELLS` labels, not a full sentence, R3_sonnet m4); do not add them to the shared
+`CHANNEL_TELLS` library. The full explanatory sentence for each flag is carried **per flagging message**
+as `truth.factorStrings.<id>.redFlag`, so the debrief shows a sentence, not a raw id. (ENG-08 is still
+needed for the `world` block and the lobby room, not for the tells.) `flagChips` labels and the
+per-message `redFlag` sentences:
 
-- `tailgating`: "Someone followed an authorised person through a secure door without badging in."
-- `no_escort`: "A visitor or contractor left to move around unescorted."
-- `uniform_pretext`: "A hi-vis jacket, a clipboard or a job title used in place of being expected."
-- `not_expected`: "The visitor is not on today's list and their paperwork does not match."
+- `tailgating`: `flagChips` "Tailgating"; `redFlag` "Someone followed an authorised person through a secure door without badging in."
+- `no_escort`: `flagChips` "No escort"; `redFlag` "A visitor or contractor left to move around unescorted."
+- `uniform_pretext`: `flagChips` "Uniform or job title as proof"; `redFlag` "A hi-vis jacket, a clipboard or a job title used in place of being expected."
+- `not_expected`: `flagChips` "Not on today's list"; `redFlag` "The visitor is not on today's list and their paperwork does not match."
 
 ### Items (3 impostor, 3 genuine; mirror pairs)
 
@@ -355,7 +568,103 @@ the tells.) Canonical strings (the `flagChips` labels):
 Scoring note: both impostor and genuine items reward **Verify** (Ring back) as the safe default (11
 §4.1: reporting/verifying when unsure is never penalised), so "refuse everyone" loses points on the
 genuine items (#2, #4, #6), exactly as E3's single genuine caller prevents "refuse everything" from
-winning.
+winning. **Comply on a genuine visitor scores only half (R3_sonnet m5):** `KIND_VERDICT_POINTS.call`
+scores `real.trust` at 30 of 60, while Ring back (verify) and Escalate score the full 60
+(`triage-scoring.js`). So on the genuine items (#2, #4, #6) the natural "just let the expected client in"
+answer earns half marks, and Ring back is the full-mark habit. Word each genuine item's `whyFine` so
+Comply is explained but the check is the modelled move ("a quick look at the list is still the habit, and
+costs the client nothing"), and the per-item feedback says the full-mark move is to check the list or
+ring the host first.
+
+### Items as final JSON
+
+The six `call` messages, as final `triageSet.messages` JSON (no guessing; R3_sonnet M7, m6). This exact
+set was validated in scratch (round 3 ruling 3, section 17). Flags are in `truth.flags`; the four
+scenario-local tells are labelled in the set `flagChips` (above) and sentence-explained per message via
+`truth.factorStrings.<id>.redFlag` (omitted from the block below for length; use the `redFlag` sentences
+listed above, one `factorStrings` entry per flag a message raises).
+
+```json
+[
+  { "id": "e12_call_tailgater", "kind": "call",
+    "callerId": "A visitor, no badge, following a staff member in",
+    "from": { "name": "Unknown visitor", "address": "At the gate, no badge" }, "time": "09:12",
+    "transcript": [
+      { "who": "Visitor", "text": "Cheers, I'm with them." },
+      { "who": "Visitor", "text": "(slips in behind a badge-holder at the gate and heads for the stairs)" }
+    ],
+    "truth": { "isPhish": true, "flags": ["tailgating", "no_escort"],
+      "perFlagNote": {
+        "tailgating": "They badged in on someone else's card, which is exactly what a wedge or a held door lets happen.",
+        "no_escort": "Heading up alone, with nobody signing for them." },
+      "ifTrusted": "An unbadged stranger is loose on the studio floor, where client plans and screens are open.",
+      "reportReply": "Thanks, we caught them on the stairs; they weren't expected." } },
+  { "id": "e12_call_expected_client", "kind": "call",
+    "callerId": "Client, here for a 10:00 with Yasmin Chaudhry",
+    "from": { "name": "Expected client", "address": "At the desk" }, "time": "09:55",
+    "transcript": [
+      { "who": "Client", "text": "Morning, I've a ten o'clock with Yasmin Chaudhry." },
+      { "who": "Client", "text": "Happy to sign in and wait, no rush." }
+    ],
+    "truth": { "isPhish": false, "flags": [],
+      "whyFine": {
+        "default": "They're on the day's list for a named meeting and happy to be signed in and walked up. A quick look at the list or a call to Yasmin is the full-mark move; just letting them in scores half.",
+        "not_expected": "They are on today's list, which a quick glance confirms." },
+      "falseAlarmCost": "Turn them away and a real client is left in the lobby and the meeting is missed." } },
+  { "id": "e12_call_fire_inspector", "kind": "call",
+    "callerId": "'Fire-safety inspector', wants the comms room",
+    "from": { "name": "'Fire-safety inspector'", "address": "At the desk, clipboard" }, "time": "11:20",
+    "transcript": [
+      { "who": "Inspector", "text": "Annual check, I just need five minutes in your comms room." },
+      { "who": "Inspector", "text": "I can let myself in, no need to trouble anyone." }
+    ],
+    "truth": { "isPhish": true, "flags": ["uniform_pretext", "not_expected", "secrecy_or_bypass"],
+      "perFlagNote": {
+        "uniform_pretext": "A hi-vis and a clipboard are easy to get; neither proves he's expected.",
+        "not_expected": "No entry on today's list and the firm on his order isn't the one on the maintenance contract.",
+        "secrecy_or_bypass": "'I can let myself in' asks to skip the escort into a secure room." },
+      "ifTrusted": "He'd be alone in the comms room with the building's network.",
+      "reportReply": "Thanks, facilities confirmed no inspection was booked and the firm's name was wrong." } },
+  { "id": "e12_call_real_contractor", "kind": "call",
+    "callerId": "Lift engineer, on today's list",
+    "from": { "name": "Lift engineer", "address": "At the desk" }, "time": "13:05",
+    "transcript": [
+      { "who": "Engineer", "text": "Lift engineer, I'm down for the service this afternoon." },
+      { "who": "Engineer", "text": "Happy to wait at the desk to be signed in and escorted." }
+    ],
+    "truth": { "isPhish": false, "flags": [],
+      "whyFine": {
+        "default": "On the list, from the contracted firm, and content to wait and be escorted, a genuine engineer never minds that; a quick list check is the full-mark move.",
+        "secrecy_or_bypass": "He asks to be signed in, not to skip it." },
+      "falseAlarmCost": "Send him away and the lift stays out of service." } },
+  { "id": "e12_call_courier_push", "kind": "call",
+    "callerId": "Courier with a parcel, badge 'in the van'",
+    "from": { "name": "Courier", "address": "At the badge door" }, "time": "14:30",
+    "transcript": [
+      { "who": "Courier", "text": "Sample box for one of your partners, hands full, could you buzz me through?" },
+      { "who": "Courier", "text": "Don't worry about signing me in, I'll be thirty seconds." }
+    ],
+    "truth": { "isPhish": true, "flags": ["tailgating", "borrowed_authority", "secrecy_or_bypass"],
+      "perFlagNote": {
+        "borrowed_authority": "Dropping a partner's name doesn't make the delivery expected.",
+        "secrecy_or_bypass": "'Don't bother signing me in' is the ask to skip the one check.",
+        "tailgating": "Buzzing the door without a badge is letting them tailgate on your say-so." },
+      "ifTrusted": "A stranger is through the badge door and onto the studio floor.",
+      "reportReply": "Thanks, real couriers leave the parcel at the desk; we logged it." } },
+  { "id": "e12_call_forgot_badge", "kind": "call",
+    "callerId": "Staff member back from leave, no badge",
+    "from": { "name": "Colleague back from leave", "address": "At the desk" }, "time": "15:40",
+    "transcript": [
+      { "who": "Colleague", "text": "First day back, I've left my pass at home, can you let me in?" },
+      { "who": "Colleague", "text": "You can check me on the staff list, I don't mind waiting." }
+    ],
+    "truth": { "isPhish": false, "flags": [],
+      "whyFine": {
+        "default": "A genuine colleague the desk can confirm. Check the staff list and issue a day pass, don't lend your own badge, and don't leave them stuck.",
+        "tailgating": "The safe answer is a temporary pass of their own, so the record stays right." },
+      "falseAlarmCost": "Refuse flatly and you've left a colleague locked out on their first day back; the courtesy is to verify and help." } }
+]
+```
 
 ## 12. Debrief cards
 
@@ -410,11 +719,13 @@ Create:
 
 - `scenarios/awareness_e12_visitor_tailgater/scenario.json.erb` (full shell: two rooms, the
   `awarenessEpisode`, the `triageSet`, `social.characters.delphine`, `social.pretextNpcs[merrin_front_desk]`,
-  `social.osint`, `social.people`, `globalVariables`). The **lobby** room holds the Delphine pretext NPC
-  (`delphine_reception`); the **studio** room holds the kiosk host NPC **Lorna Easton** with the welcome
-  ink and the N16 done-event `eventMappings` (section 5). Model on E3 + E7.
+  `social.osint`, `social.people`, `globalVariables`). Top-level `startRoom: "training_room"` (the kiosk
+  room, section 9.1 item 3). The **`lobby`** room holds the Delphine pretext NPC (`delphine_reception`,
+  with `"unlockable": ["training_room"]`) and the locked badge door to `training_room`; the
+  **`training_room`** room (the design studio) holds the kiosk and the kiosk host NPC **Lorna Easton**
+  with the welcome ink and the N16 done-event `eventMappings` (section 5). Model on E3 + E7.
 - `scenarios/awareness_e12_visitor_tailgater/ink/delphine_reception.ink` (+ compiled `.json`), and the
-  studio kiosk host ink for **Lorna Easton** (the welcome/brief and debrief lines; the N16 mapping is on
+  kiosk host ink for **Lorna Easton** (the welcome/brief and debrief lines; the N16 mapping is on
   her NPC record).
 - `scenarios/awareness_e12_visitor_tailgater/mission.json` (pattern from E3/E7).
 - `scenarios/awareness_e12_visitor_tailgater_defend/` (the defend-only shell).
@@ -448,20 +759,30 @@ Required `globalVariables` (declare all, defaults as shown): `episode_e12_visito
 ## 16. Bridge script outline
 
 A `tools/playtest/se/bridge-e12-full.jsonl` (pattern from the existing `bridge-e*-full.jsonl`) driving:
-brief → find the three OSINT facts → open pretext-prep, fill the parcel/partner blanks, Approach →
+the standard opening (the learner spawns in `training_room`, `moveToNear training_kiosk`, interact) →
+brief → find the three OSINT facts (so the `recipient` blank can be filled) → open pretext-prep, fill the
+parcel/partner blanks, Approach →
 run the person-chat lines to `got_it` (door opens) → flip → work the six reception `call` items
 (mixing verdicts to exercise Verify) → debrief → assert `episode_e12_visitor_tailgater_defend_done`.
 Validate with `check-bridge.mjs` / `run-suite.sh`.
 
 ## 17. Acceptance checks
 
-- `ruby scripts/validate_scenario.rb --strict-social scenarios/awareness_e12_visitor_tailgater` passes
-  (and the defend-only shell). The four scenario-local tells pass because each has a `flagChips` label on
-  the set (no library change); the shell otherwise needs ENG-08 for the `awarenessEpisode.world` block,
-  the lobby room type and the locked lobby-to-studio connection.
+- `ruby scripts/validate_scenario.rb scenarios/awareness_e12_visitor_tailgater/scenario.json.erb
+  --strict-social --no-graph --skip-ink` passes (the validator takes the `scenario.json.erb` file path
+  per shell, not the folder, README §8.3); same for the defend-only shell. The four scenario-local tells
+  pass because each has a `flagChips` label on the set (no library change); the shell otherwise needs
+  ENG-08 for the `awarenessEpisode.world` block, the lobby room type and the locked
+  lobby-to-`training_room` connection. **Defend set proven (round 3 ruling 3):** the six `call` items
+  (section 11) with `channelTells` `["tailgating","no_escort","uniform_pretext","not_expected",
+  "borrowed_authority","secrecy_or_bypass"]` and the four local tells labelled in `flagChips` were built
+  into a throwaway copy of the `awareness_e6_texts_and_qr_defend` shell and run through
+  `validate_scenario.rb --strict-social`: exit 0, no social lint error. The `world`/lobby/door keys
+  themselves need ENG-05a and ENG-08 (not built yet), so that half of the shell was not scratch-validated
+  here; it is validated when those packets land.
 - `node --test test/js/social-awareness-fragment-erb-parity.test.mjs` and the `validator-social-*` and
   `social-*` suites pass with E12 added.
-- The ink compiles: `inklecate` on `delphine_reception.ink` produces the `.json`; the `# unlock_door:studio`
+- The ink compiles: `inklecate` on `delphine_reception.ink` produces the `.json`; the `# unlock_door:training_room`
   tag is present on the granting line.
 - The bridge suite (section 16) reaches `..._defend_done` and the conclusion screen.
 - Manual: the costume reverts to the player's chosen avatar after the flip (aw9); the lobby door is
@@ -489,7 +810,7 @@ Validate with `check-bridge.mjs` / `run-suite.sh`.
   cannot today; section 5 and section 20.1 split into two front-of-house NPCs on that basis): if so, one
   NPC could serve as both the lobby mark and the studio host.
 - ENG-08 cannot accept the `awarenessEpisode.world` block, the lobby room type or the locked
-  lobby-to-studio connection. (The four scenario-local tells need no ENG-08 change; they use `flagChips`
+  lobby-to-`training_room` connection. (The four scenario-local tells need no ENG-08 change; they use `flagChips`
   labels, section 11.)
 
 ## 20. Open questions
@@ -505,10 +826,13 @@ Validate with `check-bridge.mjs` / `run-suite.sh`.
    This matches ENG-05a's own "Stop and ask if", which anticipates the split.
 2. **Call-action labels for a reception context.** The built `CALL_ACTIONS` read "Comply / Escalate /
    Refuse / Ring back"; "Ring back" is slightly off for a visitor at a desk (the equivalent is "check
-   the list / call the host"). ENG-07's configurable labels could relabel per set; it is cosmetic and
-   the verdict mapping is unchanged, so E12 ships without it, but note it as a polish item.
-3. **Does the learner physically walk through the opened door?** This spec treats the door opening as
-   the attack's success and empathy beat (the con worked), with defend played at the kiosk; it does not
-   require the avatar to traverse into the studio. If ENG-05 prefers the learner to walk through to
-   reach the reception seat, the studio must hold the kiosk and the walk is part of the flip transition.
+   the list / call the host"). The per-set action relabel is **ENG-03a's `triageSet.verdictLabels`**
+   (02 ENG-03a), not ENG-07 (ENG-07 is only the person-chat/triage `call` video-call bar label); it is
+   cosmetic and the verdict mapping is unchanged, so E12 ships without it, but note it as a polish item.
+3. **Does the learner physically walk through the opened door? (resolved, B2/m15.)** No. The door
+   opening is the attack's success and empathy beat (the con worked); defend is played at the kiosk in
+   `training_room`, which is also the scenario `startRoom`, so the learner starts there and ENG-05a
+   returns them there on any `write` outcome (section 9.1 item 3). The runner reopens as an overlay
+   wherever the player stands (it needs no proximity), so nothing requires walking into the opened door.
+   A failed con and a reload both land at the kiosk, never stranded.
 4. Whether the osint stage survives the timing budget or is cut into the brief (section 6).

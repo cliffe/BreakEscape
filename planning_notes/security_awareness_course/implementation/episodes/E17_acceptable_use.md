@@ -171,8 +171,23 @@ Six items on the built inbox-triage defender, `scoringProfile: "awareness"`, `ve
 the service desk is a real move), `feedbackMode: "immediate"`, `headerPanel: "off"`, `glossary:
 "closed"`. Set id `e17_acceptable_use_inbox`. `outcome.setGlobalPrefix:
 "episode_e17_acceptable_use_defend_defend_"` (the single defend-only shell's prefix, section 13),
-`passPercent: 0`. `channelTells`: `["lookalike_domain",
-"secrecy_or_bypass"]` plus the scenario-local tell `unapproved_tool`. This is the measured set, so E17
+`passPercent: 0`. `channelTells`: `["secrecy_or_bypass"]` plus the scenario-local tell `unapproved_tool`.
+`lookalike_domain` is **not** declared: no item in this set flags it, so listing it would leave an unused
+tell (matching E8 §11's convention of not declaring a tell no item flags; round 3 R3_review m6).
+`secrecy_or_bypass` is a shared-library tell, already labelled in `CHANNEL_TELLS`.
+
+**`unapproved_tool` is local in both E17 and E15 (round 3 ruling 1).** It is a scenario-local tell
+declared on E17's set with a short `flagChips` label ("Unapproved tool or app"), which the validator
+accepts (`triage.rb` `flag_universe` allows a `channelTells` id that `flagChips` labels and that is not a
+factor), so no shared-library change is needed. The same id is also used by E15's set
+(`e15_shortcuts_inbox`), but ruling 1 keeps a tell **local** unless a `10` check-form item scores it,
+even when two sets use the same id: the sets are never merged, each declares `unapproved_tool` on its own
+set, and nothing is appended to the shared `CHANNEL_TELLS` / `SKILL_NAMES`. No `10` item scores it, so it
+stays local in both. The full sentence per flagging message is carried as
+`truth.factorStrings.unapproved_tool.redFlag` ("a free app or online service with no contract, handing
+the firm's data to a provider we haven't checked").
+
+This is the measured set, so E17
 matches the other episodes' measurement (the brief's "about 6 defend items with a mirror pair"); it sits
 alongside the "can I?" sort, which is the module's signature but is scored by the answer key, not the
 awareness profile.

@@ -334,13 +334,14 @@ option; `flipBeat` names a real beat; every `flipMontageByChoice` outer key is a
 inner key a real option id of that beat; non-empty strings; `mistake` and `flip` absent on a
 `defendOnly` episode; `mistake` present when `stages` includes `mistake`.
 
-**The `attack_checks` relaxation (round 1 ruling 5; this is ENG-04/ENG-08 work, flagged to the 02
-fixer):** `awareness.rb` runs `attack_checks` on every `full?` episode (line 53), which errors unless a
-full episode has an `attack` block (target, siteIds, accountIds). A consequence-flip episode has no
-attack block, so ENG-04 (or ENG-08) must make `attack_checks` run **only when `stages` includes `osint`
-or `write`**, and add the paired lint that a `mistake` episode has **no** `attack` block. Without this
-relaxation a full E11/E15/E16 fails `--strict-social` even though it is correctly authored. If 02 has not
-yet added it to ENG-04, that change is requested of the 02 fixer (it must not be edited here).
+**The `attack_checks` relaxation (round 1 ruling 5; landed in 02 ENG-04 point 5, not outstanding):**
+`awareness.rb` runs `attack_checks` on every `full?` episode (line 53), which errors unless a full
+episode has an `attack` block (target, siteIds, accountIds). A consequence-flip episode has no attack
+block. 02 ENG-04 point 5 has already relaxed this: `attack_checks` runs **only when the stage list holds
+an attack-artefact stage (`osint`, `build`, `write`, `mfa` or `guess`)**, with the paired lint that a
+`mistake` episode has **no** `attack` block. A `mistake` episode has none of those stages, so
+`attack_checks` is skipped and a correctly authored full E11/E15/E16 passes `--strict-social`. This is
+settled engine work in 02; it is not edited here, and no further request to the 02 fixer is owed.
 
 The three consequence-flip episodes ask ENG-04 for this **identical** shape and differ only in their
 `beats`, `flipBeat` and `flipMontageByChoice` content. **E14 does not use ENG-04**: it keeps the built

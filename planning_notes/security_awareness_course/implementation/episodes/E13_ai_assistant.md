@@ -55,7 +55,7 @@ onto Brightwell (game_design §"Setting and cast").
 |---|---|
 | **ENG-06** (authored AI-assistant chat) | The assistant surface used for the teaching beats and the attack flip: a chat window with authored replies only (no runtime LM), a strike-out paste panel, information-class tags, a "Check source" action, and a "summarise my emails" mode that surfaces the planted hidden instruction. Precise needs in section 9.1. |
 | **ENG-07** (configurable video-call label) | Replace the hard-coded `SECURE VIDEO LINK` (`person-chat-ui.js:264`) with the organisation's meeting-tool name ("Brightwell Meet") and an **External** participant tag, and expose that label to the triage `call` item that carries the Project Heron deepfake. Section 9.2. |
-| **ENG-08** (schema and validator) | **Add the stage order `brief write flip defend debrief`** (osint optional, the E13 attack is a mail write with no recon), so the lint accepts E13's stage list (`awareness.rb` `stage_orders` rejects it today, known issue 10). Accept the new scenario-local tell ids `hidden_instruction` and `deepfake_request` (section 11); accept ENG-06's assistant config and ENG-07's label fields. |
+| **ENG-08** (schema and validator) | **Add the stage order `brief write flip defend debrief`** (osint optional, the E13 attack is a mail write with no recon), so the lint accepts E13's stage list (`awareness.rb` `stage_orders` rejects it today, known issue 10); accept ENG-06's assistant config and ENG-07's label fields. E13's two scenario-local tells need **no** ENG-08 change: the validator already accepts a `channelTells` id that `flagChips` labels and that is not a factor (`triage.rb` `flag_universe`), so they are declared on E13's set, not added to any shared library (section 11). |
 | (check forms) | No engine packet. AI/deepfake items join the new **`general_v2`** check pair (built by `10_CHECK_FORMS.md`), not a new role form and not the built six, as mirror pairs (section 14). The stale `ENG-09` reference is dropped (Round 1 R1_content M5). |
 | (existing) | The mail-client template write stage, the triage `voicemail` and `call` kinds, the host-NPC done event (N16), the TTS pipeline for voiced lines. No change needed. |
 
@@ -238,13 +238,19 @@ conversation; the scored Project Heron item is the triage `call`.)
 `channelTells` (closed chip list): `["hidden_instruction","deepfake_request","secrecy_or_bypass",
 "borrowed_authority","vish_callback_pressure","lookalike_domain","senderTrust"]`. `secrecy_or_bypass`,
 `borrowed_authority`, `vish_callback_pressure`, `lookalike_domain`, `senderTrust` are shared-library
-tells (`00` §2). `hidden_instruction` and `deepfake_request` are **scenario-local** (11 §5.1; ENG-08
-must let the validator accept them). Register canonical strings:
+tells (`00` §2), already labelled in `CHANNEL_TELLS`. `hidden_instruction` and `deepfake_request` are
+**scenario-local tells** (11 §5.1), declared on E13's set with a `flagChips` label each; this needs **no**
+ENG-08 library or validator change, because `triage.rb` `flag_universe` already accepts a `channelTells`
+id that `flagChips` labels and that is not a factor (the same pattern E9, E10 and E12 use, round 3 ruling
+1). Nothing is appended to the shared `CHANNEL_TELLS` / `SKILL_NAMES`. Short `flagChips` labels (noun
+phrases), with the full sentence carried per flagging message as `truth.factorStrings.<id>.redFlag` so
+the red-flag detail is not a raw id:
 
-- `hidden_instruction`: "An instruction hidden in a document or email, written to steer an AI assistant
-  that reads it."
-- `deepfake_request`: "A call or video asks for money, data or access, and a face or voice cannot prove
-  who is really speaking."
+- `hidden_instruction`: `flagChips` label "Hidden instruction for an AI"; per-message `redFlag`: "An
+  instruction hidden in a document or email, written to steer an AI assistant that reads it."
+- `deepfake_request`: `flagChips` label "A face or voice can't prove who's asking"; per-message
+  `redFlag`: "A call or video asks for money, data or access, and a face or voice cannot prove who is
+  really speaking."
 
 ### Items
 
@@ -364,8 +370,11 @@ Validate with `check-bridge.mjs` / `run-suite.sh`.
 
 ## 17. Acceptance checks
 
-- `ruby scripts/validate_scenario.rb --strict-social scenarios/awareness_e13_ai_assistant` passes (and
-  the defend-only shell), once ENG-08 accepts the two scenario-local tell ids and ENG-06/07's config.
+- `ruby scripts/validate_scenario.rb scenarios/awareness_e13_ai_assistant/scenario.json.erb
+  --strict-social --no-graph --skip-ink` passes (the validator takes the `scenario.json.erb` file path
+  per shell, not the folder, README §8.3); same for the defend-only shell. This holds once ENG-06/07's
+  config and ENG-08's osint-optional stage order are in; the two scenario-local tells need no ENG-08
+  change (they validate with a `flagChips` label, section 11).
 - The `social-awareness-fragment-erb-parity`, `validator-social-*` and `social-*` JS suites pass with
   E13 added.
 - The video-call item shows "Brightwell Meet" and an External tag (ENG-07), not `SECURE VIDEO LINK`.
@@ -392,7 +401,9 @@ Validate with `check-bridge.mjs` / `run-suite.sh`.
 - ENG-07 cannot expose its video-call label to the triage `call` item (section 11), then the Project
   Heron item ships with the built `call` banner and the "Brightwell Meet / External" framing moves into
   the item's `callerId`/transcript text as a degraded fallback.
-- ENG-08 will not accept the scenario-local tell ids `hidden_instruction` / `deepfake_request`.
+- The validator will not accept the scenario-local tell ids `hidden_instruction` / `deepfake_request`
+  declared with a `flagChips` label (it should: `triage.rb` `flag_universe` accepts a labelled non-factor
+  `channelTells` id, so no ENG-08 change is owed; stop only if that acceptance has regressed).
 
 ## 20. Open questions
 
