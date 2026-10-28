@@ -338,3 +338,19 @@ rule, ENG-09b's array shape, ENG-10's `brief` variant and the `attack_checks`/gu
 1. The ENG-08 tell table gives the wrong reason for some rows. `ransomware_note` is used only by E8, not by E13. `fake_check_paste`, `fake_update_prompt` and `dangerous_download` are said to be shared because `general_v2` scores them, but `general_v2` does not score them. Either correct the reason, or reclassify these tells as local.
 2. E8's one-off firm `fenwick-brandt.example` has the same surname as E14's subject, Dani Fenwick. Rename one of them.
 3. E14's host is now Julian Sallow (built Merrin & Sallow cast, the executive BA check host). E12 adds Lorna Easton as a second front-of-house NPC. Check both for clashes and for art cost.
+
+## Round 2 results
+
+| Review | B | M | m | t | Verdict |
+|---|---|---|---|---|---|
+| R2_engine | 0 | 0 | 2 | 2 | clean |
+| R2_content | 0 | 1 | 3 | 2 | not clean |
+| R2_sonnet | 1 | 9 | 13 | 3 | not clean |
+
+## Round 2 rulings (orchestrator)
+
+1. **core_17 annual edition (R2_sonnet B1).** Build it as a `defendOnly` variant whose defend set holds 8 messages. 8 is the `EPISODE_MESSAGES` cap. Take the 8 messages from E1 to E7, include at least one mirror pair, and cover email, call, voicemail, SMS or QR, and push. This shape validates with no new engine packet. The annual sitting is that shell (about 8 to 10 minutes) followed by the learner's existing role post-check (about 9 minutes), so about 17 to 20 minutes in total. Drop the 17-message design.
+2. **Tell table reasons (R2_engine m1, R2_content m1).** Reclassify every tell used by only one set today as **local**: `ransomware_note`, `fake_check_paste`, `fake_update_prompt`, `dangerous_download` and `mfa_number_relay`. The exception is any tell that a `10` check item scores, which must be shared (ruling 1 of round 1). Promote a tell to shared only when a second set uses it. A shared tell also needs a `SKILL_NAMES` entry in `triage-flags.js`, and the two tests that loop over `CHANNEL_TELLS` must keep passing (R2_sonnet M7).
+3. **`choice` card scoring (R2_engine m2, R2_sonnet M6).** Each option of a `choice` card maps to one of the built verdicts, and it is scored exactly as that verdict is scored under `KIND_VERDICT_POINTS` and `VERDICT_POINTS`. The card's `truth` is the correct verdict. A card holds one decision only, so E9 row 5 is split in two.
+4. **Fenwick (round 2 known item 2).** Rename E8's one-off firm `fenwick-brandt.example` to a name that clashes with nothing. Correct E14's "no repo hits" claim, because Arthur Fenwick exists in sector_01.
+5. **E8 completeness (R2_sonnet M1, M2).** E8 must list every shell and generator metadata value, plus its attack-fragment skeleton, in full. Copy the shape from the built E5 and `gen_e3_e5_shells.py`, the generator that actually holds Anjali's `HOSTS` entry, and fix P4's "copy the e6/e7 generator" pointer to match. The pilot must need no guessing.
