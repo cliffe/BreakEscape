@@ -209,6 +209,28 @@
             "readinessSlots": {
               "type": "object",
               "additionalProperties": {"type": "array", "items": {"$ref": "#/definitions/socialReadinessSlot"}}
+            },
+            "labels": {
+              "type": "object",
+              "description": "Board wording; each defaults to today's text. progress is a template using {n} and {total}.",
+              "properties": {
+                "ready": {"type": "string"}, "notReady": {"type": "string"}, "readyLine": {"type": "string"},
+                "progress": {"type": "string"}, "reconDone": {"type": "string"}, "toastTitle": {"type": "string"},
+                "caseButton": {"type": "string", "description": "The OSINT browser's board button (default 'Case file')"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "groups": {
+              "type": "array",
+              "description": "Panels for non-person fact subjects (default: one 'company' panel titled Company). An intelFacts[].subject must be a social.people id or one of these subjects.",
+              "items": {
+                "type": "object",
+                "required": ["subject"],
+                "properties": {"subject": {"type": "string"}, "title": {"type": "string"}},
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
             }
           },
           "patternProperties": {"^_": {}},
@@ -758,8 +780,9 @@
         "value": {"type": "string"},
         "date": {"type": "string"},
         "to": {"type": "string"},
-        "src": {"type": "string"},
+        "src": {"type": "string", "description": "image block: path relative to assets/ (for example social/osint/foo.png)"},
         "alt": {"type": "string"},
+        "author": {"type": "string", "description": "post block: a social.people id shown as the poster"},
         "items": {"type": "array", "items": {"oneOf": [{"type": "string"}, {"$ref": "#/definitions/socialOsintBlock"}]}}
       },
       "patternProperties": {"^_": {}},
@@ -2307,6 +2330,16 @@
           "additionalProperties": false
         },
         "labels": {"type": "object", "additionalProperties": {"type": "string"}},
+        "prepLabels": {
+          "type": "object",
+          "description": "Wording of the preparation overlay; each defaults to today's text. approachTitle is the title for an in-person call (default: title).",
+          "properties": {
+            "title": {"type": "string"}, "approachTitle": {"type": "string"},
+            "heldTitle": {"type": "string"}, "heldEmpty": {"type": "string"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
         "lines": {
           "type": "object",
           "patternProperties": {"^_": {}},

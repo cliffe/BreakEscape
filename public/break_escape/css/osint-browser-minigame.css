@@ -219,6 +219,8 @@
 .ob-staff-name { font-weight: 700; }
 .ob-staff-role,
 .ob-post-date { color: #4a4f5c; font-size: 14px; }
+.ob-post-author { display: flex; align-items: center; gap: 8px; font-weight: bold; }
+.ob-post-author .ob-headshot { width: 32px; height: 32px; }
 .ob-field-label { font-weight: 700; }
 
 .ob-badge {

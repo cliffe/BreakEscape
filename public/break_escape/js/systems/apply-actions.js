@@ -1,6 +1,6 @@
 import { displayDashes } from '../utils/display-dashes.js';
 import { writeGlobal } from './global-writer.js';
-import { grantFact, readyToastText } from './social-intel.js';
+import { grantFact, readyToastText, readyToastTitle } from './social-intel.js';
 
 /**
  * Shared action executor for scenario-defined action descriptors.
@@ -61,7 +61,7 @@ export function applyActions(actions, { source = 'scenario', gameId = null } = {
                         const newlyReady = granted.readiness?.newlyReady || [];
                         if (newlyReady.length) {
                             window.gameAlert?.(readyToastText(newlyReady),
-                                'success', 'Ready to approach', 6000);
+                                'success', readyToastTitle(), 6000);
                         }
                     }
                 }

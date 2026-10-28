@@ -2,13 +2,13 @@
 //
 // A card is { id, title, text, image? } from social.conceptCards. It shows behind a visible
 // "What is this?" button (never hover only). Everything authored is set with textContent;
-// the image is a pixel-art file under assets/osint/ (alt text is the card title, or empty and
+// the image is a pixel-art file, path relative to assets/ (alt text is the card title, or empty and
 // aria-hidden when the card says it is decorative).
 //
 //   const c = createConceptCard(card, { onToggle });
 //   parent.appendChild(c.el);   c.toggle(); c.isOpen();
 
-const IMAGE_BASE = '/break_escape/assets/osint/';
+const IMAGE_BASE = '/break_escape/assets/';
 
 export function createConceptCard(card, { doc = null, open = false, onToggle = null, buttonLabel = 'What is this?', imageBase = IMAGE_BASE } = {}) {
     const d = doc || document;

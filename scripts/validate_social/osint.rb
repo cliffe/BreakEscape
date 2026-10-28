@@ -35,6 +35,8 @@ module ValidateSocial
 
       issues.concat(osint_state(ctx))
       issues.concat(structure(ctx, osint))
+      issues.concat(site_types(ctx, osint))
+      issues.concat(assets_and_authors(ctx, osint))
       issues.concat(references(ctx, osint))
       issues.concat(award_paths(ctx, osint))
       issues
@@ -100,6 +102,75 @@ module ValidateSocial
         issues << err("#{e[:where]} grants fact '#{e[:fact]}' but has no id; the fact's source must name this element") if e[:id].to_s.empty?
       end
       issues
+    end
+
+    SITE_TYPES = %w[company-site social document].freeze
+
+    # osint-model.js siteAllowed drops a site whose type is missing or unknown, so it never shows.
+    # The "awareness" profile also drops document sites and the tools panel.
+    def self.site_types(ctx, osint)
+      issues = []
+      sites(osint).each do |s|
+        sw = "social.osint.sites[#{s['id']}]"
+        if !s['type'].is_a?(String) || s['type'].empty?
+          issues << err("#{sw}.type is missing; the browser hides a site with no type (one of #{SITE_TYPES.join(', ')})")
+        elsif !SITE_TYPES.include?(s['type'])
+          issues << err("#{sw}.type '#{s['type']}' is not one of #{SITE_TYPES.join(', ')}; the browser would hide the site")
+        elsif osint['profile'] == 'awareness' && s['type'] == 'document'
+          issues << warn_("#{sw} is a document site, which the 'awareness' profile hides; it can never be opened")
+        end
+      end
+      if osint['profile'] == 'awareness' && Mail.hash_list(osint['tools']).any?
+        issues << warn_("social.osint defines tools, which the 'awareness' profile hides; the tools panel never shows")
+      end
+      issues
+    end
+
+    ASSETS = 'public/break_escape/assets'
+
+    def self.asset_missing?(ctx, rel)
+      !File.exist?(File.join(ctx.repo_root.to_s, ASSETS, rel))
+    end
+
+    # Image files the browser loads (missing ones show a broken image or fall back), and post authors.
+    # Block `src` and card `image` are relative to assets/, `logo` to assets/logos/, avatars to
+    # assets/characters/ (a bare key or key.png).
+    def self.assets_and_authors(ctx, osint)
+      issues = []
+      people = Mail.people_ids(ctx)
+      sites(osint).each do |s|
+        next if Mail.blank?(s['logo'])
+
+        rel = "logos/#{s['logo'].sub(%r{\A/+}, '')}"
+        issues << warn_("social.osint.sites[#{s['id']}].logo '#{s['logo']}' is not a file under #{ASSETS}/logos/") if asset_missing?(ctx, rel)
+      end
+      walk(osint, 'social.osint') do |h, path|
+        if h['kind'] == 'image' && !Mail.blank?(h['src']) && asset_missing?(ctx, h['src'].sub(%r{\A/+}, ''))
+          issues << warn_("#{path}#{h['id'] ? "[#{h['id']}]" : ''}.src '#{h['src']}' is not a file under #{ASSETS}/ (src is relative to assets/)")
+        end
+        if h.key?('author')
+          if !h['author'].is_a?(String) || !people.include?(h['author'])
+            issues << err("#{path}#{h['id'] ? "[#{h['id']}]" : ''}.author #{h['author'].inspect} is not a social.people id")
+          end
+        end
+        if h.key?('person') && h.key?('posts') && !Mail.blank?(h['avatar'])
+          issues.concat(avatar_check(ctx, h['avatar'], "#{path}.avatar"))
+        end
+      end
+      Mail.hash_list(ctx.social['people']).each do |p|
+        issues.concat(avatar_check(ctx, p['avatar'], "social.people[#{p['id']}].avatar")) unless Mail.blank?(p['avatar'])
+      end
+      Mail.hash_list(ctx.social['conceptCards']).each do |c|
+        next if Mail.blank?(c['image'])
+
+        issues << warn_("social.conceptCards[#{c['id']}].image '#{c['image']}' is not a file under #{ASSETS}/ (image is relative to assets/)") if asset_missing?(ctx, c['image'].sub(%r{\A/+}, ''))
+      end
+      issues
+    end
+
+    def self.avatar_check(ctx, avatar, where)
+      rel = "characters/#{avatar.sub(/\.png\z/, '')}.png"
+      asset_missing?(ctx, rel) ? [warn_("#{where} '#{avatar}' is not a file under #{ASSETS}/characters/")] : []
     end
 
     # Every hash that carries a `fact`: a block, a post, a result, a metadata field. `unlockedBy`

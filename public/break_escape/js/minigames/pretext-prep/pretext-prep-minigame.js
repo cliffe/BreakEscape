@@ -22,7 +22,7 @@
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import {
-    blankSlot, blanksPayload, briefCopy, callGate, callLaunch, cardFacts, cardLines, heldIdsFor,
+    blankSlot, blanksPayload, briefCopy, callGate, callWords, callLaunch, cardFacts, cardLines, heldIdsFor,
     factLabel, heldOnBoard, hintLine, kindText, optionsForFact, readinessLines, textParts
 } from './pretext-card.js';
 
@@ -94,7 +94,7 @@ export class PretextPrepMinigame extends SocialOverlayScene {
     }
 
     facts() {
-        return cardFacts(this.spec);
+        return cardFacts(this.spec, this.social);
     }
 
     optionsByFact() {
@@ -130,18 +130,19 @@ export class PretextPrepMinigame extends SocialOverlayScene {
         const npc = npcMissing ? null : this.npc();
         const beginLabel = npc?.npcType === 'phone' ? 'Make the call' : (npc ? 'Approach' : 'Begin');
 
-        const root = h('div', { class: 'pretext-prep', role: 'dialog', 'aria-label': 'Prepare the call', tabindex: '-1' });
+        const words = callWords(spec, npc);
+        const root = h('div', { class: 'pretext-prep', role: 'dialog', 'aria-label': words.title, tabindex: '-1' });
         this.root = root;
 
         const head = h('div', { class: 'pretext-head' },
-            h('h2', { class: 'pretext-title', text: 'Prepare the call' }),
+            h('h2', { class: 'pretext-title', text: words.title }),
             brief.characterName ? h('p', { class: 'pretext-who', text: brief.characterName }) : null,
             this._closeButton()
         );
         root.appendChild(head);
 
         const scroll = h('div', { class: 'pretext-scroll' });
-        scroll.appendChild(this._briefBlock(brief, held));
+        scroll.appendChild(this._briefBlock(brief, held, words));
         const hint = hintLine(spec, this.globals);
         if (hint) scroll.appendChild(h('p', { class: 'pretext-hint', text: hint }));
         scroll.appendChild(this._cardBlock(facts, options, lines, factIds, labelFor, ready));
@@ -176,7 +177,7 @@ export class PretextPrepMinigame extends SocialOverlayScene {
         return btn;
     }
 
-    _briefBlock(brief, held) {
+    _briefBlock(brief, held, words) {
         const block = h('section', { class: 'pretext-brief', 'aria-label': 'Brief' });
         if (brief.scope) block.appendChild(h('p', { class: 'pretext-scope', text: brief.scope }));
         block.appendChild(h('p', { class: 'pretext-ethics', text: brief.ethics }));
@@ -185,9 +186,9 @@ export class PretextPrepMinigame extends SocialOverlayScene {
             for (const item of brief.objectives) list.appendChild(h('li', { text: item }));
             block.appendChild(list);
         }
-        block.appendChild(h('h3', { class: 'pretext-held-title', text: 'On the board' }));
+        block.appendChild(h('h3', { class: 'pretext-held-title', text: words.heldTitle }));
         if (!held.length) {
-            block.appendChild(h('p', { class: 'pretext-held-empty', text: 'Nothing on the board yet.' }));
+            block.appendChild(h('p', { class: 'pretext-held-empty', text: words.heldEmpty }));
         } else {
             const list = h('ul', { class: 'pretext-held' });
             for (const row of held) {
@@ -240,7 +241,7 @@ export class PretextPrepMinigame extends SocialOverlayScene {
     }
 
     _blankControl(fact, options) {
-        const label = factLabel(fact.factId);
+        const label = factLabel(fact.factId, fact.label);
         const picked = options.find((option) => option.value === this.chosen[fact.factId]);
         const empty = options.length === 0;
         const field = h('div', { class: 'pretext-blank-field' });
@@ -263,7 +264,7 @@ export class PretextPrepMinigame extends SocialOverlayScene {
         this._closePicker();
         const options = this.optionsByFact()[factId] || [];
         if (!options.length) return;
-        const label = factLabel(factId);
+        const label = factLabel(factId, this.facts().find((f) => f.factId === factId)?.label);
         const panel = h('div', { class: 'pretext-picker', role: 'dialog', 'aria-label': `Choose ${label}` });
         const list = h('ul', { class: 'pretext-picker-list', role: 'listbox', 'aria-label': `${label} options`, tabindex: '0' });
         const chosen = this.chosen[factId];

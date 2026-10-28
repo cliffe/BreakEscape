@@ -126,7 +126,7 @@ test('readiness is shown from target_ready_<id> and osint_done, never computed b
     s = open();
     pierce = card(s, 'pierce');
     assert.equal(pierce.dataset.status, 'ready');
-    assert.match(pierce.textContent, /Ready to approach — you have enough to craft something she'll believe\./);
+    assert.match(pierce.textContent, /Ready to approach — you have enough to craft something they'll believe\./);
     assert.match(pierce.textContent, /Done:/);
     assert.doesNotMatch(pierce.textContent, /Missing:/);
     assert.equal(card(s, 'hampshire').dataset.status, 'not_ready');

@@ -29,17 +29,33 @@ function isStaleFact(fact) {
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 
-/** "startDate" / "old_org" → "Start date" / "Old org". A label, not a value. */
-export function factLabel(factId) {
+/** "startDate" / "old_org" → "Start date" / "Old org". A label, not a value. `given` (intelFacts[id].label) wins. */
+export function factLabel(factId, given = null) {
+    if (isStr(given)) return given;
     const spaced = String(factId).replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2');
     return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+/**
+ * The overlay's own wording. `prepLabels` on the call entry overrides each piece; `approachTitle`
+ * is the heading for an in-person approach (default: same as `title`).
+ */
+export function callWords(spec, npc = null) {
+    const l = isObject(spec?.prepLabels) ? spec.prepLabels : {};
+    const pick = (k, d) => (isStr(l[k]) ? l[k] : d);
+    const title = pick('title', 'Prepare the call');
+    return {
+        title: npc && npc.npcType !== 'phone' ? pick('approachTitle', title) : title,
+        heldTitle: pick('heldTitle', 'On the board'),
+        heldEmpty: pick('heldEmpty', 'Nothing on the board yet.')
+    };
 }
 
 /**
  * One row per fact any line feeds, in first-seen order.
  * @returns {{ factId: string, blankNames: string[], lineIds: string[] }[]}
  */
-export function cardFacts(spec) {
+export function cardFacts(spec, social = null) {
     const lines = isObject(spec?.lines) ? spec.lines : {};
     const order = [];
     const byFact = new Map();
@@ -57,7 +73,12 @@ export function cardFacts(spec) {
             if (!row.lineIds.includes(lineId)) row.lineIds.push(lineId);
         }
     }
-    return order.map((id) => byFact.get(id));
+    const facts = isObject(social?.intelFacts) ? social.intelFacts : {};
+    return order.map((id) => {
+        const row = byFact.get(id);
+        if (isStr(facts[id]?.label)) row.label = facts[id].label;
+        return row;
+    });
 }
 
 /**
@@ -181,7 +202,7 @@ export function textParts(text, factIds, labelFor) {
 export function readinessLines(facts, optionsByFact) {
     return facts
         .filter((fact) => (optionsByFact[fact.factId] || []).length === 0)
-        .map((fact) => `${factLabel(fact.factId)}: nothing held yet`);
+        .map((fact) => `${factLabel(fact.factId, fact.label)}: nothing held yet`);
 }
 
 /**
@@ -196,7 +217,7 @@ export function callGate(facts, optionsByFact, chosen) {
         if (options.length === 0) continue;
         const value = chosen?.[fact.factId];
         if (!options.some((option) => option.value === value)) {
-            return { ok: false, reason: 'unchosen', line: `Choose an option for the ${factLabel(fact.factId)} blank` };
+            return { ok: false, reason: 'unchosen', line: `Choose an option for the ${factLabel(fact.factId, fact.label)} blank` };
         }
     }
     return { ok: true, reason: null, line: '' };

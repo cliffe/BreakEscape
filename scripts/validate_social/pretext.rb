@@ -248,6 +248,16 @@ module ValidateSocial
         blanks.each do |bid, fid|
           issues << err("#{lw}.blanks.#{bid} must name a fact id (the fact the blank feeds)") if blank?(fid)
         end
+        # pretext-card.js textParts fills a `{x}` from the fact id a blank feeds (blanks values); any
+        # other name is shown as literal braces.
+        if line['text'].is_a?(String)
+          line['text'].scan(/\{([A-Za-z0-9_]+)\}/).flatten.uniq.each do |ph|
+            next if blanks.value?(ph)
+
+            hint = blanks.key?(ph) ? " (that is a blank name; the text takes the fact id it feeds, '#{blanks[ph]}')" : ''
+            issues << err("#{lw}.text has the placeholder {#{ph}}, which is not a fact fed by this line's blanks (#{blanks.empty? ? 'none' : blanks.values.join(', ')})#{hint}; it would show as literal braces")
+          end
+        end
         hash_list(line['claims']).each_with_index do |cl, ci|
           fid = cl['fact']
           from = cl['from'].to_s

@@ -125,7 +125,7 @@ export function watchReadinessGlobals({ scenario = null, dispatcher = null } = {
         if (!board?.readinessSlots || !globals) return null;
         const res = evaluateReadiness(board.readinessSlots, globals, { people: board.people });
         if (toast && res.newlyReady.length && typeof window !== 'undefined') {
-            window.gameAlert?.(readyToastText(res.newlyReady), 'success', 'Ready to approach', 6000);
+            window.gameAlert?.(readyToastText(res.newlyReady), 'success', readyToastTitle(), 6000);
         }
         return res;
     };
@@ -155,6 +155,9 @@ export function factLabel(fact, id) {
 export function subjectLabel(social, fact, grantedId, globals) {
     const subject = fact?.subject;
     if (!subject || subject === 'company') return 'the company';
+    // A declared intelBoard.groups panel (a non-person subject) is named by its title.
+    const group = (Array.isArray(social?.intelBoard?.groups) ? social.intelBoard.groups : []).find((g) => g?.subject === subject);
+    if (group) return (typeof group.title === 'string' && group.title.trim()) ? group.title : subject;
     const person = (social?.people || []).find((p) => p.id === subject);
     const facts = social?.intelFacts || {};
     const held = (factId) => factId === grantedId || (globals || {})[intelGlobal(factId)] === true;
@@ -219,6 +222,12 @@ const READY_CHANNEL_TEXT = {
     phone: 'call them',
     person: 'go and talk to them in person'
 };
+
+/** The ready toast's title: `intelBoard.labels.toastTitle`, else "Ready to approach". */
+export function readyToastTitle(scenario = null) {
+    const t = socialOf(scenario)?.social?.intelBoard?.labels?.toastTitle;
+    return (typeof t === 'string' && t.trim()) ? t : 'Ready to approach';
+}
 
 /**
  * The body of the "Ready to approach" toast for the targets that have just become ready.

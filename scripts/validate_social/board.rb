@@ -16,6 +16,7 @@ module ValidateSocial
       board = ctx.social['intelBoard']
       return defender unless board.is_a?(Hash)
 
+      defender += board_extra(ctx, board)
       slots = board['readinessSlots']
       return defender if slots.nil? && !board['people'].is_a?(Array)
 
@@ -62,6 +63,52 @@ module ValidateSocial
 
     def self.err(msg)
       Mail.err(msg)
+    end
+
+    # intelBoard.people, groups, labels and intelFacts[].subject (board-model.js: a fact whose subject is
+    # neither a board person nor a group never shows on the board).
+    def self.board_extra(ctx, board)
+      issues = []
+      people = Mail.people_ids(ctx)
+      if ctx.social['people'].is_a?(Array)
+        Mail.list(board['people']).each do |pid|
+          issues << err("social.intelBoard.people has '#{pid}', which is not a social.people id") unless people.include?(pid)
+        end
+      end
+
+      groups = Mail.hash_list(board['groups'])
+      subjects = Set.new(groups.empty? ? ['company'] : [])
+      if board.key?('groups') && !board['groups'].is_a?(Array)
+        issues << err('social.intelBoard.groups must be an array of { subject, title }')
+      end
+      seen = Set.new
+      groups.each_with_index do |g, i|
+        where = "social.intelBoard.groups[#{i}]"
+        if Mail.blank?(g['subject'])
+          issues << err("#{where}.subject is missing; the panel could not match any fact")
+          next
+        end
+        issues << err("#{where}.subject '#{g['subject']}' is used more than once") unless seen.add?(g['subject'])
+        issues << warn_("#{where}.subject '#{g['subject']}' is also a social.people id; the person's card and this panel would both claim its facts") if people.include?(g['subject'])
+        issues << warn_("#{where}.title is empty; the panel would be headed with its subject id") if Mail.blank?(g['title'])
+        subjects << g['subject']
+      end
+
+      labels = board['labels']
+      if labels.is_a?(Hash) && labels['progress'].is_a?(String) && !labels['progress'].include?('{n}')
+        issues << warn_("social.intelBoard.labels.progress has no {n}; it is a template ({n} of {total}) and the count would not show")
+      end
+
+      Mail.facts(ctx).each do |fid, f|
+        next unless f.key?('subject')
+
+        sub = f['subject']
+        next if sub.is_a?(String) && (people.include?(sub) || subjects.include?(sub))
+
+        declared = (people.to_a + subjects.to_a).sort.join(', ')
+        issues << err("social.intelFacts.#{fid}.subject #{sub.inspect} is not a social.people id or a social.intelBoard.groups subject (#{declared}); the fact would never show on the board")
+      end
+      issues
     end
 
     def self.slot_checks(ctx, slot, where, facts, needed)
