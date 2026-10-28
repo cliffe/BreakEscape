@@ -615,7 +615,6 @@ export class IntelBoardMinigame extends SocialOverlayScene {
     _personCard(t) {
         const headingId = `ib-card-${t.id}`;
         const status = t.ready ? 'Ready to approach' : 'Not ready';
-        const meta = [t.role, t.address].filter(Boolean);
         const card = h('li', { class: `ib-card ib-person ${t.ready ? 'is-ready' : 'is-not-ready'}`,
             'data-person': t.id, 'data-status': t.status, 'aria-labelledby': headingId },
             h('img', { class: 'ib-pin', src: `${ICON}board-pushpin.png`, alt: '', 'aria-hidden': 'true',
@@ -627,7 +626,12 @@ export class IntelBoardMinigame extends SocialOverlayScene {
                     h('span', { class: 'ib-status-word', text: status }),
                     t.newlyReady ? h('span', { class: 'ib-new', text: 'New since you last looked' }) : null)));
 
-        if (meta.length) card.appendChild(h('p', { class: 'ib-meta', text: meta.join(' · ') }));
+        if (t.role || t.address) {
+            card.appendChild(h('p', { class: 'ib-meta' },
+                t.role ? h('span', { text: t.role }) : null,
+                t.role && t.address ? ' · ' : null,
+                t.address ? h('span', { class: 'ib-address', text: t.address }) : null));
+        }
 
         // Influence section (03, 00 S4): only for a target that is a social character, and
         // nothing when its influence.display has bar: false. Read-only, from gameState.

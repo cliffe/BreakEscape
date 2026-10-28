@@ -49,11 +49,11 @@ export function buildHeaderPanel(rec, view, handlers = {}, opts = {}) {
 
     const auth = rec.auth && typeof rec.auth === 'object' ? rec.auth : {};
     const fields = el('dl', 'tri-header-fields');
-    const add = (k, v) => { fields.append(el('dt', null, k), el('dd', null, v)); };
+    const add = (k, v, cls = null) => { fields.append(el('dt', null, k), el('dd', cls, v)); };
     add('Display name', rec.from?.name || '');
-    add('From address', rec.from?.address || '');
-    if (auth.envelopeFrom) add('Sent by (envelope)', auth.envelopeFrom);
-    if (auth.replyTo) add('Reply goes to', auth.replyTo);
+    add('From address', rec.from?.address || '', 'tri-header-address');
+    if (auth.envelopeFrom) add('Sent by (envelope)', auth.envelopeFrom, 'tri-header-address');
+    if (auth.replyTo) add('Reply goes to', auth.replyTo, 'tri-header-address');
     panel.appendChild(fields);
 
     panel.appendChild(el('h3', 'tri-auth-title', opts.plain === true ? AUTH_TITLE.plain : AUTH_TITLE.technical));

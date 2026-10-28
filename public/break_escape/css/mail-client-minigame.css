@@ -296,12 +296,12 @@
     flex: none;
     min-width: 84px;
     font-family: var(--ui-heading-font, 'GNF', monospace);
-    font-size: 12px;
+    font-size: 14px;
     color: var(--ui-text-dim, #a8b2c8);
 }
 .mail-compose-value,
 .mail-compose-from-own { margin: 0; font-family: var(--se-font-address); font-size: 16px; overflow-wrap: anywhere; }
-.mail-compose-fixed { flex: 1 1 auto; min-width: 180px; }
+.mail-compose-fixed { flex: 1 1 auto; min-width: 180px; font-family: var(--se-font-readable); }
 .mail-compose-hint { color: var(--ui-text-dim, #a8b2c8); font-size: 14px; }
 .mail-burned { color: var(--ui-text-dim, #a8b2c8); text-decoration: line-through; }
 .mail-compose-note { margin: 0; font-family: var(--se-font-readable); font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
@@ -363,7 +363,7 @@
     background: color-mix(in srgb, var(--ui-success, #6ee08f) 8%, transparent);
 }
 .mail-redflag-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.mail-redflag-title { font-family: var(--ui-heading-font, 'GNF', monospace); font-size: 12px; color: var(--ui-text-dim, #a8b2c8); }
+.mail-redflag-title { font-family: var(--ui-heading-font, 'GNF', monospace); font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
 .mail-redflag-count {
     min-width: 1.6em;
     padding: 0 6px;
@@ -588,6 +588,7 @@
 .mail-client select.mail-account-select,
 .mail-composer select.mail-compose-sendas-select,
 .mail-contact .mail-contact-addresses,
-.mail-create-option .mail-create-address {
+.mail-create-option .mail-create-address,
+.mail-chip .mail-chip-address {
     font-family: var(--se-font-address);
 }

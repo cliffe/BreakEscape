@@ -199,7 +199,7 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
             const btn = h('button', { type: 'button', class: `ob-site ob-tools-button${on ? ' is-current' : ''}`,
                 'data-site': 'tools', 'aria-current': on ? 'page' : false },
                 h('span', { class: 'ob-site-name', text: 'Tools' }),
-                h('span', { class: 'ob-site-url', text: 'Lookups' }));
+                h('span', { class: 'ob-site-url ob-site-sub', text: 'Lookups' }));
             this.addEventListener(btn, 'click', (e) => { e.preventDefault?.(); this.go(TOOLS_KEY); });
             this.strip.appendChild(btn);
         }

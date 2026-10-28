@@ -39,6 +39,8 @@
     font-family: var(--se-font-address, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
 }
 
+.ob-root .ob-site-sub { font-family: var(--se-font-readable, 'GNF', sans-serif); }
+
 .ob-sr,
 .ob-live {
     position: absolute;

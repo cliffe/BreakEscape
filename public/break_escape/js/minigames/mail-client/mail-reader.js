@@ -316,7 +316,7 @@ export class MailReader {
             const chips = el('div', 'mail-chips');
             const chip = el('span', 'mail-chip mail-chip-attachment');
             const labelText = rec.link.destination || rec.link.linkText || rec.link.kitId;
-            chip.append(icon('attach-link'), el('span', 'mail-chip-label', labelText),
+            chip.append(icon('attach-link'), el('span', `mail-chip-label${labelText === rec.link.destination ? ' mail-chip-address' : ''}`, labelText),
                 el('span', 'mail-sr-only', ' (link attachment)'));
             chips.appendChild(chip);
             pane.appendChild(chips);
@@ -352,7 +352,7 @@ export class MailReader {
             chip.type = 'button';
             chip.dataset.linkId = link.id;
             chip.title = `${this._linkPrefix()}${dest}`;
-            chip.append(icon('attach-link'), el('span', 'mail-chip-label', link.linkText || dest));
+            chip.append(icon('attach-link'), el('span', `mail-chip-label${link.linkText ? '' : ' mail-chip-address'}`, link.linkText || dest));
             const show = () => this._showLink(dest);
             chip.addEventListener('mouseenter', show);
             chip.addEventListener('focus', show);

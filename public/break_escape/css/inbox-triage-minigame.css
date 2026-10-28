@@ -382,6 +382,7 @@
 /* Browser card */
 .tri-browser { max-width: 520px; background: #e9edf5; border: 2px solid #8792ad; color: #1d2333; }
 .tri-browser-bar { display: flex; align-items: center; gap: 6px; padding: 6px; background: #c9d0e0; border-bottom: 2px solid #8792ad; }
+.tri-header-address { font-family: var(--se-font-address); }
 .tri-address { flex: 1; min-height: 36px; text-align: left; overflow-wrap: anywhere; font-family: var(--se-font-address); }
 .tri-padlock, .tri-no-padlock { flex: none; min-height: 36px; font-size: 13px; }
 .tri-no-padlock { padding: 0 6px; font-weight: 700; color: #8f2a1f; }

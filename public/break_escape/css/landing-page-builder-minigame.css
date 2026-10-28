@@ -353,7 +353,7 @@
 }
 
 .lpb-locked-domain { display: block; font-size: 14px; }
-.lpb-locked-note { display: block; font-size: 12px; color: var(--ui-text-dim, #a8b2c8); }
+.lpb-locked-note { display: block; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
 
 .lpb-note { margin: 8px 0 0; font-size: 13px; color: var(--ui-text-dim, #a8b2c8); }
 
@@ -409,7 +409,7 @@
     flex: 0 0 auto;
     min-width: 54px;
     font-weight: 700;
-    font-size: 12px;
+    font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
