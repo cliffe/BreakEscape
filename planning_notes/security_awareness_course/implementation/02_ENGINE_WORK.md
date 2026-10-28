@@ -1039,7 +1039,7 @@ A tell id can come from three places:
 |---|---|---|---|
 | `unexpected_sent_item` | E8 (defend) only | **local** | one set; `10`'s `general_v2` does not score it, so it stays local to E8's set; promote to shared only if a later check item scores it |
 | `unrequested_reset` | E8 (defend) only | **local** | one set; not in `general_v2`'s scored flags |
-| `ransomware_note` | E8 (defend) only | **local** | one set; E13 does **not** use it (E13's tells are `hidden_instruction`/`deepfake_request`), so promote only when a second set adopts it |
+| `ransomware_note` | E8 and E19 (defend), each declared locally with its own label | **local** | no `10` check item scores it, so it stays local in both sets; E13 does **not** use it |
 | `mfa_number_relay` | E9 (defend) only | **local** | one set; E3 uses `unrequested_mfa_push`, not this id, so no second set uses it today; close to `unrequested_mfa_push` but means a different thing (reading a number back, not approving a prompt), so keep the id distinct |
 | `fake_check_paste` | E10 (defend) only | **local** | one set; `general_v2` item 2 scores `lookalike_domain`/`padlock_myth`, not this id |
 | `fake_update_prompt` | E10 (defend) only | **local** | one set; `general_v2` does not score it |
@@ -1051,6 +1051,9 @@ A tell id can come from three places:
 | `uniform_pretext` | E12 (defend) only | **local** | one set |
 | `not_expected` | E12 (defend) only | **local** | one set |
 | `unlocked_screen` | E12 (defend) only | **local** | one set |
+| `app_consent_grab` | E19 (defend) only | **local** | one set |
+| `macro_enable_content` | E19 (defend) only | **local** | one set |
+| `disable_security_software` | E19 (defend) only | **local** | one set |
 | `hidden_instruction` | E13 (defend) only; E13 §14 proposes a general-pool check item later | **local** | one shipped set today; promote to shared when the general-pool AI item (E13 §14) is built |
 | `deepfake_request` | E13 (defend) only; E13 §14 and `general_v2` item 6 touch the topic | **local** | `general_v2` item 6 scores on `senderTrust`/`linkCredible`, not `deepfake_request`, so only E13 uses this id today; promote if a check item later scores on it |
 | `fake_profile` | E14 (defend) only | **local** | one set; `data_conduct` does not score it |
