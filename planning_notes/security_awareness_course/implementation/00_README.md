@@ -1,6 +1,6 @@
 # Implementation handover: new awareness episodes E8 to E17
 
-Start here after a context reset. This folder turns the awareness course plan into briefs that a Sonnet agent with a fresh context can carry out without asking questions. Every path, key and command in these files was checked against the repo on 2026-10-27. Where a brief and the code disagree, the code wins: stop and report the difference.
+Start here after a context reset. This folder turns the awareness course plan into briefs that a Sonnet agent with a fresh context can carry out without asking questions. The paths, keys and commands in these files are checked against the repo as the review rounds proceed (most recently the round 2 fix pass on 2026-10-28); treat them as needing a quick re-check at the point of use, not as a guarantee every line is still exact. Where a brief and the code disagree, the code wins: stop and report the difference.
 
 Read this file first, then `01_PIPELINE.md` (how a new episode is built), then the brief for your task.
 
@@ -61,11 +61,11 @@ Copied from `WRITER_BRIEF.md`. Do not reopen them.
 
 1. **E8 pilot.** Run the whole pipeline once (`01_PIPELINE.md`) with ENG-01. Write down every place where the pipeline was wrong, and fix `01_PIPELINE.md` before E9 starts.
 2. **E9 with E10.** These are two episodes in parallel, each with its own engine packets (ENG-02, ENG-03a, ENG-03b) and ENG-09a, which both need.
-3. **The consequence-flip stage and its defend-half surfaces.** ENG-04 is built once, then E11, E14, E15, E16 and E17 are written against it. E17 is defend-only and needs no sandbox. E14's module design uses the built `osint` and `write` stages, so it needs ENG-04 only if its brief adds a sandbox beat. It is scheduled in this wave because it shares the new defend card kinds (ENG-09a). Build the shared defend-half surfaces in the same wave: ENG-11 (the reusable sort drill for E14, E15 and E17), ENG-12 (E16's "raise a concern" fact-chip form) and ENG-13 (E14's privacy panel). Each is a new child scene gated on a new optional key, so they do not block the episodes that do not use them.
+3. **The consequence-flip stage and its defend-half surfaces.** ENG-04 is built once, then E11, E14, E15, E16 and E17 are written against it. E17 is defend-only and needs no sandbox. E14 uses the built `osint` and `write` stages and does **not** use ENG-04 (its spec and `02` agree). It is scheduled in this wave because it shares the new defend card kinds (ENG-09a) and the sort drill (ENG-11). Build the shared defend-half surfaces in the same wave: ENG-11 (the reusable sort drill for E14, E15 and E17), ENG-12 (E16's "raise a concern" fact-chip form) and ENG-13 (E14's privacy panel). Each is a new child scene gated on a new optional key, so they do not block the episodes that do not use them.
 4. **E12.** It needs ENG-05a to ENG-05e and ENG-09c, plus host and costume art after the PixelLab reset. Build it after the consequence-flip wave, so that the riskiest engine work does not hold the others up.
 5. **E13.** It needs ENG-06 and ENG-07.
 
-**Alongside, at any point:** WP-12 (`11_WP12_FIRST_PLAY_AND_ANNUAL.md`, which needs **ENG-10** first: the brief-only episode, its multi-card brief, the once-per-learner gate and the completion global), WP-15 (`12_WP15_CORE02_ITEMS.md`), the two new check-form pairs (`10_CHECK_FORMS.md`) and WP-02 (`13_WP02_REPORTING_ROUTE.md`). Episodes are pipelined, as in the AGENTS.md mission loop: one episode's playtests can run while the next is being written.
+**Alongside, at any point:** WP-12 (`11_WP12_FIRST_PLAY_AND_ANNUAL.md`). Its **core_00 first-play** part needs **ENG-10** first: the brief-only episode, its multi-card brief, the once-per-learner gate and the completion global. Its **core_17 annual** part needs **no engine packet** (ruling 1): it is a `defendOnly` shell whose defend set holds 8 messages drawn from E1 to E7, which validates on the built `defendOnly` path. Also WP-15 (`12_WP15_CORE02_ITEMS.md`), the two new check-form pairs (`10_CHECK_FORMS.md`) and WP-02 (`13_WP02_REPORTING_ROUTE.md`). Episodes are pipelined, as in the AGENTS.md mission loop: one episode's playtests can run while the next is being written.
 
 ## 5. Dependencies
 
@@ -78,14 +78,14 @@ ENG ids are packets in `02_ENGINE_WORK.md`. P ids are steps in `01_PIPELINE.md`.
 | ENG-09a authored-choice triage kind | nothing | E9, E11, E14 to E17, check forms | engine |
 | ENG-09b debrief panel list | nothing | E8 (two concept cards), and any episode with more than one panel | engine |
 | ENG-09d shell-count and parity-list guards | nothing | every episode's P6 and P7 | engine |
-| E8 | ENG-01, ENG-09b (if two panels), ENG-09d | proves `01_PIPELINE.md` | content, then playtest |
+| E8 | ENG-01, ENG-09b (E8 has two concept panels), ENG-08 (schema keys; E8's tells are scenario-local), ENG-09d | proves `01_PIPELINE.md` | content, then playtest |
 | ENG-02 password guessing stage | ENG-01 | E9 | engine |
 | E9 | ENG-01, ENG-02, ENG-09a | - | content |
 | ENG-03a triage page states | nothing | E10, check forms | engine |
 | ENG-03b check-page builder | ENG-03a (shared render strings) | E10 attack half | engine |
 | E10 | ENG-03a, ENG-03b | - | content |
 | New brand rooms (P5b) | nothing | E11 (Carrholme) | engine (room scripts) |
-| ENG-04 consequence sandbox stage | ENG-09a (for the defend items only) | E11, E15, E16 (E14 optional) | engine |
+| ENG-04 consequence sandbox stage | ENG-09a (for the defend items only) | E11, E15, E16 | engine |
 | ENG-11 reusable sort drill | ENG-08 | E14 ("Post or Not?"), E15 (Swap Shop), E17 ("can I?" sort) | engine |
 | ENG-12 "raise a concern" fact-chip form | ENG-08, ENG-04 (E16 is a consequence flip) | E16 defend half | engine |
 | ENG-13 privacy-settings panel over the OSINT board | ENG-08 | E14 defend half | engine |
@@ -95,16 +95,16 @@ ENG ids are packets in `02_ENGINE_WORK.md`. P ids are steps in `01_PIPELINE.md`.
 | ENG-05a world-play modifier hand-off (not a new stage) | nothing | E12 | engine |
 | ENG-05b costume | ENG-05a | E12 | engine |
 | ENG-05c lobby, door and NPC door opening | ENG-05a | E12 | engine plus content |
-| ENG-05d package-carry sprite state | PixelLab reset (3 Nov) and the user's approval of art scope | E12 polish (E12 can ship a first pass without it) | art |
+| ENG-05d package-carry sprite state | PixelLab reset (3 Nov) and the user's approval of art scope | E12 polish only: it is **not** a wiring prerequisite. E12 is wired and bridged with the stock costume sprite (ENG-05b) and gets the baked-in parcel after the reset. Only ENG-05a to ENG-05c and ENG-09c must land before E12 is wired | art |
 | ENG-05e real `#trigger_minigame` | nothing | E12 if its brief needs it | engine |
 | ENG-09c in-person triage card | ENG-09a | E12 defend set, physical check items | engine |
 | E12 | ENG-05a to ENG-05c, ENG-09c (ENG-05d and ENG-05e as its brief says) | - | content |
 | ENG-06 authored assistant stage | ENG-01 (shares the flip part) | E13 | engine |
 | ENG-07 video-call label | nothing | E13 | engine |
 | E13 | ENG-06, ENG-07 | - | content |
-| Check forms (`10_CHECK_FORMS.md`) | the card kinds their items use (ENG-03a, ENG-09a); any tell scored in a form must be in the shared library (ENG-08) | post-checks for the two new pairs | content |
+| Check forms (`10_CHECK_FORMS.md`) | no engine packet: every item kind is built (`email`, `page`, `call`, `push`) and every scored flag is an existing shared-library id; a tell a form item scores must be in the shared library (ENG-08), which today's two pairs already satisfy | post-checks for the two new pairs | content |
 | ENG-10 brief-only episode + completion global | nothing (its schema/validator work is in the packet) | WP-12 core_00 first play | engine |
-| WP-12 | ENG-10 + its own file (`11_WP12_FIRST_PLAY_AND_ANNUAL.md`) | - | content |
+| WP-12 | core_00 needs ENG-10; core_17 needs no packet (ruling 1, a `defendOnly` 8-message shell); plus its own file (`11_WP12_FIRST_PLAY_AND_ANNUAL.md`) | - | content |
 | WP-15 | its own file (`12_WP15_CORE02_ITEMS.md`) | - | content |
 | WP-02 | the user's explicit go-ahead for any Hacktivity edit | the debrief route box (aw1) | Hacktivity implementer |
 

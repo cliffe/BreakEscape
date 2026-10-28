@@ -354,3 +354,301 @@ rule, ENG-09b's array shape, ENG-10's `brief` variant and the `attack_checks`/gu
 3. **`choice` card scoring (R2_engine m2, R2_sonnet M6).** Each option of a `choice` card maps to one of the built verdicts, and it is scored exactly as that verdict is scored under `KIND_VERDICT_POINTS` and `VERDICT_POINTS`. The card's `truth` is the correct verdict. A card holds one decision only, so E9 row 5 is split in two.
 4. **Fenwick (round 2 known item 2).** Rename E8's one-off firm `fenwick-brandt.example` to a name that clashes with nothing. Correct E14's "no repo hits" claim, because Arthur Fenwick exists in sector_01.
 5. **E8 completeness (R2_sonnet M1, M2).** E8 must list every shell and generator metadata value, plus its attack-fragment skeleton, in full. Copy the shape from the built E5 and `gen_e3_e5_shells.py`, the generator that actually holds Anjali's `HOSTS` entry, and fix P4's "copy the e6/e7 generator" pointer to match. The pilot must need no guessing.
+
+## Round 2 fixes: 11, E11, E12, E14 to E17
+
+Fixer scope: `11_WP12_FIRST_PLAY_AND_ANNUAL.md`, `episodes/E11_misdirected_data.md`,
+`E12_visitor_and_tailgater.md`, `E14_social_media.md`, and `E15_shadow_it.md` / `E16_insider_risk.md` /
+`E17_acceptable_use.md` only where a round 2 finding touches them. No git run; no file edited outside
+these. Every fix checked against the built files, the fragments and `scripts/validate_social/awareness.rb`.
+
+### Findings fixed
+
+- **11 Part B / core_17 (R2_sonnet B1, round 2 ruling 1).** Rewrote Part B from the 17-message `full`
+  design to a **`defendOnly` variant with an 8-message combined set**, which validates under
+  `--strict-social` with **no new engine packet**. Verified against `awareness.rb`:
+  `STAGES_BY_VARIANT['defendOnly']` allows `["brief","defend","debrief"]`; `EPISODE_MESSAGES = (4..8)`
+  covers 8; `full?` is `variant == 'full'`, so `attack_checks` never runs and no attack block is needed;
+  `id_suffix_checks` is satisfied by id `core_17_annual_2027_defend`; `set_checks` wants
+  `outcome.setGlobalPrefix == "episode_core_17_annual_2027_defend_defend_"` (the built double-suffix),
+  done global `episode_core_17_annual_2027_defend_defend_done`. **The 8 reuse ids, all grep-confirmed to
+  exist 2026-10-28:** `e1_lookalike_bank` (email phish), `e1_bank_confirmed` (email genuine),
+  `e3_push_early` (push phish), `e3_call_gordon_impostor` (call phish), `e3_call_gordon_real` (call
+  genuine), `e5_sso_lookalike` (page phish), `e6_shift_moved` (sms genuine), `e7_vm_ravinder_cloned`
+  (voicemail phish). **Channel coverage:** email, call, voicemail, SMS and push (plus a sign-in page),
+  which is the ruling's email / call / voicemail / SMS-or-QR / push. **Mirror pair:** the two Gordon
+  calls (impostor normal-looking, real awkward-genuine). **E3 calls reshaped as data only:** both go in
+  `messages` as plain triage `call` cards (shape of `ha_call_facilities`: `callerId`, `from`, `time`,
+  `transcript`, `truth`), `tells`->`truth.flags`, `claims` dropped, **no `defend.calls` key** so
+  `call_checks`/`pretextNpcs` are not pulled in. `channelTells` set to the union of the copied items'
+  `00`-library tells (no new tell). Timing rewritten to shell (8 to 10 min) **plus the learner's
+  existing role post-check** (about 9 min) = 17 to 20 min; the pre/post-bracket section became a
+  post-check-follows note (core_17 is not a check mission, declares no `triage_pre_*`). Acceptance,
+  Files, Do-not and Stop-and-ask rewritten to the `defendOnly`/8-item shape and 01 P12 seeding.
+- **11 Part A (R2_sonnet m12).** Settled the one-panel-vs-seven-cards contradiction in favour of
+  **ENG-10's `strings.briefCards`**: retitled "The brief panel content" to "The seven cards", stated
+  each of the seven beats is one `briefCards` entry (not one `strings.brief` panel), and kept the single
+  rich `strings.brief` panel only as the ENG-10-not-ready stopgap. Now agrees with "Recommendation" and
+  "The shell".
+- **E11 (R2_sonnet M9).** Added section 15a, the full objective design for a `mistake` episode with
+  **no `phish_*` target**: the recommended **one-aim** design (a single `missionConclusion: true` defend
+  aim concluded on `episode_e11_misdirected_data_defend_done`, quoted `conclusionScreen`,
+  `conclusionTaskId: "sort_desk_inbox"`, the host NPC `eventMappings` on the done global), the full
+  `globalVariables` list (no `phish_*` and no attack-landed global), and the defend-only double-suffix
+  globals. Stated that P2's "first aim `manual` / `phish_<targetId>_attempts`" does **not** apply to
+  E11, and documented the optional two-aim variant as needing ENG-04 to write a global when `mistake`
+  completes (flagged, not assumed). Shape copied from `awareness_e6_texts_and_qr_defend` (one aim) and
+  `awareness_e4_exec_whaling` (two aims).
+- **E11 §17 (R2_sonnet m6).** Fixed: the validator takes the `scenario.json.erb` **file path** per
+  shell, not the folder (README 8.3); and E11 does not own "four check shells": `10`'s generator builds
+  **eight** shells across both shared pairs (`awareness_{pre,post}_{general_v2,data_conduct}_{ab,ba}`),
+  validated as `10`'s acceptance.
+- **E12 (R2_content t1).** Added an explicit **art-load tally** to section 5: the hi-vis courier costume
+  `aw_hivis_courier_v2` (parcel baked into `walk`/`breathing-idle`) plus its talk portrait, two new M&S
+  NPCs (Delphine Arvanitis, Lorna Easton), and the new lobby map `room_aw_merrin_lobby`, noted as a
+  larger budget than a one-NPC episode. Stated that **Lorna Easton can reuse an existing built sprite**
+  (the kiosk host needs only a world sprite and a talk portrait, no influence bust), saving one full
+  character art set; only Delphine (the pretext mark) needs a new person-chat portrait, so the true new
+  art cost is one set plus the costume, not two.
+- **E14 (round 2 ruling 4 / R2_content m2).** Corrected the false "'Fenwick' had no repo hits" line:
+  **Arthur Fenwick** exists as a bed-sprite-only background patient in the **unbuilt**
+  `modules/sector_01_healthcare/game_design.md` and `03_WORLD_AND_CAST.md`. **Kept Dani Fenwick** (a
+  different first name, a different company, a different and unbuilt sector module, never met in the same
+  course), stating the clash on the record rather than hiding it; acceptable because the two are in
+  separate modules. Noted that the other half of ruling 4 is already resolved on the E8 side (the E8
+  fixer renamed `fenwick-brandt.example` to `Marsden Holloway`), so no awareness-episode Fenwick clash
+  remains.
+
+### Findings that do not touch E15, E16 or E17 (no edit; checked)
+
+- **No round 2 B/M/m/t finding targets E15, E16 or E17.** R2_content, R2_sonnet and R2_engine mention
+  them only in passing or as round-1 items already fixed / spot-checks that passed.
+- **Ruling 2 (tell reclassification) does not reach them.** The five reclassified tells
+  (`ransomware_note`, `fake_check_paste`, `fake_update_prompt`, `dangerous_download`,
+  `mfa_number_relay`) are not used by any of E15/E16/E17 (grep-confirmed). Their new tells
+  (`found_media`, `unapproved_tool`, `insider_offer`) are already declared scenario-local via
+  `flagChips`, which the validator accepts; none is promoted to the shared library, so no `SKILL_NAMES`
+  entry or `CHANNEL_TELLS` change is implied. (`unapproved_tool` appears in E15 and E17, each as its own
+  scenario-local declaration on independent sets that are never merged; no review flagged it and it is
+  not one of ruling 2's five tells.)
+- **Ruling 3 (`choice` card scoring) does not reach them.** None of E15/E16/E17 uses a scored triage
+  `choice` card (grep-confirmed). Their sort activities are ENG-11 `sortDrill` surfaces and ENG-12
+  `concernForm`, and the `mistake`-sandbox beats are unscored ENG-04 `beats[].options`, none of which is
+  the `choice` triage kind that ruling 3 governs.
+
+### Note to the 02 fixer (unchanged by me)
+
+- E11's optional two-aim objective design would need ENG-04 to write a global when the `mistake` stage
+  completes (none today; the chosen options live in `episode_<id>_state`, cleared on `flip`). E11 ships
+  the one-aim design and flags the two-aim variant as ENG-04 scope; raise it with 02 only if that design
+  is wanted.
+
+## Round 2 fixes: E8, E9, E10, E13
+
+Fixer scope: `episodes/E08_after_the_click.md`, `E09_passwords.md`, `E10_downloads_and_fake_checks.md`,
+`E13_ai_assistant.md`. No git run; no file edited outside these four. Every fix was checked against the
+built E5 fragment (`awareness/e5/attack.json`), the E5 scenario erb and `mission.json`,
+`gen_e3_e5_shells.py`, `triage-scoring.js` (`VERDICT_POINTS`/`KIND_VERDICT_POINTS`), and the Round 2
+rulings.
+
+### E8 (R2_sonnet M1, M2; Round 2 rulings 4 and 5; R1_sonnet m5, m8, t1, t2, M8)
+
+- **Shell and generator metadata, in full (ruling 5 / R2_sonnet M1 / R1_sonnet M4, m8).** Added a new
+  **§8b** giving every value as a final string: the full-erb two-aim `objectives` (ids, titles,
+  descriptions, tasks, `concludeRequires`, `conclusionScreen`), the training-kiosk `observations` and
+  `observationVariants`, the `mission.json` (`display_name`, `description`, `cybok` keywords), the
+  top-level erb strings, the generator `EPISODES['e8']` entry and `LINES[('e8','defend')]` tuple
+  (Anjali's voice), and the host spoken lines for the full shell. Shapes copied from the built E5 erb
+  and `gen_e3_e5_shells.py`.
+- **Anjali's `HOSTS` entry and sprite (m8).** §8b quotes `HOSTS['anjali']` verbatim from
+  `gen_e3_e5_shells.py` (`sprite: 'female_scientist'`, verified) and gives the in-scenario host NPC
+  sprite keys `female_scientist_v2` / `female_scientist_talk.png` / `female_scientist_visemes.png`
+  (the E5 host-NPC shape) plus the learner avatar. Noted that 01 P4's "copy the e6/e7 generator"
+  pointer should be corrected to `gen_e3_e5_shells.py` for the Anjali/Quayholt helpers (a request to
+  the 01 fixer, out of this file's scope).
+- **Attack-fragment skeleton, in full (ruling 5 / R2_sonnet M2).** Added an "Attack fragment skeleton"
+  subsection to §9 listing the exact changes against `e5/attack.json`: the Ayaan/`itdesk` `people`
+  rows, the four `intelFacts` (two copied verbatim from E5, two Ayaan facts), the three-page
+  `osint.sites` with every block's `fact` present, the `post_ayaan` social post, the `mailClient`
+  `contacts` row (`revealedBy: se_intel_quayholt_staff_claims`, `targetId: takeover_victim`), and the
+  `playerSentAuth` block (copied from E5, `envelopeFrom: bounce.quayholt.example`). **The dangling
+  `quayholt_sso_portal` fact and its `blk_sso` block are explicitly deleted** (E8 has no page), which
+  resolves R2_sonnet M2's dangling reference; `landingPages`/`payloadKit`/`conceptCards` are dropped.
+- **Gate (R2_sonnet M1).** Added a sentence to §4 making §8b, §9's skeleton, §10 and §11 a content gate
+  the `opus48` writer completes before P2 wiring starts.
+- **Fenwick rename (ruling 4).** Renamed the one-off client firm `fenwick-brandt.example` to **Marsden
+  Holloway** (`marsden-holloway.example`) throughout §10, §11 and §15. "Marsden" and "Holloway" each
+  return zero repo hits (checked 2026-10-28); the §15 note records the rename and that the old name
+  clashed with E14's Dani Fenwick and sector_01's Arthur Fenwick. (E14's "no repo hits" claim is the
+  E14 fixer's; flagged there.)
+- **"Wired like E5" vs "copy E1" (R1_sonnet M8 / R2_sonnet m3).** §15 now says: frame from E1 (01 P2),
+  host ink is E1's `adaeze_okafor.ink` structure with Anjali's lines, and take only the Quayholt names,
+  sites, templates and the Quayholt globals/`eventMappings` shape from E5; do not copy E5's
+  `se_landing_pages`/`landing_*` globals (E8 has no build stage).
+- **Defend-only bridge (R1_sonnet m5 / R2_sonnet m1).** §16 drops the defend-only bridge: `run-suite.sh`
+  `JOBS` has only `*-full` entries and no defend-only bridge exists to copy. Only `bridge-e8-full.jsonl`
+  is added.
+- **"Eight pinned strings" (R1_sonnet t1 / R2_sonnet t1).** §13 reworded to the `_defendOnly`
+  pinned-strings convention with no reliance on a count of eight (the schema `strings` carries about
+  twenty keys).
+- **§2 path and §5 reason (R2_sonnet t2).** §2's `modules/.../03_WORLD_AND_CAST.md` corrected to
+  `planning_notes/security_awareness_course/03_WORLD_AND_CAST.md`. §5's "the colleague fooled in the E5
+  flip line" reason corrected: the shipped E5 flip strings name Hana Novak, so the E5 `_brandAdditions`
+  note is stale; E8 uses Ayaan only because he is an established Quayholt claims handler (the genuine
+  `ha_call_printer` caller in E3, a `call` not a voicemail). Verified `hb_vm_locked` is Reuben Ofori in
+  the actual E3 data (an authoring comment in `e3/defend.json` mislabels it, but the card is Reuben).
+
+### E9 (Round 2 rulings 2 and 3; R2_content m3; R2_sonnet m13)
+
+- **`choice` card scoring and `truth` (ruling 3 / R2_sonnet M6).** §11 now defines the mapping once:
+  each `choice` option maps to a built verdict and is scored exactly as that verdict under
+  `VERDICT_POINTS`; the card's `truth` carries `correct` (the right verdict) and `isPhish`. Every E9
+  choice card uses `truth.isPhish: true` with the safe option -> `report` (60, full) and the unsafe
+  option -> `trust` (0, a miss), `truth.correct: "report"`, no Verify button. Added a worked message
+  JSON for row 4. Verified against `triage-scoring.js` (`phish` column: report 60, trust 0).
+- **Split row 5 (ruling 3).** The old two-part sign-up card (unique-vs-reuse plus true-vs-made-up
+  security answer) is split into row 5 (`e9_signup_password`) and row 6 (`e9_security_answer`), so each
+  card holds one decision. Rows renumbered to 8 cards; the ladder and shared-PC cards are now rows 7 and
+  8. Updated all stale "rows 4 to 7" -> "rows 4 to 8", "about 6 to 7" -> "about 6 to 8", the cut note
+  ("cut row 7 or row 8"), and §20 open question 5's count (eight decisions).
+- **`mfa_number_relay` local (ruling 2).** §3 and §11 reclassify `mfa_number_relay` as scenario-local to
+  E9 (only E9 scores it today; the shipped E3 set does not carry it; no `10` item scores it), declared
+  in `channelTells` with a `flagChips` label, no shared-library append. §17 acceptance updated.
+- **Stale open question 4 (R2_content m3).** §20 open question 4 replaced with the Round 1 resolution
+  (E9 feeds `general_v2`; the `choice` cards are an episode surface, not a check-form item).
+- **"Wired like E6" (R2_sonnet m13).** §15 reworded: frame from E1 (01 P2), Tarrowby room from P5a,
+  `guess` block from ENG-02; E6 is the reference only for the built Tarrowby room and cast, not the
+  stage shape.
+
+### E10 (R2_content M1; Round 2 ruling 2)
+
+- **§15 seeding (R2_content M1 / ruling 8).** §15 no longer seeds the two courses "through
+  `awareness_deploy.py`"; it now follows `01_PIPELINE.md` P12 and says not to use `awareness_deploy.py`
+  for course seeding, matching E10's own §13 and the other specs.
+- **Tells local (ruling 2).** §3, §11, §14, §17 reclassify all five of E10's web tells
+  (`fake_check_paste`, `fake_update_prompt`, `dangerous_download`, `fake_alarm_callback`,
+  `browser_permission_grab`) as scenario-local: none is scored by a `10` check item (`general_v2` item 2
+  scores `lookalike_domain`/`padlock_myth` on the built `page` shape), so under ruling 2 every one stays
+  local, declared in `channelTells` with a `flagChips` label; a single id moves to the shared library
+  (with a `SKILL_NAMES` entry) only if `general_v2` is later balanced to score it.
+
+### E13 (R2_content t2)
+
+- **§15 seeding cites P12 (R2_content t2).** The "Hacktivity course seeds" line now follows
+  `01_PIPELINE.md` P12 (ruling 8) and says not to use `awareness_deploy.py`, for parity with E8 to E17.
+
+### Not fixed, with reason
+
+- **R2_content m1 / R2_sonnet m2 (ENG-08 tell-table reason columns):** owned by `02_ENGINE_WORK.md`
+  (the 02 fixer), not editable here. The E8/E9/E10/E13 content is consistent with ruling 2 as written
+  (all single-set tells are now declared scenario-local), so no change is needed in these four files.
+- **01 P4 "copy the e6/e7 generator" pointer (ruling 5):** flagged to the 01 fixer in E8 §8b; 01 is out
+  of this file's scope.
+
+## Round 2 fixes: 00/01/02 (fixer)
+
+Scope: `00_README.md`, `01_PIPELINE.md`, `02_ENGINE_WORK.md` only. No git run; no file edited outside
+these three. Each fix was checked against the code in `/home/user/BreakEscape` on 2026-10-28.
+
+**02_ENGINE_WORK.md**
+- **R2_engine m1 / R2_sonnet m2 (tell-table reasons; ruling 2):** rewrote the ENG-08 tell table. Every
+  E8 to E17 tell is used by exactly one set today, so **all are reclassified local** (`unexpected_sent_item`,
+  `unrequested_reset`, `ransomware_note`, `mfa_number_relay`, `fake_check_paste`, `fake_update_prompt`,
+  `dangerous_download`, plus the already-local E10/E12/E13 ids). Verified against `10_CHECK_FORMS.md` that
+  `general_v2` (scores `lookalike_domain`, `padlock_myth`, `unrequested_mfa_push`, `senderTrust`,
+  `linkCredible`, `reply_to_differs`) and `data_conduct` (scores `senderTrust`, `pretextRelevant`,
+  `secrecy_or_bypass`, `vish_callback_pressure`, `reply_to_differs`) score none of them, so the ruling-1
+  exception does not apply and nothing is promoted to shared. Corrected the false "E13 uses `ransomware_note`"
+  and "E3 uses `mfa_number_relay`" claims. Deleted the "canonical strings to register for the shared ids"
+  append list (now zero shared additions) and recast it as suggested local `factorStrings.<id>.redFlag`
+  wording. Result: no `CHANNEL_TELLS` append this round, so the lab and the 38 shells are untouched.
+- **R2_sonnet M7 (`SKILL_NAMES` + the two loop tests):** verified both tests loop
+  `Object.keys(F.CHANNEL_TELLS)` asserting `F.SKILL_NAMES[id]` (`social-triage-weakest.test.mjs:201`,
+  `social-gap-triage-flags-comparison.test.mjs:89`) and `SKILL_NAMES` is at `triage-flags.js:47`. Added the
+  rule to ENG-08: a promotion to shared must add a `SKILL_NAMES` entry in the same change or both tests fail;
+  stated that this round promotes nothing, so no `SKILL_NAMES` change and both tests pass unchanged; added
+  them to the ENG-08 acceptance note. Aligned ENG-03a point 3 (the three download tells are now local too).
+- **R2_sonnet M4 (ENG-04 runner wiring for `mistake`):** verified `_render:335` draws a launch panel only
+  when `STAGE_COPY[stage]` exists (else `_renderFinished:336`), `STAGE_COPY:79` and `step-strip.js`
+  `STAGE_LABELS:9` have no `mistake`, and `_launch:548` has a per-`spec.kind` chain. Added a new Change 2a:
+  add `STAGE_COPY.mistake` (so `_render` draws the panel), `STAGE_LABELS.mistake` (overridable via
+  `stepLabels`), and a `_launch` `mistake` branch calling `_completeWhileAway('mistake', { mistakeChoices })`,
+  wired like `build` at `:577`. Added a test line (a full consequence episode at stage `mistake` shows a
+  button, not "Finished") and the symbols to ENG-04 Read-first.
+- **R2_sonnet M5 (ENG-02 flip branch vs `cleanSent`):** verified `cleanSent:81` keeps only a `call` or mail
+  record and `readState:129` runs it on every read, so a `{ kind: 'guess' }` record is dropped. Added to
+  ENG-02 Change 4: add a `kind === 'guess'` branch to `cleanSent` returning `{ kind: 'guess' }`, write it with
+  `_completeWhileAway('guess', { sent: { kind: 'guess' } })`, and test `readState` keeps it. Noted the flip
+  already clears `sent` at `:160`, so no extra patch-key change is needed for `guess`.
+- **R2_engine m2 / R2_sonnet M6 (ENG-09a choice scoring; ruling 3):** verified `VERDICT_POINTS:70`,
+  `KIND_VERDICT_POINTS:43` (holds `call` only), `verdictPoints:88` and the `perMessage` record at `:285`.
+  Rewrote ENG-09a's Change: each `choice` option carries one of the four built verdicts; the card has a
+  `truth` (`isPhish`, `correct`); the chosen verdict is scored through the shared `verdictPoints`/`scoreTriage`
+  path under `awareness` (falls through to `VERDICT_POINTS` as `choice` has no `KIND_VERDICT_POINTS` entry);
+  gave the exact `se_awareness_records` record shape (flagPoints 0, empty flag arrays); stated the
+  one-decision-per-card rule and its lint; updated the schema lints and the tests-to-add; added the symbols
+  to Read-first. (E9 row 5's split is the E9 fixer's job.)
+- **R2_sonnet M8 (ENG-10 skip `defend_set` for `variant: brief`):** verified `episode_checks:44` always runs
+  the defend-set group `:57-66` and `defend_set` errors "defend.setId is missing" at `:362`. Rewrote ENG-10
+  Change 4 to gate that whole group on `!brief?(ep)` (new `brief?` helper beside `full?`), and to add a
+  brief-only conclusion lint that the `missionConclusion` aim's `concludeRequires.globals` names `doneGlobal`.
+  Added the symbols to ENG-10 Read-first.
+- **core_17 needs no packet (ruling 1):** ENG-10 "Episodes that depend on it" now states core_17 is a
+  `defendOnly` 8-message shell that validates on the built path with no `brief` variant and no packet; only
+  core_00 needs ENG-10.
+- **The garbled ENG-02 dependency paragraph (R2_sonnet m11):** replaced with "E9 (attack half only). The
+  defend-only variant needs ENG-09a, not ENG-02", with the reason (`guess` is an `ATTACK_STAGES` id dropped
+  from a `defendOnly` shell; the password cards are ENG-09a).
+- **R2_sonnet t3 (stale "checked" claim):** softened 02's line 3 to name the 2026-10-28 round-2 re-read.
+- No em or en dashes introduced (verified at byte level).
+
+**01_PIPELINE.md**
+- **R2_sonnet M3 (P5b object registration):** verified `scripts/room_gen/register_object.py` exists with
+  `--wall` and `--dry-run`, and that `--wall` edits `catalog.json`, `tilesets_ref.json`,
+  `objects_hospital_extras.tsx`, `game.js` (the `this.load.image` block) and `generate_rooms.py`
+  `WALL_MOUNTED_EXTRAS`. Added P5b step 3a: run `register_object.py --wall aw_logo_carrholme1
+  aw_poster_report_carrholme1` (with `--dry-run` first), listed all five files it touches and the `grep`
+  check that confirms it ran; clarified step 5 that the object-image loads are made here, not in step 5
+  (which does only the tilemap and tile-sheet loads).
+- **P4 pointer to `gen_e3_e5_shells.py` for Anjali (ruling 5 / R2_sonnet M1):** verified `HOSTS['anjali']`
+  (`'id': 'anjali_rao'`, `'sprite': 'female_scientist'`) is in `gen_e3_e5_shells.py` and absent from
+  `gen_e6_e7_shells.py`, and that the two generators differ (`gen_e6_e7` has `meta_for`, `gen_e3_e5` has
+  `success_screen`). Kept the helper scaffolding on `gen_e6_e7_shells.py` (its shape matches the field list)
+  but added that E8's host entry and line shape are copied from `gen_e3_e5_shells.py` with sprite
+  `female_scientist`, not looked for in `gen_e6_e7`; updated the `HOSTS` bullet to match. (The full E8 §8b
+  metadata table is the E8 fixer's job; this fix only corrects the generator pointer, per task scope.)
+- **R2_sonnet m9 (P5b details):** step 2 now gives an actionable in-place check (record and compare md5sums
+  of the existing `room_aw_*` PNGs, since `make_aw_tileset.py` has a fixed `OUT_DIR`); step 7 now says to
+  drop Quayholt's `aw_quayholt_queue` light emitter from the Carrholme lighting entry, since Carrholme's
+  `COMPANY_OPS` drops that prop.
+
+**00_README.md**
+- **R2_sonnet m5 (E8 row ENG-09b):** §5 E8 row now reads "ENG-01, ENG-09b (E8 has two concept panels),
+  ENG-08 (schema keys; E8's tells are scenario-local), ENG-09d", dropping the conditional "(if two panels)".
+- **R2_sonnet m4 (Check-forms engine deps):** §5 Check-forms row now says no engine packet is needed (every
+  item kind is built; every scored flag is an existing shared-library id; a form-scored tell must be shared
+  per ENG-08, which the two pairs already satisfy), replacing the "ENG-03a, ENG-09a" claim.
+- **R2_engine t1 (stale E14/ENG-04 hedge):** §4 now says E14 does **not** use ENG-04 (uses built
+  `osint`/`write`); §5 ENG-04 row drops "(E14 optional)".
+- **R2_engine t2 (ENG-05d parcel art):** §5 ENG-05d row now states the parcel sprite is not a wiring
+  prerequisite; E12 is wired and bridged with the stock costume sprite and gets the baked-in parcel after
+  the reset; only ENG-05a to ENG-05c and ENG-09c must land before E12 is wired.
+- **core_17 needs no packet (ruling 1):** §4 "Alongside" and the §5 WP-12 row now split WP-12: core_00 needs
+  ENG-10, core_17 needs no packet (a `defendOnly` 8-message shell).
+- **R2_sonnet t3 (stale "checked on 2026-10-27" claim):** §1 softened to note the round-2 re-check on
+  2026-10-28 and that lines need a quick re-check at point of use.
+
+**Not fixed, with reason**
+- **R2_sonnet m1 (E8 §16 defend-only bridge with no recipe; touches P9):** the live decision is whether to
+  drop the defend-only bridge from E8 §16 or define its file name, `JOBS` key and skeleton; E8 §16 is the
+  content fixer's. P9 is left as the authority for `eN-full` only; flagged here for the E8 fixer.
+- **R2_sonnet B1 content side (core_17 message design), M1/M2 (E8 §8b/§9), m3/m6/m7/m8/m10/m12/m13, t1/t2;
+  R2_content M-level items:** owned by the episode specs, `10`, `11`, `12`, `13`. The engine side of each is
+  settled in `02`, which the content fixers align to; core_17's engine side (needs no packet) and P4's
+  Anjali pointer are fixed above.
+
+## Known items for round 3 (orchestrator)
+
+1. The round 2 `02` fixer reclassified every new tell as local, including E8's `unexpected_sent_item`, `unrequested_reset` and `ransomware_note`. In round 1, E8 was written to author them as shared. Check that E8 and every other spec agree with the `02` tell table.
+2. The E8 defend-only bridge (R2_sonnet m1) is still open. Either define it (the file, the run-suite JOBS entry and a skeleton), or drop it from E8 §16.
+3. The E11 two-aim variant needs ENG-04 to write a global when `mistake` completes. Either add that, or confirm that E11 ships the one-aim design.
