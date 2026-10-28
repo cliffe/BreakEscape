@@ -1,6 +1,6 @@
-# Resume note: awareness course plan and kids game pitch (planning branch ccr-8675a21c-vu1k0k)
+# Resume note: awareness course plan and implementation briefs (planning branch ccr-8675a21c-vu1k0k)
 
-Plan folder `planning_notes/security_awareness_course/` (open work in its `TODO.md`); kids game pitch `planning_notes/kids_cyber_game/`. Being reconciled with what main has built (the social-engineering build and the awareness episodes in `planning_notes/phishing_and_social_engineering/`). Public repo: keep Hacktivity at feature level.
+Plan folder `planning_notes/security_awareness_course/`; **build briefs in its `implementation/` (start at `implementation/00_README.md`, §12 readiness)**, written for fresh Sonnet agents and checked over five adversarial review rounds (`implementation/reviews/`). Kids game pitch `planning_notes/kids_cyber_game/`. Public repo: keep Hacktivity at feature level.
 
 # Resume note: VM weave fixes (started 2026-10-23)
 
