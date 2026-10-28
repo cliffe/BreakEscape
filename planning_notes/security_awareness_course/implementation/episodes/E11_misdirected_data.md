@@ -475,6 +475,66 @@ Implementer (named here so the writer's keys line up; not the writer's job to bu
   `game.js` preloads, the schema room-type enum entry and the lighting entry). No new map geometry and
   no `apply_training_room.py` change (ruling 6); P5b and this spec say the same.
 
+### 15a. Objective design, globals and the conclusion (no phish target)
+
+A built full episode carries **two** aims: a first `red_team_aim` (the attack half, a `type: "manual"`
+task the host NPC completes on the attack-landed event) and a defend aim (`missionConclusion: true`,
+concluded on the done global). See `scenarios/awareness_e4_exec_whaling/scenario.json.erb`. **E11 has no
+attack half and no `phish_*` global**, so P2's "first aim `manual`, completed by the host's event
+mapping" and its `phish_<targetId>_attempts` global do **not** apply to E11; the `mistake` and `flip`
+stages run from the stage list inside the runner, not gated by any objective.
+
+**Recommended: one aim.** The validator needs exactly one aim with `missionConclusion: true`
+(`awareness.rb` `conclusion_checks`); a first aim is optional and nothing in a consequence-flip episode
+requires one. So E11's full shell carries a single objective, the defend aim, concluded on the defend
+set's done global. Shape (adapt `awareness_e6_texts_and_qr_defend`'s single-aim `objectives`):
+
+```jsonc
+"objectives": [
+  {
+    "aimId": "desk_inbox_aim",
+    "title": "Clear the Care Laundry desk inbox",
+    "description": "Sort the six items waiting at the Care Laundry desk at the training kiosk.",
+    "status": "active",
+    "order": 0,
+    "missionConclusion": true,
+    "concludeRequires": { "globals": ["episode_e11_misdirected_data_defend_done"] },
+    "conclusionScreen": {
+      "type": "success",
+      "title": "Misdirected data episode done",
+      "body": "You've seen where an ordinary morning can go wrong and worked the Care Laundry desk inbox yourself, so this episode is finished."
+    },
+    "tasks": [
+      { "taskId": "sort_desk_inbox", "title": "Sort the Care Laundry desk inbox", "type": "custom", "status": "active" }
+    ]
+  }
+]
+```
+
+- `awarenessEpisode.conclusionTaskId: "sort_desk_inbox"` (a task of the conclusion aim;
+  `conclusion_checks`).
+- The host NPC (Tomasz) carries the `eventMappings` entry that completes the task on the done global:
+  `{ "eventPattern": "global_variable_changed:episode_e11_misdirected_data_defend_done",
+  "completeTask": "sort_desk_inbox", "onceOnly": true }`. A global cannot complete a task by itself, so
+  the host carries the mapping (`conclusion_checks`).
+- `globalVariables` for the **full** shell (declare all; defaults as shown):
+  `episode_e11_misdirected_data_state: {}`, `se_awareness_records: []`,
+  `episode_e11_misdirected_data_defend_percent: 0`, `episode_e11_misdirected_data_defend_reportRate: 0`,
+  `episode_e11_misdirected_data_defend_done: false`, `episode_e11_misdirected_data_defend_pass: false`.
+  No `phish_*` global and no attack-landed global exist. (`episode_<id>_state` also holds the
+  `mistakeChoices` field at runtime, section 10a; it is declared `{}` and starts empty.)
+- The **defend-only** shell uses the double-suffix prefix (section 13): done global
+  `episode_e11_misdirected_data_defend_defend_done`, result globals
+  `episode_e11_misdirected_data_defend_defend_{percent,reportRate,pass}`, state global
+  `episode_e11_misdirected_data_defend_state`, and `conclusionTaskId`/aim shaped the same way.
+
+**Optional two-aim variant (needs ENG-04 work; do not assume it).** If the design wants a first "the
+morning's choices" aim that completes when the sandbox ends, ENG-04 must write a global when the
+`mistake` stage completes (there is none today; the chosen options live inside `episode_<id>_state`,
+cleared on `flip`). Then a first aim's `type: "manual"` task is completed by a host `eventMappings`
+entry on that new global, mirroring the built `red_team_aim`. This is extra ENG-04 scope; raise it with
+the 02 fixer before building it, and ship the one-aim design otherwise.
+
 ## 16. Bridge script outline
 
 A full-episode bridge (`tools/playtest/se/bridge-e11-full.jsonl`, run by `check-bridge.mjs` /
@@ -487,9 +547,13 @@ mission concluded. A second bridge for the defend-only shell: brief, defend, deb
 
 ## 17. Acceptance checks
 
-- `ruby scripts/validate_scenario.rb --strict-social --no-graph --skip-ink
-  scenarios/awareness_e11_misdirected_data` exits 0 with no new warnings; same for the defend-only and
-  the four check shells.
+- `ruby scripts/validate_scenario.rb scenarios/awareness_e11_misdirected_data/scenario.json.erb
+  --strict-social --no-graph --skip-ink` exits 0 with no new warnings; same for the defend-only shell
+  (`scenarios/awareness_e11_misdirected_data_defend/scenario.json.erb`). The validator takes the
+  `scenario.json.erb` **file path** per shell, not the folder (README section 8.3). The `data_conduct`
+  check shells are not E11's to validate: `10`'s generator builds **eight** shells across both shared
+  pairs (`awareness_{pre,post}_{general_v2,data_conduct}_{ab,ba}`), and validating them is `10`'s
+  acceptance, not E11's.
 - `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs` passes, including the
   parity test (the full erb carries `flipMontageByChoice`, the defend-only shell does not) and the new
   ENG-04 lints.

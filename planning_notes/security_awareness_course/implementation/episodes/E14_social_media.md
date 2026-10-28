@@ -93,9 +93,20 @@ general-purpose or Sonnet.
     subject must be an internal colleague (the learner tightens "his profile and yours"), and a client
     contact cannot be that. Per the WRITER_BRIEF rule that the code wins over `game_design.md`, Oskar
     stays a Brackenmoor client and E14 introduces a new internal junior, Dani Fenwick.
-  - **Name-clash check (2026-10-27):** "Fenwick" had no repo hits; "Dani" is a first name only and does
-    not clash as a surname. (Avoided "Doyle", which has many repo hits.) Pre-ship web search for
-    "Fenwick" as a real business is still owed where it reads as a company (it does not here).
+  - **Name-clash check (corrected 2026-10-28; round 2 ruling 4).** The earlier claim "'Fenwick' had no
+    repo hits" was wrong. **"Fenwick" is already in the repo as Arthur Fenwick**, a patient / care-home
+    resident (bed-sprite-only background character, no sender, no email, no dialogue) in the **unbuilt**
+    `modules/sector_01_healthcare/game_design.md` and `03_WORLD_AND_CAST.md`. **E14 keeps Dani Fenwick**:
+    Arthur Fenwick is a different person (different first name), in a different company and a different,
+    unbuilt sector module (a hospital patient, not an architecture-practice colleague), so a learner on
+    the core awareness course never meets both as the same name and the two cannot be confused. This is
+    acceptable (the two are in separate modules), and is stated here so the clash is on the record rather
+    than hidden behind a false "no hits" line. The other half of ruling 4 (E8's one-off client firm
+    `fenwick-brandt.example`, which had shared the surname) is already resolved by the E8 fixer, who
+    renamed it to **Marsden Holloway** (`marsden-holloway.example`), so there is no awareness-episode
+    Fenwick clash left. "Dani" is a first name only and does not clash as a surname. (Avoided "Doyle",
+    which has many repo hits.) Pre-ship web search for "Fenwick" as a real business is still owed where
+    it reads as a company (it does not here).
 - **Impersonated senior: Catherine Merrin**, managing partner (built), as a **fake** connection request
   in the defend half, flagged by the look-alike NPC guard. Her real profile is genuine.
 - **Fake recruiter and the system-fishing stranger:** generic avatars, thin new accounts, no real

@@ -92,6 +92,24 @@ ship: the attack half has no fallback (unlike E3, whose phone pretext is already
     per-item feedback and the debrief, and holds the N16 conclusion `eventMappings`. Both are
     front-of-house, so either satisfies the brief's "host: a front-of-house staff member", and the "con
     one front-desk colleague, then do the front-desk job yourself" empathy structure holds.
+  - **Art load (stated explicitly; this episode costs more than a one-NPC episode).** E12 needs, behind
+    the PixelLab queue: (1) **the hi-vis courier costume** sprite `aw_hivis_courier_v2`, with the parcel
+    **baked into its `walk` and `breathing-idle` frames** (no separate carry animation, section 9.1
+    item 2), plus the costume talk portrait `aw_hivis_courier_talk.png`; (2) **Delphine Arvanitis**, the
+    lobby pretext mark, who needs a person-chat portrait/bust for the influence conversation and a world
+    sprite placed in the lobby; (3) **the new lobby map** `room_aw_merrin_lobby` (section 5 rooms,
+    ENG-05); and (4) **Lorna Easton**, the studio kiosk host. That is two new M&S character art sets,
+    one costume, and one map, which is a larger budget than the other episodes (a single reused room and
+    a single reused host). Flag the tally to the orchestrator for the art schedule.
+  - **Lorna Easton can reuse an existing sprite (to save one art set).** The kiosk host only needs a
+    world sprite and a talk portrait for the welcome and debrief; she does **not** carry a person-chat
+    influence conversation (that is Delphine's), so she needs no influence bust. So Lorna reuses a built
+    sprite rather than a new walk atlas: take a built M&S / office-worker host sprite and talk portrait
+    already in `assets/characters/` (for example a built Merrin & Sallow cast sprite that is not a named
+    on-screen mark here) as Lorna's placeholder, saving a full character art set. **Delphine cannot**
+    reuse in the same way: as the pretext mark she needs a distinct person-chat portrait. So the true
+    new-character art cost is **one** set (Delphine) plus the costume, not two. Confirm the chosen reuse
+    sprite with the art schedule; the name Lorna Easton stays either way.
   - **Clash check (done 2026-10-28):** `Arvanitis`, `Delphine`, `Easton` and `Lorna` have no conflicting
     hits in `scenarios/`, `planning_notes/phishing_and_social_engineering/`, `docs/` or
     `public/break_escape/js` (`Easton` and `Lorna`: zero hits on 2026-10-28). Neither reuses the retired
