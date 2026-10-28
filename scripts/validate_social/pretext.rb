@@ -497,9 +497,9 @@ module ValidateSocial
         after = reach + pressure
         floor = ask['floor']
         ok = if num?(floor) then after >= floor
-             elsif refuses_at then after > refuses_at
-             else true
-             end
+        elsif refuses_at then after > refuses_at
+        else true
+        end
         ok &&= after > reports_at if reports_at
         verify = Array(ask['verification'])
         supplied = verify.all? do |f|

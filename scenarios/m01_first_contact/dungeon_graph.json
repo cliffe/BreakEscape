@@ -279,6 +279,18 @@
       "optional": false
     },
     {
+      "id": "vmch_submit_launch_code",
+      "label": "Enter the launch authorisation code",
+      "kind": "vm",
+      "optional": false
+    },
+    {
+      "id": "vmfl_submit_launch_code",
+      "label": "Launch Code Flag",
+      "kind": "flag",
+      "optional": false
+    },
+    {
       "id": "hallway_east",
       "label": "Hallway East",
       "kind": "room",
@@ -572,6 +584,16 @@
     {
       "from": "vmfl_submit_linux_flag",
       "to": "vmch_submit_sudo_flag",
+      "soft": true
+    },
+    {
+      "from": "vmch_submit_launch_code",
+      "to": "vmfl_submit_launch_code",
+      "soft": false
+    },
+    {
+      "from": "vmfl_submit_sudo_flag",
+      "to": "vmch_submit_launch_code",
       "soft": true
     },
     {

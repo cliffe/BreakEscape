@@ -42,10 +42,10 @@ module BreakEscape
     # An integer from 2 to 100000, or nil.
     def be_team_size(value)
       n = case value
-          when Integer then value
-          when String  then value.strip.match?(/\A\d+\z/) ? value.strip.to_i : nil
-          when Float   then value == value.to_i ? value.to_i : nil
-          end
+      when Integer then value
+      when String  then value.strip.match?(/\A\d+\z/) ? value.strip.to_i : nil
+      when Float   then value == value.to_i ? value.to_i : nil
+      end
       n && n >= AWARENESS_TEAM_MIN && n <= AWARENESS_TEAM_MAX ? n : nil
     end
 
