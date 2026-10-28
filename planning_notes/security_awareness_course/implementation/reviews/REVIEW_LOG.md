@@ -667,3 +667,281 @@ these three. Each fix was checked against the code in `/home/user/BreakEscape` o
 3. **Prove the shapes.** Every fixer validates any JSON snippet it changes or adds by building a throwaway shell in the scratchpad and running the real validator. The method is in `R3_sonnet.md`: install `json-schema` into a scratch gem folder, run `ruby -I ... scripts/validate_scenario.rb <file> --strict-social --no-graph --skip-ink`, with `LANG=C.UTF-8`. Where a key needs an engine packet that does not exist yet, the brief says so and the scratch test is skipped. Record which snippets you validated.
 4. **E12 (R3_sonnet B1 and B2).** Make the door ask grantable through the facts the NPC `knows` (`pretext-judge.js` `judgeAsk`). Place the kiosk and set the start room so the learner can start the episode, and so that a failed con and a reload never strand them. Define the player's room move in ENG-05a. Decide all of this from the code.
 5. **Completeness, as round 2 ruling 5 required for E8.** E10 and E12 give every shell and generator metadata value, and write their items as final JSON. E8 adds its defend email bodies and `auth`/`to` rows.
+
+## Round 3 fixes: 00/01/02 (fixer)
+
+Scope: `00_README.md`, `01_PIPELINE.md`, `02_ENGINE_WORK.md` only. No git run; no file edited
+outside these three (and this log). Every B/M/m/t finding that touches these three is answered.
+Per round 3 ruling 3, each new key here needs an engine packet that does not exist yet, so the
+keys cannot be built into a scratch shell and validated; instead every current-code claim the fixes
+rest on was verified against the live code on 2026-10-28 (the snippet list is at the end). Findings
+owned by the episode specs, `10`, `11`, `12` or `13` are left to their fixers; where one informed a
+cross-reference in my files, that cross-reference is aligned.
+
+### 02_ENGINE_WORK.md
+
+- **R3_sonnet M1 (ENG-09b array `conceptPanel` lint).** ENG-09b's Change now has **two halves**: the
+  schema widening (as before) and a validator-lint half for `awareness.rb` `string_checks` (`:296`;
+  the `conceptPanel`/`voicePanel` loop at `:305-310`). Verified the loop reads
+  `text = v.is_a?(Hash) ? v['text'] : v` and errors on a non-String, so an **array** value errors
+  today. The lint half says: when `conceptPanel` is an Array, require >= 1 entry and error on any
+  entry with empty `text`; the String/`{heading,text}` branches are unchanged. Noted that the schema
+  half alone leaves the packet's array fixture failing `--strict-social`.
+- **R3_sonnet M2 (ENG-03a/ENG-08 `page.state` schema and `url` relaxation).** ENG-03a gained a new
+  Change 3 (the old "chip exclusions" point is now 4): the schema `page` object (`:1706`,
+  `additionalProperties: false`, `required: ["url"]`, verified) and `triage.rb`'s `page.url is missing`
+  check (`:393-395`, verified) must add `state` (enum of the seven ids), `clipboardReveal`, `alarm`
+  (`{hintAfterMs}`), `permissions` (string array) and `download` (`{filename}`), and require `url`
+  only for the web-page states (no `state`, `fakeCheck`, `fakeUpdate`, `downloadBar`, `browserWarning`),
+  making it optional for the chrome/overlay states (`relaunchBar`, `fullScreenAlarm`,
+  `extensionPermission`). The same list is now recorded in ENG-08 "New episode keys".
+- **R3_sonnet B2 / round 3 ruling 4 (ENG-05a player room move).** Rewrote ENG-05a Change 1-4. The
+  `world` block's two room fields are now defined: `world.startRoom` is the kiosk room the learner
+  starts and returns to (must equal the scenario top-level `startRoom`, `training_room`), and
+  `world.room` is the lobby the attack is played in. The move is `window.loadRoom(roomId)`
+  (`core/rooms.js:773`, async, verified; the function doors.js/npc-behavior.js use): the runner
+  `loadRoom(world.room)`s into the lobby before the call and `loadRoom(world.startRoom)`s back to the
+  kiosk room on any write outcome and before the flip (on the `watchCall` hand-back), reverting the
+  costume. So a failed con and a reload both land at the kiosk, never stranded; the badge door is
+  narrative only. Added the lint that `world.startRoom` equals the scenario `startRoom`, and that the
+  costume lives under `world.costume`, never `attack`.
+- **R3_sonnet M4 (ENG-05c exact door and NPC keys).** ENG-05c Change 2 now quotes the built m02
+  `security_office` lock block verbatim (`scenarios/m02_ransomed_trust/scenario.json.erb:3104-3122`,
+  verified): `locked: true`, `lockType: "key"`, `requires: "merrin_studio_badge"`,
+  `keyPins: [40,30,55,35]`, `difficulty: "easy"`, on `rooms.training_room`; `requires` names a key no
+  object holds. The lobby NPC gets `"unlockable": ["training_room"]` (the m02 `security_guard_patrol`
+  NPC's key, `:3238`, verified) and a `# unlock_door:training_room` ink line (the m02 guard pattern).
+  Read-first adds `game.rb` `validate_unlock:1043`/`:1071` (the NPC-permission branch) and the precise
+  `npc-game-bridge.js:117-118` where `doorProperties.locked` is cleared (fixes R3_review t2's offset
+  on the 02 side; 02 had not carried the wrong 112/119 cite, only `:77`).
+- **R3_sonnet M5 (ENG-05c lobby map + `training_room` id).** ENG-05c now adds a "Room naming" block:
+  the kiosk room stays `training_room` (not `studio`) and the second room is `lobby`, because
+  `apply_training_room.py --refresh` reads `rooms.training_room.type` unguarded (`:204`, verified) and
+  `refresh_text` (`:159-196`) re-splices only `training_room`, by text anchors, so `training_room` must
+  be the kiosk room id and precede `lobby`. The lobby map `room_aw_merrin_lobby` build recipe points at
+  `01` P5c (reuse the Merrin & Sallow sheet, no props, no kiosk/host slot). Change 3 accepts the new
+  room type and the locked lobby->training_room connection.
+- **Round 3 ruling 1 / R3_review m1 / R3_sonnet M3 and M6 engine side (ENG-08 tell table).** Rewrote
+  the rule and the table. The rule now reads: shared only when a `10` check item actually scores the
+  tell; otherwise local to each set that uses it, with a `flagChips` label and `factorStrings.<id>.redFlag`,
+  **even when two sets use the same id** (the sets never merge). Added the five missing rows
+  (`fake_profile`, `recon_request` for E14; `found_media` for E15; `insider_offer` for E16) and the
+  two-set `unapproved_tool` row (E15 and E17), marked **local in each** with the carve-out reason. The
+  header no longer claims a round-2-ruling-2 "one set only" basis. Noted that E14/E16/E17 also flag the
+  shared-library `lookalike_domain`/`secrecy_or_bypass`, which need no change. (The E8 content side of
+  R3_review B1 / R3_sonnet M6 is the E8 fixer's; 02 is now the authority they align to, and 02 already
+  made the three E8 tells local.)
+- **R3_review m4 (ENG-06 local tells).** ENG-06 Change 3 and "Depends on" now say the two tells
+  `hidden_instruction`/`deepfake_request` are declared on E13's set with `flagChips` labels and
+  `factorStrings` sentences and need **no** ENG-08 library or validator change (the pattern E9/E10/E12
+  use), citing `triage.rb` `flag_universe:209`. Removed the "accept the scenario-local tells" /
+  "register canonical strings" wording that read like shared-library registration.
+- **R3_review m5 (ENG-07 vs ENG-03a naming).** ENG-07 gained a "Scope" note: it is only the person-chat
+  video-call bar label and the triage `call` card's meeting-tool/participant tag, **not** the per-set
+  verdict/action relabel (that is ENG-03a's `triageSet.verdictLabels`). This settles the misnamed
+  reference the E12 fixer removes in E12 §20.2.
+- **R3_sonnet m2 engine side (ENG-05a dependency summary).** ENG-05a "Depends on" now states the wiring
+  prerequisites are ENG-05a/05b/05c and ENG-08; ENG-05d is art only (not a wiring prerequisite), ENG-05e
+  is needed only if `watchCall` cannot be reused (it can), and ENG-09c is not needed.
+
+### 01_PIPELINE.md
+
+- **R3_sonnet m14 (P5b asset paths).** Step 2's md5 path corrected to
+  `public/break_escape/assets/tiles/rooms/room_aw_*.png` (there is no top-level `assets/`, verified),
+  and step 3's props path to `public/break_escape/assets/objects/`.
+- **R3_sonnet M5 / task (P5c lobby build recipe).** Added **P5c "A second room for E12"**: keep the
+  kiosk room id `training_room` and name the second room `lobby`, with the `apply_training_room.py`
+  `--refresh` reasoning (`:204` unguarded read; `refresh_text:159-196` re-splices training_room only, by
+  anchors, so training_room must precede lobby). The `room_aw_merrin_lobby` build reuses the Merrin &
+  Sallow sheet (skip P5b steps 2/3/3a), adds a `build_aw_rooms.py` layout with no kiosk/host slot, a
+  `game.js` tilemap load reusing the existing PNG, and the schema enum/`generate_rooms.py` comment.
+  Added the check line (`build_aw_rooms.py --check`, `check_door_alignment.py`, a scratch `--refresh`).
+  P5a's E12 note now points at P5c and states the kiosk room stays `training_room`.
+
+### 00_README.md
+
+- **R3_review m2 (spurious ENG-09a for E14).** §4 now says E14 shares ENG-11/ENG-13 and uses the built
+  `osint`/`write` triage with no `choice` card, so it does not depend on ENG-09a. The §5 E14 row drops
+  ENG-09a (now `ENG-11, ENG-13`), and E14 is removed from the ENG-09a "unblocks" list (now
+  `E9, E11, E15 to E17, check forms`). Left the E11/E15/E16/E17 ENG-09a rows alone (not flagged, and the
+  round-2 fixer set them).
+- **R3_sonnet m2 (E12 dependency lists).** §4 item 4 and the §5 rows now agree with 02: E12 needs
+  ENG-05a, ENG-05b, ENG-05c and ENG-08; it does **not** need ENG-05e or ENG-09c, and ENG-05d is art
+  only. Updated the ENG-05d row's tail, the ENG-09c "unblocks" cell (now "physical check items (a later
+  form); E12 ships without it") and the E12 dependency row. (§3's `#trigger_minigame` line is a verbatim
+  quote of the user's 2026-10-27 decision and is left unchanged; ENG-05e/§5 carry the engineering
+  outcome that it is not needed.)
+- **R3_review t1 (repo slug).** Confirmed 00 and 01 already use `cliffe/hacktivity` (lowercase) and 02
+  does not name the slug; no change needed in the three files. This log section uses the same lowercase
+  slug. (The capital `cliffe/Hacktivity` is only in earlier REVIEW_LOG round-1 notes, which are history.)
+
+### Not changed here, with reason
+
+- **R3_review m3 (E11 states `attack_checks` relaxation narrowly), R3_review m6 (E17 `lookalike_domain`),
+  R3_review t3 (E8 fact id), R3_sonnet M3/M6/M7/M8 content, m1/m3-m13/m15, t1-t4:** owned by the episode
+  specs, `10`, `11`, `12` or `13`. 02 ENG-04 point 5 / ENG-08 already carry the broader
+  attack-artefact-stage list that E11 §10a must align to; the engine side is settled here.
+
+### Snippets validated (round 3 ruling 3 method)
+
+The new keys need packets that have not landed, so they cannot be built into a scratch shell and run
+through the validator (ruling 3 allows skipping the scratch test in that case). Every current-code fact
+the fixes rest on was instead opened and matched in the live tree on 2026-10-28:
+
+- `scripts/validate_social/awareness.rb` `string_checks:296`, the `conceptPanel`/`voicePanel` loop
+  `:305-310` (`text = v.is_a?(Hash) ? v['text'] : v`; an array value errors) - M1.
+- `scripts/scenario-schema.json` `page` object `:1706` (`required: ["url"]`, `additionalProperties:
+  false`, no `state`/`clipboardReveal`/`alarm`/`permissions`/`download`); `variant` enum `:1782`
+  (`["full","defendOnly"]`) - M2.
+- `scripts/validate_social/triage.rb` page check `:393-395` (`page.url is missing`); `flag_universe:209` - M2, m4.
+- `public/break_escape/js/core/rooms.js` `loadRoom:773` (async, `window.loadRoom`), used by
+  `doors.js:721` and `npc-behavior.js:643` - B2.
+- `public/break_escape/js/systems/npc-game-bridge.js` `unlockDoor:77`, `doorProperties.locked = false`
+  at `:117-118` - M4, t2.
+- `app/models/break_escape/game.rb` `validate_unlock:1043`, NPC branch `:1071` - M4.
+- `scenarios/m02_ransomed_trust/scenario.json.erb` `security_office:3104-3122`
+  (`locked`/`lockType:"key"`/`requires`/`keyPins:[40,30,55,35]`/`difficulty:"easy"`);
+  `security_guard_patrol` NPC `unlockable:["security_office"]` at `:3238` - M4.
+- `planning_notes/phishing_and_social_engineering/awareness/apply_training_room.py` `refresh:204`
+  (reads `rooms.training_room.type` unguarded), `refresh_text:159-196` - M5.
+- Asset locations `public/break_escape/assets/tiles/rooms/room_aw_*.png` (four exist, no top-level
+  `assets/`) and `public/break_escape/assets/objects/` (per `make_aw_props.py:33`) - m14.
+- Tell ids in the specs (grep): E14 `fake_profile`/`recon_request`; E15 `found_media`/`unapproved_tool`;
+  E16 `insider_offer`; E17 `unapproved_tool` (so `unapproved_tool` is the only id in two sets) - ruling 1, m1, M3.
+- `cliffe/hacktivity` lowercase in 00/01; absent in 02 - t1.
+
+## Round 3 fixes: E8, E9, E10, 10, 11
+
+Fixer scope: `episodes/E08_after_the_click.md`, `episodes/E09_passwords.md`,
+`episodes/E10_downloads_and_fake_checks.md`, `10_CHECK_FORMS.md`,
+`11_WP12_FIRST_PLAY_AND_ANNUAL.md` only. No git run; no file edited outside these five. Every fix
+checked against the built fragments (`e1/e3/e5/e6/e7` defend.json), `gen_e3_e5_shells.py`,
+`scripts/scenario-schema.json` (`truth`, `socialTriageMessage`), `scripts/validate_social/triage.rb`
+(`FACTORS`, `CHANNEL_TELLS`, `flag_universe`) and the real validator run in the scratchpad.
+
+### E8 (R3_review B1 / R3_sonnet M6, round 3 ruling 1; R3_sonnet M8; R3_review t3)
+
+- **Tells made local (B1 / M6, ruling 1).** Rewrote §3, §11, §14, §19 and the §20 resolved note so
+  `unexpected_sent_item`, `unrequested_reset` and `ransomware_note` are **scenario-local to E8's
+  set**, declared in `channelTells` with a set-level `flagChips` map (short noun-phrase labels, added
+  in §11) and a `factorStrings.<id>.redFlag` sentence per flagging message, matching E9 §11 and E10
+  §11. Removed every instruction to append them to `CHANNEL_TELLS`/`SKILL_NAMES` and every
+  "shared library via ENG-08" / "canonical strings as the library entries" claim; §3 now cites ENG-08
+  for the episode schema keys (`flipAftermath`/`stepLabels`) only. §14 now says E8 feeds no
+  `general_v2` item that scores one of its three tells (a form-scored tell must be shared; none is).
+- **Defend email bodies, `to`, `auth` (M8).** Added a "### Item bodies, `to` and `auth`" subsection
+  to §11 giving every email item's final `body`, `to`, `time`, `auth` block and `truth` feedback
+  strings. The `auth` shape copies `hb_policy_refresh` (`e3/defend.json`); the genuine emails pass all
+  three checks on `quayholt.example`; row 1 (the Sent-folder takeover) is the spoofed-but-passing case
+  (it really left Ayaan's authenticated mailbox, so SPF/DKIM/DMARC pass; the tell is that he never
+  wrote it). Push (row 3) and page (row 5) carry no email `auth`.
+- **E5 fact-id reuse (t3).** Renamed E8's OSINT fact `quayholt_staff_claims` to `quayholt_ayaan_claims`
+  throughout (§9 table, §9 skeleton, §15 global `se_intel_quayholt_ayaan_claims`), with a note that
+  this deliberately differs from E5's `quayholt_staff_claims` (which identifies Hana Novak), to avoid
+  reusing a built fact id for a different subject.
+
+### E9 (R3_review M2)
+
+- **Worked `choice` JSON to ENG-09a's exact fields.** Rewrote the §11 worked example and the
+  "ENG-09a owns the data shape" paragraph: dropped `choice.correct` (ENG-09a does not define it; the
+  right option is the one whose `verdict` equals `truth.correct`), and replaced the schema-illegal
+  `truth.whyRight`/`truth.ifWrong` with schema-legal `truth.reportReply` (the "why right" copy, safe
+  option maps to `report`) and `truth.ifTrusted` (the "if wrong" copy, unsafe option maps to `trust`),
+  plus `truth.flags: []`. Confirmed against `scenario-schema.json` that `truth` is
+  `additionalProperties: false` and holds no `correct`/`whyRight`/`ifWrong` (ENG-09a adds only
+  `truth.correct`).
+
+### E10 (R3_sonnet M7 and round 3 ruling 5; R3_sonnet m8, m9, m10, t1, t3)
+
+- **Shell and generator metadata, in full (M7 / ruling 5).** Added §8b (copying E8 §8b's shape):
+  Niamh's `HOSTS['niamh']` entry and in-scenario sprite keys, the learner avatar, the two full-episode
+  objectives (`build_page_aim`, `browser_morning_aim` with `conclusionScreen`), the training kiosk
+  observations, the `mission.json`, the top-level erb strings, the generator `EPISODES['e10']` entry,
+  the `LINES[('e10','defend')]` tuple (Niamh's voice) and Niamh's full-shell spoken lines. Added a
+  content gate to §4.
+- **Seven page items as final JSON (ruling 5).** Added "### Items as final JSON (ENG-03a `page.state`)"
+  to §11 with all seven items (plus the optional eighth) as final JSON using ENG-03a's `page.state`
+  keys (`fakeCheck`, `fakeUpdate`, `relaunchBar`, `fullScreenAlarm`, `extensionPermission`,
+  `downloadBar`, `browserWarning`) and the state sub-keys (`clipboardReveal`, `alarm.hintAfterMs`,
+  `permissions`, `download.filename`). Each item maps to exactly one verdict (phish -> report full,
+  delete partial, trust miss; genuine -> trust), with the local tell's `flagChips` label and a
+  `factorStrings.<id>.redFlag`. Noted that `page.state` and its sub-keys are ENG-03a/ENG-08 schema
+  additions not yet built, so a scratch validation of those keys is skipped until the packet lands.
+- **m8 (invented behaviour).** Rewrote the clipboard-reveal paragraph: no "feedback window", the
+  "report and leave it" line lives in `truth.ifTrusted`; fixed the §11 table cells (row 1 three
+  relabelled verdict buttons not "Follow", row 2 a `fields: ["I am not a robot"]` tick not a picture
+  grid, row 4 the `relaunchBar` state, row 6 Close-and-report full / Go-the-trusted-way partial).
+- **m10 (Leila ink).** §5/§8/§15 now state Niamh is the only room NPC; Leila's three habits ride in
+  the concept panel and Niamh's framing, attributed to Leila, with no `ink/leila_nassar.ink`.
+- **m9 (playerSentAuth).** §15 now says the full erb copies E5's `analyst` `playerSentAuth` block.
+- **t1.** §11 "cut rows 4 or 8" corrected to cut row 7 or the optional eighth, keeping both mirror
+  pairs. **t3.** §5 read-first path corrected to
+  `planning_notes/security_awareness_course/03_WORLD_AND_CAST.md`.
+
+### 10 (R3_sonnet B3 and round 3 ruling 2)
+
+- **`channelTells` holds channel-tell ids only.** Rewrote the shell-spec line (was "Set `channelTells`
+  to the scored flags the form uses") to state that factor ids (`triage.rb` `FACTORS`) are scored
+  through the factor path and never listed in `channelTells`, copying how the built
+  `awareness_pre_general_ab` (`general_form_a`) declares its scored flags (channel tells only, factors
+  in `truth.flags`). Corrected both item-table channelTells: `general_v2` ->
+  `["lookalike_domain", "padlock_myth", "unrequested_mfa_push", "reply_to_differs"]` (dropping
+  `senderTrust`, `linkCredible`); `data_conduct` -> `["secrecy_or_bypass", "vish_callback_pressure",
+  "reply_to_differs"]` (dropping `senderTrust`, `pretextRelevant`); each with a note that the dropped
+  factors are scored through the factor path.
+
+### 11 Part B / core_17 (R3_sonnet m11, m12, m13, t4)
+
+- **m11.** Fragment folder moved from `awareness/e17/` (E17 owns that) to `awareness/core17/`.
+- **m12.** Named the strings to rewrite (copied from the E6 defend shell: `defendOnly`,
+  `defendIntro`, `noBlameLine`, `mondayCard`; the two `flip*` strings never show in a `defendOnly`
+  shell); the host ink to copy (`ink/chidi_okeke.ink` from `awareness_e6_texts_and_qr_defend`,
+  renamed to `graham_whitfield.ink`, since Graham has only check-form welcome ink today); added the
+  set-level `title`/`brief`/`realLabel` and the "moves you between seats" brief line the
+  general_staff learner needs; the message order (impostor before genuine twin); the `mission.json`
+  source (`awareness_e7_voice_ceo_defend`); and the shell-count bump (+1, P6).
+- **m13.** Pointed the "what changed this year" brief at
+  `modules/core_17_capstone_annual_assessment/concepts.md` lines 66 to 70 and quoted the three
+  headline changes verbatim.
+- **t4.** Moved `reportAlwaysVisible` off the triage set (it is a `defend`-block key, "reserved, not
+  read" on the set) and noted it stays on `awarenessEpisode.defend`.
+
+### Shapes proved (round 3 ruling 3)
+
+Validator run in the scratchpad: `json-schema` installed into a scratch `GEM_PATH`; command
+`LANG=C.UTF-8 GEM_PATH=<gems> ruby scripts/validate_scenario.rb <file> --strict-social --no-graph
+--skip-ink`, folder name == parent, sibling `mission.json`.
+
+- **`general_v2` form (B3).** Built from the real `awareness_pre_general_ab` check shell (its
+  `general_form_a` already uses channel-tells-only `channelTells` and scores `senderTrust`/
+  `linkCredible` via `truth.flags`, exactly the pattern 10 now prescribes). (1) baseline: **exit 0**.
+  (2) adding factor ids `senderTrust`/`linkCredible` to `channelTells`: **exit 1** with
+  `channelTells: 'senderTrust' is not one of 00 section 2's channel tells and flagChips gives it no
+  label` (two such errors) - this is the fault B3 flagged. (3) 10's corrected `general_v2`
+  `channelTells` list: **exit 0**.
+- **E8 defend set.** Built `awareness_e8_after_the_click_defend` carrying the `e8_used_account` set:
+  the three local tells declared in `channelTells` with a `flagChips` map and per-message
+  `factorStrings`, the five email items with final `body`/`to`/`auth`, the reused push card and the
+  page card. **ruby exit 0, no SOCIAL line, "Validation complete".** (No ENG packet: the defend-only
+  set uses only built shapes; `flipAftermath`/`stepLabels` are full-shell-only episode keys.)
+- **core_17.** Built `awareness_core_17_annual_2027_defend` from `awareness_e6_texts_and_qr_defend`
+  with the 8-message combined set (the two E3 calls reshaped into `call` messages, `tells` ->
+  `truth.flags`, `notes` -> `truth`, `claims` dropped, an authored `from`/`time`), `channelTells` the
+  union of the copied items' channel tells with the two factors (`senderTrust`, `urgencyCalibrated`)
+  filtered out (confirming 11's documented list), `verifyVerdict: true`, prefix
+  `episode_core_17_annual_2027_defend_defend_`. **ruby exit 0, no SOCIAL line, "Validation
+  complete".** No new engine packet, as ruling 1 requires.
+- **E9 `choice` card (skipped, needs an unbuilt packet).** A `choice` card dropped into a built set
+  fails today with `kind "choice" did not match ... email ... push` and `truth contains additional
+  properties ["correct"]`: the `choice` kind and `truth.correct` are ENG-09a/ENG-08 schema additions
+  that do not yet exist. E9's rewritten worked JSON uses only ENG-09a's shape plus schema-legal
+  `truth` keys (`reportReply`/`ifTrusted`/`flags`), so it validates once ENG-09a lands; the scratch
+  test is skipped until then (ruling 3).
+
+### Not in scope / left to other fixers
+
+- `02_ENGINE_WORK.md` ENG-08 tell table, ENG-09b lint and ENG-03a `page.state` schema keys (R3_sonnet
+  M1, M2; R3_review m1, M3) are the 02 fixer's (noted in the task as in progress). E8/E9/E10 are
+  written to match the 02 shapes.
+- R3_review M1/m5/t2 (E12), m2/m3/m4/m6, t1 and R3_sonnet m14 touch files outside this scope
+  (E11, E12, E13, E17, 00, 01, 02); left to their fixers.

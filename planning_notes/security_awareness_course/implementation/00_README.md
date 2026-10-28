@@ -60,9 +60,9 @@ Copied from `WRITER_BRIEF.md`. Do not reopen them.
 ## 4. Work order
 
 1. **E8 pilot.** Run the whole pipeline once (`01_PIPELINE.md`) with ENG-01. Write down every place where the pipeline was wrong, and fix `01_PIPELINE.md` before E9 starts.
-2. **E9 with E10.** These are two episodes in parallel, each with its own engine packets (ENG-02, ENG-03a, ENG-03b) and ENG-09a, which both need.
-3. **The consequence-flip stage and its defend-half surfaces.** ENG-04 is built once, then E11, E14, E15, E16 and E17 are written against it. E17 is defend-only and needs no sandbox. E14 uses the built `osint` and `write` stages and does **not** use ENG-04 (its spec and `02` agree). It is scheduled in this wave because it shares the new defend card kinds (ENG-09a) and the sort drill (ENG-11). Build the shared defend-half surfaces in the same wave: ENG-11 (the reusable sort drill for E14, E15 and E17), ENG-12 (E16's "raise a concern" fact-chip form) and ENG-13 (E14's privacy panel). Each is a new child scene gated on a new optional key, so they do not block the episodes that do not use them.
-4. **E12.** It needs ENG-05a to ENG-05e and ENG-09c, plus host and costume art after the PixelLab reset. Build it after the consequence-flip wave, so that the riskiest engine work does not hold the others up.
+2. **E9 with E10.** These are two episodes in parallel, each with its own engine packets: E9 needs ENG-02 and ENG-09a (its `choice` password cards), E10 needs ENG-03a and the optional ENG-03b.
+3. **The consequence-flip stage and its defend-half surfaces.** ENG-04 is built once, then E11, E14, E15, E16 and E17 are written against it. E17 is defend-only and needs no sandbox. E14 uses the built `osint` and `write` stages and does **not** use ENG-04 (its spec and `02` agree). It is scheduled in this wave because it shares the sort drill (ENG-11) and the privacy panel (ENG-13); it uses the built `osint`/`write` triage and authors no `choice` card, so it does **not** depend on ENG-09a. Build the shared defend-half surfaces in the same wave: ENG-11 (the reusable sort drill for E14, E15 and E17), ENG-12 (E16's "raise a concern" fact-chip form) and ENG-13 (E14's privacy panel). Each is a new child scene gated on a new optional key, so they do not block the episodes that do not use them.
+4. **E12.** Its wiring prerequisites are ENG-05a, ENG-05b, ENG-05c and ENG-08's schema/validator work, plus host and costume art after the PixelLab reset. It does **not** need ENG-05e (the flip hand-back reuses `watchCall`) or ENG-09c (the reception items are the built `call` kind), and ENG-05d (the parcel sprite) is art only, not a wiring prerequisite. Build it after the consequence-flip wave, so that the riskiest engine work does not hold the others up.
 5. **E13.** It needs ENG-06 and ENG-07.
 
 **Alongside, at any point:** WP-12 (`11_WP12_FIRST_PLAY_AND_ANNUAL.md`). Its **core_00 first-play** part needs **ENG-10** first: the brief-only episode, its multi-card brief, the once-per-learner gate and the completion global. Its **core_17 annual** part needs **no engine packet** (ruling 1): it is a `defendOnly` shell whose defend set holds 8 messages drawn from E1 to E7, which validates on the built `defendOnly` path. Also WP-15 (`12_WP15_CORE02_ITEMS.md`), the two new check-form pairs (`10_CHECK_FORMS.md`) and WP-02 (`13_WP02_REPORTING_ROUTE.md`). Episodes are pipelined, as in the AGENTS.md mission loop: one episode's playtests can run while the next is being written.
@@ -75,7 +75,7 @@ ENG ids are packets in `02_ENGINE_WORK.md`. P ids are steps in `01_PIPELINE.md`.
 |---|---|---|---|
 | ENG-01 flip aftermath (victim's seat) | nothing | E8, E9 | engine |
 | ENG-08 schema and validator | is written with each packet that adds a key | every packet's acceptance | engine |
-| ENG-09a authored-choice triage kind | nothing | E9, E11, E14 to E17, check forms | engine |
+| ENG-09a authored-choice triage kind | nothing | E9 (the only spec with `choice` cards) | engine |
 | ENG-09b debrief panel list | nothing | E8 (two concept cards), and any episode with more than one panel | engine |
 | ENG-09d shell-count and parity-list guards | nothing | every episode's P6 and P7 | engine |
 | E8 | ENG-01, ENG-09b (E8 has two concept panels), ENG-08 (schema keys; E8's tells are scenario-local), ENG-09d | proves `01_PIPELINE.md` | content, then playtest |
@@ -85,20 +85,20 @@ ENG ids are packets in `02_ENGINE_WORK.md`. P ids are steps in `01_PIPELINE.md`.
 | ENG-03b check-page builder | ENG-03a (shared render strings) | E10 attack half | engine |
 | E10 | ENG-03a, ENG-03b | - | content |
 | New brand rooms (P5b) | nothing | E11 (Carrholme) | engine (room scripts) |
-| ENG-04 consequence sandbox stage | ENG-09a (for the defend items only) | E11, E15, E16 | engine |
+| ENG-04 consequence sandbox stage | nothing | E11, E15, E16 | engine |
 | ENG-11 reusable sort drill | ENG-08 | E14 ("Post or Not?"), E15 (Swap Shop), E17 ("can I?" sort) | engine |
 | ENG-12 "raise a concern" fact-chip form | ENG-08, ENG-04 (E16 is a consequence flip) | E16 defend half | engine |
 | ENG-13 privacy-settings panel over the OSINT board | ENG-08 | E14 defend half | engine |
-| E11, E15, E16 | ENG-04, ENG-09a; E11 also P5b; E16 also ENG-12 | - | content |
-| E14 | ENG-09a, ENG-11, ENG-13 | - | content |
-| E17 (defend-only) | ENG-09a, ENG-11; Tarrowby via P5a (no new room) | - | content |
+| E11, E15, E16 | ENG-04; E11 also P5b; E15 also ENG-11; E16 also ENG-12 | - | content |
+| E14 | ENG-11, ENG-13 (built `osint`/`write` triage; no `choice` card, so no ENG-09a) | - | content |
+| E17 (defend-only) | ENG-11; Tarrowby via P5a (no new room) | - | content |
 | ENG-05a world-play modifier hand-off (not a new stage) | nothing | E12 | engine |
 | ENG-05b costume | ENG-05a | E12 | engine |
 | ENG-05c lobby, door and NPC door opening | ENG-05a | E12 | engine plus content |
-| ENG-05d package-carry sprite state | PixelLab reset (3 Nov) and the user's approval of art scope | E12 polish only: it is **not** a wiring prerequisite. E12 is wired and bridged with the stock costume sprite (ENG-05b) and gets the baked-in parcel after the reset. Only ENG-05a to ENG-05c and ENG-09c must land before E12 is wired | art |
+| ENG-05d package-carry sprite state | PixelLab reset (3 Nov) and the user's approval of art scope | E12 polish only: it is **not** a wiring prerequisite. E12 is wired and bridged with the stock costume sprite (ENG-05b) and gets the baked-in parcel after the reset. Only ENG-05a to ENG-05c (and ENG-08) must land before E12 is wired; ENG-09c is not needed | art |
 | ENG-05e real `#trigger_minigame` | nothing | E12 if its brief needs it | engine |
-| ENG-09c in-person triage card | ENG-09a | E12 defend set, physical check items | engine |
-| E12 | ENG-05a to ENG-05c, ENG-09c (ENG-05d and ENG-05e as its brief says) | - | content |
+| ENG-09c in-person triage card | ENG-09a | physical check items (a later form); E12 ships without it (reception items use the built `call` kind) | engine |
+| E12 | ENG-05a, ENG-05b, ENG-05c, ENG-08 (ENG-05d is art only; not ENG-05e or ENG-09c) | - | content |
 | ENG-06 authored assistant stage | ENG-01 (shares the flip part) | E13 | engine |
 | ENG-07 video-call label | nothing | E13 | engine |
 | E13 | ENG-06, ENG-07 | - | content |
