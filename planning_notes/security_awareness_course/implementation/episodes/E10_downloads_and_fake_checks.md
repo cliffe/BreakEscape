@@ -27,7 +27,7 @@ Learning outcomes (from `modules/core_08_safe_web_and_downloads/`): LO1 (start f
 - **ENG-03a** (triage `page` browser-screen states). The defend half's new browser screens (fake check with its clipboard reveal, download bar, extension-permission prompt, full-screen alarm, browser warning, relaunch bar) are new `page.state` values on the E5 `page` card, plus a `triageSet.verdictLabels` relabel. E10 cannot build its defend half without ENG-03a. §11 states the states and config needed. (ENG-03b, the fake-download build page, is optional and only if the attack half is changed, §9.)
 - **The E5 look-alike-page builder** (built, `designs/07`) for the attack half. Reuse it unchanged; E10 adds no attack-side engine work.
 - **ENG-09b** (debrief panel list). E10's debrief shows several short concept cards (§12), and the built `strings.conceptPanel` is a single panel; ENG-09b adds the array form.
-- **ENG-08** for the new channel tells (§11). Per ENG-08's tell table, three of E10's web tells are classed **shared** (`fake_check_paste`, `fake_update_prompt`, `dangerous_download`, so a `general_v2` item may later score them) and two are **scenario-local** (`fake_alarm_callback`, `browser_permission_grab`, used only by E10). Either way E10 lists all five in `channelTells` with a `flagChips` label and a `factorStrings.<id>.redFlag` sentence, so the set validates whatever the shared/local split is. The three-way browser verdict is **not** an ENG-08 verdict change: ENG-03a decided it is a `verdictLabels` relabel of the existing ids (see §11).
+- **ENG-08** for the new channel tells (§11). Per Round 2 ruling 2, every tell that only E10 uses today, and that no `10` check item scores, is **scenario-local**, so all five of E10's web tells (`fake_check_paste`, `fake_update_prompt`, `dangerous_download`, `fake_alarm_callback`, `browser_permission_grab`) are scenario-local to E10, not shared-library ids. (`10`'s `general_v2` web item scores `lookalike_domain`/`padlock_myth` on the built `page` shape, not these five, so none is a form-scored tell that would have to be shared; §14.) E10 lists all five in `channelTells` with a `flagChips` label and a `factorStrings.<id>.redFlag` sentence; the validator accepts a scenario-local `channelTells` id that `flagChips` labels and that is not a factor (`triage.rb` `flag_universe`), so no ENG-08 library change is needed for the tells. Only promote one to the shared library when a second set uses it or a check item scores it (then it also needs a `SKILL_NAMES` entry, ENG-08). The three-way browser verdict is **not** an ENG-08 verdict change: ENG-03a decided it is a `verdictLabels` relabel of the existing ids (see §11).
 
 ## 4. Owner models
 
@@ -98,15 +98,15 @@ The defend half is a morning of browser screens: the E5 `page` card extended wit
 
 **Verdicts (decided by ENG-03a: a label change, not a new verdict).** E5's page cards use Trust / Report / Delete. The core_08 design wants **Carry on / Close and report / Go the trusted way**. ENG-03a settles this as a `triageSet.verdictLabels` relabel of the existing ids, with the verdict ids (`trust`/`report`/`delete`) and the `awareness` scoring unchanged, so the measurement is identical to E5's page set. E10 sets on the set: `"verdictLabels": { "trust": "Carry on", "report": "Close and report", "delete": "Go the trusted way" }`. There is no new verdict id. (Verify stays off for this set, as `verifyVerdict: false` above; the web screens have no "ring back" step.)
 
-**`channelTells`** array: `["lookalike_domain", "padlock_myth", "fake_check_paste", "fake_update_prompt", "fake_alarm_callback", "browser_permission_grab", "dangerous_download"]`. `lookalike_domain` and `padlock_myth` are shared-library tells (reused from E5). The five new ids split two ways (ENG-08 tell table):
+**`channelTells`** array: `["lookalike_domain", "padlock_myth", "fake_check_paste", "fake_update_prompt", "fake_alarm_callback", "browser_permission_grab", "dangerous_download"]`. `lookalike_domain` and `padlock_myth` are shared-library tells (reused from E5). The five new ids are **all scenario-local to E10** (Round 2 ruling 2: a tell used by only one set today, and scored by no `10` check item, stays local). Declare each in `channelTells` with a `flagChips` label and a `factorStrings.<id>.redFlag` sentence on every flagging message; the validator accepts a scenario-local id that `flagChips` labels and that is not a factor (`triage.rb` `flag_universe`), so no ENG-08 library change is needed. The library wording to reuse as each label:
 
-- **Shared library (ENG-08 classes these shared, so a `general_v2` item may score them):**
   - `fake_check_paste`: "A page telling you to paste or run something to prove you are human or to fix an error"
   - `fake_update_prompt`: "A web page saying your browser or software is out of date and offering the update"
   - `dangerous_download`: "A download you did not ask for, or a program pretending to be a document"
-- **Scenario-local to E10 (declared in `channelTells`, with a `flagChips` label and a `factorStrings.<id>.redFlag` sentence on each flagging message; no library change):**
   - `fake_alarm_callback`: "A full-screen alarm with a phone number to call"
   - `browser_permission_grab`: "A page or extension asking to read or change everything in your browser, or to send you notifications"
+
+If a later `general_v2` item is balanced to score one of these web tells, that id (and only that id) then moves to the shared library with a `SKILL_NAMES` entry (ENG-08); until then they all stay local.
 
 ### Items (id, kind, screen, correct move, phish?, tells, reasoning; ENG-03a state in brackets)
 
@@ -156,7 +156,7 @@ Shell id `e10_downloads_and_fake_checks_defend`, stages `["brief", "defend", "de
 
 ## 14. Check-form items it feeds (see 10_CHECK_FORMS.md)
 
-E10's topic (core_08/core_07) feeds the new **`general_v2`** check-form pair at Quayholt, built by `10_CHECK_FORMS.md` (Round 1 ruling 1 adopts `10`'s two-pair scheme and drops the per-topic forms). Do not edit the six built role forms, including the built `general` form: `general_v2` is a separate new pair. `general_v2`'s web item (item 2) uses the **built `page` shape** (a look-alike page), not E10's new `page.state` surfaces, so the check form needs no ENG-03a states (ENG-03a states this). `10` decides which tells its web item scores: the shared-library web tells (`fake_check_paste`, `fake_update_prompt`, `dangerous_download`, which ENG-08 classifies shared for `general_v2`) are available to it, but `10`'s current item 2 scores `lookalike_domain` / `padlock_myth` on the built page shape, so whether general_v2 adopts the new tells is `10`'s balance decision. E10's local-only screens (full-screen alarm, extension permission) are not scored in any check form, so `fake_alarm_callback` and `browser_permission_grab` stay scenario-local. There is no form-building engine packet (the stale `ENG-09` reference is dropped, Round 1 R1_content M5). Keep `passPercent` 0 and the `triage_{stage}_` prefix.
+E10's topic (core_08/core_07) feeds the new **`general_v2`** check-form pair at Quayholt, built by `10_CHECK_FORMS.md` (Round 1 ruling 1 adopts `10`'s two-pair scheme and drops the per-topic forms). Do not edit the six built role forms, including the built `general` form: `general_v2` is a separate new pair. `general_v2`'s web item (item 2) uses the **built `page` shape** (a look-alike page), not E10's new `page.state` surfaces, so the check form needs no ENG-03a states (ENG-03a states this). `10`'s current item 2 scores `lookalike_domain` / `padlock_myth` on the built page shape, which are shared-library tells; it scores **none** of E10's five web tells. So under Round 2 ruling 2 all five (`fake_check_paste`, `fake_update_prompt`, `dangerous_download`, `fake_alarm_callback`, `browser_permission_grab`) stay **scenario-local** to E10 and are not scored in any check form. If `10`'s author later balances `general_v2` to score one of them, that single id moves to the shared library with a `SKILL_NAMES` entry (ENG-08); E10 does not require it. There is no form-building engine packet (the stale `ENG-09` reference is dropped, Round 1 R1_content M5). Keep `passPercent` 0 and the `triage_{stage}_` prefix.
 
 ## 15. Files to create or change
 
@@ -164,7 +164,10 @@ E10's topic (core_08/core_07) feeds the new **`general_v2`** check-form pair at 
 - `planning_notes/phishing_and_social_engineering/awareness/e10/defend.json` (new): the triageSet `e10_browser_morning` (the browser screens, with ENG-03a states), the `awarenessEpisode` block (`strings`, `_defendOnly`, `debrief`), and a `_brandAdditions` note for Pagewright, Fernside Catering, Ashby Supplies, and the Lena Fischer / Leo Brennan pool names if used.
 - `scenarios/awareness_e10_downloads_and_fake_checks/scenario.json.erb`, `mission.json`, `ink/niamh_doherty.ink` (and Leila's lines, either in Niamh's ink or a second NPC ink `ink/leila_nassar.ink`) (new): the full-episode shell wired like E5. Globals to declare: `episode_e10_downloads_and_fake_checks_state: {}`, `se_awareness_records: []`, `episode_e10_downloads_and_fake_checks_defend_{percent,reportRate,done,pass}`, `se_osint_state: {}`, the reused E5 `se_intel_*` facts, `se_landing_pages: {}`, `landing_*_built`, `landing_*_domain`, `phish_*_landed`, `phish_*_attempts`, plus any ENG-03a state globals the browser screens need. The host ink completes the attack task on the phish-attempts global and the conclusion task on `episode_e10_downloads_and_fake_checks_defend_done === true`.
 - `scenarios/awareness_e10_downloads_and_fake_checks_defend/` (new): the defend-only shell.
-- The two seeded Hacktivity courses, through `awareness_deploy.py` (feature level only).
+- The two seeded Hacktivity courses: add E10 (full) and E10 (defend-only) following
+  **`01_PIPELINE.md` P12** (Round 1 ruling 8), which holds the one seeding procedure at feature level.
+  Do not use `awareness_deploy.py` for course seeding: it holds only the shared rule of thumb, not
+  course logic. Describe at feature level only.
 - ENG-03a engine work (page states and `verdictLabels`): owned by the ENG-03a packet; ENG-03b (download build page) only if the attack half is changed (§9).
 
 ## 16. Bridge script outline
@@ -195,7 +198,7 @@ E10's topic (core_08/core_07) feeds the new **`general_v2`** check-form pair at 
 
 - ENG-03a is not available (both the full and defend-only variants need it).
 - ENG-03a cannot carry out the `verdictLabels` relabel on the browser set (the decision is a label change, not a new verdict; if even the relabel is not possible, ship the set with the built Trust/Report/Delete labels and note it degraded).
-- The validator rejects the three shared tells after the ENG-08 append, or a scenario-local tell with a `flagChips` label (it should not).
+- The validator rejects any of the five scenario-local web tells declared in `channelTells` with a `flagChips` label (it should not; ruling 2 keeps them all local, so no ENG-08 append is needed for E10's tells).
 - The orchestrator wants the attack half to build a fake-download page specifically (ENG-03b) rather than reusing E5's sign-in-page build.
 
 ## 20. Open questions

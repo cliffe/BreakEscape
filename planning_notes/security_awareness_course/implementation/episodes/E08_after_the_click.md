@@ -18,7 +18,7 @@ Behaviours scored (from `modules/core_01_phishing_email/assessment.md`): C01-B6 
 - Teaching source of truth: `planning_notes/security_awareness_course/modules/core_04_spotting_and_reporting_incidents/concepts.md` (the whole file); `modules/core_04_.../game_design.md` (the E8 design); `modules/core_01_phishing_email/game_design.md` (the E8 section) and `modules/core_01_.../assessment.md` (C01-B6, C01-B7, C01-Q4, C01-Q7).
 - The nearest built episode, end to end: **E1** `scenarios/awareness_e1_invoice_fraud/` (same stage list, same "attack with no built link" shape) and **E5** `scenarios/awareness_e5_signin_pages/` (same company, same host room). Read their `scenario.json.erb`, `mission.json` and `ink/*.ink`, and the fragments `planning_notes/phishing_and_social_engineering/awareness/e1/{attack,defend}.json` and `.../e5/{attack,defend}.json`.
 - Shapes and ids: `planning_notes/phishing_and_social_engineering/designs/00_data_contract.md` (factor library and the shared channel-tell library, around the "Channel tells" table; triageSet `truth` shape; `EvalResult`; §10a email identity).
-- Companies and cast: `planning_notes/phishing_and_social_engineering/awareness/BRAND_SET.md` (Quayholt Insurance roster and `_brandAdditions`); `modules/.../03_WORLD_AND_CAST.md` (hosts table; the E8 row names Anjali Rao).
+- Companies and cast: `planning_notes/phishing_and_social_engineering/awareness/BRAND_SET.md` (Quayholt Insurance roster and `_brandAdditions`); `planning_notes/security_awareness_course/03_WORLD_AND_CAST.md` (hosts table; the E8 row names Anjali Rao).
 - The runner stage list: `public/break_escape/js/minigames/episode-runner/episode-model.js` (`STAGE_IDS`, `DEFAULT_STAGES`, `flipPage`/`flipCall`).
 - Engine packet: `planning_notes/security_awareness_course/implementation/02_ENGINE_WORK.md`, packet **ENG-01**.
 
@@ -32,6 +32,7 @@ Behaviours scored (from `modules/core_01_phishing_email/assessment.md`): C01-B6 
 
 - Content writing and dialogue review: `opus48`.
 - The shell wiring (copying the fragment into `scenario.json.erb`, `mission.json`, the host ink, globals, objectives, the Hacktivity deploy) and ENG-01: general-purpose or Sonnet, after the content is approved.
+- **Gate before wiring starts (01 P2):** §8b (shell and generator metadata), §9's attack-fragment skeleton, §11's defend items and §10's flip block must all be final strings before a Sonnet begins P2. They are given in full here, so the pilot needs no guessing (Round 2 ruling 5).
 
 ## 5. Company, room and host
 
@@ -39,7 +40,7 @@ Behaviours scored (from `modules/core_01_phishing_email/assessment.md`): C01-B6 
 - **Room:** reuse the built `room_aw_quayholt` training room, exactly as `scenarios/awareness_e5_signin_pages/scenario.json.erb` wires it (`"type": "room_aw_quayholt"`, `chatBackground": "assets/backgrounds/rooms/aw_quayholt_blended.png"`, the same lighting block, the kiosk object). No new room.
 - **Host:** **Anjali Rao**, information security analyst, `anjali.rao@quayholt.example` (built Quayholt cast; she is the genuine sender of `hb_policy_refresh` in `e3/defend.json` and is named in BRAND_SET §3 Quayholt). She is the analyst who receives reports, which is why she hosts an incident-reporting episode. No new cast member for the host.
 - **Role:** `general_staff` (as E5).
-- **Victim seat / attack target:** **Ayaan Warsame**, claims handler, `ayaan.warsame@quayholt.example` (built Quayholt cast: the colleague fooled in the E5 flip line, confirmed in `e5/defend.json` `_brandAdditions`). The learner phishes Ayaan in the attack half, and after the flip sits in Ayaan's seat for the defend half. Reusing Ayaan avoids a new name and keeps Hana Novak (E5's victim) from being phished twice across the product. (Ayaan is not an `e3` voicemail caller: `ha_vm_locked` is Hana Novak and `hb_vm_locked` is Reuben Ofori, who is reused as the genuine colleague in defend-set row 4.)
+- **Victim seat / attack target:** **Ayaan Warsame**, claims handler, `ayaan.warsame@quayholt.example` (built Quayholt cast: a claims handler who appears in the E5 check forms and is the genuine caller of `ha_call_printer` in `e3/defend.json`, so his role and address are established). Note the E5 `_brandAdditions` note describes him as "the colleague fooled in the flip line", but the shipped E5 flip strings (`e5/defend.json` `flipDefenderLine`/`flipIntro`) actually name **Hana Novak** as the colleague the page was sent to, so that note is stale; E8 does not rely on it, and uses Ayaan only because he is an established Quayholt claims handler. The learner phishes Ayaan in the attack half, and after the flip sits in Ayaan's seat for the defend half. Reusing Ayaan avoids a new name and keeps Hana Novak (E5's victim) from being phished twice across the product. (Ayaan is not an `e3` voicemail caller; he is a genuine `call` caller. The two E3 voicemails are `ha_vm_locked` from Hana Novak and `hb_vm_locked` from Reuben Ofori, who is reused as the genuine colleague in defend-set row 4.)
 
 No new cast names are introduced by E8. All people and the company are fictional; every address ends `.example`.
 
@@ -71,6 +72,89 @@ All ids are from the frozen `STAGE_IDS` in `episode-model.js`. E8 adds no new st
 - **`scopeNote`:** "Authorised exercise at Quayholt Insurance, a fictional company. In scope: one email to a Quayholt colleague, and the signs that follow in that colleague's inbox. Nothing you write leaves the game."
 - **Anjali's welcome (host ink, resting at the hub, following the E5 `niamh_doherty.ink` pattern):** "Welcome to the Quayholt exercise. Everyone clicks something eventually, so today is about the ten minutes after, and how one quick report changes the ending. Start at the kiosk: write the email first, then take the other seat and sort what turns up."
 - **Red team lead seeded brief** (the `brief` message in `mailClient.seededMessages`, copy the E1/E5 shape and the `avatar": "npc_neutral"`): from "Red team lead" `lead@redteam.example`, to `analyst@quayholt.example`, subject "Authorised exercise: Quayholt Insurance", body: "Hello,\n\nThis is the authorised Quayholt Insurance exercise. In scope: this inbox and the colleague on it. Research the service desk notices staff act on, then write one message asking a colleague to sign in again. Nothing leaves this account.\n\nRed team lead".
+
+## 8b. Shell and generator metadata (every value final; no guessing)
+
+This section gives, as final strings, every metadata value the shell wiring (01 P2/P3) and the generator (01 P4, `gen_e8_e17_shells.py`) need, so a Sonnet implementer invents nothing (Round 2 ruling 5, R2_sonnet M1 / R1_sonnet M4, m8). Copy the shapes from the built **E5** erb and **`gen_e3_e5_shells.py`**, which is the generator that actually holds Anjali's `HOSTS` entry; 01 P4's "copy the e6/e7 generator" pointer is to be corrected to `gen_e3_e5_shells.py` for the Anjali/Quayholt helpers (a request to the 01 fixer, since 01 is out of this file's scope).
+
+### Host and learner sprites (m8)
+
+- **Anjali Rao's `HOSTS['anjali']` entry already exists in `gen_e3_e5_shells.py`** and is copied verbatim into `gen_e8_e17_shells.py`: `{ 'id': 'anjali_rao', 'displayName': 'Anjali Rao', 'sprite': 'female_scientist', 'about': "Quayholt's information security analyst, 30s, Indian, moved from Bengaluru; she receives the reports (BRAND_SET.md). Placeholder sprite until the PixelLab reset." }`.
+- **Anjali's in-scenario host NPC sprite keys** (full erb `rooms.training_room.npcs[]`, following the E5 host NPC shape): `"spriteSheet": "female_scientist_v2"`, `"spriteTalk": "assets/characters/female_scientist_talk.png"`, `"spriteVisemes": "assets/characters/female_scientist_visemes.png"`, `"npcType": "person"`, `"id": "anjali_rao"`, `"displayName": "Anjali Rao"`, `"storyPath": "scenarios/awareness_e8_after_the_click/ink/anjali_rao.json"`, `"currentKnot": "start"`. Host art is a placeholder until the PixelLab reset.
+- **Learner avatar** (full erb `player`), as E5: `"spriteSheet": "female_office_worker_v2"`, `"spriteTalk": "assets/characters/female_office_worker_talk.png"`.
+
+### Full-episode objectives (full erb `objectives[]`, copy the E5 two-aim shape)
+
+| field | aim 1 (red team) | aim 2 (defend, `missionConclusion: true`) |
+|---|---|---|
+| `aimId` | `red_team_aim` | `used_account_aim` |
+| `title` | "Send the takeover email" | "Sort the signs that follow" |
+| `description` | "Research a Quayholt colleague, then write one email dressed up as the IT service desk asking them to sign in again." | "Work through the signs in the colleague's account at the training kiosk." |
+| `order` | 0 | 1 |
+| task `taskId` / `title` / `type` | `send_takeover_phish` / "Send your email to the colleague" / `manual` | `sort_the_signs` / "Sort the signs that follow" / `custom` |
+
+Aim 2 `concludeRequires.globals`: `["episode_e8_after_the_click_defend_done"]`. Aim 2 `conclusionScreen`: `{ "type": "success", "title": "After the click episode done", "body": "You've seen both sides of a click: you sent one email, then sat in the colleague's seat and sorted the signs that followed in their account, so this episode is finished." }`.
+
+### Full-episode training kiosk (full erb `rooms.training_room.objects[]` kiosk, copy the E5 shape)
+
+- `observations`: "A touch-screen training kiosk for the Quayholt after-the-click exercise: first the red-team brief, research and the one email to write, then the signs to sort in the colleague's account."
+- `observationVariants[0]`: `{ "condition": "globalVars.episode_e8_after_the_click_defend_done", "value": "A touch-screen training kiosk for the Quayholt after-the-click exercise. The email is sent and all the signs are sorted." }`
+- `minigameData.episodeId`: `e8_after_the_click`.
+
+### Full-episode `mission.json` (copy the E5 mission.json shape)
+
+- `display_name`: "Awareness E8: After the click (full episode)"
+- `description`: "An awareness episode of about 15 minutes for all staff. On an authorised exercise at Quayholt Insurance, a fictional company, you first play the attacker: research a colleague and send one email dressed up as the IT service desk. Then you swap seats into that colleague's account, now being used by someone else, and sort the signs that follow. Only the second part is scored, and reporting when you're unsure is always fine and never marked down."
+- `difficulty_level`: 1; `scoring`: "completion"; `secgen_scenario`: null; `collection`: "training"; `ui_theme`: "general"; `estimated_duration_minutes`: 15.
+- `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Phishing", "Incident reporting", "Security awareness", "Usable security"] } ]`.
+
+Top-level erb strings (copy E5's): `scenario_id` `awareness_e8_after_the_click`; `scenario_name` "After the click: both sides"; `scenario_brief` = `strings.brief` (§8); `endGoal` "Send the email, then sort the signs in the colleague's account at the training kiosk."; `version` "1.0"; `disableAttacks` true; `startRoom` `training_room`; `startPosition` as E5.
+
+### Defend-only shell: generator `EPISODES['e8']` entry (`gen_e8_e17_shells.py`, following the `gen_e3_e5_shells.py` `EPISODES['e5']` shape)
+
+```python
+'e8': {
+    'frag': f'{AW}/e8/defend.json',
+    'full_id': 'e8_after_the_click',
+    'role_word': 'general',
+    'role_label': 'all staff',
+    'defend_set': 'e8_used_account',
+    'defend_host': 'anjali',
+    # No 'forms'/'check_hosts': E8 feeds general_v2, built by 10's own generator, not this one (ruling 1, §14).
+    'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+               'keywords': ['Phishing', 'Incident reporting', 'Security awareness', 'Usable security']}],
+    'defend': {
+        'name': 'After the click: the signs that follow',
+        'brief': "You're on an authorised exercise at Quayholt Insurance, a fictional company. A colleague clicked a convincing email and signed in, and now their account is being used. You're covering their inbox. Some of what turns up is a real sign that something is wrong, and some is ordinary. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down.",
+        'endGoal': 'Sort the signs in the colleague\'s inbox at the training kiosk.',
+        'aim': ('used_account_aim', 'Sort the signs that follow', 'Work through the signs in the colleague\'s inbox at the training kiosk.'),
+        'task': ('sort_the_signs', 'Sort the signs that follow'),
+        'kiosk': ("A touch-screen kiosk showing the colleague's Quayholt inbox after a click: a handful of signs to sort.",
+         "A touch-screen kiosk showing the colleague's Quayholt inbox after a click. The signs are all sorted."),
+        'display': 'Awareness E8: After the click (defend only)',
+        'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Sit in a colleague's seat at Quayholt Insurance, a fictional company, after they clicked a convincing email: some of what turns up in their account is a real sign that something is wrong, and some is ordinary. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
+        'minutes': 8,
+        'ending': ('Signs sorted', "You've sorted the signs in the colleague's inbox and finished this episode."),
+    },
+},
+```
+
+This `brief` is the same text as §13's defend-only brief (keep them identical). The defend-only shell id is `e8_after_the_click_defend`, prefix `episode_e8_after_the_click_defend_defend_` (§13). The defend-only `scopeNote` and `_defendOnly` strings are in the fragment (§13).
+
+### Defend-host lines: generator `LINES[('e8', 'defend')]` (the tuple `(before, after, choice, reply)`, Anjali's voice, as `gen_e3_e5_shells.py` `LINES`)
+
+```python
+('e8', 'defend'): (
+    "You're covering a colleague's inbox this morning. They clicked a convincing email and signed in, and now someone else is using their account. Some of what's turned up is a real sign; some is ordinary. Take each one as it comes, and report or check anything that doesn't sit right.",
+    "That's the inbox sorted, thanks. The one move that works for every real sign is the same: report it and leave it be.",
+    'Thanks, Anjali.', 'Any time.'),
+```
+
+### Host spoken lines for the full shell (ink, Anjali)
+
+- **Welcome** (at the hub): the §8 welcome line.
+- **After the attack half** (on the kiosk hand-off into the defend half): "Good. The email's gone, and your colleague fell for it, the way most people eventually do. Now take their seat and see what someone else is doing with their account."
+- **On completion** (defend done): "That's both sides done: you sent the email, then you sorted what it set off. The one move that works for every real sign is the same, report it and leave it be. Nobody's ever in trouble for reporting."
 
 ## 9. Attack half
 
@@ -124,6 +208,24 @@ Note: because E8 has no `build` stage and no landing page, the ask names "the li
 
 The choice the flip replays is the **sender**: setting the From line to the Quayholt IT service desk's real address (`itdesk_full` + `itdesk_address`) rather than the learner's own, so it reads as the IT notice Ayaan already acts on. That is the single lever that made Ayaan sign in, and the flip quotes it.
 
+### Attack fragment skeleton (`e8/attack.json`): the exact changes against `e5/attack.json` (R2_sonnet M2)
+
+Copy `e5/attack.json` and make exactly these changes, so no block is left dangling and nothing is invented. E8 has **no landing page and no build stage**, so delete E5's `landingPages`, `payloadKit`, `conceptCards`, the `expectedLink`/`linkCredible`/`senderAuth` build parts, and crucially **the `quayholt_sso_portal` fact and the `blk_sso` block that references it** (without this deletion, copying E5's OSINT site leaves `blk_sso` pointing at a fact E8 does not carry, R2_sonnet M2's dangling reference).
+
+- **`people`**: replace E5's Hana with Ayaan; keep `itdesk`.
+  - `{ "id": "ayaan", "kind": "cast", "address": "ayaan.warsame@quayholt.example", "forms": { "first": "Ayaan", "formal": "Mr Warsame", "full": "Ayaan Warsame" } }`
+  - `{ "id": "itdesk", "kind": "outside", "address": "it-servicedesk@quayholt.example", "forms": { "first": "IT Service Desk", "full": "Quayholt IT Service Desk" } }` (copied verbatim from E5)
+- **`intelFacts`** (exactly four; §9's fact table is the source for the strings): `quayholt_it_desk` and `quayholt_sso_migration` copied **verbatim from E5** (text, subject `itdesk`, source, `provides`, `reduceNote`); `quayholt_staff_claims` with `subject: "ayaan"`, `source: "blk_staff"`, text "Ayaan Warsame is a claims handler at Quayholt, ayaan.warsame@quayholt.example.", `provides: []`; `quayholt_ayaan_busy` with `subject: "ayaan"`, `source: "post_ayaan"`, text "Ayaan posted that the claims team is flat out clearing a backlog this week.", `provides: []`. **Delete `quayholt_sso_portal`.**
+- **`templates`**: the seven E8 templates in §9 ("Templates and slots"), replacing E5's `e5_*` ids with the `e8_*` ids (same `part`/`slots`/`urgency` shape).
+- **`osint.sites`**: `quayholt_site` with three pages, each block's `fact` present in `intelFacts`:
+  - page `team`, block `blk_staff` (`kind: "staff"`, `person: "ayaan"`, `name: "Ayaan Warsame"`, `role: "Claims handler"`, `address: "ayaan.warsame@quayholt.example"`, `fact: "quayholt_staff_claims"`).
+  - page `it`, block `blk_itdesk` (`kind: "field"`, the E5 service-desk text, `fact: "quayholt_it_desk"`). **No `blk_sso` block** (deleted with its fact).
+  - page `news`, block `blk_news` (the E5 SSO-move text, `fact: "quayholt_sso_migration"`).
+  - `quayholt_social` (`type: "social"`) with one profile for `ayaan`: `post_ayaan` (`id: "post_ayaan"`, text "Flat out clearing the claims backlog this week, roll on Friday.", `fact: "quayholt_ayaan_busy"`), plus one off-topic decoy post with no `fact` (as E5's `post_hana_other`).
+- **`mailClient`**: copy E5's `accounts` (`analyst`, `spoofsFrom: true`), `mailboxes`, `checklistTiming: "onSend"`, `bodyMode: "templates"`, `freeTextFlavour: false`, `showRedFlagMeter: true`, and the `seededMessages` `brief` (§8). **Delete `payloadKit`** (no link kit). `contacts`: one row `{ "id": "ayaan", "person": "ayaan", "name": "Ayaan Warsame", "addresses": ["ayaan.warsame@quayholt.example"], "role": "Claims handler", "revealedBy": "se_intel_quayholt_staff_claims", "targetId": "takeover_victim" }`.
+- **`phishTargets`**: the single `takeover_victim` block from §9 (drop `expectedLink`, `linkCredible`, `senderAuth`; `requiredFactors: ["senderTrust", "pretextRelevant"]`, `advisoryFactors: ["urgencyCalibrated"]`).
+- **`playerSentAuth`**: copy E5's block for the `analyst` account (the flip's auth read of the sent email): `{ "accounts": { "analyst": { "spf": "pass", "dkim": "fail", "dmarc": "fail", "envelopeFrom": "bounce.quayholt.example", "replyTo": "{account_address}" } } }`. (01 P2 only says "add `playerSentAuth`"; this is the value.)
+
 ## 10. Flip (where ENG-01 is needed)
 
 This is the episode's only new engine behaviour, and the reason to note it precisely.
@@ -140,7 +242,7 @@ Draft block E8 authors:
   "victimName": "Ayaan Warsame",
   "intro": "Ayaan read it between two claims, in the week his team was clearing a backlog. The service desk's own address was on it, and it only asked him to sign in again, which IT had said would happen while single sign-on moved. So he did. That was not carelessness: it was built to pass for the notice he acts on. Here is his account a few minutes later.",
   "items": [
-    { "id": "fa_sent", "kind": "email", "folder": "sent", "to": "claims-client@fenwick-brandt.example", "subject": "Updated payment details for your settlement", "time": "15:08", "note": "Ayaan did not write this; it is in his Sent folder, sent while someone else was signed in as him." },
+    { "id": "fa_sent", "kind": "email", "folder": "sent", "to": "claims-client@marsden-holloway.example", "subject": "Updated payment details for your settlement", "time": "15:08", "note": "Ayaan did not write this; it is in his Sent folder, sent while someone else was signed in as him." },
     { "id": "fa_push", "kind": "push", "push": { "app": "Quayholt Sign-in", "account": "ayaan.warsame@quayholt.example", "location": "Unknown location, outside the UK", "device": "Windows PC" }, "note": "A sign-in prompt he did not start, from a device that is not his." }
   ],
   "line": "Most of the damage happens between noticing and reporting."
@@ -175,7 +277,7 @@ Each message that flags one still carries its own `factorStrings.<id>.redFlag` s
 
 | # | id | kind | from / sign | subject or line | phish? | flags | verdict | Verify | reason (perFlagNote / whyFine) |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | `e8_sent_invoice` | `email` (your own address; the copy in Sent) | `ayaan.warsame@quayholt.example` (your own address), to `claims-client@fenwick-brandt.example` | "Updated payment details for your settlement" | yes (takeover; `truth.isPhish: true`) | `unexpected_sent_item`, `secrecy_or_bypass` | Report | on | A message in your own Sent folder, to a client, that you never wrote, asking them to pay a new account and keep it quiet; it means someone is in your mailbox now. (Built as an ordinary `email` card from your own address with a clear subject, ruling 4; an inline copy of the flip's `fa_sent` sign with a distinct id. `isPhish: true`, so Report scores full and Trust scores zero.) |
+| 1 | `e8_sent_invoice` | `email` (your own address; the copy in Sent) | `ayaan.warsame@quayholt.example` (your own address), to `claims-client@marsden-holloway.example` | "Updated payment details for your settlement" | yes (takeover; `truth.isPhish: true`) | `unexpected_sent_item`, `secrecy_or_bypass` | Report | on | A message in your own Sent folder, to a client, that you never wrote, asking them to pay a new account and keep it quiet; it means someone is in your mailbox now. (Built as an ordinary `email` card from your own address with a clear subject, ruling 4; an inline copy of the flip's `fa_sent` sign with a distinct id. `isPhish: true`, so Report scores full and Trust scores zero.) |
 | 2 | `e8_reset_confirm` | `email` | "Quayholt IT" `it-servicedesk@quayholt.example` (genuine system address, but unrequested) | "Your password was changed" | yes (takeover sign; `truth.isPhish: true`) | `unrequested_reset` | Report | on | The address is really Quayholt's, but you did not change your password. A confirmation for a change you did not make means someone else made it. Report it and let the service desk lock the account. (Uses the built service-desk address, not a second IT mailbox.) |
 | 3 | `e8_push_abroad` | `push` (authenticator card) | "Quayholt Sign-in", account `ayaan.warsame@quayholt.example`, location "Unknown location, outside the UK", device "Windows PC", time "11:48" | "Are you trying to sign in?" | yes (`truth.isPhish: true`) | `unrequested_mfa_push` | Deny and report (engine verdict Report: the push `deny_report` action scores as Report) | n/a | A prompt you did not start means someone has your password and is trying to get in. Deny it and report it. (Reuses the E3 push card exactly; copy `e3_push_early`'s `push` shape.) |
 | 4 | `e8_colleague_slip` | `email` | Reuben Ofori `reuben.ofori@quayholt.example` (genuine colleague; the `hb_vm_locked` voicemail caller in E3, reused here) | "I think I've sent something to the wrong client" | no (genuine; a colleague's own mistake; `truth.isPhish: false`) | (none) | Trust or Report (both score full) | on | Reuben really did make a mistake: he sent a claims spreadsheet to the wrong client and is asking what to do. Under the `awareness` profile a genuine email scores full marks whether you Trust it (read it and help him as normal) or Report it, so you are not penalised either way; the teaching is to help him report it now rather than say nothing, because a misdirected record reported in minutes can be contained. Nobody is in trouble for owning up. |
@@ -205,7 +307,7 @@ Built debrief view, in the E1/E5 order, plus the two concept cards E8 owns (core
 
 ## 13. Defend-only variant
 
-Shell id `e8_after_the_click_defend`, stages `["brief", "defend", "debrief"]`, same defend set `e8_used_account` so the measurement is unchanged, prefix `episode_e8_after_the_click_defend_defend_` (the double-`defend_` pattern the built E1/E5 defend-only shells use). Put the defend-only `brief` and `scopeNote` under `awarenessEpisode._defendOnly` (the eight pinned-strings rule, BRAND_SET §7); the shell copies them over `strings.brief` and `scopeNote`, and every other string is shared (the flip strings are simply never shown). Draft defend-only brief: "You're on an authorised exercise at Quayholt Insurance, a fictional company. A colleague clicked a convincing email and signed in, and now their account is being used. You're covering their inbox. Some of what turns up is a real sign that something is wrong, and some is ordinary. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down." Defend-only `scopeNote`: "Authorised exercise at Quayholt Insurance, a fictional company. In scope: the signs that follow in a colleague's inbox after a click." **The defend-only variant needs no ENG-01 and can ship first.**
+Shell id `e8_after_the_click_defend`, stages `["brief", "defend", "debrief"]`, same defend set `e8_used_account` so the measurement is unchanged, prefix `episode_e8_after_the_click_defend_defend_` (the double-`defend_` pattern the built E1/E5 defend-only shells use). Put the defend-only `brief` and `scopeNote` under `awarenessEpisode._defendOnly` (the `_defendOnly` pinned-strings convention, BRAND_SET §7; the generator copies the keys listed under `_defendOnly` over the shared `strings`, so do not rely on a fixed count: the schema `strings` carries about twenty keys, not eight); the shell copies `brief` over `strings.brief` and `scopeNote` over `scopeNote`, and every other string is shared (the flip strings are simply never shown). Draft defend-only brief: "You're on an authorised exercise at Quayholt Insurance, a fictional company. A colleague clicked a convincing email and signed in, and now their account is being used. You're covering their inbox. Some of what turns up is a real sign that something is wrong, and some is ordinary. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down." Defend-only `scopeNote`: "Authorised exercise at Quayholt Insurance, a fictional company. In scope: the signs that follow in a colleague's inbox after a click." **The defend-only variant needs no ENG-01 and can ship first.**
 
 Both variants join both seeded Hacktivity courses (the defend-only course and the both-versions course), as every new episode does (WRITER_BRIEF §Shape).
 
@@ -218,15 +320,15 @@ E8's account-takeover signs (C01-B6) and own-report (C01-B7) feed `general_v2` *
 ## 15. Files to create or change
 
 - `planning_notes/phishing_and_social_engineering/awareness/e8/attack.json` (new): the attack fragment (people, intelFacts, templates, mailClient, osint, phishTargets), modelled on `e5/attack.json` minus the landing-page and `build` parts.
-- `planning_notes/phishing_and_social_engineering/awareness/e8/defend.json` (new): the defend fragment (triageSets with `e8_used_account`; the `awarenessEpisode` block with `strings`, `_defendOnly`, `debrief`; a `_brandAdditions` note recording the one new `.example` recipient, the client firm `fenwick-brandt.example` used by the sent-item sign and defend row 1 (E8 adds no cast and no new sender brands; pre-ship web-search the firm name with the usual check).
-- `scenarios/awareness_e8_after_the_click/scenario.json.erb`, `mission.json`, `ink/anjali_rao.ink` (new): the full-episode shell, wired like `awareness_e5_signin_pages`. Globals to declare in `globalVariables` (all defaults as shown): `episode_e8_after_the_click_state: {}`, `se_awareness_records: []`, `episode_e8_after_the_click_defend_percent: 0`, `..._reportRate: 0`, `..._done: false`, `..._pass: false`, `se_osint_state: {}`, `se_intel_quayholt_it_desk: false`, `se_intel_quayholt_sso_migration: false`, `se_intel_quayholt_staff_claims: false`, `se_intel_quayholt_ayaan_busy: false`, `phish_takeover_victim_landed: false`, `phish_takeover_victim_attempts: 0`. The host ink completes `send_takeover_phish` on `phish_takeover_victim_attempts > 0` and the conclusion task on `episode_e8_after_the_click_defend_done === true` (copy the E5 `eventMappings`).
+- `planning_notes/phishing_and_social_engineering/awareness/e8/defend.json` (new): the defend fragment (triageSets with `e8_used_account`; the `awarenessEpisode` block with `strings`, `_defendOnly`, `debrief`; a `_brandAdditions` note recording the one new `.example` recipient, the client firm **Marsden Holloway** (`marsden-holloway.example`), a fictional settlement client, used by the sent-item sign and defend row 1. This name was chosen under Round 2 ruling 4 to replace the earlier `fenwick-brandt.example`, which collided with E14's subject Dani Fenwick and with Arthur Fenwick in the healthcare sector module; "Marsden" and "Holloway" each return zero repo hits (checked 2026-10-28). E8 adds no cast and no new sender brands; pre-ship web-search the firm name with the usual check.
+- `scenarios/awareness_e8_after_the_click/scenario.json.erb`, `mission.json`, `ink/anjali_rao.ink` (new): the full-episode shell. **Frame it from E1** (the `01_PIPELINE.md` P2 rule: a mail/OSINT episode with no built page copies the E1 shell frame, and the host ink is E1's `adaeze_okafor.ink` structure with Anjali's lines). Take only the Quayholt names, sites, templates and the Quayholt globals/`eventMappings` shape from E5 (E5 is the same company and room); E8 has no `build` stage or landing page, so do not copy E5's `se_landing_pages`/`landing_*` globals. Globals to declare in `globalVariables` (all defaults as shown): `episode_e8_after_the_click_state: {}`, `se_awareness_records: []`, `episode_e8_after_the_click_defend_percent: 0`, `..._reportRate: 0`, `..._done: false`, `..._pass: false`, `se_osint_state: {}`, `se_intel_quayholt_it_desk: false`, `se_intel_quayholt_sso_migration: false`, `se_intel_quayholt_staff_claims: false`, `se_intel_quayholt_ayaan_busy: false`, `phish_takeover_victim_landed: false`, `phish_takeover_victim_attempts: 0`. The host ink completes `send_takeover_phish` on `phish_takeover_victim_attempts > 0` and the conclusion task on `episode_e8_after_the_click_defend_done === true` (copy the E5 `eventMappings`).
 - `scenarios/awareness_e8_after_the_click_defend/` (new): the defend-only shell.
 - The two seeded Hacktivity courses: add E8 (full) and E8 (defend-only) following **`01_PIPELINE.md` P12** (Round 1 ruling 8), which holds the one seeding procedure at feature level. Do not use `awareness_deploy.py` for course seeding: it holds only the shared rule of thumb, not course logic. Describe at feature level only.
 - ENG-01 engine work: owned by the ENG-01 packet, not by this content writer.
 
 ## 16. Bridge script outline
 
-Add `tools/playtest/se/bridge-e8-full.jsonl` (and a defend-only bridge), modelled on the existing `bridge-e*-full.jsonl`. Steps: brief advances; OSINT collects the four facts; write composes the credential phish (From set to `itdesk_full`+`itdesk_address`, pretext `e8_pretext_reauth_calm` with `sso_migration`, ask `e8_ask_calm`) and sends; the flip plays, showing Ayaan's seat and the first signs through `flipAftermath`; defend triages all items on the critical path (Report the four sign items, rows 1, 2, 3 and 5; Trust or Verify the genuine ones, rows 4, 6 and 7); the episode concludes on `episode_e8_after_the_click_defend_done`. Run through `check-bridge.mjs` and `run-suite.sh`.
+Add `tools/playtest/se/bridge-e8-full.jsonl` only, modelled on the existing `bridge-e*-full.jsonl`. There is **no** defend-only bridge: `run-suite.sh` `JOBS` holds only `*-full` entries and no built defend-only bridge exists to copy, and README §9 requires only `bridge-eN-full` (Round 2 m5 / R1_sonnet m5). If the orchestrator wants a defend-only bridge later, that needs a new `JOBS` key and skeleton defined in `01_PIPELINE.md` P9 first. Steps: brief advances; OSINT collects the four facts; write composes the credential phish (From set to `itdesk_full`+`itdesk_address`, pretext `e8_pretext_reauth_calm` with `sso_migration`, ask `e8_ask_calm`) and sends; the flip plays, showing Ayaan's seat and the first signs through `flipAftermath`; defend triages all items on the critical path (Report the four sign items, rows 1, 2, 3 and 5; Trust or Verify the genuine ones, rows 4, 6 and 7); the episode concludes on `episode_e8_after_the_click_defend_done`. Run through `check-bridge.mjs` and `run-suite.sh`.
 
 ## 17. Acceptance checks
 

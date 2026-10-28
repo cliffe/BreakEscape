@@ -340,7 +340,9 @@ Change:
 
 - `awareness/BRAND_SET.md`: add Mossgate Cleaning Supplies, `brightwell-board.example`, Project Heron,
   and the `contacts.export@inboxly.example` drop, under an E13 additions block.
-- Hacktivity course seeds: add both shells to the defend-only and both-versions courses.
+- Hacktivity course seeds: add both shells to the defend-only and both-versions courses, following
+  `01_PIPELINE.md` P12 (Round 1 ruling 8); do not use `awareness_deploy.py` for course seeding (it
+  holds only the shared rule of thumb).
 
 Do **not** edit the six built role check forms, the shared `ruleOfThumb` test string, the existing
 `room_aw_*` maps, or other episodes' fragments. Keep the EU AI Act and UK GDPR out of play (they stay in
