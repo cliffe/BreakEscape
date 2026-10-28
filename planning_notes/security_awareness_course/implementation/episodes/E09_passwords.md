@@ -166,11 +166,11 @@ The triageSet config follows E3: `scoringProfile: "awareness"`, `verifyVerdict: 
 
 Rows 1 and 2 are the explicit mirror pair (aw5): the same app and account, one started by you (Approve) and one you didn't (Deny and report), so "a prompt arrived" is not itself the tell. For every `choice` card (rows 4 to 8) the safe option maps to `report` (`truth.correct`), the unsafe option(s) to `trust`, and `truth.isPhish: true`, so the right move scores full and a wrong one scores zero (the mapping paragraph above). Cut row 7 or row 8 to reach six if the orchestrator prefers; keep rows 1 and 2 (the pair), at least one password card, and the fake-IT card.
 
-**ENG-09a** owns the data shape for the `choice` cards (rows 4, 5, 6, 7, 8): each is a `choice` triage message, `rec.choice = { prompt, options: [{ id, label, verdict }], correct: "<id>", note }`, with a `truth` block, scored under the `awareness` profile. No free text. Any strength meter or vault-health view is drawn as static authored bands, not a live score of typed input (ENG-09a Stop-and-ask).
+**ENG-09a** owns the data shape for the `choice` cards (rows 4, 5, 6, 7, 8): each is a `choice` triage message, `rec.choice = { prompt, options: [{ id, label, verdict }], note? }` (ENG-09a's exact shape; **no `choice.correct`**, which ENG-09a does not define: the right option is the one whose `verdict` equals `truth.correct`, and ENG-09a lints that exactly one option matches), with a `truth` block, scored under the `awareness` profile. No free text. Any strength meter or vault-health view is drawn as static authored bands, not a live score of typed input (ENG-09a Stop-and-ask).
 
 **Choice-to-verdict mapping and `truth` (Round 2 ruling 3).** Each option maps to **one built verdict** (`trust`/`report`/`delete`/`verify`), and the chosen option is scored **exactly as that verdict scores** under `VERDICT_POINTS`/`KIND_VERDICT_POINTS` for the card's `truth.isPhish`. The card's `truth` carries the **correct verdict** in `truth.correct`, and `truth.isPhish` selects the scoring column. Every E9 `choice` card uses the same vehicle so a right move earns full marks and a wrong one scores zero (a clean miss): set `truth.isPhish: true`, map the **safe** option to `report` (phish Report = 60, full marks, the protective move) and the **unsafe** option to `trust` (phish Trust = 0, the miss), and set `truth.correct: "report"`. This is the same convention the defend set uses (Report the risky thing scores full; Trust it scores zero), so the measurement stays consistent; `truth.isPhish: true` is only the scoring vehicle and marks the unsafe option, not a claim that the card is a phishing message. No Verify button shows on a `choice` card (it is a two-option decision, not a message to ring back). A card holds **one** decision only (ruling 3), which is why the old two-part sign-up card is split into rows 5 and 6 below.
 
-Worked example (row 4):
+Worked example (row 4), using **ENG-09a's exact field names** (R3_review M2): `choice` is `{ prompt, options: [{ id, label, verdict }], note? }` with no `correct`; `truth` carries only schema-legal keys (`scenario-schema.json` `truth` is `additionalProperties: false` and ENG-09a adds just `truth.correct`), so there is no `truth.whyRight`/`truth.ifWrong`. The "why right" copy goes in `truth.reportReply` (the safe option maps to `report`) and the "if wrong" copy in `truth.ifTrusted` (the unsafe option maps to `trust`), exactly as an ordinary defend item carries them:
 
 ```jsonc
 {
@@ -179,22 +179,22 @@ Worked example (row 4):
   "choice": {
     "prompt": "Which is stronger?",
     "options": [
-      { "id": "words",  "label": "otter-ladder-crimson (three random words)", "verdict": "report" },
+      { "id": "words",   "label": "otter-ladder-crimson (three random words)", "verdict": "report" },
       { "id": "complex", "label": "Tarrowby2026! (company name, year, symbol)", "verdict": "trust" }
     ],
-    "correct": "words",
     "note": "These are made up; no real password is typed."
   },
   "truth": {
     "isPhish": true,
+    "flags": [],
     "correct": "report",
-    "whyRight": "Length and unpredictability beat complexity rules. Tarrowby2026! is on the guessers' patterns; another random word adds far more than a symbol.",
-    "ifWrong": "A company-name-plus-year-plus-symbol password is near the top of every guess list."
+    "reportReply": "Length and unpredictability beat complexity rules. Tarrowby2026! is on the guessers' patterns; another random word adds far more than a symbol.",
+    "ifTrusted": "A company-name-plus-year-plus-symbol password is near the top of every guess list."
   }
 }
 ```
 
-This spec gives the content; ENG-09a gives the fields. Rows 1 to 3 are ordinary triageSet messages (copy the `e3_push_early` `push` shape for the push cards).
+ENG-09a lints that exactly one option's `verdict` equals `truth.correct` ("report", the `words` option here) and that `truth.correct` is the full-marks verdict for `truth.isPhish`, so the engine derives the right option from `truth.correct` and the option verdicts; the card needs no `choice.correct`. This spec gives the content; ENG-09a gives the fields. Rows 1 to 3 are ordinary triageSet messages (copy the `e3_push_early` `push` shape for the push cards).
 
 ## 12. Debrief cards
 

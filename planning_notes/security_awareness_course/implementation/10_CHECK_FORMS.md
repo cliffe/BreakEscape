@@ -203,7 +203,18 @@ same verdicts (so a pair is compared like with like), not that Verify be off.
 
 Both forms: `"scoringProfile": "awareness"`, `"feedbackMode": "end"`, `"headerPanel": "collapsed"`,
 `"glossary": "closed"`, `"outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 }`.
-Set `channelTells` to the scored flags the form uses (see item tables).
+
+`channelTells` holds **only channel-tell ids** (Round 3 ruling 2). The seven **factor** ids
+(`senderTrust`, `senderAuth`, `addressedTo`, `pretextRelevant`, `attachmentPlausible`,
+`urgencyCalibrated`, `linkCredible`; `triage.rb` `FACTORS`) are always in the flag universe and are
+scored through the factor path, so they are **never** listed in `channelTells`: `triage.rb`
+`flag_universe` rejects a set that lists a factor id there ("'senderTrust' is not one of 00 section
+2's channel tells and flagChips gives it no label"). Copy exactly how a built check shell declares
+its scored flags: `general_form_a` in `e5/defend.json` scores the factors `senderTrust` and
+`linkCredible` but lists in `channelTells` only the channel tells
+`["lookalike_domain", "padlock_myth", "secrecy_or_bypass", "reply_to_differs"]`; the factors it
+scores are not in that array. Set each new form's `channelTells` the same way (the exact arrays are
+in the item tables below).
 
 ### Pre/post export and import globals
 
@@ -295,8 +306,10 @@ needs `whyFine` (default plus any per-flag key). Quote the shapes from `e5/defen
 
 Phish at slots 2, 4, 6, 8 (before permute). Per-form flag multiset: `lookalike_domain` 1,
 `padlock_myth` 1, `unrequested_mfa_push` 1, `senderTrust` 2, `linkCredible` 1, `reply_to_differs` 1
-(7 scored flags). `channelTells`: `["lookalike_domain", "padlock_myth", "unrequested_mfa_push",
-"senderTrust", "linkCredible", "reply_to_differs"]`.
+(7 scored flags). `channelTells` (channel-tell ids only, ruling 2): `["lookalike_domain",
+"padlock_myth", "unrequested_mfa_push", "reply_to_differs"]`. The two factors this form scores,
+`senderTrust` (items 6 and 8) and `linkCredible` (item 6), are scored through the factor path and are
+**not** listed in `channelTells` (they are always in `FACTORS`; `triage.rb` rejects a factor id there).
 
 Note on card kinds: item 2 is a `page` (verdicts Trust/Report/Delete; `padlock_myth` is offered only
 on a page, `triage-flags.js` `KIND_TELL_EXCLUDE`). Item 4 is a `push` (verdicts Approve/Deny/Deny and
@@ -325,9 +338,11 @@ know" or "overshare" chip, that is a later `02_ENGINE_WORK.md` library addition,
 
 Phish at slots 2, 4, 6, 8 (before permute). Per-form flag multiset: `senderTrust` 3,
 `pretextRelevant` 2, `secrecy_or_bypass` 2, `vish_callback_pressure` 1, `reply_to_differs` 1 (9
-scored flags; counts identical in A and B). `channelTells`: `["senderTrust", "pretextRelevant",
-"secrecy_or_bypass", "vish_callback_pressure", "reply_to_differs"]`. Item 4 is a `call`: its verdicts
-are Comply/Ring back/Escalate/Refuse, so Verify must be on (it is).
+scored flags; counts identical in A and B). `channelTells` (channel-tell ids only, ruling 2):
+`["secrecy_or_bypass", "vish_callback_pressure", "reply_to_differs"]`. The two factors this form
+scores, `senderTrust` (items 2, 6, 8) and `pretextRelevant` (items 2, 6), are scored through the
+factor path and are **not** listed in `channelTells` (`triage.rb` rejects a factor id there). Item 4
+is a `call`: its verdicts are Comply/Ring back/Escalate/Refuse, so Verify must be on (it is).
 
 ## Parity audit steps (run before the forms are called done)
 

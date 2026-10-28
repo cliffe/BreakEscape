@@ -287,8 +287,11 @@ are already triage `call` data; but prefer the episode calls so the Gordon mirro
 
 ## Files to create or change
 
-- Create `awareness/e17/annual_2027.json` (a fragment holding the combined set `annual_2027_mixed`
-  and a minimal `awarenessEpisode` block with the "what changed this year" brief strings).
+- Create `awareness/core17/annual_2027.json` (a fragment holding the combined set `annual_2027_mixed`
+  and a minimal `awarenessEpisode` block with the "what changed this year" brief strings). **Not
+  `awareness/e17/`**: that folder is E17's (acceptable use), whose fragment follows the built
+  `awareness/e${n}/defend.json` parity pattern; core_17 is not episode 17, so it gets its own
+  `core17/` folder (R3_sonnet m11).
 - Create the shell `scenarios/awareness_core_17_annual_2027_defend/scenario.json.erb`, `mission.json`,
   `ink/`. A generator is optional (the set is hand-assembled); if you add one, model it on
   `gen_e3_e5_shells.py` and never run it into the repo.
@@ -307,12 +310,28 @@ are already triage `call` data; but prefer the episode calls so the Gordon mirro
   one, and `attack_checks` does not run).
 - Host: a neutral proctor, **Graham Whitfield** by default (a built Brightwell finance check host,
   `BRAND_SET.md`), who carries the `eventMappings` completing the task on the combined set's done global
-  (`global_variable_changed:episode_core_17_annual_2027_defend_defend_done`).
+  (`global_variable_changed:episode_core_17_annual_2027_defend_defend_done`). Graham exists today only
+  with check-form welcome ink (`awareness_pre_finance_ab/ink/graham_pre.ink`), which is the wrong shape
+  for a defend host, so **copy the defend-host ink `ink/chidi_okeke.ink` from
+  `scenarios/awareness_e6_texts_and_qr_defend/`**, rename it to `ink/graham_whitfield.ink` (knot
+  `start`, `storyPath` pointing at the renamed file) and replace Chidi's Tarrowby lines with Graham's
+  generic proctor lines (R3_sonnet m12).
 - The combined set `annual_2027_mixed`:
   - `scoringProfile: "awareness"`, `verifyVerdict: true` (it contains calls and a voicemail, which
     need the ring-back verdict), `feedbackMode: "immediate"` (matches how the learner met these items
     all year; `end` is an option if the user wants it exam-style), `headerPanel: "off"`,
-    `glossary: "closed"`, `reportAlwaysVisible: true`.
+    `glossary: "closed"`. (`reportAlwaysVisible` is a `defend`-block key, not a set key; put it on the
+    `awarenessEpisode.defend` block, below, not on the set, R3_sonnet t4.)
+  - Set labels: `title: "The year in review"`, `brief: "A mixed run of the year's messages across
+    email, calls, a voicemail, a text, a sign-in prompt and a page, from Brightwell, Quayholt and
+    Tarrowby. Some are real; some are the year's scams. For each, decide and say why. The sitting moves
+    you between seats: a payments inbox, then a service-desk queue, then a phone."`,
+    `realLabel: "Real messages"` (the built E6 set uses "Real texts and notices"; this queue is mixed,
+    so "Real messages" reads better). The brief's "moves you between seats" line is the note the
+    general_staff learner needs, because items 1 and 2 are payments-team emails and items 4 and 5 are
+    service-desk calls (R3_sonnet m12).
+  - Message order: each impostor before its genuine twin, which the §"item ids" table already does
+    (item 4 impostor Gordon before item 5 real Gordon).
   - `channelTells`: the union of the channel tells the 8 copied items use, all `00`-library ids, so no
     new tell is introduced: `["unrequested_mfa_push", "vish_callback_pressure", "borrowed_authority",
     "lookalike_domain", "padlock_myth", "changed_bank_details", "secrecy_or_bypass"]`. Because the set
@@ -364,10 +383,38 @@ minutes in all. Keep all three genuine items so the lesson is not "everything is
 
 ## The "what changed this year" brief (draft)
 
-Three short changes, from `core_17/concepts.md`, each one aid, rewritten each year, authored into
-`strings.brief` (the built brief stage renders `strings.brief`; this is not the brief-only `briefCards`
-variant of Part A). Spoken lines are generic; any figures are on screen only (no voiced line prints a
-variable). Keep it to three beats plus the habit; the dialogue reviewer polishes.
+Three short changes, from **`modules/core_17_capstone_annual_assessment/concepts.md` lines 66 to 70**
+("The proctor's three headline changes for the 2027 brief"), each one aid, rewritten each year,
+authored into `strings.brief` (the built brief stage renders `strings.brief`; this is not the
+brief-only `briefCards` variant of Part A). The three, verbatim from that range (R3_sonnet m13):
+
+1. "Scams switch channels." A text, then a call, then an email. Check another way, every time.
+2. "A voice isn't proof." A voice note or call from someone you know can be faked. Call back on the
+   number you already have.
+3. "Your login is the prize." A prompt you didn't start, a caller who wants a code, a colleague who
+   wants your password: all the same request.
+
+Spoken lines are generic; any figures are on screen only (no voiced line prints a variable). Keep it
+to three beats plus the habit; the dialogue reviewer polishes.
+
+### Strings to rewrite, missions.json, and the shell-count test (R3_sonnet m12)
+
+- **Strings copied from the E6 defend shell and rewritten.** The `awareness_e6_texts_and_qr_defend`
+  shell carries `defendOnly`, `defendIntro`, `flipMissedHeading`, `flipLandedNoTells`, `noBlameLine`
+  and `mondayCard` strings worded for Tarrowby phones. The validator does not read most of them, but
+  the debrief prints `noBlameLine` and the Monday card, and the defend intro shows at the start, so
+  **rewrite `defendOnly`, `defendIntro`, `noBlameLine` and `mondayCard`** to the neutral year-review
+  wording (the Monday card is `"slot:customer_report_route"`, so only its lead sentence is authored).
+  The two `flip*` strings are never shown in a `defendOnly` shell (there is no flip stage); leave them
+  or drop them, either validates.
+- **`mission.json`.** Copy the block from `scenarios/awareness_e7_voice_ceo_defend/mission.json`
+  (a built `defendOnly` shell) and change `display_name`, `description` and the `cybok` keywords; keep
+  `difficulty_level: 1`, `scoring: "completion"`, `secgen_scenario: null`, `collection: "training"`,
+  `ui_theme: "general"`, `estimated_duration_minutes: 10`.
+- **Shell-count test.** core_17 adds **one** shell folder, so bump the count the rule-of-thumb test
+  reads by 1 (P6; `test/js/social-awareness-rule-of-thumb.test.mjs` counts the `awareness_*` folders),
+  and add the shell to the fragment-erb parity row set if that test enumerates defend shells. Confirm
+  the new count against the test before calling it done.
 
 ## Acceptance checks
 

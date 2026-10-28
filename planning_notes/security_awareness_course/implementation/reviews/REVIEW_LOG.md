@@ -945,3 +945,107 @@ Validator run in the scratchpad: `json-schema` installed into a scratch `GEM_PAT
   written to match the 02 shapes.
 - R3_review M1/m5/t2 (E12), m2/m3/m4/m6, t1 and R3_sonnet m14 touch files outside this scope
   (E11, E12, E13, E17, 00, 01, 02); left to their fixers.
+
+## Round 3 fixes: E11, E12, E13, E15, E17
+
+Fixer scope: `episodes/E11_misdirected_data.md`, `E12_visitor_and_tailgater.md`, `E13_ai_assistant.md`,
+`E15_shadow_it.md`, `E17_acceptable_use.md` only. No git run; no file edited outside these five. Round 3
+rulings applied, not reopened. Shapes proven against the real validator (ruling 3); the ENG-05a room-move
+and lobby/door-keys half is owned by the parallel 02 fixer and only referenced here.
+
+### E12 (R3_sonnet B1, B2; R3_review M1 / R3_sonnet M3; R3_sonnet M4, M7; R3_review m5; R3_sonnet m1, m2, m3, m4, m5, m6, m15; R3_review t2)
+
+- **B1 (buzz_door unwinnable).** Rewrote §9.3 so the ask is **grantable through a fact Delphine `knows`**,
+  following E3's built pattern (`asks.reset_password.verification` = facts the agent `knows`, claimed via
+  blanks). Delphine now `knows: { recipient: { value: "merrin_partner", grade: "identity" } }`,
+  `labels: { merrin_partner: "Catherine Merrin" }`; the `name_drop_partner` line claims `recipient` from a
+  `recipient` blank (so naming the partner correctly proves the fact); the ask `buzz_door` is
+  `pressure: -10, floor: 0, verification: ["recipient"], grants: { setGlobal: { delphine_buzzed_through:
+  true } }`. Checked against `pretext-judge.js` `judgeAsk:352-409`: granted once pressure leaves influence
+  at/above the floor and `recipient` is in `provenFacts`. The two honest checks (expected list, escort)
+  are **not** verification facts (she cannot confirm them); they live in `defenderNotes` and the flip
+  only, which is the lesson.
+- **B2 (start room strands the learner).** Decided from the code (ruling 4): the kiosk room is renamed
+  `studio` -> **`training_room`** (the id every awareness tool and bridge assumes; `apply_training_room.py`
+  reads `rooms['training_room']` unguarded, R3_sonnet M5) and is the scenario top-level `startRoom`, so the
+  learner always spawns at the kiosk. The `world` modifier places them in `lobby` for the attack only; on
+  **any** `write` outcome (`got_it`/`reported`/`walked_away`) ENG-05a returns them to `training_room` before
+  `watchCall` reopens the runner, so a failed con and a P13 reload never strand them (also resolves m15).
+  The badge door connects `lobby` -> `training_room`; the `# unlock_door:` tag is now
+  `# unlock_door:training_room`. Updated §5, §9.1 items 1/3/4, §15, §16, §17, §20.3 and the ENG-08 row. The
+  room-move function is named/owned by 02 ENG-05a; E12 only authors the `startRoom`/`world` keys.
+- **M1 / M3 (costume under the wrong block).** §9.1 item 1 now puts the costume under
+  `awarenessEpisode.world.costume` (schema's `attack` is `additionalProperties:false`), and quotes the full
+  `world` block and the full call `attack` block (`callId`, `siteIds`, `scored:false`) once.
+- **M4 (door and `unlockable` keys).** §9.1 items 3/4 now quote the built m02 lock keys
+  (`it_department`, `scenario.json.erb:2001-2004`: `locked/lockType:"key"/requires/keyPins/difficulty`) with
+  `requires` a key id no object holds, and the NPC `"unlockable": ["training_room"]`
+  (m02 `:3238`). Pickability noted as moot (no lockpick, defend at the kiosk). t2: the clear-locked line is
+  corrected to `npc-game-bridge.js:117-118`.
+- **M7 (metadata + final JSON).** Added **§8b** (every shell and generator metadata value as a final
+  string: the two Merrin & Sallow NPC sprites with Lorna reusing a built sprite, the costume, the two-aim
+  objectives copied from E3's call-attack shape, kiosk observations, `mission.json`, top-level erb strings,
+  `EPISODES['e12']` and `LINES[('e12','defend')]`, host lines), copying E8 §8b's shape. Rewrote §11 to give
+  the **six `call` items as final JSON**. Added the §4 content-gate sentence.
+- **m4 / m6 (chip labels, tells column).** §11 now uses **short `flagChips` labels** for the four local
+  tells and carries the full sentence per flagging message as `truth.factorStrings.<id>.redFlag`; it states
+  a `call` message has no `tells` field (flags live in `truth.flags`).
+- **m5 (Comply half marks).** §11 scoring note now records `KIND_VERDICT_POINTS.call.real.trust = 30` of
+  60: Comply on a genuine visitor is half marks, Ring back/Escalate full; the genuine `whyFine` wording
+  says the list check is the full-mark habit.
+- **m3 (`flipDefenderLineByChoice` on a call).** Dropped it from §9.5/§10 (the key maps template ids and the
+  call record carries no `templateId`); the choice is carried by `flipDefenderLine` + `defenderNotes`.
+- **m2 (dependency lists).** §3 now states in one sentence: E12 needs ENG-05a, 05b, 05c and ENG-08; not
+  05d (art), 05e or 09c.
+- **m1 / R3_review m5 / review-m relabel.** §17 passes the `scenario.json.erb` file path (not the folder);
+  §20.2 attributes the per-set action relabel to **ENG-03a's `verdictLabels`**, not ENG-07.
+
+### E11 (R3_review m3)
+
+- §10a's `attack_checks` paragraph was stale ("only when `stages` includes `osint` or `write`", framed as
+  owed to the 02 fixer). Aligned to 02 ENG-04 point 5's landed wording: `attack_checks` runs only when the
+  stage list holds an attack-artefact stage (`osint`, `build`, `write`, `mfa` or `guess`), with the paired
+  no-`attack`-block lint; marked settled in 02, not outstanding. No other R3 finding touched E11.
+
+### E13 (R3_review m4; R3_sonnet m1)
+
+- Removed every implication that the two scenario-local tells need an engine change. §3 ENG-08 row, §11
+  and the §19 stop-and-ask now say `hidden_instruction`/`deepfake_request` are declared on E13's set with a
+  `flagChips` label (short noun phrase) and a per-message `truth.factorStrings.<id>.redFlag`, needing **no**
+  ENG-08 library or validator change (`triage.rb` `flag_universe` already accepts a labelled non-factor
+  `channelTells` id), the pattern E9/E10/E12 use. The real ENG-08 need (the osint-optional stage order) is
+  kept. §17 now passes the `scenario.json.erb` file path with `--no-graph --skip-ink` (m1).
+
+### E15 (round 3 ruling 1)
+
+- §11 now states `unapproved_tool` is **local in both E15 and E17** (ruling 1: a tell is local unless a
+  `10` item scores it, even when two sets use the same id; sets never merge), declared with a short
+  `flagChips` label and no shared-library/`SKILL_NAMES` append; the full sentences move to per-message
+  `truth.factorStrings.<id>.redFlag`. `found_media` likewise.
+
+### E17 (round 3 ruling 1; R3_review m6)
+
+- §11b `channelTells` is now `["secrecy_or_bypass"]` plus local `unapproved_tool`; **`lookalike_domain`
+  removed** (no item flagged it; unused declaration, R3_review m6), with a note matching E8's convention.
+  Added the "local in both E17 and E15" statement and the `flagChips`-label / `factorStrings` pattern.
+
+### Shapes proven (ruling 3)
+
+Validator made runnable in the scratchpad: `json-schema` gem installed into
+`/tmp/claude-0/-home-user/626732f1-43e6-50f5-a8fa-22022b2017ae/scratchpad/gems`, then
+`LANG=C.UTF-8 GEM_HOME=<gems> GEM_PATH=<gems> ruby scripts/validate_scenario.rb <file> --strict-social
+--no-graph --skip-ink`.
+
+- **E12 defend set.** Copied `awareness_e6_texts_and_qr_defend` to the scratchpad, swapped in the six
+  `call` items (the exact §11 JSON), set `channelTells`
+  `["tailgating","no_escort","uniform_pretext","not_expected","borrowed_authority","secrecy_or_bypass"]`
+  and the four local-tell `flagChips` labels. Result: **exit 0, no SOCIAL lint error.**
+- **E17 defend set.** Same base, swapped in six `email` items with `channelTells`
+  `["secrecy_or_bypass","unapproved_tool"]` (lookalike_domain removed) and `flagChips` labelling
+  `unapproved_tool`. Result: **exit 0, no SOCIAL lint error.**
+- **Negative control.** Adding the factor id `senderTrust` to `channelTells` failed as expected
+  (`❌ SOCIAL: ... 'senderTrust' is not one of 00 section 2's channel tells and flagChips gives it no
+  label`), confirming `--strict-social` was active.
+- **Not scratch-validated (engine packets not built):** E12's `awarenessEpisode.world` block, lobby room
+  type and locked `lobby`->`training_room` connection (need ENG-05a/ENG-08), and E17's ENG-11 `sortDrill`.
+  Noted in each spec; validated when those packets land.
