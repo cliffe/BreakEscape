@@ -82,6 +82,90 @@ Defend-only: `["brief", "defend", "debrief"]`. **The defend-only variant needs E
 - **`scopeNote`:** "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: a guess list built from one colleague's public details, and your own sign-in choices. No real password is ever typed or stored; the guesses and codes are made up."
 - **Nilesh's welcome (host ink, hub pattern):** "Welcome to the Tarrowby exercise. Most passwords aren't cracked. They're guessed, reused or handed over. Start at the kiosk: I'll show you how, on a made-up colleague, then you shut it down on your own account. Nothing you touch here is a real password."
 
+## 8b. Shell and generator metadata (every value final; no guessing)
+
+Every metadata value the shell wiring (01 P2/P3) and the generator (01 P4, `gen_e8_e17_shells.py`) need, as final strings, so a Sonnet implementer invents nothing. Copy the shapes from the built **E6** erb, `mission.json` and the generator helper scaffolding (E6 is the same company and room; its host entry is Chidi's, so E9's host entry is authored new here, with the name-clash search in P11). The `opus48` content step fills §8b, §9's `guess` content, §10's flip strings and §11's defend items before any Sonnet begins P2. **The full episode also needs ENG-02 (`guess`) and the defend-only shell needs ENG-09a (`choice` cards); §8b is the generator and shell metadata, which does not itself wait on those packets.**
+
+### Host and learner sprites
+
+- **Nilesh Solanki's `HOSTS['nilesh']` entry** (authored new in `gen_e8_e17_shells.py`, Tarrowby cast; `sprite` is the base key, the in-scenario `spriteSheet` adds `_v2`): `{ 'id': 'nilesh_solanki', 'displayName': 'Nilesh Solanki', 'sprite': 'male_telecom', 'about': "Tarrowby's IT service desk analyst, 30s, Gujarati-British, grew up in Leicester (BRAND_SET.md, E6/E9 additions). Placeholder sprite until the PixelLab reset." }`.
+- **Nilesh's in-scenario host NPC sprite keys** (full erb `rooms.training_room.npcs[]`, following the E6 host NPC shape): `"spriteSheet": "male_telecom_v2"`, `"spriteTalk": "assets/characters/male_telecom_talk.png"`, `"spriteVisemes": "assets/characters/male_telecom_visemes.png"`, `"npcType": "person"`, `"id": "nilesh_solanki"`, `"displayName": "Nilesh Solanki"`, `"storyPath": "scenarios/awareness_e9_passwords/ink/nilesh_solanki.json"`, `"currentKnot": "start"`. Host art is a placeholder until the PixelLab reset.
+- **Learner avatar** (full erb `player`), as E5/E6: `"spriteSheet": "female_office_worker_v2"`, `"spriteTalk": "assets/characters/female_office_worker_talk.png"`.
+
+### Full-episode objectives (full erb `objectives[]`, copy the E6/E1 two-aim shape)
+
+| field | aim 1 (red team) | aim 2 (defend, `missionConclusion: true`) |
+|---|---|---|
+| `aimId` | `red_team_guess_aim` | `lock_down_aim` |
+| `title` | "Run the guesser" | "Lock your account down" |
+| `description` | "Build a guess list from a colleague's public details and watch how fast a reused password opens his work account." | "Work through the sign-in prompts and password choices at the training kiosk." |
+| `order` | 0 | 1 |
+| task `taskId` / `title` / `type` | `run_the_guesser` / "Run the guesser against the colleague" / `manual` | `lock_the_account` / "Lock your account down" / `custom` |
+
+Aim 2 `concludeRequires.globals`: `["episode_e9_passwords_defend_done"]`. Aim 2 `conclusionScreen`: `{ "type": "success", "title": "After passwords episode done", "body": "You've seen both sides: a reused password opening a colleague's account, then your own account locked down, so this episode is finished." }`. `conclusionTaskId` is `lock_the_account`.
+
+### Full-episode training kiosk (full erb `rooms.training_room.objects[]` kiosk, copy the E6 shape)
+
+- `observations`: "A touch-screen training kiosk for the Tarrowby passwords exercise: first a guess list built from a colleague's public details, then your own account to lock down."
+- `observationVariants[0]`: `{ "condition": "globalVars.episode_e9_passwords_defend_done", "value": "A touch-screen training kiosk for the Tarrowby passwords exercise. The guesser has run and your account is locked down." }`
+- `minigameData.episodeId`: `e9_passwords`.
+
+### Full-episode `mission.json` (copy the E6 mission.json shape)
+
+- `display_name`: "Awareness E9: Passwords and password managers (full episode)"
+- `description`: "An awareness episode of about 15 minutes for all staff. On an authorised exercise at Tarrowby Logistics, a fictional haulier, you first play the attacker: build a guess list from a colleague's public details and watch a reused password open his work account. Then it's your own account under attack, and you lock it down. Only the lock-down part is scored, and reporting when you're unsure is always fine and never marked down. No real password is ever typed."
+- `difficulty_level`: 1; `scoring`: "completion"; `secgen_scenario`: null; `collection`: "training"; `ui_theme`: "general"; `estimated_duration_minutes`: 15.
+- `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Passwords", "Passphrases", "Multi-factor authentication", "Security awareness", "Usable security"] } ]`.
+
+Top-level erb strings (copy E6's): `scenario_id` `awareness_e9_passwords`; `scenario_name` "Passwords and password managers: both sides"; `scenario_brief` = `strings.brief` (§8); `endGoal` "Run the guesser, then lock your own account down at the training kiosk."; `version` "1.0"; `disableAttacks` true; `startRoom` `training_room`; `startPosition` as E6.
+
+### Defend-only shell: generator `EPISODES['e9']` entry (`gen_e8_e17_shells.py`, following the `gen_e6_e7_shells.py` `EPISODES['e6']` shape)
+
+```python
+'e9': {
+    'frag': f'{AW}/e9/defend.json',
+    'full_id': 'e9_passwords',
+    'role_word': 'general',
+    'role_label': 'all staff',
+    'defend_set': 'e9_lock_it_down',
+    'defend_host': 'nilesh',
+    # No 'forms'/'check_hosts': E9 feeds general_v2, built by 10's own generator, not this one (see §14).
+    'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+               'keywords': ['Passwords', 'Passphrases', 'Multi-factor authentication', 'Security awareness', 'Usable security']}],
+    'defend': {
+        'name': 'Passwords and sign-in: lock the account down',
+        'brief': "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down: handle the prompts, choose stronger passwords, and don't hand anything to a message dressed up as IT. No real password is ever typed here.",
+        'endGoal': 'Lock the account down at the training kiosk.',
+        'aim': ('lock_down_aim', 'Lock your account down', 'Work through the sign-in prompts and password choices at the training kiosk.'),
+        'task': ('lock_the_account', 'Lock your account down'),
+        'kiosk': ("A touch-screen kiosk set up as your Tarrowby account under attack: sign-in prompts to handle and password choices to make.",
+         "A touch-screen kiosk set up as your Tarrowby account. The prompts are handled and the account is locked down."),
+        'display': 'Awareness E9: Passwords and password managers (defend only)',
+        'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Your own account at Tarrowby Logistics, a fictional haulier, is under attack: sign-in prompts you didn't start, a message dressed up as IT, and password choices to make. Each answer is explained, and reporting when you're unsure is always fine and never marked down. No real password is ever typed.",
+        'minutes': 8,
+        'defendIntro': "Go through the sign-in prompts and password choices and decide what to do with each one. If you didn't start a prompt, deny it and report it. Pick the stronger option each time. There's no clock on you, and no real password is typed here.",
+        'conclusion': ('Account locked down', "You've handled the prompts and chosen the stronger options, and finished this episode."),
+    },
+},
+```
+
+This `brief` is the same text as §13's defend-only brief (keep them identical). The defend-only shell id is `e9_passwords_defend`, prefix `episode_e9_passwords_defend_defend_` (§13). The defend-only `scopeNote` and `_defendOnly` strings are in the fragment (§13). The defend set `e9_lock_it_down` carries the ENG-09a `choice` cards (§11), so the generated shell validates only once ENG-09a lands; the generator itself invents nothing and raises no `KeyError`.
+
+### Defend-host lines: generator `LINES[('e9', 'defend')]` (the tuple `(before, after, choice, reply)`, Nilesh's voice, as `gen_e6_e7_shells.py` `LINES`)
+
+```python
+('e9', 'defend'): (
+    "Right, the kiosk's your own account now, with prompts coming in and a few password choices to make. Deny anything you didn't start, and pick the stronger option each time. No rush, and nothing you type here is real.",
+    "That's it locked down, thanks. A different password for every account, kept in a manager, and deny what you didn't start: that's the whole of it.",
+    'Thanks, Nilesh.', 'Any time.'),
+```
+
+### Host spoken lines for the full shell (ink, Nilesh)
+
+- **Welcome** (at the hub): the §8 welcome line.
+- **After the attack half** (on the kiosk hand-off into the defend half): "Good. One reused password opened his account, no clever cracking at all. Now it's your turn in the seat: your phone's buzzing, and someone has a password of yours."
+- **On completion** (defend done): "That's both sides done. A different password for every account, kept in a manager, three random words where you must remember one, and deny what you didn't start. Nobody's ever in trouble for reporting."
+
 ## 9. Attack half (the guesser and reuse rig)
 
 Not scored. The learner runs an authored guesser and reuse rig against Colin Mather, from his own public details, in the `guess` stage (ENG-02). **No real password is ever typed; the guesser is authored data and uses game words and made-up strings.** The engine surface is ENG-02; this section gives the content ENG-02's config must carry.

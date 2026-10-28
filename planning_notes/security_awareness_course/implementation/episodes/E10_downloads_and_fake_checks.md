@@ -144,10 +144,13 @@ Top-level erb strings (copy E5's): `scenario_id` `awareness_e10_downloads_and_fa
         'display': 'Awareness E10: Downloads and fake checks (defend only)',
         'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. A morning of web pages at Quayholt Insurance, a fictional company: fake checks, fake updates, fake alarms, extension prompts and dangerous downloads, with the genuine ones mixed in. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
         'minutes': 8,
-        'ending': ('Web pages sorted', "You've sorted the morning's web pages and finished this episode."),
+        'defendIntro': "Go through the morning's web pages and decide what to do with each one: carry on, close and report, or go the trusted way. The rule holds as you go: no honest web page ever needs you to paste, run, install or call. Take them at your own pace.",
+        'conclusion': ('Web pages sorted', "You've sorted the morning's web pages and finished this episode."),
     },
 },
 ```
+
+The generator's `defend_only()` reads `d['defendIntro']` (a string, into `strings.defendIntro`) and `d['conclusion']` (a `(title, body)` tuple). The key is `conclusion`, not `ending`; the required `defend` keys are the set listed once in `01_PIPELINE.md` P4 (`name`, `brief`, `endGoal`, `aim`, `task`, `kiosk`, `display`, `desc`, `minutes`, `defendIntro`, `conclusion`).
 
 This `brief` is the same text as §13's defend-only brief (keep them identical). The defend-only shell id is `e10_downloads_and_fake_checks_defend`, prefix `episode_e10_downloads_and_fake_checks_defend_defend_` (§13). The defend-only `scopeNote` and `_defendOnly` strings are in the fragment (§13).
 
