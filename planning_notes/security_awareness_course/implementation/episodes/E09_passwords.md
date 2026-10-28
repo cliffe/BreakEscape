@@ -24,10 +24,12 @@ Learning outcomes (from `modules/core_03_passwords_and_mfa/`): LO1 (a different 
 
 ## 3. Depends on
 
-- **ENG-02** (passphrase and guessing stage). The attack-half guesser/reuse rig and the defend-half password-practice cards are both new surfaces this packet owns. E9 cannot build its full variant without it. §9 and §11 state the config ENG-02 must accept.
+- **ENG-02** (password guessing stage `guess`). This packet owns the **attack-half** guesser/reuse rig only, in a new stage id `guess` (not a reuse of `build`). E9 cannot build its full variant's attack half without it. §9 states the `awarenessEpisode.guess` config ENG-02 must accept.
+- **ENG-09a** (authored-choice triage kind `choice`). E9's **defend-half** password-practice cards (§11 rows 4 to 7) are scored `choice` items delivered by this kind, not by ENG-02. The defend-only variant needs ENG-09a (not ENG-02), because the password cards are the core of its defend half (§13). ENG-02 is attack-half only (`02_ENGINE_WORK.md` ENG-02 scope line and Stop-and-ask).
+- **ENG-09b** (debrief panel list). E9's debrief shows several short concept cards (§12), and the built `strings.conceptPanel` is a single panel; ENG-09b adds the array form.
 - **The E3 authenticator demo** (built) for the flood flip and the push defend cards. No new work there; reuse the `e3_push_early` / `mfaDecision.pushTemplate` shapes.
-- **ENG-08** (schema and validator) if ENG-02 adds a new stage id to `STAGE_IDS` or relaxes the stage-order lint so an attack half can end in the guesser rather than a `write` stage (see §7).
-- One new channel tell `mfa_number_relay` for the fake-"IT" card (see §11), which belongs in the shared library (ENG-08) because E3 and E9 both use the fake-IT lever.
+- **ENG-08** (schema and validator): adds the `guess` stage id to `STAGE_IDS`/`ATTACK_STAGES`, the `brief osint guess flip defend debrief` stage order (so the attack half can end in the guesser with no `write` stage, see §7), the `awarenessEpisode.guess` schema key, and the `choice` kind for ENG-09a. All owned by the respective packets; ENG-08 collects them.
+- One new channel tell `mfa_number_relay` for the fake-"IT" card (see §11), which belongs in the shared library (ENG-08) because E3 and E9 both use the fake-IT lever (ENG-08 tell table lists it as shared).
 
 ## 4. Owner models
 
@@ -55,23 +57,23 @@ All people and companies are fictional; every address and domain ends `.example`
 |---|---|---|
 | brief | 1.0 | Nilesh's welcome, scope note. |
 | osint | 2.5 | Collect Colin's public details as facts. |
-| build (guesser/reuse rig, ENG-02) | 3.5 | Assemble a guess list from the facts; the guesser ticker strikes them through; the reuse step opens the work account. |
+| guess (guesser/reuse rig, ENG-02) | 3.5 | Assemble a guess list from the facts; the guesser ticker strikes them through; the reuse step opens the work account. |
 | flip | 1.5 | The learner's own account under a prompt flood, then the fake "IT" message. Reuses the authenticator flood (watch-only). |
-| defend | 4.5 | About 6 to 7 cards: push triage (authenticator) plus password-practice cards (ENG-02), Verify on. |
+| defend | 4.5 | About 6 to 7 cards: push triage (authenticator) plus password-practice `choice` cards (ENG-09a), Verify on. |
 | debrief | 2.0 | Reasoning cards, the tally, the habit, the "On Monday" card (three things to do at home tonight), the report route, the no-blame line. |
 
 Defend-only variant: brief, defend, debrief, about 8 minutes.
 
 ## 7. Stages (runner stage ids)
 
-Proposed full episode: `["brief", "osint", "build", "flip", "defend", "debrief"]`.
+Full episode: `["brief", "osint", "guess", "flip", "defend", "debrief"]`.
 
-- `build` carries the guesser/reuse rig. Currently `childLaunch` maps `build` to the landing-page builder, so **ENG-02 must make the `build` stage launch the password/guesser surface when the episode carries a guesser config** (analogous to how the `mfa` stage is driven by the top-level `mfa` config block in E3). E9 passes an `awarenessEpisode.guess` config block (new; ENG-02 owns the exact key). Alternatively ENG-02 adds a dedicated stage id; the content does not care which, only that the guesser runs as the attack artefact.
-- There is **no `write` stage**: E9 sends no email or call, the guesser is the attack artefact. The stage-order lint today expects `write`; ENG-02/ENG-08 must allow `osint -> build -> flip` with no `write`. State this to the ENG-02 owner.
-- `flip` reuses the authenticator demo in its watch-only flood shape (the `mfaDecision` note in `e3/attack.json` confirms the scene still supports `{ pushes[...], approvesAt }` when `choice` is absent). No new flip engine needed.
-- `defend` runs the push/authenticator triage cards and the ENG-02 password-practice cards together, recording into `se_awareness_records` like any defend half.
+- `guess` carries the guesser/reuse rig. This is a **new stage id** that ENG-02 adds to `STAGE_IDS` and `ATTACK_STAGES`; it is **not** a reuse of `build`. `build` today launches the landing-page builder (`childLaunch`, `episode-model.js:187`), so reusing it would open the wrong child; ENG-02's decision is a dedicated `guess` stage (`02_ENGINE_WORK.md` ENG-02, "a new stage id, `guess`, not a reuse of `build`"). E9 passes an `awarenessEpisode.guess` config block (ENG-02 owns the exact key; §9 gives the content).
+- There is **no `write` stage**: E9 sends no email or call, the guesser is the attack artefact. ENG-08 adds the stage order `brief osint guess flip defend debrief` (guess after osint, before flip, no `write`), so the lint accepts it.
+- `flip` reuses the authenticator demo in its watch-only flood shape (the `mfaDecision` note in `e3/attack.json` confirms the scene still supports `{ pushes[...], approvesAt }` when `choice` is absent). ENG-01's `flipAftermath` carries the prompt flood after the landed guess; no new flip engine is needed.
+- `defend` runs the push/authenticator triage cards (ordinary triageSet messages) and the password-practice `choice` cards (ENG-09a) together, recording into `se_awareness_records` like any defend half.
 
-Defend-only: `["brief", "defend", "debrief"]`. **The defend-only variant still needs ENG-02** (the password-practice cards are the core of the defend half), so unlike E8, E9's defend-only cannot ship before the packet.
+Defend-only: `["brief", "defend", "debrief"]`. **The defend-only variant needs ENG-09a** (the password-practice `choice` cards are the core of the defend half), **not** ENG-02: ENG-02 is attack-half only, and `guess` is an `ATTACK_STAGES` id that `stagesFor` drops from a `defendOnly` shell. So, unlike E8, E9's defend-only cannot ship before ENG-09a lands (Round 1, ENG-02 Stop-and-ask: "E9 §7's 'the defend-only variant still needs ENG-02' should read 'needs ENG-09a'").
 
 ## 8. Brief and scope note (host's draft lines)
 
@@ -82,7 +84,7 @@ Defend-only: `["brief", "defend", "debrief"]`. **The defend-only variant still n
 
 ## 9. Attack half (the guesser and reuse rig)
 
-Not scored. The learner runs an authored guesser and reuse rig against Colin Mather, from his own public details. **No real password is ever typed; the guesser is authored data and uses game words and made-up strings.** The engine surface is ENG-02; this section gives the content ENG-02's config must carry.
+Not scored. The learner runs an authored guesser and reuse rig against Colin Mather, from his own public details, in the `guess` stage (ENG-02). **No real password is ever typed; the guesser is authored data and uses game words and made-up strings.** The engine surface is ENG-02; this section gives the content ENG-02's config must carry.
 
 ### OSINT facts (ids, sources)
 
@@ -103,11 +105,33 @@ Reuse a Tarrowby `tarrowby_site` and `tarrowby_social` in `osint` (profile `awar
 The guess list is assembled from slots that take only the collected facts, in the order attackers guess:
 
 1. The common list first, struck through as "already tried": `123456`, `password`, `qwerty`, `tarrowby` (shown as the starting point, never a real credential).
-2. Local patterns from the facts: `{team}{year}` (Pennington1994), `{pet}!` (Bramble!), the company name plus a year (Tarrowby2024), `{pet}{year}` (Bramble1994).
+2. Local patterns from the facts, one fact per slot (ENG-02 resolves one `factId` per slot): `{team}1994` (Pennington1994, from the team fact), `{pet}!` (Bramble!, from the pet fact), `Tarrowby{year}` (Tarrowby1994, from the founding-year fact). The fixed digits are baked into each template; a guess that needs two found facts at once is written as two slots.
 3. **The reuse step:** Colin's RiverReach Angling password (from a breach of that forum) is tried on the Tarrowby work account and works. The red-flag meter notes reuse is the multiplier: one breach of a small site opens the work account.
 4. A three-random-words passphrase (game words, e.g. "otter-ladder-crimson") is still being tried when the rig is switched off, to make the length point. It never "lands".
 
-ENG-02 config E9 passes (shape to be finalised by the packet): `awarenessEpisode.guess = { target: "colin", commonList: [...], patternSlots: [{id:"team",...},{id:"year",...},{id:"pet",...}], reuseStep: { site: "RiverReach Angling", domain: "riverreachangling.example", landsOn: "work", note: "..." }, passphraseDemo: { words: ["otter","ladder","crimson"], neverLands: true } }`. The guesser's ticker and reasoning text are authored here, in the core_03 voice; no tool, method or working credential is shown.
+ENG-02 config E9 passes (field names match `02_ENGINE_WORK.md` ENG-02's `awarenessEpisode.guess` shape): each pattern slot reads **one** collected OSINT fact by `factId`, and `reuseStep.factId` and `landedGlobal` are declared ids.
+
+```jsonc
+"guess": {
+  "target": "colin",
+  "commonList": ["123456", "password", "qwerty", "tarrowby"],
+  "patternSlots": [
+    { "id": "team", "factId": "tarrowby_mather_team", "template": "{team}1994" },
+    { "id": "pet",  "factId": "tarrowby_mather_pet",  "template": "{pet}!" },
+    { "id": "year", "factId": "tarrowby_founded",     "template": "Tarrowby{year}" }
+  ],
+  "reuseStep": {
+    "site": "RiverReach Angling", "domain": "riverreachangling.example",
+    "factId": "tarrowby_mather_forum", "landsOn": "work",
+    "note": "One breach of a small site opened the work account."
+  },
+  "passphraseDemo": { "words": ["otter", "ladder", "crimson"], "neverLands": true },
+  "landedGlobal": "guess_e9_landed",
+  "note": "No real password is typed here; every guess is made up."
+}
+```
+
+Each slot's `template` interpolates **only its own fact** (ENG-02 resolves one `factId` per slot). A pattern that needs two facts at once (for example "team plus year") is written as two slots, or the fixed part is baked into the template, as above; do not reference another slot's token. The guesser's ticker and reasoning text are authored here, in the core_03 voice; no tool, method or working credential is shown. (If ENG-02 wants multi-fact templates instead, that is its decision; see the note to the ENG-02 owner in §20.)
 
 ### The one consequential choice quoted in the flip (aw2)
 
@@ -123,7 +147,7 @@ No new flip engine is needed; the flood is the existing authenticator watch-only
 
 ## 11. Defend set
 
-The defend half is a mix of **push/authenticator triage cards** (a triageSet, like E3's push item) and **password-practice cards** (ENG-02). Both record into `se_awareness_records`. Verify on where a card has a "check it" route. About 6 to 7 decisions. The triageSet id is `e9_lock_it_down`; episode prefix `episode_e9_passwords_defend_`.
+The defend half is a mix of **push/authenticator triage cards** (ordinary triageSet messages, like E3's push item) and **password-practice `choice` cards** (ENG-09a, the authored-choice triage kind). Both are messages in the one triage set and both record into `se_awareness_records`. Verify on where a card has a "check it" route. About 6 to 7 decisions. The triageSet id is `e9_lock_it_down`; episode prefix `episode_e9_passwords_defend_`.
 
 The triageSet config follows E3: `scoringProfile: "awareness"`, `verifyVerdict: true`, `feedbackMode: "immediate"`, `headerPanel: "off"`, `glossary: "closed"`, `reportAlwaysVisible: true`. `channelTells`: `["unrequested_mfa_push", "mfa_number_relay", "secrecy_or_bypass"]`. `unrequested_mfa_push` and `secrecy_or_bypass` are shared-library tells. **`mfa_number_relay` is new** ("A message asking you to type or read back a sign-in number or code"): add it to the shared library (ENG-08), because E3 and E9 both use the fake-IT-number lever.
 
@@ -134,14 +158,14 @@ The triageSet config follows E3: `scoringProfile: "awareness"`, `verifyVerdict: 
 | 1 | `e9_push_own` | push (authenticator triage) | "Quayholt"-style push, account `you@tarrowby.example`, location "Leeds, UK", device "your own phone", immediately after you entered your password on the real depot sign-in | Approve | A prompt you started yourself, from where you are, is the normal second step. Approve it. (The genuine half of the mirror pair.) |
 | 2 | `e9_push_unstarted` | push (authenticator triage) | Same app, account `you@tarrowby.example`, location "Unknown location, outside the UK", device "Windows PC", 02:40, when you were asleep | Deny and report | A prompt you did not start means someone has your password and is trying to get in. Deny it and report it; the service desk changes the password. `unrequested_mfa_push`. (Mirror of row 1.) |
 | 3 | `e9_fake_it_number` | email or text (triage) | from a fake "Tarrowby IT" on a look-alike/freemail address: "We're getting failed sign-ins on your account. To stop the prompts, read back the number on your screen or tap Approve." | Deny / don't reply / report | No genuine IT team asks you to type a number, read back a code or approve a prompt. The number is on the attacker's screen. `mfa_number_relay`, `secrecy_or_bypass`. |
-| 4 | `e9_passphrase` | password-practice (ENG-02) | "Which is stronger?" Option A: three random words (game words, e.g. "otter-ladder-crimson"); Option B: `Tarrowby2026!` (company name plus a year plus a symbol). | Choose the three words | Length and unpredictability beat complexity rules. `Tarrowby2026!` is on the guessers' patterns (the company name, a year, a `!`); another random word adds far more than a swap or a symbol. The strength meter and the attack-half guesser show why. |
-| 5 | `e9_signup` | password-practice (ENG-02) | A new FuelWise supplier portal sign-up: (a) a unique generated password vs "use my usual one"; (b) a security answer "mother's maiden name" with a true answer vs a made-up one stored in the manager. | Choose generate; choose the made-up answer | A unique generated password means a breach of FuelWise can't open anything else; the reuse rig in the attack half is the mirror. A true security answer can be found online, so a made-up one kept in the manager is safer. |
-| 6 | `e9_signin_ladder` | password-practice (ENG-02) | "This service offers three ways to sign in: a passkey, the authenticator app with number matching, or a text code. Pick the strongest it offers." | Choose the passkey | A passkey only works on the real site, so it can't be phished or relayed; the app with number matching is next; a text code is a last resort but still better than a password alone. (Refresh as NCSC advice moves; passkeys became the first choice in April 2026.) |
-| 7 | `e9_shared_pc` | password-practice / card (ENG-02) | A depot PC with its password on a sticky note on the monitor, readable from the loading bay. Options: use the note to sign in / ask for your own account or the service desk. | Ask for your own account or the service desk | A shared login means nobody knows who did what, the password spreads to anyone who walks past, and leavers keep access. Don't use a found password; ask the service desk. (Remaps the old warehouse scene; LO6.) |
+| 4 | `e9_passphrase` | `choice` (ENG-09a) | "Which is stronger?" Option A: three random words (game words, e.g. "otter-ladder-crimson"); Option B: `Tarrowby2026!` (company name plus a year plus a symbol). | Choose the three words | Length and unpredictability beat complexity rules. `Tarrowby2026!` is on the guessers' patterns (the company name, a year, a `!`); another random word adds far more than a swap or a symbol. The strength meter is drawn as static authored bands (no live scoring of typed input, ENG-09a Stop-and-ask); the attack-half guesser shows why. |
+| 5 | `e9_signup` | `choice` (ENG-09a) | A new FuelWise supplier portal sign-up: (a) a unique generated password vs "use my usual one"; (b) a security answer "mother's maiden name" with a true answer vs a made-up one stored in the manager. | Choose generate; choose the made-up answer | A unique generated password means a breach of FuelWise can't open anything else; the reuse rig in the attack half is the mirror. A true security answer can be found online, so a made-up one kept in the manager is safer. |
+| 6 | `e9_signin_ladder` | `choice` (ENG-09a) | "This service offers three ways to sign in: a passkey, the authenticator app with number matching, or a text code. Pick the strongest it offers." | Choose the passkey | A passkey only works on the real site, so it can't be phished or relayed; the app with number matching is next; a text code is a last resort but still better than a password alone. (Refresh as NCSC advice moves; passkeys became the first choice in April 2026.) |
+| 7 | `e9_shared_pc` | `choice` (ENG-09a) | A depot PC with its password on a sticky note on the monitor, readable from the loading bay. Options: use the note to sign in / ask for your own account or the service desk. | Ask for your own account or the service desk | A shared login means nobody knows who did what, the password spreads to anyone who walks past, and leavers keep access. Don't use a found password; ask the service desk. (Remaps the old warehouse scene; LO6.) |
 
 Rows 1 and 2 are the explicit mirror pair (aw5): the same app and account, one started by you (Approve) and one you didn't (Deny and report), so "a prompt arrived" is not itself the tell. Cut row 6 or row 7 to reach six if the orchestrator prefers; keep rows 1 and 2 (the pair) and at least one password card and the fake-IT card.
 
-ENG-02 owns the exact data shape for rows 4 to 7 (word tiles, the strength meter bands, the vault-health view, the sign-up fill test, the sign-in ladder). This spec gives the content; the packet gives the fields. Rows 1 to 3 are ordinary triageSet messages (copy the `e3_push_early` `push` shape for the push cards).
+**ENG-09a** owns the data shape for rows 4 to 7: each is a `choice` triage message, `rec.choice = { prompt, options: [{ id, label }], correct: "<id>", note }`, scored under the `awareness` profile (correct option = a right move, else a miss). No free text. Any strength meter or vault-health view is drawn as static authored bands, not a live score of typed input (ENG-09a Stop-and-ask). This spec gives the content; ENG-09a gives the fields. Rows 1 to 3 are ordinary triageSet messages (copy the `e3_push_early` `push` shape for the push cards).
 
 ## 12. Debrief cards
 
@@ -155,28 +179,28 @@ Built debrief view, core_03 order:
 6. The customer report route (slot).
 7. **The no-blame line** (`debrief.noBlameLine: true`). Draft: "Reusing a password is ordinary and common; this is how most accounts are broken into, not a sign anyone was careless. A miss here just shows what to change tonight."
 
-Concept cards (short, core_03): how passwords are stolen; the sign-in ladder; browsers, notes and managers; what a passkey is. Author in the concepts.md voice.
+Concept cards (short, core_03): how passwords are stolen; the sign-in ladder; browsers, notes and managers; what a passkey is. Author in the concepts.md voice, as entries in **ENG-09b**'s array form of `strings.conceptPanel` (the built `conceptPanel` is a single panel, so more than one card needs ENG-09b).
 
 ## 13. Defend-only variant
 
-Shell id `e9_passwords_defend`, stages `["brief", "defend", "debrief"]`, same defend set `e9_lock_it_down`, prefix `episode_e9_passwords_defend_defend_`. Put the defend-only `brief` and `scopeNote` under `awarenessEpisode._defendOnly`. Draft defend-only brief: "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down: handle the prompts, choose stronger passwords, and don't hand anything to a message dressed up as IT. No real password is ever typed here." Both variants join both seeded Hacktivity courses. **Both variants need ENG-02.**
+Shell id `e9_passwords_defend`, stages `["brief", "defend", "debrief"]`, same defend set `e9_lock_it_down`, prefix `episode_e9_passwords_defend_defend_`. Put the defend-only `brief` and `scopeNote` under `awarenessEpisode._defendOnly`. Draft defend-only brief: "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down: handle the prompts, choose stronger passwords, and don't hand anything to a message dressed up as IT. No real password is ever typed here." Both variants join both seeded Hacktivity courses (follow `01_PIPELINE.md` P12 for the seeding; do not use `awareness_deploy.py`, Round 1 ruling 8). **The defend-only variant needs ENG-09a** (the `choice` password cards), not ENG-02; the full variant also needs ENG-02 for its `guess` attack half.
 
 ## 14. Check-form items it feeds (see 10_CHECK_FORMS.md)
 
-E9 feeds the **general or mobile** check-form pair at Tarrowby; the unstarted-push item is already in the helpdesk form from E3, so do not duplicate it. Do not edit the six built role forms. New items with mirror pairs for the password content (a stronger-passphrase pick, a reuse-vs-unique sign-up, a made-up-vs-true security answer) likely need a new topic check form (ENG-09), because the existing role forms are email-triage shaped and cannot score a password-practice card. Flag this to the check-forms spec: E9's password cards may not fit any existing check-form surface at all, which is itself an ENG-02/ENG-09 question.
+E9's topic (core_03 passwords and MFA) feeds the new **`general_v2`** check-form pair, built by `10_CHECK_FORMS.md` (Round 1 ruling 1 adopts `10`'s two-pair scheme and drops the per-topic forms, so there is no separate password form). Do not edit the six built role forms. `general_v2` item 3 (MFA/password-manager rollout) and item 4 (the unrequested push) already carry E9's measurable content as ordinary `email`/`push` triage items. The password-practice `choice` cards (rows 4 to 7) are an episode defend-half surface and are **not** carried into a check form: `general_v2` scores only the shared-library flags on triage-shaped items, and a `choice` card's "right move" is not one of those flags, so the passphrase/sign-up/ladder cards stay defend-set only. There is no form-building engine packet (the stale `ENG-09` reference is dropped, Round 1 R1_content M5); `general_v2` is built by `10`'s generator. Keep `passPercent` 0.
 
 ## 15. Files to create or change
 
 - `planning_notes/phishing_and_social_engineering/awareness/e9/attack.json` (new): people, intelFacts, osint sites, and the `guess` config (the guesser templates, the reuse step, the passphrase demo).
-- `planning_notes/phishing_and_social_engineering/awareness/e9/defend.json` (new): the triageSet `e9_lock_it_down` (push and fake-IT cards), the ENG-02 password-card config, the `awarenessEpisode` block (`strings`, `_defendOnly`, `debrief`), and a `_brandAdditions` note for RiverReach Angling and Pennington Rangers.
-- `scenarios/awareness_e9_passwords/scenario.json.erb`, `mission.json`, `ink/nilesh_solanki.ink` (new): the full-episode shell, wired like E6 (Tarrowby room). Globals to declare: `episode_e9_passwords_state: {}`, `se_awareness_records: []`, `episode_e9_passwords_defend_{percent,reportRate,done,pass}`, `se_osint_state: {}`, `se_intel_tarrowby_mather_role/_team/_pet/_forum`, `se_intel_tarrowby_founded`, plus any `guess_*` state globals ENG-02 defines. The host ink completes the attack task on the guesser-done global and the conclusion task on `episode_e9_passwords_defend_done === true`.
+- `planning_notes/phishing_and_social_engineering/awareness/e9/defend.json` (new): the triageSet `e9_lock_it_down` (push and fake-IT cards as ordinary messages, plus the ENG-09a `choice` cards rows 4 to 7), the `awarenessEpisode` block (`strings`, `_defendOnly`, `debrief`), and a `_brandAdditions` note for RiverReach Angling and Pennington Rangers.
+- `scenarios/awareness_e9_passwords/scenario.json.erb`, `mission.json`, `ink/nilesh_solanki.ink` (new): the full-episode shell, wired like E6 (Tarrowby room). Globals to declare: `episode_e9_passwords_state: {}`, `se_awareness_records: []`, `episode_e9_passwords_defend_{percent,reportRate,done,pass}`, `se_osint_state: {}`, `se_intel_tarrowby_mather_role/_team/_pet/_forum`, `se_intel_tarrowby_founded`, plus the `guess_e9_landed` global (ENG-02's `landedGlobal`) and any other `guess_*` state globals ENG-02 defines. The host ink completes the attack task on `guess_e9_landed` and the conclusion task on `episode_e9_passwords_defend_done === true`.
 - `scenarios/awareness_e9_passwords_defend/` (new): the defend-only shell.
-- The two seeded Hacktivity courses, through `awareness_deploy.py` (feature level only).
-- ENG-02 engine work: owned by the ENG-02 packet.
+- The two seeded Hacktivity courses: follow `01_PIPELINE.md` P12 (feature level only); do not use `awareness_deploy.py` for seeding.
+- ENG-02 (attack-half `guess`) and ENG-09a (`choice` cards) engine work: owned by those packets.
 
 ## 16. Bridge script outline
 
-`tools/playtest/se/bridge-e9-full.jsonl` (and defend-only), modelled on the existing bridges and whatever test hooks ENG-02 exposes for the guesser and the password cards. Steps: brief; OSINT collects Colin's five facts; the guesser assembles the list and the reuse step lands; the flip plays the flood; defend handles each card on the critical path (Approve row 1, Deny-and-report rows 2 and 3, the strong choice on rows 4 to 7); conclude on `episode_e9_passwords_defend_done`. Run through `check-bridge.mjs` and `run-suite.sh`. The bridge depends on ENG-02's test bridge for the new surfaces.
+`tools/playtest/se/bridge-e9-full.jsonl` (and defend-only), modelled on the existing bridges and whatever test hooks ENG-02 exposes for the guesser and ENG-09a for the `choice` cards. Steps: brief; OSINT collects Colin's five facts; the guesser assembles the list and the reuse step lands; the flip plays the flood; defend handles each card on the critical path (Approve row 1, Deny-and-report rows 2 and 3, the strong choice on rows 4 to 7); conclude on `episode_e9_passwords_defend_done`. Run through `check-bridge.mjs` and `run-suite.sh`. The bridge depends on ENG-02's test bridge for the guesser and ENG-09a's for the `choice` cards.
 
 ## 17. Acceptance checks
 
@@ -199,14 +223,13 @@ E9 feeds the **general or mobile** check-form pair at Tarrowby; the unstarted-pu
 
 ## 19. Stop and ask if
 
-- ENG-02 is not available (the full and defend-only variants both need it; there is no partial ship as there is for E8).
-- The stage-order lint will not allow `osint -> build -> flip` with no `write`, and ENG-02/ENG-08 cannot relax it.
-- No check-form surface can score the password-practice cards and the check-forms spec has not decided on a new topic form.
-- The orchestrator wants the guesser in a dedicated new stage id rather than repurposing `build`.
+- ENG-09a is not available (both the full and defend-only variants need it for the `choice` cards; the full variant also needs ENG-02 for the `guess` attack half). There is no partial ship as there is for E8.
+- The stage-order lint will not allow `brief osint guess flip defend debrief` with no `write`, and ENG-08 cannot relax it.
+- ENG-02's single-fact-per-slot template model cannot express a needed guess pattern and multi-fact templates are refused (see §20).
 
 ## 20. Open questions
 
-1. **ENG-02 config shape.** The `awarenessEpisode.guess` block and the password-card data shapes (rows 4 to 7) are this spec's content proposals; the ENG-02 packet owns the final keys and whether the guesser lives in `build` or a new stage.
+1. **ENG-02 template model.** The `awarenessEpisode.guess` block uses ENG-02's shape (§9), with one `factId` per pattern slot and the fixed digits baked into each template. If ENG-02 would rather support multi-fact templates (a token from another slot's fact), that is its decision; E9's content works either way. (Resolved in Round 1: the guesser lives in a new `guess` stage, not `build`; the password cards rows 4 to 7 are ENG-09a `choice` items, not ENG-02.)
 2. **Attack target.** Colin Mather (built cast) is used as the guess target. Confirm, or pick another Tarrowby depot colleague (Kaylee Dunford, Callum Whiteley).
 3. **New names.** RiverReach Angling (`riverreachangling.example`) and Pennington Rangers need the pre-ship web search and a BRAND_SET note; FuelWise is reused from E6 (confirm its domain).
 4. **Check forms.** Whether E9's password cards feed the general/mobile forms or a new topic form, and whether they can be scored on any existing check surface at all.

@@ -34,7 +34,7 @@ reuse the built shell machinery.
 
 ## Depends on
 
-- The E8 to E17 episode briefs (01 to 09 in this folder) for the topic wording, the brand companies
+- The E8 to E17 episode briefs (`episodes/E08` to `E17` in this folder) for the topic wording, the brand companies
   and the cast each episode introduces. This brief does **not** wait on them: the items below are
   self-contained and cite the module `concepts.md` section each one teaches. Where an episode brief
   later names a different sender or company for the same topic, align to it.
@@ -42,10 +42,15 @@ reuse the built shell machinery.
   form is set at Carrholme (the E11 company). That brand-set addition and its room are E11's work
   (`TODO.md` section 1). If Carrholme is not ready, the fallback is to set `data_conduct` at
   Quayholt Insurance (see "Stop and ask if").
-- No engine packet is required. Every scored flag below is an existing id in the `00` library. If a
-  later author wants a dedicated tell (for example a "need to know" or "remote access" chip), that
-  is a `02_ENGINE_WORK.md` addition to the shared library in `systems/phish-rules.js`; this brief
-  avoids it.
+- No form-building engine packet is required. Every scored flag in the item lists below is **an
+  existing id in the `00` library, or an id that ENG-08 adds to the shared library** (Round 1
+  ruling 1: "existing ids, or ids that ENG-08 adds to the shared library"). The two forms as
+  authored use existing library ids only, so they build with no ENG-08 change; where a slot is
+  rebalanced to score one of the episode tells ENG-08 promotes to the shared library (for example
+  E8's `unexpected_sent_item` / `unrequested_reset` / `ransomware_note`, or E10's `fake_check_paste`
+  / `fake_update_prompt` / `dangerous_download`), that id must be in `CHANNEL_TELLS` in both
+  `systems/phish-rules.js` and `scripts/validate_social/triage.rb` first. A check-form item never
+  scores a scenario-local tell; any tell a form scores must be in the shared library (ruling 1).
 
 ## Owner model
 
@@ -100,6 +105,21 @@ tailgating and badges, so E12's main measurement stays in its own episode. One E
 item (a visitor or courier talking their way to access by message) sits in `general_v2`; the rest of
 E12 is not checked by a form, and that is deliberate.
 
+**This is the settled scheme (Round 1 ruling 1).** `general_v2` and `data_conduct` are the **only**
+new check forms for E8 to E17; the per-topic forms the episode specs once named (`data_form_a/b`,
+`social_form_a/b`, `shadowit_form_a/b`, `insider_form_a/b`, `aup_form_a/b`, and any "new
+physical-security form") are dropped. **These two item lists are the single home for every check
+item E8 to E17 feed**: an episode spec's §14 points here and does not define its own form. The
+episode-to-form mapping is: E8 (core_04) and E9 (core_03) and E10 (core_08/07) and E13 (core_15) and
+E15 (core_13) and one E12 (core_10) pretext item feed `general_v2`; E11 (core_05/06), E14 (core_12),
+E16 (core_14) and E17 (core_16) feed `data_conduct`.
+
+**The trade-off to put to the user (ruling 1).** Two broad pairs give the organiser no per-topic
+pre and post figure: the change is measured per form (`general_v2` and `data_conduct`), not per
+episode topic. If a per-topic pre/post figure is wanted, that is the only reason to keep more pairs;
+absent it, two pairs win (fewer, well-matched forms are easier to keep parallel, which is the
+measurement claim). Flag this trade-off to the user; do not build more pairs without their go-ahead.
+
 ## Files to create or change
 
 - Create `planning_notes/phishing_and_social_engineering/awareness/checks_v2/general_v2.json` (a
@@ -145,11 +165,15 @@ Everything here mirrors the built forms. Read a built pre and post shell alongsi
   `PERMUTE` array per form in the generator so the phish land in **disjoint ordinal slots** across A
   and B: no ordinal slot is a phish in both forms of a pair, and no slot carries the same flag
   signature in both (`CHECK_PARITY_AUDIT.md` B1, and the `PERMUTE` comment in `gen_e3_e5_shells.py`).
-  A pure reorder changes no counts and no flag multiset, so parity holds. Example arrays
-  (`new[i] = old[order[i]]`, lists of 10 indices), to be checked for disjointness by the audit step:
-  - `general_v2_form_a`: `[0, 1, 3, 2, 4, 5, 6, 7, 8, 9]` is **not** disjoint; use e.g.
-    `[2, 0, 1, 4, 3, 6, 5, 9, 7, 8]` for A and `[7, 3, 0, 6, 1, 8, 5, 2, 9, 4]` for B, then run the
-    disjointness check and adjust until no slot is a phish in both.
+  A pure reorder changes no counts and no flag multiset, so parity holds. With the phish authored at
+  ordinal slots 2, 4, 6, 8 (1-based; indices 1, 3, 5, 7), a worked **disjoint** pair, verified by
+  hand (`new[i] = old[order[i]]`, lists of 10 indices):
+  - form A `[1, 0, 3, 2, 5, 4, 7, 6, 9, 8]` puts the phish at output slots {1, 3, 5, 7} (indices
+    0, 2, 4, 6), and form B `[0, 3, 2, 1, 4, 7, 6, 5, 8, 9]` puts them at output slots {2, 4, 6, 8}
+    (indices 1, 3, 5, 7). The two phish-slot sets are disjoint, so no slot is a phish in both. The
+    earlier draft (`[2, 0, 1, 4, 3, 6, 5, 9, 7, 8]` / `[7, 3, 0, 6, 1, 8, 5, 2, 9, 4]`) was **not**
+    disjoint (slots 4 and 6 are phish in both), so do not copy it. Still run the audit's disjointness
+    check (step 2) on whatever arrays you ship.
 - Each pair becomes four shells, exactly as the built roles (`gen_e3_e5_shells.py` `check()` and
   `main()`): `pre_*_ab` carries form A at stage `pre`; `post_*_ab` carries form B at stage `post`;
   `pre_*_ba` carries form B at stage `pre`; `post_*_ba` carries form A at stage `post`. The form
@@ -158,15 +182,24 @@ Everything here mirrors the built forms. Read a built pre and post shell alongsi
 
 ### Verify settings
 
-The scenario files are the source of truth, and the user ruled they are right (`BRAND_SET.md`
-section 6, corrected note; four role forms have Verify on: finance, executive, helpdesk, mobile).
+The scenario files are the source of truth, and the user ruled they are right. Confirmed against the
+built shells on 2026-10-28: four role forms have Verify on (`finance`, `helpdesk`, `executive`,
+`mobile`, all `verifyVerdict: true`); `general` and `hr` have it off (the key is absent, not `false`).
+`general_v2` follows `general`, and `data_conduct` follows the Verify-on forms.
 
-- **`general_v2`: Verify off** (`"verifyVerdict": false`, and do not set it, matching `general` and
-  `hr`). It carries no call or voicemail items, so no verdict needs the "ring back" action.
+Under the `awareness` profile, Verify scores the same as Report (full marks on both an unsafe item
+and a genuine one, `triage-scoring.js` `VERDICT_POINTS`). So turning Verify on never lets "verify
+everything" beat the measurement: the four unsafe items are still what discriminate, and a cautious
+learner is not marked down. This is why the pre/post comparison only requires that A and B offer the
+same verdicts (so a pair is compared like with like), not that Verify be off.
+
+- **`general_v2`: Verify off** (do not set `verifyVerdict`, matching `general` and `hr`, which leave
+  the key absent). It carries no call or voicemail items, so no verdict needs the "ring back" action;
+  its `page` item (item 2) uses the built page shape, whose verdicts are Trust/Report/Delete with no
+  Verify (page cards never offer it), so Verify-off is correct for every item.
 - **`data_conduct`: Verify on** (`"verifyVerdict": true`), because its lesson is "check back before
-  you act" and it carries a call item (item 4). A and B must match, so Verify is on in both; the
-  pre/post comparison still compares like with like (same verdicts offered in both forms of a pair),
-  which is the only parity requirement for Verify (`BRAND_SET.md` section 6 corrected note).
+  you act" and it carries a call item (item 4), whose "ring back" action is the Verify verdict. A and
+  B must match, so Verify is on in both forms of the pair.
 
 Both forms: `"scoringProfile": "awareness"`, `"feedbackMode": "end"`, `"headerPanel": "collapsed"`,
 `"glossary": "closed"`, `"outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 }`.
@@ -332,8 +365,9 @@ Apply `CHECK_PARITY_AUDIT.md`'s method to each new pair:
 - Do not edit the six built role forms or their fragments, shells or `BRAND_SET.md` section 6.
 - Do not reuse the global names in a way that drops the explicit `importGlobals.from`; the post shell
   must import from its own pre mission by name.
-- Do not invent flag ids. Use the `00` section 2 library. If a topic needs a new reusable tell, stop
-  and point to `02_ENGINE_WORK.md`.
+- Do not invent flag ids. Use the `00` section 2 library, or an id ENG-08 adds to the shared library
+  (ruling 1). A check-form item never scores a scenario-local tell. If a topic needs a new reusable
+  tell not yet in the shared library, stop and point to `02_ENGINE_WORK.md` (ENG-08).
 - Do not run the generator into the repo; regen into a scratch folder, confirm no-change parity,
   then copy only changed files (HANDOVER.md section 4).
 - Do not add the new checks to either seeded Hacktivity course.

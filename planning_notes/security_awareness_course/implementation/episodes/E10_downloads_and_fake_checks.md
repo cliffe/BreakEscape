@@ -1,6 +1,6 @@
 # E10 fake downloads and "verify you are human" pages (implementation spec)
 
-Status: draft for a Sonnet implementer. E10 is a new awareness episode at Quayholt Insurance that **extends the built E5**: same company, same host room, same look-alike-page builder for the attack half. The new work is a defend half of browser-screen triage (fake checks, fake updates, fake alarms, extension permissions, dangerous downloads, browser warnings), which needs **ENG-03** (download and warning states, and a fake check page). The content is given in full here; ENG-03 owns the new browser surfaces.
+Status: draft for a Sonnet implementer. E10 is a new awareness episode at Quayholt Insurance that **extends the built E5**: same company, same host room, same look-alike-page builder for the attack half. The new work is a defend half of browser-screen triage (fake checks, fake updates, fake alarms, extension permissions, dangerous downloads, browser warnings), which needs **ENG-03a** (download and warning states, and a fake check page). The content is given in full here; ENG-03a owns the new browser surfaces.
 
 Writer: opus48 agent. Never run a generator into the repo. Never `git stash`. No attribution lines in commits.
 
@@ -20,18 +20,19 @@ Learning outcomes (from `modules/core_08_safe_web_and_downloads/`): LO1 (start f
 - Shapes and ids: `planning_notes/phishing_and_social_engineering/designs/00_data_contract.md` (the shared channel-tell library: `lookalike_domain`, `padlock_myth`, `linkCredible`; the `page` card in a triageSet `truth`) and `designs/07_landing_page_builder.md` (the builder E5 and E10 share) and `designs/11_awareness_product_episodes.md`.
 - Companies and cast: `planning_notes/phishing_and_social_engineering/awareness/BRAND_SET.md` (Quayholt roster and the E5 `_brandAdditions`: real hosts, look-alikes, DocShare, Ashcombe Solicitors, MailGuard); `modules/.../03_WORLD_AND_CAST.md` (the E10 row: Niamh Doherty plus a Quayholt IT colleague).
 - Runner: `public/break_escape/js/minigames/episode-runner/episode-model.js` (`STAGE_IDS`, `childLaunch`, `flipPage`).
-- Engine packet: `implementation/02_ENGINE_WORK.md`, packet **ENG-03** (and ENG-08 for new channel tells and any verdict-label change).
+- Engine packet: `implementation/02_ENGINE_WORK.md`, packet **ENG-03a** (and ENG-08 for new channel tells and any verdict-label change).
 
 ## 3. Depends on
 
-- **ENG-03** (download and warning states, and a fake check page). The defend half's new browser screens (fake check with its clipboard reveal, download bar, extension-permission prompt, full-screen alarm, browser warning, search-results page) are new states on the E5 mock-browser/page card. E10 cannot build its defend half without ENG-03. §11 states the states and config needed.
+- **ENG-03a** (triage `page` browser-screen states). The defend half's new browser screens (fake check with its clipboard reveal, download bar, extension-permission prompt, full-screen alarm, browser warning, relaunch bar) are new `page.state` values on the E5 `page` card, plus a `triageSet.verdictLabels` relabel. E10 cannot build its defend half without ENG-03a. §11 states the states and config needed. (ENG-03b, the fake-download build page, is optional and only if the attack half is changed, §9.)
 - **The E5 look-alike-page builder** (built, `designs/07`) for the attack half. Reuse it unchanged; E10 adds no attack-side engine work.
-- **ENG-08** for the new channel tells (§11) and, if ENG-03 keeps the E5 Trust/Report/Delete verdicts, the extra "Carry on / Close and report / Go the trusted way" verdict labels the browser screens want (confirm whether this is a label change or a new verdict).
+- **ENG-09b** (debrief panel list). E10's debrief shows several short concept cards (§12), and the built `strings.conceptPanel` is a single panel; ENG-09b adds the array form.
+- **ENG-08** for the new channel tells (§11). Per ENG-08's tell table, three of E10's web tells are classed **shared** (`fake_check_paste`, `fake_update_prompt`, `dangerous_download`, so a `general_v2` item may later score them) and two are **scenario-local** (`fake_alarm_callback`, `browser_permission_grab`, used only by E10). Either way E10 lists all five in `channelTells` with a `flagChips` label and a `factorStrings.<id>.redFlag` sentence, so the set validates whatever the shared/local split is. The three-way browser verdict is **not** an ENG-08 verdict change: ENG-03a decided it is a `verdictLabels` relabel of the existing ids (see §11).
 
 ## 4. Owner models
 
 - Content and dialogue: `opus48`.
-- ENG-03 engine surface and the shell wiring: general-purpose or Sonnet, after ENG-03 is built.
+- ENG-03a engine surface and the shell wiring: general-purpose or Sonnet, after ENG-03a is built.
 
 ## 5. Company, room and host
 
@@ -60,16 +61,16 @@ All people and companies fictional; every domain `.example`; no homographs.
 | build (look-alike page, E5 builder) | 2.5 | Build one look-alike page (a fake software-download or sign-in page); reuse E5's builder. |
 | write | 2.0 | Send one email carrying the link (as E5). |
 | flip | 1.5 | The victim follows the link and meets the page; the clipboard reveal concept is previewed. |
-| defend | 4.0 | About 6 to 7 browser screens (ENG-03), immediate feedback. |
+| defend | 4.0 | About 6 to 7 browser screens (ENG-03a), immediate feedback. |
 | debrief | 2.0 | Reasoning cards, the module line, the habit, the "On Monday" card, the report route, the no-blame line. |
 
 Defend-only variant: brief, defend, debrief, about 8 minutes.
 
 ## 7. Stages (runner stage ids)
 
-Full episode: `["brief", "osint", "build", "write", "flip", "defend", "debrief"]`. This is **identical to the built E5 stage list** (`awareness_e5_signin_pages`), which is what "extends E5" means: the attack half (osint, build, write, flip) is E5's, reused. The only new behaviour is in `defend`, where the triageSet carries ENG-03's new browser-screen card states.
+Full episode: `["brief", "osint", "build", "write", "flip", "defend", "debrief"]`. This is **identical to the built E5 stage list** (`awareness_e5_signin_pages`), which is what "extends E5" means: the attack half (osint, build, write, flip) is E5's, reused. The only new behaviour is in `defend`, where the triageSet carries ENG-03a's new browser-screen card states.
 
-Defend-only: `["brief", "defend", "debrief"]`. **The defend-only variant needs ENG-03** (the browser screens are the whole defend half), so it cannot ship before the packet, unlike E8's defend-only.
+Defend-only: `["brief", "defend", "debrief"]`. **The defend-only variant needs ENG-03a** (the browser screens are the whole defend half), so it cannot ship before the packet, unlike E8's defend-only.
 
 All ids from the frozen `STAGE_IDS`. E10 adds no new stage id.
 
@@ -83,7 +84,7 @@ All ids from the frozen `STAGE_IDS`. E10 adds no new stage id.
 
 ## 9. Attack half (reused from E5)
 
-Not scored. Reuse E5's attack half unchanged: OSINT finds the portal and the vendor; the look-alike-page builder (`designs/07`) builds one page; the mail client sends one email carrying the link. The only content difference is flavour: instead of a sign-in page, the learner builds a **fake software-download page** (or keeps the sign-in page; either works, because the builder judges the page by `linkCredible` and the look-alike domain the same way). To keep E10 truly "extends E5 with no attack-side engine work", **use the E5 sign-in-page build as-is** and let the defend half carry all the new material. If the orchestrator wants the attack half to build a fake-download page specifically, that is an ENG-03 addition (a new page purpose), noted as a choice.
+Not scored. Reuse E5's attack half unchanged: OSINT finds the portal and the vendor; the look-alike-page builder (`designs/07`) builds one page; the mail client sends one email carrying the link. The only content difference is flavour: instead of a sign-in page, the learner builds a **fake software-download page** (or keeps the sign-in page; either works, because the builder judges the page by `linkCredible` and the look-alike domain the same way). To keep E10 truly "extends E5 with no attack-side engine work", **use the E5 sign-in-page build as-is** and let the defend half carry all the new material. If the orchestrator wants the attack half to build a fake-download page specifically, that is **ENG-03b** (a new `landingPages[].pageType: "download"`), noted as an optional choice.
 
 Reuse the E5 facts (`quayholt_sso_portal`, `quayholt_it_desk`, `quayholt_sso_migration`, `quayholt_staff_claims`), templates, `landingPages` (`sso_login`) and the `sso_staff` phishTarget from `e5/attack.json`, with the target renamed if the orchestrator wants a fresh victim. The one consequential choice the flip quotes (aw2) is the same as E5: the look-alike domain, the one thing the attacker can never make perfect.
 
@@ -93,25 +94,27 @@ Reuse E5's `flipPage` flip: the victim follows the link and meets the built page
 
 ## 11. Defend set
 
-The defend half is a morning of browser screens: the E5 `page` card extended with ENG-03's new states. Set id `e10_browser_morning`; episode prefix `episode_e10_downloads_and_fake_checks_defend_`. Config as E5's page set: `scoringProfile: "awareness"`, `verifyVerdict: false` (the web screens have no "ring someone" step; the action is Carry on / Close and report / Go the trusted way), `feedbackMode: "immediate"`, `headerPanel: "off"`, `glossary: "closed"`, `reportAlwaysVisible: true`.
+The defend half is a morning of browser screens: the E5 `page` card extended with ENG-03a's new states. Set id `e10_browser_morning`; episode prefix `episode_e10_downloads_and_fake_checks_defend_`. Config as E5's page set: `scoringProfile: "awareness"`, `verifyVerdict: false` (the web screens have no "ring someone" step; the action is Carry on / Close and report / Go the trusted way), `feedbackMode: "immediate"`, `headerPanel: "off"`, `glossary: "closed"`, `reportAlwaysVisible: true`.
 
-**Verdicts.** E5's page cards use Trust / Report / Delete. The core_08 design wants **Carry on / Close and report / Go the trusted way** (portal, bookmark or service desk). ENG-03 must either relabel the three page verdicts for a browser set or add the "Go the trusted way" verdict. Simplest mapping, if a label change is enough: Trust -> "Carry on", Report -> "Close and report", Delete -> "Go the trusted way (bookmark/portal)". Confirm with ENG-03/ENG-08 whether this is a label change or a new verdict; the content below assumes the three-way browser verdict.
+**Verdicts (decided by ENG-03a: a label change, not a new verdict).** E5's page cards use Trust / Report / Delete. The core_08 design wants **Carry on / Close and report / Go the trusted way**. ENG-03a settles this as a `triageSet.verdictLabels` relabel of the existing ids, with the verdict ids (`trust`/`report`/`delete`) and the `awareness` scoring unchanged, so the measurement is identical to E5's page set. E10 sets on the set: `"verdictLabels": { "trust": "Carry on", "report": "Close and report", "delete": "Go the trusted way" }`. There is no new verdict id. (Verify stays off for this set, as `verifyVerdict: false` above; the web screens have no "ring back" step.)
 
-**`channelTells`** array: `["lookalike_domain", "padlock_myth", "fake_check_paste", "fake_update_prompt", "fake_alarm_callback", "browser_permission_grab", "dangerous_download"]`. `lookalike_domain` and `padlock_myth` are shared-library tells (reused from E5). **The five new ids are E10's web tells with no built equivalent; add them to the shared channel-tell library (ENG-08)**, with these canonical strings:
+**`channelTells`** array: `["lookalike_domain", "padlock_myth", "fake_check_paste", "fake_update_prompt", "fake_alarm_callback", "browser_permission_grab", "dangerous_download"]`. `lookalike_domain` and `padlock_myth` are shared-library tells (reused from E5). The five new ids split two ways (ENG-08 tell table):
 
-- `fake_check_paste`: "A page telling you to paste or run something to prove you are human or to fix an error"
-- `fake_update_prompt`: "A web page saying your browser or software is out of date and offering the update"
-- `fake_alarm_callback`: "A full-screen alarm with a phone number to call"
-- `browser_permission_grab`: "A page or extension asking to read or change everything in your browser, or to send you notifications"
-- `dangerous_download`: "A download you did not ask for, or a program pretending to be a document"
+- **Shared library (ENG-08 classes these shared, so a `general_v2` item may score them):**
+  - `fake_check_paste`: "A page telling you to paste or run something to prove you are human or to fix an error"
+  - `fake_update_prompt`: "A web page saying your browser or software is out of date and offering the update"
+  - `dangerous_download`: "A download you did not ask for, or a program pretending to be a document"
+- **Scenario-local to E10 (declared in `channelTells`, with a `flagChips` label and a `factorStrings.<id>.redFlag` sentence on each flagging message; no library change):**
+  - `fake_alarm_callback`: "A full-screen alarm with a phone number to call"
+  - `browser_permission_grab`: "A page or extension asking to read or change everything in your browser, or to send you notifications"
 
-### Items (id, kind, screen, correct move, phish?, tells, reasoning; ENG-03 state in brackets)
+### Items (id, kind, screen, correct move, phish?, tells, reasoning; ENG-03a state in brackets)
 
 About 6 to 7 screens, with two mirror pairs so "anything unusual is a trap" cannot win. The hardest item (the fake check on a familiar site) is taught in the brief before it appears (core_08 pitfall: no gotchas).
 
-| # | id | screen (ENG-03 state) | correct move | phish? | tells | reasoning (perFlagNote / whyFine) |
+| # | id | screen (ENG-03a state) | correct move | phish? | tells | reasoning (perFlagNote / whyFine) |
 |---|---|---|---|---|---|---|
-| 1 | `e10_fake_check` | A "verify you are human" box over a faded copy of Fernside's real (hacked) site: "1. Press Windows + R. 2. Press Ctrl + V. 3. Press Enter." Shown as text with Follow / Close / Report buttons; a browser-side "What did this page copy?" reveal shows one line, "A hidden command that would run a program on your computer" (the command is never shown). (fake-check state) | Close and report | yes | `fake_check_paste` | A real check happens on the page: tick a box, pick pictures, type letters. No genuine check, error or download ever asks you to paste or run anything. The site is Fernside's own, but a familiar site is not a reason to do what it suddenly tells you; it has been hacked. (ENG-03 owns the clipboard reveal; the command is a harmless description, never real.) |
+| 1 | `e10_fake_check` | A "verify you are human" box over a faded copy of Fernside's real (hacked) site: "1. Press Windows + R. 2. Press Ctrl + V. 3. Press Enter." Shown as text with Follow / Close / Report buttons; a browser-side "What did this page copy?" reveal shows one line, "A hidden command that would run a program on your computer" (the command is never shown). (fake-check state) | Close and report | yes | `fake_check_paste` | A real check happens on the page: tick a box, pick pictures, type letters. No genuine check, error or download ever asks you to paste or run anything. The site is Fernside's own, but a familiar site is not a reason to do what it suddenly tells you; it has been hacked. (ENG-03a owns the clipboard reveal; the command is a harmless description, never real.) |
 | 2 | `e10_genuine_captcha` | A real "I'm not a robot" tick box and a grid of pictures, on Fernside's real site. (ordinary page) | Carry on | no | (none) | A genuine CAPTCHA only asks you to tick or pick on the page. This is the mirror for row 1: the tell is the instruction to your computer, not the word "verify". |
 | 3 | `e10_fake_update` | A banner on a news page (a genuine site the manager asked you to read): "Your browser is out of date. Download the update." with a download button. (fake-update state) | Close and report | yes | `fake_update_prompt` | Browsers update themselves and finish when you close and reopen them; at work IT manages that. A web page cannot know your browser needs updating, and no genuine update comes from a page. |
 | 4 | `e10_browser_relaunch` | The browser's own menu bar: "An update is ready. Relaunch to finish." (ordinary browser UI) | Carry on (relaunch) | no | (none) | This one is the browser itself, not a web page, finishing an update it downloaded in the background. The mirror for row 3: a page offering an update is a trap; the browser's own bar is genuine. |
@@ -145,28 +148,28 @@ Built debrief view, core_08 order:
 7. The customer report route (slot).
 8. **The no-blame line** (`debrief.noBlameLine: true`). Draft: "These pages are built to look ordinary, and a familiar site that has been hacked is the hardest of all. A miss here just shows what to look for; reporting fast, even after you have clicked or pasted, is what limits the damage, and nobody is in trouble for it."
 
-Concept cards (short, core_08): where software comes from; read the address; the four tricks (fake check, fake update, fake alarm, fake permission); if you slipped.
+Concept cards (short, core_08): where software comes from; read the address; the four tricks (fake check, fake update, fake alarm, fake permission); if you slipped. Author as entries in **ENG-09b**'s array form of `strings.conceptPanel` (the built `conceptPanel` is a single panel, so more than one card needs ENG-09b).
 
 ## 13. Defend-only variant
 
-Shell id `e10_downloads_and_fake_checks_defend`, stages `["brief", "defend", "debrief"]`, same defend set `e10_browser_morning`, prefix `episode_e10_downloads_and_fake_checks_defend_defend_`. Put defend-only `brief` and `scopeNote` under `awarenessEpisode._defendOnly`. Draft defend-only brief: "You're on an authorised exercise at Quayholt Insurance, a fictional company. You've a morning of ordinary work to get through, and the web keeps getting in the way: downloads, 'verify you are human' boxes, pop-ups that want you to call. For each page, decide whether to carry on, close and report, or go the trusted way. Nothing here touches a real site or runs on your computer." Both variants join both seeded Hacktivity courses. **Both variants need ENG-03.**
+Shell id `e10_downloads_and_fake_checks_defend`, stages `["brief", "defend", "debrief"]`, same defend set `e10_browser_morning`, prefix `episode_e10_downloads_and_fake_checks_defend_defend_`. Put defend-only `brief` and `scopeNote` under `awarenessEpisode._defendOnly`. Draft defend-only brief: "You're on an authorised exercise at Quayholt Insurance, a fictional company. You've a morning of ordinary work to get through, and the web keeps getting in the way: downloads, 'verify you are human' boxes, pop-ups that want you to call. For each page, decide whether to carry on, close and report, or go the trusted way. Nothing here touches a real site or runs on your computer." Both variants join both seeded Hacktivity courses (follow `01_PIPELINE.md` P12 for seeding; do not use `awareness_deploy.py`, Round 1 ruling 8). **Both variants need ENG-03a.**
 
 ## 14. Check-form items it feeds (see 10_CHECK_FORMS.md)
 
-E10 feeds the **general** check-form pair at Quayholt (the forms E5 seeds). Do not edit the six built role forms. New web items with mirror pairs (a fake check against a genuine CAPTCHA; a fake update against the genuine relaunch bar; a dangerous download against an expected PDF) likely need a new topic check form (ENG-09), because the existing general form is email/page-triage shaped and the browser screens are a new card surface (ENG-03). Flag to the check-forms spec. Keep `passPercent` 0 and the `triage_{stage}_` prefix.
+E10's topic (core_08/core_07) feeds the new **`general_v2`** check-form pair at Quayholt, built by `10_CHECK_FORMS.md` (Round 1 ruling 1 adopts `10`'s two-pair scheme and drops the per-topic forms). Do not edit the six built role forms, including the built `general` form: `general_v2` is a separate new pair. `general_v2`'s web item (item 2) uses the **built `page` shape** (a look-alike page), not E10's new `page.state` surfaces, so the check form needs no ENG-03a states (ENG-03a states this). `10` decides which tells its web item scores: the shared-library web tells (`fake_check_paste`, `fake_update_prompt`, `dangerous_download`, which ENG-08 classifies shared for `general_v2`) are available to it, but `10`'s current item 2 scores `lookalike_domain` / `padlock_myth` on the built page shape, so whether general_v2 adopts the new tells is `10`'s balance decision. E10's local-only screens (full-screen alarm, extension permission) are not scored in any check form, so `fake_alarm_callback` and `browser_permission_grab` stay scenario-local. There is no form-building engine packet (the stale `ENG-09` reference is dropped, Round 1 R1_content M5). Keep `passPercent` 0 and the `triage_{stage}_` prefix.
 
 ## 15. Files to create or change
 
 - `planning_notes/phishing_and_social_engineering/awareness/e10/attack.json` (new): the attack fragment, reusing E5's facts, templates, `landingPages` and phishTarget (with the vendor/portal flavour). If the attack half is left identical to E5, this can be a thin copy that points at E5's shapes.
-- `planning_notes/phishing_and_social_engineering/awareness/e10/defend.json` (new): the triageSet `e10_browser_morning` (the browser screens, with ENG-03 states), the `awarenessEpisode` block (`strings`, `_defendOnly`, `debrief`), and a `_brandAdditions` note for Pagewright, Fernside Catering, Ashby Supplies, and the Lena Fischer / Leo Brennan pool names if used.
-- `scenarios/awareness_e10_downloads_and_fake_checks/scenario.json.erb`, `mission.json`, `ink/niamh_doherty.ink` (and Leila's lines, either in Niamh's ink or a second NPC ink `ink/leila_nassar.ink`) (new): the full-episode shell wired like E5. Globals to declare: `episode_e10_downloads_and_fake_checks_state: {}`, `se_awareness_records: []`, `episode_e10_downloads_and_fake_checks_defend_{percent,reportRate,done,pass}`, `se_osint_state: {}`, the reused E5 `se_intel_*` facts, `se_landing_pages: {}`, `landing_*_built`, `landing_*_domain`, `phish_*_landed`, `phish_*_attempts`, plus any ENG-03 state globals the browser screens need. The host ink completes the attack task on the phish-attempts global and the conclusion task on `episode_e10_downloads_and_fake_checks_defend_done === true`.
+- `planning_notes/phishing_and_social_engineering/awareness/e10/defend.json` (new): the triageSet `e10_browser_morning` (the browser screens, with ENG-03a states), the `awarenessEpisode` block (`strings`, `_defendOnly`, `debrief`), and a `_brandAdditions` note for Pagewright, Fernside Catering, Ashby Supplies, and the Lena Fischer / Leo Brennan pool names if used.
+- `scenarios/awareness_e10_downloads_and_fake_checks/scenario.json.erb`, `mission.json`, `ink/niamh_doherty.ink` (and Leila's lines, either in Niamh's ink or a second NPC ink `ink/leila_nassar.ink`) (new): the full-episode shell wired like E5. Globals to declare: `episode_e10_downloads_and_fake_checks_state: {}`, `se_awareness_records: []`, `episode_e10_downloads_and_fake_checks_defend_{percent,reportRate,done,pass}`, `se_osint_state: {}`, the reused E5 `se_intel_*` facts, `se_landing_pages: {}`, `landing_*_built`, `landing_*_domain`, `phish_*_landed`, `phish_*_attempts`, plus any ENG-03a state globals the browser screens need. The host ink completes the attack task on the phish-attempts global and the conclusion task on `episode_e10_downloads_and_fake_checks_defend_done === true`.
 - `scenarios/awareness_e10_downloads_and_fake_checks_defend/` (new): the defend-only shell.
 - The two seeded Hacktivity courses, through `awareness_deploy.py` (feature level only).
-- ENG-03 engine work: owned by the ENG-03 packet.
+- ENG-03a engine work (page states and `verdictLabels`): owned by the ENG-03a packet; ENG-03b (download build page) only if the attack half is changed (§9).
 
 ## 16. Bridge script outline
 
-`tools/playtest/se/bridge-e10-full.jsonl` (and defend-only), modelled on `bridge-e5-full.jsonl` for the attack half and on whatever test hooks ENG-03 exposes for the browser screens. Steps: brief; OSINT; build the look-alike page (reuse E5's build steps); write and send; flip; defend works each screen on the critical path (Close and report the five phish screens, Carry on the genuine CAPTCHA and the genuine relaunch bar); conclude on `episode_e10_downloads_and_fake_checks_defend_done`. Run through `check-bridge.mjs` and `run-suite.sh`. Depends on ENG-03's test bridge for the new states.
+`tools/playtest/se/bridge-e10-full.jsonl` (and defend-only), modelled on `bridge-e5-full.jsonl` for the attack half and on whatever test hooks ENG-03a exposes for the browser screens. Steps: brief; OSINT; build the look-alike page (reuse E5's build steps); write and send; flip; defend works each screen on the critical path (Close and report the five phish screens, Carry on the genuine CAPTCHA and the genuine relaunch bar); conclude on `episode_e10_downloads_and_fake_checks_defend_done`. Run through `check-bridge.mjs` and `run-suite.sh`. Depends on ENG-03a's test bridge for the new states.
 
 ## 17. Acceptance checks
 
@@ -190,17 +193,16 @@ E10 feeds the **general** check-form pair at Quayholt (the forms E5 seeds). Do n
 
 ## 19. Stop and ask if
 
-- ENG-03 is not available (both the full and defend-only variants need it).
-- ENG-03 cannot provide the three-way browser verdict (Carry on / Close and report / Go the trusted way) and no decision has been taken on whether to relabel or add a verdict.
-- The validator rejects the five new channel tells and no ENG-08 slot exists to register them.
-- No check-form surface can score the browser screens and the check-forms spec has not decided on a new topic form.
-- The orchestrator wants the attack half to build a fake-download page specifically (an ENG-03 addition) rather than reusing E5's sign-in-page build.
+- ENG-03a is not available (both the full and defend-only variants need it).
+- ENG-03a cannot carry out the `verdictLabels` relabel on the browser set (the decision is a label change, not a new verdict; if even the relabel is not possible, ship the set with the built Trust/Report/Delete labels and note it degraded).
+- The validator rejects the three shared tells after the ENG-08 append, or a scenario-local tell with a `flagChips` label (it should not).
+- The orchestrator wants the attack half to build a fake-download page specifically (ENG-03b) rather than reusing E5's sign-in-page build.
 
 ## 20. Open questions
 
 1. **The IT colleague.** This spec names Leila Nassar (built Quayholt IT service desk agent) as the explainer, to avoid reusing a host and the clashing pool name Owain Jenkins. Darren Price (service desk team lead, E3's host) is the alternative the old game_design implies. Confirm one.
 2. **Vendor domains.** The module docs use `pagewright.co.uk` / `pagewright-download.com`; the awareness rule forces `.example`, so this spec uses `pagewright.example` / `pagewright-download.example`. Confirm, and run the pre-ship web search on Pagewright, Fernside Catering and Ashby Supplies.
 3. **Named colleagues in cards.** Whether to attribute the manager's task chat and the extension recommendation to Lena Fischer and Leo Brennan (pool names) or leave them unattributed.
-4. **Attack half.** Left identical to E5 (a sign-in-page build) to keep E10 free of attack-side engine work; confirm, or ask ENG-03 to add a fake-download build page.
-5. **ENG-03 verdict and card shapes.** The browser-screen states, the clipboard reveal, and the three-way verdict are this spec's content proposals; ENG-03 owns the final engine shapes.
+4. **Attack half.** Left identical to E5 (a sign-in-page build) to keep E10 free of attack-side engine work; confirm, or ask for ENG-03b (a fake-download build page).
+5. **ENG-03a card shapes.** The browser-screen states and the clipboard reveal are this spec's content proposals; ENG-03a owns the final engine shapes. (Resolved in Round 1: the three-way browser verdict is a `verdictLabels` relabel, not a new verdict, §11.)
 6. **Item count.** Seven screens drafted (eight with the browser-warning item); the floor of six keeps both mirror pairs.

@@ -43,9 +43,9 @@ onto Brightwell (game_design §"Setting and cast").
     `voicemail` and `call`; `CALL_ACTIONS`; no `video-call` kind exists).
   - `public/break_escape/js/minigames/person-chat/person-chat-ui.js:264`, the **hard-coded** `SECURE
     VIDEO LINK` label (ENG-07 makes it configurable).
-  - `public/break_escape/js/systems/npc-manager.js:1251-1278`, `conversationMode: "video-call"` opens
-    person-chat framed as a video call with a self-view PiP (opened by an event mapping; needs a
-    `targetKnot`).
+  - `public/break_escape/js/systems/npc-manager.js` (the `conversationMode: "video-call"` handling is
+    around `:910-912` and `:1100-1122`, not `:1251`), which opens person-chat framed as a video call
+    with a self-view PiP (opened by an event mapping; needs a `targetKnot`).
   - `public/break_escape/js/minigames/episode-runner/episode-model.js` (`STAGE_IDS`, `childLaunch`
     for the mail write stage and the triage defend stage).
 
@@ -55,8 +55,8 @@ onto Brightwell (game_design §"Setting and cast").
 |---|---|
 | **ENG-06** (authored AI-assistant chat) | The assistant surface used for the teaching beats and the attack flip: a chat window with authored replies only (no runtime LM), a strike-out paste panel, information-class tags, a "Check source" action, and a "summarise my emails" mode that surfaces the planted hidden instruction. Precise needs in section 9.1. |
 | **ENG-07** (configurable video-call label) | Replace the hard-coded `SECURE VIDEO LINK` (`person-chat-ui.js:264`) with the organisation's meeting-tool name ("Brightwell Meet") and an **External** participant tag, and expose that label to the triage `call` item that carries the Project Heron deepfake. Section 9.2. |
-| **ENG-08** (schema and validator) | Accept the new scenario-local tell ids `hidden_instruction` and `deepfake_request` (section 11); accept ENG-06's assistant-stage wiring and ENG-07's label fields. |
-| **ENG-09** (check-form needs) | AI/deepfake items join the **general** check pool (not a new role form) as mirror pairs (section 14). |
+| **ENG-08** (schema and validator) | **Add the stage order `brief write flip defend debrief`** (osint optional, the E13 attack is a mail write with no recon), so the lint accepts E13's stage list (`awareness.rb` `stage_orders` rejects it today, known issue 10). Accept the new scenario-local tell ids `hidden_instruction` and `deepfake_request` (section 11); accept ENG-06's assistant config and ENG-07's label fields. |
+| (check forms) | No engine packet. AI/deepfake items join the new **`general_v2`** check pair (built by `10_CHECK_FORMS.md`), not a new role form and not the built six, as mirror pairs (section 14). The stale `ENG-09` reference is dropped (Round 1 R1_content M5). |
 | (existing) | The mail-client template write stage, the triage `voicemail` and `call` kinds, the host-NPC done event (N16), the TTS pipeline for voiced lines. No change needed. |
 
 If ENG-06 slips, E13 cannot ship as designed (the assistant teaching and the injection flip have no
@@ -112,9 +112,12 @@ instruction is a template choice, not a found fact).
 
 ## 7. Stages (runner stage ids)
 
-Full: `"stages": ["brief","write","flip","defend","debrief"]` (all in `STAGE_IDS`). `write` is a
-**mail** attack (no `attack.callId`), so `writeKind` returns `'mail'` and the runner opens the
-mail-client template composer exactly as E7 does. The ENG-06 assistant beats and the ENG-07 announced
+Full: `"stages": ["brief","write","flip","defend","debrief"]` (all in `STAGE_IDS`). There is no
+`osint` stage (the attack needs no recon; the hidden instruction is a template choice, not a found
+fact). The current `awareness.rb` `stage_orders` lint requires `osint` and `write`, so it rejects
+this list today; **ENG-08 must add the osint-optional order `brief write flip defend debrief`** (§3,
+known issue 10). `write` is a **mail** attack (no `attack.callId`), so `writeKind` returns `'mail'`
+and the runner opens the mail-client template composer exactly as E7 does. The ENG-06 assistant beats and the ENG-07 announced
 demo are run in the **flip** region (section 9), because they are the "now it is aimed at you" empathy
 beats and the defence-side teaching; this keeps E13 inside the fixed `STAGE_IDS` with no new stage id.
 
@@ -270,7 +273,7 @@ glitches (core_15 pitfall; the debrief says even those can look right).
 - Reasoning card per item, each stamped **real**, **fake** or **made up** (game_design): the assistant's
   invented figure and the agency line are "made up"; the supplier email is a real supplier with a hidden
   instruction; the voicemail and the video call are "fake"; #2/#4/#6 are "real".
-- `conceptPanel` ("Where the fakes came from"): heading "Where the fakes came from"; text: "The voice
+- `conceptPanel` ("Where the fakes came from") - E13 has a **single** concept panel, so it uses the built one-panel `strings.conceptPanel` and does **not** need ENG-09b (unlike E8, E9 and E10, which have more than one card). Heading "Where the fakes came from"; text: "The voice
   and the faces were built from public material, a keynote, a webinar, holiday videos. That's all
   public, and that's all it takes. No hacking. You can't reliably spot a fake, so the answer is always
   to check another way." (Names sources, not steps, core_15 pitfall.)
@@ -300,9 +303,14 @@ Hacktivity courses (`WRITER_BRIEF.md`).
 
 ## 14. Check-form items it feeds (`10_CHECK_FORMS.md`)
 
-E13 feeds the **general** check pool (core_15 game_design / `assessment.md`: AI and deepfake items join
-the general role forms AB and BA, not a new role form). Mirror-paired items E13 contributes (when
-`10_CHECK_FORMS.md` is written; the six built role forms are the frozen baseline and are not edited):
+E13's topic (core_15 AI and deepfakes) feeds the new **`general_v2`** check pair, built by
+`10_CHECK_FORMS.md` (Round 1 ruling 1 adopts `10`'s two-pair scheme and drops the per-topic forms).
+Not a new role form, and not the built six (the frozen baseline, not edited). `general_v2` item 6 already
+carries the AI/deepfake topic as an `email` scoring `senderTrust` / `linkCredible` (a CEO-video /
+AI-assistant lure). The scenario-local tells `hidden_instruction` and `deepfake_request` are **not**
+scored in `general_v2` (its item 6 scores on `senderTrust`/`linkCredible`, per ENG-08's tell table), so
+they stay E13 defend-set only and need no shared-library change. E13 contributes content for these
+mirror-paired candidate slots in `general_v2` only where they fit `10`'s balance:
 
 1. A document with a health detail / password to paste ↔ a document safe to paste (what to take out).
 2. An assistant answer with an invented figure ↔ an answer that checks out (check the source).
@@ -310,7 +318,7 @@ the general role forms AB and BA, not a new role form). Mirror-paired items E13 
 4. A cloned-voice / fake-video request for data or money ↔ a genuine request on the real channel
    (check another way).
 
-ENG-09 defines where these sit in the general forms; E13 supplies the content only.
+`10_CHECK_FORMS.md` decides which of these fit `general_v2`'s balance; E13 supplies the content only. There is no form-building engine packet.
 
 ## 15. Files to create or change
 

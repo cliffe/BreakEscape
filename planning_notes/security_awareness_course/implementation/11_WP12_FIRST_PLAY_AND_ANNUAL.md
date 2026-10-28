@@ -31,13 +31,23 @@ is safe, nobody is caught out.
 - `public/break_escape/js/minigames/episode-runner/episode-runner-minigame.js` lines 327 to 395 and
   532 to 545: `_render`, `_renderBrief`, `_renderFinished`, `_complete`, `_saveState`. Read these:
   they decide the recommendation below.
+- `scripts/validate_social/awareness.rb` (`stage_checks`, `STAGES_BY_VARIANT`): the validator accepts
+  only the `full` and `defendOnly` stage orders, so `stages: ["brief"]` is **rejected** today even
+  though the runner model would run it. This is what ENG-10 fixes.
+- **Engine packet: `02_ENGINE_WORK.md`, packet ENG-10** (core_00 brief-only episode: a `variant:
+  "brief"` with the `["brief"]` validator allowance, a multi-card brief `strings.briefCards`, a
+  completion global `doneGlobal`, and `oncePerLearner`). This is the clean path for Part A; see below.
 - A built shell for the `scenario.json.erb` skeleton, host NPC and kiosk: any
   `scenarios/awareness_*_defend/scenario.json.erb`, plus `gen_e3_e5_shells.py` `scenario()`.
 
 ## What the runner supports today (checked in the code)
 
 - `stagesFor(episode)` keeps any authored stage id in `STAGE_IDS`, so `stages: ["brief"]` runs the
-  brief stage only and then finishes. A brief-only episode is therefore valid to the model.
+  brief stage only and then finishes. A brief-only episode is therefore valid to the runner **model**.
+- **But the validator rejects it today.** `awareness.rb` `stage_checks` accepts only the `full` and
+  `defendOnly` stage orders (and `["check"]` for a check mission), so a `full` episode with
+  `stages: ["brief"]` fails `--strict-social` (which Part A's acceptance runs). The allowance is
+  ENG-10's work (a new `variant: "brief"`), so even the stopgap below needs ENG-10's validator change.
 - **But `_renderBrief` draws exactly one panel**: a heading, `strings.brief` as one paragraph, the
   optional `scopeNote`, and a **Start** button (`episode-runner-minigame.js:384`). It does **not**
   render a sequence of concept cards, and there is no **Got it** gate and no once-per-learner play.
@@ -49,16 +59,23 @@ is safe, nobody is caught out.
   shells conclude their objective on a `*_done` global that the triage set's
   `outcome.setGlobalPrefix` writes; a brief-only episode has no triage set, so no such global fires.
 
-## Recommendation: a brief-only episode now, with two engine gaps flagged
+## Recommendation: a brief-only episode on ENG-10
 
-Ship core_00 as a **brief-only episode shell** (`stages: ["brief"]`). It is the simplest thing that
-fits the frame and the model. Put the whole orientation in one rich `strings.brief` panel plus
-`scopeNote`. Accept that the card-by-card flow, the Got-it gate and once-per-learner play are not in
-this first build; route them to `02_ENGINE_WORK.md`.
+Ship core_00 as a **brief-only episode shell** built on **ENG-10** (`02_ENGINE_WORK.md`): a
+`variant: "brief"` with `stages: ["brief"]`, a multi-card brief `strings.briefCards`, a completion
+global `awarenessEpisode.doneGlobal`, and `oncePerLearner: true`. ENG-10 is the clean path and it
+lands the module's card-by-card flow, the Got-it gate, once-per-learner play, and a proper done
+global for the objective, all at once. It also supplies the validator allowance that `stages:
+["brief"]` needs (the validator rejects it today without ENG-10).
+
+If ENG-10 slips and core_00 must ship first, the stopgap (below) is a single rich `strings.brief`
+panel concluded on the state global, but it **still needs ENG-10's validator allowance** for
+`["brief"]`, so ENG-10's validator change is a hard dependency either way. Do not ship core_00 before
+that change.
 
 Why not a bespoke new shell type: a new concept-card runner is more engine work than the content
 warrants, and the module itself says "no new minigame is needed; the brief is authored cards in the
-existing frame".
+existing frame"; ENG-10 adds exactly the small pieces the existing frame lacks.
 
 ### Files to create or change
 
@@ -76,28 +93,36 @@ existing frame".
   (Quayholt Insurance, host Anjali Rao, `room_aw_quayholt`), and note that the module intends the
   brief to adopt the first episode's host (a later once-per-learner engine piece, below).
 - `awarenessEpisode`: `id: "core_00_first_play"`, `role: "general_staff"`, `company:
-  "quayholt_insurance"`, the Quayholt `brand` block, `variant: "full"`, `durationTargetMin: 5`,
-  `stages: ["brief"]`, `conclusionTaskId: "<the task>"`, a `scopeNote`, `strings: { brief: "<the
-  panel text>" }`. Carry `social.awareness` via `awareness_deploy.awareness_block()` so the shared
-  rule of thumb is present and the rule-of-thumb test passes. No `defend` block.
+  "quayholt_insurance"`, the Quayholt `brand` block, **`variant: "brief"`** (ENG-10), `durationTargetMin: 5`,
+  `stages: ["brief"]`, `conclusionTaskId: "<the task>"`, a `scopeNote`, **`doneGlobal:
+  "episode_core_00_first_play_done"`** and **`oncePerLearner: true`** (ENG-10), and the brief content
+  as **`strings.briefCards`** (an array of `{ heading?, text }`, the seven cards below) with an
+  optional `strings.briefDone` ("Got it") and `strings.alreadySeen`. A single rich `strings.brief`
+  panel is the degraded stopgap only if ENG-10's multi-card brief is not ready. Declare `doneGlobal`
+  in `globalVariables` (ENG-10 lints this). Carry `social.awareness` via
+  `awareness_deploy.awareness_block()` so the shared rule of thumb is present and the rule-of-thumb
+  test passes. No `defend` block.
 - `mission.json`: `display_name: "Before you start: how this works"`, `collection: "training"`,
   `ui_theme: "general"`, `difficulty_level: 1`, `scoring: "completion"`, `secgen_scenario: null`,
   `estimated_duration_minutes: 5`, a Human Factors `cybok` block.
 
 ### Completing the mission (the one wiring decision)
 
-Because no `*_done` global fires, the objective cannot conclude the built way. Two options:
+Because the built runner writes no `*_done` global for a no-triage episode, the objective cannot
+conclude the built way without ENG-10. Two options:
 
-1. **Zero-engine (ship this):** conclude on the state global becoming truthy. The runner writes
-   `episode_core_00_first_play_state` once, when the brief stage completes (`_complete('brief')` ->
-   `_saveState`). Give the objective `concludeRequires` an event the host NPC maps:
-   `eventPattern: "global_variable_changed:episode_core_00_first_play_state"` with a condition that
-   the value is set, `onceOnly: true`, `completeTask: "<the task>"`. Verify in a bridge that the task
-   completes on Start. This is the recommended path for the first build.
-2. **Clean (route to `02_ENGINE_WORK.md`):** add a completion global written when a brief-only
-   episode finishes (for example `episode_<id>_done`), so the objective concludes exactly as the
-   defend and check shells do. Prefer this once the engine packet lands; it also unblocks the
-   multi-card brief and once-per-learner gating.
+1. **Clean (ship this, ENG-10):** ENG-10's `awarenessEpisode.doneGlobal` writes
+   `episode_core_00_first_play_done = true` when the brief-only episode reaches its last stage, so the
+   objective concludes exactly as the defend and check shells do (on a `*_done` global). ENG-10 also
+   lands the multi-card brief and once-per-learner gating. This is the recommended path, and the
+   `["brief"]` validator allowance it carries is needed regardless.
+2. **Stopgap (only if ENG-10 is not ready):** conclude on the state global becoming truthy. The
+   runner writes `episode_core_00_first_play_state` once, when the brief stage completes
+   (`_complete('brief')` -> `_saveState`). Give the objective `concludeRequires` an event the host
+   NPC maps: `eventPattern: "global_variable_changed:episode_core_00_first_play_state"` with a
+   condition that the value is set, `onceOnly: true`, `completeTask: "<the task>"`. This still needs
+   ENG-10's validator allowance for `stages: ["brief"]`, so it is not truly zero-engine. Verify in a
+   bridge that the task completes on Start.
 
 ### The brief panel content (draft; the dialogue reviewer polishes)
 
@@ -135,21 +160,24 @@ the test `test/js/social-awareness-rule-of-thumb.test.mjs`):
 
 ### Engine gaps to flag (not this brief's work)
 
-Put these in `02_ENGINE_WORK.md` (or WP-02 for the Hacktivity parts), so the brief can later match
-the module in full:
+The first three of these are **ENG-10** (`02_ENGINE_WORK.md`), the packet this part depends on; the
+last is a separate, later engine piece:
 
-- a multi-card brief (a run of concept cards with Next, and a Got-it card) in the brief stage;
-- once-per-learner play of the first-play brief (a `firstPlay` gate, so it shows once then is
-  skipped), and the module's "adopt the first episode's host" behaviour;
-- a brief-only completion global (option 2 above);
+- a multi-card brief (a run of concept cards with Next and a Got-it card) in the brief stage: **ENG-10**
+  (`strings.briefCards`);
+- once-per-learner play of the first-play brief (`oncePerLearner`, so it shows once then is skipped):
+  **ENG-10**. The module's "adopt the first episode's host" behaviour is not in ENG-10; it stays a
+  later gap, flagged here.
+- a brief-only completion global: **ENG-10** (`doneGlobal`, option 1 above);
 - BE-20, the authorable title and tutorial, so the opening shows the course title, not the platform's
-  (the module calls this the one engine piece; it is out of scope here but needed for the first
-  impression).
+  (the module calls this the one engine piece; it is out of scope here and not part of ENG-10, but
+  needed for the first impression).
 
 ### Acceptance checks
 
 - `ruby scripts/validate_scenario.rb scenarios/awareness_core_00_first_play/scenario.json.erb
-  --strict-social --no-graph --skip-ink` passes.
+  --strict-social --no-graph --skip-ink` passes (requires ENG-10's `variant: "brief"` /
+  `stages: ["brief"]` validator allowance; it fails without it).
 - `node --test test/js/social-*.test.mjs` stays green, including the rule-of-thumb test.
 - A bridge run (model it on a built `bridge-e*-full.jsonl`): opening the kiosk shows the brief panel,
   Start finishes it, and the objective concludes. One bridge at a time on :3001 (HANDOVER.md
@@ -164,8 +192,10 @@ the module in full:
 
 ### Stop and ask if
 
-- The user wants the full seven-card flow or once-per-learner behaviour in this build: that needs the
-  engine packet above; confirm before building a bespoke card runner.
+- ENG-10 is not available when core_00 must ship: the stopgap (one `strings.brief` panel, state-global
+  conclusion) still needs ENG-10's `["brief"]` validator allowance, so core_00 cannot validate or ship
+  without at least that part of ENG-10. Confirm the sequencing with the orchestrator; do not build a
+  bespoke card runner.
 - The module's "2 to 3 minutes" (game_design) and this brief's "about 5 minutes" (`WRITER_BRIEF.md`)
   need reconciling: the content is short, so either is fine; ship at `durationTargetMin: 5` unless
   the user says otherwise.
