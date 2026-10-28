@@ -151,6 +151,138 @@ Defend-only: `"stages": ["brief","defend","debrief"]`.
 - Ethics line: "Authorised test. The hidden line is fictional and goes nowhere; the assistant has no
   real AI behind it."
 
+## 8b. Shell and generator metadata (every value final; no guessing)
+
+Every metadata value the shell wiring (01 P2/P3) and the generator (01 P4, `gen_e8_e17_shells.py`) need,
+as final strings, copying the shapes from the built **E7** erb and the generator shape from
+`gen_e6_e7_shells.py`. E13 is a **write-then-flip** episode (a mail attack, then the ENG-06 assistant and
+ENG-07 demo in the flip region), so the full shell carries **two** aims like E7; the defend-only shell is
+built by the generator.
+
+### Host and learner sprites
+
+- **Host Gwen Pritchard's generator `HOSTS['gwen']` entry** (new in `gen_e8_e17_shells.py`, following the
+  E6/E7 `HOSTS` shape; `defend_host: 'gwen'` below points to it):
+
+  ```python
+  'gwen': {
+      'id': 'gwen_pritchard', 'displayName': 'Gwen Pritchard', 'sprite': 'female_telecom',
+      'about': "Brightwell Foods' IT service desk lead, late 30s, Welsh (BRAND_SET.md, Brightwell cast). She runs the announced assistant demo and receives the reports. Placeholder sprite until the PixelLab reset.",
+  },
+  ```
+- **Gwen's in-scenario host NPC sprite keys** (full erb `rooms.training_room.npcs[]`, E7 host NPC shape):
+  `"spriteSheet": "female_telecom_v2"`, `"spriteTalk": "assets/characters/female_telecom_talk.png"`,
+  `"spriteVisemes": "assets/characters/female_telecom_visemes.png"`, `"npcType": "person"`,
+  `"id": "gwen_pritchard"`, `"displayName": "Gwen Pritchard"`,
+  `"storyPath": "scenarios/awareness_e13_ai_assistant/ink/gwen_pritchard.json"`, `"currentKnot": "start"`,
+  plus the N16 done-event `eventMappings`. Host art is a placeholder until the PixelLab reset.
+- **Learner avatar** (full erb `player`, as E7): `"spriteSheet": "female_office_worker_v2"`,
+  `"spriteTalk": "assets/characters/female_office_worker_talk.png"`.
+
+### Full-episode objectives (full erb `objectives[]`, copy the E7 two-aim shape)
+
+| field | aim 1 (red team) | aim 2 (defend, `missionConclusion: true`) |
+|---|---|---|
+| `aimId` | `red_team_aim` | `assistant_inbox_aim` |
+| `title` | "Plant the hidden instruction" | "Handle what comes at you" |
+| `description` | "Write a supplier brief with a line hidden in it meant for the assistant to act on." | "Work through the supplier email, the voicemail and the video call at the training kiosk." |
+| `order` | 0 | 1 |
+| task `taskId` / `title` / `type` | `plant_hidden_instruction` / "Write the supplier brief" / `manual` | `handle_assistant_inbox` / "Handle the messages" / `custom` |
+
+Aim 2 `concludeRequires.globals`: `["episode_e13_ai_assistant_defend_done"]`. Aim 2 `conclusionScreen`:
+`{ "type": "success", "title": "AI assistant episode done", "body": "You've planted one hidden line, then
+sat with the assistant and handled a supplier email, a voicemail and a video call yourself, so this
+episode is finished." }`. `awarenessEpisode.conclusionTaskId: "handle_assistant_inbox"`.
+
+### Full-episode training kiosk (full erb `rooms.training_room.objects[]` kiosk, E7 shape)
+
+- `observations`: "A touch-screen training kiosk for the Brightwell assistant exercise: first the one
+  supplier brief to write, then the assistant and the messages to handle."
+- `observationVariants[0]`: `{ "condition": "globalVars.episode_e13_ai_assistant_defend_done", "value":
+  "A touch-screen training kiosk for the Brightwell assistant exercise. The brief is written and the
+  messages are all handled." }`
+- `minigameData.episodeId`: `e13_ai_assistant`.
+
+### Full-episode `mission.json` (E7 mission.json shape)
+
+- `display_name`: "Awareness E13: The AI assistant (full episode)"
+- `description`: "An awareness episode of about 15 minutes for all staff. On an authorised exercise at
+  Brightwell Foods, a fictional company, you first play the red team: write a supplier brief with a line
+  hidden in it for the firm's new assistant. Then you use the assistant for real and handle a supplier
+  email, a voicemail and a video call. Only the second part is scored, and checking another way when
+  you're unsure is always fine and never marked down."
+- `difficulty_level`: 1; `scoring`: "completion"; `secgen_scenario`: null; `collection`: "training";
+  `ui_theme`: "general"; `estimated_duration_minutes`: 15.
+- `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Deepfakes", "Prompt injection", "AI assistants", "Security awareness"] } ]`.
+
+Top-level erb strings (copy E7's): `scenario_id` `awareness_e13_ai_assistant`; `scenario_name` "The AI
+assistant: both sides"; `scenario_brief` = `strings.brief` (section 8); `endGoal` "Write the supplier
+brief, then handle the assistant inbox at the training kiosk."; `version` "1.0"; `disableAttacks` true;
+`startRoom` `training_room`; `startPosition` as E7.
+
+### Defend-only `_defendOnly` strings (fragment)
+
+- `_defendOnly.brief`: "You're on an authorised exercise at Brightwell Foods, a fictional company, which
+  has switched on its own approved assistant. Messages are waiting: a supplier email, a voicemail and a
+  video call. Some are real and some were built to look right, a voice you know, a face you trust. Decide
+  what to do with each, and check another way when a message pushes you to move money, send data or sign
+  in. Reporting or checking when you're unsure is always fine and never marked down."
+- `_defendOnly.scopeNote`: "Authorised exercise at Brightwell Foods, a fictional company. In scope: a
+  supplier email, a voicemail and a video call at the training kiosk."
+
+### Defend-only shell: generator `EPISODES['e13']` entry (`gen_e8_e17_shells.py`, the `gen_e6_e7_shells.py` `EPISODES` shape)
+
+```python
+'e13': {
+    'frag': f'{AW}/e13/defend.json',
+    'full_id': 'e13_ai_assistant',
+    'role_word': 'general',
+    'role_label': 'all staff',
+    'defend_set': 'e13_assistant_inbox',
+    'defend_host': 'gwen',
+    # No 'forms'/'check_hosts': E13 feeds general_v2, built by 10's own generator, not this one (section 14).
+    'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+               'keywords': ['Deepfakes', 'Prompt injection', 'AI assistants', 'Security awareness']}],
+    'defend': {
+        'name': 'The AI assistant: what comes at you',
+        'brief': "You're on an authorised exercise at Brightwell Foods, a fictional company, which has switched on its own approved assistant. Messages are waiting: a supplier email, a voicemail and a video call. Some are real and some were built to look right, a voice you know, a face you trust. Decide what to do with each, and check another way when a message pushes you to move money, send data or sign in. Reporting or checking when you're unsure is always fine and never marked down.",
+        'endGoal': 'Handle the supplier email, the voicemail and the video call at the training kiosk.',
+        'aim': ('assistant_inbox_aim', 'Handle what comes at you', 'Go through the supplier email, the voicemail and the video call at the training kiosk.'),
+        'task': ('handle_assistant_inbox', 'Handle the messages'),
+        'kiosk': ("A touch-screen kiosk showing Brightwell's inbox beside the approved assistant: a supplier email, a voicemail and a video call to handle.",
+         "A touch-screen kiosk showing Brightwell's inbox beside the approved assistant. The messages are all handled."),
+        'display': 'Awareness E13: The AI assistant (defend only)',
+        'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Handle a supplier email, a voicemail and a video call at Brightwell Foods, a fictional company, beside its approved assistant: some are real and some were built to look right. Each answer is explained, and checking another way when you're unsure is always fine and never marked down.",
+        'minutes': 8,
+        'defendIntro': "Go through the messages and decide what to do with each one. You can't reliably spot a fake voice or face, so when a message asks for money, data or a sign-in, check another way, on a number or channel you already hold. Work through them at your own pace.",
+        'conclusion': ('Messages handled', "You've handled the supplier email, the voicemail and the video call and finished this episode."),
+    },
+},
+```
+
+The entry uses the real `gen_e6_e7_shells.py` keys (`conclusion`, `defendIntro`). This `brief` equals the
+section 13 defend-only brief and `_defendOnly.brief` above (keep them identical). The defend-only shell id
+is `e13_ai_assistant_defend`, prefix `episode_e13_ai_assistant_defend_defend_` (section 13).
+
+### Defend-host lines: generator `LINES[('e13', 'defend')]` (the tuple `(before, after, choice, reply)`, Gwen's voice)
+
+```python
+('e13', 'defend'): (
+    "Brightwell's switched on its own assistant, and the kiosk's got the inbox next to it: a supplier email, a voicemail and a video call. Some are real, some were built to look right. Take each as it comes.",
+    "That's them all handled, thanks. Whoever the voice or the face belongs to, checking another way on a number you already hold is the move that always works.",
+    'Thanks, Gwen.', 'Any time.'),
+```
+
+### Host spoken lines for the full shell (ink, Gwen)
+
+- **Welcome** (at the hub): the section 8 host welcome framing; "a test is coming and I'll say when".
+- **After the attack half** (hand-off into the defend half): "Good, that's your hidden line planted. Now
+  you're on the other side: use the assistant for real, and deal with what lands. The test I mentioned is
+  in here somewhere."
+- **On completion** (defend done): "That's them handled. You can't always tell a fake voice or face, so
+  the answer is always the same: check another way, on a number you already hold. Nobody's ever in
+  trouble for checking."
+
 ## 9. Attack half, the assistant teaching, and the announced demo
 
 ### 9.1 Attack (write stage): plant the hidden instruction
@@ -236,15 +368,17 @@ scored and mirror-pairable. (The announced Gwen demo in the flip is the person-c
 conversation; the scored Project Heron item is the triage `call`.)
 
 `channelTells` (closed chip list): `["hidden_instruction","deepfake_request","secrecy_or_bypass",
-"borrowed_authority","vish_callback_pressure","lookalike_domain","senderTrust"]`. `secrecy_or_bypass`,
-`borrowed_authority`, `vish_callback_pressure`, `lookalike_domain`, `senderTrust` are shared-library
-tells (`00` §2), already labelled in `CHANNEL_TELLS`. `hidden_instruction` and `deepfake_request` are
+"borrowed_authority","vish_callback_pressure","lookalike_domain"]`. `secrecy_or_bypass`,
+`borrowed_authority`, `vish_callback_pressure` and `lookalike_domain` are shared-library
+tells. `senderTrust` is a factor, scored through the factor path, and is never listed in `channelTells` (the strict-social lint refuses it there) (`00` §2), already labelled in `CHANNEL_TELLS`. `hidden_instruction` and `deepfake_request` are
 **scenario-local tells** (11 §5.1), declared on E13's set with a `flagChips` label each; this needs **no**
 ENG-08 library or validator change, because `triage.rb` `flag_universe` already accepts a `channelTells`
 id that `flagChips` labels and that is not a factor (the same pattern E9, E10 and E12 use). Nothing is
 appended to the shared `CHANNEL_TELLS` / `SKILL_NAMES`. Short `flagChips` labels (noun
-phrases), with the full sentence carried per flagging message as `truth.factorStrings.<id>.redFlag` so
-the red-flag detail is not a raw id:
+phrases), with the full sentence carried per flagging message on a **message-level `factorStrings` object
+(a sibling of `truth`, never inside it)**, keyed `factorStrings.<id>.redFlag`, so the red-flag detail is
+not a raw id (`triage-flags.js` `redFlagString` reads `message.factorStrings`; `truth` is
+`additionalProperties: false`, so a `factorStrings` under `truth` fails `--strict-social`):
 
 - `hidden_instruction`: `flagChips` label "Hidden instruction for an AI"; per-message `redFlag`: "An
   instruction hidden in a document or email, written to steer an AI assistant that reads it."

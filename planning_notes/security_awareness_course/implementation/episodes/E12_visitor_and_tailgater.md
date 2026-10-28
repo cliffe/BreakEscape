@@ -215,9 +215,9 @@ consequence flip), so it carries **two** aims.
   `"storyPath": "scenarios/awareness_e12_visitor_tailgater/ink/lorna_easton.json"`,
   `"currentKnot": "start"`, carrying the N16 done-event `eventMappings`. **She reuses a built sprite**
   (no influence bust needed): use a built Merrin & Sallow / office-worker host sprite and talk portrait
-  already in `assets/characters/` as her placeholder, for example `"spriteSheet": "male_office_worker_v2"`,
-  `"spriteTalk": "assets/characters/male_office_worker_talk.png"`,
-  `"spriteVisemes": "assets/characters/male_office_worker_visemes.png"` (confirm the chosen built sprite
+  already in `assets/characters/` as her placeholder, for example `"spriteSheet": "female_office_worker_v2"`,
+  `"spriteTalk": "assets/characters/female_office_worker_talk.png"`,
+  `"spriteVisemes": "assets/characters/female_office_worker_visemes.png"` (confirm the chosen built sprite
   with the art schedule; the name Lorna Easton stays either way). This saves one full character art set
   (section 5).
 - **Hi-vis courier costume** (ENG-05b, under `world.costume`, section 9.1 item 1): sprite
@@ -291,8 +291,22 @@ front-desk pretext, then work the reception desk at the training kiosk."; `versi
         'display': 'Awareness E12: Visitor and tailgater (defend only)',
         'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Cover the reception desk at Merrin & Sallow Architects, a fictional architecture practice: some visitors are expected, some are not, and one or two are trying to talk their way in. Each answer is explained, and checking or reporting when you're unsure is always fine and never marked down.",
         'minutes': 8,
-        'ending': ('Reception desk handled', "You've handled the visitors at the reception desk and finished this episode."),
+        'defendIntro': "Work through the visitors at the reception desk and decide what to do with each one. A genuine visitor never minds being signed in and escorted; the one who pushes to skip a check is the one to report. There's no clock on you here.",
+        'conclusion': ('Reception desk handled', "You've handled the visitors at the reception desk and finished this episode."),
     },
+},
+```
+
+The generator entry uses the real `gen_e6_e7_shells.py` keys (`conclusion`, `defendIntro`), not the
+`ending` spelling of `gen_e3_e5_shells.py`; `01_PIPELINE.md` P4 lists the required keys once.
+
+The host Lorna's generator `HOSTS['lorna']` entry (new in `gen_e8_e17_shells.py`, following the E6/E7
+`HOSTS` shape; `defend_host: 'lorna'` above points to it):
+
+```python
+'lorna': {
+    'id': 'lorna_easton', 'displayName': 'Lorna Easton', 'sprite': 'female_office_worker',
+    'about': "Merrin & Sallow's reception and facilities lead, 40s, white, north-west England (BRAND_SET.md, E12 additions). The studio kiosk host: she welcomes the learner and receives the reports. Reuses a built sprite (no influence bust needed). Placeholder sprite until the PixelLab reset.",
 },
 ```
 
@@ -380,13 +394,16 @@ ENG-05 is the "world-play attack stage" packet. E12 needs, as configuration on t
    of the world modifier (the `window.loadRoom` calls) is owned by **02 ENG-05a**; E12 only authors
    `world.room` (`lobby`), `world.startRoom` (`training_room`) and the matching top-level `startRoom`.
 
-   The locked badge door's keys follow the built m02 pattern (copy `m02_ransomed_trust` `it_department`,
-   `scenario.json.erb:2001-2004`): on the lobby room's connection to `training_room`,
-   `"locked": true, "lockType": "key", "requires": "merrin_studio_badge", "keyPins": [35, 45, 25, 55],
+   The locked badge door's keys follow `02` ENG-05c exactly: a room lock lives on the **room block being
+   entered**, not on a connection, so the lock keys go on **`rooms.training_room`** (the studio the lobby
+   opens onto), copied verbatim from m02's `security_office` room block
+   (`m02_ransomed_trust/scenario.json.erb:3104-3122`):
+   `"locked": true, "lockType": "key", "requires": "merrin_studio_badge", "keyPins": [40, 30, 55, 35],
    "difficulty": "easy"`. `requires` names a key id that **no object in the scenario holds**, so there is
    no key to pick up; the only in-fiction opener is Delphine buzzing the door (item 4). The learner is
    given no lockpick and never needs to traverse the door, so pickability does not matter here; the door
-   is the attack's success/empathy beat, not a traversal puzzle.
+   is the attack's success/empathy beat, not a traversal puzzle. (The exact keys and the on-which-block
+   placement are owned by `02` ENG-05c; this is E12's filled-in instance of them.)
 4. **An NPC opening the door, reuse the existing mechanism, do not build a new one.** NPCs already open
    doors: an ink line carrying the tag `# unlock_door:training_room` is handled at
    `minigames/helpers/chat-helpers.js:71`, which calls `NPCGameBridge.unlockDoor(roomId)`
@@ -543,10 +560,12 @@ these four:** the validator accepts a `channelTells` id when the set gives it a 
 is not a factor (`scripts/validate_social/triage.rb` `flag_universe`; proven in scratch, section 17). So
 declare the four with **short `flagChips` labels** on the set (a chip label is a short noun phrase, like
 the built `CHANNEL_TELLS` labels, not a full sentence); do not add them to the shared
-`CHANNEL_TELLS` library. The full explanatory sentence for each flag is carried **per flagging message**
-as `truth.factorStrings.<id>.redFlag`, so the debrief shows a sentence, not a raw id. (ENG-08 is still
-needed for the `world` block and the lobby room, not for the tells.) `flagChips` labels and the
-per-message `redFlag` sentences:
+`CHANNEL_TELLS` library. The full explanatory sentence for each flag is carried on a **message-level
+`factorStrings` object (a sibling of `truth`, never inside it)**, keyed `factorStrings.<id>.redFlag`, so
+the debrief shows a sentence, not a raw id (`triage-flags.js` `redFlagString` reads `message.factorStrings`;
+`truth` is `additionalProperties: false`, so a `factorStrings` under `truth` fails `--strict-social`).
+(ENG-08 is still needed for the `world` block and the lobby room, not for the tells.) `flagChips` labels
+and the per-message `redFlag` sentences:
 
 - `tailgating`: `flagChips` "Tailgating"; `redFlag` "Someone followed an authorised person through a secure door without badging in."
 - `no_escort`: `flagChips` "No escort"; `redFlag` "A visitor or contractor left to move around unescorted."
@@ -578,10 +597,13 @@ ring the host first.
 ### Items as final JSON
 
 The six `call` messages, as final `triageSet.messages` JSON. This exact set was validated in scratch
-(section 17). Flags are in `truth.flags`; the four
-scenario-local tells are labelled in the set `flagChips` (above) and sentence-explained per message via
-`truth.factorStrings.<id>.redFlag` (omitted from the block below for length; use the `redFlag` sentences
-listed above, one `factorStrings` entry per flag a message raises).
+(section 17). Flags are in `truth.flags`; the four scenario-local tells are labelled in the set
+`flagChips` (above) and sentence-explained per message on a **message-level `factorStrings` object (a
+sibling of `truth`, never inside it)**, keyed `factorStrings.<id>.redFlag`. The `factorStrings` object is
+shown below for the three messages that raise a local tell (items 1, 3, 5); it uses the `redFlag`
+sentences listed above, one entry per local flag the message raises. (The shared tells
+`borrowed_authority` and `secrecy_or_bypass` take their sentence from the `CHANNEL_TELLS` library, so they
+need no `factorStrings` entry.)
 
 ```json
 [
@@ -597,7 +619,10 @@ listed above, one `factorStrings` entry per flag a message raises).
         "tailgating": "They badged in on someone else's card, which is exactly what a wedge or a held door lets happen.",
         "no_escort": "Heading up alone, with nobody signing for them." },
       "ifTrusted": "An unbadged stranger is loose on the studio floor, where client plans and screens are open.",
-      "reportReply": "Thanks, we caught them on the stairs; they weren't expected." } },
+      "reportReply": "Thanks, we caught them on the stairs; they weren't expected." },
+    "factorStrings": {
+      "tailgating": { "redFlag": "Someone followed an authorised person through a secure door without badging in." },
+      "no_escort": { "redFlag": "A visitor or contractor left to move around unescorted." } } },
   { "id": "e12_call_expected_client", "kind": "call",
     "callerId": "Client, here for a 10:00 with Yasmin Chaudhry",
     "from": { "name": "Expected client", "address": "At the desk" }, "time": "09:55",
@@ -623,7 +648,10 @@ listed above, one `factorStrings` entry per flag a message raises).
         "not_expected": "No entry on today's list and the firm on his order isn't the one on the maintenance contract.",
         "secrecy_or_bypass": "'I can let myself in' asks to skip the escort into a secure room." },
       "ifTrusted": "He'd be alone in the comms room with the building's network.",
-      "reportReply": "Thanks, facilities confirmed no inspection was booked and the firm's name was wrong." } },
+      "reportReply": "Thanks, facilities confirmed no inspection was booked and the firm's name was wrong." },
+    "factorStrings": {
+      "uniform_pretext": { "redFlag": "A hi-vis jacket, a clipboard or a job title used in place of being expected." },
+      "not_expected": { "redFlag": "The visitor is not on today's list and their paperwork does not match." } } },
   { "id": "e12_call_real_contractor", "kind": "call",
     "callerId": "Lift engineer, on today's list",
     "from": { "name": "Lift engineer", "address": "At the desk" }, "time": "13:05",
@@ -649,7 +677,9 @@ listed above, one `factorStrings` entry per flag a message raises).
         "secrecy_or_bypass": "'Don't bother signing me in' is the ask to skip the one check.",
         "tailgating": "Buzzing the door without a badge is letting them tailgate on your say-so." },
       "ifTrusted": "A stranger is through the badge door and onto the studio floor.",
-      "reportReply": "Thanks, real couriers leave the parcel at the desk; we logged it." } },
+      "reportReply": "Thanks, real couriers leave the parcel at the desk; we logged it." },
+    "factorStrings": {
+      "tailgating": { "redFlag": "Someone followed an authorised person through a secure door without badging in." } } },
   { "id": "e12_call_forgot_badge", "kind": "call",
     "callerId": "Staff member back from leave, no badge",
     "from": { "name": "Colleague back from leave", "address": "At the desk" }, "time": "15:40",
@@ -720,16 +750,18 @@ Create:
   `awarenessEpisode`, the `triageSet`, `social.characters.delphine`, `social.pretextNpcs[merrin_front_desk]`,
   `social.osint`, `social.people`, `globalVariables`). Top-level `startRoom: "training_room"` (the kiosk
   room, section 9.1 item 3). The **`lobby`** room holds the Delphine pretext NPC (`delphine_reception`,
-  with `"unlockable": ["training_room"]`) and the locked badge door to `training_room`; the
-  **`training_room`** room (the design studio) holds the kiosk and the kiosk host NPC **Lorna Easton**
-  with the welcome ink and the N16 done-event `eventMappings` (section 5). Model on E3 + E7.
+  with `"unlockable": ["training_room"]`) and a connection to `training_room`; the **`training_room`**
+  room (the design studio, the room the lobby opens onto) carries the badge-door **lock keys on its own
+  room block** (section 9.1 item 3, `02` ENG-05c), the kiosk and the kiosk host NPC **Lorna Easton** with
+  the welcome ink and the N16 done-event `eventMappings` (section 5). Model on E3 + E7.
 - `scenarios/awareness_e12_visitor_tailgater/ink/delphine_reception.ink` (+ compiled `.json`), and the
   kiosk host ink for **Lorna Easton** (the welcome/brief and debrief lines; the N16 mapping is on
   her NPC record).
 - `scenarios/awareness_e12_visitor_tailgater/mission.json` (pattern from E3/E7).
 - `scenarios/awareness_e12_visitor_tailgater_defend/` (the defend-only shell).
-- Lobby map `assets/rooms/room_aw_merrin_lobby.json` / `.tmj` via a new entry in
-  `scripts/room_gen/build_aw_rooms.py` (ENG-05 owns the dressing; this spec owns the wiring).
+- Lobby map `public/break_escape/assets/rooms/room_aw_merrin_lobby.json` / `.tmj` via a new entry in
+  `scripts/room_gen/build_aw_rooms.py` (there is no top-level `assets/`; the real path is under
+  `public/break_escape/assets/`, 01 P5c). ENG-05 owns the dressing; this spec owns the wiring.
 
 Change:
 

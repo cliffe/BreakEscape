@@ -1067,3 +1067,287 @@ Validator made runnable in the scratchpad: `json-schema` gem installed into
 3. `factorStrings` sits at message level, never under `truth`.
 4. E12's badge door follows `02` ENG-05c: the lock keys sit on `rooms.training_room`, the room being entered.
 5. Anything still open after this pass goes into one "Known gaps" section in `00_README.md`. Nothing is left buried in the review files.
+
+## Final fixes: 01, 02, 10, 12
+
+Fixer scope: `01_PIPELINE.md`, `02_ENGINE_WORK.md`, `10_CHECK_FORMS.md`, `12_WP15_CORE02_ITEMS.md`
+only. No git run; no file edited outside these four. Every change was proved in scratch
+(`.../scratchpad/final/`) with the validator (json-schema 6.2.1 / addressable 2.9.0 /
+public_suffix 7.0.5 in a scratch `GEM_HOME`, `--strict-social --no-graph --skip-ink`, absolute
+path per folder). Baseline: built `awareness_e1_invoice_fraud` exits 0 with the one known
+`phish_supplier_contact_landed` warning.
+
+### 02 (R5_review M1)
+
+- **M1 (ENG-09b vs E13).** Dropped E13 from ENG-09b: the "Decision" sentence now reads "E8, E9 and
+  E10 ... E13 ships a single concept panel and uses the built one-panel form, so it does not depend
+  on ENG-09b", and "Episodes that depend on it" is now "E8, E9, E10". Doc-consistency fix (E13 §12 is
+  authoritative and already omits ENG-09b); nothing to validate. No other R5 finding targets 02 (M2
+  is the E12 episode spec + ENG-05c, which is already correct and out of this fixer's scope).
+
+### 01 P4 (final-pass ruling 2)
+
+- Rewrote the P4 `EPISODES` bullet into the single authoritative list, taken from the real
+  `gen_e6_e7_shells.py` `'e6'` entry: top-level `frag`, `full_id`, `defend_set`, `defend_host`,
+  `cybok`, `defend`; `defend` sub-keys `name`, `brief`, `endGoal`, `aim`, `task`, `kiosk`, `display`,
+  `desc`, `minutes`, `defendIntro`, `conclusion` (plus optional `voicePanel`, `stage`). States the
+  closing-screen key is `conclusion` (not `ending`) and `defendIntro` is required, because either
+  slip is a `KeyError`. Rewrote the HOSTS bullet to require a `HOSTS` entry (`id`, `displayName`,
+  `sprite`, `about`) for every host any `EPISODES` entry names in `defend_host` (a missing one is a
+  `KeyError`), and that a new host (e.g. E12's kiosk colleague) adds its own entry with a real built
+  sprite.
+- **Proof.** P0 no-change regeneration of the real `gen_e3_e5_shells.py` and `gen_e6_e7_shells.py`
+  into scratch (REPO patched to `/home/user/BreakEscape`): **16 folders, scenario.json.erb /
+  mission.json / ink all byte-identical to the repo, no DIFF line**. This confirms the documented
+  keys (`conclusion`, `defendIntro`, `HOSTS`) are exactly what the real generators read.
+
+### 10 (R5_sonnet M3, M4)
+
+- **M3 (pair-balance lint).** Added, after each item table, a "Pair balance (`auth` and subjects)"
+  note: in each form, item 8 (the hard phish) is the pass-but-bad item (`auth` spf/dkim/dmarc all
+  `pass`) and a genuine email (general_v2 item 5, data_conduct item 9) is the fail-but-fine item
+  (`auth` with a `dkim: fail`); every non-email card (page, push, call) carries a top-level `subject`
+  so its `[from.address, subject]` signature is non-empty and differs between A and B. Replaced the
+  step-7 "balance lint passes" bullet with the **runnable** procedure: the lint only fires when both
+  forms sit in one scenario (`pair_checks` needs `by_id[pairedWith]`), and a generated shell holds
+  one form, so build a scratch `scenario.json.erb` holding both forms (each with `pairedWith` and a
+  `stage`, pre and post) and **no** `awarenessEpisode`, then validate and require no `balance` error.
+- **M4 (check generator metadata).** Added a "Check generator metadata" subsection giving, as filled
+  Python, the two `EPISODES`-style entries with the full `check` dict (`name`, `items_pre`,
+  `items_post`, `scope`, `kiosk` with `{nth}`, `aim_desc`, `end`, `minutes`), `company`, `role_word`,
+  `role_label`, `forms`, `check_hosts` and `cybok`; stated the new generator copies `check()` from
+  `gen_e6_e7_shells.py` (reads `cfg['company']`; `gen_e6_e7_shells.py:443`), not from
+  `gen_e3_e5_shells.py` (hard-codes Quayholt, which would misname Carrholme). Gave the tuple-keyed
+  `CHECK_LINES` (`(host_id, stage)`, as `gen_e6_e7` uses, not `gen_e3_e5`'s nested form) with a new
+  `darren_price` entry; stated `data_conduct` ships at the Quayholt fallback until P5b.
+- **Proof.** Ran a scratch `check()` (reused from the scratch `gen_e6_e7_shells.py`) with the above
+  `EPISODES`/`HOSTS`/`CHECK_LINES` metadata: **8 shells generated with no KeyError**
+  (`awareness_{pre,post}_{general_v2,data_conduct}_{ab,ba}`). Validator on all 8: **EXIT=0 each**
+  (both pairs, form A via `_ab` and form B via `_ba`). Balance lint on a both-forms scratch scenario:
+  the **broken** version (genuine auth all-pass, empty push subject) gives exactly the three R5 M3
+  errors ("no fail-but-fine message" x2, `both forms hold the same message (, "")`); the **fixed**
+  version (dkim `fail` on a genuine, distinct push subjects) gives **no balance error**.
+
+### 12 (R5_sonnet B2, B3; R5_review m4)
+
+- **B2 / m4 (Item 1 chat-app SMS flags).** Rewrote Item 1's `truth`: flags are now
+  `["secrecy_or_bypass", "urgencyCalibrated"]` (or `pretextRelevant`), **not** `senderTrust`.
+  Explained correctly: `senderTrust` is refused on a non-email kind by `triage.rb`
+  `CHANNEL_REFUSED_FACTORS`; `urgencyCalibrated` is a factor not in that refused four, surfaced on the
+  SMS by `chipIdsFor`'s N-14 clause (authored `truth.flags` factors added back) -- this replaces the
+  wrong "not in the sms exclude list" reasoning (R5_review m4). Instructed adding `secrecy_or_bypass`
+  to the `e6_phone_messages` set's `channelTells` in **both** the fragment and the full erb (and in
+  Files-to-change bullets 2 and 3), moved the new-number lesson into `perFlagNote`, and reworded the
+  acceptance bullet.
+- **B3 (Item 2 remote-access call).** Rewrote Item 2 to the real `defend.calls` object shape
+  (`{ id, genuine, callerId, claims, tells, transcript, notes: { perFlagNote, ifTrusted, reportReply } }`,
+  as `e3_call_on_behalf`), not the check-form message shape (`kind`/`from`/`time`/`truth`);
+  `ha_call_facilities` is now cited as a wording model only. Fixed the "Read first" bullet to name the
+  structural model.
+- **Proof.** WP-15 E6 copy (built `awareness_e6_texts_and_qr_defend` with `e6_fuel_card_offer`
+  replaced by `e6_chat_new_number` flagged `secrecy_or_bypass` + `urgencyCalibrated`, and
+  `secrecy_or_bypass` added to `e6_phone_messages.channelTells`): **EXIT=0**. WP-15 E3 copy (built
+  `awareness_e3_helpdesk_reset_defend` with `e3_call_on_behalf` replaced by `e3_call_remote_access` in
+  `awarenessEpisode.defend.calls`, the `defend.calls` shape): **EXIT=0**. Negatives confirm the fixes
+  were needed: senderTrust on the SMS with `secrecy_or_bypass` absent from `channelTells` gives the
+  two R5 B2 errors (EXIT=1); the old message-shape call in `defend.calls` gives the three R5 B3
+  schema/lint errors (`required property 'genuine'`, `additional properties [kind,from,time,truth]`,
+  `genuine must be true or false`) (EXIT=1).
+
+### Summary of validator exit codes proved
+
+| Fixture | Exit |
+|---|---|
+| Baseline `awareness_e1_invoice_fraud` | 0 (one known warning) |
+| P0 regen of `gen_e3_e5` + `gen_e6_e7` (16 folders) | byte-identical, no DIFF |
+| Check generator run (8 shells) | no KeyError |
+| `awareness_{pre,post}_general_v2_{ab,ba}` (4) | 0 each |
+| `awareness_{pre,post}_data_conduct_{ab,ba}` (4) | 0 each |
+| Both-forms balance, fixed | 0 balance errors |
+| Both-forms balance, broken | 3 balance errors (as R5 M3) |
+| WP-15 E6 copy (chat-app swap + channelTells) | 0 |
+| WP-15 E3 copy (defend.calls remote-access) | 0 |
+| Negative: senderTrust on SMS | 1 (2 social errors) |
+| Negative: message-shape call in defend.calls | 1 (3 social errors) |
+
+### Still open (handed on, not in these four files)
+
+- The scratch fixtures cloned the built `general_form_a/b` content; the real `general_v2` /
+  `data_conduct` item content (the 40 items in `10`'s tables) is still an `opus48` authoring job.
+  The proof exercised the machinery and the `auth`/subject/`channelTells`/`defend.calls` shapes, not
+  the final lure wording.
+- `data_conduct` at Carrholme still waits on P5b (`room_aw_carrholme` is not in the schema enum); the
+  proof used the documented Quayholt fallback. (Recorded in `10` "Stop and ask if".)
+
+## Final fixes: E8 to E10
+
+Fixer scope: `episodes/E08_after_the_click.md`, `E09_passwords.md`,
+`E10_downloads_and_fake_checks.md` only. No git run; no file edited outside these three. Every fix
+was proved in the session scratchpad (`final_e8/`) against the code in `/home/user/BreakEscape` on
+2026-10-28: the validator (json-schema 6.2.1 / addressable 2.9.0 / public_suffix 7.0.5 on a scratch
+`-I` path, absolute shell path, `--strict-social --no-graph --skip-ink`, as in `R3_sonnet.md`), the
+scratch generator run by the `01` P0 method, and the real engine functions `optionsForSlot`
+(`mail-composer.js`) and `preSendGate`/`evaluateMessage` (`phish-rules.js`).
+
+### E8 (R5_sonnet B1, M1, M5)
+
+- **B1 (`{portal}` blank had no option).** §9 now says `quayholt_sso_migration` is copied from E5
+  **except** that its `provides[0]` gains `"about": "portal"` (the fact table cell, the "same two
+  facts" prose with the final `provides[0]`, and the skeleton `intelFacts` bullet all updated). §16
+  now fills the slot with `setSlot('portal', 'sso_migration')`, and §17 adds the REPL check.
+  **Proved:** on the built E8 fragment, `optionsForSlot(portal)` returns `[]` and `preSendGate`
+  blocks the send with `empty-blank` **without** the `about` change; **with** it the slot offers
+  `[sso_migration]`, `preSendGate` returns `{ok:true}`, and `evaluateMessage` lands with tell
+  `senderTrust`. Matches R5_sonnet's run.
+- **M1 (generator keys).** §8b `EPISODES['e8']` renamed `ending` to `conclusion` and added a
+  `defendIntro` string, following the real `gen_e6_e7_shells.py` `defend_only()` (which reads
+  `d['defendIntro']` into `strings.defendIntro` and `d['conclusion']` into the aim's
+  `conclusionScreen`). Added a note pointing at `01` P4's single list of required `defend` keys.
+- **M5 (every string final).** Supplied every string R5_sonnet had to invent, so §4's gate holds:
+  the set `title` and `brief` for `e8_used_account`; row 5's `body`, `ifTrusted` and `reportReply`
+  and the rest of its `truth`; `strings.defendOnly`; the full `flipNoSend`, `flipMissed`,
+  `flipMissedHeading` and `flipLandedNoTells`; the `reduceNote` strings for `quayholt_ayaan_claims`
+  and `quayholt_ayaan_busy`; the off-topic decoy post `post_ayaan_other` text; and the full
+  `factorStrings` for `open`, `senderTrust`, `pretextRelevant` and `urgencyCalibrated` (adapted from
+  E5's `sso_staff`, dropping `linkCredible`/`senderAuth`).
+- **Proved (validator).** With all §8b/§9/§10/§11 strings final and the B1 fix:
+  - the E8 **defend-only** shell (built by the scratch generator, single concept panel) validates
+    **exit 0**; with the array `conceptPanel` of §12 the only errors are ENG-09b (the array schema),
+    exactly as the brief's §3 dependency says;
+  - the E8 **full** shell, built from E1's frame with the attack fragment, a single panel and no
+    `flipAftermath`, validates **exit 0** (the one warning, `phish_takeover_victim_landed` declared
+    but unread, is the same warning the built E1 shell shows, so it is a baseline, not a regression);
+    built exactly as briefed (array panel + `flipAftermath` + `stepLabels`) it exits 1 with **only**
+    the three ENG-01/ENG-09b errors (`additional properties ["flipAftermath","stepLabels"]`; the
+    array `conceptPanel`), the two packets §3 declares.
+
+### E9 (R5_sonnet M1: no §8b)
+
+- Added a full **§8b** (it had none), modelled on E8/E10: Nilesh Solanki's authored `HOSTS['nilesh']`
+  entry (sprite `male_telecom`), the in-scenario host NPC sprite keys, the learner avatar, the
+  two-aim `objectives` (`red_team_guess_aim` / `lock_down_aim`, `conclusionTaskId: lock_the_account`),
+  the training kiosk, the `mission.json`, the top-level erb strings, the generator `EPISODES['e9']`
+  entry (right keys: `defendIntro` + `conclusion`, no `ending`), the `LINES[('e9','defend')]` tuple
+  in Nilesh's voice, and the full host spoken lines.
+
+### E10 (R5_sonnet M1: fix its §8b keys)
+
+- §8b `EPISODES['e10']` renamed `ending` to `conclusion` and added a `defendIntro` string, with the
+  same P4 pointer as E8. The rest of E10's §8b was already complete.
+
+### Proof: the generator (01 P4 keys / M1) and the P0 method
+
+Built a scratch `gen_e8_e17_shells.py` from the built `gen_e6_e7_shells.py` with the P4 differences
+(`BREAKESCAPE_REPO`/`--repo` env, required out folder) and the e8/e9/e10 `EPISODES`, `HOSTS`
+(`anjali`, `nilesh`, `niamh`) and `LINES` entries transcribed from the three edited §8b sections.
+Run by the P0 method (env-set repo, scratch fragments, explicit out folder):
+
+- `gen_e8_e17_shells.py <out> e8,e9,e10` finishes **exit 0, no `KeyError`**, and writes all three
+  defend-only shells (`awareness_e8_after_the_click_defend`, `awareness_e9_passwords_defend`,
+  `awareness_e10_downloads_and_fake_checks_defend`), each with `scenario.json.erb`, `mission.json`
+  and the host ink. Each shell carries the `conclusionScreen` from the `conclusion` tuple,
+  `strings.defendIntro`, and the doubled `episode_<id>_defend_defend_` prefix. A second run is
+  byte-identical (no `DIFF`), as P0 requires.
+- **Running what the unbuilt packets do not block:** E8's defend-only validates exit 0 (single
+  panel). E9's defend-only is blocked at validation only by the ENG-09a `choice` kind (every error is
+  `kind "choice"` / `truth.correct` / `choice` additional property); nothing else. E10's defend-only
+  is blocked only by the ENG-03a `page.state`/`alarm`/`permissions`/`download`/`verdictLabels`
+  surfaces and the ENG-09b array panel; nothing else. No missing-string or generator-metadata error
+  remains in any of the three.
+
+Open: nothing new. E8's full shell still needs ENG-01 (`flipAftermath`/`stepLabels`) and ENG-09b
+(array `conceptPanel`); E9 needs ENG-02 (`guess`) and ENG-09a (`choice`); E10 needs ENG-03a and
+ENG-09b. These are the dependencies the three specs' §3 already declare; this pass changed none of
+them.
+
+## Final fixes: E11 to E17
+
+Fixer scope: `episodes/E11_misdirected_data.md`, `E12_visitor_and_tailgater.md`, `E13_ai_assistant.md`,
+`E14_social_media.md`, `E15_shadow_it.md`, `E16_insider_risk.md`, `E17_acceptable_use.md` only. No git
+run; no file edited outside these seven. Every change proved in the session scratchpad against the real
+validator (json-schema 6.2.1 / addressable 2.9.0 / public_suffix 7.0.5 in a scratch `GEM_HOME`) and the
+real generator (`gen_e6_e7_shells.py` imported and repointed, P0 method), per the Final-fix-pass rulings.
+
+### Findings fixed
+
+- **R5_sonnet M1 (generator entries and §8b).** Added a full §8b to **E11, E13, E14, E15, E16, E17**
+  (none had one), each in the shape of E8's §8b: host/learner sprites, the generator `HOSTS[...]` entry,
+  full-episode objectives/kiosk/`mission.json`/top-level strings (E11/E15/E16 cross-reference the one-aim
+  design; E13/E14 give the two-aim shape), the `EPISODES['eN']` entry, the `LINES[('eN','defend')]` tuple
+  and the host spoken lines. Every `EPISODES` entry uses the real `gen_e6_e7_shells.py` keys **`conclusion`
+  and `defendIntro`** (not the `ending` spelling). **Corrected E12's entry** (renamed `ending` ->
+  `conclusion`, added `defendIntro`) and **added `HOSTS['lorna']`** to E12 §8b. Hosts: `tomasz`
+  (new, `male_office_worker`), `gwen` (new, `female_telecom`), `julian` (reused from `gen_e2_e4_shells.py`,
+  `male_office_worker`), `nilesh` (new, `male_telecom`, shared by E15 and E17), `lorna` (new,
+  `female_office_worker`), `anjali` (reused from `gen_e3_e5_shells.py`, `female_scientist`, E16).
+- **R5_sonnet M2 / Final-fix ruling 3 (`factorStrings` at message level).** In **E12, E13, E15, E17**
+  rewrote every "`truth.factorStrings.<id>.redFlag`" to a message-level `factorStrings` object (a sibling
+  of `truth`, never inside it), and added the `factorStrings` object to **E12's six-call JSON block** (the
+  three messages that raise a local tell: items 1, 3, 5) and authored it into **E17's new six-email JSON**
+  (items 1, 6). `triage-flags.js` `redFlagString` reads `message.factorStrings`; `truth` is
+  `additionalProperties: false`.
+- **R5_sonnet M6 (E17).** Wrote the six triage items as final JSON (`from`, `to`, `subject`, `time`,
+  `body`, `auth`, `truth`, with message-level `factorStrings` for `unapproved_tool`); added §8b and named
+  **Nilesh's sprite** (`male_telecom`, the built service-desk placeholder, shared with E15); made the
+  locked-card count consistent (§20 "six" -> "seven locked cards (S04, S16, S17, S18, S19, S21, S22)", now
+  matching §11a and §18).
+- **R5_sonnet M7 (E14, E16 card kinds).** Added a `kind` column stating each item's engine kind. E14: all
+  six DMs/connection requests are `sms` (handle in `from.address`). E16: `sms`, `email`, `push`, `email`,
+  `email`, `call`. Also fixed E14 §17 `maxSends: 1` -> the real reserved `attack.maxMessages: 1` key (the
+  built E1/E7 shape); `maxSends` is not in the schema.
+- **R5_review M2 / Final-fix ruling 4 (E12 badge door).** Moved the lock to **`rooms.training_room`** (the
+  room being entered), keys copied from m02's `security_office` block (`:3104-3122`), `keyPins
+  [40, 30, 55, 35]`, per `02` ENG-05c. Updated E12 §9.1 item 3 and §15 (was "on the lobby room's
+  connection", `it_department` `:2001-2004`, `[35, 45, 25, 55]`).
+- **R5_review m1 (E15, E16).** Reworded the intro, §2 Read-first and §3 so **`02` ENG-04 is the normative
+  `mistake`/montage config shape and E11 §10a is a worked example of it** (was "E11 §10a, the ENG-04 config
+  shape").
+- **R5_review m2 (E16 item 2).** Stated `isPhish: true` and `flags: ["borrowed_authority"]` (dropped the
+  self-contradictory "`borrowed_authority` (none, really)"); the item is flagged because the ask is the
+  unsafe one (Trust scores 0, decline/route full), matching item 4's treatment of a genuine colleague's
+  bad ask, with a note that Reuben is genuine and the nuance lives in the per-item feedback.
+- **R5_review m3 (E16 channelTells).** Gave the final list once:
+  `["unrequested_mfa_push", "secrecy_or_bypass", "borrowed_authority", "lookalike_domain"]` plus the local
+  `insider_offer`; removed the trailing "Add `lookalike_domain` for item 5" addendum and added a line
+  confirming every declared tell is used by an item.
+- **R5_review t1 (E17 §19).** Cross-reference `11b` -> `11a` (the "can I?" sort is §11a; §11b is the
+  triage set).
+- **R5_review t2 (E12 lobby path).** `assets/rooms/room_aw_merrin_lobby.json` ->
+  `public/break_escape/assets/rooms/room_aw_merrin_lobby.json` (there is no top-level `assets/`).
+
+### Proofs in scratch (`.../scratchpad/final_e11/`)
+
+- **Generator, no KeyError (M1 / Final-fix rulings 1, 2).** Built a scratch `gen_e8_e17` by importing the
+  real `gen_e6_e7_shells.py`, repointing `REPO`/`AW`, and adding the §8b `HOSTS`, `LINES` and `EPISODES['e11'..'e17']`
+  entries verbatim. `defend_only('eN')` ran for all seven with **no KeyError** (`conclusion`, `defendIntro`,
+  `HOSTS[...]`, `LINES[...]` all resolve). E11's Carrholme room is not built (P5b pending), so it was
+  aliased to a built room only to exercise the generator keys.
+- **Validator, exit 0 (Final-fix ruling 1).** Each generated `..._defend/scenario.json.erb` passed
+  `validate_scenario.rb --strict-social --no-graph --skip-ink` with **exit 0** (only the generic
+  `timedConversation`/hostile-NPC/puzzle-graph SUGGESTIONS that every awareness shell shows; E12 also shows
+  a cosmetic "Learner and Lorna share `female_office_worker_v2`" suggestion, a placeholder-sprite note, not
+  an error). The validated fragments used the **exact** authored sets: E12's six `call` items with
+  message-level `factorStrings`, E16's six items with item 2 `isPhish: true`/`borrowed_authority` and the
+  merged `channelTells`, E17's six `email` items with message-level `factorStrings`, and E14's six `sms`
+  items.
+- **Negative check (M2).** Moving E12's `factorStrings` back under `truth` fails
+  `--strict-social` (exit 1: `truth contains additional properties ["factorStrings"]` on messages 0, 2, 4),
+  confirming the message-level placement is load-bearing.
+
+### Items that still need unbuilt packets (not fixable here; the defend-only shells above need none of them)
+
+- **E11 full:** ENG-04 (`mistake`/montage) and the **Carrholme room** (`room_aw_carrholme`, 01 P5b); E11's
+  **defend-only** shell also waits on P5b (its company `carrholme_services` is not in `training_room.py`,
+  so it cannot be generated or validated until P5b lands).
+- **E12 full:** ENG-05a/b/c and ENG-08 (`world` block, costume, lobby room type, locked connection) plus
+  the lobby map (01 P5c). Defend-only shell builds today.
+- **E13 full:** ENG-06 (authored assistant), ENG-07 (video-call label) and ENG-08 (the osint-optional
+  `brief write flip defend debrief` order). Defend-only shell builds today. (Note: E13 §11's `channelTells`
+  lists `senderTrust`, a factor; the scratch defend-only fragment omitted it, since full validation of
+  E13's exact set was outside this pass's scope. Worth a look, but not one of the assigned findings.)
+- **E14 full:** ENG-11 (`sortDrill` feed drill) and ENG-13 (`privacyPanel`) for the two unscored defend
+  surfaces. Scored six-item set and defend-only shell build today.
+- **E15 full:** ENG-04 and ENG-11 (Swap Shop). Defend-only shell builds today.
+- **E16 full:** ENG-04 and ENG-12 (`concernForm`). Defend-only shell builds today.
+- **E17:** ENG-11 (`sortDrill`) for the "can I?" three-way sort (the signature activity, §11a). The one
+  defend-only shell with the scored triage set builds and validates today.

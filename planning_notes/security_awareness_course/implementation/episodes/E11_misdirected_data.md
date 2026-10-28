@@ -184,6 +184,125 @@ montage mode ENG-04 adds (section 10a). `brief`, `defend` and `debrief` are buil
   once a month, so I'm at the next chair if you need me. Clear the queue the way you would on any
   morning. If something goes wrong, the only wrong move is to keep it to yourself."
 
+## 8b. Shell and generator metadata (every value final; no guessing)
+
+Every metadata value the shell wiring (01 P2/P3) and the generator (01 P4, `gen_e8_e17_shells.py`) need,
+as final strings, copying the shapes from the built **E4**/**E6** erb and the generator shape from
+`gen_e6_e7_shells.py`. E11 is a **consequence-flip** episode: the full-shell objectives, globals and
+conclusion are given in full in section 15a (one aim, no `phish_*` target); this section adds the host,
+the mission metadata and the generator entry.
+
+### Host and learner sprites
+
+- **Host Tomasz Wiśniewski's generator `HOSTS['tomasz']` entry** (new in `gen_e8_e17_shells.py`,
+  following the E6/E7 `HOSTS` shape; `defend_host: 'tomasz'` below points to it):
+
+  ```python
+  'tomasz': {
+      'id': 'tomasz_wisniewski', 'displayName': 'Tomasz Wiśniewski', 'sprite': 'male_office_worker',
+      'about': "Carrholme Services' data protection officer, 50s, Polish, in the UK 25 years (BRAND_SET.md, Carrholme additions). Precise, kind, dry; he receives the reports. Placeholder sprite until the PixelLab reset.",
+  },
+  ```
+
+  The host id `tomasz_wisniewski` is ASCII; the non-ASCII "ś" stays only in the display string
+  `displayName` (section 5), never in an id or a global.
+- **Tomasz's in-scenario host NPC sprite keys** (full erb `rooms.training_room.npcs[]`, following the E4
+  host NPC shape): `"spriteSheet": "male_office_worker_v2"`,
+  `"spriteTalk": "assets/characters/male_office_worker_talk.png"`,
+  `"spriteVisemes": "assets/characters/male_office_worker_visemes.png"`, `"npcType": "person"`,
+  `"id": "tomasz_wisniewski"`, `"displayName": "Tomasz Wiśniewski"`,
+  `"storyPath": "scenarios/awareness_e11_misdirected_data/ink/tomasz_wisniewski.json"`,
+  `"currentKnot": "start"`, plus the N16 done-event `eventMappings` (section 15a). Host art is a
+  placeholder until the PixelLab reset.
+- **Learner avatar** (full erb `player`, as E4): `"spriteSheet": "female_office_worker_v2"`,
+  `"spriteTalk": "assets/characters/female_office_worker_talk.png"`.
+
+### Full-episode objectives, globals and conclusion
+
+Given in full in **section 15a** (the one-aim design for a `mistake` episode with no `phish_*` target):
+`objectives[]` (`desk_inbox_aim`, `missionConclusion: true`, `conclusionScreen`, task `sort_desk_inbox`),
+`awarenessEpisode.conclusionTaskId: "sort_desk_inbox"`, the host `eventMappings`, and the full
+`globalVariables` list. Do not duplicate them here.
+
+### Full-episode training kiosk (full erb `rooms.training_room.objects[]` kiosk)
+
+- `observations`: "A touch-screen training kiosk for the Carrholme Care Laundry exercise: first the
+  morning's ordinary choices, then where each led, then the desk inbox to sort."
+- `observationVariants[0]`: `{ "condition": "globalVars.episode_e11_misdirected_data_defend_done",
+  "value": "A touch-screen training kiosk for the Carrholme Care Laundry exercise. The morning is played
+  out and the desk inbox is all sorted." }`
+- `minigameData.episodeId`: `e11_misdirected_data`.
+
+### Full-episode `mission.json`
+
+- `display_name`: "Awareness E11: Misdirected data (full episode)"
+- `description`: "An awareness episode of about 15 minutes for all staff. On an authorised exercise at
+  Carrholme Services, a fictional support-services firm, you first make the ordinary calls anyone would
+  on a busy morning at the Care Laundry desk, then see, six months on, where each one led. Then you sort
+  the desk inbox yourself. Only the inbox is scored, and reporting when you're unsure is always fine and
+  never marked down."
+- `difficulty_level`: 1; `scoring`: "completion"; `secgen_scenario`: null; `collection`: "training";
+  `ui_theme`: "general"; `estimated_duration_minutes`: 15.
+- `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Data protection", "Information handling", "Incident reporting", "Security awareness"] } ]`.
+
+Top-level erb strings (copy E4's shape): `scenario_id` `awareness_e11_misdirected_data`; `scenario_name`
+"Misdirected data: the Care Laundry desk"; `scenario_brief` = `strings.brief` (section 8); `endGoal`
+"Play out the morning, then sort the Care Laundry desk inbox at the training kiosk."; `version` "1.0";
+`disableAttacks` true; `startRoom` `training_room`; `startPosition` as E4.
+
+### Defend-only shell: generator `EPISODES['e11']` entry (`gen_e8_e17_shells.py`, the `gen_e6_e7_shells.py` `EPISODES` shape)
+
+```python
+'e11': {
+    'frag': f'{AW}/e11/defend.json',
+    'full_id': 'e11_misdirected_data',
+    'role_word': 'general',
+    'role_label': 'all staff',
+    'defend_set': 'e11_carrholme_desk',
+    'defend_host': 'tomasz',
+    # No 'forms'/'check_hosts': E11 feeds data_conduct, built by 10's own generator, not this one (section 14).
+    'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+               'keywords': ['Data protection', 'Information handling', 'Incident reporting', 'Security awareness']}],
+    'defend': {
+        'name': 'Misdirected data: the Care Laundry desk inbox',
+        'brief': "You're on an authorised exercise at Carrholme Services, a fictional firm. You are covering the Care Laundry desk this morning. Items are waiting in the inbox: some are routine, some are requests or complaints that belong with someone else, and one or two were made to trick you. Sort them, and check or report anything that doesn't sit right. Reporting or checking when you are unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        'endGoal': 'Sort the Care Laundry desk inbox at the training kiosk.',
+        'aim': ('desk_inbox_aim', 'Clear the Care Laundry desk inbox', 'Sort the items waiting at the Care Laundry desk at the training kiosk.'),
+        'task': ('sort_desk_inbox', 'Sort the Care Laundry desk inbox'),
+        'kiosk': ("A touch-screen kiosk showing the Care Laundry desk inbox at Carrholme Services: a handful of items to sort.",
+         "A touch-screen kiosk showing the Care Laundry desk inbox at Carrholme Services. The items are all sorted."),
+        'display': 'Awareness E11: Misdirected data (defend only)',
+        'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Cover the Care Laundry desk inbox at Carrholme Services, a fictional support-services firm: some items are routine, some are requests or complaints that belong with the DPO, and one or two were made to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
+        'minutes': 8,
+        'defendIntro': "Take the Care Laundry desk inbox one item at a time and decide what to do with each. Anything about someone's personal data, a request to see, correct or delete it, or a breach, goes to the DPO the same day; report or check anything that doesn't sit right. There's no clock on you here.",
+        'conclusion': ('Desk inbox sorted', "You've sorted the Care Laundry desk inbox and finished this episode."),
+    },
+},
+```
+
+The entry uses the real `gen_e6_e7_shells.py` keys (`conclusion`, `defendIntro`), not the `ending`
+spelling. This `brief` is the same text as section 13's defend-only brief (keep them identical). The
+defend-only shell id is `e11_misdirected_data_defend`, prefix `episode_e11_misdirected_data_defend_defend_`
+(section 13). The defend-only `scopeNote`/`_defendOnly` strings are in the fragment (section 13).
+
+### Defend-host lines: generator `LINES[('e11', 'defend')]` (the tuple `(before, after, choice, reply)`, Tomasz's voice)
+
+```python
+('e11', 'defend'): (
+    "You're covering the Care Laundry desk inbox this morning. Some of it is routine, some is a request or a complaint that belongs with me as the DPO, and one or two were sent to catch you out. Take each as it comes, and report or check anything that doesn't sit right.",
+    "That's the inbox sorted, thanks. Anything about someone's personal data, a request to see it, a breach, a complaint, comes to the DPO the same day: that's the one move that always works.",
+    'Thanks, Tomasz.', 'Any time.'),
+```
+
+### Host spoken lines for the full shell (ink, Tomasz)
+
+- **Welcome** (at the hub): the section 8 host welcome line.
+- **After the mistake/flip** (on the hand-off into the defend half): "That's six months on. Now take the
+  desk as it is this morning: some of it routine, some of it mine as the DPO. Report or check anything
+  that doesn't sit right."
+- **On completion** (defend done): "That's the desk sorted. Anything about someone's personal data comes
+  to the DPO the same day, and nobody here is ever in trouble for reporting, including their own slip."
+
 ## 9. The consequence stage (the `mistake` sandbox)
 
 There is **no attack half and no `04` phish target**: this is the consequence flip. The learner makes

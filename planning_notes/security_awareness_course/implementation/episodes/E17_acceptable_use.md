@@ -111,6 +111,95 @@ the scored triage set both run inside the `defend` stage; they are not separate 
 Because E17 is defend-only only, `strings.brief` and `scopeNote` are the defend-only text. `_defendOnly`
 (if the schema requires it present) carries the same two strings; there are no flip strings.
 
+## 8b. Shell and generator metadata (every value final; no guessing)
+
+Every metadata value the one shell needs, as final strings. E17 ships **one** shell, a defend-only shell
+built by the generator (01 P4, `gen_e8_e17_shells.py`); there is no full shell, so there are no
+full-episode objectives or two-aim shape, only the generator entry (which `defend_only` turns into the
+single-aim defend shell and its `mission.json` via `meta_for`). Copy the generator shape from
+`gen_e6_e7_shells.py`.
+
+### Host and learner sprites
+
+- **Host Nilesh Solanki's generator `HOSTS['nilesh']` entry** (new in `gen_e8_e17_shells.py`, shared with
+  E15; following the E6/E7 `HOSTS` shape; `defend_host: 'nilesh'` below points to it):
+
+  ```python
+  'nilesh': {
+      'id': 'nilesh_solanki', 'displayName': 'Nilesh Solanki', 'sprite': 'male_telecom',
+      'about': "Tarrowby's IT service desk analyst, 30s, Gujarati-British, grew up in Leicester (BRAND_SET.md, E6 additions; renamed from Dev Mistry). The natural 'ask first' voice for acceptable use. Placeholder sprite until the PixelLab reset.",
+  },
+  ```
+
+  Sprite `male_telecom` is the built placeholder the other service-desk hosts use (for example Darren
+  Price in `gen_e3_e5_shells.py`); Nilesh is a sender only in the built E6, with no sprite assigned, so
+  this is a placeholder until the PixelLab reset. This is the **same `HOSTS['nilesh']` entry** E15 quotes;
+  it is defined once in `gen_e8_e17_shells.py` and used by both.
+- **Nilesh's in-scenario host NPC sprite keys** (shell `rooms.training_room.npcs[]`, E6 host NPC shape):
+  `"spriteSheet": "male_telecom_v2"`, `"spriteTalk": "assets/characters/male_telecom_talk.png"`,
+  `"spriteVisemes": "assets/characters/male_telecom_visemes.png"`, `"npcType": "person"`,
+  `"id": "nilesh_solanki"`, `"displayName": "Nilesh Solanki"`,
+  `"storyPath": "scenarios/awareness_e17_acceptable_use_defend/ink/nilesh_solanki.json"`,
+  `"currentKnot": "start"`, plus the N16 done-event `eventMappings` on
+  `episode_e17_acceptable_use_defend_defend_done`. Host art is a placeholder until the PixelLab reset.
+- **Learner avatar** (shell `player`, as E6): `"spriteSheet": "female_office_worker_v2"`,
+  `"spriteTalk": "assets/characters/female_office_worker_talk.png"`.
+
+### The one shell: generator `EPISODES['e17']` entry (`gen_e8_e17_shells.py`, the `gen_e6_e7_shells.py` `EPISODES` shape)
+
+```python
+'e17': {
+    'frag': f'{AW}/e17/defend.json',
+    'full_id': 'e17_acceptable_use',
+    'role_word': 'general',
+    'role_label': 'all staff',
+    'defend_set': 'e17_acceptable_use_inbox',
+    'defend_host': 'nilesh',
+    # No 'forms'/'check_hosts': E17 feeds data_conduct, built by 10's own generator, not this one (section 14).
+    'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+               'keywords': ['Acceptable use', 'Security policy', 'Monitoring', 'Security awareness']}],
+    'defend': {
+        'name': 'Acceptable use: can I?',
+        'brief': "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. Three answers: Allowed, Not allowed, Ask first. You'll sort a set of everyday 'can I?' moments against the firm's own rules, with the reason on screen, and handle a few messages that arrive in the inbox. When you're not sure, ask first.",
+        'endGoal': 'Sort the "can I?" cards and handle the inbox at the training kiosk.',
+        'aim': ('acceptable_use_aim', 'Sort the can I moments', 'Sort the "can I?" cards and handle the inbox at the training kiosk.'),
+        'task': ('sort_can_i', 'Sort the can I moments'),
+        'kiosk': ("A touch-screen kiosk showing the 'can I?' cards and a short inbox at Tarrowby Logistics: everyday moments to sort against the firm's rules.",
+         "A touch-screen kiosk showing the 'can I?' cards and a short inbox at Tarrowby Logistics. The cards and the inbox are all done."),
+        'display': 'Awareness E17: Acceptable use',
+        'desc': "An awareness episode of about 12 minutes for all staff. Sort everyday 'can I?' moments against Tarrowby Logistics' own rules, a fictional haulier, and handle a short inbox. Each answer has its reason on screen, Ask first is never the wrong answer, and reporting when you're unsure is always fine and never marked down.",
+        'minutes': 12,
+        'defendIntro': "Sort the everyday 'can I?' moments into Allowed, Not allowed or Ask first, with the reason on screen, then handle the short inbox. When you're not sure, Ask first, it's never the wrong answer. There's no clock on you here.",
+        'conclusion': ('Acceptable use done', "You've sorted the 'can I?' moments and handled the inbox, and finished this episode."),
+    },
+},
+```
+
+`full_id` is `e17_acceptable_use`, so the generator's `defend_only('e17')` builds mission
+`awareness_e17_acceptable_use_defend`, episode id `e17_acceptable_use_defend`, prefix
+`episode_e17_acceptable_use_defend_defend_` (section 13, section 11b). `role_word`/`role_label` are read
+only by the generator's `check()`, which is not run for E17 (E17 feeds `data_conduct`, built by `10`'s own
+generator); they are kept for shape parity with the other entries. `minutes` is 12 (E17's one shell
+carries the whole episode: the "can I?" sort plus the triage set, section 6), not the ~8 of the other
+defend-only shells. The `_defendOnly.brief`/`_defendOnly.scopeNote` in the fragment equal `strings.brief`
+and `scopeNote` (section 13), so the generator's `brief` above is also the fragment brief.
+
+### Defend-host lines: generator `LINES[('e17', 'defend')]` (the tuple `(before, after, choice, reply)`, Nilesh's voice)
+
+```python
+('e17', 'defend'): (
+    "Nilesh, service desk. Every rule here has a 'because', and I'll give you it. Three answers: Allowed, Not allowed, Ask first, and Ask first is never the wrong one. Sort the cards, then there's a short inbox.",
+    "That's the lot, thanks. When you're not sure, ask first, the software portal usually answers the same day; and if you make a mistake, report it.",
+    'Thanks, Nilesh.', 'Any time.'),
+```
+
+### Host spoken lines
+
+- **Welcome** (at the hub): the section 8 host welcome line; reads the three answers.
+- **On completion** (defend done): "That's the lot. Every rule here has a 'because'. When you're not
+  sure, ask first, it's never the wrong answer; and an honest mistake reported quickly gets fixed, not
+  punished."
+
 ## 9. Attack half, or the consequence stage
 
 **None.** E17 is defend-only by user decision: no attack, no `mistake` stage, no flip. This is the only
@@ -162,7 +251,7 @@ Full card bank (from `core_16/game_design.md`; Tarrowby defaults, each `id | sit
 - S18 | Turn off the antivirus because it slows your laptop | Not allowed | It's there to stop malware; ask the service desk to fix the slowness | Locked
 - S19 | Look up a famous customer's address, just to see | Not allowed | Looking without a work reason can be a crime (Data Protection Act 2018, s.170) | Locked
 - S20 | Use your own laptop for work while yours is repaired | Ask first (service desk) | Only through the remote desktop service |
-- S21 | You think you've sent a file to the wrong customer | Report it | Reporting suspected incidents is a duty; the sooner the better (core_04) | Locked
+- S21 | You think you've sent a file to the wrong customer. Can you wait and say nothing in case it was fine? | Not allowed | Report a suspected mistake straight away; reporting is a duty and the sooner the better (core_04) | Locked
 - S22 | Tell a colleague your password to watch your inbox while you're off | Not allowed | Ask the service desk for shared access; your password is yours alone (core_03) | Locked
 
 ### 11b. The scored six-item triage set (awareness profile, with a mirror pair)
@@ -183,9 +272,12 @@ factor), so no shared-library change is needed. The same id is also used by E15'
 (`e15_shortcuts_inbox`), but a tell is shared only when a `10` check-form item scores it,
 even when two sets use the same id: the sets are never merged, each declares `unapproved_tool` on its own
 set, and nothing is appended to the shared `CHANNEL_TELLS` / `SKILL_NAMES`. No `10` item scores it, so it
-stays local in both (the tell table and this rule are in `02` ENG-08). The full sentence per flagging message is carried as
-`truth.factorStrings.unapproved_tool.redFlag` ("a free app or online service with no contract, handing
-the firm's data to a provider we haven't checked").
+stays local in both (the tell table and this rule are in `02` ENG-08). The full sentence per flagging
+message is carried on a **message-level `factorStrings` object (a sibling of `truth`, never inside it)**,
+keyed `factorStrings.unapproved_tool.redFlag` ("a free app or online service with no contract, handing the
+firm's data to a provider we haven't checked"). `triage-flags.js` `redFlagString` reads
+`message.factorStrings`; `truth` is `additionalProperties: false`, so a `factorStrings` under `truth`
+fails `--strict-social`.
 
 This is the measured set, so E17
 matches the other episodes' measurement (the brief's "about 6 defend items with a mirror pair"); it sits
@@ -203,6 +295,93 @@ awareness profile.
 
 **Mirror pair (aw5):** item 1 (normal-looking unapproved-install lure, Verify/Report) and item 4
 (suspicious-looking genuine monitoring notice, Trust).
+
+### Items as final JSON
+
+The six `email` messages, as final `triageSet.messages` JSON (shape from `awareness/e4/defend.json`:
+`from { name, address }`, `to`, `subject`, `time`, `body`, `auth`, `truth`). The scenario-local tell
+`unapproved_tool` is labelled on the set `flagChips` ("Unapproved tool or app") and its sentence is
+carried on a **message-level `factorStrings` object (a sibling of `truth`)** on the two messages that
+raise it (items 1 and 6). `secrecy_or_bypass` is a shared `CHANNEL_TELLS` tell, so it needs no
+`factorStrings` entry. Items 2 and 3 are flagged (`isPhish: true`) because the **ask** is the unsafe one,
+even though the colleague is genuine; this makes the modelled decline/route the full-mark move under the
+`awareness` profile (the human nuance is in the per-item feedback). Links use reserved `.example` domains
+(non-routable), no working payload. This exact set validates `--strict-social` (section 17).
+
+```json
+[
+  { "id": "e17_meeting_app", "kind": "email",
+    "from": { "name": "Harlow Freight (client)", "address": "ops@harlow-freight.example" },
+    "to": "you@tarrowby.example",
+    "subject": "Join Tuesday's review, install Meetly first",
+    "time": "09:40",
+    "body": "Hi,\nWe run our project reviews on Meetly. Please install it from the link below before Tuesday so you can join.\nInstall: https://get.meetly-app.example/win\nThanks,\nHarlow Freight projects",
+    "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "harlow-freight.example", "replyTo": "ops@harlow-freight.example" },
+    "truth": { "isPhish": true, "flags": ["unapproved_tool"],
+      "perFlagNote": { "unapproved_tool": "Installing an app a client sent is not your call; unknown software can carry malware. Ask the service desk, or suggest our own meeting tool." },
+      "ifTrusted": "You install software the firm hasn't checked onto a work laptop.",
+      "reportReply": "Thanks, the service desk can set the meeting up on our approved tool instead." },
+    "factorStrings": { "unapproved_tool": { "redFlag": "a free app or online service with no contract, handing the firm's data to a provider we haven't checked" } } },
+  { "id": "e17_data_lookup", "kind": "email",
+    "from": { "name": "Shauna Lofthouse", "address": "shauna.lofthouse@tarrowby.example" },
+    "to": "you@tarrowby.example",
+    "subject": "Quick favour",
+    "time": "10:15",
+    "body": "Hiya, can you look up a contact's mobile in the system for me? It's a personal thing, nothing to do with work. Ta, Shauna.",
+    "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "shauna.lofthouse@tarrowby.example" },
+    "truth": { "isPhish": true, "flags": ["secrecy_or_bypass"],
+      "perFlagNote": { "secrecy_or_bypass": "A personal lookup has no work reason; looking at data your job doesn't need can be an offence (Data Protection Act 2018, s.170). Decline, and suggest another way." },
+      "ifTrusted": "You use your access to the system for something personal, which is a misuse even for a colleague.",
+      "reportReply": "Thanks, declining and pointing her to another way was the right call." } },
+  { "id": "e17_shared_login", "kind": "email",
+    "from": { "name": "Colin Mather", "address": "colin.mather@tarrowby.example" },
+    "to": "you@tarrowby.example",
+    "subject": "Watch my inbox?",
+    "time": "11:05",
+    "body": "Off sick today. Could you log in as me and keep an eye on my inbox? You've got my password from last time. Cheers, Colin.",
+    "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "colin.mather@tarrowby.example" },
+    "truth": { "isPhish": true, "flags": ["secrecy_or_bypass"],
+      "perFlagNote": { "secrecy_or_bypass": "Your login is you; a shared password hides who did what and can breach the firm's access controls. Ask the service desk for proper shared access." },
+      "ifTrusted": "Anything done under his login looks like him, and the record is wrong.",
+      "reportReply": "Thanks, the service desk can give you proper shared access to his inbox." } },
+  { "id": "e17_monitoring_notice", "kind": "email",
+    "from": { "name": "Tarrowby intranet", "address": "intranet@tarrowby.example" },
+    "to": "you@tarrowby.example",
+    "subject": "What we monitor and why",
+    "time": "08:30",
+    "body": "A reminder of what the firm checks on work systems and why: email and web filtering, sign-in records, and data leaving our systems. It is done within the rules, to protect staff and the firm, not to watch individuals. The full policy is on the intranet.",
+    "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "intranet@tarrowby.example" },
+    "truth": { "isPhish": false, "flags": [],
+      "whyFine": { "default": "It reads like a warning, but it's the firm telling you plainly what it checks and why, which is exactly what the rules require. Nothing to report." },
+      "falseAlarmCost": "Reporting it only has someone re-confirm a genuine policy notice." } },
+  { "id": "e17_personal_use_ok", "kind": "email",
+    "from": { "name": "Tarrowby HR", "address": "hr@tarrowby.example" },
+    "to": "you@tarrowby.example",
+    "subject": "Reminder: reasonable personal use",
+    "time": "14:20",
+    "body": "A quick reminder that reasonable personal use of work kit in your own time is fine, within the policy. Keep it lawful and don't let it get in the way of work. Any questions, ask HR or the service desk.",
+    "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "hr@tarrowby.example" },
+    "truth": { "isPhish": false, "flags": [],
+      "whyFine": { "default": "A genuine, ordinary policy reminder. Reasonable personal use in your own time is allowed. Handle it." },
+      "falseAlarmCost": "Reporting a routine HR reminder just takes a colleague's time." } },
+  { "id": "e17_free_tool", "kind": "email",
+    "from": { "name": "QuickConvert", "address": "hello@quickconvert-online.example" },
+    "to": "you@tarrowby.example",
+    "subject": "Convert any file, free, no install",
+    "time": "15:30",
+    "body": "Everyone uses QuickConvert! Upload your file and convert it here, free, no install needed: https://quickconvert-online.example/go",
+    "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickconvert-online.example", "replyTo": "hello@quickconvert-online.example" },
+    "truth": { "isPhish": true, "flags": ["unapproved_tool"],
+      "perFlagNote": { "unapproved_tool": "A free online tool hands the file to a provider we haven't checked; there's an approved way. Ask first, the service desk usually answers the same day." },
+      "ifTrusted": "The firm's file goes to an unchecked third party.",
+      "reportReply": "Thanks, the service desk can point you to the approved converter, usually the same day." },
+    "factorStrings": { "unapproved_tool": { "redFlag": "a free app or online service with no contract, handing the firm's data to a provider we haven't checked" } } }
+]
+```
+
+The invented sender firms (`harlow-freight.example`, `meetly-app.example`, `quickconvert-online.example`)
+are generic `.example` lure domains, not named cast; the pre-ship web search for them as real businesses
+is owed (BRAND_SET rule), noted in section 20.
 
 ## 12. Debrief cards
 
@@ -316,7 +495,7 @@ are no flip or `mistake` keys to lint.
 ## 19. Stop and ask if
 
 - The "can I?" sort (ENG-11 `sortDrill`) is wanted scored by the awareness profile rather than the
-  organisation answer key (this changes section 11b).
+  organisation answer key (this changes section 11a, the sort; section 11b is the separate triage set).
 
 ## 20. Open questions
 
@@ -327,5 +506,7 @@ are no flip or `mistake` keys to lint.
 - **The "can I?" sort scoring:** scored by the organisation answer key, not the awareness profile, so the
   measured parity set is the six-item triage set (11b). If the product wants the sort scored for
   measurement, that is a request to `05`.
-- The organisation answer key's defaults are suggestions; only confirmed cards are drawn, and the six
-  locked cards cannot be changed.
+- The organisation answer key's defaults are suggestions; only confirmed cards are drawn, and the seven
+  locked cards (S04, S16, S17, S18, S19, S21, S22) cannot be changed.
+- Pre-ship web search for the invented lure sender firms in the section 11b JSON (`harlow-freight.example`,
+  `meetly-app.example`, `quickconvert-online.example`) as real businesses is owed (BRAND_SET rule).

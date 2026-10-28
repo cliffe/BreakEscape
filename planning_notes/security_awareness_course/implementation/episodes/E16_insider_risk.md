@@ -9,8 +9,9 @@ rewards snooping, never shows a "suspicion meter", and never asks the learner to
 temptations to search a desk or photograph a screen exist only so they can be explained. Every mention
 of grievance, debt or illness comes with support. See section 18.
 
-E16 is a **consequence-flip plus defend** episode. It asks ENG-04 for the config shape **defined once in
-`E11_misdirected_data.md` section 10a**; do not redefine it here.
+E16 is a **consequence-flip plus defend** episode. The normative `mistake`/montage config shape is owned
+by **`02_ENGINE_WORK.md` ENG-04**; `E11_misdirected_data.md` section 10a is a worked example of it. Do not
+redefine it here.
 
 ## 1. Goal and module(s)
 
@@ -28,7 +29,8 @@ Period").
 ## 2. Read first (exact paths)
 
 - `modules/core_14_insider_risk/concepts.md` (source of truth), `.../game_design.md`, `.../assessment.md`.
-- **`E11_misdirected_data.md` section 10a** (the ENG-04 config shape; required reading).
+- **`02_ENGINE_WORK.md` ENG-04** (the normative `mistake`/montage config shape); **`E11_misdirected_data.md`
+  section 10a** is a worked example of it (required reading).
 - `designs/00_data_contract.md` sections 2 (channel tells, `unrequested_mfa_push`), 8 (NPC influence)
   and 11 (`awarenessEpisode`).
 - `designs/11_awareness_product_episodes.md` sections 3.1, 4.1, 5.1, the "Built note"; and the built
@@ -47,7 +49,8 @@ Period").
 
 ## 3. Depends on
 
-- **ENG-04** (the consequence-flip `mistake` stage + montage flip), config shape per `E11` section 10a.
+- **ENG-04** (the consequence-flip `mistake` stage + montage flip): the normative config shape
+  (`02_ENGINE_WORK.md`); `E11` section 10a is a worked example of it.
 - **ENG-08** schema/validator for the ENG-04 keys (if not carried by ENG-04).
 - **Built, no new packet:** the inbox-triage defender under the `awareness` profile with `Verify`; the
   built authenticator `push` card (`unrequested_mfa_push`); the NPC influence global and thresholds (how
@@ -146,6 +149,144 @@ sub-activity.
   bit of talk going round. You're not here to catch anyone. Keep your login yours, tell me what gets
   offered to you, and if something genuinely gives you pause, bring me the facts, not a theory."
 
+## 8b. Shell and generator metadata (every value final; no guessing)
+
+Every metadata value the shell wiring (01 P2/P3) and the generator (01 P4, `gen_e8_e17_shells.py`) need,
+as final strings, copying the shapes from the built **E3**/**E4** erb and the generator shape from
+`gen_e6_e7_shells.py`. E16 is a **consequence-flip** episode with **no `phish_*` target**, so the full
+shell carries a single aim (the one-aim design, as E11 section 15a).
+
+### Host and learner sprites
+
+- **Host Anjali Rao's `HOSTS['anjali']` entry already exists in `gen_e3_e5_shells.py`** and is copied
+  verbatim into `gen_e8_e17_shells.py` (also used by E8; `defend_host: 'anjali'` below points to it):
+  `{ 'id': 'anjali_rao', 'displayName': 'Anjali Rao', 'sprite': 'female_scientist', 'about': "Quayholt's information security analyst, 30s, Indian, moved from Bengaluru; she receives the reports (BRAND_SET.md). Placeholder sprite until the PixelLab reset." }`.
+- **Anjali's in-scenario host NPC sprite keys** (full erb `rooms.training_room.npcs[]`, E3 host NPC
+  shape): `"spriteSheet": "female_scientist_v2"`, `"spriteTalk": "assets/characters/female_scientist_talk.png"`,
+  `"spriteVisemes": "assets/characters/female_scientist_visemes.png"`, `"npcType": "person"`,
+  `"id": "anjali_rao"`, `"displayName": "Anjali Rao"`,
+  `"storyPath": "scenarios/awareness_e16_insider_risk/ink/anjali_rao.json"`, `"currentKnot": "start"`,
+  plus the N16 done-event `eventMappings`. Host art is a placeholder until the PixelLab reset.
+- **Learner avatar** (full erb `player`, as E3): `"spriteSheet": "female_office_worker_v2"`,
+  `"spriteTalk": "assets/characters/female_office_worker_talk.png"`.
+
+### Full-episode objectives, globals and conclusion (one aim, no phish target)
+
+Like E11, a consequence-flip episode has no `phish_*` global and no `red_team_aim`, so the full shell
+carries **one** aim (`missionConclusion: true`), concluded on the defend set's done global (follow E11
+section 15a's shape exactly):
+
+```jsonc
+"objectives": [
+  {
+    "aimId": "leaver_week_aim",
+    "title": "Handle the leaver week",
+    "description": "Go through the messages and the raise-a-concern step at the training kiosk.",
+    "status": "active",
+    "order": 0,
+    "missionConclusion": true,
+    "concludeRequires": { "globals": ["episode_e16_insider_risk_defend_done"] },
+    "conclusionScreen": {
+      "type": "success",
+      "title": "Insider risk episode done",
+      "body": "You've seen the chain a small choice can start and handled the leaver week's messages yourself, so this episode is finished."
+    },
+    "tasks": [
+      { "taskId": "handle_leaver_week", "title": "Handle the messages", "type": "custom", "status": "active" }
+    ]
+  }
+]
+```
+
+- `awarenessEpisode.conclusionTaskId: "handle_leaver_week"`; the host NPC (Anjali) carries the
+  `eventMappings` entry completing the task on `episode_e16_insider_risk_defend_done` (E11 section 15a shape).
+- `globalVariables` for the **full** shell (as E11 section 15a, no `phish_*` or attack-landed global):
+  `episode_e16_insider_risk_state: {}`, `se_awareness_records: []`, `episode_e16_insider_risk_defend_percent: 0`,
+  `episode_e16_insider_risk_defend_reportRate: 0`, `episode_e16_insider_risk_defend_done: false`,
+  `episode_e16_insider_risk_defend_pass: false`. (`episode_<id>_state` also holds `mistakeChoices` at
+  runtime, cleared on `flip`.)
+- The **defend-only** shell uses the double-suffix prefix (section 13): done global
+  `episode_e16_insider_risk_defend_defend_done`, result globals `episode_e16_insider_risk_defend_defend_{percent,reportRate,pass}`,
+  state global `episode_e16_insider_risk_defend_state`.
+
+### Full-episode training kiosk (full erb `rooms.training_room.objects[]` kiosk, E3 shape)
+
+- `observations`: "A touch-screen training kiosk for the Quayholt leaver-week exercise: first this week's
+  ordinary choices, then where each led, then the messages to handle and a fair way to raise a concern."
+- `observationVariants[0]`: `{ "condition": "globalVars.episode_e16_insider_risk_defend_done", "value": "A
+  touch-screen training kiosk for the Quayholt leaver-week exercise. The week is played out and the
+  messages are all handled." }`
+- `minigameData.episodeId`: `e16_insider_risk`.
+
+### Full-episode `mission.json` (E3 mission.json shape)
+
+- `display_name`: "Awareness E16: Insider risk (full episode)"
+- `description`: "An awareness episode of about 15 minutes for all staff. On an authorised exercise at
+  Quayholt Insurance, a fictional insurer, during a leaver's last week, you first make this week's
+  ordinary calls, then see where each led. Then you sort a short set of messages and learn to raise a
+  concern as facts, not a verdict. Only the set is scored, reporting when you're unsure is always fine and
+  never marked down, and you are never asked to investigate anyone."
+- `difficulty_level`: 1; `scoring`: "completion"; `secgen_scenario`: null; `collection`: "training";
+  `ui_theme`: "general"; `estimated_duration_minutes`: 15.
+- `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Insider risk", "Incident reporting", "Access control", "Security awareness"] } ]`.
+
+Top-level erb strings (copy E3's): `scenario_id` `awareness_e16_insider_risk`; `scenario_name` "Insider
+risk: a leaver's week"; `scenario_brief` = `strings.brief` (section 8); `endGoal` "Play out the week, then
+sort the messages and raise a concern fairly at the training kiosk."; `version` "1.0"; `disableAttacks`
+true; `startRoom` `training_room`; `startPosition` as E3.
+
+### Defend-only shell: generator `EPISODES['e16']` entry (`gen_e8_e17_shells.py`, the `gen_e6_e7_shells.py` `EPISODES` shape)
+
+```python
+'e16': {
+    'frag': f'{AW}/e16/defend.json',
+    'full_id': 'e16_insider_risk',
+    'role_word': 'general',
+    'role_label': 'all staff',
+    'defend_set': 'e16_leaver_week_inbox',
+    'defend_host': 'anjali',
+    # No 'forms'/'check_hosts': E16 feeds data_conduct, built by 10's own generator, not this one (section 14).
+    'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+               'keywords': ['Insider risk', 'Incident reporting', 'Access control', 'Security awareness']}],
+    'defend': {
+        'name': 'Insider risk: a leaver\'s week',
+        'brief': "You're on an authorised exercise at Quayholt Insurance, a fictional firm, during a leaver's last week. Messages are waiting: an offer, a request to borrow a login, some sign-in prompts, a favour. Sort them, and learn to raise a concern as facts, not a verdict on anyone. Reporting or checking when you're unsure is always fine and never marked down. You are not being asked to investigate anyone.",
+        'endGoal': 'Sort the messages and raise a concern fairly at the training kiosk.',
+        'aim': ('leaver_week_aim', 'Handle the leaver week', 'Go through the messages and the raise-a-concern step at the training kiosk.'),
+        'task': ('handle_leaver_week', 'Handle the messages'),
+        'kiosk': ("A touch-screen kiosk showing a short set of messages from a leaver's last week at Quayholt, and a fair way to raise a concern.",
+         "A touch-screen kiosk showing a short set of messages from a leaver's last week at Quayholt. The messages are sorted and the concern step is done."),
+        'display': 'Awareness E16: Insider risk (defend only)',
+        'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Sort a short set of messages from a leaver's last week at Quayholt Insurance, a fictional insurer, and learn to raise a concern as facts, not a verdict. Each answer is explained, reporting when you're unsure is always fine and never marked down, and you are never asked to investigate anyone.",
+        'minutes': 8,
+        'defendIntro': "Go through the messages and decide what to do with each one, then raise a concern as facts, not a verdict on anyone. Keep your login to yourself, report what gets offered to you, and deny any sign-in prompt you didn't start. There's no clock on you here, and you are not being asked to investigate anyone.",
+        'conclusion': ('Leaver week handled', "You've sorted the messages and raised a concern fairly, and finished this episode."),
+    },
+},
+```
+
+The entry uses the real `gen_e6_e7_shells.py` keys (`conclusion`, `defendIntro`). This `brief` equals the
+section 8 `_defendOnly.brief` (keep them identical). The defend-only shell id is `e16_insider_risk_defend`,
+prefix `episode_e16_insider_risk_defend_defend_` (section 13).
+
+### Defend-host lines: generator `LINES[('e16', 'defend')]` (the tuple `(before, after, choice, reply)`, Anjali's voice)
+
+```python
+('e16', 'defend'): (
+    "Anjali Rao, information security. It's a leaver's week and there's a bit of talk about. You're not here to catch anyone: keep your login yours, tell me what gets offered to you, and bring me facts, not a theory.",
+    "That's them sorted, thanks. Your login is you, offers get reported, and a concern goes to the right person as facts, never a verdict on anyone.",
+    'Thanks, Anjali.', 'Any time.'),
+```
+
+### Host spoken lines for the full shell (ink, Anjali)
+
+- **Welcome** (at the hub): the section 8 host welcome line; the "not being asked to investigate anyone"
+  line.
+- **After the mistake/flip** (hand-off into the defend half): "That's where this week's choices led. Now a
+  short set of messages, and a fair way to raise a concern, facts, not a verdict on anyone."
+- **On completion** (defend done): "That's them handled. Your login is you, offers get reported, and an
+  honest concern that turns out to be nothing is never a failure. Nobody's in trouble for being approached."
+
 ## 9. The consequence stage (the `mistake` sandbox)
 
 Five everyday choices across the week, one at a time, inside ordinary work; nothing is scored. Exactly
@@ -200,24 +341,38 @@ section 10a and `02` ENG-04; E16 follows the same rule.
 **Scored set:** six items on the built inbox-triage defender, `scoringProfile: "awareness"`,
 `verifyVerdict: true` (routing to the service desk is a real move), `feedbackMode: "immediate"`,
 `headerPanel: "off"`, `glossary: "closed"`. Set id `e16_leaver_week_inbox`.
-`outcome.setGlobalPrefix: "episode_e16_insider_risk_defend_"`, `passPercent: 0`. `channelTells`:
-`["unrequested_mfa_push", "secrecy_or_bypass", "borrowed_authority"]` plus the scenario-local tell
-`insider_offer` ("an offer of money or favours for access or data"). Use the built authenticator `push`
-card for item 3.
+`outcome.setGlobalPrefix: "episode_e16_insider_risk_defend_"`, `passPercent: 0`. The final `channelTells`
+(one list, all items folded in) is
+`["unrequested_mfa_push", "secrecy_or_bypass", "borrowed_authority", "lookalike_domain"]` plus the
+scenario-local tell `insider_offer` ("an offer of money or favours for access or data"). Use the built
+authenticator `push` card for item 3.
 
-| # | Id | Kind / from | Subject or line | Tells and flags | Correct verdict | Reason text |
-|---|----|-------------|-----------------|-----------------|-----------------|-------------|
-| 1 | `e16_offer` | sms/DM, unknown contact "Opportunities" | "We pay people at firms like yours for remote access. 25%. Anonymous. Interested?" | `insider_offer`, `secrecy_or_bypass` | **Report** (screenshot and report, without replying) | "Don't reply, negotiate or play along. Screenshot it and report it; the same message often goes to several people, and one report warns everyone. You're not in trouble for being asked." |
-| 2 | `e16_shared_login_req` | email/call, Reuben Ofori (built), genuine colleague, bad ask | "Can I use your login for ten minutes? I'm locked out." | `borrowed_authority` (none, really; a colleague's convenience ask) | **Verify** (route to the service desk with him) or **Report** | "Your login is you; sharing it puts his actions on your record and may show him more than he should see. Ring the service desk with him; a reset takes minutes. Say no, but offer the safe route." |
-| 3 | `e16_mfa_storm` | push card (built authenticator) | A run of sign-in prompts you didn't start, late at night | `unrequested_mfa_push` | **Report** (Deny and report; deny them all) | "You didn't start these. Deny every one and ring the service desk now, any hour. A flood of prompts is someone trying to wear you into tapping approve." |
-| 4 | `e16_leaver_favour` | email, Ross Garside | "Export my accounts to my personal email for the handover, would you?" | `secrecy_or_bypass` | **Verify** (ask what the handover needs; route to his manager) or **Report** | "Handover notes go in the shared place, not a personal inbox; the client list belongs to the firm. Decline the personal-email export and route it. Taking data to a new job can be a crime, but here you just help him do the handover properly." |
-| 5 | `e16_it_approve` | email, "IT Service Desk" on a look-alike (`quayholt-support.example`) | "We're migrating your account tonight; approve the sign-in prompt when it arrives" | `secrecy_or_bypass`, `lookalike_domain` | **Report** | "This primes you to approve a prompt you didn't start; real IT never asks that, and the address is on quayholt-support.example, not quayholt.example. Report it. (The normal-looking phish half of the mirror pair.)" |
-| 6 | `e16_genuine_lockout` | call, a colleague locked out before a client deadline, genuine, a bit pushy | "I'm really stuck, can you not just sort me out?" | none (genuine; isPhish false) | **Verify** (ring the service desk / confirm on the number on file) | "Genuine and awkward, not a trick. The safe route still serves him: the service desk, or a manager for temporary access. Refusing flat, with no safe route offered, helps nobody. (The suspicious-looking genuine half of the mirror pair.)" |
+**Card kind.** The engine has only `email, sms, voicemail, qr, page, call, push` kinds
+(`triage-kinds.js` `NON_EMAIL_KINDS`); there is no "DM" kind. The `kind` column below states each item's
+kind outright: item 1 is `sms` (a direct message, sender handle in `from.address`), item 2 `email`, item 3
+`push` (the built authenticator card), items 4 and 5 `email`, item 6 `call`.
+
+| # | Id | Kind | From (in-fiction) | Subject or line | Tells and flags | isPhish | Correct verdict | Reason text |
+|---|----|------|-------------------|-----------------|-----------------|---------|-----------------|-------------|
+| 1 | `e16_offer` | `sms` | unknown contact "Opportunities" | "We pay people at firms like yours for remote access. 25%. Anonymous. Interested?" | `insider_offer`, `secrecy_or_bypass` | true | **Report** (screenshot and report, without replying) | "Don't reply, negotiate or play along. Screenshot it and report it; the same message often goes to several people, and one report warns everyone. You're not in trouble for being asked." |
+| 2 | `e16_shared_login_req` | `email` | Reuben Ofori (built), a genuine colleague making a bad ask | "Can I use your login for ten minutes? I'm locked out." | `borrowed_authority` | true | **Verify** (route to the service desk with him) or **Report** | `perFlagNote.borrowed_authority`: "Lending your login hands someone your access under your name; whatever they open goes on your record, and it may show him more than he should see." `ifTrusted`: "His actions for those ten minutes are logged as yours, and he may reach data he has no business in." `reportReply`: "Thanks, the service desk reset his own login in minutes." Reuben is a genuine colleague, not an attacker; the item is flagged because the **ask** is the unsafe one, so the modelled move is to decline and offer the safe route, not to lend the login. |
+| 3 | `e16_mfa_storm` | `push` | the built authenticator | A run of sign-in prompts you didn't start, late at night | `unrequested_mfa_push` | true | **Report** (Deny and report; deny them all) | "You didn't start these. Deny every one and ring the service desk now, any hour. A flood of prompts is someone trying to wear you into tapping approve." |
+| 4 | `e16_leaver_favour` | `email` | Ross Garside | "Export my accounts to my personal email for the handover, would you?" | `secrecy_or_bypass` | true | **Verify** (ask what the handover needs; route to his manager) or **Report** | "Handover notes go in the shared place, not a personal inbox; the client list belongs to the firm. Decline the personal-email export and route it. Taking data to a new job can be a crime, but here you just help him do the handover properly." |
+| 5 | `e16_it_approve` | `email` | "IT Service Desk" on a look-alike (`quayholt-support.example`) | "We're migrating your account tonight; approve the sign-in prompt when it arrives" | `secrecy_or_bypass`, `lookalike_domain` | true | **Report** | "This primes you to approve a prompt you didn't start; real IT never asks that, and the address is on quayholt-support.example, not quayholt.example. Report it. (The normal-looking phish half of the mirror pair.)" |
+| 6 | `e16_genuine_lockout` | `call` | a colleague locked out before a client deadline, genuine, a bit pushy | "I'm really stuck, can you not just sort me out?" | none | false | **Verify** (ring the service desk / confirm on the number on file) | "Genuine and awkward, not a trick. The safe route still serves him: the service desk, or a manager for temporary access. Refusing flat, with no safe route offered, helps nobody. (The suspicious-looking genuine half of the mirror pair.)" |
+
+**Item 2 (`borrowed_authority`, `isPhish: true`).** Reuben is a built genuine colleague, but his
+convenience ask is the unsafe item, so it carries one flag (`borrowed_authority`) and `isPhish: true`:
+that way Trust (lend the login) scores 0 and the modelled decline/route scores full under the `awareness`
+profile, which is the behaviour the item measures. This matches item 4, where a genuine leaver's ask is
+likewise a flagged item. The human nuance (Reuben is honest; help him the safe way) is carried in the
+per-item feedback.
 
 **Mirror pair (aw5):** item 5 (normal-looking phish priming MFA approval, Report) and item 6
 (suspicious-looking genuine locked-out colleague, Verify, not refuse).
 
-Add `lookalike_domain` to `channelTells` for item 5.
+Every declared `channelTell` is used by an item: `insider_offer` (1), `secrecy_or_bypass` (1, 4, 5),
+`borrowed_authority` (2), `unrequested_mfa_push` (3), `lookalike_domain` (5).
 
 **Unscored teaching step in the defend stage (ENG-12 `concernForm`):** **"Raise a concern"** uses
 ENG-12's `awarenessEpisode.concernForm` surface, a short report built from fact chips the learner noticed

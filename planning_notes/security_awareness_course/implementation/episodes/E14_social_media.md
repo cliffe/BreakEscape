@@ -151,6 +151,121 @@ Defend-only: `"stages": ["brief", "defend", "debrief"]`. The feed drill and priv
 - **Defend-only scope note** (`_defendOnly.scopeNote`): "Authorised exercise at Merrin & Sallow
   Architects, a fictional practice. In scope: a feed, an inbox and your own profile settings."
 
+## 8b. Shell and generator metadata (every value final; no guessing)
+
+Every metadata value the shell wiring (01 P2/P3) and the generator (01 P4, `gen_e8_e17_shells.py`) need,
+as final strings, copying the shapes from the built **E4** erb and the generator shape from
+`gen_e6_e7_shells.py`. E14 is an **attack-first** OSINT-then-write episode like E4, so the full shell
+carries **two** aims; the defend-only shell is built by the generator.
+
+### Host and learner sprites
+
+- **Host Julian Sallow's `HOSTS['julian']` entry already exists in `gen_e2_e4_shells.py`** and is copied
+  verbatim into `gen_e8_e17_shells.py` (`defend_host: 'julian'` below points to it):
+  `{ 'id': 'julian_sallow', 'displayName': 'Julian Sallow', 'sprite': 'male_office_worker', 'about': "Merrin & Sallow's co-founding partner, 60s, Black British of Jamaican heritage (e4/defend.json _brandAdditions). Hosts the E4 BA check pair, and here welcomes the learner and receives the reports. Placeholder sprite until the PixelLab reset." }`.
+- **Julian's in-scenario host NPC sprite keys** (full erb `rooms.training_room.npcs[]`, E4 host NPC
+  shape): `"spriteSheet": "male_office_worker_v2"`, `"spriteTalk": "assets/characters/male_office_worker_talk.png"`,
+  `"spriteVisemes": "assets/characters/male_office_worker_visemes.png"`, `"npcType": "person"`,
+  `"id": "julian_sallow"`, `"displayName": "Julian Sallow"`,
+  `"storyPath": "scenarios/awareness_e14_social_media/ink/julian_sallow.json"`, `"currentKnot": "start"`,
+  plus the N16 done-event `eventMappings`. His art already exists (built E4 cast).
+- **Learner avatar** (full erb `player`, as E4): `"spriteSheet": "female_office_worker_v2"`,
+  `"spriteTalk": "assets/characters/female_office_worker_talk.png"`.
+
+### Full-episode objectives (full erb `objectives[]`, copy the E4 two-aim shape)
+
+| field | aim 1 (red team) | aim 2 (defend, `missionConclusion: true`) |
+|---|---|---|
+| `aimId` | `red_team_aim` | `social_inbox_aim` |
+| `title` | "Pin the public posts and write one message" | "Sort the feed and inbox" |
+| `description` | "Pin what a colleague's public posts give away, then write one short message built from it." | "Work through the feed, the inbox and your own settings at the training kiosk." |
+| `order` | 0 | 1 |
+| task `taskId` / `title` / `type` | `write_pretext_message` / "Send the pretext message" / `manual` | `sort_social_inbox` / "Sort the feed and inbox" / `custom` |
+
+Aim 2 `concludeRequires.globals`: `["episode_e14_social_media_defend_done"]`. Aim 2 `conclusionScreen`:
+`{ "type": "success", "title": "Social media episode done", "body": "You've seen what one colleague's
+public posts give away and written one message from them, then sorted the feed and inbox and tightened the
+settings yourself, so this episode is finished." }`. `awarenessEpisode.conclusionTaskId:
+"sort_social_inbox"`.
+
+### Full-episode training kiosk (full erb `rooms.training_room.objects[]` kiosk, E4 shape)
+
+- `observations`: "A touch-screen training kiosk for the Merrin & Sallow social-media exercise: first the
+  colleague's public posts to pin and the one message to write, then the feed, the inbox and the settings."
+- `observationVariants[0]`: `{ "condition": "globalVars.episode_e14_social_media_defend_done", "value":
+  "A touch-screen training kiosk for the Merrin & Sallow social-media exercise. The message is sent and the
+  feed, inbox and settings are all done." }`
+- `minigameData.episodeId`: `e14_social_media`.
+
+### Full-episode `mission.json` (E4 mission.json shape)
+
+- `display_name`: "Awareness E14: Social media and oversharing (full episode)"
+- `description`: "An awareness episode of about 15 minutes for all staff. On an authorised exercise at
+  Merrin & Sallow Architects, a fictional practice, you first play the red team: pin what one colleague's
+  public posts give away, then write one message built from it. Then you swap sides, spot the same tricks
+  in a feed and an inbox, and close the gaps on the profiles. Only the inbox is scored, and reporting when
+  you're unsure is always fine and never marked down."
+- `difficulty_level`: 1; `scoring`: "completion"; `secgen_scenario`: null; `collection`: "training";
+  `ui_theme`: "general"; `estimated_duration_minutes`: 15.
+- `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Social media", "Open source intelligence", "Oversharing", "Security awareness"] } ]`.
+
+Top-level erb strings (copy E4's): `scenario_id` `awareness_e14_social_media`; `scenario_name` "Social
+media and oversharing: both sides"; `scenario_brief` = `strings.brief` (section 8); `endGoal` "Write the
+pretext message, then sort the feed and inbox at the training kiosk."; `version` "1.0"; `disableAttacks`
+true; `startRoom` `training_room`; `startPosition` as E4.
+
+### Defend-only shell: generator `EPISODES['e14']` entry (`gen_e8_e17_shells.py`, the `gen_e6_e7_shells.py` `EPISODES` shape)
+
+```python
+'e14': {
+    'frag': f'{AW}/e14/defend.json',
+    'full_id': 'e14_social_media',
+    'role_word': 'general',
+    'role_label': 'all staff',
+    'defend_set': 'e14_social_dms',
+    'defend_host': 'julian',
+    # No 'forms'/'check_hosts': E14 feeds data_conduct, built by 10's own generator, not this one (section 14).
+    'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+               'keywords': ['Social media', 'Open source intelligence', 'Oversharing', 'Security awareness']}],
+    'defend': {
+        'name': 'Social media: the feed and the inbox',
+        'brief': "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. A feed and an inbox are waiting: some posts are fine, some give too much away, and some messages were made to pull work details out of you. Sort them, close the gaps, and report the fakes. Reporting or checking when you're unsure is always fine and never marked down.",
+        'endGoal': 'Sort the feed and the inbox at the training kiosk.',
+        'aim': ('social_inbox_aim', 'Sort the feed and inbox', 'Go through the messages, the feed drill and your own settings at the training kiosk.'),
+        'task': ('sort_social_inbox', 'Sort the feed and inbox'),
+        'kiosk': ("A touch-screen kiosk showing a feed and an inbox at Merrin & Sallow: posts to weigh, messages to sort and settings to tighten.",
+         "A touch-screen kiosk showing a feed and an inbox at Merrin & Sallow. The feed, the inbox and the settings are all done."),
+        'display': 'Awareness E14: Social media and oversharing (defend only)',
+        'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Sort a feed and an inbox at Merrin & Sallow Architects, a fictional practice: some posts give too much away, and some messages were built to pull work details out of you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
+        'minutes': 8,
+        'defendIntro': "Go through the inbox and decide what to do with each message, mark the feed drafts Post, Tweak or Hold, and tighten your own settings. A friendly opener that steers to your firm's systems or who runs IT is still reconnaissance; report it. There's no clock on you here.",
+        'conclusion': ('Feed and inbox done', "You've sorted the feed and the inbox and tightened the settings, and finished this episode."),
+    },
+},
+```
+
+The entry uses the real `gen_e6_e7_shells.py` keys (`conclusion`, `defendIntro`). This `brief` equals the
+section 8 `_defendOnly.brief` (keep them identical). The defend-only shell id is `e14_social_media_defend`,
+prefix `episode_e14_social_media_defend_defend_` (section 13).
+
+### Defend-host lines: generator `LINES[('e14', 'defend')]` (the tuple `(before, after, choice, reply)`, Julian's voice)
+
+```python
+('e14', 'defend'): (
+    "You're on an authorised exercise. There's a feed and an inbox on the kiosk: some posts give too much away, some messages are fishing for how we work. Take each as it comes, and we'll tighten your settings at the end.",
+    "That's the feed and the inbox done, thanks. The tell is always what they ask for, not how friendly they are: share nothing about our systems with a stranger, and report it.",
+    'Thanks, Julian.', 'Any time.'),
+```
+
+### Host spoken lines for the full shell (ink, Julian)
+
+- **Welcome** (at the hub): the section 8 host welcome; reads the scope note.
+- **After the attack half** (hand-off into the defend half): "That's how little it takes to build a
+  convincing message out of a colleague's posts. Now you spot the same moves in a feed and an inbox, and
+  we close the gaps, on Dani's profile and on yours."
+- **On completion** (defend done): "That's the lot. A well-made message is built from scraps anyone could
+  find; the fix is a setting and a pause, not shame. Nobody's in trouble for having posted them."
+
 ## 9. Attack half (OSINT and write)
 
 No real brands, no scraping; the board only shows what Dani posted. Follow `e4/attack.json` keys.
@@ -226,14 +341,23 @@ Set id `e14_social_dms`. `outcome.setGlobalPrefix: "episode_e14_social_media_def
 it is specific to this episode) and `recon_request` ("a stranger asking for your firm's systems, org
 chart or who runs IT"). The look-alike NPC guard handles item 2.
 
-| # | Id | Kind / from | Subject or line | Tells and flags | Correct verdict | Reason text |
-|---|----|-------------|-----------------|-----------------|-----------------|-------------|
-| 1 | `e14_fake_recruiter` | DM, "Jordan Vale, Talent Partner" (thin new account) | "Great role for you. To tailor the application, could you send an overview of your firm's systems and who runs IT?" | `fake_profile`, `recon_request` | **Report** | "A genuine recruiter never needs a breakdown of your firm's systems or who runs IT. That is reconnaissance. Share nothing and report it. (The normal-looking phish half of the mirror pair.)" |
-| 2 | `e14_fake_merrin` | connection request, "Catherine Merrin" (new, thin account; look-alike NPC guard) | "Let's connect" from a second account in the managing partner's name | `fake_profile` | **Report** | "A connection request in a senior leader's name from a new, thin account is a fake used to connect to staff and lend weight to later scams. Catherine's real profile is the established one. Report it." |
-| 3 | `e14_real_recruiter` | DM, Roseanne Wadsworth, Kettlewick Talent (`kettlewick.example`), genuine | "A practice is hiring a Part 3 architect; shall I send the brief?" | none (genuine) | **Trust** | "A real agency recruiter with a role and no questions about your systems. Nothing to report; 'report everything' is not the win." |
-| 4 | `e14_system_fisher` | DM, a stranger, genuine-looking account | "Loved your bridge model! Out of interest, what software does the studio run day to day?" | `recon_request` | **Report** | "A friendly opener that steers to your tools is still reconnaissance. You don't owe a stranger your firm's systems. Report it." |
-| 5 | `e14_colleague_dm` | DM, Thandiwe Moyo (built), genuine | "Can you send me the studio floor plan for the client visit?" | none (genuine) | **Trust** | "A colleague you know, asking for something ordinary through a normal channel. Handle it." |
-| 6 | `e14_old_colleague` | DM, a former colleague now elsewhere, genuine | "Good to reconnect! We've a junior role opening if you fancy it, happy to put your name forward." | none (genuine; reads like a recruiter pitch but asks nothing about systems) | **Trust** | "It reads like a recruiter pitch, but it's a real former colleague offering a lead and asking nothing about your work. The tell is what they ask for, not how friendly they are. (The suspicious-looking genuine half of the mirror pair.)" |
+**Card kind.** The engine has only `email, sms, voicemail, qr, page, call, push` kinds
+(`triage-kinds.js` `NON_EMAIL_KINDS`); there is no "DM" or "connection request" kind. **Every item in this
+set is authored as a `sms` card** (the direct-message surface), with the sender handle in a non-empty
+`from.address` (a handle such as `@jordan.vale`, not an email address) and `from.name` the display name;
+the "DM / connection request" wording in the table is the in-fiction framing, not the kind. The
+`kind` column below states it for each. (`fake_profile`, `recon_request` and `secrecy_or_bypass` are all
+valid on `sms` once declared in the set `channelTells`; `lookalike_domain` is a channel tell, also valid
+on `sms`.)
+
+| # | Id | Kind | From (in-fiction) | Subject or line | Tells and flags | Correct verdict | Reason text |
+|---|----|------|-------------------|-----------------|-----------------|-----------------|-------------|
+| 1 | `e14_fake_recruiter` | `sms` | DM, "Jordan Vale, Talent Partner" (thin new account) | "Great role for you. To tailor the application, could you send an overview of your firm's systems and who runs IT?" | `fake_profile`, `recon_request` | **Report** | "A genuine recruiter never needs a breakdown of your firm's systems or who runs IT. That is reconnaissance. Share nothing and report it. (The normal-looking phish half of the mirror pair.)" |
+| 2 | `e14_fake_merrin` | `sms` | connection request, "Catherine Merrin" (new, thin account; look-alike NPC guard) | "Let's connect" from a second account in the managing partner's name | `fake_profile` | **Report** | "A connection request in a senior leader's name from a new, thin account is a fake used to connect to staff and lend weight to later scams. Catherine's real profile is the established one. Report it." |
+| 3 | `e14_real_recruiter` | `sms` | DM, Roseanne Wadsworth, Kettlewick Talent (`kettlewick.example`), genuine | "A practice is hiring a Part 3 architect; shall I send the brief?" | none (genuine) | **Trust** | "A real agency recruiter with a role and no questions about your systems. Nothing to report; 'report everything' is not the win." |
+| 4 | `e14_system_fisher` | `sms` | DM, a stranger, genuine-looking account | "Loved your bridge model! Out of interest, what software does the studio run day to day?" | `recon_request` | **Report** | "A friendly opener that steers to your tools is still reconnaissance. You don't owe a stranger your firm's systems. Report it." |
+| 5 | `e14_colleague_dm` | `sms` | DM, Thandiwe Moyo (built), genuine | "Can you send me the studio floor plan for the client visit?" | none (genuine) | **Trust** | "A colleague you know, asking for something ordinary through a normal channel. Handle it." |
+| 6 | `e14_old_colleague` | `sms` | DM, a former colleague now elsewhere, genuine | "Good to reconnect! We've a junior role opening if you fancy it, happy to put your name forward." | none (genuine; reads like a recruiter pitch but asks nothing about systems) | **Trust** | "It reads like a recruiter pitch, but it's a real former colleague offering a lead and asking nothing about your work. The tell is what they ask for, not how friendly they are. (The suspicious-looking genuine half of the mirror pair.)" |
 
 **Mirror pair (aw5):** item 1 (normal-looking phish, Report) and item 6 (suspicious-looking genuine,
 Trust).
@@ -326,7 +450,8 @@ debrief (assert the habit-to-keep box and Monday card); conclusion global
 ## 17. Acceptance checks
 
 As E11 section 17, for the E14 shells (the `data_conduct` pair's parity is `10`'s acceptance, not E14's).
-Plus: the attack beat caps at one send (`maxSends: 1`); the board shows a `reduceNote` for each of the
+Plus: the attack beat caps at one send via the reserved `attack.maxMessages: 1` key (not `maxSends`,
+which does not exist in the schema, the built E1/E7 shape); the board shows a `reduceNote` for each of the
 five facts; the flip uses the built defender-inbox view (not a montage); `flipDefenderLineByChoice` is
 erb-only (parity test); the ENG-11 feed drill renders its Post/Tweak/Hold bins and the ENG-13 privacy
 panel closes at least one found fact. `social.awareness.ruleOfThumb` byte-identical to the other shells.
