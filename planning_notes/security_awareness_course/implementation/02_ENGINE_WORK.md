@@ -1050,6 +1050,7 @@ A tell id can come from three places:
 | `no_escort` | E12 (defend) only | **local** | one set |
 | `uniform_pretext` | E12 (defend) only | **local** | one set |
 | `not_expected` | E12 (defend) only | **local** | one set |
+| `unlocked_screen` | E12 (defend) only | **local** | one set |
 | `hidden_instruction` | E13 (defend) only; E13 §14 proposes a general-pool check item later | **local** | one shipped set today; promote to shared when the general-pool AI item (E13 §14) is built |
 | `deepfake_request` | E13 (defend) only; E13 §14 and `general_v2` item 6 touch the topic | **local** | `general_v2` item 6 scores on `senderTrust`/`linkCredible`, not `deepfake_request`, so only E13 uses this id today; promote if a check item later scores on it |
 | `fake_profile` | E14 (defend) only | **local** | one set; `data_conduct` does not score it |

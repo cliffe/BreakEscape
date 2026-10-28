@@ -22,7 +22,7 @@ Teaching source of truth: `modules/core_10_physical_security/concepts.md` (physi
 
 This episode's scope is cut hard to fit ~15 minutes (section 6). The full `core_10` game_design draft
 (RFID badge-clone, lockpicking, spot-the-risk drill, MG-25 document inspector, five rooms) is **not**
-built here; its content is reduced to one in-person pretext and a six-item reception triage.
+built here; its content is reduced to one in-person pretext and a seven-item reception triage.
 
 ## 2. Read first (exact paths)
 
@@ -58,7 +58,7 @@ built here; its content is reduced to one in-person pretext and a six-item recep
 | Packet | What E12 needs from it |
 |---|---|
 | **ENG-05a** (world-play attack modifier) | The whole attack half: the `world` modifier on the call `write` stage places the player in the lobby in the costume before the pretext and reverts on the flip, handing back through the built `watchCall` (no `#trigger_minigame`). With ENG-05b (costume, aw9), ENG-05c (lobby, door, NPC door opening), ENG-05d (parcel sprite art). Precise needs in section 9.1. |
-| **ENG-08** (schema and validator) | Accept the `awarenessEpisode.world` block (`room`, `startRoom`, `costume`); accept a lobby room type and a locked connection between `lobby` and `training_room`; keep the N16 host-NPC lint happy for a two-room shell. The four scenario-local tells (section 11) need **no** library change: the validator already accepts a `channelTells` id that `flagChips` labels and that is not a factor, so they are declared on the set, not added to ENG-08's shared library. |
+| **ENG-08** (schema and validator) | Accept the `awarenessEpisode.world` block (`room`, `startRoom`, `costume`); accept a lobby room type and a locked connection between `lobby` and `training_room`; keep the N16 host-NPC lint happy for a two-room shell. The five scenario-local tells (section 11, including the new `unlocked_screen`) need **no** library change: the validator already accepts a `channelTells` id that `flagChips` labels and that is not a factor, so they are declared on the set, not added to ENG-08's shared library. `unlocked_screen` is a new scenario-local tell this spec adds; it is not yet listed in ENG-08's tell catalogue table, which should gain an `unlocked_screen` row marked **local** (no code change, catalogue only). |
 | **Check forms (no engine packet)** | E12 does not get its own check form. Its one message-triage-friendly pretext item sits in the shared `general_v2` pair (`10_CHECK_FORMS.md`); section 14. |
 | (existing) | The pretext call path (`write` stage with `attack.callId`, pretext-prep → person-chat), the influence service, the triage `call` kind, the host-NPC done-event mechanism (N16), and `watchCall` (`episode-runner-minigame.js:760`) for the flip hand-back. No change needed; cited so the implementer reuses, not rebuilds. |
 
@@ -75,7 +75,7 @@ wired and bridged with the stock costume sprite and gets the baked-in parcel lat
 - Engine packets ENG-05a (with 05b to 05d) and ENG-08: general-purpose or Sonnet. The check-form item
   E12 feeds is built as part of `10_CHECK_FORMS.md` (no E12-specific engine packet).
 - Shell wiring (this spec), ink, strings: Sonnet following this brief.
-- **Content gate.** Section 8b (all shell and generator metadata), section 11's six `call` items as
+- **Content gate.** Section 8b (all shell and generator metadata), section 11's seven `call` items as
   final JSON, and the section 10 flip strings are the content the `opus48` writer completes before any
   P2 shell wiring starts; a Sonnet implementer invents nothing from them.
 
@@ -128,9 +128,13 @@ wired and bridged with the stock costume sprite and gets the baked-in parcel lat
   `game_design.md` files (consistent use, not a clash). She frames the attack as an authorised test and
   carries the "what would have stopped me" line. She appears only in the seeded brief and strings, not
   as a world NPC, to keep the cast small.
-- **Genuine visitors in the defend set** reuse one existing M&S client firm as a client and invent one
-  `.example` contractor and one fire-safety firm (section 11). Pre-ship: web-search "Arvanitis",
-  "Easton", "Northlight Security", and the invented firms for a real business of the same name.
+- **Genuine visitors in the defend set** reuse one existing M&S client firm as a client (section 11
+  item 2) and invent one `.example` maintenance contractor firm (named on the service contract, so the
+  fire inspector's firm fails to match it, item 3) and one `.example` fire-safety firm (the inspector's
+  claimed firm). The screen-lock pair (items 6 and 7) replaced the earlier genuine lift-engineer visitor,
+  so no contractor appears as a visitor now; the contracted firm name is still referenced on the contract
+  by item 3. Pre-ship: web-search "Arvanitis", "Easton", "Northlight Security", and the invented firms
+  for a real business of the same name.
 - **Rooms:** two. **The kiosk room is named `training_room`** (not `studio`), because every awareness
   tool and bridge assumes `rooms.training_room` (for example `apply_training_room.py` reads
   `rooms['training_room']['type']` unguarded, so `--refresh` crashes on a shell with no `training_room`
@@ -155,14 +159,15 @@ wired and bridged with the stock costume sprite and gets the baked-in parcel lat
 | osint | 2.0 | 3 facts on a stripped M&S "Visit us" page that make the courier pretext work. |
 | write (world-play attack) | 4.5 | Costume + parcel, walk the lobby, in-person pretext on the influence bar, the desk buzzes the door. |
 | flip | 0.5 | The con replayed as Delphine experienced it, with the lines that worked. |
-| defend | 5.0 | Six reception `call` items, Verify on, immediate feedback. |
+| defend | 5.0 | Seven reception `call` items (brisk: two transcript lines, one verdict each), Verify on, immediate feedback. |
 | debrief | 1.5 | Concept panel, Monday card, no-blame, the module line, the habit to keep. |
 | **Total** | **15.0** | |
 
 **If it overruns** (the world-play attack is the risk): cut the **osint** stage and move its three
 facts into the brief as given context (Jo tells the learner what is public). That saves ~2 minutes and
 leaves ["brief","write","flip","defend","debrief"]. Do not cut the defend set below six items or drop a
-mirror pair; measurement and aw5 depend on them.
+mirror pair; measurement and aw5 depend on them. If the seven-item defend stage pushes the total past ~15
+minutes, cut osint first (above); do not thin the defend set.
 
 ## 7. Stages (runner stage ids)
 
@@ -185,7 +190,7 @@ Defend-only variant: `"stages": ["brief","defend","debrief"]` (the runner drops 
   yourself, and the same kinds of visitor arrive. Only the reception seat is scored. Nothing you do
   leaves the game."
 - `scopeNote` (full): "Authorised exercise at Merrin & Sallow Architects, a fictional company. In scope:
-  one practice approach to the front desk in a courier's hi-vis, and six visitors to handle on the
+  one practice approach to the front desk in a courier's hi-vis, and seven situations to handle on the
   reception seat. Jo's test is authorised and the costume is handed back afterwards."
 - Seeded brief message (pattern from E7 `seededMessages[brief]`), from Jo:
   "This is Merrin & Sallow's red-team day. In scope: the lobby and the front desk. Pull on the hi-vis by
@@ -519,6 +524,24 @@ outcome }` with no `templateId` (`episode-model.js`), so a by-choice line would 
 is instead surfaced through the single `flipDefenderLine` plus the pretext
 `defenderNotes.buzz_door` (section 9.3), which name the skipped list-and-escort check in the landed case.
 
+### 9.6 Optional attack beat: the unlocked PC (authoring only, no new engine)
+
+A small, optional beat lets the courier **notice an unlocked screen** on the way in, so the learner sees
+the clear-screen risk from the attacker's side before meeting it on the defend seat (defend item 6,
+section 11). It is a **passive observation**: seeing the open screen is the whole point, and the learner
+does nothing on the PC (no interaction beyond reading the `observations` text; no engine code, no action
+list, no global).
+
+Build it, if the lobby art and time allow, as one dressed object in the lobby map (`room_aw_merrin_lobby`,
+owned by `02` ENG-05c, section 5): a reception or hot-desk workstation with an `observations` string the
+player can read in passing while walking to Delphine, exactly as the kiosk carries `observations`
+(section 8b). Suggested text: "A workstation left logged in, the screen awake and a client project list
+on show. Nobody is sitting at it." No `observationVariants`, no pickup, no lock action: the courier just
+clocks it. If the lobby cannot carry an extra prop, or it crowds the pretext walk, **cut this beat**; it
+is not a dependency of the attack and the defend-set screen-lock pair (items 6 and 7) carries the lesson
+on its own. If kept, the flip's `defenderNotes.buzz_door` and the §12 concept panel may add half a line
+noting the open screen the courier passed; that is prose only.
+
 ## 10. Flip
 
 `strings.flipHeading`: "Now you're the one on the desk". `flipIntro`: "This is how your approach looked
@@ -538,8 +561,8 @@ a busy desk waves through; getting caught by one is no lapse of sense." The flip
 "episode_e12_visitor_tailgater_defend_"`, `outcome.passPercent: 0`. `awarenessEpisode.defend`:
 `{ "setId": "e12_reception_desk", "reportAlwaysVisible": true, "stage": null }`.
 
-All six items are `kind: "call"`, the built triage `call` surface (`triage-kinds.js`
-`NON_EMAIL_KINDS`, `CALL_ACTIONS`). A visitor at the desk maps cleanly onto the four call actions:
+All seven items are `kind: "call"`, the built triage `call` surface (`triage-kinds.js`
+`NON_EMAIL_KINDS`, `CALL_ACTIONS`). A situation at the desk maps cleanly onto the four call actions:
 **Comply = trust** (let them in), **Escalate = report** (tell facilities/security), **Refuse = delete**
 (turn away), **Ring back = verify** (check the expected-visitors list / ring the host). This is the
 engine-true, scored, measurement-clean choice; person-chat is unscored so it is **not** used for the
@@ -550,15 +573,24 @@ text}]` and `truth`. **A `call` message has no `tells` field; the flags live in 
 the "tells" column of the table below as `truth.flags`. `truth` carries `isPhish`,
 `flags`, `perFlagNote`, `ifTrusted`, `reportReply` for phish, and `isPhish: false`, `flags: []`,
 `whyFine`, `falseAlarmCost` for genuine. The built `call` reasoning defaults (`triage-kinds.js:105-117`)
-back up the authored per-flag notes. The six items are given as final JSON below ("Items as final JSON").
+back up the authored per-flag notes. Two of the seven items are observed desk **situations** rather than
+someone talking to you (item 6, a colleague's unlocked screen with a visitor near it; item 7, a screen
+locked before the colleague stepped away). They use the same `call` surface and the stage-direction
+transcript style already used for the tailgater (item 1), for example
+`{ "who": "Visitor", "text": "(leans over the empty desk, reading the screen)" }`. The generic call
+review lines ("The caller was not who they said") are backstops; the authored `perFlagNote`/`whyFine`,
+`ifTrusted` and `reportReply` carry the real content, as they do for items 1 and 3. The seven items are
+given as final JSON below ("Items as final JSON").
 
 `channelTells` for the set (the closed chip list): `["tailgating","no_escort","uniform_pretext",
-"not_expected","borrowed_authority","secrecy_or_bypass"]`. `borrowed_authority` and `secrecy_or_bypass`
-are the shared-library tells (`00` §2) reused in-person, already labelled in `CHANNEL_TELLS`; the other
-four are **scenario-local tells** (11 §5.1). **No ENG-08 library change is needed for
-these four:** the validator accepts a `channelTells` id when the set gives it a `flagChips` label and it
-is not a factor (`scripts/validate_social/triage.rb` `flag_universe`; proven in scratch, section 17). So
-declare the four with **short `flagChips` labels** on the set (a chip label is a short noun phrase, like
+"not_expected","unlocked_screen","borrowed_authority","secrecy_or_bypass"]`. `borrowed_authority` and
+`secrecy_or_bypass` are the shared-library tells (`00` §2) reused in-person, already labelled in
+`CHANNEL_TELLS`; the other five (including the new `unlocked_screen`) are **scenario-local tells**
+(11 §5.1). **No ENG-08 library change is needed for
+these five:** the validator accepts a `channelTells` id when the set gives it a `flagChips` label and it
+is not a factor (`scripts/validate_social/triage.rb` `flag_universe`; the original four were proven in
+scratch, section 17, and `unlocked_screen` is declared the identical way). So
+declare the five with **short `flagChips` labels** on the set (a chip label is a short noun phrase, like
 the built `CHANNEL_TELLS` labels, not a full sentence); do not add them to the shared
 `CHANNEL_TELLS` library. The full explanatory sentence for each flag is carried on a **message-level
 `factorStrings` object (a sibling of `truth`, never inside it)**, keyed `factorStrings.<id>.redFlag`, so
@@ -571,24 +603,26 @@ and the per-message `redFlag` sentences:
 - `no_escort`: `flagChips` "No escort"; `redFlag` "A visitor or contractor left to move around unescorted."
 - `uniform_pretext`: `flagChips` "Uniform or job title as proof"; `redFlag` "A hi-vis jacket, a clipboard or a job title used in place of being expected."
 - `not_expected`: `flagChips` "Not on today's list"; `redFlag` "The visitor is not on today's list and their paperwork does not match."
+- `unlocked_screen`: `flagChips` "Unlocked screen"; `redFlag` "A screen left unlocked and unattended, open to anyone who walks up or sits down." (Teaching source: core_10 clear-screen, key message 4; core_09 "lock your screen whenever you look away".)
 
-### Items (3 impostor, 3 genuine; mirror pairs)
+### Items (4 impostor or concern, 3 genuine; mirror pairs)
 
 | # | id | genuine | callerId (at the desk) | line / what they want | tells | correct verdict | Verify | reason text |
 |---|----|---------|------------------------|-----------------------|-------|-----------------|--------|-------------|
 | 1 | `e12_call_tailgater` | no | "A visitor, no badge, following a staff member in" | Slips in behind a badge-holder at the gate and heads for the stairs: "Cheers, I'm with them." | `tailgating`, `no_escort` | Escalate (report) or Ring back | on | `perFlagNote.tailgating`: "They badged in on someone else's card, which is exactly what a wedge or a held door lets happen." `perFlagNote.no_escort`: "Heading up alone, with nobody signing for them." `ifTrusted`: "An unbadged stranger is loose on the studio floor, where client plans and screens are open." `reportReply`: "Thanks, we caught them on the stairs; they weren't expected." Mirrors #2. |
 | 2 | `e12_call_expected_client` | yes | "Client, here for a 10:00 with Yasmin Chaudhry" | On today's list, gives their name, happy to sign in and wait. | (none) | Comply or Ring back (sign in, badge, escort) | on | `whyFine.default`: "They're on the day's list for a named meeting and happy to be signed in and walked up. Checking the list or calling Yasmin is a fine Verify." `falseAlarmCost`: "Turn them away and a real client is left in the lobby and the meeting is missed." Mirror of #1 (arrival: unknown-and-pushing vs expected-and-patient). |
-| 3 | `e12_call_fire_inspector` | no | "'Fire-safety inspector', wants the comms room" | "Annual check, I just need five minutes in your comms room. I can let myself in." Not on the list; firm name doesn't match the service contract. | `uniform_pretext`, `not_expected`, `secrecy_or_bypass` | Ring back (check list + contract), then Escalate | on | `perFlagNote.uniform_pretext`: "A hi-vis and a clipboard are easy to get; neither proves he's expected." `perFlagNote.not_expected`: "No entry on today's list and the firm on his order isn't the one on the maintenance contract." `perFlagNote.secrecy_or_bypass`: "'I can let myself in' asks to skip the escort into a secure room." `ifTrusted`: "He'd be alone in the comms room with the building's network." `reportReply`: "Thanks, facilities confirmed no inspection was booked and the firm's name was wrong." Mirrors #4. |
-| 4 | `e12_call_real_contractor` | yes | "Lift engineer, on today's list" | From the firm on the service contract, on the day's list, happy to wait at the desk to be signed in and escorted. | (none) | Comply or Ring back | on | `whyFine.default`: "On the list, from the contracted firm, and content to wait and be escorted, a genuine engineer never minds that." `whyFine.secrecy_or_bypass`: "He asks to be signed in, not to skip it." `falseAlarmCost`: "Send him away and the lift stays out of service." Mirror of #3 (contractor: unverifiable-and-pushy vs verifiable-and-patient). |
-| 5 | `e12_call_courier_push` | no | "Courier with a parcel, badge 'in the van'" | The exact con the learner just ran: "Sample box for one of your partners, hands full, could you buzz me through? Don't worry about signing me in." | `tailgating`, `borrowed_authority`, `secrecy_or_bypass` | Refuse the buzz-through / Ring back (take the parcel at the desk) | on | `perFlagNote.borrowed_authority`: "Dropping a partner's name doesn't make the delivery expected." `perFlagNote.secrecy_or_bypass`: "'Don't bother signing me in' is the ask to skip the one check." `perFlagNote.tailgating`: "Buzzing the door without a badge is letting them tailgate on your say-so." `ifTrusted`: "A stranger is through the badge door and onto the studio floor." `reportReply`: "Thanks, real couriers leave the parcel at the desk; we logged it." Mirrors #6, and closes the loop with the attack. |
-| 6 | `e12_call_forgot_badge` | yes | "Staff member back from leave, no badge" | "First day back, I've left my pass at home, can you let me in?" A real colleague the desk can place on the staff list. | (none) | Ring back (check staff list, issue a temp pass), **not** Refuse | on | `whyFine.default`: "A genuine colleague the desk can confirm. Check the staff list and issue a day pass, don't lend your own badge, and don't leave them stuck." `whyFine.tailgating`: "The safe answer is a temporary pass of their own, so the record stays right." `falseAlarmCost`: "Refuse flatly and you've left a colleague locked out on their first day back; the courtesy is to verify and help." Mirror of #5 (the badge problem: a stranger pushing through vs a known colleague to verify and help). |
+| 3 | `e12_call_fire_inspector` | no | "'Fire-safety inspector', wants the comms room" | "Annual check, I just need five minutes in your comms room. I can let myself in." Not on the list; firm name doesn't match the service contract. | `uniform_pretext`, `not_expected`, `secrecy_or_bypass` | Ring back (check list + contract), then Escalate | on | `perFlagNote.uniform_pretext`: "A hi-vis and a clipboard are easy to get; neither proves he's expected." `perFlagNote.not_expected`: "No entry on today's list and the firm on his order isn't the one on the maintenance contract." `perFlagNote.secrecy_or_bypass`: "'I can let myself in' asks to skip the escort into a secure room." `ifTrusted`: "He'd be alone in the comms room with the building's network." `reportReply`: "Thanks, facilities confirmed no inspection was booked and the firm's name was wrong." No direct genuine mirror now (the patient-and-verifiable contrast is carried by #2 and #5). |
+| 4 | `e12_call_courier_push` | no | "Courier with a parcel, badge 'in the van'" | The exact con the learner just ran: "Sample box for one of your partners, hands full, could you buzz me through? Don't worry about signing me in." | `tailgating`, `borrowed_authority`, `secrecy_or_bypass` | Refuse the buzz-through / Ring back (take the parcel at the desk) | on | `perFlagNote.borrowed_authority`: "Dropping a partner's name doesn't make the delivery expected." `perFlagNote.secrecy_or_bypass`: "'Don't bother signing me in' is the ask to skip the one check." `perFlagNote.tailgating`: "Buzzing the door without a badge is letting them tailgate on your say-so." `ifTrusted`: "A stranger is through the badge door and onto the studio floor." `reportReply`: "Thanks, real couriers leave the parcel at the desk; we logged it." Mirrors #5, and closes the loop with the attack. |
+| 5 | `e12_call_forgot_badge` | yes | "Staff member back from leave, no badge" | "First day back, I've left my pass at home, can you let me in?" A real colleague the desk can place on the staff list. | (none) | Ring back (check staff list, issue a temp pass), **not** Refuse | on | `whyFine.default`: "A genuine colleague the desk can confirm. Check the staff list and issue a day pass, don't lend your own badge, and don't leave them stuck." `whyFine.tailgating`: "The safe answer is a temporary pass of their own, so the record stays right." `falseAlarmCost`: "Refuse flatly and you've left a colleague locked out on their first day back; the courtesy is to verify and help." Mirror of #4 (the badge problem: a stranger pushing through vs a known colleague to verify and help). |
+| 6 | `e12_call_unlocked_desk` | no (concern) | "A visitor near a colleague's unlocked desk" | The signed-in visitor is left by a desk while the colleague steps away without locking the screen, and leans in to read it: "(nobody's at the desk; the screen's open and they're having a good look)". | `unlocked_screen`, `no_escort` | Escalate (report) or Refuse (lock the screen, step in) | on | `perFlagNote.unlocked_screen`: "An open screen is that colleague's email, files and account, there for anyone who sits down." `perFlagNote.no_escort`: "A visitor left alone by a desk, with nobody signing for them." `ifTrusted`: "A stranger reads client plans and the colleague's account over an unlocked screen." `reportReply`: "Thanks, we locked it and had a quiet word; nobody's in trouble." Lock the screen (Windows key and L) or ask the colleague to, and report that the visitor was looking. Mirrors #7. |
+| 7 | `e12_call_locked_desk` | yes | "A colleague who locks before stepping away" | The colleague locks the screen (Windows key and L) before leaving the desk; the waiting visitor sees only a locked screen: "(screen locked, the visitor waits where they were put)". | (none) | Ring back (confirm it's locked and the visitor's settled) or Comply | on | `whyFine.default`: "The screen's locked and the visitor is where they were left, so there's nothing open to read. A quick glance to confirm is the habit; Comply (just carry on) scores half." `whyFine.unlocked_screen`: "Locked before stepping away is exactly right, nothing to act on." `falseAlarmCost`: "Raise it as an alarm and you've pulled security over to a colleague who did everything right." Mirror of #6 (the same stepped-away desk, screen locked vs screen left open). |
 
 Scoring note: both impostor and genuine items reward **Verify** (Ring back) as the safe default (11
 §4.1: reporting/verifying when unsure is never penalised), so "refuse everyone" loses points on the
-genuine items (#2, #4, #6), exactly as E3's single genuine caller prevents "refuse everything" from
+genuine items (#2, #5, #7), exactly as E3's single genuine caller prevents "refuse everything" from
 winning. **Comply on a genuine visitor scores only half:** `KIND_VERDICT_POINTS.call`
 scores `real.trust` at 30 of 60, while Ring back (verify) and Escalate score the full 60
-(`triage-scoring.js`). So on the genuine items (#2, #4, #6) the natural "just let the expected client in"
+(`triage-scoring.js`). So on the genuine items (#2, #5, #7) the natural "just let the expected client in"
 answer earns half marks, and Ring back is the full-mark habit. Word each genuine item's `whyFine` so
 Comply is explained but the check is the modelled move ("a quick look at the list is still the habit, and
 costs the client nothing"), and the per-item feedback says the full-mark move is to check the list or
@@ -596,12 +630,15 @@ ring the host first.
 
 ### Items as final JSON
 
-The six `call` messages, as final `triageSet.messages` JSON. This exact set was validated in scratch
-(section 17). Flags are in `truth.flags`; the four scenario-local tells are labelled in the set
-`flagChips` (above) and sentence-explained per message on a **message-level `factorStrings` object (a
-sibling of `truth`, never inside it)**, keyed `factorStrings.<id>.redFlag`. The `factorStrings` object is
-shown below for the three messages that raise a local tell (items 1, 3, 5); it uses the `redFlag`
-sentences listed above, one entry per local flag the message raises. (The shared tells
+The seven `call` messages, as final `triageSet.messages` JSON. The original six-item set (without the
+screen-lock pair, and with the now-removed `e12_call_real_contractor`) was validated in scratch
+(section 17); the two new screen-lock items (`e12_call_unlocked_desk`, `e12_call_locked_desk`) follow the
+identical shape and the identical local-tell pattern, so the implementer **re-validates the updated
+seven-item set in scratch** before wiring (section 17). Flags are in `truth.flags`; the five scenario-local
+tells are labelled in the set `flagChips` (above) and sentence-explained per message on a **message-level
+`factorStrings` object (a sibling of `truth`, never inside it)**, keyed `factorStrings.<id>.redFlag`. The
+`factorStrings` object is shown below for the messages that raise a local tell (items 1, 3, 4, 6); it uses
+the `redFlag` sentences listed above, one entry per local flag the message raises. (The shared tells
 `borrowed_authority` and `secrecy_or_bypass` take their sentence from the `CHANNEL_TELLS` library, so they
 need no `factorStrings` entry.)
 
@@ -652,18 +689,6 @@ need no `factorStrings` entry.)
     "factorStrings": {
       "uniform_pretext": { "redFlag": "A hi-vis jacket, a clipboard or a job title used in place of being expected." },
       "not_expected": { "redFlag": "The visitor is not on today's list and their paperwork does not match." } } },
-  { "id": "e12_call_real_contractor", "kind": "call",
-    "callerId": "Lift engineer, on today's list",
-    "from": { "name": "Lift engineer", "address": "At the desk" }, "time": "13:05",
-    "transcript": [
-      { "who": "Engineer", "text": "Lift engineer, I'm down for the service this afternoon." },
-      { "who": "Engineer", "text": "Happy to wait at the desk to be signed in and escorted." }
-    ],
-    "truth": { "isPhish": false, "flags": [],
-      "whyFine": {
-        "default": "On the list, from the contracted firm, and content to wait and be escorted, a genuine engineer never minds that; a quick list check is the full-mark move.",
-        "secrecy_or_bypass": "He asks to be signed in, not to skip it." },
-      "falseAlarmCost": "Send him away and the lift stays out of service." } },
   { "id": "e12_call_courier_push", "kind": "call",
     "callerId": "Courier with a parcel, badge 'in the van'",
     "from": { "name": "Courier", "address": "At the badge door" }, "time": "14:30",
@@ -691,7 +716,35 @@ need no `factorStrings` entry.)
       "whyFine": {
         "default": "A genuine colleague the desk can confirm. Check the staff list and issue a day pass, don't lend your own badge, and don't leave them stuck.",
         "tailgating": "The safe answer is a temporary pass of their own, so the record stays right." },
-      "falseAlarmCost": "Refuse flatly and you've left a colleague locked out on their first day back; the courtesy is to verify and help." } }
+      "falseAlarmCost": "Refuse flatly and you've left a colleague locked out on their first day back; the courtesy is to verify and help." } },
+  { "id": "e12_call_unlocked_desk", "kind": "call",
+    "callerId": "A visitor near a colleague's unlocked desk",
+    "from": { "name": "Signed-in visitor", "address": "By an empty desk" }, "time": "16:10",
+    "transcript": [
+      { "who": "Visitor", "text": "(nobody's at the desk; the screen's open and they're having a good look)" },
+      { "who": "Visitor", "text": "Oh, I'm just waiting for someone, don't mind me." }
+    ],
+    "truth": { "isPhish": true, "flags": ["unlocked_screen", "no_escort"],
+      "perFlagNote": {
+        "unlocked_screen": "An open screen is that colleague's email, files and account, there for anyone who sits down.",
+        "no_escort": "A visitor left alone by a desk, with nobody signing for them." },
+      "ifTrusted": "A stranger reads client plans and the colleague's account over an unlocked screen.",
+      "reportReply": "Thanks, we locked it and had a quiet word; nobody's in trouble." },
+    "factorStrings": {
+      "unlocked_screen": { "redFlag": "A screen left unlocked and unattended, open to anyone who walks up or sits down." },
+      "no_escort": { "redFlag": "A visitor or contractor left to move around unescorted." } } },
+  { "id": "e12_call_locked_desk", "kind": "call",
+    "callerId": "A colleague who locks before stepping away",
+    "from": { "name": "Colleague leaving the desk", "address": "At the desk" }, "time": "16:25",
+    "transcript": [
+      { "who": "Colleague", "text": "Back in five, just locking this." },
+      { "who": "Colleague", "text": "(screen locked, the visitor waits where they were put)" }
+    ],
+    "truth": { "isPhish": false, "flags": [],
+      "whyFine": {
+        "default": "The screen's locked and the visitor is where they were left, so there's nothing open to read. A quick glance to confirm is the habit; just carrying on scores half.",
+        "unlocked_screen": "Locked before stepping away is exactly right, nothing to act on." },
+      "falseAlarmCost": "Raise it as an alarm and you've pulled security over to a colleague who did everything right." } }
 ]
 ```
 
@@ -703,10 +756,12 @@ need no `factorStrings` entry.)
   were all easy to supply, and none of them proved the courier was expected. The one thing that would
   have stopped it costs nothing: a glance at the day's list and walking the visitor to the desk instead
   of buzzing the door blind. A genuine visitor never minds being signed in and escorted; the one who
-  pushes to skip it is the one to report."
+  pushes to skip it is the one to report. The same visitor, once inside, reads whatever is left open, so
+  a locked screen when you step away is part of the same habit."
 - `strings.mondayCard`: "On Monday: if you don't recognise someone, help them, 'Can I help you find
   someone? I'll walk you to reception.' Don't hold a secure door for a stranger, everyone badges in for
-  themselves, and report anyone who pushes past a check, using the route in the box below."
+  themselves, lock your screen whenever you step away (Windows key and L), and report anyone who pushes
+  past a check, using the route in the box below."
 - The module line (core_10): "If you don't know them, help them: 'Can I help you find someone? I'll
   walk you to reception.'"
 - `noBlameLine`: "A busy desk that tries to help a full-handed courier is doing its job; a miss just
@@ -740,7 +795,8 @@ by message, the kind of "visitor with a story" that core_10 teaches (`10`'s `gen
 `gvb_usb_courier` and the contractors/fire-drill genuine item 10 already carry this flavour). That item
 is authored as part of `10`, not as an E12 form; the six built role forms are the measured baseline and
 are not edited. There is no per-topic physical-security form and no new flag ids in the check forms (the
-four scenario-local tells in section 11 stay in E12's own set, never in a form).
+five scenario-local tells in section 11, including the new `unlocked_screen`, stay in E12's own set,
+never in a form).
 
 ## 15. Files to create or change
 
@@ -769,8 +825,8 @@ Change:
 - `planning_notes/phishing_and_social_engineering/awareness/training_room.py`: if the studio map wiring
   needs a lobby entry, add it (ENG-05).
 - `awareness/BRAND_SET.md`: add Delphine Arvanitis (lobby mark) and Lorna Easton (studio kiosk host),
-  the lobby, the invented contractor and fire-safety firm, under an E12 additions block (follow the
-  existing "_brandAdditions" convention).
+  the lobby, the invented maintenance-contractor firm (on the service contract) and fire-safety firm,
+  under an E12 additions block (follow the existing "_brandAdditions" convention).
 - Hacktivity course seeds: both shells join the defend-only and both-versions courses **through 01 P12**,
   not by hand-editing Hacktivity or through `awareness_deploy.py`.
 
@@ -793,24 +849,29 @@ A `tools/playtest/se/bridge-e12-full.jsonl` (pattern from the existing `bridge-e
 the standard opening (the learner spawns in `training_room`, `moveToNear training_kiosk`, interact) →
 brief → find the three OSINT facts (so the `recipient` blank can be filled) → open pretext-prep, fill the
 parcel/partner blanks, Approach →
-run the person-chat lines to `got_it` (door opens) → flip → work the six reception `call` items
-(mixing verdicts to exercise Verify) → debrief → assert `episode_e12_visitor_tailgater_defend_done`.
+run the person-chat lines to `got_it` (door opens) → flip → work the seven reception `call` items
+(mixing verdicts to exercise Verify, including Escalate on the unlocked-desk item 6) → debrief → assert
+`episode_e12_visitor_tailgater_defend_done`.
 Validate with `check-bridge.mjs` / `run-suite.sh`.
 
 ## 17. Acceptance checks
 
 - `ruby scripts/validate_scenario.rb scenarios/awareness_e12_visitor_tailgater/scenario.json.erb
   --strict-social --no-graph --skip-ink` passes (the validator takes the `scenario.json.erb` file path
-  per shell, not the folder, README §8.3); same for the defend-only shell. The four scenario-local tells
+  per shell, not the folder, README §8.3); same for the defend-only shell. The five scenario-local tells
   pass because each has a `flagChips` label on the set (no library change); the shell otherwise needs
   ENG-08 for the `awarenessEpisode.world` block, the lobby room type and the locked
-  lobby-to-`training_room` connection. **Defend set proven:** the six `call` items
-  (section 11) with `channelTells` `["tailgating","no_escort","uniform_pretext","not_expected",
-  "borrowed_authority","secrecy_or_bypass"]` and the four local tells labelled in `flagChips` were built
-  into a throwaway copy of the `awareness_e6_texts_and_qr_defend` shell and run through
-  `validate_scenario.rb --strict-social`: exit 0, no social lint error. The `world`/lobby/door keys
-  themselves need ENG-05a and ENG-08 (not built yet), so that half of the shell was not scratch-validated
-  here; it is validated when those packets land.
+  lobby-to-`training_room` connection. **Defend set:** the original six-item set (without the screen-lock
+  pair, and with the now-removed `e12_call_real_contractor`) with `channelTells` `["tailgating",
+  "no_escort","uniform_pretext","not_expected","borrowed_authority","secrecy_or_bypass"]` and its four
+  local tells labelled in `flagChips` was built into a throwaway copy of the
+  `awareness_e6_texts_and_qr_defend` shell and run through `validate_scenario.rb --strict-social`: exit 0,
+  no social lint error. **Re-validate the updated seven-item set in scratch** the same way, with the full
+  `channelTells` `["tailgating","no_escort","uniform_pretext","not_expected","unlocked_screen",
+  "borrowed_authority","secrecy_or_bypass"]` and the five local tells labelled in `flagChips` (the two new
+  `call` items follow the identical shape, so exit 0 is expected). The `world`/lobby/door keys themselves
+  need ENG-05a and ENG-08 (not built yet), so that half of the shell was not scratch-validated here; it is
+  validated when those packets land.
 - `node --test test/js/social-awareness-fragment-erb-parity.test.mjs` and the `validator-social-*` and
   `social-*` suites pass with E12 added.
 - The ink compiles: `inklecate` on `delphine_reception.ink` produces the `.json`; the `# unlock_door:training_room`
@@ -841,8 +902,8 @@ Validate with `check-bridge.mjs` / `run-suite.sh`.
   cannot today; section 5 and section 20.1 split into two front-of-house NPCs on that basis): if so, one
   NPC could serve as both the lobby mark and the studio host.
 - ENG-08 cannot accept the `awarenessEpisode.world` block, the lobby room type or the locked
-  lobby-to-`training_room` connection. (The four scenario-local tells need no ENG-08 change; they use `flagChips`
-  labels, section 11.)
+  lobby-to-`training_room` connection. (The five scenario-local tells, `unlocked_screen` included, need no
+  ENG-08 change; they use `flagChips` labels, section 11.)
 
 ## 20. Open questions
 
@@ -866,3 +927,16 @@ Validate with `check-bridge.mjs` / `run-suite.sh`.
    wherever the player stands (it needs no proximity), so nothing requires walking into the opened door.
    A failed con and a reload both land at the kiosk, never stranded.
 4. Whether the osint stage survives the timing budget or is cut into the brief (section 6).
+5. **Screen-lock item: count and the removed contractor.** Adding the clear-screen mirror pair (items 6
+   and 7, section 11) takes the defend set from six to seven. To keep it near "about six items" and the
+   ~15-minute budget, the genuine lift-engineer visitor (`e12_call_real_contractor`) was removed: it
+   carried no tells, and its "genuine visitor, Verify is full marks" lesson is still carried by items 2
+   and 5, so no `channelTells` id was lost. This leaves the fire inspector (item 3) without its direct
+   patient-contractor mirror. The user might instead prefer: keep all eight items (accept a slightly
+   longer defend stage, lean on the osint cut in section 6); or keep the contractor and drop a different
+   item. Flagged for a steer.
+6. **`unlocked_screen` is a new scenario-local tell.** It needs no engine or library change (local tell,
+   `flagChips` label plus per-message `factorStrings.redFlag`, exactly as the other four E12 tells). It is
+   not yet in ENG-08's tell catalogue table (`02_ENGINE_WORK.md`), which lists E12's tells; that table
+   should gain an `unlocked_screen` row marked **local** (catalogue only, no code change). Not edited here
+   because this task touches only the E12 spec.
