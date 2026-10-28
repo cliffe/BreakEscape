@@ -42,7 +42,7 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
 | ENG-03a triage `page` states | E10, check forms | yes: `triage-kinds.js` (guarded by new optional keys) |
 | ENG-03b check-page builder | E10 | yes: the landing-page renderer (guarded by `pageType`) |
 | ENG-04 consequence-flip `mistake` stage + montage flip | E11, E15, E16 | no |
-| ENG-05a world stage `world` | E12 | no |
+| ENG-05a world-play modifier `world` (not a new stage id) | E12 | no |
 | ENG-05b costume | E12 | yes: `core/player.js`, `utils/player-avatar.js` (guarded: a new function, existing ones unchanged) |
 | ENG-05c lobby, door and NPC door opening | E12 | no engine change expected (authoring with built features) |
 | ENG-05d package-carry sprite state | E12 | art only |
@@ -84,6 +84,7 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
    ```json
    "flipAftermath": {
      "heading": "Now you are Kieran, and it is ten past three",
+     "victimName": "Kieran",
      "intro": "Kieran clicked the link and typed his password. Here is his account a few minutes later.",
      "items": [
        { "id": "fa_sent", "kind": "email", "folder": "sent", "to": "...", "subject": "...", "time": "15:08", "note": "Kieran did not write this." },
@@ -92,6 +93,10 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
      "line": "Most of the damage happens between noticing and reporting."
    }
    ```
+
+   All fields are authored inline at episode level. The optional fields are: `heading` (the section title), `victimName` (the colleague whose account is now in use, so the view can name them in its own labels without the episode repeating the name in `strings`; drawn with `textContent`), `intro` (the lead line), `items[]` (the follow-on signs) and `line` (the closing line). `victimName` and `intro` carry everything E8 needs to re-seat the learner "in the victim's seat"; no `strings` entry is used (ruling 3).
+
+   **E8's "first odd sign" maps onto `items[0]`, not onto a defend-set id.** E8 earlier proposed `flip.firstSign` pointing at a defend-set message; that shape does not exist. Instead E8 authors the opening sign inline as `items[0]` of `kind: "email"`, `folder: "sent"`, reconstructed from the sent record (to, subject, time, note), with no `body` and no link. A sign may also appear as a defend item, but with a different id and its own inline copy (ruling 3): the flip item and the defend item never share an id.
 
    `items[].kind` is `email` (drawn as one read-only sent-items row: folder, to, subject, time and the `note`; no body, no link) or any `NON_EMAIL_KINDS` kind (`sms`, `voicemail`, `qr`, `page`, `call`, `push`), drawn with `renderKindSurface(rec, { showNote, showLink, bodyNode })` as the flip already does for a page. Every string goes in with `textContent`.
 2. `flip-view.js`: accept `aftermath` in the props. When it is an object with at least one valid item, after the message, page and call parts and before the defender line, draw a section `.aw-flip-aftermath` with an `h3` (`heading`), a `p.aw-lead` (`intro`), one `.aw-aftermath-item` per item (with `data-id`) and `p.aw-aftermath-line` (`line`). Push `'aftermath'` onto `parts`, so that `getState()` reports it.
@@ -156,7 +161,7 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
      "target": "colin",                       // a social.people id, display only
      "commonList": ["123456", "password", "qwerty", "tarrowby"],   // shown struck through as "already tried"
      "patternSlots": [                         // each reads ONE collected OSINT fact (se_intel_<factId> true)
-       { "id": "team", "factId": "tarrowby_mather_team", "template": "{team}{year}" },
+       { "id": "team", "factId": "tarrowby_mather_team", "template": "{team}1" },
        { "id": "pet",  "factId": "tarrowby_mather_pet",  "template": "{pet}!" }
      ],
      "reuseStep": {                            // the lever the flip leans on (aw2)
@@ -170,7 +175,7 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
    }
    ```
 
-   The guesser assembles each pattern slot only from facts the learner actually collected (the slot's `factId` resolves to a true `se_intel_<factId>` global); an uncollected fact leaves its slot struck through as "not found". The common list is always shown struck through first. The reuse step "lands" (opens the work account in the authored view) and sets `landedGlobal`. The passphrase demo renders as "still being tried" and never lands.
+   The guesser assembles each pattern slot only from facts the learner actually collected (the slot's `factId` resolves to a true `se_intel_<factId>` global); an uncollected fact leaves its slot struck through as "not found". A slot's `template` interpolates **only the slot's own fact value**: the single token in the template (written as the slot `id` in braces, for example `{team}` or `{pet}`) is replaced by that fact, and any other characters are authored literals. Tokens never cross slots, so a template references one fact and nothing else. The common list is always shown struck through first. The reuse step "lands" (opens the work account in the authored view) and sets `landedGlobal`. The passphrase demo renders as "still being tried" and never lands.
 4. **Landed global, reusing ENG-01.** On close the scene writes `config.landedGlobal = true` through the runner's write dep (as `_launchCall` writes state, `episode-runner-minigame.js:648`). `flipAftermathFor(episode, { landed })` (ENG-01) is called with `landed = globals[config.landedGlobal] === true`, so the prompt-flood aftermath shows only when the reuse step landed. The flip's own props come from `_flipProps`; add a `sent?.kind === 'guess'` branch there returning `{ message: null, page: null, call: null, missed: !landed }` so the flip narration matches (mirrors the mail/call branches).
 5. **Step label.** `guess` needs a strip label. Reuse ENG-01's `stepLabels` (`{ guess: "Guess list" }`); the built shells author none, so nothing else changes. `STAGE_COPY.guess` gets a launch-panel entry (`{ heading: 'Guess list', text: '...', button: 'Open the guesser' }`), matching the built entries' voice.
 6. **Schema and validator (in ENG-08).** Add `guess` to the `stages` enum and to `awareness.rb` `STAGES`; add an `awarenessEpisode.guess` object to the schema (`additionalProperties: false`); add a `stage_orders` branch so a full episode may author `brief, osint, guess, flip, defend, debrief` (guess after osint, before flip, with no `write`); lint that a `guess` stage has a `guess` block, that `patternSlots[].factId` and `reuseStep.factId` name a declared `se_intel_*` fact, that `landedGlobal` is a declared global, and that nothing in the block looks like a credential field (no `password`/`secret` keys).
@@ -186,7 +191,7 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
 
 **Acceptance.** The standard engine acceptance, plus `node --test test/js/social-password-guesser.test.mjs test/js/social-episode-runner.test.mjs test/js/validator-social-awareness.test.mjs`. Expected: all pass, `git status --porcelain scenarios/` empty.
 
-**Episodes that depend on it.** E9 (its attack half; both the full and defend-only variants need ENG-02, because the defend-half password cards are ENG-09a, not here — E9 §7 is wrong that only the full variant needs it, see Stop and ask).
+**Episodes that depend on it.** E9 (its attack half; both the full and defend-only variants need ENG-02, because the defend-half password cards are ENG-09a, not here. E9 §7 is wrong that only the full variant needs it (see Stop and ask).
 
 **Shared code paths.** Episode runner and a new child scene only. The lab and SAFETYNET never open the runner and never author `guess`.
 
@@ -202,7 +207,7 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
 
 **Goal.** E10's defend half is "a morning of browser screens": the built E5 `page` triage card extended with new states (fake "verify you are human" check with a clipboard reveal, fake update banner, full-screen alarm, extension-permission prompt, dangerous download bar, genuine browser warning and relaunch bar), and a three-way browser verdict (E10 §11). Every state is authored data; nothing runs on the computer and nothing writes to the real clipboard (E10 §18).
 
-**Read first.** `inbox-triage/triage-kinds.js` (`page()` `:364`, `renderKindSurface()` `:514`, `NON_EMAIL_KINDS` `:23`, `actionsFor()` `:66`, `VERDICT_ACTIONS` `:42`, `kindVerdictLine()` `:93`); `triage-flags.js` (`chipIdsFor` `:154`, `KIND_TELL_EXCLUDE` `:90`, `redFlagString` `:196`); the built E5 page items in `awareness/e5/defend.json`; E10 §11.
+**Read first.** `inbox-triage/triage-kinds.js` (`page()` `:364`, `renderKindSurface()` `:514`, `NON_EMAIL_KINDS` `:23`, `actionsFor()` `:66`, `VERDICT_ACTIONS` `:40`, `kindVerdictLine()` `:93`); `triage-flags.js` (`chipIdsFor` `:154`, `KIND_TELL_EXCLUDE` `:90`, `redFlagString` `:196`); the built E5 page items in `awareness/e5/defend.json`; E10 §11.
 
 **Depends on.** ENG-08 (the five new channel tells, §11 of E10, and the schema additions). ENG-03b (the attack-side fake-download build page) is independent and optional.
 
@@ -211,7 +216,7 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
 **Current code.**
 
 - `page(rec, h)` (`triage-kinds.js:364`) draws a browser chrome (padlock/not-secure, address button, optional certificate panel) and a view (heading, body, optional sign-in form with a password-manager autofill cue). It reads `rec.page` (`url`, `padlock`, `heading`, `fields`, `button`, `certificate`, `autofill`). There is no fake-check, download, alarm, extension-permission, update or warning state.
-- `actionsFor('page', verifyEnabled)` returns the three verdict buttons (Trust/Report/Delete) plus Verify when enabled (`:69`). The labels are fixed to "Trust" / "Report" / "Delete" in `VERDICT_ACTIONS` (`:42`). There is no per-set relabel.
+- `actionsFor('page', verifyEnabled)` returns the three verdict buttons (Trust/Report/Delete) plus Verify when enabled (`:69`). The labels are fixed to "Trust" / "Report" / "Delete" in `VERDICT_ACTIONS` (`:40`). There is no per-set relabel.
 - `renderKindSurface` dispatches by kind through `SURFACES` (`:507`); the flip reuses it (`flip-view.js:164`).
 
 **Decision (settles E10 §11 and §19): the three-way browser verdict is a label change, not a new verdict.** Trust -> "Carry on", Report -> "Close and report", Delete -> "Go the trusted way". The verdict ids (`trust`/`report`/`delete`) and the `awareness` scoring are unchanged, so the measurement is identical to E5's page set and no scorer change is needed. The labels are configured per set with a new optional `triageSet.verdictLabels` (ENG-08 schema), read by `actionsFor` so the buttons and the review-card wording follow. With the key absent, the built labels stand (E5 unchanged).
@@ -227,7 +232,7 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
    - `browserWarning`: a genuine red "Deceptive site ahead" interstitial with a "Go back" affordance (a true warning; the correct move is Carry on/Go back).
    - `relaunchBar`: the browser's own menu-bar "An update is ready. Relaunch to finish." (browser UI, not a web page; the genuine mirror of `fakeUpdate`).
 2. **`verdictLabels`.** `actionsFor(kind, verifyEnabled, labels)` takes an optional `{ trust, report, delete, verify }`; when present, each action's `label` is overridden. The triage renderer passes `set.verdictLabels`. The review card uses the same labels.
-3. **Chip exclusions.** The five new web tells (`fake_check_paste`, `fake_update_prompt`, `fake_alarm_callback`, `browser_permission_grab`, `dangerous_download`, ENG-08 §11) are added to the shared library; they are offered on a `page` card because they are not in `KIND_TELL_EXCLUDE.page` (`triage-flags.js:90`). No exclude-list change is needed.
+3. **Chip exclusions and where each tell lives.** The five new web tells are split by the ENG-08 table (which is authoritative): `fake_check_paste`, `fake_update_prompt` and `dangerous_download` go in the **shared library** (each is scored by the `general_v2` check form as well as E10, so its wording is written once); `fake_alarm_callback` and `browser_permission_grab` stay **local to E10's set** (one set uses each, so they are declared only in E10's `channelTells` with a `flagChips` label and a `factorStrings.<id>.redFlag` sentence, with no edit to `phish-rules.js`/`triage.rb`). All five are offered on a `page` card because they are not in `KIND_TELL_EXCLUDE.page` (`triage-flags.js:90`). No exclude-list change is needed.
 
 **Tests to add.** `test/js/social-triage-page-states.test.mjs` (jsdom, copy the staging block from `test/js/social-triage-kinds.test.mjs`):
 
@@ -283,9 +288,9 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
 
 ## ENG-04 Consequence-flip `mistake` stage + montage flip (E11, E15, E16)
 
-**Goal.** A consequence-flip episode has no attacker and no target to judge: in place of an attack half the learner makes a few ordinary choices in a safe sandbox (`mistake`), then the flip runs as a montage showing where each choice led. The config shape is **defined once in E11 §10a**; E15 and E16 use it unchanged and differ only in content. E14 and E17 do **not** use ENG-04.
+**Goal.** A consequence-flip episode has no attacker and no target to judge: in place of an attack half the learner makes a few ordinary choices in a safe sandbox (`mistake`), then the flip runs as a montage showing where each choice led. The normative config shape is in this packet (below); E11 §10a mirrors it with worked content, and E15 and E16 use the same shape and differ only in content. E14 and E17 do **not** use ENG-04.
 
-**Read first.** `episode-model.js` (`STAGE_IDS:27`, `ATTACK_STAGES:28`, `DEFAULT_STAGES:31`, `stagesFor:60`, `childLaunch:180`, `completeStage:153`, `stateKey:41`); `episode-runner-minigame.js` (`_flipProps:466`, `_renderFlip:489`, `_launch:548`); `flip-view.js` (`renderFlipView:91`); `awareness.rb` (`STAGES:18`, `STAGES_BY_VARIANT:19`, `stage_orders:157`, `string_checks:296`, `flip_by_choice_checks:334`); **E11 §10a** (the config shape; required, do not redefine); the parity test `STRINGS_ERB_ONLY_OK` (`social-awareness-fragment-erb-parity.test.mjs:59`).
+**Read first.** `episode-model.js` (`STAGE_IDS:27`, `ATTACK_STAGES:28`, `DEFAULT_STAGES:31`, `stagesFor:60`, `childLaunch:180`, `completeStage:153`, `stateKey:41`); `episode-runner-minigame.js` (`_flipProps:466`, `_renderFlip:489`, `_launch:548`); `flip-view.js` (`renderFlipView:91`); `awareness.rb` (`STAGES:18`, `STAGES_BY_VARIANT:19`, `stage_orders:157`, `string_checks:296`, `flip_by_choice_checks:334`); the parity test `STRINGS_ERB_ONLY_OK` (`social-awareness-fragment-erb-parity.test.mjs:59`). The normative config shape is in this packet (below); E11 §10a is the content mirror, so the engine agent does not need the content spec.
 
 **Depends on.** ENG-08 for the schema and lints (or carry them here). Nothing else: the montage reuses the built flip view with a new mode.
 
@@ -297,12 +302,47 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
 - `stagesFor` drops `ATTACK_STAGES` ids for a `defendOnly` variant; `flip` is already an `ATTACK_STAGES` member, so a `defendOnly` shell already drops `flip`.
 - The validator pins the full stage list (`stage_orders:157`); `brief mistake flip defend debrief` is not an allowed order today.
 
-**Change (exactly E11 §10a).**
+**Normative config shape (authoritative; E11 §10a mirrors it with worked content).**
+
+Config lives in a new `awarenessEpisode.mistake` block (sibling of the built `awarenessEpisode.mfa`), plus `flip.mode` and `strings.flipMontageByChoice`:
+
+```jsonc
+"mistake": {
+  "scored": false,                            // always false; the sandbox is never scored
+  "beats": [
+    {
+      "id": "overtime_sheet",                 // stable beat id; the montage and the analytics record key on it
+      "situation": "<on-screen prompt for this everyday choice>",
+      "options": [
+        { "id": "send_wrong_sam",  "label": "<on screen>", "safe": false },
+        { "id": "check_then_send", "label": "<on screen>", "safe": true, "approvedRoute": true }
+      ]
+    }
+    // one object per everyday choice, in order
+  ],
+  "flipBeat": "overtime_sheet"                 // the ONE consequential choice quoted back in the flip (aw2)
+},
+"flip": { "mode": "montage" },
+"strings": {
+  "flipHeading": "<montage headline, e.g. Six months later>",
+  "flipMontageByChoice": {
+    "overtime_sheet": {
+      "send_wrong_sam":  "<the line shown when the learner took the unsafe option>",
+      "check_then_send": "<the line shown when the learner took the safe option: the version where it went wrong instead>"
+    }
+  }
+}
+```
+
+Fields: each `beats[]` entry has `id`, `situation` and `options[]`; each `option` has `id`, `label`, `safe` (true = the approved route, **exactly one per beat**) and an optional `approvedRoute: true` marking the single modelled best move. `flipBeat` names the beat whose branch is the montage headline (the montage still shows every beat). The learner's chosen option per beat is stored, then discarded after the flip; nothing is scored (the measurement store may record beat id and option id for in-episode analytics only, never shown).
+
+**Change.**
 
 1. Add `'mistake'` to `STAGE_IDS` and to `ATTACK_STAGES`, placed before `flip` (so a `defendOnly` shell drops both `mistake` and `flip`, `stagesFor:68`). `DEFAULT_STAGES` is not changed.
-2. `childLaunch` gains a `mistake` branch returning `{ kind: 'mistake', sceneType: 'consequence-sandbox', params: { config: episode.mistake ?? null } }`, `null` when `episode.mistake` is absent. A new child module `minigames/episode-runner/consequence-sandbox.js` (kept beside the runner, episode-only) renders the `beats` one at a time, stores the chosen option id per beat into `episode_<id>_state` (where `write` already keeps its sent-template id, so the flip reads it back), and never scores. The learner's choices are discarded after the flip (`completeStage` clears `sent` on `flip`, `:160`; store the beat choices under a parallel `mistakeChoices` field cleared the same way).
+2. `childLaunch` gains a `mistake` branch returning `{ kind: 'mistake', sceneType: 'consequence-sandbox', params: { config: episode.mistake ?? null } }`, `null` when `episode.mistake` is absent. A new child module `minigames/episode-runner/consequence-sandbox.js` (kept beside the runner, episode-only) renders the `beats` one at a time, stores the chosen option id per beat into `episode_<id>_state`, and never scores. Store the beat choices under a `mistakeChoices` field: because `completeStage`/`readState` (`:153`, clears `sent` on `flip` at `:160`) today only pass the `sent` and `defend` patch keys through, `mistakeChoices` must be added to the patch-key allow-list in `readState`/`completeStage` and cleared on `flip` the same way `sent` is.
 3. **Montage flip.** Add `flip.mode: "montage"` on the episode block, read by `_flipProps`: when set, return `{ montage: true, beats, flipBeat, lines }` where `lines` come from `strings.flipMontageByChoice[beatId][optionId]`, using the learner's own option when it has a line, else the beat's unsafe option (the "taken instead" view, so a careful learner still sees the cost). `renderFlipView` gains a montage branch that draws `flipHeading`, one `.aw-montage-beat` per beat (the `flipBeat` first/as the headline), and `getState().shown === 'montage'`.
-4. **Validator and schema (ENG-08).** Add `mistake` to `stages` enum and `awareness.rb` `STAGES`; add `awarenessEpisode.mistake` (`scored`, `beats[]`, `flipBeat`), `flip.mode` and `strings.flipMontageByChoice` to the schema (`additionalProperties: false`); a `stage_orders` branch for `brief mistake flip defend debrief` (full) with no `osint`/`write`; lints: every beat has exactly one `safe: true` option; `flipBeat` names a real beat; every `flipMontageByChoice` outer key is a real beat and every inner key a real option of that beat; non-empty strings; `mistake`/`flip` absent on a `defendOnly` episode. Add `flipMontageByChoice` to `STRINGS_ERB_ONLY_OK` in the parity test with the reason (the defend-only shell has no `mistake`/`flip`, so the generated shell never carries it, exactly like `flipDefenderLineByChoice`).
+4. **Validator and schema (ENG-08).** Add `mistake` to `stages` enum and `awareness.rb` `STAGES`; add `awarenessEpisode.mistake` (`scored`, `beats[]`, `flipBeat`), `flip.mode` and `strings.flipMontageByChoice` to the schema (`additionalProperties: false`); a `stage_orders` branch for `brief mistake flip defend debrief` (full) with no `osint`/`write`; lints: every beat has exactly one `safe: true` option; `flipBeat` names a real beat; every `flipMontageByChoice` outer key is a real beat and every inner key a real option of that beat; non-empty strings; a `mistake` block present whenever `stages` includes `mistake`; `mistake`/`flip` absent on a `defendOnly` episode. Add `flipMontageByChoice` to `STRINGS_ERB_ONLY_OK` in the parity test with the reason (the defend-only shell has no `mistake`/`flip`, so the generated shell never carries it, exactly like `flipDefenderLineByChoice`).
+5. **Relax `attack_checks` for a `mistake` episode (ruling 5).** Today `awareness.rb:53` runs `attack_checks(ctx, ep) if full?(ep)`, and `attack_checks` (`:182`) demands an `attack` block (`target`, `siteIds`, `accountIds`, `maxMessages: 1`, `scored: false`, a real `phishTargets` target). A consequence-flip episode is `variant: "full"` but has no attacker and no target, so it fails today. Change the guard so `attack_checks` runs only when the stage list contains an attack-artefact stage (`osint`, `build`, `write`, `mfa` or `guess`): for a `mistake` episode (no `osint`/`write`) `attack_checks` is skipped. Add the paired lint that for a `mistake` episode the `attack` block must be **absent** (so a stray `attack` block is still caught). This is the single change that lets E11, E15 and E16 validate; it must land before any of the three is validated.
 
 **Tests to add.** `test/js/social-episode-sandbox.test.mjs` (jsdom): the sandbox renders each beat and stores the chosen option; with `episode.mistake` absent, `childLaunch(ep,'mistake')` is `null`; the montage draws every beat, the `flipBeat` first, falling back to the unsafe-option line for an untaken beat; `getState().shown === 'montage'`. Extend `social-episode-runner.test.mjs` (a full consequence episode runs `brief -> mistake -> flip -> defend -> debrief`; a `defendOnly` drops `mistake` and `flip`) and `validator-social-awareness.test.mjs` (a clean `mistake` fixture; failing cases: a beat with no/two `safe` options, a `flipBeat` that is not a beat, a montage key that is not a beat/option). Add `flipMontageByChoice` to the parity test's allow-list; a parity fixture confirms the full erb carries it and the defend-only shell does not.
 
@@ -320,7 +360,7 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
 
 ---
 
-## ENG-05a World-play attack stage `world` (E12)
+## ENG-05a World-play attack modifier `world` (E12)
 
 **Goal.** E12's attack half is the first awareness episode played in the game world: the learner walks a lobby room in a costume, carries a parcel, and runs an in-person pretext on the influence bar, which buzzes a badge door open (E12 §9). The pretext machinery is the built E3 path (pretext-prep -> person-chat); ENG-05a is the world wrapper and the hand-back to the flip.
 
@@ -520,7 +560,7 @@ Bridges `6` and `r4-door` run `lab_social_engineering`. `p7-episode` runs `test_
 
 **Goal.** Replace the hard-coded `SECURE VIDEO LINK` label (`person-chat-ui.js:264`) with the organisation's meeting-tool name ("Brightwell Meet") and an **External** participant tag, and expose that label to the triage `call` card that carries the Project Heron deepfake (E13 §9.2, §11, §20.2).
 
-**Read first.** `person-chat/person-chat-ui.js` (the video-call chrome, `initVideoCallOverlay:255`, the hard-coded label `:264`); `systems/npc-manager.js` (`conversationMode: "video-call"`, around `:1251`); `inbox-triage/triage-kinds.js` (`call()` `:449`); E13 §9.2, §11.
+**Read first.** `person-chat/person-chat-ui.js` (the video-call chrome, `initVideoCallOverlay:255`, the hard-coded label `:264`); `systems/npc-manager.js` (`conversationMode: "video-call"`, around `:911` and `:1110`); `inbox-triage/triage-kinds.js` (`call()` `:449`); E13 §9.2, §11.
 
 **Depends on.** ENG-08 (schema). Nothing else.
 
@@ -562,10 +602,11 @@ ENG-08 collects every schema (`scripts/scenario-schema.json`) and validator (`sc
   - `brief mistake flip defend debrief` (ENG-04; no `osint`, no `write`);
   - `brief write flip defend debrief` (E13; `osint` optional, the attack is a mail write with no recon).
   State each new order with a comment naming its episode, as the built `MFA_AFTER`/`BUILD_AFTER` comments do.
+- **Relax `attack_checks` (ENG-04, ruling 5).** `awareness.rb:53` runs `attack_checks` for every `full?` episode. Change the guard so it runs only when the stage list contains an attack-artefact stage (`osint`, `build`, `write`, `mfa` or `guess`), and add the lint that a `mistake` episode has no `attack` block. This lets a consequence-flip full episode (E11, E15, E16, stages `brief mistake flip defend debrief`) validate with no `attack` block. Owned by ENG-04; listed here so the validator change is tracked in one place.
 
 ### New episode keys
 
-Add to `socialAwarenessEpisode` (all optional, `additionalProperties: false`): `guess` (ENG-02), `mistake` and `flip` (object `{ mode }`, ENG-04), `world` (ENG-05a), `assistant` (ENG-06), `doneGlobal` and `oncePerLearner` (ENG-10). Add to `strings`: `flipMontageByChoice` (ENG-04), `briefCards`, `briefDone`, `alreadySeen` (ENG-10), `guessNote` (ENG-02). Add to a `call` triage message: `videoLabel`, `participantTag` (ENG-07), and the email-card `hiddenText` reveal (ENG-06). Add to `socialTriageSet`: `verdictLabels` (ENG-03a), `choice`-kind support (ENG-09a), `person`-kind support (ENG-09c). Add to `landingPages[]`: `pageType` (ENG-03b).
+Add to `socialAwarenessEpisode` (all optional, `additionalProperties: false`): `flipAftermath` and `stepLabels` (ENG-01), `guess` (ENG-02), `mistake` and `flip` (object `{ mode }`, ENG-04), `world` (ENG-05a), `assistant` (ENG-06), `doneGlobal` and `oncePerLearner` (ENG-10), `sortDrill` (ENG-11), `concernForm` (ENG-12), `privacyPanel` (ENG-13). `flipAftermath` is `{ heading?, victimName?, intro?, items[], line? }` (ENG-01); `stepLabels` is a `{ <stageId>: string }` map. Add to `strings`: `flipMontageByChoice` (ENG-04), `briefCards`, `briefDone`, `alreadySeen` (ENG-10), `guessNote` (ENG-02). Add to a `call` triage message: `videoLabel`, `participantTag` (ENG-07), and the email-card `hiddenText` reveal (ENG-06). Add to `socialTriageSet`: `verdictLabels` (ENG-03a), `choice`-kind support (ENG-09a), `person`-kind support (ENG-09c). Add to `landingPages[]`: `pageType` (ENG-03b).
 
 ### New message kinds
 
@@ -585,6 +626,9 @@ A tell id can come from three places:
 
 | Id | Used by | Shared or local | Reason |
 |---|---|---|---|
+| `unexpected_sent_item` | E8 (defend), `general_v2` check item | **shared** | scored in a check form as well as E8, so by ruling 1 it must live in the shared library; if `10_CHECK_FORMS.md` does not place it in `general_v2` after its balance pass, it may stay local to E8's set instead |
+| `unrequested_reset` | E8 (defend), `general_v2` check item | **shared** | same as above (the reset item is E8's mirror of the genuine-IT-notice item; scored in `general_v2`) |
+| `ransomware_note` | E8 (defend), E13 (defend) | **shared** | two sets use it (E8 after-the-click and E13), so the wording is written once (E8 §20.3 reasons the same) |
 | `mfa_number_relay` | E9 (defend), E3 fake-IT lever | **shared** | two sets (E3 and E9) use the read-back-a-number lever; close to `unrequested_mfa_push` but means a different thing (reading a number back, not approving a prompt), so keep both ids |
 | `fake_check_paste` | E10 (defend), `general_v2` check item 2 (as a page) | **shared** | E10 and the `general_v2` form both use it |
 | `fake_update_prompt` | E10 (defend), `general_v2` item 2 variant | **shared** | E10 and the check form both use it |
@@ -598,8 +642,11 @@ A tell id can come from three places:
 | `hidden_instruction` | E13 (defend) only; E13 §14 proposes a general-pool check item later | **local for now** | one shipped set today; promote to shared when the general-pool AI item (E13 §14) is built |
 | `deepfake_request` | E13 (defend) only; E13 §14 and `general_v2` item 6 touch the topic | **local for now** | the `general_v2` item 6 scores on `senderTrust`/`linkCredible`, not `deepfake_request`, so only E13 uses this id today; promote to shared if a check item later scores on it |
 
-Canonical strings to register for the shared ids (append to `CHANNEL_TELLS` in both files; E10 §11 and WP-15 give the wording):
+Canonical strings to register for the shared ids (append to `CHANNEL_TELLS` in both files; E8 §11, E10 §11 and WP-15 give the wording):
 
+- `unexpected_sent_item`: "A message or item in your own Sent folder that you did not send"
+- `unrequested_reset`: "A password reset or security change you did not ask for"
+- `ransomware_note`: "A message or on-screen note claiming your files are locked and demanding payment"
 - `mfa_number_relay`: "A message asking you to type or read back a sign-in number or code"
 - `fake_check_paste`: "A page telling you to paste or run something to prove you are human or to fix an error"
 - `fake_update_prompt`: "A web page saying your browser or software is out of date and offering the update"
@@ -659,7 +706,9 @@ Local ids (`fake_alarm_callback`, `browser_permission_grab`, `tailgating`, `no_e
 
 **Current code.** `strings.conceptPanel` is one panel (string or `{heading,text}`), rendered once by the debrief view.
 
-**Change.** Accept an **array** of `{ heading?, text }` for `strings.conceptPanel` (or a new `strings.conceptPanels`), rendered as successive panels in order. A string or single object is still accepted and renders exactly as today. Schema (ENG-08): widen `conceptPanel` to also allow an array of the panel object.
+**Decision (settles E8 §12 and the key-name question).** The built `strings.conceptPanel` is a single panel (a string or `{ heading, text }`), confirmed in `debrief-view.js` `buildPanel` and the schema (`scenario-schema.json:1898`). E8, E9, E10 and E13 each need more than one short concept card, so ENG-09b is required for them. There is **one** new shape, not two: widen the existing `strings.conceptPanel` to also accept an **array** of `{ heading?, text }`. Do not add a second `strings.conceptPanels` key. An episode with a single panel keeps the string/object form and is unchanged; an episode with several authors the array. An episode that needs only one panel does not depend on ENG-09b.
+
+**Change.** Accept an **array** of `{ heading?, text }` for `strings.conceptPanel`, rendered as successive panels in order. A string or single object is still accepted and renders exactly as today. Schema (ENG-08): widen `conceptPanel` to also allow an array of the panel object. Because `conceptPanel` is already in `STRINGS_VALUE_EXEMPT` and `STRINGS_ERB_ONLY_OK` in the parity test, the array form needs no new allow-list entry.
 
 **Tests to add.** Extend `social-episode-views.test.mjs`: a single-panel `conceptPanel` renders as today; an array renders one panel per entry in order. Extend `validator-social-awareness.test.mjs` for the array shape (non-empty `text` per entry).
 
@@ -719,7 +768,7 @@ Local ids (`fake_alarm_callback`, `browser_permission_grab`, `tailgating`, `no_e
 
 **Current code.** The parity test iterates a known set of awareness shells and the rule-of-thumb test asserts the shared string is byte-identical across all 38 shells. New shells must join both.
 
-**Change (tests only).** As each new episode/check pair ships: add its shells to the parity test's shell list and the rule-of-thumb guard; add `flipMontageByChoice` to `STRINGS_ERB_ONLY_OK` (ENG-04); add any new erb-only string key with a reason. Update the expected shell count. No engine change.
+**Change (tests only).** As each new episode/check pair ships: add its shells to the parity test's shell list and the rule-of-thumb guard; add `flipMontageByChoice` to `STRINGS_ERB_ONLY_OK` (ENG-04); add any new erb-only string key with a reason. Update the `social-awareness-rule-of-thumb.test.mjs` count assertion (`assert.equal(shells.length, 38, ...)` today) to the new total each time, counting +2 folders per full episode, +1 for E17, and +4 per new check role (01 P6 holds the same math); the `n` path logic in the parity test needs no change (`e${n}` already yields `e10`). No engine change. The path formatting in the parity test is not touched; only the `EPISODES` list, the allow-lists and the count grow.
 
 **Tests to add.** The guard updates themselves; a count assertion that fails if a new shell is not registered.
 
@@ -761,7 +810,7 @@ Local ids (`fake_alarm_callback`, `browser_permission_grab`, `tailgating`, `no_e
 1. **Multi-card brief.** New optional `strings.briefCards`: an array of `{ heading?, text }` (plain text; a blank line starts a paragraph, as `buildPanel` in `debrief-view.js` does). When present, `_renderBrief()` shows one card at a time with "Next" and "Back" buttons and a "Card n of m" line. The last card's button is "Got it" (or `strings.briefDone` when set). Without `briefCards`, `_renderBrief()` is exactly as today.
 2. **Completion global.** New optional `awarenessEpisode.doneGlobal` (a global name the scenario declares, for example `episode_core_00_first_play_done`). When the episode reaches its last stage (`state.stage` becomes null in `_complete`), the runner writes `doneGlobal = true` through `this.deps.write`, with `{ openChat: false }`, as `_saveState` does. Episodes without the key write nothing new, so the 38 built shells are unchanged.
 3. **Once per learner.** New optional `awarenessEpisode.oncePerLearner: true`. When the done global is already true at `init()`, the runner goes straight to `_renderFinished()` with a "You have seen this already" line (`strings.alreadySeen`, with a default). Cross-mission carry-over (so another mission knows it was seen) uses the built `exportGlobals` on the doneGlobal, and needs no engine change.
-4. **Validator and schema (`scripts/validate_social/awareness.rb`, `scripts/scenario-schema.json`).** Allow `"stages": ["brief"]` for a new `"variant": "brief"`, or accept it on a full episode only when `doneGlobal` is set. Prefer the new variant, because it keeps the attack checks off. Add `doneGlobal`, `oncePerLearner` and `strings.briefCards`, `strings.briefDone` and `strings.alreadySeen` to the schema. Lint that `doneGlobal` is declared in `globalVariables` and that `briefCards` is a non-empty array of objects with non-empty `text`.
+4. **Validator and schema (`scripts/validate_social/awareness.rb`, `scripts/scenario-schema.json`).** Allow `"stages": ["brief"]` for a new `"variant": "brief"`, or accept it on a full episode only when `doneGlobal` is set. Prefer the new variant, because it keeps the attack checks off. **Extend the schema `variant` enum** (`socialAwarenessEpisode.variant`, currently `["full", "defendOnly"]`) with `"brief"`, or the schema rejects the new variant before the validator sees it. In `awareness.rb`, add a `STAGES_BY_VARIANT["brief"] = ["brief"]` entry (and keep `attack_checks` off for it, which the ENG-04 guard already does because the stage list holds no attack-artefact stage). Add `doneGlobal`, `oncePerLearner` and `strings.briefCards`, `strings.briefDone` and `strings.alreadySeen` to the schema. Lint that `doneGlobal` is declared in `globalVariables` and that `briefCards` is a non-empty array of objects with non-empty `text`.
 
 **Tests to add.**
 
@@ -784,9 +833,9 @@ Local ids (`fake_alarm_callback`, `browser_permission_grab`, `tailgating`, `no_e
 
 **Goal.** One reusable "sort" surface that serves the three-way and multi-way teaching drills the E14, E15 and E17 specs each asked for as a separate surface. It runs inside the `defend` stage as a sub-activity (not a new stage id): a bank of authored cards, each sorted into one of a few authored bins, with the reason on screen. The bins and an optional answer key are config, so one surface covers:
 
-- **E17 "can I?" sort** — bins **Allowed / Not allowed / Ask first**, scored by the organisation answer key, org-confirmable card bank with locked cards (E17 §11a).
-- **E14 "Post or Not?" feed drill** — bins **Post / Tweak / Hold**, unscored teaching (E14 §11).
-- **E15 "Swap Shop" match drill** — bins = the approved ways (match each shortcut to its approved route), scored or unscored (E15 §11). A match-to-one-of-N is a sort into N bins, so it folds here.
+- **E17 "can I?" sort:** bins **Allowed / Not allowed / Ask first**, scored by the organisation answer key, org-confirmable card bank with locked cards (E17 §11a).
+- **E14 "Post or Not?" feed drill:** bins **Post / Tweak / Hold**, unscored teaching (E14 §11).
+- **E15 "Swap Shop" match drill:** bins are the approved ways (match each shortcut to its approved route), scored or unscored (E15 §11). A match-to-one-of-N is a sort into N bins, so it folds here.
 
 This replaces the three bespoke surfaces those specs each raised. The specs that must change say so in "Stop and ask if".
 

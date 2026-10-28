@@ -17,7 +17,9 @@ Paths below are relative to the repo root. `AW` means `planning_notes/phishing_a
 Every generator and room script writes files. Never point one at the repo.
 
 1. Copy the script and the modules it imports into `SCRATCH/tools/`. For the shell generators these are `training_room.py`, `awareness_deploy.py` and `training_room_lighting.json` from `AW`.
-2. The existing generators hard-code `REPO = '/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape'` and default their output to `REPO + '/scenarios'`. In the scratch copy only, change `REPO` to the checkout you are in (`/home/user/BreakEscape` in this container). Then always pass an output folder.
+2. **Set the repo the generator reads, by one rule (ruling 10).** A generator needs two paths: the repo it reads source and existing shells from, and the output folder it writes to. Always pass the output folder (step 3 on). For the repo:
+   - **The built generators** (`gen_e6_e7_shells.py` and the like) hard-code `REPO = '/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape'` and default their output to `REPO + '/scenarios'`. In the scratch copy only, change `REPO` to the checkout you are in (`/home/user/BreakEscape` in this container), and restore it before copying the script back (step 6).
+   - **The new generator (P4)** does not hard-code a home folder and takes no source edit. It reads the repo from the `BREAKESCAPE_REPO` environment variable or a `--repo` argument, and falls back to its own path (`Path(__file__).resolve().parents[3]`, correct only when it is run from `AW/` in the real checkout). Because P0 runs it from `SCRATCH/tools/`, where the path fallback would resolve to a scratch folder, **export `BREAKESCAPE_REPO=<checkout>` (or pass `--repo <checkout>`) when you run it from scratch**. No source edit, so step 6's "restore REPO" does not apply to it.
 3. **No-change run first.** Run the unchanged scratch copy into `SCRATCH/out-before/`. Every file it writes must be byte-identical to the repo's:
 
    ```
@@ -32,7 +34,7 @@ Every generator and room script writes files. Never point one at the repo.
    Expected: no `DIFF` line. This was confirmed for `gen_e6_e7_shells.py` on 2026-10-27, with `REPO` patched in a scratch copy. If anything differs, stop: someone has edited a shell by hand, and that must be settled before you regenerate.
 4. Make your change in the scratch copy, run it into `SCRATCH/out-after/`, and diff `out-before` against `out-after`. Only the files you meant to change may differ.
 5. Copy only those files into the repo: `scenario.json.erb`, `mission.json` and the `.ink`. Then compile the ink in place (P3).
-6. Copy the changed generator back to `AW`, with `REPO` restored to its original value, so that the committed script still matches the user's machine. A new generator is written so that it needs no patching (P4).
+6. Copy a changed **built** generator back to `AW`, with its hard-coded `REPO` restored to the original value, so that the committed script still matches the user's machine. The **new** generator (P4) has no hard-coded `REPO` to restore: it reads `BREAKESCAPE_REPO`/`--repo`, so the committed script is used unchanged on every machine.
 7. Restore any `dungeon_graph.*` churn on shells you did not mean to touch with `git show HEAD:<path> > <path>`.
 
 ## P1. The fragments: `AW/eN/attack.json` and `AW/eN/defend.json`
@@ -48,6 +50,8 @@ Every generator and room script writes files. Never point one at the repo.
 `strings` holds `brief`, `noBlameLine`, `mondayCard`, `defendOnly` and the flip lines (`flipHeading`, `flipIntro`, `flipDefenderLine`, `flipNoSend`, `flipMissed`, `flipMissedHeading`, `flipLandedNoTells`). See `AW/e1/defend.json` `awarenessEpisode.strings`. A triage message's shape is the episode set's own: copy `scenarios/awareness_e5_signin_pages/scenario.json.erb` `social.triageSets[0].messages[1]` for a `page` card, and the E1 set for email.
 
 **Shape of `attack.json`.** Copy `AW/e1/attack.json` for a mail attack: `people`, `intelFacts`, `templates`, `mailClient`, `osint`, `phishTargets`. Copy `AW/e3/attack.json` for a call attack: `characters`, `pretextNpcs` and `_episodeAttack`. Copy `AW/e5/attack.json` for a page attack: `landingPages` and `conceptCards`. An attack shape added by an engine packet (`guess`, `mistake`, `world`, `assistant`) takes the fragment shape that packet gives.
+
+**Full-episode-only episode keys (`flipAftermath`, `stepLabels`, `guess`, `mistake`, `flip.mode`, `world`, `assistant`, `privacyPanel`, `sortDrill`, `concernForm`).** These are episode-level (not in `strings`) and are not shared with the defend-only shell. The generator's `defend_only()` builds the defend-only `awarenessEpisode` from named fields, so it never copies them, and the parity test does not compare them. Author each one by hand into the **full erb** `social.awarenessEpisode` (P2). Record it in `AW/eN/defend.json` `awarenessEpisode` as well if you want the fragment to hold the full record; the generator ignores it either way. `flipAftermath` (ENG-01) follows this rule: hand-authored into the full erb, inline (`heading`, `victimName`, `intro`, `items[]`, `line`), not pointed at a defend-set id.
 
 **Check:** `python3 -m json.tool AW/eN/defend.json >/dev/null && python3 -m json.tool AW/eN/attack.json >/dev/null`. Expected: no output.
 
@@ -113,15 +117,15 @@ Then add the shell's block to `scripts/ink_runtime_check/missions.json` (copy th
 Build it from `AW/gen_e6_e7_shells.py`:
 
 - Copy the helpers unchanged: `strip_private`, `clean_set`, `host_npc`, `kiosk`, `scenario`, `ink_source`, `meta_for`, `defend_only` and `check`.
-- Keep one `EPISODES` dict entry per new episode, with the same fields as the `'e6'` entry: `frag`, `full_id`, `defend_set`, `defend_host`, `cybok` and `defend` (`name`, `brief`, `endGoal`, `aim`, `task`, `kiosk`, `display`, `desc`, `minutes`, `defendIntro`, `conclusion`). Add `role_word`, `role_label`, `company`, `forms`, `check_hosts` and `check` when the episode has new check forms (`10_CHECK_FORMS.md`).
-- Add a `HOSTS` entry per host (`id`, `displayName`, `sprite`, `about`), a `LINES[('eN', 'defend')]` entry and the `CHECK_LINES` entries.
-- `PERMUTE` gets one entry per new form (an explicit permutation with the phish in disjoint slots across A and B, as `CHECK_PARITY_AUDIT.md` requires).
+- Keep one `EPISODES` dict entry per new episode, with the same fields as the `'e6'` entry: `frag`, `full_id`, `defend_set`, `defend_host`, `cybok` and `defend` (`name`, `brief`, `endGoal`, `aim`, `task`, `kiosk`, `display`, `desc`, `minutes`, `defendIntro`, `conclusion`).
+- **Check shells are not built here (ruling 1).** The new topics are measured by the **two** shared pairs `general_v2` and `data_conduct` only, not by one form per episode, so no new-episode entry carries `role_word`/`role_label`/`forms`/`check_hosts`/`check`. The two pairs and their pre/post check shells are built by the check-forms generator that `10_CHECK_FORMS.md` defines (its own `gen_checks_v2_shells.py`), from the `triageSets` in `defend.json`. `gen_e8_e17_shells.py` builds only the episode full and defend-only shells. If a later topic genuinely needs its own check role, add the `check()` fields then, but that is not the plan for E8 to E17.
+- Add a `HOSTS` entry per episode host (`id`, `displayName`, `sprite`, `about`) and a `LINES[('eN', 'defend')]` entry. The `CHECK_LINES` and `PERMUTE` entries (an explicit permutation with the phish in disjoint slots across A and B, as `CHECK_PARITY_AUDIT.md` requires) belong to the check-forms generator in `10_CHECK_FORMS.md`, not here, since this generator builds no check shells (ruling 1).
 - **Differences from the template, to make it safe by construction:**
-  - derive the repo from the script's own path, `REPO = str(Path(__file__).resolve().parents[3])`, not a hard-coded home folder;
+  - take the repo from the `BREAKESCAPE_REPO` environment variable or a `--repo <path>` argument, falling back to the script's own path (`REPO = str(Path(__file__).resolve().parents[3])`) only when neither is set, instead of a hard-coded home folder. The path fallback is right when the script is run from `AW/` in the real checkout; P0 runs it from `SCRATCH/tools/`, where the fallback resolves to a scratch folder, so P0 sets `BREAKESCAPE_REPO` (ruling 10, P0 step 2). This one rule means the committed script runs unpatched everywhere;
   - require the output folder as an argument (exit with a usage line when it is missing), so the script can never default into `scenarios/`;
   - `main()` builds every new episode each run, so a later run must regenerate the earlier ones byte-identically (P0 step 3).
-- The defend-only shell keeps the built rules in `defend_only()`. Its id is `<full_id>_defend`. Its done prefix is the doubled `episode_<id>_defend_defend_`. The flip strings are dropped. `strings.brief` comes from `_defendOnly.brief`, and `defend.stage` is `None`.
-- A new check role uses `check()` unchanged. Mission names follow `awareness_{pre,post}_<role_word>_{ab,ba}`, with `exportGlobals` on the pre shell and `importGlobals` on the post shell.
+- The defend-only shell keeps the built rules in `defend_only()`. Its id is `<full_id>_defend`. Its done prefix is the doubled `episode_<id>_defend_defend_`. `strings.brief` comes from `_defendOnly.brief`, and `defend.stage` is `None`. **The flip strings that `defend_only()` pops are exactly these seven** (as in `gen_e6_e7_shells.py`): `flipHeading`, `flipIntro`, `flipDefenderLine`, `flipNoSend`, `flipMissed`, `flipPageIntro`, `flipCallIntro`. `flipMissedHeading` and `flipLandedNoTells` are **not** popped; they are harmless in a defend-only shell (never shown, no flip stage) but carry over, so do not describe the defend-only shell as having "no flip strings". `flipAftermath`, `stepLabels`, `flip.mode` and `flipMontageByChoice` are episode-level or erb-only and are never in the fragment the generator reads, so the defend-only shell never carries them.
+- For reference, a check role (built by the check-forms generator, not this one, per ruling 1) uses `check()` with mission names `awareness_{pre,post}_<role_word>_{ab,ba}`, `exportGlobals` on the pre shell and `importGlobals` on the post shell. `PERMUTE` (above) and the `CHECK_LINES` entries belong with whichever generator builds the check shells.
 
 **Check:** P0 steps 3 to 5, then compile the generated ink (`./scripts/compile-ink.sh awareness_eN_<slug>_defend`) and validate each new shell with `--strict-social`. Expected: no-change runs are byte-identical, and each new shell validates.
 
@@ -135,17 +139,17 @@ Nothing to build. The generator calls `training_room.room_fields(company)` and `
 python3 AW/training_room.py quayholt_insurance
 ```
 
-The output gives `scenario.lighting`, `startPosition`, `host.position` and `rooms.training_room` (`type`, `chatBackground`, `lighting`). Expected: it matches E3's or E5's erb for Quayholt.
+The output gives `scenario.lighting`, `startPosition`, `host.position` and `rooms.training_room` (`type`, `chatBackground`, `lighting`). Expected: it matches E3's or E5's erb for Quayholt. The script does **not** print the room's other keys: copy `door_sign` (`"Training Room"`) and `connections` (`{}`) for a one-room shell from the E5 room block as well, so `rooms.training_room` is complete. (E12 is the only episode with a real door and a non-empty `connections`; see ENG-05c.)
 
-### P5b. A new brand's room (Carrholme Services for E11, Marrowdale Facilities for E17)
+### P5b. A new brand's room (Carrholme Services for E11)
 
-Reuse the shared training-room skeleton (`room_uni_seminar` plus `SKELETON_*` in `scripts/room_gen/build_aw_rooms.py`) with the company's own floor and wall sheet, logo plate, report poster and accent. The company id follows the built pattern: `carrholme_services`, map type `room_aw_carrholme`, short key `carrholme` (and `marrowdale_facilities`, `room_aw_marrowdale`, `marrowdale`). Steps:
+**Only E11 (Carrholme) needs P5b.** E17 uses the built Tarrowby company and room (ruling 2), so it is a P5a episode with no new room. **Ruling 6: "reuse an existing map" means no new layout.** Carrholme does not get a hand-drawn map; it gets its own branding through the existing room-gen scripts, over the **shared training-room skeleton** (`room_uni_seminar` plus `SKELETON_*` in `scripts/room_gen/build_aw_rooms.py`): the company's own floor and wall sheet, logo plate, report poster, accent and lighting. The inputs are the accent hex and the two-line wordmark from the brand set (step 1). P5b and E11 §5 must say the same thing: E11 points at P5b for the room work and adds no layout of its own. The company id follows the built pattern: `carrholme_services`, map type `room_aw_carrholme`, short key `carrholme`. Steps:
 
 1. **Brand set first (P11).** You need the accent hex and the two-line wordmark before you can draw anything.
 2. **`scripts/room_gen/make_aw_tileset.py`:** add `"room_aw_carrholme": (<back wall rgb>, <side wall rgb>, hexrgb("<accent>"), <floor painter>)` to `SHEETS`. Reuse a floor painter that already exists (`CARPET_OATMEAL`, `vinyl_pixel`, `CARPET_BLUE`, `concrete_pixel`). The script rewrites every sheet. Run it on a scratch copy of the repo's `assets/tiles/rooms/` if you can. Otherwise confirm with `git status` that only the new PNG changed, and restore any other PNG with `git show HEAD:<path> > <path>`.
 3. **`scripts/room_gen/make_aw_props.py`:** add `"carrholme": ("<accent>", ("CARRHOLME", "SERVICES"), <mark function>)` to `COMPANIES`. Reuse a mark function that exists, or add one small `mark_*` function in the style of `mark_chevron`. It writes `aw_logo_carrholme1` and `aw_poster_report_carrholme1` into `assets/objects/`. Confirm that only the new files changed, as in step 2.
 4. **`scripts/room_gen/build_aw_rooms.py`:** add `"carrholme": [ ... ]` to `COMPANY_OPS`, starting from the Quayholt list minus its company props (`aw_quayholt_queue1`). Build with `python3 scripts/room_gen/build_aw_rooms.py carrholme`, then `python3 scripts/room_gen/build_aw_rooms.py --check`. Expected: `room_aw_carrholme.json` and `.tmj` are written, and `--check` prints `same` for all five maps.
-5. **`public/break_escape/js/core/game.js`:** add the map and the tiles beside the four existing pairs (around lines 142 and 238):
+5. **`public/break_escape/js/core/game.js`:** add the map and the tiles beside the four existing pairs (around lines 145 and 241, the `room_aw_merrin_sallow` loads):
    `this.load.tilemapTiledJSON('room_aw_carrholme', 'rooms/room_aw_carrholme.json');` and `this.load.image('room_aw_carrholme', 'tiles/rooms/room_aw_carrholme.png');`.
 6. **`scripts/scenario-schema.json`:** add `"room_aw_carrholme"` to the room `type` enum after `"room_aw_merrin_sallow"`. Update the comment in `scripts/generate_rooms.py` (around line 4688), which lists the `room_aw_*` types.
 7. **`AW/training_room_lighting.json`:** add a `carrholme_services` entry shaped like `quayholt_insurance`'s (`mood`, `scenario`, `room`). The lighting skill (`mission-room-lighting`) reviews it later.
@@ -165,7 +169,7 @@ Reuse the shared training-room skeleton (`room_uni_seminar` plus `SKELETON_*` in
 
 `test/js/social-awareness-fragment-erb-parity.test.mjs` compares the fragment with the full erb for `awarenessEpisode.strings`, `awarenessEpisode.debrief` and the episode triage set (set-level keys and every message by id), after stripping `_` keys.
 
-- Add the episode to `EPISODES`: `{ n: 8, dir: 'awareness_e8_<slug>' }`. The fragment path is built as `.../awareness/e${n}/defend.json`, so the folder must be `AW/e8/`. ENG-09d widens `n` to cover E10 to E17. It works as is, because `e${n}` gives `e10`.
+- Add the episode to `EPISODES`: `{ n: 8, dir: 'awareness_e8_<slug>' }`. The fragment path is built as `.../awareness/e${n}/defend.json`, so the folder must be `AW/e8/`. The template literal `e${n}` already gives `e10` for `n: 10`, so the path logic needs **no code change** to cover E10 to E17; ENG-09d's only job here is to add each new episode's row to this `EPISODES` list (and the count/allow-list guards below), not to change how `n` is formatted.
 - **Allow-listed differences today:** `STRINGS_VALUE_EXEMPT` (`defendIntro`, `conceptPanel`), `STRINGS_ERB_ONLY_OK` (`conceptPanel`, `flipCallIntro`, `flipPageIntro`, `voicePanel`, `defendIntro`, `flipDefenderLineByChoice`) and `SET_ERB_ONLY_OK` (`playerSentAuth`). A new erb-only string key needs a new entry with a one-line reason in the header comment. Engine packets put full-episode-only data outside `strings` where they can (for example `awarenessEpisode.flipAftermath` in ENG-01), so that no allow-list entry is needed.
 
 **Check:** `node --test test/js/social-awareness-fragment-erb-parity.test.mjs`. Expected: one more passing test than before.
@@ -215,20 +219,23 @@ Use the `tts-audio` skill, and only once the episode's dialogue is signed off an
 ## P11. The brand set entry (`AW/BRAND_SET.md`)
 
 - **Existing company:** add an "Additions from EN (date)" section at the end, in the style of "Additions from E6 defend (2026-10-22)": new cast (name, role, age, background, as the cast-diversity rule asks), new domains and look-alikes (the learnable shapes only: a swapped character, an added hyphen, an added word; no homographs) and the name-clash search you ran.
-- **New company (Carrholme, Marrowdale):** add a row to the §2 roster table (id, company, domain, look-alikes, `logoText`, accent hex, what it is, episodes), a §3 cast subsection, and a note that the name needs a web search for a real business before release.
+- **New company (Carrholme only; E17 stays on built Tarrowby per ruling 2):** add a row to the §2 roster table (id, company, domain, look-alikes, `logoText`, accent hex, what it is, episodes), a §3 cast subsection, and a note that the name needs a web search for a real business before release.
 - **Name-clash search:** grep each new surname across `scenarios/`, `planning_notes/` and `docs/` and record the result. The lab's brands stay in the lab.
 
 **Check:** `grep -rn "<surname>" scenarios planning_notes docs | grep -v BRAND_SET` returns only the new episode's own files.
 
 ## P12. Mission ordering, collection and the two seeded Hacktivity courses
 
+**This is the single home of the seeding instructions (ruling 8).** Every episode spec points here for how a new episode joins the two seeded courses and does not repeat the steps. In particular, seeding is **not** done through `awareness_deploy.py`: that script holds only the shared rule of thumb (`AWARENESS_RULE_OF_THUMB_TEXT` and `awareness_block()`) and no course logic, so an episode spec that says "seed through `awareness_deploy.py`" is wrong. The seeding happens in the Hacktivity repository (below).
+
 **In Break Escape:** `mission.json` `"collection": "training"` puts the mission in the training collection when `db/seeds.rb` loads the scenarios (`bin/rails db:seed` reads every `scenarios/*/mission.json`). There is no order field in `mission.json`. The organiser orders missions in Hacktivity.
 
-**In Hacktivity (feature level only; the implementer reads the Hacktivity code directly):** two courses were seeded for aw7, one with the defend-only episodes and one with both versions (HANDOVER status block: Hacktivity f8b4ad9e). Each new episode must be added to both:
+**In Hacktivity (feature level only; the implementer reads the Hacktivity code directly):** Hacktivity is a **separate private repository, `cliffe/hacktivity`**, not part of this checkout; attach it with `add_repo` before starting. Two courses were seeded for aw7, one with the defend-only episodes and one with both versions (HANDOVER status block: Hacktivity f8b4ad9e). Each new episode must be added to both:
 
 - the defend-only course gains `awareness_eN_<slug>_defend`;
 - the both-versions course gains `awareness_eN_<slug>` and `awareness_eN_<slug>_defend`;
-- the new check missions are placed the way the built checks are placed (before and after the episodes).
+- **E17 is the exception (ruling 2):** it has only `awareness_e17_<slug>_defend`, and that one shell is listed in both courses;
+- the new check missions (the `general_v2` and `data_conduct` pairs) are **not** added to either seeded course; they are separate pre and post missions, placed as the built checks are (review log item 7).
 
 Before changing anything, the implementer reads how E6 and E7 were seeded and copies that exactly: the same seed mechanism, the episode order, and the organiser guidance text. The user's 2026-10-27 decision ("joins both seeded Hacktivity courses") covers adding the new episodes. Any other Hacktivity change, including WP-02, needs its own go-ahead. Do not write Hacktivity paths, endpoints or credentials into this repo.
 

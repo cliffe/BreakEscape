@@ -39,13 +39,13 @@ Copied from `WRITER_BRIEF.md`. Do not reopen them.
   | E14 social media | Merrin & Sallow Architects | named in `modules/core_12_social_media_and_oversharing/README.md` |
   | E15 shadow IT | Tarrowby Logistics | named in `modules/core_13_removable_media_cloud_and_shadow_it/README.md` |
   | E16 insider risk | Quayholt Insurance | named in `modules/core_14_insider_risk/README.md` |
-  | E17 acceptable use | Marrowdale Facilities (new) | proposed in `modules/core_16_acceptable_use_and_your_responsibilities/README.md`; to add |
+  | E17 acceptable use | Tarrowby Logistics | in the set (E2, E6, E9, E15); ruling 2 keeps E17 on the built Tarrowby company, room and cast to save art (host Nilesh Solanki) |
 
 - **Shape:**
   - The consequence flip is used for E11 and for shadow IT (E15). E16's module design is also a consequence flip (`modules/core_14_insider_risk/game_design.md`). E17 is defend-only.
   - There is no tagline. The built rule of thumb is quoted word for word.
-  - Every new episode ships a full version and a defend-only version, and joins both seeded Hacktivity courses (the defend-only course and the both-versions course).
-  - **E17 default taken:** E17 has no attack half, so it ships one shell, `awareness_e17_<slug>_defend` (variant `defendOnly`), and that one shell joins both courses. The user can overrule this. A "full" E17 would then be the same shell with a consequence sandbox (ENG-04) added.
+  - Every new episode ships a full version and a defend-only version, and joins both seeded Hacktivity courses (the defend-only course and the both-versions course). **E17 is the one exception** (ruling 2): it ships a single defend-only shell and that one shell is listed in both courses.
+  - **E17 (ruling 2):** E17 has no attack half, so it ships **one** shell only, `awareness_e17_<slug>_defend` (variant `defendOnly`), at **Tarrowby Logistics** with host **Nilesh Solanki**, and that one shell is listed in both seeded courses. There is no byte-identical "full" twin. The user can overrule this; a "full" E17 would then be the same shell with a consequence sandbox (ENG-04) added.
 - **E12 notes from the user:**
   - In the attack half, the player's avatar is swapped for a hi-vis one to gain influence. It must be a costume that is given back afterwards, because aw9 says the chosen avatar always wins.
   - Carrying a package can be a PixelLab sprite state.
@@ -53,7 +53,7 @@ Copied from `WRITER_BRIEF.md`. Do not reopen them.
   - E12 breaks the one-room, no-doors frame. It needs a lobby and a door, and an attack half played in the game world.
 - **Defaults taken** (the user can overrule):
   - The six built role check forms are left exactly as they are, because they are the measured baseline.
-  - New topics get new check forms. Do not edit the existing role forms.
+  - **Check-form scheme (ruling 1).** The new topics are measured by **two** new check-form pairs only, `general_v2` and `data_conduct` (defined in `10_CHECK_FORMS.md`), not by one form per topic. Every per-topic form the episode specs once named (data, social, shadowit, insider, aup, physical) is dropped. Each new episode's items feed one of the two pairs: the broad-awareness topics into `general_v2`, the data and conduct topics into `data_conduct`. Do not edit the six built role forms. **Trade-off to report to the user:** two broad pairs give no per-topic pre and post figure for an organiser; if per-topic measurement is wanted, that is the only reason to add more pairs. **Rule for tells (ruling 1 + ENG-08):** any tell a check-form item scores must be in the shared library (`CHANNEL_TELLS` in both `systems/phish-rules.js` and `scripts/validate_social/triage.rb`); a tell used only in one episode's defend set can stay scenario-local with a `flagChips` label.
   - Each episode is held to about 15 minutes: one attack artefact and a defend set of about six items, as in E1 and E2.
   - Pilot with E8 first. It is the only episode that nearly fits the existing runner stages, and it proves the new-episode pipeline end to end.
 
@@ -61,11 +61,11 @@ Copied from `WRITER_BRIEF.md`. Do not reopen them.
 
 1. **E8 pilot.** Run the whole pipeline once (`01_PIPELINE.md`) with ENG-01. Write down every place where the pipeline was wrong, and fix `01_PIPELINE.md` before E9 starts.
 2. **E9 with E10.** These are two episodes in parallel, each with its own engine packets (ENG-02, ENG-03a, ENG-03b) and ENG-09a, which both need.
-3. **The consequence-flip stage.** ENG-04 is built once, then E11, E14, E15, E16 and E17 are written against it. E17 is defend-only and needs no sandbox. E14's module design uses the built `osint` and `write` stages, so it needs ENG-04 only if its brief adds a sandbox beat. It is scheduled in this wave because it shares the new defend card kinds (ENG-09a).
+3. **The consequence-flip stage and its defend-half surfaces.** ENG-04 is built once, then E11, E14, E15, E16 and E17 are written against it. E17 is defend-only and needs no sandbox. E14's module design uses the built `osint` and `write` stages, so it needs ENG-04 only if its brief adds a sandbox beat. It is scheduled in this wave because it shares the new defend card kinds (ENG-09a). Build the shared defend-half surfaces in the same wave: ENG-11 (the reusable sort drill for E14, E15 and E17), ENG-12 (E16's "raise a concern" fact-chip form) and ENG-13 (E14's privacy panel). Each is a new child scene gated on a new optional key, so they do not block the episodes that do not use them.
 4. **E12.** It needs ENG-05a to ENG-05e and ENG-09c, plus host and costume art after the PixelLab reset. Build it after the consequence-flip wave, so that the riskiest engine work does not hold the others up.
 5. **E13.** It needs ENG-06 and ENG-07.
 
-**Alongside, at any point:** WP-12 (`11_WP12_FIRST_PLAY_AND_ANNUAL.md`), WP-15 (`12_WP15_CORE02_ITEMS.md`), the new check forms (`10_CHECK_FORMS.md`) and WP-02 (`13_WP02_REPORTING_ROUTE.md`). Episodes are pipelined, as in the AGENTS.md mission loop: one episode's playtests can run while the next is being written.
+**Alongside, at any point:** WP-12 (`11_WP12_FIRST_PLAY_AND_ANNUAL.md`, which needs **ENG-10** first: the brief-only episode, its multi-card brief, the once-per-learner gate and the completion global), WP-15 (`12_WP15_CORE02_ITEMS.md`), the two new check-form pairs (`10_CHECK_FORMS.md`) and WP-02 (`13_WP02_REPORTING_ROUTE.md`). Episodes are pipelined, as in the AGENTS.md mission loop: one episode's playtests can run while the next is being written.
 
 ## 5. Dependencies
 
@@ -84,12 +84,15 @@ ENG ids are packets in `02_ENGINE_WORK.md`. P ids are steps in `01_PIPELINE.md`.
 | ENG-03a triage page states | nothing | E10, check forms | engine |
 | ENG-03b check-page builder | ENG-03a (shared render strings) | E10 attack half | engine |
 | E10 | ENG-03a, ENG-03b | - | content |
-| New brand rooms (P5b) | nothing | E11 (Carrholme), E17 (Marrowdale) | engine (room scripts) |
+| New brand rooms (P5b) | nothing | E11 (Carrholme) | engine (room scripts) |
 | ENG-04 consequence sandbox stage | ENG-09a (for the defend items only) | E11, E15, E16 (E14 optional) | engine |
-| E11, E15, E16 | ENG-04, ENG-09a; E11 also P5b | - | content |
-| E14 | ENG-09a | - | content |
-| E17 (defend-only) | ENG-09a, P5b | - | content |
-| ENG-05a world stage hand-off | nothing | E12 | engine |
+| ENG-11 reusable sort drill | ENG-08 | E14 ("Post or Not?"), E15 (Swap Shop), E17 ("can I?" sort) | engine |
+| ENG-12 "raise a concern" fact-chip form | ENG-08, ENG-04 (E16 is a consequence flip) | E16 defend half | engine |
+| ENG-13 privacy-settings panel over the OSINT board | ENG-08 | E14 defend half | engine |
+| E11, E15, E16 | ENG-04, ENG-09a; E11 also P5b; E16 also ENG-12 | - | content |
+| E14 | ENG-09a, ENG-11, ENG-13 | - | content |
+| E17 (defend-only) | ENG-09a, ENG-11; Tarrowby via P5a (no new room) | - | content |
+| ENG-05a world-play modifier hand-off (not a new stage) | nothing | E12 | engine |
 | ENG-05b costume | ENG-05a | E12 | engine |
 | ENG-05c lobby, door and NPC door opening | ENG-05a | E12 | engine plus content |
 | ENG-05d package-carry sprite state | PixelLab reset (3 Nov) and the user's approval of art scope | E12 polish (E12 can ship a first pass without it) | art |
@@ -99,8 +102,10 @@ ENG ids are packets in `02_ENGINE_WORK.md`. P ids are steps in `01_PIPELINE.md`.
 | ENG-06 authored assistant stage | ENG-01 (shares the flip part) | E13 | engine |
 | ENG-07 video-call label | nothing | E13 | engine |
 | E13 | ENG-06, ENG-07 | - | content |
-| Check forms (`10_CHECK_FORMS.md`) | the card kinds their items use (ENG-03a, ENG-09a, ENG-09c) | post-checks for the new topics | content |
-| WP-12, WP-15 | their own files | - | content |
+| Check forms (`10_CHECK_FORMS.md`) | the card kinds their items use (ENG-03a, ENG-09a); any tell scored in a form must be in the shared library (ENG-08) | post-checks for the two new pairs | content |
+| ENG-10 brief-only episode + completion global | nothing (its schema/validator work is in the packet) | WP-12 core_00 first play | engine |
+| WP-12 | ENG-10 + its own file (`11_WP12_FIRST_PLAY_AND_ANNUAL.md`) | - | content |
+| WP-15 | its own file (`12_WP15_CORE02_ITEMS.md`) | - | content |
 | WP-02 | the user's explicit go-ahead for any Hacktivity edit | the debrief route box (aw1) | Hacktivity implementer |
 
 ## 6. Model routing
@@ -129,7 +134,7 @@ If a safety classifier stops an `opus48` task, follow AGENTS.md: report the exac
 - **Do not change E1 to E7 content** unless a packet says so and its acceptance check proves the existing shells are byte-identical or deliberately changed.
 - **Do not break other games.** The triage, person-chat, mail-client, landing-page and door code is shared with `lab_social_engineering`, the `test_social_*` scenarios and the SAFETYNET missions (m02 uses video calls and NPC door unlocks). Every engine change is opt-in on a new key and keeps the old path unchanged when the key is absent.
 - **No real brands. Use `.example` domains only. No working payloads, commands or tooling steps.** Attack content stays at the level of templates, pretexts and psychology. A "copied command" is described in words, never shown.
-- **Hacktivity at feature level only** in this public repo: no internal file paths, endpoints, credentials or weaknesses. The implementer reads the Hacktivity code directly. No Hacktivity edit happens without the user's explicit go-ahead.
+- **Hacktivity at feature level only** in this public repo: no internal file paths, endpoints, credentials or weaknesses. Hacktivity is a **separate private repository, `cliffe/hacktivity`** (not part of this checkout); the implementer attaches it with `add_repo` and reads its code directly. Naming the repository is allowed; its internals are not. No Hacktivity edit happens without the user's explicit go-ahead. (Course seeding and WP-02 are the only Hacktivity work here; see `01_PIPELINE.md` P12 for the one home of the seeding procedure.)
 - **Playtests use the keyless server on :3001 only.** Never stop the user's server on :3000.
 - **No TTS** unless the user asks. No printed variables in voiced lines.
 - **No image generation** without the user's approval of the scope. PixelLab is preferred, after the reset on 3 November. Sprite hand edits go in `tools/pixellab_overrides/`, never straight onto `assets/characters/<key>.png`.
@@ -141,6 +146,12 @@ If a safety classifier stops an `opus48` task, follow AGENTS.md: report the exac
 ## 8. Standard checks (every commit)
 
 Run these from the repo root (`/home/user/BreakEscape` here, `REPO` on the user's machine). Record the pass counts before you start, so that a drop is visible.
+
+**The environment, honestly.** Not every container has what these checks need. Confirm each before you trust a red result, and if a tool is missing, say so in the log rather than treating its absence as a failure of your work.
+
+- **Node and jsdom.** The engine tests (`social-episode-*`, `social-triage-*`, `validator-social-*`) are jsdom tests and need `node_modules/jsdom`. Some containers do not have it installed; the tests then fail to load with `ERR_MODULE_NOT_FOUND: Cannot find package 'jsdom'`, which is an environment problem, not a content one. If `node_modules` is missing or jsdom is absent, run `npm ci` (or `npm install`) first; if that cannot be done, note that the jsdom suites were not run and say which ones.
+- **Ruby and Bundler.** The validator spawns Ruby and needs the `json-schema` gem, so the validator tests and `--strict-social` are run with `bundle exec`. If `bundle exec` fails with `Bundler::GemNotFound` (gems not installed), try `gem install json-schema` and run `ruby scripts/validate_scenario.rb` directly; if even that fails, stop and report, and do not claim the validator passed.
+- **Node 24 for bridges.** The bridges need Node 24 at `$HOME/.cache/ms-playwright-go/1.57.0/node` (the user's machine; HANDOVER §4). It is absent from many containers, where `node` is an older version and the keyless server will not drive a bridge. Confirm `"$NODE" --version` prints `v24.x` first; if it does not, the bridges cannot run here, so note that and run them on the user's machine.
 
 1. **Node tests (social and validator).** This is the CI job:
 
@@ -168,7 +179,7 @@ Run these from the repo root (`/home/user/BreakEscape` here, `REPO` on the user'
 
    Expected: no `FAIL` line. `--no-graph --skip-ink` keeps the run from rewriting `dungeon_graph.*` and compiled ink. For a shell you own, also run it once without those flags, so that the ink compiles and the graph is refreshed.
 
-4. **Ink** for each new or changed ink file: `./scripts/compile-ink.sh <scenario_dir_name>`, then `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<scenario_dir_name>/` and `node scripts/ink_runtime_check/reopencheck.mjs scripts/ink_runtime_check/missions.json`. Expected: compiles clean, no unexplained lint finding, reopencheck passes with the new shells' entries in `missions.json`.
+4. **Ink** for each new or changed ink file: `./scripts/compile-ink.sh <scenario_dir_name>`, then `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<scenario_dir_name>/` and `node scripts/ink_runtime_check/reopencheck.mjs scripts/ink_runtime_check/missions.json`. **reopencheck baseline (ruling 9):** on an untouched tree it exits 1 with "Total problems: 4" (four `m09_digital_archaeology` phone NPCs: recruiter, nightshade_phone, torres_phone, gary_phone). That is the baseline, not a regression. The run takes about 150 seconds, past the default 120-second tool timeout, so give it a longer timeout. Expected: compiles clean, no unexplained lint finding, and reopencheck reports **no more than the 4 baseline problems** with the new shells' entries added to `missions.json`. A commit must not add a new problem; compare against the baseline, do not expect zero.
 
 5. **Bridges, one at a time, on the keyless server on :3001 with Node 24:**
 
@@ -226,7 +237,7 @@ Check forms       ██░░░░░░░░  -           E8 items drafted
 | `WRITER_BRIEF.md` | the brief for the writers and reviewers of these files, and the user's decisions |
 | `00_README.md` | this index |
 | `01_PIPELINE.md` | the step-by-step new-episode pipeline, derived from how E1 to E7 were built |
-| `02_ENGINE_WORK.md` | engine packets ENG-01 to ENG-09, each self-contained |
+| `02_ENGINE_WORK.md` | engine packets ENG-01 to ENG-13, each self-contained |
 | `10_CHECK_FORMS.md` | the new check forms for the new topics |
 | `11_WP12_FIRST_PLAY_AND_ANNUAL.md` | WP-12: the core_00 first-play brief and the core_17 annual edition |
 | `12_WP15_CORE02_ITEMS.md` | WP-15: the core_02 defend items for the missing channels |
@@ -240,6 +251,6 @@ Check forms       ██░░░░░░░░  -           E8 items drafted
 | `episodes/E14_social_media.md` | E14 brief (Merrin & Sallow Architects) |
 | `episodes/E15_shadow_it.md` | E15 brief (Tarrowby Logistics, consequence flip) |
 | `episodes/E16_insider_risk.md` | E16 brief (Quayholt Insurance, consequence flip) |
-| `episodes/E17_acceptable_use.md` | E17 brief (Marrowdale Facilities, defend-only) |
+| `episodes/E17_acceptable_use.md` | E17 brief (Tarrowby Logistics, defend-only) |
 
 Scenario folder names and episode ids are fixed in each episode brief. Follow the built pattern: folder `awareness_eN_<slug>`, episode id `eN_<slug>`, defend-only id `eN_<slug>_defend`.
