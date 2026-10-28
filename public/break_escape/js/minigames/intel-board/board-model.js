@@ -9,7 +9,39 @@
 export const INTEL_PREFIX = 'se_intel_';
 export const STATE_KEY = 'se_board_state';
 export const NOT_IDENTIFIED = 'Not yet identified';
-export const READY_TEXT = "Ready to approach — you have enough to craft something she'll believe.";
+export const READY_TEXT = "Ready to approach — you have enough to craft something they'll believe.";
+
+/** Wording a scenario may override with `intelBoard.labels`; these are the defaults. */
+export const DEFAULT_LABELS = {
+    ready: 'Ready to approach',
+    notReady: 'Not ready',
+    readyLine: READY_TEXT,
+    progress: '{n} of {total} targets ready to approach',
+    reconDone: 'Recon complete.',
+    toastTitle: 'Ready to approach',
+    caseButton: 'Case file'
+};
+
+/** `intelBoard.labels` over the defaults; a blank or non-string entry keeps the default. */
+export function boardLabels(board) {
+    const given = board?.labels && typeof board.labels === 'object' ? board.labels : {};
+    const out = { ...DEFAULT_LABELS };
+    for (const k of Object.keys(DEFAULT_LABELS)) {
+        if (typeof given[k] === 'string' && given[k].trim()) out[k] = given[k];
+    }
+    return out;
+}
+
+/** Non-person fact panels: `intelBoard.groups`, defaulting to the one Company panel. */
+export const DEFAULT_GROUPS = [{ subject: 'company', title: 'Company' }];
+
+export function boardGroups(board) {
+    const list = Array.isArray(board?.groups)
+        ? board.groups.filter((g) => g && typeof g.subject === 'string' && g.subject)
+        : null;
+    if (!list || !list.length) return DEFAULT_GROUPS.map((g) => ({ ...g }));
+    return list.map((g) => ({ subject: g.subject, title: typeof g.title === 'string' && g.title.trim() ? g.title : g.subject }));
+}
 
 const isTrue = (v) => v === true;
 
@@ -316,16 +348,24 @@ export function buildBoardModel(social, globals) {
     }
     const contacts = [...contactMap.values()];
 
-    const companyIds = heldIds.filter((f) => facts[f].subject === 'company' && !callFacts.has(f));
-    const companyCallIds = heldIds.filter((f) => facts[f].subject === 'company' && callFacts.has(f));
-    const company = {
-        factIds: companyIds.filter((f) => !isStaleFact(facts[f])),
-        staleIds: companyIds.filter((f) => isStaleFact(facts[f])),
-        fromCallIds: companyCallIds
+    const buildGroup = (subject, title) => {
+        const ids = heldIds.filter((f) => facts[f].subject === subject && !callFacts.has(f));
+        const callIds = heldIds.filter((f) => facts[f].subject === subject && callFacts.has(f));
+        const grp = {
+            subject,
+            title,
+            factIds: ids.filter((f) => !isStaleFact(facts[f])),
+            staleIds: ids.filter((f) => isStaleFact(facts[f])),
+            fromCallIds: callIds
+        };
+        grp.facts = grp.factIds.map((f) => ({ id: f, text: facts[f].text || '' }));
+        grp.stale = grp.staleIds.map((f) => ({ id: f, text: facts[f].text || '' }));
+        grp.fromCall = callIds.map((f) => ({ id: f, text: facts[f].text || '' }));
+        return grp;
     };
-    company.facts = company.factIds.map((f) => ({ id: f, text: facts[f].text || '' }));
-    company.stale = company.staleIds.map((f) => ({ id: f, text: facts[f].text || '' }));
-    company.fromCall = companyCallIds.map((f) => ({ id: f, text: facts[f].text || '' }));
+    const groups = boardGroups(board).map((g) => buildGroup(g.subject, g.title));
+    // `company` stays the Company panel (empty when the board declares groups without one).
+    const company = groups.find((g) => g.subject === 'company') || buildGroup('company', 'Company');
 
     const ready = targets.filter((t) => t.ready).map((t) => t.id);
     return {
@@ -334,6 +374,8 @@ export function buildBoardModel(social, globals) {
         targets,
         contacts,
         company,
+        groups,
+        labels: boardLabels(board),
         ready,
         newlyReady: targets.filter((t) => t.newlyReady).map((t) => t.id),
         osintDone: isTrue(g.osint_done),

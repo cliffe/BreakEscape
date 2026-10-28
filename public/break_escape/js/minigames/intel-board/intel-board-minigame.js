@@ -47,7 +47,7 @@ import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { writeGlobal } from '../../systems/global-writer.js';
 import { createInfluenceBar } from '../../ui/influence-bar.js';
 import { buildBoardModel, buildDefenderModel, buildEngagementModel, readBoardState, readEngagementState,
-    ENGAGEMENT_MODES, STATE_KEY, READY_TEXT } from './board-model.js';
+    ENGAGEMENT_MODES, STATE_KEY } from './board-model.js';
 
 const ICON = '/break_escape/assets/icons/';
 const SUPPORTED_MODES = ['recon', 'defender', ...ENGAGEMENT_MODES];
@@ -159,10 +159,10 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         });
         this.closeButton = close;
 
-        const progress = `${m.ready.length} of ${m.total} targets ready to approach`;
+        const progress = m.labels.progress.replace('{n}', m.ready.length).replace('{total}', m.total);
         const head = h('header', { class: 'ib-head' },
             h('h2', { class: 'ib-title', text: m.title }),
-            h('p', { class: 'ib-progress', text: m.osintDone ? `Recon complete. ${progress}.` : `${progress}.` }),
+            h('p', { class: 'ib-progress', text: m.osintDone ? `${m.labels.reconDone} ${progress}.` : `${progress}.` }),
             close);
 
         const body = h('div', { class: 'ib-scroll', tabindex: '0', role: 'region',
@@ -175,7 +175,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         } else {
             body.appendChild(this._peopleSection(m));
             body.appendChild(this._contactsSection(m));
-            body.appendChild(this._companySection(m));
+            for (const grp of m.groups) body.appendChild(this._companySection(m, grp));
         }
 
         this.root = h('div', { class: 'ib-root', tabindex: '-1', 'data-mode': this.mode }, head, live, body);
@@ -614,7 +614,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
 
     _personCard(t) {
         const headingId = `ib-card-${t.id}`;
-        const status = t.ready ? 'Ready to approach' : 'Not ready';
+        const status = t.ready ? this.model.labels.ready : this.model.labels.notReady;
         const meta = [t.role, t.address].filter(Boolean);
         const card = h('li', { class: `ib-card ib-person ${t.ready ? 'is-ready' : 'is-not-ready'}`,
             'data-person': t.id, 'data-status': t.status, 'aria-labelledby': headingId },
@@ -683,7 +683,7 @@ export class IntelBoardMinigame extends SocialOverlayScene {
             }
             card.appendChild(check);
         }
-        if (t.ready) card.appendChild(h('p', { class: 'ib-ready-line', text: READY_TEXT }));
+        if (t.ready) card.appendChild(h('p', { class: 'ib-ready-line', text: this.model.labels.readyLine }));
         return card;
     }
 
@@ -715,35 +715,37 @@ export class IntelBoardMinigame extends SocialOverlayScene {
         return sec;
     }
 
-    _companySection(m) {
-        const sec = h('section', { class: 'ib-section ib-company', 'aria-labelledby': 'ib-h-company' },
-            h('h3', { id: 'ib-h-company', class: 'ib-h', text: 'Company' }));
+    _companySection(m, grp = m.company) {
+        const isCompany = grp.subject === 'company';
+        const hid = isCompany ? 'ib-h-company' : `ib-h-group-${grp.subject}`;
+        const sec = h('section', { class: `ib-section ib-company${isCompany ? '' : ' ib-group'}`, 'aria-labelledby': hid, 'data-subject': grp.subject },
+            h('h3', { id: hid, class: 'ib-h', text: grp.title }));
         const card = h('div', { class: 'ib-card ib-company-card' },
             h('img', { class: 'ib-pin', src: `${ICON}board-pushpin.png`, alt: '', 'aria-hidden': 'true',
                 width: 11, height: 14 }));
-        if (!m.company.facts.length) {
-            card.appendChild(h('p', { class: 'ib-empty', text: 'Nothing found about the company yet.' }));
+        if (!grp.facts.length) {
+            card.appendChild(h('p', { class: 'ib-empty', text: `Nothing found about ${grp.title === 'Company' ? 'the company' : grp.title} yet.` }));
         } else {
             const ul = h('ul', { class: 'ib-facts' });
-            for (const f of m.company.facts) {
+            for (const f of grp.facts) {
                 ul.appendChild(h('li', { class: 'ib-fact', 'data-fact': f.id },
                     icon('mark-tick'), h('span', { class: 'ib-fact-text', text: f.text })));
             }
             card.appendChild(ul);
         }
-        if (m.company.fromCall && m.company.fromCall.length) {
+        if (grp.fromCall && grp.fromCall.length) {
             card.appendChild(h('h4', { class: 'ib-subh', text: 'From the call' }));
             const ul = h('ul', { class: 'ib-facts ib-from-call', 'aria-label': 'From the call' });
-            for (const f of m.company.fromCall) {
+            for (const f of grp.fromCall) {
                 ul.appendChild(h('li', { class: 'ib-fact', 'data-fact': f.id },
                     icon('mark-tick'), h('span', { class: 'ib-fact-text', text: f.text })));
             }
             card.appendChild(ul);
         }
-        if (m.company.stale.length) {
+        if (grp.stale.length) {
             card.appendChild(h('h4', { class: 'ib-subh', text: 'Old or unverified' }));
             const ul = h('ul', { class: 'ib-facts ib-stale' });
-            for (const f of m.company.stale) {
+            for (const f of grp.stale) {
                 ul.appendChild(h('li', { class: 'ib-fact is-stale', 'data-fact': f.id },
                     icon('mark-question'), h('span', { class: 'ib-word', text: 'Old or unverified:' }),
                     h('span', { class: 'ib-fact-text', text: f.text })));
@@ -832,7 +834,9 @@ export class IntelBoardMinigame extends SocialOverlayScene {
                     facts: [...m.company.factIds],
                     stale: [...m.company.staleIds],
                     fromCall: [...(m.company.fromCallIds || [])]
-                }
+                },
+                groups: m.groups.map((g) => ({ subject: g.subject, title: g.title, facts: [...g.factIds],
+                    stale: [...g.staleIds], fromCall: [...(g.fromCallIds || [])] }))
             } : null
         };
     }
