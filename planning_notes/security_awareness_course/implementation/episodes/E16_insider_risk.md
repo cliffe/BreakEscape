@@ -1,4 +1,4 @@
-# E16 — Insider risk
+# E16: Insider risk
 
 Buildable by a fresh Sonnet implementer from this spec plus "Read first". All companies, people,
 domains and figures are fictional; `.example` domains only. UK spelling; "cyber security" two words; no
@@ -53,12 +53,14 @@ Period").
   built authenticator `push` card (`unrequested_mfa_push`); the NPC influence global and thresholds (how
   Ross and Samira respond); the montage flip (ENG-04); the measurement store; the debrief view; the
   shared rule of thumb.
-- **Needs a new ENG packet (small, unscored):** the **"raise a concern" fact-chip form** (build a short
-  report from fact chips (what, when, where, who) and conclusion chips; the feedback favours facts and
-  flags conclusions; a route picker: security team, manager, HR, Speak Up line, DPO). `game_design.md`
-  lists it as "new (small)". Fold into E16's engine work or raise it; it is a teaching step, not scored
-  by the `awareness` profile.
-- **ENG-09:** the new "insider" topic check forms (section 14). Do not edit the six built role forms.
+- **ENG-12** (the "raise a concern" fact-chip form): build a short report from fact chips (what, when,
+  where, who) and conclusion chips, where the feedback favours facts over a verdict. ENG-12 owns this
+  surface (`awarenessEpisode.concernForm`); it is a chip-composition interaction, not a sort, so it does
+  not fold into ENG-11. The route picker (security team, manager, HR, Speak Up line, DPO) is part of the
+  form's guidance. Unscored teaching, not scored by the `awareness` profile. Section 11.
+- **Check forms (no engine packet):** E16's topic (insider risk, core_14) is a judgement topic, so it
+  feeds the shared **`data_conduct`** pair built per `10_CHECK_FORMS.md` (ruling 1), not a per-topic
+  form. Do not edit the six built role forms. Section 14.
 
 ## 4. Owner models
 
@@ -191,7 +193,11 @@ text):
 - `samira` / `kind`: "A kind word, and a quiet word to her manager because you were worried: Samira's
   father was in hospital. Nobody was accused, and she got support. That is what good looks like."
 
-`flipHeading` = "A week later". Both strings erb-only (ENG-04 rule).
+`flipHeading` = "A week later". `flipHeading` stays **in the fragment** (`defend.json` `strings`); the
+defend-only generator pops it with the other flip strings, and the full erb carries the same value, so
+parity passes with no allow-list entry. Only `flipMontageByChoice` is **erb-only** and added to the
+parity allow-list, exactly as E11 section 10a rules (02's ENG-04 adds only `flipMontageByChoice` to
+`STRINGS_ERB_ONLY_OK`, not `flipHeading`).
 
 ## 11. Defend set
 
@@ -217,11 +223,13 @@ card for item 3.
 
 Add `lookalike_domain` to `channelTells` for item 5.
 
-**Unscored teaching step in the defend stage (new surface):** **"Raise a concern"** — a short form built
-from fact chips the learner noticed this week (what, when, where, who) and conclusion chips from the
-rumour ("Ross is stealing", "Craig thinks Samira's involved"); the feedback favours facts and flags
-conclusions, and offers a route (security team, manager, HR, Speak Up line, DPO). Posting it in the team
-chat counts as spreading it, not raising it. Unscored (not the `awareness` profile).
+**Unscored teaching step in the defend stage (ENG-12 `concernForm`):** **"Raise a concern"** uses
+ENG-12's `awarenessEpisode.concernForm` surface, a short report built from fact chips the learner noticed
+this week (`factChips` of kind what / when / where / who) and `conclusionChips` from the rumour ("Ross is
+stealing", "Craig thinks Samira's involved"); the authored feedback favours facts over a verdict and
+gently discourages jumping to a conclusion, and the guidance offers a route (security team, manager, HR,
+Speak Up line, DPO). Posting it in the team chat counts as spreading it, not raising it. Unscored
+teaching (not the `awareness` profile).
 
 ## 12. Debrief cards
 
@@ -249,29 +257,29 @@ fair way to raise a concern."
 
 Own shell, id `e16_insider_risk_defend`, `variant: "defendOnly"`, same `defend.setId`
 (`e16_leaver_week_inbox`), stages `["brief","defend","debrief"]`, set prefix
-`episode_e16_insider_risk_defend_defend_`. Keeps the scored set and the "raise a concern" step, so
+`episode_e16_insider_risk_defend_defend_`. Keeps the scored set and the ENG-12 "raise a concern" step, so
 measurement is unchanged; drops the week sandbox and the chain montage. Ships alongside the full shell;
-both join the two seeded Hacktivity courses.
+both join the two seeded Hacktivity courses (full in the both-versions course, defend-only in the
+defend-only course) **through 01 P12** (ruling 8).
 
-## 14. Check-form items it feeds (new "insider" topic forms; see `10_CHECK_FORMS.md`)
+## 14. Check-form items it feeds (`data_conduct`; see `10_CHECK_FORMS.md`)
 
-New topic, so **new** forms `insider_form_a` and `insider_form_b` (ENG-09), 10 items each (4 phish, 6
-genuine), `awareness` profile, `feedbackMode: "end"`, `headerPanel: "collapsed"`, `pairedWith`, prefix
-`triage_{stage}_`, `passPercent: 0`, `verifyVerdict: true`. Do not edit the six built role forms. Item n
-in A matches item n in B. The E16 mirror-paired contribution, in full:
+Per round 1 ruling 1, there is no per-topic `insider_form_a/b` pair. E16's topic (insider risk, core_14)
+is a judgement topic, so it feeds the shared **`data_conduct`** pair (Carrholme, Verify on), defined and
+built in `10_CHECK_FORMS.md`. The earlier per-topic table is dropped. The six built role forms are the
+measured baseline and are not edited. (The trade-off the orchestrator reports to the user is that two
+broad pairs give no per-topic pre/post figure.)
 
-| # | Form A (`insider_form_a`) | Form B (`insider_form_b`) | Phish | Flags (both) | Difficulty |
-|---|---------------------------|---------------------------|-------|--------------|------------|
-| 1 | `ia_offer`: an outside offer of money for remote access | `ib_offer`: an outside offer of a share for "plugging in a device" | yes | `insider_offer`, `secrecy_or_bypass` | easy |
-| 2 | `ia_it_prime`: a look-alike "IT" email priming you to approve a prompt | `ib_reset_prime`: a look-alike "IT" email priming a code read-out | yes | `secrecy_or_bypass`, `lookalike_domain` | medium |
-| 3 | `ia_genuine_lockout`: a genuine, awkward locked-out colleague (route to the service desk) | `ib_genuine_access`: a genuine temporary-access request (route to a manager) | no | | medium (suspicious-looking genuine) |
-| 4 | `ia_mfa_storm`: a run of sign-in prompts you didn't start | `ib_single_prompt`: one prompt at an odd hour you didn't start | yes | `unrequested_mfa_push` | easy |
-| 5 | `ia_fair_concern`: a concern worded as facts (what/when/where) | `ib_fair_concern`: a concern routed to the right person, as facts | no | | medium |
-| 6 | `ia_leaver_favour`: a leaver asks to export accounts to a personal email | `ib_leaver_favour`: a leaver asks to forward the client list home | no (a bad ask, but a genuine colleague; route it) | | medium |
+Do not add new flag ids to the check forms: `data_conduct` scores only `00`-library tells, and E16's
+scenario-local tell (`insider_offer`) stays in E16's own defend set, never in a form (a tell scored in a
+form must be in the shared library, ruling 1).
 
-Each form carries a mirror pair (row 2 phish against row 3 suspicious-looking genuine). Rows 5 and 6 are
-"fair concern" and "leaver favour" items drawn from `assessment.md`'s bank; confirm the item kinds exist
-before authoring. The `triage.rb` balance lint must pass on the pair.
+E16's contribution is the core_14 rows of `10`'s `data_conduct` pair (see `10`'s item list): the
+"use your login / approve under your account" leaver-favour call (`dca_login_favour` /
+`dcb_approve_under_you`) and the within-need-to-know manager report that could be mistaken for a data
+risk (`dca_manager_report` / `dcb_access_review`). These are authored as part of `10`, aligned to E16's
+framing; they are not a separate E16 form. The "fair concern" item is taught by E16's own ENG-12 concern
+form, not by a check-form row.
 
 ## 15. Files to create or change
 
@@ -280,10 +288,11 @@ Implementer: `awareness/e16/mistake.json` (the sandbox beats and the `awarenessE
 target) and `awareness/e16/defend.json` (the `triageSets` entry `e16_leaver_week_inbox`, the
 `_brandAdditions` for the three new Quayholt cast, the `awarenessEpisode` defend/debrief/strings/_defendOnly
 keys, by analogy with `e3/`/`e4/`); shells `scenarios/awareness_e16_insider_risk/` and `.../_defend/`
-(one-room `room_aw_quayholt` kiosk, host Anjali, kiosk `{ episodeId }`); the "raise a concern" form
-surface; new check shells `awareness_{pre,post}_insider_{ab,ba}`; `BRAND_SET.md` (Ross Garside, Samira
-Nawaz, Craig Pickering); the `insider_offer` scenario-local tell; ENG-04 schema/validator/parity updates
-(shared with E11). Never run a generator into the repo.
+(one-room `room_aw_quayholt` kiosk, host Anjali, kiosk `{ episodeId }`); the "raise a concern" step as
+ENG-12's `concernForm` config (section 11); `BRAND_SET.md` (Ross Garside, Samira Nawaz, Craig
+Pickering); the `insider_offer` scenario-local tell; ENG-04 schema/validator/parity updates (shared with
+E11). The `data_conduct` check shells are built by `10`'s check generator, not here (section 14). Never
+run a generator into the repo.
 
 ## 16. Bridge script outline
 
@@ -297,9 +306,11 @@ conclusion global `episode_e16_insider_risk_defend_done` set. A second bridge fo
 
 ## 17. Acceptance checks
 
-As E11 section 17, for the E16 shells and the `insider_form_a`/`insider_form_b` pair. The montage renders
-every beat and ends on Samira; the push card uses the built authenticator; `flipMontageByChoice` is
-erb-only; `social.awareness.ruleOfThumb` byte-identical. Tone review (section 18) signed off by the
+As E11 section 17, for the E16 shells (the `data_conduct` pair's parity is `10`'s acceptance, not E16's).
+The montage renders every beat and ends on Samira; the push card uses the built authenticator;
+`flipHeading` is in the fragment and `flipMontageByChoice` is erb-only; the ENG-12 concern form favours
+facts over a verdict; `social.awareness.ruleOfThumb` byte-identical. Tone review (section 18) signed off
+by the
 dialogue reviewer.
 
 ## 18. Do not (tone rules are blockers here)

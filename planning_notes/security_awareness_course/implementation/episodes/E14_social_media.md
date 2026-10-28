@@ -1,4 +1,4 @@
-# E14 — Social media and oversharing
+# E14: Social media and oversharing
 
 Buildable by a fresh Sonnet implementer from this spec plus "Read first". All companies, people,
 domains and figures are fictional; every domain ends `.example`. UK spelling; "cyber security" two
@@ -46,15 +46,17 @@ Source of truth: `modules/core_12_social_media_and_oversharing/concepts.md`. Sha
   message), the built flip view with `flipDefenderLineByChoice` (aw2), the inbox-triage defender under
   the `awareness` profile, the look-alike NPC guard (the fake senior-profile connection request), the
   measurement store, the debrief view and the shared rule of thumb.
-- **Needs a new ENG packet (two small surfaces, unscored, in the defend stage):**
+- **Two small unscored surfaces in the defend stage, each now owned by a packet in `02_ENGINE_WORK.md`:**
   - **The privacy-settings panel** (tighten a profile; each change visibly closes a found fact on the
-    board, the subject's and then the learner's own). `game_design.md` lists it as "new". No built
-    packet covers it; fold it into E14's engine work or raise it as a new ENG packet.
-  - **The "Post or Not?" feed drill** (mark draft posts Post, Tweak or Hold). `game_design.md` lists it
-    as "new". A three-way sort, like core_16's sort surface; fold into E14's engine work or raise it as
-    a new ENG packet. **It is a teaching drill, not scored by the `awareness` profile** (section 11),
-    so it does not need a scoring row of its own.
-- **ENG-09:** the new "social" topic check forms (section 14). Do not edit the six built role forms.
+    board, the subject's and then the learner's own) uses **ENG-13**'s `awarenessEpisode.privacyPanel`
+    block (a board-linked panel over the OSINT board; each setting names the `se_intel_*` facts it
+    closes). Section 11.
+  - **The "Post or Not?" feed drill** (mark draft posts Post, Tweak or Hold) uses **ENG-11**'s reusable
+    `sortDrill` surface with its own `bins` (Post / Tweak / Hold), `scored: false` (teaching). It is not a
+    bespoke surface and not a scoring row of its own. Section 11.
+- **Check forms (no engine packet):** E14's topic (social media and oversharing, core_12) is a judgement
+  topic, so it feeds the shared **`data_conduct`** pair built per `10_CHECK_FORMS.md` (ruling 1), not a
+  per-topic form. Do not edit the six built role forms. Section 14.
 
 ## 4. Owner models
 
@@ -69,9 +71,18 @@ general-purpose or Sonnet.
   events, so diaries are partly public (which is what makes OSINT land).
 - **Room: `room_aw_merrin_sallow`** (the built Merrin & Sallow training-room type used by E4). The feed,
   the OSINT board, the privacy panel and the triage are full-screen overlays; no new room.
-- **Host: Tomás Carvalho** (`tomas.carvalho@merrinsallow.example`), the E4 inbox owner, here welcoming
-  the learner, carrying the per-item feedback and the debrief, and holding the conclusion
+- **Host: Julian Sallow** (`julian.sallow@merrinsallow.example`), the built Merrin & Sallow co-founding
+  partner (built E4 cast; already hosts the E4 executive BA check pair, so his art exists), here
+  welcoming the learner, carrying the per-item feedback and the debrief, and holding the conclusion
   `eventMappings`. Reuse of the built E4 cast; no new host art.
+  - **Host rename (round 1 ruling 7):** E14 formerly reused Tomás Carvalho (the E4 PA) as host, but
+    "Tomás" read as confusable with E11's "Tomasz" Wiśniewski if the two episodes ship in one course.
+    Ruling 7 renames E14's host. Rather than invent a new name (and new art), E14 now hosts with another
+    built M&S cast member, **Julian Sallow**, which clashes with nothing and still saves art: "Julian"
+    does not clash with "Tomasz"; `BRAND_SET.md` and `awareness/e4/defend.json` already carry Julian
+    Sallow, and the e4 `nameCheck` records "Sallow appears only in BRAND_SET". So E11 keeps Tomasz and
+    E14 keeps a built, art-ready host. Julian is otherwise unused in E14 (the subject is Dani, the
+    pretext target Yasmin, the impersonated senior Catherine Merrin), so there is no in-episode clash.
 - **OSINT subject: Dani Fenwick**, a junior architect at Merrin & Sallow, friendly and oversharing, in
   on the exercise and thanked at the end (`dani.fenwick@merrinsallow.example`; public profile on the
   invented professional network). Late 20s, mixed heritage, two years qualified.
@@ -109,7 +120,7 @@ a late-20s mixed British/Filipino junior. Pre-ship: "Fenwick" web search owed.
 
 | Stage | Minutes | What happens |
 |-------|---------|--------------|
-| brief | 1 | Tomás welcomes, reads the scope note |
+| brief | 1 | Julian welcomes, reads the scope note |
 | osint | 3 to 4 | Pin Dani's five public posts to the board; each shows its reduce note (section 9) |
 | write | 2 to 3 | Compose one pretext message from a template, blanks filled from found facts; red-flag meter on; one send ends the beat |
 | flip | under 1 | The learner's own message lands in a colleague's inbox with its tells highlighted (built flip) |
@@ -228,17 +239,22 @@ chart or who runs IT"). The look-alike NPC guard handles item 2.
 **Mirror pair (aw5):** item 1 (normal-looking phish, Report) and item 6 (suspicious-looking genuine,
 Trust).
 
-**Unscored teaching activities in the same defend stage (new surfaces, section 3):**
+**Unscored teaching activities in the same defend stage (ENG-11 and ENG-13; section 3):**
 
-- **"Post or Not?" feed drill:** draft posts to mark **Post**, **Tweak** or **Hold**, with one line of
-  feedback each: a lanyard selfie (Tweak); a post naming the finance system (Hold); a team photo with a
+- **"Post or Not?" feed drill (ENG-11 `sortDrill`):** uses ENG-11's reusable `sortDrill` surface with
+  `bins: [{id:"post",label:"Post"},{id:"tweak",label:"Tweak"},{id:"hold",label:"Hold"}]`, `scored:
+  false`. Draft posts to mark Post, Tweak or Hold, with one line of feedback each (an ENG-11 card's
+  `reason`): a lanyard selfie (Tweak); a post naming the finance system (Hold); a team photo with a
   client whiteboard in shot (Tweak); a two-week leave post (Tweak or Hold); a genuinely fine pet photo
   with tight privacy (Post); a desk photo with a screen in shot (Tweak); a child's first-day photo
-  tagging the school (Tweak, a security-question reminder). Unscored (not the `awareness` profile).
-- **Tighten the settings (privacy panel):** set posts to connections only, hide the connections list,
-  turn off location tags, crop or remove the risky posts, and change the pet-name security answer to a
-  made-up one. Each change visibly closes a found fact on the board, Dani's first, then the learner's
-  own. Unscored.
+  tagging the school (Tweak, a security-question reminder). Unscored (not the `awareness` profile, and
+  `scored: false` in the drill).
+- **Tighten the settings (privacy panel, ENG-13 `privacyPanel`):** uses ENG-13's
+  `awarenessEpisode.privacyPanel` block, each setting naming the found fact(s) it closes via
+  `closesFacts: ["se_intel_df_..."]`. Set posts to connections only, hide the connections list, turn off
+  location tags, crop or remove the risky posts, and change the pet-name security answer to a made-up
+  one. Each change visibly closes a found fact on the board (a view-only teaching effect, ENG-13), Dani's
+  first, then the learner's own. Unscored.
 
 ## 12. Debrief cards
 
@@ -267,39 +283,39 @@ with what gave each one away."
 Own shell, id `e14_social_media_defend`, `variant: "defendOnly"`, same `defend.setId`
 (`e14_social_dms`), stages `["brief","defend","debrief"]`, set prefix
 `episode_e14_social_media_defend_defend_`. Drops the OSINT/write/flip beats; keeps the same scored set
-and the feed drill and privacy panel, so measurement is unchanged. Ships alongside the full shell; both
-join the two seeded Hacktivity courses (full in the both-versions course, defend-only in the defend-only
-course).
+and the ENG-11 feed drill and the ENG-13 privacy panel, so measurement is unchanged. Ships alongside the
+full shell; both join the two seeded Hacktivity courses (full in the both-versions course, defend-only in
+the defend-only course) **through 01 P12** (ruling 8).
 
-## 14. Check-form items it feeds (new "social" topic forms; see `10_CHECK_FORMS.md`)
+## 14. Check-form items it feeds (`data_conduct`; see `10_CHECK_FORMS.md`)
 
-New topic, so **new** forms `social_form_a` and `social_form_b` (ENG-09), 10 items each (4 phish, 6
-genuine), `awareness` profile, `feedbackMode: "end"`, `headerPanel: "collapsed"`, `pairedWith`, prefix
-`triage_{stage}_`, `passPercent: 0`, `verifyVerdict: false`. Do not edit the six built role forms. Item
-n in A matches item n in B. The E14 mirror-paired contribution, in full:
+Per round 1 ruling 1, there is no per-topic `social_form_a/b` pair. E14's topic (social media and
+oversharing, core_12) is a judgement topic, so it feeds the shared **`data_conduct`** pair (Carrholme,
+Verify on), defined and built in `10_CHECK_FORMS.md`. The earlier per-topic table is dropped. The six
+built role forms are the measured baseline and are not edited. (The trade-off the orchestrator reports to
+the user is that two broad pairs give no per-topic pre/post figure.)
 
-| # | Form A (`social_form_a`) | Form B (`social_form_b`) | Phish | Flags (both) | Difficulty |
-|---|--------------------------|--------------------------|-------|--------------|------------|
-| 1 | `sa_fake_recruiter`: a recruiter DM asking for your firm's systems and who runs IT | `sb_fake_headhunter`: a headhunter DM asking for an org chart "for the brief" | yes | `fake_profile`, `recon_request` | medium |
-| 2 | `sa_real_recruiter`: a real agency recruiter with a role and no system questions | `sb_old_colleague`: a former colleague offering a lead, asking nothing about work | no | | medium (suspicious-looking genuine) |
-| 3 | `sa_fake_senior`: a connection request in a senior leader's name from a new account | `sb_fake_ceo`: a connection request in the CEO's name from a thin account | yes | `fake_profile` | easy |
-| 4 | `sa_read_post`: which of these posts gives most away (a lanyard selfie) | `sb_read_post`: which of these posts gives most away (a whiteboard in shot) | n/a (a "what does this give away" item; see `assessment.md` for the item kind) | | easy |
-| 5 | `sa_colleague_dm`: a known colleague asks for an ordinary document | `sb_manager_dm`: your manager asks for a routine file | no | | easy |
-| 6 | `sa_system_fisher`: a friendly stranger steering to "what tools do you use?" | `sb_event_fisher`: a "conference organiser" asking which systems your team runs | yes | `recon_request` | medium |
+Do not add new flag ids to the check forms: `data_conduct` scores only `00`-library tells, and E14's
+scenario-local tells (`fake_profile`, `recon_request`) stay in E14's own defend set, never in a form (a
+tell scored in a form must be in the shared library, ruling 1). The post-reading / "what does this give
+away" item kind (which the old row 4 used) is an in-episode drill, handled by the ENG-11 feed drill, not
+a check-form item.
 
-Each form carries one mirror pair (row 1 phish against row 2 suspicious-looking genuine). The
-"read-a-post" item (row 4) uses the assessment bank's post-reading item kind; confirm the kind exists in
-`05`/`assessment.md` before authoring, else drop it to a seventh row. The `triage.rb` balance lint must
-pass on the pair.
+E14's contribution is the core_12 rows of `10`'s `data_conduct` pair (see `10`'s item list): the
+recruiter / fake-profile reconnaissance probe (`dca_recruiter_probe` / `dcb_journalist_probe`) and the
+"what's approved to share" genuine comms item (`dca_comms_ok` / `dcb_press_line`). These are authored as
+part of `10`, aligned to E14's framing; they are not a separate E14 form.
 
 ## 15. Files to create or change
 
 Writer: this spec only.
 Implementer: `awareness/e14/attack.json` and `awareness/e14/defend.json` (modelled on `e4/`); shells
 `scenarios/awareness_e14_social_media/` and `.../_defend/` (one-room `room_aw_merrin_sallow` kiosk, host
-Tomás, kiosk `{ episodeId }`); the two new surfaces (privacy panel, feed drill); new check shells
-`awareness_{pre,post}_social_{ab,ba}`; `BRAND_SET.md` (Dani Fenwick); the `fake_profile`/`recon_request`
-scenario-local tells; parity/validator updates as needed. Never run a generator into the repo.
+Julian Sallow, kiosk `{ episodeId }`); the **"Post or Not?" feed drill as ENG-11's `sortDrill` surface**
+and the **privacy panel as ENG-13's `privacyPanel`** (section 11); `BRAND_SET.md` (Dani Fenwick); the
+`fake_profile`/`recon_request` scenario-local tells; parity/validator updates as needed. The
+`data_conduct` check shells are built by `10`'s check generator, not here (section 14). Never run a
+generator into the repo.
 
 ## 16. Bridge script outline
 
@@ -312,10 +328,11 @@ debrief (assert the habit-to-keep box and Monday card); conclusion global
 
 ## 17. Acceptance checks
 
-As E11 section 17, for the E14 shells and the `social_form_a`/`social_form_b` pair. Plus: the attack
-beat caps at one send (`maxSends: 1`); the board shows a `reduceNote` for each of the five facts; the
-flip uses the built defender-inbox view (not a montage); `flipDefenderLineByChoice` is erb-only (parity
-test). `social.awareness.ruleOfThumb` byte-identical to the other shells.
+As E11 section 17, for the E14 shells (the `data_conduct` pair's parity is `10`'s acceptance, not E14's).
+Plus: the attack beat caps at one send (`maxSends: 1`); the board shows a `reduceNote` for each of the
+five facts; the flip uses the built defender-inbox view (not a montage); `flipDefenderLineByChoice` is
+erb-only (parity test); the ENG-11 feed drill renders its Post/Tweak/Hold bins and the ENG-13 privacy
+panel closes at least one found fact. `social.awareness.ruleOfThumb` byte-identical to the other shells.
 
 ## 18. Do not
 
@@ -333,19 +350,21 @@ test). `social.awareness.ruleOfThumb` byte-identical to the other shells.
 
 ## 19. Stop and ask if
 
-- The post-reading item kind (check-form row 4) does not exist in `05`/`assessment.md`.
-- The privacy panel or feed drill are not wanted as new surfaces (for example, the feed drill is meant
-  to be the scored set rather than an unscored teaching drill): this changes section 11.
-- The orchestrator wants the OSINT subject kept as Oskar Berglund despite the built E4 conflict.
+- ENG-11's `sortDrill` or ENG-13's `privacyPanel` are wanted scored rather than unscored teaching (for
+  example, the feed drill is meant to be the scored set): this changes section 11.
+- The orchestrator wants the OSINT subject kept as Oskar Berglund despite the built E4 conflict (section
+  5 resolves this to Dani Fenwick; reopening it needs built E4 data changed, out of E14's scope).
 
 ## 20. Open questions
 
-- **Oskar vs Dani:** this spec uses a new internal junior, Dani Fenwick, because built E4 fixes Oskar as
-  a Brackenmoor client (section 5). If the orchestrator prefers to keep Oskar, built E4 data must change
-  too, which is out of E14's scope.
-- **Feed drill and privacy panel scoring:** kept unscored here so the measured defend set is a standard
-  six-item triage set with a mirror pair. If the product wants the feed drill scored, that is a request
-  to `05` and changes the measurement.
-- **Host first-name clash with E11:** E14's host Tomás Carvalho and E11's DPO Tomasz Wiśniewski are
-  near-identical first names (see E11 section 20); recommend renaming one if both ship in one course.
+- **Oskar vs Dani (resolved):** the OSINT subject is the new internal junior **Dani Fenwick**, because
+  built E4 fixes Oskar Berglund as a Brackenmoor client (section 5) and the code wins over
+  `game_design.md`. This is settled; keeping Oskar would require changing built E4 data, which is out of
+  E14's scope.
+- **Feed drill and privacy panel scoring:** kept unscored here (ENG-11 `scored: false`, ENG-13 view-only)
+  so the measured defend set is a standard six-item triage set with a mirror pair. If the product wants
+  the feed drill scored, that is a request to `05` and changes the measurement.
+- **Host first-name clash with E11 (resolved, ruling 7):** E14's host is renamed from Tomás Carvalho to
+  the built M&S partner **Julian Sallow** (section 5), so E11 keeps Tomasz Wiśniewski and there is no
+  first-name clash.
 - The pre-ship web search for "Fenwick" (as a name) is owed.

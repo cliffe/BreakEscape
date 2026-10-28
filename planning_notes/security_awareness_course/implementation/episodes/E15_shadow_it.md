@@ -1,4 +1,4 @@
-# E15 — Shadow IT (removable media, cloud storage and workarounds)
+# E15: Shadow IT (removable media, cloud storage and workarounds)
 
 Buildable by a fresh Sonnet implementer from this spec plus "Read first". All companies, people,
 domains and figures are fictional; `.example` domains only. UK spelling; "cyber security" two words; no
@@ -44,10 +44,12 @@ Source of truth: `modules/core_13_removable_media_cloud_and_shadow_it/concepts.m
 - **Built, no new packet:** the inbox-triage defender under the `awareness` profile with `Verify`; the
   mail client's recipient check (the "Me (personal)" autocomplete in the sandbox); the montage flip
   (ENG-04); the measurement store; the debrief view; the shared rule of thumb.
-- **Needs a new ENG packet (small, unscored):** the **"Swap Shop" match drill** (match a shortcut to its
-  approved swap from three options). `game_design.md` lists it as "new". Fold into E15's engine work or
-  raise it; it is a teaching drill, not scored by the `awareness` profile.
-- **ENG-09:** the new "shadow IT" topic check forms (section 14). Do not edit the six built role forms.
+- **ENG-11** (reusable sort drill): the **"Swap Shop" match drill** uses ENG-11's `sortDrill` surface
+  with its own `bins` (the approved ways), `scored: false` (teaching). A match-to-one-of-N is a sort into
+  N bins, so it folds into ENG-11; it is not a bespoke surface and not scored by the `awareness` profile.
+- **Check forms (no engine packet):** E15's topic (removable media, cloud, shadow IT, core_13) is a
+  message-triage-friendly topic, so it feeds the shared **`general_v2`** pair built per
+  `10_CHECK_FORMS.md` (ruling 1), not a per-topic form. Do not edit the six built role forms. Section 14.
 
 ## 4. Owner models
 
@@ -147,7 +149,11 @@ choice", an untaken one framed "the version where it was taken instead". `person
 - `rota_app` / `ask_it`: "The version where the rota stayed in the free app: the departed temp could
   still edit it, and it was lost when the account was closed. IT moved it to the team space in minutes."
 
-`flipHeading` = "Six months later". Both strings are erb-only (ENG-04 rule).
+`flipHeading` = "Six months later". `flipHeading` stays **in the fragment** (`defend.json` `strings`);
+the defend-only generator pops it with the other flip strings, and the full erb carries the same value,
+so parity passes with no allow-list entry. Only `flipMontageByChoice` is **erb-only** and added to the
+parity allow-list, exactly as E11 section 10a rules (02's ENG-04 adds only `flipMontageByChoice` to
+`STRINGS_ERB_ONLY_OK`, not `flipHeading`).
 
 ## 11. Defend set
 
@@ -170,10 +176,12 @@ stick or device") and `unapproved_tool` ("a free app or online service with no c
 **Mirror pair (aw5):** item 4 (normal-looking phish/unapproved-tool lure, Report/Delete) and item 5
 (suspicious-looking genuine share-link email, Trust).
 
-**Unscored teaching drill in the defend stage (new surface):** **Swap Shop** — match each shortcut to
-its approved swap from three options, one line of why on each: personal email to the work laptop and
-remote access; a free transfer site to a file-sharing link with an end date; a rota in a free app to the
-team space; a found stick to IT. Unscored (not the `awareness` profile).
+**Unscored teaching drill in the defend stage (ENG-11 `sortDrill`):** **Swap Shop** uses ENG-11's
+reusable `sortDrill` surface, `scored: false`, with `bins` set to the approved ways: match each shortcut
+to its approved swap, one line of why on each (an ENG-11 card's `reason`): personal email to the work
+laptop and remote access; a free transfer site to a file-sharing link with an end date; a rota in a free
+app to the team space; a found stick to IT. A match-to-one-of-N is a sort into N bins, so it is ENG-11's
+surface, not a bespoke one. Unscored (not the `awareness` profile).
 
 ## 12. Debrief cards
 
@@ -202,27 +210,26 @@ below, with the approved way."
 Own shell, id `e15_shadow_it_defend`, `variant: "defendOnly"`, same `defend.setId`
 (`e15_shortcuts_inbox`), stages `["brief","defend","debrief"]`, set prefix
 `episode_e15_shadow_it_defend_defend_`. Drops the sandbox and the montage; keeps the scored set and the
-Swap Shop drill, so measurement is unchanged. Ships alongside the full shell; both join the two seeded
-Hacktivity courses.
+ENG-11 Swap Shop drill, so measurement is unchanged. Ships alongside the full shell; both join the two
+seeded Hacktivity courses (full in the both-versions course, defend-only in the defend-only course)
+**through 01 P12** (ruling 8).
 
-## 14. Check-form items it feeds (new "shadow IT" topic forms; see `10_CHECK_FORMS.md`)
+## 14. Check-form items it feeds (`general_v2`; see `10_CHECK_FORMS.md`)
 
-New topic, so **new** forms `shadowit_form_a` and `shadowit_form_b` (ENG-09), 10 items each (4 phish, 6
-genuine), `awareness` profile, `feedbackMode: "end"`, `headerPanel: "collapsed"`, `pairedWith`, prefix
-`triage_{stage}_`, `passPercent: 0`, `verifyVerdict: true`. Do not edit the six built role forms. Item n
-in A matches item n in B. The E15 mirror-paired contribution, in full:
+Per round 1 ruling 1, there is no per-topic `shadowit_form_a/b` pair. E15's topic (removable media, cloud
+storage and shadow IT, core_13) is message-triage-friendly, so it feeds the shared **`general_v2`** pair
+(Quayholt, Verify off), defined and built in `10_CHECK_FORMS.md`. The earlier per-topic table is dropped.
+The six built role forms are the measured baseline and are not edited. (The trade-off the orchestrator
+reports to the user is that two broad pairs give no per-topic pre/post figure.)
 
-| # | Form A (`shadowit_form_a`) | Form B (`shadowit_form_b`) | Phish | Flags (both) | Difficulty |
-|---|----------------------------|----------------------------|-------|--------------|------------|
-| 1 | `sia_posted_stick`: a posted USB "from a client" with a note's phone number | `sib_foyer_stick`: a stick found in reception with a handwritten label | yes | `found_media`, `vish_callback_pressure` | medium |
-| 2 | `sia_free_transfer`: a link to a free file transfer site for a big file | `sib_free_converter`: a link to a free online file converter | yes | `unapproved_tool` | medium |
-| 3 | `sia_fileshare_notice`: the approved service's share-link email (genuine) | `sib_remote_access`: the approved remote-access reminder (genuine) | no | | medium (suspicious-looking genuine) |
-| 4 | `sia_personal_email`: "send it to your personal address to finish at home" | `sib_personal_cloud`: "sync it to your personal cloud to work on later" | yes | `unapproved_tool` | easy |
-| 5 | `sia_it_reply`: the service desk approves a requested tool (genuine) | `sib_it_move`: IT confirms it has moved a rota into the team space (genuine) | no | | easy |
-| 6 | `sia_team_chat`: use the company chat app for a work group (genuine) | `sib_team_drive`: save the file to the team drive (genuine) | no | | easy |
+Do not add new flag ids to the check forms: `general_v2` scores only `00`-library tells, and E15's
+scenario-local tells (`found_media`, `unapproved_tool`) stay in E15's own defend set, never in a form (a
+tell scored in a form must be in the shared library, ruling 1).
 
-Each form carries a mirror pair (row 2 phish against the row 3 suspicious-looking genuine). The
-`triage.rb` balance lint must pass on the pair.
+E15's contribution is the core_13 rows of `10`'s `general_v2` pair (see `10`'s item list): the "ask IT,
+here's the approved way" / cloud how-to genuine item (`gva_approved_tools` / `gvb_cloud_howto`) and the
+free-converter / posted-USB unsafe item (`gva_free_converter` / `gvb_usb_courier`). These are authored as
+part of `10`, aligned to E15's framing; they are not a separate E15 form.
 
 ## 15. Files to create or change
 
@@ -231,10 +238,10 @@ Implementer: `awareness/e15/mistake.json` (the sandbox beats and the `awarenessE
 analogy with `e4/attack.json` but with no `04` target) and `awareness/e15/defend.json` (the
 `triageSets` entry `e15_shortcuts_inbox`, the `awarenessEpisode` defend/debrief/strings/_defendOnly keys,
 by analogy with `e4/defend.json`); shells `scenarios/awareness_e15_shadow_it/` and `.../_defend/`
-(one-room `room_aw_tarrowby` kiosk, host Nilesh, kiosk `{ episodeId }`); the Swap Shop drill surface;
-new check shells `awareness_{pre,post}_shadowit_{ab,ba}`; the `found_media`/`unapproved_tool`
-scenario-local tells; the ENG-04 schema/validator/parity updates (shared with E11). Never run a
-generator into the repo.
+(one-room `room_aw_tarrowby` kiosk, host Nilesh, kiosk `{ episodeId }`); the Swap Shop drill as ENG-11's
+`sortDrill` config (section 11); the `found_media`/`unapproved_tool` scenario-local tells; the ENG-04
+schema/validator/parity updates (shared with E11). The `general_v2` check shells are built by `10`'s
+check generator, not here (section 14). Never run a generator into the repo.
 
 ## 16. Bridge script outline
 
@@ -247,8 +254,9 @@ the defend-only shell.
 
 ## 17. Acceptance checks
 
-As E11 section 17, for the E15 shells and the `shadowit_form_a`/`shadowit_form_b` pair. The montage flip
-renders every beat; `flipMontageByChoice` is erb-only; `social.awareness.ruleOfThumb` byte-identical.
+As E11 section 17, for the E15 shells (the `general_v2` pair's parity is `10`'s acceptance, not E15's).
+The montage flip renders every beat; `flipHeading` is in the fragment and `flipMontageByChoice` is
+erb-only; the ENG-11 Swap Shop drill renders its bins; `social.awareness.ruleOfThumb` byte-identical.
 
 ## 18. Do not
 
@@ -266,8 +274,9 @@ renders every beat; `flipMontageByChoice` is erb-only; `social.awareness.ruleOfT
 ## 19. Stop and ask if
 
 - The ENG-04 shape as built differs from `E11` section 10a.
-- The Swap Shop drill is wanted as the scored set rather than an unscored drill (this changes section
-  11).
+- The Swap Shop drill (ENG-11 `sortDrill`) is wanted scored rather than an unscored drill (this changes
+  section 11). ENG-11 notes that if the user wants Swap Shop to feel like a matching game rather than an
+  N-bin sort, that is its own packet; the sort covers the teaching either way.
 
 ## 20. Open questions
 

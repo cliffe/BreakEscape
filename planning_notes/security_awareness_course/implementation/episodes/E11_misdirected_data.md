@@ -1,4 +1,4 @@
-# E11 — Misdirected data (data protection and handling information)
+# E11: Misdirected data (data protection and handling information)
 
 A Sonnet implementer should be able to build E11 from this spec plus the files in "Read first"
 without inventing facts. Every key, stage id, shape and company name below is taken from the built
@@ -55,9 +55,10 @@ richer than the built awareness shape, the built shape wins and this spec distil
   shape.
 - **ENG-08** (schema and validator changes): the schema and lint additions listed in section 10a and
   section 15 belong in ENG-08 unless ENG-04 carries them.
-- **ENG-09** (check-form needs): the new "data" topic check forms in section 14. Per the user's
-  decision, new topics get **new** check forms; the six built role forms are the measured baseline and
-  are not edited.
+- **Check forms (no engine packet):** E11 feeds the `data_conduct` topic pair, built per
+  `10_CHECK_FORMS.md` (round 1 ruling 1). The forms need no form-building engine packet; they come from
+  the check generator in `10`. The six built role forms are the measured baseline and are not edited.
+  See section 14.
 - Built engine (no new packet): the inbox-triage defender under the `awareness` profile, the `Verify`
   verdict, the `voicemail`/`call` message kinds, the measurement store (`awareness-measure.js`), the
   debrief view, the shared rule of thumb (`social.awareness.ruleOfThumb`) and the step strip.
@@ -79,12 +80,15 @@ richer than the built awareness shape, the built shape wins and this spec distil
   work; a mixed, largely non-technical workforce. It is a controller for its own staff data and a
   processor for some client data, which is why the DPO decides who must be told (core_05). Carrholme is
   the default organisation already named throughout core_05 and core_06 `concepts.md`.
-- **Room: reuse an existing training-room map with Carrholme branding.** Use the same single-room kiosk
-  map the other awareness episodes use (`room_aw_merrin_sallow`, `room_aw_tarrowby`, `room_aw_quayholt`
-  are the built pattern), reskinned as the room type **`room_aw_carrholme`** with the Carrholme CSS
-  wordmark. The sandbox desktop, the montage and the triage surface are full-screen overlays, so no new
-  room geometry is needed. Register `room_aw_carrholme` the way the other `room_aw_*` types are
-  registered (`awareness/training_room.py`, `apply_training_room.py`); do not hand-draw a new map.
+- **Room: reuse an existing training-room layout; no new geometry (ruling 6).** Carrholme does not get a
+  hand-drawn map. It gets its own room type **`room_aw_carrholme`** by reskinning the built single-room
+  kiosk layout the other awareness episodes use (`room_aw_merrin_sallow`, `room_aw_tarrowby`,
+  `room_aw_quayholt` are the built pattern): Carrholme's tileset, props, logo wordmark, accent and
+  lighting are applied through **01 P5b's existing scripts** (`make_aw_tileset.py`, `make_aw_props.py`,
+  the `COMPANY_OPS` entry in `build_aw_rooms.py`, the `game.js` preloads, the schema room-type enum and
+  the lighting entry). E11 and P5b say the same thing; follow P5b exactly and do not hand-draw a new
+  layout. The sandbox desktop, the montage and the triage surface are full-screen overlays, so no new
+  room geometry is needed. Accent `#4a6b57`; wordmark `CARRHOLME`.
 - **Host: the Carrholme Data Protection Officer, Tomasz Wiśniewski** (`tomasz.wisniewski@carrholme.example`).
   Named in both core_05 and core_06 `concepts.md` as Carrholme's DPO. He welcomes the learner, carries
   the per-item feedback and the debrief, and his NPC record holds the `eventMappings` that complete the
@@ -92,9 +96,10 @@ richer than the built awareness shape, the built shape wins and this spec distil
   - **Name-clash check (done 2026-10-27):** "Wiśniewski" appears only in the course modules and
     `docs/IDEAS_BACKLOG.md`; no built scenario, ink or engine file uses it, and no Licence to Hack or
     SIS character shares the surname. "Carrholme" appears only in the course modules. Both are clean to
-    use. **Soft clash to resolve before ship:** E14 (Merrin & Sallow) has a host **Tomás Carvalho**;
-    "Tomás" and "Tomasz" are near-identical first names, and if E11 and E14 ship in the same course the
-    two hosts will read as confusable. See Open questions (section 20).
+    use. **Host first-name clash (resolved, ruling 7):** E14 (Merrin & Sallow) formerly hosted with
+    **Tomás Carvalho**, whose first name read as confusable with "Tomasz". Ruling 7 renames E14's host,
+    not E11's: E14 now hosts with the built M&S co-founding partner **Julian Sallow**, so **E11 keeps
+    Tomasz Wiśniewski** and there is no longer a first-name clash.
   - **Unicode note:** the "ś" in Wiśniewski is non-ASCII. Display is fine (the built E4 already renders
     "Tomás Carvalho" with a non-ASCII "á"); keep the name only in display strings (`from.name`,
     `social.people[].forms`, body text), never in an id or a global name, so no Unicode-id engine work
@@ -121,11 +126,13 @@ Cast (all fictional; ages are bands for the concept prompts; all need the pre-sh
 | Sam Whitaker | Payroll Officer | 30s, British Caribbean | `sam.whitaker@carrholme.example` | The correct recipient of the overtime sheet |
 | Sam Whitlow | Manager, Hollinsbrook House (client care home, `hollinsbrookhouse.example`) | 50s, white, Yorkshire | `sam.whitlow@hollinsbrookhouse.example` | The wrong "Sam" the breach goes to; replies in the defend set |
 | Gareth Hale | Son of a resident (Hollinsbrook House) | 40s, white | `gareth.hale@inboxly.example` (freemail) | The subject access request in the defend set |
-| Kestrel Court | Client care home (`kestrelcourt.example`) | — | `laundry@kestrelcourt.example` | Sends the misdirected care summary (inbound breach) |
+| Kestrel Court | Client care home (`kestrelcourt.example`) | n/a | `laundry@kestrelcourt.example` | Sends the misdirected care summary (inbound breach) |
 
 People named on screen only (no art, no sender): Edna Hale (87, Hollinsbrook House, Room 12), Albert
 Finch (Room 14), Pauline Grant (Room 9), Bernadette Lyons (Carrholme cleaner), Lee Corrigan and Marcus
-Webb (Care Laundry drivers), the nine contact-centre staff on the overtime sheet.
+Webb (Care Laundry drivers), "Carol" (the caller in the `caller_bernadette` sandbox beat, section 9),
+"DC Hendry" (the voice-only police-impersonation caller in defend item 2, section 11), the nine
+contact-centre staff on the overtime sheet.
 
 **Cast-diversity note (standing rule):** the cast spans 30s to 50s and mixes Polish, white British
 (Scottish, Yorkshire, Manchester) and British Caribbean backgrounds; stated here so the P7-Z3 concept
@@ -229,9 +236,14 @@ Montage lines (`strings.flipMontageByChoice`, keyed beat then option; full text)
   care note and a driver's mobile reached a stranger. Taking the extra details out first left only what
   Mr Hale was owed."
 
-Flip strings: `flipHeading` = "Six months later". The defend-only variant never shows the flip, so
-`flipMontageByChoice` and `flipHeading` are **erb-only** (not in the fragment, not carried by the
-generated defend-only shell), exactly as the built `flipDefenderLineByChoice` is (section 10a).
+Flip strings: `flipHeading` = "Six months later". `flipHeading` stays **in the fragment** (`defend.json`
+`strings`), exactly like the built flip headings: the defend-only generator pops `flipHeading` (with the
+other flip strings) when it builds the defend-only shell, and the full erb carries the same value, so the
+fragment-and-erb parity test passes with no allow-list entry. Only `flipMontageByChoice` is **erb-only**
+(not in the fragment, not carried by the defend-only shell), exactly as the built
+`flipDefenderLineByChoice` is, and only `flipMontageByChoice` is added to the parity allow-list (section
+10a). This resolves the Sonnet-review `flipHeading` parity finding: 02's ENG-04 adds only
+`flipMontageByChoice` to `STRINGS_ERB_ONLY_OK`, so `flipHeading` must live in the fragment.
 
 ### 10a. ENG-04 config shape (defined once; E15 and E16 reference this)
 
@@ -272,10 +284,13 @@ Fields:
 - `flipBeat`: the id of the beat whose chosen branch is the montage headline. This is aw2's "one
   consequential choice, quoted back"; the montage still shows every beat, `flipBeat` only sets which
   one leads.
-- The learner's chosen option per beat is written to the declared global `episode_<id>_state` (where
-  the built `write` stage already keeps its sent-template id, so the flip reads it back), then
-  discarded after the flip. No free text; nothing scored. The measurement store (`awareness-measure.js`)
-  may record the beat id and chosen option id for in-episode analytics, never shown to the learner.
+- The learner's chosen option per beat is written to the declared global `episode_<id>_state` under a
+  `mistakeChoices` field (parallel to the `sent` field the built `write` stage keeps, so the flip reads
+  it back), then discarded after the flip. ENG-04 adds `mistakeChoices` to the `readState` filter and
+  clears it in `completeStage` on `flip` exactly as `sent` is cleared (`episode-model.js` `completeStage`
+  `:160`); name both functions in the packet so the field is not silently dropped. No free text; nothing
+  scored. The measurement store (`awareness-measure.js`) may record the beat id and chosen option id for
+  in-episode analytics, never shown to the learner.
 
 The flip renders in montage mode. ENG-04 adds `flip.mode: "montage"` on the episode block and reads the
 montage strings keyed beat then option. This is the consequence analogue of the built
@@ -297,13 +312,20 @@ montage strings keyed beat then option. This is the consequence analogue of the 
 Montage rules (ENG-04):
 - The montage shows every beat. For each beat ENG-04 picks the line from
   `flipMontageByChoice[beatId][optionId]` using the learner's own option when it has a line, else the
-  beat's unsafe option (the "taken instead" view), so a careful learner still sees the cost.
+  beat's unsafe option (the "taken instead" view), so a careful learner still sees the cost. Because E11
+  authors a line for **both** options of every beat (section 10), this fallback never fires for E11; it
+  is in the shape for E15/E16 if they leave an option without a line.
+- The "Your choice" / "the version where it was taken instead" framing is **authored into the string
+  text**, not applied by the engine: the engine only selects which line to show per beat and renders
+  `flipHeading` and one `.aw-montage-beat` per beat. The writer sets the framing in each
+  `flipMontageByChoice` value.
 - `flipBeat`'s branch is rendered first / as the headline.
-- A beat with no montage line for the taken option falls back to the beat's unsafe-option line.
-- The defend-only variant never runs `mistake` or `flip`, so `flipMontageByChoice` and `flipHeading`
-  are erb-only (not in the fragment; the generated defend-only shell does not carry them), exactly as
-  `flipDefenderLineByChoice` is today. Add `flipMontageByChoice` to `STRINGS_ERB_ONLY_OK` in
-  `test/js/social-awareness-fragment-erb-parity.test.mjs` with a reason.
+- The defend-only variant never runs `mistake` or `flip`. `flipHeading` stays in the fragment
+  (`defend.json` `strings`); the defend-only generator pops it alongside the other flip strings, and the
+  full erb carries the same value, so parity passes with no allow-list entry. Only `flipMontageByChoice`
+  is erb-only (not in the fragment; the defend-only shell does not carry it), exactly as
+  `flipDefenderLineByChoice` is today. Add **only** `flipMontageByChoice` to `STRINGS_ERB_ONLY_OK` in
+  `test/js/social-awareness-fragment-erb-parity.test.mjs` with a reason; do not add `flipHeading`.
 
 Schema and validator (ENG-04, or folded into ENG-08): add `awarenessEpisode.mistake` and
 `strings.flipMontageByChoice` and `flip.mode` to `scripts/scenario-schema.json`; in
@@ -311,6 +333,14 @@ Schema and validator (ENG-04, or folded into ENG-08): add `awarenessEpisode.mist
 option; `flipBeat` names a real beat; every `flipMontageByChoice` outer key is a real beat id and every
 inner key a real option id of that beat; non-empty strings; `mistake` and `flip` absent on a
 `defendOnly` episode; `mistake` present when `stages` includes `mistake`.
+
+**The `attack_checks` relaxation (round 1 ruling 5; this is ENG-04/ENG-08 work, flagged to the 02
+fixer):** `awareness.rb` runs `attack_checks` on every `full?` episode (line 53), which errors unless a
+full episode has an `attack` block (target, siteIds, accountIds). A consequence-flip episode has no
+attack block, so ENG-04 (or ENG-08) must make `attack_checks` run **only when `stages` includes `osint`
+or `write`**, and add the paired lint that a `mistake` episode has **no** `attack` block. Without this
+relaxation a full E11/E15/E16 fails `--strict-social` even though it is correctly authored. If 02 has not
+yet added it to ENG-04, that change is requested of the 02 fixer (it must not be edited here).
 
 The three consequence-flip episodes ask ENG-04 for this **identical** shape and differ only in their
 `beats`, `flipBeat` and `flipMontageByChoice` content. **E14 does not use ENG-04**: it keeps the built
@@ -390,31 +420,34 @@ Its own shell, id `e11_misdirected_data_defend`, `variant: "defendOnly"`, same `
 copy over `strings.brief` and `scopeNote`; every other string is shared. The defend set, its scoring and
 the check forms are unchanged, so measurement is identical. Per the user's decision, E11 ships **both**
 the full and the defend-only shell, and both join the two seeded Hacktivity courses (the full shell in
-the both-versions course, the defend-only shell in the defend-only course).
+the both-versions course, the defend-only shell in the defend-only course). The seeding is done through
+**01 P12** (ruling 8), which holds the one feature-level seeding procedure; do not seed through
+`awareness_deploy.py`, which carries only the rule of thumb.
 
-## 14. Check-form items it feeds (new "data" topic forms; see `10_CHECK_FORMS.md`)
+## 14. Check-form items it feeds (`data_conduct`; see `10_CHECK_FORMS.md`)
 
-New topic, so **new** check forms (ENG-09): a parallel pair `data_form_a` and `data_form_b`, 10 items
-each (4 phish, 6 genuine), `scoringProfile: "awareness"`, `feedbackMode: "end"`, `headerPanel:
-"collapsed"`, `pairedWith` each other, prefix `triage_{stage}_`, `passPercent: 0`, `verifyVerdict: true`.
-Do **not** edit the six built role forms (finance, executive, helpdesk, hr, mobile, general); they are
-the measured baseline. Item n in A matches item n in B on kind, phish-or-genuine, flags and difficulty.
-Pull the full bank from `core_05/assessment.md` and `core_06/assessment.md`; the mirror-paired items
-below are the E11 contribution, given in full as the pattern.
+Per round 1 ruling 1, the new topics do **not** get a per-topic form each. They feed the **two shared
+topic pairs** defined and built in `10_CHECK_FORMS.md`: `general_v2` (Quayholt, Verify off) and
+`data_conduct` (Carrholme, Verify on). E11's topic (data protection and handling, core_05/core_06) is a
+**judgement** topic, so it feeds **`data_conduct`**. There is no `data_form_a/b` pair; the earlier
+per-topic table is dropped. (The trade-off the orchestrator reports to the user is that two broad pairs
+give no per-topic pre/post figure.)
 
-| # | Form A (`data_form_a`) | Form B (`data_form_b`) | Phish | Flags (both) | Difficulty |
-|---|------------------------|------------------------|-------|--------------|------------|
-| 1 | `da_sar_plain`: "Send me everything you hold about me" from a customer (genuine request to route) | `db_complaint_plain`: "I'm not happy you gave my number to the care home" (genuine complaint to route) | no | | easy |
-| 2 | `da_payroll_lookalike`: "Carrholme Payroll" on `carrholme-payroll.example`, confirm bank details | `db_hr_lookalike`: "Carrholme HR" on `carrholme-hr.example`, confirm NI number | yes | `lookalike_domain`, `senderTrust` | medium |
-| 3 | `da_inbound_summary`: a client home attaches its full residents' care summary by mistake (genuine sender, breach) | `db_inbound_payroll`: another team's payroll run arrives in your inbox by mistake (genuine sender, breach) | no | | medium |
-| 4 | `da_police_call`: "DC Hendry" wants a colleague's address, withheld number | `db_bailiff_call`: "the council" wants a resident list, withheld number | yes | `vish_callback_pressure`, `borrowed_authority` | medium |
-| 5 | `da_cardigan_update`: a family member updates a phone number on a claim (genuine routine) | `db_room_number`: a driver needs a room number to return a found item (genuine routine) | no | | easy |
-| 6 | `da_marketing_export`: the sales director asks to export family contacts for an offer | `db_survey_export`: a manager asks to reuse claim contacts for a survey | yes | `secrecy_or_bypass` | medium |
+`data_conduct` is authored in `10`, set at Carrholme Services, so E11's brand-set addition (Carrholme
+and its cast, section 5) must land before the `data_conduct` pair ships; `10` names Carrholme as the
+form's company and lists Carrholme as its dependency. The six built role forms are the measured baseline
+and are not edited. Do **not** add a new per-topic form or new flag ids: `data_conduct` scores only
+`00`-library tells (`senderTrust`, `pretextRelevant`, `secrecy_or_bypass`, `vish_callback_pressure`,
+`reply_to_differs`), and any tell scored in a form must be in the shared library (ruling 1), which the
+E11 defend-set scenario-local tells are not.
 
-Items 1, 5 are the "data protection is not a reason to stop helping" calibration items (correct action:
-route or handle, never refuse). Each form carries one mirror pair (row 2 phish against the row 1/3
-suspicious-looking genuine). The validator's balance lint (`scripts/validate_social/triage.rb`
-`balance`) must pass on the pair.
+E11's contribution is the set of `data_conduct` rows that draw on core_05/core_06 (see `10`'s
+`data_conduct` item list): the outside-"auditor" data pull (`dca_customer_list` / `dcb_hr_records`), the
+genuine need-to-know data ask (`dca_team_report` / `dcb_payroll_file`), the correctly-routed folder share
+(`dca_folder_share` / `dcb_portal_share`), the manager's within-need-to-know report
+(`dca_manager_report` / `dcb_access_review`) and the subject-access-request acknowledgement
+(`dca_sar_routed` / `dcb_retention_notice`). These are items in `10`'s single `data_conduct` pair, not a
+separate E11 form; author them as part of `10`, aligned to E11's Carrholme framing.
 
 ## 15. Files to create or change
 
@@ -430,16 +463,17 @@ Implementer (named here so the writer's keys line up; not the writer's job to bu
   `awareness_e11_misdirected_data_defend/` (defend-only), each a one-room `room_aw_carrholme` kiosk map,
   `ui_theme: "general"`, a host NPC (Tomasz) with the conclusion `eventMappings`, and a `kiosk` object
   `{ episodeId: "e11_misdirected_data" }` / `{ episodeId: "e11_misdirected_data_defend" }`.
-- New check shells: `awareness_pre_data_ab`, `awareness_post_data_ab`, `awareness_pre_data_ba`,
-  `awareness_post_data_ba` (ENG-09), from the generator pattern, never generated into the repo by the
-  writer.
+- The `data_conduct` check shells (`awareness_{pre,post}_data_conduct_{ab,ba}`) are built by `10`'s
+  check generator, not E11's; E11 only supplies the Carrholme framing for `10`'s `data_conduct` rows
+  (section 14). No per-topic `data_*` shells.
 - `BRAND_SET.md`: the Carrholme row and cast (section 5).
 - `scripts/scenario-schema.json` and `scripts/validate_social/awareness.rb`: the ENG-04 schema and
   lints (section 10a), if not already added by ENG-04.
 - `test/js/social-awareness-fragment-erb-parity.test.mjs`: add `flipMontageByChoice` to
   `STRINGS_ERB_ONLY_OK`.
-- Room type registration in `awareness/training_room.py` and `apply_training_room.py` for
-  `room_aw_carrholme`.
+- Room type `room_aw_carrholme`: follow **01 P5b** (the tileset, props, logo, `COMPANY_OPS` entry,
+  `game.js` preloads, the schema room-type enum entry and the lighting entry). No new map geometry and
+  no `apply_training_room.py` change (ruling 6); P5b and this spec say the same.
 
 ## 16. Bridge script outline
 
@@ -460,7 +494,7 @@ mission concluded. A second bridge for the defend-only shell: brief, defend, deb
   parity test (the full erb carries `flipMontageByChoice`, the defend-only shell does not) and the new
   ENG-04 lints.
 - The defend set `e11_carrholme_desk` has 6 items, exactly one mirror pair, and the `triage.rb` balance
-  lint passes on the `data_form_a`/`data_form_b` pair.
+  lint passes on it. The `data_conduct` pair's parity is `10`'s acceptance, not E11's.
 - `social.awareness.ruleOfThumb` is byte-identical to the other 38 shells
   (`test/js/social-awareness-rule-of-thumb.test.mjs`).
 - The bridges pass (section 16).
@@ -491,16 +525,11 @@ mission concluded. A second bridge for the defend-only shell: brief, defend, deb
 
 ## 20. Open questions
 
-- **Host first-name clash:** E11's DPO is **Tomasz** Wiśniewski and E14's host is **Tomás** Carvalho. If
-  the two episodes ship in one course the near-identical first names read as confusable. Recommend the
-  orchestrator rename one first name before ship (as `BRAND_SET.md` already did for the Moyo and Dev
-  clashes), keeping the surnames the modules name. Flagged, not resolved, because both names are the
-  module sources of truth.
+- **Host first-name clash (resolved, ruling 7):** E11 keeps **Tomasz Wiśniewski**; E14's host is renamed
+  from Tomás Carvalho to the built M&S partner **Julian Sallow**, so there is no first-name clash. No
+  action for E11.
 - **DPO-routing vs the awareness scorer:** the built scorer does not penalise `Trust` on a genuine
   request that should go to the DPO, so that nuance lives in the per-item card, not the score (section
   11). If the product wants it scored, that is a request to `05` and changes the defend set.
-- **`room_aw_carrholme` map source:** which existing training-room map to clone for the Carrholme skin
-  (the brief says reuse one); any of the built `room_aw_*` maps will do, but name the chosen source in
-  the shell so the reuse is auditable.
 - The pre-ship web search for "Carrholme Services", "Hollinsbrook House" and "Kestrel Court" is still
   owed (BRAND_SET rule).

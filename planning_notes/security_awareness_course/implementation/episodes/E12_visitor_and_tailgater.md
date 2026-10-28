@@ -57,18 +57,19 @@ built here; its content is reduced to one in-person pretext and a six-item recep
 
 | Packet | What E12 needs from it |
 |---|---|
-| **ENG-05** (world-play attack stage) | The whole attack half. Precise needs in section 9.1. |
-| **ENG-08** (schema and validator) | Accept the new scenario-local tell ids (section 11); accept a lobby room type and a locked connection between lobby and studio; accept the `attack.costume` / world-play fields ENG-05 adds; keep the N16 host-NPC lint happy for a two-room shell. |
-| **ENG-09** (check-form needs) | A new physical-security check form (section 14); E12 feeds it. |
-| (existing) | The pretext call path (`write` stage with `attack.callId`, pretext-prep → person-chat), the influence service, the triage `call` kind, the host-NPC done-event mechanism (N16). No change needed; cited so the implementer reuses, not rebuilds. |
+| **ENG-05a** (world-play attack modifier) | The whole attack half: the `world` modifier on the call `write` stage places the player in the lobby in the costume before the pretext and reverts on the flip, handing back through the built `watchCall` (02 ENG-05a has settled this; no `#trigger_minigame`). With ENG-05b (costume, aw9), ENG-05c (lobby, door, NPC door opening), ENG-05d (parcel sprite art). Precise needs in section 9.1. |
+| **ENG-08** (schema and validator) | Accept the `awarenessEpisode.world` block (`room`, `startRoom`, `costume`); accept a lobby room type and a locked connection between lobby and studio; keep the N16 host-NPC lint happy for a two-room shell. The four scenario-local tells (section 11) need **no** library change: the validator already accepts a `channelTells` id that `flagChips` labels and that is not a factor, so they are declared on the set, not added to ENG-08's shared library. |
+| **Check forms (no engine packet)** | E12 does not get its own check form. Its one message-triage-friendly pretext item sits in the shared `general_v2` pair (`10_CHECK_FORMS.md`, ruling 1); section 14. |
+| (existing) | The pretext call path (`write` stage with `attack.callId`, pretext-prep → person-chat), the influence service, the triage `call` kind, the host-NPC done-event mechanism (N16), and `watchCall` (`episode-runner-minigame.js:760`) for the flip hand-back. No change needed; cited so the implementer reuses, not rebuilds. |
 
-Build order: ENG-05, ENG-08 and ENG-09 land before E12 is wired. If ENG-05 slips, E12 cannot ship:
-the attack half has no fallback (unlike E3, whose phone pretext is already built).
+Build order: ENG-05a (with 05b to 05d) and ENG-08 land before E12 is wired. If ENG-05a slips, E12 cannot
+ship: the attack half has no fallback (unlike E3, whose phone pretext is already built).
 
 ## 4. Owner models
 
 - Content writing and review: `opus48` (phishing / social-engineering content).
-- Engine packets ENG-05, ENG-08, ENG-09: general-purpose or Sonnet.
+- Engine packets ENG-05a (with 05b to 05d) and ENG-08: general-purpose or Sonnet. The check-form item
+  E12 feeds is built as part of `10_CHECK_FORMS.md` (no E12-specific engine packet).
 - Shell wiring (this spec), ink, strings: Sonnet following this brief.
 
 ## 5. Company, room and host
@@ -76,14 +77,27 @@ the attack half has no fallback (unlike E3, whose phone pretext is already built
 - **Company:** Merrin & Sallow Architects, a London architecture practice (`BRAND_SET.md` roster).
   `brand` block: `{ "name": "Merrin & Sallow Architects", "logoText": "MERRIN & SALLOW", "accent": "#8a5a2b" }`.
   Domain `merrinsallow.example`; look-alikes `merrin-sallow.example`, `merrinsallow-studio.example`.
-- **Host (front-of-house):** **Delphine Arvanitis**, Front-of-House Coordinator, 50s, Greek-Cypriot
-  British, fifteen years on the desk. Address `reception@merrinsallow.example`.
-  - **Clash check (done 2026-10-27):** `Arvanitis` has no hits in `scenarios/`, `planning_notes/
-    phishing_and_social_engineering/`, `docs/` or `public/break_escape/js`. `Delphine` is clean there
-    too. She does **not** reuse the retired `core_10` draft name **Maureen Gallagher**, `BRAND_SET.md`
-    bars `Gallagher` ("clashes with an existing scenario"). She is a new M&S cast member, distinct from
-    the E4 M&S cast (Catherine Merrin, Tomás Carvalho, Yasmin Chaudhry, Julian Sallow, Thandiwe Moyo,
-    Oskar Berglund, Leah Abramson).
+- **Two front-of-house NPCs (resolved from the code; see section 20 open question 1).** An NPC is
+  declared inside exactly one room (`scenario-schema.json`: `rooms[].npcs`), and a `person` pretext NPC
+  is resolved as a placed world NPC via `cfg.channels.person` (`episode-runner-minigame.js:640`). The
+  lobby pretext target must therefore be a world NPC in the **lobby**, while the kiosk host that carries
+  the brief, the per-item feedback and the N16 done-event `eventMappings` is a world NPC at the kiosk in
+  the **studio**. One NPC record cannot be in both rooms, so E12 uses two front-of-house people:
+  - **Lobby pretext mark:** **Delphine Arvanitis**, Front-of-House Coordinator, 50s, Greek-Cypriot
+    British, fifteen years on the desk. Address `reception@merrinsallow.example`. She is the person the
+    courier talks past and who buzzes the door (`character: "delphine"`, section 9.3); she does **not**
+    carry the brief or the done event.
+  - **Studio kiosk host:** **Lorna Easton**, Reception & Facilities Lead, 40s, white, north-west England.
+    Address `lorna.easton@merrinsallow.example`. She welcomes the learner, reads the scope, carries the
+    per-item feedback and the debrief, and holds the N16 conclusion `eventMappings`. Both are
+    front-of-house, so either satisfies the brief's "host: a front-of-house staff member", and the "con
+    one front-desk colleague, then do the front-desk job yourself" empathy structure holds.
+  - **Clash check (done 2026-10-28):** `Arvanitis`, `Delphine`, `Easton` and `Lorna` have no conflicting
+    hits in `scenarios/`, `planning_notes/phishing_and_social_engineering/`, `docs/` or
+    `public/break_escape/js` (`Easton` and `Lorna`: zero hits on 2026-10-28). Neither reuses the retired
+    `core_10` draft name **Maureen Gallagher**; `BRAND_SET.md` bars `Gallagher` ("clashes with an
+    existing scenario"). Both are new M&S cast members, distinct from the E4 M&S cast (Catherine Merrin,
+    Tomás Carvalho, Yasmin Chaudhry, Julian Sallow, Thandiwe Moyo, Oskar Berglund, Leah Abramson).
 - **Red-team lead (brief and debrief framing):** **Jo Fairweather**, Northlight Security, the
   authorised ethical social engineer who recurs as the course's red-team persona across the module
   `game_design.md` files (consistent use, not a clash). She frames the attack as an authorised test and
@@ -91,7 +105,7 @@ the attack half has no fallback (unlike E3, whose phone pretext is already built
   as a world NPC, to keep the cast small.
 - **Genuine visitors in the defend set** reuse one existing M&S client firm as a client and invent one
   `.example` contractor and one fire-safety firm (section 11). Pre-ship: web-search "Arvanitis",
-  "Northlight Security", and the invented firms for a real business of the same name.
+  "Easton", "Northlight Security", and the invented firms for a real business of the same name.
 - **Rooms:** two.
   - `studio` (the defend seat and the kiosk): map type `room_aw_merrin_sallow`, built by
     `build_aw_rooms.py` and wired by `training_room.py` (`merrin_sallow` entry,
@@ -186,13 +200,12 @@ ENG-05 is the "world-play attack stage" packet. E12 needs, as configuration on t
    a successful pretext the host's ink speaks a buzzed-in line tagged `# unlock_door:studio` and the
    door opens. ENG-05 only needs to ensure the lobby door honours a locked connection and that the
    host NPC has door-unlock permission; the opening itself is built.
-5. **A real `#trigger_minigame`.** Today `# trigger_minigame:<name>` only shows a notification and logs
-   (`chat-helpers.js:190-201`, "Actual minigame triggering would be game-specific"). ENG-05 makes it
-   start the named minigame. **E12 uses it only if** the world-play needs the chat to hand back to the
-   episode runner for the flip; if ENG-05 instead reuses the `watchCall` pattern
-   (`episode-runner-minigame.js:760`, which already waits for `pretext_<callId>_outcome` and every
-   overlay to close, then reopens the runner for the flip), E12 needs no `#trigger_minigame`. State
-   which route ENG-05 takes; prefer reusing `watchCall`.
+5. **The flip hand-back (settled: `watchCall`, no `#trigger_minigame`).** 02 ENG-05a has decided the
+   hand-back reuses `watchCall` (`episode-runner-minigame.js:760`), which already waits for
+   `pretext_<callId>_outcome` to change and every overlay to close, then reopens the runner for the flip.
+   So **E12 needs no real `#trigger_minigame`**. The optional `#trigger_minigame` engine fix (ENG-05e) is
+   not a dependency of E12; do not wire it. (If, against 02's decision, the hand-back cannot reuse
+   `watchCall`, stop and ask, section 19.)
 
 ### 9.2 OSINT facts (ids, source, what they unlock)
 
@@ -250,8 +263,9 @@ Ink: one new file `ink/delphine_reception.ink`, modelled line-for-line on
 `ink/leila_servicedesk.ink`, the two `EXTERNAL pretext_say/pretext_ask` fallbacks, the `se_intel_*`
 and `pretext_*` VAR declarations, a `desk` knot offering the fact-gated lines, a `reaction` knot that
 routes on band, and an `ask_reaction` knot where result `1` speaks the buzzed-in line **with the
-`# unlock_door:studio` tag**. The host NPC also needs its welcome/brief and the N16 done-event mapping
-(section 15); keep those in the same record's `eventMappings`.
+`# unlock_door:studio` tag**. This is Delphine's lobby ink only. The welcome/brief and the N16
+done-event `eventMappings` live on the **studio kiosk host (Lorna Easton)**, a separate NPC record in
+the studio (section 5, section 15), not on Delphine.
 
 ### 9.4 Red-flag meter
 
@@ -297,8 +311,12 @@ item directly as a `call` message in `triageSet.messages` (the way E7 authors vo
 `channelTells` for the set (the closed chip list): `["tailgating","no_escort","uniform_pretext",
 "not_expected","borrowed_authority","secrecy_or_bypass"]`. `borrowed_authority` and `secrecy_or_bypass`
 are the shared-library tells (`00` §2) reused in-person; the other four are **scenario-local tells**
-(11 §5.1 allows them; reusable ones later go to `00`). ENG-08 must let the validator accept these four
-new ids (section 3). Canonical strings to register:
+(11 §5.1 allows them; reusable ones later go to `00`). **No ENG-08 library change is needed for these
+four:** the validator already accepts a `channelTells` id when the set gives it a `flagChips` label and
+it is not a factor (`scripts/validate_social/triage.rb` `flag_universe`). So declare the four with
+`flagChips` labels on the set, using the canonical strings below as those labels; do not add them to the
+shared `CHANNEL_TELLS` library. (ENG-08 is still needed for the `world` block and the lobby room, not for
+the tells.) Canonical strings (the `flagChips` labels):
 
 - `tailgating`: "Someone followed an authorised person through a secure door without badging in."
 - `no_escort`: "A visitor or contractor left to move around unescorted."
@@ -351,23 +369,22 @@ A second shell, id `e12_visitor_tailgater_defend`, `variant: "defendOnly"`, `sta
 shell copies them over `strings.brief`/`scopeNote`; `BRAND_SET.md` §7). `defendOnly` string (moves the
 empathy line to the debrief since there is no flip): "These visitors were played by people whose job is
 to look like they belong, and a busy desk can be caught by any of them. Any you were caught out by are
-shown below, with what gave each one away." Joins both seeded Hacktivity courses (defend-only course and
-both-versions course), per the user's decision in `WRITER_BRIEF.md`.
+shown below, with what gave each one away." Both the full and the defend-only shell join the two seeded
+Hacktivity courses (the full shell in the both-versions course, the defend-only shell in the defend-only
+course) **through 01 P12** (ruling 8), per the user's decision in `WRITER_BRIEF.md`.
 
-## 14. Check-form items it feeds (`10_CHECK_FORMS.md`)
+## 14. Check-form items it feeds (`general_v2`; see `10_CHECK_FORMS.md`)
 
-E12 feeds a **new physical-security / front-of-house check form** (ENG-09; the six built role forms are
-the measured baseline and are not edited, `WRITER_BRIEF.md`). `10_CHECK_FORMS.md` does not exist yet;
-when it is written, E12 contributes these mirror-paired items (each pair one impostor / one genuine, so
-pre/post compare like with like, aw5):
-
-1. Tailgater at the gate ↔ an expected visitor signing in.
-2. Unverifiable "inspector" wanting a secure room ↔ a contracted engineer on the list.
-3. A courier pushing to be buzzed through ↔ a colleague who forgot their badge (verify and help).
-4. "Lend me your badge just for today" ↔ a genuine lost-badge report (issue a temp pass).
-
-Each item uses the same closed chip list as the set (section 11). ENG-09 defines the form shell; E12
-only supplies the item content.
+Per round 1 ruling 1, E12 does **not** get its own physical-security check form. A message inbox is a
+poor instrument for tailgating and badges, so E12's main measurement stays inside the episode (the scored
+reception `call` set, section 11), and `10_CHECK_FORMS.md` deliberately leaves the rest of E12 unchecked
+by a form. E12 contributes just **one physical-pretext item** to the shared **`general_v2`** pair (the
+message-triage-friendly topics; Quayholt, Verify off): a visitor or courier talking their way to access
+by message, the kind of "visitor with a story" that core_10 teaches (`10`'s `general_v2` item 8B
+`gvb_usb_courier` and the contractors/fire-drill genuine item 10 already carry this flavour). That item
+is authored as part of `10`, not as an E12 form; the six built role forms are the measured baseline and
+are not edited. There is no per-topic physical-security form and no new flag ids in the check forms (the
+four scenario-local tells in section 11 stay in E12's own set, never in a form).
 
 ## 15. Files to create or change
 
@@ -375,8 +392,12 @@ Create:
 
 - `scenarios/awareness_e12_visitor_tailgater/scenario.json.erb` (full shell: two rooms, the
   `awarenessEpisode`, the `triageSet`, `social.characters.delphine`, `social.pretextNpcs[merrin_front_desk]`,
-  `social.osint`, `social.people`, `globalVariables`). Model on E3 + E7.
-- `scenarios/awareness_e12_visitor_tailgater/ink/delphine_reception.ink` (+ compiled `.json`).
+  `social.osint`, `social.people`, `globalVariables`). The **lobby** room holds the Delphine pretext NPC
+  (`delphine_reception`); the **studio** room holds the kiosk host NPC **Lorna Easton** with the welcome
+  ink and the N16 done-event `eventMappings` (section 5). Model on E3 + E7.
+- `scenarios/awareness_e12_visitor_tailgater/ink/delphine_reception.ink` (+ compiled `.json`), and the
+  studio kiosk host ink for **Lorna Easton** (the welcome/brief and debrief lines; the N16 mapping is on
+  her NPC record).
 - `scenarios/awareness_e12_visitor_tailgater/mission.json` (pattern from E3/E7).
 - `scenarios/awareness_e12_visitor_tailgater_defend/` (the defend-only shell).
 - Lobby map `assets/rooms/room_aw_merrin_lobby.json` / `.tmj` via a new entry in
@@ -387,9 +408,11 @@ Change:
 - `scripts/room_gen/build_aw_rooms.py`: add the `room_aw_merrin_lobby` build (ENG-05).
 - `planning_notes/phishing_and_social_engineering/awareness/training_room.py`: if the studio map wiring
   needs a lobby entry, add it (ENG-05).
-- `awareness/BRAND_SET.md`: add Delphine Arvanitis, the lobby, the invented contractor and fire-safety
-  firm, under an E12 additions block (follow the existing "_brandAdditions" convention).
-- Hacktivity course seeds: add both shells to the defend-only and both-versions courses.
+- `awareness/BRAND_SET.md`: add Delphine Arvanitis (lobby mark) and Lorna Easton (studio kiosk host),
+  the lobby, the invented contractor and fire-safety firm, under an E12 additions block (follow the
+  existing "_brandAdditions" convention).
+- Hacktivity course seeds: both shells join the defend-only and both-versions courses **through 01 P12**
+  (ruling 8), not by hand-editing Hacktivity or through `awareness_deploy.py`.
 
 Do **not** edit the six built role check forms, the shared `ruleOfThumb` test string, the existing
 `room_aw_*` maps, or any other episode's fragments.
@@ -415,8 +438,9 @@ Validate with `check-bridge.mjs` / `run-suite.sh`.
 ## 17. Acceptance checks
 
 - `ruby scripts/validate_scenario.rb --strict-social scenarios/awareness_e12_visitor_tailgater` passes
-  (and the defend-only shell). Expect it to pass only once ENG-08 accepts the four scenario-local tell
-  ids, the lobby room type and the world-play `attack` fields.
+  (and the defend-only shell). The four scenario-local tells pass because each has a `flagChips` label on
+  the set (no library change); the shell otherwise needs ENG-08 for the `awarenessEpisode.world` block,
+  the lobby room type and the locked lobby-to-studio connection.
 - `node --test test/js/social-awareness-fragment-erb-parity.test.mjs` and the `validator-social-*` and
   `social-*` suites pass with E12 added.
 - The ink compiles: `inklecate` on `delphine_reception.ink` produces the `.json`; the `# unlock_door:studio`
@@ -440,20 +464,27 @@ Validate with `check-bridge.mjs` / `run-suite.sh`.
 
 ## 19. Stop and ask if
 
-- ENG-05's world-play handoff turns out **not** to reuse `watchCall` for the flip, so E12 needs a real
-  `#trigger_minigame` (section 9.1 item 5), confirm the route before wiring the ink.
-- The host NPC cannot be **both** the lobby pretext target (`channels.person`) and the studio kiosk
-  host carrying the N16 done-event mapping (section 20, open question 1).
-- ENG-08 will not accept scenario-local tell ids and requires every tell in `00` §2 first.
+- ENG-05a's world-play handoff turns out **not** to reuse `watchCall` for the flip (02 has settled that
+  it does), so E12 would need a real `#trigger_minigame` (ENG-05e, section 9.1 item 5): confirm the route
+  before wiring the ink.
+- The implementer reads the code and finds a single NPC record **can** be in two rooms after all (it
+  cannot today; section 5 and section 20.1 split into two front-of-house NPCs on that basis): if so, one
+  NPC could serve as both the lobby mark and the studio host.
+- ENG-08 cannot accept the `awarenessEpisode.world` block, the lobby room type or the locked
+  lobby-to-studio connection. (The four scenario-local tells need no ENG-08 change; they use `flagChips`
+  labels, section 11.)
 
 ## 20. Open questions
 
-1. **One NPC or two for the host.** This spec uses a single front-of-house NPC (Delphine Arvanitis) as
-   both the lobby pretext target and the studio kiosk host with the N16 done mapping, mirroring E3's
-   "con her, then take her seat" empathy structure. If ENG-05's world-play cannot have one NPC present
-   in the lobby for the attack and drive the done event from the studio, split into two front-of-house
-   NPCs (Delphine on the desk as the mark; a second named front-of-house colleague as the kiosk host).
-   Both are front-of-house, so either satisfies the brief's "host: a front-of-house staff member".
+1. **One NPC or two for the host (resolved from the code: two).** An NPC is declared inside one room
+   (`scenario-schema.json` `rooms[].npcs`), and the `person` pretext target is resolved as a placed world
+   NPC via `cfg.channels.person` (`episode-runner-minigame.js:640`). The lobby pretext mark must be a
+   world NPC in the lobby; the kiosk host carrying the N16 done-event `eventMappings` must be a world NPC
+   at the studio kiosk. One NPC record cannot be in both rooms, so E12 uses **two** front-of-house NPCs:
+   **Delphine Arvanitis** on the desk as the mark, and **Lorna Easton** as the studio kiosk host (section
+   5). Both are front-of-house, so either satisfies the brief's "host: a front-of-house staff member",
+   and the "con one front-desk colleague, then do the front-desk job yourself" empathy structure holds.
+   This matches ENG-05a's own "Stop and ask if", which anticipates the split.
 2. **Call-action labels for a reception context.** The built `CALL_ACTIONS` read "Comply / Escalate /
    Refuse / Ring back"; "Ring back" is slightly off for a visitor at a desk (the equivalent is "check
    the list / call the host"). ENG-07's configurable labels could relabel per set; it is cosmetic and

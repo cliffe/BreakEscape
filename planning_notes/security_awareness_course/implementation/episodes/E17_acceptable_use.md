@@ -1,4 +1,4 @@
-# E17 — Acceptable use and your responsibilities
+# E17: Acceptable use and your responsibilities
 
 Buildable by a fresh Sonnet implementer from this spec plus "Read first". All companies, people and
 domains are fictional; `.example` domains only. UK spelling; "cyber security" two words; no em or en
@@ -6,8 +6,8 @@ dashes.
 
 E17 is **defend-only by the user's decision**: acceptable use has no single attacker, so it ships only
 the defend-only shape, with no attack half, no consequence flip and no flip stage. It does **not** use
-ENG-04. Section 13 explains how "ships both versions" is honoured when the full version equals the
-defend-only version.
+ENG-04. Per round 1 ruling 2, E17 ships **one** defend-only shell, listed in **both** seeded courses
+(not two identical shells); section 13.
 
 ## 1. Goal and module(s)
 
@@ -43,13 +43,14 @@ Source of truth: `modules/core_16_acceptable_use_and_your_responsibilities/conce
   set), the `Verify` verdict, the organisation answer key (the "can I?" answers, built on the
   organisation profile), the measurement store, the debrief view, the shared rule of thumb. Not ENG-04:
   E17 has no `mistake` stage and no flip.
-- **Needs a new ENG packet (small):** the **three-way "sort" surface** for the "can I?" cards (Allowed /
-  Not allowed / Ask first against the organisation answer key, with the reason on screen and **locked**
-  cards that cannot be changed). `game_design.md` lists it as "new (small)". Fold into E17's engine work
-  or raise it. Note core_12/E14's "Post or Not?" feed drill is a sibling three-way sort; if ENG builds
-  one reusable three-way sort surface it serves both.
-- **ENG-09:** the new "acceptable use" topic check forms (section 14). Do not edit the six built role
-  forms.
+- **ENG-11** (reusable sort drill): the "can I?" three-way sort uses ENG-11's `sortDrill` surface, with
+  `bins` Allowed / Not allowed / Ask first, `scored: true` against the organisation answer key
+  (`answerKeyProfile: "organisation"`), locked cards and `alwaysScoresBin: "ask"` ("Ask first" always
+  earns a point). ENG-11 is the one reusable sort surface; E14's "Post or Not?" feed drill is the sibling
+  it also serves. Section 11a.
+- **Check forms (no engine packet):** E17's topic (acceptable use, core_16) is a judgement topic, so it
+  feeds the shared **`data_conduct`** pair built per `10_CHECK_FORMS.md` (ruling 1), not a per-topic
+  form. Do not edit the six built role forms. Section 14.
 
 ## 4. Owner models
 
@@ -123,17 +124,20 @@ episode in the set that ships the defend-only shape alone.
 
 Two activities in the `defend` stage.
 
-### 11a. The "can I?" three-way sort (the signature activity; new surface)
+### 11a. The "can I?" three-way sort (the signature activity; ENG-11 `sortDrill`)
 
-Everyday situations sorted **Allowed / Not allowed / Ask first** against the organisation answer key,
-with the reason on screen. The card bank is `core_16/game_design.md`'s S01 to S22 (reproduced below in
-full for the implementer). The organisation confirms or edits each card; **cards it has not confirmed are
-never drawn**; **locked cards (S04, S16, S17, S18, S19, S21, S22) cannot be changed**, and no
-organisation can make any of them "Allowed" or make reporting optional. Each play draws at least one of
-each answer; when the policy changes, cards linked to the changed sections are drawn first with a "new"
-badge. Scored by the organisation answer key (not the `awareness` profile); "Ask first" always scores at
-least a point, because punishing caution stops people asking. Cards are everyday situations, never
-"what does section 4.3 say"; the section is a pointer, not asked for.
+Uses ENG-11's reusable `sortDrill` surface, with `bins` Allowed / Not allowed / Ask first, `scored:
+true`, `answerKeyProfile: "organisation"` and `alwaysScoresBin: "ask"`. Everyday situations are sorted
+against the organisation answer key, with the reason on screen. The card bank is
+`core_16/game_design.md`'s S01 to S22 (reproduced below in full as ENG-11 `sortDrill.cards`). The
+organisation confirms or edits each card (`confirmed`); **cards it has not confirmed are never drawn**;
+**locked cards (S04, S16, S17, S18, S19, S21, S22) have `locked: true`** and cannot be reparented, so no
+organisation can make any of them "Allowed" or make reporting optional. `drawRules`
+(`oneOfEachAnswer: true`, `newFirst: true`) draw at least one of each answer, and when the policy changes
+draw the changed-section cards first with a "new" badge. Scored by the organisation answer key (not the
+`awareness` profile); `alwaysScoresBin: "ask"` gives "Ask first" at least a point, because punishing
+caution stops people asking. Cards are everyday situations, never "what does section 4.3 say"; the
+section is a pointer, not asked for.
 
 Full card bank (from `core_16/game_design.md`; Tarrowby defaults, each `id | situation | default answer
 | reason on screen | locked`):
@@ -166,7 +170,8 @@ Full card bank (from `core_16/game_design.md`; Tarrowby defaults, each `id | sit
 Six items on the built inbox-triage defender, `scoringProfile: "awareness"`, `verifyVerdict: true` (ask
 the service desk is a real move), `feedbackMode: "immediate"`, `headerPanel: "off"`, `glossary:
 "closed"`. Set id `e17_acceptable_use_inbox`. `outcome.setGlobalPrefix:
-"episode_e17_acceptable_use_defend_"`, `passPercent: 0`. `channelTells`: `["lookalike_domain",
+"episode_e17_acceptable_use_defend_defend_"` (the single defend-only shell's prefix, section 13),
+`passPercent: 0`. `channelTells`: `["lookalike_domain",
 "secrecy_or_bypass"]` plus the scenario-local tell `unapproved_tool`. This is the measured set, so E17
 matches the other episodes' measurement (the brief's "about 6 defend items with a mirror pair"); it sits
 alongside the "can I?" sort, which is the module's signature but is scored by the answer key, not the
@@ -210,52 +215,43 @@ here): the summary first, the full policy one click away, and "I have a question
 Because E17 has no flip, the no-blame line lives only in the debrief (there is no flip from which to move
 it), and there is no `defendOnly` flip string.
 
-## 13. Defend-only variant, and how "ships both versions" is honoured
+## 13. Defend-only variant (one shell, listed in both courses)
 
-The user's standing decision is that **every new episode ships a full version and a defend-only version,
-and joins both seeded Hacktivity courses**. For E17 there is no attack half by design, so **the full
-version equals the defend-only version**: both have `stages: ["brief","defend","debrief"]` and the same
-`defend` activities. E17 is therefore shipped as **two shells with identical content**, differing only
-in id, global prefix and the `variant` field:
+Per round 1 ruling 2, E17 ships **one** defend-only shell and that one shell is listed in **both** seeded
+Hacktivity courses. Acceptable use has no attack half, so there is nothing a "full" shell would add over
+the defend-only shape; two byte-identical shells would only add a second global prefix and a maintenance
+trap for no learner benefit. `00`, `01` and this spec all say the same: one shell.
 
-- **Full shell:** id `e17_acceptable_use`, `variant: "full"`, set prefix
-  `episode_e17_acceptable_use_defend_`. Listed in the **both-versions** seeded course as the full
-  version.
-- **Defend-only shell:** id `e17_acceptable_use_defend`, `variant: "defendOnly"`, set prefix
-  `episode_e17_acceptable_use_defend_defend_` (the built double-suffix rule for an id ending `_defend`).
-  Listed in the **defend-only** seeded course.
+- **The one shell:** folder `scenarios/awareness_e17_acceptable_use_defend/`, episode id
+  `e17_acceptable_use_defend`, `variant: "defendOnly"`, `stages: ["brief","defend","debrief"]`, set
+  prefix `episode_e17_acceptable_use_defend_defend_` (the built double-suffix rule for an id ending
+  `_defend`, matching the built E6 defend-only shell), defend set id `e17_acceptable_use_inbox`.
+- **Seeding (01 P12, ruling 8):** this one shell joins both courses, the defend-only course and the
+  both-versions course, through 01 P12. The user's "joins both seeded Hacktivity courses" decision is met
+  by listing the single defend-only shell in both; there is no separate full shell.
 
-Both use the same `defend.setId` (`e17_acceptable_use_inbox`) and the same "can I?" bank, so measurement
-is identical and the two courses show the same content under the two labels. The `_defendOnly.brief` and
-`_defendOnly.scopeNote` equal `strings.brief` and `scopeNote` (there is nothing to strip, because there
-is no attack beat). State this equality in the fragment's `_about` note so a reviewer does not read the
-duplication as an error.
+`_defendOnly.brief` and `_defendOnly.scopeNote` equal `strings.brief` and `scopeNote` (there is nothing
+to strip, because there is no attack beat); state this in the fragment's `_about` note so a reviewer does
+not read it as an error.
 
-If the platform would rather list one shell in both courses than ship two identical shells, that is a
-host/seeding decision (A7 is out of scope); this spec ships two shells so the "both versions" decision is
-met literally and each course has its own id and prefix (no shared global). Flagged in section 20.
+## 14. Check-form items it feeds (`data_conduct`; see `10_CHECK_FORMS.md`)
 
-## 14. Check-form items it feeds (new "acceptable use" topic forms; see `10_CHECK_FORMS.md`)
+Per round 1 ruling 1, there is no per-topic `aup_form_a/b` pair. E17's topic (acceptable use, core_16) is
+a judgement topic, so it feeds the shared **`data_conduct`** pair (Carrholme, Verify on), defined and
+built in `10_CHECK_FORMS.md`. The earlier per-topic table is dropped. The six built role forms are the
+measured baseline and are not edited. (The trade-off the orchestrator reports to the user is that two
+broad pairs give no per-topic pre/post figure.)
 
-New topic, so **new** forms `aup_form_a` and `aup_form_b` (ENG-09), 10 items each (4 phish, 6 genuine),
-`awareness` profile, `feedbackMode: "end"`, `headerPanel: "collapsed"`, `pairedWith`, prefix
-`triage_{stage}_`, `passPercent: 0`, `verifyVerdict: true`. Do not edit the six built role forms. Item n
-in A matches item n in B. The acceptable-use check items (install an app, a data lookup, a shared login,
-a monitoring fact-or-myth) join as mirror pairs (per `core_16/assessment.md`). The E17 contribution, in
-full:
+Do not add new flag ids to the check forms: `data_conduct` scores only `00`-library tells, and E17's
+scenario-local tell (`unapproved_tool`) stays in E17's own defend set, never in a form (a tell scored in
+a form must be in the shared library, ruling 1). The fact-or-myth and Ask-first item kinds are taught by
+E17's own "can I?" sort (section 11a), not by check-form rows.
 
-| # | Form A (`aup_form_a`) | Form B (`aup_form_b`) | Phish | Flags (both) | Difficulty |
-|---|-----------------------|-----------------------|-------|--------------|------------|
-| 1 | `aa_install_app`: a meeting invite wanting an app install | `ab_free_tool`: a link to a free online converter | yes | `unapproved_tool` | medium |
-| 2 | `aa_monitoring`: the firm's genuine monitoring notice | `ab_personal_use`: the genuine reasonable-personal-use reminder | no | | medium (suspicious-looking genuine) |
-| 3 | `aa_data_lookup`: a colleague asks for a personal-reason lookup | `ab_famous_lookup`: "look up a famous customer, just to see" | yes | `secrecy_or_bypass` | easy |
-| 4 | `aa_shared_login`: "log in as me while I'm off, I've said yes" | `ab_badge_lend`: "lend me your badge, I left mine at home" | yes | `secrecy_or_bypass` | easy |
-| 5 | `aa_monitoring_myth`: "IT reads all my emails whenever they like" (a myth to spot as false) | `ab_private_chat_myth`: "my work chat is private" (a myth) | n/a (a fact-or-myth item; see `assessment.md` for the item kind) | | medium |
-| 6 | `aa_ask_first`: a new tool you're unsure about (Ask first) | `ab_ask_first`: a laptop abroad question (Ask first) | no (Ask first / genuine) | | easy |
-
-Each form carries a mirror pair (row 1 phish against row 2 suspicious-looking genuine). Rows 5 and 6 use
-the fact-or-myth and Ask-first item kinds from `assessment.md`; confirm the kinds exist before authoring,
-else drop to standard triage rows. The `triage.rb` balance lint must pass on the pair.
+E17's contribution is the core_16 rows of `10`'s `data_conduct` pair (see `10`'s item list): the
+new-acceptable-use / annual-training genuine reminder (`dca_aup_reminder` / `dcb_training_reminder`) and
+the "send it from your personal email, don't flag it" unsafe push (`dca_personal_email_push` /
+`dcb_skip_dlp`). These are authored as part of `10`, aligned to E17's framing; they are not a separate
+E17 form.
 
 ## 15. Files to create or change
 
@@ -263,28 +259,28 @@ Writer: this spec only.
 Implementer: `awareness/e17/defend.json` (the `triageSets` entry `e17_acceptable_use_inbox`, the "can I?"
 card bank wired to the organisation answer key with the locked set, the `awarenessEpisode`
 defend/debrief/strings/_defendOnly keys, by analogy with `e6/defend.json`; no attack fragment, since E17
-has no attack); shells `scenarios/awareness_e17_acceptable_use/` (full) and `.../_defend/` (defend-only),
-both one-room `room_aw_tarrowby` kiosks, host Nilesh, kiosk `{ episodeId }`, both with identical defend
-content (section 13); the three-way sort surface; new check shells
-`awareness_{pre,post}_aup_{ab,ba}`; the `unapproved_tool` scenario-local tell. No BRAND_SET entry
-(Tarrowby is built). Never run a generator into the repo.
+has no attack); **one** shell `scenarios/awareness_e17_acceptable_use_defend/` (defend-only, listed in
+both courses; ruling 2 and section 13), a one-room `room_aw_tarrowby` kiosk, host Nilesh, kiosk
+`{ episodeId }`; the "can I?" sort as ENG-11's `sortDrill` config (section 11a); the `unapproved_tool`
+scenario-local tell. No BRAND_SET entry (Tarrowby is built). The `data_conduct` check shells are built by
+`10`'s check generator, not here (section 14). Never run a generator into the repo.
 
 ## 16. Bridge script outline
 
-`tools/playtest/se/bridge-e17-defend.jsonl` (there is no "full" bridge distinct from this, since the two
-shells are identical): open kiosk; brief; the "can I?" sort (assert at least one of each answer is drawn,
-that a locked card cannot be set to Allowed, and that each shows a reason); the six triage items (one
-verdict each, assert immediate feedback and the mirror pair); debrief (assert the three-answers panel,
-the habit-to-keep box and the Monday card); conclusion global `episode_e17_acceptable_use_defend_done`
-set. Run it against both shells (the full shell's prefix is `episode_e17_acceptable_use_defend_`, the
-defend-only shell's is `episode_e17_acceptable_use_defend_defend_`).
+`tools/playtest/se/bridge-e17-defend.jsonl` (one shell, so one bridge): open kiosk; brief; the "can I?"
+sort (assert at least one of each answer is drawn, that a locked card cannot be set to Allowed, and that
+each shows a reason); the six triage items (one verdict each, assert immediate feedback and the mirror
+pair); debrief (assert the three-answers panel, the habit-to-keep box and the Monday card); conclusion
+global `episode_e17_acceptable_use_defend_defend_done` set (the single defend-only shell's prefix,
+section 13).
 
 ## 17. Acceptance checks
 
-As E11 section 17, for both E17 shells and the `aup_form_a`/`aup_form_b` pair. Additionally: the full and
-defend-only shells are identical in `stages` and `defend.setId` (section 13); a locked "can I?" card
-cannot be set to Allowed; `social.awareness.ruleOfThumb` byte-identical to the other shells. There are no
-flip or `mistake` keys to lint.
+As E11 section 17, for the one E17 defend-only shell (the `data_conduct` pair's parity is `10`'s
+acceptance, not E17's). Additionally: the shell validates as `variant: "defendOnly"` with `stages:
+["brief","defend","debrief"]`; a locked "can I?" card cannot be set to Allowed and `alwaysScoresBin`
+earns a point on "Ask first"; `social.awareness.ruleOfThumb` byte-identical to the other shells. There
+are no flip or `mistake` keys to lint.
 
 ## 18. Do not
 
@@ -305,17 +301,14 @@ flip or `mistake` keys to lint.
 
 ## 19. Stop and ask if
 
-- The fact-or-myth and Ask-first check-item kinds (rows 5, 6) do not exist in `05`/`assessment.md`.
-- The platform wants one shell listed in both courses rather than two identical shells (section 13).
-- The "can I?" sort is wanted scored by the awareness profile rather than the organisation answer key
-  (this changes section 11b).
+- The "can I?" sort (ENG-11 `sortDrill`) is wanted scored by the awareness profile rather than the
+  organisation answer key (this changes section 11b).
 
 ## 20. Open questions
 
-- **Two identical shells vs one listed twice:** this spec ships a `full` and a `defendOnly` shell with
-  identical content so the "both versions" decision is met literally and each course has its own id and
-  prefix. If the platform can list one shell in both courses, that would avoid the duplication; it is a
-  seeding decision (A7 out of scope).
+- **Shell count (resolved, ruling 2):** E17 ships **one** defend-only shell, listed in both seeded
+  courses (section 13); it does not ship a second identical full shell. `00`, `01` and this spec all say
+  one shell.
 - **Host and company reuse with E15:** E17 and E15 are both Tarrowby with host Nilesh Solanki. This is
   deliberate (it saves art, the stated reason for choosing an existing company), but if E15 and E17 ship
   in the same course the same host and company appear twice. If that is unwanted, give E17 a different
