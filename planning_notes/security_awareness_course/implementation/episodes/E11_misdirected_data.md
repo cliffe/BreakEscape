@@ -5,8 +5,9 @@ without inventing facts. Every key, stage id, shape and company name below is ta
 awareness files or named here as an explicit new need. All companies, people, domains and figures are
 fictional; every domain ends `.example`. UK spelling; "cyber security" two words; no em or en dashes.
 
-This spec also **defines the ENG-04 config shape once** (section 10a). E15 and E16 reference it; do
-not redefine it there.
+The consequence-flip engine shape (the `mistake` stage, the montage flip, the `mistakeChoices` state,
+the schema, the lints and the `attack_checks` relaxation) is owned by `02_ENGINE_WORK.md` ENG-04.
+Section 10a carries E11's filled-in instance of that shape; E15 and E16 carry their own.
 
 ## 1. Goal and module(s)
 
@@ -50,15 +51,15 @@ richer than the built awareness shape, the built shape wins and this spec distil
 
 ## 3. Depends on
 
-- **ENG-04** (consequence-flip "mistake" stage, an attack half with no target to judge). E11 asks ENG-04
-  for the config shape **defined in section 10a of this spec**. E15 and E16 ask ENG-04 for the same
-  shape.
-- **ENG-08** (schema and validator changes): the schema and lint additions listed in section 10a and
-  section 15 belong in ENG-08 unless ENG-04 carries them.
+- **ENG-04** (consequence-flip `mistake` stage + montage flip, `02_ENGINE_WORK.md`): the attack half
+  with no target to judge. The config shape, the stage changes, the `mistakeChoices` state handling, the
+  schema, the lints and the `attack_checks` relaxation are all owned there. Section 10a carries E11's
+  filled-in instance.
+- **ENG-08** (schema and validator changes, `02_ENGINE_WORK.md`): the schema and lint additions for the
+  `mistake` shape belong with ENG-04/ENG-08; see section 15.
 - **Check forms (no engine packet):** E11 feeds the `data_conduct` topic pair, built per
-  `10_CHECK_FORMS.md` (round 1 ruling 1). The forms need no form-building engine packet; they come from
-  the check generator in `10`. The six built role forms are the measured baseline and are not edited.
-  See section 14.
+  `10_CHECK_FORMS.md`. The forms need no form-building engine packet; they come from the check generator
+  in `10`. The six built role forms are the measured baseline and are not edited. See section 14.
 - Built engine (no new packet): the inbox-triage defender under the `awareness` profile, the `Verify`
   verdict, the `voicemail`/`call` message kinds, the measurement store (`awareness-measure.js`), the
   debrief view, the shared rule of thumb (`social.awareness.ruleOfThumb`) and the step strip.
@@ -80,7 +81,7 @@ richer than the built awareness shape, the built shape wins and this spec distil
   work; a mixed, largely non-technical workforce. It is a controller for its own staff data and a
   processor for some client data, which is why the DPO decides who must be told (core_05). Carrholme is
   the default organisation already named throughout core_05 and core_06 `concepts.md`.
-- **Room: reuse an existing training-room layout; no new geometry (ruling 6).** Carrholme does not get a
+- **Room: reuse an existing training-room layout; no new geometry.** Carrholme does not get a
   hand-drawn map. It gets its own room type **`room_aw_carrholme`** by reskinning the built single-room
   kiosk layout the other awareness episodes use (`room_aw_merrin_sallow`, `room_aw_tarrowby`,
   `room_aw_quayholt` are the built pattern): Carrholme's tileset, props, logo wordmark, accent and
@@ -93,13 +94,11 @@ richer than the built awareness shape, the built shape wins and this spec distil
   Named in both core_05 and core_06 `concepts.md` as Carrholme's DPO. He welcomes the learner, carries
   the per-item feedback and the debrief, and his NPC record holds the `eventMappings` that complete the
   shell (section 5.1 of `11`). Precise, kind, dry.
-  - **Name-clash check (done 2026-10-27):** "Wiśniewski" appears only in the course modules and
+  - **Name-clash check:** "Wiśniewski" appears only in the course modules and
     `docs/IDEAS_BACKLOG.md`; no built scenario, ink or engine file uses it, and no Licence to Hack or
     SIS character shares the surname. "Carrholme" appears only in the course modules. Both are clean to
-    use. **Host first-name clash (resolved, ruling 7):** E14 (Merrin & Sallow) formerly hosted with
-    **Tomás Carvalho**, whose first name read as confusable with "Tomasz". Ruling 7 renames E14's host,
-    not E11's: E14 now hosts with the built M&S co-founding partner **Julian Sallow**, so **E11 keeps
-    Tomasz Wiśniewski** and there is no longer a first-name clash.
+    use. E11's host is **Tomasz Wiśniewski**; E14's host is the built M&S co-founding partner Julian
+    Sallow, so there is no host first-name clash.
   - **Unicode note:** the "ś" in Wiśniewski is non-ASCII. Display is fine (the built E4 already renders
     "Tomás Carvalho" with a non-ASCII "á"); keep the name only in display strings (`from.name`,
     `social.people[].forms`, body text), never in an id or a global name, so no Unicode-id engine work
@@ -236,34 +235,28 @@ Montage lines (`strings.flipMontageByChoice`, keyed beat then option; full text)
   care note and a driver's mobile reached a stranger. Taking the extra details out first left only what
   Mr Hale was owed."
 
-Flip strings: `flipHeading` = "Six months later". `flipHeading` stays **in the fragment** (`defend.json`
-`strings`), exactly like the built flip headings: the defend-only generator pops `flipHeading` (with the
-other flip strings) when it builds the defend-only shell, and the full erb carries the same value, so the
-fragment-and-erb parity test passes with no allow-list entry. Only `flipMontageByChoice` is **erb-only**
-(not in the fragment, not carried by the defend-only shell), exactly as the built
-`flipDefenderLineByChoice` is, and only `flipMontageByChoice` is added to the parity allow-list (section
-10a). This resolves the Sonnet-review `flipHeading` parity finding: 02's ENG-04 adds only
-`flipMontageByChoice` to `STRINGS_ERB_ONLY_OK`, so `flipHeading` must live in the fragment.
+Flip strings: `flipHeading` = "Six months later" stays in the fragment (`defend.json` `strings`); only
+`flipMontageByChoice` is erb-only and on the parity allow-list. The shape owner is 02 ENG-04 (which adds
+only `flipMontageByChoice` to `STRINGS_ERB_ONLY_OK`); E11 follows it.
 
-### 10a. ENG-04 config shape (defined once; E15 and E16 reference this)
+### 10a. E11's filled-in `mistake` instance
 
-ENG-04 adds one attack-side stage, `mistake`, to `STAGE_IDS` in
-`public/break_escape/js/minigames/episode-runner/episode-model.js` (today
-`['brief','osint','build','write','mfa','flip','defend','debrief','check']`), placed before `flip`, and
-adds a montage render mode to the built flip view. A consequence-flip episode's full `stages` are
-`["brief","mistake","flip","defend","debrief"]`; its defend-only `stages` are
-`["brief","defend","debrief"]` (ENG-04 drops `mistake` and `flip` for `defendOnly`, exactly as the
-runner already drops the attack stages). The `mistake` stage is never scored (section 4.1 of `11`) and
-carries **no `04` phish target** (that is what "an attack half with no target to judge" means).
+The consequence-flip engine shape and behaviour, the `mistake` stage and its placement in `STAGE_IDS`,
+the montage flip mode, the `mistakeChoices` state handling, the schema, the lints and the `attack_checks`
+relaxation, are owned by **`02_ENGINE_WORK.md` ENG-04**; do not redefine them here. E11's full `stages`
+are `["brief","mistake","flip","defend","debrief"]` and its defend-only `stages` are
+`["brief","defend","debrief"]`. The `mistake` stage is never scored (section 4.1 of `11`) and carries no
+`04` phish target. Below is E11's filled-in instance of the ENG-04 shape; E15 and E16 carry their own.
 
-Config lives in a new `awarenessEpisode.mistake` block (sibling of the built `awarenessEpisode.mfa`):
+E11's `awarenessEpisode.mistake` block (one beat shown; the other three beats, section 9, follow the
+same shape, in order):
 
 ```jsonc
 "mistake": {
   "scored": false,
   "beats": [
     {
-      "id": "overtime_sheet",                 // stable beat id; the montage and the measurement record key on it
+      "id": "overtime_sheet",
       "situation": "Shauna asks you to send the overtime sheet to Sam in Payroll. Typing \"Sam\" offers Sam Whitlow (Hollinsbrook House) first and Sam Whitaker (Payroll) second.",
       "options": [
         { "id": "send_wrong_sam",  "label": "Send it to the first Sam", "safe": false },
@@ -272,29 +265,11 @@ Config lives in a new `awarenessEpisode.mistake` block (sibling of the built `aw
     }
     // ... one object per everyday choice, in order
   ],
-  "flipBeat": "overtime_sheet"                 // the ONE consequential choice quoted back in the flip (aw2)
+  "flipBeat": "overtime_sheet"
 }
 ```
 
-Fields:
-- `beats[]`: the everyday choices, shown one at a time inside the work, in order. Each has `id`,
-  `situation` (on-screen prompt) and `options[]`.
-- `option`: `id`, `label` (on screen), `safe` (true = the approved route). Exactly one option per beat
-  is `safe: true`. An optional `approvedRoute: true` marks the single modelled best move.
-- `flipBeat`: the id of the beat whose chosen branch is the montage headline. This is aw2's "one
-  consequential choice, quoted back"; the montage still shows every beat, `flipBeat` only sets which
-  one leads.
-- The learner's chosen option per beat is written to the declared global `episode_<id>_state` under a
-  `mistakeChoices` field (parallel to the `sent` field the built `write` stage keeps, so the flip reads
-  it back), then discarded after the flip. ENG-04 adds `mistakeChoices` to the `readState` filter and
-  clears it in `completeStage` on `flip` exactly as `sent` is cleared (`episode-model.js` `completeStage`
-  `:160`); name both functions in the packet so the field is not silently dropped. No free text; nothing
-  scored. The measurement store (`awareness-measure.js`) may record the beat id and chosen option id for
-  in-episode analytics, never shown to the learner.
-
-The flip renders in montage mode. ENG-04 adds `flip.mode: "montage"` on the episode block and reads the
-montage strings keyed beat then option. This is the consequence analogue of the built
-`strings.flipDefenderLineByChoice[templateId]` (aw2):
+E11's `flip.mode` and montage strings (full text in section 10):
 
 ```jsonc
 "flip": { "mode": "montage" },
@@ -309,43 +284,16 @@ montage strings keyed beat then option. This is the consequence analogue of the 
 }
 ```
 
-Montage rules (ENG-04):
-- The montage shows every beat. For each beat ENG-04 picks the line from
-  `flipMontageByChoice[beatId][optionId]` using the learner's own option when it has a line, else the
-  beat's unsafe option (the "taken instead" view), so a careful learner still sees the cost. Because E11
-  authors a line for **both** options of every beat (section 10), this fallback never fires for E11; it
-  is in the shape for E15/E16 if they leave an option without a line.
-- The "Your choice" / "the version where it was taken instead" framing is **authored into the string
-  text**, not applied by the engine: the engine only selects which line to show per beat and renders
-  `flipHeading` and one `.aw-montage-beat` per beat. The writer sets the framing in each
-  `flipMontageByChoice` value.
-- `flipBeat`'s branch is rendered first / as the headline.
-- The defend-only variant never runs `mistake` or `flip`. `flipHeading` stays in the fragment
-  (`defend.json` `strings`); the defend-only generator pops it alongside the other flip strings, and the
-  full erb carries the same value, so parity passes with no allow-list entry. Only `flipMontageByChoice`
-  is erb-only (not in the fragment; the defend-only shell does not carry it), exactly as
-  `flipDefenderLineByChoice` is today. Add **only** `flipMontageByChoice` to `STRINGS_ERB_ONLY_OK` in
-  `test/js/social-awareness-fragment-erb-parity.test.mjs` with a reason; do not add `flipHeading`.
+E11-specific authoring notes:
+- `flipBeat` is `overtime_sheet` (aw2's one consequential choice, quoted back as the montage headline;
+  the montage still shows every beat).
+- E11 authors a line for **both** options of every beat (section 10), so ENG-04's unsafe-option fallback
+  (for an untaken beat) never fires for E11.
+- The "Your choice" / "the version where it was taken instead" framing is authored into the string text,
+  not applied by the engine.
 
-Schema and validator (ENG-04, or folded into ENG-08): add `awarenessEpisode.mistake` and
-`strings.flipMontageByChoice` and `flip.mode` to `scripts/scenario-schema.json`; in
-`scripts/validate_social/awareness.rb` add lints: every `mistake.beats[]` has exactly one `safe: true`
-option; `flipBeat` names a real beat; every `flipMontageByChoice` outer key is a real beat id and every
-inner key a real option id of that beat; non-empty strings; `mistake` and `flip` absent on a
-`defendOnly` episode; `mistake` present when `stages` includes `mistake`.
-
-**The `attack_checks` relaxation (round 1 ruling 5; landed in 02 ENG-04 point 5, not outstanding):**
-`awareness.rb` runs `attack_checks` on every `full?` episode (line 53), which errors unless a full
-episode has an `attack` block (target, siteIds, accountIds). A consequence-flip episode has no attack
-block. 02 ENG-04 point 5 has already relaxed this: `attack_checks` runs **only when the stage list holds
-an attack-artefact stage (`osint`, `build`, `write`, `mfa` or `guess`)**, with the paired lint that a
-`mistake` episode has **no** `attack` block. A `mistake` episode has none of those stages, so
-`attack_checks` is skipped and a correctly authored full E11/E15/E16 passes `--strict-social`. This is
-settled engine work in 02; it is not edited here, and no further request to the 02 fixer is owed.
-
-The three consequence-flip episodes ask ENG-04 for this **identical** shape and differ only in their
-`beats`, `flipBeat` and `flipMontageByChoice` content. **E14 does not use ENG-04**: it keeps the built
-attack stages `osint` and `write` and the built defender-inbox flip.
+**E14 does not use ENG-04**: it keeps the built attack stages `osint` and `write` and the built
+defender-inbox flip.
 
 ## 11. Defend set
 
@@ -422,25 +370,24 @@ copy over `strings.brief` and `scopeNote`; every other string is shared. The def
 the check forms are unchanged, so measurement is identical. Per the user's decision, E11 ships **both**
 the full and the defend-only shell, and both join the two seeded Hacktivity courses (the full shell in
 the both-versions course, the defend-only shell in the defend-only course). The seeding is done through
-**01 P12** (ruling 8), which holds the one feature-level seeding procedure; do not seed through
+**01 P12**, which holds the one feature-level seeding procedure; do not seed through
 `awareness_deploy.py`, which carries only the rule of thumb.
 
 ## 14. Check-form items it feeds (`data_conduct`; see `10_CHECK_FORMS.md`)
 
-Per round 1 ruling 1, the new topics do **not** get a per-topic form each. They feed the **two shared
-topic pairs** defined and built in `10_CHECK_FORMS.md`: `general_v2` (Quayholt, Verify off) and
-`data_conduct` (Carrholme, Verify on). E11's topic (data protection and handling, core_05/core_06) is a
-**judgement** topic, so it feeds **`data_conduct`**. There is no `data_form_a/b` pair; the earlier
-per-topic table is dropped. (The trade-off the orchestrator reports to the user is that two broad pairs
-give no per-topic pre/post figure.)
+The new topics do **not** get a per-topic form each. They feed the **two shared topic pairs** defined
+and built in `10_CHECK_FORMS.md`: `general_v2` (Quayholt, Verify off) and `data_conduct` (Carrholme,
+Verify on). E11's topic (data protection and handling, core_05/core_06) is a **judgement** topic, so it
+feeds **`data_conduct`**. There is no `data_form_a/b` pair. (The trade-off the orchestrator reports to
+the user is that two broad pairs give no per-topic pre/post figure.)
 
 `data_conduct` is authored in `10`, set at Carrholme Services, so E11's brand-set addition (Carrholme
 and its cast, section 5) must land before the `data_conduct` pair ships; `10` names Carrholme as the
 form's company and lists Carrholme as its dependency. The six built role forms are the measured baseline
 and are not edited. Do **not** add a new per-topic form or new flag ids: `data_conduct` scores only
 `00`-library tells (`senderTrust`, `pretextRelevant`, `secrecy_or_bypass`, `vish_callback_pressure`,
-`reply_to_differs`), and any tell scored in a form must be in the shared library (ruling 1), which the
-E11 defend-set scenario-local tells are not.
+`reply_to_differs`), and any tell scored in a form must be in the shared library, which the E11
+defend-set scenario-local tells are not.
 
 E11's contribution is the set of `data_conduct` rows that draw on core_05/core_06 (see `10`'s
 `data_conduct` item list): the outside-"auditor" data pull (`dca_customer_list` / `dcb_hr_records`), the
@@ -469,12 +416,12 @@ Implementer (named here so the writer's keys line up; not the writer's job to bu
   (section 14). No per-topic `data_*` shells.
 - `BRAND_SET.md`: the Carrholme row and cast (section 5).
 - `scripts/scenario-schema.json` and `scripts/validate_social/awareness.rb`: the ENG-04 schema and
-  lints (section 10a), if not already added by ENG-04.
+  lints, owned by `02_ENGINE_WORK.md` ENG-04 (listed here only so the keys line up).
 - `test/js/social-awareness-fragment-erb-parity.test.mjs`: add `flipMontageByChoice` to
   `STRINGS_ERB_ONLY_OK`.
 - Room type `room_aw_carrholme`: follow **01 P5b** (the tileset, props, logo, `COMPANY_OPS` entry,
   `game.js` preloads, the schema room-type enum entry and the lighting entry). No new map geometry and
-  no `apply_training_room.py` change (ruling 6); P5b and this spec say the same.
+  no `apply_training_room.py` change; P5b and this spec say the same.
 
 ### 15a. Objective design, globals and the conclusion (no phish target)
 
@@ -590,9 +537,6 @@ mission concluded. A second bridge for the defend-only shell: brief, defend, deb
 
 ## 20. Open questions
 
-- **Host first-name clash (resolved, ruling 7):** E11 keeps **Tomasz Wiśniewski**; E14's host is renamed
-  from Tomás Carvalho to the built M&S partner **Julian Sallow**, so there is no first-name clash. No
-  action for E11.
 - **DPO-routing vs the awareness scorer:** the built scorer does not penalise `Trust` on a genuine
   request that should go to the DPO, so that nuance lives in the per-item card, not the score (section
   11). If the product wants it scored, that is a request to `05` and changes the defend set.

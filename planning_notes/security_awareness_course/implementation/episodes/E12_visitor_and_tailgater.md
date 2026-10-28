@@ -57,12 +57,12 @@ built here; its content is reduced to one in-person pretext and a six-item recep
 
 | Packet | What E12 needs from it |
 |---|---|
-| **ENG-05a** (world-play attack modifier) | The whole attack half: the `world` modifier on the call `write` stage places the player in the lobby in the costume before the pretext and reverts on the flip, handing back through the built `watchCall` (02 ENG-05a has settled this; no `#trigger_minigame`). With ENG-05b (costume, aw9), ENG-05c (lobby, door, NPC door opening), ENG-05d (parcel sprite art). Precise needs in section 9.1. |
+| **ENG-05a** (world-play attack modifier) | The whole attack half: the `world` modifier on the call `write` stage places the player in the lobby in the costume before the pretext and reverts on the flip, handing back through the built `watchCall` (no `#trigger_minigame`). With ENG-05b (costume, aw9), ENG-05c (lobby, door, NPC door opening), ENG-05d (parcel sprite art). Precise needs in section 9.1. |
 | **ENG-08** (schema and validator) | Accept the `awarenessEpisode.world` block (`room`, `startRoom`, `costume`); accept a lobby room type and a locked connection between `lobby` and `training_room`; keep the N16 host-NPC lint happy for a two-room shell. The four scenario-local tells (section 11) need **no** library change: the validator already accepts a `channelTells` id that `flagChips` labels and that is not a factor, so they are declared on the set, not added to ENG-08's shared library. |
-| **Check forms (no engine packet)** | E12 does not get its own check form. Its one message-triage-friendly pretext item sits in the shared `general_v2` pair (`10_CHECK_FORMS.md`, ruling 1); section 14. |
+| **Check forms (no engine packet)** | E12 does not get its own check form. Its one message-triage-friendly pretext item sits in the shared `general_v2` pair (`10_CHECK_FORMS.md`); section 14. |
 | (existing) | The pretext call path (`write` stage with `attack.callId`, pretext-prep → person-chat), the influence service, the triage `call` kind, the host-NPC done-event mechanism (N16), and `watchCall` (`episode-runner-minigame.js:760`) for the flip hand-back. No change needed; cited so the implementer reuses, not rebuilds. |
 
-Build order (one sentence, to settle the cross-document disagreement, R3_sonnet m2): **E12 needs
+Build order: **E12 needs
 ENG-05a, ENG-05b, ENG-05c and ENG-08 before it is wired; it does not need ENG-05d (parcel art, baked into
 the costume sprite and not a wiring prerequisite), ENG-05e (the optional `#trigger_minigame`, since the
 hand-back reuses `watchCall`) or ENG-09c.** If ENG-05a slips, E12 cannot ship: the attack half has no
@@ -75,17 +75,16 @@ wired and bridged with the stock costume sprite and gets the baked-in parcel lat
 - Engine packets ENG-05a (with 05b to 05d) and ENG-08: general-purpose or Sonnet. The check-form item
   E12 feeds is built as part of `10_CHECK_FORMS.md` (no E12-specific engine packet).
 - Shell wiring (this spec), ink, strings: Sonnet following this brief.
-- **Content gate (round 3 ruling 5 / R3_sonnet M7).** Section 8b (all shell and generator metadata),
-  section 11's six `call` items as final JSON, and the section 10 flip strings are the content the
-  `opus48` writer completes before any P2 shell wiring starts; a Sonnet implementer invents nothing from
-  them.
+- **Content gate.** Section 8b (all shell and generator metadata), section 11's six `call` items as
+  final JSON, and the section 10 flip strings are the content the `opus48` writer completes before any
+  P2 shell wiring starts; a Sonnet implementer invents nothing from them.
 
 ## 5. Company, room and host
 
 - **Company:** Merrin & Sallow Architects, a London architecture practice (`BRAND_SET.md` roster).
   `brand` block: `{ "name": "Merrin & Sallow Architects", "logoText": "MERRIN & SALLOW", "accent": "#8a5a2b" }`.
   Domain `merrinsallow.example`; look-alikes `merrin-sallow.example`, `merrinsallow-studio.example`.
-- **Two front-of-house NPCs (resolved from the code; see section 20 open question 1).** An NPC is
+- **Two front-of-house NPCs.** An NPC is
   declared inside exactly one room (`scenario-schema.json`: `rooms[].npcs`), and a `person` pretext NPC
   is resolved as a placed world NPC via `cfg.channels.person` (`episode-runner-minigame.js:640`). The
   lobby pretext target must therefore be a world NPC in the **lobby**, while the kiosk host that carries
@@ -135,9 +134,8 @@ wired and bridged with the stock costume sprite and gets the baked-in parcel lat
 - **Rooms:** two. **The kiosk room is named `training_room`** (not `studio`), because every awareness
   tool and bridge assumes `rooms.training_room` (for example `apply_training_room.py` reads
   `rooms['training_room']['type']` unguarded, so `--refresh` crashes on a shell with no `training_room`
-  key, R3_sonnet M5), and the generated defend-only shell uses `training_room` too, so full and
-  defend-only must agree. The design-studio fiction is carried by the room's `door_sign` ("Studio"), not
-  by the room id.
+  key), and the generated defend-only shell uses `training_room` too, so full and defend-only must agree.
+  The design-studio fiction is carried by the room's `door_sign` ("Studio"), not by the room id.
   - `training_room` (the design-studio room: the defend seat and the kiosk, and Lorna the kiosk host):
     map type `room_aw_merrin_sallow`, built by `build_aw_rooms.py` and wired by `training_room.py`
     (`merrin_sallow` entry, `chatBackground: assets/backgrounds/rooms/aw_merrin_sallow_blended.png`).
@@ -198,8 +196,8 @@ Defend-only variant: `"stages": ["brief","defend","debrief"]` (the runner drops 
 
 ## 8b. Shell and generator metadata (every value final; no guessing)
 
-Every metadata value the shell wiring and the generator need, as final strings (round 3 ruling 5 /
-R3_sonnet M7), copying the two-aim call-attack shape from the built **E3** (`awareness_e3_helpdesk_reset`)
+Every metadata value the shell wiring and the generator need, as final strings, copying the two-aim
+call-attack shape from the built **E3** (`awareness_e3_helpdesk_reset`)
 and the generator shape from `gen_e3_e5_shells.py` (E12's defend-only shell is added to
 `gen_e8_e17_shells.py` with the same field shape). E12 is a **call-attack** episode like E3 (not a
 consequence flip), so it carries **two** aims.
@@ -279,7 +277,7 @@ front-desk pretext, then work the reception desk at the training kiosk."; `versi
     'role_label': 'all staff',
     'defend_set': 'e12_reception_desk',
     'defend_host': 'lorna',
-    # No 'forms'/'check_hosts': E12 feeds one item into general_v2, built by 10's own generator (ruling 1, §14).
+    # No 'forms'/'check_hosts': E12 feeds one item into general_v2, built by 10's own generator (§14).
     'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
                'keywords': ['Physical security', 'Social engineering', 'Security awareness', 'Tailgating']}],
     'defend': {
@@ -344,8 +342,8 @@ ENG-05 is the "world-play attack stage" packet. E12 needs, as configuration on t
 
    ```jsonc
    "world": {
-     "room": "lobby",                 // where the runner places the player for the attack
-     "startRoom": "lobby",            // the player's placement when the world-play begins (item 3)
+     "room": "lobby",                 // the room the in-world attack is PLAYED in
+     "startRoom": "training_room",    // the room the learner STARTS and RETURNS to; equals the scenario startRoom (item 3)
      "costume": {
        "sprite": "aw_hivis_courier_v2",
        "talk": "assets/characters/aw_hivis_courier_talk.png"
@@ -358,8 +356,10 @@ ENG-05 is the "world-play attack stage" packet. E12 needs, as configuration on t
    }
    ```
 
-   The scenario's own top-level `startRoom` is `training_room` (the kiosk room), **not** the lobby
-   (item 3); `world.room`/`world.startRoom` only place the player in the lobby for the attack.
+   The two room fields match ENG-05a exactly: `world.startRoom` = `training_room` = the scenario's
+   top-level `startRoom` (the kiosk room, where the learner starts and returns); `world.room` = `lobby`
+   (the room the attack is played in, a temporary placement, never the scenario's `startRoom`). "Studio"
+   appears only as a narrative description, never as a room id (item 3).
 2. **A parcel the player carries.** There is **no stock "carry" animation**: the six house templates are
    `breathing-idle, walk, cross-punch, lead-jab, taking-punch, falling-back-death`
    (`.claude/skills/pixellab-character-animations/SKILL.md`), and the pipeline forbids `action_description`
@@ -368,17 +368,17 @@ ENG-05 is the "world-play attack stage" packet. E12 needs, as configuration on t
    `breathing-idle` frames (made with the standard `pixellab_pipeline.py` route, parcel as part of the
    character, not as a separate animation state). This is an art note for ENG-05/PixelLab, not new
    engine code. (Hand edits go in `tools/pixellab_overrides/`, never on the atlas, CLAUDE.md.)
-3. **A lobby room, a badge door, and the start-room flow (B2, decided from the code).** `rooms.lobby`
+3. **A lobby room, a badge door, and the start-room flow.** `rooms.lobby`
    (type `room_aw_merrin_lobby`, section 5) connected to `rooms.training_room` (the kiosk room) by a
    badge door that starts **locked**. The scenario's top-level `startRoom` is **`training_room`**, so the
    learner always spawns at the kiosk and can start the brief; they never need to walk through the locked
    door (defend is played at the kiosk, section 20.3). The `world` modifier (item 1) places the player in
-   `lobby` for the world-play attack only; **on any `write` outcome (`got_it`, `reported` or
-   `walked_away`) ENG-05a moves the player back to `training_room`** before `watchCall` reopens the runner
-   for the flip (item 5). So a failed con and a P13 reload both land the learner at the kiosk, never
-   stranded behind the locked door (this resolves R3_sonnet B2 and m15). The function that moves the
-   player between rooms is named and owned by **02 ENG-05a** (the room-move half of the world modifier);
-   E12 only authors `world.room`/`world.startRoom` and the top-level `startRoom`.
+   `lobby` for the world-play attack only, via `window.loadRoom`; **on any `write` outcome (`got_it`,
+   `reported` or `walked_away`) ENG-05a moves the player back to `training_room`** (again via
+   `window.loadRoom`) before `watchCall` reopens the runner for the flip (item 5). So a failed con and a
+   reload both land the learner at the kiosk, never stranded behind the locked door. The room-move half
+   of the world modifier (the `window.loadRoom` calls) is owned by **02 ENG-05a**; E12 only authors
+   `world.room` (`lobby`), `world.startRoom` (`training_room`) and the matching top-level `startRoom`.
 
    The locked badge door's keys follow the built m02 pattern (copy `m02_ransomed_trust` `it_department`,
    `scenario.json.erb:2001-2004`): on the lobby room's connection to `training_room`,
@@ -398,12 +398,11 @@ ENG-05 is the "world-play attack stage" packet. E12 needs, as configuration on t
    record (`delphine_reception`) must declare `"unlockable": ["training_room"]`**. On a successful
    pretext her ink speaks the buzzed-in line tagged `# unlock_door:training_room` and the door opens. The
    opening itself is built; ENG-05c only needs the lobby room to honour the locked connection.
-5. **The flip hand-back (settled: `watchCall`, no `#trigger_minigame`).** 02 ENG-05a has decided the
-   hand-back reuses `watchCall` (`episode-runner-minigame.js:760`), which already waits for
-   `pretext_<callId>_outcome` to change and every overlay to close, then reopens the runner for the flip.
-   So **E12 needs no real `#trigger_minigame`**. The optional `#trigger_minigame` engine fix (ENG-05e) is
-   not a dependency of E12; do not wire it. (If, against 02's decision, the hand-back cannot reuse
-   `watchCall`, stop and ask, section 19.)
+5. **The flip hand-back: `watchCall`, no `#trigger_minigame`.** The hand-back reuses `watchCall`
+   (`episode-runner-minigame.js:760`, 02 ENG-05a), which already waits for `pretext_<callId>_outcome` to
+   change and every overlay to close, then reopens the runner for the flip. So **E12 needs no real
+   `#trigger_minigame`**: the optional `#trigger_minigame` engine fix (ENG-05e) is not a dependency of
+   E12; do not wire it. (If the hand-back cannot reuse `watchCall`, stop and ask, section 19.)
 
 ### 9.2 OSINT facts (ids, source, what they unlock)
 
@@ -441,7 +440,7 @@ Pretext lines (ids, techniques, gating fact, draft text). `blanks`/`claims` as E
 | `double_parked` | `urgency`, also `deflect` | (always) | (none) | "I'm double-parked with a full run on, any chance you can be quick?" |
 | `no_need_to_sign` | `deflect`, also `urgency` | (always) | (none) | "No need to sign me in, I'll be thirty seconds and straight back out." |
 
-**The ask is grantable through the fact Delphine `knows` (R3_sonnet B1, round 3 ruling 4).** Following
+**The ask is grantable through the fact Delphine `knows`.** Following
 the built E3 pattern (`asks.reset_password.verification: ["manager","staffId"]`, facts the agent `knows`
 and the caller claims through blanks, `scenario.json.erb:776-789`), Delphine `knows` the parcel's
 recipient, and the one ask gates on the courier naming that recipient correctly:
@@ -499,8 +498,8 @@ The pretext choice the flip shows is whether the learner **asked Delphine to ski
 buzz the door** (`hands_full` + `no_need_to_sign` + `buzz_door`) versus a line that kept the normal
 process. E12 does **not** use `flipDefenderLineByChoice` to name it: that key maps pretext **template**
 ids and is read from the saved send record, but a call attack's record is `{ kind: 'call', callId,
-outcome }` with no `templateId` (`episode-model.js`), so a by-choice line would never show (R3_sonnet
-m3). The choice is instead surfaced through the single `flipDefenderLine` plus the pretext
+outcome }` with no `templateId` (`episode-model.js`), so a by-choice line would never show. The choice
+is instead surfaced through the single `flipDefenderLine` plus the pretext
 `defenderNotes.buzz_door` (section 9.3), which name the skipped list-and-escort check in the landed case.
 
 ## 10. Flip
@@ -508,7 +507,7 @@ m3). The choice is instead surfaced through the single `flipDefenderLine` plus t
 `strings.flipHeading`: "Now you're the one on the desk". `flipIntro`: "This is how your approach looked
 from Delphine's side of the counter. The lines picked out below are what got the door open." A single
 `flipDefenderLine` for the landed case (the courier got buzzed through) and `flipNoSend` / `flipMissed`
-for the walked-away/reported cases; **no `flipDefenderLineByChoice`** (R3_sonnet m3, see section 9.5).
+for the walked-away/reported cases; **no `flipDefenderLineByChoice`** (see section 9.5).
 `flipDefenderLine` carries the consequential-choice point in prose ("You asked her to skip the sign-in
 and buzz you through, and the name did the rest"), backed by `defenderNotes.buzz_door`. No-blame
 throughout (aw culture, 11 §4.3): "A full-handed courier in a hi-vis with the right name is exactly what
@@ -530,8 +529,8 @@ engine-true, scored, measurement-clean choice; person-chat is unscored so it is 
 defend beat (same decision E3 took, 11 N15: "person-chat is not used for the defend beat"). Author each
 item directly as a `call` message in `triageSet.messages` (the way E3 authors `ha_call_facilities`
 inline), with `id`, `kind: "call"`, `callerId`, `from { name, address }`, `time`, `transcript[{who,
-text}]` and `truth`. **A `call` message has no `tells` field; the flags live in `truth.flags`**
-(R3_sonnet m6), so read the "tells" column of the table below as `truth.flags`. `truth` carries `isPhish`,
+text}]` and `truth`. **A `call` message has no `tells` field; the flags live in `truth.flags`**, so read
+the "tells" column of the table below as `truth.flags`. `truth` carries `isPhish`,
 `flags`, `perFlagNote`, `ifTrusted`, `reportReply` for phish, and `isPhish: false`, `flags: []`,
 `whyFine`, `falseAlarmCost` for genuine. The built `call` reasoning defaults (`triage-kinds.js:105-117`)
 back up the authored per-flag notes. The six items are given as final JSON below ("Items as final JSON").
@@ -539,11 +538,11 @@ back up the authored per-flag notes. The six items are given as final JSON below
 `channelTells` for the set (the closed chip list): `["tailgating","no_escort","uniform_pretext",
 "not_expected","borrowed_authority","secrecy_or_bypass"]`. `borrowed_authority` and `secrecy_or_bypass`
 are the shared-library tells (`00` §2) reused in-person, already labelled in `CHANNEL_TELLS`; the other
-four are **scenario-local tells** (11 §5.1; round 3 ruling 1). **No ENG-08 library change is needed for
+four are **scenario-local tells** (11 §5.1). **No ENG-08 library change is needed for
 these four:** the validator accepts a `channelTells` id when the set gives it a `flagChips` label and it
 is not a factor (`scripts/validate_social/triage.rb` `flag_universe`; proven in scratch, section 17). So
 declare the four with **short `flagChips` labels** on the set (a chip label is a short noun phrase, like
-the built `CHANNEL_TELLS` labels, not a full sentence, R3_sonnet m4); do not add them to the shared
+the built `CHANNEL_TELLS` labels, not a full sentence); do not add them to the shared
 `CHANNEL_TELLS` library. The full explanatory sentence for each flag is carried **per flagging message**
 as `truth.factorStrings.<id>.redFlag`, so the debrief shows a sentence, not a raw id. (ENG-08 is still
 needed for the `world` block and the lobby room, not for the tells.) `flagChips` labels and the
@@ -568,7 +567,7 @@ per-message `redFlag` sentences:
 Scoring note: both impostor and genuine items reward **Verify** (Ring back) as the safe default (11
 §4.1: reporting/verifying when unsure is never penalised), so "refuse everyone" loses points on the
 genuine items (#2, #4, #6), exactly as E3's single genuine caller prevents "refuse everything" from
-winning. **Comply on a genuine visitor scores only half (R3_sonnet m5):** `KIND_VERDICT_POINTS.call`
+winning. **Comply on a genuine visitor scores only half:** `KIND_VERDICT_POINTS.call`
 scores `real.trust` at 30 of 60, while Ring back (verify) and Escalate score the full 60
 (`triage-scoring.js`). So on the genuine items (#2, #4, #6) the natural "just let the expected client in"
 answer earns half marks, and Ring back is the full-mark habit. Word each genuine item's `whyFine` so
@@ -578,8 +577,8 @@ ring the host first.
 
 ### Items as final JSON
 
-The six `call` messages, as final `triageSet.messages` JSON (no guessing; R3_sonnet M7, m6). This exact
-set was validated in scratch (round 3 ruling 3, section 17). Flags are in `truth.flags`; the four
+The six `call` messages, as final `triageSet.messages` JSON. This exact set was validated in scratch
+(section 17). Flags are in `truth.flags`; the four
 scenario-local tells are labelled in the set `flagChips` (above) and sentence-explained per message via
 `truth.factorStrings.<id>.redFlag` (omitted from the block below for length; use the `redFlag` sentences
 listed above, one `factorStrings` entry per flag a message raises).
@@ -698,11 +697,11 @@ empathy line to the debrief since there is no flip): "These visitors were played
 to look like they belong, and a busy desk can be caught by any of them. Any you were caught out by are
 shown below, with what gave each one away." Both the full and the defend-only shell join the two seeded
 Hacktivity courses (the full shell in the both-versions course, the defend-only shell in the defend-only
-course) **through 01 P12** (ruling 8), per the user's decision in `WRITER_BRIEF.md`.
+course) **through 01 P12**, per the user's decision in `WRITER_BRIEF.md`.
 
 ## 14. Check-form items it feeds (`general_v2`; see `10_CHECK_FORMS.md`)
 
-Per round 1 ruling 1, E12 does **not** get its own physical-security check form. A message inbox is a
+E12 does **not** get its own physical-security check form. A message inbox is a
 poor instrument for tailgating and badges, so E12's main measurement stays inside the episode (the scored
 reception `call` set, section 11), and `10_CHECK_FORMS.md` deliberately leaves the rest of E12 unchecked
 by a form. E12 contributes just **one physical-pretext item** to the shared **`general_v2`** pair (the
@@ -740,8 +739,8 @@ Change:
 - `awareness/BRAND_SET.md`: add Delphine Arvanitis (lobby mark) and Lorna Easton (studio kiosk host),
   the lobby, the invented contractor and fire-safety firm, under an E12 additions block (follow the
   existing "_brandAdditions" convention).
-- Hacktivity course seeds: both shells join the defend-only and both-versions courses **through 01 P12**
-  (ruling 8), not by hand-editing Hacktivity or through `awareness_deploy.py`.
+- Hacktivity course seeds: both shells join the defend-only and both-versions courses **through 01 P12**,
+  not by hand-editing Hacktivity or through `awareness_deploy.py`.
 
 Do **not** edit the six built role check forms, the shared `ruleOfThumb` test string, the existing
 `room_aw_*` maps, or any other episode's fragments.
@@ -773,7 +772,7 @@ Validate with `check-bridge.mjs` / `run-suite.sh`.
   per shell, not the folder, README §8.3); same for the defend-only shell. The four scenario-local tells
   pass because each has a `flagChips` label on the set (no library change); the shell otherwise needs
   ENG-08 for the `awarenessEpisode.world` block, the lobby room type and the locked
-  lobby-to-`training_room` connection. **Defend set proven (round 3 ruling 3):** the six `call` items
+  lobby-to-`training_room` connection. **Defend set proven:** the six `call` items
   (section 11) with `channelTells` `["tailgating","no_escort","uniform_pretext","not_expected",
   "borrowed_authority","secrecy_or_bypass"]` and the four local tells labelled in `flagChips` were built
   into a throwaway copy of the `awareness_e6_texts_and_qr_defend` shell and run through
@@ -815,7 +814,7 @@ Validate with `check-bridge.mjs` / `run-suite.sh`.
 
 ## 20. Open questions
 
-1. **One NPC or two for the host (resolved from the code: two).** An NPC is declared inside one room
+1. **One NPC or two for the host: two (decided from the code).** An NPC is declared inside one room
    (`scenario-schema.json` `rooms[].npcs`), and the `person` pretext target is resolved as a placed world
    NPC via `cfg.channels.person` (`episode-runner-minigame.js:640`). The lobby pretext mark must be a
    world NPC in the lobby; the kiosk host carrying the N16 done-event `eventMappings` must be a world NPC
@@ -823,13 +822,12 @@ Validate with `check-bridge.mjs` / `run-suite.sh`.
    **Delphine Arvanitis** on the desk as the mark, and **Lorna Easton** as the studio kiosk host (section
    5). Both are front-of-house, so either satisfies the brief's "host: a front-of-house staff member",
    and the "con one front-desk colleague, then do the front-desk job yourself" empathy structure holds.
-   This matches ENG-05a's own "Stop and ask if", which anticipates the split.
 2. **Call-action labels for a reception context.** The built `CALL_ACTIONS` read "Comply / Escalate /
    Refuse / Ring back"; "Ring back" is slightly off for a visitor at a desk (the equivalent is "check
    the list / call the host"). The per-set action relabel is **ENG-03a's `triageSet.verdictLabels`**
    (02 ENG-03a), not ENG-07 (ENG-07 is only the person-chat/triage `call` video-call bar label); it is
    cosmetic and the verdict mapping is unchanged, so E12 ships without it, but note it as a polish item.
-3. **Does the learner physically walk through the opened door? (resolved, B2/m15.)** No. The door
+3. **Does the learner physically walk through the opened door? No.** The door
    opening is the attack's success and empathy beat (the con worked); defend is played at the kiosk in
    `training_room`, which is also the scenario `startRoom`, so the learner starts there and ENG-05a
    returns them there on any `write` outcome (section 9.1 item 3). The runner reopens as an overlay

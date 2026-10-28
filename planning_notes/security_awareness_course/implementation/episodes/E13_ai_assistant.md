@@ -55,8 +55,8 @@ onto Brightwell (game_design §"Setting and cast").
 |---|---|
 | **ENG-06** (authored AI-assistant chat) | The assistant surface used for the teaching beats and the attack flip: a chat window with authored replies only (no runtime LM), a strike-out paste panel, information-class tags, a "Check source" action, and a "summarise my emails" mode that surfaces the planted hidden instruction. Precise needs in section 9.1. |
 | **ENG-07** (configurable video-call label) | Replace the hard-coded `SECURE VIDEO LINK` (`person-chat-ui.js:264`) with the organisation's meeting-tool name ("Brightwell Meet") and an **External** participant tag, and expose that label to the triage `call` item that carries the Project Heron deepfake. Section 9.2. |
-| **ENG-08** (schema and validator) | **Add the stage order `brief write flip defend debrief`** (osint optional, the E13 attack is a mail write with no recon), so the lint accepts E13's stage list (`awareness.rb` `stage_orders` rejects it today, known issue 10); accept ENG-06's assistant config and ENG-07's label fields. E13's two scenario-local tells need **no** ENG-08 change: the validator already accepts a `channelTells` id that `flagChips` labels and that is not a factor (`triage.rb` `flag_universe`), so they are declared on E13's set, not added to any shared library (section 11). |
-| (check forms) | No engine packet. AI/deepfake items join the new **`general_v2`** check pair (built by `10_CHECK_FORMS.md`), not a new role form and not the built six, as mirror pairs (section 14). The stale `ENG-09` reference is dropped (Round 1 R1_content M5). |
+| **ENG-08** (schema and validator) | **Add the stage order `brief write flip defend debrief`** (osint optional, the E13 attack is a mail write with no recon), so the lint accepts E13's stage list (`awareness.rb` `stage_orders` rejects it today); accept ENG-06's assistant config and ENG-07's label fields. E13's two scenario-local tells need **no** ENG-08 change: the validator already accepts a `channelTells` id that `flagChips` labels and that is not a factor (`triage.rb` `flag_universe`), so they are declared on E13's set, not added to any shared library (section 11). |
+| (check forms) | No engine packet. AI/deepfake items join the new **`general_v2`** check pair (built by `10_CHECK_FORMS.md`), not a new role form and not the built six, as mirror pairs (section 14). |
 | (existing) | The mail-client template write stage, the triage `voicemail` and `call` kinds, the host-NPC done event (N16), the TTS pipeline for voiced lines. No change needed. |
 
 If ENG-06 slips, E13 cannot ship as designed (the assistant teaching and the injection flip have no
@@ -115,8 +115,8 @@ instruction is a template choice, not a found fact).
 Full: `"stages": ["brief","write","flip","defend","debrief"]` (all in `STAGE_IDS`). There is no
 `osint` stage (the attack needs no recon; the hidden instruction is a template choice, not a found
 fact). The current `awareness.rb` `stage_orders` lint requires `osint` and `write`, so it rejects
-this list today; **ENG-08 must add the osint-optional order `brief write flip defend debrief`** (§3,
-known issue 10). `write` is a **mail** attack (no `attack.callId`), so `writeKind` returns `'mail'`
+this list today; **ENG-08 must add the osint-optional order `brief write flip defend debrief`** (§3).
+`write` is a **mail** attack (no `attack.callId`), so `writeKind` returns `'mail'`
 and the runner opens the mail-client template composer exactly as E7 does. The ENG-06 assistant beats and the ENG-07 announced
 demo are run in the **flip** region (section 9), because they are the "now it is aimed at you" empathy
 beats and the defence-side teaching; this keeps E13 inside the fixed `STAGE_IDS` with no new stage id.
@@ -241,8 +241,8 @@ conversation; the scored Project Heron item is the triage `call`.)
 tells (`00` §2), already labelled in `CHANNEL_TELLS`. `hidden_instruction` and `deepfake_request` are
 **scenario-local tells** (11 §5.1), declared on E13's set with a `flagChips` label each; this needs **no**
 ENG-08 library or validator change, because `triage.rb` `flag_universe` already accepts a `channelTells`
-id that `flagChips` labels and that is not a factor (the same pattern E9, E10 and E12 use, round 3 ruling
-1). Nothing is appended to the shared `CHANNEL_TELLS` / `SKILL_NAMES`. Short `flagChips` labels (noun
+id that `flagChips` labels and that is not a factor (the same pattern E9, E10 and E12 use). Nothing is
+appended to the shared `CHANNEL_TELLS` / `SKILL_NAMES`. Short `flagChips` labels (noun
 phrases), with the full sentence carried per flagging message as `truth.factorStrings.<id>.redFlag` so
 the red-flag detail is not a raw id:
 
@@ -310,7 +310,7 @@ Hacktivity courses (`WRITER_BRIEF.md`).
 ## 14. Check-form items it feeds (`10_CHECK_FORMS.md`)
 
 E13's topic (core_15 AI and deepfakes) feeds the new **`general_v2`** check pair, built by
-`10_CHECK_FORMS.md` (Round 1 ruling 1 adopts `10`'s two-pair scheme and drops the per-topic forms).
+`10_CHECK_FORMS.md` (`10`'s two-pair scheme; the per-topic forms are dropped).
 Not a new role form, and not the built six (the frozen baseline, not edited). `general_v2` item 6 already
 carries the AI/deepfake topic as an `email` scoring `senderTrust` / `linkCredible` (a CEO-video /
 AI-assistant lure). The scenario-local tells `hidden_instruction` and `deepfake_request` are **not**
@@ -347,7 +347,7 @@ Change:
 - `awareness/BRAND_SET.md`: add Mossgate Cleaning Supplies, `brightwell-board.example`, Project Heron,
   and the `contacts.export@inboxly.example` drop, under an E13 additions block.
 - Hacktivity course seeds: add both shells to the defend-only and both-versions courses, following
-  `01_PIPELINE.md` P12 (Round 1 ruling 8); do not use `awareness_deploy.py` for course seeding (it
+  `01_PIPELINE.md` P12; do not use `awareness_deploy.py` for course seeding (it
   holds only the shared rule of thumb).
 
 Do **not** edit the six built role check forms, the shared `ruleOfThumb` test string, the existing
