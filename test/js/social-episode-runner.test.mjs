@@ -180,17 +180,17 @@ test('a full episode runs every stage in order and holds then clears sent', () =
     assert.equal(epState().stage, 'brief');
     // the brief goes in as text
     assert.ok(cur().container.textContent.includes('<b>Brief</b> line'));
-    assert.equal(cur().container.querySelector('.er-panel b'), null);
+    assert.equal(cur().container.querySelector('.epr-panel b'), null);
 
-    click('.er-start');
+    click('.epr-start');
     assert.equal(epState().stage, 'osint');
-    click('.er-launch');
+    click('.epr-launch');
     assert.equal(scene(), 'osint-browser');
     closeChild(); // a normal close returns to the runner
     assert.equal(scene(), 'episode-runner');
     assert.equal(epState().stage, 'write');
 
-    click('.er-launch');
+    click('.epr-launch');
     assert.equal(scene(), 'mail-client');
     assert.deepEqual(cur().params.accountIds, ['analyst']);
     assert.equal(cur().params.defaultAccount, 'analyst');
@@ -209,7 +209,7 @@ test('a full episode runs every stage in order and holds then clears sent', () =
     assert.equal(epState().sentHeld, false);
     assert.equal(stored(ep.id).sent, null);
 
-    click('.er-launch');
+    click('.epr-launch');
     assert.equal(scene(), 'inbox-triage');
     assert.deepEqual(calls.triage[0].triageSetId, 'fixture_inbox');
     assert.equal(calls.triage[0].conclusionTaskId, 'finish_episode');
@@ -276,8 +276,8 @@ test('a reopen at every stage resumes there', () => {
     open(ep);
     assert.equal(epState().stage, null);
     // one Close only: the bar's (P7-J playtest); the finished panel adds none of its own
-    assert.ok(cur().container.querySelector('.er-finished'));
-    assert.equal(cur().container.querySelector('.er-finish'), null);
+    assert.ok(cur().container.querySelector('.epr-finished'));
+    assert.equal(cur().container.querySelector('.epr-finish'), null);
     assert.equal([...cur().container.querySelectorAll('button')].filter((b) => /close/i.test(b.textContent)).length, 1);
 });
 
@@ -299,9 +299,9 @@ test('a defendOnly episode never launches OSINT or mail', () => {
     try {
         open(ep);
         assert.deepEqual(M.stagesFor(ep), ['brief', 'defend', 'debrief']);
-        click('.er-start');
+        click('.epr-start');
         assert.equal(epState().stage, 'defend');
-        click('.er-launch');
+        click('.epr-launch');
         cur().gameResult = { setId: 'fixture_inbox', percent: 100, reportRate: 1, answers: [] };
         cur().complete(true);
         assert.equal(epState().stage, 'debrief');
@@ -322,7 +322,7 @@ test('a check mission launches triage with defend.stage and ends with the triage
     setup(ep);
     open(ep);
     assert.equal(epState().stage, 'check');
-    click('.er-launch');
+    click('.epr-launch');
     assert.equal(scene(), 'inbox-triage');
     assert.equal(calls.triage[0].stage, 'pre');
     assert.equal(calls.triage[0].triageSetId, 'form_a');
@@ -338,7 +338,7 @@ test('a triage abort leaves the stage unchanged and records nothing', () => {
     const ep = fullEpisode();
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
     open(ep);
-    click('.er-launch');
+    click('.epr-launch');
     assert.equal(scene(), 'inbox-triage');
     cur().abort();
     assert.equal(cur(), null);
@@ -354,14 +354,14 @@ test('a read-only reopen of the triage is never measured', () => {
     setup(ep);
     triageMode.readOnly = true;
     open(ep);
-    click('.er-launch');
+    click('.epr-launch');
     cur().gameResult = { setId: 'form_a', stage: 'post', reopened: true, percent: 60, reportRate: 0.5 };
     cur().complete(true);
     assert.equal(calls.measure.length, 0);
     // the reopened flag alone is enough too
     setup(fullEpisode(), { [M.stateKey('e1_fixture')]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
     open(fullEpisode());
-    click('.er-launch');
+    click('.epr-launch');
     cur().gameResult = { setId: 'fixture_inbox', reopened: true, percent: 60, reportRate: 0.5 };
     cur().complete(true);
     assert.equal(calls.measure.length, 0);
@@ -372,7 +372,7 @@ test('the measurement dep is called once per finished round', () => {
     const ep = fullEpisode();
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
     open(ep);
-    click('.er-launch');
+    click('.epr-launch');
     cur().gameResult = { setId: 'fixture_inbox', percent: 40, reportRate: 0, answers: [] };
     cur().complete(true);
     assert.equal(calls.measure.length, 1);
@@ -380,7 +380,7 @@ test('the measurement dep is called once per finished round', () => {
     window.gameState.globalVariables[M.stateKey(ep.id)] = { v: 1, done: ['brief', 'osint', 'write', 'flip'] };
     while (FW.currentMinigame) FW.forceCloseMinigame();
     open(ep);
-    click('.er-launch');
+    click('.epr-launch');
     cur().gameResult = { setId: 'fixture_inbox', percent: 90, reportRate: 1, answers: [] };
     cur().complete(true);
     assert.equal(calls.measure.length, 2);
@@ -391,7 +391,7 @@ test('closing the mail client with nothing sent stays on write', () => {
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint'] } });
     stub.mailAbort = true;
     open(ep);
-    click('.er-launch');
+    click('.epr-launch');
     assert.equal(scene(), 'mail-client');
     closeChild();
     assert.equal(cur(), null, 'an aborted child does not reopen the runner');
@@ -403,7 +403,7 @@ test('closing the mail client on a normal close with nothing sent reopens the ru
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint'] } });
     stub.mailSend = false; // the learner opened the client but sent nothing
     open(ep);
-    click('.er-launch');
+    click('.epr-launch');
     assert.equal(scene(), 'mail-client');
     closeChild(); // a normal close from an episode child returns to the runner
     assert.equal(scene(), 'episode-runner', 'the runner reopens instead of dropping out to the game');
@@ -417,8 +417,8 @@ test('the write stage offers Back to research, which reopens osint and leaves th
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint'] } });
     open(ep);
     assert.equal(epState().stage, 'write');
-    assert.ok(cur().container.querySelector('.er-back-research'), 'the write stage shows Back to research');
-    click('.er-back-research');
+    assert.ok(cur().container.querySelector('.epr-back-research'), 'the write stage shows Back to research');
+    click('.epr-back-research');
     assert.equal(scene(), 'osint-browser', 'it reopens the research browser');
     assert.equal(cur().params?.start, '@home', 'on the first site, not the last page seen (E1-E4 P4-10)');
     closeChild();
@@ -432,9 +432,9 @@ test('Back to research is only on the write stage, not on osint', () => {
     const ep = fullEpisode();
     setup(ep);
     open(ep);
-    click('.er-start');
+    click('.epr-start');
     assert.equal(epState().stage, 'osint');
-    assert.equal(cur().container.querySelector('.er-back-research'), null, 'no Back to research on the osint launch');
+    assert.equal(cur().container.querySelector('.epr-back-research'), null, 'no Back to research on the osint launch');
 });
 
 test('Esc and Close are a normal exit with no minigame_failed', () => {
@@ -466,7 +466,7 @@ test('the runner reads the state global fresh on a reopen, not the stale params'
     setup(ep);
     const params = open(ep);
     assert.equal(params.state.stage, 'brief');
-    click('.er-start');
+    click('.epr-start');
     while (FW.currentMinigame) FW.forceCloseMinigame();
     FW.startMinigame('episode-runner', null, params); // the old params still say brief
     assert.equal(epState().stage, 'osint');
@@ -478,13 +478,13 @@ test('with the real P7-B views the flip and debrief render and move on', () => {
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint'] } });
     startEpisodeRunner(kiosk(ep.id), { deps: realDeps });
     assert.ok(cur().container.querySelector('.aw-strip'), 'the real step strip');
-    click('.er-launch');
+    click('.epr-launch');
     closeChild();
     assert.equal(epState().stage, 'flip');
     assert.ok(cur().container.querySelector('.aw-flip'));
     click('.aw-continue');
     assert.equal(epState().stage, 'defend');
-    click('.er-launch');
+    click('.epr-launch');
     cur().gameResult = { setId: 'fixture_inbox', percent: 80, reportRate: 0.5, verifyCount: 0,
         answers: [{ id: 'm1', verdict: 'trust', flags: [], score: 100, ms: 900 }] };
     cur().complete(true);
@@ -501,7 +501,7 @@ test('with the real views and the real store, a round is recorded once and the d
     const realDeps = { startTriage: deps.startTriage, now: deps.now }; // real views, write and measure
     setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
     startEpisodeRunner(kiosk(ep.id), { deps: realDeps });
-    click('.er-launch');
+    click('.epr-launch');
     cur().gameResult = { setId: 'fixture_inbox', percent: 80, reportRate: 0.5, verifyCount: 0,
         answers: [{ id: 'm1', verdict: 'report', flags: [], score: 80, ms: 1200 }] };
     cur().complete(true);
@@ -521,7 +521,7 @@ test('with the real views and the real store, a round is recorded once and the d
     // a second round on the same key keeps the first answer
     window.gameState.globalVariables[M.stateKey(ep.id)] = { v: 1, done: ['brief', 'osint', 'write', 'flip'] };
     startEpisodeRunner(kiosk(ep.id), { deps: realDeps });
-    click('.er-launch');
+    click('.epr-launch');
     cur().gameResult = { setId: 'fixture_inbox', percent: 20, reportRate: 0, verifyCount: 0,
         answers: [{ id: 'm1', verdict: 'trust', flags: [], score: 0, ms: 500 }] };
     cur().complete(true);
@@ -549,32 +549,32 @@ const facilitatedEpisode = () => ({
         }
     }
 });
-const panelText = () => cur().container.querySelector('.er-body').textContent;
-const panelHeading = () => cur().container.querySelector('.er-heading')?.textContent || '';
-const resume = () => click('.er-resume');
+const panelText = () => cur().container.querySelector('.epr-body').textContent;
+const panelHeading = () => cur().container.querySelector('.epr-heading')?.textContent || '';
+const resume = () => click('.epr-resume');
 
 test('a facilitated episode shows each stage prompt and pauses between stages', () => {
     const ep = facilitatedEpisode();
     setup(ep);
     open(ep);
     assert.equal(epState().facilitated, true);
-    assert.ok(cur().container.querySelector('.er-root.er-facilitated'));
+    assert.ok(cur().container.querySelector('.epr-root.epr-facilitated'));
     // the prompt goes in as text
     assert.ok(panelText().includes('Who would <i>you</i> target first?'));
-    assert.equal(cur().container.querySelector('.er-facilitator i'), null);
+    assert.equal(cur().container.querySelector('.epr-facilitator i'), null);
 
-    click('.er-start');
+    click('.epr-start');
     assert.equal(epState().stage, 'osint');
     assert.equal(epState().paused, true);
-    assert.ok(cur().container.querySelector('.er-pause'));
-    assert.equal(cur().container.querySelector('.er-launch'), null, 'no launch while paused');
+    assert.ok(cur().container.querySelector('.epr-pause'));
+    assert.equal(cur().container.querySelector('.epr-launch'), null, 'no launch while paused');
     assert.ok(panelText().includes('Talk it over.'));
     assert.ok(panelText().includes('Who would <i>you</i> target first?'), 'the pause repeats the finished stage prompt');
     resume();
     assert.equal(epState().paused, false);
     assert.ok(panelText().includes('What did you find that helps?'));
 
-    click('.er-launch');
+    click('.epr-launch');
     assert.equal(scene(), 'osint-browser');
     closeChild();
     assert.equal(scene(), 'episode-runner');
@@ -583,7 +583,7 @@ test('a facilitated episode shows each stage prompt and pauses between stages', 
     resume();
     assert.ok(panelText().includes('What would make you suspicious of this?'));
 
-    click('.er-launch');
+    click('.epr-launch');
     assert.equal(cur().params.maxSends, 1);
     closeChild();
     assert.equal(epState().stage, 'flip');
@@ -598,7 +598,7 @@ test('a facilitated episode shows each stage prompt and pauses between stages', 
     assert.equal(epState().paused, true);
     resume();
 
-    click('.er-launch');
+    click('.epr-launch');
     assert.equal(scene(), 'inbox-triage');
     const result = { setId: 'fixture_inbox', percent: 80, headline: 'Good work', pass: true, reportRate: 0.5, verifyCount: 1,
         answers: [{ id: 'm1', verdict: 'report', flags: [], score: 80, ms: 900 }] };
@@ -629,7 +629,7 @@ test('a facilitated reopen from the kiosk goes straight to the stage', () => {
     open(ep);
     assert.equal(epState().stage, 'write');
     assert.equal(epState().paused, false);
-    assert.ok(cur().container.querySelector('.er-launch'));
+    assert.ok(cur().container.querySelector('.epr-launch'));
     // a stale pauseAfter for a stage not done is ignored
     while (FW.currentMinigame) FW.forceCloseMinigame();
     startEpisodeRunner(kiosk(ep.id), { deps, pauseAfter: 'write' });
@@ -647,8 +647,8 @@ test('a facilitated debrief with the real view hides the score; an unfacilitated
         setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
         startEpisodeRunner(kiosk(ep.id), { deps: realViews });
         if (facilitated) assert.ok(panelText().includes('Do this one on your own.'));
-        else assert.equal(cur().container.querySelector('.er-facilitator'), null, 'no prompts unless facilitated');
-        click('.er-launch');
+        else assert.equal(cur().container.querySelector('.epr-facilitator'), null, 'no prompts unless facilitated');
+        click('.epr-launch');
         cur().gameResult = result;
         cur().complete(true);
         if (facilitated) resume();
@@ -667,11 +667,11 @@ test('a facilitated defendOnly episode pauses between its three stages', () => {
     const ep = { ...facilitatedEpisode(), id: 'e1_fixture_defend', variant: 'defendOnly' };
     setup(ep);
     open(ep);
-    click('.er-start');
+    click('.epr-start');
     assert.equal(epState().stage, 'defend');
     assert.equal(epState().paused, true);
     resume();
-    click('.er-launch');
+    click('.epr-launch');
     cur().gameResult = { setId: 'fixture_inbox', percent: 100, reportRate: 1, answers: [] };
     cur().complete(true);
     assert.equal(epState().stage, 'debrief');
@@ -735,7 +735,7 @@ test('E3: write is a pretext call; Close on the card stays on write; a call that
     openE3(ep);
     assert.equal(epState().stage, 'write');
     assert.ok(panelHeading().includes('Make the call'));
-    click('.er-launch');
+    click('.epr-launch');
     assert.equal(scene(), 'pretext-prep');
     assert.equal(cur().params.callId, CALL_ID);
     assert.equal(cur().params.character, 'leila');
@@ -748,7 +748,7 @@ test('E3: write is a pretext call; Close on the card stays on write; a call that
     runTimers(); // the watcher sees the runner open again and stops
     assert.equal(timers.length, 0);
 
-    click('.er-launch');
+    click('.epr-launch');
     assert.equal(scene(), 'pretext-prep');
     FW.startMinigame('phone-chat', null, { npcId: 'leila_servicedesk' }); // Begin hands over to the chat
     assert.equal(scene(), 'phone-chat');
@@ -792,7 +792,7 @@ test('E3: mfa opens the authenticator with episode.mfa; Close moves to the flip'
     openE3(ep);
     assert.equal(epState().stage, 'mfa');
     assert.ok(panelHeading().includes('Sign-in prompts'));
-    click('.er-launch');
+    click('.epr-launch');
     assert.equal(scene(), 'authenticator');
     assert.deepEqual(cur().params.pushes, e3.mfa.pushes);
     assert.equal(cur().params.approvesAt, '06:50');
@@ -835,7 +835,7 @@ test('E3: the defend stage is the role swap: the merged set (calls first) with t
     openE3(ep);
     assert.equal(epState().stage, 'defend');
     assert.ok(panelHeading().includes('Take the calls'));
-    click('.er-launch');
+    click('.epr-launch');
     const opts = calls.triage[0];
     assert.equal(opts.triageSetId, 'e3_service_desk_queue');
     assert.equal(opts.skin, 'awareness');
@@ -864,7 +864,7 @@ test('E5: build opens the page builder with the page id and target, between osin
     open(ep);
     assert.equal(epState().stage, 'build');
     assert.ok(panelHeading().includes('Build'));
-    click('.er-launch');
+    click('.epr-launch');
     assert.equal(scene(), 'landing-page-builder');
     assert.equal(cur().params.landingPageId, 'sso_login');
     assert.equal(cur().params.targetId, 'sso_staff');
@@ -872,7 +872,7 @@ test('E5: build opens the page builder with the page id and target, between osin
     closeChild();
     assert.equal(scene(), 'episode-runner');
     assert.equal(epState().stage, 'write');
-    assert.equal(cur().container.querySelector('.er-heading').textContent, 'Write');
+    assert.equal(cur().container.querySelector('.epr-heading').textContent, 'Write');
 });
 
 test('E5: the flip gets the built page; a mail send with nothing to replay is missed, not noSend', () => {
@@ -953,9 +953,9 @@ test('defend intro: strings.defendIntro replaces the line; without it the defaul
     const authored = { ...fullEpisode(), strings: { ...fullEpisode().strings, defendIntro: 'Now read the <b>queue</b> as Tom would.' } };
     setup(authored, { [M.stateKey(authored.id)]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
     open(authored);
-    assert.equal(cur().container.querySelector('.er-text').textContent, 'Now read the <b>queue</b> as Tom would.');
-    assert.equal(cur().container.querySelector('.er-text b'), null, 'text, not HTML');
-    assert.equal(cur().container.querySelector('.er-launch').textContent, 'Open the inbox', 'the button still fits the set');
+    assert.equal(cur().container.querySelector('.epr-text').textContent, 'Now read the <b>queue</b> as Tom would.');
+    assert.equal(cur().container.querySelector('.epr-text b'), null, 'text, not HTML');
+    assert.equal(cur().container.querySelector('.epr-launch').textContent, 'Open the inbox', 'the button still fits the set');
 
     // E5-like defendOnly run on a page set: no inbox wording
     const pages = { ...fullEpisode(), id: 'e5_fixture_defend', variant: 'defendOnly' };
@@ -966,7 +966,7 @@ test('defend intro: strings.defendIntro replaces the line; without it the defaul
     assert.equal(epState().stage, 'defend');
     assert.ok(panelText().includes('Look at each page'));
     assert.equal(panelText().includes('inbox'), false);
-    assert.equal(cur().container.querySelector('.er-launch').textContent, 'Open the pages');
+    assert.equal(cur().container.querySelector('.epr-launch').textContent, 'Open the pages');
 });
 
 test('defend button follows the set kind (phone, voice) even when strings.defendIntro is set', () => {
@@ -996,8 +996,8 @@ test('defend button follows the set kind (phone, voice) even when strings.defend
             id: `x${i}`, kind, from: 'A', subject: 's', body: 'b', transcript: [{ who: 'A', text: 't' }] })) }];
         open(ep);
         assert.equal(epState().stage, 'defend');
-        assert.equal(cur().container.querySelector('.er-text').textContent, intro, 'the authored line is kept');
-        assert.equal(cur().container.querySelector('.er-launch').textContent, button, `${id}: the button fits the set`);
+        assert.equal(cur().container.querySelector('.epr-text').textContent, intro, 'the authored line is kept');
+        assert.equal(cur().container.querySelector('.epr-launch').textContent, button, `${id}: the button fits the set`);
     }
 });
 
@@ -1020,8 +1020,8 @@ test('aw1/aw4/aw6: the debrief gets the report route, rule of thumb and team siz
     setup(ep);
     window.gameScenario.social.awareness = { reportRoute: 'Use the Report button.', ruleOfThumb: 'Stop. Check. Report.', teamSize: 9 };
     open(ep);
-    click('.er-start');
-    click('.er-launch');
+    click('.epr-start');
+    click('.epr-launch');
     cur().gameResult = { setId: 'fixture_inbox', percent: 100, reportRate: 1, reportCount: 1, phishVerified: 1, answers: [] };
     cur().complete(true);
     let d = calls.debrief.at(-1);
@@ -1035,8 +1035,8 @@ test('aw1/aw4/aw6: the debrief gets the report route, rule of thumb and team siz
     window.breakEscapeConfig = { awareness: { reportRoute: { heading: 'Reporting here', text: 'Forward to security.' } } };
     try {
         open(ep);
-        click('.er-start');
-        click('.er-launch');
+        click('.epr-start');
+        click('.epr-launch');
         cur().gameResult = { setId: 'fixture_inbox', percent: 100, reportRate: 1, answers: [] };
         cur().complete(true);
         d = calls.debrief.at(-1);
@@ -1047,8 +1047,8 @@ test('aw1/aw4/aw6: the debrief gets the report route, rule of thumb and team siz
         setup(ep);
         delete window.breakEscapeConfig;
         open(ep);
-        click('.er-start');
-        click('.er-launch');
+        click('.epr-start');
+        click('.epr-launch');
         cur().gameResult = { setId: 'fixture_inbox', percent: 100, reportRate: 1, answers: [] };
         cur().complete(true);
         assert.equal(calls.debrief.at(-1).reportRoute.configured, false);
@@ -1056,4 +1056,51 @@ test('aw1/aw4/aw6: the debrief gets the report route, rule of thumb and team siz
     } finally {
         delete window.breakEscapeConfig;
     }
+});
+
+// ── reusability options: stage copy, step labels ───────────────────────────────
+test('strings.stages overrides a stage panel line by line and leaves the others alone', () => {
+    const ep = fullEpisode();
+    setup(ep);
+    open(ep);
+    click('.epr-start');
+    assert.equal(panelHeading(), 'Look around', 'default heading with no override');
+    assert.equal(cur().container.querySelector('.epr-launch').textContent, 'Open the browser');
+
+    const ep2 = { ...fullEpisode(), strings: { ...fullEpisode().strings,
+        stages: { osint: { heading: 'Recon', button: 'Open the map' } } } };
+    setup(ep2);
+    open(ep2);
+    click('.epr-start');
+    assert.equal(panelHeading(), 'Recon');
+    assert.equal(cur().container.querySelector('.epr-launch').textContent, 'Open the map');
+    assert.ok(panelText().includes('Open the browser and find out what you can'), 'text keeps its default');
+});
+
+test('strings.stepLabels reaches the step strip; no override leaves the labels undefined', () => {
+    const ep = fullEpisode();
+    setup(ep);
+    open(ep);
+    assert.equal(cur()._stripLabels(), undefined);
+    const ep2 = { ...fullEpisode(), strings: { ...fullEpisode().strings, stepLabels: { osint: 'Recon' } } };
+    setup(ep2);
+    open(ep2);
+    assert.deepEqual(cur()._stripLabels(), { osint: 'Recon' });
+});
+
+test('the defend and mfa stage copy is overridable through strings.stages', () => {
+    const ep = { ...fullEpisode(), strings: { stages: { defend: { heading: 'Your turn' } } } };
+    setup(ep);
+    open(ep);
+    assert.equal(cur()._stageCopy('defend').heading, 'Your turn');
+    assert.equal(cur()._stageCopy('defend').button, 'Open the inbox');
+    assert.ok(cur()._stageCopy('mfa').text.startsWith('You have the password'));
+});
+
+test('a null conclusionTaskId reaches the triage options as null (standalone beat)', () => {
+    const ep = { ...fullEpisode(), standalone: false };
+    delete ep.conclusionTaskId;
+    const o = M.childLaunch(ep, 'defend');
+    assert.equal(o.kind, 'triage');
+    assert.equal(o.options.conclusionTaskId, null);
 });

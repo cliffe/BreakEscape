@@ -38,6 +38,7 @@ module ValidateSocial
       issues.concat(checklist_timing(ctx))
       issues.concat(body_mode(ctx))
       issues.concat(mirror_to_behavior(ctx))
+      issues.concat(report_workstation(ctx))
       issues
     end
 
@@ -231,6 +232,26 @@ module ValidateSocial
         end
       end
       issues
+    end
+
+    # ---- report-workstation ----------------------------------------------------
+
+    # A report-workstation opens the engagement report; with no social.engagement.report it opens
+    # an empty one (no steps, so it never completes).
+    def self.report_workstation(ctx)
+      return [] if ctx.social.dig('engagement', 'report').is_a?(Hash)
+
+      rooms = ctx.json['rooms']
+      rooms = rooms.values if rooms.is_a?(Hash)
+      Array(rooms).flat_map do |room|
+        next [] unless room.is_a?(Hash)
+
+        Array(room['objects']).filter_map do |obj|
+          next unless obj.is_a?(Hash) && obj['type'] == 'report-workstation'
+
+          warn_("report-workstation '#{obj['name'] || obj['id']}' has no social.engagement.report; it would open an empty report")
+        end
+      end
     end
 
     def self.person_npc_ids(json)

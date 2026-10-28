@@ -35,7 +35,7 @@ import { writeGlobal } from '../../systems/global-writer.js';
 import { createConceptCard } from '../osint-browser/concept-card.js';
 import { renderLandingPage, logoMissing, logoSrc } from './landing-page-render.js';
 import {
-    scorePage, guardDomain, applyScore, setBuilt, buildRecord, linkInfoFor, CHOICE_KEYS, TELL_IDS
+    scorePage, guardDomain, applyScore, setBuilt, buildRecord, linkInfoFor, pageString, fieldLabel, FIELD_LABELS, CHOICE_KEYS, TELL_IDS
 } from './landing-page-model.js';
 import { buildSuspectPage } from './landing-page-inspect.js';
 
@@ -58,13 +58,6 @@ const DEFAULT_LOGOS = [
     { id: 'stretched', label: 'Stretched copy' },
     { id: 'none', label: 'No logo' }
 ];
-const FIELD_LABELS = {
-    email: 'Email',
-    password: 'Password',
-    one_time_code: 'One-time code',
-    card_number: 'Card number',
-    ni_number: 'National insurance number'
-};
 const RESULT_WORD = { pass: 'Pass', partial: 'Partly', fail: 'Fail' };
 
 // What each giveaway is, in words, so the count names every one: the address is always one,
@@ -102,11 +95,6 @@ const STEPS = [
     { id: 'inspect', label: 'Inspect' }
 ];
 
-const PADLOCK_NOTE =
-    'A padlock means the connection is private to whoever owns the address. Fake sites can show one too.';
-const PRETEXT_NOTE =
-    'The page has to match the story the email told. Pick the service, the reason and the wording this ' +
-    'person is already expecting, or it will not ring true.';
 
 // The closing five-habits card (07 §3 step 6). Used only when the scenario authors no
 // `five-habits` conceptCards text; the lab authors its own (P5-G). Chrome text, no address.
@@ -429,7 +417,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
 
     /** The chosen brand's logo image failed to load, so its score line is left out. */
     _logoUnavailable() {
-        return !!this.choices?.logo && this.choices.logo !== 'none' && logoMissing(logoSrc(this.choices.brand));
+        return !!this.choices?.logo && this.choices.logo !== 'none' && logoMissing(logoSrc(this.choices.brand, undefined, (this.pageDef.brands || []).find((b) => b && b.id === this.choices.brand)));
     }
 
     /** In step 6 the preview regions are focusable hot-spots (07 §6); wire each to a pick. */
@@ -516,7 +504,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
                 card.appendChild(caseBtn);
             }
         }
-        card.appendChild(this._builtInNote('why-match', 'Why the page must match the story', PRETEXT_NOTE));
+        card.appendChild(this._builtInNote('why-match', 'Why the page must match the story', pageString(this.pageDef, 'pretextNote')));
         return card;
     }
 
@@ -575,7 +563,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         if (brand && brand.realDomain) {
             const locked = h('div', { class: 'lpb-domain-locked' },
                 h('span', { class: 'lpb-readable lpb-locked-domain lpb-addr', text: brand.realDomain }),
-                h('span', { class: 'lpb-locked-note', text: 'You don’t own this. Only the company does.' }));
+                h('span', { class: 'lpb-locked-note', text: pageString(this.pageDef, 'lockedDomainNote') }));
             body.appendChild(locked);
         }
         return this._row('domain', 'The address', body, this._cardsFor(['typo-squat', 'homograph', 'right-to-left', 'hover-link']));
@@ -606,7 +594,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
             const on = chosen.has(f);
             const chip = h('button', { type: 'button', class: `lpb-chip lpb-check${on ? ' is-selected' : ''}`,
                 role: 'checkbox', 'aria-checked': String(on), 'data-value': f, 'data-focus': `form:${f}` },
-                h('span', { class: 'lpb-chip-text', text: FIELD_LABELS[f] || f }));
+                h('span', { class: 'lpb-chip-text', text: fieldLabel(f, this.pageDef) }));
             this.addEventListener(chip, 'click', (e) => { e.preventDefault?.(); this._toggleField(f); });
             group.appendChild(chip);
         }
@@ -621,7 +609,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         ];
         const body = this._radioGroup('padlock', opts, this.choices.padlock ? 'on' : 'off',
             (v) => this._set('padlock', v === 'on'));
-        const note = h('p', { class: 'lpb-note', text: PADLOCK_NOTE });
+        const note = h('p', { class: 'lpb-note', text: pageString(this.pageDef, 'padlockNote') });
         return this._row('padlock', 'Padlock', body, [note, ...this._cardsFor(['padlock'])]);
     }
 
@@ -734,7 +722,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         if (this.scored && !this._stale()) {
             const canReach = this.scored.meetsThreshold === true;
             const attach = h('button', { type: 'button', class: 'lpb-attach-btn minigame-button', 'data-focus': 'attach',
-                text: canReach ? 'Attach to email' : 'Attach anyway' });
+                text: canReach ? pageString(this.pageDef, 'attachLabel') : pageString(this.pageDef, 'attachAnywayLabel') });
             this.addEventListener(attach, 'click', (e) => { e.preventDefault?.(); this.attach(); });
             bar.appendChild(attach);
         }
@@ -811,7 +799,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         const brand = this._brandById(this._activeBrandId());
         const real = brand && brand.realDomain;
         if (g.reason === 'bad-suffix') {
-            return 'This address is not allowed in the lab. Pick one from the list of look-alike addresses.';
+            return pageString(this.pageDef, 'blockBadSuffix');
         }
         return (real ? `${real} belongs to the company, so you cannot use it. ` : '') +
             'Pick a look-alike address from the list, one the victim might mistake for the real one, then press Score again.';
@@ -1145,7 +1133,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
                 stale: this._stale(),
                 attachAvailable: !!(this.scored && !this._stale()),
                 attachLabel: this.scored && !this._stale()
-                    ? (this.scored.meetsThreshold ? 'Attach to email' : 'Attach anyway') : null,
+                    ? (this.scored.meetsThreshold ? pageString(this.pageDef, 'attachLabel') : pageString(this.pageDef, 'attachAnywayLabel')) : null,
                 attached: this._attached,
                 canInspect: this._canInspect(),
                 inspecting: this._inspecting,

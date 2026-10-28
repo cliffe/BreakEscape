@@ -360,3 +360,16 @@ test('social.awareness (aw1, aw4, aw6): clean settings pass; blanks warn, a bad 
   ep(j).debrief = { mondayCard: 'slot:something_else' };
   expectIn(lint(j), /only 'slot:customer_report_route' is read/);
 });
+
+test('standalone: false skips the conclusion, host NPC and conclusionTaskId checks only', { skip }, () => {
+  const j = fx('clean_full.json');
+  aim(j).missionConclusion = false;
+  delete ep(j).conclusionTaskId;
+  expectIn(lint(j), /no aim has missionConclusion/);
+  expectIn(lint(j), /conclusionTaskId is missing/);
+  ep(j).standalone = false;
+  assert.deepEqual(lint(j), []);
+  // the done global still has to be declared
+  delete j.globalVariables.episode_e1_stub_defend_done;
+  expectIn(lint(j), /done global .* is not declared/);
+});

@@ -23,6 +23,17 @@
 
 export const STATE_KEY = 'se_report_state';
 
+/** The report's fixed copy; `engagement.report.strings` overrides any key. */
+export const DEFAULT_REPORT_STRINGS = {
+    resultsHeading: 'Campaign results',
+    failedSendNote: 'Failed sends are not wasted: in a live test each one is a chance for a member of staff to report you.',
+    pretextCall: 'Pretext call',
+    blamingStaff: 'Blaming staff:',
+    findingsHint: 'Pair each finding with its root cause and a control. Findings are about processes, not people.',
+    noLandingPage: 'No landing page in this engagement.'
+};
+const RESULT_PANELS = ['mail', 'pages', 'calls'];
+
 const isTrue = (v) => v === true;
 const int = (v) => (Number.isFinite(v) ? v : 0);
 
@@ -200,8 +211,13 @@ export function buildReportModel(social, globals, mailState) {
             return {
                 callId: c.id,
                 character,
-                done: isTrue(g.pretext_call_done),
-                reported: character ? isTrue(g[character + '_reported']) : false,
+                // `doneGlobal` / `reportedGlobal` name the globals to read. Unset, the call's own
+                // outcome global decides (got_it = granted, reported = reported), with the lab's
+                // shared `pretext_call_done` and `<character>_reported` still honoured.
+                done: typeof c.doneGlobal === 'string' && c.doneGlobal ? isTrue(g[c.doneGlobal])
+                    : (outcome === 'got_it' || isTrue(g.pretext_call_done)),
+                reported: typeof c.reportedGlobal === 'string' && c.reportedGlobal ? isTrue(g[c.reportedGlobal])
+                    : (outcome === 'reported' || (character ? isTrue(g[character + '_reported']) : false)),
                 outcome: typeof outcome === 'string' ? outcome : null,
                 lowest: typeof lowest === 'number' ? lowest : null,
                 failedAttempts: Number.isFinite(failedAttempts) ? failedAttempts : 0
@@ -272,9 +288,24 @@ export function buildReportModel(social, globals, mailState) {
     for (const s of steps) if (s.done && s.onCompleteGlobal && !isTrue(g[s.onCompleteGlobal])) toSet.push(s.onCompleteGlobal);
     if (complete && block.onCompleteGlobal && !isTrue(g[block.onCompleteGlobal])) toSet.push(block.onCompleteGlobal);
 
+    // Which result panels show: `results` lists any of mail/pages/calls (default all three).
+    const panels = Array.isArray(block.results)
+        ? RESULT_PANELS.filter((k) => block.results.includes(k)) : RESULT_PANELS.slice();
+    const strings = { ...DEFAULT_REPORT_STRINGS };
+    if (block.strings && typeof block.strings === 'object') {
+        for (const k of Object.keys(DEFAULT_REPORT_STRINGS)) {
+            if (typeof block.strings[k] === 'string' && block.strings[k]) strings[k] = block.strings[k];
+        }
+    }
+    // The step the results panel reports on: the one the confirm/question items are bound to.
+    const resultsStepId = (items.find((i) => i.step) || {}).step || 'results';
+
     return {
         title: block.title || 'Engagement report',
         intro: block.intro || '',
+        strings,
+        panels,
+        resultsStepId,
         results: {
             mail,
             pages,

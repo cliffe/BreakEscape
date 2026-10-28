@@ -29,7 +29,7 @@
 // can never drift apart (P5-R single-source). The model is pure (no DOM, no network), so
 // importing it here adds no browser coupling; both are re-exported below for callers and
 // the renderer's test, which used to read them from this file.
-import { resolveDomainOption, isDomainBlocked } from './landing-page-model.js';
+import { resolveDomainOption, isDomainBlocked, fieldLabel } from './landing-page-model.js';
 
 export { resolveDomainOption, isDomainBlocked };
 
@@ -47,17 +47,13 @@ const LOGO_BASE = '/break_escape/assets/social/landing/';
 const missingLogos = new Set();
 /** True once the logo image for this src has failed to load in this session. */
 export function logoMissing(src) { return missingLogos.has(src); }
-/** The logo src the page uses for a brand. */
-export function logoSrc(brand, base = LOGO_BASE) { return `${base}logo-${brand || 'unknown'}.png`; }
-
-// Human labels for the form-field ids a page may ask for (07 §3 step 6, 00 §1).
-const FIELD_LABELS = {
-    email: 'Email',
-    password: 'Password',
-    one_time_code: 'One-time code',
-    card_number: 'Card number',
-    ni_number: 'National insurance number',
-};
+/** The logo src the page uses for a brand. A brand definition's own `logo` path (relative to the game root) wins. */
+export function logoSrc(brand, base = LOGO_BASE, brandDef = null) {
+    if (brandDef && typeof brandDef.logo === 'string' && brandDef.logo) {
+        return /^(\/|https?:)/i.test(brandDef.logo) ? brandDef.logo : `/break_escape/${brandDef.logo}`;
+    }
+    return `${base}logo-${brand || 'unknown'}.png`;
+}
 
 // --- DOM helpers ----------------------------------------------------------------------
 
@@ -202,7 +198,7 @@ export function renderLandingPage(options = {}) {
     const logo = make('div', 'lpb-logo');
     if (choices.logo && choices.logo !== 'none') {
         const brand = brandById(pageDef, choices.brand);
-        const src = logoSrc(choices.brand, logoBase);
+        const src = logoSrc(choices.brand, logoBase, brand);
         if (missingLogos.has(src)) {
             logo.classList.add('is-unavailable');
         } else {
@@ -243,7 +239,7 @@ export function renderLandingPage(options = {}) {
     for (const field of fields) {
         const box = make('div', 'lpb-field');
         box.setAttribute('data-field', field);
-        box.appendChild(pageText(make('span', 'lpb-field-label', FIELD_LABELS[field] || field)));
+        box.appendChild(pageText(make('span', 'lpb-field-label', fieldLabel(field, pageDef))));
         // The input line is a plain, empty div — no <input>, nothing to type into.
         box.appendChild(make('div', 'lpb-field-input'));
         form.appendChild(box);

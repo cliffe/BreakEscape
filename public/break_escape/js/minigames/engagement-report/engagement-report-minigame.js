@@ -117,7 +117,7 @@ export class EngagementReportMinigame extends SocialOverlayScene {
         });
         this.closeButton = close;
 
-        const resultsDone = m.steps.find((s) => s.id === 'results')?.done;
+        const resultsDone = m.steps.find((s) => s.id === m.resultsStepId)?.done;
         const progress = m.complete
             ? 'Report filed.'
             : `${m.steps.filter((s) => s.done).length} of ${m.steps.length} steps done.`;
@@ -143,11 +143,14 @@ export class EngagementReportMinigame extends SocialOverlayScene {
     _resultsSection(m, done) {
         const sec = h('section', { class: `er-section er-results is-${done ? 'done' : 'open'}`,
             'aria-labelledby': 'er-h-results' },
-            h('h3', { id: 'er-h-results', class: 'er-h', text: 'Campaign results' }));
+            h('h3', { id: 'er-h-results', class: 'er-h', text: m.strings.resultsHeading }));
 
         // Mail
         const r = m.results;
-        if (r.mail.length) {
+        const showPanel = (k) => m.panels.includes(k);
+        if (!showPanel('mail')) {
+            // panel switched off by report.results
+        } else if (r.mail.length) {
             const table = h('table', { class: 'er-table er-mail', 'aria-label': 'Mail results by target' },
                 h('thead', {}, h('tr', {},
                     h('th', { scope: 'col', text: 'Target' }),
@@ -168,7 +171,7 @@ export class EngagementReportMinigame extends SocialOverlayScene {
             sec.appendChild(table);
             if (r.mail.some((row) => row.failed > 0)) {
                 sec.appendChild(h('p', { class: 'er-note er-fail-note',
-                    text: 'Failed sends are not wasted: in a live test each one is a chance for a member of staff to report you.' }));
+                    text: m.strings.failedSendNote }));
             }
         } else {
             sec.appendChild(h('p', { class: 'er-empty', text: 'No mail has been sent yet.' }));
@@ -178,19 +181,19 @@ export class EngagementReportMinigame extends SocialOverlayScene {
         const pagePanel = h('div', { class: 'er-pages', 'aria-label': 'Landing page results' },
             h('h4', { class: 'er-subh', text: 'Landing page' }));
         if (!r.pages.length) {
-            pagePanel.appendChild(h('p', { class: 'er-empty', text: 'No landing page in this engagement.' }));
+            pagePanel.appendChild(h('p', { class: 'er-empty', text: m.strings.noLandingPage }));
         } else {
             for (const p of r.pages) {
                 pagePanel.appendChild(h('p', { class: `er-page-line is-${p.sent ? 'sent' : 'unsent'}`,
                     'data-page': p.pageId, text: p.sent ? `${p.label}: ${pageOutcomeLine(p)}` : 'No page sent.' }));
             }
         }
-        sec.appendChild(pagePanel);
+        if (showPanel('pages')) sec.appendChild(pagePanel);
 
         // Calls
-        if (r.calls.length) {
+        if (showPanel('calls') && r.calls.length) {
             const callPanel = h('div', { class: 'er-calls', 'aria-label': 'Call results' },
-                h('h4', { class: 'er-subh', text: 'Pretext call' }));
+                h('h4', { class: 'er-subh', text: m.strings.pretextCall }));
             for (const c of r.calls) {
                 const parts = [];
                 // The globals are the engagement's latest state (outcome/reported) plus a running
@@ -221,7 +224,7 @@ export class EngagementReportMinigame extends SocialOverlayScene {
         // Results-step items: confirm buttons and (opt-in) questions about the results
         for (const item of m.items) {
             if (item.kind === 'question') {
-                sec.appendChild(this._questionItem(item));
+                sec.appendChild(this._questionItem(item, m.strings));
                 continue;
             }
             const row = h('div', { class: `er-confirm is-${item.confirmed ? 'done' : 'open'}`,
@@ -246,7 +249,7 @@ export class EngagementReportMinigame extends SocialOverlayScene {
     }
 
     /** A `question` item on the results: a labelled option group with the picked option's why. */
-    _questionItem(item) {
+    _questionItem(item, strings) {
         const groupId = `er-q-${item.id}`;
         const wrap = h('div', { class: `er-question er-pair is-${item.done ? 'done' : 'open'}`,
             'data-question': item.id || '' },
@@ -269,7 +272,7 @@ export class EngagementReportMinigame extends SocialOverlayScene {
             const good = item.picked.correct === true;
             wrap.appendChild(h('p', { class: `er-feedback ${good ? 'good' : (item.picked.blame ? 'blame' : 'bad')}`, role: 'status' },
                 icon(good ? 'mark-tick' : 'mark-cross'),
-                h('span', { class: 'er-word', text: good ? 'Right:' : (item.picked.blame ? 'Blaming staff:' : 'Not quite:') }),
+                h('span', { class: 'er-word', text: good ? 'Right:' : (item.picked.blame ? strings.blamingStaff : 'Not quite:') }),
                 h('span', { class: 'er-why', text: item.picked.why })));
         }
         return wrap;
@@ -284,7 +287,7 @@ export class EngagementReportMinigame extends SocialOverlayScene {
             return sec;
         }
         sec.appendChild(h('p', { class: 'er-note',
-            text: 'Pair each finding with its root cause and a control. Findings are about processes, not people.' }));
+            text: m.strings.findingsHint }));
         const list = h('ol', { class: 'er-finding-list' });
         for (const f of m.findings) list.appendChild(this._findingCard(f));
         sec.appendChild(list);
@@ -329,7 +332,7 @@ export class EngagementReportMinigame extends SocialOverlayScene {
             const good = picked.correct === true;
             group.appendChild(h('p', { class: `er-feedback ${good ? 'good' : (picked.blame ? 'blame' : 'bad')}`, role: 'status' },
                 icon(good ? 'mark-tick' : 'mark-cross'),
-                h('span', { class: 'er-word', text: good ? 'Good:' : (picked.blame ? 'Blaming staff:' : 'Not quite:') }),
+                h('span', { class: 'er-word', text: good ? 'Good:' : (picked.blame ? this.model.strings.blamingStaff : 'Not quite:') }),
                 h('span', { class: 'er-why', text: picked.why })));
         }
         return group;

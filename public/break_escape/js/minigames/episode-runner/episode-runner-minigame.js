@@ -268,20 +268,20 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
     init() {
         super.init();
         if (this.headerElement) this.headerElement.style.display = 'none';
-        const root = el('div', 'er-root');
+        const root = el('div', 'epr-root');
         root.setAttribute('role', 'region');
         root.setAttribute('aria-label', 'Exercise');
         applyBrand(root, this.episode.brand);
-        if (this.facilitated) root.classList.add('er-facilitated');
+        if (this.facilitated) root.classList.add('epr-facilitated');
         this.root = root;
 
-        const bar = el('div', 'er-bar');
-        this.stripHost = el('div', 'er-strip');
+        const bar = el('div', 'epr-bar');
+        this.stripHost = el('div', 'epr-strip');
         bar.appendChild(this.stripHost);
         this.mountCloseControl(bar, 'Close');
         root.appendChild(bar);
 
-        this.body = el('div', 'er-body');
+        this.body = el('div', 'epr-body');
         root.appendChild(this.body);
         this.gameContainer.appendChild(root);
 
@@ -337,11 +337,11 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
     }
 
     _panel(heading, text) {
-        const panel = el('section', 'er-panel');
-        const h = el('h2', 'er-heading aw-heading', heading);
+        const panel = el('section', 'epr-panel');
+        const h = el('h2', 'epr-heading aw-heading', heading);
         h.tabIndex = -1;
         panel.appendChild(h);
-        if (isStr(text)) panel.appendChild(el('p', 'er-text', text));
+        if (isStr(text)) panel.appendChild(el('p', 'epr-text', text));
         this.body.appendChild(panel);
         return panel;
     }
@@ -351,27 +351,27 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         if (!this.facilitated || !host) return null;
         const prompt = facilitatorPrompt(this.strings, stage);
         if (!prompt) return null;
-        const aside = el('aside', 'er-facilitator');
+        const aside = el('aside', 'epr-facilitator');
         aside.setAttribute('aria-label', 'Prompt for the group');
-        aside.append(el('span', 'er-facilitator-label', PAUSE_COPY.prompt), el('span', 'er-facilitator-text', prompt));
+        aside.append(el('span', 'epr-facilitator-label', PAUSE_COPY.prompt), el('span', 'epr-facilitator-text', prompt));
         return aside;
     }
 
     _renderPause() {
         const after = this.pauseAfter;
         const panel = this._panel(PAUSE_COPY.heading, facilitatorPrompt(this.strings, 'pause') || PAUSE_COPY.text);
-        panel.classList.add('er-pause');
+        panel.classList.add('epr-pause');
         const prompt = this._groupPrompt(panel, after);
         if (prompt) panel.appendChild(prompt);
         this._button(panel, PAUSE_COPY.next, () => {
             this.pauseAfter = null;
             this._render();
             this._focus();
-        }, 'er-resume');
+        }, 'epr-resume');
     }
 
     _button(panel, label, onClick, cls = '') {
-        const btn = el('button', `er-button aw-button ${cls}`.trim(), label);
+        const btn = el('button', `epr-button aw-button ${cls}`.trim(), label);
         btn.type = 'button';
         this.addEventListener(btn, 'click', (e) => {
             e.preventDefault?.();
@@ -384,14 +384,24 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
     _renderBrief() {
         const ep = this.episode;
         const panel = this._panel(ep.brand?.name || this.params.title || 'Brief', this.strings.brief);
-        if (isStr(ep.scopeNote)) panel.appendChild(el('p', 'er-scope', ep.scopeNote));
+        if (isStr(ep.scopeNote)) panel.appendChild(el('p', 'epr-scope', ep.scopeNote));
         const prompt = this._groupPrompt(panel, 'brief');
         if (prompt) panel.appendChild(prompt);
-        this._button(panel, 'Start', () => this._complete('brief'), 'er-start');
+        this._button(panel, 'Start', () => this._complete('brief'), 'epr-start');
     }
 
     /** The panel copy for a stage that opens another tool. */
     _stageCopy(stage) {
+        const copy = this._baseStageCopy(stage);
+        // strings.stages.<stageId> { heading, text, button } replaces any of the three lines.
+        const own = isObj(this.strings.stages) && isObj(this.strings.stages[stage]) ? this.strings.stages[stage] : null;
+        if (!own || !copy) return copy;
+        return { heading: isStr(own.heading) ? own.heading : copy.heading,
+            text: isStr(own.text) ? own.text : copy.text,
+            button: isStr(own.button) ? own.button : copy.button };
+    }
+
+    _baseStageCopy(stage) {
         if (stage === 'write' && writeKind(this.episode) === 'call') return CALL_COPY;
         if (stage === 'defend') {
             let set = null;
@@ -406,10 +416,10 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         const panel = this._panel(copy.heading, copy.text);
         const prompt = this._groupPrompt(panel, stage);
         if (prompt) panel.appendChild(prompt);
-        this.notice = el('p', 'er-notice');
+        this.notice = el('p', 'epr-notice');
         this.notice.setAttribute('aria-live', 'polite');
         panel.appendChild(this.notice);
-        this._button(panel, copy.button, () => this._launch(stage), 'er-launch');
+        this._button(panel, copy.button, () => this._launch(stage), 'epr-launch');
         // From the write stage, always offer a way back to research. A learner who closed the
         // browser without noting a contact or a fact the message needs is otherwise stuck with
         // Send disabled and no route back — the one restart-or-nothing dead end (P1 B1 blocker,
@@ -418,7 +428,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             // It opens on the first site, where a fresh visit starts, not on the last page seen:
             // a learner coming back for something they missed needs every source in reach
             // (E1-E4 P4-10: index-based clicks landed on Friendface or Events after a return).
-            this._button(panel, 'Back to research', () => this._launch('osint', { home: true }), 'er-back-research');
+            this._button(panel, 'Back to research', () => this._launch('osint', { home: true }), 'epr-back-research');
         }
     }
 
@@ -427,7 +437,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
      * email, so the 'flip' step reads "The call" rather than the default "Your message" (E3-6).
      */
     _stripLabels() {
-        return writeKind(this.episode) === 'call' ? { flip: 'The call' } : undefined;
+        const own = isObj(this.strings.stepLabels) ? this.strings.stepLabels : null;
+        const base = writeKind(this.episode) === 'call' ? { flip: 'The call' } : undefined;
+        return own ? { ...base, ...own } : base;
     }
 
     /**
@@ -531,7 +543,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
     /** The bar's Close is the only Close: the panel says it is finished and nothing more. */
     _renderFinished() {
         const panel = this._panel('Finished', FINISHED_TEXT);
-        panel.classList.add('er-finished');
+        panel.classList.add('epr-finished');
     }
 
     _complete(stageId, patch = {}) {
@@ -594,7 +606,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             child = this._launchTriage(stage, spec.options);
         }
         this._launching = null;
-        if (!child && this.gameState.isActive && this.notice) this.notice.textContent = LAUNCH_FAILED;
+        if (!child && this.gameState.isActive && this.notice) this.notice.textContent = isStr(this.strings.launchFailed) ? this.strings.launchFailed : LAUNCH_FAILED;
     }
 
     // ── the pretext call (E3) ────────────────────────────────────────────────

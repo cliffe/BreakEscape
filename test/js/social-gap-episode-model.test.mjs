@@ -2,7 +2,7 @@
 // out-of-order completion, defendOnly variants, check missions, sent-record selection and the
 // flip builders on thin or malformed data.
 // Run with: bin/test-js test/js/social-gap-episode-model.test.mjs
-import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -12,8 +12,13 @@ import assert from 'node:assert/strict';
 const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 const dir = mkdtempSync(join(tmpdir(), 'social-gap-episode-model-'));
-writeFileSync(join(dir, 'episode-model.mjs'), readFileSync(join(js, 'minigames/episode-runner/episode-model.js'), 'utf8'));
-const M = await import(pathToFileURL(join(dir, 'episode-model.mjs')).href);
+// episode-model imports the landing-page model for the form-field labels, so copy the tree shape.
+mkdirSync(join(dir, 'minigames/episode-runner'), { recursive: true });
+mkdirSync(join(dir, 'minigames/landing-page-builder'), { recursive: true });
+for (const f of ['minigames/episode-runner/episode-model.js', 'minigames/landing-page-builder/landing-page-model.js']) {
+    writeFileSync(join(dir, f), readFileSync(join(js, f), 'utf8'));
+}
+const M = await import(pathToFileURL(join(dir, 'minigames/episode-runner/episode-model.js')).href);
 
 const full = (over = {}) => ({ id: 'e1', stages: ['brief', 'osint', 'write', 'flip', 'defend', 'debrief'], attack: { target: 't1', accountIds: ['a'], siteIds: ['s'] }, defend: { setId: 'set1' }, ...over });
 
