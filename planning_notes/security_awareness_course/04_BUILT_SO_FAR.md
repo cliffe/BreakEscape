@@ -107,25 +107,15 @@ Every episode follows the same shape:
 
 ## 4. What comes next (replaces the old roadmap)
 
-1. **Finish the built product first.** It is nearly done: host character art after 3 November and a sprite playtest, then human timing runs and the one facilitator guide. This is not this plan's work; new episodes can be designed alongside, but their build should not pull people off the release.
-2. **Close the engine gaps that every new episode needs.** These are the open catalogue items in `features/README.md` with build status "Not built" and priority MVP:
-   - BE-03 text route;
-   - BE-04 and BE-26 accessibility beyond the social overlays;
-   - BE-19 a real `#trigger_minigame`;
-   - BE-20 an authorable title and tutorial (today they still show Hacktivity and spy text);
-   - BE-23 pause that also stops the clock;
-   - BE-25 Unicode name entry;
-   - BE-30 configurable call labels.
-3. **New episodes, in this proposed order** (D15): each is a full episode, a defend-only variant and new items for the check forms, in the built shape, at a brand-set company.
-   - E8 *after the click* (core_04 and core_01 LO6);
-   - E9 passwords and password managers (core_03);
-   - E10 fake downloads and "verify you are human" pages (core_08 and core_07);
-   - E11 misdirected and overshared data (core_05 and core_06, consequence flip);
-   - E12 the visitor and the tailgater (core_10, with person-chat in the training room);
-   - E13 the AI assistant (core_15, authored);
-   - then the remaining core topics, the role extensions and sector_01.
-4. **New check roles** for developers, customer-facing staff, procurement and healthcare, once their episodes exist.
-5. **Platform**: only the reporting-route setting, once the user answers. The rest of the HA list is wish list.
+The build plan now lives in **`implementation/`**: start at `implementation/00_README.md`. It holds the work order, the dependency table, the engine packets (`02_ENGINE_WORK.md`), the pipeline (`01_PIPELINE.md`), the new check forms (`10_CHECK_FORMS.md`), WP-12, WP-15 and WP-02, and one implementation spec per new episode (`implementation/episodes/E08` to `E17`). Those briefs were checked against the code and the built content over several adversarial review rounds (`implementation/reviews/`), and they win over this file and the module plans wherever they differ.
+
+In short (user decisions of 2026-10-27):
+
+1. The built product finishes on its own track (host art after 3 November, timing runs, one facilitator guide).
+2. New episodes E8 to E17 are built in the built shape, pilot first (E8), with the engine packets each needs. The separate "engine gaps" package was dropped; the small fixes an episode needs are folded into its packets.
+3. Two new check-form pairs (`general_v2`, `data_conduct`) cover the new topics; the six role forms stay unchanged.
+4. WP-12 (core_00 first-play brief, core_17 annual edition), WP-15 (core_02 defend items) and WP-02 (the reporting-route setting with pre-canned options) run alongside.
+5. Later, by user decision: role extensions, new roles, accessibility, drills and the kids game.
 
 ## 5. What the plan keeps
 

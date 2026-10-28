@@ -8,6 +8,8 @@ The course extends a product line that is already built: **Incident Simulations:
 
 ## Start here
 
+**To build the next episodes, start at `implementation/00_README.md`.** The briefs there are checked against the code and win over the planning files below wherever they differ.
+
 1. **`04_BUILT_SO_FAR.md`**: what is built, how each conflict between the plan and the build was settled (R1 to R13), coverage by module and what comes next. Read this first.
 2. **`00_COURSE_OVERVIEW.md`**: who it's for, the pathways (role check pairs, episodes and defend-only drills), the 26-module catalogue with built coverage, topic boundaries and the roadmap.
 3. **`01_LEARNING_DESIGN.md`**: how an episode works (brief, attack, flip, defend, debrief, with pre and post checks), the consequence flip for topics with no natural attacker, and the answer to "should every activity be a game?".

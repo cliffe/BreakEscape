@@ -1,3 +1,5 @@
+> **For the build, this design is superseded by `../../implementation/episodes/E08_after_the_click.md`.** That implementation brief is checked against the code and the built content and wins wherever the two differ (company, host, stages, items, config). This file stays as design background: the intent, the alternatives and the reasoning.
+
 # core_04 game design: The Golden Hour
 
 core_04 is delivered two ways: the **reporting culture built into every episode's debrief** (the report verdict, the team-protected tally, the customer report route, the no-blame line), and one new episode, **E8 *after the click***, which teaches the incident content in the built shape and also carries core_01 LO6. The old plan's live-spread "golden hour" afternoon is retired as a room-walk design; its ideas are carried by E8's flip, defend set and debrief. Where a scenario file and this description differ, the scenario file wins.

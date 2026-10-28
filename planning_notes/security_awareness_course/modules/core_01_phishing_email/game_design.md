@@ -1,3 +1,5 @@
+> **For the build, this design is superseded by `../../implementation/episodes/E08_after_the_click.md`.** That implementation brief is checked against the code and the built content and wins wherever the two differ (company, host, stages, items, config). This file stays as design background: the intent, the alternatives and the reasoning.
+
 # core_01 game design: Inbox Zero
 
 core_01 is delivered by four built episodes, plus one new episode this plan adds. The built episodes are not redesigned here: they are described as built, and the new work is E8 *after the click*, designed in the built shape. Where a scenario file and this description differ, the scenario file wins.

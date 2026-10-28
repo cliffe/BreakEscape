@@ -1,3 +1,5 @@
+> **For the build, this design is superseded by `../../implementation/episodes/E09_passwords.md`.** That implementation brief is checked against the code and the built content and wins wherever the two differ (company, host, stages, items, config). This file stays as design background: the intent, the alternatives and the reasoning.
+
 # core_03 game design: Keys to the Kingdom
 
 core_03 is delivered by the built MFA-fatigue stage inside E3, plus one new episode this plan adds, E9 *passwords and password managers*, designed in the built shape. The E3 stage is described as built, not redesigned. Where a scenario file and this description differ, the scenario file wins.

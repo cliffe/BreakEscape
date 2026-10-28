@@ -1,3 +1,5 @@
+> **For the build, this design is superseded by `../../implementation/12_WP15_CORE02_ITEMS.md`.** That implementation brief is checked against the code and the built content and wins wherever the two differ (company, host, stages, items, config). This file stays as design background: the intent, the alternatives and the reasoning.
+
 # core_02 game design: The Caller
 
 core_02 is delivered by two built episodes (E3 helpdesk, E6 mobile), the voicemail cards in E4 and E7, and a small set of new defend items plus the proposed visitor episode (E12) for the in-person approach. The built episodes are described as built, not redesigned. Where a scenario file and this description differ, the scenario file wins.

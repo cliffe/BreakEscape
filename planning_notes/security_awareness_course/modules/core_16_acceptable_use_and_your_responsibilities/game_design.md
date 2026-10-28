@@ -1,3 +1,5 @@
+> **For the build, this design is superseded by `../../implementation/episodes/E17_acceptable_use.md`.** That implementation brief is checked against the code and the built content and wins wherever the two differ (company, host, stages, items, config). This file stays as design background: the intent, the alternatives and the reasoning.
+
 # core_16 game design: Small Print
 
 ## Concept

@@ -6,40 +6,9 @@
 
 **The built product comes first.** It resumed on 2026-10-27 and most stages are closed; what remains is host character art after 3 November, a sprite playtest, human timing runs and one facilitator guide, written last (status block at the top of `../phishing_and_social_engineering/awareness/HANDOVER.md`). That is not this plan's work; new episode designs can proceed alongside it.
 
-## 1. New episodes E8 to E13: from concept to episode design
+## 1 to 3. Build work: moved to `implementation/`
 
-Each becomes an episode design in the built shape (brief, attack or consequence flip, flip, defend, debrief), a defend-only variant and new check items, at the company named in `03_WORLD_AND_CAST.md` (decided). Order: D15 (decided: E8 to E13 in that order). All six are Go now (build review page, 2026-10-27).
-
-- [ ] **E8 after the click** (core_04, core_01 LO6), at Quayholt Insurance.
-- [ ] **E9 passwords and password managers** (core_03), at Tarrowby Logistics.
-- [ ] **E10 fake downloads and "verify you are human" pages** (core_08, core_07), at Quayholt Insurance; builds on E5's landing-page builder.
-- [ ] **E11 misdirected and overshared data** (core_05, core_06), consequence flip (D13), at Carrholme Services (new company).
-- [ ] **E12 the visitor and the tailgater** (core_10), person-chat in the training room, at Merrin & Sallow Architects. User's notes: the attack half can swap the player's avatar to a hi-vis one to gain influence; carrying a package can be a PixelLab sprite state; an NPC opening a door is a small add (NPCs can already trigger events and unlock doors).
-- [ ] **E13 the AI assistant** (core_15), authored, no runtime model, at Brightwell Foods.
-- [ ] Add Carrholme Services to `BRAND_SET.md` after a web search, with cast that follows the diversity rule; decide its room (a fifth room, or reuse a map).
-- [ ] Also Go now: E14 to E17 (core_12, 13, 14, 16), core_00 first-play brief and the core_17 annual edition, and core_02's missing-channel defend items (WP-11, WP-12, WP-15).
-- [ ] Every new episode ships both versions and joins both seeded Hacktivity courses (D-seed).
-- [ ] Each design follows the existing loops in `AGENTS.md` and the build's file layout (fragments in `awareness/e*/`, generated shells).
-
-## 2. Check items
-
-- [ ] Turn each module's question bank into candidate items for the role check forms and defend sets (R6), with critical behaviours as mirror pairs (aw5).
-- [ ] New items for the existing six roles where E8 to E13 add a topic (general and mobile first), keeping each form pair matched and the phish slots disjoint (`awareness/CHECK_PARITY_AUDIT.md`).
-- [ ] Confirmation of Payee (C11-LO5) and the UK personal-scam routes (7726, 159, Report Fraud) as candidate items; none appears in a shell yet.
-- [ ] Later check roles (developers, customer-facing staff, procurement, healthcare) once their episodes exist (04 §4 step 4).
-
-## 3. Engine gaps every new episode needs (04 §4 step 2)
-
-These are catalogue items with build status "Not built" and priority MVP (`features/README.md`):
-
-- [ ] BE-03 text route.
-- [ ] BE-04 and BE-26 accessibility beyond the social overlays (see D9).
-- [ ] BE-19 a real `#trigger_minigame`.
-- [ ] BE-20 an authorable title and tutorial (today they still show Hacktivity and spy text).
-- [ ] BE-23 pause that also stops the clock.
-- [ ] BE-25 Unicode name entry.
-- [ ] BE-30 configurable call labels.
-- [ ] Runner support for the consequence flip (D13) and for person-chat in the training room (E12).
+The new episodes (E8 to E17), their check items and the engine work are now planned as implementation briefs in `implementation/` (start at `implementation/00_README.md`). The old checklists that stood here are superseded: the engine-gaps list was dropped by the user (2026-10-27), and new topics get new check forms instead of items in the six role forms.
 
 ## 4. Names register
 

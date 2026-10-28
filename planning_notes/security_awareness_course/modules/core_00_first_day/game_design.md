@@ -1,3 +1,5 @@
+> **For the build, this design is superseded by `../../implementation/11_WP12_FIRST_PLAY_AND_ANNUAL.md (Part A)`.** That implementation brief is checked against the code and the built content and wins wherever the two differ (company, host, stages, items, config). This file stays as design background: the intent, the alternatives and the reasoning.
+
 # core_00 game design: First Play
 
 core_00 is not an episode. It is the first-play "how it works" brief inside the kiosk frame, shown once per learner before their first episode. The old "First Day" morning at Larkspur Group (the walk round the building, the reception scene, the fake payroll email) is retired; the world is now a training room at a client company, and the orientation it needs is short. Where a scenario file and this description differ, the scenario file wins.
