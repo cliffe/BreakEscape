@@ -1,4 +1,4 @@
-# Implementation handover: new awareness episodes E8 to E17
+# Implementation handover: new awareness episodes E8 to E20
 
 Start here after a context reset. This folder turns the awareness course plan into briefs that a Sonnet agent with a fresh context can carry out without asking questions. The paths, keys and commands in these files are checked against the repo; treat them as needing a quick re-check at the point of use, not as a guarantee every line is still exact. Where a brief and the code disagree, the code wins: stop and report the difference.
 
@@ -6,7 +6,7 @@ Read this file first, then `01_PIPELINE.md` (how a new episode is built), then t
 
 ## 1. Goal
 
-Add ten new episodes, E8 to E17, to the built awareness product **Incident Simulations: Critical Cases**. Build them in the shape E1 to E7 already use: brief, attack (or a consequence sandbox), flip, defend, debrief. Each one also ships a defend-only shell, new check-form items and an entry in both seeded Hacktivity courses. Alongside the episodes, carry out three work packages: WP-12 (the core_00 first-play brief and the core_17 annual edition), WP-15 (the core_02 defend items for the missing channels) and WP-02 (the Hacktivity customer reporting route, as a list of pre-canned options).
+Add thirteen new episodes, E8 to E20, to the built awareness product **Incident Simulations: Critical Cases**. Build them in the shape E1 to E7 already use: brief, attack (or a consequence sandbox), flip, defend, debrief. Each one also ships a defend-only shell, new check-form items and an entry in both seeded Hacktivity courses. Alongside the episodes, carry out three work packages: WP-12 (the core_00 first-play brief and the core_17 annual edition), WP-15 (the core_02 defend items for the missing channels) and WP-02 (the Hacktivity customer reporting route, as a list of pre-canned options).
 
 The kind of game is the awareness product: short, education-first episodes for non-technical staff on a neutral corporate skin (`ui_theme: "general"`). It has no VMs, no combat, no spy framing and no runtime language model. Put this sentence in every writer's and reviewer's prompt (AGENTS.md, "Kinds of game").
 
