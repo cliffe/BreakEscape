@@ -1,6 +1,6 @@
 # Implementation handover: new awareness episodes E8 to E17
 
-Start here after a context reset. This folder turns the awareness course plan into briefs that a Sonnet agent with a fresh context can carry out without asking questions. The paths, keys and commands in these files are checked against the repo as the review rounds proceed (most recently the round 2 fix pass on 2026-10-28); treat them as needing a quick re-check at the point of use, not as a guarantee every line is still exact. Where a brief and the code disagree, the code wins: stop and report the difference.
+Start here after a context reset. This folder turns the awareness course plan into briefs that a Sonnet agent with a fresh context can carry out without asking questions. The paths, keys and commands in these files are checked against the repo; treat them as needing a quick re-check at the point of use, not as a guarantee every line is still exact. Where a brief and the code disagree, the code wins: stop and report the difference.
 
 Read this file first, then `01_PIPELINE.md` (how a new episode is built), then the brief for your task.
 
@@ -24,7 +24,7 @@ In short (full detail in `../04_BUILT_SO_FAR.md` and `../../phishing_and_social_
 Copied from `WRITER_BRIEF.md`. Do not reopen them.
 
 - **Go now:** E8 to E13 in that order, then E14 to E17; WP-12; WP-15; WP-02 as a list of pre-canned options.
-- **Dropped:** WP-03, the engine-gaps package. Spy and Hacktivity branding does not matter here. Each small engine fix a specific episode needs is folded into that episode's engine work, for example the hard-coded "SECURE VIDEO LINK" label for E13, a real `#trigger_minigame` for E12, and Unicode names only if an episode needs them.
+- **Dropped:** WP-03, the engine-gaps package. Spy and Hacktivity branding does not matter here. Each small engine fix a specific episode needs is folded into that episode's engine work, for example the hard-coded "SECURE VIDEO LINK" label for E13, a real `#trigger_minigame` for E12, and Unicode names only if an episode needs them. (Outcome: E12 does not need a real `#trigger_minigame`, because its flip hand-back reuses `watchCall`; see `02_ENGINE_WORK.md` ENG-05a and ENG-05e.)
 - **Later:** finishing E1 to E7 (waits on PixelLab), accessibility, role extensions and new roles, drills, and the kids game.
 - **Companies:**
 
@@ -39,13 +39,13 @@ Copied from `WRITER_BRIEF.md`. Do not reopen them.
   | E14 social media | Merrin & Sallow Architects | named in `modules/core_12_social_media_and_oversharing/README.md` |
   | E15 shadow IT | Tarrowby Logistics | named in `modules/core_13_removable_media_cloud_and_shadow_it/README.md` |
   | E16 insider risk | Quayholt Insurance | named in `modules/core_14_insider_risk/README.md` |
-  | E17 acceptable use | Tarrowby Logistics | in the set (E2, E6, E9, E15); ruling 2 keeps E17 on the built Tarrowby company, room and cast to save art (host Nilesh Solanki) |
+  | E17 acceptable use | Tarrowby Logistics | in the set (E2, E6, E9, E15); E17 stays on the built Tarrowby company, room and cast to save art (host Nilesh Solanki) |
 
 - **Shape:**
   - The consequence flip is used for E11 and for shadow IT (E15). E16's module design is also a consequence flip (`modules/core_14_insider_risk/game_design.md`). E17 is defend-only.
   - There is no tagline. The built rule of thumb is quoted word for word.
-  - Every new episode ships a full version and a defend-only version, and joins both seeded Hacktivity courses (the defend-only course and the both-versions course). **E17 is the one exception** (ruling 2): it ships a single defend-only shell and that one shell is listed in both courses.
-  - **E17 (ruling 2):** E17 has no attack half, so it ships **one** shell only, `awareness_e17_<slug>_defend` (variant `defendOnly`), at **Tarrowby Logistics** with host **Nilesh Solanki**, and that one shell is listed in both seeded courses. There is no byte-identical "full" twin. The user can overrule this; a "full" E17 would then be the same shell with a consequence sandbox (ENG-04) added.
+  - Every new episode ships a full version and a defend-only version, and joins both seeded Hacktivity courses (the defend-only course and the both-versions course). **E17 is the one exception:** it ships a single defend-only shell and that one shell is listed in both courses.
+  - **E17:** E17 has no attack half, so it ships **one** shell only, `awareness_e17_<slug>_defend` (variant `defendOnly`), at **Tarrowby Logistics** with host **Nilesh Solanki**, and that one shell is listed in both seeded courses. There is no byte-identical "full" twin. The user can overrule this; a "full" E17 would then be the same shell with a consequence sandbox (ENG-04) added.
 - **E12 notes from the user:**
   - In the attack half, the player's avatar is swapped for a hi-vis one to gain influence. It must be a costume that is given back afterwards, because aw9 says the chosen avatar always wins.
   - Carrying a package can be a PixelLab sprite state.
@@ -53,7 +53,7 @@ Copied from `WRITER_BRIEF.md`. Do not reopen them.
   - E12 breaks the one-room, no-doors frame. It needs a lobby and a door, and an attack half played in the game world.
 - **Defaults taken** (the user can overrule):
   - The six built role check forms are left exactly as they are, because they are the measured baseline.
-  - **Check-form scheme (ruling 1).** The new topics are measured by **two** new check-form pairs only, `general_v2` and `data_conduct` (defined in `10_CHECK_FORMS.md`), not by one form per topic. Every per-topic form the episode specs once named (data, social, shadowit, insider, aup, physical) is dropped. Each new episode's items feed one of the two pairs: the broad-awareness topics into `general_v2`, the data and conduct topics into `data_conduct`. Do not edit the six built role forms. **Trade-off to report to the user:** two broad pairs give no per-topic pre and post figure for an organiser; if per-topic measurement is wanted, that is the only reason to add more pairs. **Rule for tells (ruling 1 + ENG-08):** any tell a check-form item scores must be in the shared library (`CHANNEL_TELLS` in both `systems/phish-rules.js` and `scripts/validate_social/triage.rb`); a tell used only in one episode's defend set can stay scenario-local with a `flagChips` label.
+  - **Check-form scheme.** The new topics are measured by **two** new check-form pairs only, `general_v2` and `data_conduct` (defined in `10_CHECK_FORMS.md`), not by one form per topic. There is no per-topic form (data, social, shadowit, insider, aup, physical). Each new episode's items feed one of the two pairs: the broad-awareness topics into `general_v2`, the data and conduct topics into `data_conduct`. Do not edit the six built role forms. **Trade-off to report to the user:** two broad pairs give no per-topic pre and post figure for an organiser; if per-topic measurement is wanted, that is the only reason to add more pairs. **Rule for tells:** any tell a check-form item scores must be in the shared library (`CHANNEL_TELLS` in both `systems/phish-rules.js` and `scripts/validate_social/triage.rb`); a tell used only in one episode's defend set can stay scenario-local with a `flagChips` label.
   - Each episode is held to about 15 minutes: one attack artefact and a defend set of about six items, as in E1 and E2.
   - Pilot with E8 first. It is the only episode that nearly fits the existing runner stages, and it proves the new-episode pipeline end to end.
 
@@ -65,7 +65,7 @@ Copied from `WRITER_BRIEF.md`. Do not reopen them.
 4. **E12.** Its wiring prerequisites are ENG-05a, ENG-05b, ENG-05c and ENG-08's schema/validator work, plus host and costume art after the PixelLab reset. It does **not** need ENG-05e (the flip hand-back reuses `watchCall`) or ENG-09c (the reception items are the built `call` kind), and ENG-05d (the parcel sprite) is art only, not a wiring prerequisite. Build it after the consequence-flip wave, so that the riskiest engine work does not hold the others up.
 5. **E13.** It needs ENG-06 and ENG-07.
 
-**Alongside, at any point:** WP-12 (`11_WP12_FIRST_PLAY_AND_ANNUAL.md`). Its **core_00 first-play** part needs **ENG-10** first: the brief-only episode, its multi-card brief, the once-per-learner gate and the completion global. Its **core_17 annual** part needs **no engine packet** (ruling 1): it is a `defendOnly` shell whose defend set holds 8 messages drawn from E1 to E7, which validates on the built `defendOnly` path. Also WP-15 (`12_WP15_CORE02_ITEMS.md`), the two new check-form pairs (`10_CHECK_FORMS.md`) and WP-02 (`13_WP02_REPORTING_ROUTE.md`). Episodes are pipelined, as in the AGENTS.md mission loop: one episode's playtests can run while the next is being written.
+**Alongside, at any point:** WP-12 (`11_WP12_FIRST_PLAY_AND_ANNUAL.md`). Its **core_00 first-play** part needs **ENG-10** first: the brief-only episode, its multi-card brief, the once-per-learner gate and the completion global. Its **core_17 annual** part needs **no engine packet**: it is a `defendOnly` shell whose defend set holds 8 messages drawn from E1 to E7, which validates on the built `defendOnly` path. Also WP-15 (`12_WP15_CORE02_ITEMS.md`), the two new check-form pairs (`10_CHECK_FORMS.md`) and WP-02 (`13_WP02_REPORTING_ROUTE.md`). Episodes are pipelined, as in the AGENTS.md mission loop: one episode's playtests can run while the next is being written.
 
 ## 5. Dependencies
 
@@ -104,7 +104,7 @@ ENG ids are packets in `02_ENGINE_WORK.md`. P ids are steps in `01_PIPELINE.md`.
 | E13 | ENG-06, ENG-07 | - | content |
 | Check forms (`10_CHECK_FORMS.md`) | no engine packet: every item kind is built (`email`, `page`, `call`, `push`) and every scored flag is an existing shared-library id; a tell a form item scores must be in the shared library (ENG-08), which today's two pairs already satisfy | post-checks for the two new pairs | content |
 | ENG-10 brief-only episode + completion global | nothing (its schema/validator work is in the packet) | WP-12 core_00 first play | engine |
-| WP-12 | core_00 needs ENG-10; core_17 needs no packet (ruling 1, a `defendOnly` 8-message shell); plus its own file (`11_WP12_FIRST_PLAY_AND_ANNUAL.md`) | - | content |
+| WP-12 | core_00 needs ENG-10; core_17 needs no packet (a `defendOnly` 8-message shell); plus its own file (`11_WP12_FIRST_PLAY_AND_ANNUAL.md`) | - | content |
 | WP-15 | its own file (`12_WP15_CORE02_ITEMS.md`) | - | content |
 | WP-02 | the user's explicit go-ahead for any Hacktivity edit | the debrief route box (aw1) | Hacktivity implementer |
 
@@ -179,7 +179,7 @@ Run these from the repo root (`/home/user/BreakEscape` here, `REPO` on the user'
 
    Expected: no `FAIL` line. `--no-graph --skip-ink` keeps the run from rewriting `dungeon_graph.*` and compiled ink. For a shell you own, also run it once without those flags, so that the ink compiles and the graph is refreshed.
 
-4. **Ink** for each new or changed ink file: `./scripts/compile-ink.sh <scenario_dir_name>`, then `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<scenario_dir_name>/` and `node scripts/ink_runtime_check/reopencheck.mjs scripts/ink_runtime_check/missions.json`. **reopencheck baseline (ruling 9):** on an untouched tree it exits 1 with "Total problems: 4" (four `m09_digital_archaeology` phone NPCs: recruiter, nightshade_phone, torres_phone, gary_phone). That is the baseline, not a regression. The run takes about 150 seconds, past the default 120-second tool timeout, so give it a longer timeout. Expected: compiles clean, no unexplained lint finding, and reopencheck reports **no more than the 4 baseline problems** with the new shells' entries added to `missions.json`. A commit must not add a new problem; compare against the baseline, do not expect zero.
+4. **Ink** for each new or changed ink file: `./scripts/compile-ink.sh <scenario_dir_name>`, then `node scripts/ink_runtime_check/dialoguelint.mjs scenarios/<scenario_dir_name>/` and `node scripts/ink_runtime_check/reopencheck.mjs scripts/ink_runtime_check/missions.json`. **reopencheck baseline:** on an untouched tree it exits 1 with "Total problems: 4" (four `m09_digital_archaeology` phone NPCs: recruiter, nightshade_phone, torres_phone, gary_phone). That is the baseline, not a regression. The run takes about 150 seconds, past the default 120-second tool timeout, so give it a longer timeout. Expected: compiles clean, no unexplained lint finding, and reopencheck reports **no more than the 4 baseline problems** with the new shells' entries added to `missions.json`. A commit must not add a new problem; compare against the baseline, do not expect zero.
 
 5. **Bridges, one at a time, on the keyless server on :3001 with Node 24:**
 
