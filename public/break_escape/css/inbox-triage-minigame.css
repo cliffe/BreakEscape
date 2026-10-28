@@ -279,7 +279,7 @@
     display: inline-block;
     padding: 0 4px;
     margin-right: 2px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     color: #10152a;
     background: var(--ui-accent, #ffcc44);
@@ -323,7 +323,7 @@
     cursor: pointer;
 }
 .tri-sms-bubble .mail-chip-link img.mail-icon { display: none; }
-.tri-sms-time { margin: 4px 0 0; font-size: 12px; color: #3a4566; text-align: right; }
+.tri-sms-time { margin: 4px 0 0; font-size: 13px; color: #3a4566; text-align: right; }
 
 /* Voicemail card */
 .tri-kind-voicemail { padding: 10px 12px; background: #10152a; border: 2px solid var(--ui-line, #4c5b80); border-left: 6px solid #8f7cf0; }
@@ -396,7 +396,7 @@
 
 /* 11 N14: phone body around an sms thread */
 .tri-phone-frame { border-radius: 0; border-width: 6px; border-color: #1c2440; padding-top: 6px; }
-.tri-phone-status { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 12px; color: var(--ui-text-dim, #a8b2c8); }
+.tri-phone-status { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 13px; color: var(--ui-text-dim, #a8b2c8); }
 .tri-phone-speaker { display: block; width: 48px; height: 6px; background: #1c2440; border: 2px solid #3a4566; }
 .tri-phone-battery { justify-self: end; display: block; width: 22px; height: 10px; border: 2px solid #a8b2c8; background: linear-gradient(90deg, #a8b2c8 70%, transparent 70%); }
 .tri-phone-clock { justify-self: start; }

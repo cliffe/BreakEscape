@@ -171,7 +171,7 @@
     display: inline-flex;
     align-items: center;
     padding: 2px 6px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     color: #7a1414;
     background: #f3d2d2;
@@ -216,7 +216,7 @@
 .lpb-logo.is-missing::after {
     content: 'No logo';
     color: #9aa;
-    font-size: 12px;
+    font-size: 13px;
     font-style: italic;
 }
 
