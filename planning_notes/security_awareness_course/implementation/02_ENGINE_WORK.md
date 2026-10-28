@@ -745,7 +745,7 @@ Schema (ENG-08): a `choice` object on a triage message with `prompt`, `options[]
 
 **Current code.** `strings.conceptPanel` is one panel (string or `{heading,text}`), rendered once by the debrief view.
 
-**Decision.** The built `strings.conceptPanel` is a single panel (a string or `{ heading, text }`), confirmed in `debrief-view.js` `buildPanel` and the schema (`scenario-schema.json:1898`). E8, E9, E10 and E13 each need more than one short concept card, so ENG-09b is required for them. There is **one** new shape, not two: widen the existing `strings.conceptPanel` to also accept an **array** of `{ heading?, text }`. Do not add a second `strings.conceptPanels` key. An episode with a single panel keeps the string/object form and is unchanged; an episode with several authors the array. An episode that needs only one panel does not depend on ENG-09b.
+**Decision.** The built `strings.conceptPanel` is a single panel (a string or `{ heading, text }`), confirmed in `debrief-view.js` `buildPanel` and the schema (`scenario-schema.json:1898`). E8, E9 and E10 each need more than one short concept card, so ENG-09b is required for them. E13 ships a single concept panel and uses the built one-panel form, so it does not depend on ENG-09b. There is **one** new shape, not two: widen the existing `strings.conceptPanel` to also accept an **array** of `{ heading?, text }`. Do not add a second `strings.conceptPanels` key. An episode with a single panel keeps the string/object form and is unchanged; an episode with several authors the array. An episode that needs only one panel does not depend on ENG-09b.
 
 **Change.** Accept an **array** of `{ heading?, text }` for `strings.conceptPanel`, rendered as successive panels in order. A string or single object is still accepted and renders exactly as today. The change has **two halves, both required**; the schema half alone is not enough.
 
@@ -758,7 +758,7 @@ Because `conceptPanel` is already in `STRINGS_VALUE_EXEMPT` and `STRINGS_ERB_ONL
 
 **Acceptance.** The standard engine acceptance, plus `node --test test/js/social-episode-views.test.mjs test/js/validator-social-awareness.test.mjs`.
 
-**Episodes that depend on it.** E8, E9, E10, E13 (any with more than one concept card).
+**Episodes that depend on it.** E8, E9, E10 (any with more than one concept card).
 
 **Shared code paths.** Debrief view (episode runner only). The lab and SAFETYNET never open it.
 

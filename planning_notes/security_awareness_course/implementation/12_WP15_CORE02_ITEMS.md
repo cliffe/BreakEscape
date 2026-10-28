@@ -13,8 +13,11 @@ go into the two beyond-email episode defend sets, not into the six role check fo
   and the levers: "The channels" (messaging-app impersonation, tech support scams),
   "The requests that should always make you pause" (remote access), and "At home" (7726, 159, Report
   Fraud)).
-- `awareness/e3/defend.json` (the E3 fragment: the set `e3_service_desk_queue`, its call cards in
-  `awarenessEpisode.defend.calls`, and the built call item shape `ha_call_facilities`).
+- `awareness/e3/defend.json` (the E3 fragment: the set `e3_service_desk_queue`, and its call cards in
+  `awarenessEpisode.defend.calls`, which are the **structural** model for Item 2 -- shape
+  `{ id, genuine, callerId, claims, tells, transcript, notes }`, e.g. `e3_call_on_behalf`. The
+  check-form message `ha_call_facilities` is a different shape (`kind`/`truth`) and is only a wording
+  model, not the structure).
 - `awareness/e6/defend.json` (the E6 fragment: the set `e6_phone_messages` and the built SMS item
   shapes `e6_parcel_fee`, `e6_fuel_card_offer`, `ma_colin_personal_number`).
 - `public/break_escape/js/minigames/inbox-triage/triage-kinds.js` and `triage-flags.js`: the card
@@ -91,22 +94,38 @@ A messaging-app impersonation as an `sms` card, following the shape of `e6_parce
   the E6 cast so no name is the fraudster here and genuine in a form.)
 - `truth`:
   - `isPhish: true`
-  - `flags: ["senderTrust", "secrecy_or_bypass"]` (both allowed on `sms`; `senderTrust` is not in the
-    `sms` exclude list, and `secrecy_or_bypass` is the "urgent secret favour" lever). Optionally add
-    `urgencyCalibrated`.
-  - `perFlagNote.senderTrust`: a new number is a new account, not proof it is the person; her real
-    number is already saved, so a text from an unknown number saying "it's me" is the warning sign,
-    not the proof (core_02 "Why caller ID and a known number are not proof").
+  - `flags: ["secrecy_or_bypass", "urgencyCalibrated"]`. **Do not use `senderTrust` here.**
+    `senderTrust` is an email factor; `triage.rb` `CHANNEL_REFUSED_FACTORS`
+    (`senderTrust senderAuth addressedTo attachmentPlausible`) refuses it on every non-email kind,
+    because an SMS has no email From line to read it from, so the validator rejects it on an `sms` card.
+    `secrecy_or_bypass` is a channel tell (the "urgent secret favour" lever). `urgencyCalibrated` is a
+    factor, but **not** one of the refused four, so it is allowed on a text; it is surfaced on this
+    non-email card by `chipIdsFor`'s N-14 clause, which adds a message's authored `truth.flags` factors
+    back onto a non-email card's chip list, so it is tickable on the SMS. `pretextRelevant` (also not
+    refused on a text) may be used in place of `urgencyCalibrated` if the "no reason I'd be asked this"
+    framing fits better; pick one.
   - `perFlagNote.secrecy_or_bypass`: "don't mention it yet" and an urgent favour are the "Hi Mum / new
-    number" lever (core_02 "Messaging-app impersonation").
+    number" lever (core_02 "Messaging-app impersonation"). Carry the new-number lesson here too: a new
+    number is a new account, not proof it is the person; her real number is already saved, so a text
+    from an unknown number saying "it's me" is the warning sign, not the proof (core_02 "Why caller ID
+    and a known number are not proof").
+  - `perFlagNote.urgencyCalibrated` (or `.pretextRelevant`): the rush before the 2pm run is manufactured
+    pressure to stop you checking her saved number first.
   - `ifTrusted`: the favour that follows is usually gift cards, a payment or data, from someone who
     is not the colleague.
   - `reportReply`: confirms the real colleague is on her saved number and did not text; at work report
     it the organisation's way; at home, a messaging-app impersonation is blocked and reported inside
     the app (7726 does not cover chat apps), and a scam text goes to 7726.
 
-No dedicated "new number / it's me" tell exists in the `00` library; `senderTrust` +
-`secrecy_or_bypass` carry it. If the user wants a reusable `new_number_itsme` chip, that is a library
+Add `secrecy_or_bypass` to the `e6_phone_messages` set's `channelTells` (it is not there today; the set
+lists `["unexpected_qr", "smish_shortlink_urgency", "reply_stop_trick", "lookalike_domain"]`), in
+**both** the fragment and the full erb, or the validator rejects the flag as "not in this set's enabled
+channel tells". `urgencyCalibrated`/`pretextRelevant` is a factor and is **not** added to `channelTells`
+(it is always in `FACTORS`; `triage.rb` rejects a factor id there). Adding `secrecy_or_bypass` adds a
+chip to all six E6 items; that is expected and harmless.
+
+No dedicated "new number / it's me" tell exists in the `00` library; `secrecy_or_bypass` +
+`urgencyCalibrated` carry it. If the user wants a reusable `new_number_itsme` chip, that is a library
 addition in `02_ENGINE_WORK.md`; not required here.
 
 Source concept: core_02 "Messaging-app impersonation", "Why caller ID and a known number are not
@@ -114,23 +133,31 @@ proof".
 
 ## Item 2: the remote-access / tech-support scam (E3, `e3_service_desk_queue`)
 
-A `call` card for the service-desk seat, following the built call shape `ha_call_facilities` in
-`e3/defend.json` (`kind: "call"`, `callerId`, `from`, `time`, `transcript: [{who, text}]`, `truth: {
-isPhish, flags, perFlagNote, ifTrusted, reportReply }`). Draft:
+A call in the service-desk queue lives in `awarenessEpisode.defend.calls`, **not** as a triage
+`message`, so it takes the `defend.calls` object shape, not the check-form message shape. The built
+`ha_call_facilities` is a check-form *message* (`kind: "call"`, `truth: {...}`) and is only a **wording**
+model; copy the **structure** from a real `defend.calls` entry (`e3_call_on_behalf`,
+`e3_call_gordon_impostor`): `{ id, genuine, callerId, claims, tells, transcript: [{who, text}], notes:
+{ perFlagNote, ifTrusted, reportReply } }`. There is no `kind`, `from`, `time` or `truth` key on a
+`defend.calls` entry; `genuine` (a boolean) replaces `isPhish`, and `tells` replaces `flags`. Draft:
 
 - `id`: `e3_call_remote_access`
-- `kind`: `"call"`
+- `genuine`: `false`
 - `callerId`: a supposed supplier/maintenance engineer calling from a mobile (an external vendor the
-  desk might plausibly deal with; invented name, not a real brand).
-- `transcript`: the caller says there is an urgent problem with a Quayholt server or a licence, and
-  asks the agent to install a remote-support tool or approve a remote session now, steering off the
-  callback ("no time to go through your supplier contact, I'm on site and the maintenance window
-  closes at 10") and invoking someone senior ("your IT manager asked us to sort it directly").
-- `truth`:
-  - `isPhish: true`
-  - `flags: ["vish_callback_pressure", "borrowed_authority"]` (both allowed on `call`, and the same
-    pair the built impostor call `ha_call_facilities` scores). Optionally add `secrecy_or_bypass` if
-    the caller asks to skip the ticket.
+  desk might plausibly deal with; invented name, not a real brand), e.g. `"Marcus Hale, Fenn Systems
+  support (mobile)"`.
+- `claims`: `[]` (the caller names no verifiable staff facts; or, to mirror `e3_call_on_behalf`, the
+  facts he states, each `{ fact, value, label }`).
+- `tells`: `["vish_callback_pressure", "borrowed_authority"]` (both allowed on `call`, the same pair the
+  built impostor call scores). Optionally add `"secrecy_or_bypass"` if the caller asks to skip the
+  ticket (add it to the set's `channelTells` if used; it is already enabled on the E6 set, but the E3
+  set `e3_service_desk_queue` lists its own).
+- `transcript`: `[{who, text}]` lines. The caller says there is an urgent problem with a Quayholt
+  server or a licence, and asks the agent to install a remote-support tool or approve a remote session
+  now, steering off the callback ("no time to go through your supplier contact, I'm on site and the
+  maintenance window closes at 10") and invoking someone senior ("your IT manager asked us to sort it
+  directly").
+- `notes`:
   - `perFlagNote.vish_callback_pressure`: he talks you off ringing the supplier back on the number on
     file ("on site", "window closes"); a callback on a number you already hold is the check.
   - `perFlagNote.borrowed_authority`: "your IT manager asked us" is there to push you past the check.
@@ -208,12 +235,14 @@ count does not change per-item scoring under the `awareness` profile.
    `awarenessEpisode.defend.calls` (and update the `_calls` order note and the `_formPairing` note if
    it references the call); add the home-route line to the Monday card string.
 2. `awareness/e6/defend.json`: replace `e6_fuel_card_offer` with `e6_chat_new_number` in
-   `e6_phone_messages.messages`; extend `e6_parcel_fee`'s `reportReply`/debrief with the 7726/159
-   line; add the home-route line to the Monday card string; update the `_order` and `_brandAdditions`
-   notes.
+   `e6_phone_messages.messages`; **add `"secrecy_or_bypass"` to `e6_phone_messages.channelTells`**
+   (today `["unexpected_qr", "smish_shortlink_urgency", "reply_stop_trick", "lookalike_domain"]`);
+   extend `e6_parcel_fee`'s `reportReply`/debrief with the 7726/159 line; add the home-route line to
+   the Monday card string; update the `_order` and `_brandAdditions` notes.
 3. `scenarios/awareness_e3_helpdesk_reset/scenario.json.erb` and
    `scenarios/awareness_e6_texts_and_qr/scenario.json.erb`: make the identical change to the episode
-   set so the fragment-erb parity test passes.
+   set (including the `e6_phone_messages.channelTells` addition) so the fragment-erb parity test
+   passes.
 4. Regenerate the two defend-only shells (`awareness_e3_helpdesk_reset_defend`,
    `awareness_e6_texts_and_qr_defend`) with `gen_e3_e5_shells.py` and `gen_e6_e7_shells.py` **into a
    scratch folder**, confirm a no-change regen of everything else is byte-identical to HEAD, then copy
@@ -231,9 +260,11 @@ count does not change per-item scoring under the `awareness` profile.
 - Run the E3 and E6 full bridges (`tools/playtest/se/bridge-e3-full.jsonl`, `bridge-e6-full.jsonl`),
   one at a time on :3001, and confirm the new call and SMS items render and score, and the Verify /
   ring-back verdict is offered on the E3 call (E3's set has `verifyVerdict: true`).
-- The chat-app `sms` card offers only the tells valid for `sms` (`triage-flags.js` `KIND_TELL_EXCLUDE`
-  excludes `vish_callback_pressure`, `unexpected_qr`, etc. from SMS), and the two scored flags are
-  among those offered.
+- The chat-app `sms` card validates under `--strict-social` with `flags: ["secrecy_or_bypass",
+  "urgencyCalibrated"]`: `secrecy_or_bypass` is in the set's `channelTells` (added above), and
+  `urgencyCalibrated` is an authored factor surfaced on the non-email card by `chipIdsFor`'s N-14
+  clause. Confirm the card does **not** carry `senderTrust` (refused on a non-email kind by
+  `CHANNEL_REFUSED_FACTORS`), and that both scored flags are among those offered.
 
 ## Do not
 

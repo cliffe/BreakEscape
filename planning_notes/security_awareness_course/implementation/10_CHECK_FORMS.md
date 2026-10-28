@@ -128,8 +128,11 @@ measurement claim). Flag this trade-off to the user; do not build more pairs wit
   (same shape, `data_conduct_form_a`/`_b`, set at Carrholme).
 - Create `planning_notes/phishing_and_social_engineering/awareness/gen_checks_v2_shells.py`, a copy
   of `gen_e3_e5_shells.py` cut down to the `check()` path only (no `defend_only()`), with two new
-  `EPISODES`-style entries, `PERMUTE` entries for the four new forms, `HOSTS` and `CHECK_LINES` for
-  the new hosts.
+  `EPISODES`-style entries (the full dicts are under "Check generator metadata" below), `PERMUTE`
+  entries for the four new forms, and `HOSTS` and `CHECK_LINES` for the hosts. Take the `check()` body
+  from `gen_e6_e7_shells.py`, whose version reads the company from `cfg['company']`
+  (`gen_e6_e7_shells.py:443`), so each pair can set its own company; the `gen_e3_e5_shells.py` version
+  hard-codes Quayholt and would misname `data_conduct` at Carrholme.
 - The generator writes eight new shell folders under `scenarios/`:
   `awareness_{pre,post}_general_v2_{ab,ba}` and `awareness_{pre,post}_data_conduct_{ab,ba}`.
 
@@ -258,6 +261,92 @@ Host NPC shape, ink and the `eventMappings` that complete `finish_check` on `tri
 copy `host_npc()` and `ink_source()` from `gen_e3_e5_shells.py` unchanged. The room is the company's
 training room via `training_room.room_fields(company)`; no new room art.
 
+### Check generator metadata (the `check` dict, `company` and `CHECK_LINES`)
+
+`check()` reads more than the name and minutes: it reads `cfg['company']` (a phrase), `cfg['role_word']`,
+`cfg['role_label']`, `cfg['forms']`, `cfg['check_hosts']`, `cfg['cybok']` and the whole `cfg['check']`
+dict (`items_pre`, `items_post`, `scope`, `kiosk` with a `{nth}` placeholder, `aim_desc`, `end`, `name`,
+`minutes`), plus `CHECK_LINES[host_id][stage]` for each host. A missing key is a `KeyError` at
+generation. **Copy `check()` from `gen_e6_e7_shells.py`, not `gen_e3_e5_shells.py`**: the e6/e7 version
+reads the company from `cfg['company']` (`gen_e6_e7_shells.py:443`), whereas the e3/e5 version hard-codes
+`"Quayholt Insurance, a fictional company"`, which would misname `data_conduct` at Carrholme. Give each
+pair a full `EPISODES`-style entry:
+
+```python
+'general_v2': {
+    'frag': f'{AW}/checks_v2/general_v2.json',
+    'role_word': 'general_v2',
+    'role_label': 'all staff',
+    'company': 'Quayholt Insurance, a fictional company',
+    'forms': ('general_v2_form_a', 'general_v2_form_b'),
+    'check_hosts': {'ab': 'anjali', 'ba': 'darren'},
+    'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+               'keywords': ['Security awareness', 'Phishing', 'Multi-factor authentication', 'Deepfakes']}],
+    'check': {
+        'name': 'Everyday threats check (part two)',
+        'items_pre': 'Ten items from a Quayholt inbox: emails, a browser page and a sign-in prompt.',
+        'items_post': 'Ten new items from a Quayholt inbox, the same kinds as before.',
+        'scope': 'Authorised exercise at Quayholt Insurance, a fictional company. In scope: ten items in a Quayholt inbox.',
+        'kiosk': 'A touch-screen kiosk set up as a Quayholt inbox, with ten items ready for the {nth} check.',
+        'aim_desc': 'Go through ten items at the training kiosk.',
+        'end': 'Go through the ten items at the training kiosk.',
+        'minutes': 9,
+    },
+},
+'data_conduct': {
+    'frag': f'{AW}/checks_v2/data_conduct.json',
+    'role_word': 'data_conduct',
+    'role_label': 'all staff',
+    'company': 'Carrholme Services, a fictional company',   # Quayholt fallback until P5b (see Stop and ask if)
+    'forms': ('data_conduct_form_a', 'data_conduct_form_b'),
+    'check_hosts': {'ab': 'anjali', 'ba': 'sofia'},          # Quayholt fallback hosts; swap to Carrholme cast when the room ships
+    'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+               'keywords': ['Security awareness', 'Data protection', 'Insider risk', 'Acceptable use']}],
+    'check': {
+        'name': 'Data and conduct check',
+        'items_pre': 'Ten items from a Carrholme inbox and phone: emails and a call about data and conduct.',
+        'items_post': 'Ten new items from a Carrholme inbox and phone, the same kinds as before.',
+        'scope': 'Authorised exercise at Carrholme Services, a fictional company. In scope: ten items from a Carrholme inbox and phone.',
+        'kiosk': 'A touch-screen kiosk set up as a Carrholme inbox and phone, with ten items ready for the {nth} check.',
+        'aim_desc': 'Go through ten items at the training kiosk.',
+        'end': 'Go through the ten items at the training kiosk.',
+        'minutes': 9,
+    },
+},
+```
+
+With `company` set to `'Carrholme Services, a fictional company'`, the fallback (Stop and ask if) sets it
+to `'Quayholt Insurance, a fictional company'` and leaves `check_hosts` at `anjali`/`sofia`; the item
+wording stays as authored (swap "Carrholme" for "Quayholt" framing with the fallback).
+
+`CHECK_LINES` in `gen_e6_e7_shells.py` (the `check()` you copy) is keyed by a **`(host_id, stage)`
+tuple**, not the nested `host_id -> {pre, post}` dict that `gen_e3_e5_shells.py` uses. So author the new
+hosts' lines in the tuple-keyed form, each a `(opening, saved, player-thanks, host-reply)` tuple (the
+dialogue reviewer polishes them). `anjali_rao` and `sofia_marchetti` exist in `gen_e3_e5_shells.py` in
+the nested form; re-key them to tuples when you copy them across. Add a new `darren_price` entry:
+
+```python
+CHECK_LINES = {
+    ('anjali_rao', 'pre'): (...),   # re-keyed from gen_e3_e5_shells.py
+    ('anjali_rao', 'post'): (...),
+    ('sofia_marchetti', 'pre'): (...),
+    ('sofia_marchetti', 'post'): (...),
+    ('darren_price', 'pre'): (
+        "Darren here, I run the service desk. Quick check on the kiosk before the training: ten items from a Quayholt inbox. Just do what you'd normally do.",
+        "First check's saved. You'll do another afterwards and we'll see how the two compare.",
+        'Thanks, Darren.', 'No problem.'),
+    ('darren_price', 'post'): (
+        "Back again. Ten new items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.",
+        "Check saved. Thanks for doing it.",
+        'Thanks, Darren.', 'No problem.'),
+}
+```
+
+When `data_conduct` moves to Carrholme after P5b, author the two Carrholme hosts' `HOSTS` entries (with
+built sprite keys) and their `CHECK_LINES` tuples in this same shape, and set `check_hosts` to them.
+Anjali's and Darren's sprite keys come from `gen_e3_e5_shells.py` `HOSTS` (`anjali` -> `female_scientist`,
+`darren` -> `male_telecom`); copy those `HOSTS` entries across too.
+
 ### Mission titles, names and collection
 
 Follow the built strings exactly (`gen_e3_e5_shells.py` `check()`):
@@ -314,6 +403,28 @@ Note on card kinds: item 2 is a `page` (verdicts Trust/Report/Delete; `padlock_m
 on a page, `triage-flags.js` `KIND_TELL_EXCLUDE`). Item 4 is a `push` (verdicts Approve/Deny/Deny and
 report; scored only on `unrequested_mfa_push`). No calls or voicemails, so Verify stays off.
 
+**Pair balance (`auth` and subjects; the `triage.rb` `balance` lint).** Besides the matched counts and
+flag multiset, the lint requires each form to hold one **pass-but-bad** phish (an email whose `auth`
+has `spf`, `dkim` and `dmarc` all `"pass"`) and one **fail-but-fine** genuine item (a real email whose
+`auth` has at least one of the three `"fail"`). Author them so:
+
+- **Item 8** (the hard phish) is the **pass-but-bad** item: give it
+  `"auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "...", "replyTo": "..." }`
+  (the look-alike/reply-to still carries the tell), and a `perFlagNote` teaching that a passing check is
+  not a verdict.
+- **Item 5** (the genuine update notice) is the **fail-but-fine** item: give it
+  `"auth": { "spf": "pass", "dkim": "fail", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "..." }`,
+  and a `whyFine` teaching that a failed check is a clue, not proof (the mail is still genuine Quayholt
+  IT; the real fix is to check the intranet, not to judge on the header).
+
+Form B's matched items (`gvb_flash_update`-adjacent item 5, item 8) carry the **same** pass/fail
+pattern with a different `envelopeFrom`/`replyTo`. Every non-email card carries a top-level `subject`
+(and a `from.address` where the kind has one): item 2 (`page`) and item 4 (`push`) each need one, or the
+card's duplicate-check signature `[from.address, subject]` reads `("", "")` in both forms and trips the
+"both forms hold the same message" error. The built push `ha_push_night` shows the shape
+(`"subject": "Sign-in request at 02:14"`); give item 4 a parallel dated subject
+(`gva_push_0238` "Sign-in request at 02:38" / `gvb_push_sunday` "Sign-in request, Sunday 23:10").
+
 ## Item list: `data_conduct` (Carrholme, Verify on)
 
 Same rules. "phish" = an unsafe request to report, verify, refuse or deny. Item 4 is a `call` so the
@@ -343,6 +454,22 @@ scores, `senderTrust` (items 2, 6, 8) and `pretextRelevant` (items 2, 6), are sc
 factor path and are **not** listed in `channelTells` (`triage.rb` rejects a factor id there). Item 4
 is a `call`: its verdicts are Comply/Ring back/Escalate/Refuse, so Verify must be on (it is).
 
+**Pair balance (`auth` and subjects; the `triage.rb` `balance` lint).** As `general_v2`, each form needs
+one **pass-but-bad** phish and one **fail-but-fine** genuine email:
+
+- **Item 8** (the hard phish email) is the **pass-but-bad** item:
+  `"auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "...", "replyTo": "..." }`
+  (the reply-to still carries `reply_to_differs`), with a `perFlagNote` that a passing check is not a
+  verdict.
+- **Item 9** (the genuine manager email) is the **fail-but-fine** item:
+  `"auth": { "spf": "pass", "dkim": "fail", "dmarc": "pass", "envelopeFrom": "<carrholme domain>", "replyTo": "..." }`,
+  with a `whyFine` that a failed check is a clue, not proof (the ask is still within need-to-know and
+  routed normally).
+
+Form B's matched items carry the same pass/fail pattern with a different `envelopeFrom`/`replyTo`. The
+`call` (item 4) carries a top-level `subject` (and its `callerId`/`from`), so its duplicate-check
+signature is non-empty and differs between A and B (`dca_login_favour` / `dcb_approve_under_you`).
+
 ## Parity audit steps (run before the forms are called done)
 
 Apply `CHECK_PARITY_AUDIT.md`'s method to each new pair:
@@ -366,7 +493,17 @@ Apply `CHECK_PARITY_AUDIT.md`'s method to each new pair:
 7. **Validator and tests.** Run, with the new fragments and shells in place:
    - `ruby scripts/validate_scenario.rb <each new erb> --strict-social --no-graph --skip-ink`
      (all 8 new shells pass).
-   - the balance lint in `scripts/validate_social/triage.rb` (`balance`) passes on each new pair.
+   - **The balance lint (`scripts/validate_social/triage.rb` `balance`) runs only when both forms of a
+     pair sit in one scenario** (`pair_checks` needs `by_id[pairedWith]` to resolve). A generated check
+     shell holds one form, so the lint never fires on it; the generator also pops `pairedWith`. So
+     exercise the lint on a **scratch pair scenario**: build a throwaway `scenario.json.erb` that holds
+     both forms (`general_v2_form_a` with `"pairedWith": "general_v2_form_b"` and `"stage": "pre"`, and
+     `general_v2_form_b` with `"pairedWith": "general_v2_form_a"` and `"stage": "post"`) in
+     `social.triageSets`, with **no** `awarenessEpisode` block, then run
+     `ruby scripts/validate_scenario.rb <scratch>/scenario.json.erb --strict-social --no-graph --skip-ink`.
+     Ignore the kiosk/`awarenessEpisode`-absent scaffolding errors; the pass bar is that **no `balance`
+     error** is printed (no "pass-but-bad", "fail-but-fine" or "both forms hold the same message").
+     Repeat for `data_conduct`.
    - `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs` stays green.
    - the rule-of-thumb test `test/js/social-awareness-rule-of-thumb.test.mjs` passes (the shells
      carry the shared rule of thumb via `awareness_deploy.awareness_block()`; the generator must call
