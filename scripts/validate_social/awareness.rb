@@ -10,6 +10,8 @@
 #   full       stages brief, osint, write, flip, defend, debrief
 #   defendOnly stages brief, defend, debrief; the id ends in `_defend`; the attack block is not read
 #   check      stages ["check"] and defend.stage "pre" or "post" (the spot-the-phish pair, S5.2)
+#   brief      stages ["brief"] only (ENG-10, the core_00 first-play brief): no attack, no defend set,
+#              a doneGlobal the objective concludes on
 #
 # The triage set's own rules (message shapes, tells, scoring) stay in triage.rb. This file lints
 # what binds the set to the episode: ids, counts, the done global, the host NPC and the carry-over.
@@ -18,7 +20,8 @@ module ValidateSocial
     STAGES = %w[brief osint build write flip defend debrief check mfa].freeze
     STAGES_BY_VARIANT = {
       'full' => %w[brief osint write flip defend debrief],
-      'defendOnly' => %w[brief defend debrief]
+      'defendOnly' => %w[brief defend debrief],
+      'brief' => %w[brief]
     }.freeze
     # Wave 3 (E3): the push-stream beat, an unscored attack demonstration. It sits straight after
     # `write` or straight after `flip`, never in a defendOnly or check shell.
@@ -52,8 +55,17 @@ module ValidateSocial
       issues.concat(id_suffix_checks(ep))
       issues.concat(attack_checks(ctx, ep)) if full?(ep)
       issues.concat(string_checks(ctx, ep))
+      issues.concat(done_global_checks(ctx, ep))
       issues.concat(settings_checks(ctx, ep))
       issues.concat(mfa_checks(ep))
+      if brief?(ep)
+        # ENG-10: a brief-only episode has no defend set, so the whole defend-set group is skipped
+        # (defend_set, set_checks, call_checks, result_global_checks, player_sent_auth_checks and the
+        # set's done global). Its own lints: no defend/attack block, and the doneGlobal.
+        issues.concat(brief_checks(ctx, ep))
+        issues.concat(state_global_checks(ctx, id))
+        return issues
+      end
       set = defend_set(ctx, ep, issues)
       done = nil
       if set
@@ -83,6 +95,11 @@ module ValidateSocial
     def self.check_mission?(ep)
       defend = ep['defend']
       (defend.is_a?(Hash) && CHECK_STAGES.include?(defend['stage'])) || ep['stages'] == ['check']
+    end
+
+    # ENG-10: the brief-only episode (variant "brief", stages ["brief"]).
+    def self.brief?(ep)
+      ep['variant'] == 'brief' && !check_mission?(ep)
     end
 
     def self.full?(ep)
@@ -145,9 +162,9 @@ module ValidateSocial
           issues << err("variant '#{ep['variant']}' has stages #{stages.inspect}; it must be #{want.inspect}#{extra}")
         end
       elsif !ep.key?('variant')
-        issues << err("variant is missing; it is full or defendOnly (only a check mission, stages [\"check\"], may leave it out)")
+        issues << err("variant is missing; it is full, defendOnly or brief (only a check mission, stages [\"check\"], may leave it out)")
       else
-        issues << err("variant '#{ep['variant']}' must be full or defendOnly")
+        issues << err("variant '#{ep['variant']}' must be full, defendOnly or brief")
       end
       issues
     end
@@ -302,6 +319,7 @@ module ValidateSocial
         issues << err('strings.brief is empty; the brief stage would open on a blank panel')
       end
       issues.concat(flip_by_choice_checks(ctx, strings['flipDefenderLineByChoice'])) if strings.key?('flipDefenderLineByChoice')
+      issues.concat(brief_card_checks(strings))
       %w[conceptPanel voicePanel].each do |key|
         next unless strings.key?(key)
 
@@ -349,6 +367,78 @@ module ValidateSocial
           issues << warn_("strings.flipDefenderLineByChoice.#{key} is not a social.templates id; the flip keys this map on the pretext the learner chose (state.sent.templateId), so this line would never be shown")
         elsif !pretext_ids.include?(key)
           issues << warn_("strings.flipDefenderLineByChoice.#{key} is the template '#{key}', which is not a 'pretext'; only the chosen pretext is recorded as the flip's templateId, so this line would never be shown")
+        end
+      end
+      issues
+    end
+
+    # ENG-10: strings.briefCards is a non-empty array of { heading?, text } with real text;
+    # briefDone and alreadySeen are non-empty strings. Read only by the brief stage, but linted wherever
+    # authored, so a typo does not ship as a blank card.
+    def self.brief_card_checks(strings)
+      issues = []
+      if strings.key?('briefCards')
+        cards = strings['briefCards']
+        if !cards.is_a?(Array) || cards.empty?
+          issues << err('strings.briefCards must be a non-empty array of { heading?, text }; an empty list would leave the brief with no card')
+        else
+          cards.each_with_index do |card, i|
+            if !card.is_a?(Hash) || !card['text'].is_a?(String) || card['text'].strip.empty?
+              issues << err("strings.briefCards[#{i}] has no text; the card would be blank")
+            elsif card.key?('heading') && (!card['heading'].is_a?(String) || card['heading'].strip.empty?)
+              issues << err("strings.briefCards[#{i}].heading is empty; drop the key or give it text")
+            end
+          end
+        end
+      end
+      %w[briefDone alreadySeen].each do |key|
+        next unless strings.key?(key)
+
+        issues << err("strings.#{key} is empty; drop the key and the runner's own line stands") if !strings[key].is_a?(String) || strings[key].strip.empty?
+      end
+      issues
+    end
+
+    # ENG-10: lints for a brief-only episode. No defend set exists, so the done global comes from
+    # doneGlobal, and the conclusion aim has to wait on it.
+    def self.brief_checks(ctx, ep)
+      issues = []
+      %w[defend attack].each do |key|
+        issues << err("a brief episode has a #{key} block; it runs the brief stage only and never reads it") if ep.key?(key)
+      end
+      strings = ep['strings']
+      if !strings.is_a?(Hash) || (!strings.key?('briefCards') && Mail.blank?(strings['brief']))
+        issues << err('a brief episode has neither strings.briefCards nor strings.brief; the learner would see an empty brief')
+      end
+      done = ep['doneGlobal']
+      if Mail.blank?(done)
+        issues << err('a brief episode needs doneGlobal; without it nothing is written when the brief ends and the objective cannot conclude')
+        return issues
+      end
+      issues.concat(conclusion_checks(ctx, ep, done))
+      issues
+    end
+
+    # doneGlobal (any episode that authors it) starts false once declared; an undeclared name is
+    # reported by conclusion_checks for a brief episode and here for any other. oncePerLearner reads
+    # the global, so it needs one.
+    def self.done_global_checks(ctx, ep)
+      issues = []
+      done = ep['doneGlobal']
+      if ep.key?('doneGlobal')
+        if !done.is_a?(String) || done.strip.empty?
+          issues << err('doneGlobal is empty; name the global the runner sets true when the last stage ends')
+        elsif ctx.all_globals.key?(done)
+          issues << err("doneGlobal '#{done}' is declared as #{ctx.all_globals[done].inspect}; it must start false") unless ctx.all_globals[done] == false
+        elsif !brief?(ep)
+          issues << err("doneGlobal '#{done}' is not declared in globalVariables; an undeclared name is not saved")
+        end
+      end
+      if ep.key?('oncePerLearner')
+        if ep['oncePerLearner'] != true && ep['oncePerLearner'] != false
+          issues << err('oncePerLearner must be true or false')
+        elsif ep['oncePerLearner'] == true && Mail.blank?(done)
+          issues << err('oncePerLearner is true but there is no doneGlobal; the runner has nothing to read to know the learner has seen it')
         end
       end
       issues

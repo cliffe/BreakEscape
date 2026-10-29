@@ -103,6 +103,10 @@ const VOICE_DEFEND_ONLY_COPY = Object.freeze({ heading: 'Defend', text: 'Go thro
 // Message kinds read as a work phone (11 E6; push is the authenticator prompt).
 const PHONE_KINDS = new Set(['sms', 'qr', 'push']);
 const FINISHED_TEXT = 'You have finished this exercise. You can close this window.';
+// ENG-10: the once-per-learner finished line (strings.alreadySeen), and the multi-card brief's
+// button defaults (strings.briefDone). Card copy and the done global are data.
+const ALREADY_SEEN_TEXT = 'You have seen this already. You can close this window.';
+const BRIEF_COPY = Object.freeze({ next: 'Next', back: 'Back', done: 'Got it' });
 const CALL_WAIT_MS = 300;                 // how often the call watcher looks for the chat closing
 const CALL_WAIT_LIMIT = 4 * 60 * 60 * 1000 / CALL_WAIT_MS; // gives up after four hours (a reopen still resumes)
 const LAUNCH_FAILED = 'That did not open. Close this window and try the kiosk again.';
@@ -260,7 +264,32 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         } catch (e) {
             console.error('[episode] could not write the state global:', e);
         }
+        this._writeDone(state);
         win().stateSync?.sync?.();
+    }
+
+    /**
+     * ENG-10: awarenessEpisode.doneGlobal is set true once, when the last stage ends (state.stage
+     * is null). An episode without the key writes nothing new.
+     */
+    _writeDone(state) {
+        const name = this.episode.doneGlobal;
+        if (!isStr(name) || state.stage) return;
+        const g = this.globals;
+        if (g && g[name] === true) return;
+        try {
+            this.deps.write(name, true, { openChat: false });
+        } catch (e) {
+            console.error('[episode] could not write the done global:', e);
+        }
+    }
+
+    /** ENG-10: oncePerLearner, with the done global already true when the runner opens. */
+    _seenAlready() {
+        const name = this.episode.doneGlobal;
+        if (this.episode.oncePerLearner !== true || !isStr(name)) return false;
+        const g = this.globals;
+        return !!g && g[name] === true;
     }
 
     // ── lifecycle ────────────────────────────────────────────────────────────
@@ -286,6 +315,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this.gameContainer.appendChild(root);
 
         this.state = this._readState();
+        this.alreadySeen = this._seenAlready();
         this._settleCall();
         // A pause carried back by a child's return or the triage reopen; only for a stage
         // that is done, and never once the episode has finished.
@@ -328,7 +358,8 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this._destroyView();
         const stage = this.state.stage;
         this.strip?.update?.({ current: stage, done: this.state.done, skipped: this._skippedStages() });
-        if (this.pauseAfter && stage) this._renderPause();
+        if (this.alreadySeen) this._renderFinished();
+        else if (this.pauseAfter && stage) this._renderPause();
         else if (stage === 'brief') this._renderBrief();
         else if (stage === 'flip') this._renderFlip();
         else if (stage === 'debrief') this._renderDebrief();
@@ -381,8 +412,48 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         return btn;
     }
 
+    _briefCards() {
+        const cards = this.strings.briefCards;
+        if (!Array.isArray(cards)) return [];
+        return cards.filter((c) => isObj(c) && isStr(c.text) && c.text.trim());
+    }
+
+    /**
+     * ENG-10: strings.briefCards, one card at a time with Back, Next and "Card n of m"; the last
+     * card's button is strings.briefDone ("Got it") and completes the brief stage. Plain text, a
+     * blank line starts a paragraph.
+     */
+    _renderBriefCards(cards) {
+        const ep = this.episode;
+        const last = cards.length - 1;
+        const index = Math.min(Math.max(this.briefIndex || 0, 0), last);
+        this.briefIndex = index;
+        const card = cards[index];
+        const panel = this._panel(isStr(card.heading) ? card.heading : (ep.brand?.name || this.params.title || 'Brief'));
+        panel.classList.add('epr-brief-card');
+        for (const para of card.text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)) {
+            panel.appendChild(el('p', 'epr-text', para));
+        }
+        if (index === 0 && isStr(ep.scopeNote)) panel.appendChild(el('p', 'epr-scope', ep.scopeNote));
+        const count = el('p', 'epr-card-count', `Card ${index + 1} of ${cards.length}`);
+        count.setAttribute('aria-live', 'polite');
+        panel.appendChild(count);
+        const prompt = this._groupPrompt(panel, 'brief');
+        if (prompt) panel.appendChild(prompt);
+        const go = (to) => {
+            this.briefIndex = to;
+            this._render();
+            this._focus();
+        };
+        if (index > 0) this._button(panel, BRIEF_COPY.back, () => go(index - 1), 'epr-back');
+        if (index < last) this._button(panel, BRIEF_COPY.next, () => go(index + 1), 'epr-next');
+        else this._button(panel, isStr(this.strings.briefDone) ? this.strings.briefDone : BRIEF_COPY.done, () => this._complete('brief'), 'epr-start epr-done');
+    }
+
     _renderBrief() {
         const ep = this.episode;
+        const cards = this._briefCards();
+        if (cards.length) return this._renderBriefCards(cards);
         const panel = this._panel(ep.brand?.name || this.params.title || 'Brief', this.strings.brief);
         if (isStr(ep.scopeNote)) panel.appendChild(el('p', 'epr-scope', ep.scopeNote));
         const prompt = this._groupPrompt(panel, 'brief');
@@ -542,7 +613,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
 
     /** The bar's Close is the only Close: the panel says it is finished and nothing more. */
     _renderFinished() {
-        const panel = this._panel('Finished', FINISHED_TEXT);
+        const seen = this.alreadySeen;
+        const panel = this._panel('Finished', seen && isStr(this.strings.alreadySeen) ? this.strings.alreadySeen
+            : (seen ? ALREADY_SEEN_TEXT : FINISHED_TEXT));
         panel.classList.add('epr-finished');
     }
 

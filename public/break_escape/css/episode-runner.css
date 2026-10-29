@@ -46,6 +46,8 @@
     background: #fff;
     border-left: 4px solid var(--aw-accent);
 }
+.epr-card-count { margin: 12px 0 0; font-size: 14px; }
+.epr-brief-card .epr-button + .epr-button { margin-left: 8px; }
 .epr-notice { margin: 0; font-size: 15px; color: #8a5a00; }
 .epr-notice:empty { display: none; }
 
