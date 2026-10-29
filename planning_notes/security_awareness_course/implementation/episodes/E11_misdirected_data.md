@@ -455,7 +455,10 @@ kind with a transcript, as E4's voicemail items do.
 
 Built debrief view (`debrief-view.js`), in order:
 
-1. A per-item reasoning card for each of the six defend items (the reason text in section 11).
+1. A per-item reasoning card for each item the learner got wrong (`reviewNeeded`); on a clean run
+   this is a single "you read every one the right way" line, with no per-item cards. The reasoning for
+   every item (the reason text in section 11) is carried in the immediate per-item feedback during
+   triage (`feedbackMode: "immediate"`), shown before the next item, not in a debrief card.
 2. Feedback on the genuine items (the cardigan update, the real breach heads-up): which the learner
    trusted, checked or reported.
 3. The **team protected** / people-affected tally (the built tally; the module's "people board" is a

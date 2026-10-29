@@ -62,3 +62,47 @@ The built `awareness` scorer gives full marks for Report/Trust/Verify on a genui
 ## Verdict
 
 **Ship-worthy after MA1 and MA2 are fixed.** The episode is well built: the consequence-flip is the right shape for a no-attacker topic, the facts track core_05/core_06, both shells validate with no social warnings, the defend set is fair and matched, and the wiring is sound. Two episode-local wording defects must be fixed before ship — MA1 (the 72-hour line teaches the wrong mental model of when the clock starts) and MA2 (the Bernadette montage contradicts its own beat). MA3 is an engine/ENG-04 rendering gap that applies to every consequence-flip episode (the amber "taken" stripe lands on correctly-handled beats); it is small, the fix data already exists in `montageProps.safe`, and the ENG-04 owner should take it with one render check. MI1 is a one-line realism fix; MI2 and MI3 are doc/needs-user items (correct spec §12; the scorer limitation is a known request to `05`), neither a shipped defect.
+
+## C1 outcomes
+
+Fixed by the content fixer on 2026-10-29 (Opus 4.8). Changed files: the full-only fragment
+`planning_notes/phishing_and_social_engineering/awareness/e11/mistake.json`, the defend fragment
+`.../e11/defend.json`, the full shell `scenarios/awareness_e11_misdirected_data/scenario.json.erb`,
+the regenerated defend-only shell `scenarios/awareness_e11_misdirected_data_defend/scenario.json.erb`,
+and this review's spec `.../episodes/E11_misdirected_data.md` §12.
+
+- **MA1 fixed.** The `overtime_sheet`/`send_wrong_sam` montage line no longer invokes the 72-hour
+  clock. New: "... sat in a care home manager's inbox for three days before anyone noticed. Three days
+  the DPO never had, to warn the staff and limit the harm." The cost now hangs on the detection gap and
+  the harm, not on a statutory clock that had not started (core_05 `concepts.md:80`: the 72 hours run
+  from becoming aware). Fixed in both `mistake.json` and the full erb.
+- **MA2 fixed.** The `caller_bernadette`/`give_details` montage line no longer says the desk was told
+  "he was her brother" (the caller was Carol the sister). New: "Your choice. Two weeks on, a stranger
+  was waiting for Bernadette outside her school. The birthday-surprise call was how he learned where a
+  lone worker would be, and when." Cause and effect now hold. Fixed in both `mistake.json` and the full erb.
+- **MI1 fixed.** Item 6 `e11_cardigan_update` no longer says the mobile number "is the one he's
+  emailing you from today" (an email carries no mobile number). Chose the plain-number option over the
+  review's "in the signature" wording, to avoid a cross-reference to item 4 (Gareth's email shows no
+  signature number) and to avoid an em dash. New: "Mrs Hale's son, Gareth, has a new mobile number for
+  the claim, 07700 900412, so please update the contact on file." (Ofcom drama-range mobile.) Fixed in
+  `defend.json` and both shells (defend-only via regeneration).
+- **MI2 fixed (doc).** Spec §12 element 1 now reads that a per-item reasoning card shows only for items
+  the learner got wrong (`reviewNeeded`); a clean run shows a single "you read every one the right way"
+  line and no per-item cards, and the per-item reasoning for every item is carried in the immediate
+  per-item feedback during triage (`feedbackMode: "immediate"`), not in a debrief card. No shipped file
+  was wrong; this corrects the spec so no one builds against a debrief that will not appear.
+- **MA3** is fixed in the engine on main (montage beats now styled safe/unsafe with a "Your call" tag,
+  overridable via `strings.flipMontageTagSafe`/`flipMontageTagUnsafe`); no E11 content change needed, and
+  the two overrides were not required here. **MI3** is a known shared-scorer limitation, unchanged.
+
+Spoken/learner-facing lines changed (3): the two montage lines above (`send_wrong_sam`,
+`give_details`) and the item-6 email body. The host ink was not touched.
+
+Checks re-run, all green: `python3 -m json.tool` on both fragments (OK); the defend-only shell
+regenerated via `gen_e8_e17_shells.py` into scratch, diffed (only the item-6 body changed; mission.json
+and ink byte-identical), then its `scenario.json.erb` copied over the repo file. `validate_scenario.rb
+--strict-social --no-graph --skip-ink` on both shells exits 0 with no social warnings (only the generic
+one-room-kiosk suggestions). The fragment/erb parity test passes E11's row (`ok - E11: fragment and full
+erb share the same learner-facing copy`); the rule-of-thumb string is untouched and byte-identical in
+both shells. `dialoguelint.mjs` reports no rule hits (host lines sit in conditional blocks, lines=0, as
+C1 noted). The `e11-full` bridge on the keyless :3001 server passes 20/20.
