@@ -75,7 +75,7 @@
             "flags": ["fake_check_paste"],
             "perFlagNote": { "fake_check_paste": "A real check happens on the page: you tick a box or pick pictures. No genuine check ever tells you to press keys or paste something into your computer, and this one has quietly copied a command for you to run. The site is Fernside's own, but a familiar site is not a reason to do what it suddenly tells you; it has been broken into." },
             "ifTrusted": "Following the steps would have run a hidden program, with nothing showing on screen. If you did it, report it straight away, do not restart, and do not clear anything.",
-            "reportReply": "Thanks. We've blocked that page, warned Fernside their site was hacked, and reported it. Fernside's own site is fine; it was broken into."
+            "reportReply": "Thanks. We've blocked that page, warned Fernside their site had been broken into, and reported it. Fernside is a genuine supplier; attackers got into their site, it is not a fake."
           },
           "factorStrings": { "fake_check_paste": { "redFlag": "A page telling you to paste or run something to prove you are human or to fix an error" } }
         },

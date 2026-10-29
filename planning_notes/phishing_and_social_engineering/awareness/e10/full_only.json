@@ -1,11 +1,10 @@
 {
   "_about": "Full-episode-only keys for scenarios/awareness_e10_downloads_and_fake_checks/scenario.json.erb. The wiring agent pastes each value into the full erb at the path its note gives. None of these is in the fragment-erb parity comparison (episode-level, or allow-listed erb-only), and the generated defend-only shell never carries them. Authored by opus48. E10 reuses E5's attack-half flip (a built flipPage extended by ENG-03b's pageType:fakeCheck branch), so it has NO flipAftermath and NO stepLabels (those are ENG-01, E8+). The only full-only keys are playerSentAuth and the conceptPanel array (ENG-09b must have landed for the array form to validate). The flip strings live in defend.json awarenessEpisode.strings (shared keys, as E5), not here.",
-
   "_notes": {
     "playerSentAuth": "Paste at the full erb's e10_browser_morning triageSet as social.triageSets[0].playerSentAuth (FULL erb only). Erb-only (SET_ERB_ONLY_OK); it is the flip's auth read of the sent lure email. Deliberately NOT in the fragment, so the generated defend-only shell (which has no write/flip stage) stays clean. Copied from E5's / E8's analyst block. If the full erb's set carries no playerSent replay entry and the flip reads only the build record, player_sent_auth_checks still accepts this table; include it so the auth read of the sent email has a source and no warning fires.",
-    "conceptPanel": "Paste at social.awarenessEpisode.strings.conceptPanel (ENG-09b array form). IDENTICAL to the value already in e10/defend.json awarenessEpisode.strings.conceptPanel: the generator carries that into the defend-only shell too, so all five cards show in both variants (E10 spec section 12). Reproduced here only so the full erb's strings block carries them. conceptPanel is value-exempt and erb-only-OK in the parity allow-list, so no allow-list change is needed."
+    "conceptPanel": "Paste at social.awarenessEpisode.strings.conceptPanel (ENG-09b array form). IDENTICAL to the value already in e10/defend.json awarenessEpisode.strings.conceptPanel: the generator carries that into the defend-only shell too, so all five cards show in both variants (E10 spec section 12). Reproduced here only so the full erb's strings block carries them. conceptPanel is value-exempt and erb-only-OK in the parity allow-list, so no allow-list change is needed.",
+    "flipPageHeading": "Already pasted at the full erb's social.awarenessEpisode.strings.flipPageHeading (flip-only string, replaces the fixed 'The page it links to' heading). Erb-only: allow-listed in STRINGS_ERB_ONLY_OK; the defend-only shell has no flip and never carries it."
   },
-
   "playerSentAuth": {
     "accounts": {
       "analyst": {
@@ -17,12 +16,27 @@
       }
     }
   },
-
   "conceptPanel": [
-    { "heading": "Where software comes from", "text": "Start software and sites from a place you trust: the Quayholt Apps portal, a bookmark, or an address you typed yourself, never an advert or a search result. If the software you need isn't in Quayholt Apps, ask the service desk; they would rather help you find it than clean up afterwards." },
-    { "heading": "Read the address", "text": "Read the address from the right-hand end, where the real name sits. A padlock only means nobody can listen in on the connection; it does not make a site honest, and a fake page can show one too. A familiar address is still no reason to do what a site suddenly tells you: sites get hacked." },
-    { "heading": "The four tricks", "text": "A web page cannot run anything on your computer by itself, so it tries to get you to: a 'verify you are human' box that wants you to paste and run something, a fake 'your browser is out of date' prompt, a full-screen alarm with a number to call, or an extension that asks to read and change everything. None of them is real. Close the page." },
-    { "heading": "If you slipped", "text": "If a page talked you into pasting, running, installing, calling or allowing, report it straight away: the browser Report button, the 'Report an incident' form, or the security team on extension 4444. Don't restart the computer, don't clear anything, and don't run tools from the web. If you're asked to, unplug the network cable or turn off Wi-Fi and leave the machine on." },
-    { "heading": "The one rule", "text": "Start from a place you trust. Never let a web page drive your computer. If in doubt, close it and report it." }
-  ]
+    {
+      "heading": "Where software comes from",
+      "text": "Start software and sites from a place you trust: the Quayholt Apps portal, a bookmark, or an address you typed yourself, never an advert or a search result. If the software you need isn't in Quayholt Apps, ask the service desk; they would rather help you find it than clean up afterwards."
+    },
+    {
+      "heading": "Read the address",
+      "text": "Read the address from the right-hand end, where the real name sits. A padlock only means nobody can listen in on the connection; it does not make a site honest, and a fake page can show one too. A familiar address is still no reason to do what a site suddenly tells you: sites get hacked."
+    },
+    {
+      "heading": "The four tricks",
+      "text": "A web page cannot run anything on your computer by itself, so it tries to get you to: a 'verify you are human' box that wants you to paste and run something, a fake 'your browser is out of date' prompt, a full-screen alarm with a number to call, or an extension that asks to read and change everything. None of them is real. Close the page."
+    },
+    {
+      "heading": "If you slipped",
+      "text": "If a page talked you into pasting, running, installing, calling or allowing, report it straight away: the browser Report button, the 'Report an incident' form, or the security team on extension 4444. Don't restart the computer, don't clear anything, and don't run tools from the web. If you're asked to, unplug the network cable or turn off Wi-Fi and leave the machine on."
+    },
+    {
+      "heading": "The one rule",
+      "text": "Start from a place you trust. Never let a web page drive your computer. If in doubt, close it and report it."
+    }
+  ],
+  "flipPageHeading": "The page you built"
 }
