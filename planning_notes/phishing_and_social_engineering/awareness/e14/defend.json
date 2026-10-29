@@ -1,0 +1,177 @@
+{
+  "_about": "E14 social-media defend fragment (awareness wave 2, opus48 content slot). Merrin & Sallow Architects and everyone in it are fictional; every address ends .example. triageSets holds only the episode set e14_social_dms (E14's check items feed the shared data_conduct pair, built by 10_CHECK_FORMS.md's own generator, not this fragment). Copy triageSets and the awarenessEpisode keys into the E14 shells: the wiring agent builds the full erb, the generator (gen_e8_e17_shells.py) builds the defend-only shell. Brand roster and cast: ../BRAND_SET.md (Merrin & Sallow Architects); new recipients/senders are under _brandAdditions. ENG-11 (sortDrill) is on main; ENG-13 (privacyPanel) and ENG-08 (schema) must have landed before the full shell validates. The sortDrill (Post/Tweak/Hold feed drill) and privacyPanel are episode-level full-only keys in full_only.json.",
+
+  "_brandAdditions": {
+    "_use": "For BRAND_SET.md section 3 (Merrin & Sallow Architects, additions from E14). Full entry and the name-clash record are in e14/BRAND_ADDITIONS.md.",
+    "cast": [
+      "Dani Fenwick: junior architect, OSINT subject, in on the exercise and thanked at the end. Late 20s, mixed heritage (British/Filipino), two years qualified; he/him. dani.fenwick@merrinsallow.example, public Friendface profile @dani.builds. The oversharing colleague whose public posts the learner pins.",
+      "Jordan Vale: a fake agency recruiter (thin new account @jordan.vale, 'Talent Partner'). Not a real person; a reconnaissance probe. Defend row 1. E16 references this name to keep its own offer handle distinct.",
+      "Elif Demir: a stranger on the feed (genuine-looking account @elif.makes), admires Dani's model then fishes for the studio's software. Defend row 4. Not cast, feed-only.",
+      "Harriet Beaumont: a former Merrin & Sallow colleague now at another practice (@harriet.beaumont). Genuine; offers Dani a lead and asks nothing about his work. Defend row 6, the suspicious-looking-genuine half of the mirror pair."
+    ],
+    "built": "Catherine Merrin (managing partner, impersonated by a fake second account in row 2, real profile genuine), Thandiwe Moyo (studio manager, genuine colleague DM row 5), Yasmin Chaudhry (finance controller, attack-half target) and Roseanne Wadsworth at Kettlewick Talent (kettlewick.example, the genuine agency, row 3) are all built Merrin & Sallow / awareness cast."
+  },
+
+  "triageSets": [
+    {
+      "id": "e14_social_dms",
+      "_prefix": "Prefix for the full episode (id e14_social_media). The defend-only shell (id e14_social_media_defend) sets episode_e14_social_media_defend_defend_ instead, as E1/E4/E8 do. No stage on purpose, as in E1/E4: the effective stage is 'mission', and an explicit stage with passPercent 0 draws a validator warning.",
+      "_kinds": "The engine has no 'DM' or 'connection request' kind (triage-kinds.js NON_EMAIL_KINDS), so every item is a `sms` card (the direct-message surface): from.name is the display name and from.address is the sender handle (e.g. @jordan.vale, not an email). 'DM' / 'connection request' is the in-fiction framing. verifyVerdict is false: the moves are Trust, Report and Delete, with no 'ring a number' item.",
+      "_localTells": "fake_profile and recon_request are social-media reconnaissance signs with no built equivalent, so they are scenario-local to this set (00 section 2's CHANNEL_TELLS is untouched, and no SKILL_NAMES entry is added to phish-rules.js/triage.rb). Each is declared in channelTells with a flagChips label and a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's skill name), and every flagging message carries a factorStrings.<id>.redFlag sentence. Promote one to the shared library only if a 10 check item later scores it. lookalike_domain and secrecy_or_bypass are shared-library tells (offered as chips, no message scores them here, as E4 lists reply_to_differs without using it).",
+      "title": "Dani's messages and requests",
+      "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. Six messages and connection requests are waiting. For each one, choose Trust, Report or Delete, then tick what you noticed. The tell is always what they ask for, not how friendly they are. Reporting or checking when you're unsure is always fine and never marked down.",
+      "scoringProfile": "awareness",
+      "verifyVerdict": false,
+      "feedbackMode": "immediate",
+      "headerPanel": "off",
+      "glossary": "closed",
+      "channelTells": ["lookalike_domain", "secrecy_or_bypass", "fake_profile", "recon_request"],
+      "flagChips": {
+        "fake_profile": "Fake or thin profile",
+        "recon_request": "Fishing for how we work"
+      },
+      "skillNames": {
+        "fake_profile": "Spotting a fake or thin profile",
+        "recon_request": "Spotting a stranger fishing for how your firm works"
+      },
+      "outcome": { "setGlobalPrefix": "episode_e14_social_media_defend_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "e14_fake_recruiter",
+          "_note": "Row 1. The normal-looking phish half of the mirror pair: a tempting recruiter DM from a thin new account that steers straight to the firm's systems and who runs IT. fake_profile + recon_request. Report.",
+          "kind": "sms",
+          "from": { "name": "Jordan Vale, Talent Partner", "address": "@jordan.vale" },
+          "time": "09:14",
+          "body": "Hi! Came across your profile, I've a great architecture role that would suit you. To tailor the application, could you send a quick overview of the systems your firm uses and who runs your IT?",
+          "factorStrings": {
+            "fake_profile": { "redFlag": "A new account with a thin history, impersonating someone or inventing a persona" },
+            "recon_request": { "redFlag": "A stranger asking about your firm's systems, security tools, org chart or who runs IT" }
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["fake_profile", "recon_request"],
+            "perFlagNote": {
+              "fake_profile": "A brand-new account, almost no history, and it moved to the systems question fast: a fake recruiter profile used for reconnaissance",
+              "recon_request": "A genuine recruiter never needs a breakdown of your firm's systems or who runs IT. That is reconnaissance, not recruitment"
+            },
+            "ifTrusted": "A map of the studio's systems and who runs IT would go to a stranger, ready-made for the next scam.",
+            "reportReply": "Thanks. There's no such recruiter; the account is a day old. Share nothing about our systems, and report it. This is the normal-looking phish you'll see most."
+          }
+        },
+        {
+          "id": "e14_fake_merrin",
+          "_note": "Row 2. A connection request in the managing partner's name from a second, new, thin account (handle @catherine.merrin.2). The look-alike NPC guard flags the duplicate senior name in the full episode; here it carries fake_profile. Catherine's real profile is the established one. Report.",
+          "kind": "sms",
+          "from": { "name": "Catherine Merrin", "address": "@catherine.merrin.2" },
+          "time": "10:02",
+          "body": "Hi, let's connect. Always good to stay close to the team.",
+          "factorStrings": {
+            "fake_profile": { "redFlag": "A new account with a thin history, impersonating someone or inventing a persona" }
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["fake_profile"],
+            "perFlagNote": {
+              "fake_profile": "A second account in the managing partner's name, new and thin, when her real profile is the established one: a fake used to connect to staff and lend weight to a later scam"
+            },
+            "ifTrusted": "Connecting hands a stranger a foothold in the managing partner's name to approach your colleagues.",
+            "reportReply": "Thanks. Catherine's real profile is the one you already follow; this one is days old. A senior name on a new account is a classic fake. Report it."
+          }
+        },
+        {
+          "id": "e14_real_recruiter",
+          "_note": "Row 3. Genuine: a real agency recruiter with a role and no questions about systems. Roseanne Wadsworth at Kettlewick Talent (built genuine agency). Trust; 'report everything' is not the win. Under the awareness profile a genuine item scores full whether Trusted or Reported.",
+          "kind": "sms",
+          "from": { "name": "Roseanne Wadsworth, Kettlewick Talent", "address": "@roseanne.kettlewick" },
+          "time": "11:20",
+          "body": "A practice I work with is hiring a Part 3 architect, and your profile looks a good fit. Shall I send you the brief?",
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "A real agency recruiter with a named role and no questions about your systems or who runs IT. Nothing to report; 'report everything' is not the win, and this is the recruiter the fake one is dressed up as."
+            }
+          }
+        },
+        {
+          "id": "e14_system_fisher",
+          "_note": "Row 4. A friendly opener on the feed that steers to the studio's tools. recon_request. Report. A genuine-looking account (Elif Demir), which is the point: the ask is the tell, not the account.",
+          "kind": "sms",
+          "from": { "name": "Elif Demir", "address": "@elif.makes" },
+          "time": "13:05",
+          "body": "Loved your bridge model on the feed! Out of interest, what software does the studio run day to day?",
+          "factorStrings": {
+            "recon_request": { "redFlag": "A stranger asking about your firm's systems, security tools, org chart or who runs IT" }
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["recon_request"],
+            "perFlagNote": {
+              "recon_request": "A friendly opener that steers to the tools the studio runs is still reconnaissance. You don't owe a stranger your firm's systems"
+            },
+            "ifTrusted": "Naming the studio's software hands a stranger the first piece of a convincing pretext.",
+            "reportReply": "Thanks. The compliment was real enough; the question wasn't their business. Share nothing about our tools with a stranger, and report it."
+          }
+        },
+        {
+          "id": "e14_colleague_dm",
+          "_note": "Row 5. Genuine: a colleague you know asking for something ordinary through a normal channel. Thandiwe Moyo (built studio manager). Trust and handle it.",
+          "kind": "sms",
+          "from": { "name": "Thandiwe Moyo", "address": "@thandiwe.moyo" },
+          "time": "14:12",
+          "body": "Can you send me the studio floor plan for the client visit on Thursday? Ta.",
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "A colleague you know, asking for something ordinary through a normal channel. Nothing to report; handle it."
+            }
+          }
+        },
+        {
+          "id": "e14_old_colleague",
+          "_note": "Row 6. The suspicious-looking genuine half of the mirror pair: a real former colleague, now elsewhere, offering a lead. It reads like a recruiter pitch but asks nothing about systems. Harriet Beaumont. Trust. Pairs with row 1 (fake_recruiter, Report).",
+          "kind": "sms",
+          "from": { "name": "Harriet Beaumont", "address": "@harriet.beaumont" },
+          "time": "15:40",
+          "body": "Good to reconnect! We've a junior role opening here if you fancy it, happy to put your name forward. No pressure either way.",
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "It reads like a recruiter pitch, but it's a real former colleague offering you a lead and asking nothing about your work. The tell is what they ask for, not how friendly they are. Trusting it is right, and reporting it still scores full."
+            }
+          }
+        }
+      ]
+    }
+  ],
+
+  "awarenessEpisode": {
+    "role": "general_staff",
+    "company": "merrin_sallow",
+    "brand": { "name": "Merrin & Sallow Architects", "logoText": "MERRIN & SALLOW", "accent": "#8a5a2b" },
+    "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional practice. In scope: Dani Fenwick's public posts and your own profile. Nothing you do here leaves this room.",
+    "defend": { "setId": "e14_social_dms", "reportAlwaysVisible": true },
+    "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
+    "strings": {
+      "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. First you're on the red team: look at what one colleague, Dani Fenwick, has posted in public, pin what an attacker would use, then write one short message built from it. Then you swap sides: you spot the same tricks in a feed and an inbox, and close the gaps, on Dani's profile and your own. Only the inbox is scored.",
+      "flipHeading": "Now you're Yasmin",
+      "flipIntro": "This is the message you just sent, as Yasmin read it while covering for Dani. The lines picked out below are what make it fit the week.",
+      "flipDefenderLine": "It named Dani's leave, the new system and his manager, and asked for one small thing, all built from public posts. When a message fits the week, a colleague acting on it is the ordinary thing to do.",
+      "flipNoSend": "Your message didn't go out this time, so there's nothing of yours to show. Next, you spot the same moves in a feed and an inbox, and close the gaps, on Dani's profile and your own.",
+      "flipMissed": "The defence is the same either way: next, you spot the same moves in a feed and an inbox, and close the gaps, on Dani's profile and your own.",
+      "flipMissedHeading": "Nothing to replay this time",
+      "flipLandedNoTells": "It read as an ordinary note from a colleague, with nothing in it to question. Next, you spot the same moves in a feed and an inbox, and close the gaps.",
+      "noBlameLine": "A convincing profile of a person is built from scraps anyone could find. Nobody is foolish for having posted them; the fix is a setting and a pause, not shame.",
+      "defendIntro": "Now you swap sides. Work through the inbox, mark the feed drafts Post, Tweak or Hold, and tighten the settings, on Dani's profile and your own. A friendly opener that steers to your firm's systems or who runs IT is still reconnaissance; report it. There's no clock on you here.",
+      "mondayCard": "On Monday: tighten one privacy setting today, and check what's behind you before your next post or video call. And if a stranger asks about your firm's systems or who runs IT, share nothing and report it using the route in the box below.",
+      "defendOnly": "A well-made message is built from scraps anyone could find online, and anyone can be pulled in by one. The ones you were caught out by are shown below, with what gave each one away."
+    },
+    "_defendOnly": {
+      "_use": "Strings for the defend-only shell (e14_social_media_defend), which has no OSINT, write or flip stage. The generator copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared (the flip strings are never shown). brief equals the generator EPISODES['e14'].defend.brief (keep identical); this is section 8's _defendOnly.brief.",
+      "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. A feed and an inbox are waiting: some posts are fine, some give too much away, and some messages were made to pull work details out of you. Sort them, close the gaps, and report the fakes. Reporting or checking when you're unsure is always fine and never marked down.",
+      "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional practice. In scope: a feed, an inbox and your own profile settings."
+    }
+  }
+}

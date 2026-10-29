@@ -1,0 +1,50 @@
+{
+  "_about": "E14 full-episode-only keys. Each block below is pasted by the wiring agent into the FULL erb's social.awarenessEpisode (sortDrill, privacyPanel) or social.awarenessEpisode.strings (flipDefenderLineByChoice). None is shared with the defend-only shell by the generator (defend_only() builds the awarenessEpisode from named fields and copies no episode-level key), and none is compared by the parity test. See the _notes on each. IMPORTANT for the wiring agent: E14 section 13 says the defend-only shell ALSO keeps the sortDrill feed drill and the privacyPanel, but the generator does not copy episode-level keys, so the defend-only shell will not carry them unless the generator is extended or the defend-only erb is hand-patched with the same two blocks. Flag/resolve this when wiring (see the report's questions).",
+
+  "sortDrill": {
+    "_notes": "Goes in the FULL erb social.awarenessEpisode.sortDrill (ENG-11, on main; shape: sort-drill-model.js normaliseConfig / social-sort-drill.test.mjs). Runs inside the defend stage as an unscored teaching sub-activity, opened before the scored inbox. scored:false, so it records placements for analytics only and shows no mark. Also wanted in the defend-only shell (section 13): add the same block there (see _about). Bins Post/Tweak/Hold. Each card's reason is the one line of feedback.",
+    "bins": [
+      { "id": "post", "label": "Post" },
+      { "id": "tweak", "label": "Tweak" },
+      { "id": "hold", "label": "Hold" }
+    ],
+    "scored": false,
+    "strings": {
+      "title": "Post or Not?",
+      "heading": "Post, Tweak or Hold?",
+      "intro": "Each card is a draft post. Decide whether to Post it, Tweak it first, or Hold it back. The reason shows straight after.",
+      "teach": "Suggested: {bin}.",
+      "teachFits": "That works.",
+      "finish": "See where they went",
+      "summaryHeading": "Where the drafts went"
+    },
+    "cards": [
+      { "id": "e14_feed_lanyard", "situation": "A selfie for your work anniversary, with your lanyard and pass clearly in shot.", "answer": "tweak", "reason": "Lovely photo. Crop or blur the pass first: a badge in a photo helps someone copy it or tailgate in." },
+      { "id": "e14_feed_system", "situation": "'Buried in the new finance system this week but getting there!'", "answer": "hold", "reason": "Hold this: naming an internal system tells an attacker exactly which pretext to use. Keep the system out of it." },
+      { "id": "e14_feed_whiteboard", "situation": "A team photo at your desks, with a whiteboard of client names and go-live dates behind you.", "answer": "tweak", "reason": "Post the people, not the whiteboard. Client names and dates in the background are a free briefing for anyone watching." },
+      { "id": "e14_feed_leave", "situation": "'Two weeks off from Friday, can't wait. House-sitter sorted, cat's in charge.'", "answer": ["tweak", "hold"], "reason": "'Away for two weeks' tells work who is short-staffed and tells strangers the house is empty. Tweak it (drop the dates) or hold it until you're back." },
+      { "id": "e14_feed_pet", "situation": "A photo of your dog on a walk, posted to connections only, no work or location in it.", "answer": "post", "reason": "This one's fine: no work details, no badge, no location, and your audience is set to people you know. Post away." },
+      { "id": "e14_feed_screen", "situation": "A 'my desk setup' photo with your monitor on, email and a client file open on screen.", "answer": "tweak", "reason": "Turn the screen off or angle it away first. An open inbox or document in shot can leak names, subjects and even a meeting link." },
+      { "id": "e14_feed_school", "situation": "Your child's first-day photo, tagging the school by name and location.", "answer": "tweak", "reason": "Post the moment, drop the tag. A school name is a common security-question answer and tells strangers where your child is each morning." }
+    ]
+  },
+
+  "privacyPanel": {
+    "_notes": "Goes in the FULL erb social.awarenessEpisode.privacyPanel (ENG-13, being built; shape per 02_ENGINE_WORK.md ENG-13: { settings:[{ id, label, closesFacts:[se_intel_*], default }], note }). Runs inside the defend stage as an unscored, view-only teaching panel over the OSINT board: toggling a setting marks its named found fact(s) closed in the panel's view (Dani's first, then the learner's own). Every closesFacts id names a declared se_intel_<factId> from attack.json's intelFacts. Also wanted in the defend-only shell (section 13): add the same block there (see _about). In the defend-only shell there is no OSINT board of found facts, so confirm with the ENG-13 implementer how the panel renders without collected facts (it may show the board read-only, or the panel teaches the settings on their own).",
+    "settings": [
+      { "id": "pp_profile", "label": "Set your profile and work details (employer, team, manager) to connections only", "closesFacts": ["se_intel_df_profile"], "default": "open" },
+      { "id": "pp_posts", "label": "Set new and old posts to connections only, and hide your connections list", "closesFacts": ["se_intel_df_leave"], "default": "open" },
+      { "id": "pp_systems", "label": "Don't name internal systems; take down the reposted job advert", "closesFacts": ["se_intel_df_system"], "default": "open" },
+      { "id": "pp_photos", "label": "Check the background before posting; crop out badges and screens, and turn off location tags", "closesFacts": ["se_intel_df_badge"], "default": "open" },
+      { "id": "pp_security_answer", "label": "Use a made-up security-question answer kept in your password manager, not your real pet's name", "closesFacts": ["se_intel_df_pet"], "default": "open" }
+    ],
+    "note": "Each change closes a found fact on the board. Tighten Dani's profile first, then do the same on your own."
+  },
+
+  "flipDefenderLineByChoice": {
+    "_notes": "Goes in the FULL erb social.awarenessEpisode.strings.flipDefenderLineByChoice (erb-only; allow-listed in the parity test's STRINGS_ERB_ONLY_OK, so it needs no new allow-list entry). aw2: the built defender-inbox flip reads the chosen pretext templateId and shows the matching line in place of strings.flipDefenderLine. Keys are the pretext template ids in attack.json. The defend-only shell has no write/flip stage and does not carry this key.",
+    "df_pretext_access_now": "Yasmin read it between two things. It named Dani's leave, the new system and Thandiwe, so it fitted the week, and the rush left no room to check. When a message fits the week, a colleague acting on it is the ordinary thing to do.",
+    "df_pretext_access_calm": "No deadline and no secrecy, just an easy favour that matched a week she knew about. The ease is exactly what slipped it past her.",
+    "df_pretext_catchup": "A catch-up asks for nothing, so there was nothing to question. It is the ask for access that turns a friendly note into a way in."
+  }
+}

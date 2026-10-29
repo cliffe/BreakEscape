@@ -1,0 +1,177 @@
+{
+  "_note": "E14 social-media attack fragment (awareness wave 2, opus48 content slot). A fragment of the `social` block; the full-episode shell copies these keys into scenarios/awareness_e14_social_media/scenario.json.erb, and the defend-only shell leaves the attack out. All companies and people are fictional (BRAND_SET.md, Merrin & Sallow Architects); every address ends .example. The learner, on an authorised Merrin & Sallow exercise, first does the attacker's OSINT on one colleague's public posts (Dani Fenwick, in on the exercise), then writes one pretext message to the colleague covering finance while Dani is away (Yasmin Chaudhry), built only from facts pinned on the board. No scraping tools or techniques, no look-alike: the board shows only what Dani posted, and the defence is always named. Follows e4/attack.json keys.",
+
+  "_fromModel_note": "The composer offers ONE fixed From: the exercise account set up in Dani's name (`dani_exercise`, person 'dani', spoofsFrom false), so the only From template is `df_from` (from_own, no slots). With a non-spoofing account the engine forces the header to the account and passes senderTrust when the account's person is in the target's `trusts` (phish-rules.js judgeSender, forced branch); df_cover.trusts is ['dani']. This matches the brief's 'one From (the learner's exercise account)' and 'senderTrust uses df_full' (the trust rests on Dani's identity). The attacker does NOT use a look-alike or spoofed address: the lesson here is that public posts make the CONTENT believable (pretextRelevant), not the sender header, which is E1/E4's lesson. Deviation from the brief: Dani's own public email address is not provided as a sender-address blank (no `df_address`), because the from_own model needs none and it would muddle the lesson into address spoofing.",
+
+  "people": [
+    { "id": "dani", "kind": "cast", "address": "dani.fenwick@merrinsallow.example",
+      "forms": { "first": "Dani", "full": "Dani Fenwick" } },
+    { "id": "moyo", "kind": "cast", "address": "thandiwe.moyo@merrinsallow.example",
+      "forms": { "first": "Thandiwe", "full": "Thandiwe Moyo" } },
+    { "id": "yasmin", "kind": "cast", "address": "yasmin.chaudhry@merrinsallow.example",
+      "forms": { "first": "Yasmin", "full": "Yasmin Chaudhry" } }
+  ],
+
+  "intelFacts": {
+    "df_profile": {
+      "text": "Dani Fenwick is a junior architect at Merrin & Sallow, on the studio team, and his manager is the studio manager, Thandiwe Moyo.",
+      "subject": "dani", "source": "blk_profile",
+      "provides": [
+        { "type": "name", "about": "sender", "value": "dani_full", "label": "Dani Fenwick", "kind": "distinctive" },
+        { "type": "name", "about": "manager", "value": "moyo_full", "label": "Thandiwe Moyo", "kind": "distinctive" },
+        { "type": "team", "value": "studio", "label": "the studio team", "kind": "generic" }
+      ],
+      "reduceNote": "Lock your profile down: an attacker reads your employer, team and manager straight off a public profile."
+    },
+    "df_system": {
+      "text": "A job advert Dani reposted names the practice's new finance system by name.",
+      "subject": "dani", "source": "post_system",
+      "provides": [
+        { "type": "reference", "value": "ms_finance_system", "label": "the new finance system", "kind": "distinctive" }
+      ],
+      "reduceNote": "Don't name internal systems, security tools or suppliers; a hiring post can give one away."
+    },
+    "df_badge": {
+      "text": "Dani's 'new kit' photo shows a lanyard and a whiteboard in shot, confirming the system and his level of access.",
+      "subject": "dani", "source": "post_badge",
+      "provides": [],
+      "reduceNote": "No badge, pass or screen in a photo; check what's behind you before you post."
+    },
+    "df_leave": {
+      "text": "Dani's leave countdown says he is away all next week.",
+      "subject": "dani", "source": "post_leave",
+      "provides": [
+        { "type": "date", "value": "next_week", "label": "next week", "kind": "distinctive" }
+      ],
+      "reduceNote": "Keep leave private: 'away all week' tells an attacker when to strike and who's covering."
+    },
+    "df_pet": {
+      "text": "Dani's dog photo, captioned as a 'name a pet' answer, gives his dog's name, a common security-question answer.",
+      "subject": "dani", "source": "post_pet",
+      "provides": [],
+      "reduceNote": "Keep pet, school, birthday and first car out of public view; use a made-up security answer kept in your manager."
+    }
+  },
+
+  "_facts_note": "df_badge and df_pet provide no blank values: they are readiness/teaching facts (df_badge corroborates the finance system rather than unlocking a new slot; df_pet is a security-question reminder). This also keeps the pretext's one `reference` slot (system) to a single option, the finance system, so no awkward template x fact combination can arise (the brief proposed df_badge -> reference `df_access`, dropped for this reason; the badge keeps its board card and reduceNote). dani_full and moyo_full are board-distinctiveness facts, not consumed by any slot (the From is from_own), which is why Dani reading 'his profile' on the board is distinctive. See the pilot note in 01_PIPELINE.md on template x fact grammar.",
+
+  "templates": {
+    "df_from": { "part": "from", "text": "{account_name} <{account_address}>", "slots": [] },
+    "df_greet": { "part": "greeting", "text": "Yasmin,", "slots": [] },
+    "df_pretext_access_now": { "part": "pretext",
+      "text": "I'm off all {when} and never got my access to {system} set up before I left. Thandiwe said it was fine. Can you sort it today so I'm not stuck when I'm back? Easiest if you just confirm it here.",
+      "slots": [ { "id": "when", "type": "date" }, { "id": "system", "type": "reference" } ],
+      "urgency": "high" },
+    "df_pretext_access_calm": { "part": "pretext",
+      "text": "I'm away {when}. When you get a chance, could you set up my access to {system} for when I'm back? No rush.",
+      "slots": [ { "id": "when", "type": "date" }, { "id": "system", "type": "reference" } ],
+      "urgency": "low" },
+    "df_pretext_catchup": { "part": "pretext",
+      "text": "How's the studio while I'm away {when}?",
+      "slots": [ { "id": "when", "type": "date" } ],
+      "urgency": "low" }
+  },
+
+  "_templates_note": "The brief's section 9 wording for the two access pretexts said 'get {system} access sorted' and 'sort my {system} access'; with the fact label 'the new finance system' the second read 'sort my the new finance system access' (a double determiner, the exact class of bug the E8 pilot flagged). Reworded to 'access to {system}', which reads correctly with the label: 'set up my access to the new finance system'. Template ids are kept, because flipDefenderLineByChoice is keyed on them. The ask part is folded into the pretext wording (as the brief wrote it), so the target offers no separate `ask` template set.",
+
+  "mailClient": {
+    "accounts": [
+      { "id": "dani_exercise", "address": "dani.fenwick@merrinsallow.example", "displayName": "Dani Fenwick",
+        "kind": "given", "person": "dani", "mailbox": "dani_exercise", "spoofsFrom": false }
+    ],
+    "mailboxes": [ { "id": "dani_exercise" } ],
+    "contacts": [
+      { "id": "yasmin", "person": "yasmin", "name": "Yasmin Chaudhry",
+        "addresses": ["yasmin.chaudhry@merrinsallow.example"], "role": "Finance controller",
+        "targetId": "df_cover" }
+    ],
+    "seededMessages": [
+      { "id": "brief", "mailbox": "dani_exercise",
+        "from": { "name": "Red team lead", "address": "lead@redteam.example", "avatar": "npc_neutral" },
+        "to": "dani.fenwick@merrinsallow.example", "subject": "Authorised exercise: Merrin & Sallow",
+        "body": "Hello,\n\nThis is the authorised Merrin & Sallow exercise. In scope: Dani Fenwick's public posts and this exercise account, set up in his name. Pin what an attacker would use, then write one message to Yasmin, who covers finance while Dani is away. Nothing leaves this account.\n\nRed team lead",
+        "time": "09:02", "unread": true, "folder": "inbox" }
+    ],
+    "checklistTiming": "onSend",
+    "bodyMode": "templates",
+    "freeTextFlavour": false,
+    "showRedFlagMeter": true
+  },
+
+  "osint": {
+    "profile": "awareness",
+    "sites": [
+      { "id": "friendface", "name": "Friendface", "url": "friendface.example", "type": "social",
+        "profiles": [
+          { "person": "dani", "handle": "@dani.builds",
+            "bio": "Junior architect. Dog person. Views my own.",
+            "blocks": [
+              { "id": "blk_profile", "kind": "staff", "person": "dani", "name": "Dani Fenwick",
+                "role": "Junior Architect at Merrin & Sallow Architects, studio team, reports to Thandiwe Moyo (studio manager)",
+                "fact": "df_profile" }
+            ],
+            "posts": [
+              { "id": "post_system", "date": "3 weeks ago",
+                "text": "We're hiring! The studio is moving everything onto our new finance system, so we need someone who knows it. Repost and tag anyone good.",
+                "fact": "df_system" },
+              { "id": "post_badge", "date": "9 days ago",
+                "text": "New-starter kit sorted: lanyard, pass and a desk by the window. Still getting my head round the whiteboard behind me!",
+                "fact": "df_badge" },
+              { "id": "post_leave", "date": "2 days ago",
+                "text": "Countdown is on: away all next week, back refreshed. Somebody water my desk plant.",
+                "fact": "df_leave" },
+              { "id": "post_pet", "date": "last month",
+                "text": "Everyone's doing the 'name a pet' thing, so: meet Biscuit, the best beagle in London.",
+                "fact": "df_pet" }
+            ] }
+        ] }
+    ]
+  },
+
+  "phishTargets": [
+    {
+      "id": "df_cover",
+      "address": "yasmin.chaudhry@merrinsallow.example",
+      "displayName": "Yasmin Chaudhry",
+      "role": "Finance controller",
+      "subjects": [
+        { "id": "s_access", "text": "Quick favour while I'm off", "topic": "access", "requires": ["df_leave"] },
+        { "id": "s_other", "text": "Hello", "topic": "general" }
+      ],
+      "interests": { "topics": ["access"] },
+      "emailReplyDelay": 6,
+      "redFlagMeter": true,
+      "urgency": { "advisoryMax": "low" },
+      "templateSets": {
+        "from": ["df_from"],
+        "greeting": ["df_greet"],
+        "pretext": ["df_pretext_access_now", "df_pretext_access_calm", "df_pretext_catchup"],
+        "ask": []
+      },
+      "primedFor": {
+        "distinctiveValues": ["ms_finance_system", "next_week"],
+        "minDistinct": 1,
+        "trusts": ["dani"],
+        "story": "a colleague she knows is away and has asked her to set up his access before he is back"
+      },
+      "requiredFactors": ["senderTrust", "pretextRelevant"],
+      "advisoryFactors": ["urgencyCalibrated"],
+      "factorStrings": {
+        "open": { "pass": "✓ She would open it", "fail": "Nothing about the sender or the subject made her open it.", "redFlag": null },
+        "senderTrust": { "pass": "✓ It reads as Dani", "fail": "She doesn't act on an access request from a stranger. It has to read as Dani, a colleague she knows.", "redFlag": null },
+        "pretextRelevant": { "pass": "✓ Fits a week she knows Dani is away", "fail": "Nothing ties this to Dani's leave or the finance system, so a request out of the blue reads as odd rather than something he would send.", "redFlag": null },
+        "urgencyCalibrated": { "pass": "✓ The pressure reads as believable" }
+      },
+      "replies": {
+        "landed": "No problem, Dani. I'll get your access set up this afternoon so it's ready for when you're back. Have a good week off.",
+        "missed": "Before I set up any access I'll check with you on your work number, or ask Thandiwe. Nothing goes on until then."
+      },
+      "hints": [
+        "Whose name, as a colleague Yasmin already knows, would make her act on an access request?",
+        "What did his posts give away that makes the request fit this week: his leave, and the system the studio runs?",
+        "Write as Dani, tie it to his leave next week and the new finance system, and keep the ask small."
+      ],
+      "outcome": { "setGlobal": { "phish_df_cover_landed": true } }
+    }
+  ]
+}
