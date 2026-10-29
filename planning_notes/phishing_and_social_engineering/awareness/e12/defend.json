@@ -36,6 +36,17 @@
         "whyBothHalves": "Both halves matter: stopping the wrong visitor keeps the building safe, and letting in the right ones keeps work moving. The day's list or their host is how you tell."
       },
       "criticalWhat": "letting in a visitor you hadn't checked",
+      "_bands": "B1 major F-E12-1: the default band headlines read 'you caught the phish and knew why', which is wrong for a visitor episode (no phish). Reworded for a reception desk; same 85/60/0 cut points as every other awareness set.",
+      "bands": [
+        { "min": 85, "headline": "Sharp: you spotted the risky visitors and knew why" },
+        { "min": 60, "headline": "Getting there: a few tells slipped past" },
+        { "min": 0, "headline": "Worth practising: here's where to look first" }
+      ],
+      "_resultCopy": "B1 major F-E12-1: the default no-flags lines name 'messages' and 'each fake', wrong for a visitor desk. Reworded for visitors.",
+      "resultCopy": {
+        "noFlagsLead": "You didn't tick anything on these visitors, so there's nothing to grade skill by skill.",
+        "noFlags": "Next time, tick what you noticed. The review cards show what gave each one away."
+      },
       "skillNames": {
         "tailgating": "Spotting someone following through a secure door without badging in",
         "no_escort": "Spotting a visitor or contractor left to move around unescorted",
@@ -115,16 +126,18 @@
             { "who": "Inspector", "text": "Annual check, I just need five minutes in your comms room." },
             { "who": "Inspector", "text": "I can let myself in, no need to trouble anyone." }
           ],
-          "truth": { "isPhish": true, "flags": ["uniform_pretext", "not_expected", "secrecy_or_bypass"],
+          "truth": { "isPhish": true, "flags": ["uniform_pretext", "not_expected", "no_escort", "secrecy_or_bypass"],
             "perFlagNote": {
               "uniform_pretext": "A hi-vis and a clipboard are easy to get; neither proves he's expected.",
               "not_expected": "No entry on today's list and the firm on his order isn't the one on the maintenance contract.",
+              "no_escort": "'I can let myself in' means roaming a secure room with nobody alongside him.",
               "secrecy_or_bypass": "'I can let myself in' asks to skip the escort into a secure room." },
             "ifTrusted": "He'd be alone in the comms room with the building's network.",
             "reportReply": "Thanks, facilities confirmed no inspection was booked and the firm's name was wrong." },
           "factorStrings": {
             "uniform_pretext": { "redFlag": "A hi-vis jacket, a clipboard or a job title used in place of being expected." },
-            "not_expected": { "redFlag": "The visitor is not on today's list and their paperwork does not match." } } },
+            "not_expected": { "redFlag": "The visitor is not on today's list and their paperwork does not match." },
+            "no_escort": { "redFlag": "A visitor or contractor left to move around unescorted." } } },
         { "id": "e12_call_courier_push", "kind": "call",
           "_note": "Item 4. Impostor: the exact con the learner just ran, a courier with a parcel and the badge 'in the van' asking to be buzzed through without signing in. Refuse the buzz-through / Ring back (take the parcel at the desk). Local tells tailgating + uniform_pretext (P1 F-E12-7: the hi-vis counts here, same as the fire inspector) plus shared borrowed_authority + secrecy_or_bypass. Mirrors item 5 and closes the loop with the attack.",
           "callerId": "Courier with a parcel, badge 'in the van'",
@@ -133,17 +146,19 @@
             { "who": "Courier", "text": "Sample box for one of your partners, hands full, could you buzz me through?" },
             { "who": "Courier", "text": "Don't worry about signing me in, I'll be thirty seconds." }
           ],
-          "truth": { "isPhish": true, "flags": ["tailgating", "borrowed_authority", "secrecy_or_bypass", "uniform_pretext"],
+          "truth": { "isPhish": true, "flags": ["tailgating", "borrowed_authority", "secrecy_or_bypass", "uniform_pretext", "not_expected"],
             "perFlagNote": {
               "borrowed_authority": "Dropping a partner's name doesn't make the delivery expected.",
               "secrecy_or_bypass": "'Don't bother signing me in' is the ask to skip the one check.",
               "tailgating": "Buzzing the door without a badge is letting them tailgate on your say-so.",
-              "uniform_pretext": "The hi-vis and the parcel say 'courier', but neither proves this delivery was expected." },
+              "uniform_pretext": "The hi-vis and the parcel say 'courier', but neither proves this delivery was expected.",
+              "not_expected": "An unbooked drop-off: nothing on the day's list says a parcel for a partner was due." },
             "ifTrusted": "A stranger is through the badge door and onto the studio floor.",
             "reportReply": "Thanks, real couriers leave the parcel at the desk; we logged it." },
           "factorStrings": {
             "tailgating": { "redFlag": "Someone followed an authorised person through a secure door without badging in." },
-            "uniform_pretext": { "redFlag": "A hi-vis jacket, a clipboard or a job title used in place of being expected." } } },
+            "uniform_pretext": { "redFlag": "A hi-vis jacket, a clipboard or a job title used in place of being expected." },
+            "not_expected": { "redFlag": "The visitor is not on today's list and their paperwork does not match." } } },
         { "id": "e12_call_forgot_badge", "kind": "call",
           "_note": "Item 5. Genuine: a real colleague back from leave with no pass, who the desk can place on the staff list. Ring back (check the list, issue a day pass), not Refuse. Mirror of item 4 (the badge problem: a stranger pushing through vs a known colleague to verify and help).",
           "callerId": "Staff member back from leave, no badge",
@@ -157,7 +172,8 @@
               "default": "A genuine colleague the desk can confirm. Check the staff list and issue a day pass, don't lend your own badge, and don't leave them stuck.",
               "tailgating": "The safe answer is a temporary pass of their own, so the record stays right." },
             "falseAlarmCost": "Refuse flatly and you've left a colleague locked out on their first day back; the courtesy is to verify and help." } },
-        { "id": "e12_call_unlocked_desk", "kind": "call",
+        { "id": "e12_call_unlocked_desk", "kind": "call", "kindTag": "At a colleague's desk",
+          "_kindTag": "B1 nit F-E12-11: this item and item 7 are not a visitor asking to be let in but a moment at a colleague's unattended desk, so 'Let them in' (the set comply label) reads oddly. kindTag reframes the card in the list and review; the comply verdict is unchanged.",
           "_note": "Item 6. Concern: a signed-in visitor left alone by a colleague's desk whose screen was not locked, leaning in to read it. Observed-situation transcript. Escalate (report) or Refuse (lock the screen, step in). Local tells unlocked_screen + no_escort. Mirror of item 7.",
           "callerId": "A visitor near a colleague's unlocked desk",
           "from": { "name": "Signed-in visitor", "address": "By an empty desk" }, "time": "16:10",
@@ -174,7 +190,8 @@
           "factorStrings": {
             "unlocked_screen": { "redFlag": "A screen left unlocked and unattended, open to anyone who walks up or sits down." },
             "no_escort": { "redFlag": "A visitor or contractor left to move around unescorted." } } },
-        { "id": "e12_call_locked_desk", "kind": "call",
+        { "id": "e12_call_locked_desk", "kind": "call", "kindTag": "At a colleague's desk",
+          "_kindTag": "B1 nit F-E12-11: a moment at a colleague's desk, not a visitor to admit; kindTag reframes the card so 'Let them in' reads less oddly. Comply verdict unchanged.",
           "_note": "Item 7. Genuine: a colleague who locks the screen before stepping away; the waiting visitor sees only a locked screen. P1 F-E12-1: Let them in / carry on (comply) is a full-mark answer here (nothing to act on), not the half-mark call-kind default; Check first (verify) is also full. Scored by truth.verdictPoints.trust 60. Mirror of item 6 (the same stepped-away desk, screen locked vs left open).",
           "callerId": "A colleague who locks before stepping away",
           "from": { "name": "Colleague leaving the desk", "address": "At the desk" }, "time": "16:25",
@@ -210,12 +227,22 @@
       "allPhishRight": "Every risky visitor was caught, with every tell named.",
       "reportedPct": "Reported {pct}% of the risky visitors",
       "teamLine": "By reporting or checking {n} of these visitors rather than letting them through, you kept the building safer for everyone in it.",
-      "noBlameLine": "A busy desk that tries to help a full-handed courier is doing its job; a miss just shows which visitor to slow down for next time.",
+      "_noBlameLine": "B1 F-E12-7: reworded away from 'full-handed courier' so it stands on its own in the defend-only shell, where the player never played the courier. The courier-specific replay stays in the flip (full only).",
+      "noBlameLine": "A busy desk that tries to help a visitor with their hands full is doing its job; a miss just shows which visitor to slow down for next time.",
+      "_noBlameLineCritical": "B1 major F-E12-1: the engine default no-blame-after-critical line names 'messages'; reworded for visitors so no phishing wording shows in a visitor episode.",
+      "noBlameLineCritical": "These visitors are played by people whose job is to look like they belong, so a miss here says more about the attack than about you. The points only show where to look next time.",
       "mondayCard": "On Monday: if you don't recognise someone, help them, 'Can I help you find someone? I'll walk you to reception.' Don't hold a secure door for a stranger, everyone badges in for themselves, lock your screen whenever you step away (Windows key and L), and report anyone who pushes past a check, using the route in the box below.",
       "defendOnly": "These visitors were played by people whose job is to look like they belong, and a busy desk can be caught by any of them. Any you were caught out by are shown below, with what gave each one away.",
+      "_conceptPanel": "B1 F-E12-7: heading and text reworded from 'What the courier relied on' / 'the courier was expected' so the debrief panel stands on its own in the defend-only shell (the generator copies this string into it, and there the player never played the courier). The courier callback lives in the flip (full only).",
       "conceptPanel": {
-        "heading": "What the courier relied on",
-        "text": "The parcel, the partner's name and the hurry were all easy to supply, and none of them proved the courier was expected. What stops it costs nothing: a glance at the day's list and walking the visitor to the desk instead of buzzing the door blind. A genuine visitor never minds being signed in and escorted; the one who pushes to skip it is the one to report. The same visitor, once inside, reads whatever is left open, so a locked screen when you step away is part of the same habit."
+        "heading": "What these visitors relied on",
+        "text": "A parcel, a familiar name and a bit of hurry are all easy to supply, and none of them proves a visitor is expected. What stops it costs nothing: a glance at the day's list and walking the visitor to the desk instead of buzzing the door blind. A genuine visitor never minds being signed in and escorted; the one who pushes to skip it is the one to report. The same visitor, once inside, reads whatever is left open, so a locked screen when you step away is part of the same habit."
+      },
+      "_stagesOsint": "B1 minor F-E12-4: the default research-stage card does not say how to add a line to your notes. This text spells out clicking a line; it pairs with osint.pinHints (a visible Pin cue on each line). Full episode only; the generator drops strings.stages not in brief/defend/debrief, so the defend-only shell never carries it.",
+      "stages": {
+        "osint": {
+          "text": "Open the browser and read what you can find about the people and the building. Click a line that looks useful to add it to your notes. Close the browser when you have what you need."
+        }
       }
     },
     "_defendOnly": {

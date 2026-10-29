@@ -63,6 +63,7 @@
 
   "osint": {
     "profile": "awareness",
+    "pinHints": true,
     "sites": [
       { "id": "merrin_site", "name": "Merrin & Sallow Architects", "url": "merrinsallow.example", "type": "company-site",
         "pages": [
@@ -124,7 +125,7 @@
           "pass": "Recipient. Catherine Merrin is a partner here, so the name sounds right.",
           "fail": "Recipient. You said \"{said}\". The desk has no {actual} expecting a parcel.",
           "failCategory": "Recipient. That is not a name she can place.",
-          "unknown": "Recipient. She has no name to check the parcel against."
+          "unknown": "Recipient. With no name to check the parcel against, there is nothing for her to confirm, so she is right not to open the door."
         },
         "techniques": {
           "authority_borrowed": "Borrowed authority. A partner's name on the box does not make the delivery expected.",
@@ -148,7 +149,7 @@
         "Catherine Merrin is the partner whose sample boxes wait at reception; drop her name as the one expecting the parcel."
       ],
       "defenderNotes": {
-        "buzz_door": "The name on the parcel and the hurry were both easy to supply. A quick look at the day's expected-deliveries list, and walking the courier to the desk rather than buzzing the door blind, is what a genuine courier never minds and this one could not survive."
+        "buzz_door": "A parcel, a hurry and a borrowed name are all easy to supply, and none of them proves the delivery was expected. A quick look at the day's expected-deliveries list, and walking the courier to the desk rather than buzzing the door blind, is what a genuine courier never minds and this one could not survive."
       }
     }
   ]
