@@ -93,3 +93,5 @@ Merges now happen in the orchestrator's own worktree (`.claude/worktrees/orch-me
 | C1 | 0 | 1 | 8 | `reviews/build/WAVE1_DESIGN_C1.md`; fixed edf453778 (item 8 scores senderTrust only, per the built forms' C2-M6; retitled "Everyday threats check"; Marcus Webb -> Wesley Tan; E6 unused chip dropped; annual "Caller" restored, brief reworded); P1-m2 fixed by the engine display fix; P3-m2 withdrawn (built E5 item) |
 
 - ENG-14 Wi-Fi list merged. Every SSID uses the address font, so the look-alike is not singled out (ruling: keep). E14 content committed (7bc4ae036); E14 wiring started.
+- E8 design C2 (`reviews/build/E8_DESIGN_C2.md`): 0/0/1. All C1 findings closed except MI5 (kept by design). New N1 (minor): the defend-only `defendIntro` still gives "leave the device as it is" as the universal move; goes to the dialogue fixer. A design C3 confirmation follows the dialogue fixes. E8 dialogue review C1 running (opus48).
+- E14 wiring (Sonnet) stopped by a safety classifier mid-run, with two content gaps the validator found (no ask template; no pretext decoy). Handed to opus48 to finish both wiring and content (wire-e14b), per the user's rule.
