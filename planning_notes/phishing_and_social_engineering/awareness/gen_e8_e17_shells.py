@@ -431,7 +431,7 @@ EPISODES = {
                    'keywords': ['Remote working', 'Mobile devices', 'Public Wi-Fi', 'Shoulder surfing', 'Security awareness']}],
         'defend': {
             'name': 'On the road: tell the safe networks and pages from the fakes',
-            'brief': "You're on an authorised exercise at Tarrowby Logistics, a fictional company. You're working away from the depot and the public networks and sign-in pages keep coming up: the café's Wi-Fi and a look-alike, a page that wants your work password, a notice about a lost device. Some are safe and some are built to catch you. Handle each one, and never type your work password into a Wi-Fi page. No real network is joined and no real password is typed here.",
+            'brief': "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Working away from the depot, the public networks and sign-in pages keep coming up: some are safe to use, and some are built to catch you. Handle each one, and never type your work password into a Wi-Fi page. No real network is joined and no real password is typed here.",
             'endGoal': 'Sort the networks and pages at the training kiosk.',
             'aim': ('tell_them_apart_aim', 'Tell the safe networks and pages from the fakes', 'Work through the public networks and sign-in pages at the training kiosk.'),
             'task': ('tell_them_apart', 'Sort the networks and pages'),

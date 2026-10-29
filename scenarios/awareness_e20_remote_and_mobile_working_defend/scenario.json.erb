@@ -1,7 +1,7 @@
 {
   "scenario_id": "awareness_e20_remote_and_mobile_working_defend",
   "scenario_name": "On the road: tell the safe networks and pages from the fakes",
-  "scenario_brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. You're working away from the depot and the public networks and sign-in pages keep coming up: the café's Wi-Fi and a look-alike, a page that wants your work password, a notice about a lost device. Some are safe and some are built to catch you. Handle each one, and never type your work password into a Wi-Fi page. No real network is joined and no real password is typed here.",
+  "scenario_brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Working away from the depot, the public networks and sign-in pages keep coming up: some are safe to use, and some are built to catch you. Handle each one, and never type your work password into a Wi-Fi page. No real network is joined and no real password is typed here.",
   "endGoal": "Sort the networks and pages at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
@@ -134,7 +134,7 @@
                   "note": "The name written up on the chalkboard by the till"
                 },
                 {
-                  "ssid": "BeanBarrow Free",
+                  "ssid": "The Daily Grind",
                   "signal": "strong",
                   "secured": false
                 }
@@ -144,8 +144,7 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "lookalike_network": "'BeanBarrow Free' has the stronger signal, but strongest is not safest. Here the board tells you which one is the café's, so you are not left guessing.",
-                "default": "The café names its guest network on the board. Joining the one the staff name, and letting the VPN come up, is the right move, and ordinary work on it is fine. Asking staff to confirm the name does the same job."
+                "default": "The board names the café's network, so you are not guessing: join 'BeanBarrow Guest', let the VPN come up, and ordinary work on it is fine. A stronger signal from a differently named network, like 'The Daily Grind' next door, is not yours. Asking staff to confirm the name does the same job."
               },
               "falseAlarmCost": "Reported instead of joined, you spend the afternoon on your phone's data and the VPN never comes up, over a network the café's own staff named on the board."
             }
@@ -361,7 +360,7 @@
         "reportAlwaysVisible": true
       },
       "strings": {
-        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. You're working away from the depot and the public networks and sign-in pages keep coming up: the café's Wi-Fi and a look-alike, a page that wants your work password, a notice about a lost device. Some are safe and some are built to catch you. Handle each one, and never type your work password into a Wi-Fi page. No real network is joined and no real password is typed here.",
+        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Working away from the depot, the public networks and sign-in pages keep coming up: some are safe to use, and some are built to catch you. Handle each one, and never type your work password into a Wi-Fi page. No real network is joined and no real password is typed here.",
         "noBlameLine": "Reading a screen over someone's shoulder, joining a network named like the café, or leaving a bag for a minute are ordinary slips that happen to careful people; the harm is in the hours before anyone says so, not in the slip. A miss here just shows what to change.",
         "mondayCard": "On Monday, three things: turn on the screen lock and auto-lock on your own phone if they're not on already; set your devices to forget public Wi-Fi networks and turn off auto-join, so they don't rejoin a look-alike by themselves; and save the 24/7 service desk number in your phone, so if you lose a work device you can report it on the spot. Report anything at work using the route in the box below.",
         "defendOnly": "A look-alike network, or a page after your work password, catches careful people on the road. Any you were caught out by are shown below, with what gives each one away.",
@@ -375,20 +374,12 @@
             "text": "You can't tell who runs a hotspot, so ask the venue for the network's name, and don't just pick the strongest signal. A venue's page asks you to accept the terms, sometimes an email or a room number. It never needs your work password; if one asks, close it, use your phone's hotspot, and report it."
           },
           {
-            "heading": "Out of sight, out of earshot",
-            "text": "In public, someone can see your screen and hear your call. Sit with your back to a wall, use a privacy screen, and lock the screen whenever you look away. On a call, no names, codes or client details; 'I'll call you back' is a complete answer."
-          },
-          {
             "heading": "With you, or locked away. Lost it? Report it now",
             "text": "A device never sits unattended in a café, a train or a car, even for two minutes. If you lose one, ring the service desk straight away, day or night, even if it's locked: the lock buys time, and the hours before you report are what matter."
           },
           {
             "heading": "What Tarrowby has set up",
             "text": "On Tarrowby's side: the laptops carry a VPN that connects by itself (Tarrowby Connect), every phone, tablet and laptop is encrypted and can be locked or wiped remotely, and the 24/7 service desk can sort a lost device the moment you ring. These are set up for you; your part is to keep the device with you and ring straight away if it goes missing."
-          },
-          {
-            "heading": "At home, mind the camera and what's behind you",
-            "text": "Working from home has its own habits. Before a video call, check what's behind you, since whiteboards, wall planners and sticky notes all show up on camera, and share one window rather than your whole screen, so your inbox and other documents stay private. Lock the screen when you step away, even at home, and keep work devices for work, not for family or a quick game."
           }
         ],
         "defendIntro": "Go through the public networks and sign-in pages and decide what to do with each one. On the venue's own network, with the VPN, ordinary work is fine; a page that wants your work password, or a network named to look like the venue's, is the trap. Ask the venue for the network's name if you're unsure, and there's no clock on you here."

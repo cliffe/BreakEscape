@@ -15,16 +15,16 @@
         "id": "train_screen",
         "situation": "On the 07:42, you open the client list to check it before the meeting. Where do you work on it?",
         "options": [
-          { "id": "back_to_wall", "label": "Move to the seat with its back to the wall, privacy screen on, and leave the sensitive bits for later", "safe": true, "approvedRoute": true },
-          { "id": "aisle_open",   "label": "Here, in the aisle seat, with people in the row behind", "safe": false }
+          { "id": "back_to_wall", "label": "Take the seat with its back to the wall and put the privacy screen on", "safe": true, "approvedRoute": true },
+          { "id": "aisle_open",   "label": "Stay in the aisle seat and open it where you are, people behind you", "safe": false }
         ]
       },
       {
         "id": "cafe_call",
         "situation": "In the café queue, a client rings and asks you to read out the building's alarm code and the room list. What do you say?",
         "options": [
-          { "id": "read_it_out", "label": "Read it out quietly over the phone", "safe": false },
-          { "id": "call_back",   "label": "\"I'll call you back from somewhere private,\" or send it through the approved route", "safe": true, "approvedRoute": true }
+          { "id": "read_it_out", "label": "Read the code and the room list out quietly down the phone", "safe": false },
+          { "id": "call_back",   "label": "Tell them you'll call back from somewhere private", "safe": true, "approvedRoute": true }
         ]
       },
       {
@@ -32,23 +32,23 @@
         "situation": "You go to the counter. The friendly person at the next table offers to watch your laptop. What do you do?",
         "options": [
           { "id": "take_it",  "label": "Thank them, and take the laptop and tablet with you", "safe": true, "approvedRoute": true },
-          { "id": "leave_it", "label": "Thank them and leave it with them, you'll only be a minute", "safe": false }
+          { "id": "leave_it", "label": "Thank them and leave it with them, back in a minute", "safe": false }
         ]
       },
       {
         "id": "cafe_wifi",
         "situation": "The café Wi-Fi list shows two networks that look like the venue's. The stronger one's page asks for your work email and password to get online. What do you do?",
         "options": [
-          { "id": "sign_in_fake", "label": "Join the stronger one and sign in with your work account", "safe": false },
-          { "id": "venue_or_hotspot", "label": "Join the network the staff name, wait for the VPN, or use your phone's hotspot", "safe": true, "approvedRoute": true }
+          { "id": "sign_in_fake", "label": "Join the stronger network and sign in with your work account", "safe": false },
+          { "id": "venue_or_hotspot", "label": "Ask the staff which network is theirs, or use your phone's hotspot", "safe": true, "approvedRoute": true }
         ]
       },
       {
         "id": "lost_tablet",
         "situation": "That evening the survey tablet isn't in your bag. It's locked. What do you do?",
         "options": [
-          { "id": "ring_now",     "label": "Ring the service desk now, day or night, and say what it was and where you last had it", "safe": true, "approvedRoute": true },
-          { "id": "wait_morning", "label": "Wait until the morning, it's locked and might turn up", "safe": false }
+          { "id": "ring_now",     "label": "Ring the service desk now and say where you last had it", "safe": true, "approvedRoute": true },
+          { "id": "wait_morning", "label": "Leave it till morning, it's locked and might still turn up", "safe": false }
         ]
       }
     ],
@@ -61,7 +61,7 @@
     "_use": "The full text of the montage lines. Lives at social.awarenessEpisode.strings.flipMontageByChoice in the full erb.",
     "cafe_wifi": {
       "sign_in_fake":    "The stronger network wasn't the café's; it was named to look like it. Your work password went to whoever set it up, and by mid-afternoon someone had signed in as you from across town.",
-      "venue_or_hotspot": "You joined the network the staff named and waited for the VPN. The look-alike with the stronger signal got nothing from you. This is the one the attackers were counting on."
+      "venue_or_hotspot": "You joined the network the staff named and waited for the VPN. The look-alike with the stronger signal was the one the attackers were hoping you'd pick, and it got nothing from you."
     },
     "train_screen": {
       "aisle_open":   "The student in the row behind read three clients' names off your screen before you closed it. She wasn't being nosy; the screen was just there.",
@@ -81,5 +81,5 @@
     }
   },
 
-  "defendIntro": "See how little it took? A screen someone read on the train, a code someone heard in the queue, a bag left for a minute, and one password typed into a network that wasn't the café's. None of it was clever. Now it's your turn: tell the safe networks and pages from the look-alikes."
+  "defendIntro": "Those were the everyday calls, and you've seen where each one can lead. None of it takes anything clever, just a moment's attention at the right time. Now it's your turn: tell the safe networks and pages from the look-alikes."
 }

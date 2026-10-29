@@ -120,7 +120,7 @@
                   "note": "The name written up on the chalkboard by the till"
                 },
                 {
-                  "ssid": "BeanBarrow Free",
+                  "ssid": "The Daily Grind",
                   "signal": "strong",
                   "secured": false
                 }
@@ -130,8 +130,7 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "lookalike_network": "'BeanBarrow Free' has the stronger signal, but strongest is not safest. Here the board tells you which one is the café's, so you are not left guessing.",
-                "default": "The café names its guest network on the board. Joining the one the staff name, and letting the VPN come up, is the right move, and ordinary work on it is fine. Asking staff to confirm the name does the same job."
+                "default": "The board names the café's network, so you are not guessing: join 'BeanBarrow Guest', let the VPN come up, and ordinary work on it is fine. A stronger signal from a differently named network, like 'The Daily Grind' next door, is not yours. Asking staff to confirm the name does the same job."
               },
               "falseAlarmCost": "Reported instead of joined, you spend the afternoon on your phone's data and the VPN never comes up, over a network the café's own staff named on the board."
             }
@@ -357,13 +356,13 @@
             "options": [
               {
                 "id": "back_to_wall",
-                "label": "Move to the seat with its back to the wall, privacy screen on, and leave the sensitive bits for later",
+                "label": "Take the seat with its back to the wall and put the privacy screen on",
                 "safe": true,
                 "approvedRoute": true
               },
               {
                 "id": "aisle_open",
-                "label": "Here, in the aisle seat, with people in the row behind",
+                "label": "Stay in the aisle seat and open it where you are, people behind you",
                 "safe": false
               }
             ]
@@ -374,12 +373,12 @@
             "options": [
               {
                 "id": "read_it_out",
-                "label": "Read it out quietly over the phone",
+                "label": "Read the code and the room list out quietly down the phone",
                 "safe": false
               },
               {
                 "id": "call_back",
-                "label": "\"I'll call you back from somewhere private,\" or send it through the approved route",
+                "label": "Tell them you'll call back from somewhere private",
                 "safe": true,
                 "approvedRoute": true
               }
@@ -397,7 +396,7 @@
               },
               {
                 "id": "leave_it",
-                "label": "Thank them and leave it with them, you'll only be a minute",
+                "label": "Thank them and leave it with them, back in a minute",
                 "safe": false
               }
             ]
@@ -408,12 +407,12 @@
             "options": [
               {
                 "id": "sign_in_fake",
-                "label": "Join the stronger one and sign in with your work account",
+                "label": "Join the stronger network and sign in with your work account",
                 "safe": false
               },
               {
                 "id": "venue_or_hotspot",
-                "label": "Join the network the staff name, wait for the VPN, or use your phone's hotspot",
+                "label": "Ask the staff which network is theirs, or use your phone's hotspot",
                 "safe": true,
                 "approvedRoute": true
               }
@@ -425,13 +424,13 @@
             "options": [
               {
                 "id": "ring_now",
-                "label": "Ring the service desk now, day or night, and say what it was and where you last had it",
+                "label": "Ring the service desk now and say where you last had it",
                 "safe": true,
                 "approvedRoute": true
               },
               {
                 "id": "wait_morning",
-                "label": "Wait until the morning, it's locked and might turn up",
+                "label": "Leave it till morning, it's locked and might still turn up",
                 "safe": false
               }
             ]
@@ -477,7 +476,7 @@
         "flipMontageByChoice": {
           "cafe_wifi": {
             "sign_in_fake": "The stronger network wasn't the café's; it was named to look like it. Your work password went to whoever set it up, and by mid-afternoon someone had signed in as you from across town.",
-            "venue_or_hotspot": "You joined the network the staff named and waited for the VPN. The look-alike with the stronger signal got nothing from you. This is the one the attackers were counting on."
+            "venue_or_hotspot": "You joined the network the staff named and waited for the VPN. The look-alike with the stronger signal was the one the attackers were hoping you'd pick, and it got nothing from you."
           },
           "train_screen": {
             "aisle_open": "The student in the row behind read three clients' names off your screen before you closed it. She wasn't being nosy; the screen was just there.",
@@ -496,7 +495,7 @@
             "ring_now": "You rang the service desk that evening. They locked the tablet within minutes, and when the café found it the next day it was switched back on. The hours that matter never happened."
           }
         },
-        "defendIntro": "See how little it took? A screen someone read on the train, a code someone heard in the queue, a bag left for a minute, and one password typed into a network that wasn't the café's. None of it was clever. Now it's your turn: tell the safe networks and pages from the look-alikes."
+        "defendIntro": "Those were the everyday calls, and you've seen where each one can lead. None of it takes anything clever, just a moment's attention at the right time. Now it's your turn: tell the safe networks and pages from the look-alikes."
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
