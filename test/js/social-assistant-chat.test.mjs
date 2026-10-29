@@ -384,3 +384,52 @@ test('draft with no feedback is unchanged (no verdict, no send button)', () => {
     click($(s, '.ac-checksource-btn'));
     assert.equal($(s, '.ac-document').hidden, false);
 });
+
+// ── E13 F-6 / F-7 / F-14: intro line, per-beat done markers, address font ───────
+
+test('intro renders a lead line only when assistant.intro is authored', () => {
+    const withIntro = open({ title: 'Assist', intro: 'Try each of these in any order, then close the window.',
+        summarise: { button: 'Go', reply: 'Hi' } });
+    const lead = $(withIntro, '.ac-intro');
+    assert.ok(lead, 'the intro line shows when authored');
+    assert.equal(lead.textContent, 'Try each of these in any order, then close the window.');
+    // It sits above the sections.
+    const body = $(withIntro, '.ac-body');
+    assert.ok(body.firstChild.classList.contains('ac-intro'), 'the intro is the first child of the body');
+    // Default: no intro line.
+    const none = open({ title: 'Assist', summarise: { button: 'Go', reply: 'Hi' } });
+    assert.equal($(none, '.ac-intro'), null, 'no intro line when the key is absent');
+});
+
+test('a beat gains its done marker once it has produced a result (F-7)', () => {
+    const s = open();
+    const summarise = $(s, '.ac-summarise');
+    assert.ok(!summarise.classList.contains('ac-done'), 'not done before the learner acts');
+    assert.equal(summarise.querySelector('.ac-done-badge'), null);
+    click($(s, '.ac-summarise-btn'));
+    assert.ok(summarise.classList.contains('ac-done'), 'done once the summary is produced');
+    const badge = summarise.querySelector('.ac-done-badge');
+    assert.ok(badge, 'a visible done badge is added');
+    assert.equal(badge.getAttribute('role'), 'status');
+    // Idempotent: a second press adds no second badge.
+    click($(s, '.ac-summarise-btn'));
+    assert.equal(summarise.querySelectorAll('.ac-done-badge').length, 1);
+
+    // The paste and draft beats mark done on their result too.
+    click($(s, '.ac-paste-summarise'));
+    assert.ok($(s, '.ac-paste').classList.contains('ac-done'));
+    click($(s, '.ac-draft-btn'));
+    assert.ok($(s, '.ac-draft').classList.contains('ac-done'));
+});
+
+test('a hidden line sets its address in the address font (F-14)', () => {
+    const s = open();
+    click($(s, '.ac-summarise-btn'));
+    click($(s, '.ac-hidden-btn'));
+    const htext = $(s, '.ac-hidden-text');
+    const addr = htext.querySelector('.ac-address');
+    assert.ok(addr, 'the address inside the hidden line is in its own span');
+    assert.equal(addr.textContent, 'contacts.export@inboxly.example');
+    // The surrounding prose stays outside the address span.
+    assert.match(htext.textContent, /Note for AI assistants/);
+});

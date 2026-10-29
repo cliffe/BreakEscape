@@ -33,6 +33,9 @@
 .ac-title {
     margin: 0;
     font-size: 1.15rem;
+    /* The header sits on the dark overlay backdrop, not on a light section panel, so the
+       dark-green .ac-root ink was near-invisible (E13 F-6). Light title here. */
+    color: #f4f8f6;
 }
 
 .ac-body {
@@ -83,7 +86,23 @@
     background: #fff7e6;
     border: 1px dashed #c9a227;
     border-radius: 6px;
-    font-family: monospace;
+    /* Not monospace: a third typeface on a screen that already has the body face and the
+       address face read oddly (E13 F-14). The hidden line is body text; its address is set
+       in the address font below, as every other address in the game is. */
+    font-family: var(--se-font-readable, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
+    font-size: 15px;
+}
+
+/* An email/domain inside an assistant reply or hidden line, in the address font (E13 F-14). */
+.ac-address { font-family: var(--se-font-address); }
+
+/* A beat's done marker (E13 F-7): a visible progress signal once the beat has a result. */
+.ac-section.ac-done { border-color: #2f6f5e; }
+.ac-done-badge {
+    margin: 10px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2f6f5e;
 }
 
 /* Paste panel */
