@@ -37,8 +37,9 @@
 
 .pp-toolbar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 2px solid var(--pp-line); background: var(--pp-raised); }
 .pp-title { flex: 1 1 auto; margin: 0; font-size: 18px; }
-.pp-live { margin: 0; font-size: 13px; color: var(--pp-dim); }
-.pp-live:empty { display: none; }
+/* The live region is for screen readers only; the visible count lives in .pp-counter. Hiding it
+   the way the concern form's .cf-live is keeps it from showing as a stray line (E14-m2). */
+.pp-live { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .pp-stage { flex: 1; min-height: 0; overflow-y: auto; }
 
 .pp-panel { padding: 14px 16px; max-width: 920px; }

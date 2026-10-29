@@ -46,6 +46,7 @@
 .sd-bin-legend { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 10px 0; font-size: 15px; }
 .sd-bin-legend dt { font-weight: 700; }
 .sd-bin-legend dd { margin: 0; }
+.sd-reload-note { margin: 0 0 12px; max-width: 60ch; font-size: 14px; color: var(--sd-dim); }
 .sd-counter { margin: 0 0 6px; font-size: 14px; color: var(--sd-dim); }
 
 .sd-button, .sd-bin-btn { font-family: var(--se-font-readable); font-size: 16px; min-height: 44px; }
@@ -99,7 +100,12 @@
 .sd-col-card { display: flex; flex-direction: column; gap: 2px; margin: 0 0 8px; font-size: 15px; overflow-wrap: anywhere; }
 .sd-col-empty { font-size: 14px; color: var(--sd-dim); }
 .sd-col-reason { font-size: 14px; color: var(--sd-dim); }
-.sd-col-answer { font-size: 14px; font-weight: 700; color: var(--sd-bad); }
+.sd-col-mark { font-size: 14px; font-weight: 700; }
+/* Each summary verdict reads in words; colour only backs it up. Right and "that works" read as
+   good, a safe/cautious choice stays neutral (never red), only a genuine miss is marked red. */
+.sd-mark-right, .sd-mark-fits { color: var(--sd-good); }
+.sd-mark-caution, .sd-mark-suggest { color: var(--sd-dim); }
+.sd-mark-wrong { color: var(--sd-bad); }
 .sd-miss .sd-col-text { text-decoration: underline; text-decoration-color: var(--sd-bad); }
 .sd-score { margin: 0 0 8px; font-size: 17px; font-weight: 700; }
 

@@ -534,6 +534,15 @@ test('sortDrill: a scored drill names its answer key; alwaysScoresBin names a bi
   expectIn(lint(withDrill((d) => { d.scored = 'yes'; })), /scored must be true or false/);
 });
 
+test('sortDrill: a card acceptable list names real bins and is read only when scored (E17-M1)', { skip }, () => {
+  assert.deepEqual(lint(withDrill((d) => { d.cards[0].acceptable = ['ask']; })), [], 'an acceptable bin is fine');
+  expectIn(lint(withDrill((d) => { d.cards[0].acceptable = ['ask', 'maybe']; })), /acceptable 'maybe' is not one of the bins/);
+  expectIn(lint(withDrill((d) => { d.cards[0].acceptable = []; })), /acceptable must be a non-empty array/);
+  expectIn(lint(withDrill((d) => { d.cards[0].acceptable = ['yes']; })), /acceptable 'yes' is already an answer/);
+  expectIn(lint(withDrill((d) => { d.scored = false; delete d.answerKeyProfile; delete d.alwaysScoresBin; d.cards[0].acceptable = ['ask']; })),
+    /acceptable is set on an unscored drill/);
+});
+
 test('sortDrill: locked cards keep one answer and stay drawable; something must be drawable', { skip }, () => {
   expectIn(lint(withDrill((d) => { d.cards[1].answer = ['no', 'ask']; })), /locked but has more than one accepted answer/);
   expectIn(lint(withDrill((d) => { d.cards[1].confirmed = false; })), /locked and confirmed: false/);
@@ -559,7 +568,8 @@ test('sortDrill schema: the clean drill passes; a mistyped key, a fifth bin and 
     ['one bin', (d) => { d.bins = [d.bins[0]]; }, 'bins'],
     ['a numeric answer', (d) => { d.cards[0].answer = 7; }, 'answer'],
     ['scored as a string', (d) => { d.scored = 'yes'; }, 'scored'],
-    ['a missing reason', (d) => { delete d.cards[0].reason; }, 'reason']
+    ['a missing reason', (d) => { delete d.cards[0].reason; }, 'reason'],
+    ['a non-array acceptable', (d) => { d.cards[0].acceptable = 7; }, 'acceptable']
   ];
   const scenarios = [withDrill(), ...cases.map(([, mutate]) => withDrill(mutate))];
   const results = schemaRun(scenarios);

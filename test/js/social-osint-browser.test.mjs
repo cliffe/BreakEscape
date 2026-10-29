@@ -126,6 +126,39 @@ test('selecting a block collects its fact once: global, note, sync, badge; a dec
     assert.equal(window.gameState.globalVariables.se_intel_baker_namesake, undefined);
 });
 
+test('pinHints off by default: no visible pin affordance on blocks', () => {
+    setGlobals();
+    const s = open();
+    assert.equal(s.container.querySelector('.ob-pin'), null);
+    // the screen-reader hint is still present for assistive tech
+    assert.ok(s.container.querySelector('#ob-hint-add'));
+});
+
+test('pinHints on: each not-yet-noted block shows a visible Pin, replaced by Noted once pinned (E14-M1)', () => {
+    setGlobals();
+    social.osint.pinHints = true;
+    const s = open();
+    const pins = s.container.querySelectorAll('.ob-pin');
+    assert.equal(pins.length, s.container.querySelectorAll('.ob-block:not(.is-noted)').length);
+    assert.ok(pins.length >= 1);
+    assert.match(pins[0].textContent, /Pin/);
+    // the pin label sits inside the block button, so keyboard focus reaches it
+    assert.equal(pins[0].closest('.ob-block').tagName, 'BUTTON');
+    pick(s, 'row_pierce');
+    const pierce = block(s, 'row_pierce');
+    assert.ok(pierce.classList.contains('is-noted'));
+    assert.equal(pierce.querySelector('.ob-pin'), null, 'a pinned block shows Noted, not Pin');
+    assert.match(pierce.textContent, /Noted/);
+});
+
+test('pinHints: the pin word is data (osint.pinLabel)', () => {
+    setGlobals();
+    social.osint.pinHints = true;
+    social.osint.pinLabel = 'Add to notes';
+    const s = open();
+    assert.match(s.container.querySelector('.ob-pin').textContent, /Add to notes/);
+});
+
 test('the four flagship facts found by browsing set target_ready_pierce (and not osint_done)', () => {
     setGlobals();
     const s = open();
