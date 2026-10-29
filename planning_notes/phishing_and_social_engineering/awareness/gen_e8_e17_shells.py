@@ -240,11 +240,11 @@ LINES = {
         "That's the lot sorted, thanks. If the official way's ever slow, tell us and we'll fix it, we can't mend what we don't know about.",
         'Thanks, Nilesh.', 'Any time.'),
     ('e9', 'defend'): (
-        "Right, the kiosk's your own account now, with prompts coming in and a few password choices to make. Deny anything you didn't start, and pick the stronger option each time. No rush, and nothing you type here is real.",
+        "Your own account now: prompts coming in, and a few password choices. Deny anything you didn't start, and pick the stronger option each time. Nothing you type here is real.",
         "That's it locked down, thanks. A different password for every account, kept in a manager, and deny what you didn't start: that's the whole of it.",
         'Thanks, Nilesh.', 'Any time.'),
     ('e16', 'defend'): (
-        "Anjali Rao, information security. It's a leaver's week and there's a bit of talk about. You're not here to catch anyone: keep your login yours, tell me what gets offered to you, and bring me facts, not a theory.",
+        "Anjali Rao, information security. It's a leaver's week. You're not here to catch anyone: keep your login yours, tell me what you're offered, and bring me facts, not a theory.",
         "That's them sorted, thanks. Your login is you, offers get reported, and a concern goes to the right person as facts, never a verdict on anyone.",
         'Thanks, Anjali.', 'Any time.'),
 }
