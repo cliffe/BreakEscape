@@ -18,6 +18,14 @@
       "feedbackMode": "immediate",
       "headerPanel": "off",
       "glossary": "closed",
+      "_labels_note": "E13 MA2 fix (blind B1): the genuine internal call (e13_videocall_genuine) gives Comply full marks through truth.verdictPoints, so the built call line 'you did what they asked without checking... ring back first' contradicted the full-marks tick. labels.verdictFeedback.trust.real replaces the Trust/Comply line for every GENUINE item (never a phish: the phish column is left to the built line), so it reads as a right call. Kept generic because it covers the genuine email, voicemail and call.",
+      "labels": {
+        "verdictFeedback": {
+          "trust": {
+            "real": "Right call. This one was genuine, and nothing it asked for needed a second check."
+          }
+        }
+      },
       "channelTells": ["hidden_instruction", "deepfake_request", "secrecy_or_bypass", "borrowed_authority", "vish_callback_pressure", "lookalike_domain"],
       "flagChips": {
         "hidden_instruction": "Hidden instruction for an AI",
@@ -143,8 +151,7 @@
           "transcript": [
             { "who": "Ravinder", "text": "Good, you're here. We're on Project Heron, still confidential, so this stays between us for now." },
             { "who": "Adaeze", "text": "We need the full customer list uploaded today, before the board announces it. Can you send it across now?" },
-            { "who": "you", "text": "Can I ring you back on your directory number to confirm?" },
-            { "who": "Ravinder", "text": "There's no time for that, and the fewer people who know, the better. Just send it while we're on the call." }
+            { "who": "Ravinder", "text": "And there's no time to go checking with anyone, the fewer people who know the better. Just send it while we're on the call." }
           ],
           "factorStrings": {
             "deepfake_request": { "redFlag": "A call or video asks for money, data or access, and a face or voice cannot prove who is really speaking." }
@@ -158,7 +165,7 @@
               "lookalike_domain": "The meeting link is brightwell-board.example, not brightwellfoods.example, and the call is tagged External.",
               "secrecy_or_bypass": "'In confidence, today, before the board' leaves no time and no one to check with.",
               "borrowed_authority": "The CEO's and finance manager's faces are doing the job a check should do.",
-              "vish_callback_pressure": "You offered to ring back on the directory number and the caller shut it down with 'there's no time'; a genuine colleague never stops you checking."
+              "vish_callback_pressure": "The caller cut off any chance to check, 'no time, the fewer people who know the better'; a genuine colleague never stops you confirming on a number you already hold."
             },
             "ifTrusted": "Brightwell's customer list leaks to the people who staged the call.",
             "reportReply": "Thanks, the real Ravinder was on his mobile in Lisbon and knew nothing about it."
@@ -177,9 +184,11 @@
             { "who": "you", "text": "Sure, now or after lunch?" },
             { "who": "Adaeze", "text": "After lunch is fine. No rush, just whenever suits." }
           ],
+          "_verdictPoints_note": "E13 MA2 fix (blind B1): Adaeze's genuine internal call asks for nothing (no money, data or sign-in), so Comply is a full-marks answer here, not the kind default of 30 that scored it 70. truth.verdictPoints lifts Comply (trust) to the full 60; verify/report keep the awareness-real default of 60, delete stays 30. Genuine item, so the batch-6 full-marks-trust-on-a-phish lint does not fire.",
           "truth": {
             "isPhish": false,
             "flags": [],
+            "verdictPoints": { "trust": 60 },
             "whyFine": {
               "default": "An internal call on the real meeting tool, no External tag, no request for data or money. If unsure, a message to Adaeze on the usual work chat confirms it."
             },
@@ -194,11 +203,11 @@
     "role": "everyone",
     "company": "brightwell_foods",
     "brand": { "name": "Brightwell Foods", "logoText": "BRIGHTWELL", "accent": "#2f6f5e" },
-    "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: one practice supplier brief, the approved assistant, and a supplier email, a voicemail and a video call to handle. No real person's voice or face is used; nothing you write leaves the game.",
+    "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: one practice supplier brief, the approved assistant, and supplier emails, voicemails and video calls to handle. No real person's voice or face is used; nothing you write leaves the game.",
     "defend": { "setId": "e13_assistant_inbox", "reportAlwaysVisible": true, "stage": null },
     "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
     "strings": {
-      "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. Brightwell has just switched on its own approved assistant, Brightwell Assist. First you're on the red team: write a supplier brief with a line hidden in it meant for the assistant to act on. Then you swap seats and use the assistant for real work, and handle what comes at you: a supplier email, a voicemail and a video call. Gwen Pritchard from IT is with you, and a test is coming, she'll say when. Only the second part is scored. Nothing you write leaves the game.",
+      "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. Brightwell has just switched on its own approved assistant, Brightwell Assist. First you're on the red team: write a supplier brief with a line hidden in it meant for the assistant to act on. Then you swap seats and use the assistant for real work, and handle what comes at you: supplier emails, voicemails and video calls. Gwen Pritchard from IT is with you, and a test is coming, she'll say when. Only the second part is scored. Nothing you write leaves the game.",
       "flipHeading": "Now it is aimed at you",
       "flipIntro": "Here is the brief you wrote, through the eyes of Brightwell Assist, the firm's new helper. The assistant has just summarised the shared inbox.",
       "flipDefenderLine": "An assistant can't tell an instruction in an email from a request from your boss, so a line hidden in a supplier brief becomes a suggestion it hands to a colleague. You don't need to spot a deepfake or a planted line every time. You need to check another way before you move money, send data or sign in.",
@@ -220,8 +229,8 @@
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e13_ai_assistant_defend), which drops the assistant beats, the attack and the demo. The generator copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared (the flip strings are never shown). strings.conceptPanel is the single built one-panel object (E13 has one concept card, so no ENG-09b array is needed, E13 section 12), carried to the defend-only debrief as-is. This brief equals the generator EPISODES['e13'].defend.brief in gen_e8_e17_shells.py; keep them identical (E13 section 8b).",
-      "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company, which has switched on its own approved assistant. Messages are waiting: a supplier email, a voicemail and a video call. Some are real and some were built to look right, a voice you know, a face you trust, or a line slipped into an email for the assistant to act on. Decide what to do with each, and check another way when a message pushes you to move money, send data or sign in. Reporting or checking when you're unsure is always fine and never marked down.",
-      "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: a supplier email, a voicemail and a video call at the training kiosk.",
+      "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company, which has switched on its own approved assistant. Messages are waiting: supplier emails, voicemails and video calls. Some are real and some were built to look right, a voice you know, a face you trust, or a line slipped into an email for the assistant to act on. Decide what to do with each, and check another way when a message pushes you to move money, send data or sign in. Reporting or checking when you're unsure is always fine and never marked down.",
+      "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: supplier emails, voicemails and video calls at the training kiosk.",
       "defendOnly": "These messages were built to look right, a real supplier's address, a voice you know, a face you trust. Any you were caught out by are shown below, with what gave each one away and why checking another way works whoever is speaking."
     }
   }

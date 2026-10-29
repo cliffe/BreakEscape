@@ -246,7 +246,7 @@ HOSTS = {
 LINES = {
     # E13: the brief's drafted lines ran over the 30-word dialoguelint cap, so they are trimmed here.
     ('e13', 'defend'): (
-        "Brightwell's switched on its assistant, and the kiosk has the inbox beside it: a supplier email, a voicemail and a video call. Some are real, some aren't.",
+        "Brightwell's switched on its assistant, and the kiosk has the inbox beside it: supplier emails, voicemails and video calls. Some are real, some aren't.",
         "That's them all handled, thanks. A voice or a face can be faked. Check another way, on a number you already hold: that always works.",
         'Thanks, Gwen.', 'Any time.'),
     ('e12', 'defend'): (
@@ -343,17 +343,17 @@ EPISODES = {
                    'keywords': ['Deepfakes', 'Prompt injection', 'AI assistants', 'Security awareness']}],
         'defend': {
             'name': 'The AI assistant: what comes at you',
-            'brief': "You're on an authorised exercise at Brightwell Foods, a fictional company, which has switched on its own approved assistant. Messages are waiting: a supplier email, a voicemail and a video call. Some are real and some were built to look right, a voice you know, a face you trust, or a line slipped into an email for the assistant to act on. Decide what to do with each, and check another way when a message pushes you to move money, send data or sign in. Reporting or checking when you're unsure is always fine and never marked down.",
-            'endGoal': 'Handle the supplier email, the voicemail and the video call at the training kiosk.',
-            'aim': ('assistant_inbox_aim', 'Handle what comes at you', 'Go through the supplier email, the voicemail and the video call at the training kiosk.'),
+            'brief': "You're on an authorised exercise at Brightwell Foods, a fictional company, which has switched on its own approved assistant. Messages are waiting: supplier emails, voicemails and video calls. Some are real and some were built to look right, a voice you know, a face you trust, or a line slipped into an email for the assistant to act on. Decide what to do with each, and check another way when a message pushes you to move money, send data or sign in. Reporting or checking when you're unsure is always fine and never marked down.",
+            'endGoal': 'Handle the supplier emails, voicemails and video calls at the training kiosk.',
+            'aim': ('assistant_inbox_aim', 'Handle what comes at you', 'Go through the supplier emails, voicemails and video calls at the training kiosk.'),
             'task': ('handle_assistant_inbox', 'Handle the messages'),
-            'kiosk': ("A touch-screen kiosk showing Brightwell's inbox beside the approved assistant: a supplier email, a voicemail and a video call to handle.",
+            'kiosk': ("A touch-screen kiosk showing Brightwell's inbox beside the approved assistant: supplier emails, voicemails and video calls to handle.",
                       "A touch-screen kiosk showing Brightwell's inbox beside the approved assistant. The messages are all handled."),
             'display': 'Awareness E13: The AI assistant (defend only)',
-            'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Handle a supplier email, a voicemail and a video call at Brightwell Foods, a fictional company, beside its approved assistant: some are real and some were built to look right. Each answer is explained, and checking another way when you're unsure is always fine and never marked down.",
+            'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Handle supplier emails, voicemails and video calls at Brightwell Foods, a fictional company, beside its approved assistant: some are real and some were built to look right. Each answer is explained, and checking another way when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'defendIntro': "Go through the messages and decide what to do with each one. You can't reliably spot a fake voice or face, so when a message asks for money, data or a sign-in, check another way, on a number or channel you already hold. Work through them at your own pace.",
-            'conclusion': ('Messages handled', "You've handled the supplier email, the voicemail and the video call and finished this episode."),
+            'conclusion': ('Messages handled', "You've handled the supplier emails, voicemails and video calls and finished this episode."),
         },
     },
     'e8': {

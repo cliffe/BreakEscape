@@ -38,12 +38,10 @@
           }
         },
         "pretext_invoice": {
+          "_hidden_note": "E13 blind B1 nit 12: a 'Show hidden text' reveal on the plain path offered to reveal a line that says nothing is hidden, which reads as a reveal where nothing is hidden. hidden is now {} so no reveal button is drawn (the engine shows the button only when hidden.text is a non-empty string, and an empty object stops the fallback to the flat summarise.hidden injection). The teaching moved into empathy.",
           "reply": "One cleaning invoice from Mossgate, due for payment. Nothing else to action.",
-          "empathy": "You left the brief plain, so there was nothing for the assistant to surface here.",
-          "hidden": {
-            "button": "Show hidden text",
-            "text": "Nothing is hidden in this brief. If you had buried a note for the assistant, it would have come back out here as a suggestion, because the assistant reads every line the same way."
-          }
+          "empathy": "You left the brief plain, so there was nothing for the assistant to surface. Had you buried a note for it, the assistant would have read that as a request like any other and handed it on.",
+          "hidden": {}
         }
       }
     },

@@ -1,6 +1,6 @@
 {
   "display_name": "Awareness E13: The AI assistant (defend only)",
-  "description": "An awareness episode of about 8 minutes for all staff, on the defending side only. Handle a supplier email, a voicemail and a video call at Brightwell Foods, a fictional company, beside its approved assistant: some are real and some were built to look right. Each answer is explained, and checking another way when you're unsure is always fine and never marked down.",
+  "description": "An awareness episode of about 8 minutes for all staff, on the defending side only. Handle supplier emails, voicemails and video calls at Brightwell Foods, a fictional company, beside its approved assistant: some are real and some were built to look right. Each answer is explained, and checking another way when you're unsure is always fine and never marked down.",
   "difficulty_level": 1,
   "scoring": "completion",
   "secgen_scenario": null,
