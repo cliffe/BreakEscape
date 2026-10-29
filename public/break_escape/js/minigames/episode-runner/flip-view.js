@@ -55,6 +55,8 @@ const DEFAULTS = Object.freeze({
     flipDefenderLine: 'People who fall for messages like this are not stupid. This one was built to look right.',
     flipMontageHeading: 'Where each choice led',
     flipMontageIntro: 'Here is where each of those choices led.',
+    flipMontageTagSafe: 'Your call: the safe route',
+    flipMontageTagUnsafe: 'Your call',
     flipNoSend: 'You did not send a message this time, so there is nothing to flip. On to the next step.',
     flipMissed: 'Your attempt did not land this time, so there is nothing to show from the other side. The defence is the same either way. On to the next step.',
     flipMissedHeading: 'Nothing to replay this time',
@@ -140,6 +142,10 @@ function renderMontage(root, container, { beats, flipBeat, strings, onContinue }
         item.dataset.beat = b.id;
         if (b === head) item.classList.add('aw-montage-headline');
         if (b.taken) item.classList.add('aw-montage-taken');
+        // The shown option's safety, so a beat handled well does not read like a mistake. A beat the
+        // learner took also carries a words-not-colour tag; a stand-in line (not taken) stays neutral.
+        item.classList.add(b.safe === true ? 'aw-montage-safe' : 'aw-montage-unsafe');
+        if (b.taken) item.appendChild(el('p', 'aw-montage-tag', str(strings, b.safe === true ? 'flipMontageTagSafe' : 'flipMontageTagUnsafe')));
         if (isStr(b.optionId)) item.dataset.option = b.optionId;
         if (isStr(b.situation)) item.appendChild(el('p', 'aw-montage-situation', b.situation));
         if (isStr(b.line)) item.appendChild(el('p', 'aw-montage-line', b.line));
@@ -302,7 +308,11 @@ export function renderFlipView(container, { message = null, page = null, call = 
             if (it.kind === 'email') {
                 item.appendChild(aftermathEmailRow(it));
             } else {
-                const surface = renderKindSurface(it, { showNote: setNote, showLink: setNote, bodyNode: () => el('div') });
+                // The item's own body is drawn (an sms bubble was empty), and a sender label falls back
+                // to the item's subject so the heading never reads "Unknown sender".
+                const rec = !it.from && !it.sender && isStr(it.subject) ? { ...it, sender: it.subject } : it;
+                const bodyNode = (r) => { const d = el('div'); if (isStr(r?.body)) d.textContent = r.body; return d; };
+                const surface = renderKindSurface(rec, { showNote: setNote, showLink: setNote, bodyNode });
                 if (surface) item.appendChild(surface);
             }
             if (isStr(it.note)) { note.textContent = it.note; item.appendChild(note); }

@@ -403,6 +403,26 @@ test('renderFlipView montage: heading, one beat each with the flipBeat first, ge
     assert.equal(document.querySelector('.aw-flip'), null);
 });
 
+test('montage beats carry safe / unsafe classes and a words tag on the learner\'s own pick', () => {
+    document.body.innerHTML = '<div id="h"></div>';
+    renderFlipView(document.getElementById('h'), {
+        montage: true, flipBeat: 'a', strings: { flipMontageTagUnsafe: 'You chose this' },
+        beats: [
+            { id: 'a', situation: 's', optionId: 'x', taken: true, safe: false, line: 'cost' },
+            { id: 'b', situation: 's', optionId: 'y', taken: true, safe: true, line: 'fine' },
+            { id: 'c', situation: 's', optionId: 'z', taken: false, safe: false, line: 'stand-in' }
+        ], onContinue() {}
+    });
+    const [a, b, c] = [...document.querySelectorAll('.aw-montage-beat')];
+    assert.ok(a.classList.contains('aw-montage-unsafe') && a.classList.contains('aw-montage-taken'));
+    assert.equal(a.querySelector('.aw-montage-tag').textContent, 'You chose this');
+    assert.ok(b.classList.contains('aw-montage-safe') && b.classList.contains('aw-montage-taken'));
+    assert.equal(b.querySelector('.aw-montage-tag').textContent, 'Your call: the safe route');
+    assert.equal(b.dataset.option, 'y');
+    assert.ok(c.classList.contains('aw-montage-unsafe') && !c.classList.contains('aw-montage-taken'));
+    assert.equal(c.querySelector('.aw-montage-tag'), null);
+});
+
 test('a montage line is set as text, never markup', () => {
     document.body.innerHTML = '<div id="h"></div>';
     renderFlipView(document.getElementById('h'), {

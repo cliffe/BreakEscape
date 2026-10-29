@@ -299,6 +299,31 @@ test('the debrief card names the option, not an email verdict, and shows why or 
     assert.match(cards[0].querySelector('.aw-if-trusted').textContent, /What could go wrong: A text code can be relayed/);
 });
 
+// A wrong choice card is not a trusted phish email: it must not cap the band (E9 MI1).
+test('a wrong choice card does not cap the band the way a trusted phish email does', () => {
+    const bands = [{ min: 90, headline: 'Top' }, { min: 0, headline: 'Rest' }];
+    const good = { id: 'm_phish', verdict: 'report', flags: ['senderTrust', 'urgencyCalibrated'] };
+    const wrongChoice = S.scoreTriage({ messages: [normal(email()), words()],
+        answers: [good, { id: 'c_words', verdict: 'trust', flags: [], action: 'complex' }], profile: 'awareness', bands });
+    // the choice card scores a zero verdict, so the mean is below 90; use a fixture where the mean
+    // would reach the top band without the choice, by scoring only the cap rule: one right email
+    const emailOnly = S.scoreTriage({ messages: [normal(email())], answers: [good], profile: 'awareness', bands });
+    assert.equal(emailOnly.headline, 'Top');
+    assert.equal(wrongChoice.phishCaught, 1);
+    assert.equal(wrongChoice.phishTotal, 1, 'the choice card is outside the phish tallies');
+    // a trusted phish email still caps the top band
+    const trusted = S.scoreTriage({ messages: [normal(email())], answers: [{ id: 'm_phish', verdict: 'trust', flags: [] }],
+        profile: 'awareness', bands: [{ min: 0, headline: 'Top' }, { min: 1000, headline: 'x' }] });
+    assert.equal(trusted.phishCaught, 0);
+    // the cap itself: with every band at min 0, a capped round drops to the second band
+    const two = [{ min: 0, headline: 'Top' }, { min: -1, headline: 'Second' }];
+    const capFromEmail = S.scoreTriage({ messages: [normal(email())], answers: [{ id: 'm_phish', verdict: 'trust', flags: [] }], profile: 'awareness', bands: two });
+    const capFromChoice = S.scoreTriage({ messages: [normal(email()), words()],
+        answers: [good, { id: 'c_words', verdict: 'trust', flags: [], action: 'complex' }], profile: 'awareness', bands: two });
+    assert.equal(capFromEmail.headline, 'Second', 'a trusted phish email caps the band');
+    assert.equal(capFromChoice.headline, 'Top', 'a wrong choice card does not');
+});
+
 // ── opt-in: without a choice message nothing changes ──────────────────────────────
 test('a set with no choice message scores and reads as before', () => {
     const only = scoreOnly(email());

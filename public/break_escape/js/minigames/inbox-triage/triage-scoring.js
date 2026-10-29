@@ -337,7 +337,7 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
     // P5-3 (E5-E7): a phish trusted of a kind that is not critical (a look-alike page, a
     // voicemail) still means a phish was not caught, so the top band ("you caught the phish")
     // is out of reach too.
-    const phishTrusted = perMessage.filter((m) => m.answered && m.isPhish && m.verdict === 'trust').length;
+    const phishTrusted = perMessage.filter((m) => m.answered && m.isPhish && m.verdict === 'trust' && !choiceIds.has(m.id)).length;
     const zeroCap = zeroMisses >= ZERO_SKILL_MISSES_CAP
         || (profile === 'awareness' && zeros.length >= AWARENESS_ZERO_SKILLS_CAP);
     if (criticalMisses.length || phishTrusted || zeroCap) {
