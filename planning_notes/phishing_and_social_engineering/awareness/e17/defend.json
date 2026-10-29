@@ -21,6 +21,24 @@
         "no_work_reason": "Asked to look something up with no work reason",
         "shared_login": "Asked to use or share someone's login"
       },
+      "bands": [
+        {
+          "min": 85,
+          "headline": "Sharp: you made the right calls and knew why"
+        },
+        {
+          "min": 60,
+          "headline": "Getting there: a few reasons slipped past"
+        },
+        {
+          "min": 0,
+          "headline": "Worth practising: here's where to look first"
+        }
+      ],
+      "resultCopy": {
+        "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+        "noFlags": "Next time, tick what you noticed. The review cards give the reason behind each one."
+      },
       "skillNames": {
         "unapproved_tool": "Spotting an unapproved tool or app",
         "no_work_reason": "Noticing a request with no work reason",
@@ -28,7 +46,25 @@
       },
       "_labels": "E17-M2 (E14_E17_PLAYTEST_P1): this set is acceptable-use, not phishing. The running team tally defaults to 'Phish stopped for the team: N'; teamBadge/teamBadgeTitle reword it for a set whose flagged items are unsafe requests, not phish (inbox-triage-minigame.js _renderTeamTally).",
       "labels": {
-        "phishCaughtLabel": "Requests handled the right way",
+        "verdict": {
+          "report": {
+            "hint": "This breaks a rule or needs a look. Tell the service desk."
+          }
+        },
+        "verdictFeedback": {
+          "report": {
+            "phish": "Right call: you raised it. Telling the service desk helps the next person who gets the same request."
+          },
+          "delete": {
+            "phish": "Safe, but not raised. Deleting protects you; telling the service desk helps everyone else."
+          }
+        },
+        "queue": {
+          "inbox": {
+            "reportLabel": "Raised with the service desk"
+          }
+        },
+        "phishCaughtLabel": "Rule-breaking requests spotted",
         "scoreLine": "Right call is most of the score; naming the reasons is the rest.",
         "teamBadge": "Requests handled the right way: {n}",
         "teamBadgeTitle": "Requests you reported or checked this round rather than just acting on them"
@@ -145,7 +181,8 @@
       "_teamLine": "E17-M2 (E14_E17_PLAYTEST_P1): the debrief team line defaults to 'kept N phish away from your team' (debrief-view.js teamLine). This set has no phish, so the override thanks the learner for handling unsafe requests the right way instead. {n} is the count.",
       "teamLine": "By reporting or checking {n} of these rather than just acting on them, you kept the firm on the right side of its own rules.",
       "mondayCard": "Pick the one person you'd ask when you're unsure: the service desk for software and devices, the security team for anything suspicious, the DPO for personal data, your manager for how your team works.",
-      "noBlameLine": "Honest mistakes reported quickly are fixed, not punished. Deliberate misuse is different, and the policy says what happens. The difference is intent and openness."
+      "noBlameLine": "Honest mistakes reported quickly are fixed, not punished. Deliberate misuse is different, and the policy says what happens. The difference is intent and openness.",
+      "noBlameLineCritical": "Rules are hard to carry in your head, so a miss here is no fault of yours. The points only show where to look next time."
     },
     "_defendOnly": {
       "_use": "Strings for the one defend-only shell (e17_acceptable_use_defend). The shell copies brief over strings.brief and scopeNote over scopeNote. Because E17 is defend-only only, with no attack beat to strip, brief and scopeNote here EQUAL strings.brief and scopeNote above; there is nothing to trim, and this is not an error. There are no flip strings, because E17 has no flip.",
