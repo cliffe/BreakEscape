@@ -27,7 +27,7 @@
 
 import { redFlagString, skillName } from '../inbox-triage/triage-flags.js';
 import { weakestFactor, flagUnits, unitAccepts, genuineFeedback, genuineFeedbackText, verdictPoints, verdictPointsOverride, FULL_VERDICT_POINTS, dedupeSentences } from '../inbox-triage/triage-scoring.js';
-import { kindOf, isNonEmail, actionById, kindVerdictLine, defaultSubject, choiceOptionFor, choiceText } from '../inbox-triage/triage-kinds.js';
+import { kindOf, isNonEmail, actionById, kindVerdictLine, defaultSubject, choiceOptionFor, choiceText, verdictFeedbackOverride } from '../inbox-triage/triage-kinds.js';
 
 const DEFAULTS = Object.freeze({
     heading: 'What happened',
@@ -49,8 +49,6 @@ const PANEL_HEADINGS = Object.freeze({
     conceptPanel: 'How it works',
     voicePanel: 'A voice is not proof'
 });
-
-const VERDICT_WORD = Object.freeze({ trust: 'Trust', report: 'Report', delete: 'Delete', verify: 'Verify' });
 
 const LINES = Object.freeze({
     phish: {
@@ -116,8 +114,12 @@ function verdictWordAndLine(answer, msg, phish, labels = null, scoring = null) {
     }
     // truth.kindLine (optional): what a genuine-but-report item really was, in place of "built to look right".
     const kindLine = phish && answer.verdict === 'trust' && isObj(msg?.truth) && isStr(msg.truth.kindLine) ? msg.truth.kindLine : null;
-    return { word: VERDICT_WORD[answer.verdict] || String(answer.verdict ?? ''),
-        line: kindLine ? `${kindLine} Here is what to look for next time.` : (LINES[phish ? 'phish' : 'real'][answer.verdict] || '') };
+    // F-E10-2: name the verdict with the set's relabelled label (not the engine word "Delete"),
+    // and let the set override the feedback line per verdict so it does not leak "Deleting".
+    const word = actionById('email', answer.action, answer.verdict, labels).label || String(answer.verdict ?? '');
+    const fb = verdictFeedbackOverride(labels, answer.verdict, phish);
+    return { word,
+        line: kindLine ? `${kindLine} Here is what to look for next time.` : (fb || LINES[phish ? 'phish' : 'real'][answer.verdict] || '') };
 }
 
 /**

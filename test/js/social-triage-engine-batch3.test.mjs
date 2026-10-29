@@ -180,6 +180,33 @@ test('truth.verifyLine overrides the Verify feedback line; absent keeps the prea
     assert.match($(s2, '.tri-card-verdict').textContent, /Checking first is a sound habit\./);
 });
 
+// ── labels.verdictFeedback (batch-5 F-E10-2) ─────────────────────────────────────
+test('labels.verdictFeedback overrides the per-verdict feedback line; truth.reportLine still wins', () => {
+    const over = awareSet({
+        labels: {
+            verdict: { delete: { label: 'Go the trusted way' } },
+            verdictFeedback: { delete: { phish: 'Skip it and use Quayholt Apps or the service desk number you hold.' } }
+        }
+    });
+    const s = open(over);
+    click($(s, '.tri-start'));
+    click($(s, '.mail-row[data-id="p1"]'));
+    click($(s, '.tri-verdict[data-verdict="delete"]'));
+    click($(s, '.tri-confirm'));
+    const text = $(s, '.tri-card-verdict').textContent;
+    assert.match(text, /You chose Go the trusted way\./, 'the relabelled verdict word');
+    assert.match(text, /Skip it and use Quayholt Apps/);
+    assert.doesNotMatch(text, /Deleting protects you/);
+
+    // Without the override the default line returns.
+    const s2 = open(awareSet());
+    click($(s2, '.tri-start'));
+    click($(s2, '.mail-row[data-id="p1"]'));
+    click($(s2, '.tri-verdict[data-verdict="delete"]'));
+    click($(s2, '.tri-confirm'));
+    assert.match($(s2, '.tri-card-verdict').textContent, /Deleting protects you/);
+});
+
 // ── labels.scoreLine (E8 weak-line #5) ───────────────────────────────────────────
 test('labels.scoreLine overrides the scored-round brief line; absent keeps the default', () => {
     const s = open(awareSet());

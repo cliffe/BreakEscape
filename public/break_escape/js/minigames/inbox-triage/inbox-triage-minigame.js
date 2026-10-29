@@ -50,7 +50,7 @@ import {
 } from './triage-flags.js';
 import {
     kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, kindLabel, kindLabelFor, verdictAction, emailHiddenReveal,
-    shortTitle, realNounFor, choiceOptions, choiceOptionFor, choiceText
+    shortTitle, realNounFor, choiceOptions, choiceOptionFor, choiceText, verdictFeedbackOverride
 } from './triage-kinds.js';
 import { comparisonFor, comparisonText } from './triage-comparison.js';
 
@@ -834,6 +834,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const aware = this.profile === 'awareness';
         const own = kindVerdictLine(kindOf(rec), phish, verdict);
         if (own) return own;
+        // A set may override the per-verdict feedback line (F-E10-2) so a relabelled verdict does
+        // not leak the engine word; a per-item truth.reportLine / verifyLine still wins (below).
+        const fb = verdictFeedbackOverride(this.labels, verdict, phish);
         if (phish) {
             // truth.kindLine (optional) says what this item really was, for a genuine message the
             // learner should still report, where "This one was a phish" would be false.
@@ -847,15 +850,15 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // where "A report warns everyone else" is wrong (reporting a locked-out colleague is not
             // warning the team about an attack). When absent, the default stands.
             const report = isStr(rec.truth.reportLine) ? rec.truth.reportLine
-                : 'Right call: reported. A report warns everyone else.';
+                : (fb || 'Right call: reported. A report warns everyone else.');
             return {
                 report,
-                delete: 'Safe, but not reported. Deleting protects you; reporting warns everyone else.',
-                trust: `Not this time. ${what}`,
-                verify
+                delete: fb || 'Safe, but not reported. Deleting protects you; reporting warns everyone else.',
+                trust: fb || `Not this time. ${what}`,
+                verify: isStr(rec.truth.verifyLine) ? verify : (fb || verify)
             }[verdict];
         }
-        return {
+        return fb || {
             trust: 'Right call. This one was real.',
             report: aware
                 ? "Reported, and that's never wrong. For next time, here is why this one was fine."

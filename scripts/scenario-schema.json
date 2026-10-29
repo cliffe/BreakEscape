@@ -2789,6 +2789,13 @@
       "patternProperties": {"^_": {}},
       "additionalProperties": false
     },
+    "socialTriageVerdictFeedbackLine": {
+      "type": "object",
+      "description": "The feedback line a verdict shows, by truth: phish (when the item is a phish) and real (when it is genuine). Each a non-empty string.",
+      "properties": {"phish": {"type": "string", "minLength": 1}, "real": {"type": "string", "minLength": 1}},
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
     "socialTriageSet": {
       "type": "object",
       "description": "An inbox triage set (design 05; triage-starter.js, inbox-triage-minigame.js)",
@@ -2864,6 +2871,18 @@
               "additionalProperties": false
             },
             "verdict": {"type": "object", "description": "Email verdict buttons and brief legend by trust, report, delete, verify: { label?, past?, hint? }", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
+            "verdictFeedback": {
+              "type": "object",
+              "description": "batch-5 (F-E10-2): override the per-item feedback line a verdict shows the learner, so a relabelled verdict does not leak the engine word ('Deleting protects you' on a page named 'Go the trusted way'). By verdict, each { phish?, real? }. A per-item truth.reportLine / verifyLine still wins. Absent keeps the default lines.",
+              "properties": {
+                "trust": {"$ref": "#/definitions/socialTriageVerdictFeedbackLine"},
+                "report": {"$ref": "#/definitions/socialTriageVerdictFeedbackLine"},
+                "delete": {"$ref": "#/definitions/socialTriageVerdictFeedbackLine"},
+                "verify": {"$ref": "#/definitions/socialTriageVerdictFeedbackLine"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
             "callActions": {"type": "object", "description": "By action id comply, escalate, refuse, verify_callback", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
             "pushActions": {"type": "object", "description": "By action id approve, deny, deny_report", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
             "smsHeading": {"type": "string", "description": "The 'Text message' heading on a text (default 'Text message')"},

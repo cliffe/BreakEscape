@@ -111,6 +111,17 @@ test('batch-5: a valid verdict-points override (per-item and per-set) raises not
     assert.deepEqual(lintJson(j), []);
 });
 
+test('batch-5: a valid labels.verdictFeedback raises nothing; a bad shape is refused', { skip }, () => {
+    const ok = mini();
+    ok.social.triageSets[0].labels = { verdictFeedback: { delete: { phish: 'Use the service desk.', real: 'It was real.' } } };
+    assert.deepEqual(lintJson(ok), []);
+    const bad = mini();
+    bad.social.triageSets[0].labels = { verdictFeedback: { delete: { phish: '' }, nope: { phish: 'x' } } };
+    const out = lintJson(bad);
+    expectIn(out, /labels\.verdictFeedback\.delete\.phish is empty/);
+    expectIn(out, /labels\.verdictFeedback has the key 'nope'/);
+});
+
 test('batch-5: verdict-points out of range or a bad verdict key is refused', { skip }, () => {
     const j = mini();
     j.social.triageSets[0].messages[0].truth.verdictPoints = { trust: 80, bogus: 10 };

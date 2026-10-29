@@ -326,7 +326,7 @@ module ValidateSocial
       return [err("#{where}.labels must be an object")] unless labels.is_a?(Hash)
 
       issues = []
-      known = %w[kind verdict callActions pushActions smsHeading queue choice teamBadge teamBadgeTitle phishCaughtLabel scoreLine]
+      known = %w[kind verdict verdictFeedback callActions pushActions smsHeading queue choice teamBadge teamBadgeTitle phishCaughtLabel scoreLine]
       labels.each_key { |k| issues << err("#{where}.labels has the key '#{k}', which is not one of #{known.join(', ')}") unless known.include?(k) }
       issues << err("#{where}.labels.smsHeading is empty") if labels.key?('smsHeading') && blank?(labels['smsHeading'])
       %w[teamBadge teamBadgeTitle phishCaughtLabel scoreLine].each do |key|
@@ -369,6 +369,26 @@ module ValidateSocial
       group.call('verdict', %w[trust report delete verify])
       group.call('callActions', %w[comply escalate refuse verify_callback])
       group.call('pushActions', %w[approve deny deny_report])
+      if labels.key?('verdictFeedback')
+        vf = labels['verdictFeedback']
+        if !vf.is_a?(Hash)
+          issues << err("#{where}.labels.verdictFeedback must be an object of verdict -> { phish?, real? }")
+        else
+          vf.each do |id, v|
+            next if id.to_s.start_with?('_')
+            issues << warn_("#{where}.labels.verdictFeedback has the key '#{id}', which is not one of trust, report, delete, verify; it is never read") unless BUILT_VERDICTS.include?(id)
+            if !v.is_a?(Hash)
+              issues << err("#{where}.labels.verdictFeedback.#{id} must be an object { phish?, real? } of feedback lines")
+            else
+              v.each do |truth, line|
+                next if truth.to_s.start_with?('_')
+                issues << err("#{where}.labels.verdictFeedback.#{id} has the key '#{truth}', which is not phish or real") unless %w[phish real].include?(truth)
+                issues << err("#{where}.labels.verdictFeedback.#{id}.#{truth} is empty") if %w[phish real].include?(truth) && blank?(line)
+              end
+            end
+          end
+        end
+      end
       if labels.key?('queue')
         q = labels['queue']
         if q.is_a?(Hash)
