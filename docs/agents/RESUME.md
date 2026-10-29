@@ -1,3 +1,7 @@
+# Resume note: video pipeline m01 trial (started 2026-10-29)
+
+Plan `docs/video/M01_TRIAL_PLAN.md` (revised after review R1, `docs/video/reviews/`); log `docs/video/TRIAL_LOG.md`. Branch `claude/break-escape-video-creation-wk365q`. User brief saved on artifact 9ewiCXuTDXZ88YU43EHzpE. Stage 0 (capture tooling, Sonnet) and stage 1 (scout, Haiku) started; see the log for status. Haiku/Sonnet wherever possible (user). Renders go to git-ignored `video_out/`.
+
 # Resume note: awareness course plan and implementation briefs (planning branch ccr-8675a21c-vu1k0k)
 
 Plan folder `planning_notes/security_awareness_course/`; **build briefs in its `implementation/` (start at `implementation/00_README.md`, §12 readiness)**, written for fresh Sonnet agents and checked over five adversarial review rounds (`implementation/reviews/`). Kids game pitch `planning_notes/kids_cyber_game/`. Public repo: keep Hacktivity at feature level.

@@ -71,3 +71,6 @@ tools/playtest/**/*.png
 
 # Agents sometimes create a repo-root scratchpad; real scratch space is the session scratchpad
 /scratchpad/
+
+# Video pipeline renders and stills (docs/video)
+/video_out/
