@@ -483,7 +483,7 @@ EPISODES = {
             'display': 'Awareness E15: Shadow IT (defend only)',
             'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Sort found sticks and shortcut messages at Tarrowby Logistics, a fictional haulier, and match each shortcut to its approved way. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
             'minutes': 8,
-            'defendIntro': "Go through the found sticks and 'quicker way' messages and decide what to do with each, then match each shortcut to its approved swap. A found or posted stick goes to IT unplugged; if the official way is slow, ask IT rather than build a way round it. There's no clock on you here.",
+            'defendIntro': "Now go through the found sticks and 'quicker way' messages and decide what to do with each. A found or posted stick goes to IT unplugged; if the official way is slow, ask IT rather than build a way round it. There's no clock on you here.",
             'conclusion': ('Shortcuts sorted', "You've sorted the inbox and matched the approved swaps, and finished this episode."),
         },
     },

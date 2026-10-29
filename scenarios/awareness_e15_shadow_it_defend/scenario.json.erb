@@ -107,23 +107,20 @@
             "factorStrings": {
               "found_media": {
                 "redFlag": "A found, posted or giveaway stick or device"
-              },
-              "vish_callback_pressure": {
-                "redFlag": "A number to ring that came with the message itself, not one you already hold"
               }
             },
             "truth": {
               "isPhish": true,
               "flags": [
-                "found_media",
-                "vish_callback_pressure"
+                "found_media"
               ],
               "perFlagNote": {
-                "found_media": "A stick that came in the post is a found stick: don't plug it in, not even to see what's on it or who it's from. Hand it to IT, who can check it safely.",
-                "vish_callback_pressure": "The number is written on the note itself, so it only proves whoever sent the stick wrote it down. Ring the client on a number you already hold, not the one on the note."
+                "found_media": "A stick that came in the post is a found stick: don't plug it in, not even to see what's on it or who it's from. Hand it to IT, who can check it safely."
               },
               "ifTrusted": "Plugging it in could run malware the moment a file is opened, on your machine and then the share.",
-              "reportReply": "Thanks. We'll take the stick and hand it to IT to check safely. We rang the client on the number already on file, and they'd posted nothing. A note's number proves nothing; the stick goes to IT."
+              "reportReply": "Thanks. We'll take the stick and hand it to IT to check safely. We rang the client on the number already on file, and they'd posted nothing. A note's number proves nothing; the stick goes to IT.",
+              "kindLine": "The email was genuinely from reception, but the posted stick is a found stick, and plugging it in could run malware.",
+              "missLabel": "plugging in a posted stick"
             }
           },
           {
@@ -298,7 +295,8 @@
               "flags": [],
               "whyFine": {
                 "default": "You asked IT for a tool and they've answered from Nilesh's real address with the approved one. Asking first is exactly what turns a workaround into a quick yes. Handle it."
-              }
+              },
+              "falseAlarmCost": "Reported as a scam, the one quick yes from IT you did get sits in a queue while someone checks a genuine reply."
             }
           }
         ]
@@ -331,8 +329,12 @@
         "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack is due by Monday and the share is slow. Found sticks and 'quicker way' messages are waiting: some are safe, some aren't. Sort them, and match each shortcut to the approved way. Reporting or checking when you're unsure is always fine and never marked down.",
         "noBlameLine": "Shortcuts are well meant, usually taken under a deadline. Being caught by one is no fault of yours; Colin was right that the share was slow. The move is to tell IT so the data gets somewhere safe.",
         "mondayCard": "On Monday: pick the shortcut you reach for most, and learn the approved swap for it. A found or posted stick goes to IT unplugged. Work stays in work places, not your personal email, personal cloud or a free online service. If the official way is slow, tell IT rather than build your own way round, and report what you're unsure about using the route in the box below. If personal data went to a personal account, that route brings in the DPO.",
-        "defendIntro": "Go through the found sticks and 'quicker way' messages and decide what to do with each, then match each shortcut to its approved swap. A found or posted stick goes to IT unplugged; if the official way is slow, ask IT rather than build a way round it. There's no clock on you here.",
-        "defendOnly": "Every shortcut here is the kind a busy person takes with good intentions, and every one has a quiet cost. The ones you were caught out by are shown below, with the approved way."
+        "defendIntro": "Now go through the found sticks and 'quicker way' messages and decide what to do with each. A found or posted stick goes to IT unplugged; if the official way is slow, ask IT rather than build a way round it. There's no clock on you here.",
+        "defendOnly": "Every shortcut here is the kind a busy person takes with good intentions, and every one has a quiet cost. The ones you were caught out by are shown below, with the approved way.",
+        "conceptPanel": {
+          "heading": "About that stick",
+          "text": "The stick that came in the post was ours: an authorised test, and it only tells us a stick was plugged in. We name nobody. Most people who plug a found stick in are being kind, trying to find the owner, or just curious, so the kind move is to hand it to IT."
+        }
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
@@ -396,7 +398,10 @@
           "teach": "Approved way: {bin}.",
           "teachFits": "That's the one.",
           "summaryHeading": "The approved swaps",
-          "doneLine": "You matched all {total} shortcuts to their approved way."
+          "doneLine": "You matched all {total} shortcuts to their approved way.",
+          "launchHeading": "Swap Shop",
+          "launchText": "First, match each shortcut someone might reach for under a deadline to the approved way that does the same job safely. Nothing here is marked.",
+          "launchButton": "Open the Swap Shop"
         }
       }
     },
