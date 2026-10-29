@@ -88,7 +88,7 @@
       "character": "delphine",
       "callId": "merrin_front_desk",
       "tuning": { "matchCreditCapPerLine": 10, "maxRefusals": 2, "feedbackMode": "live", "tellDetail": "full", "showTechniqueNames": "live" },
-      "susceptibility": { "authority_borrowed": -15, "urgency": -10, "deflect": -10 },
+      "susceptibility": { "authority_borrowed": -5, "urgency": -10, "deflect": -10 },
       "unverifiableCost": -10,
       "knows": {
         "recipient": { "value": "merrin_partner", "grade": "identity" }
@@ -111,7 +111,7 @@
           "text": "No need to sign me in, I'll be thirty seconds and straight back out." }
       },
       "asks": {
-        "buzz_door": { "pressure": -10, "floor": 0, "verification": ["recipient"],
+        "buzz_door": { "pressure": -10, "floor": -10, "verification": ["recipient"],
           "grants": { "setGlobal": { "delphine_buzzed_through": true } } }
       },
       "outcomes": {

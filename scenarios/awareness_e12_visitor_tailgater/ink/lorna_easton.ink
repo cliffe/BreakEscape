@@ -14,6 +14,7 @@
 
 VAR episode_e12_visitor_tailgater_defend_done = false
 VAR pretext_merrin_front_desk_outcome = ""
+VAR delphine_buzzed_through = false
 VAR hub_quiet = false
 
 === start ===
@@ -28,7 +29,11 @@ VAR hub_quiet = false
         Lorna Easton: Nobody's in trouble for slowing a pushy visitor down.
     - else:
         { pretext_merrin_front_desk_outcome != "":
-            Lorna Easton: However that went at the door, now you're the one being asked. Same visitors, your desk.
+            { delphine_buzzed_through:
+                Lorna Easton: You talked your way through that door just now. Here you're the one being asked, same visitors.
+            - else:
+                Lorna Easton: She held that door on you just now. Here you're the one being asked, same visitors.
+            }
             Lorna Easton: Sign people in, walk them up, and if someone won't be checked, that's your answer.
         - else:
             Lorna Easton: Welcome to the Merrin & Sallow exercise. Jo's set the red-team scope; I'll see you right.
