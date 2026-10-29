@@ -74,3 +74,5 @@ tools/playtest/**/*.png
 
 # Video pipeline renders and stills (docs/video)
 /video_out/
+# new-game.rb sprite-swap markers (restore-sprite.rb deletes them)
+/tools/playtest/sprite-restore-*.txt
