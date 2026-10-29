@@ -77,6 +77,7 @@ module ValidateSocial
         issues.concat(state_global_checks(ctx, id))
         return issues
       end
+      issues.concat(concern_form_checks(ep)) if ep.key?('concernForm')
       set = defend_set(ctx, ep, issues)
       done = nil
       if set
@@ -1186,6 +1187,62 @@ module ValidateSocial
         issues << err('sortDrill.drawCount must be a whole number of cards, 1 or more')
       elsif count && rules.is_a?(Hash) && rules['oneOfEachAnswer'] == true && count < answered.uniq.length
         issues << err("sortDrill.drawCount #{count} is below the #{answered.uniq.length} bins the cards answer, so oneOfEachAnswer cannot hold")
+      end
+      issues
+    end
+
+    # ---- the concern form (ENG-12) -------------------------------------------------
+
+    CONCERN_KINDS = %w[what when where who].freeze
+
+    # `concernForm` runs inside the defend stage (after any sortDrill, before the triage set). The lints
+    # keep every fact chip usable (a known kind, a unique id) and the minimum reachable.
+    def self.concern_form_checks(ep)
+      f = ep['concernForm']
+      return [err('concernForm must be an object { factChips, conclusionChips?, guidance?, minFacts? }')] unless f.is_a?(Hash)
+
+      issues = []
+      stages = ep['stages']
+      if check_mission?(ep) || !(stages.is_a?(Array) && stages.include?('defend'))
+        issues << err("concernForm runs inside the defend stage; this episode's stages #{stages.inspect} have none to host it")
+      end
+      chips = f['factChips']
+      ids = []
+      if chips.is_a?(Array) && !chips.empty?
+        chips.each_with_index do |c, i|
+          unless c.is_a?(Hash) && !Mail.blank?(c['id']) && !Mail.blank?(c['label'])
+            issues << err("concernForm.factChips[#{i}] needs a non-empty id and label")
+            next
+          end
+          cw = "concernForm.factChips[#{c['id']}]"
+          issues << err("#{cw}.kind '#{c['kind']}' is not one of #{CONCERN_KINDS.join(', ')}") unless CONCERN_KINDS.include?(c['kind'])
+          issues << err("concernForm.factChips: id '#{c['id']}' is used more than once") if ids.include?(c['id'])
+          ids << c['id']
+        end
+      else
+        issues << err('concernForm.factChips must be a non-empty array; the learner builds the report from facts')
+      end
+      conclusions = f['conclusionChips']
+      unless conclusions.nil? || conclusions.is_a?(Array)
+        issues << err('concernForm.conclusionChips must be an array')
+        conclusions = nil
+      end
+      (conclusions || []).each_with_index do |c, i|
+        unless c.is_a?(Hash) && !Mail.blank?(c['id']) && !Mail.blank?(c['label'])
+          issues << err("concernForm.conclusionChips[#{i}] needs a non-empty id and label")
+          next
+        end
+        issues << err("concernForm.conclusionChips: id '#{c['id']}' is also used by another chip") if ids.include?(c['id'])
+        ids << c['id']
+      end
+      if f.key?('minFacts')
+        min = f['minFacts']
+        fact_count = chips.is_a?(Array) ? chips.length : 0
+        if !(min.is_a?(Integer) && min >= 1)
+          issues << err('concernForm.minFacts must be a whole number, 1 or more')
+        elsif min > fact_count
+          issues << err("concernForm.minFacts #{min} is more than the #{fact_count} fact chips, so no report could be complete")
+        end
       end
       issues
     end

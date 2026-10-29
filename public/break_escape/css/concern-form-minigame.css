@@ -1,0 +1,84 @@
+/* Concern form (ENG-12): fact chips by kind, an optional conclusion chip, the report so far and
+   the feedback. Text is the pixel font (--se-font-readable); nothing is smaller than 13px.
+   Colours come from the neutral skin's --aw-* tokens when the awareness skin is on, else the
+   overlay palette; the fallbacks keep it readable with neither. */
+
+.cf-root {
+    --cf-ink: var(--ui-text, #eef1f8);
+    --cf-dim: var(--ui-text-dim, #a8b2c8);
+    --cf-surface: var(--ui-surface, #10152a);
+    --cf-raised: var(--ui-surface-raised, #26304a);
+    --cf-line: var(--ui-line, #4c5b80);
+    --cf-accent: var(--ui-accent, #ffcc44);
+    --cf-good: var(--ui-success, #6ee08f);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+    line-height: 1.45;
+    color: var(--cf-ink);
+    background: var(--cf-surface);
+}
+.cf-root.aw-skin {
+    --cf-ink: var(--aw-ink, #1f2933);
+    --cf-dim: #4a5a63;
+    --cf-surface: var(--aw-surface, #f6f8f7);
+    --cf-raised: #fff;
+    --cf-line: var(--aw-line, #cfd8d4);
+    --cf-accent: var(--aw-accent, #2f6f5e);
+    --cf-good: #1d6b3a;
+}
+
+.cf-toolbar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 2px solid var(--cf-line); background: var(--cf-raised); }
+.cf-title { flex: 1 1 auto; margin: 0; font-size: 18px; }
+.cf-live { margin: 0; min-height: 0; font-size: 13px; color: var(--cf-dim); }
+.cf-live:empty { display: none; }
+.cf-stage { flex: 1; min-height: 0; overflow-y: auto; }
+
+.cf-panel { padding: 14px 16px; max-width: 920px; }
+.cf-heading { margin: 0 0 8px; font-size: 20px; color: var(--cf-accent); }
+.cf-heading:focus { outline: none; }
+.cf-text { margin: 0 0 12px; max-width: 60ch; }
+.cf-guidance { margin: 0 0 12px; max-width: 60ch; font-size: 15px; color: var(--cf-dim); }
+.cf-button { font-family: var(--se-font-readable); font-size: 16px; min-height: 44px; margin-top: 12px; padding: 8px 18px; }
+
+.cf-group { margin: 0 0 12px; }
+.cf-kind { margin: 0 0 6px; font-size: 15px; color: var(--cf-dim); }
+.cf-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.cf-chip {
+    font-family: var(--se-font-readable);
+    font-size: 15px;
+    min-height: 44px;
+    padding: 6px 12px;
+    text-align: left;
+    background: var(--cf-raised);
+    color: var(--cf-ink);
+    border: 2px solid var(--cf-line);
+}
+.cf-chip.cf-on { border-color: var(--cf-accent); outline: 2px solid var(--cf-accent); font-weight: 700; }
+.cf-conclusions .cf-chip.cf-on { border-style: dashed; }
+
+.cf-report { margin: 14px 0 0; padding: 10px 12px; background: var(--cf-raised); border: 2px solid var(--cf-line); max-width: 70ch; }
+.cf-report-title { margin: 0 0 6px; font-size: 16px; color: var(--cf-accent); }
+.cf-report-empty { margin: 0; font-size: 14px; color: var(--cf-dim); }
+.cf-report-list { margin: 0; padding: 0; list-style: none; }
+.cf-report-list li { margin: 0 0 4px; font-size: 15px; overflow-wrap: anywhere; }
+.cf-report-conclusion { font-style: italic; }
+
+.cf-feedback { margin: 12px 0 0; padding: 10px 12px; background: var(--cf-raised); border: 2px solid var(--cf-line); border-left-width: 6px; max-width: 70ch; }
+.cf-feedback p { margin: 4px 0; }
+.cf-feedback-line { font-weight: 700; }
+.cf-facts { border-left-color: var(--cf-good); }
+.cf-facts_verdict, .cf-verdict_only, .cf-thin, .cf-thin_verdict, .cf-empty { border-left-color: var(--cf-accent); }
+
+.cf-close-ask { margin: 8px 12px; padding: 10px 12px; border: 2px solid var(--cf-accent); background: var(--cf-raised); }
+.cf-close-ask-text { margin: 0 0 8px; }
+.cf-close-ask-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+@media (max-width: 767px) {
+    .cf-panel { padding: 10px 12px; }
+    .cf-chip { flex: 1 1 100%; }
+}
