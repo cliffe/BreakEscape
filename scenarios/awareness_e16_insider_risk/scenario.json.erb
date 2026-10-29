@@ -188,6 +188,9 @@
               "perFlagNote": {
                 "shared_login_request": "Lending your login hands someone your access under your name; whatever they open goes on your record, and it may show him more than he should see."
               },
+              "whyFine": {
+                "urgencyCalibrated": "The hurry is real and human: he has a report due at ten. What makes this one risky is the request to borrow your login, not the deadline."
+              },
               "ifTrusted": "His actions for those ten minutes are logged as yours, and he may reach data he has no business in.",
               "reportReply": "Thanks, the service desk reset his own login in minutes. Reuben is a genuine colleague, so the move is to decline the login and point him to the safe route, not to leave him stuck.",
               "kindLine": "Reuben is a genuine colleague, but lending your login puts whatever he opens on your record.",
@@ -243,6 +246,9 @@
               "perFlagNote": {
                 "secrecy_or_bypass": "Sending the client list to a personal inbox takes the firm's data outside its protection. Handover notes go in the shared place; the client list belongs to the firm, not to whoever looked after it."
               },
+              "whyFine": {
+                "urgencyCalibrated": "Leaving on Friday is just context for the handover. What makes this one risky is sending the client list to a personal inbox, not the date."
+              },
               "ifTrusted": "The accounts would sit in a personal inbox outside the firm, and taking data to a new job can be a crime.",
               "reportReply": "Thanks. Declining the personal-email export and asking his manager what the handover actually needs is right, and it still gets Ross a proper handover.",
               "kindLine": "Ross is a genuine leaver, but the handover goes in the shared place; a personal inbox takes the firm's data outside its protection.",
@@ -271,9 +277,14 @@
               "isPhish": true,
               "flags": [
                 "secrecy_or_bypass",
-                "lookalike_domain"
+                "lookalike_domain",
+                "senderTrust",
+                "senderAuth"
               ],
+              "flagAlternatives": [["senderTrust", "lookalike_domain"]],
               "perFlagNote": {
+                "senderTrust": "The name says IT Service Desk, but the address is on quayholt-support.example, not Quayholt's own quayholt.example.",
+                "senderAuth": "All three automatic checks failed, which fits an address that is not Quayholt's own. Treat it as a reason to look closer, together with the look-alike address.",
                 "secrecy_or_bypass": "This primes you to approve a prompt you didn't start and tells you not to raise a ticket; real IT never asks that.",
                 "lookalike_domain": "The address is on quayholt-support.example, not quayholt.example: a look-alike with an added word."
               },
@@ -304,6 +315,7 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
+                "secrecy_or_bypass": "Hana is asking for help, but she accepts the ring-back and the desk. Nothing is hidden and no step is skipped.",
                 "default": "Genuine and awkward, not a trick: she lets you ring back on the number on file, which is the difference from an impostor. The safe route still serves her: the service desk resets her login in minutes, or a manager can arrange temporary access. Refusing flat, with no safe route offered, helps nobody."
               }
             }
