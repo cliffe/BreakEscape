@@ -14,6 +14,7 @@
 //   montageProps(episode, choices)  what the montage flip shows: every beat with the line for the
 //                                 learner's option, else the unsafe option's (ENG-04)
 //   writeKind(episode)            'call' when attack.callId is set (E3), else 'mail'
+//   worldFor(episode)             the world-play block (ENG-05a) of a call attack, cleaned, or null
 //   sentFromRecord(rec, targetId) the ids the write stage holds for the flip
 //   sentFromCall(callId, outcome) the same for a pretext call
 //   flipPage(episode, social, globals)  the built page the flip shows (E5), or null
@@ -250,6 +251,22 @@ export function completeStage(episode, state, stageId, patch = {}) {
 /** How the write stage attacks: 'call' (a pretext call, attack.callId) or 'mail'. */
 export function writeKind(episode) {
     return isStr(episode?.attack?.callId) ? 'call' : 'mail';
+}
+
+/**
+ * The world-play modifier on a call attack (ENG-05a, E12), cleaned, or null. It is not a stage:
+ * the write stage is still the call, and `world` only says where the learner plays it and what
+ * they wear. Null unless the write stage is a call and `world.room` and `world.startRoom` are
+ * both named, so a mail attack or a half-authored block runs the built path.
+ *   { room, startRoom, spawn: { x, y } | null, costume: { sprite, talk? } | null }
+ */
+export function worldFor(episode) {
+    const w = episode?.world;
+    if (!isObj(w) || writeKind(episode) !== 'call' || !isStr(w.room) || !isStr(w.startRoom)) return null;
+    const c = isObj(w.costume) && isStr(w.costume.sprite)
+        ? { sprite: w.costume.sprite, ...(isStr(w.costume.talk) ? { talk: w.costume.talk } : {}) } : null;
+    const sp = isObj(w.spawn) && Number.isFinite(w.spawn.x) && Number.isFinite(w.spawn.y) ? { x: w.spawn.x, y: w.spawn.y } : null;
+    return { room: w.room, startRoom: w.startRoom, spawn: sp, costume: c };
 }
 
 /**

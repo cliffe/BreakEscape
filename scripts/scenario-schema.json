@@ -1959,6 +1959,36 @@
           "patternProperties": {"^_": {}},
           "additionalProperties": false
         },
+        "world": {
+          "type": "object",
+          "description": "ENG-05a/05b: world-play modifier on a call attack (E12). Not a stage: the write stage is still the call. The runner moves the learner into `room`, puts the costume on, and on the call ending (any outcome) or an early exit moves them back and gives the chosen avatar back (aw9). `startRoom` must equal the scenario's startRoom. Linted by awareness.rb",
+          "required": ["room", "startRoom"],
+          "properties": {
+            "room": {"type": "string", "minLength": 1, "description": "The room the attack is played in (a rooms key)"},
+            "startRoom": {"type": "string", "minLength": 1, "description": "The room the learner starts in and returns to (the kiosk room); equals the scenario startRoom"},
+            "spawn": {
+              "type": "object",
+              "description": "Optional landing tile in `room`, in tiles from its top-left; without it the learner lands at the room centre",
+              "required": ["x", "y"],
+              "properties": {"x": {"type": "number", "minimum": 0}, "y": {"type": "number", "minimum": 0}},
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "costume": {
+              "type": "object",
+              "description": "A temporary skin over the chosen avatar (utils/player-costume.js). Never a new chosen avatar",
+              "required": ["sprite"],
+              "properties": {
+                "sprite": {"type": "string", "minLength": 1, "description": "Character atlas key (assets/characters/<sprite>.png)"},
+                "talk": {"type": "string", "minLength": 1, "description": "Talk portrait path; derived from the sprite key when absent"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            }
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
         "sortDrill": {
           "type": "object",
           "description": "ENG-11: a reusable sort drill that runs first inside the defend stage (sort-drill-minigame.js). Cards are sorted into 2 to 4 authored bins with the reason on screen. scored true marks each drop against the card's answer; false is teaching only and shows no mark. Linted by awareness.rb.",

@@ -58,7 +58,7 @@ import { episodeDefendSet } from './role-swap.js';
 import {
     stagesFor, stateKey, readState, completeStage, childLaunch, variantOf,
     sentFromRecord, findSentRecord, flipEntry, measurementCtx, defendSummary,
-    writeKind, sentFromCall, callOutcomeKey, flipPage, flipCall, CALL_LANDED,
+    writeKind, worldFor, sentFromCall, callOutcomeKey, flipPage, flipCall, CALL_LANDED,
     awarenessSettings, reportRouteFor, flipAftermathFor, isMontage, montageProps,
     drillPending, drillLaunchCopy, drillLaunchParams, drillRecord
 } from './episode-model.js';
@@ -207,6 +207,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             now: () => Date.now(),
             schedule: (fn, ms) => setTimeout(fn, ms),
             clearScheduled: (h) => clearTimeout(h),
+            // World-play (ENG-05a): loaded on first use so a runner without `world` never touches them.
+            enterWorld: (world) => import('../../utils/world-play.js').then((m) => m.enterWorld(world)),
+            leaveWorld: (world) => import('../../utils/world-play.js').then((m) => m.leaveWorld(world)),
             ...(isObj(this.params.deps) ? this.params.deps : {})
         };
         this.strip = null;
@@ -291,6 +294,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
 
         this.state = this._readState();
         this._settleCall();
+        this._settleWorld();
         // A pause carried back by a child's return or the triage reopen; only for a stage
         // that is done, and never once the episode has finished.
         const after = this.params.pauseAfter;
@@ -627,7 +631,10 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                 }
             }));
         } else if (spec.kind === 'call') {
-            child = this._launchCall(spec.params);
+            const world = worldFor(this.episode);
+            // A world-play call places the learner first, so the launch is a promise (truthy);
+            // it reports its own failure.
+            child = world ? this._launchWorldCall(spec.params, world) : this._launchCall(spec.params);
         } else if (spec.kind === 'triage' && stage === 'defend' && drillPending(this.episode, this._readState())) {
             // ENG-11: the sort drill comes first in the defend stage. Its record is kept in the
             // state, so the panel then opens the inbox. A drill closed part-way keeps nothing.
@@ -679,7 +686,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
      * a watcher waits for the outcome global and for every overlay to close, then holds the
      * call for the flip and reopens the runner.
      */
-    _launchCall(params) {
+    _launchCall(params, handBack = null) {
         const callId = params.callId;
         const spec = (Array.isArray(this.social.pretextNpcs) ? this.social.pretextNpcs : [])
             .find((c) => isObj(c) && c.callId === callId) || null;
@@ -696,13 +703,50 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         const child = this.launchChild('pretext-prep', socialOverlayParams({ callId, character, npcId }));
         if (child) {
             watchCall({
-                episode: this.episode, callId, before, reopen,
+                episode: this.episode, callId, before, reopen, handBack,
                 globals: () => this.params.globals || win().gameState?.globalVariables || null,
                 save: (state) => { this.deps.write(stateKey(this.episode.id), state, { openChat: false }); win().stateSync?.sync?.(); },
                 schedule: this.deps.schedule, clearScheduled: this.deps.clearScheduled
             });
         }
         return child;
+    }
+
+    /**
+     * World-play (ENG-05a): move the learner into the lobby in the costume, then open the same
+     * pretext-prep card as any call. The watcher puts them back before the runner reopens for the
+     * flip. If the lobby cannot be entered nothing is launched and the learner stays at the kiosk.
+     */
+    async _launchWorldCall(params, world) {
+        const id = this.episode.id;
+        const back = async () => {
+            worldAway.delete(id);
+            try { await this.deps.leaveWorld(world); } catch (e) { console.error('[episode] world hand-back failed:', e); }
+        };
+        const fail = async () => {
+            await back();
+            if (this.gameState.isActive && this.notice) this.notice.textContent = isStr(this.strings.launchFailed) ? this.strings.launchFailed : LAUNCH_FAILED;
+            return null;
+        };
+        worldAway.add(id);
+        let placed = false;
+        try { placed = await this.deps.enterWorld(world); } catch (e) { console.error('[episode] world entry failed:', e); }
+        if (!placed) return fail();
+        this._launching = 'write'; // read by returnParams() while launchChild builds returnTo
+        const child = this._launchCall(params, back);
+        this._launching = null;
+        return child || fail();
+    }
+
+    /**
+     * A reopen with the learner still away (the prep card was closed, so no call ran): bring them
+     * back. A no-op unless this module sent them away, so it costs nothing without `world`.
+     */
+    _settleWorld() {
+        const world = worldFor(this.episode);
+        if (!world || !worldAway.has(this.episode.id)) return;
+        worldAway.delete(this.episode.id);
+        Promise.resolve(this.deps.leaveWorld(world)).catch((e) => console.error('[episode] world hand-back failed:', e));
     }
 
     /** A child's onComplete runs after this overlay has closed: save from the stored state. */
@@ -798,6 +842,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
 // ── the call watcher (module level: the runner is closed while the call runs) ─────
 
 const callWatches = new Map(); // episode id -> { stop }
+const worldAway = new Set();   // episode ids whose learner this module has moved into the world room (ENG-05a)
 
 export function stopCallWatch(episodeId) {
     callWatches.get(episodeId)?.stop?.();
@@ -808,10 +853,10 @@ export function stopCallWatch(episodeId) {
  * Wait for the pretext call to end. Heard: the outcome global changed (the change event) or
  * holds a value it did not hold at launch. Then, once no overlay is open (the chat and its
  * debrief have closed), write the write stage done with the call held, and reopen the runner.
- * If the runner is open again first (the prep card was closed), the watch ends. Exposed for
- * the tests.
+ * If the runner is open again first (the prep card was closed), the watch ends. `handBack`
+ * (optional, ENG-05a) runs before the reopen and when the watch gives up. Exposed for the tests.
  */
-export function watchCall({ episode, callId, before = null, reopen = {}, globals, save, schedule, clearScheduled }) {
+export function watchCall({ episode, callId, before = null, reopen = {}, handBack = null, globals, save, schedule, clearScheduled }) {
     stopCallWatch(episode.id);
     const w = win();
     const key = callOutcomeKey(callId);
@@ -836,17 +881,30 @@ export function watchCall({ episode, callId, before = null, reopen = {}, globals
         const ended = outcome && (heard || outcome !== before);
         if (ended && !current) {
             stopCallWatch(episode.id);
-            const written = completeStage(episode, readState(episode, g[stateKey(episode.id)]), 'write',
-                { sent: sentFromCall(callId, outcome) });
-            const state = skipMfaIfUnlanded(episode, written, outcome);
-            save(state);
-            fw?.startMinigame?.('episode-runner', null, {
-                ...reopen,
-                pauseAfter: episode.facilitated === true ? 'write' : null
-            });
+            const finish = () => {
+                const written = completeStage(episode, readState(episode, g[stateKey(episode.id)]), 'write',
+                    { sent: sentFromCall(callId, outcome) });
+                const state = skipMfaIfUnlanded(episode, written, outcome);
+                save(state);
+                fw?.startMinigame?.('episode-runner', null, {
+                    ...reopen,
+                    pauseAfter: episode.facilitated === true ? 'write' : null
+                });
+            };
+            // World-play (ENG-05a): the learner comes back to the kiosk room, and the costume
+            // comes off, before the flip. Whatever the outcome, and even if the hand-back fails.
+            if (typeof handBack === 'function') {
+                Promise.resolve().then(handBack).catch((e) => console.error('[episode] world hand-back failed:', e)).then(finish);
+            } else {
+                finish();
+            }
             return;
         }
-        if (++ticks > CALL_WAIT_LIMIT) { stopCallWatch(episode.id); return; }
+        if (++ticks > CALL_WAIT_LIMIT) {
+            stopCallWatch(episode.id);
+            if (typeof handBack === 'function') Promise.resolve().then(handBack).catch(() => {});
+            return;
+        }
         timer = schedule(tick, CALL_WAIT_MS);
     };
     callWatches.set(episode.id, { stop, tick });
