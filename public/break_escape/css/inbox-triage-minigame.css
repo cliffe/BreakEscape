@@ -402,8 +402,9 @@
 .tri-wifi-ssid { display: block; font-family: var(--se-font-address); font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
 .tri-wifi-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin-top: 4px; font-size: 13px; }
 .tri-wifi-lock-wrap, .tri-wifi-signal { display: inline-flex; align-items: center; gap: 6px; }
-.tri-wifi-secured { color: #1f5d33; }
-.tri-wifi-open { color: #8f2a1f; }
+/* Neutral on purpose: a password on a public network is not what makes it safe (core_09), so
+   open and secured share one ink and differ only in the lock shape and the words. */
+.tri-wifi-secured, .tri-wifi-open { color: #2a3555; }
 .tri-wifi-lock { position: relative; display: inline-block; width: 12px; height: 8px; margin-top: 7px; background: currentColor; }
 .tri-wifi-lock::before { content: ''; position: absolute; left: 2px; bottom: 8px; width: 4px; height: 5px; border: 2px solid currentColor; border-bottom: 0; }
 .tri-wifi-open .tri-wifi-lock::before { left: 6px; height: 4px; border-right-color: transparent; }
