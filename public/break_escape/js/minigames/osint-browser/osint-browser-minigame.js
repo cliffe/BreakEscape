@@ -56,6 +56,13 @@ function h(tag, props = {}, ...kids) {
     return node;
 }
 
+// An email address or web address inside a sentence is set in the address font, like every other
+// address in the game; the words around it keep the readable face (E8 F15).
+const ADDRESS_RE = /([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|https?:\/\/[^\s,;)]+)/g;
+export function addressify(text) {
+    return String(text ?? '').split(ADDRESS_RE).map((part, i) => (i % 2 ? h('span', { class: 'ob-address', text: part }) : part)).filter((x) => x !== '');
+}
+
 const icon = (name) => h('img', { class: 'ob-icon', src: `${ICON}${name}.png`, alt: '', 'aria-hidden': 'true',
     width: 16, height: 16 });
 
@@ -620,7 +627,7 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         if (fb) {
             const mark = fb.outcome === 'nothing' ? 'mark-question' : 'mark-tick';
             item.appendChild(h('div', { class: `ob-feedback is-${fb.outcome}`, 'data-for': id },
-                icon(mark), h('span', { class: 'ob-feedback-text', text: fb.text })));
+                icon(mark), h('span', { class: 'ob-feedback-text' }, addressify(fb.text))));
         }
         return item;
     }

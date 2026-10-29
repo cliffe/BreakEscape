@@ -146,6 +146,9 @@ export const HEADER_TELLS = Object.freeze(['senderAuth', 'reply_to_differs']);
  * `truth.flags`), which keeps every authored flag tickable. Without a message nothing is
  * dropped from an email's list (the set-level view).
  *
+ * `opts.relevantFirst` puts the set's own tells (flagChips labels) first, then the built-in channel
+ * tells, then the generic email factors; the awareness round passes it (see _chipIds).
+ *
  * `opts.hideHeaderTells` drops the header-panel tells (HEADER_TELLS) whether or not they are
  * authored: the awareness round passes it while the header details for this message are still
  * closed, so the learner is never asked to judge a header they have not opened. It is applied
@@ -178,6 +181,13 @@ export function chipIdsFor(set, kind = 'email', message = null, opts = {}) {
         if (extra.length) ids = [...extra, ...ids];
     }
     if (opts.hideHeaderTells) ids = ids.filter((id) => !HEADER_TELLS.includes(id));
+    // Opt-in order (F4): the set's own tells first, then the channel tells for this kind, then the
+    // generic email factors. The same order for every message of a kind, so it never hints at the
+    // answer. Array.sort is stable, so the order inside each group is unchanged.
+    if (opts.relevantFirst === true) {
+        const rank = (id) => (local(id) ? 0 : (CHANNEL_TELLS[id] && !FACTOR_ORDER.includes(id) ? 1 : 2));
+        ids = [...ids].sort((a, b) => rank(a) - rank(b));
+    }
     return ids;
 }
 

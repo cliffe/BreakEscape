@@ -214,7 +214,12 @@ export class ConcernFormMinigame extends SocialOverlayScene {
         fb.setAttribute('role', 'status');
         fb.dataset.tone = tone;
         fb.appendChild(el('p', 'cf-feedback-line', feedbackFor(this.config, tone)));
-        if (this.config.guidance) fb.appendChild(el('p', 'cf-guidance', this.config.guidance));
+        // The guidance is on the intro already. Under the feedback it shows once, and only when it is
+        // not on screen already, so it does not repeat under every check (E16 MINOR-2).
+        if (this.config.guidance && !this._guidanceShown && !this.stageEl?.querySelector?.('.cf-guidance')) {
+            fb.appendChild(el('p', 'cf-guidance', this.config.guidance));
+            this._guidanceShown = true;
+        }
         return fb;
     }
 

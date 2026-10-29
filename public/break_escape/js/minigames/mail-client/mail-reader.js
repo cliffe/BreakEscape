@@ -133,6 +133,8 @@ export class MailReader {
         this.linkNote = '';
         this.opts.onOpen?.(rec);
         this.render();
+        // A new message opens at its top, not at the scroll position of the one before it.
+        if (this.readPane) this.readPane.scrollTop = 0;
         const heading = this.readPane.querySelector?.('.mail-subject');
         if (heading) { heading.tabIndex = -1; heading.focus?.(); }
         return true;

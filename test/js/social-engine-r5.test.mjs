@@ -150,13 +150,17 @@ test('P5-6: reporting a real item gets a neutral thank-you; a phish keeps "That 
     scene.cleanup();
 });
 
-test('P5-1: the stylesheet pins the result bar to the bottom of the result panel', () => {
+test('P5-1 / E8 F5: the result text scrolls in its own body and the action bar sits below it, never over it', () => {
     const css = readFileSync(join(root, 'public/break_escape/css/inbox-triage-minigame.css'), 'utf8');
-    const rule = /\.tri-result > \.tri-result-bar \{([^}]*)\}/.exec(css);
-    assert.ok(rule, 'a .tri-result > .tri-result-bar rule');
-    assert.match(rule[1], /position: sticky/);
-    assert.match(rule[1], /bottom:/);
-    assert.match(rule[1], /background-color:/);
+    const bar = /\.tri-result > \.tri-result-bar \{([^}]*)\}/.exec(css);
+    assert.ok(bar, 'a .tri-result > .tri-result-bar rule');
+    assert.doesNotMatch(bar[1], /position: sticky/, 'the bar no longer overlays the skill lines');
+    assert.match(bar[1], /flex: none/);
+    assert.match(bar[1], /background-color:/);
+    const body = /\.tri-result > \.tri-result-body \{([^}]*)\}/.exec(css);
+    assert.ok(body, 'a .tri-result > .tri-result-body rule');
+    assert.match(body[1], /overflow-y: auto/);
+    assert.match(css, /\.tri-result \{[^}]*flex-direction: column/);
 });
 
 // ── P5-10: email ticks only for tells the email could carry ──────────────────

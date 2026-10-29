@@ -1187,7 +1187,16 @@ export class MailComposer {
         bar.append(back, send, line);
         this.sendButton = send;
         this.gateLineEl = line;
-        this.root.appendChild(bar);
+        // With the red-flag meter on, the meter and the Send bar share one footer pinned to the foot
+        // of the panel, so the hints are always on screen beside Send (E8 F2), however tall the form.
+        const meter = this.root.querySelector?.('.mail-redflag-meter');
+        if (meter) {
+            const foot = el('div', 'mail-compose-foot');
+            foot.append(meter, bar);
+            this.root.appendChild(foot);
+        } else {
+            this.root.appendChild(bar);
+        }
     }
 
     // ── the blank picker (a listbox; arrow keys, Enter/click, Esc) ────────────

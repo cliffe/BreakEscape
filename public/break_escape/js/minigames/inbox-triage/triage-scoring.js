@@ -118,10 +118,11 @@ export function isCriticalMiss(profile, isPhish, verdict, kind, critical = null)
  * this round's critical misses were ("approving a sign-in you didn't start, or trusting a
  * phish email"). Kinds outside CRITICAL_WHAT read "trusting a phish".
  */
-export function criticalWhat(kinds) {
+export function criticalWhat(kinds, labels = []) {
     const seen = [];
-    for (const k of kinds || []) {
-        const w = CRITICAL_WHAT[k] || 'trusting a phish';
+    // `labels[i]` is that miss's own truth.missLabel (a genuine item that should still be reported).
+    for (const [i, k] of (kinds || []).entries()) {
+        const w = (typeof labels?.[i] === 'string' && labels[i]) || CRITICAL_WHAT[k] || 'trusting a phish';
         if (!seen.includes(w)) seen.push(w);
     }
     if (!seen.length) return '';
@@ -249,6 +250,7 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
     let flagsCaught = 0, flagsAuthored = 0;
     const criticalMisses = [];
     const criticalKinds = [];
+    const criticalLabels = []; // truth.missLabel per critical miss, or null
     let phishVerified = 0;
 
     for (const msg of messages) {
@@ -286,7 +288,11 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         const fPts = isChoice ? 0 : flagPoints(profile, isPhish, { caught: caughtUnits, falseClaims: falseClaims.length, authored: units.length });
         const score = isChoice ? roundHalfUp(vPts * 100 / FULL_VERDICT_POINTS) : roundHalfUp(vPts + fPts);
         const critical = isCriticalMiss(profile, isPhish, verdict, kind, truth.critical);
-        if (critical) { criticalMisses.push(msg.id); criticalKinds.push(kind); }
+        if (critical) {
+            criticalMisses.push(msg.id);
+            criticalKinds.push(kind);
+            criticalLabels.push(typeof truth.missLabel === 'string' && truth.missLabel ? truth.missLabel : null);
+        }
         perMessage.push({
             id: msg.id, isPhish, verdict, verdictPoints: vPts, flagPoints: roundHalfUp(fPts), score,
             caught, missed, falseClaims, answered: true,
@@ -371,6 +377,7 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         realTotal: perMessage.filter((m) => !m.isPhish && !choiceIds.has(m.id)).length,
         criticalMisses,
         criticalKinds,
+        criticalLabels,
         criticalPenalty: CRITICAL_PENALTY * criticalMisses.length,
         // Phish answered Verify / Ring back: caught, but not reported (N7: the report line
         // read like a miss beside a near-perfect round).

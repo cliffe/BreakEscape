@@ -208,7 +208,7 @@ test('immediate feedback, one false alarm: the result names it without repeating
     assert.deepEqual(g.itemWhy, []);
     // one block, after the grid and before the skills
     assert.equal($$(s, '.tri-genuine').length, 1);
-    const order = [...$(s, '.tri-result').children].map((n) => n.className.split(' ')[0]);
+    const order = [...$(s, '.tri-result-body').children].map((n) => n.className.split(' ')[0]);
     assert.ok(order.indexOf('tri-numbers') < order.indexOf('tri-genuine'));
 });
 
