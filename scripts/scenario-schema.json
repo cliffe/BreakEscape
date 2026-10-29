@@ -1412,7 +1412,10 @@
                   {"type": "string"},
                   {
                     "type": "object",
-                    "properties": {"landed": {"type": "string"}, "missed": {"type": "string"}},
+                    "properties": {
+                      "landed": {"type": "string"}, "missed": {"type": "string"},
+                      "sentLine": {"description": "batch-5 (E13 F-2): the send-result banner for this sent pretext, beside the reply. A plain string overrides the landing banner only; { landed, missed } picks by whether the send landed. Default: 'It landed. They acted on it.' / 'It did not land.'", "oneOf": [{"type": "string"}, {"type": "object", "properties": {"landed": {"type": "string"}, "missed": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}]}
+                    },
                     "patternProperties": {"^_": {}},
                     "additionalProperties": false
                   }
@@ -1423,6 +1426,12 @@
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": {"type": "string"}
+        },
+        "sentLines": {
+          "type": "object",
+          "description": "batch-5 (E13 F-2): the send-result banner by the sent template id, a fallback for when the replies.byChoice entry is a plain-string reply with no room for a sentLine. A plain string overrides the landing banner only; { landed, missed } picks by whether the send landed.",
+          "additionalProperties": {"oneOf": [{"type": "string"}, {"type": "object", "properties": {"landed": {"type": "string"}, "missed": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}]},
+          "patternProperties": {"^_": {}}
         },
         "outcome": {
           "type": "object",
