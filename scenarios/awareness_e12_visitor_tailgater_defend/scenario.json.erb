@@ -91,6 +91,29 @@
           "unlocked_screen": "Spotting a screen left unlocked and unattended"
         },
         "labels": {
+          "itemNoun": "visitor",
+          "next": "Next visitor",
+          "teamBadge": "Visitors reported for the team: {n}",
+          "teamBadgeTitle": "Visitors you reported or checked this round rather than letting through",
+          "phishCaughtLabel": "Risky visitors caught",
+          "verdictFeedback": {
+            "trust": {
+              "phish": "Not this time. That visitor was not who they said, or not allowed where they were going.",
+              "real": "That visitor was genuine. Letting someone in is fine once you have seen them on the list or checked with their host."
+            },
+            "report": {
+              "phish": "Right call: reported. Facilities or security can watch for this visitor and warn the rest of the building.",
+              "real": "That visitor was genuine, but reporting when you are unsure is never wrong."
+            },
+            "delete": {
+              "phish": "Safe, but nobody was told. Reporting lets facilities or security look out for this visitor.",
+              "real": "That visitor was genuine. Turning them away without a way to check left them stuck."
+            },
+            "verify": {
+              "phish": "Right call: the day's list or a word with their host is how you check.",
+              "real": "Checking first is fine. This visitor was genuine, and the list or their host confirmed it."
+            }
+          },
           "callActions": {
             "comply": {
               "label": "Let them in",
@@ -180,6 +203,9 @@
               }
             ],
             "truth": {
+              "verdictPoints": {
+                "trust": 60
+              },
               "isPhish": false,
               "flags": [],
               "whyFine": {
@@ -367,6 +393,9 @@
               }
             ],
             "truth": {
+              "verdictPoints": {
+                "trust": 60
+              },
               "isPhish": false,
               "flags": [],
               "whyFine": {
