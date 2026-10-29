@@ -8,6 +8,40 @@
 
   "triageSets": [
     {
+      "genuineCopy": {
+        "binnedLeadOne": "One everyday item was treated as a sign of a takeover",
+        "binnedLeadMany": "{n} everyday items were treated as signs of a takeover",
+        "costBoth": "Reporting when you're unsure is never wrong, but a report on an everyday item takes security's time to check, and a deleted one can leave a colleague's honest slip or a maintenance warning unseen.",
+        "costReport": "Reporting when you're unsure is never wrong, but a report on an everyday item takes security's time to check, and the real item waits.",
+        "costBin": "Deleting an everyday item has a cost: a colleague's honest slip or a maintenance warning goes unanswered.",
+        "whyBothHalves": "Both halves matter: reporting the signs of a takeover limits the damage, and answering the everyday items keeps work moving."
+      },
+      "bands": [
+        {
+          "min": 85,
+          "headline": "Sharp: you read the signs and knew why"
+        },
+        {
+          "min": 60,
+          "headline": "Getting there: a few signs slipped past"
+        },
+        {
+          "min": 0,
+          "headline": "Worth practising: here's where to look first"
+        }
+      ],
+      "criticalWhat": {
+        "email": "treating a sign of a taken-over account as normal",
+        "push": "approving a sign-in you didn't start",
+        "page": "treating a sign of a taken-over account as normal"
+      },
+      "reportReply": "Thanks. We're looking at the account now. Please leave the device as it is.",
+      "resultCopy": {
+        "noFlags": "Next time, tick what looks off. The review cards show what each sign was telling you.",
+        "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+        "criticalLead": "let a problem go unreported",
+        "reportedPct": "Reported {pct}% of the signs of a taken-over account"
+      },
       "id": "e8_used_account",
       "_prefix": "Prefix for the full episode (id e8_after_the_click). The defend-only shell (id e8_after_the_click_defend) sets episode_e8_after_the_click_defend_defend_ instead. No stage on purpose, as in E1/E5: the effective stage is 'mission', and an explicit stage with passPercent 0 draws a validator warning.",
       "_localTells": "unexpected_sent_item, unrequested_reset and ransomware_note are account-takeover and malware signs with no built equivalent, so they are scenario-local to this set (00 section 2's CHANNEL_TELLS is untouched, and no SKILL_NAMES entry is added to phish-rules.js/triage.rb). Each is declared in channelTells with a flagChips label and a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's skill name), and every flagging message carries a factorStrings.<id>.redFlag sentence. Promote one to the shared library only if a 10 check item later scores it. unrequested_mfa_push and secrecy_or_bypass are shared-library tells and need no label.",
@@ -32,6 +66,9 @@
         "ransomware_note": "Recognising a ransom note"
       },
       "labels": {
+        "teamBadgeTitle": "Signs of a taken-over account you reported or checked this round rather than carrying on",
+        "teamBadge": "Signs reported for the team: {n}",
+        "phishCaughtLabel": "Signs spotted",
         "verdict": {
           "report": { "hint": "Something here is wrong. Send it to security." }
         }
@@ -181,6 +218,10 @@
     "defend": { "setId": "e8_used_account", "reportAlwaysVisible": true },
     "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
     "strings": {
+      "allPhishRight": "Every sign was caught, with every reason named.",
+      "teamLine": "By reporting or checking {n} of these rather than carrying on, you got a taken-over account looked at sooner.",
+      "weakestTells": "The signs most often missed: {names} ({counts} each).",
+      "weakestTell": "The sign most often missed: {names} ({counts}).",
       "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: look at what's public about a Quayholt colleague, then write one email, dressed up as the IT service desk, that asks them to sign in again. Then you swap seats. The colleague clicked, and now you're the one whose account is being used. Sort the signs that follow. Only that second part is scored.",
       "flipHeading": "Now it lands on you",
       "flipIntro": "This is your email as Ayaan met it. He is the claims handler you sent it to, and this time he signed in.",

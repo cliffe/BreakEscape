@@ -59,6 +59,40 @@
   "social": {
     "triageSets": [
       {
+        "genuineCopy": {
+          "binnedLeadOne": "One everyday item was treated as a sign of a takeover",
+          "binnedLeadMany": "{n} everyday items were treated as signs of a takeover",
+          "costBoth": "Reporting when you're unsure is never wrong, but a report on an everyday item takes security's time to check, and a deleted one can leave a colleague's honest slip or a maintenance warning unseen.",
+          "costReport": "Reporting when you're unsure is never wrong, but a report on an everyday item takes security's time to check, and the real item waits.",
+          "costBin": "Deleting an everyday item has a cost: a colleague's honest slip or a maintenance warning goes unanswered.",
+          "whyBothHalves": "Both halves matter: reporting the signs of a takeover limits the damage, and answering the everyday items keeps work moving."
+        },
+        "bands": [
+          {
+            "min": 85,
+            "headline": "Sharp: you read the signs and knew why"
+          },
+          {
+            "min": 60,
+            "headline": "Getting there: a few signs slipped past"
+          },
+          {
+            "min": 0,
+            "headline": "Worth practising: here's where to look first"
+          }
+        ],
+        "criticalWhat": {
+          "email": "treating a sign of a taken-over account as normal",
+          "push": "approving a sign-in you didn't start",
+          "page": "treating a sign of a taken-over account as normal"
+        },
+        "reportReply": "Thanks. We're looking at the account now. Please leave the device as it is.",
+        "resultCopy": {
+          "noFlags": "Next time, tick what looks off. The review cards show what each sign was telling you.",
+          "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+          "criticalLead": "let a problem go unreported",
+          "reportedPct": "Reported {pct}% of the signs of a taken-over account"
+        },
         "id": "e8_used_account",
         "title": "Ayaan's inbox after the click",
         "brief": "You're covering Ayaan's inbox after the click. Six things have turned up. For each one, choose Trust, Report, Delete or Verify (ring the service desk or Anjali on a number you already hold), then tick what you noticed. Reporting when you're unsure is always fine and never marked down.",
@@ -86,6 +120,9 @@
           "ransomware_note": "Recognising a ransom note"
         },
         "labels": {
+          "teamBadgeTitle": "Signs of a taken-over account you reported or checked this round rather than carrying on",
+          "teamBadge": "Signs reported for the team: {n}",
+          "phishCaughtLabel": "Signs spotted",
           "verdict": {
             "report": {
               "hint": "Something here is wrong. Send it to security."
@@ -300,6 +337,10 @@
         "reportAlwaysVisible": true
       },
       "strings": {
+        "allPhishRight": "Every sign was caught, with every reason named.",
+        "teamLine": "By reporting or checking {n} of these rather than carrying on, you got a taken-over account looked at sooner.",
+        "weakestTells": "The signs most often missed: {names} ({counts} each).",
+        "weakestTell": "The sign most often missed: {names} ({counts}).",
         "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. A colleague, Ayaan, clicked a convincing email and signed in, and now his account is being used. You're covering his inbox at the kiosk. Some of what turns up is a real sign that something is wrong, and some is ordinary. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down.",
         "allRight": "You read every sign the right way. They all trace back to one email built to look like the service desk, and the real desk never asks you to sign in by email.",
         "noBlameLine": "Everyone clicks something eventually, and a colleague who reports their own slip is doing exactly the right thing. A miss here just shows where to look next time; nobody is in trouble for reporting.",
