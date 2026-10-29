@@ -77,7 +77,7 @@ test('stages: valid ids, in the order of the variant, ["check"] on a check', { s
   expectIn(lint(j), /must be \["check"\]/);
   j = fx('clean_full.json');
   ep(j).variant = 'sideways';
-  expectIn(lint(j), /variant 'sideways' must be full or defendOnly/);
+  expectIn(lint(j), /variant 'sideways' must be full, defendOnly or brief/);
 });
 
 test('ids: _defend on defendOnly, and only there', { skip }, () => {
@@ -541,4 +541,76 @@ test('sortDrill schema: the clean drill passes; a mistyped key, a fifth bin and 
     assert.deepEqual(other, [], `${name}: an error outside #/social`);
     assert.ok(social.some((e) => e.includes('sortDrill') && e.includes(detail)), `${name}: no error naming ${detail}\n${social.join('\n')}`);
   });
+});
+
+// ── ENG-10: the brief-only episode (variant "brief", stages ["brief"]) ──────────────
+test('a clean brief-only shell gives no issues and needs no defend set or attack block', { skip }, () => {
+  assert.deepEqual(lint(fx('clean_brief_only.json')), []);
+});
+
+test('brief: stages must be ["brief"], and defend or attack blocks are refused', { skip }, () => {
+  let j = fx('clean_brief_only.json');
+  ep(j).stages = ['brief', 'debrief'];
+  expectIn(lint(j), /variant 'brief' has stages/);
+  j = fx('clean_brief_only.json');
+  ep(j).defend = { setId: 'x' };
+  expectIn(lint(j), /brief episode has a defend block/);
+  j = fx('clean_brief_only.json');
+  ep(j).attack = {};
+  expectIn(lint(j), /brief episode has a attack block/);
+  // a full episode may still not author just ["brief"]
+  j = fx('clean_full.json');
+  ep(j).stages = ['brief'];
+  expectIn(lint(j), /variant 'full' has stages/);
+});
+
+test('brief: doneGlobal is required, declared, starts false, and the aim waits on it', { skip }, () => {
+  let j = fx('clean_brief_only.json');
+  delete ep(j).doneGlobal;
+  expectIn(lint(j), /needs doneGlobal/);
+  expectIn(lint(j), /oncePerLearner is true but there is no doneGlobal/);
+  j = fx('clean_brief_only.json');
+  delete j.globalVariables.episode_b1_stub_done;
+  expectIn(lint(j), /done global 'episode_b1_stub_done' is not declared/);
+  j = fx('clean_brief_only.json');
+  j.globalVariables.episode_b1_stub_done = true;
+  expectIn(lint(j), /must start false/);
+  j = fx('clean_brief_only.json');
+  aim(j).concludeRequires.globals = [];
+  expectIn(lint(j), /concludeRequires\.globals \[\] must list 'episode_b1_stub_done'/);
+  j = fx('clean_brief_only.json');
+  host(j).eventMappings = [];
+  expectIn(lint(j), /no NPC has an eventMappings entry for 'global_variable_changed:episode_b1_stub_done'/);
+  j = fx('clean_brief_only.json');
+  ep(j).oncePerLearner = 'yes';
+  expectIn(lint(j), /oncePerLearner must be true or false/);
+});
+
+test('brief: briefCards is a non-empty array of cards with text; the other lines are non-empty', { skip }, () => {
+  let j = fx('clean_brief_only.json');
+  ep(j).strings.briefCards = [];
+  expectIn(lint(j), /briefCards must be a non-empty array/);
+  j = fx('clean_brief_only.json');
+  ep(j).strings.briefCards[1].text = '  ';
+  expectIn(lint(j), /briefCards\[1\] has no text/);
+  j = fx('clean_brief_only.json');
+  ep(j).strings.briefCards[0].heading = '';
+  expectIn(lint(j), /briefCards\[0\]\.heading is empty/);
+  j = fx('clean_brief_only.json');
+  ep(j).strings.briefDone = '';
+  ep(j).strings.alreadySeen = ' ';
+  expectIn(lint(j), /strings\.briefDone is empty/);
+  expectIn(lint(j), /strings\.alreadySeen is empty/);
+  j = fx('clean_brief_only.json');
+  delete ep(j).strings.briefCards;
+  expectIn(lint(j), /neither strings\.briefCards nor strings\.brief/);
+});
+
+test('a non-brief episode with a doneGlobal must declare it, and still needs a defend block', { skip }, () => {
+  let j = fx('clean_defend_only.json');
+  ep(j).doneGlobal = 'nope';
+  expectIn(lint(j), /doneGlobal 'nope' is not declared/);
+  j = fx('clean_defend_only.json');
+  delete ep(j).defend;
+  expectIn(lint(j), /defend\.setId is missing/);
 });

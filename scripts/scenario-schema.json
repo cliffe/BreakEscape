@@ -1835,7 +1835,7 @@
     "socialAwarenessEpisode": {
       "type": "object",
       "description": "An awareness episode (design 11 S5.1, PHASE7_PACKETS S2.1; the episode runner reads it). Linted by scripts/validate_social/awareness.rb. A defend-only episode uses id '<full id>_defend'. A check mission uses stages ['check'] and defend.stage 'pre' or 'post'.",
-      "required": ["id", "stages", "defend"],
+      "required": ["id", "stages"],
       "properties": {
         "id": {"type": "string"},
         "role": {"type": "string"},
@@ -1851,7 +1851,9 @@
           "patternProperties": {"^_": {}},
           "additionalProperties": false
         },
-        "variant": {"type": "string", "enum": ["full", "defendOnly"], "description": "Optional on a check mission (stages [\"check\"]); required for the other two kinds (awareness.rb says so)"},
+        "variant": {"type": "string", "enum": ["full", "defendOnly", "brief"], "description": "Optional on a check mission (stages [\"check\"]); required for the other kinds (awareness.rb says so). 'brief' (ENG-10) runs stages [\"brief\"] only: no attack, no defend block, a doneGlobal"},
+        "doneGlobal": {"type": "string", "description": "ENG-10: a boolean global the scenario declares (false). The runner sets it true when the episode's last stage ends, so an objective's concludeRequires or a host's eventMappings can wait on it. Required on a brief episode"},
+        "oncePerLearner": {"type": "boolean", "description": "ENG-10: true shows the finished panel with strings.alreadySeen when doneGlobal is already true at open. Needs doneGlobal"},
         "durationTargetMin": {"type": "number", "minimum": 0},
         "scopeNote": {"type": "string"},
         "flipAftermath": {
@@ -2015,6 +2017,19 @@
           "description": "Every learner-facing line of the episode, as data",
           "properties": {
             "brief": {"type": "string"},
+            "briefCards": {
+              "type": "array",
+              "description": "ENG-10: the brief as a run of cards (Next, Back, 'Card n of m'); the last card's button is briefDone. A blank line in text starts a paragraph. Without it the single strings.brief panel stands",
+              "items": {
+                "type": "object",
+                "required": ["text"],
+                "properties": {"heading": {"type": "string"}, "text": {"type": "string"}},
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "briefDone": {"type": "string", "description": "ENG-10: the last brief card's button label; default 'Got it'"},
+            "alreadySeen": {"type": "string", "description": "ENG-10: the finished panel's line when oncePerLearner finds doneGlobal already true; default 'You have seen this already.'"},
             "flipHeading": {"type": "string"},
             "flipIntro": {"type": "string"},
             "flipDefenderLine": {"type": "string"},
