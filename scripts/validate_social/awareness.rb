@@ -79,6 +79,7 @@ module ValidateSocial
       end
       issues.concat(concern_form_checks(ep)) if ep.key?('concernForm')
       issues.concat(privacy_panel_checks(ctx, ep)) if ep.key?('privacyPanel')
+      issues.concat(world_checks(ctx, ep)) if ep.key?('world')
       set = defend_set(ctx, ep, issues)
       done = nil
       if set
@@ -325,6 +326,54 @@ module ValidateSocial
       end
       if aw.key?('teamSize') && !(aw['teamSize'].is_a?(Integer) && aw['teamSize'] >= 2)
         issues << Mail.err("social.awareness.teamSize is #{aw['teamSize'].inspect}; it must be a whole number of people, 2 or more (the team line drops it otherwise)")
+      end
+      issues
+    end
+
+    # ---- world-play modifier (ENG-05a, ENG-05b) -------------------------------------
+
+    # `world` moves the learner into another room for a call attack and dresses them in a costume.
+    # It only means something on a full episode whose write stage is a call, and its two rooms must
+    # exist: the hand-back returns the learner to the room the scenario starts in, so a reload and
+    # a failed call both land them at the kiosk.
+    def self.world_checks(ctx, ep)
+      world = ep['world']
+      return [err('world must be an object { room, startRoom, costume?, spawn? }')] unless world.is_a?(Hash)
+
+      if ep['variant'] == 'defendOnly'
+        return [err('a defendOnly episode has an awarenessEpisode.world block; the shell drops the attack it modifies, so remove it')]
+      end
+
+      issues = []
+      atk = ep['attack']
+      unless Array(ep['stages']).include?('write') && atk.is_a?(Hash) && atk.key?('callId')
+        issues << err('world modifies a call attack, but this episode has no write stage with attack.callId; the learner would never be moved')
+      end
+
+      rooms = ctx.json['rooms'].is_a?(Hash) ? ctx.json['rooms'] : {}
+      %w[room startRoom].each do |k|
+        v = world[k]
+        if Mail.blank?(v)
+          issues << err("world.#{k} is empty or missing")
+        elsif !rooms.key?(v)
+          issues << err("world.#{k} '#{v}' is not a room in this scenario (#{rooms.keys.join(', ')})")
+        end
+      end
+      if !Mail.blank?(world['room']) && world['room'] == world['startRoom']
+        issues << err("world.room and world.startRoom are both '#{world['room']}'; the learner would never move")
+      end
+      top = ctx.json['startRoom']
+      if !Mail.blank?(world['startRoom']) && world['startRoom'] != top
+        issues << err("world.startRoom '#{world['startRoom']}' is not the scenario startRoom '#{top}'; a reload would leave the learner away from the kiosk")
+      end
+
+      if world.key?('costume')
+        c = world['costume']
+        if !c.is_a?(Hash) || Mail.blank?(c['sprite'])
+          issues << err('world.costume must name a sprite (assets/characters/<sprite>.png)')
+        elsif Mail.blank?(c['talk'])
+          issues << warn_("world.costume.talk is missing; the talk portrait is derived as assets/characters/#{c['sprite']}_talk.png, which must exist")
+        end
       end
       issues
     end
