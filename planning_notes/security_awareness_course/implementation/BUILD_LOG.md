@@ -39,3 +39,25 @@ A safety classifier stopped eng-b (ENG-03a/03b) while it was still reading code:
 - Running: bridge regression on main (Haiku), `general_v2` generator and shells (Sonnet), eng-d, eng-b2, content-e8, content-wp.
 - WP-15 (b7068b712) and annual content (a25b403ce, fragment at `awareness/annual/defend.json`): E6 swaps `e6_fuel_card_offer` for `e6_chat_new_number`; E3 swaps `e3_call_on_behalf` for `e3_call_remote_access` (Vanteq Systems, Marcus Hale). New cast Dermot Lynch. Regen of the two defend-only shells and the annual shell: Sonnet (wire-wp).
 - `general_v2` shells (07a744f1a, 149dafc44): 4 shells validate; reopencheck at baseline. Orchestrator looked at the triage screenshot. Queued for design review C1: (a) the inbox list row for a `page` card prints the look-alike domain `quayho1t-check.example` in the pixel font, not the address font, so the 1/l swap is harder to read than in the reader; (b) the AB pre-check title reads "Everyday threats check (part two)"; (c) "Marcus" used twice (Marcus Webb in general_v2, Marcus Hale in E3).
+- WP-15 shells regenerated (7b87f2315; only the E3 and E6 defend-only erbs changed across all 16 generated shells); annual shell (a0108e0c3, `STANDALONE_SHELLS` guard list); `bridge-e6-full` now plays `e6_chat_new_number` (8c608ee5b). e3-full 22/22, e6-full 15/15.
+- E8 wired (bb1eecb5a, 61eab210e, pilot notes b8e109908): bridge e8-full 13/13; 298/298 JS files. New bridges need `BREAK_ESCAPE_STANDALONE=true bin/rails db:seed` first (now in P9).
+- Bridge regression after the ENG-01/09b/09d and ENG-04 merges: 11/11 PASS (e1-e7 full, p7-channels, p7-episode, 6, r4-door).
+- ENG-09a/ENG-11 merged (2f91651d4); conflicts in `episode-model.js` (cleanMistake vs drill helpers, readState, completeStage) and the runner import resolved keeping both. 300/300 JS files. Accepted engine choices (user may overrule): a choice card scores on a 100 scale; choice cards stay out of phish/report tallies; the sort drill runs before the inbox inside the defend stage; a scored drill scores against each card's own `answer` (2/1/0 points).
+- Design review C1 running: E8 (opus48) and checks/WP-15/annual (opus48), into `reviews/build/`.
+
+## Wave 2 (2026-10-29, user: "parallelise further")
+
+Shared rules: `AGENT_RULES_ENGINE.md`, `AGENT_RULES_CONTENT.md`. Content agents write ink to `AW/eN/ink/` (not `scenarios/`, which trips the registry guards for everyone) and brand entries to `AW/eN/BRAND_ADDITIONS.md` (the orchestrator folds them into BRAND_SET).
+
+| Agent | Model | Work |
+|---|---|---|
+| eng-02 | Sonnet, worktree | ENG-02 `guess` stage (E9; leaves room for ENG-02b) |
+| eng-10 | Sonnet, worktree | ENG-10 brief-only episode (core_00) |
+| eng-12 | Sonnet, worktree | ENG-12 raise-a-concern form (E16) |
+| eng-13 | Sonnet, worktree | ENG-13 privacy panel (E14) |
+| eng-0607 | Sonnet, worktree | ENG-06 assistant, ENG-07 call label (E13) |
+| eng-05ab | Sonnet, worktree | ENG-05a world play, ENG-05b costume (E12) |
+| rooms | Sonnet, worktree | P5b Carrholme room, P5c Merrin lobby |
+| c-e9, c-e11, c-e13, c-e14, c-e15, c-e16, c-e17, c-e19 | opus48 | episode content |
+
+Held back: E12 content (after ENG-05a/b and the lobby land), E18 (after ENG-02b), E20 (after ENG-14, which follows ENG-03a), core_00 content (after ENG-10), `data_conduct` (after the Carrholme room).
