@@ -108,6 +108,36 @@
             }
           },
           {
+            "id": "gvb_flash_update",
+            "kind": "page",
+            "subject": "From a link: 'Update required'",
+            "time": "08:44",
+            "body": "Your media player is out of date and this video cannot play. Download and run the update to continue. This secure page will guide you through it; look for the padlock in the address bar.",
+            "page": {
+              "url": "https://quayholt-update.example/player",
+              "padlock": true,
+              "certificate": {
+                "issuedTo": "quayholt-update.example",
+                "issuer": "Open Certs Ltd"
+              },
+              "heading": "Player update required",
+              "button": "Download update"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "padlock_myth"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "The address is quayholt-update.example, a separate site with a word added by a hyphen. Quayholt's own pages end in quayholt.example.",
+                "padlock_myth": "The page tells you to trust the padlock, but it was issued to quayholt-update.example. A padlock only means the connection is private, not that the site is Quayholt's or that the download is safe."
+              },
+              "ifTrusted": "The 'update' is malware. Real updates for your work laptop come through IT, not a download a web page pushes at you to watch a video.",
+              "reportReply": "Thanks. That isn't our site, and updates don't arrive as a download a page tells you to run. We've blocked quayholt-update.example."
+            }
+          },
+          {
             "id": "gvb_push_sunday",
             "kind": "push",
             "subject": "Sign-in request, Sunday 23:10",
@@ -157,36 +187,6 @@
             }
           },
           {
-            "id": "gvb_flash_update",
-            "kind": "page",
-            "subject": "From a link: 'Update required'",
-            "time": "08:44",
-            "body": "Your media player is out of date and this video cannot play. Download and run the update to continue. This secure page will guide you through it; look for the padlock in the address bar.",
-            "page": {
-              "url": "https://quayholt-update.example/player",
-              "padlock": true,
-              "certificate": {
-                "issuedTo": "quayholt-update.example",
-                "issuer": "Open Certs Ltd"
-              },
-              "heading": "Player update required",
-              "button": "Download update"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "lookalike_domain",
-                "padlock_myth"
-              ],
-              "perFlagNote": {
-                "lookalike_domain": "The address is quayholt-update.example, a separate site with a word added by a hyphen. Quayholt's own pages end in quayholt.example.",
-                "padlock_myth": "The page tells you to trust the padlock, but it was issued to quayholt-update.example. A padlock only means the connection is private, not that the site is Quayholt's or that the download is safe."
-              },
-              "ifTrusted": "The 'update' is malware. Real updates for your work laptop come through IT, not a download a web page pushes at you to watch a video.",
-              "reportReply": "Thanks. That isn't our site, and updates don't arrive as a download a page tells you to run. We've blocked quayholt-update.example."
-            }
-          },
-          {
             "id": "gvb_patch_notice",
             "from": {
               "name": "Quayholt IT",
@@ -218,36 +218,6 @@
                 "linkCredible": "The link goes where it says, to Quayholt's own intranet.",
                 "default": "IT's real address, a routine patch notice, and nothing to send back. Letting patches install promptly is a simple way to keep a laptop safe."
               }
-            }
-          },
-          {
-            "id": "gvb_usb_courier",
-            "from": {
-              "name": "Dale Ferris",
-              "address": "dale.ferris@itrollout-support.example"
-            },
-            "to": "you@quayholt.example",
-            "subject": "Your laptop dock: USB posted to you",
-            "time": "11:42",
-            "body": "Hi,\nAs part of the rollout we've posted you a USB stick with the software for your new laptop dock. When it arrives, plug it into your laptop and run the setup file on it.\nOur engineer Ross set it up for you, so there's nothing to wait on from the service desk.\nDale",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "itrollout-support.example",
-              "replyTo": "d.ferris@quickpost-mail.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "senderTrust"
-              ],
-              "perFlagNote": {
-                "senderTrust": "The name reads like IT, but the address is an outside inbox at itrollout-support.example, not quayholt.example. Quayholt IT writes from the Quayholt domain."
-              },
-              "headerNote": "The automatic checks pass because the message really was sent from itrollout-support.example, a domain the sender owns. A pass shows which mail system sent it, not that the sender is Quayholt IT. You could also see, if you open the header, that the reply-to is a different outside address again (quickpost-mail.example), so a reply wouldn't reach anyone at Quayholt.",
-              "ifTrusted": "Plugging in an unexpected USB and running a file on it can install malware before you've done anything else. Real IT doesn't post you a USB to run yourself; a parcel or a message you weren't expecting is one to check, not to act on.",
-              "reportReply": "Thanks. There's no Dale Ferris on quayholt.example, and we don't post USBs for you to run. If a stick turns up, don't plug it in; hand it to the service desk."
             }
           },
           {
@@ -369,6 +339,36 @@
               "whyFine": {
                 "default": "Facilities' real address, a notice about a planned drill, and nothing to click or send back."
               }
+            }
+          },
+          {
+            "id": "gvb_usb_courier",
+            "from": {
+              "name": "Dale Ferris",
+              "address": "dale.ferris@itrollout-support.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "Your laptop dock: USB posted to you",
+            "time": "11:42",
+            "body": "Hi,\nAs part of the rollout we've posted you a USB stick with the software for your new laptop dock. When it arrives, plug it into your laptop and run the setup file on it.\nOur engineer Ross set it up for you, so there's nothing to wait on from the service desk.\nDale",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "itrollout-support.example",
+              "replyTo": "d.ferris@quickpost-mail.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The name reads like IT, but the address is an outside inbox at itrollout-support.example, not quayholt.example. Quayholt IT writes from the Quayholt domain."
+              },
+              "headerNote": "The automatic checks pass because the message really was sent from itrollout-support.example, a domain the sender owns. A pass shows which mail system sent it, not that the sender is Quayholt IT. You could also see, if you open the header, that the reply-to is a different outside address again (quickpost-mail.example), so a reply wouldn't reach anyone at Quayholt.",
+              "ifTrusted": "Plugging in an unexpected USB and running a file on it can install malware before you've done anything else. Real IT doesn't post you a USB to run yourself; a parcel or a message you weren't expecting is one to check, not to act on.",
+              "reportReply": "Thanks. There's no Dale Ferris on quayholt.example, and we don't post USBs for you to run. If a stick turns up, don't plug it in; hand it to the service desk."
             }
           }
         ]

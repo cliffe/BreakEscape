@@ -158,6 +158,32 @@
             }
           },
           {
+            "id": "dca_team_report",
+            "from": {
+              "name": "Martin Fletcher",
+              "address": "martin.fletcher@carrholme.example"
+            },
+            "to": "you@carrholme.example",
+            "subject": "Team figures for Thursday's review",
+            "time": "09:35",
+            "body": "Hi,\nCould you send me the team's performance figures for the quarter before Thursday's review? Just the summary we usually put together, no personal detail needed.\nThanks,\nMartin",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "carrholme.example",
+              "replyTo": "martin.fletcher@carrholme.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "pretextRelevant": "Your director asking for the team summary he normally reviews is squarely within his job, and he asks for the summary, not anyone's personal detail. A request that fits the person and the need is a normal one.",
+                "default": "Martin's real Carrholme address, a routine ask for figures he's entitled to see, and no personal data involved. If you wanted to be sure it was him, a quick word in person settles it; there's nothing wrong with the request."
+              }
+            }
+          },
+          {
             "id": "dca_login_favour",
             "kind": "call",
             "callerId": "Kenny Dolan, ex-staff (calling from a mobile)",
@@ -192,28 +218,27 @@
             }
           },
           {
-            "id": "dca_team_report",
+            "id": "dca_comms_ok",
             "from": {
-              "name": "Martin Fletcher",
-              "address": "martin.fletcher@carrholme.example"
+              "name": "Carrholme Comms",
+              "address": "comms@carrholme.example"
             },
-            "to": "you@carrholme.example",
-            "subject": "Team figures for Thursday's review",
-            "time": "09:35",
-            "body": "Hi,\nCould you send me the team's performance figures for the quarter before Thursday's review? Just the summary we usually put together, no personal detail needed.\nThanks,\nMartin",
+            "to": "all-staff@carrholme.example",
+            "subject": "What you can share about the new office",
+            "time": "11:00",
+            "body": "Hello all,\nWe're moving to the new office next month. Here's a short note on what's fine to mention on social media and what to leave to us: the address and move date are public, but please don't post photos of desks, screens or visitor passes.\nAny press enquiries come to Comms.\nThe Communications Team",
             "auth": {
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
               "envelopeFrom": "carrholme.example",
-              "replyTo": "martin.fletcher@carrholme.example"
+              "replyTo": "comms@carrholme.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "pretextRelevant": "Your director asking for the team summary he normally reviews is squarely within his job, and he asks for the summary, not anyone's personal detail. A request that fits the person and the need is a normal one.",
-                "default": "Martin's real Carrholme address, a routine ask for figures he's entitled to see, and no personal data involved. If you wanted to be sure it was him, a quick word in person settles it; there's nothing wrong with the request."
+                "default": "Comms' real Carrholme address, a routine note about what's approved to share, and nothing to click or send back. Knowing who speaks for the organisation, and what's fine to post, is exactly what this covers."
               }
             }
           },
@@ -249,27 +274,54 @@
             }
           },
           {
-            "id": "dca_comms_ok",
+            "id": "dca_aup_reminder",
             "from": {
-              "name": "Carrholme Comms",
-              "address": "comms@carrholme.example"
+              "name": "Carrholme People Team",
+              "address": "people@carrholme.example"
             },
             "to": "all-staff@carrholme.example",
-            "subject": "What you can share about the new office",
-            "time": "11:00",
-            "body": "Hello all,\nWe're moving to the new office next month. Here's a short note on what's fine to mention on social media and what to leave to us: the address and move date are public, but please don't post photos of desks, screens or visitor passes.\nAny press enquiries come to Comms.\nThe Communications Team",
+            "subject": "New acceptable-use policy: please read and acknowledge",
+            "time": "12:10",
+            "body": "Hello,\nWe've refreshed the acceptable-use policy (how we use work email, devices and systems). Please read it on the intranet and press Acknowledge when you have. Any time before the end of the month is fine.\nThere's nothing to send back.\nThe People Team",
             "auth": {
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
               "envelopeFrom": "carrholme.example",
-              "replyTo": "comms@carrholme.example"
+              "replyTo": "people@carrholme.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "Comms' real Carrholme address, a routine note about what's approved to share, and nothing to click or send back. Knowing who speaks for the organisation, and what's fine to post, is exactly what this covers."
+                "default": "The People Team's real Carrholme address, a routine ask to acknowledge a policy on the intranet, and a month to do it. Acknowledging a policy you've read is a normal part of the job, with nothing to sign in to."
+              }
+            }
+          },
+          {
+            "id": "dca_manager_report",
+            "from": {
+              "name": "Elaine Prentice",
+              "address": "elaine.prentice@carrholme.example"
+            },
+            "to": "you@carrholme.example",
+            "subject": "Caseload report for our one-to-one",
+            "time": "13:20",
+            "body": "Hi,\nBefore our one-to-one on Friday, could you send me the caseload report for your team, the one we go through each month? Just the usual report, nothing extra.\nThanks,\nElaine",
+            "auth": {
+              "spf": "pass",
+              "dkim": "fail",
+              "dmarc": "pass",
+              "envelopeFrom": "carrholme.example",
+              "replyTo": "elaine.prentice@carrholme.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderAuth": "One of the automatic checks came back as a fail. Treat that as a reason to look closer, not proof of a fake: real mail fails a check now and then when it's forwarded or passed through certain systems. Here the address is Carrholme's, it's your own manager, and she asks only for the report you already share with her.",
+                "pretextRelevant": "Your manager asking for the monthly caseload report you go through together is within her remit and within need-to-know. Unusual isn't wrong: a request that fits the person and the routine is a normal one.",
+                "default": "Elaine's real Carrholme address, your own line manager, and the routine report you share each month. There's nothing to skip or send outside, so this is a normal ask."
               }
             }
           },
@@ -306,31 +358,6 @@
             }
           },
           {
-            "id": "dca_aup_reminder",
-            "from": {
-              "name": "Carrholme People Team",
-              "address": "people@carrholme.example"
-            },
-            "to": "all-staff@carrholme.example",
-            "subject": "New acceptable-use policy: please read and acknowledge",
-            "time": "12:10",
-            "body": "Hello,\nWe've refreshed the acceptable-use policy (how we use work email, devices and systems). Please read it on the intranet and press Acknowledge when you have. Any time before the end of the month is fine.\nThere's nothing to send back.\nThe People Team",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "carrholme.example",
-              "replyTo": "people@carrholme.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "default": "The People Team's real Carrholme address, a routine ask to acknowledge a policy on the intranet, and a month to do it. Acknowledging a policy you've read is a normal part of the job, with nothing to sign in to."
-              }
-            }
-          },
-          {
             "id": "dca_sar_routed",
             "from": {
               "name": "Carrholme DPO office",
@@ -352,33 +379,6 @@
               "flags": [],
               "whyFine": {
                 "default": "The DPO's real Carrholme address, telling you a request from a person about their own data has been logged and routed to him, which is exactly where it should go. There's nothing to send and nothing to do."
-              }
-            }
-          },
-          {
-            "id": "dca_manager_report",
-            "from": {
-              "name": "Elaine Prentice",
-              "address": "elaine.prentice@carrholme.example"
-            },
-            "to": "you@carrholme.example",
-            "subject": "Caseload report for our one-to-one",
-            "time": "13:20",
-            "body": "Hi,\nBefore our one-to-one on Friday, could you send me the caseload report for your team, the one we go through each month? Just the usual report, nothing extra.\nThanks,\nElaine",
-            "auth": {
-              "spf": "pass",
-              "dkim": "fail",
-              "dmarc": "pass",
-              "envelopeFrom": "carrholme.example",
-              "replyTo": "elaine.prentice@carrholme.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "senderAuth": "One of the automatic checks came back as a fail. Treat that as a reason to look closer, not proof of a fake: real mail fails a check now and then when it's forwarded or passed through certain systems. Here the address is Carrholme's, it's your own manager, and she asks only for the report you already share with her.",
-                "pretextRelevant": "Your manager asking for the monthly caseload report you go through together is within her remit and within need-to-know. Unusual isn't wrong: a request that fits the person and the routine is a normal one.",
-                "default": "Elaine's real Carrholme address, your own line manager, and the routine report you share each month. There's nothing to skip or send outside, so this is a normal ask."
               }
             }
           }

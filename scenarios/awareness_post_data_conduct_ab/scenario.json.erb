@@ -127,6 +127,37 @@
             }
           },
           {
+            "id": "dcb_hr_records",
+            "from": {
+              "name": "Trevor Oakes",
+              "address": "t.oakes@itrollout-support.example"
+            },
+            "to": "you@carrholme.example",
+            "subject": "Data migration: send me the full staff records",
+            "time": "09:04",
+            "body": "Hello,\nWe're migrating Carrholme to a new system and I need to load your people in. Please reply with the full staff records, names, dates of birth, National Insurance numbers and bank details, as a spreadsheet. We're on a tight window, so today please.\nTrevor Oakes\nIT migration",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "itrollout-support.example",
+              "replyTo": "t.oakes@itrollout-support.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "pretextRelevant"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The address is an outside firm, itrollout-support.example, not Carrholme. A real system move is run with your own IT and the DPO, not a cold email asking you to send the data out.",
+                "pretextRelevant": "There is no good reason you'd email full staff records, with dates of birth, NI numbers and bank details, to anyone. A genuine migration moves data through a controlled transfer, not a reply."
+              },
+              "ifTrusted": "Replying would send the whole workforce's personal and financial data out of Carrholme to whoever owns that address, a serious data breach and a gift to a fraudster.",
+              "reportReply": "Thanks. No migration asked for that, and staff records never go out by email. We've passed it to the DPO and blocked the address."
+            }
+          },
+          {
             "id": "dcb_approve_under_you",
             "kind": "call",
             "callerId": "Deborah Vale, Claims (calling from a mobile)",
@@ -187,37 +218,6 @@
             }
           },
           {
-            "id": "dcb_hr_records",
-            "from": {
-              "name": "Trevor Oakes",
-              "address": "t.oakes@itrollout-support.example"
-            },
-            "to": "you@carrholme.example",
-            "subject": "Data migration: send me the full staff records",
-            "time": "09:04",
-            "body": "Hello,\nWe're migrating Carrholme to a new system and I need to load your people in. Please reply with the full staff records, names, dates of birth, National Insurance numbers and bank details, as a spreadsheet. We're on a tight window, so today please.\nTrevor Oakes\nIT migration",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "itrollout-support.example",
-              "replyTo": "t.oakes@itrollout-support.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "senderTrust",
-                "pretextRelevant"
-              ],
-              "perFlagNote": {
-                "senderTrust": "The address is an outside firm, itrollout-support.example, not Carrholme. A real system move is run with your own IT and the DPO, not a cold email asking you to send the data out.",
-                "pretextRelevant": "There is no good reason you'd email full staff records, with dates of birth, NI numbers and bank details, to anyone. A genuine migration moves data through a controlled transfer, not a reply."
-              },
-              "ifTrusted": "Replying would send the whole workforce's personal and financial data out of Carrholme to whoever owns that address, a serious data breach and a gift to a fraudster.",
-              "reportReply": "Thanks. No migration asked for that, and staff records never go out by email. We've passed it to the DPO and blocked the address."
-            }
-          },
-          {
             "id": "dcb_press_line",
             "from": {
               "name": "Carrholme Comms",
@@ -240,38 +240,6 @@
               "whyFine": {
                 "default": "Comms' real Carrholme address, telling you who speaks for the organisation and where to send enquiries, with nothing to click or send back. Passing a reporter to Comms is exactly the right move."
               }
-            }
-          },
-          {
-            "id": "dcb_skip_dlp",
-            "from": {
-              "name": "Rhona Baxter",
-              "address": "rhona.baxter.docs@webmail-plus.example"
-            },
-            "to": "you@carrholme.example",
-            "subject": "Just send it out, don't flag it",
-            "time": "12:48",
-            "body": "Hi,\nThe system keeps blocking the client file when I try to send it out, flags it as sensitive. It's fine, honestly. Could you send it from your side and don't flag it as sensitive this time? We just need it with them today.\nThanks,\nRhona",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "webmail-plus.example",
-              "replyTo": "r.baxter.send@quickpost-mail.example"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "senderTrust",
-                "secrecy_or_bypass"
-              ],
-              "perFlagNote": {
-                "senderTrust": "The name reads like a colleague, but the address is an outside inbox at webmail-plus.example, not carrholme.example. A real workmate writes from the Carrholme domain.",
-                "secrecy_or_bypass": "'Don't flag it as sensitive' and 'just send it out' are there to get round the check that's doing its job. The block flagged the file for a reason; the safe move is to ask IT, not to override it."
-              },
-              "headerNote": "The automatic checks pass because the message really was sent from webmail-plus.example, a domain the sender owns. A pass shows which mail system sent it, not that the sender is a Carrholme colleague. You could also see, if you open the header, that the reply-to is a different outside address again (quickpost-mail.example), so a reply wouldn't reach anyone at Carrholme.",
-              "ifTrusted": "Overriding the sensitivity check sends client data out unprotected, which may be a breach, and it trains you to switch off the one control that was working. The 'just this once' is the whole trick.",
-              "reportReply": "Thanks. There's no Rhona Baxter on carrholme.example, and we don't override the sensitivity check to send a file out. We've reported it to the DPO and blocked the address."
             }
           },
           {
@@ -380,6 +348,38 @@
               "whyFine": {
                 "default": "The records team's real Carrholme address, a routine note about the retention schedule handled centrally, and nothing to send or sign in to. Keeping data only as long as it's needed is part of looking after it."
               }
+            }
+          },
+          {
+            "id": "dcb_skip_dlp",
+            "from": {
+              "name": "Rhona Baxter",
+              "address": "rhona.baxter.docs@webmail-plus.example"
+            },
+            "to": "you@carrholme.example",
+            "subject": "Just send it out, don't flag it",
+            "time": "12:48",
+            "body": "Hi,\nThe system keeps blocking the client file when I try to send it out, flags it as sensitive. It's fine, honestly. Could you send it from your side and don't flag it as sensitive this time? We just need it with them today.\nThanks,\nRhona",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "webmail-plus.example",
+              "replyTo": "r.baxter.send@quickpost-mail.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "secrecy_or_bypass"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The name reads like a colleague, but the address is an outside inbox at webmail-plus.example, not carrholme.example. A real workmate writes from the Carrholme domain.",
+                "secrecy_or_bypass": "'Don't flag it as sensitive' and 'just send it out' are there to get round the check that's doing its job. The block flagged the file for a reason; the safe move is to ask IT, not to override it."
+              },
+              "headerNote": "The automatic checks pass because the message really was sent from webmail-plus.example, a domain the sender owns. A pass shows which mail system sent it, not that the sender is a Carrholme colleague. You could also see, if you open the header, that the reply-to is a different outside address again (quickpost-mail.example), so a reply wouldn't reach anyone at Carrholme.",
+              "ifTrusted": "Overriding the sensitivity check sends client data out unprotected, which may be a breach, and it trains you to switch off the one control that was working. The 'just this once' is the whole trick.",
+              "reportReply": "Thanks. There's no Rhona Baxter on carrholme.example, and we don't override the sensitivity check to send a file out. We've reported it to the DPO and blocked the address."
             }
           }
         ],

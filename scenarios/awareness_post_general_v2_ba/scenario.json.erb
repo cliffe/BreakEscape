@@ -157,6 +157,31 @@
             }
           },
           {
+            "id": "gva_mfa_rollout",
+            "from": {
+              "name": "Quayholt IT",
+              "address": "it-notices@quayholt.example"
+            },
+            "to": "all-staff@quayholt.example",
+            "subject": "We've turned on 2-step verification: how it works",
+            "time": "09:10",
+            "body": "Hello all,\nFrom this week your Quayholt account uses 2-step verification (also called MFA). After your password, the authenticator app on your phone will ask you to approve the sign-in.\nTwo things to remember: approve a prompt only when you started the sign-in yourself, and the service desk will never ask you to approve one or read out a code. There's nothing to set up and nothing to send back.\nQuayholt IT",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "it-notices@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "IT's real address, a routine notice explaining a change, and nothing to click or send. It even reminds you that nobody genuine asks you to approve a prompt or read a code."
+              }
+            }
+          },
+          {
             "id": "gva_push_0238",
             "kind": "push",
             "subject": "Sign-in request at 02:38",
@@ -181,18 +206,25 @@
             }
           },
           {
-            "id": "gva_mfa_rollout",
+            "id": "gva_update_tuesday",
             "from": {
               "name": "Quayholt IT",
               "address": "it-notices@quayholt.example"
             },
             "to": "all-staff@quayholt.example",
-            "subject": "We've turned on 2-step verification: how it works",
-            "time": "09:10",
-            "body": "Hello all,\nFrom this week your Quayholt account uses 2-step verification (also called MFA). After your password, the authenticator app on your phone will ask you to approve the sign-in.\nTwo things to remember: approve a prompt only when you started the sign-in yourself, and the service desk will never ask you to approve one or read out a code. There's nothing to set up and nothing to send back.\nQuayholt IT",
+            "subject": "Software updates going out on Tuesday evening",
+            "time": "09:55",
+            "body": "Hi everyone,\nSecurity updates will install on work laptops from Tuesday evening. Save your work and leave the laptop switched on and plugged in. It may restart once.\nThere's nothing you need to do. If you want the detail, it's on the intranet:\n{{link:updates}}\nQuayholt IT",
+            "links": [
+              {
+                "id": "updates",
+                "text": "intranet.quayholt.example/updates",
+                "destination": "https://intranet.quayholt.example/updates"
+              }
+            ],
             "auth": {
               "spf": "pass",
-              "dkim": "pass",
+              "dkim": "fail",
               "dmarc": "pass",
               "envelopeFrom": "quayholt.example",
               "replyTo": "it-notices@quayholt.example"
@@ -201,7 +233,9 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "IT's real address, a routine notice explaining a change, and nothing to click or send. It even reminds you that nobody genuine asks you to approve a prompt or read a code."
+                "senderAuth": "One of the automatic checks on this message came back as a fail. That is a clue to look closer, not proof of a fake: forwarding and some mail systems break a check on real mail too. Here the address is Quayholt's, the link goes to Quayholt's own intranet, and nothing is being asked of you.",
+                "linkCredible": "The link goes where it says, to Quayholt's own intranet, and you could reach the same page from the intranet home.",
+                "default": "IT's real address, a routine heads-up about updates, and nothing to send back. Applying updates promptly is one of the simplest things that keeps a laptop safe."
               }
             }
           },
@@ -244,25 +278,18 @@
             }
           },
           {
-            "id": "gva_update_tuesday",
+            "id": "gva_approved_tools",
             "from": {
               "name": "Quayholt IT",
               "address": "it-notices@quayholt.example"
             },
             "to": "all-staff@quayholt.example",
-            "subject": "Software updates going out on Tuesday evening",
-            "time": "09:55",
-            "body": "Hi everyone,\nSecurity updates will install on work laptops from Tuesday evening. Save your work and leave the laptop switched on and plugged in. It may restart once.\nThere's nothing you need to do. If you want the detail, it's on the intranet:\n{{link:updates}}\nQuayholt IT",
-            "links": [
-              {
-                "id": "updates",
-                "text": "intranet.quayholt.example/updates",
-                "destination": "https://intranet.quayholt.example/updates"
-              }
-            ],
+            "subject": "Need to move a big file or try a new tool? Here's the approved way",
+            "time": "11:05",
+            "body": "Hello all,\nIf a file is too big to email, or you'd like to try a new app or online tool for work, ask us first. There's a request form on the intranet, and we'll usually say yes quickly and point you to a safe way to do it.\nThe reason we ask is that free converter sites and random apps can leak the files you put through them. You won't get in trouble for asking; that's what we're here for.\nQuayholt IT",
             "auth": {
               "spf": "pass",
-              "dkim": "fail",
+              "dkim": "pass",
               "dmarc": "pass",
               "envelopeFrom": "quayholt.example",
               "replyTo": "it-notices@quayholt.example"
@@ -271,9 +298,40 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderAuth": "One of the automatic checks on this message came back as a fail. That is a clue to look closer, not proof of a fake: forwarding and some mail systems break a check on real mail too. Here the address is Quayholt's, the link goes to Quayholt's own intranet, and nothing is being asked of you.",
-                "linkCredible": "The link goes where it says, to Quayholt's own intranet, and you could reach the same page from the intranet home.",
-                "default": "IT's real address, a routine heads-up about updates, and nothing to send back. Applying updates promptly is one of the simplest things that keeps a laptop safe."
+                "default": "IT's real address, and an offer of the approved way to do something you might otherwise work around. Asking first is the quicker yes, and there's nothing here to click or send."
+              }
+            }
+          },
+          {
+            "id": "gva_guide_ack",
+            "from": {
+              "name": "Sofia Marchetti",
+              "address": "sofia.marchetti@quayholt.example"
+            },
+            "to": "all-staff@quayholt.example",
+            "subject": "Please confirm you've read the new starter guide",
+            "time": "12:15",
+            "body": "Hi all,\nThe updated new-starter guide is on the intranet. When you've had a read, press Acknowledge on the page, or just reply to me.\n{{link:guide}}\nNo rush, any time before the end of the month is fine.\nSofia\nHR",
+            "links": [
+              {
+                "id": "guide",
+                "text": "intranet.quayholt.example/new-starter-guide",
+                "destination": "https://intranet.quayholt.example/new-starter-guide"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "sofia.marchetti@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "linkCredible": "The link goes where it says, to Quayholt's own intranet, and you could reach the guide from the intranet home instead.",
+                "default": "HR's real address, a routine ask to acknowledge a policy, a link to Quayholt's own intranet, and a month to do it. Acknowledging a policy you've read is a normal part of the job."
               }
             }
           },
@@ -308,31 +366,6 @@
             }
           },
           {
-            "id": "gva_approved_tools",
-            "from": {
-              "name": "Quayholt IT",
-              "address": "it-notices@quayholt.example"
-            },
-            "to": "all-staff@quayholt.example",
-            "subject": "Need to move a big file or try a new tool? Here's the approved way",
-            "time": "11:05",
-            "body": "Hello all,\nIf a file is too big to email, or you'd like to try a new app or online tool for work, ask us first. There's a request form on the intranet, and we'll usually say yes quickly and point you to a safe way to do it.\nThe reason we ask is that free converter sites and random apps can leak the files you put through them. You won't get in trouble for asking; that's what we're here for.\nQuayholt IT",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "quayholt.example",
-              "replyTo": "it-notices@quayholt.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "default": "IT's real address, and an offer of the approved way to do something you might otherwise work around. Asking first is the quicker yes, and there's nothing here to click or send."
-              }
-            }
-          },
-          {
             "id": "gva_contractors",
             "from": {
               "name": "Owen Treharne",
@@ -354,39 +387,6 @@
               "flags": [],
               "whyFine": {
                 "default": "Facilities' real address, a heads-up about booked contractors, and nothing to click or send. It's also a good reminder: badged and escorted at reception is how real visitors come in, so sending a stranger to reception is the right thing, not rude."
-              }
-            }
-          },
-          {
-            "id": "gva_guide_ack",
-            "from": {
-              "name": "Sofia Marchetti",
-              "address": "sofia.marchetti@quayholt.example"
-            },
-            "to": "all-staff@quayholt.example",
-            "subject": "Please confirm you've read the new starter guide",
-            "time": "12:15",
-            "body": "Hi all,\nThe updated new-starter guide is on the intranet. When you've had a read, press Acknowledge on the page, or just reply to me.\n{{link:guide}}\nNo rush, any time before the end of the month is fine.\nSofia\nHR",
-            "links": [
-              {
-                "id": "guide",
-                "text": "intranet.quayholt.example/new-starter-guide",
-                "destination": "https://intranet.quayholt.example/new-starter-guide"
-              }
-            ],
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "quayholt.example",
-              "replyTo": "sofia.marchetti@quayholt.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "linkCredible": "The link goes where it says, to Quayholt's own intranet, and you could reach the guide from the intranet home instead.",
-                "default": "HR's real address, a routine ask to acknowledge a policy, a link to Quayholt's own intranet, and a month to do it. Acknowledging a policy you've read is a normal part of the job."
               }
             }
           }
