@@ -102,6 +102,7 @@
 
   "osint": {
     "profile": "awareness",
+    "pinHints": true,
     "sites": [
       { "id": "friendface", "name": "Friendface", "url": "friendface.example", "type": "social",
         "profiles": [
