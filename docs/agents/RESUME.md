@@ -1,6 +1,6 @@
 # Resume note: video pipeline m01 trial (started 2026-10-29)
 
-Plan `docs/video/M01_TRIAL_PLAN.md`; log `docs/video/TRIAL_LOG.md`; style and how-to `docs/video/GUIDELINES.md`. Branch `claude/break-escape-video-creation-wk365q`. Status 2026-10-29: trial delivered. m01 teaser rendered (16:9, 9:16, 1:1) and slideshow, review page https://claude.ai/artifact/HhdmENxRVcGuCa5BiZS5Gd (feedback in its db doc `feedback/m01`). Renders live in git-ignored `video_out/` (lost with the container). Next: read the user's feedback, fix m01, then whatever they pick (skill, other missions, cinematic mode, lectures). Haiku/Sonnet wherever possible (user).
+Plans `docs/video/M01_TRIAL_PLAN.md`, `docs/video/M01_TRAILER_V2_PLAN.md`; log `docs/video/TRIAL_LOG.md`; style and how-to `docs/video/GUIDELINES.md`. Branch `claude/break-escape-video-creation-wk365q`. Status 2026-10-29: v2 60 s trailer (SAFETYNET: Licence to Hack) rendered A/B and on the review page https://claude.ai/artifact/HhdmENxRVcGuCa5BiZS5Gd (feedback in db doc `feedback/m01_v2`). Next: read feedback; then 9:16, 1:1, 30 s cut-down; Veo opening if approved. Rails needs BE_DB_USER=root etc. (see TRIAL_LOG). Haiku/Sonnet wherever possible (user).
 
 # Resume note: awareness course plan and implementation briefs (planning branch ccr-8675a21c-vu1k0k)
 

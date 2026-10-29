@@ -1,9 +1,9 @@
 {
  "id": "m01_trailer60",
- "title": "SAFETYNET: Licence to Hack, m01 60 s trailer (draft)",
+ "title": "SAFETYNET: Licence to Hack, m01 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "draft v1: structure per M01_TRAILER_V2_PLAN.md sections 2 and 8; several shots are placeholders (lint lists them)",
+ "status": "v2: real takes t10-t18 in place; only the Real Hacking clip is a placeholder",
  "music": {
   "track": "Noir/Midnight Cipher Chase.mp3",
   "analysis": "midnight_cipher_chase.json",
@@ -91,23 +91,23 @@
   {
    "id": "hax_hook",
    "type": "gameplay",
-   "duration": 6,
+   "duration": 4.5,
    "snap": true,
    "join": {
     "type": "glitch"
    },
    "source": {
-    "file": "t02_hax_briefing.trimmed.mkv",
-    "in": 2.0,
-    "out": 8.5
+    "file": "t10_hax_hook.trimmed.mkv",
+    "in": 18.2,
+    "out": 22.7
    },
    "dialogue": true,
    "lines": [
     {
      "speaker": "Agent HaX",
-     "text": "We have a situation at Viral Dynamics Media. ENTROPY's Social Fabric cell is operating there.",
-     "start": 0.17,
-     "end": 6.23
+     "text": "Whatever they're building, it's targeted and sophisticated.",
+     "start": 0.265,
+     "end": 4.091
     }
    ],
    "framing": {
@@ -141,8 +141,9 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "HaX briefing line: names the cell and company, no culprit, code or ending"
-   }
+    "note": "HaX hook: names no cell, culprit, code or ending"
+   },
+   "note": "t10 18.2-22.7: subtitle on screen throughout, line 18.465-22.291; the next line's subtitle replaces it at 22.75 so the cut must stay before that (a dissolve freezes the last frame); earlier line fragment (17.67-17.96) excluded"
   },
   {
    "id": "card_mission",
@@ -168,17 +169,17 @@
   {
    "id": "m_lights",
    "type": "gameplay",
-   "duration": 1,
+   "duration": 2.5,
    "snap": true,
    "join": {
     "type": "glitch"
    },
    "source": {
     "file": "t03_lights_on.trimmed.mkv",
-    "in": 5.05,
+    "in": 3.55,
     "out": 6.05
    },
-   "note": "lights strike on the drop at 12.0 s (marker lights-on at 5.13 s in the take)",
+   "note": "2.5 s: 1.5 s dark office lead-in (player through the door), lights strike on the drop at 12.0 s (marker lights-on at 5.13 s in the take; draft in-point 5.05 kept)",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -380,33 +381,32 @@
    }
   },
   {
-   "id": "m_replace",
+   "id": "m_cyberchef",
    "type": "gameplay",
    "duration": 1,
    "snap": true,
    "join": {
     "type": "cut"
    },
-   "placeholder": true,
-   "placeholder_note": "montage A replacement shot (scout v2 part B): minigame, whole panel with margin, at most 2x",
    "source": {
-    "file": "montageA_replacement.trimmed.mkv",
-    "in": 0,
-    "out": 1
+    "file": "t14_cyberchef.trimmed.mkv",
+    "in": 6.567,
+    "out": 7.567
    },
+   "note": "CyberChef workstation, 2x crop on the input/output panes (x .475-.975, rows y .135-.635): input pasted at 6.63, decode 'Meet at the server room' visible from 6.77 (take's marks lag by 0.5 s; cut on frames)",
    "framing": {
     "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
+     "cx": 0.725,
+     "cy": 0.385,
+     "zoom": 2
     },
     "9:16": {
-     "cx": 0.5,
+     "cx": 0.62,
      "cy": 0.5,
      "zoom": 1
     },
     "1:1": {
-     "cx": 0.5,
+     "cx": 0.7,
      "cy": 0.5,
      "zoom": 1
     }
@@ -420,13 +420,13 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "placeholder"
+    "note": "CyberChef decoding the briefcase notes' own worked example (base64 to 'Meet at the server room'); no mission answer"
    }
   },
   {
    "id": "card_real",
    "type": "card",
-   "duration": 2,
+   "duration": 1.5,
    "snap": true,
    "join": {
     "type": "glitch"
@@ -447,18 +447,18 @@
   {
    "id": "real_clip",
    "type": "gameplay",
-   "duration": 3.5,
+   "duration": 2.0,
    "snap": true,
    "join": {
     "type": "glitch"
    },
    "placeholder": true,
-   "placeholder_note": "old-trailer Kali footage until in-game VM capture exists (password on the Hydra line mosaicked in the clip)",
+   "placeholder_note": "old-trailer Kali footage 0-2.0 s of the placeholder clip (Hydra terminal then CyberChef ROT13) until in-game VM capture exists; password on the Hydra line mosaicked in the clip",
    "source": {
     "type": "clip",
     "file": "real_hacking_kali.mp4",
     "in": 0,
-    "out": 3.85
+    "out": 2.0
    },
    "framing": {
     "16:9": {
@@ -513,25 +513,23 @@
   {
    "id": "npc_1",
    "type": "gameplay",
-   "duration": 3.5,
+   "duration": 4.0,
    "snap": true,
    "join": {
     "type": "glitch"
    },
-   "placeholder": true,
-   "placeholder_note": "NPC line 1: portrait view with the game's subtitle bar (take being recorded; 4.5 s max)",
    "source": {
-    "file": "npc_line_1.trimmed.mkv",
-    "in": 0,
-    "out": 3.5
+    "file": "t11_kevin_line.trimmed.mkv",
+    "in": 12.2,
+    "out": 16.2
    },
    "dialogue": true,
    "lines": [
     {
-     "speaker": "NPC 1",
-     "text": "(line to come)",
-     "start": 0.2,
-     "end": 3.3
+     "speaker": "Kevin Park",
+     "text": "I flagged it to management three times. Nothing happened.",
+     "start": 0.102,
+     "end": 3.615
     }
    ],
    "framing": {
@@ -541,12 +539,12 @@
      "zoom": 1
     },
     "9:16": {
-     "cx": 0.65,
+     "cx": 0.7,
      "cy": 0.444,
      "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.4635,
+     "cx": 0.47,
      "cy": 0.5,
      "zoom": 1
     }
@@ -565,31 +563,30 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "placeholder"
-   }
+    "note": "Kevin line: a wronged insider, no code, culprit or ending"
+   },
+   "note": "t11 12.2-16.2: line 12.302-15.815; previous (skipped) line ended 11.646"
   },
   {
    "id": "npc_2",
    "type": "gameplay",
-   "duration": 3.5,
+   "duration": 4.0,
    "snap": true,
    "join": {
     "type": "cut"
    },
-   "placeholder": true,
-   "placeholder_note": "NPC line 2: portrait view with the game's subtitle bar (take being recorded; 4.5 s max)",
    "source": {
-    "file": "npc_line_2.trimmed.mkv",
-    "in": 0,
-    "out": 3.5
+    "file": "t12_maya_line.trimmed.mkv",
+    "in": 34.2,
+    "out": 38.2
    },
    "dialogue": true,
    "lines": [
     {
-     "speaker": "NPC 2",
-     "text": "(line to come)",
-     "start": 0.2,
-     "end": 3.3
+     "speaker": "Maya Chen",
+     "text": "Anyone who gets too close gets removed.",
+     "start": 0.118,
+     "end": 3.645
     }
    ],
    "framing": {
@@ -599,12 +596,12 @@
      "zoom": 1
     },
     "9:16": {
-     "cx": 0.65,
+     "cx": 0.69,
      "cy": 0.444,
      "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.4635,
+     "cx": 0.47,
      "cy": 0.5,
      "zoom": 1
     }
@@ -623,31 +620,30 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "placeholder"
-   }
+    "note": "Maya line: menace, names no one, no code or ending"
+   },
+   "note": "t12 34.2-38.2: line 34.318-37.845; previous (skipped) line, which names Derek, ended 33.983"
   },
   {
    "id": "npc_3",
    "type": "gameplay",
-   "duration": 3.5,
+   "duration": 4.5,
    "snap": true,
    "join": {
     "type": "cut"
    },
-   "placeholder": true,
-   "placeholder_note": "NPC line 3: portrait view with the game's subtitle bar (take being recorded; 4.5 s max)",
    "source": {
-    "file": "npc_line_3.trimmed.mkv",
-    "in": 0,
-    "out": 3.5
+    "file": "t13_sarah_line.trimmed.mkv",
+    "in": 17.6,
+    "out": 22.1
    },
    "dialogue": true,
    "lines": [
     {
-     "speaker": "NPC 3",
-     "text": "(line to come)",
-     "start": 0.2,
-     "end": 3.3
+     "speaker": "Sarah O'Brien",
+     "text": "Next thing you know, HR calls her in and she's gone.",
+     "start": 0.095,
+     "end": 4.326
     }
    ],
    "framing": {
@@ -657,12 +653,12 @@
      "zoom": 1
     },
     "9:16": {
-     "cx": 0.65,
+     "cx": 0.7,
      "cy": 0.444,
      "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.4635,
+     "cx": 0.47,
      "cy": 0.5,
      "zoom": 1
     }
@@ -681,8 +677,9 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "placeholder"
-   }
+    "note": "Sarah line: sets up the vanished manager, no code, culprit or ending"
+   },
+   "note": "t13 17.6-22.1: line 17.695-21.926; previous line ended 17.265, next starts 22.894; influence toast fades in the first 0.5 s"
   },
   {
    "id": "card_uncover",
@@ -706,20 +703,19 @@
    }
   },
   {
-   "id": "mb_1",
+   "id": "mb_keypad",
    "type": "gameplay",
    "duration": 1,
    "snap": true,
    "join": {
     "type": "glitch"
    },
-   "placeholder": true,
-   "placeholder_note": "montage B: rooms and characters walking (take being recorded)",
    "source": {
-    "file": "montageB_1.trimmed.mkv",
-    "in": 0,
-    "out": 1
+    "file": "t15_cabinet_keypad.trimmed.mkv",
+    "in": 4.6,
+    "out": 5.6
    },
+   "note": "filing cabinet keypad 4.6-5.6: '7___' to '72__' (not the code; ENTER never pressed); whole panel at 1x",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -729,7 +725,7 @@
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.125
+     "zoom": 1
     },
     "1:1": {
      "cx": 0.5,
@@ -745,25 +741,24 @@
     "shows_code": false,
     "shows_identity": false,
     "shows_ending": false,
-    "keypad_partial": null,
-    "note": "placeholder"
+    "keypad_partial": true,
+    "note": "filing cabinet keypad, two of four digits entered, not the real code"
    }
   },
   {
-   "id": "mb_2",
+   "id": "mb_sarah",
    "type": "gameplay",
    "duration": 1,
    "snap": true,
    "join": {
     "type": "cut"
    },
-   "placeholder": true,
-   "placeholder_note": "montage B: rooms and characters walking (take being recorded)",
    "source": {
-    "file": "montageB_2.trimmed.mkv",
-    "in": 0,
-    "out": 1
+    "file": "t16_walk_sarah.trimmed.mkv",
+    "in": 2.3,
+    "out": 3.3
    },
+   "note": "walk to Sarah's desk 2.3-3.3 (walk ends 3.25, bubble prompt, no dialogue)",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -790,24 +785,23 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "placeholder"
+    "note": "player walks to the receptionist, no dialogue, no text"
    }
   },
   {
-   "id": "mb_3",
+   "id": "mb_kevin",
    "type": "gameplay",
    "duration": 1,
    "snap": true,
    "join": {
     "type": "cut"
    },
-   "placeholder": true,
-   "placeholder_note": "montage B: rooms and characters walking (take being recorded)",
    "source": {
-    "file": "montageB_3.trimmed.mkv",
-    "in": 0,
-    "out": 1
+    "file": "t17_walk_kevin.trimmed.mkv",
+    "in": 2.0,
+    "out": 3.0
    },
+   "note": "walk to Kevin 2.0-3.0 (walk ends 3.0)",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -834,24 +828,23 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "placeholder"
+    "note": "player walks to the IT manager, no dialogue, no text"
    }
   },
   {
-   "id": "mb_4",
+   "id": "mb_maya",
    "type": "gameplay",
    "duration": 1,
    "snap": true,
    "join": {
     "type": "cut"
    },
-   "placeholder": true,
-   "placeholder_note": "montage B: rooms and characters walking (take being recorded)",
    "source": {
-    "file": "montageB_4.trimmed.mkv",
-    "in": 0,
-    "out": 1
+    "file": "t18_walk_maya.trimmed.mkv",
+    "in": 5.3,
+    "out": 6.3
    },
+   "note": "walk beside Maya 5.3-6.3 (room-transition click marker at ~3.4 s is outside the window)",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -878,7 +871,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "placeholder"
+    "note": "player walks to Maya in her office, no dialogue, no text"
    }
   },
   {
