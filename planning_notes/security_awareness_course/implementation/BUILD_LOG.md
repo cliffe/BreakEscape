@@ -127,3 +127,17 @@ Merges now happen in the orchestrator's own worktree (`.claude/worktrees/orch-me
 - core_00 shell (a894af4d6, bridge core00 10/10 incl. reload and already-seen) and data_conduct shells (d7647a4e4) wired.
 - E15 design C1: 0/2/5, all accepted as the reviewer proposes (reveal into `strings.conceptPanel`; drop the backwards clause from `defendIntro` and theme the Swap Shop launch strings; drop `vish_callback_pressure` from the posted-stick item; add a `falseAlarmCost` to row 6). Cross-episode question parked for the montage episodes (E11, E15, E16, E19, E20): a careful learner who picked every safe option sees only "the version where..." lines, with no affirmation of their own good calls. Engine already marks the taken option; the fix is likely a short authored "your call" line per beat. Decide when E11's review is in.
 - E11 design C1: 0/3/3. MA1 (the 72-hour clock runs from awareness, not from the slip) and MA2 (sister, not brother) are fact/continuity fixes for the content fixer; MI1 likewise. MA3 (montage styles a safe pick like a mistake) settles the cross-episode question: added to the engine UX batch (style each beat from `safe`; a "your call" tag in words). MI2: correct spec §12 (per-item cards show only for misses, by the built Cut A). MI3: the known awareness-scorer limit, documented.
+- E9 design C1: 0/3/3. MA1 (flip says things twice; flipGuessIntro not authored), MA3 (defend-only feedback names things the defend-only learner never saw) and MI3 (training-example caution) go to the content fixer; MA2 (aftermath sms body not rendered) and MI1 (choice cards leak into the band cap) added to the engine UX batch. The common-guess list (123456, password, qwerty) stays: it teaches, per concepts.md.
+
+## Design C1 summary (wave of six)
+
+| Episode | B | M | m | Fixer |
+|---|---:|---:|---:|---|
+| E9 | 0 | 3 | 3 | content + engine |
+| E11 | 0 | 3 | 3 | content + engine |
+| E15 | 0 | 2 | 5 | content |
+| E16 | 0 | 2 | 3 | content (MAJOR-1 fixed) |
+| E17 | 0 | 0 | 3 | content |
+| E19 | 0 | 0 | 4 | content |
+
+Content fixers start once the engine UX batch lands (some fixes need its per-message verdict line).
