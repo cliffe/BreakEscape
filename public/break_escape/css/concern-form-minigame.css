@@ -34,8 +34,7 @@
 
 .cf-toolbar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 2px solid var(--cf-line); background: var(--cf-raised); }
 .cf-title { flex: 1 1 auto; margin: 0; font-size: 18px; }
-.cf-live { margin: 0; min-height: 0; font-size: 13px; color: var(--cf-dim); }
-.cf-live:empty { display: none; }
+.cf-live { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .cf-stage { flex: 1; min-height: 0; overflow-y: auto; }
 
 .cf-panel { padding: 14px 16px; max-width: 920px; }
