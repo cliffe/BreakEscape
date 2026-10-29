@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e17_acceptable_use_defend_defend_done:
-        Nilesh Solanki: That's the lot, thanks. When you're not sure, ask first, the software portal usually answers the same day; and if you make a mistake, report it.
+        Nilesh Solanki: That's the lot, thanks. When you're not sure, ask first, the service desk usually answers the same day; and if you make a mistake, report it.
     - else:
         Nilesh Solanki: Nilesh, service desk. Every rule here has a 'because'. Allowed, Not allowed, Ask first, and Ask first is never wrong. Sort the cards, then a short inbox.
     }

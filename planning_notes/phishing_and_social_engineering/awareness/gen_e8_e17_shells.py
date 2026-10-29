@@ -254,13 +254,13 @@ LINES = {
         "That's the desk cleared, thanks. The move that works for every pushy visitor is the same: check the list, escort them, and report anyone who won't be checked.",
         'Thanks, Lorna.', 'Any time.'),
     ('e8', 'defend'): (
-        "You're covering a colleague's inbox. They clicked a convincing email, so someone else is using their account. Some signs are real, some are ordinary. Report anything that doesn't sit right.",
+        "You're covering Ayaan's inbox at the training kiosk. He clicked a convincing email, so someone else is in his account. Some signs are real, some ordinary. Report anything odd.",
         "That's the inbox sorted, thanks. The one move that works for every real sign is the same: report it and let the team act.",
         'Thanks, Anjali.', 'Any time.'),
     # E17 and E19: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
     ('e17', 'defend'): (
         "Nilesh, service desk. Every rule here has a 'because'. Allowed, Not allowed, Ask first, and Ask first is never wrong. Sort the cards, then a short inbox.",
-        "That's the lot, thanks. When you're not sure, ask first, the software portal usually answers the same day; and if you make a mistake, report it.",
+        "That's the lot, thanks. When you're not sure, ask first, the service desk usually answers the same day; and if you make a mistake, report it.",
         'Thanks, Nilesh.', 'Any time.'),
     ('e19', 'defend'): (
         "You're covering this desk inbox. Some of it is ordinary, some tries to open a door, and one colleague's screen has locked. Didn't expect it? Report it.",
@@ -268,7 +268,7 @@ LINES = {
         'Thanks, Anjali.', 'Any time.'),
     # E11 and E15: the brief's drafted lines ran over the 30-word cap, so they are trimmed here.
     ('e11', 'defend'): (
-        "You're covering the Care Laundry desk inbox. Some of it is routine, some belongs with me as DPO, some was sent to catch you out. Report anything that doesn't sit right.",
+        "You're covering the Care Laundry desk inbox. Some of it is routine, some belongs with the DPO, some was sent to catch you out. Report anything that doesn't sit right.",
         "That's the inbox sorted, thanks. Anything about someone's personal data, a request, a breach or a complaint, comes to the DPO the same day.",
         'Thanks, Tomasz.', 'Any time.'),
     ('e15', 'defend'): (
@@ -300,7 +300,7 @@ LINES = {
         'Thanks, Niamh.', 'No bother.'),
     # E18: the brief's drafted lines ran over the 30-word dialoguelint cap, so they are trimmed here.
     ('e18', 'defend'): (
-        "Your own seat now. After a sweep the alerts come thick and fast, some real, some fakes. Report the fakes, and never type a password to unlock or check anything.",
+        "Your own seat now. After a sweep the alerts come thick, some real, some fakes. Report the fakes, and never type a password to unlock or check anything.",
         "That's them sorted, thanks. A genuine alert never asks for your password; the fakes always do. Report the fakes, and change a reused password on the real site.",
         'Thanks, Ama.', 'Any time.'),
 }
@@ -364,7 +364,7 @@ EPISODES = {
                    'keywords': ['Phishing', 'Incident reporting', 'Security awareness', 'Usable security']}],
         'defend': {
             'name': 'After the click: the signs that follow',
-            'brief': "You're on an authorised exercise at Quayholt Insurance, a fictional company. A colleague clicked a convincing email and signed in, and now their account is being used. You're covering their inbox. Some of what turns up is a real sign that something is wrong, and some is ordinary. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down.",
+            'brief': "You're on an authorised exercise at Quayholt Insurance, a fictional company. A colleague, Ayaan, clicked a convincing email and signed in, and now his account is being used. You're covering his inbox at the training kiosk. Some of what turns up is a real sign that something is wrong, and some is ordinary. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down.",
             'endGoal': "Sort the signs in the colleague's inbox at the training kiosk.",
             'aim': ('used_account_aim', 'Sort the signs that follow', "Work through the signs in the colleague's inbox at the training kiosk."),
             'task': ('sort_the_signs', 'Sort the signs that follow'),
@@ -374,7 +374,7 @@ EPISODES = {
             'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Sit in a colleague's seat at Quayholt Insurance, a fictional company, after they clicked a convincing email: some of what turns up in their account is a real sign that something is wrong, and some is ordinary. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'defendIntro': "Go through the signs in the colleague's inbox and decide what to do with each one. Some are a real sign that someone else is in the account, and some are ordinary; the one move that works for every real sign is to report it and let the team act. Take them at your own pace.",
-            'conclusion': ('Signs sorted', "You've sorted the signs in the colleague's inbox and finished this episode."),
+            'conclusion': ('Signs sorted', "You've sorted the signs in the colleague's inbox and finished this episode. If it ever happens to you, report it straight away, change your password on the real site, and leave the device as it is."),
         },
     },
     'e17': {
