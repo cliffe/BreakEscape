@@ -231,53 +231,35 @@
             }
           },
           {
-            "id": "e3_call_on_behalf",
+            "id": "e3_call_remote_access",
             "genuine": false,
-            "callerId": "Josh Henley, from the Head of Claims' office (withheld)",
-            "claims": [
-              {
-                "fact": "team",
-                "value": "claims",
-                "label": "Claims"
-              },
-              {
-                "fact": "manager",
-                "value": "okonkwo_full",
-                "label": "Ngozi Okonkwo"
-              },
-              {
-                "fact": "staffId",
-                "value": "gordon_staffid",
-                "label": "QH-20719"
-              }
-            ],
+            "callerId": "Marcus Hale, Vanteq Systems support (mobile)",
+            "claims": [],
             "tells": [
-              "borrowed_authority",
-              "secrecy_or_bypass",
-              "vish_callback_pressure"
+              "vish_callback_pressure",
+              "borrowed_authority"
             ],
             "transcript": [
               {
-                "who": "Caller",
-                "text": "Hi, Josh Henley, I work for Ngozi Okonkwo in Claims. Gordon McLeish is stuck with a client and can't get into his account. His staff number's QH-20719."
+                "who": "Marcus",
+                "text": "Hello, Marcus Hale, support engineer at Vanteq Systems. There's a fault on one of your Quayholt claims servers and the maintenance window closes at ten, so I need to get on and fix it now."
               },
               {
-                "who": "Caller",
-                "text": "He's in with the client, he can't take calls. Ngozi's signed it off, so you don't need to go through the questions. Can you move his sign-in prompts to his new phone? Keep it low-key, he's embarrassed enough."
+                "who": "Marcus",
+                "text": "No time to go through your supplier contact, I'm on site at another client. If you can just install our support tool and approve the remote session, I'll be straight in and out."
               },
               {
-                "who": "Caller",
-                "text": "If you need to ring anyone, ring me on 07700 900215."
+                "who": "Marcus",
+                "text": "Your IT manager asked us to sort it directly, so you don't need to raise a ticket for this one."
               }
             ],
             "notes": {
               "perFlagNote": {
-                "borrowed_authority": "'Ngozi's signed it off' puts the Head of Claims between you and the check",
-                "secrecy_or_bypass": "'You don't need to go through the questions' and 'keep it low-key' ask you to skip the process and not tell anyone",
-                "vish_callback_pressure": "He offers his own number instead of the one on file. A callback only counts on a number you already hold"
+                "vish_callback_pressure": "He talks you off ringing the supplier back on the number you hold on file: he's 'on site' and the 'window closes at ten'. A callback on a number you already hold is the check.",
+                "borrowed_authority": "'Your IT manager asked us' is there to push you past that check."
               },
-              "ifTrusted": "Gordon's sign-in prompts would go to the caller's phone, so the caller could approve their own sign-ins as Gordon.",
-              "reportReply": "Thanks. There's no Josh Henley at Quayholt, and Ngozi hasn't signed anything off. Gordon's account is unchanged."
+              "ifTrusted": "Installing the tool or approving the session hands the caller remote control of a Quayholt system. Genuine support and suppliers never need a cold-call remote session or a one-time code to do their job.",
+              "reportReply": "Thanks. We rang the supplier back on the number on file and they had made no such call, and there's no fault on that server. Nothing was installed."
             }
           }
         ]
@@ -286,7 +268,7 @@
         "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. You're on the IT service desk in Leila Nassar's seat. Three calls are waiting and a sign-in prompt from overnight is still on your phone. Some callers are who they say, and some are reading facts they found online. Help the real ones, and ring back or escalate anything that doesn't sit right. Ringing back when you're unsure is always fine and never marked down, though a real caller does take a colleague's time to check.",
         "noBlameLine": "These callers rehearse sounding right, and a service desk that tries to help them is doing its job under pressure. A miss just shows which call to slow down next time.",
         "noBlameLineCritical": "This was built to catch you when you're under pressure. The points only show where to look next time.",
-        "mondayCard": "On Monday: a name, a team, a manager and a staff number can all be found online, so on a phone call they prove nothing. Before you reset a password or move someone's sign-in prompts, hang up and ring them back on the number already on file, not one they give you. If a sign-in prompt arrives that you didn't start, deny it and report it using the route in the box below.",
+        "mondayCard": "On Monday: a name, a team, a manager and a staff number can all be found online, so on a phone call they prove nothing. Before you reset a password, move someone's sign-in prompts or install remote-support software for a caller, hang up and ring them back on the number already on file, not one they give you. Genuine IT and suppliers never cold-call to install remote-control software or to have you read out a code. If a sign-in prompt arrives that you didn't start, deny it and report it using the route in the box below. At home, report fraud and cyber crime to Report Fraud (Police Scotland on 101 in Scotland).",
         "defendOnly": "These calls were made by people whose job is to sound right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
         "defendIntro": "You're in Leila's seat. Three calls are waiting and a sign-in prompt from overnight is still on your phone. Take them one at a time.",
         "conceptPanel": {
