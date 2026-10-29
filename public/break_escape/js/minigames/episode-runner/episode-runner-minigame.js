@@ -57,7 +57,7 @@ import {
     stagesFor, stateKey, readState, completeStage, childLaunch, variantOf,
     sentFromRecord, findSentRecord, flipEntry, measurementCtx, defendSummary,
     writeKind, sentFromCall, callOutcomeKey, flipPage, flipCall, CALL_LANDED,
-    awarenessSettings, reportRouteFor
+    awarenessSettings, reportRouteFor, flipAftermathFor
 } from './episode-model.js';
 
 /**
@@ -437,9 +437,11 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
      * email, so the 'flip' step reads "The call" rather than the default "Your message" (E3-6).
      */
     _stripLabels() {
+        // strings.stepLabels is the built home; ENG-01 adds episode.stepLabels, which wins.
         const own = isObj(this.strings.stepLabels) ? this.strings.stepLabels : null;
+        const top = isObj(this.episode.stepLabels) ? this.episode.stepLabels : null;
         const base = writeKind(this.episode) === 'call' ? { flip: 'The call' } : undefined;
-        return own ? { ...base, ...own } : base;
+        return own || top ? { ...base, ...own, ...top } : base;
     }
 
     /**
@@ -495,7 +497,11 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         // falling back to flipMissed); a record that cannot be found reads as a miss, as before.
         const nothing = !message && !page && !!sent?.recordId;
         const landedNoTells = nothing && rec?.landed === true;
-        return { message, page, call: null, missed: nothing && !landedNoTells, landedNoTells };
+        const out = { message, page, call: null, missed: nothing && !landedNoTells, landedNoTells };
+        // ENG-01: the victim's seat, only for a landed mail or page (rec.landed === false returned above).
+        const aftermath = (message || page) ? flipAftermathFor(this.episode, { landed: rec?.landed !== false }) : null;
+        if (aftermath) out.aftermath = aftermath;
+        return out;
     }
 
     _renderFlip() {

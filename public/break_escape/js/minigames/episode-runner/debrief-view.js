@@ -198,9 +198,11 @@ function buildCard(answer, msg, set = null) {
     return card;
 }
 
-/** An optional plain-text panel (strings.conceptPanel, strings.voicePanel), or null. */
-function buildPanel(strings, key) {
-    const raw = isObj(strings) ? strings[key] : null;
+/**
+ * An optional plain-text panel (strings.conceptPanel, strings.voicePanel), or null. `raw` is the
+ * panel's value when given (ENG-09b: one entry of a conceptPanel array), else strings[key].
+ */
+function buildPanel(strings, key, raw = isObj(strings) ? strings[key] : null) {
     const text = typeof raw === 'string' ? raw : (isObj(raw) && typeof raw.text === 'string' ? raw.text : '');
     if (!text.trim()) return null;
     const heading = isObj(raw) && typeof raw.heading === 'string' && raw.heading.trim() ? raw.heading : PANEL_HEADINGS[key];
@@ -348,8 +350,14 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     }
     if (genuine) root.appendChild(genuine.node);
 
-    const concept = buildPanel(strings, 'conceptPanel');
-    if (concept) root.appendChild(concept);
+    // ENG-09b: conceptPanel may be an array of { heading?, text }, drawn in order; an entry with
+    // no text is skipped. A string or one object draws one panel, exactly as before.
+    const conceptRaw = isObj(strings) ? strings.conceptPanel : null;
+    const conceptList = Array.isArray(conceptRaw)
+        ? conceptRaw.map((r) => buildPanel(strings, 'conceptPanel', r)).filter(Boolean)
+        : [buildPanel(strings, 'conceptPanel')].filter(Boolean);
+    const concept = conceptList.length > 0;
+    for (const panel of conceptList) root.appendChild(panel);
     const voice = buildPanel(strings, 'voicePanel');
     if (voice) root.appendChild(voice);
 
@@ -394,7 +402,8 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     return {
         destroy() { root.remove(); },
         getState() {
-            return { items: reviewed.length, mondayCard: true, noBlame, conceptPanel: !!concept, voicePanel: !!voice,
+            return { items: reviewed.length, mondayCard: true, noBlame, conceptPanel: concept, voicePanel: !!voice,
+                ...(Array.isArray(conceptRaw) ? { conceptPanels: conceptList.length } : {}),
                 reportRoute: route ? (route.configured === true ? 'configured' : 'generic') : null,
                 ruleOfThumb: !!rule, teamProtected: teamText ? team : null,
                 genuine: genuine ? { trusted: genuine.trusted, checked: genuine.checked, flagged: genuine.flagged } : null };

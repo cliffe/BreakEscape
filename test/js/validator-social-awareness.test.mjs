@@ -361,6 +361,89 @@ test('social.awareness (aw1, aw4, aw6): clean settings pass; blanks warn, a bad 
   expectIn(lint(j), /only 'slot:customer_report_route' is read/);
 });
 
+// ENG-09b: strings.conceptPanel may be an array of { heading?, text }.
+test('conceptPanel: an array needs text in every entry; the string and object forms are unchanged', { skip }, () => {
+  let j = fx('clean_full.json');
+  ep(j).strings.conceptPanel = [{ heading: 'One', text: 'First.' }, { text: 'Second.' }];
+  assert.deepEqual(lint(j), []);
+  j = fx('clean_full.json');
+  ep(j).strings.conceptPanel = [{ heading: 'One', text: 'First.' }, { heading: 'Two', text: '  ' }, { heading: 'Three' }];
+  const out = lint(j);
+  expectIn(out, /strings\.conceptPanel entry 2 has no text/);
+  expectIn(out, /strings\.conceptPanel entry 3 has no text/);
+  expectIn(out, /strings\.conceptPanel entry 1 has no text/, 0);
+  j = fx('clean_full.json');
+  ep(j).strings.conceptPanel = [];
+  expectIn(lint(j), /strings\.conceptPanel is an empty list/);
+  j = fx('clean_full.json');
+  ep(j).strings.conceptPanel = { text: '' };
+  expectIn(lint(j), /strings\.conceptPanel has no text/);
+  // voicePanel stays single-panel
+  j = fx('clean_full.json');
+  ep(j).strings.voicePanel = [{ text: 'x' }];
+  expectIn(lint(j), /strings\.voicePanel has no text/);
+});
+
+// ENG-01: flipAftermath and stepLabels.
+const aftermathBlock = () => ({
+  heading: 'Now you are Kieran', victimName: 'Kieran', intro: 'His account a few minutes later.',
+  items: [
+    { id: 'fa_sent', kind: 'email', folder: 'sent', to: 'finance@fixture.example', subject: 'Invoice', time: '15:08', note: 'He did not write this.' },
+    { id: 'fa_push', kind: 'push', push: { app: 'Authenticator', account: 'k@fixture.example' } }
+  ],
+  line: 'Most of the damage happens between noticing and reporting.'
+});
+
+test('flipAftermath and stepLabels: a clean block passes; each lint fires on its own', { skip }, () => {
+  let j = fx('clean_full.json');
+  ep(j).flipAftermath = aftermathBlock();
+  ep(j).stepLabels = { flip: 'The click' };
+  assert.deepEqual(lint(j), []);
+  const bad = (mutate, re) => {
+    const k = fx('clean_full.json');
+    ep(k).flipAftermath = aftermathBlock();
+    mutate(ep(k).flipAftermath);
+    expectIn(lint(k), re);
+  };
+  bad((b) => { b.items = []; }, /flipAftermath\.items must be a non-empty list/);
+  bad((b) => { b.items[0].id = ''; }, /items\[0\]\.id is empty or missing/);
+  bad((b) => { b.items[1].id = 'fa_sent'; }, /items\[1\]\.id 'fa_sent' repeats/);
+  bad((b) => { b.items[0].kind = 'fax'; }, /items\[0\]\.kind is "fax"/);
+  bad((b) => { delete b.items[0].to; delete b.items[0].subject; }, /an email row needs a to or a subject/);
+  bad((b) => { delete b.items[1].push.app; }, /items\[1\]\.push\.app is missing/);
+  j = fx('clean_full.json');
+  ep(j).stepLabels = { flop: 'x', defend: ' ' };
+  const out = lint(j);
+  expectIn(out, /stepLabels\.flop is not a stage id/);
+  expectIn(out, /stepLabels\.defend is empty/);
+  // a defend-only shell never runs the flip
+  j = fx('clean_defend_only.json');
+  ep(j).flipAftermath = aftermathBlock();
+  expectIn(lint(j), /flipAftermath is set but this episode runs no flip stage/);
+});
+
+test('schema: flipAftermath, stepLabels and a conceptPanel array pass; typos fail', { skip }, () => {
+  const ok = fx('clean_full.json');
+  ep(ok).flipAftermath = aftermathBlock();
+  ep(ok).stepLabels = { flip: 'The click' };
+  ep(ok).strings.conceptPanel = [{ heading: 'One', text: 'First.' }, { text: 'Second.' }];
+  const typo = fx('clean_full.json');
+  ep(typo).flipAftermath = { ...aftermathBlock(), headin: 'x' };
+  const noKind = fx('clean_full.json');
+  ep(noKind).flipAftermath = aftermathBlock();
+  delete ep(noKind).flipAftermath.items[0].kind;
+  const noText = fx('clean_full.json');
+  ep(noText).strings.conceptPanel = [{ heading: 'No text' }];
+  const labels = fx('clean_full.json');
+  ep(labels).stepLabels = { flip: 3 };
+  const [r0, r1, r2, r3, r4] = schemaRun([ok, typo, noKind, noText, labels]);
+  assert.deepEqual(r0, { social: [], other: [] });
+  assert.ok(r1.social.some((e) => e.includes('headin')), r1.social.join('\n'));
+  assert.ok(r2.social.some((e) => e.includes('kind')), r2.social.join('\n'));
+  assert.ok(r3.social.length > 0, 'an array entry without text fails the schema');
+  assert.ok(r4.social.length > 0, 'a non-string step label fails the schema');
+});
+
 test('standalone: false skips the conclusion, host NPC and conclusionTaskId checks only', { skip }, () => {
   const j = fx('clean_full.json');
   aim(j).missionConclusion = false;

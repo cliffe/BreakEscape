@@ -52,6 +52,8 @@ module ValidateSocial
       issues.concat(id_suffix_checks(ep))
       issues.concat(attack_checks(ctx, ep)) if full?(ep)
       issues.concat(string_checks(ctx, ep))
+      issues.concat(flip_aftermath_checks(ep)) if ep.key?('flipAftermath')
+      issues.concat(step_label_checks(ep)) if ep.key?('stepLabels')
       issues.concat(settings_checks(ctx, ep))
       issues.concat(mfa_checks(ep))
       set = defend_set(ctx, ep, issues)
@@ -289,6 +291,63 @@ module ValidateSocial
       issues
     end
 
+    # ---- flipAftermath and stepLabels (ENG-01) ---------------------------------------
+
+    AFTERMATH_KINDS = %w[email sms voicemail qr page call push].freeze
+
+    def self.flip_aftermath_checks(ep)
+      block = ep['flipAftermath']
+      return [err('flipAftermath must be an object { heading?, victimName?, intro?, items: [...], line? }')] unless block.is_a?(Hash)
+
+      issues = []
+      if !full?(ep) || !Array(ep['stages']).include?('flip')
+        issues << warn_("flipAftermath is set but this episode runs no flip stage (variant '#{ep['variant']}'); it would never show")
+      end
+      items = block['items']
+      unless items.is_a?(Array) && !items.empty?
+        return issues << err('flipAftermath.items must be a non-empty list; without a valid item the aftermath is not drawn')
+      end
+
+      seen = {}
+      items.each_with_index do |it, i|
+        w = "flipAftermath.items[#{i}]"
+        unless it.is_a?(Hash)
+          issues << err("#{w} must be an object")
+          next
+        end
+        if Mail.blank?(it['id'])
+          issues << err("#{w}.id is empty or missing; an item without an id is not drawn")
+        elsif seen[it['id']]
+          issues << err("#{w}.id '#{it['id']}' repeats flipAftermath.items[#{seen[it['id']]}]")
+        else
+          seen[it['id']] = i
+        end
+        kind = it['kind']
+        unless AFTERMATH_KINDS.include?(kind)
+          issues << err("#{w}.kind is #{kind.inspect}; it must be one of #{AFTERMATH_KINDS.join(', ')}")
+          next
+        end
+        issues << err("#{w}: an email row needs a to or a subject; it would be blank") if kind == 'email' && Mail.blank?(it['to']) && Mail.blank?(it['subject'])
+        issues << err("#{w}.push.app is missing; the prompt would not say which app is asking") if kind == 'push' && (!it['push'].is_a?(Hash) || Mail.blank?(it['push']['app']))
+        issues << err("#{w}.page.url is missing; the address bar would be blank") if kind == 'page' && (!it['page'].is_a?(Hash) || Mail.blank?(it['page']['url']))
+        issues << err("#{w}.qr.destination is missing") if kind == 'qr' && (!it['qr'].is_a?(Hash) || Mail.blank?(it['qr']['destination']))
+        issues << err("#{w}.body is empty; the text bubble would be blank") if kind == 'sms' && Mail.blank?(it['body'])
+      end
+      issues
+    end
+
+    def self.step_label_checks(ep)
+      labels = ep['stepLabels']
+      return [err('stepLabels must be an object { <stageId>: string }')] unless labels.is_a?(Hash)
+
+      labels.each_with_object([]) do |(k, v), out|
+        next if k.to_s.start_with?('_')
+
+        out << err("stepLabels.#{k} is not a stage id (#{STAGES.join(', ')})") unless STAGES.include?(k)
+        out << err("stepLabels.#{k} is empty; the step would show no name") if Mail.blank?(v)
+      end
+    end
+
     # ---- strings ---------------------------------------------------------------------
 
     FACILITATOR_KEYS = %w[brief osint build write mfa flip defend debrief check pause].freeze
@@ -306,6 +365,15 @@ module ValidateSocial
         next unless strings.key?(key)
 
         v = strings[key]
+        if key == 'conceptPanel' && v.is_a?(Array)
+          # ENG-09b: several concept panels, drawn in order; each needs text.
+          issues << err('strings.conceptPanel is an empty list; the debrief would show no panel') if v.empty?
+          v.each_with_index do |entry, i|
+            t = entry.is_a?(Hash) ? entry['text'] : nil
+            issues << err("strings.conceptPanel entry #{i + 1} has no text; the debrief would show an empty panel") if !t.is_a?(String) || t.strip.empty?
+          end
+          next
+        end
         text = v.is_a?(Hash) ? v['text'] : v
         issues << err("strings.#{key} has no text; the debrief would show an empty panel") if !text.is_a?(String) || text.strip.empty?
       end

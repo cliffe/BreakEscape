@@ -409,6 +409,37 @@ test('debrief: the optional concept and voice panels render as plain text, betwe
     assert.ok(/\.aw-panel\s*\{/.test(css), 'the skin styles the panels');
 });
 
+test('debrief (ENG-09b): a conceptPanel array renders one panel per entry, in order; a one-panel form is unchanged', () => {
+    const evil = '<b>x</b>';
+    const h = host();
+    const d = renderDebrief(h, { result: result(), set: set(), variant: 'full', onFinish() {},
+        strings: { conceptPanel: [
+            { heading: 'What happened', text: `Para one. ${evil}\n\nPara two.` },
+            { text: 'No heading here.' },
+            { heading: 'Blank', text: '  ' },
+            { heading: 'What to do', text: 'Report it.' }
+        ], voicePanel: 'A voice is not proof.' } });
+    const panels = [...h.querySelectorAll('.aw-concept-panel')];
+    assert.deepEqual(panels.map((p) => p.querySelector('.aw-panel-heading').textContent), ['What happened', 'How it works', 'What to do']);
+    assert.deepEqual([...panels[0].querySelectorAll('.aw-panel-text')].map((p) => p.textContent), [`Para one. ${evil}`, 'Para two.']);
+    assert.equal(panels[0].querySelector('b'), null, 'never parsed as HTML');
+    assert.deepEqual(d.getState(), { items: 1, mondayCard: true, noBlame: true, conceptPanel: true, voicePanel: true, conceptPanels: 3, reportRoute: null, ruleOfThumb: false, teamProtected: null, genuine: { trusted: 1, checked: 0, flagged: 1 } });
+    // every concept panel sits before the voice panel and the Monday card
+    const order = [...h.querySelector('.aw-debrief').children].map((n) => n.className);
+    const lastConcept = order.map((c, i) => (c.includes('aw-concept-panel') ? i : -1)).reduce((a, b) => Math.max(a, b));
+    assert.ok(lastConcept < order.findIndex((c) => c.includes('aw-voice-panel')));
+    assert.ok(lastConcept < order.findIndex((c) => c.includes('aw-monday')));
+    // an array with no usable text draws none; a single object still draws one and reports no count
+    const h2 = host();
+    const d2 = renderDebrief(h2, { result: result(), set: set(), variant: 'full', onFinish() {}, strings: { conceptPanel: [{ text: ' ' }] } });
+    assert.equal(h2.querySelector('.aw-concept-panel'), null);
+    assert.equal(d2.getState().conceptPanel, false);
+    const h3 = host();
+    const d3 = renderDebrief(h3, { result: result(), set: set(), variant: 'full', onFinish() {}, strings: { conceptPanel: { heading: 'One', text: 'Only.' } } });
+    assert.equal(h3.querySelectorAll('.aw-concept-panel').length, 1);
+    assert.equal('conceptPanels' in d3.getState(), false);
+});
+
 test('P3 N-6 / flip split: nothing to replay gets the miss heading; a landing with no tells has its own line', () => {
     const h = host();
     renderFlipView(h, { missed: true, strings: { flipHeading: 'Now it lands on you' }, onContinue() {} });

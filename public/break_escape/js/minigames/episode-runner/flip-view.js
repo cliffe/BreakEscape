@@ -12,7 +12,13 @@
 //            `page` card;
 //   call     a pretext call (E3): { callerId, claims, transcript, notes }, drawn as the
 //            triage `call` card the helpdesk agent sees (the learner's own lines and the
-//            facts they claimed), then the helpdesk side's notes on what would have caught it.
+//            facts they claimed), then the helpdesk side's notes on what would have caught it;
+//   aftermath  ENG-01, optional: the victim's seat after a landed message or page.
+//            { heading?, victimName?, intro?, items: [{ id, kind, note?, ... }], line? }. An
+//            `email` item is one read-only sent-items row (folder, to, subject, time, note;
+//            no body, no link); any other non-email kind is drawn with renderKindSurface.
+//            Drawn after the message, page and call and before the defender line, only when
+//            there is a message or page and at least one valid item.
 // A page may come with a message (E5 sends the email that links to it). With none of them,
 // the view shows flipMissed when `missed` is true (something was sent but did not land, so
 // there is nothing to replay), flipLandedNoTells when `landedNoTells` is true (it landed but
@@ -28,7 +34,7 @@
 
 import { MailReader } from '../mail-client/mail-reader.js';
 import { redFlagString } from '../inbox-triage/triage-flags.js';
-import { renderKindSurface } from '../inbox-triage/triage-kinds.js';
+import { renderKindSurface, isNonEmail } from '../inbox-triage/triage-kinds.js';
 import { renderLandingPage } from '../landing-page-builder/landing-page-render.js';
 
 const DEFAULTS = Object.freeze({
@@ -79,6 +85,25 @@ export function defenderLine(strings, templateId) {
     return str(strings, 'flipDefenderLine');
 }
 
+/** The valid items of a flipAftermath block: an `email` row or a non-email kind, each with an id. */
+function aftermathItems(block) {
+    if (!isObj(block) || !Array.isArray(block.items)) return [];
+    return block.items.filter((it) => isObj(it) && isStr(it.id) && (it.kind === 'email' || isNonEmail(it.kind)));
+}
+
+/** One sent-items row for an aftermath `email` item: textContent only, no body and no link. */
+function aftermathEmailRow(it) {
+    const row = el('div', 'aw-aftermath-email');
+    const dl = el('dl', 'aw-aftermath-fields');
+    const add = (k, v) => { if (isStr(v)) dl.append(el('dt', null, k), el('dd', null, v)); };
+    add('Folder', isStr(it.folder) ? it.folder.charAt(0).toUpperCase() + it.folder.slice(1) : 'Sent');
+    add('To', it.to);
+    add('Subject', it.subject);
+    add('Time', it.time);
+    row.appendChild(dl);
+    return row;
+}
+
 const UNKNOWN_TELL = 'Something about this one did not add up.';
 
 /** The sentence for a tell id: the library's, else the page tells', else a neutral phrase (never the raw id). */
@@ -88,7 +113,7 @@ export function tellSentence(id, message) {
     return PAGE_TELLS[id] || UNKNOWN_TELL;
 }
 
-export function renderFlipView(container, { message = null, page = null, call = null, missed = false, landedNoTells = false, templateId = null, strings = {}, onContinue } = {}) {
+export function renderFlipView(container, { message = null, page = null, call = null, aftermath = null, missed = false, landedNoTells = false, templateId = null, strings = {}, onContinue } = {}) {
     const root = el('section', 'aw-flip');
     const heading = el('h2', 'aw-heading', str(strings, 'flipHeading'));
     heading.tabIndex = -1;
@@ -197,6 +222,34 @@ export function renderFlipView(container, { message = null, page = null, call = 
             }
             root.appendChild(list);
         }
+    }
+
+    // ENG-01: the victim's seat, after the replay and before the defender line. Only with
+    // something replayed from a landed attack (a missed or no-send flip never reaches it).
+    const aftermathList = (hasMessage || hasPage) && !missed && !landedNoTells ? aftermathItems(aftermath) : [];
+    if (aftermathList.length) {
+        parts.push('aftermath');
+        const sec = el('section', 'aw-flip-aftermath');
+        if (isStr(aftermath.heading)) sec.appendChild(el('h3', 'aw-flip-section', aftermath.heading));
+        if (isStr(aftermath.intro)) sec.appendChild(el('p', 'aw-lead', aftermath.intro));
+        if (isStr(aftermath.victimName)) sec.dataset.victim = aftermath.victimName;
+        for (const it of aftermathList) {
+            const item = el('div', 'aw-aftermath-item');
+            item.dataset.id = it.id;
+            item.dataset.kind = it.kind;
+            const note = el('p', 'aw-aftermath-note');
+            const setNote = (t) => { note.textContent = t; };
+            if (it.kind === 'email') {
+                item.appendChild(aftermathEmailRow(it));
+            } else {
+                const surface = renderKindSurface(it, { showNote: setNote, showLink: setNote, bodyNode: () => el('div') });
+                if (surface) item.appendChild(surface);
+            }
+            if (isStr(it.note)) { note.textContent = it.note; item.appendChild(note); }
+            sec.appendChild(item);
+        }
+        if (isStr(aftermath.line)) sec.appendChild(el('p', 'aw-aftermath-line', aftermath.line));
+        root.appendChild(sec);
     }
 
     if (parts.length) {

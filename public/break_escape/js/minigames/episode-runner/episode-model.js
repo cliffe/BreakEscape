@@ -15,6 +15,7 @@
 //   sentFromCall(callId, outcome) the same for a pretext call
 //   flipPage(episode, social, globals)  the built page the flip shows (E5), or null
 //   flipCall(episode, social, sent)     the call the flip shows (E3), or null
+//   flipAftermathFor(episode, { landed })  the victim's-seat block the flip adds after a landed attack, or null
 //   measurementCtx(episode, set, launchStage, now)   ctx for recordTriageResult
 //   teamProtectedOf(result)       the "team kept safe" tally (aw6): phish reported or checked
 //   awarenessSettings(social, config)  the scenario's social.awareness block, with the host
@@ -253,6 +254,17 @@ const labelOf = (list, id) => {
     const hit = list.find((o) => isObj(o) && o.id === id);
     return hit ? (hit.label ?? hit.text ?? hit.heading ?? null) : null;
 };
+
+/**
+ * The flip's victim's-seat block (ENG-01, episode.flipAftermath), or null. It shows only when
+ * the attack landed: pass `landed: false` for a miss and the block is withheld. The caller adds
+ * its own no-message/no-page test (a flip with nothing to replay has no aftermath either).
+ */
+export function flipAftermathFor(episode, { landed = true } = {}) {
+    if (landed === false) return null;
+    const block = episode?.flipAftermath;
+    return isObj(block) ? block : null;
+}
 
 /**
  * The built look-alike page the flip shows (E5), from the builder's record
