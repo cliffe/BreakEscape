@@ -3,8 +3,8 @@
 awareness_{pre,post}_<role_word>_{ab,ba}, four shells per pair, from
 awareness/checks_v2/<pair>.json.
 
-Built now: general_v2 (Quayholt, Verify off). data_conduct waits for the Carrholme room; add it as one
-more EPISODES entry (plus its HOSTS, CHECK_LINES and PERMUTE rows) and main() builds it with no other change.
+Built: general_v2 (Quayholt, Verify off) and data_conduct (Carrholme, Verify on). A further pair is one more
+EPISODES entry (plus its HOSTS, CHECK_LINES and PERMUTE rows); main() builds it with no other change.
 
 Helpers are copied from gen_e6_e7_shells.py (not imported, so a change there cannot break this);
 check() reads the company from cfg['company'].
@@ -74,6 +74,8 @@ def strip_private(obj):
 PERMUTE = {
     'general_v2_form_a': [1, 0, 3, 2, 5, 4, 7, 6, 9, 8],
     'general_v2_form_b': [0, 3, 2, 1, 4, 7, 6, 5, 8, 9],
+    'data_conduct_form_a': [1, 0, 3, 2, 5, 4, 7, 6, 9, 8],
+    'data_conduct_form_b': [0, 3, 2, 1, 4, 7, 6, 5, 8, 9],
 }
 
 def clean_set(sets, set_id, stage=None, comparison=None):
@@ -225,6 +227,14 @@ HOSTS = {
         'id': 'darren_price', 'displayName': 'Darren Price', 'sprite': 'male_telecom',
         'about': "Quayholt's service desk team lead and owner of the verification script, 40s, white, from Bristol (BRAND_SET.md). Steady, a bit dry. Placeholder sprite until PixelLab.",
     },
+    'tomasz': {
+        'id': 'tomasz_wisniewski', 'displayName': 'Tomasz Wisniewski', 'sprite': 'male_office_worker',
+        'about': "Carrholme Services' data protection officer, 50s, Polish, in the UK 25 years (BRAND_SET.md, E11 additions). Receives the reports. Runs the before-and-after checks for the AB pair. Placeholder sprite until PixelLab.",
+    },
+    'yusuf': {
+        'id': 'yusuf_demir', 'displayName': 'Yusuf Demir', 'sprite': 'male_telecom',
+        'about': "Carrholme Services' information security lead, 40s, British Turkish (data_conduct _brandAdditions). Runs the before-and-after checks for the BA pair; steady, practical. Placeholder sprite until PixelLab.",
+    },
 }
 
 CHECK_LINES = {
@@ -244,6 +254,22 @@ CHECK_LINES = {
         "Back again. Ten new items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.",
         "Check saved. Thanks for doing it.",
         'Thanks, Darren.', 'No problem.'),
+    ('tomasz_wisniewski', 'pre'): (
+        "I'm Tomasz, the data protection officer here. There's a short check on the kiosk first: ten items about data and conduct from a Carrholme inbox. Do what you'd normally do.",
+        "That's your first check saved. We'll do another after the training and see how the two compare.",
+        'Thanks, Tomasz.', "You're welcome."),
+    ('tomasz_wisniewski', 'post'): (
+        "Welcome back. Ten fresh items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.",
+        "Check saved. Thank you for doing it.",
+        'Thanks, Tomasz.', "You're welcome."),
+    ('yusuf_demir', 'pre'): (
+        "Yusuf here, I look after information security at Carrholme. Quick check on the kiosk before the training: ten items from a Carrholme inbox. Just do what you'd normally do.",
+        "First check's saved. You'll do another afterwards and we'll compare the two.",
+        'Thanks, Yusuf.', 'No problem.'),
+    ('yusuf_demir', 'post'): (
+        "Back again. Ten new items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.",
+        "Check saved. Thanks for doing it.",
+        'Thanks, Yusuf.', 'No problem.'),
 }
 
 EPISODES = {
@@ -267,7 +293,26 @@ EPISODES = {
             'minutes': 9,
         },
     },
-    # 'data_conduct': add here when the Carrholme room ships (10_CHECK_FORMS.md, "Check generator metadata").
+    'data_conduct': {
+        'frag': f'{AW}/checks_v2/data_conduct.json',
+        'role_word': 'data_conduct',
+        'role_label': 'all staff',
+        'company': 'Carrholme Services, a fictional company',
+        'forms': ('data_conduct_form_a', 'data_conduct_form_b'),
+        'check_hosts': {'ab': 'tomasz', 'ba': 'yusuf'},
+        'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+                   'keywords': ['Security awareness', 'Data protection', 'Insider risk', 'Acceptable use']}],
+        'check': {
+            'name': 'Data and conduct check',
+            'items_pre': 'Ten items from a Carrholme inbox and phone: emails and a call about data and conduct.',
+            'items_post': 'Ten new items from a Carrholme inbox and phone, the same kinds as before.',
+            'scope': 'Authorised exercise at Carrholme Services, a fictional company. In scope: ten items from a Carrholme inbox and phone.',
+            'kiosk': 'A touch-screen kiosk set up as a Carrholme inbox and phone, with ten items ready for the {nth} check.',
+            'aim_desc': 'Go through ten items at the training kiosk.',
+            'end': 'Go through the ten items at the training kiosk.',
+            'minutes': 9,
+        },
+    },
 }
 
 
