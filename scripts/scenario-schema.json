@@ -2847,7 +2847,8 @@
           "description": "Replaces the result screen's two follow-up lines (default: the mail-client and lab-sheet wording, or the awareness wording). {it} in weakest becomes it or them.",
           "properties": {
             "weakest": {"type": "string", "description": "After 'Weakest skill: ...'"},
-            "noFlags": {"type": "string", "description": "When the learner named no flags"}
+            "noFlags": {"type": "string", "description": "When the learner named no flags"},
+            "noFlagsLead": {"type": "string", "description": "batch-5 (E17): the sentence before noFlags (default \"You didn't name any flags on these messages, so there's nothing to grade skill by skill.\"). For a non-phishing set where 'name any flags' reads wrongly."}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false

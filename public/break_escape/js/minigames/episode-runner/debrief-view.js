@@ -346,7 +346,10 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
         if (reported) how.push(`${reported} reported`);
         if (checked) how.push(`${checked} checked by another route`);
         if (deleted) how.push(`${deleted} deleted`);
-        bits.push(`Phish caught: ${result.phishCaught} of ${total}${how.length ? ` (${how.join(', ')})` : ''}`);
+        // batch-5 (E17): the counter label follows the set's labels.phishCaughtLabel, as the result
+        // grid does, so a non-phishing set ("Requests handled") reads the same in the debrief.
+        const caughtLabel = isObj(set?.labels) && isStr(set.labels.phishCaughtLabel) ? set.labels.phishCaughtLabel : 'Phish caught';
+        bits.push(`${caughtLabel}: ${result.phishCaught} of ${total}${how.length ? ` (${how.join(', ')})` : ''}`);
     } else {
         if (Number.isFinite(result?.reportRate)) bits.push(`Reported ${Math.round(result.reportRate * 100)}% of the phish`);
         if (Number.isFinite(result?.verifyCount) && result.verifyCount > 0) bits.push(`Checked by another route: ${result.verifyCount}`);

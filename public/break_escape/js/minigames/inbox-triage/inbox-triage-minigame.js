@@ -1127,19 +1127,25 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const own = isObj(this.set?.resultCopy) ? this.set.resultCopy : {};
         if (typeof own.weakest === 'string' && own.weakest) copy.weakest = own.weakest.split('{it}').join(it);
         if (typeof own.noFlags === 'string' && own.noFlags) copy.noFlags = own.noFlags;
+        if (typeof own.noFlagsLead === 'string' && own.noFlagsLead) copy.noFlagsLead = own.noFlagsLead;
         return copy;
     }
 
     _defaultResultCopy(it) {
+        // noFlagsLead (batch-5 E17): the sentence before noFlags, overridable for a non-phishing set
+        // where "name any flags" reads wrongly. Default unchanged.
+        const noFlagsLead = "You didn't name any flags on these messages, so there's nothing to grade skill by skill.";
         if (this.awarenessSkin || this.profile === 'awareness') {
             return {
                 weakest: this._awarenessWeakestLine(it),
-                noFlags: 'Next time, tick what looks off. The review cards show what gave each fake one away.'
+                noFlags: 'Next time, tick what looks off. The review cards show what gave each fake one away.',
+                noFlagsLead
             };
         }
         return {
             weakest: `Practise ${it} in the mail client, then look ${it} up in your lab sheet.`,
-            noFlags: 'Tick what looks off next time, then check your lab sheet.'
+            noFlags: 'Tick what looks off next time, then check your lab sheet.',
+            noFlagsLead
         };
     }
 
@@ -1322,8 +1328,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                             (nudges[weak.id] || this._resultCopy(Array.isArray(weak.ties) && weak.ties.length > 1).weakest)));
                     }
                 } else {
-                    p.appendChild(el('p', 'tri-weakest',
-                        'You didn\'t name any flags on these messages, so there\'s nothing to grade skill by skill. ' + this._resultCopy().noFlags));
+                    const copy = this._resultCopy();
+                    p.appendChild(el('p', 'tri-weakest', `${copy.noFlagsLead} ${copy.noFlags}`));
                 }
             }
         }

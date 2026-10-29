@@ -238,6 +238,28 @@ test('labels.itemNoun renames the item noun in the brief and the Next button; la
     assert.equal($(s3, '.tri-next').textContent, 'Next message');
 });
 
+// ── resultCopy.noFlagsLead (batch-5 E17) ─────────────────────────────────────────
+test('resultCopy.noFlagsLead overrides the "You didn\'t name any flags" lead; default otherwise', () => {
+    const playNoFlags = (s) => {
+        click($(s, '.tri-start'));
+        click($(s, '.mail-row[data-id="p1"]'));
+        click($(s, '.tri-verdict[data-verdict="report"]'));
+        click($(s, '.tri-confirm')); // no chips ticked
+        click($(s, '.mail-row[data-id="r1"]'));
+        click($(s, '.tri-verdict[data-verdict="trust"]'));
+        click($(s, '.tri-confirm'));
+        click($(s, '.tri-next')); // See result
+    };
+    const s = open(awareSet());
+    playNoFlags(s);
+    assert.match($(s, '.tri-weakest').textContent, /You didn't name any flags/);
+
+    const s2 = open(awareSet({ resultCopy: { noFlagsLead: 'You ticked nothing, so there is no skill breakdown.' } }));
+    playNoFlags(s2);
+    assert.match($(s2, '.tri-weakest').textContent, /You ticked nothing/);
+    assert.doesNotMatch($(s2, '.tri-weakest').textContent, /name any flags/);
+});
+
 // ── labels.phishCaughtLabel (E17-M2) ─────────────────────────────────────────────
 test('labels.phishCaughtLabel overrides the result counter label; absent keeps "Phish caught"', () => {
     const play = (s) => {

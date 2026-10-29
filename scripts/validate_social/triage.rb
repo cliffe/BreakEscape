@@ -279,9 +279,9 @@ module ValidateSocial
       if set.key?('resultCopy')
         rc = set['resultCopy']
         if rc.is_a?(Hash)
-          rc.each { |k, v| issues << err("#{where}.resultCopy.#{k} is empty") if %w[weakest noFlags].include?(k) && blank?(v) }
+          rc.each { |k, v| issues << err("#{where}.resultCopy.#{k} is empty") if %w[weakest noFlags noFlagsLead].include?(k) && blank?(v) }
         else
-          issues << err("#{where}.resultCopy must be an object { weakest?, noFlags? }")
+          issues << err("#{where}.resultCopy must be an object { weakest?, noFlags?, noFlagsLead? }")
         end
       end
       issues << err("#{where}.reportReplyFrom must be a non-empty string") if set.key?('reportReplyFrom') && blank?(set['reportReplyFrom'])
