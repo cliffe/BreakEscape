@@ -520,6 +520,37 @@ export function dataOnlyText(target, result, social = null, sentTemplateId = nul
 }
 
 /**
+ * The send-result banner text (N17): the line at the top of the teaching checklist. Default is
+ * "It landed. They acted on it." on a landing and "It did not land." otherwise, unchanged.
+ *
+ * E13 F-2: an open target (primedFor.trusts ["*"]) lands for every pretext, so a plain brief that
+ * planted nothing still read "They acted on it". A target may override the banner per sent choice,
+ * in the replies.byChoice style the immediate reply uses:
+ *   - target.replies.byChoice[<sentTemplateId>].sentLine  (preferred — sits beside the reply)
+ *   - target.sentLines[<sentTemplateId>]                   (when the byChoice entry is a plain
+ *                                                           string reply, with no room for it)
+ * Each override is a plain string (the landing banner only; the miss banner stays the default) or
+ * { landed, missed } (picked by result.landed). Absent, the default text is returned unchanged.
+ */
+export function sentResultLine(target, result, sentTemplateId = null) {
+    const landed = !!(result && result.landed);
+    const def = landed ? 'It landed. They acted on it.' : 'It did not land.';
+    const pick = (v) => {
+        if (isStr(v)) return landed ? v : null;                 // a bare string overrides the landing banner only
+        if (isObject(v)) { const s = landed ? v.landed : v.missed; return isStr(s) ? s : null; }
+        return null;
+    };
+    const replies = isObject(target && target.replies) ? target.replies : {};
+    const entry = isObject(replies.byChoice) && isStr(sentTemplateId) ? replies.byChoice[sentTemplateId] : null;
+    const fromByChoice = isObject(entry) ? pick(entry.sentLine) : null;
+    if (isStr(fromByChoice)) return fromByChoice;
+    const sentLines = isObject(target && target.sentLines) ? target.sentLines : {};
+    const fromMap = isStr(sentTemplateId) ? pick(sentLines[sentTemplateId]) : null;
+    if (isStr(fromMap)) return fromMap;
+    return def;
+}
+
+/**
  * The persisted sent-record link (00 §10a). It carries the landing-page domain the
  * student chose, read from message.linkInfo (domainId, pageId, domain, browserDomain),
  * so the inbox-triage playerSent replay can resolve the look-alike domain and keep the
@@ -625,13 +656,13 @@ function checkRow(pass, line) {
  * client) the reply-to note. A failed send offers "Edit & resend"; a landed send
  * offers "Done" instead (01 §3; `onEdit` dismisses the panel in both cases).
  */
-export function renderChecklist(result, target, { claimedFrom = null, account = null, showReplyToNote = false, showReplyPending = false, onEdit = null } = {}) {
+export function renderChecklist(result, target, { claimedFrom = null, account = null, showReplyToNote = false, showReplyPending = false, onEdit = null, sentTemplateId = null } = {}) {
     const panel = cl('div', 'mail-checklist');
     panel.setAttribute('role', 'status');
     panel.setAttribute('aria-live', 'polite');
 
     const banner = cl('p', `mail-checklist-banner ${result.landed ? 'landed' : 'not-landed'}`);
-    banner.textContent = result.landed ? 'It landed. They acted on it.' : 'It did not land.';
+    banner.textContent = sentResultLine(target, result, sentTemplateId);
     panel.appendChild(banner);
 
     const list = cl('ul', 'mail-checklist-rows');

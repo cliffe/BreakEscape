@@ -152,6 +152,37 @@ test('E13 D1: replies.byChoice keys the data-only reply on the sent template', (
     assert.equal(bridge.dataOnlyText(halfPair, landedRes, aw, 'tpl'), 'default landed');
 });
 
+test('E13 F-2: sentResultLine defaults unchanged and overrides the send banner per sent choice', () => {
+    const landed = { landed: true };
+    const missed = { landed: false };
+    // default is byte-for-byte the old banner, with and without a template id
+    assert.equal(bridge.sentResultLine({ id: 't' }, landed), 'It landed. They acted on it.');
+    assert.equal(bridge.sentResultLine({ id: 't' }, missed), 'It did not land.');
+    assert.equal(bridge.sentResultLine({ id: 't' }, landed, 'any'), 'It landed. They acted on it.');
+    // replies.byChoice[id].sentLine: a bare string overrides the landing banner only
+    const t = { id: 'assist', replies: { byChoice: {
+        pretext_invoice: { sentLine: 'The brief went out as written. Nothing hidden to carry.' },
+        inject_contacts: 'injection reply'
+    } } };
+    assert.equal(bridge.sentResultLine(t, landed, 'pretext_invoice'), 'The brief went out as written. Nothing hidden to carry.');
+    assert.equal(bridge.sentResultLine(t, missed, 'pretext_invoice'), 'It did not land.');
+    // a byChoice entry that is a plain-string reply carries no sentLine: default banner
+    assert.equal(bridge.sentResultLine(t, landed, 'inject_contacts'), 'It landed. They acted on it.');
+    // the { landed, missed } object form picks by result.landed
+    const pair = { id: 't', replies: { byChoice: { tpl: { sentLine: { landed: 'won', missed: 'lost' } } } } };
+    assert.equal(bridge.sentResultLine(pair, landed, 'tpl'), 'won');
+    assert.equal(bridge.sentResultLine(pair, missed, 'tpl'), 'lost');
+    // target-level sentLines[templateId] as the fallback
+    const map = { id: 't', sentLines: { tpl: 'went as plain text' } };
+    assert.equal(bridge.sentResultLine(map, landed, 'tpl'), 'went as plain text');
+    assert.equal(bridge.sentResultLine(map, landed, 'other'), 'It landed. They acted on it.');
+    // and it reaches the rendered checklist banner
+    const panel = bridge.renderChecklist({ landed: true, open: { opened: true }, factors: [], tells: [] },
+        { id: 'assist', replies: { byChoice: { pretext_invoice: { sentLine: 'plain send, nothing planted' } } } },
+        { sentTemplateId: 'pretext_invoice' });
+    assert.equal(panel.querySelector('.mail-checklist-banner').textContent, 'plain send, nothing planted');
+});
+
 test('E13 D1: sentTemplateIdOf picks the pretext part, else the first chosen template', () => {
     assert.equal(bridge.sentTemplateIdOf({ templates: { from: 'f', pretext: 'pretext_invoice', ask: 'a' } }), 'pretext_invoice');
     assert.equal(bridge.sentTemplateIdOf({ templates: { from: 'f', ask: 'a' } }), 'f');
