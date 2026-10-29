@@ -23,6 +23,14 @@
       "flagChips": {
         "mfa_number_relay": "A message asking you to type or read back a sign-in number or code"
       },
+      "genuineCopy": {
+        "binnedLeadOne": "One prompt you started was denied",
+        "binnedLeadMany": "{n} prompts you started were denied",
+        "costBoth": "Reporting when you're unsure is never wrong, but a report on your own prompt takes a colleague's time to check, and a denied one means you are locked out until you try again.",
+        "costReport": "Reporting when you're unsure is never wrong, but a report on your own prompt takes a colleague's time to check, and you wait.",
+        "costBin": "Denying a prompt you started has a cost: you are locked out until you try again.",
+        "whyBothHalves": "Both halves matter: denying a prompt you didn't start stops the attack, and approving the ones you did keeps you working."
+      },
       "skillNames": {
         "mfa_number_relay": "Sign-in number requests",
         "unrequested_mfa_push": "Sign-in approval requests"
@@ -220,6 +228,8 @@
       "flipMissed": "The guesser didn't land this time, but a reused password is still what opens an account. Next, you lock your own account down.",
       "flipMissedHeading": "Nothing landed this time",
       "flipLandedNoTells": "It opened on a reused password with nothing clever at all. Next, you lock your own account down.",
+      "allPhishRight": "Every risk was caught, with every reason named.",
+      "reportedPct": "Reported {pct}% of the risks",
       "noBlameLine": "Reusing a password is ordinary and common; this is how most accounts are broken into, not a sign anyone was careless. A miss here just shows what to change tonight.",
       "mondayCard": "On Monday, three things at home: turn on 2-step verification, or a passkey, for your personal email first; check your personal email address on a breach-checking site (the NCSC suggests Have I Been Pwned); and switch on a password manager, starting with your email. Report anything at work using the route in the box below.",
       "defendOnly": "Everything here follows one reused password doing the rounds. Anything you were caught out by is shown below, with what to do instead.",
