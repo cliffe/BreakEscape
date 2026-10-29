@@ -7,7 +7,7 @@
     {
       "id": "e19_lock_the_doors",
       "_prefix": "Prefix for the full episode (id e19_malware_and_updates): episode_e19_malware_and_updates_defend_. The defend-only shell (id e19_malware_and_updates_defend) sets episode_e19_malware_and_updates_defend_defend_ instead (the built double-suffix rule for an id that already ends _defend). No explicit stage on purpose (as E1/E5/E8): the effective stage is 'mission', and an explicit stage with passPercent 0 draws a validator warning.",
-      "_localTells": "app_consent_grab, ransomware_note, macro_enable_content and disable_security_software are consent/malware signs with no built equivalent, so they are scenario-local to this set (00 section 2's CHANNEL_TELLS is untouched, and no SKILL_NAMES entry is added to phish-rules.js/triage.rb). Each is declared in channelTells with a flagChips label and a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's skill name), and every flagging message carries a factorStrings.<id>.redFlag sentence. ransomware_note is the same local tell id E8 declares for its own set: each set declares it locally with its own flagChips label, so there is no shared-library change. Promote one to the shared library only if a 10 check item or a second set later scores it (then it also needs a SKILL_NAMES entry, ENG-08). secrecy_or_bypass is a shared-library tell and needs no label.",
+      "_localTells": "app_consent_grab, ransomware_note, macro_enable_content and disable_security_software are consent/malware signs with no built equivalent, so they are scenario-local to this set (00 section 2's CHANNEL_TELLS is untouched, and no SKILL_NAMES entry is added to phish-rules.js/triage.rb). Each is declared in channelTells with a flagChips label and a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's skill name), and every flagging message carries a factorStrings.<id>.redFlag sentence. ransomware_note is the same local tell id E8 declares for its own set: each set declares it locally with its own flagChips label, so there is no shared-library change. Promote one to the shared library only if a 10 check item or a second set later scores it (then it also needs a SKILL_NAMES entry, ENG-08). The shared-library secrecy_or_bypass tell was dropped from this set (playtest F-E19-1, 2026-10-29): its chip reads 'keep it secret', which neither the enable-content nor the disable-protection message asks for, so scoring it produced an unfair 'weakest skill: Secrecy'. The bypass is still taught by each item's own local tell (macro_enable_content, disable_security_software).",
       "_order": "Message array order is the teaching order (E19 spec section 11): the two consent cards first (the mirror pair, item 1 phish then item 2 genuine, so the 'allow this app' lesson is set before anything else), then the ransom-note heads-up (3), the enable-content document (4), the disable-protection message (5), and the genuine device-update prompt (6) as the calibration item, so 'anything unusual is a trap' cannot win.",
       "title": "The desk inbox",
       "brief": "You're covering a Quayholt desk inbox this afternoon. For each item, choose Trust, Report, Delete or Verify (check it yourself through a route you already trust, like ringing the service desk or Anjali on a number you already hold), then tick what you noticed. A program, a file or an app that wants to run or wants your access can do whatever you can do, so if you didn't expect it, don't open the door. Reporting when you're unsure is always fine and never marked down.",
@@ -16,7 +16,7 @@
       "feedbackMode": "immediate",
       "headerPanel": "off",
       "glossary": "closed",
-      "channelTells": ["app_consent_grab", "macro_enable_content", "disable_security_software", "ransomware_note", "secrecy_or_bypass"],
+      "channelTells": ["app_consent_grab", "macro_enable_content", "disable_security_software", "ransomware_note"],
       "flagChips": {
         "app_consent_grab": "An app you didn't install, or didn't start, asking to read your mail or files",
         "ransomware_note": "A message that your files are locked and a payment is demanded",
@@ -97,7 +97,7 @@
         },
         {
           "id": "e19_enable_content",
-          "_note": "Row 4. An unexpected 'enable content' document from a supplier look-alike. Builds on E2's macro concept (a recruiter's CV at Tarrowby) as an ordinary internal/supplier document; does not repeat E2's cards. The macro is described in plain words, never demonstrated: no payload, no file-format trick. Fernside Catering is reused from E10's _brandAdditions. E10 is now built; its Fernside register is fernside.example (genuine), orders.fernside.example (genuine portal) and orders-fernside.example (look-alike portal). E19's accounts@fernside-invoices.example is a deliberate, distinct invoice-email look-alike (a portal shape would not fit an invoice sender), accepted as intended rather than re-pointed (design review C1 MI2, BUILD_LOG 2026-10-29); see BRAND_ADDITIONS.md. The look-alike domain is named in the reason text but is not itself a scored flag here (the scored tells are the enable-content ask and the bypass).",
+          "_note": "Row 4. An unexpected 'enable content' document from a supplier look-alike. Builds on E2's macro concept (a recruiter's CV at Tarrowby) as an ordinary internal/supplier document; does not repeat E2's cards. The macro is described in plain words, never demonstrated: no payload, no file-format trick. Fernside Catering is reused from E10's _brandAdditions. E10 is now built; its Fernside register is fernside.example (genuine), orders.fernside.example (genuine portal) and orders-fernside.example (look-alike portal). E19's accounts@fernside-invoices.example is a deliberate, distinct invoice-email look-alike (a portal shape would not fit an invoice sender), accepted as intended rather than re-pointed (design review C1 MI2, BUILD_LOG 2026-10-29); see BRAND_ADDITIONS.md. The look-alike domain is NOT a scored flag here (the scored tell is the enable-content ask), so the reportReply no longer calls it a look-alike: it would contradict the engine's 'not a flag here' note on an unticked sender-mismatch chip (playtest F-E19-2, 2026-10-29).",
           "from": { "name": "Fernside Catering", "address": "accounts@fernside-invoices.example" },
           "to": "you@quayholt.example",
           "subject": "Credit note 0423",
@@ -109,13 +109,12 @@
           },
           "truth": {
             "isPhish": true,
-            "flags": ["macro_enable_content", "secrecy_or_bypass"],
+            "flags": ["macro_enable_content"],
             "perFlagNote": {
-              "macro_enable_content": "'Enable content' switches on the small program (a macro) inside the file, and it runs with your access, able to reach what you can reach. A real document shows up as soon as you open it",
-              "secrecy_or_bypass": "It asks you to switch off a protection the software put there on purpose, which is the one step that lets the file's program run"
+              "macro_enable_content": "'Enable content' switches on the small program (a macro) inside the file, and it runs with your access, able to reach what you can reach. A real document shows up as soon as you open it"
             },
             "ifTrusted": "Enabling it would run the file's hidden program as you, reaching whatever you can reach, before you ever saw a credit note.",
-            "reportReply": "Thanks. You weren't expecting this credit note, and the address is a look-alike of the supplier's. Leaving it shut and reporting it left nothing to clean up."
+            "reportReply": "Thanks. You weren't expecting this credit note, and it asked you to switch content on before it would show. Leaving it shut and reporting it left nothing to clean up."
           }
         },
         {
@@ -132,13 +131,12 @@
           },
           "truth": {
             "isPhish": true,
-            "flags": ["disable_security_software", "secrecy_or_bypass"],
+            "flags": ["disable_security_software"],
             "perFlagNote": {
-              "disable_security_software": "Genuine IT never asks you to allow or turn off what the security software blocked; that's how an attacker gets their program to run as you. Leave protection on and allow nothing it blocked",
-              "secrecy_or_bypass": "It tells you to wave through a block the software made on purpose, by claiming the warning is a mistake"
+              "disable_security_software": "Genuine IT never asks you to allow or turn off what the security software blocked; that's how an attacker gets their program to run as you. Leave protection on and allow nothing it blocked"
             },
             "ifTrusted": "Allowing what Quayholt Protect blocked would let the attacker's program run as you, the very thing the block stopped.",
-            "reportReply": "Thanks. The address is a look-alike, not Quayholt's. If a block is ever slowing real work, the service desk can tune it; they never ask you to switch it off."
+            "reportReply": "Thanks. Genuine IT never asks you to allow or turn off what the security software blocked. If a block is ever slowing real work, the service desk can tune it; they never ask you to switch it off."
           }
         },
         {
@@ -171,14 +169,14 @@
     "defend": { "setId": "e19_lock_the_doors", "reportAlwaysVisible": true },
     "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
     "strings": {
-      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. It is an ordinary Thursday afternoon at a Quayholt desk. First you make the everyday calls anyone makes on a busy afternoon: a restart prompt, a document that wants you to switch something on, a warning from the security software, a file to save. Then you see where each one led by the end of the day. After that you take the desk inbox one item at a time. Only the inbox is scored. This one shows a ransomware message on a colleague's screen; there are no alarms or flashing screens.",
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. It is an ordinary Thursday afternoon at a Quayholt desk. First you make the everyday calls anyone makes on a busy afternoon: a restart prompt, a document that wants you to switch something on, a warning from the security software, a file to save. Then you see where each one led by the end of the day. After that you take the desk inbox one item at a time. Only the inbox is scored. This episode shows a ransomware message and plays out where an afternoon's choices lead, your own machine among them; there are no alarms or flashing screens.",
       "flipHeading": "Later that afternoon",
       "noBlameLine": "Opening the wrong file, or postponing a restart, happens to careful people on a busy afternoon; this is how most incidents start, not a sign anyone was careless. What turns it into harm is silence. Nobody at Quayholt is in trouble for reporting, including their own slip.",
       "mondayCard": "On Monday, three things at home: turn on automatic updates on your phone and your computer, and restart when they ask; keep a backup of anything you'd hate to lose, somewhere separate from the computer; and never pay or reply to a ransom message, report it instead. At work: restart when it asks, save where it's backed up, and if something looks wrong, report it straight away using the route in the box below. Quayholt keeps backups the attacker can't reach and runs Quayholt Protect, so a reported incident can be recovered.",
       "defendOnly": "Any of these can catch a careful person on a busy afternoon. The ones you were caught out by are shown below, with what good looks like. Reporting fast is what limits the harm.",
       "conceptPanel": [
         { "heading": "It runs with your access", "text": "A program, a macro inside a document, or an app you connect, runs with your access. It can read what you can read, send as you, and reach the shared drives you reach. That's why a file or an app you weren't expecting is worth stopping for, even a familiar-looking one." },
-        { "heading": "Updates close known holes", "text": "Most updates fix a hole attackers already know about. When your device or IT asks, install it and restart the same day; many only finish after a restart. A web page offering you an update is a different thing, and never genuine (E10)." },
+        { "heading": "Updates close known holes", "text": "Most updates fix a hole attackers already know about. When your device or IT asks, install it and restart the same day; many only finish after a restart. A web page offering you an update is a different thing, and never genuine." },
         { "heading": "Ransomware, and what you do", "text": "You might see files that won't open or have strange names, or a message that your files are locked with a demand to pay. Report it straight away. Don't pay, don't contact the attackers, don't try to fix it; if the team asks, disconnect from the network and leave the device switched on." },
         { "heading": "Allow this app?", "text": "A link or an app asking to read your mail or your files is asking for your access without a password. Only approve something you, or IT, set up and trust. If you didn't start it, deny it and report it." }
       ],

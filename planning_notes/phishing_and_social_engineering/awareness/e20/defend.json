@@ -22,6 +22,18 @@
       "feedbackMode": "immediate",
       "headerPanel": "off",
       "glossary": "closed",
+      "_labels": "The set holds Wi-Fi network lists, sign-in pages and emails, so the engine's default verdict hints ('This is real. I'd open it or act on it', 'This is a phish. Send it to security') and the 'Inbox check: N messages' queue heading read as email. labels.verdict.<v>.hint rewords the four hints to fit a network, a page or a message, and labels.queue.inbox relabels the brief heading ('On the road: N networks, pages and messages'). The four button LABELS stay Trust/Report/Delete/Verify, which the set brief glosses ('Trust (you'd connect or carry on)', 'Verify (ask the venue...)'); a single relabel can't fit networks, pages and emails at once (playtest F-E20-1, 2026-10-29).",
+      "labels": {
+        "verdict": {
+          "trust": { "hint": "This one's safe. I'd connect or carry on." },
+          "report": { "hint": "This is a fake or a trap. Tell security." },
+          "delete": { "hint": "This is junk. Ignore it." },
+          "verify": { "hint": "I'd check first: ask the venue, or ring a number I already hold." }
+        },
+        "queue": {
+          "inbox": { "label": "On the road", "item": ["network, page or message", "networks, pages and messages"] }
+        }
+      },
       "channelTells": ["lookalike_domain", "lookalike_network", "wifi_page_credentials", "found_device_lure"],
       "flagChips": {
         "lookalike_network": "A public Wi-Fi network named to look like the venue's, often with a stronger signal",
@@ -39,6 +51,7 @@
         {
           "id": "e20_wifi_venue",
           "_note": "Card 1. The genuine half of the Wi-Fi mirror pair (aw5). A public Wi-Fi network list (page.state wifiList) at The Bean and Barrow, where a chalkboard by the till names the guest network. Correct move Trust (connect to BeanBarrow Guest) OR Verify (ask staff to confirm the name); under the awareness profile a genuine item also scores full on Report, so a cautious learner is never marked down. The staff-named network, joined and then left to the VPN, is the right one. Mirrors card 2.",
+          "from": { "name": "The Bean and Barrow" },
           "kind": "page",
           "subject": "At The Bean and Barrow: the Wi-Fi list",
           "time": "09:50",
@@ -64,6 +77,7 @@
         {
           "id": "e20_wifi_eviltwin",
           "_note": "Card 2. The look-alike half of the mirror pair. A Wi-Fi network list (page.state wifiList) at Haverbridge Lodge with no staff sign, where a stronger 'Haverbridge Lodge FREE' sits next to 'Haverbridge Lodge Guest' and is already selected. The scenario-local lookalike_network tell lives here. Correct move Report (don't just pick the strongest; ask the front desk for the name, or use the phone's hotspot).",
+          "from": { "name": "Haverbridge Lodge" },
           "kind": "page",
           "subject": "At Haverbridge Lodge: the Wi-Fi list",
           "time": "18:20",
@@ -81,6 +95,7 @@
           },
           "truth": {
             "isPhish": true,
+            "kindLine": "This network was named to look like the hotel's; it wasn't the real one.",
             "flags": ["lookalike_network"],
             "perFlagNote": {
               "lookalike_network": "'Haverbridge Lodge FREE', in capitals with the strongest signal, sits right next to 'Haverbridge Lodge Guest'. Anyone can name a hotspot to look like the venue's, and a stronger signal says nothing about who runs it."
@@ -109,9 +124,10 @@
           },
           "truth": {
             "isPhish": true,
+            "kindLine": "This page was a fake, after your work password; a real Wi-Fi page never needs it.",
             "flags": ["wifi_page_credentials"],
             "perFlagNote": {
-              "wifi_page_credentials": "A venue's Wi-Fi page asks you to accept the terms, sometimes an email or a room number. It has no reason to want your work password; one that does is a fake. The bar here also reads 'Not secure'. Even with a padlock, no Wi-Fi page needs your work password: a padlock only means the connection is encrypted, not that the page is honest (see E5)."
+              "wifi_page_credentials": "A venue's Wi-Fi page asks you to accept the terms, sometimes an email or a room number. It has no reason to want your work password; one that does is a fake. The bar here also reads 'Not secure'. Even with a padlock, no Wi-Fi page needs your work password: a padlock only means the connection is encrypted, not that the page is honest."
             },
             "ifTrusted": "Your work email and password would go to whoever put the page up, and they could sign in as you from anywhere.",
             "reportReply": "Thanks. No Wi-Fi page needs your work password. Close it, join the network the venue names or use your phone's hotspot, and report the page."
@@ -175,6 +191,7 @@
           },
           "truth": {
             "isPhish": true,
+            "kindLine": "This was a fake lost-device message, after your work password; it wasn't from the service desk.",
             "flags": ["found_device_lure", "lookalike_domain"],
             "perFlagNote": {
               "found_device_lure": "You find a lost device by ringing the service desk, never by signing in to a message that found you first. The 24-hour clock is there to rush you past that thought.",
@@ -197,16 +214,17 @@
     "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
     "strings": {
       "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier. First you spend two days working away from the depot: a train, a café, a hotel, a morning at home. You make the everyday calls anyone makes on the road, then you see where each one led. After that you tell the safe public networks and sign-in pages from the look-alikes. Only that last part is scored. Nothing you tap is a real network, and no real password is ever typed.",
-      "flipHeading": "Through their eyes.",
+      "flipHeading": "Later that day",
       "noBlameLine": "Reading a screen over someone's shoulder, joining a network named like the café, or leaving a bag for a minute are ordinary slips that happen to careful people; the harm is in the hours before anyone says so, not in the slip. A miss here just shows what to change.",
       "mondayCard": "On Monday, three things: turn on the screen lock and auto-lock on your own phone if they're not on already; set your devices to forget public Wi-Fi networks and turn off auto-join, so they don't rejoin a look-alike by themselves; and save the 24/7 service desk number in your phone, so if you lose a work device you can report it on the spot. Report anything at work using the route in the box below.",
       "defendOnly": "A look-alike network, or a page after your work password, catches careful people on the road. Any you were caught out by are shown below, with what gives each one away.",
       "conceptPanel": [
-        { "heading": "Public Wi-Fi, in proportion", "text": "Nearly everything you do now is encrypted, and Tarrowby's laptops add a VPN on top, so ordinary work on the venue's own network is mostly fine. The old 'anyone on the café Wi-Fi can read your email' is out of date. What still catches people is a network named to look like the venue's, and a page that asks for your work password." },
+        { "heading": "Public Wi-Fi, in proportion", "text": "Nearly everything you do now is encrypted, and Tarrowby's laptops add a VPN (a secure tunnel back to the company) on top, so ordinary work on the venue's own network is mostly fine. The old 'anyone on the café Wi-Fi can read your email' is out of date. What still catches people is a network named to look like the venue's, and a page that asks for your work password." },
         { "heading": "The look-alike and the over-asking page", "text": "You can't tell who runs a hotspot, so ask the venue for the network's name, and don't just pick the strongest signal. A venue's page asks you to accept the terms, sometimes an email or a room number. It never needs your work password; if one asks, close it, use your phone's hotspot, and report it." },
         { "heading": "Out of sight, out of earshot", "text": "In public, someone can see your screen and hear your call. Sit with your back to a wall, use a privacy screen, and lock the screen whenever you look away. On a call, no names, codes or client details; 'I'll call you back' is a complete answer." },
         { "heading": "With you, or locked away. Lost it? Report it now", "text": "A device never sits unattended in a café, a train or a car, even for two minutes. If you lose one, ring the service desk straight away, day or night, even if it's locked: the lock buys time, and the hours before you report are what matter." },
-        { "heading": "What Tarrowby has set up", "text": "On Tarrowby's side: the laptops carry a VPN that connects by itself (Tarrowby Connect), every phone, tablet and laptop is encrypted and can be locked or wiped remotely, and the 24/7 service desk can sort a lost device the moment you ring. These are set up for you; your part is to keep the device with you and ring straight away if it goes missing." }
+        { "heading": "What Tarrowby has set up", "text": "On Tarrowby's side: the laptops carry a VPN that connects by itself (Tarrowby Connect), every phone, tablet and laptop is encrypted and can be locked or wiped remotely, and the 24/7 service desk can sort a lost device the moment you ring. These are set up for you; your part is to keep the device with you and ring straight away if it goes missing." },
+        { "heading": "At home, mind the camera and what's behind you", "text": "Working from home has its own habits. Before a video call, check what's behind you, since whiteboards, wall planners and sticky notes all show up on camera, and share one window rather than your whole screen, so your inbox and other documents stay private. Lock the screen when you step away, even at home, and keep work devices for work, not for family or a quick game." }
       ]
     },
     "_defendOnly": {

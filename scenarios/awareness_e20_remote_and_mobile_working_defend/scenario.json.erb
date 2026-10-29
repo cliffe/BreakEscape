@@ -68,6 +68,31 @@
         "feedbackMode": "immediate",
         "headerPanel": "off",
         "glossary": "closed",
+        "labels": {
+          "verdict": {
+            "trust": {
+              "hint": "This one's safe. I'd connect or carry on."
+            },
+            "report": {
+              "hint": "This is a fake or a trap. Tell security."
+            },
+            "delete": {
+              "hint": "This is junk. Ignore it."
+            },
+            "verify": {
+              "hint": "I'd check first: ask the venue, or ring a number I already hold."
+            }
+          },
+          "queue": {
+            "inbox": {
+              "label": "On the road",
+              "item": [
+                "network, page or message",
+                "networks, pages and messages"
+              ]
+            }
+          }
+        },
         "channelTells": [
           "lookalike_domain",
           "lookalike_network",
@@ -91,6 +116,9 @@
         "messages": [
           {
             "id": "e20_wifi_venue",
+            "from": {
+              "name": "The Bean and Barrow"
+            },
             "kind": "page",
             "subject": "At The Bean and Barrow: the Wi-Fi list",
             "time": "09:50",
@@ -124,6 +152,9 @@
           },
           {
             "id": "e20_wifi_eviltwin",
+            "from": {
+              "name": "Haverbridge Lodge"
+            },
             "kind": "page",
             "subject": "At Haverbridge Lodge: the Wi-Fi list",
             "time": "18:20",
@@ -152,6 +183,7 @@
             },
             "truth": {
               "isPhish": true,
+              "kindLine": "This network was named to look like the hotel's; it wasn't the real one.",
               "flags": [
                 "lookalike_network"
               ],
@@ -186,11 +218,12 @@
             },
             "truth": {
               "isPhish": true,
+              "kindLine": "This page was a fake, after your work password; a real Wi-Fi page never needs it.",
               "flags": [
                 "wifi_page_credentials"
               ],
               "perFlagNote": {
-                "wifi_page_credentials": "A venue's Wi-Fi page asks you to accept the terms, sometimes an email or a room number. It has no reason to want your work password; one that does is a fake. The bar here also reads 'Not secure'. Even with a padlock, no Wi-Fi page needs your work password: a padlock only means the connection is encrypted, not that the page is honest (see E5)."
+                "wifi_page_credentials": "A venue's Wi-Fi page asks you to accept the terms, sometimes an email or a room number. It has no reason to want your work password; one that does is a fake. The bar here also reads 'Not secure'. Even with a padlock, no Wi-Fi page needs your work password: a padlock only means the connection is encrypted, not that the page is honest."
               },
               "ifTrusted": "Your work email and password would go to whoever put the page up, and they could sign in as you from anywhere.",
               "reportReply": "Thanks. No Wi-Fi page needs your work password. Close it, join the network the venue names or use your phone's hotspot, and report the page."
@@ -282,6 +315,7 @@
             },
             "truth": {
               "isPhish": true,
+              "kindLine": "This was a fake lost-device message, after your work password; it wasn't from the service desk.",
               "flags": [
                 "found_device_lure",
                 "lookalike_domain"
@@ -328,7 +362,7 @@
         "conceptPanel": [
           {
             "heading": "Public Wi-Fi, in proportion",
-            "text": "Nearly everything you do now is encrypted, and Tarrowby's laptops add a VPN on top, so ordinary work on the venue's own network is mostly fine. The old 'anyone on the café Wi-Fi can read your email' is out of date. What still catches people is a network named to look like the venue's, and a page that asks for your work password."
+            "text": "Nearly everything you do now is encrypted, and Tarrowby's laptops add a VPN (a secure tunnel back to the company) on top, so ordinary work on the venue's own network is mostly fine. The old 'anyone on the café Wi-Fi can read your email' is out of date. What still catches people is a network named to look like the venue's, and a page that asks for your work password."
           },
           {
             "heading": "The look-alike and the over-asking page",
@@ -345,6 +379,10 @@
           {
             "heading": "What Tarrowby has set up",
             "text": "On Tarrowby's side: the laptops carry a VPN that connects by itself (Tarrowby Connect), every phone, tablet and laptop is encrypted and can be locked or wiped remotely, and the 24/7 service desk can sort a lost device the moment you ring. These are set up for you; your part is to keep the device with you and ring straight away if it goes missing."
+          },
+          {
+            "heading": "At home, mind the camera and what's behind you",
+            "text": "Working from home has its own habits. Before a video call, check what's behind you, since whiteboards, wall planners and sticky notes all show up on camera, and share one window rather than your whole screen, so your inbox and other documents stay private. Lock the screen when you step away, even at home, and keep work devices for work, not for family or a quick game."
           }
         ],
         "defendIntro": "Go through the public networks and sign-in pages and decide what to do with each one. On the venue's own network, with the VPN, ordinary work is fine; a page that wants your work password, or a network named to look like the venue's, is the trap. Ask the venue for the network's name if you're unsure, and there's no clock on you here."

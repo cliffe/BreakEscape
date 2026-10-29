@@ -37,7 +37,7 @@ VAR hub_quiet = false
 - else:
     { episode_e20_remote_and_mobile_working_defend_done:
         Zainab Hussain: That's both sides done. On the venue's own network with the VPN, ordinary work is fine.
-        Zainab Hussain: A Wi-Fi page wanting your work password is always a fake, and when you're not sure it's the phone's hotspot.
+        Zainab Hussain: A Wi-Fi page wanting your work password is always a fake, and when you're not sure, use your phone's hotspot.
         Zainab Hussain: Keep your devices with you, and if you lose one, ring the service desk straight away, day or night. Nobody's ever in trouble for reporting.
     - else:
         Zainab Hussain: Welcome to the Tarrowby exercise. I'm out of the office more than I'm in it, so this one's close to my heart.
