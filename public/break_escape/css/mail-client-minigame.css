@@ -143,6 +143,7 @@
 .mail-row-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .mail-row-top { display: flex; justify-content: space-between; gap: 8px; }
 .mail-row-who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-row-who.mail-row-address { font-family: var(--se-font-address); font-size: 15px; }
 .mail-row[data-unread='true'] .mail-row-who,
 .mail-row[data-unread='true'] .mail-row-subject { font-weight: 700; }
 .mail-row-time { flex: none; color: var(--ui-text-dim, #a8b2c8); font-size: 14px; }

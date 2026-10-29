@@ -180,11 +180,15 @@ export class MailReader {
                 mark.appendChild(icon('mail-unread-dot'));
                 mark.appendChild(el('span', 'mail-sr-only', 'Unread. '));
             }
+            const sender = fromLine(rec);
             const who = this.folder === 'sent'
                 ? `To: ${rec.to || ''}`
-                : (fromLine(rec).name || fromLine(rec).address);
+                : (sender.name || sender.address);
+            // Address text (a bare address with no display name, or a page host) is set in the
+            // address font so look-alike characters read as they would in a browser bar.
+            const whoIsAddress = this.folder !== 'sent' && (rec.whoIsAddress === true || (!sender.name && !!sender.address));
             const top = el('span', 'mail-row-top');
-            top.append(el('span', 'mail-row-who', who), el('span', 'mail-row-time', rec.time || ''));
+            top.append(el('span', whoIsAddress ? 'mail-row-who mail-row-address' : 'mail-row-who', who), el('span', 'mail-row-time', rec.time || ''));
             const sub = el('span', 'mail-row-subject', rec.subject || '(no subject)');
             const tag = this.opts.rowTag ? this.opts.rowTag(rec) : null;
             if (tag) sub.prepend(el('span', 'mail-row-tag', tag), document.createTextNode(' '));

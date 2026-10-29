@@ -40,6 +40,10 @@ export function normaliseTriageMessage(msg, labels = null) {
     const nonEmail = isNonEmail(msg.kind || 'email');
     // A non-email kind may have no sender or subject of its own (a printed notice, a web
     // page): the list row then shows a sensible stand-in instead of a blank line.
+    // The page host stands in as the sender: it is an address, so the list row sets it in the
+    // address font (a 1/l swap in a look-alike domain must show).
+    const whoIsAddress = nonEmail && !from.name && !from.address && msg.kind === 'page'
+        && isObj(msg.page) && isStr(msg.page.url);
     if (nonEmail && !from.name && !from.address) from.name = defaultWho(msg, labels);
     const links = (Array.isArray(msg.links) ? msg.links : []).filter(isObj).map((l) => ({
         ...l, linkText: l.linkText ?? l.text ?? l.destination ?? ''
@@ -48,6 +52,7 @@ export function normaliseTriageMessage(msg, labels = null) {
         ...msg,
         kind: msg.kind || 'email',
         from,
+        ...(whoIsAddress ? { whoIsAddress: true } : {}),
         to: msg.to ?? '',
         subject: msg.subject || (nonEmail ? defaultSubject(msg, labels) : (msg.subject ?? '')),
         time: msg.time ?? '',
