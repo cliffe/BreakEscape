@@ -61,7 +61,8 @@ import {
     writeKind, sentFromCall, callOutcomeKey, flipPage, flipCall, CALL_LANDED,
     awarenessSettings, reportRouteFor, flipAftermathFor, isMontage, montageProps,
     drillPending, drillLaunchCopy, drillLaunchParams, drillRecord,
-    concernPending, concernLaunchCopy, concernLaunchParams, concernRecord
+    concernPending, concernLaunchCopy, concernLaunchParams, concernRecord,
+    privacyPending, privacyLaunchCopy, privacyLaunchParams, privacyRecord
 } from './episode-model.js';
 
 /**
@@ -472,6 +473,8 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         if (stage === 'defend' && drillPending(this.episode, this.state)) return drillLaunchCopy(this.episode);
         // ENG-12: then the concern form, if the episode has one.
         if (stage === 'defend' && concernPending(this.episode, this.state)) return concernLaunchCopy(this.episode);
+        // ENG-13: then the privacy panel, if there is one.
+        if (stage === 'defend' && privacyPending(this.episode, this.state)) return privacyLaunchCopy(this.episode);
         const copy = this._baseStageCopy(stage);
         // strings.stages.<stageId> { heading, text, button } replaces any of the three lines.
         const own = isObj(this.strings.stages) && isObj(this.strings.stages[stage]) ? this.strings.stages[stage] : null;
@@ -720,6 +723,17 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                 onComplete: (success, result) => {
                     if (!isNormal(success, result)) return;
                     this._saveState({ ...this._readState(), concern: concernRecord(result) });
+                }
+            })));
+        } else if (spec.kind === 'triage' && stage === 'defend' && privacyPending(this.episode, this._readState())) {
+            // ENG-13: the privacy panel comes after the drill and before the inbox. Its record is
+            // kept in the state. The panel reads the board's found facts and changes none of them.
+            child = this.launchChild('privacy-panel', socialOverlayParams(privacyLaunchParams(this.episode, {
+                social: this.social,
+                globals: this.globals,
+                onComplete: (success, result) => {
+                    if (!isNormal(success, result)) return;
+                    this._saveState({ ...this._readState(), privacy: privacyRecord(result) });
                 }
             })));
         } else if (spec.kind === 'triage') {

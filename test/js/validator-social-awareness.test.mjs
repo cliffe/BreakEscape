@@ -683,3 +683,75 @@ test('concernForm schema: the clean form passes; a mistyped key, a bad kind and 
     assert.ok(social.some((e) => e.includes('concernForm') && e.includes(detail)), `${name}: no error naming ${detail}\n${social.join('\n')}`);
   });
 });
+
+// ── ENG-13: the privacy-settings panel (awarenessEpisode.privacyPanel) ────────────
+const panel = () => ({
+  settings: [
+    { id: 'p_audience', label: 'Posts: connections only', section: 'Her profile', closesFacts: ['se_intel_p_leave', 'p_badge'] },
+    { id: 'p_pet', label: 'Security answer: made up', closesFacts: ['se_intel_p_pet'], default: 'tight', hint: 'A made-up answer.' }
+  ],
+  note: 'A teaching view.'
+});
+const withPanel = (mutate) => {
+  const j = fx('clean_defend_only.json');
+  j.social.intelFacts = {
+    p_leave: { subject: 'company', text: 'Away all next week' },
+    p_badge: { subject: 'company', text: 'A lanyard in shot' },
+    p_pet: { subject: 'company', text: 'The dog is called Biscuit' }
+  };
+  ep(j).privacyPanel = panel();
+  if (mutate) mutate(ep(j).privacyPanel, j);
+  return j;
+};
+
+test('privacyPanel: a clean panel raises nothing, with or without the se_intel_ prefix; absent is left alone', { skip }, () => {
+  assert.deepEqual(lint(withPanel()), []);
+  assert.deepEqual(lint(fx('clean_defend_only.json')), []);
+});
+
+test('privacyPanel: closesFacts must name declared intelFacts', { skip }, () => {
+  expectIn(lint(withPanel((p) => { p.settings[0].closesFacts = ['se_intel_ghost']; })), /closesFacts: 'se_intel_ghost' is not a declared social\.intelFacts id/);
+  expectIn(lint(withPanel((p) => { p.settings[0].closesFacts = ['p_ghost', 'p_badge']; })), /'p_ghost' is not a declared/);
+  expectIn(lint(withPanel((p) => { p.settings[0].closesFacts = []; })), /closesFacts must be a non-empty array/);
+  expectIn(lint(withPanel((p) => { delete p.settings[0].closesFacts; })), /closesFacts must be a non-empty array/);
+  expectIn(lint(withPanel((p) => { p.settings[0].closesFacts = [7]; })), /not a fact id/);
+  expectIn(lint(withPanel((p, j) => { delete j.social.intelFacts; })), /none are declared/, 3);
+});
+
+test('privacyPanel: settings need unique ids, a label and a known default', { skip }, () => {
+  expectIn(lint(withPanel((p) => { p.settings = []; })), /settings must be a non-empty array/);
+  expectIn(lint(withPanel((p) => { p.settings[1].id = 'p_audience'; })), /id 'p_audience' is used more than once/);
+  expectIn(lint(withPanel((p) => { p.settings[0].label = ' '; })), /label is empty or missing/);
+  expectIn(lint(withPanel((p) => { p.settings[0].id = ''; })), /needs a non-empty id/);
+  expectIn(lint(withPanel((p) => { p.settings[0].default = 'closed'; })), /default "closed" must be 'open' or 'tight'/);
+  expectIn(lint(withPanel((p) => { p.settings[0].password = 'x'; })), /looks like a credential field/);
+  expectIn(lint(withPanel((p) => { p.settings[0] = 'x'; })), /settings\[0\] must be an object/);
+});
+
+test('privacyPanel: it needs a defend stage, so a check mission cannot carry one', { skip }, () => {
+  const j = fx('clean_check_pre.json');
+  ep(j).privacyPanel = panel();
+  expectIn(lint(j), /privacyPanel runs inside the defend stage/);
+  const k = withPanel();
+  ep(k).privacyPanel = 'nope';
+  expectIn(lint(k), /privacyPanel must be an object/);
+});
+
+test('privacyPanel schema: the clean panel passes; a mistyped key, a bad default and a missing label fail', { skip }, () => {
+  const cases = [
+    ['a mistyped key', (p) => { p.settingz = []; }, 'settingz'],
+    ['a mistyped setting key', (p) => { p.settings[0].closesFact = ['x']; }, 'closesFact'],
+    ['a bad default', (p) => { p.settings[0].default = 'closed'; }, 'default'],
+    ['a missing label', (p) => { delete p.settings[0].label; }, 'label'],
+    ['closesFacts as a string', (p) => { p.settings[0].closesFacts = 'p_leave'; }, 'closesFacts'],
+    ['no settings key', (p) => { delete p.settings; }, 'settings']
+  ];
+  const scenarios = [withPanel(), ...cases.map(([, mutate]) => withPanel(mutate))];
+  const results = schemaRun(scenarios);
+  assert.deepEqual(results[0], { social: [], other: [] });
+  cases.forEach(([name, , detail], i) => {
+    const { social, other } = results[i + 1];
+    assert.deepEqual(other, [], `${name}: an error outside #/social`);
+    assert.ok(social.some((e) => e.includes('privacyPanel') && e.includes(detail)), `${name}: no error naming ${detail}\n${social.join('\n')}`);
+  });
+});

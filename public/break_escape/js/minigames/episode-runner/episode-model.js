@@ -218,6 +218,54 @@ function cleanConcern(raw) {
     return out;
 }
 
+// ── the privacy panel (ENG-13) ───────────────────────────────────────────────────
+// `episode.privacyPanel` runs in the defend stage after the sort drill (if any) and before the
+// inbox (the 'privacy-panel' scene). The state keeps counts only, so a reopen skips it. An episode
+// with no usable `privacyPanel` has no such step and the defend stage is exactly as before.
+
+const PRIVACY_LAUNCH = Object.freeze({
+    heading: 'Tighten the settings',
+    text: 'Before the inbox, tighten a profile and see which found facts each setting closes.',
+    button: 'Open the settings'
+});
+
+/** The panel's config when it holds a setting that names a fact, else null. */
+export function privacyConfigOf(episode) {
+    const p = episode?.privacyPanel;
+    const ok = isObj(p) && Array.isArray(p.settings) && p.settings.some((s) => isObj(s) && isStr(s.id) && isStr(s.label)
+        && Array.isArray(s.closesFacts) && s.closesFacts.some(isStr));
+    return ok ? p : null;
+}
+
+/** The panel is still to do: the defend stage is current and no record is held. */
+export function privacyPending(episode, state) {
+    return !!privacyConfigOf(episode) && state?.stage === 'defend' && state?.privacy?.done !== true;
+}
+
+/** The launch panel before the settings; `privacyPanel.strings.launchHeading|launchText|launchButton` replace each line. */
+export function privacyLaunchCopy(episode) {
+    const own = isObj(episode?.privacyPanel?.strings) ? episode.privacyPanel.strings : {};
+    const line = (key, fallback) => (isStr(own[key]) ? own[key] : fallback);
+    return { heading: line('launchHeading', PRIVACY_LAUNCH.heading), text: line('launchText', PRIVACY_LAUNCH.text),
+        button: line('launchButton', PRIVACY_LAUNCH.button) };
+}
+
+/** The params the 'privacy-panel' scene starts with. */
+export function privacyLaunchParams(episode, extra = {}) {
+    return { config: episode.privacyPanel, skin: 'awareness', ...extra };
+}
+
+/** The record to keep from the panel's result: counts only. */
+export function privacyRecord(result) {
+    return isObj(result) ? cleanPrivacy({ ...result, done: true }) : null;
+}
+
+function cleanPrivacy(raw) {
+    if (!isObj(raw) || raw.done !== true) return null;
+    const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+    return { done: true, settings: num(raw.settings), tightened: num(raw.tightened), facts: num(raw.facts), closed: num(raw.closed) };
+}
+
 function cleanDefend(raw) {
     if (!isObj(raw)) return null;
     const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
@@ -272,6 +320,9 @@ export function readState(episode, raw) {
     // Likewise the concern form's record (ENG-12).
     const concern = cleanConcern(src.concern);
     if (concern) state.concern = concern;
+    // Likewise the privacy panel (ENG-13).
+    const privacy = cleanPrivacy(src.privacy);
+    if (privacy) state.privacy = privacy;
     state.stage = nextStage(episode, state);
     return state;
 }
@@ -290,6 +341,7 @@ export function completeStage(episode, state, stageId, patch = {}) {
     if ('defend' in patch) next.defend = cleanDefend(patch.defend);
     if ('drill' in patch) { const drill = cleanDrill(patch.drill); if (drill) next.drill = drill; }
     if ('concern' in patch) { const concern = cleanConcern(patch.concern); if (concern) next.concern = concern; }
+    if ('privacy' in patch) { const privacy = cleanPrivacy(patch.privacy); if (privacy) next.privacy = privacy; }
     if ('mistakeChoices' in patch) {
         const choices = cleanMistake(patch.mistakeChoices);
         if (choices) next.mistakeChoices = choices;
