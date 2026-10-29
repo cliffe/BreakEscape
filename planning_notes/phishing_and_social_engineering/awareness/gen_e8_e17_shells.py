@@ -210,7 +210,7 @@ HOSTS = {
 # Host lines: (before, after, choice, reply). One welcome line; the kiosk does the rest.
 LINES = {
     ('e8', 'defend'): (
-        "You're covering a colleague's inbox this morning. They clicked a convincing email and signed in, and now someone else is using their account. Some of what's turned up is a real sign; some is ordinary. Take each one as it comes, and report or check anything that doesn't sit right.",
+        "You're covering a colleague's inbox. They clicked a convincing email, so someone else is using their account. Some signs are real, some are ordinary. Report anything that doesn't sit right.",
         "That's the inbox sorted, thanks. The one move that works for every real sign is the same: report it and leave it be.",
         'Thanks, Anjali.', 'Any time.'),
 }
