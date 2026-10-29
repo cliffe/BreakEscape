@@ -143,6 +143,8 @@ export function preload() {
     this.load.tilemapTiledJSON('room_aw_tarrowby', 'rooms/room_aw_tarrowby.json'); // Tarrowby Logistics depot training room (2x2 GU)
     this.load.tilemapTiledJSON('room_aw_quayholt', 'rooms/room_aw_quayholt.json'); // Quayholt Insurance service-desk training room (2x2 GU)
     this.load.tilemapTiledJSON('room_aw_merrin_sallow', 'rooms/room_aw_merrin_sallow.json'); // Merrin & Sallow Architects studio meeting room (2x2 GU)
+    this.load.tilemapTiledJSON('room_aw_carrholme', 'rooms/room_aw_carrholme.json'); // Carrholme Services support-services training room (2x2 GU)
+    this.load.tilemapTiledJSON('room_aw_merrin_lobby', 'rooms/room_aw_merrin_lobby.json'); // Merrin & Sallow reception lobby (E12; uses the room_aw_merrin_sallow sheet)
     this.load.tilemapTiledJSON('room_zds_reception', 'rooms/room_zds_reception.json'); // m03 Zero Day lobby: WHITEHAT sign, marble desk, plaque, awards, leather sofa (2x2 GU)
     this.load.tilemapTiledJSON('room_zds_conference', 'rooms/room_zds_conference.json'); // m03 boardroom: whiteboard, wall screen, walnut table, leather chairs (2x2 GU)
     this.load.tilemapTiledJSON('room_zds_office', 'rooms/room_zds_office.json'); // m03 consultant's office: desk with PC and photo, review, camp bed (2x2 GU)
@@ -239,6 +241,7 @@ export function preload() {
     this.load.image('room_aw_tarrowby', 'tiles/rooms/room_aw_tarrowby.png'); // awareness: pale grey, steel-blue skirting, sheet vinyl
     this.load.image('room_aw_quayholt', 'tiles/rooms/room_aw_quayholt.png'); // awareness: cool white, purple skirting, blue carpet
     this.load.image('room_aw_merrin_sallow', 'tiles/rooms/room_aw_merrin_sallow.png'); // awareness: warm stone, bronze skirting, concrete
+    this.load.image('room_aw_carrholme', 'tiles/rooms/room_aw_carrholme.png'); // awareness: pale sage, muted-green skirting, grey vinyl
     this.load.image('room_zds_lobby', 'tiles/rooms/room_zds_lobby.png'); // m03: polished stone, hat-mark inlay
     this.load.image('room_zds_carpet', 'tiles/rooms/room_zds_carpet.png'); // m03: slate-blue carpet tiles
     this.load.image('room_zds_exec', 'tiles/rooms/room_zds_exec.png'); // m03: walnut parquet with a navy and gold rug
@@ -382,6 +385,8 @@ export function preload() {
     this.load.image('aw_chair_south_charcoal1', 'objects/aw_chair_south_charcoal1.png');
     this.load.image('aw_chair_north_charcoal1', 'objects/aw_chair_north_charcoal1.png');
     this.load.image('aw_chair_w_charcoal1', 'objects/aw_chair_w_charcoal1.png');
+    this.load.image('aw_logo_carrholme1', 'objects/aw_logo_carrholme1.png');
+    this.load.image('aw_poster_report_carrholme1', 'objects/aw_poster_report_carrholme1.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');

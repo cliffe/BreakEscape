@@ -2916,7 +2916,7 @@
          "margin":0,
          "name":"objects\/hospital_extras",
          "spacing":0,
-         "tilecount":638,
+         "tilecount":640,
          "tileheight":60,
          "tiles":[
                 {
@@ -6746,6 +6746,18 @@
                  "image":"..\/objects\/aw_chair_w_charcoal1.png",
                  "imageheight":32,
                  "imagewidth":17
+                }, 
+                {
+                 "id":648,
+                 "image":"..\/objects\/aw_logo_carrholme1.png",
+                 "imageheight":19,
+                 "imagewidth":64
+                }, 
+                {
+                 "id":649,
+                 "image":"..\/objects\/aw_poster_report_carrholme1.png",
+                 "imageheight":21,
+                 "imagewidth":16
                 }],
          "tilewidth":60
         }],

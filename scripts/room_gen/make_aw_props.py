@@ -137,11 +137,23 @@ def mark_set_square(c, x0, y0, accent):
             c.px(x0 + i, y0 + j, accent)
 
 
+def mark_linen(c, x0, y0, accent):
+    """Carrholme: a stack of folded, name-taped linen (three folds, a tape at the edge)."""
+    for k, y in enumerate((1, 4, 7)):
+        w = 9 - (k % 2)
+        c.rect(x0, y0 + y, x0 + w - 1, y0 + y + 2, WHITE)
+        c.hline(x0, x0 + w - 1, y0 + y + 2, light(accent))       # the fold's shadowed lip
+        c.px(x0 + w - 2, y0 + y, accent)                         # the name tape
+        c.px(x0 + w - 2, y0 + y + 1, accent)
+    c.hline(x0, x0 + 8, y0 + 11, light(accent))                  # the shelf
+
+
 COMPANIES = {
     "brightwell": ("#2f6f5e", ("BRIGHTWELL", "FOODS"), mark_oats),
     "tarrowby": ("#3b5b8c", ("TARROWBY", "LOGISTICS"), mark_chevron),
     "quayholt": ("#6b4c9a", ("QUAYHOLT", "INSURANCE"), mark_quaypost),
     "merrin_sallow": ("#8a5a2b", ("MERRIN &", "SALLOW"), mark_set_square),
+    "carrholme": ("#4a6b57", ("CARRHOLME", "SERVICES"), mark_linen),
 }
 
 
