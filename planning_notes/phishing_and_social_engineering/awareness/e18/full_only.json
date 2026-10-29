@@ -29,6 +29,8 @@
     "spray": {
       "passes": [
         { "id": "pass_project", "fromSlot": "project" },
+        { "id": "pass_motto",   "fromSlot": "motto" },
+        { "id": "pass_place",   "fromSlot": "place" },
         { "id": "pass_season",  "literal": "Autumn2026" }
       ],
       "opensCount": 3,
@@ -58,7 +60,7 @@
     "line": "Most of the harm comes from acting on the fake alert instead of the real one."
   },
 
-  "stepLabels": { "guess": "Campaign" },
+  "stepLabels": { "guess": "Campaign", "flip": "Your inbox" },
 
   "conceptPanel": [
     { "heading": "Password spraying", "text": "One likely password, tried just once against every account, so no single account locks. The accounts that open are the predictable ones: a company word, a project name, a season and a year." },
