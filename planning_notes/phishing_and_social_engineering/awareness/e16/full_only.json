@@ -85,8 +85,6 @@
   "defendIntro": "That's where this week's choices led. Now a short set of messages, and a fair way to raise a concern, facts, not a verdict on anyone. Take them at your own pace.",
 
   "concernForm": {
-    "title": "Raise a concern",
-    "intro": "Write it as facts you saw yourself, not a verdict on anyone. Pick what to put in the report, then choose who to send it to.",
     "factChips": [
       { "id": "fc_offer_what", "kind": "what", "label": "An unknown contact offered payment for remote access" },
       { "id": "fc_offer_when", "kind": "when", "label": "The message came on Tuesday evening" },
@@ -100,17 +98,14 @@
       { "id": "cc_samira", "label": "Samira is in on it with Ross" },
       { "id": "cc_craig", "label": "Craig reckons Samira's involved" }
     ],
-    "guidance": {
-      "favourFacts": "Good. Facts, routed to the right person, are what a fair concern looks like. You don't have to be sure, and you may not hear the outcome, because that is confidential too.",
-      "onVerdict": "That's a conclusion, not something you saw. Leave the verdict to the people whose job and lawful process it is; give them what you actually noticed instead. If you're wrong, a verdict is unfair to someone who has done nothing.",
-      "teamChatNote": "Posting it in the team chat counts as spreading it, not raising it.",
-      "routes": [
-        { "id": "security", "label": "The security team", "when": "An outside offer, a sign-in prompt you didn't start, or data or access being misused" },
-        { "id": "manager", "label": "Your manager", "when": "A colleague's conduct, or you're worried about their wellbeing" },
-        { "id": "hr", "label": "HR", "when": "A colleague's wellbeing, or you feel pressured or threatened yourself" },
-        { "id": "speakup", "label": "The Speak Up line", "when": "You'd rather raise it anonymously, or your manager is part of it" },
-        { "id": "dpo", "label": "The DPO", "when": "It involves personal data (or the security team, who will pass it on)" }
-      ]
+    "guidance": "Who to tell: the security team for an outside offer, a sign-in prompt you didn't start, or data or access being misused; your manager for a colleague's conduct or if you're worried about their wellbeing; HR for a colleague's wellbeing, or if you feel pressured or threatened yourself; the Speak Up line if you'd rather raise it anonymously or your manager is part of it; the DPO if it involves personal data. Posting it in the team chat counts as spreading it, not raising it.",
+    "strings": {
+      "title": "Raise a concern",
+      "intro": "Write it as facts you saw yourself, not a verdict on anyone. Pick what to put in the report, then choose who to send it to.",
+      "feedbackFacts": "Good. Facts, routed to the right person, are what a fair concern looks like. You don't have to be sure, and you may not hear the outcome, because that is confidential too.",
+      "feedbackFactsVerdict": "That's a conclusion, not something you saw. Leave the verdict to the people whose job and lawful process it is; give them what you actually noticed instead. If you're wrong, a verdict is unfair to someone who has done nothing.",
+      "feedbackVerdictOnly": "That's a conclusion, not something you saw. Leave the verdict to the people whose job and lawful process it is; give them what you actually noticed instead. If you're wrong, a verdict is unfair to someone who has done nothing.",
+      "feedbackThinVerdict": "That's a conclusion, not something you saw. Leave the verdict to the people whose job and lawful process it is; give them what you actually noticed instead. If you're wrong, a verdict is unfair to someone who has done nothing."
     }
   }
 }

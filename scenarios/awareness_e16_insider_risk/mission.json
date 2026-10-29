@@ -1,0 +1,22 @@
+{
+  "display_name": "Awareness E16: Insider risk (full episode)",
+  "description": "An awareness episode of about 15 minutes for all staff. On an authorised exercise at Quayholt Insurance, a fictional insurer, during a leaver's last week, you first make this week's ordinary calls, then see where each led. Then you sort a short set of messages and learn to raise a concern as facts, not a verdict. Only the set is scored, reporting when you're unsure is always fine and never marked down, and you are never asked to investigate anyone.",
+  "difficulty_level": 1,
+  "scoring": "completion",
+  "secgen_scenario": null,
+  "collection": "training",
+  "ui_theme": "general",
+  "estimated_duration_minutes": 15,
+  "cybok": [
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": [
+        "Insider risk",
+        "Incident reporting",
+        "Access control",
+        "Security awareness"
+      ]
+    }
+  ]
+}
