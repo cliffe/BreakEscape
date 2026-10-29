@@ -201,13 +201,13 @@
                   "verdict": "trust"
                 }
               ],
-              "note": "These are made up for the exercise; no real password is typed or stored."
+              "note": "These are made up for the exercise; no real password is typed or stored. Never use a training example as your real password."
             },
             "truth": {
               "isPhish": true,
               "flags": [],
               "correct": "report",
-              "reportReply": "Length and unpredictability beat complexity rules. The company name plus a year plus a symbol is near the top of every guess list, exactly the pattern the guesser tried on Colin. Another random word adds far more than a capital or a symbol does.",
+              "reportReply": "Length and unpredictability beat complexity rules. The company name plus a year plus a symbol is near the top of every guess list, exactly the pattern a guesser tries first. Another random word adds far more than a capital or a symbol does.",
               "ifTrusted": "A company-name-plus-year-plus-symbol password is one of the first things a guesser tries; the symbol on the end barely slows it down."
             }
           },
@@ -236,7 +236,7 @@
               "flags": [],
               "correct": "report",
               "reportReply": "A unique generated password means a breach of FuelWise can't open anything else. Let the manager make and remember it; you never have to type or recall it.",
-              "ifTrusted": "Reusing your usual password is what the attack half exploited on Colin: one breach of a small site, and the work account opened with no cracking at all."
+              "ifTrusted": "Reusing your usual password is the one habit that turns a breach of any site you used into a break-in everywhere you used the same one."
             }
           },
           {
@@ -264,7 +264,7 @@
               "flags": [],
               "correct": "report",
               "reportReply": "A true security answer can be found online or guessed from what you've posted, so a made-up one kept in the manager is safer. Treat the answer like another password.",
-              "ifTrusted": "A real maiden name is the sort of thing a guesser can look up or work out from public posts, the same way it built Colin's guess list."
+              "ifTrusted": "A real maiden name is the sort of thing a guesser can look up or work out from public posts, the same way they build a guess list in the first place."
             }
           },
           {
@@ -415,7 +415,6 @@
         "reportAlwaysVisible": true
       },
       "flipAftermath": {
-        "heading": "Now it's your phone",
         "victimName": "you",
         "intro": "A reused password opened Colin's account in seconds, no clever cracking at all. The other end of that is a phone buzzing in the dark. Here is yours, a few minutes after someone got hold of a password of yours.",
         "items": [
@@ -433,16 +432,18 @@
           {
             "id": "fa_it_text",
             "kind": "sms",
+            "from": "Tarrowby IT",
             "subject": "A message that says it's IT",
             "body": "We can see the failed sign-ins. Read back the number on your screen and we'll stop the prompts.",
             "note": "A message dressed up as IT, offering to make the prompts stop if you read back the number. The number is on their screen, not IT's."
           }
         ],
-        "line": "They can't get past your phone, so they lean on it. Deny what you didn't start, report it, and let the service desk change the password."
+        "line": "They can't get past your phone, so they are leaning on it: prompt after prompt, then a message dressed up as IT."
       },
       "strings": {
         "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier, in the depot office. First you're on the red team: look at what a colleague has put online, build a guess list from it, and watch how fast a reused password opens his work account. Then it's your own account under attack, and you lock it down. Only the lock-down part is scored.",
         "flipHeading": "Now it's your phone.",
+        "flipGuessIntro": "You watched a reused password open a colleague's account. Here is the other end: your own phone.",
         "flipIntro": "You watched a reused password open a colleague's account. Here is the other end: your own phone, buzzing with sign-in prompts you didn't start, and a message from 'IT' telling you how to make them stop.",
         "flipDefenderLine": "Someone has a password of yours, from a breach of a site you forgot you used. They can't get past your phone, so they are leaning on it: prompt after prompt, then a message dressed up as IT with a number 'to stop the prompts'. The number is on their screen, not IT's. Deny what you didn't start, and report it.",
         "flipNoSend": "Nothing of the colleague's is here to replay, but the lesson is the same: a reused password is what opens an account. Next, you lock your own account down.",
