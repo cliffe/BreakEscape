@@ -16,6 +16,14 @@ import { createInfluenceBar } from '../../ui/influence-bar.js';
 const ICON = '/break_escape/assets/icons/';
 const ATTACH_ICONS = new Set(['document', 'pdf', 'spreadsheet', 'archive', 'image', 'link']);
 
+// Whether a link chip's visible label is itself a web/email address (a URL, a bare domain with a
+// path, or an email) rather than prose like "Click here". Such a label is set in the address font,
+// like every other address (E15, E17-n3). Prose labels keep the readable face.
+const ADDRESS_LIKE = /^(https?:\/\/\S+|www\.\S+|[^\s@]+@[^\s@]+\.[^\s@]+|[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?)$/i;
+function labelIsAddress(text) {
+    return ADDRESS_LIKE.test(String(text ?? '').trim());
+}
+
 function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -198,9 +206,18 @@ export class MailReader {
             body.append(top, sub);
             row.append(mark, body);
             const badge = this.opts.rowBadge ? this.opts.rowBadge(rec) : null;
-            if (badge) {
+            // A badge may be a plain word (the mail/triage default: a success tick) or an object
+            // { word, tone?, mark? } so a wrong triage verdict shows a cross, never a success tick
+            // (F-E19-7). tone adds a .mail-row-badge-<tone> class; mark names the icon, or null for
+            // none. A bare string keeps the old mark-tick output exactly.
+            const info = typeof badge === 'string' ? { word: badge }
+                : (badge && typeof badge === 'object' ? badge : null);
+            if (info && info.word) {
                 const b = el('span', 'mail-row-badge');
-                b.append(icon('mark-tick'), el('span', 'mail-row-badge-word', badge));
+                if (info.tone) b.classList.add(`mail-row-badge-${info.tone}`);
+                const markName = Object.prototype.hasOwnProperty.call(info, 'mark') ? info.mark : 'mark-tick';
+                if (markName) b.appendChild(icon(markName));
+                b.appendChild(el('span', 'mail-row-badge-word', info.word));
                 body.appendChild(b);
             }
             if (Array.isArray(rec.attachments) && rec.attachments.length) {
@@ -358,7 +375,9 @@ export class MailReader {
             chip.type = 'button';
             chip.dataset.linkId = link.id;
             chip.title = `${this._linkPrefix()}${dest}`;
-            chip.append(icon('attach-link'), el('span', `mail-chip-label${link.linkText ? '' : ' mail-chip-address'}`, link.linkText || dest));
+            const labelText = link.linkText || dest;
+            const asAddress = !link.linkText || labelIsAddress(labelText);
+            chip.append(icon('attach-link'), el('span', `mail-chip-label${asAddress ? ' mail-chip-address' : ''}`, labelText));
             const show = () => this._showLink(dest);
             chip.addEventListener('mouseenter', show);
             chip.addEventListener('focus', show);
@@ -377,11 +396,11 @@ export class MailReader {
     _appendTextRuns(container, text, rec) {
         const highlights = Array.isArray(rec.highlights) ? rec.highlights : [];
         if (!highlights.length || typeof this.opts.onHighlight !== 'function') {
-            container.appendChild(document.createTextNode(text));
+            this._appendBodyText(container, text);
             return;
         }
         for (const run of markHighlights(text, highlights)) {
-            if (!run.highlight) { container.appendChild(document.createTextNode(run.text)); continue; }
+            if (!run.highlight) { this._appendBodyText(container, run.text); continue; }
             const mark = el('button', 'mail-highlight');
             mark.type = 'button';
             mark.dataset.highlightId = run.highlight.id || '';
@@ -393,6 +412,33 @@ export class MailReader {
             });
             container.appendChild(mark);
         }
+    }
+
+    /**
+     * Append body text, setting any web/email address in the address font (--se-font-address) so
+     * look-alike characters read as they would in a browser bar, as every other address in the game
+     * does (E17-n3, E8 F15). Prose stays in the readable body face. Trailing sentence punctuation is
+     * left outside the address span. Bodies with no address append a single text node, unchanged.
+     */
+    _appendBodyText(container, text) {
+        const str = typeof text === 'string' ? text : '';
+        if (!str) { return; }
+        const re = /(https?:\/\/[^\s]+|www\.[^\s]+|[^\s@]+@[^\s@]+\.[^\s@]+)/g;
+        let last = 0;
+        let m;
+        while ((m = re.exec(str)) !== null) {
+            let token = m[0];
+            const start = m.index;
+            const trail = (token.match(/[.,;:!?)\]}>'"]+$/) || [''])[0];
+            if (trail) token = token.slice(0, token.length - trail.length);
+            if (!token) continue; // nothing but punctuation (cannot happen with these patterns)
+            if (start > last) container.appendChild(document.createTextNode(str.slice(last, start)));
+            container.appendChild(el('span', 'mail-body-url', token));
+            if (trail) container.appendChild(document.createTextNode(trail));
+            last = start + m[0].length;
+        }
+        if (last === 0) { container.appendChild(document.createTextNode(str)); return; }
+        if (last < str.length) container.appendChild(document.createTextNode(str.slice(last)));
     }
 
     /** "Add selection to notepad" (01 N16): sends the current text selection to the notes API. */

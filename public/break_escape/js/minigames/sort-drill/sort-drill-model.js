@@ -59,6 +59,9 @@ export const DEFAULT_TEXT = Object.freeze({
     summarySuggest: 'Better: {bin}',
     scoreLine: 'You put {correct} of {total} in the right bin.',
     doneLine: 'You sorted {total} cards.',
+    // Unscored drill, when a pick did not match the author's answer: the summary line falls back to
+    // this instead of a doneLine that claims every card matched (E15 F-E15-9). {fit}/{total} tokens.
+    doneMissLine: 'You sorted {total} cards; {fit} went to the suggested place.',
     done: 'Done',
     noCards: 'There are no cards to sort.',
     closeAsk: "Close now and your sorting so far won't be kept.",
@@ -249,7 +252,16 @@ export function scoreDrill(config, cards, placements) {
         points += s.points;
         list.push({ id: card.id, bin, correct: s.correct, points: s.points });
     }
-    if (!config.scored) return { scored: false, total: cards.length, placed: list.length, placements: list };
+    if (!config.scored) {
+        // How many placements landed on a bin the author counts as an answer. No mark is shown per
+        // card beyond "fits / better", but the summary line needs this to avoid claiming every card
+        // matched when one did not (E15 F-E15-9).
+        const fit = list.filter((p) => {
+            const card = cards.find((c) => c.id === p.id);
+            return card && answersOf(card).includes(p.bin);
+        }).length;
+        return { scored: false, total: cards.length, placed: list.length, fit, placements: list };
+    }
     max = cards.length * POINTS.correct;
     return {
         scored: true,

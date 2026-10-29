@@ -178,6 +178,9 @@
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
+/* A web or email address inside the body reads in the address font, like every other address in the
+   game (E17-n3, E8 F15), so look-alike characters show as they would in a browser bar. */
+.mail-body .mail-body-url { font-family: var(--se-font-address); }
 
 .mail-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
 .mail-chip {
@@ -387,6 +390,8 @@
 }
 .mail-redflag-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .mail-redflag-title { font-family: var(--ui-heading-font, 'GNF', monospace); font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+/* The red-team framing line under the head (E8 F8): a lower count is better. */
+.mail-redflag-sub { margin: 2px 0 6px; font-size: 13px; color: var(--ui-text-dim, #a8b2c8); }
 .mail-redflag-count {
     min-width: 1.6em;
     padding: 0 6px;

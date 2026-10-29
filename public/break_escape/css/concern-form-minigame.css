@@ -42,6 +42,7 @@
 .cf-heading:focus { outline: none; }
 .cf-text { margin: 0 0 12px; max-width: 60ch; }
 .cf-guidance { margin: 0 0 12px; max-width: 60ch; font-size: 15px; color: var(--cf-dim); }
+.cf-reload-note { margin: 0 0 12px; max-width: 60ch; font-size: 14px; color: var(--cf-dim); }
 .cf-button { font-family: var(--se-font-readable); font-size: 16px; min-height: 44px; margin-top: 12px; padding: 8px 18px; }
 
 .cf-group { margin: 0 0 12px; }

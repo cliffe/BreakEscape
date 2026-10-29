@@ -142,7 +142,9 @@ test('scoreDrill: counts, points and percent against the key; an unscored drill 
         [true, 'house_rules', 4, 4, 2, 5, 8, 63]);
     const t = Model.normaliseConfig(teachingConfig());
     const u = Model.scoreDrill(t, t.cards, [{ id: 'P1', bin: 'hold' }, { id: 'P2', bin: 'tweak' }]);
-    assert.deepEqual(u, { scored: false, total: 3, placed: 2, placements: [{ id: 'P1', bin: 'hold' }, { id: 'P2', bin: 'tweak' }] });
+    // fit counts the placements that landed on an author answer (P1->hold misses, P2->tweak fits),
+    // so the summary can be honest when not every card matched (F-E15-9). Still no mark per card.
+    assert.deepEqual(u, { scored: false, total: 3, placed: 2, fit: 1, placements: [{ id: 'P1', bin: 'hold' }, { id: 'P2', bin: 'tweak' }] });
     assert.equal('points' in u || 'percent' in u || 'correct' in u, false);
     assert.equal(Model.scoreCard(t, t.cards[0], 'hold').points, 0);
     assert.deepEqual(EM.drillRecord(u), { done: true, scored: false, total: 3, placed: 2 });
@@ -318,6 +320,22 @@ test('unscored: teaching only, no mark anywhere and nothing recorded as one', ()
     // or there is a better bin; nothing is marked red.
     assert.deepEqual($$(s, '.sd-col-card').map((n) => n.dataset.mark).sort(), ['fits', 'fits', 'suggest']);
     assert.match($(s, '.sd-mark-suggest').textContent, /Better: Post/);
+});
+
+test('unscored summary: every card fitting shows doneLine; a miss shows doneMissLine with the fit count (F-E15-9)', () => {
+    let s = open(teachingConfig());
+    click($(s, '.sd-start'));
+    drop(s, 'post'); next(s);   // P1 -> post (fits)
+    drop(s, 'tweak'); next(s);  // P2 -> tweak (fits)
+    drop(s, 'tweak'); next(s);  // P3 -> tweak (fits) -> summary
+    assert.doesNotMatch($(s, '.sd-score').textContent, /went to the suggested place/, 'all fit: the plain done line');
+
+    s = open(teachingConfig());
+    click($(s, '.sd-start'));
+    drop(s, 'hold'); next(s);   // P1 -> hold (miss; suggests post)
+    drop(s, 'tweak'); next(s);  // P2 -> tweak (fits)
+    drop(s, 'tweak'); next(s);  // P3 -> tweak (fits) -> summary
+    assert.match($(s, '.sd-score').textContent, /2 went to the suggested place/, 'a miss: the honest count, not "matched all"');
 });
 
 test('a per-card acceptable pick shows a neutral summary mark, never a red miss (E17-M1)', () => {

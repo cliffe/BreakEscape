@@ -1135,6 +1135,11 @@ export class MailComposer {
         head.appendChild(el('span', 'mail-redflag-title', 'Red flags'));
         head.appendChild(el('span', 'mail-redflag-count', String(data.flags.length)));
         panel.appendChild(head);
+        // In the red-team seat a lower count is better, so the meter needs one line to say so, or
+        // "Red flags 1" reads as a mistake to fix and 0 looks like nothing matters (E8 F8). Authored
+        // override: opts.meterHint; '' hides it.
+        const hint = typeof this.opts.meterHint === 'string' ? this.opts.meterHint : 'Fewer flags means harder to spot.';
+        if (hint) panel.appendChild(el('p', 'mail-redflag-sub', hint));
         const mark = (cls, src) => {
             const img = el('img', cls);
             img.src = src;

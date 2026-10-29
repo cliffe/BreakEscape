@@ -78,7 +78,17 @@ export class PasswordGuesserMinigame extends SocialOverlayScene {
 
     start() {
         super.start();
-        try { this.card?.querySelector?.('.epr-gs-step')?.focus?.(); } catch (e) { /* focus is a nicety */ }
+        // Open at the top so the first view is the title, the "nothing real" note and the rows, not
+        // the Step/Run/Switch-off controls at the foot (F-E18-2). Focus the scroll region itself
+        // (preventScroll) rather than the first control, so moving focus into the overlay does not
+        // yank the view to the bottom; the live log only updates on a learner action, never on open.
+        try {
+            if (this.root) {
+                if (!this.root.hasAttribute('tabindex')) this.root.tabIndex = -1;
+                this.root.focus?.({ preventScroll: true });
+                this.root.scrollTop = 0;
+            }
+        } catch (e) { /* focus and scroll are a nicety */ }
     }
 
     // ── drawing ────────────────────────────────────────────────────────────────

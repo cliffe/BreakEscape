@@ -60,7 +60,7 @@ function h(tag, props = {}, ...kids) {
 // address in the game; the words around it keep the readable face (E8 F15).
 const ADDRESS_RE = /([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|https?:\/\/[^\s,;)]+)/g;
 export function addressify(text) {
-    return String(text ?? '').split(ADDRESS_RE).map((part, i) => (i % 2 ? h('span', { class: 'ob-address', text: part }) : part)).filter((x) => x !== '');
+    return String(text ?? '').split(ADDRESS_RE).map((part, i) => (i % 2 ? h('span', { class: 'ob-addr', text: part }) : part)).filter((x) => x !== '');
 }
 
 const icon = (name) => h('img', { class: 'ob-icon', src: `${ICON}${name}.png`, alt: '', 'aria-hidden': 'true',
