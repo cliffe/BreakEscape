@@ -10,12 +10,14 @@
 
   "intelFacts": {
     "quayholt_fernside_portal": {
-      "text": "Quayholt orders its catering through Fernside Catering's order portal at orders.fernside.example; the team keeps it bookmarked.",
+      "text": "Quayholt orders its catering through Fernside Catering's order portal at orders.fernside.example; the operations team keeps it bookmarked, and their order reminders to staff come from operations@quayholt.example.",
       "subject": "leo", "source": "blk_fernside_portal",
       "provides": [
-        { "type": "reference", "about": "portal", "value": "fernside_portal_name", "label": "the Fernside order portal", "kind": "distinctive" }
+        { "type": "reference", "about": "portal", "value": "fernside_portal_name", "label": "the Fernside order portal", "kind": "distinctive" },
+        { "type": "name", "about": "sender", "value": "ops_lead_full", "label": "Quayholt Operations", "kind": "distinctive" },
+        { "type": "address", "value": "ops_lead_address", "label": "operations@quayholt.example", "kind": "distinctive" }
       ],
-      "reduceNote": "Naming the supplier portal staff already trust and bookmark tells an attacker which familiar site to aim at."
+      "reduceNote": "Naming the supplier portal staff already trust and bookmark, and the operations address their reminders come from, tells an attacker which familiar site to aim at and which sender to forge."
     },
     "fernside_small_site": {
       "text": "Fernside is a small family supplier; its order portal runs on an old website it has not kept up to date.",
@@ -35,10 +37,12 @@
     "e10_pretext_order": { "part": "pretext",
       "text": "This week's Fernside catering order is still outstanding and Friday's delivery depends on it going in today.",
       "slots": [],
+      "implies": [ { "value": "fernside_portal_name" } ],
       "urgency": "high" },
     "e10_pretext_order_calm": { "part": "pretext",
       "text": "It's the usual time for this week's Fernside catering order. When you get a moment, could you put it in through the portal?",
       "slots": [],
+      "implies": [ { "value": "fernside_portal_name" } ],
       "urgency": "low" },
     "e10_pretext_offtopic": { "part": "pretext",
       "text": "Here is this month's round-up of news from around Quayholt Operations.",
@@ -58,7 +62,7 @@
     "mailboxes": [ { "id": "analyst" } ],
     "contacts": [
       { "id": "leo", "person": "leo", "name": "Leo Brennan",
-        "addresses": ["leo.brennan@quayholt.example"], "role": "Operations assistant",
+        "addresses": ["leo.brennan@quayholt.example"], "role": "Operations colleague",
         "revealedBy": "se_intel_quayholt_fernside_portal", "targetId": "order_colleague" }
     ],
     "payloadKit": [],
@@ -82,11 +86,11 @@
         "pages": [
           { "id": "procurement", "title": "Suppliers and ordering", "blocks": [
             { "id": "blk_fernside_portal", "kind": "p",
-              "text": "Quayholt orders its catering through Fernside Catering. The operations team places the weekly order through Fernside's order portal at orders.fernside.example, which they keep bookmarked.",
+              "text": "Quayholt orders its catering through Fernside Catering. The operations team places the weekly order through Fernside's order portal at orders.fernside.example, which they keep bookmarked, and sends order reminders to staff from operations@quayholt.example.",
               "fact": "quayholt_fernside_portal" } ] },
           { "id": "people", "title": "Our people", "blocks": [
             { "id": "blk_leo", "kind": "staff", "person": "leo", "name": "Leo Brennan",
-              "role": "Operations assistant", "address": "leo.brennan@quayholt.example" } ] } ] },
+              "role": "Operations colleague", "address": "leo.brennan@quayholt.example" } ] } ] },
 
       { "id": "fernside_site", "name": "Fernside Catering", "url": "fernside.example", "type": "company-site",
         "pages": [
@@ -155,7 +159,7 @@
       "id": "order_colleague",
       "address": "leo.brennan@quayholt.example",
       "displayName": "Leo Brennan",
-      "role": "Operations assistant",
+      "role": "Operations colleague",
       "subjects": [
         { "id": "s_order", "text": "This week's Fernside order", "topic": "operations" },
         { "id": "s_other", "text": "Quick note", "topic": "general" }

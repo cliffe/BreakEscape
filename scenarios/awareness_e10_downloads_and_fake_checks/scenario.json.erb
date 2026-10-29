@@ -1,0 +1,982 @@
+{
+  "scenario_id": "awareness_e10_downloads_and_fake_checks",
+  "scenario_name": "Downloads and fake checks: the whole web",
+  "scenario_brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: build a fake 'verify you are human' check from ready-made parts on a supplier site, and send one email to bring a colleague to it. Then you swap seats and work through a morning of web pages, the kind that try to get you to download, paste or call. Only the pages are scored. Nothing is built for real and nothing is collected.",
+  "endGoal": "Build and send the page, then sort the morning's web pages at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "build_page_aim",
+      "title": "Build and send the page",
+      "description": "Build one fake 'verify you are human' check from ready-made parts and send the lure email that leads a colleague to it.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "build_and_send_page",
+          "title": "Send your lure email",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "browser_morning_aim",
+      "title": "Work through the morning's web pages",
+      "description": "Work through the browser screens at the training kiosk: decide whether to carry on, close and report, or go the trusted way.",
+      "status": "active",
+      "order": 1,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e10_downloads_and_fake_checks_defend_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Downloads and fake checks episode done",
+        "body": "You built one page and sent its link, then worked through a morning of web pages, closing and reporting the ones that tried to drive your computer, so this episode is finished."
+      },
+      "tasks": [
+        {
+          "taskId": "work_browser_morning",
+          "title": "Work through the web pages",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e10_downloads_and_fake_checks_state": {},
+    "se_awareness_records": [],
+    "episode_e10_downloads_and_fake_checks_defend_percent": 0,
+    "episode_e10_downloads_and_fake_checks_defend_reportRate": 0,
+    "episode_e10_downloads_and_fake_checks_defend_done": false,
+    "episode_e10_downloads_and_fake_checks_defend_pass": false,
+    "se_osint_state": {},
+    "se_intel_quayholt_fernside_portal": false,
+    "se_intel_fernside_small_site": false,
+    "se_landing_pages": {},
+    "landing_fake_check_fernside_built": false,
+    "landing_fake_check_fernside_domain": "",
+    "phish_order_colleague_landed": false,
+    "phish_order_colleague_attempts": 0
+  },
+  "social": {
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    },
+    "triageSets": [
+      {
+        "id": "e10_browser_morning",
+        "title": "A morning of Quayholt web pages",
+        "brief": "The kiosk has a morning's worth of web pages open, the kind that turn up while you're trying to work: fake downloads, 'verify you are human' boxes, pop-ups that want you to call. For each one, decide whether you'd carry on, close and report it, or go the trusted way, then tick what you noticed. The rule holds every time: no honest web page ever needs you to paste, run, install or call. Reporting when you're unsure is always fine and never marked down, and reporting fast after you've clicked or pasted is what limits the damage.",
+        "scoringProfile": "awareness",
+        "verifyVerdict": false,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "padlock_myth",
+          "fake_check_paste",
+          "fake_update_prompt",
+          "fake_alarm_callback",
+          "browser_permission_grab",
+          "dangerous_download"
+        ],
+        "verdictLabels": {
+          "trust": "Carry on",
+          "report": "Close and report",
+          "delete": "Go the trusted way"
+        },
+        "flagChips": {
+          "fake_check_paste": "A page telling you to paste or run something to prove you are human or to fix an error",
+          "fake_update_prompt": "A web page saying your browser or software is out of date and offering the update",
+          "dangerous_download": "A download you did not ask for, or a program pretending to be a document",
+          "fake_alarm_callback": "A full-screen alarm with a phone number to call",
+          "browser_permission_grab": "A page or extension asking to read or change everything in your browser, or to send you notifications"
+        },
+        "skillNames": {
+          "fake_check_paste": "Spotting a page that tells you to paste or run something",
+          "fake_update_prompt": "Spotting a fake 'your browser is out of date' prompt",
+          "dangerous_download": "Spotting a program pretending to be a document",
+          "fake_alarm_callback": "Spotting a fake alarm with a number to call",
+          "browser_permission_grab": "Judging what an extension or page is asking to read or change"
+        },
+        "outcome": {
+          "setGlobalPrefix": "episode_e10_downloads_and_fake_checks_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e10_fake_check",
+            "kind": "page",
+            "subject": "From a bookmark: Fernside Catering order portal",
+            "time": "09:12",
+            "body": "To continue to the order portal, confirm you are human:\n1. Press Windows + R.\n2. Press Ctrl + V.\n3. Press Enter.",
+            "page": {
+              "url": "https://orders.fernside.example/verify",
+              "padlock": true,
+              "state": "fakeCheck",
+              "heading": "Verify you are human",
+              "clipboardReveal": "A hidden command that would run a program on your computer"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "fake_check_paste"
+              ],
+              "perFlagNote": {
+                "fake_check_paste": "A real check happens on the page: you tick a box or pick pictures. No genuine check ever tells you to press keys or paste something into your computer, and this one has quietly copied a command for you to run. The site is Fernside's own, but a familiar site is not a reason to do what it suddenly tells you; it has been broken into."
+              },
+              "ifTrusted": "Following the steps would have run a hidden program, with nothing showing on screen. If you did it, report it straight away, do not restart, and do not clear anything.",
+              "reportReply": "Thanks. We've blocked that page, warned Fernside their site was hacked, and reported it. Fernside's own site is fine; it was broken into."
+            },
+            "factorStrings": {
+              "fake_check_paste": {
+                "redFlag": "A page telling you to paste or run something to prove you are human or to fix an error"
+              }
+            }
+          },
+          {
+            "id": "e10_genuine_captcha",
+            "kind": "page",
+            "subject": "From a bookmark: Fernside Catering order portal",
+            "time": "09:20",
+            "body": "Confirm you are not a robot to continue.",
+            "page": {
+              "url": "https://orders.fernside.example/login",
+              "padlock": true,
+              "heading": "Order portal sign-in",
+              "fields": [
+                "I am not a robot"
+              ],
+              "button": "Continue"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "fake_check_paste": "A genuine check only asks you to tick a box or pick pictures on the page; it never tells you to do anything to your computer.",
+                "default": "Fernside's own address, and a check that stays on the page: tick the box and carry on. The tell on row 1 was the instruction to your computer, not the word 'verify'."
+              }
+            }
+          },
+          {
+            "id": "e10_fake_update",
+            "kind": "page",
+            "subject": "From a link the manager asked you to read: industry news",
+            "time": "10:05",
+            "body": "Your browser is out of date and may be insecure. Download the latest version to continue.",
+            "page": {
+              "url": "https://news.hauliernews.example/article/depot-rates",
+              "padlock": true,
+              "state": "fakeUpdate",
+              "heading": "Update required",
+              "button": "Download update"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "fake_update_prompt"
+              ],
+              "perFlagNote": {
+                "fake_update_prompt": "A web page cannot know your browser needs updating, and no genuine update ever comes from a page; browsers update themselves and finish when you close and reopen them. At work, IT manages that."
+              },
+              "ifTrusted": "The download would be a program pretending to be an update. Close the tab and report it.",
+              "reportReply": "Thanks. That's not how browsers update. We've reported the page and left a note for the news site."
+            },
+            "factorStrings": {
+              "fake_update_prompt": {
+                "redFlag": "A web page saying your browser or software is out of date and offering the update"
+              }
+            }
+          },
+          {
+            "id": "e10_browser_relaunch",
+            "kind": "page",
+            "subject": "Your browser's own menu bar",
+            "time": "10:18",
+            "body": "An update is ready. Relaunch to finish.",
+            "page": {
+              "url": "about:browser",
+              "padlock": false,
+              "state": "relaunchBar",
+              "heading": "An update is ready",
+              "button": "Relaunch"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "fake_update_prompt": "This one is the browser itself, in its own menu bar, not a web page; it downloaded the update in the background and only needs a relaunch.",
+                "default": "The browser's own bar, not a page: relaunching to finish an update is the normal, safe thing. A page offering an update is the trap; the browser's own bar is genuine."
+              }
+            }
+          },
+          {
+            "id": "e10_fake_alarm",
+            "kind": "page",
+            "subject": "A page that took the whole screen",
+            "time": "11:02",
+            "body": "Your computer has been locked. Call support now on 0800 496 0000 to unlock it.",
+            "page": {
+              "url": "https://secure-alert.example/locked",
+              "padlock": true,
+              "state": "fullScreenAlarm",
+              "heading": "Your computer has been locked",
+              "alarm": {
+                "hintAfterMs": 30000
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "fake_alarm_callback"
+              ],
+              "perFlagNote": {
+                "fake_alarm_callback": "A genuine error message never includes a phone number. The alarm and the lock are just a web page; the number reaches whoever made it, who would ask you to install a remote-access tool. Don't call: press Esc, close the tab or the browser, and if it will not close, ring the service desk on the number you already hold."
+              },
+              "ifTrusted": "Calling connects you to the scammer, not support. Press Esc, close the tab or the browser; if it will not close, ring the service desk on the number you already hold, and do not call the number on screen.",
+              "reportReply": "Thanks. Your computer was never locked; that was a page pretending. We've blocked it and reported it."
+            },
+            "factorStrings": {
+              "fake_alarm_callback": {
+                "redFlag": "A full-screen alarm with a phone number to call"
+              }
+            }
+          },
+          {
+            "id": "e10_extension_permission",
+            "kind": "page",
+            "subject": "An extension store page a search result led to",
+            "time": "13:40",
+            "body": "Free PDF Tools. 4.8 stars, 2 million users. Add to your browser.",
+            "page": {
+              "url": "https://addons.example/free-pdf-tools",
+              "padlock": true,
+              "state": "extensionPermission",
+              "heading": "Add 'Free PDF Tools'?",
+              "permissions": [
+                "Read and change all your data on all websites",
+                "Read your browsing history"
+              ]
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "browser_permission_grab"
+              ],
+              "perFlagNote": {
+                "browser_permission_grab": "An extension with that access can see and change everything you do in the browser, the finance system and the intranet included, and it can change what it does when it updates. Stars and a user count do not make it safe."
+              },
+              "ifTrusted": "Adding it hands a stranger everything you do in the browser. Close and report it; get a PDF tool from Quayholt Apps (DocShift), or ask the service desk.",
+              "reportReply": "Thanks. We've reported that extension. DocShift in Quayholt Apps does the same job and is approved."
+            },
+            "factorStrings": {
+              "browser_permission_grab": {
+                "redFlag": "A page or extension asking to read or change everything in your browser, or to send you notifications"
+              }
+            }
+          },
+          {
+            "id": "e10_download_exe",
+            "kind": "page",
+            "subject": "A download that started from a link",
+            "time": "14:22",
+            "body": "Fernside_pricelist.pdf.exe has finished downloading. Open file?",
+            "page": {
+              "url": "https://downloads.example/fernside",
+              "padlock": true,
+              "state": "downloadBar",
+              "heading": "Download complete",
+              "download": {
+                "filename": "Fernside_pricelist.pdf.exe"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "dangerous_download"
+              ],
+              "perFlagNote": {
+                "dangerous_download": "You asked for a price list, which is a PDF or a spreadsheet, not a program. A name ending .pdf.exe is a program dressed up as a document."
+              },
+              "ifTrusted": "Opening it would run a program, not show a price list. Don't open it; close and report it.",
+              "reportReply": "Thanks. We've removed it and asked Fernside to send the price list as a normal PDF."
+            },
+            "factorStrings": {
+              "dangerous_download": {
+                "redFlag": "A download you did not ask for, or a program pretending to be a document"
+              }
+            }
+          }
+        ],
+        "playerSentAuth": {
+          "accounts": {
+            "analyst": {
+              "spf": "pass",
+              "dkim": "fail",
+              "dmarc": "fail",
+              "envelopeFrom": "bounce.quayholt.example",
+              "replyTo": "{account_address}"
+            }
+          }
+        }
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e10_downloads_and_fake_checks",
+      "role": "general_staff",
+      "company": "quayholt_insurance",
+      "brand": {
+        "name": "Quayholt Insurance",
+        "logoText": "QUAYHOLT",
+        "accent": "#6b4c9a"
+      },
+      "variant": "full",
+      "durationTargetMin": 15,
+      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: one practice page from ready-made parts, and the web pages you meet in a morning's work. No real site is touched and nothing runs on your computer.",
+      "stages": [
+        "brief",
+        "osint",
+        "build",
+        "write",
+        "flip",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "work_browser_morning",
+      "attack": {
+        "target": "order_colleague",
+        "siteIds": [
+          "quayholt_site",
+          "fernside_site"
+        ],
+        "accountIds": [
+          "analyst"
+        ],
+        "defaultAccount": "analyst",
+        "landingPageId": "fake_check_fernside",
+        "showRedFlagMeter": true,
+        "maxMessages": 1,
+        "scored": false
+      },
+      "defend": {
+        "setId": "e10_browser_morning",
+        "reportAlwaysVisible": true,
+        "stage": null
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: build a fake 'verify you are human' check from ready-made parts on a supplier site, and send one email to bring a colleague to it. Then you swap seats and work through a morning of web pages, the kind that try to get you to download, paste or call. Only the pages are scored. Nothing is built for real and nothing is collected.",
+        "flipHeading": "Now it lands on a colleague",
+        "flipIntro": "This is the page you built, as Leo Brennan, the colleague you nudged to the Fernside portal, meets it when he opens the portal from his own bookmark. The parts picked out below are what make it believable.",
+        "flipDefenderLine": "Leo opened the Fernside portal between jobs, the way he does every week. The page sat on Fernside's own address, with the padlock and all, so nothing warned him off. The one thing it could not hide is the last step: whatever the pretext, the page still had to tell him to paste and run something on his computer, and no real check ever does.",
+        "flipNoSend": "Your page didn't go out this time, so there's nothing of yours to show. Next, the same kind of page turns up in a morning's browsing, and you're the one deciding what to do with it.",
+        "flipMissed": "The defence is the same either way: next, the same kind of page turns up in a morning's browsing, and you're the one deciding what to do with it.",
+        "flipMissedHeading": "Nothing to replay this time",
+        "flipLandedNoTells": "The page passed without a slip this time, but the paste-and-run step is always there to catch. Next, the same kind of page turns up in a morning's browsing, and you're the one deciding what to do with it.",
+        "noBlameLine": "These pages are built to look ordinary, and a familiar site that has been hacked is the hardest of all. A miss here just shows what to look for; reporting fast, even after you've clicked or pasted, is what limits the damage, and nobody is in trouble for it.",
+        "mondayCard": "On Monday: get software from Quayholt Apps, not from adverts or search results; read the address before you sign in; and if a page ever tells you to paste, run, install, update, call or allow, close it. If you did any of those, report it straight away using the route in the box below, and don't restart or clear anything.",
+        "defendOnly": "These pages are built to look like an ordinary morning's browsing, and anyone can be caught by one, a familiar site that has been hacked most of all. Any you were caught out by are shown below, with what gave each one away and the safe way through.",
+        "defendIntro": "Now you swap seats. The kiosk has a morning of web pages open, each the kind that turns up while you work. For each one, decide whether to carry on, close and report, or go the trusted way. The rule holds as you go: no honest web page ever needs you to paste, run, install or call.",
+        "conceptPanel": [
+          {
+            "heading": "Where software comes from",
+            "text": "Start software and sites from a place you trust: the Quayholt Apps portal, a bookmark, or an address you typed yourself, never an advert or a search result. If the software you need isn't in Quayholt Apps, ask the service desk; they would rather help you find it than clean up afterwards."
+          },
+          {
+            "heading": "Read the address",
+            "text": "Read the address from the right-hand end, where the real name sits. A padlock only means nobody can listen in on the connection; it does not make a site honest, and a fake page can show one too. A familiar address is still no reason to do what a site suddenly tells you: sites get hacked."
+          },
+          {
+            "heading": "The four tricks",
+            "text": "A web page cannot run anything on your computer by itself, so it tries to get you to: a 'verify you are human' box that wants you to paste and run something, a fake 'your browser is out of date' prompt, a full-screen alarm with a number to call, or an extension that asks to read and change everything. None of them is real. Close the page."
+          },
+          {
+            "heading": "If you slipped",
+            "text": "If a page talked you into pasting, running, installing, calling or allowing, report it straight away: the browser Report button, the 'Report an incident' form, or the security team on extension 4444. Don't restart the computer, don't clear anything, and don't run tools from the web. If you're asked to, unplug the network cable or turn off Wi-Fi and leave the machine on."
+          },
+          {
+            "heading": "The one rule",
+            "text": "Start from a place you trust. Never let a web page drive your computer. If in doubt, close it and report it."
+          }
+        ],
+        "flipPageIntro": "This is the page you built, as Leo Brennan meets it when he opens the Fernside portal from his own bookmark. Anything that would give it away is picked out below."
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "people": [
+      {
+        "id": "ops_lead",
+        "kind": "outside",
+        "address": "operations@quayholt.example",
+        "forms": {
+          "first": "Operations",
+          "full": "Quayholt Operations"
+        }
+      },
+      {
+        "id": "leo",
+        "kind": "cast",
+        "address": "leo.brennan@quayholt.example",
+        "forms": {
+          "first": "Leo",
+          "formal": "Mr Brennan",
+          "full": "Leo Brennan"
+        }
+      }
+    ],
+    "intelFacts": {
+      "quayholt_fernside_portal": {
+        "text": "Quayholt orders its catering through Fernside Catering's order portal at orders.fernside.example; the operations team keeps it bookmarked, and their order reminders to staff come from operations@quayholt.example.",
+        "subject": "leo",
+        "source": "blk_fernside_portal",
+        "provides": [
+          {
+            "type": "reference",
+            "about": "portal",
+            "value": "fernside_portal_name",
+            "label": "the Fernside order portal",
+            "kind": "distinctive"
+          },
+          {
+            "type": "name",
+            "about": "sender",
+            "value": "ops_lead_full",
+            "label": "Quayholt Operations",
+            "kind": "distinctive"
+          },
+          {
+            "type": "address",
+            "value": "ops_lead_address",
+            "label": "operations@quayholt.example",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "Naming the supplier portal staff already trust and bookmark, and the operations address their reminders come from, tells an attacker which familiar site to aim at and which sender to forge."
+      },
+      "fernside_small_site": {
+        "text": "Fernside is a small family supplier; its order portal runs on an old website it has not kept up to date.",
+        "subject": "ops_lead",
+        "source": "blk_fernside_site",
+        "provides": [
+          {
+            "type": "reference",
+            "value": "fernside_neglected_site",
+            "label": "Fernside's out-of-date site",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "A small supplier's neglected site is the sort an attacker can misuse to borrow the trust staff place in it. The fact states only that the trust is borrowable, never how a site is broken into."
+      }
+    },
+    "templates": {
+      "e10_from": {
+        "part": "from",
+        "text": "{sender_name} <{sender_address}>",
+        "slots": [
+          {
+            "id": "sender_name",
+            "type": "name",
+            "about": "sender",
+            "label": "sender's name"
+          },
+          {
+            "id": "sender_address",
+            "type": "address",
+            "label": "sender's address"
+          }
+        ]
+      },
+      "e10_greet": {
+        "part": "greeting",
+        "text": "Hi Leo,",
+        "slots": []
+      },
+      "e10_pretext_order": {
+        "part": "pretext",
+        "text": "This week's Fernside catering order is still outstanding and Friday's delivery depends on it going in today.",
+        "slots": [],
+        "implies": [
+          {
+            "value": "fernside_portal_name"
+          }
+        ],
+        "urgency": "high"
+      },
+      "e10_pretext_order_calm": {
+        "part": "pretext",
+        "text": "It's the usual time for this week's Fernside catering order. When you get a moment, could you put it in through the portal?",
+        "slots": [],
+        "implies": [
+          {
+            "value": "fernside_portal_name"
+          }
+        ],
+        "urgency": "low"
+      },
+      "e10_pretext_offtopic": {
+        "part": "pretext",
+        "text": "Here is this month's round-up of news from around Quayholt Operations.",
+        "slots": [],
+        "urgency": "low"
+      },
+      "e10_ask": {
+        "part": "ask",
+        "text": "Place the order through the Fernside portal you've got bookmarked, as you always do.",
+        "slots": [],
+        "urgency": "low"
+      }
+    },
+    "mailClient": {
+      "accounts": [
+        {
+          "id": "analyst",
+          "address": "analyst@quayholt.example",
+          "displayName": "Red-team analyst",
+          "kind": "given",
+          "person": null,
+          "mailbox": "analyst",
+          "spoofsFrom": true
+        }
+      ],
+      "mailboxes": [
+        {
+          "id": "analyst"
+        }
+      ],
+      "contacts": [
+        {
+          "id": "leo",
+          "person": "leo",
+          "name": "Leo Brennan",
+          "addresses": [
+            "leo.brennan@quayholt.example"
+          ],
+          "role": "Operations colleague",
+          "revealedBy": "se_intel_quayholt_fernside_portal",
+          "targetId": "order_colleague"
+        }
+      ],
+      "payloadKit": [],
+      "seededMessages": [
+        {
+          "id": "brief",
+          "mailbox": "analyst",
+          "from": {
+            "name": "Red team lead",
+            "address": "lead@redteam.example",
+            "avatar": "npc_neutral"
+          },
+          "to": "analyst@quayholt.example",
+          "subject": "Authorised exercise: Quayholt Insurance",
+          "body": "Hi,\n\nThis is the authorised Quayholt Insurance exercise. In scope: this inbox and the colleague listed on it. Find out which supplier portal the team orders through, then build a fake 'verify you are human' check in the builder, on that supplier's own site. Send one short email to bring the colleague to the portal. There is no link to send: they open it from their own bookmark. Nothing is built for real, nothing runs on anyone's computer, and no command is ever shown.\n\nRed team lead",
+          "time": "09:05",
+          "unread": true,
+          "folder": "inbox"
+        }
+      ],
+      "checklistTiming": "onSend",
+      "bodyMode": "templates",
+      "freeTextFlavour": false,
+      "showRedFlagMeter": true
+    },
+    "osint": {
+      "profile": "awareness",
+      "sites": [
+        {
+          "id": "quayholt_site",
+          "name": "Quayholt Insurance",
+          "url": "quayholt.example",
+          "type": "company-site",
+          "pages": [
+            {
+              "id": "procurement",
+              "title": "Suppliers and ordering",
+              "blocks": [
+                {
+                  "id": "blk_fernside_portal",
+                  "kind": "p",
+                  "text": "Quayholt orders its catering through Fernside Catering. The operations team places the weekly order through Fernside's order portal at orders.fernside.example, which they keep bookmarked, and sends order reminders to staff from operations@quayholt.example.",
+                  "fact": "quayholt_fernside_portal"
+                }
+              ]
+            },
+            {
+              "id": "people",
+              "title": "Our people",
+              "blocks": [
+                {
+                  "id": "blk_leo",
+                  "kind": "staff",
+                  "person": "leo",
+                  "name": "Leo Brennan",
+                  "role": "Operations colleague",
+                  "address": "leo.brennan@quayholt.example"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "fernside_site",
+          "name": "Fernside Catering",
+          "url": "fernside.example",
+          "type": "company-site",
+          "pages": [
+            {
+              "id": "about",
+              "title": "About Fernside",
+              "blocks": [
+                {
+                  "id": "blk_fernside_site",
+                  "kind": "p",
+                  "text": "Fernside Catering is a small family supplier. Order online through our portal at orders.fernside.example.",
+                  "fact": "fernside_small_site"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "landingPages": [
+      {
+        "id": "fake_check_fernside",
+        "title": "Fernside order portal: verify you are human",
+        "profile": "awareness",
+        "pageType": "fakeCheck",
+        "tellCounter": true,
+        "targets": {
+          "order_colleague": {
+            "linkThreshold": 70
+          }
+        },
+        "check": {
+          "host": "orders.fernside.example",
+          "heading": "Verify you are human",
+          "clipboardReveal": "A hidden command that would run a program on your computer",
+          "points": {
+            "borrowedTrust": 35,
+            "pretext": 25,
+            "stepWording": 25,
+            "urgency": 15
+          },
+          "hosts": [
+            {
+              "id": "genuine",
+              "label": "Fernside's own order portal (orders.fernside.example), broken into",
+              "trust": "genuine"
+            },
+            {
+              "id": "lookalike",
+              "label": "A look-alike you set up (orders-fernside.example)",
+              "trust": "lookalike"
+            },
+            {
+              "id": "unrelated",
+              "label": "An unrelated page nobody expects",
+              "trust": "unrelated"
+            }
+          ],
+          "pretexts": [
+            {
+              "id": "fits",
+              "label": "Confirm you are human to continue to the order portal",
+              "match": true
+            },
+            {
+              "id": "generic",
+              "label": "A generic 'security update required'"
+            },
+            {
+              "id": "prize",
+              "label": "You have won a prize",
+              "slips": true
+            }
+          ],
+          "urgencies": [
+            {
+              "id": "calm",
+              "label": "One quick step to continue",
+              "match": true
+            },
+            {
+              "id": "pushy",
+              "label": "Do this now or lose access"
+            }
+          ],
+          "steps": [
+            {
+              "id": "smooth",
+              "label": "A smooth, routine-looking accessibility check",
+              "match": true
+            },
+            {
+              "id": "clumsy",
+              "label": "A clumsy demand to act on your computer"
+            }
+          ],
+          "strings": {
+            "verdictHigh": "Convincing enough that {firstName} would follow the steps.",
+            "borrowedTrustGenuine": "✓ Host: the page sits on Fernside's own portal, the site {firstName} already trusts and has bookmarked. It needs no look-alike at all.",
+            "borrowedTrustLookalike": "~ Host: a look-alike address. Convincing, but it is not the portal {firstName} knows.",
+            "borrowedTrustUnrelated": "✗ Host: an unrelated page {firstName} has no reason to open.",
+            "stepWordingPass": "✓ Steps: worded as a smooth, routine check, so the demand to act on the computer does not stand out.",
+            "defFakeCheckPaste": "However genuine the site, the page still has to tell {firstName} to paste and run something to continue. No real check ever does, and that is the one part you can never remove."
+          }
+        },
+        "conceptCards": [
+          "borrowed-trust",
+          "paste-step"
+        ]
+      }
+    ],
+    "conceptCards": [
+      {
+        "id": "borrowed-trust",
+        "title": "Borrowed trust",
+        "text": "The strongest fake check needs no look-alike address at all. Put it on a site the visitor already trusts and bookmarks, broken into, and their trust in the real site carries over to the page. A familiar address is not a reason to do what a site suddenly tells you."
+      },
+      {
+        "id": "paste-step",
+        "title": "The one thing it can't hide",
+        "text": "However real the site and however smooth the wording, the page still has to tell the visitor to paste and run something on their own computer. No genuine check, error or download ever asks for that. It is the one tell the attacker can never take away."
+      }
+    ],
+    "phishTargets": [
+      {
+        "id": "order_colleague",
+        "address": "leo.brennan@quayholt.example",
+        "displayName": "Leo Brennan",
+        "role": "Operations colleague",
+        "subjects": [
+          {
+            "id": "s_order",
+            "text": "This week's Fernside order",
+            "topic": "operations"
+          },
+          {
+            "id": "s_other",
+            "text": "Quick note",
+            "topic": "general"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "operations"
+          ]
+        },
+        "emailReplyDelay": 6,
+        "redFlagMeter": true,
+        "urgency": {
+          "advisoryMax": "medium"
+        },
+        "senderAuth": {
+          "domainPublishesAuth": true,
+          "spoofAligns": false,
+          "dmarcPolicy": "none"
+        },
+        "templateSets": {
+          "from": [
+            "e10_from"
+          ],
+          "greeting": [
+            "e10_greet"
+          ],
+          "pretext": [
+            "e10_pretext_order",
+            "e10_pretext_order_calm",
+            "e10_pretext_offtopic"
+          ],
+          "ask": [
+            "e10_ask"
+          ]
+        },
+        "primedFor": {
+          "distinctiveValues": [
+            "fernside_portal_name"
+          ],
+          "minDistinct": 1,
+          "trusts": [
+            "ops_lead"
+          ],
+          "story": "a reminder from operations to place this week's Fernside catering order through the portal he keeps bookmarked"
+        },
+        "requiredFactors": [
+          "senderTrust",
+          "pretextRelevant"
+        ],
+        "advisoryFactors": [
+          "urgencyCalibrated",
+          "senderAuth"
+        ],
+        "factorStrings": {
+          "open": {
+            "pass": "✓ He would open it",
+            "fail": "Nothing about the sender or the subject gave him a reason to open it.",
+            "redFlag": null
+          },
+          "senderTrust": {
+            "pass": "✓ From the operations address he acts on",
+            "fail": "He does not recognise this sender. Order reminders reach him from operations at quayholt.example.",
+            "redFlag": "The From line carries the operations address Leo acts on, so the reminder reads as routine, but it was forged: operations never sent it."
+          },
+          "pretextRelevant": {
+            "pass": "✓ Placing the weekly Fernside order is a routine he knows",
+            "fail": "No order he can match this to, so no reason to go to the portal now.",
+            "redFlag": null
+          },
+          "urgencyCalibrated": {
+            "pass": "✓ The pressure reads as believable",
+            "fail": "A rush to get the order in today is the kind of pressure that gets someone to the portal before they stop to think.",
+            "failMissed": "",
+            "redFlag": "This pushes you to place the order today, before you stop to wonder why the portal is asking you to prove you are human."
+          },
+          "senderAuth": {
+            "pass": "✓ Sender authentication would pass",
+            "fail": "This did not really come from the address it claims, so it fails the domain's alignment check. Quayholt publishes p=none, so a receiver would still deliver it.",
+            "redFlag": null
+          }
+        },
+        "replies": {
+          "landed": "Thanks, I'll put the order in now.",
+          "missed": "That didn't come from operations, and the order isn't due from me this week, so I left it. I'll check with them the usual way."
+        },
+        "hints": [
+          "Which address do Quayholt staff already trust for operations notices? Put that in the From line.",
+          "What routine does Leo already expect, so a nudge to the portal reads as ordinary?",
+          "You don't need a look-alike link. The page sits on Fernside's own portal, the one Leo opens from his bookmark. The persuasion is in the page, not the address."
+        ],
+        "outcome": {
+          "setGlobal": {
+            "phish_order_colleague_landed": true
+          }
+        }
+      }
+    ]
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_quayholt",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_quayholt_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "aw_quayholt_queue": {
+            "color": "#9fc0ff",
+            "radius": 32,
+            "intensity": 0.25,
+            "effect": "screen"
+          },
+          "info_screen": {
+            "intensity": 0.25,
+            "radius": 24
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.3,
+            "color": "#e8f0ff",
+            "radius": 72,
+            "intensity": 0.3
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "niamh_doherty",
+          "displayName": "Niamh Doherty",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "female_telecom_v2",
+          "spriteTalk": "assets/characters/female_telecom_talk.png",
+          "spriteVisemes": "assets/characters/female_telecom_visemes.png",
+          "storyPath": "scenarios/awareness_e10_downloads_and_fake_checks/ink/niamh_doherty.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:phish_order_colleague_attempts",
+              "condition": "value > 0",
+              "onceOnly": true,
+              "completeTask": "build_and_send_page"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e10_downloads_and_fake_checks_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "work_browser_morning"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise: first build one look-alike page and send its link, then a morning of browser screens to sort.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e10_downloads_and_fake_checks_defend_done",
+              "value": "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise. The page is sent and the morning's screens are all sorted."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e10_downloads_and_fake_checks"
+          }
+        }
+      ]
+    }
+  }
+}
