@@ -61,13 +61,25 @@
       {
         "id": "e15_shortcuts_inbox",
         "title": "Shadow IT: the shortcuts",
-        "brief": "It's Friday at Tarrowby, the pack is due Monday and the share is slow. Six things are waiting: found and posted sticks, 'quicker way' messages, and a couple of genuine ones. For each, choose Trust, Report, Delete or Verify (ring the sender or ask IT on a number you already hold), then tick what you noticed. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "brief": "It's Friday, the Monday pack is due and the share is slow. Six things are waiting: found sticks, 'quicker way' messages, and a couple of genuine ones. For each, choose Trust, Report, Delete or Verify, then tick what you noticed. Checking when you're unsure is always fine, though a real one does take a colleague's time.",
         "realLabel": "Real notices and replies",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
         "feedbackMode": "immediate",
         "headerPanel": "off",
         "glossary": "closed",
+        "labels": {
+          "verdict": {
+            "trust": { "hint": "This one's safe. I'd act on it." },
+            "report": { "hint": "This looks wrong. Tell IT." },
+            "delete": { "hint": "This is junk. I'd just delete it." },
+            "verify": { "hint": "I'd check first: ring the sender, or ask IT on a number I already hold." }
+          },
+          "teamBadge": "Risky shortcuts stopped for the team: {n}",
+          "teamBadgeTitle": "Found sticks and unsafe shortcuts you reported or checked this round rather than acting on them",
+          "phishCaughtLabel": "Caught in time",
+          "scoreLine": "Right call is most of the score; naming what's wrong is the rest."
+        },
         "channelTells": [
           "found_media",
           "unapproved_tool",
@@ -161,7 +173,9 @@
                 "unapproved_tool": "A free transfer site has no contract with Tarrowby, no control over who downloads the link, and no off switch: old links stay live for good. Share big files from the file-sharing service instead, to a named person, with an end date."
               },
               "ifTrusted": "The pack would sit on a service nobody at Tarrowby has checked, behind a link anyone could pass on.",
-              "reportReply": "Thanks. For big files there's an approved way: a file-sharing link to named people that expires. The service desk sets it up in a couple of minutes."
+              "reportReply": "Thanks. For big files there's an approved way: a file-sharing link to named people that expires. The service desk sets it up in a couple of minutes.",
+              "kindLine": "This was an unapproved free site, not the approved way to send a big file.",
+              "missLabel": "sending a file through an unapproved site"
             }
           },
           {
@@ -195,7 +209,9 @@
                 "found_media": "A giveaway stick from a stand is still a stick you didn't buy and can't vouch for. A real supplier is happy to email a catalogue or send a link; the stick goes to IT."
               },
               "ifTrusted": "A stick handed out to a crowd is an easy way to get malware onto a firm's machines, whoever printed the logo on it.",
-              "reportReply": "Thanks. We'll pass the stick to IT. Kindness and curiosity are why people plug these in, so the kind move is to hand it in rather than plug it in."
+              "reportReply": "Thanks. We'll pass the stick to IT. Kindness and curiosity are why people plug these in, so the kind move is to hand it in rather than plug it in.",
+              "kindLine": "A giveaway stick from a stand is still a found stick; it goes to IT, unplugged.",
+              "missLabel": "plugging in a giveaway stick"
             }
           },
           {
@@ -236,7 +252,9 @@
                 "unapproved_tool": "'Everyone uses it' is how an unapproved tool spreads. A one-click install can carry malware, and a free online editor hands whatever you upload to a provider nobody has checked. There's an approved tool; the service desk will point you to it."
               },
               "ifTrusted": "Either the install puts something on your machine, or the file you upload lands with a provider Tarrowby has no agreement with.",
-              "reportReply": "Thanks. There's an approved PDF tool already, so there's no need for this one. Report or delete it, and ask the service desk if you're not sure which tool to use."
+              "reportReply": "Thanks. There's an approved PDF tool already, so there's no need for this one. Report or delete it, and ask the service desk if you're not sure which tool to use.",
+              "kindLine": "'Everyone uses it' is how an unapproved tool spreads; there's an approved one.",
+              "missLabel": "installing an unapproved tool"
             }
           },
           {
@@ -294,9 +312,9 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "You asked IT for a tool and they've answered from Nilesh's real address with the approved one. Asking first is exactly what turns a workaround into a quick yes. Handle it."
+                "default": "You asked IT for a tool and they've answered from Nilesh's real address with the approved one. Asking first is exactly what turns a workaround into a quick yes. This one was safe to act on."
               },
-              "falseAlarmCost": "Reported as a scam, the one quick yes from IT you did get sits in a queue while someone checks a genuine reply."
+              "falseAlarmCost": "Reported as a scam, a genuine reply from IT sits in a queue while someone checks it."
             }
           }
         ]
@@ -404,12 +422,13 @@
         "mode": "montage"
       },
       "strings": {
-        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack is due at a client by Monday and the file share has slowed to a crawl. First you make the calls anyone would under a deadline; then you see, six months on, where each shortcut led. Then you sort a short set of found sticks and shortcut messages, and match each shortcut to the approved way. Only the sort is scored.",
+        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack is due at a client by Monday and the file share has slowed to a crawl. First you make the calls anyone would under a deadline; then you see, six months on, where each shortcut led. Then you sort a short set of found sticks and shortcut messages, and match each shortcut to the approved way. Only the inbox is scored.",
         "flipHeading": "Six months later",
         "noBlameLine": "Shortcuts are well meant, usually taken under a deadline. Being caught by one is no fault of yours; Colin was right that the share was slow. The move is to tell IT so the data gets somewhere safe.",
-        "mondayCard": "On Monday: pick the shortcut you reach for most, and learn the approved swap for it. A found or posted stick goes to IT unplugged. Work stays in work places, not your personal email, personal cloud or a free online service. If the official way is slow, tell IT rather than build your own way round, and report what you're unsure about using the route in the box below. If personal data went to a personal account, that route brings in the DPO.",
+        "mondayCard": "On Monday: pick the shortcut you reach for most, and learn the approved swap for it. A found or posted stick goes to IT unplugged. Work stays in work places, not your personal email, personal cloud or a free online service. If the official way is slow, tell IT rather than build your own way round, and report what you're unsure about using the route in the box below. If personal data went to a personal account, the data protection officer needs to know too.",
         "defendIntro": "Now go through the found sticks and 'quicker way' messages and decide what to do with each. A found or posted stick goes to IT unplugged; if the official way is slow, ask IT rather than build a way round it. There's no clock on you here.",
         "defendOnly": "Every shortcut here is the kind a busy person takes with good intentions, and every one has a quiet cost. The ones you were caught out by are shown below, with the approved way.",
+        "teamLine": "By reporting or checking {n} of these rather than acting on them, you kept a found stick or a risky shortcut away from the rest of your team.",
         "conceptPanel": {
           "heading": "About that stick",
           "text": "The stick that came in the post was ours: an authorised test, and it only tells us a stick was plugged in. We name nobody. Most people who plug a found stick in are being kind, trying to find the owner, or just curious, so the kind move is to hand it to IT."
@@ -417,19 +436,19 @@
         "flipMontageByChoice": {
           "personal_email": {
             "send_personal": "Months on, the personal inbox was broken into with a reused password; the pack sat in its sent items, and the client got a convincing fake invoice built from it.",
-            "ask_nilesh": "The version where the pack went to a personal inbox instead: it was broken into with a reused password and the pack was copied. Remote access left nothing outside the firm to find."
+            "ask_nilesh": "Through remote access the pack never left the firm, so there was nothing outside to find. The version where it went to a personal inbox instead was broken into with a reused password and copied."
           },
           "free_transfer": {
             "use_free_site": "The free transfer site was breached; old public links, including a video with people in the background, turned up in search results.",
-            "use_fileshare": "The version where a free site was used: its old links were still live when it was breached. The firm's link expired after seven days, so there was nothing to find."
+            "use_fileshare": "The firm's link expired after seven days, so there was nothing to find. The version where a free site was used had old links still live when it was breached."
           },
           "posted_stick": {
             "plug_in": "The same stick reached four other firms; one plugged it in and was down for nine days.",
-            "to_it": "The version where the stick was plugged in: it carried malware and took a firm offline for nine days. The client confirmed they had posted nothing; IT checked the stick safely."
+            "to_it": "IT checked the stick safely, and the client confirmed they had posted nothing. The version where it was plugged in carried malware and took a firm offline for nine days."
           },
           "rota_app": {
             "use_app": "The rota stayed editable by the departed temp, then vanished when the free app closed the unused account, the week before a busy run.",
-            "ask_it": "The version where the rota stayed in the free app: the departed temp could still edit it, and it was lost when the account was closed. IT moved it to the team space in minutes."
+            "ask_it": "IT moved the rota to the team space in minutes. The version where it stayed in the free app could still be edited by the departed temp, and was lost when the account was closed."
           }
         }
       },

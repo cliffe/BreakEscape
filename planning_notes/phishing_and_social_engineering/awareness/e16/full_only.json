@@ -98,11 +98,15 @@
       { "id": "cc_samira", "label": "Samira is in on it with Ross" },
       { "id": "cc_craig", "label": "Craig reckons Samira's involved" }
     ],
-    "guidance": "Who to tell: the security team for an outside offer, a sign-in prompt you didn't start, or data or access being misused; your manager for a colleague's conduct or if you're worried about their wellbeing; HR for a colleague's wellbeing, or if you feel pressured or threatened yourself; the Speak Up line if you'd rather raise it anonymously or your manager is part of it; the DPO if it involves personal data. Posting it in the team chat counts as spreading it, not raising it.",
+    "guidance": "Who to tell: the security team for an outside offer, a sign-in prompt you didn't start, or data or access being misused; your manager or HR if you're worried about a colleague's wellbeing. If it involves personal data, tell the data protection officer. Posting it in the team chat is spreading it, not raising it.",
     "strings": {
       "title": "Raise a concern",
-      "intro": "Write it as facts you saw yourself, not a verdict on anyone. Pick what to put in the report, then choose who to send it to.",
-      "feedbackFacts": "Good. Facts, routed to the right person, are what a fair concern looks like. You don't have to be sure, and you may not hear the outcome, because that is confidential too.",
+      "_launch": "F-E16-4 (E15_E16_PLAYTEST_P1): the form runs before the inbox in BOTH variants (concern-form-minigame.js). In the full shell the learner has just played the week's choices; in the defend-only shell it is the first thing they see, so the engine default launch text ('build a short report from what you noticed') lands cold. launchText sets the week in two lines so the fact chips make sense in either run (episode-model.js CONCERN_LAUNCH override).",
+      "launchHeading": "Raise a concern",
+      "launchText": "This week an unknown contact offered you money for access, and a colleague has seemed to be having a hard week. Build a short report of what you actually saw, as facts, not a verdict on anyone.",
+      "launchButton": "Open the form",
+      "intro": "Write it as facts you saw yourself, not a verdict on anyone. Pick the facts to put in the report.",
+      "feedbackFacts": "Good. Facts, not a verdict, are what a fair concern looks like. The note below says who to tell. You don't have to be sure, and you may not hear the outcome, because that's confidential too.",
       "feedbackFactsVerdict": "Your facts are exactly what's needed. Just leave the conclusion out, and let whoever looks into it reach their own. That's fairer to everyone, and you don't have to be sure to raise a fair concern.",
       "feedbackVerdictOnly": "That's a conclusion, not something you saw. Leave the verdict to the people whose job and lawful process it is; give them what you actually noticed instead. If you're wrong, a verdict is unfair to someone who has done nothing.",
       "feedbackThinVerdict": "Those facts are a good start. Add a couple more of the things you saw yourself, and leave the conclusion out for whoever looks into it."

@@ -51,19 +51,19 @@
     "flipMontageByChoice": {
       "personal_email": {
         "send_personal": "Months on, the personal inbox was broken into with a reused password; the pack sat in its sent items, and the client got a convincing fake invoice built from it.",
-        "ask_nilesh": "The version where the pack went to a personal inbox instead: it was broken into with a reused password and the pack was copied. Remote access left nothing outside the firm to find."
+        "ask_nilesh": "Through remote access the pack never left the firm, so there was nothing outside to find. The version where it went to a personal inbox instead was broken into with a reused password and copied."
       },
       "free_transfer": {
         "use_free_site": "The free transfer site was breached; old public links, including a video with people in the background, turned up in search results.",
-        "use_fileshare": "The version where a free site was used: its old links were still live when it was breached. The firm's link expired after seven days, so there was nothing to find."
+        "use_fileshare": "The firm's link expired after seven days, so there was nothing to find. The version where a free site was used had old links still live when it was breached."
       },
       "posted_stick": {
         "plug_in": "The same stick reached four other firms; one plugged it in and was down for nine days.",
-        "to_it": "The version where the stick was plugged in: it carried malware and took a firm offline for nine days. The client confirmed they had posted nothing; IT checked the stick safely."
+        "to_it": "IT checked the stick safely, and the client confirmed they had posted nothing. The version where it was plugged in carried malware and took a firm offline for nine days."
       },
       "rota_app": {
         "use_app": "The rota stayed editable by the departed temp, then vanished when the free app closed the unused account, the week before a busy run.",
-        "ask_it": "The version where the rota stayed in the free app: the departed temp could still edit it, and it was lost when the account was closed. IT moved it to the team space in minutes."
+        "ask_it": "IT moved the rota to the team space in minutes. The version where it stayed in the free app could still be edited by the departed temp, and was lost when the account was closed."
       }
     }
   }
