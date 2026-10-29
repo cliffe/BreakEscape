@@ -90,7 +90,7 @@
             "url": "https://orders.fernside.example/login",
             "padlock": true,
             "heading": "Order portal sign-in",
-            "fields": ["I am not a robot"],
+            "fields": [{ "label": "I am not a robot", "type": "tick" }],
             "button": "Continue"
           },
           "truth": {
