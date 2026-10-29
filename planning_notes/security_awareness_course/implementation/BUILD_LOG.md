@@ -24,3 +24,7 @@ Started 2026-10-29. Orchestrator: Opus 5.5. Plan: `00_README.md` (work order §4
 Decisions:
 - Four engine agents in parallel rather than serially: the packets are opt-in on separate keys, so conflicts are limited to shared lists (`STAGE_IDS`, schema, validator); the orchestrator resolves them at merge.
 - `data_conduct` waits on P5b (Carrholme room); it starts with E11.
+
+### eng-b stopped (2026-10-29)
+
+A safety classifier stopped eng-b (ENG-03a/03b) while it was still reading code: "Your response above was stopped by a safety classifier — this is not a tool or API error. The rest of it was withheld, and tool calls in it that had not finished did not run. Do not produce that content again, even reworded." No code written; worktree branch `worktree-agent-ae74dcc1fb6ce7fc5` clean. Per AGENTS.md, a retry of the same prompt on `sonnet-cvp` or Haiku goes to the user. Its code-reading notes, kept for the retry: verdict relabel already exists via `set.labels.verdict.*` (add `verdictLabels` as shorthand); pages without `url` need handling in `page()`, `defaultWho` and `triage.rb`; the fakeCheck mode also needs a builder-minigame branch (rows, `_sig`/`_pick7`, inspect step, `closeResult`/`linkInfoFor`, an `attach()` host-id equivalent), not only model, renderer and flip.
