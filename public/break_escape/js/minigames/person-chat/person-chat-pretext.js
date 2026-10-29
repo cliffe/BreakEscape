@@ -499,12 +499,18 @@ export function renderDebrief(container, { session, spec, onDone } = {}) {
 
     const done = document.createElement('button');
     done.type = 'button';
-    done.className = 'pretext-debrief-done';
+    done.className = 'pretext-debrief-done minigame-button';
     done.textContent = 'Done';
-    done.addEventListener('click', () => { panel.remove(); if (typeof onDone === 'function') onDone(); });
+    // The debrief is a centred modal over a full backdrop (batch-5 F-E12-3): the backdrop covers
+    // the open chat so nothing of the debrief runs behind End Conversation and the stale live bar
+    // is not read beside the final outcome. The backdrop, not the panel, is removed on Done.
+    const backdrop = document.createElement('div');
+    backdrop.className = 'pretext-debrief-backdrop';
+    done.addEventListener('click', () => { backdrop.remove(); if (typeof onDone === 'function') onDone(); });
     panel.appendChild(done);
 
-    container.appendChild(panel);
+    backdrop.appendChild(panel);
+    container.appendChild(backdrop);
     try { done.focus(); } catch (e) { /* headless */ }
     return panel;
 }
