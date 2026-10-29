@@ -51,11 +51,12 @@ const EPISODES = [
   { n: 8, dir: 'awareness_e8_after_the_click' },
   { n: 9, dir: 'awareness_e9_passwords' },
   { n: 11, dir: 'awareness_e11_misdirected_data' },
+  { n: 14, dir: 'awareness_e14_social_media' },
   { n: 15, dir: 'awareness_e15_shadow_it' },
   { n: 16, dir: 'awareness_e16_insider_risk' },
   { n: 19, dir: 'awareness_e19_malware_and_updates' },
-];
   { n: 20, dir: 'awareness_e20_remote_and_mobile_working' },
+];
 
 // strings keys whose VALUE is allowed to differ between fragment and erb.
 //   - conceptPanel (E3, P6 m-4): the full episode's learner just ran the attack ("Why the call and

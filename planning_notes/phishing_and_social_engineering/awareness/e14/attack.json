@@ -59,20 +59,22 @@
     "df_from": { "part": "from", "text": "{account_name} <{account_address}>", "slots": [] },
     "df_greet": { "part": "greeting", "text": "Yasmin,", "slots": [] },
     "df_pretext_access_now": { "part": "pretext",
-      "text": "I'm off all {when} and never got my access to {system} set up before I left. Thandiwe said it was fine. Can you sort it today so I'm not stuck when I'm back? Easiest if you just confirm it here.",
+      "text": "I'm off all {when} and never got my access to {system} set up before I left. Thandiwe said it was fine. Can you sort it today so I'm not stuck when I'm back?",
       "slots": [ { "id": "when", "type": "date" }, { "id": "system", "type": "reference" } ],
       "urgency": "high" },
     "df_pretext_access_calm": { "part": "pretext",
-      "text": "I'm away {when}. When you get a chance, could you set up my access to {system} for when I'm back? No rush.",
+      "text": "I'm away {when}. When you get a chance, could you set up my access to {system} for when I'm back?",
       "slots": [ { "id": "when", "type": "date" }, { "id": "system", "type": "reference" } ],
       "urgency": "low" },
     "df_pretext_catchup": { "part": "pretext",
-      "text": "How's the studio while I'm away {when}?",
-      "slots": [ { "id": "when", "type": "date" } ],
-      "urgency": "low" }
+      "text": "How's the studio while I'm away?",
+      "slots": [],
+      "urgency": "low" },
+    "df_ask_confirm": { "part": "ask", "text": "Easiest if you just confirm it here.", "slots": [], "urgency": "low" },
+    "df_ask_calm": { "part": "ask", "text": "No rush, just let me know once it's sorted.", "slots": [], "urgency": "low" }
   },
 
-  "_templates_note": "The brief's section 9 wording for the two access pretexts said 'get {system} access sorted' and 'sort my {system} access'; with the fact label 'the new finance system' the second read 'sort my the new finance system access' (a double determiner, the exact class of bug the E8 pilot flagged). Reworded to 'access to {system}', which reads correctly with the label: 'set up my access to the new finance system'. Template ids are kept, because flipDefenderLineByChoice is keyed on them. The ask part is folded into the pretext wording (as the brief wrote it), so the target offers no separate `ask` template set.",
+  "_templates_note": "The brief's section 9 wording for the two access pretexts said 'get {system} access sorted' and 'sort my {system} access'; with the fact label 'the new finance system' the second read 'sort my the new finance system access' (a double determiner, the exact class of bug the E8 pilot flagged). Reworded to 'access to {system}', which reads correctly with the label: 'set up my access to the new finance system'. Template ids are kept, because flipDefenderLineByChoice is keyed on them. The ask part (the engine always appends one; mail-composer defaults it) is a short confirming tail, as E4's ms_ask_confirm/ms_ask_calm are: the request itself stays in the pretext, so judgePretext (which reads only the pretext's slots and implies, not the ask) is unchanged. The trailing nudge that each access pretext used to carry ('Easiest if you just confirm it here.' / 'No rush.') is now the ask, so pretext+ask recombines to the original wording and no sentence is duplicated. df_pretext_catchup is slot-free: with no distinctive value it cannot satisfy pretextRelevant, so it is the required plausible-but-wrong decoy (04 N10 'Closed and open targets'); it still reads as a friendly catch-up that asks for nothing in the body, and the appended ask is the bite.",
 
   "mailClient": {
     "accounts": [
@@ -146,7 +148,7 @@
         "from": ["df_from"],
         "greeting": ["df_greet"],
         "pretext": ["df_pretext_access_now", "df_pretext_access_calm", "df_pretext_catchup"],
-        "ask": []
+        "ask": ["df_ask_confirm", "df_ask_calm"]
       },
       "primedFor": {
         "distinctiveValues": ["ms_finance_system", "next_week"],

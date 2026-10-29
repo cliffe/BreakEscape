@@ -35,13 +35,15 @@ const FULL_EPISODES = [
   'awareness_e8_after_the_click',
   'awareness_e9_passwords',
   'awareness_e11_misdirected_data',
+  'awareness_e14_social_media',
   'awareness_e15_shadow_it',
   'awareness_e16_insider_risk',
   'awareness_e19_malware_and_updates',
-];
   'awareness_e20_remote_and_mobile_working',
+];
 // One line per check role; each is four shells (pre and post, each in ab and ba order).
 const CHECK_ROLES = [
+  'data_conduct',
   'executive',
   'finance',
   'general',
@@ -53,6 +55,7 @@ const CHECK_ROLES = [
 // Single shells that are neither a full episode nor a check role (no defend twin, no pre/post pair),
 // such as the core_17 annual edition. One line per shell, the folder name as it is.
 const STANDALONE_SHELLS = [
+  'awareness_core_00_first_play',
   'awareness_core_17_annual_2027_defend',
   // E17 is defend-only: one shell, no full twin, listed in both courses.
   'awareness_e17_acceptable_use_defend',

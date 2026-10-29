@@ -201,26 +201,48 @@ VAR hub_quiet = false
 # Hosts: built cast from BRAND_SET.md. Sprite keys are existing placeholders (no image generation)
 # until the PixelLab reset.
 HOSTS = {
+    'gwen': {
+        'id': 'gwen_pritchard', 'displayName': 'Gwen Pritchard', 'sprite': 'female_telecom',
+        'about': "Brightwell Foods' IT service desk lead, late 30s, Welsh (BRAND_SET.md, Brightwell cast). She runs the announced assistant demo and receives the reports. Placeholder sprite until the PixelLab reset.",
+    },
     'anjali': {
         'id': 'anjali_rao', 'displayName': 'Anjali Rao', 'sprite': 'female_scientist',
         'about': "Quayholt's information security analyst, 30s, Indian, moved from Bengaluru; she receives the reports (BRAND_SET.md). Placeholder sprite until the PixelLab reset.",
+    },
+    'lorna': {
+        'id': 'lorna_easton', 'displayName': 'Lorna Easton', 'sprite': 'female_office_worker',
+        'about': "Merrin & Sallow's reception and facilities lead, 40s, white, north-west England (BRAND_SET.md, E12 additions). The studio kiosk host: she welcomes the learner and receives the reports. Reuses a built sprite (no influence bust needed). Placeholder sprite until the PixelLab reset.",
     },
     'nilesh': {
         'id': 'nilesh_solanki', 'displayName': 'Nilesh Solanki', 'sprite': 'male_telecom',
         'about': "Tarrowby's IT service desk analyst, 30s, Gujarati-British, grew up in Leicester (BRAND_SET.md, E6 additions). The natural 'ask first' voice for acceptable use. Placeholder sprite until the PixelLab reset.",
     },
+    'zainab': {
+        'id': 'zainab_hussain', 'displayName': 'Zainab Hussain', 'sprite': 'female_blowse',
+        'about': "Tarrowby's field service engineer, 30s, British Bangladeshi, wears a hijab; eight years working from vans, cafés and trains (BRAND_SET.md, E20 additions). The on-the-road explainer; welcomes the learner, carries the feedback and debrief, and voices Tarrowby's controls. Placeholder sprite female_blowse until the PixelLab reset.",
+    },
     'tomasz': {
         'id': 'tomasz_wisniewski', 'displayName': 'Tomasz Wiśniewski', 'sprite': 'male_office_worker',
         'about': "Carrholme Services' data protection officer, 50s, Polish, in the UK 25 years (BRAND_SET.md, Carrholme section). Precise, kind, dry; he receives the reports. Placeholder sprite until the PixelLab reset.",
+    },
+    # E14: copied verbatim from gen_e2_e4_shells.py HOSTS['julian'] (built E4 cast; no new host art).
+    'julian': {
+        'id': 'julian_sallow', 'displayName': 'Julian Sallow', 'sprite': 'male_office_worker',
+        'about': "Merrin & Sallow's co-founding partner, 60s, Black British of Jamaican heritage (e4/defend.json _brandAdditions). Hosts the E4 BA check pair, and here welcomes the learner and receives the reports. Placeholder sprite until the PixelLab reset.",
     },
 }
 
 # Host lines: (before, after, choice, reply). One welcome line; the kiosk does the rest.
 LINES = {
-    'zainab': {
-        'id': 'zainab_hussain', 'displayName': 'Zainab Hussain', 'sprite': 'female_blowse',
-        'about': "Tarrowby's field service engineer, 30s, British Bangladeshi, wears a hijab; eight years working from vans, cafés and trains (BRAND_SET.md, E20 additions). The on-the-road explainer; welcomes the learner, carries the feedback and debrief, and voices Tarrowby's controls. Placeholder sprite female_blowse until the PixelLab reset.",
-    },
+    # E13: the brief's drafted lines ran over the 30-word dialoguelint cap, so they are trimmed here.
+    ('e13', 'defend'): (
+        "Brightwell's switched on its assistant, and the kiosk has the inbox beside it: a supplier email, a voicemail and a video call. Some are real, some aren't.",
+        "That's them all handled, thanks. Whoever the voice or the face belongs to, checking another way on a number you already hold is the move that always works.",
+        'Thanks, Gwen.', 'Any time.'),
+    ('e12', 'defend'): (
+        "You're on reception this morning. Visitors come one at a time: some are on the list, some aren't, and one or two will try it on. Take each as it comes, sign people in and escort them, and check or report anyone who pushes past a check.",
+        "That's the desk cleared, thanks. The move that works for every pushy visitor is the same: check the list, escort them, and report anyone who won't be checked.",
+        'Thanks, Lorna.', 'Any time.'),
     ('e8', 'defend'): (
         "You're covering a colleague's inbox. They clicked a convincing email, so someone else is using their account. Some signs are real, some are ordinary. Report anything that doesn't sit right.",
         "That's the inbox sorted, thanks. The one move that works for every real sign is the same: report it and let the team act.",
@@ -243,6 +265,11 @@ LINES = {
         "Nilesh, service desk. Found sticks, 'quicker way' messages, then a board to match each shortcut to its approved swap. Ask us first, we'd rather help than clean up.",
         "That's the lot sorted, thanks. If the official way's ever slow, tell us and we'll fix it, we can't mend what we don't know about.",
         'Thanks, Nilesh.', 'Any time.'),
+    # E20: the brief's drafted lines ran over the 30-word cap, so they are trimmed here.
+    ('e20', 'defend'): (
+        "The kiosk has the networks and pages you meet on the road. Connect, report, or ask the venue first. A page wanting your work password is a trap. Nothing's real.",
+        "That's them sorted, thanks. On the venue's network with the VPN, ordinary work is fine. A Wi-Fi page wanting your work password is a fake; if unsure, use your hotspot.",
+        'Thanks, Zainab.', 'Any time.'),
     ('e9', 'defend'): (
         "Your own account now: prompts coming in, and a few password choices. Deny anything you didn't start, and pick the stronger option each time. Nothing you type here is real.",
         "That's it locked down, thanks. A different password for every account, kept in a manager, and deny what you didn't start: that's the whole of it.",
@@ -251,9 +278,63 @@ LINES = {
         "Anjali Rao, information security. It's a leaver's week. You're not here to catch anyone: keep your login yours, tell me what you're offered, and bring me facts, not a theory.",
         "That's them sorted, thanks. Your login is you, offers get reported, and a concern goes to the right person as facts, never a verdict on anyone.",
         'Thanks, Anjali.', 'Any time.'),
+    # E14: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
+    ('e14', 'defend'): (
+        "You're on an authorised exercise. A feed and an inbox: some posts give too much away, some messages fish for how we work. Take each as it comes.",
+        "That's the feed and the inbox done, thanks. The tell is always what they ask for, not how friendly they are: share nothing about our systems, and report it.",
+        'Thanks, Julian.', 'Any time.'),
 }
 
 EPISODES = {
+    'e12': {
+        'frag': f'{AW}/e12/defend.json',
+        'full_id': 'e12_visitor_tailgater',
+        'role_word': 'general',
+        'role_label': 'all staff',
+        'defend_set': 'e12_reception_desk',
+        'defend_host': 'lorna',
+        'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+                   'keywords': ['Physical security', 'Social engineering', 'Security awareness', 'Tailgating']}],
+        'defend': {
+            'name': 'Visitor and tailgater: the reception desk',
+            'brief': "You're on an authorised exercise at Merrin & Sallow Architects, a fictional architecture practice. You're covering the reception desk, and visitors arrive one at a time: some are expected, some are not, and one or two are trying to talk their way in. Handle each one, and check or report anyone who pushes past a check. Checking or reporting when you're unsure is always fine and never marked down.",
+            'endGoal': 'Work the reception desk at the training kiosk.',
+            'aim': ('reception_desk_aim', 'Cover the reception desk', 'Work through the visitors at the reception desk at the training kiosk.'),
+            'task': ('work_reception_desk', 'Work through the reception desk'),
+            'kiosk': ("A touch-screen kiosk showing the Merrin & Sallow reception desk: a handful of visitors to handle.",
+                      "A touch-screen kiosk showing the Merrin & Sallow reception desk. The visitors are all handled."),
+            'display': 'Awareness E12: Visitor and tailgater (defend only)',
+            'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Cover the reception desk at Merrin & Sallow Architects, a fictional architecture practice: some visitors are expected, some are not, and one or two are trying to talk their way in. Each answer is explained, and checking or reporting when you're unsure is always fine and never marked down.",
+            'minutes': 8,
+            'defendIntro': "Work through the visitors at the reception desk and decide what to do with each one. A genuine visitor never minds being signed in and escorted; the one who pushes to skip a check is the one to report. There's no clock on you here.",
+            'conclusion': ('Reception desk handled', "You've handled the visitors at the reception desk and finished this episode."),
+        },
+    },
+    'e13': {
+        'frag': f'{AW}/e13/defend.json',
+        'full_id': 'e13_ai_assistant',
+        'role_word': 'general',
+        'role_label': 'all staff',
+        'defend_set': 'e13_assistant_inbox',
+        'defend_host': 'gwen',
+        # No 'forms'/'check_hosts': E13 feeds general_v2, built by 10's own generator, not this one.
+        'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+                   'keywords': ['Deepfakes', 'Prompt injection', 'AI assistants', 'Security awareness']}],
+        'defend': {
+            'name': 'The AI assistant: what comes at you',
+            'brief': "You're on an authorised exercise at Brightwell Foods, a fictional company, which has switched on its own approved assistant. Messages are waiting: a supplier email, a voicemail and a video call. Some are real and some were built to look right, a voice you know, a face you trust. Decide what to do with each, and check another way when a message pushes you to move money, send data or sign in. Reporting or checking when you're unsure is always fine and never marked down.",
+            'endGoal': 'Handle the supplier email, the voicemail and the video call at the training kiosk.',
+            'aim': ('assistant_inbox_aim', 'Handle what comes at you', 'Go through the supplier email, the voicemail and the video call at the training kiosk.'),
+            'task': ('handle_assistant_inbox', 'Handle the messages'),
+            'kiosk': ("A touch-screen kiosk showing Brightwell's inbox beside the approved assistant: a supplier email, a voicemail and a video call to handle.",
+                      "A touch-screen kiosk showing Brightwell's inbox beside the approved assistant. The messages are all handled."),
+            'display': 'Awareness E13: The AI assistant (defend only)',
+            'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Handle a supplier email, a voicemail and a video call at Brightwell Foods, a fictional company, beside its approved assistant: some are real and some were built to look right. Each answer is explained, and checking another way when you're unsure is always fine and never marked down.",
+            'minutes': 8,
+            'defendIntro': "Go through the messages and decide what to do with each one. You can't reliably spot a fake voice or face, so when a message asks for money, data or a sign-in, check another way, on a number or channel you already hold. Work through them at your own pace.",
+            'conclusion': ('Messages handled', "You've handled the supplier email, the voicemail and the video call and finished this episode."),
+        },
+    },
     'e8': {
         'frag': f'{AW}/e8/defend.json',
         'full_id': 'e8_after_the_click',
@@ -265,11 +346,6 @@ EPISODES = {
             'name': 'After the click: the signs that follow',
             'brief': "You're on an authorised exercise at Quayholt Insurance, a fictional company. A colleague clicked a convincing email and signed in, and now their account is being used. You're covering their inbox. Some of what turns up is a real sign that something is wrong, and some is ordinary. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down.",
             'endGoal': "Sort the signs in the colleague's inbox at the training kiosk.",
-    # E20: the brief's drafted lines ran over the 30-word cap, so they are trimmed here.
-    ('e20', 'defend'): (
-        "The kiosk has the networks and pages you meet on the road. Connect, report, or ask the venue first. A page wanting your work password is a trap. Nothing's real.",
-        "That's them sorted, thanks. On the venue's network with the VPN, ordinary work is fine. A Wi-Fi page wanting your work password is a fake; if unsure, use your hotspot.",
-        'Thanks, Zainab.', 'Any time.'),
             'aim': ('used_account_aim', 'Sort the signs that follow', "Work through the signs in the colleague's inbox at the training kiosk."),
             'task': ('sort_the_signs', 'Sort the signs that follow'),
             'kiosk': ("A touch-screen kiosk showing the colleague's Quayholt inbox after a click: a handful of signs to sort.",
@@ -325,6 +401,28 @@ EPISODES = {
             'conclusion': ('Desk inbox sorted', "You've sorted the desk inbox and finished this episode."),
         },
     },
+    'e20': {
+        'frag': f'{AW}/e20/defend.json',
+        'full_id': 'e20_remote_and_mobile_working',
+        'defend_set': 'e20_on_the_road_inbox',
+        'defend_host': 'zainab',
+        'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+                   'keywords': ['Remote working', 'Mobile devices', 'Public Wi-Fi', 'Shoulder surfing', 'Security awareness']}],
+        'defend': {
+            'name': 'On the road: tell the safe networks and pages from the fakes',
+            'brief': "You're on an authorised exercise at Tarrowby Logistics, a fictional company. You're working away from the depot and the public networks and sign-in pages keep coming up: the café's Wi-Fi and a look-alike, a page that wants your work password, a notice about a lost device. Some are safe and some are built to catch you. Handle each one, and never type your work password into a Wi-Fi page. No real network is joined and no real password is typed here.",
+            'endGoal': 'Sort the networks and pages at the training kiosk.',
+            'aim': ('tell_them_apart_aim', 'Tell the safe networks and pages from the fakes', 'Work through the public networks and sign-in pages at the training kiosk.'),
+            'task': ('tell_them_apart', 'Sort the networks and pages'),
+            'kiosk': ("A touch-screen kiosk showing the public networks and sign-in pages you meet on the road: some safe, some look-alikes to catch you.",
+                      "A touch-screen kiosk showing the public networks and sign-in pages. They are all sorted."),
+            'display': 'Awareness E20: Remote and mobile working (defend only)',
+            'desc': "An awareness episode of about 8 minutes for staff who work away from the office, on the sorting side only. Working away from Tarrowby Logistics, a fictional haulier: the café's real Wi-Fi and a look-alike, a page that wants your work password, a genuine lost-device notice and a fake one. Each answer is explained, and reporting when you're unsure is always fine and never marked down. No real network is joined and no real password is typed.",
+            'minutes': 8,
+            'defendIntro': "Go through the public networks and sign-in pages and decide what to do with each one. On the venue's own network, with the VPN, ordinary work is fine; a page that wants your work password, or a network named to look like the venue's, is the trap. Ask the venue for the network's name if you're unsure, and there's no clock on you here.",
+            'conclusion': ('Networks and pages sorted', "You've sorted the safe networks and pages from the look-alikes and finished this episode."),
+        },
+    },
     'e11': {
         'frag': f'{AW}/e11/defend.json',
         'full_id': 'e11_misdirected_data',
@@ -377,28 +475,6 @@ EPISODES = {
         'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
                    'keywords': ['Passwords', 'Passphrases', 'Multi-factor authentication', 'Security awareness', 'Usable security']}],
         'defend': {
-    'e20': {
-        'frag': f'{AW}/e20/defend.json',
-        'full_id': 'e20_remote_and_mobile_working',
-        'defend_set': 'e20_on_the_road_inbox',
-        'defend_host': 'zainab',
-        'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
-                   'keywords': ['Remote working', 'Mobile devices', 'Public Wi-Fi', 'Shoulder surfing', 'Security awareness']}],
-        'defend': {
-            'name': 'On the road: tell the safe networks and pages from the fakes',
-            'brief': "You're on an authorised exercise at Tarrowby Logistics, a fictional company. You're working away from the depot and the public networks and sign-in pages keep coming up: the café's Wi-Fi and a look-alike, a page that wants your work password, a notice about a lost device. Some are safe and some are built to catch you. Handle each one, and never type your work password into a Wi-Fi page. No real network is joined and no real password is typed here.",
-            'endGoal': 'Sort the networks and pages at the training kiosk.',
-            'aim': ('tell_them_apart_aim', 'Tell the safe networks and pages from the fakes', 'Work through the public networks and sign-in pages at the training kiosk.'),
-            'task': ('tell_them_apart', 'Sort the networks and pages'),
-            'kiosk': ("A touch-screen kiosk showing the public networks and sign-in pages you meet on the road: some safe, some look-alikes to catch you.",
-                      "A touch-screen kiosk showing the public networks and sign-in pages. They are all sorted."),
-            'display': 'Awareness E20: Remote and mobile working (defend only)',
-            'desc': "An awareness episode of about 8 minutes for staff who work away from the office, on the sorting side only. Working away from Tarrowby Logistics, a fictional haulier: the café's real Wi-Fi and a look-alike, a page that wants your work password, a genuine lost-device notice and a fake one. Each answer is explained, and reporting when you're unsure is always fine and never marked down. No real network is joined and no real password is typed.",
-            'minutes': 8,
-            'defendIntro': "Go through the public networks and sign-in pages and decide what to do with each one. On the venue's own network, with the VPN, ordinary work is fine; a page that wants your work password, or a network named to look like the venue's, is the trap. Ask the venue for the network's name if you're unsure, and there's no clock on you here.",
-            'conclusion': ('Networks and pages sorted', "You've sorted the safe networks and pages from the look-alikes and finished this episode."),
-        },
-    },
             'name': 'Passwords and sign-in: lock the account down',
             'brief': "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down: handle the prompts, choose stronger passwords, and don't hand anything to a message dressed up as IT. No real password is ever typed here.",
             'endGoal': 'Lock the account down at the training kiosk.',
@@ -433,6 +509,57 @@ EPISODES = {
             'minutes': 8,
             'defendIntro': "Go through the messages and decide what to do with each one, then raise a concern as facts, not a verdict on anyone. Keep your login to yourself, report what gets offered to you, and deny any sign-in prompt you didn't start. There's no clock on you here, and you are not being asked to investigate anyone.",
             'conclusion': ('Leaver week handled', "You've sorted the messages and raised a concern fairly, and finished this episode."),
+        },
+    },
+    'e14': {
+        'frag': f'{AW}/e14/defend.json',
+        'full_id': 'e14_social_media',
+        'defend_set': 'e14_social_dms',
+        'defend_host': 'julian',
+        # E14: the sortDrill (Post or Not?) and privacyPanel come from e14/full_only.json via
+        # defend_half_keys, so the defend-only shell carries both (section 13). The privacyPanel's
+        # closesFacts name se_intel_df_* facts; a defend-only shell has no attack/OSINT, so
+        # social.intelFacts would be absent and awareness.rb privacy_panel_checks would reject every
+        # closesFacts id as undeclared. Smallest fix: carry the five facts (text + reduceNote only,
+        # the two keys privacy-model.js reads) here and inject them into the defend-only social below;
+        # no provides/subject/source, so board.rb needs nothing more and nothing else references them.
+        'defend_intel_facts': {
+            'df_profile': {
+                'text': "Dani Fenwick is a junior architect at Merrin & Sallow, on the studio team, and his manager is the studio manager, Thandiwe Moyo.",
+                'reduceNote': "Lock your profile down: an attacker reads your employer, team and manager straight off a public profile.",
+            },
+            'df_system': {
+                'text': "A job advert Dani reposted names the practice's new finance system by name.",
+                'reduceNote': "Don't name internal systems, security tools or suppliers; a hiring post can give one away.",
+            },
+            'df_badge': {
+                'text': "Dani's 'new kit' photo shows a lanyard and a whiteboard in shot, confirming the system and his level of access.",
+                'reduceNote': "No badge, pass or screen in a photo; check what's behind you before you post.",
+            },
+            'df_leave': {
+                'text': "Dani's leave countdown says he is away all next week.",
+                'reduceNote': "Keep leave private: 'away all week' tells an attacker when to strike and who's covering.",
+            },
+            'df_pet': {
+                'text': "Dani's dog photo, captioned as a 'name a pet' answer, gives his dog's name, a common security-question answer.",
+                'reduceNote': "Keep pet, school, birthday and first car out of public view; use a made-up security answer kept in your manager.",
+            },
+        },
+        'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+                   'keywords': ['Social media', 'Open source intelligence', 'Oversharing', 'Security awareness']}],
+        'defend': {
+            'name': 'Social media: the feed and the inbox',
+            'brief': "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. A feed and an inbox are waiting: some posts are fine, some give too much away, and some messages were made to pull work details out of you. Sort them, close the gaps, and report the fakes. Reporting or checking when you're unsure is always fine and never marked down.",
+            'endGoal': 'Sort the feed and the inbox at the training kiosk.',
+            'aim': ('social_inbox_aim', 'Sort the feed and inbox', 'Go through the messages, the feed drill and your own settings at the training kiosk.'),
+            'task': ('sort_social_inbox', 'Sort the feed and inbox'),
+            'kiosk': ("A touch-screen kiosk showing a feed and an inbox at Merrin & Sallow: posts to weigh, messages to sort and settings to tighten.",
+                      "A touch-screen kiosk showing a feed and an inbox at Merrin & Sallow. The feed, the inbox and the settings are all done."),
+            'display': 'Awareness E14: Social media and oversharing (defend only)',
+            'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Sort a feed and an inbox at Merrin & Sallow Architects, a fictional practice: some posts give too much away, and some messages were built to pull work details out of you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
+            'minutes': 8,
+            'defendIntro': "Go through the inbox and decide what to do with each message, mark the feed drafts Post, Tweak or Hold, and tighten your own settings. A friendly opener that steers to your firm's systems or who runs IT is still reconnaissance; report it. There's no clock on you here.",
+            'conclusion': ('Feed and inbox done', "You've sorted the feed and the inbox and tightened the settings, and finished this episode."),
         },
     },
 }
@@ -521,8 +648,18 @@ def defend_only(ekey):
     }
     host = HOSTS[cfg['defend_host']]
     ink_name = host['id']
+    social = {'triageSets': [s], 'awarenessEpisode': ep}
+    # E14 only: the defend-only shell keeps the privacyPanel (a defend-half key), whose closesFacts
+    # name se_intel_df_* facts. With no attack half there is no social.intelFacts, so declare the
+    # named facts here (text + reduceNote only) for the panel to render and the validator to accept.
+    # Each declared fact's se_intel_<id> global must also be declared (facts are synced to ink); the
+    # panel reads them read-only and in a defend-only shell they stay false (no board was collected).
+    if cfg.get('defend_intel_facts'):
+        social['intelFacts'] = copy.deepcopy(cfg['defend_intel_facts'])
+        for _fid in cfg['defend_intel_facts']:
+            globals_[f'se_intel_{_fid}'] = False
     sc = scenario(mission, d['name'], d['brief'], d['endGoal'], d['aim'], d['task'], done, globals_,
-                       {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, d['kiosk'], d['conclusion'])
+                       social, host, ink_name, d['kiosk'], d['conclusion'])
     meta = meta_for(d['display'], d['desc'], d['minutes'], cfg['cybok'])
     ink = ink_source(f"Awareness {ekey.upper()}, defend only", host, done, LINES[(ekey, 'defend')])
     return mission, sc, meta, ink_name, ink
@@ -532,7 +669,7 @@ def main():
     if len(sys.argv) < 2:
         sys.exit('usage: gen_e8_e17_shells.py [--repo <checkout>] <out_dir>')
     out = sys.argv[1]
-    built = [defend_only(k) for k in ('e8', 'e11', 'e15', 'e17', 'e19', 'e9', 'e16', 'e20')]
+    built = [defend_only(k) for k in ('e8', 'e11', 'e15', 'e17', 'e19', 'e9', 'e16', 'e20', 'e14', 'e13', 'e12')]
     for mission, sc, meta, ink_name, ink in built:
         d = os.path.join(out, mission)
         os.makedirs(os.path.join(d, 'ink'), exist_ok=True)
