@@ -418,3 +418,14 @@ test('runner: with no concernForm the defend stage runs exactly the triage set, 
     assert.equal(EM.concernConfigOf({ concernForm: { factChips: [{ id: 'a', kind: 'why', label: 'A' }] } }), null);
     assert.equal(EM.concernConfigOf({ concernForm: { factChips: [] } }), null);
 });
+
+test('the Start card warns that a reload starts the picks again (F-E16-8); an override and "" are honoured', () => {
+    let s = open(config());
+    assert.match($(s, '.cf-reload-note').textContent, /close or reload/i, 'default reload note on the Start card');
+
+    s = open({ ...config(), strings: { reloadNote: 'Your picks are not saved.' } });
+    assert.equal($(s, '.cf-reload-note').textContent, 'Your picks are not saved.');
+
+    s = open({ ...config(), strings: { reloadNote: '' } });
+    assert.equal($(s, '.cf-reload-note'), null, 'an empty override hides the line');
+});

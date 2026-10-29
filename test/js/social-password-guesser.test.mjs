@@ -282,6 +282,16 @@ test('the surface lists the common guesses struck through as queued, with no edi
     assert.equal(cur().getTestState().guesser.mode, 'target');
 });
 
+test('the console opens scrolled to the top, focus on the region not the Step control (F-E18-2)', () => {
+    openScene(guessBlock(), allFound);
+    const root = cur().root;
+    assert.ok(root.classList.contains('epr-gs-root'));
+    assert.equal(root.scrollTop, 0, 'opens at the top, not the foot');
+    assert.equal(root.getAttribute('tabindex'), '-1');
+    assert.equal(document.activeElement, root, 'focus is the scroll region');
+    assert.notEqual(document.activeElement, root.querySelector('.epr-gs-step'), 'not the Step button at the foot');
+});
+
 test('an uncollected fact leaves its slot struck through as not found, naming no guess', () => {
     openScene(guessBlock(), { se_intel_f_team: true, se_intel_f_forum: true });
     cur().container.querySelector('.epr-gs-all').click();

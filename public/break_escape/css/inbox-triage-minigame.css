@@ -90,8 +90,11 @@
 .triage-client img.tri-icon { width: 16px; height: 16px; margin-right: 4px; }
 .tri-locked { display: flex; align-items: center; gap: 4px; margin: 6px 0; font-size: 16px; }
 
-/* Row badge in the list */
+/* Row badge in the list. A badge carries a tone (F-E19-7): a right or acceptable call keeps the
+   success colour and tick; a wrong call turns danger-coloured and shows a cross, so the list never
+   reads as if a wrong verdict went well. */
 .mail-row-badge { display: inline-flex; align-items: center; gap: 2px; font-size: 13px; color: var(--ui-success, #6ee08f); }
+.mail-row-badge.mail-row-badge-wrong { color: var(--ui-danger, #f0896e); }
 .mail-row-badge img.mail-icon { width: 12px; height: 12px; }
 
 /* The link status line stays in view at the foot of the pane while the player reads. */

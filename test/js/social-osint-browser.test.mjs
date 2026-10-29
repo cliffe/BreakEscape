@@ -502,3 +502,24 @@ test('R19 F19-2: the status line from a note is cleared when the player moves to
     assert.equal(s.live.textContent, '');
     assert.equal(s.getTestState().osint.live, '');
 });
+
+// ── F-E18-3: an address inside a feedback/"Noted:" line must read dark-on-light, not dark-on-dark.
+//    The inline span uses class ob-addr (address font only), never ob-address, which is the dark
+//    address-bar container; the container keeps its dark box, the inline span has none.
+const { addressify } = await import(pathToFileURL(join(dir, 'minigames/osint-browser/osint-browser-minigame.js')));
+
+test('addressify wraps an address in .ob-addr, never the .ob-address container class (F-E18-3)', () => {
+    const parts = addressify('Noted: built as first.last@merrin-sallow.example for everyone');
+    const spans = parts.filter((p) => p && typeof p === 'object' && p.nodeType === 1);
+    assert.equal(spans.length, 1, 'one address span');
+    assert.equal(spans[0].getAttribute('class'), 'ob-addr');
+    assert.equal(spans[0].textContent, 'first.last@merrin-sallow.example');
+    assert.ok(!spans[0].classList.contains('ob-address'), 'must not reuse the dark address-bar class');
+});
+
+test('CSS: .ob-addr sets the address font with no box; the .ob-address container keeps its dark box (F-E18-3)', () => {
+    const css = readFileSync(join(js, '../css/osint-browser-minigame.css'), 'utf8');
+    assert.match(css, /\.ob-addr\s*\{[^}]*font-family:\s*var\(--se-font-address/);
+    assert.ok(!/\.ob-addr\s*\{[^}]*background/.test(css), 'the inline address span has no background box');
+    assert.match(css, /\.ob-address\s*\{[^}]*background:\s*var\(--ui-bg/, 'the container keeps its dark box');
+});

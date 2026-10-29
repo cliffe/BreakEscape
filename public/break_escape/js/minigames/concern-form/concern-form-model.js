@@ -33,6 +33,7 @@ export const DEFAULT_TEXT = Object.freeze({
     title: 'Raise a concern',
     heading: 'Raise a concern',
     intro: 'Build a short report from what you saw yourself. Pick the facts to include. You can add a conclusion if you want to, and the feedback will say how it reads.',
+    reloadNote: 'If you close or reload, your picks start again.',
     start: 'Start',
     factsHeading: 'What you noticed',
     conclusionsHeading: 'What you think it means (optional)',

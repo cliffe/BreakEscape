@@ -177,6 +177,44 @@ test('truth.missLabel fills the critical-miss line and drops "let an attacker st
     assert.match($(t, '.tri-critical').textContent, /let an attacker straight in \(trusting a phish email\)/);
 });
 
+test('the critical-miss line names the item that cost the points (F-E15-1)', () => {
+    const s = open(makeSet([real(), phish()]));
+    click($(s, '.tri-start'));
+    answer(s, 'm_reset', 'trust'); // one critical miss (labelled)
+    answer(s, 'm_phish', 'report'); // a right call on the other, so only m_reset is critical
+    click($(s, '.tri-next'));
+    const line = $(s, '.tri-critical').textContent;
+    assert.match(line, /The item was 'Your password was changed'\./, 'names the critical-miss item');
+});
+
+test('truth.reportLine overrides the Report feedback line; without it the default stands (F-E16-1)', () => {
+    const colleague = { ...phish(), id: 'm_colleague', subject: 'Can I use your login?',
+        truth: { ...phish().truth, reportLine: 'Right to flag it. The service desk can reset his own login.' } };
+    const s = open(makeSet([colleague, phish()]));
+    click($(s, '.tri-start'));
+    answer(s, 'm_colleague', 'report');
+    const text = $(s, '.tri-card-verdict').textContent;
+    assert.match(text, /Right to flag it\. The service desk can reset his own login\./);
+    assert.doesNotMatch(text, /A report warns everyone else/);
+    answer(s, 'm_phish', 'report');
+    assert.match($(s, '.tri-card-verdict').textContent, /A report warns everyone else\./, 'default unchanged');
+});
+
+test('the list badge shows a cross on a wrong verdict, never a success tick (F-E19-7)', () => {
+    const s = open(makeSet([real(), phish()]));
+    click($(s, '.tri-start'));
+    answer(s, 'm_phish', 'trust'); // wrong: trusting a phish
+    const badge = $(s, '.mail-row[data-id="m_phish"] .mail-row-badge');
+    assert.ok(badge, 'the answered row has a badge');
+    assert.ok(badge.classList.contains('mail-row-badge-wrong'));
+    assert.match(badge.querySelector('img.mail-icon').getAttribute('src'), /mark-cross/);
+    // a right call keeps the success tick
+    answer(s, 'm_reset', 'report');
+    const ok = $(s, '.mail-row[data-id="m_reset"] .mail-row-badge');
+    assert.match(ok.querySelector('img.mail-icon').getAttribute('src'), /mark-tick/);
+    assert.ok(!ok.classList.contains('mail-row-badge-wrong'));
+});
+
 test('scoreTriage exposes criticalLabels aligned with criticalKinds', () => {
     const r = S.scoreTriage({ messages: [real(), phish()], profile: 'awareness',
         answers: [{ id: 'm_reset', verdict: 'trust', flags: [] }, { id: 'm_phish', verdict: 'trust', flags: [] }] });

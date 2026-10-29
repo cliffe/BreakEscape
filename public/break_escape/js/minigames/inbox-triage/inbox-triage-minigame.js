@@ -247,8 +247,16 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             rowBadge: (rec) => {
                 const a = this.answers.get(rec.id);
                 if (!a) return null;
-                if (kindOf(rec) === 'choice') return choiceText('answered', this.labels);
-                return actionById(isNonEmail(rec) ? kindOf(rec) : 'email', a.action, a.verdict, this.labels).past;
+                // Carry the verdict's tone so the list never shows a success tick on a wrong call
+                // (F-E19-7): a right or acceptable call keeps the tick, a wrong one shows a cross.
+                const right = this._isRight(rec, a.verdict);
+                if (kindOf(rec) === 'choice') {
+                    return { word: choiceText('answered', this.labels), tone: right ? 'right' : 'wrong',
+                        mark: right ? 'mark-tick' : 'mark-cross' };
+                }
+                const word = actionById(isNonEmail(rec) ? kindOf(rec) : 'email', a.action, a.verdict, this.labels).past;
+                const tone = this._verdictTone(rec, a.verdict); // 'right' | 'acceptable' | 'wrong'
+                return { word, tone, mark: tone === 'wrong' ? 'mark-cross' : 'mark-tick' };
             },
             emptyText: 'There is nothing to sort in this round.',
             onOpen: (rec) => this._onOpen(rec)
@@ -818,8 +826,13 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // Verify IS the fast report, e.g. "Calling it in straight away is exactly right."). When
             // absent, the generic preamble plus `what` reads as before.
             const verify = isStr(rec.truth.verifyLine) ? rec.truth.verifyLine : `Checking first is a sound habit. ${what}`;
+            // truth.reportLine (optional, E16 F-E16-1): the whole Report feedback line, for an item
+            // where "A report warns everyone else" is wrong (reporting a locked-out colleague is not
+            // warning the team about an attack). When absent, the default stands.
+            const report = isStr(rec.truth.reportLine) ? rec.truth.reportLine
+                : 'Right call: reported. A report warns everyone else.';
             return {
-                report: 'Right call: reported. A report warns everyone else.',
+                report,
                 delete: 'Safe, but not reported. Deleting protects you; reporting warns everyone else.',
                 trust: `Not this time. ${what}`,
                 verify
@@ -1211,9 +1224,18 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // still be reported), the line does not claim an attacker was let in.
             const labels = Array.isArray(result.criticalLabels) ? result.criticalLabels : [];
             const allLabelled = labels.length === result.criticalMisses.length && labels.every((l) => isStr(l));
+            // Name the item(s) that actually cost the points, so the line is not read against a
+            // correct Trust on a genuine item listed below it (F-E15-1). criticalMisses are message ids.
+            const missItems = result.criticalMisses
+                .map((id) => this.messages.find((m) => m.id === id))
+                .filter(Boolean)
+                .map((m) => shortTitle(m) || this._cardTitle(m));
+            const nameLine = missItems.length
+                ? ` ${missItems.length === 1 ? 'The item was' : 'The items were'} ${missItems.map((t) => `'${t}'`).join(missItems.length === 2 ? ' and ' : ', ')}.`
+                : '';
             p.appendChild(el('p', 'tri-critical',
                 `${result.criticalMisses.length === 1 ? 'One answer' : `${result.criticalMisses.length} answers`} ${allLabelled ? 'missed something that needed reporting' : 'let an attacker straight in'} ` +
-                `(${criticalWhat(result.criticalKinds, labels) || "approving a sign-in you didn't start, or doing what an impostor asked on a call"}). ` +
+                `(${criticalWhat(result.criticalKinds, labels) || "approving a sign-in you didn't start, or doing what an impostor asked on a call"}).` + nameLine + ` ` +
                 `That costs ${CRITICAL_PENALTY} points off the round${result.criticalMisses.length === 1 ? "" : " each"}, on top of the item itself.`));
         }
         // The genuine items (FUN_DECISIONS disc_visible): which real ones the learner trusted, what

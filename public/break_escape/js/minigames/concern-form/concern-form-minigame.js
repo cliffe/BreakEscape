@@ -107,6 +107,10 @@ export class ConcernFormMinigame extends SocialOverlayScene {
         p.appendChild(h);
         p.appendChild(el('p', 'cf-text', this.text('intro')));
         if (this.config.guidance) p.appendChild(el('p', 'cf-guidance', this.config.guidance));
+        // The form keeps no state across a close or reload, so a reopen starts the picks again. Say so
+        // on the Start card, as the sort drill does (E16 F-E16-8). strings.reloadNote: '' suppresses it.
+        const reload = this.config.strings?.reloadNote === '' ? '' : this.text('reloadNote');
+        if (reload) p.appendChild(el('p', 'cf-reload-note', reload));
         const start = el('button', 'cf-start cf-button minigame-button', this.text('start'));
         start.type = 'button';
         this.addEventListener(start, 'click', () => this._showStep('build'));

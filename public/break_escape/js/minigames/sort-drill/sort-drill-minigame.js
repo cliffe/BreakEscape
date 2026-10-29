@@ -315,10 +315,12 @@ export class SortDrillMinigame extends SocialOverlayScene {
         const h = el('h3', 'sd-heading', this.text('summaryHeading'));
         h.tabIndex = -1;
         p.appendChild(h);
-        // A scored drill says how many went right; an unscored one shows no mark at all.
+        // A scored drill says how many went right; an unscored one shows no per-card mark, but when
+        // a pick did not fit the author's answer the line must not claim every card matched (F-E15-9).
+        const unscoredMiss = !r.scored && Number.isFinite(r.fit) && r.fit < r.total;
         p.appendChild(el('p', 'sd-score', r.scored
             ? this.text('scoreLine', { correct: r.correct, total: r.total, points: r.points, max: r.max })
-            : this.text('doneLine', { total: r.total })));
+            : this.text(unscoredMiss ? 'doneMissLine' : 'doneLine', { total: r.total, fit: r.fit })));
         p.appendChild(this._board(true));
         const done = el('button', 'sd-finish sd-button minigame-button', this.text('done'));
         done.type = 'button';
