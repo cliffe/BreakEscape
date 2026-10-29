@@ -30,6 +30,14 @@
       "channelTells": ["lookalike_domain", "padlock_myth", "fake_check_paste", "fake_update_prompt", "fake_alarm_callback", "browser_permission_grab", "dangerous_download"],
       "verdictLabels": { "trust": "Carry on", "report": "Close and report", "delete": "Go the trusted way" },
       "labels": {
+        "itemNoun": "page",
+        "next": "Next page",
+        "verdictFeedback": {
+          "delete": {
+            "phish": "Safe, but not reported. Going the trusted way protects you; reporting the page warns everyone else.",
+            "real": "That page was genuine. Going the trusted way is cautious, but you could have carried on."
+          }
+        },
         "_use": "MA1 (E10 C1): the sub-hint under each button and the summary-list past-tense tag come from VERDICT_ACTIONS unless labels.verdict overrides them (triage-kinds.js relabel applies label, past and hint). verdictLabels only sets each button's label, so without this block the browser verdicts kept the email-world sub-text ('Go the trusted way' read 'This is junk. Bin it.') and the list tags read 'Trusted'/'Reported'. hint and past here match the relabelled browser buttons; label stays with verdictLabels.",
         "verdict": {
           "trust": { "hint": "This page is genuine. Carry on with what I came to do.", "past": "Carried on" },
