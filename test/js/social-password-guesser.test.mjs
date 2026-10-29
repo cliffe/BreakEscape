@@ -329,6 +329,26 @@ test('switching off after a landed run writes the landed global true and reports
     assert.equal(results[0].ok, true);
 });
 
+test('Close on a finished run completes it like switch-off: finished + landed, global written (E18 F1)', () => {
+    const { writes, results } = openScene(guessBlock(), allFound);
+    cur().container.querySelector('.epr-gs-all').click();
+    assert.equal(cur().getTestState().guesser.switchedOff, false, 'the switch-off button was not pressed');
+    cur().requestClose(); // the overlay Close control (and the Esc path) go through requestClose
+    assert.equal(cur(), null, 'the overlay closed');
+    assert.deepEqual(results[0].result, { finished: true, landed: true }, 'a finished run is kept, not discarded');
+    assert.deepEqual(writes, [['guess_fixture_landed', true]]);
+    assert.equal(results[0].ok, true);
+    assert.equal(failed().length, 0);
+});
+
+test('Esc on a finished run completes it too (E18 F1)', () => {
+    const { results } = openScene(guessBlock(), allFound);
+    cur().container.querySelector('.epr-gs-all').click();
+    document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.equal(cur(), null, 'Esc closed a finished run');
+    assert.deepEqual(results[0].result, { finished: true, landed: true });
+});
+
 test('a run where the reuse fact was not found never lands: no write, finished true', () => {
     const { writes, results } = openScene(guessBlock(), { se_intel_f_team: true });
     cur().container.querySelector('.epr-gs-all').click();
@@ -468,6 +488,22 @@ test('closing the guesser part-way stays on the guess stage and keeps nothing', 
     assert.equal(scene(), 'episode-runner');
     assert.equal(epState().stage, 'guess');
     assert.deepEqual(stored(ep.id).done, ['brief', 'osint']);
+});
+
+test('Run all then the overlay Close (not switch-off) advances guess -> flip and keeps the run (E18 F1)', () => {
+    const ep = episode();
+    setup(ep, { ...allFound, [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint'] } });
+    open(ep);
+    click('.epr-launch');
+    assert.equal(scene(), 'password-guesser');
+    click('.epr-gs-all');
+    cur().requestClose(); // the learner presses the overlay Close, not "Switch the rig off"
+    assert.equal(scene(), 'episode-runner', 'the runner reopens itself');
+    assert.equal(epState().stage, 'flip', 'the finished run completed the stage instead of being discarded');
+    assert.deepEqual(stored(ep.id).done, ['brief', 'osint', 'guess']);
+    assert.equal(window.gameState.globalVariables.guess_fixture_landed, true);
+    assert.equal(failed().length, 0);
+    assert.deepEqual(errors, []);
 });
 
 test('a full guess episode runs every stage brief -> osint -> guess -> flip -> defend -> debrief', () => {
