@@ -1884,7 +1884,7 @@
         "stepLabels": {"type": "object", "description": "ENG-01: step-strip labels keyed by stage id; wins over strings.stepLabels", "additionalProperties": {"type": "string"}},
         "stages": {
           "type": "array",
-          "items": {"type": "string", "enum": ["brief", "osint", "build", "write", "flip", "defend", "debrief", "check", "mfa", "mistake"]}
+          "items": {"type": "string", "enum": ["brief", "osint", "build", "write", "flip", "defend", "debrief", "check", "mfa", "mistake", "guess"]}
         },
         "conclusionTaskId": {"type": "string", "description": "The task the host NPC's mapping completes; passed to the triage starter"},
         "standalone": {"type": "boolean", "description": "Default true. False makes the episode one beat in a bigger mission: awareness.rb then skips the missionConclusion, host-NPC and conclusionTaskId checks"},
@@ -2056,10 +2056,12 @@
             "flipMissedHeading": {"type": "string", "description": "The flip's heading when nothing is replayed (a miss, or a landing with no tells); default 'Nothing to replay this time'"},
             "flipPageIntro": {"type": "string", "description": "The flip's intro when it shows a built landing page"},
             "flipCallIntro": {"type": "string", "description": "The flip's intro when it shows a pretext call"},
+            "flipGuessIntro": {"type": "string", "description": "ENG-02: the flip's intro after a landed password guess (the guess stage), before flipAftermath"},
+            "guessNote": {"type": "string", "description": "ENG-02: the on-screen line in the password guesser saying nothing real is typed; wins over guess.note (default: 'No real password is typed or stored here. Every guess is made up for the exercise.')"},
             "continue": {"type": "string", "description": "The label of the Continue button"},
             "stages": {
               "type": "object",
-              "description": "Per-stage panel copy over the runner's fixed lines, keyed by stage id (brief, osint, build, write, mfa, mistake, flip, defend, debrief, check)",
+              "description": "Per-stage panel copy over the runner's fixed lines, keyed by stage id (brief, osint, build, write, mfa, mistake, guess, flip, defend, debrief, check)",
               "additionalProperties": {
                 "type": "object",
                 "properties": {"heading": {"type": "string"}, "text": {"type": "string"}, "button": {"type": "string"}},
@@ -2071,10 +2073,10 @@
             "stepLabels": {"type": "object", "description": "Step-strip labels keyed by stage id", "additionalProperties": {"type": "string"}},
             "facilitator": {
               "type": "object",
-              "description": "Facilitator notes: one string per stage id (brief, osint, build, write, mfa, mistake, flip, defend, debrief, check) plus 'pause'",
+              "description": "Facilitator notes: one string per stage id (brief, osint, build, write, mfa, mistake, guess, flip, defend, debrief, check) plus 'pause'",
               "properties": {
                 "brief": {"type": "string"}, "osint": {"type": "string"}, "build": {"type": "string"},
-                "write": {"type": "string"}, "mfa": {"type": "string"}, "mistake": {"type": "string"}, "flip": {"type": "string"},
+                "write": {"type": "string"}, "mfa": {"type": "string"}, "mistake": {"type": "string"}, "guess": {"type": "string"}, "flip": {"type": "string"},
                 "defend": {"type": "string"}, "debrief": {"type": "string"}, "check": {"type": "string"}, "pause": {"type": "string"}
               },
               "patternProperties": {"^_": {}},
@@ -2105,6 +2107,60 @@
           "properties": {
             "mondayCard": {"type": "string", "description": "'slot:customer_report_route' is the only value the runner reads"},
             "noBlameLine": {"type": "boolean"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "guess": {
+          "type": "object",
+          "description": "ENG-02: the guess stage's authored guesser (E9; the password-guesser scene). Every guess is authored data: no real password, list, tool or method is held or shown. mode picks the render ('target' is the default and the only mode so far; ENG-02b adds spray and stuff as further modes of this block). Linted by awareness.rb (guess_checks): each patternSlots factId and the reuseStep factId name a social.intelFacts id, landedGlobal is declared false, commonList is short, and no key names a credential.",
+          "required": ["landedGlobal"],
+          "properties": {
+            "mode": {"type": "string", "enum": ["target"], "description": "Which render builds the guess list. Default 'target' (one colleague, E9)"},
+            "target": {"type": "string", "description": "A social.people id, display only"},
+            "commonList": {"type": "array", "maxItems": 8, "items": {"type": "string", "minLength": 1, "maxLength": 24}, "description": "The usual first guesses, shown struck through as already tried. Short and made up"},
+            "patternSlots": {
+              "type": "array",
+              "description": "Guesses built from collected facts. Each reads ONE se_intel_<factId> global; an uncollected fact leaves the slot struck through as not found",
+              "items": {
+                "type": "object",
+                "required": ["id", "factId", "word", "template"],
+                "properties": {
+                  "id": {"type": "string", "description": "Also the one token the template may use, in braces"},
+                  "factId": {"type": "string", "description": "A social.intelFacts id (bare, without the se_intel_ prefix)"},
+                  "word": {"type": "string", "description": "The made-up word the fact stands for; it replaces the {id} token"},
+                  "template": {"type": "string", "description": "The guess, with fixed characters and only this slot's own {id} token"},
+                  "label": {"type": "string", "description": "What the row says when the fact has not been collected (default: a generic line)"}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "reuseStep": {
+              "type": "object",
+              "description": "The lever the flip leans on: a password from a breached small site opens the work account. Lands only if the learner collected factId",
+              "required": ["site", "factId"],
+              "properties": {
+                "site": {"type": "string"}, "domain": {"type": "string"},
+                "factId": {"type": "string"}, "landsOn": {"type": "string"}, "note": {"type": "string"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "passphraseDemo": {
+              "type": "object",
+              "description": "Three unrelated game words, still being tried when the rig is switched off. Never lands",
+              "required": ["words", "neverLands"],
+              "properties": {
+                "words": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+                "neverLands": {"type": "boolean", "enum": [true]}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "landedGlobal": {"type": "string", "description": "A declared global (default false) the guesser sets true when an account opens; the flip shows flipAftermath only then"},
+            "note": {"type": "string", "description": "The on-screen line saying nothing real is typed; strings.guessNote wins"},
+            "strings": {"type": "object", "description": "The guesser's own lines over its defaults (password-guesser-model.js DEFAULT_TEXT), keyed by line", "additionalProperties": {"type": "string"}}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false

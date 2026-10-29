@@ -18,7 +18,9 @@
 //            `email` item is one read-only sent-items row (folder, to, subject, time, note;
 //            no body, no link); any other non-email kind is drawn with renderKindSurface.
 //            Drawn after the message, page and call and before the defender line, only when
-//            there is a message or page and at least one valid item.
+//            there is a message, page or landed guess and at least one valid item.
+//   guess    ENG-02: true after a landed password guess (the runner's guess stage). It shows
+//            strings.flipGuessIntro, then the aftermath; with `missed` it is ignored.
 // A page may come with a message (E5 sends the email that links to it). With none of them,
 // the view shows flipMissed when `missed` is true (something was sent but did not land, so
 // there is nothing to replay), flipLandedNoTells when `landedNoTells` is true (it landed but
@@ -34,7 +36,7 @@
 // (marked .aw-montage-headline) and the rest in authored order, each a situation and the line for the
 // option shown. A learner's own option is marked .aw-montage-taken. The framing ("Your choice", "the
 // version where it was taken instead") is in the authored lines. flipDefenderLine is shown only when authored.
-// getState() -> { shown: 'message' | 'page' | 'call' | 'missed' | 'landedNoTells' | 'noSend' | 'montage', parts,
+// getState() -> { shown: 'message' | 'page' | 'call' | 'guess' | 'missed' | 'landedNoTells' | 'noSend' | 'montage', parts,
 // tells } (`shown` is the first part shown; `parts` lists every part; `tells` the sentences on screen).
 // Every string goes in with textContent.
 
@@ -47,6 +49,8 @@ const DEFAULTS = Object.freeze({
     flipHeading: 'Your message, from the other side',
     flipIntro: 'This is the message you just wrote, as the person who receives it would see it.',
     flipPageIntro: 'This is the page you built, as the person who follows the link would see it.',
+    flipGuessHeading: 'The account, from the other side',
+    flipGuessIntro: 'One reused password was enough. This is what the owner of that account sees next.',
     flipCallIntro: 'This is your call from the other end of the line. Here is what would have caught it.',
     flipDefenderLine: 'People who fall for messages like this are not stupid. This one was built to look right.',
     flipMontageHeading: 'Where each choice led',
@@ -153,7 +157,7 @@ function renderMontage(root, container, { beats, flipBeat, strings, onContinue }
     };
 }
 
-export function renderFlipView(container, { message = null, page = null, call = null, aftermath = null, missed = false, landedNoTells = false, templateId = null, montage = false, beats = null, flipBeat = null, strings = {}, onContinue } = {}) {
+export function renderFlipView(container, { message = null, page = null, call = null, aftermath = null, guess = false, missed = false, landedNoTells = false, templateId = null, montage = false, beats = null, flipBeat = null, strings = {}, onContinue } = {}) {
     const root = el('section', 'aw-flip');
     if (montage === true) {
         const own = isStr(strings?.flipHeading) ? strings.flipHeading : DEFAULTS.flipMontageHeading;
@@ -162,7 +166,8 @@ export function renderFlipView(container, { message = null, page = null, call = 
         root.appendChild(h);
         return renderMontage(root, container, { beats, flipBeat, strings, onContinue });
     }
-    const heading = el('h2', 'aw-heading', str(strings, 'flipHeading'));
+    const hasGuess = guess === true && !missed;
+    const heading = el('h2', 'aw-heading', hasGuess && !isStr(strings?.flipHeading) ? DEFAULTS.flipGuessHeading : str(strings, 'flipHeading'));
     heading.tabIndex = -1;
     root.appendChild(heading);
 
@@ -189,6 +194,12 @@ export function renderFlipView(container, { message = null, page = null, call = 
         }
         if (ids.length) root.appendChild(list);
     };
+
+    // ENG-02: a landed password guess has nothing to replay; it leads straight into the aftermath below.
+    if (hasGuess) {
+        parts.push('guess');
+        root.appendChild(el('p', 'aw-lead', str(strings, 'flipGuessIntro')));
+    }
 
     if (hasMessage) {
         parts.push('message');
@@ -273,7 +284,7 @@ export function renderFlipView(container, { message = null, page = null, call = 
 
     // ENG-01: the victim's seat, after the replay and before the defender line. Only with
     // something replayed from a landed attack (a missed or no-send flip never reaches it).
-    const aftermathList = (hasMessage || hasPage) && !missed && !landedNoTells ? aftermathItems(aftermath) : [];
+    const aftermathList = (hasMessage || hasPage || hasGuess) && !missed && !landedNoTells ? aftermathItems(aftermath) : [];
     if (aftermathList.length) {
         parts.push('aftermath');
         const sec = el('section', 'aw-flip-aftermath');

@@ -9,7 +9,9 @@
 //   readState(episode, raw)       a clean state from the stored global (or a fresh one)
 //   completeStage(episode, state, stageId, patch)   the state after a stage ends
 //   childLaunch(episode, stage)   what the stage opens: osint, build, mail or call, mfa,
-//                                 mistake (the consequence sandbox), triage or nothing
+//                                 mistake (the consequence sandbox), guess (the password guesser),
+//                                 triage or nothing
+//   guessLanded(episode, globals) whether the guess stage's landed global is true (ENG-02)
 //   mistakeBeats(episode)         the authored consequence beats, cleaned (ENG-04)
 //   montageProps(episode, choices)  what the montage flip shows: every beat with the line for the
 //                                 learner's option, else the unsafe option's (ENG-04)
@@ -30,8 +32,8 @@
 
 import { fieldLabel } from '../landing-page-builder/landing-page-model.js';
 
-export const STAGE_IDS = Object.freeze(['brief', 'osint', 'build', 'write', 'mfa', 'mistake', 'flip', 'defend', 'debrief', 'check']);
-export const ATTACK_STAGES = Object.freeze(['osint', 'build', 'write', 'mfa', 'mistake', 'flip']);
+export const STAGE_IDS = Object.freeze(['brief', 'osint', 'build', 'write', 'mfa', 'mistake', 'guess', 'flip', 'defend', 'debrief', 'check']);
+export const ATTACK_STAGES = Object.freeze(['osint', 'build', 'write', 'mfa', 'mistake', 'guess', 'flip']);
 /** The pretext call's outcome that counts as landed (06 N7). */
 export const CALL_LANDED = 'got_it';
 export const DEFAULT_STAGES = Object.freeze({
@@ -94,6 +96,9 @@ function cleanSent(raw) {
             outcome: isStr(raw.outcome) ? raw.outcome : null
         };
     }
+    // A password-guessing stage (ENG-02): the flip needs only to know the stage ran; whether it landed
+    // is read from the stage's landed global, never from this record.
+    if (raw.kind === 'guess') return { kind: 'guess' };
     return {
         recordId: isStr(raw.recordId) ? raw.recordId : null,
         targetId: isStr(raw.targetId) ? raw.targetId : null,
@@ -260,6 +265,7 @@ export function writeKind(episode) {
  *   { kind: 'call', sceneType: 'pretext-prep', params: { callId } }  (write, when attack.callId is set)
  *   { kind: 'mfa', sceneType: 'authenticator', params: { pushes, approvesAt, mode } }  (from episode.mfa)
  *   { kind: 'mistake', sceneType: 'consequence-sandbox', params: { config, strings? } }  (from episode.mistake)
+ *   { kind: 'guess', sceneType: 'password-guesser', params: { config, note? } }  (from episode.guess; null without it)
  *   { kind: 'triage', options: { triageSetId, stage?, conclusionTaskId } }
  *   null for brief, flip and debrief (drawn by the runner itself)
  */
@@ -295,6 +301,14 @@ export function childLaunch(episode, stage) {
         if (isObj(episode.strings?.sandbox)) params.strings = episode.strings.sandbox;
         return { kind: 'mistake', sceneType: 'consequence-sandbox', params };
     }
+    if (stage === 'guess') {
+        // ENG-02: opt-in on the `guess` block. Without it the stage draws nothing (the validator forbids that).
+        if (!isObj(episode?.guess)) return null;
+        const params = { config: episode.guess };
+        // strings.guessNote is the on-screen "nothing real is typed" line, over guess.note and the default.
+        if (isStr(episode.strings?.guessNote)) params.note = episode.strings.guessNote;
+        return { kind: 'guess', sceneType: 'password-guesser', params };
+    }
     if (stage === 'write' && writeKind(episode) === 'call') {
         return { kind: 'call', sceneType: 'pretext-prep', params: { callId: attack.callId } };
     }
@@ -313,6 +327,12 @@ export function childLaunch(episode, stage) {
         return { kind: 'triage', options };
     }
     return null;
+}
+
+/** Whether the guess stage landed: the block's landedGlobal is true. False without a block or a global. */
+export function guessLanded(episode, globals) {
+    const name = isObj(episode?.guess) ? episode.guess.landedGlobal : null;
+    return isStr(name) && isObj(globals) && globals[name] === true;
 }
 
 /**
