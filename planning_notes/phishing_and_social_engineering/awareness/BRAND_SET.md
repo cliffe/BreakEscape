@@ -232,3 +232,16 @@ The full list is under `_brandAdditions` in `awareness/e6/defend.json`.
   - The mobile BA checks: Jun Watanabe, HR assistant.
   - E7 defend-only: Agnieszka Duda, Brightwell's payroll officer.
   - Placeholder sprite keys: `male_telecom`, `female_telecom`, `male_office_worker` and `female_blowse`.
+
+## Additions from E8 (after the click, 2026-10-29)
+E8 is the pilot new episode at **Quayholt Insurance** (`quayholt_insurance`), host **Anjali Rao**. The full list is under `_brandAdditions` in `awareness/e8/defend.json`.
+- **Cast: none new.** Every person E8 names is built Quayholt cast:
+  - **Anjali Rao**, information security analyst (the host; she receives the reports). Already in the roster §3.
+  - **Ayaan Warsame**, claims handler: the attack target, and the seat the learner takes for the defend half. Built from E5 `_brandAdditions` (Somali-British, 30s, Bristol).
+  - **Reuben Ofori**, claims handler: the genuine colleague in defend row 4 (the `hb_vm_locked` voicemail caller added in E3).
+- **New domain (one, no cast):** **Marsden Holloway** (`marsden-holloway.example`), a fictional settlement client of Quayholt's claims team. It appears only as the recipient address of the takeover sent-item (flip `fa_sent` and defend row 1 `e8_sent_invoice`). No inbound mail, no person.
+- **No new sender brand and no look-alikes:** the takeover reuses Quayholt's own real addresses (`it-servicedesk@quayholt.example`, `reception@quayholt.example`, `ayaan.warsame@quayholt.example`). The lesson is a sign in your own account, not a look-alike domain, so E8 adds no spoof domain to the roster.
+- **Name-clash search (grep across `scenarios/`, `planning_notes/`, `docs/`, 2026-10-29):**
+  - "Ayaan", "Reuben", "Anjali": built Quayholt cast; expected hits only.
+  - "Marsden" / "Holloway": **no hits in built `scenarios/`.** The only hits are in planning notes: `00_README.md`'s pre-ship search list, and the **E14 (social media) plan and its review logs, which also use `marsden-holloway.example` as a one-off client firm** (renamed there from `fenwick-brandt.example` to avoid the Fenwick clash). So E8 and the E14 plan share the same non-cast client firm. Reuse is harmless (both use it only as an external recipient address, no cast, no inbound mail), and may be the review process consolidating on one name; the orchestrator should confirm or rename one if a distinct client is wanted. **If both ship, treat Marsden Holloway as a single shared fictional client.**
+- **Pre-ship:** web-search "Marsden Holloway" against real businesses with the usual check before release.

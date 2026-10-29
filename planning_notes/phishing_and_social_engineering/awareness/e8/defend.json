@@ -1,0 +1,212 @@
+{
+  "_about": "E8 after-the-click defend fragment (awareness pilot). Quayholt Insurance and everyone in it are fictional; every address ends .example. triageSets holds only the episode set e8_used_account (E8's check items feed the general_v2 pair, built by 10_CHECK_FORMS.md's own generator, not this fragment). Copy triageSets and the awarenessEpisode keys into the E8 shells: the wiring agent builds the full erb, the generator (gen_e8_e17_shells.py) builds the defend-only shell. Brand roster and cast: ../BRAND_SET.md (Quayholt Insurance). The one new .example recipient this file adds is _brandAdditions below. ENG-01 (flipAftermath), ENG-09b (conceptPanel array) and ENG-08 (schema) must have landed before the shells validate.",
+
+  "_brandAdditions": {
+    "_use": "For BRAND_SET.md (Quayholt Insurance additions from E8). E8 adds no cast and no new sender brand: Anjali Rao (host), Ayaan Warsame (attack target and victim seat) and Reuben Ofori (genuine colleague, defend row 4) are all built Quayholt cast. It adds one new .example recipient only.",
+    "client": "Marsden Holloway (marsden-holloway.example): a fictional settlement client of Quayholt's claims team, used only as the recipient of the takeover sent-item (flip fa_sent and defend row 1 e8_sent_invoice). No cast member, no inbound mail. 'Marsden' and 'Holloway' each returned zero repo hits on 2026-10-28; it does not reuse 'Fenwick' (E14 subject / healthcare module). Pre-ship: web-search the firm name against real businesses with the usual check."
+  },
+
+  "triageSets": [
+    {
+      "id": "e8_used_account",
+      "_prefix": "Prefix for the full episode (id e8_after_the_click). The defend-only shell (id e8_after_the_click_defend) sets episode_e8_after_the_click_defend_defend_ instead. No stage on purpose, as in E1/E5: the effective stage is 'mission', and an explicit stage with passPercent 0 draws a validator warning.",
+      "_localTells": "unexpected_sent_item, unrequested_reset and ransomware_note are account-takeover and malware signs with no built equivalent, so they are scenario-local to this set (00 section 2's CHANNEL_TELLS is untouched, and no SKILL_NAMES entry is added to phish-rules.js/triage.rb). Each is declared in channelTells with a flagChips label and a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's skill name), and every flagging message carries a factorStrings.<id>.redFlag sentence. Promote one to the shared library only if a 10 check item later scores it. unrequested_mfa_push and secrecy_or_bypass are shared-library tells and need no label.",
+      "playerSentAuth_note": "playerSentAuth is NOT carried in this fragment: it is erb-only (SET_ERB_ONLY_OK) and the flip-only auth read of the sent email, so it lives in full_only.json for the full erb and is kept out of the generated defend-only shell.",
+      "title": "Ayaan's inbox after the click",
+      "brief": "You're covering Ayaan's inbox after the click. Seven things have turned up. For each one, choose Trust, Report, Delete or Verify (ring the service desk or Anjali on a number you already hold), then tick what you noticed. Reporting when you're unsure is always fine and never marked down.",
+      "scoringProfile": "awareness",
+      "verifyVerdict": true,
+      "feedbackMode": "immediate",
+      "headerPanel": "off",
+      "glossary": "closed",
+      "channelTells": ["unexpected_sent_item", "unrequested_reset", "unrequested_mfa_push", "ransomware_note", "secrecy_or_bypass"],
+      "flagChips": {
+        "unexpected_sent_item": "Sent item you didn't send",
+        "unrequested_reset": "Reset you didn't ask for",
+        "ransomware_note": "Ransom note"
+      },
+      "skillNames": {
+        "unexpected_sent_item": "Noticing a sent item you didn't send",
+        "unrequested_reset": "Noticing a reset you didn't ask for",
+        "ransomware_note": "Recognising a ransom note"
+      },
+      "outcome": { "setGlobalPrefix": "episode_e8_after_the_click_defend_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "e8_sent_invoice",
+          "_note": "Row 1. Takeover: a message in the victim's own Sent folder, sent by whoever is signed in as Ayaan. Spoofed-but-passing: it really left Ayaan's authenticated mailbox, so SPF/DKIM/DMARC all pass on quayholt.example; the tell is not the headers but that Ayaan never wrote it. An inline copy of the flip's fa_sent sign, with a distinct id.",
+          "from": { "name": "Ayaan Warsame", "address": "ayaan.warsame@quayholt.example" },
+          "to": "claims-client@marsden-holloway.example",
+          "subject": "Updated payment details for your settlement",
+          "time": "15:08",
+          "body": "Hello,\nPlease note our bank details for your settlement have changed. Use the account on the attached remittance for this and any future payments, and treat this as confidential until it is processed.\nKind regards,\nAyaan Warsame\nClaims, Quayholt Insurance",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "ayaan.warsame@quayholt.example" },
+          "factorStrings": {
+            "unexpected_sent_item": { "redFlag": "A message or item in your own Sent folder that you did not send" }
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["unexpected_sent_item", "secrecy_or_bypass"],
+            "perFlagNote": {
+              "unexpected_sent_item": "This is in your own Sent folder at 15:08, but you did not write it, which means someone is signed in as you right now",
+              "secrecy_or_bypass": "It tells the client to change the paying account and keep it quiet, which is how a mailbox takeover is cashed out"
+            },
+            "ifTrusted": "If you leave it, the client pays a criminal's account and your mailbox keeps sending in your name.",
+            "reportReply": "Thanks. We've locked the account, warned the client not to pay, and started the recovery. You caught it from the Sent folder, which is exactly the sign."
+          }
+        },
+        {
+          "id": "e8_reset_confirm",
+          "_note": "Row 2. Takeover sign from Quayholt's genuine service-desk address: a real confirmation of a change the learner did not make. Pairs softly with row 6 (genuine IT notice from the same real address).",
+          "from": { "name": "Quayholt IT", "address": "it-servicedesk@quayholt.example" },
+          "to": "ayaan.warsame@quayholt.example",
+          "subject": "Your password was changed",
+          "time": "11:52",
+          "body": "Hello,\nThis confirms that the password for your Quayholt account was changed successfully. If you made this change, no action is needed.\nIf you did not make this change, contact the service desk straight away.\nQuayholt IT Service Desk",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "it-servicedesk@quayholt.example" },
+          "factorStrings": {
+            "unrequested_reset": { "redFlag": "A password reset or security change you did not ask for" }
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["unrequested_reset"],
+            "perFlagNote": {
+              "unrequested_reset": "The address is really Quayholt's and this is a genuine confirmation, but you did not change your password, so someone else did"
+            },
+            "ifTrusted": "If you ignore it, the attacker keeps the new password and your access.",
+            "reportReply": "Thanks. We've reset it again to one only you control and locked the old session. A confirmation for a change you didn't make is always worth reporting."
+          }
+        },
+        {
+          "id": "e8_push_abroad",
+          "_note": "Row 3. Authenticator prompt the learner did not start, from a device that is not theirs. Built from the E3 e3_push_early card (account and time changed; perFlagNote reworded for the daytime context: the E3 wording references 02:14 and being asleep, which does not fit 11:48). Deny and report; the push deny_report action scores as Report.",
+          "kind": "push",
+          "time": "11:48",
+          "push": {
+            "app": "Quayholt Sign-in",
+            "request": "Are you trying to sign in?",
+            "account": "ayaan.warsame@quayholt.example",
+            "location": "Unknown location, outside the UK",
+            "device": "Windows PC"
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["unrequested_mfa_push"],
+            "perFlagNote": {
+              "unrequested_mfa_push": "A sign-in prompt you did not start, from a Windows PC outside the UK that is not yours, means someone has your password and is hoping you will tap Approve. Deny it and report it"
+            },
+            "ifTrusted": "Approving would let the sender into your account, with your Quayholt access, from a computer you've never used.",
+            "reportReply": "Thanks. We've reset your password and blocked that sign-in. The prompt is what stopped them."
+          }
+        },
+        {
+          "id": "e8_colleague_slip",
+          "_note": "Row 4. Genuine: a colleague owning up to his own mistake and asking for help. Under the awareness profile a genuine email scores full whether Trusted (read it and help him) or Reported. Reuben Ofori is built Quayholt cast (the hb_vm_locked voicemail caller in E3).",
+          "from": { "name": "Reuben Ofori", "address": "reuben.ofori@quayholt.example" },
+          "to": "ayaan.warsame@quayholt.example",
+          "subject": "I think I've sent something to the wrong client",
+          "time": "09:21",
+          "body": "Ayaan,\nI think I've just sent a claims spreadsheet to the wrong client by mistake. I've not heard back yet. What should I do, and who do I tell?\nReuben",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "reuben.ofori@quayholt.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "Reuben's real address, and a colleague owning up to a mistake and asking for help; reading it and helping him report it is the right move, and reporting it yourself also scores full."
+            }
+          }
+        },
+        {
+          "id": "e8_locked_files",
+          "_note": "Row 5. Malware sign: an on-screen ransom note on the shared drive. Built page card (no ENG-03 states), padlock false, no certificate. No ransom amount, no countdown, no pay button: E8 stops at 'report at once and leave the device as it is' (core_07 owns recovery). Mirror-pairs with row 6 (genuine IT maintenance) so 'anything to do with IT is bad' does not win.",
+          "kind": "page",
+          "subject": "Read README_UNLOCK.txt",
+          "time": "14:30",
+          "body": "Your files are locked. To get them back, follow the instructions in README_UNLOCK.txt.",
+          "page": {
+            "url": "README_UNLOCK (shared drive)",
+            "padlock": false,
+            "heading": "Your files are locked"
+          },
+          "factorStrings": {
+            "ransomware_note": { "redFlag": "A message or on-screen note claiming your files are locked and demanding payment" }
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["ransomware_note"],
+            "perFlagNote": {
+              "ransomware_note": "Files that will not open and a note demanding payment is a sign to report at once and leave the device as it is: do not restart it, do not delete the note, do not try to open the files again"
+            },
+            "ifTrusted": "Acting on the note, or trying to fix it yourself, could destroy the evidence the team needs.",
+            "reportReply": "Thanks. We've isolated the device and the shared drive. Leaving it as it was is exactly what helps."
+          }
+        },
+        {
+          "id": "e8_maintenance",
+          "_note": "Row 6. Genuine: the calibration mirror. A planned-outage notice from IT's real address, also on the intranet, asking you to do nothing. After a run of real signs it is tempting to report everything; Trusting is right, and Verifying or Reporting still score full.",
+          "from": { "name": "Quayholt IT", "address": "it-servicedesk@quayholt.example" },
+          "to": "all-staff@quayholt.example",
+          "subject": "Planned maintenance on the claims system, Saturday 08:00 to 12:00",
+          "time": "08:05",
+          "body": "Hello all,\nThe claims system will be unavailable for planned maintenance this Saturday from 08:00 to 12:00. There is nothing you need to do. This notice is also on the intranet.\nQuayholt IT Service Desk",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "it-servicedesk@quayholt.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "IT's real address, a planned-outage notice that asks you for nothing and is on the intranet too; after a run of real signs it is tempting to report everything, but trusting this is right and verifying or reporting it still scores full."
+            }
+          }
+        },
+        {
+          "id": "e8_parcel",
+          "_note": "Row 7. Genuine, plain-ordinary: a reception notice from Quayholt's own address, nothing to sign in to or pay. Not everything in a bad hour is an attack. May be cut to reach six items.",
+          "from": { "name": "Quayholt Reception", "address": "reception@quayholt.example" },
+          "to": "ayaan.warsame@quayholt.example",
+          "subject": "A parcel is waiting for you at the front desk",
+          "time": "10:40",
+          "body": "Hi Ayaan,\nThere's a parcel for you at the front desk whenever you're passing.\nReception",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "reception@quayholt.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "An ordinary reception notice from Quayholt's own address, nothing to sign in to or pay. Not everything in a bad hour is an attack."
+            }
+          }
+        }
+      ]
+    }
+  ],
+
+  "awarenessEpisode": {
+    "role": "general_staff",
+    "company": "quayholt_insurance",
+    "brand": { "name": "Quayholt Insurance", "logoText": "QUAYHOLT", "accent": "#6b4c9a" },
+    "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: one email to a Quayholt colleague, and the signs that follow in that colleague's inbox. Nothing you write leaves the game.",
+    "defend": { "setId": "e8_used_account", "reportAlwaysVisible": true },
+    "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
+    "strings": {
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: look at what's public about a Quayholt colleague, then write one email, dressed up as the IT service desk, that asks them to sign in again. Then you swap seats. The colleague clicked, and now you're the one whose account is being used. Sort the signs that follow. Only that second part is scored.",
+      "flipHeading": "Now it lands on you",
+      "flipIntro": "This is your email as Ayaan, the claims handler you sent it to, met it, and this time he signed in.",
+      "flipDefenderLine": "The service desk never sends sign-in requests by email, whatever address they come from; that is the one thing that would have given it away.",
+      "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, you're the one whose account is being used, sorting the signs that follow.",
+      "flipMissed": "The defence is the same either way: next, you're the one whose account is being used, sorting the signs that follow.",
+      "flipMissedHeading": "Nothing to replay this time",
+      "flipLandedNoTells": "It landed clean, with nothing in it to catch this time. Next, you're the one whose account is being used, sorting the signs that follow.",
+      "noBlameLine": "Everyone clicks something eventually, and a colleague who reports their own slip is doing exactly the right thing. A miss here just shows where to look next time; nobody is in trouble for reporting.",
+      "mondayCard": "On Monday: if you think you have clicked, signed in or spotted something odd on your account or a colleague's, report it straight away, change your password on the real site, and leave the device as it is. Reporting fast, even your own slip, is what limits the damage, and report it using the route in the box below.",
+      "defendOnly": "These signs were set off by an email built to look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
+      "conceptPanel": [
+        { "heading": "The five questions a report answers", "text": "A useful report answers five questions, as far as you know: what you noticed, when, where (which account, device or system), who is affected, and what you have done so far. Be honest about the last one: 'I clicked the link', 'I signed in', 'I restarted it'. A rough report now beats a perfect one later; the team will ask for the rest." },
+        { "heading": "First steps and recovery", "text": "If you clicked or signed in: report it, change the password on the real site (not through any link), then change it anywhere you used the same one, and follow the service desk. For anything on a device: leave it as it is. Do not switch it off unless you are told to, do not delete the evidence, and do not try to fix it. If the service desk asks, unplug the network cable or turn off Wi-Fi and leave it on." }
+      ]
+    },
+    "_defendOnly": {
+      "_use": "Strings for the defend-only shell (e8_after_the_click_defend), which has no OSINT, write or flip stage. The generator copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared (the flip strings are never shown). The conceptPanel array is carried over, so both concept cards show in the defend-only debrief (ENG-09b).",
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. A colleague clicked a convincing email and signed in, and now their account is being used. You're covering their inbox. Some of what turns up is a real sign that something is wrong, and some is ordinary. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down.",
+      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: the signs that follow in a colleague's inbox after a click."
+    }
+  }
+}
