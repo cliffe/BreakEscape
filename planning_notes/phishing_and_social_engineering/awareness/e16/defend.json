@@ -55,6 +55,18 @@
         "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
         "noFlags": "Next time, tick what you noticed. The review cards show what each one was really asking for."
       },
+      "genuineCopy": {
+        "binnedLeadOne": "One real request was turned down",
+        "binnedLeadMany": "{n} real requests were turned down",
+        "costBoth": "Reporting when you're unsure is never wrong, but a report on a real request takes someone's time to check, and a request turned down leaves a colleague stuck.",
+        "costReport": "Reporting when you're unsure is never wrong, but a report on a real request takes someone's time to check, and the colleague waits.",
+        "costBin": "Turning down a real request has a cost: a colleague who is locked out is left stuck.",
+        "whyBothHalves": "Both halves matter: raising the risky requests protects the firm, and helping with the genuine ones keeps people working and willing to ask."
+      },
+      "criticalWhat": {
+        "email": "going along with a request you hadn't checked",
+        "call": "going along with a caller you hadn't checked"
+      },
       "skillNames": {
         "insider_offer": "Recognising an offer for access or data",
         "shared_login_request": "Spotting a request to share a login"
@@ -205,6 +217,9 @@
     "strings": {
       "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm. A colleague is leaving on Friday and the office is talking. Your job is not to solve anything: keep your access to yourself, report what's offered to you, and pass on facts, not a verdict on anyone. First you make this week's calls and see where each led; then a short set of messages, and a fair way to raise a concern. Only the set is scored.",
       "flipHeading": "A week later",
+      "allRight": "You handled every one of these the right way. Nothing to pick over here.",
+      "allPhishRight": "Every risk was raised, with every sign named.",
+      "reportedPct": "Raised {pct}% of the risks",
       "noBlameLine": "A well-made offer or a plausible rumour fools decent people. Raising an honest concern that turns out to be nothing is never a failure, and nobody is in trouble for being approached.",
       "noBlameLineCritical": "Offers and requests like these catch decent people, and a colleague asking for a login or a favour usually means well, so a miss here is no judgement on anyone. The points only show where to look next time.",
       "mondayCard": "On Monday: think of the one person here you'd tell if you noticed something, and keep your login and your prompts to yourself.",
