@@ -110,3 +110,13 @@ Merges now happen in the orchestrator's own worktree (`.claude/worktrees/orch-me
 - **Routing change:** Sonnet agents were stopped by the safety classifier four times on awareness work that touches attack halves (ENG-03, ENG-06/07, E14 wiring, E12 wiring); opus48 finished each. From now on, wiring of an episode with an attack half goes to opus48; Sonnet keeps engine-only, consequence-flip and check-form wiring, and playtests.
 - Running: wiring E10, E12 (retry), E13, E14 (opus48), E20 (Sonnet), core_00 + data_conduct shells (Sonnet); E8 confirmation review C3 (opus48) and E8 persona playtest P1 (Sonnet); content E18 (opus48).
 - Findings parked for each episode's design review: E15's "that stick in the post was ours" reveal has no home (no fragment or debrief slot); E15's defendIntro shows only after the drill.
+
+## E8 stage status
+
+| Stage | Cycles | Result |
+|---|---|---|
+| Design | C1 0/3/8, C2 0/0/1, C3 0/0/0 | closed (MI5 kept by design) |
+| Dialogue | C1 0/0/3, C2 0/0/0 | closed (WC-1, WC-2 optional, not taken) |
+| Playtest | P1 persona + reload running | |
+
+- Wired E9 + E16 (bridges 14/14, 17/17). E9 got an `attack` block (validator requires it), slot `word`s and `stepLabels.flip`; E16's concern-form keys were reshaped to the schema. Design C1 now running for E9, E11, E15, E16, E17, E19 (opus48, one each; shared `REVIEWER_BRIEF.md`).
