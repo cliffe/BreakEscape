@@ -104,7 +104,7 @@
           "claims": [ { "fact": "recipient", "from": "blank:recipient" } ],
           "text": "It's the sample box for {recipient}, she's expecting it today." },
         "hands_full": { "technique": "deflect", "requires": ["merrin_badge_door"], "claims": [],
-          "text": "My hands are full and the badge is back in the van, could you just buzz me through?" },
+          "text": "My hands are full and the badge's back in the van." },
         "double_parked": { "technique": "urgency", "also": ["deflect"], "claims": [],
           "text": "I'm double-parked with a full run on, any chance you can be quick?" },
         "no_need_to_sign": { "technique": "deflect", "also": ["urgency"], "claims": [],
