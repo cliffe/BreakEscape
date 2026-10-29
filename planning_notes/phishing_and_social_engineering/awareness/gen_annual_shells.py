@@ -164,6 +164,8 @@ def scenario(mission, name, brief, end_goal, aim, task, done, globals_, social, 
 def ink_source(header, host, done, lines):
     before, after, choice, reply = lines
     n = host['displayName']
+    if isinstance(before, (list, tuple)):  # several host lines (each under the 30-word cap)
+        before = f'\n        {n}: '.join(before)
     return f"""// ================================================
 // {header}: {n} (person, Training Room)
 // {host['about']}
@@ -220,7 +222,8 @@ HOSTS = {
 }
 
 LINES = (
-    "Welcome to the year-end edition. It's a mixed run of this year's messages across email, calls, a text and a sign-in page, from a few different companies. Real ones are in there with the scams. Take them one at a time.",
+    ("Welcome to the year-end edition. It's a mixed run of this year's messages, across a few channels and a few companies.",
+     "Real ones are in there with the scams. Take them one at a time, and say why on each."),
     "That's the year covered, thanks. Check another way, report what doesn't sit right, and leave the rest to the people whose job it is.",
     'Thanks, Graham.', 'Any time.',
 )

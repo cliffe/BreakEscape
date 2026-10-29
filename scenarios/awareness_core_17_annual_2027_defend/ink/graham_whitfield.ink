@@ -21,7 +21,8 @@ VAR hub_quiet = false
     { episode_core_17_annual_2027_defend_defend_done:
         Graham Whitfield: That's the year covered, thanks. Check another way, report what doesn't sit right, and leave the rest to the people whose job it is.
     - else:
-        Graham Whitfield: Welcome to the year-end edition. It's a mixed run of this year's messages across email, calls, a text and a sign-in page, from a few different companies. Real ones are in there with the scams. Take them one at a time.
+        Graham Whitfield: Welcome to the year-end edition. It's a mixed run of this year's messages, across a few channels and a few companies.
+        Graham Whitfield: Real ones are in there with the scams. Take them one at a time, and say why on each.
     }
 }
 + [Thanks, Graham.]

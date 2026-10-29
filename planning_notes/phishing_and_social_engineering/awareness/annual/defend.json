@@ -39,7 +39,7 @@
             "address": "accounts@brightwel1foods.example"
           },
           "to": "payments@brightwellfoods.example",
-          "subject": "Updated bank details — please action today",
+          "subject": "Updated bank details, please action today",
           "time": "10:12",
           "body": "Hi team,\nHarlow Packaging have moved to a new bank. Please change the payee account on invoice INV-2217 before today's payment run, so the payment doesn't bounce.\nNew account name: Harlow Packaging Ltd\nNew account number ending 7716\nThanks,\nAccounts",
           "auth": {
@@ -138,9 +138,9 @@
           "callerId": "Gordon McLeish, Claims (calling from a mobile)",
           "time": "10:52",
           "transcript": [
-            { "who": "Gordon", "text": "Gordon McLeish. My password's expired while I was on leave and now nothing works. I've a settlement call at twelve." },
-            { "who": "Gordon", "text": "QH-20719, Ngozi Okonkwo. Twenty-two years I've been here, and I still get the questions." },
-            { "who": "Gordon", "text": "Fine. Whatever you need to do, just make it quick, I've that call at twelve." }
+            { "who": "Caller", "text": "Gordon McLeish. My password's expired while I was on leave and now nothing works. I've a settlement call at twelve." },
+            { "who": "Caller", "text": "QH-20719, Ngozi Okonkwo. Twenty-two years I've been here, and I still get the questions." },
+            { "who": "Caller", "text": "Fine. Whatever you need to do, just make it quick, I've that call at twelve." }
           ],
           "truth": {
             "isPhish": false,

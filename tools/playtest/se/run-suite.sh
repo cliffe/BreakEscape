@@ -48,6 +48,7 @@ JOBS=(
   e20-full:awareness_e20_remote_and_mobile_working
   e17-defend:awareness_e17_acceptable_use_defend
   core00:awareness_core_00_first_play
+  core17:awareness_core_17_annual_2027_defend
 )
 
 new_game() { # scenario -> game id
