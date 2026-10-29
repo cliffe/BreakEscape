@@ -1,21 +1,16 @@
 // Key-driven walking for the walking shots (no click-to-move marker on screen). Legs hold an arrow key for a computed time.
 import { sleep } from './lib.mjs';
 
-/** Measure walking speed (px/s) with a short off-camera walk in a safe direction. */
-export async function measureSpeed(bridge, dir = 'up') {
-  const p0 = (await bridge.getState()).player;
-  await bridge.walk(dir, 400);
-  const p1 = (await bridge.getState()).player;
-  await sleep(200);
-  return Math.hypot(p1.x - p0.x, p1.y - p0.y) / 0.4;
-}
-/** Walk legs [['up', targetY] | ['left'|'right', targetX]] by holding the key for the estimated time, then correcting in short pulses. */
+const OPP = { up: 'down', down: 'up', left: 'right', right: 'left' };
+/** Walk legs [[dir, target]]: 'up'/'down' move to world y = target, 'left'/'right' to world x = target. The direction is flipped if the target lies the other way.
+ *  Each leg holds the arrow key for the time the distance needs at `speed` px/s, then corrects in short pulses. */
 export async function keyLegs(bridge, legs, speed, mark) {
-  for (const [dir, target] of legs) {
-    const axis = (dir === 'up' || dir === 'down') ? 'y' : 'x';
-    const sign = (dir === 'up' || dir === 'left') ? -1 : 1;
+  for (const [dir0, target] of legs) {
+    const axis = (dir0 === 'up' || dir0 === 'down') ? 'y' : 'x';
     const cur = (await bridge.getState()).player[axis];
-    const ms = Math.max(0, Math.round(((target - cur) * sign) / speed * 1000) - 60);
+    const dir = ((target - cur) * ((dir0 === 'up' || dir0 === 'left') ? -1 : 1)) >= 0 ? dir0 : OPP[dir0];
+    const sign = (dir === 'up' || dir === 'left') ? -1 : 1;
+    const ms = Math.max(0, Math.round(Math.abs(target - cur) / speed * 1000) - 60);
     if (mark) mark('leg:' + dir, { from: cur, to: target, ms });
     if (ms > 50) await bridge.walk(dir, ms);
     for (let i = 0; i < 4; i++) {
