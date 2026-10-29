@@ -3,6 +3,8 @@
 // first guesses, patterns built from OSINT facts the learner collected, a password reused from a
 // breached hobby site that opens the work account, and a three-random-words passphrase that is still
 // being tried when the rig is switched off.
+// ENG-02b: `mode` 'spray' and 'stuff' draw the organisation-scale console (E18) through the same rows and
+// stepping: roster, word list, spray passes, a masked credential-stuffing panel and the passphrase hold-out.
 //
 // The scene 'password-guesser', launched by the episode runner through launchChild.
 //
@@ -101,6 +103,7 @@ export class PasswordGuesserMinigame extends SocialOverlayScene {
             for (const row of panel.rows) {
                 const li = el('li', 'epr-gs-row');
                 li.dataset.row = row.id;
+                if (row.address) li.dataset.address = 'true';
                 const text = el('span', 'epr-gs-text', row.text);
                 const status = el('span', 'epr-gs-status');
                 li.append(text, status);
@@ -142,7 +145,7 @@ export class PasswordGuesserMinigame extends SocialOverlayScene {
             const state = this.run.stateOf(i);
             const node = this.rowNodes[i];
             node.li.dataset.state = state;
-            node.li.className = `epr-gs-row epr-gs-${state}`;
+            node.li.className = `epr-gs-row epr-gs-${state}${row.address ? ' epr-gs-address' : ''}`;
             node.status.textContent = this._text(state);
             if (node.note) node.note.hidden = state !== 'opened';
         });

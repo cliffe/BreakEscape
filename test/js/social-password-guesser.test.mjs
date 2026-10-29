@@ -237,10 +237,12 @@ test('the passphrase always holds, whatever the block says', () => {
 test('modeOf: absent is target; an unregistered mode has no builder (nothing renders it)', () => {
     assert.equal(G.modeOf({}), 'target');
     assert.equal(G.modeOf({ mode: 'target' }), 'target');
-    assert.equal(G.modeOf({ mode: 'spray' }), null);
+    assert.equal(G.modeOf({ mode: 'sweep' }), null);
+    assert.equal(G.modeOf({ mode: 'spray' }), 'spray');
+    assert.equal(G.modeOf({ mode: 'stuff' }), 'stuff');
     assert.equal(G.modeOf({ mode: '__proto__' }), null);
-    assert.equal(G.buildRun({ mode: 'spray' }, {}), null);
-    assert.deepEqual(Object.keys(G.MODE_BUILDERS), ['target']);
+    assert.equal(G.buildRun({ mode: 'sweep' }, {}), null);
+    assert.deepEqual(Object.keys(G.MODE_BUILDERS), ['target', 'spray', 'stuff']);
 });
 
 test('GuesserRun steps one row at a time; landed once the reuse row is reached; switch-off only at the end', () => {
@@ -360,7 +362,7 @@ test('lines come from config.strings and params.note over the defaults; text is 
 });
 
 test('an unregistered mode draws one line and a Close, and never reports finished', () => {
-    const { writes, results } = openScene({ ...guessBlock(), mode: 'spray' }, allFound);
+    const { writes, results } = openScene({ ...guessBlock(), mode: 'sweep' }, allFound);
     const root = cur().container;
     assert.ok(root.querySelector('.epr-gs-note').textContent.includes('does not know how to run'));
     assert.equal(root.querySelectorAll('.epr-gs-row').length, 0);
