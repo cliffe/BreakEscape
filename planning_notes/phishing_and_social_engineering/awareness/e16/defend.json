@@ -19,14 +19,29 @@
       "feedbackMode": "immediate",
       "headerPanel": "off",
       "glossary": "closed",
-      "channelTells": ["insider_offer", "secrecy_or_bypass", "borrowed_authority", "unrequested_mfa_push", "lookalike_domain"],
+      "_labels": "F-E16-1 (E15_E16_PLAYTEST_P1): the flagged items include two genuine colleagues (Reuben's login request, Ross's handover) and an outside offer, so the engine's phishing defaults are wrong and read as blame. The verdict hints default to 'This is a phish. Send it to security'; the team tally to 'Phish stopped for the team: {n}'; the result counter to 'Phish caught'; the scored-round line to 'naming the flags'. labels.verdict.<v>.hint, teamBadge/teamBadgeTitle, phishCaughtLabel and scoreLine reword them so a reported colleague is never counted as a phish (inbox-triage-minigame.js _renderTeamTally, result builder, triage-kinds.js).",
+      "labels": {
+        "verdict": {
+          "trust": { "hint": "This one's genuine. I'd act on it." },
+          "report": { "hint": "This needs reporting. Tell the security team." },
+          "delete": { "hint": "This is junk. I'd just delete it." },
+          "verify": { "hint": "I'd check first: ring the service desk, or confirm on a number I already hold." }
+        },
+        "teamBadge": "Risks reported for the team: {n}",
+        "teamBadgeTitle": "Offers, risky requests and fakes you reported or checked this round rather than acting on them",
+        "phishCaughtLabel": "Handled right",
+        "scoreLine": "Right call is most of the score; naming what you noticed is the rest."
+      },
+      "channelTells": ["insider_offer", "shared_login_request", "secrecy_or_bypass", "unrequested_mfa_push", "lookalike_domain"],
       "flagChips": {
-        "insider_offer": "Offer of money or favours for access"
+        "insider_offer": "Offer of money or favours for access",
+        "shared_login_request": "A request to use someone else's login"
       },
       "skillNames": {
-        "insider_offer": "Recognising an offer for access or data"
+        "insider_offer": "Recognising an offer for access or data",
+        "shared_login_request": "Spotting a request to share a login"
       },
-      "_localTells": "insider_offer is an offer-of-money-for-access sign with no built-library equivalent, so it is scenario-local to this set (00 section 2's CHANNEL_TELLS is untouched, and no SKILL_NAMES entry is added to phish-rules.js/triage.rb). It is declared in channelTells with a flagChips label and a set-level skillNames name, and the one flagging message (row 1) carries a factorStrings.insider_offer.redFlag sentence. Promote it to the shared library only if a 10 check item later scores it. secrecy_or_bypass, borrowed_authority, unrequested_mfa_push and lookalike_domain are shared-library tells (00 section 2) and need no label.",
+      "_localTells": "insider_offer (offer of money for access) and shared_login_request (a request to use or share a login) have no built-library equivalent, so both are scenario-local to this set (00 section 2's CHANNEL_TELLS is untouched, and no SKILL_NAMES entry is added to phish-rules.js/triage.rb). Each is declared in channelTells with a flagChips label and a set-level skillNames name, and its flagging message carries a factorStrings.<id>.redFlag sentence. F-E16-2 (E15_E16_PLAYTEST_P1): Reuben's login request was tagged borrowed_authority, whose shared chip reads 'Someone senior is invoked to skip a check'; Reuben is a peer and invokes nobody senior, so the chip and the 'Weakest skill: Borrowed authority' result line were wrong. The request is retagged to the local shared_login_request tell, which names what the message actually does, and borrowed_authority is dropped from this set's channelTells (no other item uses it). Promote either local tell to the shared library only if a 10 check item later scores it. secrecy_or_bypass, unrequested_mfa_push and lookalike_domain are shared-library tells (00 section 2) and need no label.",
       "outcome": { "setGlobalPrefix": "episode_e16_insider_risk_defend_", "passPercent": 0 },
       "messages": [
         {
@@ -58,11 +73,14 @@
           "time": "09:34",
           "body": "Morning,\nI'm locked out and I've a report due at ten. Any chance I could just use your login for ten minutes? I'll be quick, promise.\nReuben",
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "reuben.ofori@quayholt.example" },
+          "factorStrings": {
+            "shared_login_request": { "redFlag": "A request to use or share someone else's login" }
+          },
           "truth": {
             "isPhish": true,
-            "flags": ["borrowed_authority"],
+            "flags": ["shared_login_request"],
             "perFlagNote": {
-              "borrowed_authority": "Lending your login hands someone your access under your name; whatever they open goes on your record, and it may show him more than he should see."
+              "shared_login_request": "Lending your login hands someone your access under your name; whatever they open goes on your record, and it may show him more than he should see."
             },
             "ifTrusted": "His actions for those ten minutes are logged as yours, and he may reach data he has no business in.",
             "reportReply": "Thanks, the service desk reset his own login in minutes. Reuben is a genuine colleague, so the move is to decline the login and point him to the safe route, not to leave him stuck.",
@@ -109,7 +127,7 @@
             },
             "ifTrusted": "The accounts would sit in a personal inbox outside the firm, and taking data to a new job can be a crime.",
             "reportReply": "Thanks. Declining the personal-email export and asking his manager what the handover actually needs is right, and it still gets Ross a proper handover.",
-            "kindLine": "Ross is a genuine leaver, but sending the client list to a personal inbox takes the firm's data outside its protection, and that can be a crime.",
+            "kindLine": "Ross is a genuine leaver, but the handover goes in the shared place; a personal inbox takes the firm's data outside its protection.",
             "missLabel": "sending company data to a personal inbox"
           }
         },
@@ -164,13 +182,15 @@
     "defend": { "setId": "e16_leaver_week_inbox", "reportAlwaysVisible": true },
     "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
     "strings": {
-      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm. A colleague is leaving on Friday, and the office is talking. Your job is not to solve anything: keep your access to yourself, report what's offered to you, notice what you actually see, and pass facts to the right person, fairly, including about the colleague everyone is whispering about. First you make this week's ordinary calls; then you see where each led. Then a short set of messages, and a fair way to raise a concern. Only the set is scored.",
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm. A colleague is leaving on Friday and the office is talking. Your job is not to solve anything: keep your access to yourself, report what's offered to you, and pass on facts, not a verdict on anyone. First you make this week's calls and see where each led; then a short set of messages, and a fair way to raise a concern. Only the set is scored.",
       "flipHeading": "A week later",
       "noBlameLine": "A well-made offer or a plausible rumour fools decent people. Raising an honest concern that turns out to be nothing is never a failure, and nobody is in trouble for being approached.",
       "mondayCard": "On Monday: think of the one person here you'd tell if you noticed something, and keep your login and your prompts to yourself.",
       "defendOnly": "The offers and the rumours here are the kind that catch decent people. The ones you were caught out by are shown below, with what good looks like, and a fair way to raise a concern.",
+      "_teamLine": "F-E16-1 (E15_E16_PLAYTEST_P1): the debrief team line defaults to 'kept {n} phish away from your team' (debrief-view.js teamLine). This set includes genuine colleagues, so the override drops 'phish' and keeps the no-blame register. {n} is the count.",
+      "teamLine": "By reporting or checking {n} of these rather than acting on them, you warned the team where it mattered and pointed colleagues to the safe route, without treating anyone as a suspect.",
       "conceptPanel": [
-        { "heading": "Seen, said, true", "text": "What the office saw about Samira: in early, taking calls in the stairwell, visiting HR. What was said: she was 'going with Ross'. What was true: her father was in hospital all week. Unusual is not the same as wrong, and a kind word comes first. Rumours tend to land on the person already having the hardest week." },
+        { "heading": "Seen, said, true", "text": "The colleague the office was whispering about, Samira: what people saw was her in early, taking calls in the stairwell, visiting HR. What was said was that she was leaving with Ross, a manager also on his way out. What was true was that her father was in hospital all week. Unusual is not the same as wrong, and a kind word comes first. Rumours tend to land on the person already having the hardest week." },
         { "heading": "Three things to keep", "text": "Your login is you: never share it, never borrow one. Offers get reported: don't reply, screenshot and send it on. Concerns go to the right person as facts, not a verdict on anyone. You don't have to be sure; you do have to be fair." }
       ]
     },
