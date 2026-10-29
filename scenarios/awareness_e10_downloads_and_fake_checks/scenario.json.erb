@@ -114,7 +114,7 @@
           "verdict": {
             "trust": { "hint": "This page is genuine. Carry on with what I came to do.", "past": "Carried on" },
             "report": { "hint": "This is a trap. Close it and tell security.", "past": "Reported" },
-            "delete": { "hint": "Don't use this page; reach what I need the trusted way.", "past": "Went the trusted way" }
+            "delete": { "hint": "Skip this page and reach what I came for the trusted way: Quayholt Apps, a bookmark, or an address I typed myself.", "past": "Went the trusted way" }
           }
         },
         "flagChips": {
@@ -432,8 +432,8 @@
             "text": "Read the address from the right-hand end, where the real name sits. A padlock only means nobody can listen in on the connection; it does not make a site honest, and a fake page can show one too. A familiar address is still no reason to do what a site suddenly tells you: sites get hacked."
           },
           {
-            "heading": "The four tricks",
-            "text": "A web page cannot run anything on your computer by itself, so it tries to get you to: a 'verify you are human' box that wants you to paste and run something, a fake 'your browser is out of date' prompt, a full-screen alarm with a number to call, or an extension that asks to read and change everything. None of them is real. Close the page."
+            "heading": "The tricks a page tries",
+            "text": "A web page cannot run anything on your computer by itself, so it tries to get you to: a 'verify you are human' box that wants you to paste and run something, a fake 'your browser is out of date' prompt, a full-screen alarm with a number to call, an extension that asks to read and change everything, or a download that is really a program dressed up as a document. None of them is real. Close the page."
           },
           {
             "heading": "If you slipped",
@@ -693,6 +693,12 @@
         "title": "Fernside order portal: verify you are human",
         "profile": "awareness",
         "pageType": "fakeCheck",
+        "pretext": {
+          "facts": [
+            "quayholt_fernside_portal",
+            "fernside_small_site"
+          ]
+        },
         "tellCounter": true,
         "targets": {
           "order_colleague": {
@@ -712,7 +718,7 @@
           "hosts": [
             {
               "id": "genuine",
-              "label": "Fernside's own order portal (orders.fernside.example), broken into",
+              "label": "The real Fernside order page (orders.fernside.example), after someone has broken into it",
               "trust": "genuine"
             },
             {

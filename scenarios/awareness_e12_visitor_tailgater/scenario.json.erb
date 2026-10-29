@@ -112,7 +112,7 @@
           "secrecy_or_bypass"
         ],
         "flagChips": {
-          "tailgating": "Tailgating",
+          "tailgating": "Tailgating (following someone through a badged door)",
           "no_escort": "No escort",
           "uniform_pretext": "Uniform or job title as proof",
           "not_expected": "Not on today's list",
@@ -202,7 +202,7 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "They're on the day's list for a named meeting and happy to be signed in and walked up. A quick look at the list or a call to Yasmin is the full-mark move; just letting them in scores half.",
+                "default": "They're on the day's list for a named meeting and happy to be signed in. Signing them in and walking them up is the right call, and a glance at the list or a quick word with Yasmin confirms it.",
                 "not_expected": "They are on today's list, which a quick glance confirms."
               },
               "falseAlarmCost": "Turn them away and a real client is left in the lobby and the meeting is missed."
@@ -275,12 +275,14 @@
               "flags": [
                 "tailgating",
                 "borrowed_authority",
-                "secrecy_or_bypass"
+                "secrecy_or_bypass",
+                "uniform_pretext"
               ],
               "perFlagNote": {
                 "borrowed_authority": "Dropping a partner's name doesn't make the delivery expected.",
                 "secrecy_or_bypass": "'Don't bother signing me in' is the ask to skip the one check.",
-                "tailgating": "Buzzing the door without a badge is letting them tailgate on your say-so."
+                "tailgating": "Buzzing the door without a badge is letting them tailgate on your say-so.",
+                "uniform_pretext": "The hi-vis and the parcel say 'courier', but neither proves this delivery was expected."
               },
               "ifTrusted": "A stranger is through the badge door and onto the studio floor.",
               "reportReply": "Thanks, real couriers leave the parcel at the desk; we logged it."
@@ -288,6 +290,9 @@
             "factorStrings": {
               "tailgating": {
                 "redFlag": "Someone followed an authorised person through a secure door without badging in."
+              },
+              "uniform_pretext": {
+                "redFlag": "A hi-vis jacket, a clipboard or a job title used in place of being expected."
               }
             }
           },
@@ -384,7 +389,7 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "The screen's locked and the visitor is where they were left, so there's nothing open to read. A quick glance to confirm is the habit; just carrying on scores half.",
+                "default": "The screen's locked and the visitor is where they were left, so there's nothing open to read. Carrying on is fine, and a quick glance to confirm is the same good habit.",
                 "unlocked_screen": "Locked before stepping away is exactly right, nothing to act on."
               },
               "falseAlarmCost": "Raise it as an alarm and you've pulled security over to a colleague who did everything right."
@@ -448,8 +453,8 @@
         "mondayCard": "On Monday: if you don't recognise someone, help them, 'Can I help you find someone? I'll walk you to reception.' Don't hold a secure door for a stranger, everyone badges in for themselves, lock your screen whenever you step away (Windows key and L), and report anyone who pushes past a check, using the route in the box below.",
         "defendOnly": "These visitors were played by people whose job is to look like they belong, and a busy desk can be caught by any of them. Any you were caught out by are shown below, with what gave each one away.",
         "conceptPanel": {
-          "heading": "Why the courier got in",
-          "text": "The parcel, the partner's name and the hurry were all easy to supply, and none of them proved the courier was expected. The one thing that would have stopped it costs nothing: a glance at the day's list and walking the visitor to the desk instead of buzzing the door blind. A genuine visitor never minds being signed in and escorted; the one who pushes to skip it is the one to report. The same visitor, once inside, reads whatever is left open, so a locked screen when you step away is part of the same habit."
+          "heading": "What the courier relied on",
+          "text": "The parcel, the partner's name and the hurry were all easy to supply, and none of them proved the courier was expected. What stops it costs nothing: a glance at the day's list and walking the visitor to the desk instead of buzzing the door blind. A genuine visitor never minds being signed in and escorted; the one who pushes to skip it is the one to report. The same visitor, once inside, reads whatever is left open, so a locked screen when you step away is part of the same habit."
         },
         "defendIntro": "Now you're the one on the Merrin & Sallow desk. Visitors arrive one at a time: some are expected, some are not, and one or two will try to talk their way past a check. Take each as it comes; there's no clock on you here."
       },
@@ -552,7 +557,7 @@
     },
     "intelFacts": {
       "merrin_badge_door": {
-        "text": "The design studio sits behind a badge door; front-of-house buzz expected visitors and couriers through.",
+        "text": "The design studio sits behind a badge door, and the front-of-house team buzzes expected visitors and couriers through from the reception desk.",
         "subject": "company",
         "source": "blk_visit",
         "provides": [],
@@ -597,7 +602,7 @@
                 {
                   "id": "blk_visit",
                   "kind": "p",
-                  "text": "Our design studio sits behind a badge door. Front-of-house buzz expected visitors and couriers through from the reception desk.",
+                  "text": "Our design studio sits behind a badge door, and the front-of-house team buzzes expected visitors and couriers through from the reception desk.",
                   "fact": "merrin_badge_door"
                 },
                 {
@@ -659,6 +664,11 @@
         },
         "labels": {
           "merrin_partner": "Catherine Merrin"
+        },
+        "prepLabels": {
+          "approachTitle": "Your aim: talk the front desk into buzzing you through the badge door without a badge",
+          "heldTitle": "What you found",
+          "heldEmpty": "You haven't found anything to use yet."
         },
         "lines": {
           "open_parcel": {
@@ -740,7 +750,7 @@
           "techniques": {
             "authority_borrowed": "Borrowed authority. A partner's name on the box does not make the delivery expected.",
             "urgency": "Urgency. Being in a hurry is the oldest line for skipping a check.",
-            "deflect": "Dodging the check. Buzzing you through blind, rather than signing you in and walking you up, is exactly what a genuine courier never needs."
+            "deflect": "Dodging the check. A genuine courier is happy to sign in and be walked up; trying to skip that is the tell."
           },
           "ask": {
             "accepted": "She buzzed the door on the partner's name and the hurry, and neither of those proved the delivery was expected.",
