@@ -47,11 +47,11 @@ module ValidateSocial
     GLOSSARIES = %w[closed open off].freeze
     CHIP_STYLES = %w[plain technical character].freeze
     AUTH_VALUES = %w[pass fail none].freeze
-    NON_EMAIL_KINDS = %w[sms voicemail qr page call push].freeze
+    NON_EMAIL_KINDS = %w[sms voicemail qr page call push choice].freeze
     # The fields each non-email kind reads (triage-kinds.js). Any of them on another kind is ignored.
     KIND_FIELDS = {
       'sms' => %w[earlier], 'voicemail' => %w[duration transcript audio], 'qr' => %w[qr],
-      'page' => %w[page], 'call' => %w[callerId transcript], 'push' => %w[push]
+      'page' => %w[page], 'call' => %w[callerId transcript], 'push' => %w[push], 'choice' => %w[choice]
     }.freeze
     KINDS = (%w[email playerSent] + NON_EMAIL_KINDS).freeze
     # The four globals a set writes, with the declared type each takes.
@@ -239,8 +239,9 @@ module ValidateSocial
       issues
     end
 
-    LABEL_QUEUES = %w[inbox call push callPush voicemail page sms other].freeze
-    LABEL_KINDS = %w[email sms voicemail qr page call push].freeze
+    LABEL_QUEUES = %w[inbox call push callPush voicemail page sms choice other].freeze
+    CHOICE_TEXT_KEYS = %w[brief group answered right wrong better whyRight ifWrong].freeze
+    LABEL_KINDS = %w[email sms voicemail qr page call push choice].freeze
 
     # The wording options (resultCopy, reportReplyFrom, skillNames, tellStrings, labels), and the
     # scenario-local tells they exist for: a local tell (a channelTells id outside 00 section 2 that
@@ -298,7 +299,7 @@ module ValidateSocial
       return [err("#{where}.labels must be an object")] unless labels.is_a?(Hash)
 
       issues = []
-      known = %w[kind verdict callActions pushActions smsHeading queue]
+      known = %w[kind verdict callActions pushActions smsHeading queue choice]
       labels.each_key { |k| issues << err("#{where}.labels has the key '#{k}', which is not one of #{known.join(', ')}") unless known.include?(k) }
       issues << err("#{where}.labels.smsHeading is empty") if labels.key?('smsHeading') && blank?(labels['smsHeading'])
       group = lambda do |key, ids|
@@ -318,6 +319,17 @@ module ValidateSocial
             v.each { |f, t| issues << err("#{where}.labels.#{key}.#{id}.#{f} is empty") if %w[label past hint].include?(f) && blank?(t) }
           end
           issues << warn_("#{where}.labels.#{key} has the key '#{id}', which is not one of #{ids.join(', ')}; it is never read") unless ids.include?(id)
+        end
+      end
+      if labels.key?('choice')
+        ch = labels['choice']
+        if ch.is_a?(Hash)
+          ch.each do |id, v|
+            issues << warn_("#{where}.labels.choice has the key '#{id}', which is not one of #{CHOICE_TEXT_KEYS.join(', ')}; it is never read") unless CHOICE_TEXT_KEYS.include?(id)
+            issues << err("#{where}.labels.choice.#{id} is empty") if blank?(v)
+          end
+        else
+          issues << err("#{where}.labels.choice must be an object of wording lines")
         end
       end
       group.call('kind', LABEL_KINDS)
@@ -379,7 +391,7 @@ module ValidateSocial
 
       issues = []
       seen = {}
-      if msgs.any? { |m| m.is_a?(Hash) && NON_EMAIL_KINDS.include?(kind(m)) } && (universe - FACTORS).empty?
+      if msgs.any? { |m| m.is_a?(Hash) && NON_EMAIL_KINDS.include?(kind(m)) && kind(m) != 'choice' } && (universe - FACTORS).empty?
         issues << warn_("#{where} holds non-email messages but enables no channelTells; their chip list would offer only 'Nothing looks wrong'")
       end
       msgs.each_with_index do |m, i|
@@ -417,6 +429,8 @@ module ValidateSocial
         issues << err("#{mw}: a call message belongs in an awareness set with verifyVerdict: true (analyst sets never enable Verify)") unless aware && set['verifyVerdict'] == true
       elsif k == 'push'
         issues << err("#{mw}: a push message belongs in an awareness set") unless aware
+      elsif k == 'choice'
+        issues << err("#{mw}: a choice message belongs in an awareness set (its options are scored through the awareness verdict rows)") unless aware
       end
       issues
     end
@@ -439,7 +453,8 @@ module ValidateSocial
         issues << warn_("#{mw} is a #{k} message with 'auth'; only email has a header panel, so it is ignored")
       end
       issues.concat(kind_field_checks(m, k, mw))
-      issues.concat(truth_checks(m, universe, mw))
+      issues.concat(k == 'choice' ? choice_checks(m, mw) : truth_checks(m, universe, mw))
+      issues.concat(truth_correct_checks(m, mw)) unless k == 'choice'
       issues
     end
 
@@ -505,12 +520,100 @@ module ValidateSocial
       when 'call'
         issues.concat(transcript_checks(m['transcript'], "#{mw}.transcript", required: true))
         issues << warn_("#{mw} has no callerId or from; the card would say 'Unknown caller'") if blank?(m['callerId']) && !who
+      when 'choice'
+        issues.concat(choice_shape_checks(m['choice'], "#{mw}.choice"))
       when 'push'
         pu = m['push']
         issues << err("#{mw}.push.app is missing; the prompt would not say which app is asking") if !pu.is_a?(Hash) || blank?(pu['app'])
         issues << warn_("#{mw}.time is empty; the prompt's time is often the tell (an odd hour)") if blank?(m['time'])
       end
       issues
+    end
+
+    # ---- choice (ENG-09a) --------------------------------------------------------
+    # The verdicts that earn full marks under the awareness profile, by truth (triage-scoring.js
+    # VERDICT_POINTS): the right option must be one of them.
+    FULL_MARKS_VERDICTS = { true => %w[report verify], false => %w[trust report verify] }.freeze
+    BUILT_VERDICTS = %w[trust report delete verify].freeze
+    # A bare token of 8+ characters that mixes three kinds of character reads like a pasted password.
+    CREDENTIAL_RE = /\A(?=\S{8,}\z)(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])\S+\z/.freeze
+
+    def self.choice_shape_checks(c, where)
+      return [err("#{where} is missing; a choice message needs { prompt, options }")] unless c.is_a?(Hash)
+
+      issues = []
+      issues << err("#{where}.prompt is empty or missing; the card would ask nothing") if blank?(c['prompt'])
+      issues << err("#{where}.note is empty") if c.key?('note') && blank?(c['note'])
+      opts = c['options']
+      unless opts.is_a?(Array) && opts.length.between?(2, 4)
+        issues << err("#{where}.options must hold two to four options (a choice card is one decision)")
+        return issues
+      end
+      ids = []
+      opts.each_with_index do |o, i|
+        ow = "#{where}.options[#{i}]"
+        unless o.is_a?(Hash)
+          issues << err("#{ow} must be an object { id, label, verdict }")
+          next
+        end
+        issues << err("#{ow}.id is empty or missing") if blank?(o['id'])
+        issues << err("#{ow}.label is empty or missing; the button would be blank") if blank?(o['label'])
+        issues << err("#{ow}.verdict '#{o['verdict']}' must be one of #{BUILT_VERDICTS.join(', ')}") unless BUILT_VERDICTS.include?(o['verdict'])
+        ids << o['id'] unless blank?(o['id'])
+        if o['label'].is_a?(String) && o['label'].match?(CREDENTIAL_RE)
+          issues << warn_("#{ow}.label is a bare string that looks like a real credential; use a made-up example inside a sentence, never a password anyone uses")
+        end
+      end
+      issues << err("#{where}.options: an id is used more than once") if ids.uniq.length != ids.length
+      issues
+    end
+
+    # A choice card has no flags to tick; its truth names the verdict of the right option.
+    def self.choice_checks(m, mw)
+      t = m['truth']
+      return [err("#{mw}.truth is missing; the round could not score this choice")] unless t.is_a?(Hash)
+
+      issues = []
+      unless [true, false].include?(t['isPhish'])
+        issues << err("#{mw}.truth.isPhish must be true or false (it picks the scoring column; the safe option maps to a full-marks verdict)")
+        return issues
+      end
+      issues << err("#{mw}.truth.flags: a choice card authors no flags (there is nothing to tick); leave it empty") unless Mail.list(t['flags']).empty?
+      %w[links attachments].each do |f|
+        issues << err("#{mw}.#{f}: a choice card holds one decision and has no #{f}") unless Mail.list(m[f]).empty?
+      end
+      %w[perFlagNote flagAlternatives].each do |f|
+        issues << warn_("#{mw}.truth.#{f} is on a choice card, which authors no flags; it is never read") if t.key?(f)
+      end
+      %w[ifTrusted reportReply].each do |f|
+        issues << err("#{mw}.truth.#{f} is empty; the review card would show a blank line") if t.key?(f) && blank?(t[f])
+      end
+      full = FULL_MARKS_VERDICTS[t['isPhish']]
+      correct = t['correct']
+      unless BUILT_VERDICTS.include?(correct)
+        issues << err("#{mw}.truth.correct must be one of #{BUILT_VERDICTS.join(', ')} (the verdict of the right option)")
+        return issues
+      end
+      unless full.include?(correct)
+        issues << err("#{mw}.truth.correct '#{correct}' does not score full marks for isPhish #{t['isPhish']}; the right option must map to #{full.join(' or ')}")
+      end
+      opts = m.dig('choice', 'options')
+      if opts.is_a?(Array)
+        hits = opts.count { |o| o.is_a?(Hash) && o['verdict'] == correct }
+        issues << err("#{mw}.choice.options: #{hits} options have the verdict '#{correct}' (truth.correct); exactly one must") unless hits == 1
+        # Every other option must score below full marks, or two answers would both be "right".
+        opts.select { |o| o.is_a?(Hash) && o['verdict'] != correct && full.include?(o['verdict']) }.each do |o|
+          issues << err("#{mw}.choice.options['#{o['id']}'] maps to '#{o['verdict']}', which also scores full marks; only the right option may")
+        end
+      end
+      issues
+    end
+
+    # truth.correct belongs to choice cards only.
+    def self.truth_correct_checks(m, mw)
+      return [] unless m['truth'].is_a?(Hash) && m['truth'].key?('correct')
+
+      [warn_("#{mw}.truth.correct is on a #{kind(m)} message; only a choice card reads it")]
     end
 
     # "issued to" is a host name: dotted labels of letters, digits and hyphens, with an optional

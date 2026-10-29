@@ -69,7 +69,7 @@ export const SKILL_NAMES = Object.freeze({
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
-const NON_EMAIL = ['sms', 'voicemail', 'qr', 'page', 'call', 'push'];
+const NON_EMAIL = ['sms', 'voicemail', 'qr', 'page', 'call', 'push', 'choice'];
 
 // Tells that cannot apply to a kind of message, so offering them as ticks let a learner tick
 // something that could never be right (N6; P3 N-4 extended it past calls, voicemails and prompts):
@@ -152,6 +152,7 @@ export const HEADER_TELLS = Object.freeze(['senderAuth', 'reply_to_differs']);
  * to every message alike, so the presence of a chip never hints at the answer.
  */
 export function chipIdsFor(set, kind = 'email', message = null, opts = {}) {
+    if (kind === 'choice') return []; // a choice card (ENG-09a) has no flags to tick
     const local = (id) => isObj(set?.flagChips) && isStr(set.flagChips[id]) && !FACTOR_ORDER.includes(id);
     const tells = (Array.isArray(set?.channelTells) ? set.channelTells : []).filter((id) => CHANNEL_TELLS[id] || local(id));
     const email = !NON_EMAIL.includes(kind);

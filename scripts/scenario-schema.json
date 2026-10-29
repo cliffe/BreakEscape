@@ -1616,7 +1616,7 @@
       "required": ["id"],
       "properties": {
         "id": {"type": "string"},
-        "kind": {"type": "string", "enum": ["email", "playerSent", "sms", "voicemail", "qr", "page", "call", "push"]},
+        "kind": {"type": "string", "enum": ["email", "playerSent", "sms", "voicemail", "qr", "page", "call", "push", "choice"]},
         "from": {
           "oneOf": [
             {"type": "string"},
@@ -1676,7 +1676,8 @@
             "ifTrusted": {"type": "string"},
             "falseAlarmCost": {"type": "string", "description": "Real items only (optional): one sentence on what reporting or deleting this real one would cost (a payment held up, a colleague left waiting). Shown after what made it safe on the result screen and the debrief (disc_visible)."},
             "headerNote": {"type": "string"},
-            "reportReply": {"type": "string"}
+            "reportReply": {"type": "string"},
+            "correct": {"type": "string", "enum": ["trust", "report", "delete", "verify"], "description": "choice only: the verdict of the right option (it must score full marks for isPhish)"}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
@@ -1717,6 +1718,33 @@
             "patternProperties": {"^_": {}},
             "additionalProperties": false
           }
+        },
+        "choice": {
+          "description": "choice: an authored decision. Each option is scored as the built verdict it names (awareness profile); the right one is the option whose verdict equals truth.correct. Nothing is typed.",
+          "type": "object",
+          "required": ["prompt", "options"],
+          "properties": {
+            "prompt": {"type": "string", "minLength": 1},
+            "options": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 4,
+              "items": {
+                "type": "object",
+                "required": ["id", "label", "verdict"],
+                "properties": {
+                  "id": {"type": "string", "minLength": 1},
+                  "label": {"type": "string", "minLength": 1},
+                  "verdict": {"type": "string", "enum": ["trust", "report", "delete", "verify"]}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "note": {"type": "string", "description": "A line under the prompt, such as 'these are made up; no real password is typed'"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
         },
         "duration": {"type": "string", "description": "voicemail: display length such as 0:41"},
         "audio": {
@@ -1928,6 +1956,57 @@
             }
           },
           "required": ["setId"],
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "sortDrill": {
+          "type": "object",
+          "description": "ENG-11: a reusable sort drill that runs first inside the defend stage (sort-drill-minigame.js). Cards are sorted into 2 to 4 authored bins with the reason on screen. scored true marks each drop against the card's answer; false is teaching only and shows no mark. Linted by awareness.rb.",
+          "required": ["bins", "scored", "cards"],
+          "properties": {
+            "bins": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 4,
+              "items": {
+                "type": "object",
+                "required": ["id", "label"],
+                "properties": {"id": {"type": "string", "minLength": 1}, "label": {"type": "string", "minLength": 1}, "hint": {"type": "string"}},
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "scored": {"type": "boolean"},
+            "answerKeyProfile": {"type": "string", "description": "Scored drills only: names the answer key the cards' answers come from (kept in the result)"},
+            "alwaysScoresBin": {"type": "string", "description": "Scored drills only: a bin id. Choosing it on a card it is not the answer to still earns a point (caution is never marked as nothing)"},
+            "cards": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["id", "situation", "answer", "reason"],
+                "properties": {
+                  "id": {"type": "string", "minLength": 1},
+                  "situation": {"type": "string", "minLength": 1},
+                  "answer": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}, "minItems": 1}], "description": "A bin id, or a list of bin ids that are all accepted"},
+                  "reason": {"type": "string", "minLength": 1},
+                  "locked": {"type": "boolean", "description": "A deployment's overrides never change or drop this card"},
+                  "confirmed": {"type": "boolean", "description": "false: never drawn (an organisation has not confirmed the card). Default true"},
+                  "new": {"type": "boolean", "description": "Shown with a New badge, and first when drawRules.newFirst"}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "drawRules": {
+              "type": "object",
+              "properties": {"oneOfEachAnswer": {"type": "boolean"}, "newFirst": {"type": "boolean"}},
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "drawCount": {"type": "integer", "minimum": 1, "description": "Draw this many cards from the confirmed bank (default: all of them)"},
+            "strings": {"type": "object", "description": "Wording over the drill's defaults (sort-drill-model.js DEFAULT_TEXT), keyed by line", "additionalProperties": {"type": "string"}}
+          },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
         },
@@ -2251,14 +2330,24 @@
           "type": "object",
           "description": "Wording over the defaults (triage-kinds.js 'kindLabel'): any key left out keeps its default.",
           "properties": {
-            "kind": {"type": "object", "description": "Short kind words by kind: email, sms, voicemail, qr, page, call, push", "additionalProperties": {"type": "string"}},
+            "kind": {"type": "object", "description": "Short kind words by kind: email, sms, voicemail, qr, page, call, push, choice", "additionalProperties": {"type": "string"}},
+            "choice": {
+              "type": "object",
+              "description": "Wording of an authored-choice card (triage-kinds.js CHOICE_TEXT): brief, group, answered, right, wrong, better, whyRight, ifWrong",
+              "properties": {
+                "brief": {"type": "string"}, "group": {"type": "string"}, "answered": {"type": "string"}, "right": {"type": "string"},
+                "wrong": {"type": "string"}, "better": {"type": "string"}, "whyRight": {"type": "string"}, "ifWrong": {"type": "string"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
             "verdict": {"type": "object", "description": "Email verdict buttons and brief legend by trust, report, delete, verify: { label?, past?, hint? }", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
             "callActions": {"type": "object", "description": "By action id comply, escalate, refuse, verify_callback", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
             "pushActions": {"type": "object", "description": "By action id approve, deny, deny_report", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
             "smsHeading": {"type": "string", "description": "The 'Text message' heading on a text (default 'Text message')"},
             "queue": {
               "type": "object",
-              "description": "The brief's wording by queue: inbox, call, push, callPush, voicemail, page, sms, other",
+              "description": "The brief's wording by queue: inbox, call, push, callPush, voicemail, page, sms, choice, other",
               "additionalProperties": {
                 "type": "object",
                 "properties": {

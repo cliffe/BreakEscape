@@ -19,6 +19,7 @@ export { OsintBrowserMinigame } from './osint-browser/osint-browser-minigame.js'
 export { InboxTriageMinigame } from './inbox-triage/inbox-triage-minigame.js';
 export { PretextPrepMinigame } from './pretext-prep/pretext-prep-minigame.js';
 export { LandingPageBuilderMinigame } from './landing-page-builder/landing-page-builder-minigame.js';
+export { SortDrillMinigame } from './sort-drill/sort-drill-minigame.js';
 export { EngagementReportMinigame } from './engagement-report/engagement-report-minigame.js';
 export { AuthenticatorMinigame } from './authenticator/authenticator-minigame.js';
 export { PinMinigame, startPinMinigame } from './pin/pin-minigame.js';
@@ -111,6 +112,7 @@ import { EpisodeRunnerMinigame } from './episode-runner/episode-runner-minigame.
 import { ConsequenceSandboxMinigame } from './episode-runner/consequence-sandbox.js';
 import { PretextPrepMinigame } from './pretext-prep/pretext-prep-minigame.js';
 import { LandingPageBuilderMinigame } from './landing-page-builder/landing-page-builder-minigame.js';
+import { SortDrillMinigame } from './sort-drill/sort-drill-minigame.js';
 import { EngagementReportMinigame } from './engagement-report/engagement-report-minigame.js';
 import { AuthenticatorMinigame } from './authenticator/authenticator-minigame.js';
 
@@ -183,6 +185,7 @@ MinigameFramework.registerScene('episode-runner', EpisodeRunnerMinigame);
 MinigameFramework.registerScene('consequence-sandbox', ConsequenceSandboxMinigame);
 MinigameFramework.registerScene('pretext-prep', PretextPrepMinigame);
 MinigameFramework.registerScene('landing-page-builder', LandingPageBuilderMinigame);
+MinigameFramework.registerScene('sort-drill', SortDrillMinigame);
 MinigameFramework.registerScene('engagement-report', EngagementReportMinigame);
 MinigameFramework.registerScene('authenticator', AuthenticatorMinigame);
 MinigameFramework.registerScene('pin', PinMinigame);

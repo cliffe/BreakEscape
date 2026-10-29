@@ -112,6 +112,60 @@ export function cleanMistake(raw) {
     return Object.keys(out).length ? out : null;
 }
 
+// ── the sort drill (ENG-11) ──────────────────────────────────────────────────────
+// `episode.sortDrill` runs first inside the defend stage (the 'sort-drill' scene). The runner keeps
+// only a small record of it (counts, no card text) in the state, so a reopen skips the drill. An
+// episode with no usable `sortDrill` has no drill step: drillPending is false and the defend stage
+// opens the triage set exactly as before.
+
+const DRILL_LAUNCH = Object.freeze({
+    heading: 'Sort the cards',
+    text: 'Before the inbox, sort a set of cards into their bins. The reason shows after each one.',
+    button: 'Open the cards'
+});
+
+/** The drill's config when it holds two or more bins and a card, else null. */
+export function drillConfigOf(episode) {
+    const d = episode?.sortDrill;
+    return isObj(d) && Array.isArray(d.bins) && d.bins.length >= 2 && Array.isArray(d.cards) && d.cards.length ? d : null;
+}
+
+/** The drill is still to do: the defend stage is current and no record is held. */
+export function drillPending(episode, state) {
+    return !!drillConfigOf(episode) && state?.stage === 'defend' && state?.drill?.done !== true;
+}
+
+/** The launch panel before the drill; `sortDrill.strings.launchHeading|launchText|launchButton` replace each line. */
+export function drillLaunchCopy(episode) {
+    const own = isObj(episode?.sortDrill?.strings) ? episode.sortDrill.strings : {};
+    const line = (key, fallback) => (isStr(own[key]) ? own[key] : fallback);
+    return { heading: line('launchHeading', DRILL_LAUNCH.heading), text: line('launchText', DRILL_LAUNCH.text),
+        button: line('launchButton', DRILL_LAUNCH.button) };
+}
+
+/** The params the 'sort-drill' scene starts with. */
+export function drillLaunchParams(episode, overrides = null, extra = {}) {
+    return { config: episode.sortDrill, ...(isObj(overrides) ? { overrides } : {}), skin: 'awareness', ...extra };
+}
+
+/** The record to keep from the drill's result: counts only. */
+export function drillRecord(result) {
+    return isObj(result) ? cleanDrill({ ...result, done: true }) : null;
+}
+
+/** ENG-11: the sort drill's small record (counts only), kept in the state so a reopen skips the drill. */
+function cleanDrill(raw) {
+    if (!isObj(raw) || raw.done !== true) return null;
+    const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+    const out = { done: true, scored: raw.scored === true, total: num(raw.total), placed: num(raw.placed) };
+    if (out.scored) {
+        out.correct = num(raw.correct);
+        out.percent = num(raw.percent);
+        if (isStr(raw.answerKeyProfile)) out.answerKeyProfile = raw.answerKeyProfile;
+    }
+    return out;
+}
+
 function cleanDefend(raw) {
     if (!isObj(raw)) return null;
     const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
@@ -160,6 +214,9 @@ export function readState(episode, raw) {
     // Only a consequence episode holds choices (ENG-04); other states keep their exact shape.
     const mistakeChoices = cleanMistake(src.mistakeChoices);
     if (mistakeChoices) state.mistakeChoices = mistakeChoices;
+    // Only an episode with a sort drill carries the key, so every other state is unchanged.
+    const drill = cleanDrill(src.drill);
+    if (drill) state.drill = drill;
     state.stage = nextStage(episode, state);
     return state;
 }
@@ -176,6 +233,7 @@ export function completeStage(episode, state, stageId, patch = {}) {
     const next = { ...base, done };
     if ('sent' in patch) next.sent = cleanSent(patch.sent);
     if ('defend' in patch) next.defend = cleanDefend(patch.defend);
+    if ('drill' in patch) { const drill = cleanDrill(patch.drill); if (drill) next.drill = drill; }
     if ('mistakeChoices' in patch) {
         const choices = cleanMistake(patch.mistakeChoices);
         if (choices) next.mistakeChoices = choices;
