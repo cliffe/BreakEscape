@@ -58,6 +58,15 @@
         "noFlagsLead": "You didn't tick anything on these items, so there's nothing to grade skill by skill.",
         "noFlags": "Next time, tick what looks wrong. The review cards show the risk in each one."
       },
+      "genuineCopy": {
+        "binnedLeadOne": "One real message was deleted as junk",
+        "binnedLeadMany": "{n} real messages were deleted as junk",
+        "costBoth": "Reporting when you're unsure is never wrong, but a report on a real message takes IT's time to check, and a deleted one can leave a colleague waiting.",
+        "costReport": "Reporting when you're unsure is never wrong, but a report on a real message takes IT's time to check, and the colleague waits.",
+        "costBin": "Deleting a real message has a cost: a shared file or an approved tool goes unseen and a colleague is left waiting.",
+        "whyBothHalves": "Both halves matter: stopping the risky shortcut protects the data, and acting on the real notices keeps work moving."
+      },
+      "criticalWhat": "taking a risky shortcut",
       "skillNames": {
         "found_media": "Spotting a found or posted stick",
         "unapproved_tool": "Spotting an unapproved tool or app"
@@ -246,6 +255,9 @@
     "strings": {
       "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack is due at a client by Monday and the file share has slowed to a crawl. First you make the calls anyone would under a deadline; then you see, six months on, where each shortcut led. Then you sort a short set of found sticks and shortcut messages, and match each shortcut to the approved way. Only the inbox is scored.",
       "flipHeading": "Six months later",
+      "allRight": "You took the safe route on every one of these. Nothing to pick over here.",
+      "allPhishRight": "Every risky shortcut was stopped, with every reason named.",
+      "reportedPct": "Reported {pct}% of the risky shortcuts",
       "noBlameLine": "Shortcuts are well meant, usually taken under a deadline. Being caught by one is no fault of yours; Colin was right that the share was slow. The move is to tell IT so the data gets somewhere safe.",
       "noBlameLineCritical": "These shortcuts are tempting when a deadline bites, so a miss here says more about the pressure than about you. The points only show where to look next time.",
       "mondayCard": "On Monday: pick the shortcut you reach for most, and learn the approved swap for it. A found or posted stick goes to IT unplugged. Work stays in work places, not your personal email, personal cloud or a free online service. If the official way is slow, tell IT rather than build your own way round, and report what you're unsure about using the route in the box below. If personal data went to a personal account, the data protection officer needs to know too.",
