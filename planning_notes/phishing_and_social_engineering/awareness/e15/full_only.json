@@ -50,19 +50,19 @@
     "_notes": "flipMontageByChoice goes into the FULL erb only, at social.awarenessEpisode.strings.flipMontageByChoice. It is ERB-ONLY and must be added to STRINGS_ERB_ONLY_OK in test/js/social-awareness-fragment-erb-parity.test.mjs (ENG-04 adds it there, like flipDefenderLineByChoice). flipHeading ('Six months later') is NOT here: it lives in defend.json's strings and is shared by both shells. Keyed beat then option; every outer key is a real beat and every inner key a real option of that beat (ENG-04 lint). personal_email is shown first (it is the flipBeat); the montage still shows every beat. Text is verbatim from E15 section 10. The 'Your choice' / 'the version where it was taken instead' framing is in the text, not applied by the engine, so a line is authored for BOTH options of every beat (the unsafe-option fallback never fires for E15).",
     "flipMontageByChoice": {
       "personal_email": {
-        "send_personal": "Your choice. Months on, the personal inbox was broken into with a reused password; the pack sat in its sent items, and the client got a convincing fake invoice built from it.",
+        "send_personal": "Months on, the personal inbox was broken into with a reused password; the pack sat in its sent items, and the client got a convincing fake invoice built from it.",
         "ask_nilesh": "The version where the pack went to a personal inbox instead: it was broken into with a reused password and the pack was copied. Remote access left nothing outside the firm to find."
       },
       "free_transfer": {
-        "use_free_site": "Your choice. The free transfer site was breached; old public links, including a video with people in the background, turned up in search results.",
+        "use_free_site": "The free transfer site was breached; old public links, including a video with people in the background, turned up in search results.",
         "use_fileshare": "The version where a free site was used: its old links were still live when it was breached. The firm's link expired after seven days, so there was nothing to find."
       },
       "posted_stick": {
-        "plug_in": "Your choice. The same stick reached four other firms; one plugged it in and was down for nine days.",
+        "plug_in": "The same stick reached four other firms; one plugged it in and was down for nine days.",
         "to_it": "The version where the stick was plugged in: it carried malware and took a firm offline for nine days. The client confirmed they had posted nothing; IT checked the stick safely."
       },
       "rota_app": {
-        "use_app": "Your choice. The rota stayed editable by the departed temp, then vanished when the free app closed the unused account, the week before a busy run.",
+        "use_app": "The rota stayed editable by the departed temp, then vanished when the free app closed the unused account, the week before a busy run.",
         "ask_it": "The version where the rota stayed in the free app: the departed temp could still edit it, and it was lost when the account was closed. IT moved it to the team space in minutes."
       }
     }

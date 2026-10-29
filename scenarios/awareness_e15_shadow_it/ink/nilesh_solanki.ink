@@ -38,18 +38,3 @@ VAR hub_quiet = false
     ~ hub_quiet = true
     #exit_conversation
     -> hub
-
-// ------------------------------------------------
-// Hand-off line (E15 section 8b: "after the mistake/flip"). The full episode
-// runs brief -> mistake -> flip -> defend -> debrief inside the kiosk in one
-// sitting, and unlike E8 there is no mid-episode global (no phish-attempt count;
-// the mistake choices live in episode_<id>_state and are cleared on flip), so
-// there is no state the hub can branch on to show this between the montage and
-// the sort. It is kept here for the wiring agent: if the montage-to-defend
-// transition shows a host line in the runner, use this; otherwise it is covered
-// by the kiosk's own stage framing. This knot is not reached by the hub above.
-// Open question for wiring, flagged in the content agent's report.
-=== handoff ===
-Nilesh Solanki: That's six months on.
-Nilesh Solanki: Now sort what's actually in front of you: a few found sticks and 'quicker way' messages, and match each shortcut to its approved swap.
--> DONE

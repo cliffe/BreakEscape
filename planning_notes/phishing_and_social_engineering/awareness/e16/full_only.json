@@ -61,23 +61,23 @@
 
   "flipMontageByChoice": {
     "outside_offer": {
-      "engage": "Your choice. A reply drew more pressure, then a flood of sign-in prompts that night. The same message had gone to several people; the one who reported it warned everyone.",
+      "engage": "A reply drew more pressure, then a flood of sign-in prompts that night. The same message had gone to several people; the one who reported it warned everyone.",
       "report": "The version where someone replied instead: the pressure grew and the sign-in prompts came that night. Reporting it, without a word back, stopped it and warned the team. You are not in trouble for being approached."
     },
     "shared_login": {
-      "log_in_for_him": "Your choice. Reuben clicked the wrong shortcut and opened the HR drive, under your name, on the record until it was explained. Harmless this time; a reset would have cost two minutes.",
+      "log_in_for_him": "Reuben clicked the wrong shortcut and opened the HR drive, under your name, on the record until it was explained. Harmless this time; a reset would have cost two minutes.",
       "service_desk": "The version where a login was shared: whatever was opened went on the record of whoever's login it was. The service desk reset it in minutes instead."
     },
     "rumour": {
-      "add": "Your choice. The theory reached Samira, who had been at the hospital every night. It wasn't true, and it landed on someone already having the worst week.",
+      "add": "The theory reached Samira, who had been at the hospital every night. It wasn't true, and it landed on someone already having the worst week.",
       "route": "The version where the theory spread: it reached Samira, and it wasn't true. Facts to the right person help; a theory in the kitchen only hurts."
     },
     "leaver_favour": {
-      "personal_email": "Your choice. The client list sat in a personal inbox outside the firm. Company data belongs to the company, and the people in it belong to themselves.",
+      "personal_email": "The client list sat in a personal inbox outside the firm. Company data belongs to the company, and the people in it belong to themselves.",
       "handover": "The version where accounts went to a personal inbox: the firm's data left its protection. Handover notes in the shared place did the job and kept it in."
     },
     "samira": {
-      "confront": "Your choice. Samira, whose father was in hospital, was asked if she was 'in on it'. She wasn't. The question made a hard week harder.",
+      "confront": "Samira, whose father was in hospital, was asked if she was 'in on it'. She wasn't. The question made a hard week harder.",
       "kind": "A kind word, and a quiet word to her manager because you were worried: Samira's father was in hospital. Nobody was accused, and she got support. That is what good looks like."
     }
   },
@@ -105,7 +105,7 @@
       "feedbackFacts": "Good. Facts, routed to the right person, are what a fair concern looks like. You don't have to be sure, and you may not hear the outcome, because that is confidential too.",
       "feedbackFactsVerdict": "Your facts are exactly what's needed. Just leave the conclusion out, and let whoever looks into it reach their own. That's fairer to everyone, and you don't have to be sure to raise a fair concern.",
       "feedbackVerdictOnly": "That's a conclusion, not something you saw. Leave the verdict to the people whose job and lawful process it is; give them what you actually noticed instead. If you're wrong, a verdict is unfair to someone who has done nothing.",
-      "feedbackThinVerdict": "That's a conclusion, not something you saw. Leave the verdict to the people whose job and lawful process it is; give them what you actually noticed instead. If you're wrong, a verdict is unfair to someone who has done nothing."
+      "feedbackThinVerdict": "Those facts are a good start. Add a couple more of the things you saw yourself, and leave the conclusion out for whoever looks into it."
     }
   }
 }
