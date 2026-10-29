@@ -70,3 +70,14 @@ Held back: E12 content (after ENG-05a/b and the lobby land), E18 (after ENG-02b)
 | C1 | 0 | 3 | 8 | `reviews/build/E8_DESIGN_C1.md`; fixing: content (opus48 fix-e8), engine MA3/MI2 + triage list address font (Sonnet eng-fix1, worktree) |
 
 Rulings: MI3 cut the parcel item (six items, the target); MI8 withdrawn (the defend-only shell keeps `flipMissedHeading`/`flipLandedNoTells` by the generator's documented rule, as the built episodes do). By design, not a finding: under the awareness scoring profile, reporting a genuine item still scores full, so the awkward-genuine lesson is carried by feedback.
+
+### Wave 2 merges (2026-10-29)
+
+Merges now happen in the orchestrator's own worktree (`.claude/worktrees/orch-merge`, branch `orch-merge`) and main is fast-forwarded, because a conflicted merge in the shared tree blocked other agents' commits (E17's content agent could not commit mid-merge).
+
+- ENG-10 brief-only episode (9893d6a79), ENG-12 concern form (75e41464d), rooms P5b Carrholme + P5c Merrin lobby (merged clean), ENG-13 privacy panel (d2d2eef59), ENG-05a/05b world play + costume, eng-fix1 display fixes (flip aftermath contrast, address fonts in aftermath and triage list rows), ENG-03a/03b (opus48 retry, 5bd0623e9). Validator conflicts resolved by union via diff3; runner import lists combined. Merge worktree: 310/311 JS files (the one failure, `event-mapping-unlock-door`, fails only under the parallel runner's IPC on Node 22 and passes standalone 4/4); validator sweep over all awareness, lab and test_social shells: no FAIL.
+- Defend-stage order when several are authored: sort drill, then concern form, then privacy panel, then the inbox.
+- Rooms: orchestrator looked at both renders. For the room-dressing review: the lobby's coffee table overlaps the sofa; Carrholme's floor is sparse. Registering the Carrholme wall props added two tile entries to the shared embedded tileset, so all four existing `room_aw_*` maps were rebuilt (14 lines each, only those entries).
+- ENG-03b left open: the builder minigame's fakeCheck UI branch and the CSS for the new page states. Running as eng-03c (opus48, worktree).
+- E9 content committed (823382f2a; 8 defend items, 5 of them `choice` cards; `guess` config in `full_only.json`; guess tokens as `provides[0].type: "guessToken"`, to be confirmed against ENG-02). E17 content committed (183e5c1ef; sortDrill drawCount 9).
+- Started: ENG-14 Wi-Fi list (Sonnet), content E10, E12, E20, core_00 + data_conduct (opus48).
