@@ -10,6 +10,7 @@
 
   "triageSets": [
     {
+      "reportReply": "Thanks. IT has it and will point you to the approved way.",
       "id": "e15_shortcuts_inbox",
       "_prefix": "Prefix for the full episode (id e15_shadow_it): episode_e15_shadow_it_defend_. The defend-only shell (id e15_shadow_it_defend) sets episode_e15_shadow_it_defend_defend_ instead (the built double-suffix rule for an id that already ends _defend). No stage key on purpose, as in E1/E5/E8.",
       "_localTells": "found_media and unapproved_tool are shadow-IT signs with no built equivalent, so they are scenario-local to this set (00 section 2's CHANNEL_TELLS is untouched, and no SKILL_NAMES entry is added to phish-rules.js/triage.rb). Each is declared in channelTells with a flagChips label and a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's skill name), and every flagging message carries a factorStrings.<id>.redFlag sentence (a sibling of truth, never inside it: truth is additionalProperties:false). unapproved_tool is also used by E17's set, but both tells stay scenario-local because no 10 check-form item scores them (ENG-08's shared-vs-local rule); the two sets never merge, so each declares its own flagChips label. lookalike_domain and vish_callback_pressure are shared-library tells and need no label.",
@@ -55,6 +56,8 @@
         }
       ],
       "resultCopy": {
+        "criticalLead": "let a risky shortcut through",
+        "reportedPct": "Reported {pct}% of the risky shortcuts",
         "noFlagsLead": "You didn't tick anything on these items, so there's nothing to grade skill by skill.",
         "noFlags": "Next time, tick what looks wrong. The review cards show the risk in each one."
       },
@@ -253,11 +256,12 @@
       }
     },
     "strings": {
+      "weakestTells": "The risks most often missed: {names} ({counts} each).",
+      "weakestTell": "The risk most often missed: {names} ({counts}).",
       "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack is due at a client by Monday and the file share has slowed to a crawl. First you make the calls anyone would under a deadline; then you see, six months on, where each shortcut led. Then you sort a short set of found sticks and shortcut messages, and match each shortcut to the approved way. Only the inbox is scored.",
       "flipHeading": "Six months later",
       "allRight": "You took the safe route on every one of these. Nothing to pick over here.",
       "allPhishRight": "Every risky shortcut was stopped, with every reason named.",
-      "reportedPct": "Reported {pct}% of the risky shortcuts",
       "noBlameLine": "Shortcuts are well meant, usually taken under a deadline. Being caught by one is no fault of yours; Colin was right that the share was slow. The move is to tell IT so the data gets somewhere safe.",
       "noBlameLineCritical": "These shortcuts are tempting when a deadline bites, so a miss here says more about the pressure than about you. The points only show where to look next time.",
       "mondayCard": "On Monday: pick the shortcut you reach for most, and learn the approved swap for it. A found or posted stick goes to IT unplugged. Work stays in work places, not your personal email, personal cloud or a free online service. If the official way is slow, tell IT rather than build your own way round, and report what you're unsure about using the route in the box below. If personal data went to a personal account, the data protection officer needs to know too.",
