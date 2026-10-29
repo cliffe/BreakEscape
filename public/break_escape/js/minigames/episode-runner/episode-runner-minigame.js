@@ -60,7 +60,8 @@ import {
     sentFromRecord, findSentRecord, flipEntry, measurementCtx, defendSummary,
     writeKind, sentFromCall, callOutcomeKey, flipPage, flipCall, CALL_LANDED,
     awarenessSettings, reportRouteFor, flipAftermathFor, isMontage, montageProps,
-    drillPending, drillLaunchCopy, drillLaunchParams, drillRecord
+    drillPending, drillLaunchCopy, drillLaunchParams, drillRecord,
+    concernPending, concernLaunchCopy, concernLaunchParams, concernRecord
 } from './episode-model.js';
 
 /**
@@ -398,6 +399,8 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
     _stageCopy(stage) {
         // ENG-11: with a sort drill still to do, the defend panel opens the drill, not the inbox.
         if (stage === 'defend' && drillPending(this.episode, this.state)) return drillLaunchCopy(this.episode);
+        // ENG-12: then the concern form, if the episode has one.
+        if (stage === 'defend' && concernPending(this.episode, this.state)) return concernLaunchCopy(this.episode);
         const copy = this._baseStageCopy(stage);
         // strings.stages.<stageId> { heading, text, button } replaces any of the three lines.
         const own = isObj(this.strings.stages) && isObj(this.strings.stages[stage]) ? this.strings.stages[stage] : null;
@@ -635,6 +638,15 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                 onComplete: (success, result) => {
                     if (!isNormal(success, result)) return;
                     this._saveState({ ...this._readState(), drill: drillRecord(result) });
+                }
+            })));
+        } else if (spec.kind === 'triage' && stage === 'defend' && concernPending(this.episode, this._readState())) {
+            // ENG-12: the concern form follows any drill and comes before the inbox. Its record
+            // is kept in the state, so the panel then opens the inbox. Closed part-way keeps nothing.
+            child = this.launchChild('concern-form', socialOverlayParams(concernLaunchParams(this.episode, {
+                onComplete: (success, result) => {
+                    if (!isNormal(success, result)) return;
+                    this._saveState({ ...this._readState(), concern: concernRecord(result) });
                 }
             })));
         } else if (spec.kind === 'triage') {

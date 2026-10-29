@@ -166,6 +166,58 @@ function cleanDrill(raw) {
     return out;
 }
 
+// ── the concern form (ENG-12) ────────────────────────────────────────────────────
+// `episode.concernForm` runs inside the defend stage after any sort drill and before the triage
+// set (the 'concern-form' scene). Like the drill, the runner keeps only a small record of it
+// (counts and a tone, never a mark) so a reopen skips it. An episode with no usable
+// `concernForm` has no such step: concernPending is false and the defend stage is as before.
+
+const CONCERN_LAUNCH = Object.freeze({
+    heading: 'Raise a concern',
+    text: 'Before the inbox, build a short report from what you noticed. Facts first.',
+    button: 'Open the form'
+});
+
+/** The form's config when it holds a fact chip of a known kind, else null. */
+export function concernConfigOf(episode) {
+    const f = episode?.concernForm;
+    const kinds = ['what', 'when', 'where', 'who'];
+    return isObj(f) && Array.isArray(f.factChips) && f.factChips.some((c) => isObj(c) && kinds.includes(c.kind)) ? f : null;
+}
+
+/** The form is still to do: the defend stage is current, no drill is ahead of it and no record is held. */
+export function concernPending(episode, state) {
+    return !!concernConfigOf(episode) && state?.stage === 'defend' && state?.concern?.done !== true
+        && !drillPending(episode, state);
+}
+
+/** The launch panel before the form; `concernForm.strings.launchHeading|launchText|launchButton` replace each line. */
+export function concernLaunchCopy(episode) {
+    const own = isObj(episode?.concernForm?.strings) ? episode.concernForm.strings : {};
+    const line = (key, fallback) => (isStr(own[key]) ? own[key] : fallback);
+    return { heading: line('launchHeading', CONCERN_LAUNCH.heading), text: line('launchText', CONCERN_LAUNCH.text),
+        button: line('launchButton', CONCERN_LAUNCH.button) };
+}
+
+/** The params the 'concern-form' scene starts with. */
+export function concernLaunchParams(episode, extra = {}) {
+    return { config: episode.concernForm, skin: 'awareness', ...extra };
+}
+
+/** The record to keep from the form's result: counts and a tone. */
+export function concernRecord(result) {
+    return isObj(result) ? cleanConcern({ ...result, done: true }) : null;
+}
+
+/** ENG-12: the concern form's small record, kept in the state so a reopen skips the form. */
+function cleanConcern(raw) {
+    if (!isObj(raw) || raw.done !== true) return null;
+    const num = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.round(v) : 0);
+    const out = { done: true, facts: num(raw.facts), conclusions: num(raw.conclusions) };
+    if (isStr(raw.tone)) out.tone = raw.tone;
+    return out;
+}
+
 function cleanDefend(raw) {
     if (!isObj(raw)) return null;
     const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
@@ -217,6 +269,9 @@ export function readState(episode, raw) {
     // Only an episode with a sort drill carries the key, so every other state is unchanged.
     const drill = cleanDrill(src.drill);
     if (drill) state.drill = drill;
+    // Likewise the concern form's record (ENG-12).
+    const concern = cleanConcern(src.concern);
+    if (concern) state.concern = concern;
     state.stage = nextStage(episode, state);
     return state;
 }
@@ -234,6 +289,7 @@ export function completeStage(episode, state, stageId, patch = {}) {
     if ('sent' in patch) next.sent = cleanSent(patch.sent);
     if ('defend' in patch) next.defend = cleanDefend(patch.defend);
     if ('drill' in patch) { const drill = cleanDrill(patch.drill); if (drill) next.drill = drill; }
+    if ('concern' in patch) { const concern = cleanConcern(patch.concern); if (concern) next.concern = concern; }
     if ('mistakeChoices' in patch) {
         const choices = cleanMistake(patch.mistakeChoices);
         if (choices) next.mistakeChoices = choices;

@@ -542,3 +542,72 @@ test('sortDrill schema: the clean drill passes; a mistyped key, a fifth bin and 
     assert.ok(social.some((e) => e.includes('sortDrill') && e.includes(detail)), `${name}: no error naming ${detail}\n${social.join('\n')}`);
   });
 });
+
+// ── ENG-12: the concern form (awarenessEpisode.concernForm) ───────────────────────
+const concern = () => ({
+  factChips: [
+    { id: 'F1', kind: 'what', label: 'A door was propped open' },
+    { id: 'F2', kind: 'when', label: 'Tuesday morning' },
+    { id: 'F3', kind: 'who', label: 'I saw the delivery driver' }
+  ],
+  conclusionChips: [{ id: 'C1', label: 'Someone is up to something' }],
+  guidance: 'Tell the site manager.', minFacts: 2
+});
+const withConcern = (mutate, base = 'clean_defend_only.json') => {
+  const j = fx(base);
+  ep(j).concernForm = concern();
+  if (mutate) mutate(ep(j).concernForm, j);
+  return j;
+};
+
+test('concernForm: a clean form raises nothing; absent is left alone; it can sit beside a sortDrill', { skip }, () => {
+  assert.deepEqual(lint(withConcern()), []);
+  assert.deepEqual(lint(withConcern((c) => { delete c.conclusionChips; delete c.guidance; delete c.minFacts; })), []);
+  const both = withConcern();
+  ep(both).sortDrill = drill();
+  assert.deepEqual(lint(both), []);
+  assert.deepEqual(lint(fx('clean_defend_only.json')), []);
+});
+
+test('concernForm: fact chips need an id, a label, a known kind and a unique id', { skip }, () => {
+  expectIn(lint(withConcern((c) => { c.factChips[0].kind = 'why'; })), /factChips\[F1\]\.kind 'why' is not one of what, when, where, who/);
+  expectIn(lint(withConcern((c) => { delete c.factChips[0].kind; })), /factChips\[F1\]\.kind '' is not one of/);
+  expectIn(lint(withConcern((c) => { c.factChips[1].id = 'F1'; })), /factChips: id 'F1' is used more than once/);
+  expectIn(lint(withConcern((c) => { c.factChips[0].label = ' '; })), /factChips\[0\] needs a non-empty id and label/);
+  expectIn(lint(withConcern((c) => { c.factChips = []; })), /factChips must be a non-empty array/);
+});
+
+test('concernForm: conclusion chips need an id and label, and no id may repeat a fact chip', { skip }, () => {
+  expectIn(lint(withConcern((c) => { c.conclusionChips[0].id = 'F2'; })), /conclusionChips: id 'F2' is also used by another chip/);
+  expectIn(lint(withConcern((c) => { c.conclusionChips[0].label = ''; })), /conclusionChips\[0\] needs a non-empty id and label/);
+  expectIn(lint(withConcern((c) => { c.conclusionChips = 'no'; })), /conclusionChips must be an array/);
+});
+
+test('concernForm: minFacts is a whole number the fact chips can reach', { skip }, () => {
+  expectIn(lint(withConcern((c) => { c.minFacts = 4; })), /minFacts 4 is more than the 3 fact chips/);
+  expectIn(lint(withConcern((c) => { c.minFacts = 0; })), /minFacts must be a whole number/);
+});
+
+test('concernForm: it needs a defend stage to run in, so a check mission cannot carry one', { skip }, () => {
+  expectIn(lint(withConcern(null, 'clean_check_pre.json')), /concernForm runs inside the defend stage/);
+});
+
+test('concernForm schema: the clean form passes; a mistyped key, a bad kind and a missing label fail', { skip }, () => {
+  const cases = [
+    ['a mistyped key', (c) => { c.guidence = 'x'; }, 'guidence'],
+    ['a mistyped chip key', (c) => { c.factChips[0].lable = 'x'; }, 'lable'],
+    ['a bad kind', (c) => { c.factChips[0].kind = 'why'; }, 'kind'],
+    ['a missing label', (c) => { delete c.factChips[0].label; }, 'label'],
+    ['no fact chips', (c) => { delete c.factChips; }, 'factChips'],
+    ['minFacts as a string', (c) => { c.minFacts = 'two'; }, 'minFacts'],
+    ['a numeric string', (c) => { c.strings = { check: 7 }; }, 'check']
+  ];
+  const scenarios = [withConcern(), ...cases.map(([, mutate]) => withConcern(mutate))];
+  const results = schemaRun(scenarios);
+  assert.deepEqual(results[0], { social: [], other: [] });
+  cases.forEach(([name, , detail], i) => {
+    const { social, other } = results[i + 1];
+    assert.deepEqual(other, [], `${name}: an error outside #/social`);
+    assert.ok(social.some((e) => e.includes('concernForm') && e.includes(detail)), `${name}: no error naming ${detail}\n${social.join('\n')}`);
+  });
+});
