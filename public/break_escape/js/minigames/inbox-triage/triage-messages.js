@@ -241,6 +241,31 @@ export function resolvePlayerSent(entry, set, mailState, social, opts = {}) {
 }
 
 /**
+ * A landed sent record that carries no scored tell, as the recipient would read it (ENG-UX2). Used
+ * by the episode flip when the episode authors a per-choice defender line, so the learner sees the
+ * message they sent even though there is no tell to list. No authentication row and no link: the
+ * message is replayed as written, flags empty. Returns null for anything that is not a sent record.
+ */
+export function plainSentMessage(rec, entry = null) {
+    if (!isObj(rec) || rec.folder !== 'sent') return null;
+    const body = (typeof rec.body === 'string' ? rec.body : '').replace(/\{\{link:[A-Za-z0-9_-]+\}\}/g, '').trim();
+    return normaliseTriageMessage({
+        id: isStr(entry?.id) ? entry.id : 'episode_flip',
+        kind: 'email',
+        playerSent: true,
+        sourceRecordId: rec.id,
+        from: rec.from,
+        to: rec.to,
+        subject: rec.subject,
+        time: rec.time,
+        body,
+        links: [],
+        attachments: [],
+        truth: { isPhish: true, flags: [] }
+    });
+}
+
+/**
  * The round's messages in authored order. Authored entries are normalised; playerSent
  * entries are replaced by the replay or recorded in `skipped`. A message with no id,
  * or a playerSent with no tells, never reaches the round.

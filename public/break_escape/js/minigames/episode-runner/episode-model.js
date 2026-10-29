@@ -40,6 +40,7 @@ export const CALL_LANDED = 'got_it';
 export const DEFAULT_STAGES = Object.freeze({
     full: Object.freeze(['brief', 'osint', 'write', 'flip', 'defend', 'debrief']),
     defendOnly: Object.freeze(['brief', 'defend', 'debrief']),
+    brief: Object.freeze(['brief']),
     check: Object.freeze(['check'])
 });
 export const STATE_VERSION = 1;
@@ -50,9 +51,10 @@ const isStr = (v) => typeof v === 'string' && v.length > 0;
 export const stateKey = (id) => `episode_${id}_state`;
 export const defendPrefix = (id) => `episode_${id}_defend_`;
 
-/** 'full' or 'defendOnly' (anything else reads as 'full'). */
+/** 'full', 'defendOnly' or 'brief' (ENG-10; anything else reads as 'full'). */
 export function variantOf(episode) {
-    return episode?.variant === 'defendOnly' ? 'defendOnly' : 'full';
+    if (episode?.variant === 'defendOnly') return 'defendOnly';
+    return episode?.variant === 'brief' ? 'brief' : 'full';
 }
 
 /** A check mission: its stages list names 'check'. */

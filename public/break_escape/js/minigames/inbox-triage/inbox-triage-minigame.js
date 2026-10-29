@@ -479,8 +479,14 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         if (!this.teamEl) return;
         const n = this.teamProtectedCount();
         this.teamEl.textContent = '';
-        this.teamEl.append(icon('mark-tick'), el('span', 'aw-team-tally-text', `Phish stopped for the team: ${n}`));
-        this.teamEl.title = 'Phish you reported or checked by another route this round';
+        // aw-ux2: set.labels.teamBadge ({n}) and set.labels.teamBadgeTitle override the wording for
+        // sets whose reported items are not all phish; unset keeps the phish wording.
+        const own = this.labels;
+        const badge = typeof own?.teamBadge === 'string' && own.teamBadge.trim()
+            ? own.teamBadge.replace(/\{n\}/g, String(n)) : `Phish stopped for the team: ${n}`;
+        this.teamEl.append(icon('mark-tick'), el('span', 'aw-team-tally-text', badge));
+        this.teamEl.title = typeof own?.teamBadgeTitle === 'string' && own.teamBadgeTitle.trim()
+            ? own.teamBadgeTitle : 'Phish you reported or checked by another route this round';
         this.teamEl.classList.remove('aw-team-pop');
         if (pop) {
             void this.teamEl.offsetWidth; // restart the animation

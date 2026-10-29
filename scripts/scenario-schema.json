@@ -2209,6 +2209,7 @@
             "defendOnly": {"type": "string"},
             "defendIntro": {"type": "string", "description": "Replaces the runner's fixed defend-stage intro, which talks about an inbox (wrong for a page or call set)"},
             "flipMissed": {"type": "string", "description": "The flip's line after a send that did not land"},
+            "teamLine": {"type": "string", "description": "aw-ux2: the debrief's team thank-you, with {n} for the count and optionally {team} for the team size (only used when a team size is set). Default: 'Your reports and checks this round kept N phish away from ...'. For sets whose reported items are not all phish"},
             "flipLandedNoTells": {"type": "string", "description": "The flip's line after a send that landed but has nothing to replay (no tells); falls back to flipMissed"},
             "flipMissedHeading": {"type": "string", "description": "The flip's heading when nothing is replayed (a miss, or a landing with no tells); default 'Nothing to replay this time'"},
             "flipPageIntro": {"type": "string", "description": "The flip's intro when it shows a built landing page"},
@@ -2761,6 +2762,8 @@
             "callActions": {"type": "object", "description": "By action id comply, escalate, refuse, verify_callback", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
             "pushActions": {"type": "object", "description": "By action id approve, deny, deny_report", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
             "smsHeading": {"type": "string", "description": "The 'Text message' heading on a text (default 'Text message')"},
+            "teamBadge": {"type": "string", "description": "aw-ux2: the triage team badge, with {n} for the count (default 'Phish stopped for the team: {n}'). For sets whose reported items are not all phish"},
+            "teamBadgeTitle": {"type": "string", "description": "aw-ux2: the badge's hover text (default 'Phish you reported or checked by another route this round')"},
             "queue": {
               "type": "object",
               "description": "The brief's wording by queue: inbox, call, push, callPush, voicemail, page, sms, choice, other",
