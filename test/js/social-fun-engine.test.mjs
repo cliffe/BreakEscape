@@ -224,7 +224,9 @@ test('aw6: the report sting plays a sound and the pop; the tally counts phish re
     // calls: impostor (phish), real (genuine), on behalf (phish), new starter (genuine); push (phish)
     answer(scene, 'e3_call_gordon_impostor', 'escalate');
     assert.deepEqual(played, ['ui_confirm'], 'the report sting sound');
-    assert.ok(q('.tri-locked.aw-report-win'), 'the report pop');
+    // F-E19-3: immediate mode carries the report pop on the review card's verdict line, not a
+    // separate .tri-locked line.
+    assert.ok(q('.tri-card-verdict.aw-report-win'), 'the report pop');
     assert.equal(scene.getTestState().triage.teamTally, 1);
     assert.ok(tally().classList.contains('aw-team-pop'), 'the tally pops when it goes up');
     answer(scene, 'e3_call_gordon_real', 'escalate'); // a genuine caller escalated: thanked, but no tally

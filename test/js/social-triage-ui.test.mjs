@@ -198,7 +198,10 @@ test('the chip list: seven factors then Nothing looks wrong; none is exclusive; 
     click($(s, '.tri-confirm'));
     assert.equal(state(s).messages[0].verdict, 'trust');
     assert.equal($(s, '.tri-verdict'), null);
-    assert.match($(s, '.tri-locked').textContent, /Your verdict: Trust\. Locked in\./);
+    // F-E19-3: immediate mode drops the separate "Your verdict: … Locked in." line; the review
+    // card's verdict line is the single confirmation.
+    assert.equal($(s, '.tri-locked'), null);
+    assert.match($(s, '.tri-card-verdict').textContent, /You chose Trust\./);
 });
 
 test('immediate feedback: the review card names caught, missed and false flags and what would have happened', () => {

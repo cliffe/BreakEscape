@@ -137,10 +137,14 @@ test('P5-6: reporting a real item gets a neutral thank-you; a phish keeps "That 
     const click = (n) => n.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
     click($('.tri-start'));
     const act = (id, v) => { click($(`.mail-row[data-id="${id}"]`)); click($(`.tri-verdict[data-action="${v}"]`)); click($('.tri-confirm')); };
+    // F-E19-3: immediate mode folds the thanks beat into the review card's verdict line (the single
+    // confirmation), which keeps the aw-report-thanks class. A real report reads neutral; a phish
+    // keeps "A report warns everyone else."
     act('r1', 'report');
-    assert.equal($('.aw-report-thanks').textContent, 'Thanks for reporting. A colleague will check it and let it through.');
+    assert.ok($('.tri-card-verdict.aw-report-thanks'), 'the card verdict line carries the thanks class');
+    assert.match($('.tri-card-verdict').textContent, /never wrong/);
     act('p1', 'report');
-    assert.equal($('.aw-report-thanks').textContent, 'Thanks for reporting. That warns everyone else.');
+    assert.match($('.tri-card-verdict').textContent, /A report warns everyone else/);
     // P5-1: Finish lives in the result bar, the last child of the scrolling result panel (the
     // stylesheet pins it there)
     click($('.tri-next'));

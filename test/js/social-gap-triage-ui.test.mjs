@@ -185,7 +185,9 @@ test('a confirmed verdict is locked: no verdict buttons, and re-opening the shee
     click($(s, '.tri-start'));
     verdict(s, 'm1_it', 'trust');
     assert.equal($$(s, '.tri-verdict').length, 0);
-    assert.ok($(s, '.tri-locked'));
+    // F-E19-3: immediate mode confirms via the review card's verdict line, not a .tri-locked line.
+    assert.equal($(s, '.tri-locked'), null);
+    assert.ok($(s, '.tri-card-verdict'));
     s._openSheet(s.messages[0], 'report');
     assert.equal(state(s).sheet.open, false);
     assert.equal(s.answers.get('m1_it').verdict, 'trust');

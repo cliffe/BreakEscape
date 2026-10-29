@@ -607,23 +607,23 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             }
             box.appendChild(group);
         } else {
-            const lock = el('p', 'tri-locked');
-            lock.append(icon('mark-tick'), el('span', null, `Your verdict: ${this._actionLabel(rec, ans)}. Locked in.`));
-            box.appendChild(lock);
-            if (this.awarenessSkin && ans.verdict === 'report' && kindOf(rec) !== 'choice') {
-                // The positive beat for a report: it plays once, on the render right after
-                // the report was locked; later renders show the line without the animation.
-                const win = this._reportWin === rec.id;
-                const thanks = el('p', `aw-report-thanks${win ? ' aw-report-win' : ''}`,
-                    rec.truth?.isPhish === true ? REPORT_THANKS : REPORT_THANKS_REAL);
-                if (win) {
-                    lock.classList.add('aw-report-win');
-                    this._reportWin = null;
-                }
-                box.appendChild(thanks);
-            }
+            // The report's positive beat plays once, on the render right after the report was locked.
+            const isReport = this.awarenessSkin && ans.verdict === 'report' && kindOf(rec) !== 'choice';
+            const win = isReport && this._reportWin === rec.id;
             if (this.feedbackMode === 'immediate') {
-                box.appendChild(this._card(rec));
+                // F-E19-3: in immediate mode the review card's verdict line is the single
+                // confirmation. The separate "Your verdict: … Locked in." lock line and the
+                // standalone thanks line are dropped (three near-identical lines → one); the card
+                // verdict line carries the report-win pop and thanks beat via the same classes.
+                const card = this._card(rec);
+                if (isReport) {
+                    const vEl = card.querySelector?.('.tri-card-verdict');
+                    if (vEl) {
+                        vEl.classList.add('aw-report-thanks');
+                        if (win) { vEl.classList.add('aw-report-win'); this._reportWin = null; }
+                    }
+                }
+                box.appendChild(card);
                 const next = el('button', 'tri-next minigame-button');
                 next.type = 'button';
                 const nextRec = this._nextUnanswered(rec.id);
@@ -633,6 +633,21 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                     else this._finishSort();
                 });
                 box.appendChild(next);
+            } else {
+                // End mode keeps the lock line: there is no review card during the sort, so this is
+                // the only confirmation until the Review step.
+                const lock = el('p', 'tri-locked');
+                lock.append(icon('mark-tick'), el('span', null, `Your verdict: ${this._actionLabel(rec, ans)}. Locked in.`));
+                box.appendChild(lock);
+                if (isReport) {
+                    const thanks = el('p', `aw-report-thanks${win ? ' aw-report-win' : ''}`,
+                        rec.truth?.isPhish === true ? REPORT_THANKS : REPORT_THANKS_REAL);
+                    if (win) {
+                        lock.classList.add('aw-report-win');
+                        this._reportWin = null;
+                    }
+                    box.appendChild(thanks);
+                }
             }
         }
         pane.appendChild(box);
@@ -797,7 +812,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
      */
     _scrollToFeedback() {
         const pane = this.reader?.readPane;
-        const target = pane?.querySelector?.('.tri-locked');
+        // Immediate mode drops the .tri-locked line (F-E19-3), so fall back to the review card's
+        // verdict line, which is now the single confirmation.
+        const target = pane?.querySelector?.('.tri-locked') || pane?.querySelector?.('.tri-card-verdict');
         if (!target || typeof target.scrollIntoView !== 'function') return;
         let reduce = false;
         try { reduce = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches; } catch (e) { /* default */ }
