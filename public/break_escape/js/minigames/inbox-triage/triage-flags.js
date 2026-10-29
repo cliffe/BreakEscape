@@ -152,6 +152,7 @@ export const HEADER_TELLS = Object.freeze(['senderAuth', 'reply_to_differs']);
  * to every message alike, so the presence of a chip never hints at the answer.
  */
 export function chipIdsFor(set, kind = 'email', message = null, opts = {}) {
+    if (kind === 'choice') return []; // a choice card (ENG-09a) has no flags to tick
     const local = (id) => isObj(set?.flagChips) && isStr(set.flagChips[id]) && !FACTOR_ORDER.includes(id);
     const tells = (Array.isArray(set?.channelTells) ? set.channelTells : []).filter((id) => CHANNEL_TELLS[id] || local(id));
     const email = !NON_EMAIL.includes(kind);

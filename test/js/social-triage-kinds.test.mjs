@@ -109,7 +109,7 @@ test('chips: an email gets the seven factors then the tells; a non-email kind ge
     assert.deepEqual(chipIdsFor(set), [...FACTOR_ORDER, 'unexpected_qr', 'reply_stop_trick']);
     // P3 N-4: each kind drops the tells that cannot apply to it (a QR code on a text, call, page
     // or prompt; Reply STOP anywhere but a text).
-    const expected = { sms: ['reply_stop_trick'], qr: ['unexpected_qr'], voicemail: [], page: [], call: [], push: [] };
+    const expected = { sms: ['reply_stop_trick'], qr: ['unexpected_qr'], voicemail: [], page: [], call: [], push: [], choice: [] };
     for (const k of kinds.NON_EMAIL_KINDS) assert.deepEqual(chipIdsFor(set, k), expected[k], k);
     assert.deepEqual(chipIdsFor({}, 'sms'), []);
 });

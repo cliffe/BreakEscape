@@ -57,10 +57,8 @@ import {
     stagesFor, stateKey, readState, completeStage, childLaunch, variantOf,
     sentFromRecord, findSentRecord, flipEntry, measurementCtx, defendSummary,
     writeKind, sentFromCall, callOutcomeKey, flipPage, flipCall, CALL_LANDED,
-    awarenessSettings, reportRouteFor
+    awarenessSettings, reportRouteFor, drillPending, drillLaunchCopy, drillLaunchParams, drillRecord
 } from './episode-model.js';
-import { drillPending, drillLaunchCopy, drillLaunchParams } from '../sort-drill/sort-drill-host.js';
-import { drillSummary } from '../sort-drill/sort-drill-model.js';
 
 /**
  * A pretext call that did not land (reported or walked away) means the attacker never got
@@ -612,7 +610,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             child = this.launchChild('sort-drill', socialOverlayParams(drillLaunchParams(this.episode, this._drillOverrides(), {
                 onComplete: (success, result) => {
                     if (!isNormal(success, result)) return;
-                    this._saveState({ ...this._readState(), drill: drillSummary(result) });
+                    this._saveState({ ...this._readState(), drill: drillRecord(result) });
                 }
             })));
         } else if (spec.kind === 'triage') {

@@ -11,7 +11,6 @@
 //                                   `new` ones first, one of each answer when asked
 //   scoreCard(config, card, binId)  { correct, caution, points, max } for one drop
 //   scoreDrill(config, placements)  the whole drill's score, or an unscored summary
-//   drillSummary(result)            the small record the host keeps
 //
 // Scoring (scored drills only): the right bin earns POINTS.correct, the config's
 // `alwaysScoresBin` earns POINTS.caution on a card it is not the answer to (so caution is never
@@ -54,11 +53,7 @@ export const DEFAULT_TEXT = Object.freeze({
     noCards: 'There are no cards to sort.',
     closeAsk: "Close now and your sorting so far won't be kept.",
     keepGoing: 'Keep going',
-    closeAnyway: 'Close anyway',
-    // A host's launch panel before the drill (the episode runner's defend stage)
-    launchHeading: 'Sort the cards',
-    launchText: 'Before the inbox, sort a set of cards into their bins. The reason shows after each one.',
-    launchButton: 'Open the cards'
+    closeAnyway: 'Close anyway'
 });
 
 /** One line of wording with {tokens} filled in. */
@@ -239,20 +234,4 @@ export function scoreDrill(config, cards, placements) {
         percent: max ? Math.round((points / max) * 100) : 0,
         placements: list
     };
-}
-
-/**
- * The small record a host keeps after the drill: counts only, no card text. An unscored drill
- * keeps `{ done, scored: false, total, placed }`.
- */
-export function drillSummary(result) {
-    if (!isObj(result)) return null;
-    const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
-    const out = { done: true, scored: result.scored === true, total: num(result.total), placed: num(result.placed) };
-    if (out.scored) {
-        out.correct = num(result.correct);
-        out.percent = num(result.percent);
-        if (isStr(result.answerKeyProfile)) out.answerKeyProfile = result.answerKeyProfile;
-    }
-    return out;
 }

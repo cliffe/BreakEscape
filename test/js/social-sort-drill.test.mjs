@@ -16,7 +16,7 @@ const js = join(here, '../../public/break_escape/js');
 const dir = mkdtempSync(join(tmpdir(), 'social-sort-drill-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
-    'minigames/sort-drill/sort-drill-minigame.js', 'minigames/sort-drill/sort-drill-model.js', 'minigames/sort-drill/sort-drill-host.js',
+    'minigames/sort-drill/sort-drill-minigame.js', 'minigames/sort-drill/sort-drill-model.js',
     'minigames/episode-runner/episode-runner-minigame.js', 'minigames/episode-runner/episode-model.js',
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
     'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/role-swap.js', 'systems/episode-starter.js',
@@ -48,7 +48,6 @@ const load = (rel) => import(pathToFileURL(join(dir, rel)).href);
 const { MinigameFramework: FW } = await load('minigames/framework/minigame-manager.js');
 const { SocialOverlayScene } = await load('minigames/framework/social-overlay.js');
 const Model = await load('minigames/sort-drill/sort-drill-model.js');
-const Host = await load('minigames/sort-drill/sort-drill-host.js');
 const { SortDrillMinigame } = await load('minigames/sort-drill/sort-drill-minigame.js');
 const { EpisodeRunnerMinigame } = await load('minigames/episode-runner/episode-runner-minigame.js');
 const { startEpisodeRunner } = await load('systems/episode-starter.js');
@@ -104,7 +103,7 @@ test('scoreDrill: counts, points and percent against the key; an unscored drill 
     assert.deepEqual(u, { scored: false, total: 3, placed: 2, placements: [{ id: 'P1', bin: 'hold' }, { id: 'P2', bin: 'tweak' }] });
     assert.equal('points' in u || 'percent' in u || 'correct' in u, false);
     assert.equal(Model.scoreCard(t, t.cards[0], 'hold').points, 0);
-    assert.deepEqual(Model.drillSummary(u), { done: true, scored: false, total: 3, placed: 2 });
+    assert.deepEqual(EM.drillRecord(u), { done: true, scored: false, total: 3, placed: 2 });
 });
 
 test('unconfirmed cards are never drawn, but a locked card always is', () => {
@@ -441,8 +440,8 @@ test('runner: with no sortDrill the defend stage runs exactly the triage set, as
     rclick('.epr-launch');
     assert.equal(scene(), 'inbox-triage');
     assert.equal(stub.triage, 1);
-    assert.equal(Host.drillPending(ep, { stage: 'defend' }), false);
+    assert.equal(EM.drillPending(ep, { stage: 'defend' }), false);
     assert.equal('drill' in EM.readState(ep, {}), false, 'a state carries no drill key unless one ran');
     // an unusable drill (no bins) is ignored, not a dead end
-    assert.equal(Host.drillConfigOf({ sortDrill: { bins: [], cards: [] } }), null);
+    assert.equal(EM.drillConfigOf({ sortDrill: { bins: [], cards: [] } }), null);
 });
