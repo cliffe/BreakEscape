@@ -83,6 +83,7 @@
           "subject": "Your settlement payment",
           "time": "15:08",
           "body": "Hello,\nWe're ready to settle your claim. Please make the payment to the account on the attached remittance, and use that account for any future invoices too, as our details have changed. Grateful if you'd keep this to yourself until it has gone through.\nKind regards,\nAyaan Warsame\nClaims, Quayholt Insurance",
+          "attachments": [ { "id": "remit", "label": "Remittance_advice.pdf", "kind": "pdf" } ],
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "ayaan.warsame@quayholt.example" },
           "factorStrings": {
             "unexpected_sent_item": { "redFlag": "A message or item in your own Sent folder that you did not send" }
