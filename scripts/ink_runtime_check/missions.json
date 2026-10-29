@@ -2628,6 +2628,41 @@
       }
     ]
   },
+  "awareness_e9_passwords": {
+    "globals": {
+      "episode_e9_passwords_defend_percent": 0,
+      "episode_e9_passwords_defend_reportRate": 0,
+      "episode_e9_passwords_defend_done": false,
+      "episode_e9_passwords_defend_pass": false,
+      "guess_e9_landed": false
+    },
+    "npcs": [
+      {
+        "id": "nilesh_solanki",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e9_passwords/ink/nilesh_solanki.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e9_passwords_defend": {
+    "globals": {
+      "episode_e9_passwords_defend_defend_percent": 0,
+      "episode_e9_passwords_defend_defend_reportRate": 0,
+      "episode_e9_passwords_defend_defend_done": false,
+      "episode_e9_passwords_defend_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "nilesh_solanki",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e9_passwords_defend/ink/nilesh_solanki.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
   "awareness_e17_acceptable_use_defend": {
     "globals": {
       "episode_e17_acceptable_use_defend_defend_percent": 0,

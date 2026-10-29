@@ -33,6 +33,7 @@ const FULL_EPISODES = [
   'awareness_e6_texts_and_qr',
   'awareness_e7_voice_ceo',
   'awareness_e8_after_the_click',
+  'awareness_e9_passwords',
   'awareness_e11_misdirected_data',
   'awareness_e15_shadow_it',
   'awareness_e19_malware_and_updates',

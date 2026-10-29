@@ -1,0 +1,462 @@
+{
+  "scenario_id": "awareness_e9_passwords_defend",
+  "scenario_name": "Passwords and sign-in: lock the account down",
+  "scenario_brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down: handle the prompts, choose stronger passwords, and don't hand anything to a message dressed up as IT. No real password is ever typed here.",
+  "endGoal": "Lock the account down at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "lock_down_aim",
+      "title": "Lock your account down",
+      "description": "Work through the sign-in prompts and password choices at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e9_passwords_defend_defend_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Account locked down",
+        "body": "You've handled the prompts and chosen the stronger options, and finished this episode."
+      },
+      "tasks": [
+        {
+          "taskId": "lock_the_account",
+          "title": "Lock your account down",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e9_passwords_defend_state": {},
+    "se_awareness_records": [],
+    "episode_e9_passwords_defend_defend_percent": 0,
+    "episode_e9_passwords_defend_defend_reportRate": 0,
+    "episode_e9_passwords_defend_defend_done": false,
+    "episode_e9_passwords_defend_defend_pass": false
+  },
+  "social": {
+    "triageSets": [
+      {
+        "id": "e9_lock_it_down",
+        "title": "Your Tarrowby account under attack",
+        "brief": "It's your own Tarrowby account now, and someone has a password of yours. Eight things come up: sign-in prompts, a message dressed up as IT, and a few password choices. On a prompt, Approve only one you started yourself; otherwise Deny and report. On an email, choose Trust, Report, Delete or Verify, then tick what you noticed. On a choice card, pick the option you think is best. There's no clock, and no real password is typed here. Reporting when you're unsure is always fine and never marked down.",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "unrequested_mfa_push",
+          "mfa_number_relay",
+          "secrecy_or_bypass"
+        ],
+        "flagChips": {
+          "mfa_number_relay": "A message asking you to type or read back a sign-in number or code"
+        },
+        "skillNames": {
+          "mfa_number_relay": "Spotting a message that asks you to type or read back a sign-in number"
+        },
+        "outcome": {
+          "setGlobalPrefix": "episode_e9_passwords_defend_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e9_push_own",
+            "kind": "push",
+            "time": "08:12",
+            "push": {
+              "app": "Tarrowby Sign-in",
+              "request": "Are you trying to sign in?",
+              "account": "you@tarrowby.example",
+              "location": "Leeds, UK",
+              "device": "your own phone"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "You just entered your password on the real depot sign-in, from the depot, and this prompt is on your own phone from Leeds. A prompt you started yourself is the normal second step, so Approve it. Denying it or reporting it is no error, it just means signing in again."
+              }
+            }
+          },
+          {
+            "id": "e9_push_unstarted",
+            "kind": "push",
+            "time": "02:40",
+            "push": {
+              "app": "Tarrowby Sign-in",
+              "request": "Are you trying to sign in?",
+              "account": "you@tarrowby.example",
+              "location": "Unknown location, outside the UK",
+              "device": "Windows PC"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unrequested_mfa_push"
+              ],
+              "perFlagNote": {
+                "unrequested_mfa_push": "A sign-in prompt at 02:40, from a Windows PC outside the UK that is not yours, while you were asleep, means someone has your password and is hoping you will tap Approve. Deny it and report it; the service desk changes the password."
+              },
+              "ifTrusted": "Approving would let the sender into your Tarrowby account, with your access, from a computer you've never used.",
+              "reportReply": "Thanks. We've reset your password and blocked that sign-in. Denying the prompt is what stopped them."
+            }
+          },
+          {
+            "id": "e9_fake_it_number",
+            "from": {
+              "name": "Tarrowby IT Service Desk",
+              "address": "tarrowby.itdesk@mailboxly.example"
+            },
+            "to": "you@tarrowby.example",
+            "subject": "We can stop those sign-in prompts for you",
+            "time": "02:46",
+            "body": "Hello,\nWe can see failed sign-ins on your account and we know the prompts are a nuisance. To stop them, read back the six-digit number on your screen in a reply, or just tap Approve on the next prompt and we'll close it off.\nTarrowby IT Service Desk",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "mailboxly.example",
+              "replyTo": "tarrowby.itdesk@mailboxly.example"
+            },
+            "factorStrings": {
+              "mfa_number_relay": {
+                "redFlag": "A message asking you to type or read back a sign-in number or code"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "mfa_number_relay",
+                "secrecy_or_bypass"
+              ],
+              "perFlagNote": {
+                "mfa_number_relay": "No genuine IT team asks you to type a number, read back a code or approve a prompt. The number is on the attacker's screen; reading it back, or approving, hands them the account.",
+                "secrecy_or_bypass": "'To stop them, just approve the next one' is talking you into the one step that lets them in. The prompts stop when the password is changed, not when you approve."
+              },
+              "ifTrusted": "Reading back the number, or approving, lets the sender straight into your account.",
+              "reportReply": "Thanks. That wasn't IT: we never ask you to read back a number or approve a prompt. We've reset the password and the prompts have stopped."
+            }
+          },
+          {
+            "id": "e9_passphrase",
+            "kind": "choice",
+            "subject": "Which password is stronger?",
+            "choice": {
+              "prompt": "Which of these makes the stronger password?",
+              "options": [
+                {
+                  "id": "words",
+                  "label": "Three random words you don't use anywhere else (for example otter-ladder-crimson)",
+                  "verdict": "report"
+                },
+                {
+                  "id": "complex",
+                  "label": "Your company's name, a year and a symbol on the end (for example Tarrowby2026!)",
+                  "verdict": "trust"
+                }
+              ],
+              "note": "These are made up for the exercise; no real password is typed or stored."
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [],
+              "correct": "report",
+              "reportReply": "Length and unpredictability beat complexity rules. The company name plus a year plus a symbol is near the top of every guess list, exactly the pattern the guesser tried on Colin. Another random word adds far more than a capital or a symbol does.",
+              "ifTrusted": "A company-name-plus-year-plus-symbol password is one of the first things a guesser tries; the symbol on the end barely slows it down."
+            }
+          },
+          {
+            "id": "e9_signup_password",
+            "kind": "choice",
+            "subject": "A password for the new FuelWise portal",
+            "choice": {
+              "prompt": "The new FuelWise supplier portal asks you to set a password. What do you use?",
+              "options": [
+                {
+                  "id": "unique",
+                  "label": "A unique password the manager generates, used only on this portal",
+                  "verdict": "report"
+                },
+                {
+                  "id": "reuse",
+                  "label": "Your usual password, the one you already use for other sign-ins",
+                  "verdict": "trust"
+                }
+              ],
+              "note": "No real password is typed; the manager fills it in for you."
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [],
+              "correct": "report",
+              "reportReply": "A unique generated password means a breach of FuelWise can't open anything else. Let the manager make and remember it; you never have to type or recall it.",
+              "ifTrusted": "Reusing your usual password is what the attack half exploited on Colin: one breach of a small site, and the work account opened with no cracking at all."
+            }
+          },
+          {
+            "id": "e9_security_answer",
+            "kind": "choice",
+            "subject": "A security question on the FuelWise sign-up",
+            "choice": {
+              "prompt": "FuelWise asks for your mother's maiden name as a security question. What do you give it?",
+              "options": [
+                {
+                  "id": "madeup",
+                  "label": "A made-up answer (random words) saved in your password manager",
+                  "verdict": "report"
+                },
+                {
+                  "id": "true",
+                  "label": "Your real mother's maiden name",
+                  "verdict": "trust"
+                }
+              ],
+              "note": "The made-up answer is stored with the login, so you never have to remember it."
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [],
+              "correct": "report",
+              "reportReply": "A true security answer can be found online or guessed from what you've posted, so a made-up one kept in the manager is safer. Treat the answer like another password.",
+              "ifTrusted": "A real maiden name is the sort of thing a guesser can look up or work out from public posts, the same way it built Colin's guess list."
+            }
+          },
+          {
+            "id": "e9_signin_ladder",
+            "kind": "choice",
+            "subject": "How to sign in to this service",
+            "choice": {
+              "prompt": "This service offers three ways to sign in. Pick the strongest it offers.",
+              "options": [
+                {
+                  "id": "passkey",
+                  "label": "A passkey (your fingerprint, face or PIN, tied to the real site)",
+                  "verdict": "report"
+                },
+                {
+                  "id": "app",
+                  "label": "The authenticator app with number matching",
+                  "verdict": "trust"
+                },
+                {
+                  "id": "sms",
+                  "label": "A one-time code sent by text",
+                  "verdict": "trust"
+                }
+              ],
+              "note": "Turn on the strongest the service offers; any of these beats a password on its own."
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [],
+              "correct": "report",
+              "reportReply": "A passkey only works on the real site, so it can't be phished or relayed the way the fake 'IT' message tried. The app with number matching is next best; a text code is a last resort, still better than a password alone.",
+              "ifTrusted": "The app and the text code are both worth having, but they can be phished or relayed. Where a passkey is offered, it is the one to choose."
+            }
+          },
+          {
+            "id": "e9_shared_pc",
+            "kind": "choice",
+            "subject": "A password on a sticky note",
+            "choice": {
+              "prompt": "A depot PC has its password on a sticky note on the monitor, readable from the loading bay. You need to use it. What do you do?",
+              "options": [
+                {
+                  "id": "ask",
+                  "label": "Ask the service desk for your own account, or a shared vault in the manager",
+                  "verdict": "report"
+                },
+                {
+                  "id": "use_note",
+                  "label": "Use the password on the note to sign in",
+                  "verdict": "trust"
+                }
+              ],
+              "note": "Finding a password on a note is common; the fix is the service desk's job, but you can ask for it."
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [],
+              "correct": "report",
+              "reportReply": "A shared login means nobody knows who did what, the password spreads to anyone who walks past, and leavers keep access. Don't use a found password; ask the service desk for your own account.",
+              "ifTrusted": "Signing in on someone else's password, even to get a job done, leaves a record in their name and keeps a login going that anyone in the bay can read."
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e9_passwords_defend",
+      "role": "general_staff",
+      "company": "tarrowby_logistics",
+      "brand": {
+        "name": "Tarrowby Logistics",
+        "logoText": "TARROWBY",
+        "accent": "#3b5b8c"
+      },
+      "variant": "defendOnly",
+      "durationTargetMin": 8,
+      "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: your own sign-in prompts and password choices. No real password is ever typed or stored.",
+      "stages": [
+        "brief",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "lock_the_account",
+      "defend": {
+        "setId": "e9_lock_it_down",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down: handle the prompts, choose stronger passwords, and don't hand anything to a message dressed up as IT. No real password is ever typed here.",
+        "flipMissedHeading": "Nothing landed this time",
+        "flipLandedNoTells": "It opened on a reused password with nothing clever at all. Next, you lock your own account down.",
+        "noBlameLine": "Reusing a password is ordinary and common; this is how most accounts are broken into, not a sign anyone was careless. A miss here just shows what to change tonight.",
+        "mondayCard": "On Monday, three things at home: turn on 2-step verification, or a passkey, for your personal email first; check your personal email address on a breach-checking site (the NCSC suggests Have I Been Pwned); and switch on a password manager, starting with your email. Report anything at work using the route in the box below.",
+        "defendOnly": "These prompts and choices follow one reused password doing the rounds, and anyone can be caught out by them. Any you were caught out by are shown below, with what to do instead.",
+        "conceptPanel": [
+          {
+            "heading": "How passwords get stolen",
+            "text": "Most passwords aren't cracked by genius. They're guessed from the obvious first (123456, a team, a pet, the company name and a year), reused from a breach of another site, phished through a fake sign-in page, or simply handed over. A different password for every account, kept in a manager, is the one habit that blunts all of those at once."
+          },
+          {
+            "heading": "The sign-in ladder",
+            "text": "Turn on a second step beyond the password wherever you can. A passkey is best: it only works on the real site, so it can't be phished or relayed. An authenticator app with number matching is next. A text code is a last resort, but still far better than a password alone."
+          },
+          {
+            "heading": "Browsers, notes and managers",
+            "text": "A password manager makes and remembers a different password for every account and fills it in only on the right site. Your browser's own manager is fine for personal accounts on your own devices; at work, use what the organisation provides. Never leave a password on a note on a shared desk, monitor or keyboard."
+          },
+          {
+            "heading": "What a passkey is",
+            "text": "A passkey replaces the password with a secret kept on your device or in your manager, unlocked the way you unlock your phone. Because it is tied to the real website, it can't be typed into a fake page, reused on another site, or leaked in someone else's breach."
+          }
+        ],
+        "defendIntro": "Go through the sign-in prompts and password choices and decide what to do with each one. If you didn't start a prompt, deny it and report it. Pick the stronger option each time. There's no clock on you, and no real password is typed here."
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on",
+    "ambient": "#bcc2cc"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_tarrowby",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_tarrowby_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "drinks_vending": {
+            "color": "#e0f0ff",
+            "radius": 40,
+            "intensity": 0.45
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 4.5,
+            "y": 5,
+            "color": "#dfe8f4",
+            "radius": 110,
+            "intensity": 0.25
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "nilesh_solanki",
+          "displayName": "Nilesh Solanki",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/awareness_e9_passwords_defend/ink/nilesh_solanki.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_e9_passwords_defend_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "lock_the_account"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk set up as your Tarrowby account under attack: sign-in prompts to handle and password choices to make.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e9_passwords_defend_defend_done",
+              "value": "A touch-screen kiosk set up as your Tarrowby account. The prompts are handled and the account is locked down."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e9_passwords_defend"
+          }
+        }
+      ]
+    }
+  }
+}

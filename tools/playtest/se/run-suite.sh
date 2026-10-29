@@ -35,6 +35,7 @@ JOBS=(
   e5-full:awareness_e5_signin_pages e6-full:awareness_e6_texts_and_qr
   e7-full:awareness_e7_voice_ceo
   e8-full:awareness_e8_after_the_click
+  e9-full:awareness_e9_passwords
   e11-full:awareness_e11_misdirected_data
   e15-full:awareness_e15_shadow_it
   e19-full:awareness_e19_malware_and_updates

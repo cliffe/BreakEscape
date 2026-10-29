@@ -12,9 +12,9 @@
     "target": "colin",
     "commonList": ["123456", "password", "qwerty", "tarrowby"],
     "patternSlots": [
-      { "id": "team", "factId": "tarrowby_mather_team", "template": "{team}1994" },
-      { "id": "pet",  "factId": "tarrowby_mather_pet",  "template": "{pet}!" },
-      { "id": "year", "factId": "tarrowby_founded",     "template": "Tarrowby{year}" }
+      { "id": "team", "factId": "tarrowby_mather_team", "word": "Pennington", "template": "{team}1994" },
+      { "id": "pet",  "factId": "tarrowby_mather_pet", "word": "Bramble",  "template": "{pet}!" },
+      { "id": "year", "factId": "tarrowby_founded", "word": "1994",     "template": "Tarrowby{year}" }
     ],
     "reuseStep": {
       "site": "RiverReach Angling", "domain": "riverreachangling.example",
