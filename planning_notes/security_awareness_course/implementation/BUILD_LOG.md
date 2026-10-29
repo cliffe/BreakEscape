@@ -121,3 +121,4 @@ Merges now happen in the orchestrator's own worktree (`.claude/worktrees/orch-me
 
 - Wired E9 + E16 (bridges 14/14, 17/17). E9 got an `attack` block (validator requires it), slot `word`s and `stepLabels.flip`; E16's concern-form keys were reshaped to the schema. Design C1 now running for E9, E11, E15, E16, E17, E19 (opus48, one each; shared `REVIEWER_BRIEF.md`).
 - E17 design C1: 0/0/3. Rulings: MI1 E17's 12-minute target governs (it is the whole episode in one defend-only shell, by design); MI2 take the tighter monitoring line; MI3 sync the spec's card table. Fix with the other C1 fixes.
+- E16 design C1: 0/2/3. MAJOR-1 (engine: cf-live visible) fixed by the orchestrator (CSS, matches sd-live). MAJOR-2 (verdict feedback tones flattened), MINOR-1 ('lender'), MINOR-3 (stale notes) go to the C1 fixer; MINOR-2 (guidance shown twice) to an engine tidy. No defender line on the flip is deliberate (reviewer verified).
