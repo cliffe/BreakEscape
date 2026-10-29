@@ -41,7 +41,7 @@
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { MailReader } from '../mail-client/mail-reader.js';
-import { scoreTriage, weakestFactor, bandFor, verdictPoints, FULL_VERDICT_POINTS, CRITICAL_PENALTY, criticalWhat,
+import { scoreTriage, weakestFactor, bandFor, verdictPoints, verdictPointsOverride, FULL_VERDICT_POINTS, CRITICAL_PENALTY, criticalWhat,
     genuineFeedback, genuineFeedbackText, dedupeSentences, missedPhishText } from './triage-scoring.js';
 import { buildTriageMessages } from './triage-messages.js';
 import { buildHeaderPanel } from './header-panel.js';
@@ -809,7 +809,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     _scoreOne(rec) {
         const ans = this.answers.get(rec.id);
         if (!ans) return null;
-        return scoreTriage({ messages: [rec], answers: [ans], profile: this.profile }).perMessage[0];
+        return scoreTriage({ messages: [rec], answers: [ans], profile: this.profile, scoring: this.set?.scoring }).perMessage[0];
     }
 
     _verdictLine(rec, verdict) {
@@ -857,8 +857,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     _rightCallLine(rec) {
         const phish = rec.truth.isPhish === true;
         const kind = kindOf(rec);
+        const override = verdictPointsOverride(rec.truth, kind, this.set?.scoring);
         const full = actionsFor(kind, this.verifyEnabled, this.labels)
-            .filter((a) => verdictPoints(this.profile, phish, a.verdict, kind) >= FULL_VERDICT_POINTS);
+            .filter((a) => verdictPoints(this.profile, phish, a.verdict, kind, override) >= FULL_VERDICT_POINTS);
         const order = phish ? ['report', 'verify'] : ['trust', 'verify', 'report'];
         const rank = (a) => { const i = order.indexOf(a.verdict); return i < 0 ? 99 : i; };
         const sorted = [...full].sort((a, b) => rank(a) - rank(b));
@@ -869,7 +870,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
     /** Right means full verdict marks under the set's profile, the same rule the result grid uses. */
     _isRight(rec, verdict) {
-        return verdictPoints(this.profile, rec.truth.isPhish === true, verdict, kindOf(rec)) >= FULL_VERDICT_POINTS;
+        const kind = kindOf(rec);
+        return verdictPoints(this.profile, rec.truth.isPhish === true, verdict, kind,
+            verdictPointsOverride(rec.truth, kind, this.set?.scoring)) >= FULL_VERDICT_POINTS;
     }
 
     /**
@@ -1135,7 +1138,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     _score() {
         return scoreTriage({
             messages: this.messages, answers: this._answerList(), profile: this.profile,
-            bands: this.set.bands, passPercent: this.passPercent
+            bands: this.set.bands, passPercent: this.passPercent, scoring: this.set.scoring
         });
     }
 

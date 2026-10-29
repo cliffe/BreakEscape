@@ -26,7 +26,7 @@
 // Every string goes in with textContent. The wording never blames the learner.
 
 import { redFlagString, skillName } from '../inbox-triage/triage-flags.js';
-import { weakestFactor, flagUnits, unitAccepts, genuineFeedback, genuineFeedbackText, verdictPoints, FULL_VERDICT_POINTS, dedupeSentences } from '../inbox-triage/triage-scoring.js';
+import { weakestFactor, flagUnits, unitAccepts, genuineFeedback, genuineFeedbackText, verdictPoints, verdictPointsOverride, FULL_VERDICT_POINTS, dedupeSentences } from '../inbox-triage/triage-scoring.js';
 import { kindOf, isNonEmail, actionById, kindVerdictLine, defaultSubject, choiceOptionFor, choiceText } from '../inbox-triage/triage-kinds.js';
 
 const DEFAULTS = Object.freeze({
@@ -102,11 +102,11 @@ function titleOf(msg, id) {
  * a call or sign-in prompt uses its action labels (Ring back, Escalate, Deny and report) and
  * its own review lines, not the email verdicts (D3).
  */
-function verdictWordAndLine(answer, msg, phish, labels = null) {
+function verdictWordAndLine(answer, msg, phish, labels = null, scoring = null) {
     const kind = kindOf(msg);
     if (kind === 'choice') {
         // An authored-choice card (ENG-09a): the option's own label, then right or wrong, not the email verdicts.
-        const right = wrongVerdict(answer, msg, 'awareness') === false;
+        const right = wrongVerdict(answer, msg, 'awareness', scoring) === false;
         return { word: choiceOptionFor(msg, answer.action, answer.verdict)?.label || String(answer.verdict ?? ''),
             line: choiceText(right ? 'right' : 'wrong', labels) };
     }
@@ -144,11 +144,12 @@ function reviewNeeded(answer, msg) {
  * deleted, a real one deleted, a genuine caller complied with unchecked. A missed tick alone
  * is not a wrong verdict.
  */
-function wrongVerdict(answer, msg, profile) {
+function wrongVerdict(answer, msg, profile, scoring = null) {
     if (!isStr(answer?.verdict)) return false;
     const phish = answer.isPhish === true || (isObj(msg?.truth) && msg.truth.isPhish === true);
+    const kind = kindOf(msg);
     try {
-        return verdictPoints(profile, phish, answer.verdict, kindOf(msg)) < FULL_VERDICT_POINTS;
+        return verdictPoints(profile, phish, answer.verdict, kind, verdictPointsOverride(msg?.truth, kind, scoring)) < FULL_VERDICT_POINTS;
     } catch (e) {
         return false;
     }
@@ -163,7 +164,7 @@ function buildCard(answer, msg, set = null) {
     const title = el('h3', 'aw-card-title', titleOf(msg, answer.id));
     title.tabIndex = -1;
     card.appendChild(title);
-    const { word, line } = verdictWordAndLine(answer, msg, phish, set?.labels);
+    const { word, line } = verdictWordAndLine(answer, msg, phish, set?.labels, set?.scoring);
     card.appendChild(el('p', 'aw-card-verdict', `You chose ${word}. ${line}`.trim()));
 
     const picked = new Set(Array.isArray(answer.flags) ? answer.flags : []);
@@ -199,7 +200,7 @@ function buildCard(answer, msg, set = null) {
     }
     if (kindOf(msg) === 'choice') {
         // The right pick shows why (reportReply); a wrong one shows the better option and what could go wrong.
-        const right = wrongVerdict(answer, msg, 'awareness') === false;
+        const right = wrongVerdict(answer, msg, 'awareness', set?.scoring) === false;
         const labels = set?.labels;
         if (right && typeof truth.reportReply === 'string' && truth.reportReply) {
             card.appendChild(el('p', 'aw-if-trusted', `${choiceText('whyRight', labels)}: ${truth.reportReply}`));
@@ -276,9 +277,9 @@ export function teamLine(count, teamSize, template = null) {
 function buildGenuine(set, answers, reviewedIds, profile) {
     const messages = Array.isArray(set?.messages) ? set.messages.filter(isObj) : [];
     const fb = genuineFeedback({
-        messages, answers, profile,
+        messages, answers, profile, scoring: set?.scoring,
         titleOf: (m) => titleOf(m, m.id),
-        actionLabel: (m, a) => verdictWordAndLine(a, m, false).word
+        actionLabel: (m, a) => verdictWordAndLine(a, m, false, set?.labels, set?.scoring).word
     });
     const text = fb ? genuineFeedbackText(fb, { detail: true }) : null;
     if (!text) return null;
@@ -416,7 +417,7 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     // read oddly at 98% (P5-15), so it shows only after a wrong verdict. After a critical miss
     // the result has just said what it cost, so a line that owns the points stands in (P5-5).
     const profile = set?.scoringProfile === 'analyst' ? 'analyst' : 'awareness';
-    const noBlame = !answers.length || answers.some((a) => wrongVerdict(a, messageFor(set, a.id), profile));
+    const noBlame = !answers.length || answers.some((a) => wrongVerdict(a, messageFor(set, a.id), profile, set?.scoring));
     const critical = Array.isArray(result?.criticalMisses) && result.criticalMisses.length > 0;
     if (noBlame) {
         root.appendChild(el('p', `aw-no-blame${critical ? ' aw-no-blame-critical' : ''}`,

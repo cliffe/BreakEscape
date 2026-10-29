@@ -80,17 +80,46 @@ const VERDICT_POINTS = {
 
 const clamp01 = (n) => Math.min(1, Math.max(0, n));
 const roundHalfUp = (n) => Math.floor(n + 0.5);
+const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
 /**
- * Verdict points for one message. Throws on an unknown profile or verdict. `kind` (optional,
- * the message's kind) applies KIND_VERDICT_POINTS under the awareness profile.
+ * The verdict-point range an override may set: 0..FULL_VERDICT_POINTS (the verdict is worth 60
+ * on the 100-point scale). The validator range-checks authored overrides against this.
  */
-export function verdictPoints(profile, isPhish, verdict, kind = null) {
+export const VERDICT_POINTS_MIN = 0;
+export const VERDICT_POINTS_MAX = 60;
+
+/**
+ * An opt-in override of the verdict points (out of 60) for one message (batch-5 F-E12-1, E13
+ * F-10): a reception desk that gives full marks for letting in an expected client, a call set
+ * where Refuse is a decent answer. `truth.verdictPoints` (a map verdict->points on the message)
+ * wins over `scoring.kindPoints[kind]` (a per-kind map on the set). Either may name any subset of
+ * verdicts; a verdict it omits keeps the profile/kind default. Returns the merged map, or null
+ * when nothing is authored (then scoring is byte-for-byte as before).
+ */
+export function verdictPointsOverride(truth, kind, scoring) {
+    const per = isObj(truth) && isObj(truth.verdictPoints) ? truth.verdictPoints : null;
+    const byKind = isObj(scoring) && isObj(scoring.kindPoints) && isObj(scoring.kindPoints[kind])
+        ? scoring.kindPoints[kind] : null;
+    if (!per && !byKind) return null;
+    return { ...(byKind || {}), ...(per || {}) };
+}
+
+/**
+ * Verdict points for one message. Throws on an unknown profile or an unavailable verdict. `kind`
+ * (optional) applies KIND_VERDICT_POINTS under the awareness profile. `override` (optional, from
+ * verdictPointsOverride) is an authored map that wins over the profile and kind defaults, but
+ * only for a verdict the profile already offers (an analyst set still cannot score Verify).
+ */
+export function verdictPoints(profile, isPhish, verdict, kind = null, override = null) {
     const table = VERDICT_POINTS[profile];
     if (!table) throw new RangeError(`triage-scoring: unknown scoringProfile "${profile}"`);
     const pts = table[isPhish ? 'phish' : 'real'][verdict];
     if (pts === undefined) {
         throw new RangeError(`triage-scoring: verdict "${verdict}" is not available in the ${profile} profile`);
+    }
+    if (isObj(override) && typeof override[verdict] === 'number' && Number.isFinite(override[verdict])) {
+        return override[verdict];
     }
     if (profile === 'awareness' && kind) {
         const own = KIND_VERDICT_POINTS[kind]?.[isPhish ? 'phish' : 'real']?.[verdict];
@@ -235,7 +264,7 @@ export function unitAccepts(unit) {
     return [...unit.members, ...(unit.alternates || [])];
 }
 
-export function scoreTriage({ messages, answers, profile = 'awareness', bands, passPercent } = {}) {
+export function scoreTriage({ messages, answers, profile = 'awareness', bands, passPercent, scoring = null } = {}) {
     if (!PROFILES.includes(profile)) throw new RangeError(`triage-scoring: unknown scoringProfile "${profile}"`);
     if (!Array.isArray(messages)) throw new TypeError('triage-scoring: messages must be an array');
     const byId = new Map();
@@ -268,7 +297,8 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         }
         const verdict = a.verdict;
         const kind = typeof msg.kind === 'string' && msg.kind ? msg.kind : 'email';
-        const vPts = verdictPoints(profile, isPhish, verdict, kind);
+        const override = verdictPointsOverride(truth, kind, scoring);
+        const vPts = verdictPoints(profile, isPhish, verdict, kind, override);
         const ticked = [...new Set(a.flags || [])].filter((f) => f !== NONE_CHIP);
         const tickedSet = new Set(ticked);
         // Score by units, not raw flags: an alternatives group counts once (05 "Either tick
@@ -433,7 +463,7 @@ export function listCap(titles, max = 3) {
  * Returns null when the round has no answered real item, or the set opts out
  * (set.genuineFeedback === false, read by the callers).
  */
-export function genuineFeedback({ messages, answers, profile = 'awareness', titleOf, actionLabel } = {}) {
+export function genuineFeedback({ messages, answers, profile = 'awareness', titleOf, actionLabel, scoring = null } = {}) {
     if (!Array.isArray(messages)) return null;
     const byId = new Map();
     for (const a of answers || []) if (a && typeof a === 'object') byId.set(a.id ?? a.messageId, a);
@@ -456,7 +486,7 @@ export function genuineFeedback({ messages, answers, profile = 'awareness', titl
         answered += 1;
         const kind = typeof m.kind === 'string' && m.kind ? m.kind : 'email';
         let pts = 0;
-        try { pts = verdictPoints(profile, false, a.verdict, kind); } catch (e) { continue; }
+        try { pts = verdictPoints(profile, false, a.verdict, kind, verdictPointsOverride(truth, kind, scoring)); } catch (e) { continue; }
         if (TRUST_VERDICTS.includes(a.verdict) && pts >= FULL_VERDICT_POINTS) {
             (a.verdict === 'verify' ? checked : trusted).push({ id: m.id, title: title(m) });
         } else if (FLAG_VERDICTS.includes(a.verdict)) {

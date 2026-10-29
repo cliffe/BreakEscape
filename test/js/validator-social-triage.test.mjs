@@ -104,6 +104,23 @@ test('the minimal inline scenario is clean (guards the mutation tests below)', {
   assert.deepEqual(lintJson(mini()), []);
 });
 
+test('batch-5: a valid verdict-points override (per-item and per-set) raises nothing', { skip }, () => {
+    const j = mini();
+    j.social.triageSets[0].scoring = { kindPoints: { call: { trust: 60, report: 30 } } };
+    j.social.triageSets[0].messages[0].truth.verdictPoints = { trust: 60 };
+    assert.deepEqual(lintJson(j), []);
+});
+
+test('batch-5: verdict-points out of range or a bad verdict key is refused', { skip }, () => {
+    const j = mini();
+    j.social.triageSets[0].messages[0].truth.verdictPoints = { trust: 80, bogus: 10 };
+    j.social.triageSets[0].scoring = { kindPoints: { call: { report: -5 } } };
+    const out = lintJson(j);
+    expectIn(out, /truth\.verdictPoints\.trust must be a number from 0 to 60/);
+    expectIn(out, /truth\.verdictPoints: 'bogus' is not a verdict/);
+    expectIn(out, /scoring\.kindPoints\.call\.report must be a number from 0 to 60/);
+});
+
 test('without a social key the triage lints do not run', { skip }, () => {
   const script = `require ${JSON.stringify(join(root, 'scripts/validate_social.rb'))}
     ctx = ValidateSocial::Context.new(json: {}, repo_root: '.', social: nil)

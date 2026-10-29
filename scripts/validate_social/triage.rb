@@ -117,6 +117,7 @@ module ValidateSocial
       issues.concat(chip_checks(set, universe, where))
       issues.concat(wording_checks(set, universe, where))
       issues.concat(band_checks(set, where))
+      issues.concat(scoring_checks(set, where))
       issues.concat(profile_checks(set, where))
       issues.concat(message_checks(ctx, set, universe, where))
       issues.concat(player_sent_auth_checks(ctx, set, where))
@@ -127,6 +128,27 @@ module ValidateSocial
           issues << err("#{where}.pairedWith '#{pw}' is not a social.triageSets id")
         elsif pw == set['id']
           issues << err("#{where}.pairedWith names the set itself")
+        end
+      end
+      issues
+    end
+
+    # set.scoring (batch-5): optional per-kind verdict-points overrides. A message's own
+    # truth.verdictPoints wins over these. Absent, scoring is unchanged.
+    def self.scoring_checks(set, where)
+      return [] unless set.key?('scoring')
+      sc = set['scoring']
+      return [err("#{where}.scoring must be an object")] unless sc.is_a?(Hash)
+      issues = []
+      if sc.key?('kindPoints')
+        kp = sc['kindPoints']
+        if !kp.is_a?(Hash)
+          issues << err("#{where}.scoring.kindPoints must be an object of kind -> { verdict: points }")
+        else
+          kp.each do |kind, points|
+            next if kind.to_s.start_with?('_')
+            issues.concat(verdict_points_checks(points, "#{where}.scoring.kindPoints.#{kind}"))
+          end
         end
       end
       issues
@@ -603,6 +625,29 @@ module ValidateSocial
     # VERDICT_POINTS): the right option must be one of them.
     FULL_MARKS_VERDICTS = { true => %w[report verify], false => %w[trust report verify] }.freeze
     BUILT_VERDICTS = %w[trust report delete verify].freeze
+    # A verdict-points override is worth 0..60 (the verdict is 60 of the 100-point item;
+    # triage-scoring.js VERDICT_POINTS_MIN/MAX). Shared by truth.verdictPoints and
+    # set.scoring.kindPoints[kind] (batch-5 F-E12-1, E13 F-10).
+    VERDICT_POINTS_MIN = 0
+    VERDICT_POINTS_MAX = 60
+
+    # Validate a verdict-points override map { trust?, report?, delete?, verify? }: a Hash with only
+    # built-verdict keys and numeric values in range. Returns issue list.
+    def self.verdict_points_checks(points, where)
+      return [err("#{where} must be an object of verdict -> points, e.g. { \"trust\": 60 }")] unless points.is_a?(Hash)
+      issues = []
+      points.each do |v, n|
+        next if v.to_s.start_with?('_')
+        unless BUILT_VERDICTS.include?(v)
+          issues << err("#{where}: '#{v}' is not a verdict (one of #{BUILT_VERDICTS.join(', ')})")
+          next
+        end
+        if !n.is_a?(Numeric) || n < VERDICT_POINTS_MIN || n > VERDICT_POINTS_MAX
+          issues << err("#{where}.#{v} must be a number from #{VERDICT_POINTS_MIN} to #{VERDICT_POINTS_MAX} (the verdict is worth #{VERDICT_POINTS_MAX} of the item's 100 points)")
+        end
+      end
+      issues
+    end
     # A bare token of 8+ characters that mixes three kinds of character reads like a pasted password.
     CREDENTIAL_RE = /\A(?=\S{8,}\z)(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])\S+\z/.freeze
 
@@ -877,6 +922,7 @@ module ValidateSocial
         issues << err("#{mw}.truth.#{f} is empty; leave it out to keep the phish wording") if t.key?(f) && blank?(t[f])
         issues << warn_("#{mw}.truth.#{f} is on a real item (isPhish false); it only replaces phish wording, so it is never seen") if t.key?(f) && !t['isPhish']
       end
+      issues.concat(verdict_points_checks(t['verdictPoints'], "#{mw}.truth.verdictPoints")) if t.key?('verdictPoints')
       if t['isPhish'] && t.key?('falseAlarmCost')
         issues << warn_("#{mw}.truth.falseAlarmCost is on a phish; it is shown only for a real item reported or deleted, so it is never seen")
       end
