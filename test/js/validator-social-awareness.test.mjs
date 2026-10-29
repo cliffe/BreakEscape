@@ -373,3 +373,89 @@ test('standalone: false skips the conclusion, host NPC and conclusionTaskId chec
   delete j.globalVariables.episode_e1_stub_defend_done;
   expectIn(lint(j), /done global .* is not declared/);
 });
+
+// ── ENG-11: the sort drill (awarenessEpisode.sortDrill) ───────────────────────────
+const drill = () => ({
+  bins: [{ id: 'yes', label: 'Allowed' }, { id: 'no', label: 'Not allowed' }, { id: 'ask', label: 'Ask first' }],
+  scored: true, answerKeyProfile: 'house_rules', alwaysScoresBin: 'ask',
+  cards: [
+    { id: 'S1', situation: 'Stream the match at lunch', answer: 'yes', reason: 'Own time is fine.' },
+    { id: 'S2', situation: 'Lend your badge', answer: 'no', reason: 'It is yours alone.', locked: true },
+    { id: 'S3', situation: 'Install a free tool', answer: 'ask', reason: 'Check it first.', confirmed: false, new: true }
+  ],
+  drawRules: { oneOfEachAnswer: true, newFirst: true }, drawCount: 3
+});
+const withDrill = (mutate) => {
+  const j = fx('clean_defend_only.json');
+  ep(j).sortDrill = drill();
+  if (mutate) mutate(ep(j).sortDrill, j);
+  return j;
+};
+
+test('sortDrill: a clean scored drill and a clean unscored one raise nothing; absent is left alone', { skip }, () => {
+  assert.deepEqual(lint(withDrill()), []);
+  const unscored = withDrill((d) => { d.scored = false; delete d.answerKeyProfile; delete d.alwaysScoresBin; });
+  assert.deepEqual(lint(unscored), []);
+  assert.deepEqual(lint(fx('clean_defend_only.json')), []);
+});
+
+test('sortDrill: two to four bins with unique ids', { skip }, () => {
+  expectIn(lint(withDrill((d) => { d.bins = [d.bins[0]]; })), /bins must hold 2 to 4 bins/);
+  expectIn(lint(withDrill((d) => { d.bins.push({ id: 'a', label: 'A' }, { id: 'b', label: 'B' }); })), /bins must hold 2 to 4 bins/);
+  expectIn(lint(withDrill((d) => { d.bins[1].id = 'yes'; })), /id 'yes' is used more than once/);
+  expectIn(lint(withDrill((d) => { d.bins[0].label = ''; })), /bins\[0\] needs a non-empty id and label/);
+});
+
+test('sortDrill: every card answer names a real bin, with a situation and a reason', { skip }, () => {
+  expectIn(lint(withDrill((d) => { d.cards[0].answer = 'maybe'; })), /answer 'maybe' is not one of the bins/);
+  expectIn(lint(withDrill((d) => { d.cards[0].answer = ['yes', 'ghost']; })), /answer 'ghost' is not one of the bins/);
+  expectIn(lint(withDrill((d) => { delete d.cards[0].answer; })), /answer is missing/);
+  expectIn(lint(withDrill((d) => { d.cards[0].reason = ''; })), /reason is empty or missing/);
+  expectIn(lint(withDrill((d) => { d.cards[0].situation = ' '; })), /situation is empty or missing/);
+  expectIn(lint(withDrill((d) => { d.cards[1].id = 'S1'; })), /id 'S1' is used more than once/);
+  assert.deepEqual(lint(withDrill((d) => { d.cards[0].answer = ['yes', 'ask']; })), [], 'a list of accepted bins is fine');
+});
+
+test('sortDrill: a scored drill names its answer key; alwaysScoresBin names a bin', { skip }, () => {
+  expectIn(lint(withDrill((d) => { delete d.answerKeyProfile; })), /scored but names no answerKeyProfile/);
+  expectIn(lint(withDrill((d) => { d.alwaysScoresBin = 'maybe'; })), /alwaysScoresBin 'maybe' is not one of the bins/);
+  expectIn(lint(withDrill((d) => { d.scored = false; })), /answerKeyProfile is set on an unscored drill/);
+  expectIn(lint(withDrill((d) => { d.scored = 'yes'; })), /scored must be true or false/);
+});
+
+test('sortDrill: locked cards keep one answer and stay drawable; something must be drawable', { skip }, () => {
+  expectIn(lint(withDrill((d) => { d.cards[1].answer = ['no', 'ask']; })), /locked but has more than one accepted answer/);
+  expectIn(lint(withDrill((d) => { d.cards[1].confirmed = false; })), /locked and confirmed: false/);
+  expectIn(lint(withDrill((d) => { d.cards[0].confirmed = false; d.cards[1].locked = false; d.cards[1].confirmed = false; })), /no confirmed card to draw/);
+});
+
+test('sortDrill: drawCount must hold oneOfEachAnswer', { skip }, () => {
+  expectIn(lint(withDrill((d) => { d.drawCount = 2; })), /drawCount 2 is below the 3 bins the cards answer/);
+  expectIn(lint(withDrill((d) => { d.drawCount = 0; })), /drawCount must be a whole number/);
+});
+
+test('sortDrill: it needs a defend stage to run in, so a check mission cannot carry one', { skip }, () => {
+  const j = fx('clean_check_pre.json');
+  ep(j).sortDrill = drill();
+  expectIn(lint(j), /sortDrill runs inside the defend stage/);
+});
+
+test('sortDrill schema: the clean drill passes; a mistyped key, a fifth bin and a bad answer type fail', { skip }, () => {
+  const cases = [
+    ['a mistyped key', (d) => { d.scoredd = true; }, 'scoredd'],
+    ['a mistyped card key', (d) => { d.cards[0].reasn = 'x'; }, 'reasn'],
+    ['five bins', (d) => { d.bins.push({ id: 'a', label: 'A' }, { id: 'b', label: 'B' }); }, 'bins'],
+    ['one bin', (d) => { d.bins = [d.bins[0]]; }, 'bins'],
+    ['a numeric answer', (d) => { d.cards[0].answer = 7; }, 'answer'],
+    ['scored as a string', (d) => { d.scored = 'yes'; }, 'scored'],
+    ['a missing reason', (d) => { delete d.cards[0].reason; }, 'reason']
+  ];
+  const scenarios = [withDrill(), ...cases.map(([, mutate]) => withDrill(mutate))];
+  const results = schemaRun(scenarios);
+  assert.deepEqual(results[0], { social: [], other: [] });
+  cases.forEach(([name, , detail], i) => {
+    const { social, other } = results[i + 1];
+    assert.deepEqual(other, [], `${name}: an error outside #/social`);
+    assert.ok(social.some((e) => e.includes('sortDrill') && e.includes(detail)), `${name}: no error naming ${detail}\n${social.join('\n')}`);
+  });
+});

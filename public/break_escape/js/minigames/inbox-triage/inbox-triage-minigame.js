@@ -50,7 +50,7 @@ import {
 } from './triage-flags.js';
 import {
     kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, kindLabel, verdictAction,
-    shortTitle, realNounFor
+    shortTitle, realNounFor, choiceOptions, choiceOptionFor, choiceText
 } from './triage-kinds.js';
 import { comparisonFor, comparisonText } from './triage-comparison.js';
 
@@ -236,6 +236,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             rowBadge: (rec) => {
                 const a = this.answers.get(rec.id);
                 if (!a) return null;
+                if (kindOf(rec) === 'choice') return choiceText('answered', this.labels);
                 return actionById(isNonEmail(rec) ? kindOf(rec) : 'email', a.action, a.verdict, this.labels).past;
             },
             emptyText: 'There is nothing to sort in this round.',
@@ -356,6 +357,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             return pick('inbox', { label: 'Inbox check', item: ['message', 'messages'], real: realNounFor(kinds, this.set),
                 reportLabel: 'Reported rather than just deleted', dropLegend: false });
         }
+        if (every(['choice'])) return pick('choice', { label: 'Decisions', item: ['decision', 'decisions'], real: 'Sound choices',
+            reportLabel: 'Reported rather than just deleted', dropLegend: true });
         if (every(['call'])) return pick('call', { label: 'Service desk queue', item: ['call', 'calls'], real: 'Real callers',
             reportLabel: 'Escalated rather than just refused', dropLegend: true });
         if (every(['push'])) return pick('push', { label: 'Sign-in prompts', item: ['prompt', 'prompts'], real: 'Expected sign-ins',
@@ -398,6 +401,10 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             const shown = actionsFor(kind, this.verifyEnabled, this.labels);
             p.appendChild(el('p', `tri-brief-kind tri-brief-${kind}`,
                 `${lead}: ${shown.map((a) => `${a.label} (${a.hint.replace(/\.$/, '').toLowerCase()})`).join('; ')}.`));
+        }
+
+        if (kinds.has('choice')) {
+            p.appendChild(el('p', 'tri-brief-kind tri-brief-choice', choiceText('brief', this.labels)));
         }
 
         // A pre/post check is completion-scored (finishing it is what counts; the breakdown is
@@ -452,7 +459,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         let n = 0;
         for (const m of this.messages) {
             const a = this.answers.get(m.id);
-            if (a && m.truth?.isPhish === true && (a.verdict === 'report' || a.verdict === 'verify')) n += 1;
+            if (a && kindOf(m) !== 'choice' && m.truth?.isPhish === true && (a.verdict === 'report' || a.verdict === 'verify')) n += 1;
         }
         return n;
     }
@@ -503,7 +510,25 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         if (this.step !== 'sort') return;
         const ans = this.answers.get(rec.id);
         const box = el('div', 'tri-actions');
-        if (!ans) {
+        if (!ans && kindOf(rec) === 'choice') {
+            // ENG-09a: one decision, so the card's own options replace the verdict row. Each option
+            // is scored as the built verdict it maps to, with no "What made you say that?" sheet
+            // (a choice card authors no flags). The verdict is not on the button: a colour or icon
+            // would give the right option away.
+            const group = el('div', 'tri-verdicts tri-choice-options');
+            group.setAttribute('role', 'group');
+            group.setAttribute('aria-label', choiceText('group', this.labels));
+            for (const o of choiceOptions(rec)) {
+                const btn = el('button', 'tri-choice-option minigame-button');
+                btn.type = 'button';
+                btn.dataset.action = o.id;
+                btn.dataset.verdict = o.verdict;
+                btn.appendChild(el('span', 'tri-choice-label', o.label));
+                this.addEventListener(btn, 'click', () => this._pickChoice(rec, o));
+                group.appendChild(btn);
+            }
+            box.appendChild(group);
+        } else if (!ans) {
             const group = el('div', 'tri-verdicts');
             group.setAttribute('role', 'group');
             group.setAttribute('aria-label', 'Your verdict');
@@ -526,7 +551,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             const lock = el('p', 'tri-locked');
             lock.append(icon('mark-tick'), el('span', null, `Your verdict: ${this._actionLabel(rec, ans)}. Locked in.`));
             box.appendChild(lock);
-            if (this.awarenessSkin && ans.verdict === 'report') {
+            if (this.awarenessSkin && ans.verdict === 'report' && kindOf(rec) !== 'choice') {
                 // The positive beat for a report: it plays once, on the render right after
                 // the report was locked; later renders show the line without the animation.
                 const win = this._reportWin === rec.id;
@@ -578,6 +603,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     /** The word for what the player did: the call or push action's label, else the verdict's. */
     _actionLabel(rec, ans) {
         if (!ans) return '';
+        if (kindOf(rec) === 'choice') return choiceOptionFor(rec, ans.action, ans.verdict)?.label || '';
         return actionById(isNonEmail(rec) ? kindOf(rec) : 'email', ans.action, ans.verdict, this.labels).label;
     }
 
@@ -660,15 +686,29 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const ms = Number.isFinite(opened) ? Math.max(0, Date.now() - opened) : 0;
         const answer = { id: s.messageId, verdict: s.verdict, flags, ms };
         if (s.action && s.action !== s.verdict) answer.action = s.action;
+        this._lockAnswer(s.messageId, answer);
+    }
+
+    /** A choice card's option is the whole answer: no flags, no sheet (ENG-09a). */
+    _pickChoice(rec, option) {
+        if (this.sheet || this.answers.has(rec.id)) return;
+        const opened = this.openedAt.get(rec.id);
+        const ms = Number.isFinite(opened) ? Math.max(0, Date.now() - opened) : 0;
+        this._lockAnswer(rec.id, { id: rec.id, verdict: option.verdict, flags: [], ms, action: option.id });
+    }
+
+    /** Record an answer, close the sheet if one is open, and move the round on. */
+    _lockAnswer(messageId, answer) {
         const teamBefore = this.teamEl ? this.teamProtectedCount() : 0;
-        this.answers.set(s.messageId, answer);
-        if (this.awarenessSkin && answer.verdict === 'report') {
-            this._reportWin = s.messageId;
+        this.answers.set(messageId, answer);
+        const answered = this.messages.find((m) => m.id === messageId);
+        if (this.awarenessSkin && answer.verdict === 'report' && kindOf(answered) !== 'choice') {
+            this._reportWin = messageId;
             // The report sting (11 §4.3, §8): a short positive sound with the pop animation.
             try { window.soundManager?.play?.('ui_confirm'); } catch (e) { /* sound is optional */ }
         }
         this._closeSheet(false);
-        const rec = this.messages.find((m) => m.id === s.messageId);
+        const rec = this.messages.find((m) => m.id === messageId);
         if (this.teamEl) this._renderTeamTally(this.teamProtectedCount() > teamBefore);
         this._announce(this._lockedLine(rec.id));
         this.progressEl.textContent = `${this.answers.size} of ${this.messages.length} sorted`;
@@ -745,6 +785,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const per = this._scoreOne(rec);
         const truth = rec.truth;
         const card = el('article', 'tri-review-card');
+        const isChoice = kindOf(rec) === 'choice';
         card.dataset.messageId = rec.id;
         card.dataset.kind = kindOf(rec);
         const title = el('h3', 'tri-card-title', this._cardTitle(rec));
@@ -754,8 +795,11 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const tone = this._verdictTone(rec, ans.verdict);
         const verdict = el('p', `tri-card-verdict ${tone}`);
         verdict.append(icon(tone === 'wrong' ? 'mark-cross' : 'mark-tick'),
-            el('span', null, `You chose ${this._actionLabel(rec, ans)}. ${this._verdictLine(rec, ans.verdict)}`));
+            el('span', null, `You chose ${this._actionLabel(rec, ans)}. ${isChoice
+                ? choiceText(this._isRight(rec, ans.verdict) ? 'right' : 'wrong', this.labels)
+                : this._verdictLine(rec, ans.verdict)}`));
         card.appendChild(verdict);
+        if (isChoice) return this._choiceCard(card, rec, ans, per);
 
         // lab3 (opt-in): mark the player's own sends on the flip, so the attack-to-defence mirror
         // lands in the mandatory review and not only in an NPC's optional topic. Shown only when the
@@ -822,6 +866,38 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 ? (truth.reportReply || "Thanks. Confirmed as a phish, we've pulled it from the other inboxes.")
                 : null;
             if (reply) card.appendChild(el('p', 'tri-it-reply', `${this._replyFrom()}: ${reply}`));
+        }
+        card.appendChild(el('p', 'tri-card-score', `Score for this message: ${per.score} of 100`));
+        return card;
+    }
+
+    /**
+     * The rest of an authored-choice review card (ENG-09a). There are no tells to list: the right
+     * pick shows why (truth.reportReply), a wrong one names the better option and what could go
+     * wrong (truth.ifTrusted). A real item's whyFine lines still show.
+     */
+    _choiceCard(card, rec, ans, per) {
+        const truth = rec.truth;
+        const right = this._isRight(rec, ans.verdict);
+        if (right && typeof truth.reportReply === 'string' && truth.reportReply) {
+            card.appendChild(el('p', 'tri-choice-why', `${choiceText('whyRight', this.labels)}: ${truth.reportReply}`));
+        }
+        if (!right) {
+            const best = choiceOptions(rec).find((o) => o.verdict === truth.correct);
+            if (best) card.appendChild(el('p', 'tri-choice-better', `${choiceText('better', this.labels)}: ${best.label}`));
+            if (typeof truth.ifTrusted === 'string' && truth.ifTrusted) {
+                card.appendChild(el('p', 'tri-if-trusted', `${choiceText('ifWrong', this.labels)}: ${truth.ifTrusted}`));
+            }
+        }
+        if (!truth.isPhish) {
+            const why = isObj(truth.whyFine) ? truth.whyFine : {};
+            const lines = dedupeSentences(Object.values(why).filter((v) => typeof v === 'string' && v));
+            if (lines.length) {
+                const ul = el('ul', 'tri-why-fine');
+                ul.setAttribute('aria-label', 'Why this one was fine');
+                for (const l of lines) ul.appendChild(el('li', null, l));
+                card.appendChild(ul);
+            }
         }
         card.appendChild(el('p', 'tri-card-score', `Score for this message: ${per.score} of 100`));
         return card;
@@ -940,6 +1016,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         if (every(['call', 'push', 'voicemail'])) {
             return `If a caller, prompt or voicemail pushes you to act, stop and check through a channel you already trust, ${ask}`;
         }
+        if (every(['choice'])) return `Think back to the choices you missed the next time they come up at work, ${ask}`;
         if (every(['sms', 'qr'])) return `Be wary of links and codes you did not ask for, ${ask}`;
         return `Look for ${it} in the next messages you get at work, ${ask}`;
     }
@@ -1348,7 +1425,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 teamTally: this.teamEl ? this.teamProtectedCount() : null,
                 callClaims: [...(this.reader?.readPane?.querySelectorAll?.('.tri-call-claim') || [])]
                     .map((c) => ({ fact: c.dataset.fact, value: c.querySelector('.tri-claim-value')?.textContent || '' })),
-                actionButtons: [...(this.reader?.readPane?.querySelectorAll?.('.tri-verdict') || [])]
+                actionButtons: [...(this.reader?.readPane?.querySelectorAll?.('.tri-verdict, .tri-choice-option') || [])]
                     .map((b) => b.dataset.action),
                 comparison: this.step === 'result' && this.comparison ? JSON.parse(JSON.stringify(this.comparison)) : null,
                 // The real-items lines on the result screen (disc_visible): what is drawn, by class.

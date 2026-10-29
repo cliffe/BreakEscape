@@ -59,6 +59,8 @@ import {
     writeKind, sentFromCall, callOutcomeKey, flipPage, flipCall, CALL_LANDED,
     awarenessSettings, reportRouteFor
 } from './episode-model.js';
+import { drillPending, drillLaunchCopy, drillLaunchParams } from '../sort-drill/sort-drill-host.js';
+import { drillSummary } from '../sort-drill/sort-drill-model.js';
 
 /**
  * A pretext call that did not land (reported or walked away) means the attacker never got
@@ -392,6 +394,8 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
 
     /** The panel copy for a stage that opens another tool. */
     _stageCopy(stage) {
+        // ENG-11: with a sort drill still to do, the defend panel opens the drill, not the inbox.
+        if (stage === 'defend' && drillPending(this.episode, this.state)) return drillLaunchCopy(this.episode);
         const copy = this._baseStageCopy(stage);
         // strings.stages.<stageId> { heading, text, button } replaces any of the three lines.
         const own = isObj(this.strings.stages) && isObj(this.strings.stages[stage]) ? this.strings.stages[stage] : null;
@@ -602,11 +606,26 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             }));
         } else if (spec.kind === 'call') {
             child = this._launchCall(spec.params);
+        } else if (spec.kind === 'triage' && stage === 'defend' && drillPending(this.episode, this._readState())) {
+            // ENG-11: the sort drill comes first in the defend stage. Its record is kept in the
+            // state, so the panel then opens the inbox. A drill closed part-way keeps nothing.
+            child = this.launchChild('sort-drill', socialOverlayParams(drillLaunchParams(this.episode, this._drillOverrides(), {
+                onComplete: (success, result) => {
+                    if (!isNormal(success, result)) return;
+                    this._saveState({ ...this._readState(), drill: drillSummary(result) });
+                }
+            })));
         } else if (spec.kind === 'triage') {
             child = this._launchTriage(stage, spec.options);
         }
         this._launching = null;
         if (!child && this.gameState.isActive && this.notice) this.notice.textContent = isStr(this.strings.launchFailed) ? this.strings.launchFailed : LAUNCH_FAILED;
+    }
+
+    /** A deployment's per-card changes to the drill bank (breakEscapeConfig.awareness.sortDrillCards), or null. */
+    _drillOverrides() {
+        const o = win().breakEscapeConfig?.awareness?.sortDrillCards;
+        return isObj(o) ? o : null;
     }
 
     // ── the pretext call (E3) ────────────────────────────────────────────────

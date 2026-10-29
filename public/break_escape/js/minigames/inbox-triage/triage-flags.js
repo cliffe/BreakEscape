@@ -69,7 +69,7 @@ export const SKILL_NAMES = Object.freeze({
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
-const NON_EMAIL = ['sms', 'voicemail', 'qr', 'page', 'call', 'push'];
+const NON_EMAIL = ['sms', 'voicemail', 'qr', 'page', 'call', 'push', 'choice'];
 
 // Tells that cannot apply to a kind of message, so offering them as ticks let a learner tick
 // something that could never be right (N6; P3 N-4 extended it past calls, voicemails and prompts):

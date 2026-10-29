@@ -54,6 +54,7 @@ module ValidateSocial
       issues.concat(string_checks(ctx, ep))
       issues.concat(settings_checks(ctx, ep))
       issues.concat(mfa_checks(ep))
+      issues.concat(sort_drill_checks(ep)) if ep.key?('sortDrill')
       set = defend_set(ctx, ep, issues)
       done = nil
       if set
@@ -775,6 +776,95 @@ module ValidateSocial
           err("global '#{name}' is not declared in globalVariables; declare it as #{want} (an undeclared name is not saved)")
         end
       end
+    end
+
+    # ---- the sort drill (ENG-11) ---------------------------------------------------
+
+    SORT_DRILL_BINS = (2..4)
+
+    # `sortDrill` runs first inside the defend stage. Its bins, cards and scoring are data; the lints
+    # keep every card answerable (an answer naming a real bin) and a scored drill tied to a key.
+    def self.sort_drill_checks(ep)
+      d = ep['sortDrill']
+      return [err('sortDrill must be an object { bins, cards, scored?, ... }')] unless d.is_a?(Hash)
+
+      issues = []
+      stages = ep['stages']
+      if check_mission?(ep) || !(stages.is_a?(Array) && stages.include?('defend'))
+        issues << err("sortDrill runs inside the defend stage; this episode's stages #{stages.inspect} have none to host it")
+      end
+      bins = d['bins']
+      ids = []
+      if bins.is_a?(Array) && SORT_DRILL_BINS.cover?(bins.length)
+        bins.each_with_index do |b, i|
+          unless b.is_a?(Hash) && !Mail.blank?(b['id']) && !Mail.blank?(b['label'])
+            issues << err("sortDrill.bins[#{i}] needs a non-empty id and label")
+            next
+          end
+          issues << err("sortDrill.bins: id '#{b['id']}' is used more than once") if ids.include?(b['id'])
+          ids << b['id']
+        end
+      else
+        issues << err("sortDrill.bins must hold #{SORT_DRILL_BINS.first} to #{SORT_DRILL_BINS.last} bins (a sort needs a choice, and more than four will not fit a row)")
+      end
+      scored = d['scored']
+      issues << err('sortDrill.scored must be true or false') unless [true, false].include?(scored)
+      if scored == true
+        issues << err("sortDrill is scored but names no answerKeyProfile; say which answer key the cards' answers come from") if Mail.blank?(d['answerKeyProfile'])
+      elsif scored == false
+        %w[answerKeyProfile alwaysScoresBin].each do |k|
+          issues << warn_("sortDrill.#{k} is set on an unscored drill; it is never read") if d.key?(k)
+        end
+      end
+      if d.key?('alwaysScoresBin') && !ids.include?(d['alwaysScoresBin'])
+        issues << err("sortDrill.alwaysScoresBin '#{d['alwaysScoresBin']}' is not one of the bins (#{ids.join(', ')})")
+      end
+      issues.concat(sort_drill_card_checks(d, ids))
+      issues
+    end
+
+    def self.sort_drill_card_checks(d, ids)
+      cards = d['cards']
+      return [err('sortDrill.cards must be a non-empty array')] unless cards.is_a?(Array) && !cards.empty?
+
+      issues = []
+      seen = []
+      answered = []
+      drawable = 0
+      cards.each_with_index do |c, i|
+        unless c.is_a?(Hash)
+          issues << err("sortDrill.cards[#{i}] must be an object")
+          next
+        end
+        cw = "sortDrill.cards[#{c['id'] || i}]"
+        issues << err("#{cw} has no id") if Mail.blank?(c['id'])
+        issues << err("sortDrill.cards: id '#{c['id']}' is used more than once") if !Mail.blank?(c['id']) && seen.include?(c['id'])
+        seen << c['id']
+        issues << err("#{cw}.situation is empty or missing; the card would show nothing") if Mail.blank?(c['situation'])
+        issues << err("#{cw}.reason is empty or missing; every drop shows its reason") if Mail.blank?(c['reason'])
+        answers = Array(c['answer'])
+        if answers.empty?
+          issues << err("#{cw}.answer is missing; name a bin id (or a list of bin ids)")
+        else
+          answers.each { |a| issues << err("#{cw}.answer '#{a}' is not one of the bins (#{ids.join(', ')})") unless ids.include?(a) }
+          issues << err("#{cw}.answer lists the same bin twice") if answers.uniq.length != answers.length
+          answered << answers.first
+        end
+        if c['locked'] == true
+          issues << err("#{cw} is locked but has more than one accepted answer; a locked card has one fixed answer") if answers.length > 1
+          issues << err("#{cw} is locked and confirmed: false; a locked card is always drawn") if c['confirmed'] == false
+        end
+        drawable += 1 if c['locked'] == true || c['confirmed'] != false
+      end
+      issues << err('sortDrill has no confirmed card to draw') if drawable.zero?
+      rules = d['drawRules']
+      count = d['drawCount']
+      if count && !(count.is_a?(Integer) && count >= 1)
+        issues << err('sortDrill.drawCount must be a whole number of cards, 1 or more')
+      elsif count && rules.is_a?(Hash) && rules['oneOfEachAnswer'] == true && count < answered.uniq.length
+        issues << err("sortDrill.drawCount #{count} is below the #{answered.uniq.length} bins the cards answer, so oneOfEachAnswer cannot hold")
+      end
+      issues
     end
 
     # ---- check missions: the set binds to defend.stage (S5.2) ----------------------

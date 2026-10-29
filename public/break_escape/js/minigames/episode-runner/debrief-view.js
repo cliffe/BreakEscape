@@ -27,7 +27,7 @@
 
 import { redFlagString, skillName } from '../inbox-triage/triage-flags.js';
 import { weakestFactor, flagUnits, unitAccepts, genuineFeedback, genuineFeedbackText, verdictPoints, FULL_VERDICT_POINTS, dedupeSentences } from '../inbox-triage/triage-scoring.js';
-import { kindOf, isNonEmail, actionById, kindVerdictLine, defaultSubject } from '../inbox-triage/triage-kinds.js';
+import { kindOf, isNonEmail, actionById, kindVerdictLine, defaultSubject, choiceOptionFor, choiceText } from '../inbox-triage/triage-kinds.js';
 
 const DEFAULTS = Object.freeze({
     heading: 'What happened',
@@ -104,6 +104,12 @@ function titleOf(msg, id) {
  */
 function verdictWordAndLine(answer, msg, phish, labels = null) {
     const kind = kindOf(msg);
+    if (kind === 'choice') {
+        // An authored-choice card (ENG-09a): the option's own label, then right or wrong, not the email verdicts.
+        const right = wrongVerdict(answer, msg, 'awareness') === false;
+        return { word: choiceOptionFor(msg, answer.action, answer.verdict)?.label || String(answer.verdict ?? ''),
+            line: choiceText(right ? 'right' : 'wrong', labels) };
+    }
     if (kind === 'call' || kind === 'push') {
         const action = actionById(kind, answer.action, answer.verdict, labels);
         return { word: action.label, line: kindVerdictLine(kind, phish, answer.verdict) || '' };
@@ -189,7 +195,21 @@ function buildCard(answer, msg, set = null) {
             card.appendChild(ul);
         }
     }
-    if (phish && (verdict === 'trust' || verdict === 'delete') && typeof truth.ifTrusted === 'string' && truth.ifTrusted) {
+    if (kindOf(msg) === 'choice') {
+        // The right pick shows why (reportReply); a wrong one shows the better option and what could go wrong.
+        const right = wrongVerdict(answer, msg, 'awareness') === false;
+        const labels = set?.labels;
+        if (right && typeof truth.reportReply === 'string' && truth.reportReply) {
+            card.appendChild(el('p', 'aw-if-trusted', `${choiceText('whyRight', labels)}: ${truth.reportReply}`));
+        } else if (!right) {
+            const best = (Array.isArray(msg?.choice?.options) ? msg.choice.options : [])
+                .find((o) => isObj(o) && o.verdict === truth.correct);
+            if (best && isStr(best.label)) card.appendChild(el('p', 'aw-choice-better', `${choiceText('better', labels)}: ${best.label}`));
+            if (typeof truth.ifTrusted === 'string' && truth.ifTrusted) {
+                card.appendChild(el('p', 'aw-if-trusted', `${choiceText('ifWrong', labels)}: ${truth.ifTrusted}`));
+            }
+        }
+    } else if (phish && (verdict === 'trust' || verdict === 'delete') && typeof truth.ifTrusted === 'string' && truth.ifTrusted) {
         const lead = verdict === 'trust' ? 'What could have happened'
             : (kindOf(msg) === 'call' ? 'What this caller was after' : 'What this one was after');
         card.appendChild(el('p', 'aw-if-trusted', `${lead}: ${truth.ifTrusted}`));

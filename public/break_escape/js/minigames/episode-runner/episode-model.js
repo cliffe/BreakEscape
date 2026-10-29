@@ -98,6 +98,19 @@ function cleanSent(raw) {
     };
 }
 
+/** ENG-11: the sort drill's small record (counts only), kept in the state so a reopen skips the drill. */
+function cleanDrill(raw) {
+    if (!isObj(raw) || raw.done !== true) return null;
+    const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+    const out = { done: true, scored: raw.scored === true, total: num(raw.total), placed: num(raw.placed) };
+    if (out.scored) {
+        out.correct = num(raw.correct);
+        out.percent = num(raw.percent);
+        if (isStr(raw.answerKeyProfile)) out.answerKeyProfile = raw.answerKeyProfile;
+    }
+    return out;
+}
+
 function cleanDefend(raw) {
     if (!isObj(raw)) return null;
     const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
@@ -143,6 +156,9 @@ export function readState(episode, raw) {
         sent: cleanSent(src.sent),
         defend: cleanDefend(src.defend)
     };
+    // Only an episode with a sort drill carries the key, so every other state is unchanged.
+    const drill = cleanDrill(src.drill);
+    if (drill) state.drill = drill;
     state.stage = nextStage(episode, state);
     return state;
 }
@@ -159,6 +175,7 @@ export function completeStage(episode, state, stageId, patch = {}) {
     const next = { ...base, done };
     if ('sent' in patch) next.sent = cleanSent(patch.sent);
     if ('defend' in patch) next.defend = cleanDefend(patch.defend);
+    if ('drill' in patch) { const drill = cleanDrill(patch.drill); if (drill) next.drill = drill; }
     if (stageId === 'flip') next.sent = null;
     next.stage = nextStage(episode, next);
     return next;

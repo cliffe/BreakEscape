@@ -451,3 +451,22 @@
 }
 .tri-close-ask-text { margin: 0 0 8px; }
 .tri-close-ask-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Authored-choice card (ENG-09a): the prompt, then one wide button per option. The options carry
+   no verdict colour, so the right one is not given away. */
+.tri-kind-choice { padding: 10px 12px; background: #10152a; border: 2px solid var(--ui-line, #4c5b80); border-left: 6px solid var(--ui-accent, #ffcc44); }
+.tri-choice-note { margin: 8px 0 0; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+.tri-choice-options { flex-direction: column; align-items: stretch; }
+.tri-choice-option {
+    display: block;
+    width: 100%;
+    max-width: 560px;
+    min-height: 44px;
+    padding: 8px 12px;
+    text-align: left;
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+    line-height: 1.35;
+}
+.tri-choice-why, .tri-choice-better { margin: 6px 0; font-size: 15px; }
+.tri-choice-better { font-weight: 700; }

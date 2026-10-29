@@ -240,6 +240,7 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
     const byId = new Map();
     for (const a of answers || []) byId.set(a.id ?? a.messageId, a);
 
+    const choiceIds = new Set(messages.filter((m) => m && m.kind === 'choice').map((m) => m.id));
     const perMessage = [];
     const perFactor = {};
     const falseByFactor = {};
@@ -278,8 +279,12 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         const missed = units.filter((u) => !unitCaught(u)).map((u) => u.note);
         const falseClaims = ticked.filter((f) => !accepted.has(f));
         const caughtUnits = units.filter(unitCaught).length;
-        const fPts = flagPoints(profile, isPhish, { caught: caughtUnits, falseClaims: falseClaims.length, authored: units.length });
-        const score = roundHalfUp(vPts + fPts);
+        // An authored-choice card (ENG-09a) is one decision with no flags to tick, so its score is
+        // the verdict row on the usual 100-point scale (the full-marks option earns 100, as a fully
+        // caught phish does); with the 40 flag points missing it would cap a mixed round at 60.
+        const isChoice = kind === 'choice';
+        const fPts = isChoice ? 0 : flagPoints(profile, isPhish, { caught: caughtUnits, falseClaims: falseClaims.length, authored: units.length });
+        const score = isChoice ? roundHalfUp(vPts * 100 / FULL_VERDICT_POINTS) : roundHalfUp(vPts + fPts);
         const critical = isCriticalMiss(profile, isPhish, verdict, kind, truth.critical);
         if (critical) { criticalMisses.push(msg.id); criticalKinds.push(kind); }
         perMessage.push({
@@ -302,6 +307,10 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         }
         for (const f of falseClaims) falseByFactor[f] = (falseByFactor[f] || 0) + 1;
 
+        // A choice card is a decision, not a message to catch or report: it counts toward the score
+        // and the band, but not toward the phish, report, verify or false-alarm tallies (those feed
+        // reportRate and the team-protected line, which would then count password picks).
+        if (isChoice) continue;
         if (verdict === 'verify') verifyCount += 1;
         if (isPhish) {
             phishTotal += 1;
@@ -358,8 +367,8 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         falseByFactor,
         // Real items given full verdict marks (Trust, Verify, or Report under awareness), so the
         // result grid counts exactly what the review cards call right (P3 N-2).
-        realHandledRight: perMessage.filter((m) => m.answered && !m.isPhish && m.handledRight).length,
-        realTotal: perMessage.filter((m) => !m.isPhish).length,
+        realHandledRight: perMessage.filter((m) => m.answered && !m.isPhish && m.handledRight && !choiceIds.has(m.id)).length,
+        realTotal: perMessage.filter((m) => !m.isPhish && !choiceIds.has(m.id)).length,
         criticalMisses,
         criticalKinds,
         criticalPenalty: CRITICAL_PENALTY * criticalMisses.length,
@@ -432,7 +441,7 @@ export function genuineFeedback({ messages, answers, profile = 'awareness', titl
         const truth = m.truth && typeof m.truth === 'object' ? m.truth : {};
         // A playerSent entry is replayed as a phish (triage-messages.js); an answer that says
         // isPhish (the debrief's stored answers) wins over a set entry that lacks truth.
-        if (truth.isPhish || m.kind === 'playerSent' || m.playerSent === true) continue;
+        if (truth.isPhish || m.kind === 'playerSent' || m.playerSent === true || m.kind === 'choice') continue;
         const a = byId.get(m.id);
         if (a && a.isPhish === true) continue;
         realTotal += 1;
@@ -463,7 +472,8 @@ export function genuineFeedback({ messages, answers, profile = 'awareness', titl
  */
 export function missedPhishText(perMessage, messages, titleOf) {
     const byId = new Map((messages || []).map((m) => [m.id, m]));
-    const titles = (perMessage || []).filter((m) => m && m.answered !== false && m.isPhish === true && m.verdict === 'trust')
+    const titles = (perMessage || []).filter((m) => m && m.answered !== false && m.isPhish === true && m.verdict === 'trust'
+        && byId.get(m.id)?.kind !== 'choice')
         .map((m) => {
             const rec = byId.get(m.id);
             return (rec && typeof titleOf === 'function' ? titleOf(rec) : null) || m.id;

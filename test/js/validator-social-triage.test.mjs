@@ -468,3 +468,109 @@ test('05 "Either tick counts": truth.flagAlternatives shape and membership', { s
 test('the fixtures were not rewritten by any run', { skip }, () => {
   assert.equal(folderHash(fx), fixturesBefore);
 });
+
+// ── ENG-09a: the authored-choice kind ──────────────────────────────────────────────
+function choiceScenario(mutate) {
+  const j = mini();
+  const set = j.social.triageSets[0];
+  set.scoringProfile = 'awareness';
+  set.messages = [{
+    id: 'c1', kind: 'choice', subject: 'Which is stronger?',
+    choice: {
+      prompt: 'Which is stronger?',
+      options: [
+        { id: 'words', label: 'three random words together', verdict: 'report' },
+        { id: 'complex', label: 'a company name, a year and a symbol', verdict: 'trust' }
+      ],
+      note: 'These are made up; no real password is typed.'
+    },
+    truth: { isPhish: true, flags: [], correct: 'report', reportReply: 'Length beats symbols.', ifTrusted: 'Guess lists start there.' }
+  }];
+  if (mutate) mutate(set.messages[0], set, j);
+  return j;
+}
+const choiceLint = (mutate) => lintJson(choiceScenario(mutate));
+
+test('choice: a clean choice card raises nothing, and a real-item card with a trust answer is clean too', { skip }, () => {
+  assert.deepEqual(choiceLint(), []);
+  assert.deepEqual(choiceLint((m) => {
+    m.truth = { isPhish: false, flags: [], correct: 'trust', whyFine: { default: 'Generated passwords are unique.' } };
+    m.choice.options = [{ id: 'use', label: 'Use it', verdict: 'trust' }, { id: 'own', label: 'Type your usual one', verdict: 'delete' }];
+  }), []);
+  assert.deepEqual(choiceLint((m) => { m.choice.options.push({ id: 'text', label: 'a code by text', verdict: 'delete' }); }), []);
+});
+
+test('choice: every option verdict is a built verdict; exactly one matches truth.correct', { skip }, () => {
+  const bad = choiceLint((m) => { m.choice.options[1].verdict = 'maybe'; });
+  expectIn(bad, /options\[1\]\.verdict 'maybe' must be one of trust, report, delete, verify/);
+  expectIn(choiceLint((m) => { m.choice.options[0].verdict = 'delete'; }), /0 options have the verdict 'report'/);
+  expectIn(choiceLint((m) => { m.choice.options[1].verdict = 'report'; }), /2 options have the verdict 'report'/);
+});
+
+test('choice: truth.correct must be the full-marks verdict for isPhish', { skip }, () => {
+  expectIn(choiceLint((m) => { m.truth.correct = 'trust'; m.choice.options[1].verdict = 'trust'; m.choice.options[0].verdict = 'delete'; }),
+    /truth\.correct 'trust' does not score full marks for isPhish true/);
+  expectIn(choiceLint((m) => { m.truth.correct = 'delete'; m.choice.options[0].verdict = 'delete'; m.choice.options[1].verdict = 'trust'; }),
+    /truth\.correct 'delete' does not score full marks/);
+  expectIn(choiceLint((m) => { delete m.truth.correct; }), /truth\.correct must be one of trust, report, delete, verify/);
+});
+
+test('choice: no other option may also score full marks', { skip }, () => {
+  // report and verify both score 60 on a phish, so only one of them may be on the card
+  expectIn(choiceLint((m) => { m.choice.options[1].verdict = 'verify'; }), /options\['complex'\] maps to 'verify', which also scores full marks/);
+});
+
+test('choice: one decision only: 2 to 4 options, unique ids, a prompt, no flags, links or attachments', { skip }, () => {
+  expectIn(choiceLint((m) => { m.choice.options = [m.choice.options[0]]; }), /options must hold two to four options/);
+  expectIn(choiceLint((m) => { m.choice.options.push(...['a', 'b', 'c'].map((id) => ({ id, label: id, verdict: 'delete' }))); }), /options must hold two to four options/);
+  expectIn(choiceLint((m) => { m.choice.options[1].id = 'words'; }), /an id is used more than once/);
+  expectIn(choiceLint((m) => { m.choice.prompt = ''; }), /choice\.prompt is empty or missing/);
+  expectIn(choiceLint((m) => { delete m.choice; }), /choice is missing; a choice message needs/);
+  expectIn(choiceLint((m) => { m.truth.flags = ['senderTrust']; }), /authors no flags/);
+  expectIn(choiceLint((m) => { m.links = [{ id: 'l', destination: 'https://x.example' }]; }), /one decision and has no links/);
+  expectIn(choiceLint((m) => { m.choice.options[0].label = ''; }), /label is empty or missing/);
+});
+
+test('choice: an option that is a bare credential-looking string is warned about', { skip }, () => {
+  expectIn(choiceLint((m) => { m.choice.options[1].label = 'Hunter2Fakeco!'; }), /looks like a real credential/);
+  assert.equal(count(choiceLint((m) => { m.choice.options[1].label = 'Fakeco2026! (company, year, symbol)'; }), /credential/), 0);
+});
+
+test('choice: awareness sets only; truth.correct elsewhere is a warning', { skip }, () => {
+  expectIn(choiceLint((_m, set) => { set.scoringProfile = 'analyst'; }), /a choice message belongs in an awareness set/);
+  const j = mini();
+  j.social.triageSets[0].messages[1].truth.correct = 'report';
+  expectIn(lintJson(j), /truth\.correct is on a email message; only a choice card reads it/);
+});
+
+test('choice: labels.choice keys are checked; a choice-only set needs no channel tells', { skip }, () => {
+  assert.deepEqual(choiceLint((_m, set) => { set.labels = { choice: { right: 'Yes.', wrong: 'No.' }, queue: { choice: { label: 'Checks' } } }; }), []);
+  expectIn(choiceLint((_m, set) => { set.labels = { choice: { rihgt: 'Yes.' } }; }), /labels\.choice has the key 'rihgt'/);
+  expectIn(choiceLint((_m, set) => { set.labels = { choice: { right: '' } }; }), /labels\.choice\.right is empty/);
+  expectIn(choiceLint((_m, set) => { set.labels = { choice: 'x' }; }), /labels\.choice must be an object/);
+  assert.equal(count(choiceLint(), /enables no channelTells/), 0);
+});
+
+test('choice schema: the card passes; a mistyped key, a bad verdict and one option fail', { skip }, () => {
+  const cases = [
+    ['a mistyped choice key', (m) => { m.choice.promt = 'x'; }, 'promt'],
+    ['a bad verdict', (m) => { m.choice.options[0].verdict = 'maybe'; }, 'verdict'],
+    ['a single option', (m) => { m.choice.options = [m.choice.options[0]]; }, 'options'],
+    ['a bad truth.correct', (m) => { m.truth.correct = 'maybe'; }, 'correct'],
+    ['a mistyped label key', (_m, set) => { set.labels = { choice: { rihgt: 'x' } }; }, 'rihgt']
+  ];
+  const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+    JSON::Validator.use_multi_json = false
+    out = JSON.parse($stdin.read).map do |j|
+      social, other = ValidateSocial.split_schema_errors(validate_json(j, ${JSON.stringify(join(root, 'scripts/scenario-schema.json'))}))
+      { social: social, other: other }
+    end
+    puts JSON.generate(out)`;
+  const r = spawnSync('ruby', ['-e', script], { encoding: 'utf8', env, input: JSON.stringify([choiceScenario(), ...cases.map(([, mutate]) => choiceScenario(mutate))]), maxBuffer: 64 << 20 });
+  assert.equal(r.status, 0, r.stderr);
+  const results = JSON.parse(r.stdout.trim().split('\n').pop());
+  assert.deepEqual(results[0].social, []);
+  cases.forEach(([name, , detail], i) => {
+    assert.ok(results[i + 1].social.some((e) => e.includes(detail)), `${name}: no error naming ${detail}\n${results[i + 1].social.join('\n')}`);
+  });
+});

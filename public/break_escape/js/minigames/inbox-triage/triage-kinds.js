@@ -20,7 +20,7 @@ const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 
 export const EMAIL_KINDS = Object.freeze(['email', 'playerSent']);
-export const NON_EMAIL_KINDS = Object.freeze(['sms', 'voicemail', 'qr', 'page', 'call', 'push']);
+export const NON_EMAIL_KINDS = Object.freeze(['sms', 'voicemail', 'qr', 'page', 'call', 'push', 'choice']);
 
 export function kindOf(rec) {
     return isStr(rec?.kind) ? rec.kind : 'email';
@@ -34,18 +34,20 @@ export function isNonEmail(recOrKind) {
 /** Short word for the kind, used in the message list and the brief. */
 export const KIND_LABEL = Object.freeze({
     email: 'Email', sms: 'Text', voicemail: 'Voicemail', qr: 'QR notice',
-    page: 'Web page', call: 'Call', push: 'Sign-in prompt'
+    page: 'Web page', call: 'Call', push: 'Sign-in prompt', choice: 'Question'
 });
 
 /**
  * Set-level wording over the defaults in this file (`set.labels`), all optional:
- *   kind        { email, sms, voicemail, qr, page, call, push }: the short kind words (KIND_LABEL)
+ *   kind        { email, sms, voicemail, qr, page, call, push, choice }: the short kind words (KIND_LABEL)
  *   verdict     { trust|report|delete|verify: { label?, past?, hint? } }
  *   callActions { comply|escalate|refuse|verify_callback: { label?, past?, hint? } }
  *   pushActions { approve|deny|deny_report: { label?, past?, hint? } }
  *   smsHeading  the "Text message" heading on a text and the fallback title of an untitled one
- *   queue       { inbox|call|push|callPush|voicemail|page|sms|other: { label?, item?: [one, many],
+ *   queue       { inbox|call|push|callPush|voicemail|page|sms|choice|other: { label?, item?: [one, many],
  *                 real?, reportLabel? } }: the brief's queue wording (read by the minigame)
+ *   choice      { brief?, group?, answered?, right?, wrong?, better?, whyRight?, ifWrong? }: the authored-choice
+ *               card's wording (see CHOICE_TEXT below)
  * Anything not given keeps the default, so a set with no `labels` reads exactly as before.
  */
 export function kindLabel(kind, labels) {
@@ -174,6 +176,42 @@ export function shortTitle(msg) {
     return strip(subject || who);
 }
 
+// ── the authored-choice kind (`choice`, ENG-09a) ────────────────────────────────
+
+/** The four built verdicts an option may map to. */
+export const CHOICE_VERDICTS = Object.freeze(['trust', 'report', 'delete', 'verify']);
+
+/** Default wording of a `choice` card (`set.labels.choice` layers over each line). */
+const CHOICE_TEXT = Object.freeze({
+    brief: 'On a question: pick the option you think is best. There is nothing to type.', // the brief's line
+    group: 'Pick one',            // the option group's accessible name
+    answered: 'Answered',         // the message row's badge once picked
+    right: 'Right choice.',       // review card line after the full-marks option
+    wrong: 'Not the best choice here.',
+    better: 'The better choice',  // names the full-marks option after a wrong pick
+    whyRight: 'Why',              // leads the truth.reportReply line after the right pick
+    ifWrong: 'What could go wrong' // leads the truth.ifTrusted line after a wrong pick
+});
+
+/** One line of a choice card's wording: the set's `labels.choice[key]`, else the default. */
+export function choiceText(key, labels = null) {
+    const own = labels?.choice?.[key];
+    return isStr(own) ? own : (CHOICE_TEXT[key] || '');
+}
+
+/** The card's options as `{ id, label, verdict }`, bad entries dropped. */
+export function choiceOptions(rec) {
+    const list = isObj(rec?.choice) && Array.isArray(rec.choice.options) ? rec.choice.options : [];
+    return list.filter((o) => isObj(o) && isStr(o.id) && isStr(o.label) && CHOICE_VERDICTS.includes(o.verdict))
+        .map((o) => ({ id: o.id, label: o.label, verdict: o.verdict }));
+}
+
+/** The option a learner picked, by id, else the first option with that verdict. */
+export function choiceOptionFor(rec, actionId, verdict) {
+    const all = choiceOptions(rec);
+    return all.find((o) => o.id === actionId) || all.find((o) => o.verdict === verdict) || null;
+}
+
 /**
  * The noun for the genuine items of a queue that holds email (P6-5). A set can name it
  * (`realLabel`). A queue that mixes email with texts, notices or other channels names what it
@@ -209,6 +247,7 @@ export function defaultSubject(msg, labels = null) {
     case 'page': return isObj(msg.page) && isStr(msg.page.heading) ? msg.page.heading : 'Web page';
     case 'call': return 'Incoming call';
     case 'push': return isObj(msg.push) && isStr(msg.push.app) ? `${msg.push.app}: sign-in request` : 'Sign-in request';
+    case 'choice': return isObj(msg.choice) && isStr(msg.choice.prompt) ? first(msg.choice.prompt) : kindLabel('choice', labels);
     default: return '';
     }
 }
@@ -541,7 +580,17 @@ function push(rec) {
     return box;
 }
 
-const SURFACES = { sms, voicemail, qr, page, call, push };
+function choice(rec, h, labels) {
+    const c = isObj(rec.choice) ? rec.choice : {};
+    const box = el('section', 'tri-kind tri-kind-choice');
+    box.setAttribute('aria-label', kindLabel('choice', labels));
+    box.appendChild(el('p', 'tri-kind-label', kindLabel('choice', labels)));
+    box.appendChild(heading(isStr(c.prompt) ? c.prompt : (rec.subject || kindLabel('choice', labels))));
+    if (isStr(c.note)) box.appendChild(el('p', 'tri-choice-note', c.note));
+    return box;
+}
+
+const SURFACES = { sms, voicemail, qr, page, call, push, choice };
 
 /**
  * The reading-pane surface for a non-email message, or null for email.
