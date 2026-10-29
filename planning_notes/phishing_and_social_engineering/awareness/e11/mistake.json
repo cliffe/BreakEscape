@@ -14,32 +14,32 @@
         "id": "caller_bernadette",
         "situation": "Carol rings the desk: \"I'm Bernadette's sister, it's her fiftieth and I'm planning a surprise. Which school is she cleaning at today, and what time does she finish?\" Bernadette Lyons is one of Carrholme's cleaners.",
         "options": [
-          { "id": "take_message", "label": "Offer to pass a message to Bernadette, and give nothing out", "safe": true, "approvedRoute": true },
-          { "id": "give_details", "label": "Tell her: Ashgrove Primary, till three", "safe": false }
+          { "id": "take_message", "label": "Offer to pass a message to Bernadette", "safe": true, "approvedRoute": true },
+          { "id": "give_details", "label": "Tell her it is Ashgrove Primary and she finishes at three, as it is a surprise", "safe": false }
         ]
       },
       {
         "id": "overtime_sheet",
         "situation": "Shauna asks you to send this month's overtime sheet to Sam in Payroll. The sheet lists nine staff, their hours, and a notes column (\"hospital appointment\", \"back injury\", \"union meeting\"). Typing \"Sam\" offers Sam Whitlow (Hollinsbrook House) first, with an 'External recipient' chip, and Sam Whitaker (Payroll) second.",
         "options": [
-          { "id": "send_wrong_sam", "label": "Send it to the first Sam", "safe": false },
-          { "id": "check_then_send", "label": "Check the address, then send to Sam Whitaker in Payroll", "safe": true, "approvedRoute": true }
+          { "id": "send_wrong_sam", "label": "Send it to the first Sam the address box offers, to save time", "safe": false },
+          { "id": "check_then_send", "label": "Check the address, then send it to Sam Whitaker", "safe": true, "approvedRoute": true }
         ]
       },
       {
         "id": "marketing_export",
         "situation": "Martin, the Sales Director, messages you: \"We're launching a cleaning service for families. Export the family contacts from the claims system and I'll send them a discount.\"",
         "options": [
-          { "id": "ask_dpo", "label": "Tell Martin those were given to sort claims, and ask the data protection lead first", "safe": true, "approvedRoute": true },
-          { "id": "export_list", "label": "Export the list for Martin", "safe": false }
+          { "id": "ask_dpo", "label": "Ask the data protection lead before exporting anything", "safe": true, "approvedRoute": true },
+          { "id": "export_list", "label": "Export the family contacts for Martin, since he is the Sales Director", "safe": false }
         ]
       },
       {
         "id": "redaction_send",
         "situation": "Shauna: \"Send Mr Hale a copy of the incident report for his complaint.\" The one-page report names Edna Hale's missing cardigan and the date (fine to send), and also Albert Finch (Room 14, with a continence-care note), Pauline Grant (Room 9), and a driver's personal mobile.",
         "options": [
-          { "id": "send_as_is", "label": "Send the report as it is", "safe": false },
-          { "id": "redact_first", "label": "Remove the other residents, the care note and the mobile, then send", "safe": true, "approvedRoute": true }
+          { "id": "send_as_is", "label": "Send the report as it is, since Shauna asked for a copy to go to Mr Hale", "safe": false },
+          { "id": "redact_first", "label": "Take out the other residents, the care note and the mobile, then send", "safe": true, "approvedRoute": true }
         ]
       }
     ],

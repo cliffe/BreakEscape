@@ -84,12 +84,11 @@
           },
           "teamBadge": "Items passed on for the team: {n}",
           "teamBadgeTitle": "Data issues, requests and fakes you reported or checked this round rather than handling alone",
-          "phishCaughtLabel": "Handled right",
+          "phishCaughtLabel": "Items you reported, checked or deleted",
           "scoreLine": "Right call is most of the score; naming what you noticed is the rest."
         },
         "channelTells": [
           "lookalike_domain",
-          "secrecy_or_bypass",
           "vish_callback_pressure",
           "borrowed_authority",
           "personal_data_breach",
@@ -214,7 +213,8 @@
               "isPhish": true,
               "flags": [
                 "lookalike_domain",
-                "senderTrust"
+                "senderTrust",
+                "urgencyCalibrated"
               ],
               "flagAlternatives": [
                 [
@@ -224,7 +224,8 @@
               ],
               "perFlagNote": {
                 "lookalike_domain": "Carrholme is carrholme.example. This came from carrholme-payroll.example, with an added word, which is a separate domain anyone can register.",
-                "senderTrust": "The name says Carrholme Payroll, but the address is on carrholme-payroll.example, which isn't Carrholme's. Payroll does not collect your bank or NI details by email like this."
+                "senderTrust": "The name says Carrholme Payroll, but the address is on carrholme-payroll.example, which isn't Carrholme's. Payroll does not collect your bank or NI details by email like this.",
+                "urgencyCalibrated": "'Confirm today or see your payment held' is pressure to act before you can check. Real payroll gives you time and does not threaten your pay over an email."
               },
               "headerNote": "The message did pass the technical checks, but that only proves which address really sent it, not that the sender is Carrholme. Carrholme is carrholme.example; this came from carrholme-payroll.example, a separate address anyone can register.",
               "ifTrusted": "Your bank and National Insurance details would go to a stranger, enough to redirect your pay or set up accounts in your name.",
@@ -288,12 +289,14 @@
             "truth": {
               "isPhish": true,
               "flags": [
-                "personal_data_breach"
+                "personal_data_breach",
+                "attachmentPlausible"
               ],
               "kindLine": "Kestrel Court is real, but the file attached is their residents' care summary, not a laundry list: personal data we should not hold. Report it so the data protection lead can decide what to do.",
               "missLabel": "holding personal data we were sent in error",
               "perFlagNote": {
-                "personal_data_breach": "The sender is real, but the file is their residents' full care summary: names, conditions and medicines, which are theirs to hold, not ours. Do not open it further or forward it. Tell the sender, report it, and delete it when the DPO says so."
+                "personal_data_breach": "The sender is real, but the file is their residents' full care summary: names, conditions and medicines, which are theirs to hold, not ours. Do not open it further or forward it. Tell the sender, report it, and delete it when the DPO says so.",
+                "attachmentPlausible": "The attachment is a care summary on a laundry-list email, so it doesn't fit what the message says it is. Check what a file is before you open it."
               },
               "ifTrusted": "Treat it as a normal laundry list and the care summary sits in our inbox unreported: we hold data we should not, and nobody decides what to do with it.",
               "reportReply": "Thanks, reported. The DPO will tell Kestrel Court and decide how to delete it safely. Don't open or forward the file in the meantime."
