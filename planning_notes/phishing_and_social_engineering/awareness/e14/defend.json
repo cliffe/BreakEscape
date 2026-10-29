@@ -14,6 +14,32 @@
 
   "triageSets": [
     {
+      "labels": {
+        "teamBadgeTitle": "Fake messages you reported this round rather than answering",
+        "teamBadge": "Fakes stopped for the team: {n}",
+        "phishCaughtLabel": "Fakes caught"
+      },
+      "bands": [
+        {
+          "min": 85,
+          "headline": "Sharp: you caught the fakes and knew why"
+        },
+        {
+          "min": 60,
+          "headline": "Getting there: a few signs slipped past"
+        },
+        {
+          "min": 0,
+          "headline": "Worth practising: here's where to look first"
+        }
+      ],
+      "reportReply": "Thanks. We've noted the account and will warn the others.",
+      "resultCopy": {
+        "noFlags": "Next time, tick what looks off. The review cards show what gave each fake message away.",
+        "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+        "criticalLead": "gave a stranger something to work with",
+        "reportedPct": "Reported {pct}% of the fake messages"
+      },
       "id": "e14_social_dms",
       "_prefix": "Prefix for the full episode (id e14_social_media). The defend-only shell (id e14_social_media_defend) sets episode_e14_social_media_defend_defend_ instead, as E1/E4/E8 do. No stage on purpose, as in E1/E4: the effective stage is 'mission', and an explicit stage with passPercent 0 draws a validator warning.",
       "_kinds": "The engine has no 'DM' or 'connection request' kind (triage-kinds.js NON_EMAIL_KINDS), so every item is a `sms` card (the direct-message surface): from.name is the display name and from.address is the sender handle (e.g. @jordan.vale, not an email). 'DM' / 'connection request' is the in-fiction framing. verifyVerdict is false: the moves are Trust, Report and Delete, with no 'ring a number' item.",
@@ -164,6 +190,9 @@
     "defend": { "setId": "e14_social_dms", "reportAlwaysVisible": true },
     "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
     "strings": {
+      "teamLine": "By reporting {n} of these rather than answering, you kept a fake message away from the rest of your team.",
+      "weakestTells": "The signs most often missed: {names} ({counts} each).",
+      "weakestTell": "The sign most often missed: {names} ({counts}).",
       "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. First you're on the red team: look at what one colleague, Dani Fenwick, has posted in public, pin what an attacker would use, then write one short message built from it. Then you swap sides: you spot the same tricks in a feed and an inbox, and close the gaps, on Dani's profile. Only the inbox is scored.",
       "flipHeading": "Now you're Yasmin",
       "flipIntro": "This is the message you just sent, as Yasmin read it while covering for Dani. The lines picked out below are what make it fit the week.",
@@ -173,7 +202,6 @@
       "flipMissedHeading": "Nothing to replay this time",
       "flipLandedNoTells": "It read as an ordinary note from a colleague, with nothing in it to question. Next, you spot the same moves in a feed and an inbox, and close the gaps.",
       "allPhishRight": "Every fake was caught, with every tell named.",
-      "reportedPct": "Reported {pct}% of the fake messages",
       "noBlameLine": "A convincing profile of a person is built from scraps anyone could find. Nobody is foolish for having posted them; the fix is a setting and a pause, not shame.",
       "defendIntro": "Now the inbox: mark each message Trust, Report or Delete, and tick what gave it away. A friendly opener that steers to your firm's systems or who runs IT is still reconnaissance; report it. There's no clock on you here.",
       "mondayCard": "On Monday: tighten one privacy setting today, and check what's behind you before your next post or video call. And if a stranger asks about your firm's systems or who runs IT, share nothing and report it using the route in the box below.",

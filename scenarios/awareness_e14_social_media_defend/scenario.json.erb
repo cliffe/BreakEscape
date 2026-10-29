@@ -64,6 +64,32 @@
   "social": {
     "triageSets": [
       {
+        "labels": {
+          "teamBadgeTitle": "Fake messages you reported this round rather than answering",
+          "teamBadge": "Fakes stopped for the team: {n}",
+          "phishCaughtLabel": "Fakes caught"
+        },
+        "bands": [
+          {
+            "min": 85,
+            "headline": "Sharp: you caught the fakes and knew why"
+          },
+          {
+            "min": 60,
+            "headline": "Getting there: a few signs slipped past"
+          },
+          {
+            "min": 0,
+            "headline": "Worth practising: here's where to look first"
+          }
+        ],
+        "reportReply": "Thanks. We've noted the account and will warn the others.",
+        "resultCopy": {
+          "noFlags": "Next time, tick what looks off. The review cards show what gave each fake message away.",
+          "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+          "criticalLead": "gave a stranger something to work with",
+          "reportedPct": "Reported {pct}% of the fake messages"
+        },
         "id": "e14_social_dms",
         "title": "Messages and requests",
         "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. Six messages and connection requests are waiting. For each one, choose Trust, Report or Delete, then tick what you noticed. The tell is always what they ask for, not how friendly they are. Reporting or checking when you're unsure is always fine and never marked down.",
@@ -261,9 +287,11 @@
         "reportAlwaysVisible": true
       },
       "strings": {
+        "teamLine": "By reporting {n} of these rather than answering, you kept a fake message away from the rest of your team.",
+        "weakestTells": "The signs most often missed: {names} ({counts} each).",
+        "weakestTell": "The sign most often missed: {names} ({counts}).",
         "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. A feed and an inbox are waiting: some posts are fine, some give too much away, and some messages were made to pull work details out of you. Sort them, close the gaps, and report the fakes. Reporting or checking when you're unsure is always fine and never marked down.",
         "allPhishRight": "Every fake was caught, with every tell named.",
-        "reportedPct": "Reported {pct}% of the fake messages",
         "noBlameLine": "A convincing profile of a person is built from scraps anyone could find. Nobody is foolish for having posted them; the fix is a setting and a pause, not shame.",
         "defendIntro": "Go through the inbox and decide what to do with each message, mark the feed drafts Post, Tweak or Hold, and tighten your own settings. A friendly opener that steers to your firm's systems or who runs IT is still reconnaissance; report it. There's no clock on you here.",
         "mondayCard": "On Monday: tighten one privacy setting today, and check what's behind you before your next post or video call. And if a stranger asks about your firm's systems or who runs IT, share nothing and report it using the route in the box below.",
