@@ -6,5 +6,6 @@ const [editFile, aspect, out] = process.argv.slice(2);
 const edit = JSON.parse(fs.readFileSync(editFile, 'utf8'));
 const man = JSON.parse(fs.readFileSync(path.join(here, '../public/manifest.json'), 'utf8'));
 const available = {}; for (const k of Object.keys(man.takes)) available[`takes/${k}`] = true;
+  for (const k of Object.keys(man.clips || {})) available[`clips/${k}`] = true;
 fs.mkdirSync(path.dirname(out), { recursive: true });
 fs.writeFileSync(out, JSON.stringify({ edit, aspect, available }));

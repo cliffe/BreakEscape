@@ -8,6 +8,7 @@ export function readProps(editFile, aspect) {
   const edit = JSON.parse(fs.readFileSync(editFile, 'utf8'));
   const man = JSON.parse(fs.readFileSync(path.join(root, 'public/manifest.json'), 'utf8'));
   const available = {}; for (const k of Object.keys(man.takes)) available[`takes/${k}`] = true;
+  for (const k of Object.keys(man.clips || {})) available[`clips/${k}`] = true;
   return { edit, aspect, available };
 }
 export async function bundleWithTakes() {

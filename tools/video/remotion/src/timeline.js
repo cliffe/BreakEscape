@@ -2,20 +2,41 @@
 export const ASPECTS = { '16:9': [1920, 1080], '9:16': [1080, 1920], '1:1': [1080, 1080] };
 export const dims = (edit, aspect) => (edit.aspects || ASPECTS)[aspect] || ASPECTS[aspect];
 
-/** Frame-accurate layout. Join windows are centred on the boundary between shots (join belongs to the shot it leads into). */
+/** Join types that are drawn as an effect (anything else is a hard cut). */
+export const JOIN_EFFECTS = ['glitch', 'blur', 'dissolve'];
+/** Default and allowed frame counts per join type (lint enforces the ranges). */
+export const JOIN_FRAMES = { glitch: { def: 6, min: 6, max: 10 }, blur: { def: 10, min: 6, max: 14 }, dissolve: { def: 8, min: 6, max: 10 } };
+
+/** The join type a shot really uses: edit.effects.cardJoin ("glitch" | "dissolve") re-points every glitch/dissolve join, so one edit list renders A/B. Blur and cut are never changed. */
+export function resolveJoin(edit, shot) {
+  let t = shot.join?.type || 'cut';
+  const sw = edit.effects?.cardJoin;
+  if (sw && (t === 'glitch' || t === 'dissolve' || t === 'card')) t = sw;
+  else if (t === 'card') t = 'glitch';
+  const n = t === 'cut' ? 0 : (shot.join?.frames ?? JOIN_FRAMES[t]?.def ?? 6);
+  return { type: t, frames: n };
+}
+
+/**
+ * Frame-accurate layout. Join windows are centred on the boundary between shots (the join belongs to the shot it leads into),
+ * except dissolve: the outgoing shot is frozen on its last frame and breaks into blocks over the incoming shot, so the whole
+ * window lies after the boundary. A first shot's join has only an incoming side.
+ */
 export function buildTimeline(edit) {
   const fps = edit.fps; let acc = 0; const shots = [];
   edit.shots.forEach((s, i) => {
     const start = Math.round(acc * fps); acc += s.duration;
     const end = Math.round(acc * fps);
-    shots.push({ ...s, index: i, startFrame: start, endFrame: end, frames: end - start, startSec: start / fps, endSec: end / fps });
+    const rj = resolveJoin(edit, s);
+    shots.push({ ...s, index: i, startFrame: start, endFrame: end, frames: end - start, startSec: start / fps, endSec: end / fps, joinType: rj.type, joinFrames: rj.frames });
   });
   const joins = shots.map((s, i) => {
-    const t = s.join?.type || 'cut'; const n = s.join?.frames || (t === 'glitch' ? 8 : t === 'blur' ? 10 : 0);
+    const t = s.joinType; const n = s.joinFrames;
     if (t === 'cut') return null;
-    // first shot: effect only on the incoming side (from black)
-    const pre = i === 0 ? 0 : Math.floor(n / 2); const post = i === 0 ? n : Math.ceil(n / 2);
-    return { type: t, frames: n, pre, post, boundary: s.startFrame, from: s.startFrame - pre, to: s.startFrame + post };
+    // first shot: effect only on the incoming side (from black); dissolve needs an outgoing shot
+    let pre = i === 0 ? 0 : Math.floor(n / 2); let post = i === 0 ? n : Math.ceil(n / 2);
+    if (t === 'dissolve') { pre = 0; post = n; }
+    return { type: t, frames: n, pre, post, boundary: s.startFrame, from: s.startFrame - pre, to: s.startFrame + post, index: i };
   });
   return { fps, shots, joins, totalFrames: shots.length ? shots[shots.length - 1].endFrame : 0 };
 }
@@ -27,7 +48,7 @@ export function effectAt(tl, frame) {
     const side = frame < j.boundary ? 'out' : 'in';
     const k = side === 'out' ? (frame - j.from + 1) / (j.pre + 1) : 1 - (frame - j.boundary) / (j.post + 1);
     const i = Math.max(0, Math.min(1, k));
-    return { type: j.type, intensity: j.index === 0 ? i : i, side, p: (frame - j.from) / (j.to - j.from), join: j };
+    return { type: j.type, intensity: i, side, p: (frame - j.from) / (j.to - j.from), join: j, k: frame - j.from };
   }
   return null;
 }
@@ -60,3 +81,12 @@ export function visibleRect(fr, outW, outH, sourceSize = [1920, 1080]) {
 export function cardLines(shot) {
   return (shot.text || []).map((l) => (typeof l === 'string' ? { text: l } : l));
 }
+
+/** Where a gameplay shot's footage lives: {dir:'takes'|'clips', file}. source.type 'clip' = any synced video file (assets/placeholders etc.). */
+export function sourceRef(shot) {
+  const src = shot.source; if (!src?.file) return null;
+  return { dir: src.type === 'clip' ? 'clips' : 'takes', file: src.file };
+}
+export const isPlaceholderShot = (s) => !!s.placeholder;
+/** Shot types that count as a "card" for the join rule (text cards, the title card, logo cards). */
+export const isCardLike = (s) => s.type === 'card' || s.type === 'title';
