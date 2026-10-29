@@ -110,7 +110,13 @@ function verdictWordAndLine(answer, msg, phish, labels = null, scoring = null) {
     }
     if (kind === 'call' || kind === 'push') {
         const action = actionById(kind, answer.action, answer.verdict, labels);
-        return { word: action.label, line: verdictFeedbackOverride(labels, answer.verdict, phish) || kindVerdictLine(kind, phish, answer.verdict) || '' };
+        // batch-6 (item over set): an item's own kindLine wins over the set's labels.verdictFeedback
+        // here too, as it does on the email path below, so a genuine-but-report caller is not
+        // described as a phish by a set-wide feedback line.
+        const callKindLine = phish && answer.verdict === 'trust' && isObj(msg?.truth) && isStr(msg.truth.kindLine) ? msg.truth.kindLine : null;
+        return { word: action.label,
+            line: callKindLine ? `${callKindLine} Here is what to look for next time.`
+                : (verdictFeedbackOverride(labels, answer.verdict, phish) || kindVerdictLine(kind, phish, answer.verdict) || '') };
     }
     // truth.kindLine (optional): what a genuine-but-report item really was, in place of "built to look right".
     const kindLine = phish && answer.verdict === 'trust' && isObj(msg?.truth) && isStr(msg.truth.kindLine) ? msg.truth.kindLine : null;
@@ -151,7 +157,7 @@ function wrongVerdict(answer, msg, profile, scoring = null) {
     const phish = answer.isPhish === true || (isObj(msg?.truth) && msg.truth.isPhish === true);
     const kind = kindOf(msg);
     try {
-        return verdictPoints(profile, phish, answer.verdict, kind, verdictPointsOverride(msg?.truth, kind, scoring)) < FULL_VERDICT_POINTS;
+        return verdictPoints(profile, phish, answer.verdict, kind, verdictPointsOverride(msg?.truth, kind, scoring, phish)) < FULL_VERDICT_POINTS;
     } catch (e) {
         return false;
     }
@@ -281,9 +287,10 @@ function buildGenuine(set, answers, reviewedIds, profile) {
     const fb = genuineFeedback({
         messages, answers, profile, scoring: set?.scoring,
         titleOf: (m) => titleOf(m, m.id),
-        actionLabel: (m, a) => verdictWordAndLine(a, m, false, set?.labels, set?.scoring).word
+        actionLabel: (m, a) => verdictWordAndLine(a, m, false, set?.labels, set?.scoring).word,
+        actionPast: (m, a) => actionById(kindOf(m) === 'call' || kindOf(m) === 'push' ? kindOf(m) : 'email', a.action, a.verdict, set?.labels).past
     });
-    const text = fb ? genuineFeedbackText(fb, { detail: true }) : null;
+    const text = fb ? genuineFeedbackText(fb, { detail: true, strings: set?.genuineCopy }) : null;
     if (!text) return null;
     const box = el('section', 'aw-genuine');
     box.setAttribute('aria-label', 'The real ones');
@@ -328,7 +335,17 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     heading.tabIndex = -1;
     root.appendChild(heading);
 
-    if (variant === 'defendOnly') root.appendChild(el('p', 'aw-lead aw-defend-only', str(strings, 'defendOnly')));
+    // Cut A: the learner read the full reasoning for every item in immediate feedback, so the
+    // debrief dwells only on what they got wrong. These drive the cards below and the "nothing
+    // missed" line; computed up front so the defendOnly lead is not shown on a clean round.
+    const answers = Array.isArray(result?.answers) ? result.answers.filter(isObj) : [];
+    const reviewed = answers.filter((a) => reviewNeeded(a, messageFor(set, a.id)));
+
+    // The defendOnly lead stands in for the write-stage recap, but its wording points at "the ones
+    // you were caught out by ... shown below" (E19 m-2); on a clean round nothing is below and the
+    // "nothing to pick over here" line carries it instead, so the lead is shown only when something
+    // was reviewed. On a non-clean round it reads as before.
+    if (variant === 'defendOnly' && reviewed.length) root.appendChild(el('p', 'aw-lead aw-defend-only', str(strings, 'defendOnly')));
 
     const summary = el('p', 'aw-summary');
     const bits = [];
@@ -341,28 +358,53 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     if (Number.isFinite(total) && total > 0 && Number.isFinite(result?.phishCaught)) {
         const reported = Number.isFinite(result.reportCount) ? result.reportCount : Math.round((result.reportRate || 0) * total);
         const checked = Number.isFinite(result.phishVerified) ? result.phishVerified : 0;
-        const deleted = Math.max(0, result.phishCaught - reported - checked);
+        // E8 F6 / E13 F-10: a caught phish handled with a safe refuse is not a "delete" — a push
+        // Deny and a call Refuse (both verdict 'delete') read as denied / turned away, never
+        // "deleted". Count the delete-verdict catches by kind from the answers when they carry
+        // the detail; fall back to the old residual (labelled "deleted") when they do not.
+        const residual = Math.max(0, result.phishCaught - reported - checked);
+        let denied = 0, refused = 0, deleted = residual;
+        const deleteCatches = answers.filter((a) => a.isPhish === true && a.verdict === 'delete');
+        if (deleteCatches.length) {
+            denied = 0; refused = 0; deleted = 0;
+            for (const a of deleteCatches) {
+                const k = kindOf(messageFor(set, a.id));
+                if (k === 'push') denied += 1;
+                else if (k === 'call') refused += 1;
+                else deleted += 1;
+            }
+            // Keep the sum consistent with phishCaught if the counts and residual disagree (stored
+            // reopen without per-answer detail): trust the residual as the "deleted" bucket.
+            if (denied + refused + deleted !== residual && !answers.some((a) => a.isPhish === true)) {
+                denied = 0; refused = 0; deleted = residual;
+            }
+        }
         const how = [];
         if (reported) how.push(`${reported} reported`);
         if (checked) how.push(`${checked} checked by another route`);
+        if (refused) how.push(`${refused} turned away`);
+        if (denied) how.push(`${denied} denied`);
         if (deleted) how.push(`${deleted} deleted`);
         // batch-5 (E17): the counter label follows the set's labels.phishCaughtLabel, as the result
         // grid does, so a non-phishing set ("Requests handled") reads the same in the debrief.
         const caughtLabel = isObj(set?.labels) && isStr(set.labels.phishCaughtLabel) ? set.labels.phishCaughtLabel : 'Phish caught';
         bits.push(`${caughtLabel}: ${result.phishCaught} of ${total}${how.length ? ` (${how.join(', ')})` : ''}`);
-    } else {
-        if (Number.isFinite(result?.reportRate)) bits.push(`Reported ${Math.round(result.reportRate * 100)}% of the phish`);
+    } else if (!(Number.isFinite(total) && total === 0)) {
+        // batch-6 C3: "Reported N% of the phish" is overridable (strings.reportedPct, {pct}) and
+        // hidden entirely when the set has no phish at all (total 0), where the line is meaningless.
+        if (Number.isFinite(result?.reportRate)) {
+            const pct = Math.round(result.reportRate * 100);
+            const tmpl = isObj(strings) && isStr(strings.reportedPct) ? strings.reportedPct : 'Reported {pct}% of the phish';
+            bits.push(tmpl.replace(/\{pct\}/g, String(pct)));
+        }
         if (Number.isFinite(result?.verifyCount) && result.verifyCount > 0) bits.push(`Checked by another route: ${result.verifyCount}`);
     }
     summary.textContent = bits.join('. ');
     if (bits.length) root.appendChild(summary);
 
-    // Cut A: the learner read the full reasoning for every item in immediate feedback, so the
-    // debrief dwells only on what they got wrong. A card per missed item, then one weakest-skill
-    // line; if nothing was missed, one short line says so. The score summary, panels, Monday card
-    // and no-blame line stay.
-    const answers = Array.isArray(result?.answers) ? result.answers.filter(isObj) : [];
-    const reviewed = answers.filter((a) => reviewNeeded(a, messageFor(set, a.id)));
+    // A card per missed item, then one weakest-skill line; if nothing was missed, one short line
+    // says so. The score summary, panels, Monday card and no-blame line stay. (`answers` and
+    // `reviewed` were computed above, before the defendOnly lead.)
     const cards = el('div', 'aw-cards');
     for (const a of reviewed) cards.appendChild(buildCard(a, messageFor(set, a.id), set));
     root.appendChild(cards);
@@ -382,7 +424,7 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     const genuine = set?.genuineFeedback === false ? null
         : buildGenuine(set, answers, new Set(reviewed.map((a) => a.id)), set?.scoringProfile === 'analyst' ? 'analyst' : 'awareness');
     if (!reviewed.length && answers.length) {
-        root.appendChild(el('p', 'aw-all-right', genuine?.flagged ? DEFAULTS.allPhishRight : str(strings, 'allRight')));
+        root.appendChild(el('p', 'aw-all-right', genuine?.flagged ? str(strings, 'allPhishRight') : str(strings, 'allRight')));
     }
     if (genuine) root.appendChild(genuine.node);
 

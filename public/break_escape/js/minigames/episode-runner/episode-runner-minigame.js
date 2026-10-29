@@ -510,6 +510,15 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this.notice = el('p', 'epr-notice');
         this.notice.setAttribute('aria-live', 'polite');
         panel.appendChild(this.notice);
+        // E14 F11: the compose draft is not kept across a close or reload, so a reopen starts the
+        // message again. Say so on the launch panel, as the sort drill and concern form do.
+        // strings.writeReloadNote: '' suppresses it; a compose write stage only (not a call).
+        if (stage === 'write' && writeKind(this.episode) !== 'call') {
+            const note = this.strings.writeReloadNote === '' ? ''
+                : (isStr(this.strings.writeReloadNote) ? this.strings.writeReloadNote
+                    : 'If you close or reload before you send, your draft starts again.');
+            if (note) panel.appendChild(el('p', 'epr-reload-note', note));
+        }
         this._button(panel, copy.button, () => this._launch(stage), 'epr-launch');
         // From the write stage, always offer a way back to research. A learner who closed the
         // browser without noting a contact or a fact the message needs is otherwise stuck with

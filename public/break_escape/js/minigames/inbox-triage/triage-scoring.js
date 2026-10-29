@@ -81,6 +81,7 @@ const VERDICT_POINTS = {
 const clamp01 = (n) => Math.min(1, Math.max(0, n));
 const roundHalfUp = (n) => Math.floor(n + 0.5);
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+const isStr = (v) => typeof v === 'string' && v.length > 0;
 
 /**
  * The verdict-point range an override may set: 0..FULL_VERDICT_POINTS (the verdict is worth 60
@@ -96,11 +97,25 @@ export const VERDICT_POINTS_MAX = 60;
  * wins over `scoring.kindPoints[kind]` (a per-kind map on the set). Either may name any subset of
  * verdicts; a verdict it omits keeps the profile/kind default. Returns the merged map, or null
  * when nothing is authored (then scoring is byte-for-byte as before).
+ *
+ * `scoring.kindPoints[kind]` may be a flat verdict->points map (applied to every message of that
+ * kind), or `{ phish: {...}, real: {...} }` (batch-6 M1, like `labels.verdictFeedback`): then the
+ * sub-map is picked by the item's `isPhish`, so an author can say "Comply is full marks for a
+ * genuine caller" without also rewarding complying with a vishing impostor of the same kind. The
+ * shape is detected by a `phish`/`real` key; `isPhish` must be passed for it to apply (callers do).
  */
-export function verdictPointsOverride(truth, kind, scoring) {
+export function verdictPointsOverride(truth, kind, scoring, isPhish) {
     const per = isObj(truth) && isObj(truth.verdictPoints) ? truth.verdictPoints : null;
-    const byKind = isObj(scoring) && isObj(scoring.kindPoints) && isObj(scoring.kindPoints[kind])
+    const raw = isObj(scoring) && isObj(scoring.kindPoints) && isObj(scoring.kindPoints[kind])
         ? scoring.kindPoints[kind] : null;
+    let byKind = raw;
+    if (raw && (isObj(raw.phish) || isObj(raw.real))) {
+        // The phish/real shape: choose by the item's isPhish; undefined isPhish selects nothing so
+        // the profile/kind default stands (a caller that cannot tell must not pick the wrong half).
+        byKind = isPhish === true ? (isObj(raw.phish) ? raw.phish : null)
+            : isPhish === false ? (isObj(raw.real) ? raw.real : null)
+                : null;
+    }
     if (!per && !byKind) return null;
     return { ...(byKind || {}), ...(per || {}) };
 }
@@ -146,12 +161,18 @@ export function isCriticalMiss(profile, isPhish, verdict, kind, critical = null)
  * The bracketed "what counts" part of the result's critical-miss line, naming only the kinds
  * this round's critical misses were ("approving a sign-in you didn't start, or trusting a
  * phish email"). Kinds outside CRITICAL_WHAT read "trusting a phish".
+ *
+ * `fallback` (batch-6 C4, optional) lets a non-phishing set replace the "trusting a phish email"
+ * wording for an item that authored no `truth.missLabel`: a per-kind map { email: '…', call: '…' }
+ * or a single string used for every kind. A per-miss missLabel still wins; absent, defaults stand.
  */
-export function criticalWhat(kinds, labels = []) {
+export function criticalWhat(kinds, labels = [], fallback = null) {
+    const ofKind = (k) => (isObj(fallback) && isStr(fallback[k])) ? fallback[k]
+        : (isStr(fallback) ? fallback : (CRITICAL_WHAT[k] || 'trusting a phish'));
     const seen = [];
     // `labels[i]` is that miss's own truth.missLabel (a genuine item that should still be reported).
     for (const [i, k] of (kinds || []).entries()) {
-        const w = (typeof labels?.[i] === 'string' && labels[i]) || CRITICAL_WHAT[k] || 'trusting a phish';
+        const w = (typeof labels?.[i] === 'string' && labels[i]) || ofKind(k);
         if (!seen.includes(w)) seen.push(w);
     }
     if (!seen.length) return '';
@@ -297,7 +318,7 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         }
         const verdict = a.verdict;
         const kind = typeof msg.kind === 'string' && msg.kind ? msg.kind : 'email';
-        const override = verdictPointsOverride(truth, kind, scoring);
+        const override = verdictPointsOverride(truth, kind, scoring, isPhish);
         const vPts = verdictPoints(profile, isPhish, verdict, kind, override);
         const ticked = [...new Set(a.flags || [])].filter((f) => f !== NONE_CHIP);
         const tickedSet = new Set(ticked);
@@ -463,12 +484,16 @@ export function listCap(titles, max = 3) {
  * Returns null when the round has no answered real item, or the set opts out
  * (set.genuineFeedback === false, read by the callers).
  */
-export function genuineFeedback({ messages, answers, profile = 'awareness', titleOf, actionLabel, scoring = null } = {}) {
+export function genuineFeedback({ messages, answers, profile = 'awareness', titleOf, actionLabel, actionPast, scoring = null } = {}) {
     if (!Array.isArray(messages)) return null;
     const byId = new Map();
     for (const a of answers || []) if (a && typeof a === 'object') byId.set(a.id ?? a.messageId, a);
     const title = (m) => (typeof titleOf === 'function' ? titleOf(m) : null) || m.subject || m.id;
     const label = (m, a) => (typeof actionLabel === 'function' ? actionLabel(m, a) : null) || a.verdict;
+    // The past-tense verb for the "You trusted/approved this real one" line (E9 F-E9-8): a push
+    // prompt was approved, a call complied with, not "trusted". Falls back to "trusted" when the
+    // caller gives no actionPast, so an email-only set reads exactly as before.
+    const pastVerb = (m, a) => { const v = (typeof actionPast === 'function' ? actionPast(m, a) : null); return isStr(v) ? v.toLowerCase() : 'trusted'; };
     const trusted = [];
     const checked = [];
     const flagged = [];
@@ -486,9 +511,10 @@ export function genuineFeedback({ messages, answers, profile = 'awareness', titl
         answered += 1;
         const kind = typeof m.kind === 'string' && m.kind ? m.kind : 'email';
         let pts = 0;
-        try { pts = verdictPoints(profile, false, a.verdict, kind, verdictPointsOverride(truth, kind, scoring)); } catch (e) { continue; }
+        try { pts = verdictPoints(profile, false, a.verdict, kind, verdictPointsOverride(truth, kind, scoring, false)); } catch (e) { continue; }
         if (TRUST_VERDICTS.includes(a.verdict) && pts >= FULL_VERDICT_POINTS) {
-            (a.verdict === 'verify' ? checked : trusted).push({ id: m.id, title: title(m) });
+            if (a.verdict === 'verify') checked.push({ id: m.id, title: title(m) });
+            else trusted.push({ id: m.id, title: title(m), verb: pastVerb(m, a) });
         } else if (FLAG_VERDICTS.includes(a.verdict)) {
             const wf = truth.whyFine && typeof truth.whyFine === 'object' ? truth.whyFine : {};
             const why = (typeof wf.default === 'string' && wf.default.trim())
@@ -541,8 +567,12 @@ export const GENUINE_WHY_LINE = 'Both halves matter: catching a phish stops the 
  * the debrief) gives one line per flagged item with what made it safe. Title lists past three
  * end "and N more". Empty strings are left out by the callers.
  */
-export function genuineFeedbackText(fb, { detail = false } = {}) {
+export function genuineFeedbackText(fb, { detail = false, strings = null } = {}) {
     if (!fb || typeof fb !== 'object') return null;
+    // batch-6 (C1): the phish-worded lines are overridable per set (set.genuineCopy), so a
+    // non-phishing episode (acceptable use) reads without "phish". Defaults are unchanged.
+    const S = isObj(strings) ? strings : {};
+    const pick = (key, def) => (isStr(S[key]) ? S[key] : def);
     const trusted = Array.isArray(fb.trusted) ? fb.trusted : [];
     const checked = Array.isArray(fb.checked) ? fb.checked : [];
     const flagged = Array.isArray(fb.flagged) ? fb.flagged : [];
@@ -552,7 +582,15 @@ export function genuineFeedbackText(fb, { detail = false } = {}) {
     const these = (n, all) => (all ? 'the real ones' : n === 1 ? 'this real one' : 'these real ones');
     const sentences = [];
     if (trusted.length) {
-        sentences.push(`You trusted ${these(trusted.length, trusted.length === realTotal && trusted.length > 1)}: ${names(trusted)}.`);
+        // Group by the verb each item was handled with (E9 F-E9-8): "You approved this real one"
+        // for a sign-in prompt, "You trusted this real one" for an email. One verb → one sentence,
+        // unchanged for an email-only round (every verb is "trusted").
+        const groups = new Map();
+        for (const t of trusted) { const v = isStr(t.verb) ? t.verb : 'trusted'; (groups.get(v) || groups.set(v, []).get(v)).push(t); }
+        for (const [verb, items] of groups) {
+            const all = groups.size === 1 && items.length === realTotal && items.length > 1;
+            sentences.push(`You ${verb} ${these(items.length, all)}: ${names(items)}.`);
+        }
     }
     if (checked.length) {
         const all = checked.length === realTotal && checked.length > 1;
@@ -564,7 +602,9 @@ export function genuineFeedbackText(fb, { detail = false } = {}) {
         const binned = flagged.filter((f) => f.verdict !== 'report');
         const countOf = (n) => (n === 1 ? 'one real one' : `${n} real ones`);
         const repLead = `You reported ${countOf(reported.length)} just in case, which is fine when unsure`;
-        const binLead = binned.length === 1 ? 'One real one was treated as a phish' : `${binned.length} real ones were treated as phish`;
+        const binLead = binned.length === 1
+            ? pick('binnedLeadOne', 'One real one was treated as a phish')
+            : pick('binnedLeadMany', `${binned.length} real ones were treated as phish`).replace(/\{n\}/g, String(binned.length));
         if (detail) {
             out.flaggedLead = !binned.length ? `${repLead}:`
                 : !reported.length ? `${binLead}:`
@@ -583,12 +623,12 @@ export function genuineFeedbackText(fb, { detail = false } = {}) {
         const anyReport = reported.length > 0;
         const anyBin = binned.length > 0;
         out.cost = anyReport && anyBin
-            ? "Reporting when you're unsure is never wrong, but treating a real message as a phish has a cost: a report takes a colleague's time to check, and a deleted or refused one can mean a missed payment or a colleague left waiting."
+            ? pick('costBoth', "Reporting when you're unsure is never wrong, but treating a real message as a phish has a cost: a report takes a colleague's time to check, and a deleted or refused one can mean a missed payment or a colleague left waiting.")
             : anyReport
-                ? "Reporting when you're unsure is never wrong, but a report on a real message has a cost: a colleague has to stop and check it, and the real request waits."
-                : 'Deleting or refusing a real one has a cost: it can mean a missed payment, a missed shift change or a colleague left waiting.';
+                ? pick('costReport', "Reporting when you're unsure is never wrong, but a report on a real message has a cost: a colleague has to stop and check it, and the real request waits.")
+                : pick('costBin', 'Deleting or refusing a real one has a cost: it can mean a missed payment, a missed shift change or a colleague left waiting.');
     }
-    out.why = GENUINE_WHY_LINE;
+    out.why = pick('whyBothHalves', GENUINE_WHY_LINE);
     return out;
 }
 

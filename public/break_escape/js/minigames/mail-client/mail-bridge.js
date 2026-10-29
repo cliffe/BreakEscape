@@ -201,6 +201,27 @@ export function renderBodyText(message, templates, account, labels = {}) {
     return lines.filter((l) => l.trim().length).join('\n\n');
 }
 
+/**
+ * The hidden line carried on the stored record (E13 AI-assistant injection): a chosen template's
+ * `hiddenText` (slots filled), concealed behind the mail reader's "Show hidden text" reveal rather
+ * than shown in the visible body. Empty when no chosen template authors a hiddenText, so ordinary
+ * mail — and every mission — is unchanged. The label of the first that authors one is returned too.
+ */
+export function renderHiddenText(message, templates, account, labels = {}) {
+    const tpls = isObject(templates) ? templates : {};
+    const chosen = (message && message.templates) || {};
+    const slotMap = (message && message.slots) || {};
+    const lines = [];
+    let label = '';
+    for (const part of BODY_PARTS) {
+        const tpl = tpls[chosen[part]];
+        if (!tpl || !isStr(tpl.hiddenText)) continue;
+        lines.push(fillTemplate(tpl.hiddenText, arr(tpl.slots), slotMap, labels, account));
+        if (!label && isStr(tpl.hiddenTextLabel)) label = tpl.hiddenTextLabel;
+    }
+    return { text: lines.filter((l) => l.trim().length).join('\n\n'), label };
+}
+
 /** The claimed From as displayed (00 §10a): the account itself, or the resolved blanks. */
 export function resolveHeaderDisplay(message, account, labels = {}) {
     const hf = (message && message.headerFrom) || {};
@@ -416,8 +437,7 @@ export function performSend(scene, message) {
             replyScheduled = opened;
         }
     } else if (opened) {
-        const outcomeGlobal = target.outcome && target.outcome.setGlobal;
-        const firstGlobal = isObject(outcomeGlobal) ? Object.keys(outcomeGlobal)[0] : (isStr(outcomeGlobal) ? outcomeGlobal : null);
+        const firstGlobal = outcomeGlobalFor(target, sentTemplateIdOf(message));
         const replyText = dataOnlyText(target, result, social, sentTemplateIdOf(message));
         // The job runs even with no text, so withReply timing still reveals the checklist; an
         // empty text delivers no message (mail-scheduler _deliverText).
@@ -486,6 +506,26 @@ export function sentTemplateIdOf(message) {
     const parts = isObject(message && message.templates) ? message.templates : {};
     if (isStr(parts.pretext)) return parts.pretext;
     return Object.values(parts).find(isStr) ?? null;
+}
+
+/**
+ * The outcome global a landed send sets (00 §10a). Default: `target.outcome.setGlobal` (a string,
+ * or the first key of a map). `target.outcome.byChoice` (E13 F-2) makes it conditional on the sent
+ * template so, e.g., only the pretext that planted a hidden line sets `phish_*_landed`: an entry
+ * keyed by the sent template id is a global-name string, or `false`/`null`/`''` to set none. A
+ * template with no byChoice entry falls back to the default, so behaviour is unchanged unless the
+ * target authors `byChoice`. Returns the global name, or null for none.
+ */
+export function outcomeGlobalFor(target, sentTemplateId) {
+    const outcome = target && target.outcome;
+    if (!isObject(outcome)) return null;
+    const byChoice = isObject(outcome.byChoice) ? outcome.byChoice : null;
+    if (byChoice && isStr(sentTemplateId) && Object.prototype.hasOwnProperty.call(byChoice, sentTemplateId)) {
+        const v = byChoice[sentTemplateId];
+        return isStr(v) ? v : null; // an explicit false/null/'' entry means "set no global for this choice"
+    }
+    const setGlobal = outcome.setGlobal;
+    return isObject(setGlobal) ? (Object.keys(setGlobal)[0] || null) : (isStr(setGlobal) ? setGlobal : null);
 }
 
 /**
@@ -599,6 +639,10 @@ function buildRecord({ message, result, account, social, labels, subjectText, ta
         tells: result ? arr(result.tells).slice() : [],
         read: true
     };
+    // A chosen template's hidden line (E13): stored apart from the body so the reader conceals it
+    // behind a "Show hidden text" reveal instead of showing it in plain view. Absent otherwise.
+    const hidden = renderHiddenText(message, social.templates, account, labels);
+    if (isStr(hidden.text)) { record.hiddenText = hidden.text; if (isStr(hidden.label)) record.hiddenTextLabel = hidden.label; }
     return record;
 }
 

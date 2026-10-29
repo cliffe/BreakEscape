@@ -32,7 +32,9 @@
 .epr-strip .aw-strip { border-bottom: 0; }
 .epr-bar .se-overlay-close { flex: 0 0 auto; margin: 6px 10px; }
 
-.epr-body { flex: 1; min-height: 0; overflow-y: auto; }
+/* padding-bottom (E8 F8): the scroll area keeps room below its last control, so the debrief Finish
+   button is fully scrollable into view at a tall viewport (1400x1000) rather than clipped at the fold. */
+.epr-body { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
 
 .epr-panel { padding: 16px; line-height: 1.45; }
 .epr-heading { margin: 0 0 8px; font-size: 22px; color: var(--aw-accent); }
@@ -50,6 +52,8 @@
 .epr-brief-card .epr-button + .epr-button { margin-left: 8px; }
 .epr-notice { margin: 0; font-size: 15px; color: #8a5a00; }
 .epr-notice:empty { display: none; }
+/* E14 F11: the write-stage "your draft starts again" reload note. */
+.epr-reload-note { margin: 4px 0 0; font-size: 14px; color: #52606d; }
 
 .epr-button {
     margin-top: 14px;

@@ -1089,6 +1089,8 @@
       "properties": {
         "part": {"type": "string", "enum": ["from", "greeting", "pretext", "ask"]},
         "text": {"type": "string"},
+        "hiddenText": {"type": "string", "description": "batch-6 (E13 F-3): a line planted for a reader that is not the recipient (an AI assistant). Stored apart from the body and concealed behind the mail reader's 'Show hidden text' reveal, never shown in the visible body. Slots fill as in text. Absent: no hidden line"},
+        "hiddenTextLabel": {"type": "string", "description": "Overrides the reveal button label (default 'Show hidden text')"},
         "slots": {"type": "array", "items": {"$ref": "#/definitions/socialTemplateSlot"}, "maxItems": 2},
         "urgency": {"type": "string", "enum": ["low", "medium", "high"]},
         "flags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true, "description": "P5-8: channel tells this wording carries (e.g. secrecy_or_bypass, borrowed_authority). Added to the send's tells, so the flip, the replayed defend card and the composer's red-flag meter all name them"},
@@ -1439,6 +1441,12 @@
             "setGlobal": {
               "oneOf": [{"type": "string"}, {"type": "object", "additionalProperties": true}],
               "description": "global name -> value, or one global name; the mail client sets the first to true on a landing"
+            },
+            "byChoice": {
+              "type": "object",
+              "description": "batch-6 (E13 F-2): make the landed-send global conditional on the sent template id. An entry keyed by a sent template id is the global name that landing sets (a string), or false/null/'' to set none for that choice. A template with no entry falls back to setGlobal. So only the pretext that actually planted a hidden line sets phish_*_landed.",
+              "additionalProperties": {"oneOf": [{"type": "string"}, {"type": "boolean"}, {"type": "null"}]},
+              "patternProperties": {"^_": {}}
             }
           },
           "patternProperties": {"^_": {}},
@@ -2257,7 +2265,11 @@
             "noBlameLineCritical": {"type": "string", "description": "The no-blame line after a critical miss (the result has just said what it cost), so it must not claim nobody is marked down. Default: the engine's own line"},
             "mondayCard": {"type": "string"},
             "defendOnly": {"type": "string"},
+            "allRight": {"type": "string", "description": "The debrief line on a round with nothing to review (default 'You read every one of these the right way. Nothing to pick over here.'). Honoured by debrief-view.js; add here so an episode can set it (E19 B1)"},
+            "allPhishRight": {"type": "string", "description": "The debrief line on a clean round where a real one was reported (default 'Every phish was caught, with every tell named.'). For a non-phishing set where 'phish' is wrong (batch-6 C2)"},
+            "reportedPct": {"type": "string", "description": "The stored-reopen summary line 'Reported {pct}% of the phish' ({pct} is the percentage). Hidden when the set has no phish at all. For a non-phishing set (batch-6 C3)"},
             "defendIntro": {"type": "string", "description": "Replaces the runner's fixed defend-stage intro, which talks about an inbox (wrong for a page or call set)"},
+            "writeReloadNote": {"type": "string", "description": "batch-6 (E14 F11): the write-stage launch note that a close/reload starts the compose draft again (default 'If you close or reload before you send, your draft starts again.'). '' suppresses it"},
             "flipMissed": {"type": "string", "description": "The flip's line after a send that did not land"},
             "teamLine": {"type": "string", "description": "aw-ux2: the debrief's team thank-you, with {n} for the count and optionally {team} for the team size (only used when a team size is set). Default: 'Your reports and checks this round kept N phish away from ...'. For sets whose reported items are not all phish"},
             "flipLandedNoTells": {"type": "string", "description": "The flip's line after a send that landed but has nothing to replay (no tells); falls back to flipMissed"},
@@ -2805,6 +2817,18 @@
       "patternProperties": {"^_": {}},
       "additionalProperties": false
     },
+    "socialTriageKindPointsMap": {
+      "type": "object",
+      "description": "A verdict->points map (each 0..60) for scoring.kindPoints.",
+      "properties": {
+        "trust": {"type": "number", "minimum": 0, "maximum": 60},
+        "report": {"type": "number", "minimum": 0, "maximum": 60},
+        "delete": {"type": "number", "minimum": 0, "maximum": 60},
+        "verify": {"type": "number", "minimum": 0, "maximum": 60}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
     "socialTriageSet": {
       "type": "object",
       "description": "An inbox triage set (design 05; triage-starter.js, inbox-triage-minigame.js)",
@@ -2828,17 +2852,20 @@
             "kindPoints": {
               "type": "object",
               "additionalProperties": {
-                "type": "object",
-                "properties": {
-                  "trust": {"type": "number", "minimum": 0, "maximum": 60},
-                  "report": {"type": "number", "minimum": 0, "maximum": 60},
-                  "delete": {"type": "number", "minimum": 0, "maximum": 60},
-                  "verify": {"type": "number", "minimum": 0, "maximum": 60}
-                },
-                "patternProperties": {"^_": {}},
-                "additionalProperties": false
+                "oneOf": [
+                  {"$ref": "#/definitions/socialTriageKindPointsMap"},
+                  {
+                    "type": "object",
+                    "properties": {
+                      "phish": {"$ref": "#/definitions/socialTriageKindPointsMap"},
+                      "real": {"$ref": "#/definitions/socialTriageKindPointsMap"}
+                    },
+                    "patternProperties": {"^_": {}},
+                    "additionalProperties": false
+                  }
+                ]
               },
-              "description": "Optional per-kind override of the verdict points (out of 60), keyed by kind (email, call, push, page, sms, qr, voicemail, choice), opt-in (batch-5 F-E12-1, E13 F-10): e.g. a visitor queue where Comply on a genuine caller is full marks ({\"call\": {\"trust\": 60}}). A message's own truth.verdictPoints wins over this. An omitted verdict keeps the profile/kind default. Default: scoring unchanged."}
+              "description": "Optional per-kind override of the verdict points (out of 60), keyed by kind (email, call, push, page, sms, qr, voicemail, choice), opt-in (batch-5 F-E12-1, E13 F-10): e.g. a visitor queue where Comply on a genuine caller is full marks ({\"call\": {\"trust\": 60}}). The value is a flat verdict->points map, OR { phish: {...}, real: {...} } (batch-6 M1) to reward a verdict only on genuine items of that kind (so complying with a vishing impostor of the same kind is NOT rewarded). A message's own truth.verdictPoints wins over this. An omitted verdict keeps the profile/kind default. Default: scoring unchanged."}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false,
@@ -2846,6 +2873,28 @@
         "verdictLabels": {"type": "object", "description": "ENG-03a: relabel the three (or four) verdict buttons and review-card wording for this set, by id (trust, report, delete, verify). The verdict ids and scoring are unchanged. Absent keeps the built Trust/Report/Delete labels.", "properties": {"trust": {"type": "string"}, "report": {"type": "string"}, "delete": {"type": "string"}, "verify": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false},
         "missedPhishLine": {"type": "boolean", "description": "Opt-in (inbox-triage-minigame.js): the result card names the phish the learner trusted. Default off."},
         "genuineFeedback": {"type": "boolean", "description": "false hides the result screen's and debrief's lines on the real items (which were trusted, what made a flagged one safe). Default on."},
+        "genuineCopy": {
+          "type": "object",
+          "description": "batch-6 (C1): override the phish-worded lines in the real-items feedback, so a non-phishing set reads without 'phish'. Any key left out keeps its default.",
+          "properties": {
+            "binnedLeadOne": {"type": "string", "description": "When one real one was treated as a phish (default 'One real one was treated as a phish')"},
+            "binnedLeadMany": {"type": "string", "description": "When several were ({n} is the count; default 'N real ones were treated as phish')"},
+            "costBoth": {"type": "string", "description": "The cost line when both a report and a delete/refuse happened"},
+            "costReport": {"type": "string", "description": "The cost line when only a report happened"},
+            "costBin": {"type": "string", "description": "The cost line when only a delete/refuse happened"},
+            "whyBothHalves": {"type": "string", "description": "The 'both halves matter' closing line (default mentions catching a phish)"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "criticalWhat": {
+          "description": "batch-6 (C4): the 'what counts' wording for a critical miss on an item with no truth.missLabel. A string used for every kind, or a per-kind map (email, call, push, ...). Default 'trusting a phish email' etc.",
+          "oneOf": [
+            {"type": "string", "minLength": 1},
+            {"type": "object", "additionalProperties": {"type": "string"}, "patternProperties": {"^_": {}}}
+          ]
+        },
+        "sheetNudge": {"type": "string", "description": "batch-6 (E8 F11): the one-line nudge shown when Confirm is pressed with nothing ticked. Default 'Tick what made you decide, or choose Nothing looks wrong. Then Confirm again.'"},
         "brief": {"type": "string"},
         "pairedWith": {"type": "string"},
         "channelTells": {"type": "array", "items": {"type": "string"}},

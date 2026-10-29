@@ -506,8 +506,30 @@ export function renderDebrief(container, { session, spec, onDone } = {}) {
     // is not read beside the final outcome. The backdrop, not the panel, is removed on Done.
     const backdrop = document.createElement('div');
     backdrop.className = 'pretext-debrief-backdrop';
-    done.addEventListener('click', () => { backdrop.remove(); if (typeof onDone === 'function') onDone(); });
+    // m1: the element to restore focus to when the modal closes (the control that ended the call).
+    const opener = (typeof document !== 'undefined' && document.activeElement) || null;
+    const restoreFocus = () => { try { if (opener && typeof opener.focus === 'function' && opener.isConnected !== false) opener.focus(); } catch (e) { /* headless */ } };
+    done.addEventListener('click', () => { backdrop.remove(); restoreFocus(); if (typeof onDone === 'function') onDone(); });
     panel.appendChild(done);
+
+    // m1: trap Tab within the panel while the modal is up, and stop keystrokes reaching the chat's
+    // global keydown handler behind it. role="dialog" + aria-modal names it a modal to AT.
+    panel.setAttribute('aria-modal', 'true');
+    const focusables = () => Array.from(panel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+        .filter((node) => !node.disabled && node.getAttribute('aria-hidden') !== 'true');
+    backdrop.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+            const items = focusables();
+            if (!items.length) { e.preventDefault(); return; }
+            const first = items[0];
+            const last = items[items.length - 1];
+            const active = (typeof document !== 'undefined' && document.activeElement) || null;
+            if (e.shiftKey && (active === first || !panel.contains(active))) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && (active === last || !panel.contains(active))) { e.preventDefault(); first.focus(); }
+        }
+        // Keep every keystroke (Esc included) from reaching the chat's global keydown behind the modal.
+        e.stopPropagation();
+    });
 
     backdrop.appendChild(panel);
     container.appendChild(backdrop);

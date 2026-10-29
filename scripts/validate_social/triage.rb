@@ -145,9 +145,20 @@ module ValidateSocial
         if !kp.is_a?(Hash)
           issues << err("#{where}.scoring.kindPoints must be an object of kind -> { verdict: points }")
         else
-          kp.each do |kind, points|
-            next if kind.to_s.start_with?('_')
-            issues.concat(verdict_points_checks(points, "#{where}.scoring.kindPoints.#{kind}"))
+          # The kinds that carry at least one phish item (for the M1 trust-full-marks warning).
+          phish_kinds = Mail.hash_list(set['messages']).select { |m| m.is_a?(Hash) && m.dig('truth', 'isPhish') == true }
+            .map { |m| kind(m) }.uniq
+          kp.each do |k, points|
+            next if k.to_s.start_with?('_')
+            issues.concat(verdict_points_checks(points, "#{where}.scoring.kindPoints.#{k}", allow_split: true))
+            next unless points.is_a?(Hash)
+            # M1: a flat map that gives Trust full marks also rewards trusting a phish of this kind;
+            # the phish side of a split map that does so says it outright. Either is a footgun.
+            if points.key?('phish') || points.key?('real')
+              issues << warn_("#{where}.scoring.kindPoints.#{k}.phish.trust is full marks (#{VERDICT_POINTS_MAX}); it rewards trusting a phish #{k}, which the review card then paints as a right verdict on an uncaught phish") if trust_full_marks?(points['phish'])
+            elsif trust_full_marks?(points) && phish_kinds.include?(k)
+              issues << warn_("#{where}.scoring.kindPoints.#{k}.trust is full marks (#{VERDICT_POINTS_MAX}) and a phish #{k} is in the set, so trusting that phish also scores full marks; reward Trust only on genuine items with { phish, real } or a per-item truth.verdictPoints")
+            end
           end
         end
       end
@@ -657,9 +668,26 @@ module ValidateSocial
     VERDICT_POINTS_MAX = 60
 
     # Validate a verdict-points override map { trust?, report?, delete?, verify? }: a Hash with only
-    # built-verdict keys and numeric values in range. Returns issue list.
-    def self.verdict_points_checks(points, where)
+    # built-verdict keys and numeric values in range. Returns issue list. When allow_split is true
+    # (scoring.kindPoints only, batch-6 M1) the map may instead be { phish: {...}, real: {...} }:
+    # each sub-map is validated and nothing else is accepted alongside them.
+    def self.verdict_points_checks(points, where, allow_split: false)
       return [err("#{where} must be an object of verdict -> points, e.g. { \"trust\": 60 }")] unless points.is_a?(Hash)
+      if points.key?('phish') || points.key?('real')
+        unless allow_split
+          return [err("#{where}: the { phish, real } split is only for set.scoring.kindPoints; a per-item verdictPoints names verdicts directly")]
+        end
+        issues = []
+        points.each do |k, v|
+          next if k.to_s.start_with?('_')
+          unless %w[phish real].include?(k)
+            issues << err("#{where}: '#{k}' is not 'phish' or 'real' (the split map names only those)")
+            next
+          end
+          issues.concat(verdict_points_checks(v, "#{where}.#{k}"))
+        end
+        return issues
+      end
       issues = []
       points.each do |v, n|
         next if v.to_s.start_with?('_')
@@ -672,6 +700,14 @@ module ValidateSocial
         end
       end
       issues
+    end
+
+    # batch-6 M1: full marks for a trust-family verdict ('trust': Comply/Approve) rewards falling
+    # for the attack. On a phish item, or for a kind whose flat kindPoints map applies to phish
+    # items of that kind, that paints the review card green on an uncaught critical phish. Warn so
+    # an author reaches for truth.verdictPoints on genuine items, or the { phish, real } split.
+    def self.trust_full_marks?(points)
+      points.is_a?(Hash) && points['trust'].is_a?(Numeric) && points['trust'] >= VERDICT_POINTS_MAX
     end
     # A bare token of 8+ characters that mixes three kinds of character reads like a pasted password.
     CREDENTIAL_RE = /\A(?=\S{8,}\z)(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])\S+\z/.freeze
@@ -947,7 +983,12 @@ module ValidateSocial
         issues << err("#{mw}.truth.#{f} is empty; leave it out to keep the phish wording") if t.key?(f) && blank?(t[f])
         issues << warn_("#{mw}.truth.#{f} is on a real item (isPhish false); it only replaces phish wording, so it is never seen") if t.key?(f) && !t['isPhish']
       end
-      issues.concat(verdict_points_checks(t['verdictPoints'], "#{mw}.truth.verdictPoints")) if t.key?('verdictPoints')
+      if t.key?('verdictPoints')
+        issues.concat(verdict_points_checks(t['verdictPoints'], "#{mw}.truth.verdictPoints"))
+        # M1: Trust at full marks on a phish item rewards falling for it and paints the review card
+        # green on an uncaught critical phish.
+        issues << warn_("#{mw}.truth.verdictPoints.trust is full marks (#{VERDICT_POINTS_MAX}) on a phish item; trusting this phish then scores full marks and the review card reads as a right verdict") if t['isPhish'] && trust_full_marks?(t['verdictPoints'])
+      end
       if t['isPhish'] && t.key?('falseAlarmCost')
         issues << warn_("#{mw}.truth.falseAlarmCost is on a phish; it is shown only for a real item reported or deleted, so it is never seen")
       end

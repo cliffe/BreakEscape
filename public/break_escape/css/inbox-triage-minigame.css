@@ -174,7 +174,11 @@
 .tri-flag-word { font-weight: 700; flex: none; }
 .tri-flag.caught .tri-flag-word { color: var(--ui-success, #6ee08f); }
 .tri-flag.missed .tri-flag-word { color: var(--ui-danger, #ff7a6b); }
+/* F-E9-6: an un-ticked tell on a correctly-handled item ("Also worth noticing:") is neutral, not a danger-red miss. */
+.tri-flag.missed.tri-flag-soft .tri-flag-word { color: var(--ui-text-dim, #a8b2c8); }
 .tri-false-flag .tri-flag-word { color: var(--ui-warn, #e6b04d); }
+/* E19 m-5: the ticked chip's label is its own run, so "Not a flag here:" and the explanation do not read as one run-on sentence. */
+.tri-false-flag .tri-flag-label { flex: none; font-weight: 600; }
 .tri-why-fine { list-style: disc; padding-left: 20px; display: block; }
 .tri-it-reply { padding: 6px 8px; border-left: 4px solid var(--ui-accent, #ffcc44); background: rgba(255, 204, 68, 0.08); }
 .tri-card-score { color: var(--ui-text-dim, #a8b2c8); font-size: 14px; }
@@ -285,6 +289,8 @@
     .tri-sheet-bar .minigame-button { min-height: 40px; }
 }
 .tri-sheet-bar { display: flex; gap: 8px; justify-content: flex-end; flex: none; padding-top: 8px; }
+/* E8 F11: the one-line nudge on the review card when the learner confirmed without ticking anything. */
+.tri-card-nudge { margin: 6px 0; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
 
 .triage-client button:focus-visible,
 .triage-client select:focus-visible,

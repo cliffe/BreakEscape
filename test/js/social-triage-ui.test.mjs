@@ -215,7 +215,10 @@ test('immediate feedback: the review card names caught, missed and false flags a
     const text = $(s, '.tri-review-card').textContent;
     assert.match(text, /Right call: reported/);
     assert.match(text, /Caught:.*Sender address doesn't match the display name/);
-    assert.match(text, /Missed:.*Unexpected urgency/);
+    // F-E9-6: the verdict (Report on a phish) is right, so an un-ticked tell reads "Also worth
+    // noticing:", not a red "Missed:".
+    assert.match(text, /Also worth noticing:.*Unexpected urgency/);
+    assert.doesNotMatch(text, /Missed:/);
     assert.match(text, /Not a flag here:/);
     assert.match(text, /Header note: All three passed/);
     assert.match(text, /IT Security: Thanks\. Confirmed as a phish\./);
