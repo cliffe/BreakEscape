@@ -29,6 +29,14 @@
       "glossary": "closed",
       "channelTells": ["lookalike_domain", "padlock_myth", "fake_check_paste", "fake_update_prompt", "fake_alarm_callback", "browser_permission_grab", "dangerous_download"],
       "verdictLabels": { "trust": "Carry on", "report": "Close and report", "delete": "Go the trusted way" },
+      "labels": {
+        "_use": "MA1 (E10 C1): the sub-hint under each button and the summary-list past-tense tag come from VERDICT_ACTIONS unless labels.verdict overrides them (triage-kinds.js relabel applies label, past and hint). verdictLabels only sets each button's label, so without this block the browser verdicts kept the email-world sub-text ('Go the trusted way' read 'This is junk. Bin it.') and the list tags read 'Trusted'/'Reported'. hint and past here match the relabelled browser buttons; label stays with verdictLabels.",
+        "verdict": {
+          "trust": { "hint": "This page is genuine. Carry on with what I came to do.", "past": "Carried on" },
+          "report": { "hint": "This is a trap. Close it and tell security.", "past": "Reported" },
+          "delete": { "hint": "Don't use this page; reach what I need the trusted way.", "past": "Went the trusted way" }
+        }
+      },
       "flagChips": {
         "fake_check_paste": "A page telling you to paste or run something to prove you are human or to fix an error",
         "fake_update_prompt": "A web page saying your browser or software is out of date and offering the update",
@@ -61,6 +69,9 @@
           },
           "truth": {
             "isPhish": true,
+            "critical": true,
+            "missLabel": "running a command a page told you to paste",
+            "kindLine": "That was a fake check that had already copied a command for you to run.",
             "flags": ["fake_check_paste"],
             "perFlagNote": { "fake_check_paste": "A real check happens on the page: you tick a box or pick pictures. No genuine check ever tells you to press keys or paste something into your computer, and this one has quietly copied a command for you to run. The site is Fernside's own, but a familiar site is not a reason to do what it suddenly tells you; it has been broken into." },
             "ifTrusted": "Following the steps would have run a hidden program, with nothing showing on screen. If you did it, report it straight away, do not restart, and do not clear anything.",
@@ -107,6 +118,7 @@
           },
           "truth": {
             "isPhish": true,
+            "kindLine": "That 'update' came from a web page, not your browser.",
             "flags": ["fake_update_prompt"],
             "perFlagNote": { "fake_update_prompt": "A web page cannot know your browser needs updating, and no genuine update ever comes from a page; browsers update themselves and finish when you close and reopen them. At work, IT manages that." },
             "ifTrusted": "The download would be a program pretending to be an update. Close the tab and report it.",
@@ -153,6 +165,9 @@
           },
           "truth": {
             "isPhish": true,
+            "critical": true,
+            "missLabel": "calling the number on a pop-up",
+            "kindLine": "Your computer was never locked; that was a page pretending.",
             "flags": ["fake_alarm_callback"],
             "perFlagNote": { "fake_alarm_callback": "A genuine error message never includes a phone number. The alarm and the lock are just a web page; the number reaches whoever made it, who would ask you to install a remote-access tool. Don't call: press Esc, close the tab or the browser, and if it will not close, ring the service desk on the number you already hold." },
             "ifTrusted": "Calling connects you to the scammer, not support. Press Esc, close the tab or the browser; if it will not close, ring the service desk on the number you already hold, and do not call the number on screen.",
@@ -176,6 +191,7 @@
           },
           "truth": {
             "isPhish": true,
+            "kindLine": "That extension was asking to read and change everything you do.",
             "flags": ["browser_permission_grab"],
             "perFlagNote": { "browser_permission_grab": "An extension with that access can see and change everything you do in the browser, the finance system and the intranet included, and it can change what it does when it updates. Stars and a user count do not make it safe." },
             "ifTrusted": "Adding it hands a stranger everything you do in the browser. Close and report it; get a PDF tool from Quayholt Apps (DocShift), or ask the service desk.",
@@ -199,6 +215,9 @@
           },
           "truth": {
             "isPhish": true,
+            "critical": true,
+            "missLabel": "opening a program dressed up as a document",
+            "kindLine": "That was a program dressed up as a document.",
             "flags": ["dangerous_download"],
             "perFlagNote": { "dangerous_download": "You asked for a price list, which is a PDF or a spreadsheet, not a program. A name ending .pdf.exe is a program dressed up as a document." },
             "ifTrusted": "Opening it would run a program, not show a price list. Don't open it; close and report it.",
@@ -220,7 +239,7 @@
     "strings": {
       "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: build a fake 'verify you are human' check from ready-made parts on a supplier site, and send one email to bring a colleague to it. Then you swap seats and work through a morning of web pages, the kind that try to get you to download, paste or call. Only the pages are scored. Nothing is built for real and nothing is collected.",
       "flipHeading": "Now it lands on a colleague",
-      "flipIntro": "This is the page you built, as Leo Brennan, the colleague you nudged to the Fernside portal, meets it when he opens the portal from his own bookmark. The parts picked out below are what make it believable.",
+      "flipIntro": "This is the email you sent Leo, the operations colleague who places the weekly Fernside order. The parts picked out below are what would give it away.",
       "flipDefenderLine": "Leo opened the Fernside portal between jobs, the way he does every week. The page sat on Fernside's own address, with the padlock and all, so nothing warned him off. The one thing it could not hide is the last step: whatever the pretext, the page still had to tell him to paste and run something on his computer, and no real check ever does.",
       "flipNoSend": "Your page didn't go out this time, so there's nothing of yours to show. Next, the same kind of page turns up in a morning's browsing, and you're the one deciding what to do with it.",
       "flipMissed": "The defence is the same either way: next, the same kind of page turns up in a morning's browsing, and you're the one deciding what to do with it.",

@@ -103,12 +103,12 @@ Every metadata value the shell wiring (01 P2/P3) and the generator (01 P4, `gen_
 | `order` | 0 | 1 |
 | task `taskId` / `title` / `type` | `build_and_send_page` / "Send your lure email" / `manual` | `work_browser_morning` / "Work through the web pages" / `custom` |
 
-Aim 2 `concludeRequires.globals`: `["episode_e10_downloads_and_fake_checks_defend_done"]`. Aim 2 `conclusionScreen`: `{ "type": "success", "title": "Downloads and fake checks episode done", "body": "You built one page and sent its link, then worked through a morning of web pages, closing and reporting the ones that tried to drive your computer, so this episode is finished." }`.
+Aim 2 `concludeRequires.globals`: `["episode_e10_downloads_and_fake_checks_defend_done"]`. Aim 2 `conclusionScreen`: `{ "type": "success", "title": "Downloads and fake checks episode done", "body": "You built one page on a supplier's own site and sent the email that brings a colleague to it, then worked through a morning of web pages, closing and reporting the ones that tried to drive your computer, so this episode is finished." }`. (Corrected from the E5-shaped "built one page and sent its link" wording, which contradicts E10's no-link fake-check design: E10 C1 MA3.)
 
 ### Full-episode training kiosk (full erb `rooms.training_room.objects[]` kiosk, copy the E5 shape)
 
-- `observations`: "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise: first build one look-alike page and send its link, then a morning of browser screens to sort."
-- `observationVariants[0]`: `{ "condition": "globalVars.episode_e10_downloads_and_fake_checks_defend_done", "value": "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise. The page is sent and the morning's screens are all sorted." }`
+- `observations`: "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise: first build one fake 'verify you are human' check on a supplier's own site and send the email that brings a colleague to it, then a morning of browser screens to sort." (Corrected from "build one look-alike page and send its link", which contradicts the no-link design: E10 C1 MA3.)
+- `observationVariants`: first `{ "condition": "globalVars.phish_order_colleague_landed && !globalVars.episode_e10_downloads_and_fake_checks_defend_done", "value": "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise. Your fake check is live on the supplier's own site and the email is away to your colleague; next, sort the morning's browser screens." }` (added to read `phish_order_colleague_landed` so the global the send outcome sets is no longer dead: E10 C1 MI1), then `{ "condition": "globalVars.episode_e10_downloads_and_fake_checks_defend_done", "value": "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise. The page is sent and the morning's screens are all sorted." }`
 - `minigameData.episodeId`: `e10_downloads_and_fake_checks`.
 
 ### Full-episode `mission.json` (copy the E5 mission.json shape)

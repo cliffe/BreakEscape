@@ -51,7 +51,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "Downloads and fake checks episode done",
-        "body": "You built one page and sent its link, then worked through a morning of web pages, closing and reporting the ones that tried to drive your computer, so this episode is finished."
+        "body": "You built one page on a supplier's own site and sent the email that brings a colleague to it, then worked through a morning of web pages, closing and reporting the ones that tried to drive your computer, so this episode is finished."
       },
       "tasks": [
         {
@@ -110,6 +110,13 @@
           "report": "Close and report",
           "delete": "Go the trusted way"
         },
+        "labels": {
+          "verdict": {
+            "trust": { "hint": "This page is genuine. Carry on with what I came to do.", "past": "Carried on" },
+            "report": { "hint": "This is a trap. Close it and tell security.", "past": "Reported" },
+            "delete": { "hint": "Don't use this page; reach what I need the trusted way.", "past": "Went the trusted way" }
+          }
+        },
         "flagChips": {
           "fake_check_paste": "A page telling you to paste or run something to prove you are human or to fix an error",
           "fake_update_prompt": "A web page saying your browser or software is out of date and offering the update",
@@ -144,6 +151,9 @@
             },
             "truth": {
               "isPhish": true,
+              "critical": true,
+              "missLabel": "running a command a page told you to paste",
+              "kindLine": "That was a fake check that had already copied a command for you to run.",
               "flags": [
                 "fake_check_paste"
               ],
@@ -198,6 +208,7 @@
             },
             "truth": {
               "isPhish": true,
+              "kindLine": "That 'update' came from a web page, not your browser.",
               "flags": [
                 "fake_update_prompt"
               ],
@@ -252,6 +263,9 @@
             },
             "truth": {
               "isPhish": true,
+              "critical": true,
+              "missLabel": "calling the number on a pop-up",
+              "kindLine": "Your computer was never locked; that was a page pretending.",
               "flags": [
                 "fake_alarm_callback"
               ],
@@ -285,6 +299,7 @@
             },
             "truth": {
               "isPhish": true,
+              "kindLine": "That extension was asking to read and change everything you do.",
               "flags": [
                 "browser_permission_grab"
               ],
@@ -317,6 +332,9 @@
             },
             "truth": {
               "isPhish": true,
+              "critical": true,
+              "missLabel": "opening a program dressed up as a document",
+              "kindLine": "That was a program dressed up as a document.",
               "flags": [
                 "dangerous_download"
               ],
@@ -391,7 +409,7 @@
       "strings": {
         "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: build a fake 'verify you are human' check from ready-made parts on a supplier site, and send one email to bring a colleague to it. Then you swap seats and work through a morning of web pages, the kind that try to get you to download, paste or call. Only the pages are scored. Nothing is built for real and nothing is collected.",
         "flipHeading": "Now it lands on a colleague",
-        "flipIntro": "This is the page you built, as Leo Brennan, the colleague you nudged to the Fernside portal, meets it when he opens the portal from his own bookmark. The parts picked out below are what make it believable.",
+        "flipIntro": "This is the email you sent Leo, the operations colleague who places the weekly Fernside order. The parts picked out below are what would give it away.",
         "flipDefenderLine": "Leo opened the Fernside portal between jobs, the way he does every week. The page sat on Fernside's own address, with the padlock and all, so nothing warned him off. The one thing it could not hide is the last step: whatever the pretext, the page still had to tell him to paste and run something on his computer, and no real check ever does.",
         "flipNoSend": "Your page didn't go out this time, so there's nothing of yours to show. Next, the same kind of page turns up in a morning's browsing, and you're the one deciding what to do with it.",
         "flipMissed": "The defence is the same either way: next, the same kind of page turns up in a morning's browsing, and you're the one deciding what to do with it.",
@@ -965,8 +983,12 @@
           "interactable": true,
           "active": true,
           "locked": false,
-          "observations": "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise: first build one look-alike page and send its link, then a morning of browser screens to sort.",
+          "observations": "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise: first build one fake 'verify you are human' check on a supplier's own site and send the email that brings a colleague to it, then a morning of browser screens to sort.",
           "observationVariants": [
+            {
+              "condition": "globalVars.phish_order_colleague_landed && !globalVars.episode_e10_downloads_and_fake_checks_defend_done",
+              "value": "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise. Your fake check is live on the supplier's own site and the email is away to your colleague; next, sort the morning's browser screens."
+            },
             {
               "condition": "globalVars.episode_e10_downloads_and_fake_checks_defend_done",
               "value": "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise. The page is sent and the morning's screens are all sorted."
