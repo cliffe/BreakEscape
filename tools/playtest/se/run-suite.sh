@@ -39,7 +39,7 @@ JOBS=(
   e10-full:awareness_e10_downloads_and_fake_checks
   e11-full:awareness_e11_misdirected_data
   e12-full:awareness_e12_visitor_tailgater
-  e13-full:awareness_e13_ai_assistant
+  e13-full:awareness_e13_ai_assistant e13-plain:awareness_e13_ai_assistant
   e14-full:awareness_e14_social_media
   e15-full:awareness_e15_shadow_it
   e16-full:awareness_e16_insider_risk
