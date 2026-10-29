@@ -1,0 +1,155 @@
+{
+  "_note": "E12 visitor-and-tailgater attack fragment (awareness). A fragment of the `social` block; the wiring agent copies people, characters, intelFacts, osint and pretextNpcs into scenarios/awareness_e12_visitor_tailgater/scenario.json.erb (01 P2), with the `_` notes stripped. E12 is a call-attack episode like E3, but the pretext is played in the game world (the lobby) via the ENG-05 world modifier: see e12/full_only.json for the episode-level `world` and `attack` blocks the full erb carries. The learner, on an authorised Merrin & Sallow red-team day, pulls on a hi-vis courier costume, walks the lobby, and talks the front-of-house coordinator (character `delphine` = Delphine Arvanitis, record delphine_reception, npcType person) into buzzing them through the badge door with an in-person pretext. No working intrusion detail; the con is an authorised, non-instructional test (core_10 pitfalls). Everyone and every company is fictional (BRAND_SET.md, Merrin & Sallow Architects); every domain ends .example. Catherine Merrin (the partner whose name the courier drops) is the E4 managing partner, reused by name only and not met. Modelled line-for-line on e3/attack.json (characters, pretextNpcs, knows/labels/lines/asks/tells). Brief: episodes/E12_visitor_and_tailgater.md sections 9.1-9.3.",
+
+  "_episodeAttack": {
+    "_note": "The episode-level attack block. The wiring agent sets awarenessEpisode.attack and awarenessEpisode.world (full_only.json) from here. `attack.callId` makes writeKind(episode) return 'call' (episode-model.js:166), so the runner opens pretext-prep, whose Begin opens person-chat (delphine is npcType 'person'). The attack half is never scored (11 §4.1). Repeated verbatim in full_only.json `attack` for the wiring agent's convenience; keep the two in step.",
+    "callId": "merrin_front_desk",
+    "siteIds": ["merrin_site", "merrin_social"],
+    "scored": false,
+    "stages": ["brief", "osint", "write", "flip", "defend", "debrief"]
+  },
+
+  "people": [
+    { "id": "delphine", "kind": "cast", "address": "reception@merrinsallow.example",
+      "forms": { "first": "Delphine", "formal": "Ms Arvanitis", "full": "Delphine Arvanitis" } },
+    { "id": "lorna", "kind": "cast", "address": "lorna.easton@merrinsallow.example",
+      "forms": { "first": "Lorna", "formal": "Ms Easton", "full": "Lorna Easton" } },
+    { "id": "catherine", "kind": "cast", "address": "catherine.merrin@merrinsallow.example",
+      "forms": { "first": "Catherine", "formal": "Ms Merrin", "full": "Catherine Merrin" } }
+  ],
+
+  "characters": {
+    "delphine": {
+      "displayName": "Delphine Arvanitis",
+      "channels": { "person": "delphine_reception" },
+      "influence": { "global": "delphine_influence", "min": -100, "max": 100, "start": 0 },
+      "syncedVars": ["delphine_influence"],
+      "thresholds": [
+        { "id": "wary", "at": -30, "icon": "wary",
+          "effects": [ { "type": "setGlobal", "global": "delphine_wary", "value": true, "clearOnRearm": true } ] },
+        { "id": "refuses", "at": -50, "icon": "refuses",
+          "effects": [ { "type": "setGlobal", "global": "delphine_refusing", "value": true, "clearOnRearm": true } ] },
+        { "id": "reports", "at": -70, "icon": "reports",
+          "effects": [
+            { "type": "setGlobal", "global": "delphine_alerted", "value": true },
+            { "type": "endConversation" }
+          ] }
+      ]
+    }
+  },
+
+  "intelFacts": {
+    "merrin_badge_door": {
+      "text": "The design studio sits behind a badge door; front-of-house buzz expected visitors and couriers through.",
+      "subject": "company", "source": "blk_visit",
+      "provides": [],
+      "reduceNote": "Spelling out that the desk buzzes people through a badge door tells an attacker there is a door to be talked through and who does the buzzing."
+    },
+    "merrin_partner_travel": {
+      "text": "Catherine Merrin, a partner, is often out at project sites, so parcels for her pile up at reception.",
+      "subject": "catherine", "source": "post_merrin_site",
+      "provides": [
+        { "type": "name", "about": "recipient", "value": "merrin_partner", "label": "Catherine Merrin", "kind": "distinctive" }
+      ],
+      "reduceNote": "A partner's public post that she is away and her parcels wait at reception hands a courier a real name to drop and a reason the delivery is plausible."
+    },
+    "merrin_courier_routine": {
+      "text": "The studio takes frequent material-sample deliveries; the desk signs couriers in.",
+      "subject": "company", "source": "blk_deliveries",
+      "provides": [],
+      "reduceNote": "Advertising that couriers come and go all day makes one more courier at the desk look routine rather than worth a second look."
+    }
+  },
+
+  "osint": {
+    "profile": "awareness",
+    "sites": [
+      { "id": "merrin_site", "name": "Merrin & Sallow Architects", "url": "merrinsallow.example", "type": "company-site",
+        "pages": [
+          { "id": "visit", "title": "Visit us", "blocks": [
+            { "id": "blk_visit", "kind": "p",
+              "text": "Our design studio sits behind a badge door. Front-of-house buzz expected visitors and couriers through from the reception desk.",
+              "fact": "merrin_badge_door" },
+            { "id": "blk_deliveries", "kind": "p",
+              "text": "We take frequent material-sample deliveries, and the desk signs couriers in at reception.",
+              "fact": "merrin_courier_routine" } ] } ] },
+
+      { "id": "merrin_social", "name": "Friendface", "url": "friendface.example", "type": "social",
+        "profiles": [
+          { "person": "catherine", "posts": [
+            { "id": "post_merrin_site", "text": "On site all week again, so the sample boxes are stacking up at reception. I'll get to them when I'm back.",
+              "fact": "merrin_partner_travel" },
+            { "id": "post_merrin_other", "text": "Lovely light on the river from the scaffold this morning." } ] } ] }
+    ]
+  },
+
+  "pretextNpcs": [
+    {
+      "character": "delphine",
+      "callId": "merrin_front_desk",
+      "tuning": { "matchCreditCapPerLine": 10, "maxRefusals": 2, "feedbackMode": "live", "tellDetail": "full", "showTechniqueNames": "live" },
+      "susceptibility": { "authority_borrowed": -15, "urgency": -10, "deflect": -10 },
+      "unverifiableCost": -10,
+      "knows": {
+        "recipient": { "value": "merrin_partner", "grade": "identity" }
+      },
+      "labels": {
+        "merrin_partner": "Catherine Merrin"
+      },
+      "lines": {
+        "open_parcel": { "requires": ["merrin_courier_routine"], "claims": [],
+          "text": "Parcel for the studio, needs a signature from someone up there." },
+        "name_drop_partner": { "technique": "authority_borrowed", "requires": ["merrin_partner_travel"],
+          "blanks": { "recipient": "recipient" },
+          "claims": [ { "fact": "recipient", "from": "blank:recipient" } ],
+          "text": "It's the sample box for {recipient}, she's expecting it today." },
+        "hands_full": { "technique": "deflect", "requires": ["merrin_badge_door"], "claims": [],
+          "text": "My hands are full and the badge is back in the van, could you just buzz me through?" },
+        "double_parked": { "technique": "urgency", "also": ["deflect"], "claims": [],
+          "text": "I'm double-parked with a full run on, any chance you can be quick?" },
+        "no_need_to_sign": { "technique": "deflect", "also": ["urgency"], "claims": [],
+          "text": "No need to sign me in, I'll be thirty seconds and straight back out." }
+      },
+      "asks": {
+        "buzz_door": { "pressure": -10, "floor": 0, "verification": ["recipient"],
+          "grants": { "setGlobal": { "delphine_buzzed_through": true } } }
+      },
+      "outcomes": {
+        "got_it": {},
+        "reported": { "line": "I'm going to stop you there. I'll take the parcel at the desk and ring facilities, and if it's really expected they'll come down for it." },
+        "walked_away": {}
+      },
+      "tells": {
+        "recipient": {
+          "pass": "Recipient. Catherine Merrin is a partner here, so the name sounds right.",
+          "fail": "Recipient. You said \"{said}\". The desk has no {actual} expecting a parcel.",
+          "failCategory": "Recipient. That is not a name she can place.",
+          "unknown": "Recipient. She has no name to check the parcel against."
+        },
+        "techniques": {
+          "authority_borrowed": "Borrowed authority. A partner's name on the box does not make the delivery expected.",
+          "urgency": "Urgency. Being in a hurry is the oldest line for skipping a check.",
+          "deflect": "Dodging the check. Buzzing you through blind, rather than signing you in and walking you up, is exactly what a genuine courier never needs."
+        },
+        "ask": {
+          "accepted": "She buzzed the door on the partner's name and the hurry, and neither of those proved the delivery was expected.",
+          "pending": "She wants to know who it is for before she opens the door.",
+          "refused": "She will not open the door on this."
+        },
+        "bands": {
+          "calm": "Delphine is happy to help.",
+          "wary": "Delphine has slowed down.",
+          "refusing": "Delphine has stopped and wants to check the delivery."
+        }
+      },
+      "hints": [
+        "Find out who at the studio takes deliveries before you walk up.",
+        "The site says the desk buzzes couriers through, and a partner posts that her parcels pile up at reception.",
+        "Catherine Merrin is the partner whose sample boxes wait at reception; drop her name as the one expecting the parcel."
+      ],
+      "defenderNotes": {
+        "buzz_door": "The name on the parcel and the hurry were both easy to supply. A quick look at the day's expected-deliveries list, and walking the courier to the desk rather than buzzing the door blind, is what a genuine courier never minds and this one could not survive."
+      }
+    }
+  ]
+}
