@@ -1,0 +1,517 @@
+{
+  "scenario_id": "awareness_post_general_v2_ab",
+  "scenario_name": "Everyday threats check (part two): after (AB)",
+  "scenario_brief": "The second of two short checks for all staff at Quayholt Insurance, a fictional company. Ten new items from a Quayholt inbox, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
+  "endGoal": "Go through the ten items at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "second_check_aim",
+      "title": "Do the second check",
+      "description": "Go through ten items at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "triage_post_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Second check done",
+        "body": "Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side."
+      },
+      "tasks": [
+        {
+          "taskId": "finish_check",
+          "title": "Finish the second check",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_post_general_v2_ab_state": {},
+    "se_awareness_records": [],
+    "triage_post_percent": 0,
+    "triage_post_reportRate": 0,
+    "triage_post_done": false,
+    "triage_post_pass": false
+  },
+  "importGlobals": [
+    {
+      "from": "awareness_pre_general_v2_ab",
+      "var": "triage_pre_percent",
+      "as": "triage_pre_percent",
+      "default": 0
+    },
+    {
+      "from": "awareness_pre_general_v2_ab",
+      "var": "triage_pre_reportRate",
+      "as": "triage_pre_reportRate",
+      "default": 0
+    },
+    {
+      "from": "awareness_pre_general_v2_ab",
+      "var": "triage_pre_done",
+      "as": "triage_pre_done",
+      "default": false
+    },
+    {
+      "from": "awareness_pre_general_v2_ab",
+      "completed": "pre_check_completed"
+    }
+  ],
+  "social": {
+    "triageSets": [
+      {
+        "id": "general_v2_form_b",
+        "title": "Everyday threats check (part two)",
+        "brief": "Ten items from a Quayholt Insurance inbox: emails, a web page and a sign-in prompt. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "stage": "post",
+        "scoringProfile": "awareness",
+        "feedbackMode": "end",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "padlock_myth",
+          "unrequested_mfa_push",
+          "reply_to_differs"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "triage_{stage}_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "gvb_report_closed",
+            "from": {
+              "name": "Anjali Rao",
+              "address": "anjali.rao@quayholt.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "Your report has been closed off",
+            "time": "08:08",
+            "body": "Hi,\nJust to close the loop on the message you reported yesterday. It was a fake, and you were right to send it on. We've blocked the sender and taken the same message out of other inboxes.\nThere's nothing more for you to do. Thank you for reporting it so quickly.\nAnjali\nInformation Security",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "anjali.rao@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Information Security's real address, closing off a report you made, and nothing to click, pay or sign in to. This is the reply you can expect after you report something: it was dealt with, and you hear back."
+              }
+            }
+          },
+          {
+            "id": "gvb_push_sunday",
+            "kind": "push",
+            "subject": "Sign-in request, Sunday 23:10",
+            "time": "Sun 23:10",
+            "push": {
+              "app": "Quayholt Sign-in",
+              "request": "Are you trying to sign in?",
+              "account": "you@quayholt.example",
+              "location": "Unknown location, outside the UK",
+              "device": "Mac"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unrequested_mfa_push"
+              ],
+              "perFlagNote": {
+                "unrequested_mfa_push": "It's late on a Sunday and you aren't signing in to anything. A prompt you didn't start means someone else has your password and is trying to get in."
+              },
+              "ifTrusted": "Approving it would let whoever has your password into your account from a device that isn't yours.",
+              "reportReply": "Good call. Deny and report is right: a prompt you didn't start means your password is out there, so we'll help you change it."
+            }
+          },
+          {
+            "id": "gvb_passmgr_rollout",
+            "from": {
+              "name": "Quayholt IT",
+              "address": "it-notices@quayholt.example"
+            },
+            "to": "all-staff@quayholt.example",
+            "subject": "Your password manager is ready to use",
+            "time": "09:12",
+            "body": "Hello all,\nThe Quayholt password manager is now set up on work laptops. It remembers a different strong password for every account, so you don't have to, and it fills your password in only on the right website.\nThat last part is handy: if it offers nothing on a sign-in page, look again at the web address before you type. There's a short guide on the intranet, and nothing to send back.\nQuayholt IT",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "it-notices@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "IT's real address, a routine rollout notice, and nothing to click or send. The tip it gives is a real one: a password manager that stays quiet on a page is a sign the address may not be the real one."
+              }
+            }
+          },
+          {
+            "id": "gvb_flash_update",
+            "kind": "page",
+            "subject": "From a link: 'Update required'",
+            "time": "08:44",
+            "body": "Your media player is out of date and this video cannot play. Download and run the update to continue. This secure page will guide you through it; look for the padlock in the address bar.",
+            "page": {
+              "url": "https://quayholt-update.example/player",
+              "padlock": true,
+              "certificate": {
+                "issuedTo": "quayholt-update.example",
+                "issuer": "Open Certs Ltd"
+              },
+              "heading": "Player update required",
+              "button": "Download update"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "padlock_myth"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "The address is quayholt-update.example, a separate site with a word added by a hyphen. Quayholt's own pages end in quayholt.example.",
+                "padlock_myth": "The page tells you to trust the padlock, but it was issued to quayholt-update.example. A padlock only means the connection is private, not that the site is Quayholt's or that the download is safe."
+              },
+              "ifTrusted": "The 'update' is malware. Real updates for your work laptop come through IT, not a download a web page pushes at you to watch a video.",
+              "reportReply": "Thanks. That isn't our site, and updates don't arrive as a download a page tells you to run. We've blocked quayholt-update.example."
+            }
+          },
+          {
+            "id": "gvb_patch_notice",
+            "from": {
+              "name": "Quayholt IT",
+              "address": "it-notices@quayholt.example"
+            },
+            "to": "all-staff@quayholt.example",
+            "subject": "This month's security patches land Wednesday night",
+            "time": "09:58",
+            "body": "Hi everyone,\nThis month's security patches will install on work laptops on Wednesday night. Please save your work and leave the laptop on and plugged in. It may restart.\nThere's nothing to do at your end. The full list is on the intranet if you're interested:\n{{link:patches}}\nQuayholt IT",
+            "links": [
+              {
+                "id": "patches",
+                "text": "intranet.quayholt.example/patches",
+                "destination": "https://intranet.quayholt.example/patches"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "fail",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "it-notices@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderAuth": "One automatic check on this message failed. Treat that as a reason to look closer, not as proof it's fake: real mail fails a check now and then when it's forwarded or passed through certain systems. Here the address is Quayholt's, the link goes to the intranet, and nothing is being asked of you.",
+                "linkCredible": "The link goes where it says, to Quayholt's own intranet.",
+                "default": "IT's real address, a routine patch notice, and nothing to send back. Letting patches install promptly is a simple way to keep a laptop safe."
+              }
+            }
+          },
+          {
+            "id": "gvb_usb_courier",
+            "from": {
+              "name": "Dale Ferris",
+              "address": "dale.ferris@itrollout-support.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "Your laptop dock: USB posted to you",
+            "time": "11:42",
+            "body": "Hi,\nAs part of the rollout we've posted you a USB stick with the software for your new laptop dock. When it arrives, plug it into your laptop and run the setup file on it.\nOur engineer Ross set it up for you, so there's nothing to wait on from the service desk.\nDale",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "itrollout-support.example",
+              "replyTo": "d.ferris@quickpost-mail.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "reply_to_differs"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The name reads like IT, but the address is an outside inbox at itrollout-support.example, not quayholt.example. Quayholt IT writes from the Quayholt domain.",
+                "reply_to_differs": "Open the header and the reply-to is a different outside address again (quickpost-mail.example), so a reply wouldn't reach anyone at Quayholt."
+              },
+              "headerNote": "The automatic checks pass because the message really was sent from itrollout-support.example, a domain the sender owns. A pass shows which mail system sent it, not that the sender is Quayholt IT.",
+              "ifTrusted": "Plugging in an unexpected USB and running a file on it can install malware before you've done anything else. Real IT doesn't post you a USB to run yourself; a parcel or a message you weren't expecting is one to check, not to act on.",
+              "reportReply": "Thanks. There's no Dale Ferris on quayholt.example, and we don't post USBs for you to run. If a stick turns up, don't plug it in; hand it to the service desk."
+            }
+          },
+          {
+            "id": "gvb_cloud_howto",
+            "from": {
+              "name": "Quayholt IT",
+              "address": "it-notices@quayholt.example"
+            },
+            "to": "all-staff@quayholt.example",
+            "subject": "Using cloud storage the approved way",
+            "time": "11:08",
+            "body": "Hello all,\nIf you need to store or share work files online, use the Quayholt-approved cloud space. There's a short how-to on the intranet, and we can set you up quickly if you don't have it yet.\nPlease don't drop work files into a personal cloud account or a personal email; once they're there we can't protect them. Ask us and we'll sort a safe way.\nQuayholt IT",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "it-notices@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "IT's real address, and guidance on the approved way to store files, with nothing to click or send. Using the approved space, and asking when you're stuck, is the safe route."
+              }
+            }
+          },
+          {
+            "id": "gvb_ai_assistant",
+            "from": {
+              "name": "Priya Nadar",
+              "address": "priya.nadar@inboxly.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "Your new AI assistant is ready: sign in to activate",
+            "time": "10:25",
+            "body": "Hi,\nWe're rolling out a new AI assistant to help with your day-to-day work. To switch yours on, open the page below and sign in with your Quayholt account. It only takes a moment.\n{{link:assistant}}\nPriya\nIT rollout team",
+            "links": [
+              {
+                "id": "assistant",
+                "text": "ai.quayholt.example/start",
+                "destination": "https://quayholt-ai.example/signin"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "priya.nadar@inboxly.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "linkCredible"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The name is dressed up as IT, but it sits on a personal inbox at inboxly.example, not quayholt.example. A smartly written email is easy to produce; it doesn't prove who sent it.",
+                "linkCredible": "The link text says ai.quayholt.example, but it goes to quayholt-ai.example, a different site built to collect your Quayholt password."
+              },
+              "ifTrusted": "'Sign in to activate' is the trick: the page takes your Quayholt password. A real new tool is switched on by IT, not by you signing in through a link in an email.",
+              "reportReply": "Thanks. There's no Priya Nadar on quayholt.example, and we don't switch tools on through a link like that. We've blocked the page."
+            }
+          },
+          {
+            "id": "gvb_survey_real",
+            "from": {
+              "name": "Quayholt People Team",
+              "address": "peopleteam@quayholt.example"
+            },
+            "to": "all-staff@quayholt.example",
+            "subject": "This quarter's pulse survey is open",
+            "time": "12:18",
+            "body": "Hello,\nThe quarterly pulse survey is open until the end of next week. It takes about five minutes, it's anonymous, and it doesn't ask you to sign in.\n{{link:pulse}}\nThank you,\nThe People Team",
+            "links": [
+              {
+                "id": "pulse",
+                "text": "intranet.quayholt.example/pulse",
+                "destination": "https://intranet.quayholt.example/pulse"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "peopleteam@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "linkCredible": "The link goes where it says, to Quayholt's own intranet, and the survey asks for no sign-in.",
+                "default": "The People Team's real address at quayholt.example, a survey with over a week to answer, and nothing to sign in to."
+              }
+            }
+          },
+          {
+            "id": "gvb_fire_drill",
+            "from": {
+              "name": "Owen Treharne",
+              "address": "owen.treharne@quayholt.example"
+            },
+            "to": "all-staff@quayholt.example",
+            "subject": "Fire drill on Friday morning",
+            "time": "12:44",
+            "body": "Morning all,\nThere's a planned fire drill on Friday morning. When the alarm sounds, leave by the nearest exit and gather at the meeting point in the car park.\nIt's only a drill, so no need to reply or sign anything. Fire wardens will be in their hi-vis to point the way.\nOwen\nFacilities",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "owen.treharne@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Facilities' real address, a notice about a planned drill, and nothing to click or send back."
+              }
+            }
+          }
+        ],
+        "comparison": {
+          "requireGlobal": "pre_check_completed"
+        }
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "post_general_v2_ab",
+      "role": "general_staff",
+      "company": "quayholt_insurance",
+      "brand": {
+        "name": "Quayholt Insurance",
+        "logoText": "QUAYHOLT",
+        "accent": "#6b4c9a"
+      },
+      "variant": "full",
+      "durationTargetMin": 9,
+      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: ten items in a Quayholt inbox.",
+      "stages": [
+        "check"
+      ],
+      "conclusionTaskId": "finish_check",
+      "defend": {
+        "setId": "general_v2_form_b",
+        "stage": "post",
+        "reportAlwaysVisible": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_quayholt",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_quayholt_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "aw_quayholt_queue": {
+            "color": "#9fc0ff",
+            "radius": 32,
+            "intensity": 0.25,
+            "effect": "screen"
+          },
+          "info_screen": {
+            "intensity": 0.25,
+            "radius": 24
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.3,
+            "color": "#e8f0ff",
+            "radius": 72,
+            "intensity": 0.3
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "anjali_rao",
+          "displayName": "Anjali Rao",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/awareness_post_general_v2_ab/ink/anjali_post.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:triage_post_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "finish_check"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk set up as a Quayholt inbox, with ten items ready for the second check.",
+          "minigameData": {
+            "episodeId": "post_general_v2_ab"
+          }
+        }
+      ]
+    }
+  }
+}

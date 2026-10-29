@@ -1,0 +1,517 @@
+{
+  "scenario_id": "awareness_post_general_v2_ba",
+  "scenario_name": "Everyday threats check (part two): after (BA)",
+  "scenario_brief": "The second of two short checks for all staff at Quayholt Insurance, a fictional company. Ten new items from a Quayholt inbox, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
+  "endGoal": "Go through the ten items at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "second_check_aim",
+      "title": "Do the second check",
+      "description": "Go through ten items at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "triage_post_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Second check done",
+        "body": "Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side."
+      },
+      "tasks": [
+        {
+          "taskId": "finish_check",
+          "title": "Finish the second check",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_post_general_v2_ba_state": {},
+    "se_awareness_records": [],
+    "triage_post_percent": 0,
+    "triage_post_reportRate": 0,
+    "triage_post_done": false,
+    "triage_post_pass": false
+  },
+  "importGlobals": [
+    {
+      "from": "awareness_pre_general_v2_ba",
+      "var": "triage_pre_percent",
+      "as": "triage_pre_percent",
+      "default": 0
+    },
+    {
+      "from": "awareness_pre_general_v2_ba",
+      "var": "triage_pre_reportRate",
+      "as": "triage_pre_reportRate",
+      "default": 0
+    },
+    {
+      "from": "awareness_pre_general_v2_ba",
+      "var": "triage_pre_done",
+      "as": "triage_pre_done",
+      "default": false
+    },
+    {
+      "from": "awareness_pre_general_v2_ba",
+      "completed": "pre_check_completed"
+    }
+  ],
+  "social": {
+    "triageSets": [
+      {
+        "id": "general_v2_form_a",
+        "title": "Everyday threats check (part two)",
+        "brief": "Ten items from a Quayholt Insurance inbox: emails, a web page and a sign-in prompt. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "stage": "post",
+        "scoringProfile": "awareness",
+        "feedbackMode": "end",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "padlock_myth",
+          "unrequested_mfa_push",
+          "reply_to_differs"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "triage_{stage}_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "gva_verify_human",
+            "kind": "page",
+            "subject": "From a link: 'Verify you are human'",
+            "time": "08:41",
+            "body": "Checking your browser before you continue. To prove you are human, press the Windows key and the letter R together, then paste the text we've copied for you and press Enter. This step is required to view the document.",
+            "page": {
+              "url": "https://quayho1t-check.example/verify",
+              "padlock": true,
+              "certificate": {
+                "issuedTo": "quayho1t-check.example",
+                "issuer": "Open Certs Ltd"
+              },
+              "heading": "Quayholt security check",
+              "button": "I am human"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "padlock_myth"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "Read the address slowly: quayho1t has a digit 1 where the l should be, so this is quayho1t-check.example, not a Quayholt site. Quayholt pages end in quayholt.example.",
+                "padlock_myth": "The page has a padlock, but it was issued to quayho1t-check.example. The padlock shows the connection is private to whoever runs that site, not that the site is Quayholt's."
+              },
+              "ifTrusted": "A real page never asks you to press keys and paste something in to prove you are human. Following those steps would run a command on your computer that installs malware. No document was waiting.",
+              "reportReply": "Thanks. That isn't our site, and no page should ever walk you through pressing keys and pasting text. We've blocked quayho1t-check.example."
+            }
+          },
+          {
+            "id": "gva_report_thanks",
+            "from": {
+              "name": "Anjali Rao",
+              "address": "anjali.rao@quayholt.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "Thanks for your report: here's what we did",
+            "time": "08:06",
+            "body": "Hi,\nThanks for reporting that odd email last week. You did exactly the right thing. We've blocked the sender and pulled the message from everyone's inbox, so there's nothing more for you to do.\nReports like yours are how we catch these early, so please keep sending them.\nAnjali\nInformation Security",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "anjali.rao@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Information Security's real address, a thank-you for a report you sent, and nothing to click, pay or sign in to. This is what the loop looks like after you report something: the team blocks it and clears it, and tells you so."
+              }
+            }
+          },
+          {
+            "id": "gva_push_0238",
+            "kind": "push",
+            "subject": "Sign-in request at 02:38",
+            "time": "02:38",
+            "push": {
+              "app": "Quayholt Sign-in",
+              "request": "Are you trying to sign in?",
+              "account": "you@quayholt.example",
+              "location": "Unknown location, outside the UK",
+              "device": "Windows PC"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unrequested_mfa_push"
+              ],
+              "perFlagNote": {
+                "unrequested_mfa_push": "This prompt arrived at 02:38, when you were asleep and nowhere near a sign-in. A prompt you didn't start means someone else already has your password and is hoping you'll tap Approve."
+              },
+              "ifTrusted": "Approving it would let whoever has your password straight into your account from a computer you've never used.",
+              "reportReply": "Good call. Denying and reporting it is exactly right: someone has your password, so we're helping you change it now."
+            }
+          },
+          {
+            "id": "gva_mfa_rollout",
+            "from": {
+              "name": "Quayholt IT",
+              "address": "it-notices@quayholt.example"
+            },
+            "to": "all-staff@quayholt.example",
+            "subject": "We've turned on 2-step verification: how it works",
+            "time": "09:10",
+            "body": "Hello all,\nFrom this week your Quayholt account uses 2-step verification (also called MFA). After your password, the authenticator app on your phone will ask you to approve the sign-in.\nTwo things to remember: approve a prompt only when you started the sign-in yourself, and the service desk will never ask you to approve one or read out a code. There's nothing to set up and nothing to send back.\nQuayholt IT",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "it-notices@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "IT's real address, a routine notice explaining a change, and nothing to click or send. It even reminds you that nobody genuine asks you to approve a prompt or read a code."
+              }
+            }
+          },
+          {
+            "id": "gva_ceo_video",
+            "from": {
+              "name": "Helen Achterberg",
+              "address": "helen.achterberg@inboxly.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "A short message from me: please watch today",
+            "time": "10:20",
+            "body": "I've recorded a short video for all staff about the changes ahead. Please watch it today and sign in with your Quayholt account on the page so we can see who has viewed it.\n{{link:video}}\nHelen\nSent from my phone",
+            "links": [
+              {
+                "id": "video",
+                "text": "team-briefing.quayholt.example",
+                "destination": "https://quayholt-briefing.example/play"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "helen.achterberg@inboxly.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "linkCredible"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The chief executive's name sits on a personal inbox at inboxly.example, not quayholt.example. A video or a voice can be faked now, so a familiar face or name is not proof of who really sent something.",
+                "linkCredible": "The link text says team-briefing.quayholt.example, but it actually goes to quayholt-briefing.example, a different site that asks for your Quayholt password."
+              },
+              "ifTrusted": "The page the link opens collects your Quayholt password. The 'video' is bait, and the sign-in to 'confirm you've viewed it' is the whole point.",
+              "reportReply": "Thanks. Helen didn't send that, and her real address is on quayholt.example. We've blocked the page the link went to."
+            }
+          },
+          {
+            "id": "gva_update_tuesday",
+            "from": {
+              "name": "Quayholt IT",
+              "address": "it-notices@quayholt.example"
+            },
+            "to": "all-staff@quayholt.example",
+            "subject": "Software updates going out on Tuesday evening",
+            "time": "09:55",
+            "body": "Hi everyone,\nSecurity updates will install on work laptops from Tuesday evening. Save your work and leave the laptop switched on and plugged in. It may restart once.\nThere's nothing you need to do. If you want the detail, it's on the intranet:\n{{link:updates}}\nQuayholt IT",
+            "links": [
+              {
+                "id": "updates",
+                "text": "intranet.quayholt.example/updates",
+                "destination": "https://intranet.quayholt.example/updates"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "fail",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "it-notices@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderAuth": "One of the automatic checks on this message came back as a fail. That is a clue to look closer, not proof of a fake: forwarding and some mail systems break a check on real mail too. Here the address is Quayholt's, the link goes to Quayholt's own intranet, and nothing is being asked of you.",
+                "linkCredible": "The link goes where it says, to Quayholt's own intranet, and you could reach the same page from the intranet home.",
+                "default": "IT's real address, a routine heads-up about updates, and nothing to send back. Applying updates promptly is one of the simplest things that keeps a laptop safe."
+              }
+            }
+          },
+          {
+            "id": "gva_free_converter",
+            "from": {
+              "name": "Marcus Webb",
+              "address": "marcus.webb@fastmail-pro.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "Quicker way to turn the client files round",
+            "time": "11:40",
+            "body": "Hi,\nI know IT are backed up, so here's a shortcut while we wait. Rather than raise a ticket, run the client files through a free converter site and send them straight on. I've used it plenty. Reply to me and I'll send you the link.\nSaves us a few days.\nMarcus",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "fastmail-pro.example",
+              "replyTo": "m.webb.docs@quickpost-mail.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "reply_to_differs"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The name reads like a colleague, but the address is an outside inbox at fastmail-pro.example, not quayholt.example. A workmate writes to you from the Quayholt domain.",
+                "reply_to_differs": "Open the header and the reply-to is a different outside address again (quickpost-mail.example). Your reply would go there, not to anyone at Quayholt."
+              },
+              "headerNote": "The automatic checks pass because the message really was sent from fastmail-pro.example, a domain the sender owns. A pass tells you which mail system sent it, not that the sender is who the name suggests.",
+              "ifTrusted": "A free converter site can keep a copy of every file you put through it, so the client files would leave Quayholt. The 'shortcut' is also how an attacker gets you to skip the approved route. The approved way is to ask IT.",
+              "reportReply": "Thanks. There's no Marcus Webb on quayholt.example, and client files should never go through a random converter. We've blocked the address."
+            }
+          },
+          {
+            "id": "gva_approved_tools",
+            "from": {
+              "name": "Quayholt IT",
+              "address": "it-notices@quayholt.example"
+            },
+            "to": "all-staff@quayholt.example",
+            "subject": "Need to move a big file or try a new tool? Here's the approved way",
+            "time": "11:05",
+            "body": "Hello all,\nIf a file is too big to email, or you'd like to try a new app or online tool for work, ask us first. There's a request form on the intranet, and we'll usually say yes quickly and point you to a safe way to do it.\nThe reason we ask is that free converter sites and random apps can leak the files you put through them. You won't get in trouble for asking; that's what we're here for.\nQuayholt IT",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "it-notices@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "IT's real address, and an offer of the approved way to do something you might otherwise work around. Asking first is the quicker yes, and there's nothing here to click or send."
+              }
+            }
+          },
+          {
+            "id": "gva_contractors",
+            "from": {
+              "name": "Owen Treharne",
+              "address": "owen.treharne@quayholt.example"
+            },
+            "to": "all-staff@quayholt.example",
+            "subject": "Lift contractors on site on Thursday",
+            "time": "12:40",
+            "body": "Morning all,\nLift engineers are in on Thursday to service the lifts. They'll sign in at reception, wear a visitor badge and be escorted, so you don't need to let anyone in or hold a door for them.\nIf someone you don't know asks you to let them through, it's fine to point them to reception; that's the whole point of the badge.\nOwen\nFacilities",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "owen.treharne@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Facilities' real address, a heads-up about booked contractors, and nothing to click or send. It's also a good reminder: badged and escorted at reception is how real visitors come in, so sending a stranger to reception is the right thing, not rude."
+              }
+            }
+          },
+          {
+            "id": "gva_guide_ack",
+            "from": {
+              "name": "Sofia Marchetti",
+              "address": "sofia.marchetti@quayholt.example"
+            },
+            "to": "all-staff@quayholt.example",
+            "subject": "Please confirm you've read the new starter guide",
+            "time": "12:15",
+            "body": "Hi all,\nThe updated new-starter guide is on the intranet. When you've had a read, press Acknowledge on the page, or just reply to me.\n{{link:guide}}\nNo rush, any time before the end of the month is fine.\nSofia\nHR",
+            "links": [
+              {
+                "id": "guide",
+                "text": "intranet.quayholt.example/new-starter-guide",
+                "destination": "https://intranet.quayholt.example/new-starter-guide"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "sofia.marchetti@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "linkCredible": "The link goes where it says, to Quayholt's own intranet, and you could reach the guide from the intranet home instead.",
+                "default": "HR's real address, a routine ask to acknowledge a policy, a link to Quayholt's own intranet, and a month to do it. Acknowledging a policy you've read is a normal part of the job."
+              }
+            }
+          }
+        ],
+        "comparison": {
+          "requireGlobal": "pre_check_completed"
+        }
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "post_general_v2_ba",
+      "role": "general_staff",
+      "company": "quayholt_insurance",
+      "brand": {
+        "name": "Quayholt Insurance",
+        "logoText": "QUAYHOLT",
+        "accent": "#6b4c9a"
+      },
+      "variant": "full",
+      "durationTargetMin": 9,
+      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: ten items in a Quayholt inbox.",
+      "stages": [
+        "check"
+      ],
+      "conclusionTaskId": "finish_check",
+      "defend": {
+        "setId": "general_v2_form_a",
+        "stage": "post",
+        "reportAlwaysVisible": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_quayholt",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_quayholt_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "aw_quayholt_queue": {
+            "color": "#9fc0ff",
+            "radius": 32,
+            "intensity": 0.25,
+            "effect": "screen"
+          },
+          "info_screen": {
+            "intensity": 0.25,
+            "radius": 24
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.3,
+            "color": "#e8f0ff",
+            "radius": 72,
+            "intensity": 0.3
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "darren_price",
+          "displayName": "Darren Price",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/awareness_post_general_v2_ba/ink/darren_post.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:triage_post_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "finish_check"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk set up as a Quayholt inbox, with ten items ready for the second check.",
+          "minigameData": {
+            "episodeId": "post_general_v2_ba"
+          }
+        }
+      ]
+    }
+  }
+}
