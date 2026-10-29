@@ -755,3 +755,122 @@ test('privacyPanel schema: the clean panel passes; a mistyped key, a bad default
     assert.ok(social.some((e) => e.includes('privacyPanel') && e.includes(detail)), `${name}: no error naming ${detail}\n${social.join('\n')}`);
   });
 });
+
+// ── ENG-02: the password guesser (stage `guess`, awarenessEpisode.guess) ──────────
+const guessFact = (id) => ({ text: `Fact ${id}.`, subject: 'supplier_contact', source: 'ep_staff', provides: [{ type: 'name', about: 'recipient', value: id, label: id, kind: 'generic' }] });
+const guessBlock = () => ({
+  target: 'supplier_contact',
+  commonList: ['aaa111', 'bbb222'],
+  patternSlots: [
+    { id: 'team', factId: 'g_team', word: 'Rovers', template: '{team}77' },
+    { id: 'pet', factId: 'g_pet', word: 'Bobbin', template: '{pet}!' }
+  ],
+  reuseStep: { site: 'Fishing Forum', domain: 'fishing.example', factId: 'g_forum', landsOn: 'work', note: 'One small site opened it.' },
+  passphraseDemo: { words: ['otter', 'ladder', 'crimson'], neverLands: true },
+  landedGlobal: 'guess_stub_landed',
+  note: 'Nothing real is typed here.'
+});
+const withGuess = (mutate) => {
+  const j = fx('clean_full.json');
+  const e = ep(j);
+  e.stages = ['brief', 'osint', 'guess', 'flip', 'defend', 'debrief'];
+  e.attack = { siteIds: ['supplier_site'], scored: false };
+  e.guess = guessBlock();
+  for (const id of ['g_team', 'g_pet', 'g_forum']) { j.social.intelFacts[id] = guessFact(id); j.globalVariables[`se_intel_${id}`] = false; }
+  j.globalVariables.guess_stub_landed = false;
+  if (mutate) mutate(e.guess, j, e);
+  return j;
+};
+
+test('guess: a clean E9-shaped episode raises nothing (no write stage, no mail account, no mail target)', { skip }, () => {
+  assert.deepEqual(lint(withGuess()), []);
+  // the mode may be spelled out; the other keys are optional
+  assert.deepEqual(lint(withGuess((g) => { g.mode = 'target'; })), []);
+  assert.deepEqual(lint(withGuess((g) => { delete g.commonList; delete g.passphraseDemo; delete g.note; delete g.target; })), []);
+});
+
+test('guess: the stage order is brief osint guess flip defend debrief and nothing looser', { skip }, () => {
+  expectIn(lint(withGuess((g, j, e) => { e.stages = ['brief', 'guess', 'flip', 'defend', 'debrief']; })), /variant 'full' has stages/);
+  expectIn(lint(withGuess((g, j, e) => { e.stages = ['brief', 'osint', 'flip', 'guess', 'defend', 'debrief']; })), /variant 'full' has stages/);
+  // the built orders still pass
+  assert.deepEqual(lint(fx('clean_full.json')), []);
+});
+
+test('guess: the stage needs the block, the block needs the stage, a defendOnly shell carries neither', { skip }, () => {
+  expectIn(lint(withGuess((g, j, e) => { delete e.guess; })), /stages lists 'guess' but there is no awarenessEpisode\.guess block/);
+  const j = fx('clean_full.json');
+  ep(j).guess = guessBlock();
+  expectIn(lint(j), /guess is set but stages has no 'guess'/);
+  const d = fx('clean_defend_only.json');
+  ep(d).guess = guessBlock();
+  expectIn(lint(d), /defendOnly episode has an awarenessEpisode\.guess block/);
+});
+
+test('guess: a pattern slot or the reuse step must name a declared intel fact', { skip }, () => {
+  expectIn(lint(withGuess((g) => { g.patternSlots[0].factId = 'ghost'; })), /patternSlots\[0\]\.factId 'ghost' is not a social\.intelFacts id/);
+  expectIn(lint(withGuess((g) => { delete g.patternSlots[1].factId; })), /patternSlots\[1\]\.factId '' is not a social\.intelFacts id/);
+  expectIn(lint(withGuess((g) => { g.reuseStep.factId = 'ghost'; })), /reuseStep\.factId 'ghost' is not a social\.intelFacts id/);
+  expectIn(lint(withGuess((g) => { delete g.reuseStep.site; })), /reuseStep\.site is missing/);
+  expectIn(lint(withGuess((g) => { delete g.reuseStep; })), /no reuseStep; nothing in it can land/);
+});
+
+test('guess: a slot template uses only its own token and has a word to put in it', { skip }, () => {
+  expectIn(lint(withGuess((g) => { g.patternSlots[0].template = '{team}{pet}'; })), /may use only its own \{team\}/);
+  expectIn(lint(withGuess((g) => { g.patternSlots[0].template = 'fixed'; })), /has no \{team\} token/);
+  expectIn(lint(withGuess((g) => { delete g.patternSlots[0].word; })), /patternSlots\[0\]\.word is missing/);
+  expectIn(lint(withGuess((g) => { g.patternSlots[1].id = 'team'; })), /id 'team' is used by an earlier slot/);
+  expectIn(lint(withGuess((g) => { g.patternSlots[0].template = 'x'.repeat(60); })), /longer than 48 characters/);
+});
+
+test('guess: landedGlobal is declared false; the passphrase never lands; the common list stays short', { skip }, () => {
+  expectIn(lint(withGuess((g) => { delete g.landedGlobal; })), /landedGlobal is missing/);
+  expectIn(lint(withGuess((g) => { g.landedGlobal = 'undeclared_global'; })), /landedGlobal 'undeclared_global' is not declared in globalVariables/);
+  expectIn(lint(withGuess((g, j) => { j.globalVariables.guess_stub_landed = true; })), /must be declared false/);
+  expectIn(lint(withGuess((g) => { g.passphraseDemo.neverLands = false; })), /neverLands must be true/);
+  expectIn(lint(withGuess((g) => { g.passphraseDemo.words = []; })), /words must be a list of game words/);
+  expectIn(lint(withGuess((g) => { g.commonList = Array.from({ length: 9 }, (_, i) => `w${i}`); })), /has 9 entries; keep it to 8/);
+  expectIn(lint(withGuess((g) => { g.commonList[0] = 'y'.repeat(30); })), /commonList\[0\] must be a short string/);
+  expectIn(lint(withGuess((g) => { g.mode = 'spray'; })), /guess\.mode is "spray"; it must be one of target/);
+});
+
+test('guess: nothing in the block names a credential', { skip }, () => {
+  expectIn(lint(withGuess((g) => { g.password = 'x'; })), /guess\.password looks like a credential field/);
+  expectIn(lint(withGuess((g) => { g.patternSlots[0].secret = 'x'; })), /patternSlots\[0\]\.secret looks like a credential field/);
+  expectIn(lint(withGuess((g) => { g.reuseStep.passwordHash = 'x'; })), /reuseStep\.passwordHash looks like a credential field/);
+  assert.deepEqual(lint(withGuess()), [], 'passphraseDemo is not a credential field');
+});
+
+test('a full episode with a write stage still needs its mail attack block', { skip }, () => {
+  const j = fx('clean_full.json');
+  delete ep(j).attack.maxMessages;
+  expectIn(lint(j), /attack\.maxMessages is nil/);
+  const k = fx('clean_full.json');
+  ep(k).attack.accountIds = [];
+  expectIn(lint(k), /attack\.accountIds is empty/);
+});
+
+test('guess schema: the clean block passes; a mistyped key, a long common list, a bad mode and a bare slot fail', { skip }, () => {
+  const cases = [
+    ['a mistyped key', (g) => { g.landedGlobl = 'x'; }, 'landedGlobl'],
+    ['a mistyped slot key', (g) => { g.patternSlots[0].facId = 'x'; }, 'facId'],
+    ['nine common guesses', (g) => { g.commonList = Array.from({ length: 9 }, (_, i) => `w${i}`); }, 'commonList'],
+    ['a bad mode', (g) => { g.mode = 'spray'; }, 'mode'],
+    ['a slot without a word', (g) => { delete g.patternSlots[0].word; }, 'word'],
+    ['no landedGlobal', (g) => { delete g.landedGlobal; }, 'landedGlobal'],
+    ['neverLands false', (g) => { g.passphraseDemo.neverLands = false; }, 'neverLands'],
+    ['a reuse step without a site', (g) => { delete g.reuseStep.site; }, 'site']
+  ];
+  const scenarios = [withGuess(), ...cases.map(([, mutate]) => withGuess(mutate))];
+  const results = schemaRun(scenarios);
+  assert.deepEqual(results[0], { social: [], other: [] });
+  cases.forEach(([name, , detail], i) => {
+    const { social, other } = results[i + 1];
+    assert.deepEqual(other, [], `${name}: an error outside #/social`);
+    assert.ok(social.some((e) => e.includes('guess') && e.includes(detail)), `${name}: no error naming ${detail}\n${social.join('\n')}`);
+  });
+});
+
+test('guess schema: strings.guessNote, strings.flipGuessIntro and a guess facilitator line are allowed', { skip }, () => {
+  const j = withGuess((g, jj, e) => { e.strings.guessNote = 'x'; e.strings.flipGuessIntro = 'y'; e.strings.facilitator = { guess: 'Discuss.' }; e.strings.stages = { guess: { heading: 'h', text: 't', button: 'b' } }; e.stepLabels = { guess: 'Guess list' }; });
+  assert.deepEqual(schemaRun([j])[0], { social: [], other: [] });
+});

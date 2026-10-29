@@ -22,6 +22,7 @@ export { LandingPageBuilderMinigame } from './landing-page-builder/landing-page-
 export { SortDrillMinigame } from './sort-drill/sort-drill-minigame.js';
 export { ConcernFormMinigame } from './concern-form/concern-form-minigame.js';
 export { PrivacyPanelMinigame } from './privacy-panel/privacy-panel-minigame.js';
+export { PasswordGuesserMinigame } from './password-guesser/password-guesser-minigame.js';
 export { EngagementReportMinigame } from './engagement-report/engagement-report-minigame.js';
 export { AuthenticatorMinigame } from './authenticator/authenticator-minigame.js';
 export { PinMinigame, startPinMinigame } from './pin/pin-minigame.js';
@@ -117,6 +118,7 @@ import { LandingPageBuilderMinigame } from './landing-page-builder/landing-page-
 import { SortDrillMinigame } from './sort-drill/sort-drill-minigame.js';
 import { ConcernFormMinigame } from './concern-form/concern-form-minigame.js';
 import { PrivacyPanelMinigame } from './privacy-panel/privacy-panel-minigame.js';
+import { PasswordGuesserMinigame } from './password-guesser/password-guesser-minigame.js';
 import { EngagementReportMinigame } from './engagement-report/engagement-report-minigame.js';
 import { AuthenticatorMinigame } from './authenticator/authenticator-minigame.js';
 
@@ -192,6 +194,7 @@ MinigameFramework.registerScene('landing-page-builder', LandingPageBuilderMiniga
 MinigameFramework.registerScene('sort-drill', SortDrillMinigame);
 MinigameFramework.registerScene('concern-form', ConcernFormMinigame);
 MinigameFramework.registerScene('privacy-panel', PrivacyPanelMinigame);
+MinigameFramework.registerScene('password-guesser', PasswordGuesserMinigame);
 MinigameFramework.registerScene('engagement-report', EngagementReportMinigame);
 MinigameFramework.registerScene('authenticator', AuthenticatorMinigame);
 MinigameFramework.registerScene('pin', PinMinigame);
