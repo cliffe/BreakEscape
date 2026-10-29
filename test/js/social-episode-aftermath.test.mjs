@@ -59,6 +59,29 @@ const aftermath = () => ({
     line: 'Most of the damage happens between noticing and reporting.'
 });
 
+test('a non-email aftermath item draws its own body and sender, not an empty bubble (E9 MA2)', () => {
+    const h = host();
+    const view = renderFlipView(h, {
+        message: sent(), strings: {}, onContinue() {},
+        aftermath: { items: [
+            { id: 'fa_sms', kind: 'sms', from: 'IT Service', subject: 'ignored', body: 'Read back the number on your screen.' },
+            { id: 'fa_sms2', kind: 'sms', subject: 'A message that says it is IT', body: 'Second text.' },
+            { id: 'fa_vm', kind: 'voicemail', from: 'Helpdesk', body: 'Please ring back.' },
+            { id: 'fa_call', kind: 'call', from: 'Mr Grey', body: 'He asked for the code.' },
+            { id: 'fa_push', kind: 'push', push: { app: 'Authenticator' }, body: 'Prompt text.' }
+        ] }
+    });
+    const text = (sel) => h.querySelector(sel)?.textContent;
+    assert.equal(text('[data-id="fa_sms"] .tri-sms-text'), 'Read back the number on your screen.');
+    assert.match(text('[data-id="fa_sms"] .tri-phone-top'), /IT Service/);
+    assert.match(text('[data-id="fa_sms2"] .tri-phone-top'), /A message that says it is IT/);
+    assert.doesNotMatch(h.textContent, /Unknown sender/);
+    assert.equal(text('[data-id="fa_vm"] .tri-vm-text'), 'Please ring back.');
+    assert.equal(text('[data-id="fa_call"] .tri-call-body'), 'He asked for the code.');
+    assert.equal(text('[data-id="fa_push"] .tri-push-body'), 'Prompt text.');
+    view.destroy();
+});
+
 test('without aftermath the flip is the same as before (message, page, call, missed, noSend)', () => {
     const cases = [
         [{ message: sent() }, ['message']],

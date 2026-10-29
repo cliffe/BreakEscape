@@ -136,7 +136,8 @@ module ValidateSocial
       issues = []
       {
         'stage' => STAGES, 'scoringProfile' => PROFILES, 'feedbackMode' => FEEDBACK_MODES,
-        'headerPanel' => HEADER_PANELS, 'glossary' => GLOSSARIES, 'chipStyle' => CHIP_STYLES
+        'headerPanel' => HEADER_PANELS, 'glossary' => GLOSSARIES, 'chipStyle' => CHIP_STYLES,
+        'chipOrder' => %w[default relevantFirst]
       }.each do |key, allowed|
         next unless set.key?(key)
 
@@ -852,6 +853,10 @@ module ValidateSocial
 
       %w[headerNote ifTrusted reportReply falseAlarmCost].each do |f|
         issues << err("#{mw}.truth.#{f} is empty; the review card would show a blank line") if t.key?(f) && blank?(t[f])
+      end
+      %w[kindLine missLabel].each do |f|
+        issues << err("#{mw}.truth.#{f} is empty; leave it out to keep the phish wording") if t.key?(f) && blank?(t[f])
+        issues << warn_("#{mw}.truth.#{f} is on a real item (isPhish false); it only replaces phish wording, so it is never seen") if t.key?(f) && !t['isPhish']
       end
       if t['isPhish'] && t.key?('falseAlarmCost')
         issues << warn_("#{mw}.truth.falseAlarmCost is on a phish; it is shown only for a real item reported or deleted, so it is never seen")

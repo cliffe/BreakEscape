@@ -250,6 +250,7 @@
 .ob-feedback.is-already { border-left-color: #1d6a35; }
 .ob-feedback.is-nothing { border-left-color: #8a2b1f; }
 .ob-feedback-text { overflow-wrap: anywhere; }
+.ob-address { font-family: var(--se-font-address, 'Source Sans 3', 'Segoe UI', Arial, sans-serif); }
 
 /* the "noted" flourish: a short highlight; a static highlight under reduced motion */
 .ob-item.just-noted .ob-block { animation: ob-noted 900ms ease-out 1; }

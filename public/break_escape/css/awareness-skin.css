@@ -191,6 +191,10 @@
 .aw-montage { margin: 0 0 12px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; max-width: 70ch; }
 .aw-montage-beat { margin: 0; padding: 10px 12px; background: #fff; border: 1px solid var(--aw-line); border-left: 4px solid var(--aw-line); }
 .aw-montage-headline { border-left-color: var(--aw-accent); border-width: 2px; border-left-width: 6px; }
-.aw-montage-taken { border-left-color: var(--aw-warn); }
+.aw-montage-taken.aw-montage-unsafe, .aw-montage-taken:not(.aw-montage-safe) { border-left-color: var(--aw-warn); }
+/* A beat the learner handled safely: calm green stripe, the tag says so in words. */
+.aw-montage-taken.aw-montage-safe { border-left-color: #2f7d4f; background: #f3f9f5; }
+.aw-montage-tag { margin: 0 0 4px; font-size: 13px; font-weight: 700; color: var(--aw-warn); }
+.aw-montage-safe .aw-montage-tag { color: #1f5d33; }
 .aw-montage-situation { margin: 0 0 4px; font-size: 14px; color: #52606d; }
 .aw-montage-line { margin: 0; font-size: 16px; font-weight: 600; }

@@ -114,8 +114,10 @@ function verdictWordAndLine(answer, msg, phish, labels = null) {
         const action = actionById(kind, answer.action, answer.verdict, labels);
         return { word: action.label, line: kindVerdictLine(kind, phish, answer.verdict) || '' };
     }
+    // truth.kindLine (optional): what a genuine-but-report item really was, in place of "built to look right".
+    const kindLine = phish && answer.verdict === 'trust' && isObj(msg?.truth) && isStr(msg.truth.kindLine) ? msg.truth.kindLine : null;
     return { word: VERDICT_WORD[answer.verdict] || String(answer.verdict ?? ''),
-        line: LINES[phish ? 'phish' : 'real'][answer.verdict] || '' };
+        line: kindLine ? `${kindLine} Here is what to look for next time.` : (LINES[phish ? 'phish' : 'real'][answer.verdict] || '') };
 }
 
 /**

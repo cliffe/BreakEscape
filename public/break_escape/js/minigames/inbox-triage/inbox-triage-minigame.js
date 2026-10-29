@@ -92,6 +92,7 @@ function icon(name) {
 }
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+const isStr = (v) => typeof v === 'string' && v.length > 0;
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 export class InboxTriageMinigame extends SocialOverlayScene {
@@ -546,6 +547,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             }
             box.appendChild(group);
         } else if (!ans) {
+            box.classList.add('tri-actions-open');
             const group = el('div', 'tri-verdicts');
             group.setAttribute('role', 'group');
             group.setAttribute('aria-label', 'Your verdict');
@@ -614,7 +616,10 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     }
 
     _chipIds(rec) {
-        return chipIdsFor(this.set, kindOf(rec), rec, { hideHeaderTells: this._hideHeaderTells(rec) });
+        // The awareness round lists the set's own tells and the kind's channel tells before the generic
+        // email ones (E8 F4); set.chipOrder "default" keeps the old order.
+        const relevantFirst = this.set.chipOrder === 'relevantFirst' || (this.awarenessSkin && this.set.chipOrder !== 'default');
+        return chipIdsFor(this.set, kindOf(rec), rec, { hideHeaderTells: this._hideHeaderTells(rec), relevantFirst });
     }
 
     /** The word for what the player did: the call or push action's label, else the verdict's. */
@@ -652,7 +657,10 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             inputs.set(id, input);
         };
         ids.forEach(addChip);
+        // "Nothing looks wrong" sits below the scrolling list so it is always in view.
         addChip(NONE_ID);
+        const noneLabel = fs.querySelector('.tri-chip-none');
+        if (noneLabel) noneLabel.remove();
         if (this._hideHeaderTells(rec) && this.set.headerPanel !== 'off') {
             fs.appendChild(el('p', 'tri-chip-header-note',
                 "Header checks are under 'Show details'. Go back and open them to tick a header tell."));
@@ -666,6 +674,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             });
         }
         sheet.appendChild(fs);
+        if (noneLabel) sheet.appendChild(noneLabel);
 
         const bar = el('div', 'tri-sheet-bar');
         const confirm = el('button', 'tri-confirm minigame-button', 'Confirm');
@@ -738,6 +747,21 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const focus = this.reader.readPane.querySelector?.('.tri-card-title') || this.reader.readPane.querySelector?.('.tri-next');
         if (focus) { focus.tabIndex = focus.tabIndex < 0 ? -1 : focus.tabIndex; focus.focus?.(); }
         else this.reader.readPane.querySelector?.('.tri-next')?.focus?.();
+        this._scrollToFeedback();
+    }
+
+    /**
+     * After Confirm, bring the "Your verdict" line and the feedback card under it to the top of the
+     * reading pane, so the card and Next are not left below the fold. Instant when the player
+     * prefers reduced motion.
+     */
+    _scrollToFeedback() {
+        const pane = this.reader?.readPane;
+        const target = pane?.querySelector?.('.tri-locked');
+        if (!target || typeof target.scrollIntoView !== 'function') return;
+        let reduce = false;
+        try { reduce = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches; } catch (e) { /* default */ }
+        target.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
     }
 
     // ── review cards ───────────────────────────────────────────────────────────
@@ -754,11 +778,14 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const own = kindVerdictLine(kindOf(rec), phish, verdict);
         if (own) return own;
         if (phish) {
+            // truth.kindLine (optional) says what this item really was, for a genuine message the
+            // learner should still report, where "This one was a phish" would be false.
+            const what = isStr(rec.truth.kindLine) ? rec.truth.kindLine : 'This one was a phish.';
             return {
                 report: 'Right call: reported. A report warns everyone else.',
                 delete: 'Safe, but not reported. Deleting protects you; reporting warns everyone else.',
-                trust: 'Not this time. This one was a phish.',
-                verify: 'Checking first is a sound habit. This one was a phish.'
+                trust: `Not this time. ${what}`,
+                verify: `Checking first is a sound habit. ${what}`
             }[verdict];
         }
         return {
@@ -771,6 +798,23 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 : 'That one was real. Deleting real work loses it; if you are unsure, report it.',
             verify: 'Checking first is fine. This one was real.'
         }[verdict];
+    }
+
+    /**
+     * The sentence that names the right call, added to a card whose verdict fell short: the actions
+     * that earn full verdict marks on this item, in this set's own words, at most two.
+     */
+    _rightCallLine(rec) {
+        const phish = rec.truth.isPhish === true;
+        const kind = kindOf(rec);
+        const full = actionsFor(kind, this.verifyEnabled, this.labels)
+            .filter((a) => verdictPoints(this.profile, phish, a.verdict, kind) >= FULL_VERDICT_POINTS);
+        const order = phish ? ['report', 'verify'] : ['trust', 'verify', 'report'];
+        const rank = (a) => { const i = order.indexOf(a.verdict); return i < 0 ? 99 : i; };
+        const sorted = [...full].sort((a, b) => rank(a) - rank(b));
+        const names = [...new Set(sorted.map((a) => a.label))].slice(0, 2);
+        if (!names.length) return '';
+        return ` The right call was ${names.join(' or ')}.`;
     }
 
     /** Right means full verdict marks under the set's profile, the same rule the result grid uses. */
@@ -814,7 +858,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         verdict.append(icon(tone === 'wrong' ? 'mark-cross' : 'mark-tick'),
             el('span', null, `You chose ${this._actionLabel(rec, ans)}. ${isChoice
                 ? choiceText(this._isRight(rec, ans.verdict) ? 'right' : 'wrong', this.labels)
-                : this._verdictLine(rec, ans.verdict)}`));
+                : this._verdictLine(rec, ans.verdict) + (tone === 'wrong' ? this._rightCallLine(rec) : '')}`));
         card.appendChild(verdict);
         if (isChoice) return this._choiceCard(card, rec, ans, per);
 
@@ -1069,6 +1113,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             realTotal: s.realTotal,
             criticalMisses: s.criticalMisses,
             criticalKinds: s.criticalKinds,
+            criticalLabels: s.criticalLabels,
             phishVerified: s.phishVerified,
             total: this.messages.length,
             skipped: this.skipped.map((x) => x.id),
@@ -1122,9 +1167,13 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         p.appendChild(nums);
 
         if (!stored && result.criticalMisses?.length) {
+            // When every critical miss carries its own truth.missLabel (a genuine item that should
+            // still be reported), the line does not claim an attacker was let in.
+            const labels = Array.isArray(result.criticalLabels) ? result.criticalLabels : [];
+            const allLabelled = labels.length === result.criticalMisses.length && labels.every((l) => isStr(l));
             p.appendChild(el('p', 'tri-critical',
-                `${result.criticalMisses.length === 1 ? 'One answer' : `${result.criticalMisses.length} answers`} let an attacker straight in ` +
-                `(${criticalWhat(result.criticalKinds) || "approving a sign-in you didn't start, or doing what an impostor asked on a call"}). ` +
+                `${result.criticalMisses.length === 1 ? 'One answer' : `${result.criticalMisses.length} answers`} ${allLabelled ? 'missed something that needed reporting' : 'let an attacker straight in'} ` +
+                `(${criticalWhat(result.criticalKinds, labels) || "approving a sign-in you didn't start, or doing what an impostor asked on a call"}). ` +
                 `That costs ${CRITICAL_PENALTY} points off the round${result.criticalMisses.length === 1 ? "" : " each"}, on top of the item itself.`));
         }
         // The genuine items (FUN_DECISIONS disc_visible): which real ones the learner trusted, what
@@ -1194,6 +1243,12 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         this.saveNote = el('p', 'tri-save-note');
         this.saveNote.setAttribute('role', 'status');
         p.appendChild(this.saveNote);
+
+        // The text scrolls in its own body and the action bar sits below it, so the skill breakdown
+        // is never underneath Finish (E8 F5).
+        const body = el('div', 'tri-result-body');
+        while (p.firstChild) body.appendChild(p.firstChild);
+        p.appendChild(body);
 
         const bar = el('div', 'tri-result-bar');
         this.finishBtn = el('button', 'tri-finish minigame-button', 'Finish');

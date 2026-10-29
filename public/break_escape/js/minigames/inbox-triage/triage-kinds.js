@@ -341,7 +341,9 @@ function transcriptList(lines, className) {
 }
 
 function senderName(rec) {
-    return rec?.from?.name || rec?.from?.address || '';
+    // An authored `from` may be a plain string (a flip aftermath item), and `sender` is the label.
+    if (isStr(rec?.from)) return rec.from;
+    return rec?.from?.name || rec?.from?.address || (isStr(rec?.sender) ? rec.sender : '');
 }
 
 function sms(rec, h, labels) {
@@ -763,6 +765,11 @@ function call(rec) {
         wrap.appendChild(dl);
         box.appendChild(wrap);
     }
+    if (!(Array.isArray(rec.transcript) && rec.transcript.length) && isStr(rec.body)) {
+        // A call authored with a plain body (a flip aftermath item) and no transcript.
+        box.appendChild(el('p', 'tri-page-text tri-call-body', rec.body));
+        return box;
+    }
     box.appendChild(transcriptList(rec.transcript, 'tri-transcript tri-call-transcript'));
     return box;
 }
@@ -793,6 +800,7 @@ function push(rec) {
     add('Location', p.location);
     add('Device', p.device);
     box.appendChild(dl);
+    if (isStr(rec.body)) box.appendChild(el('p', 'tri-push-body', rec.body));
     return box;
 }
 
