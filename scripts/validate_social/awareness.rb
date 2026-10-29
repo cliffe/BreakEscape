@@ -17,7 +17,7 @@
 # what binds the set to the episode: ids, counts, the done global, the host NPC and the carry-over.
 module ValidateSocial
   module Awareness
-    STAGES = %w[brief osint build write flip defend debrief check mfa mistake].freeze
+    STAGES = %w[brief osint build write flip defend debrief check mfa mistake guess].freeze
     STAGES_BY_VARIANT = {
       'full' => %w[brief osint write flip defend debrief],
       'defendOnly' => %w[brief defend debrief],
@@ -33,6 +33,9 @@ module ValidateSocial
     # learner makes everyday choices in a sandbox (`mistake`, with awarenessEpisode.mistake), then the
     # flip runs as a montage (flip.mode "montage"). No `osint`, `build`, `write`, `mfa` or `guess`.
     MISTAKE_ORDER = %w[brief mistake flip defend debrief].freeze
+    # ENG-02 (E9, and E18 through ENG-02b): the attack half ends in the password guesser, with no `write`.
+    # `guess` sits after `osint` and before `flip`.
+    GUESS_ORDER = %w[brief osint guess flip defend debrief].freeze
     # The stages that make something the attack half's checks read (the attack block).
     ATTACK_ARTEFACT_STAGES = %w[osint build write mfa guess].freeze
     FLIP_MODES = %w[montage].freeze
@@ -62,6 +65,7 @@ module ValidateSocial
       issues.concat(id_suffix_checks(ep))
       issues.concat(attack_checks(ctx, ep)) if full?(ep) && attack_artefact_stage?(ep)
       issues.concat(mistake_checks(ep))
+      issues.concat(guess_checks(ctx, ep))
       issues.concat(string_checks(ctx, ep))
       issues.concat(flip_aftermath_checks(ep)) if ep.key?('flipAftermath')
       issues.concat(step_label_checks(ep)) if ep.key?('stepLabels')
@@ -182,7 +186,7 @@ module ValidateSocial
       elsif STAGES_BY_VARIANT.key?(ep['variant'])
         want = STAGES_BY_VARIANT[ep['variant']]
         unless stage_orders(ep['variant'], want).include?(stages)
-          extra = ep['variant'] == 'full' ? " (or the same with 'build' straight after 'osint', and/or 'mfa' straight after 'write' or straight after 'flip'; or a consequence episode, #{MISTAKE_ORDER.inspect})" : ''
+          extra = ep['variant'] == 'full' ? " (or the same with 'build' straight after 'osint', and/or 'mfa' straight after 'write' or straight after 'flip'; or a consequence episode, #{MISTAKE_ORDER.inspect}; or a password-guessing episode, #{GUESS_ORDER.inspect})" : ''
           issues << err("variant '#{ep['variant']}' has stages #{stages.inspect}; it must be #{want.inspect}#{extra}")
         end
       elsif !ep.key?('variant')
@@ -204,7 +208,7 @@ module ValidateSocial
           i = base.index(after)
           base[0..i] + ['mfa'] + base[(i + 1)..]
         end
-      end + [MISTAKE_ORDER]
+      end + [MISTAKE_ORDER, GUESS_ORDER]
     end
 
     def self.id_suffix_checks(ep)
@@ -227,7 +231,10 @@ module ValidateSocial
       issues = []
       # A call attack (E3) places a pretext call, not a mail send: no mail account, no send cap.
       by_call = atk.key?('callId')
-      unless by_call
+      # ENG-02: an episode with no `write` stage (the guesser is the attack artefact) sends no mail, so
+      # it needs no mail account, no send cap and no mail target, exactly as a call attack does not.
+      no_mail = by_call || !Array(ep['stages']).include?('write')
+      unless no_mail
         issues << err("attack.maxMessages is #{atk['maxMessages'].inspect}; it must be 1 (one send, then the flip)") unless atk['maxMessages'] == 1
       end
       # Unscored always: the attack beat is a demonstration or a checklist (E7's cloned-voice script
@@ -239,7 +246,7 @@ module ValidateSocial
       target = atk['target']
       targets = Mail.hash_list(ctx.social['phishTargets'])
       found = targets.find { |t| t['id'] == target }
-      if by_call && !atk.key?('target')
+      if no_mail && !atk.key?('target')
         found = nil
       elsif Mail.blank?(target) || found.nil?
         issues << err("attack.target '#{target}' is not a social.phishTargets id")
@@ -261,7 +268,7 @@ module ValidateSocial
       Array(atk['accountIds']).each do |aid|
         issues << err("attack.accountIds '#{aid}' is not a social.mailClient.accounts id") unless account_ids.include?(aid)
       end
-      issues << err('attack.accountIds is empty; the mail client would open with no account') if Array(atk['accountIds']).empty? && !by_call
+      issues << err('attack.accountIds is empty; the mail client would open with no account') if Array(atk['accountIds']).empty? && !no_mail
       if atk.key?('defaultAccount') && !Array(atk['accountIds']).include?(atk['defaultAccount'])
         issues << err("attack.defaultAccount '#{atk['defaultAccount']}' is not in attack.accountIds")
       end
@@ -437,7 +444,7 @@ module ValidateSocial
 
     # ---- strings ---------------------------------------------------------------------
 
-    FACILITATOR_KEYS = %w[brief osint build write mfa mistake flip defend debrief check pause].freeze
+    FACILITATOR_KEYS = %w[brief osint build write mfa mistake guess flip defend debrief check pause].freeze
 
     def self.string_checks(ctx, ep)
       strings = ep['strings']
@@ -1149,6 +1156,156 @@ module ValidateSocial
         else
           err("global '#{name}' is not declared in globalVariables; declare it as #{want} (an undeclared name is not saved)")
         end
+      end
+    end
+
+    # ---- the password guesser (ENG-02) -------------------------------------------------
+
+    # `guess.mode` picks the guesser's builder. ENG-02b appends 'spray' and 'stuff' here, with their own
+    # lints (a branch beside guess_target_checks); E9's block authors no mode and is the 'target' mode.
+    GUESS_MODES = %w[target].freeze
+    # The guesser is a made-up model, never a password list: a short common list, patterns from collected
+    # facts, one reuse step. These caps keep a pasted list out of the data.
+    GUESS_COMMON_MAX = 8
+    GUESS_WORD_MAX = 24
+    # Keys that name a credential. `passphraseDemo` (three game words that never land) does not match.
+    CREDENTIAL_KEY = /password|passwd|pwd|secret|credential|hash/i
+
+    # `guess` is the stage's authored guesser. Opt-in: a `guess` stage needs the block, and the block
+    # needs the stage. Everything in it is authored data, so the lints check that every fact it reads is
+    # a declared one, that it can land, and that it holds nothing that looks like a credential.
+    def self.guess_checks(ctx, ep)
+      stages = Array(ep['stages'])
+      has_stage = stages.include?('guess')
+      has_block = ep.key?('guess')
+      return [] unless has_stage || has_block
+      if ep['variant'] == 'defendOnly'
+        return has_block ? [err('a defendOnly episode has an awarenessEpisode.guess block; the shell drops the guess stage, so remove it')] : []
+      end
+      return [err("stages lists 'guess' but there is no awarenessEpisode.guess block; the guesser would open on nothing")] if has_stage && !has_block
+      return [warn_("awarenessEpisode.guess is set but stages has no 'guess'; the guesser is never played")] unless has_stage
+
+      g = ep['guess']
+      return [err('awarenessEpisode.guess must be an object { commonList, patternSlots, reuseStep, passphraseDemo, landedGlobal }')] unless g.is_a?(Hash)
+
+      issues = []
+      mode = g.fetch('mode', 'target')
+      if GUESS_MODES.include?(mode)
+        issues.concat(guess_target_checks(ctx, g))
+      else
+        issues << err("awarenessEpisode.guess.mode is #{mode.inspect}; it must be one of #{GUESS_MODES.join(', ')}")
+      end
+      issues.concat(guess_common_checks(g))
+      name = g['landedGlobal']
+      if Mail.blank?(name)
+        issues << err('awarenessEpisode.guess.landedGlobal is missing; the flip could not tell whether the guesser landed')
+      elsif !ctx.all_globals.key?(name)
+        issues << err("awarenessEpisode.guess.landedGlobal '#{name}' is not declared in globalVariables; an undeclared name is not saved (declare it false)")
+      elsif ctx.all_globals[name] != false
+        issues << err("awarenessEpisode.guess.landedGlobal '#{name}' must be declared false (it starts not landed), not #{ctx.all_globals[name].inspect}")
+      end
+      issues.concat(guess_credential_checks(g, 'awarenessEpisode.guess'))
+      issues
+    end
+
+    # Every mode: the common list is short, the fixed lines are strings.
+    def self.guess_common_checks(g)
+      issues = []
+      if g.key?('commonList')
+        list = g['commonList']
+        if !list.is_a?(Array)
+          issues << err('awarenessEpisode.guess.commonList must be a list of short made-up strings')
+        else
+          issues << err("awarenessEpisode.guess.commonList has #{list.length} entries; keep it to #{GUESS_COMMON_MAX} (it is the starting point of the demonstration, not a list of passwords)") if list.length > GUESS_COMMON_MAX
+          list.each_with_index do |w, i|
+            issues << err("awarenessEpisode.guess.commonList[#{i}] must be a short string (#{GUESS_WORD_MAX} characters at most)") if !w.is_a?(String) || w.strip.empty? || w.length > GUESS_WORD_MAX
+          end
+        end
+      end
+      if g.key?('strings')
+        st = g['strings']
+        issues << err('awarenessEpisode.guess.strings must be an object of strings keyed by line') if !st.is_a?(Hash) || st.any? { |_, v| !v.is_a?(String) }
+      end
+      issues
+    end
+
+    # mode "target" (E9): pattern slots read one fact each, the reuse step reads one, the passphrase never lands.
+    def self.guess_target_checks(ctx, g)
+      issues = []
+      facts = Mail.facts(ctx).keys
+      people = Mail.people_ids(ctx)
+      if g.key?('target') && (Mail.blank?(g['target']) || !people.include?(g['target']))
+        issues << warn_("awarenessEpisode.guess.target '#{g['target']}' is not a social.people id; it is shown as the colleague the guesser runs against")
+      end
+      slots = g['patternSlots']
+      if g.key?('patternSlots') && !slots.is_a?(Array)
+        issues << err('awarenessEpisode.guess.patternSlots must be a list of { id, factId, word, template }')
+        slots = nil
+      end
+      ids = []
+      Array(slots).each_with_index do |slot, i|
+        w = "awarenessEpisode.guess.patternSlots[#{i}]"
+        unless slot.is_a?(Hash)
+          issues << err("#{w} must be an object { id, factId, word, template }")
+          next
+        end
+        sid = slot['id']
+        if Mail.blank?(sid)
+          issues << err("#{w}.id is missing; it names the one token the template may use")
+        else
+          issues << err("#{w}.id '#{sid}' is used by an earlier slot") if ids.include?(sid)
+          ids << sid
+        end
+        issues << err("#{w}.factId '#{slot['factId']}' is not a social.intelFacts id; the guess is built only from a fact the learner collected") if Mail.blank?(slot['factId']) || !facts.include?(slot['factId'])
+        issues << err("#{w}.word is missing; it is the made-up word the fact stands for, put in the template's {#{sid}} token") if Mail.blank?(slot['word'])
+        tpl = slot['template']
+        if Mail.blank?(tpl)
+          issues << err("#{w}.template is missing")
+        else
+          tokens = tpl.scan(/\{([^}]*)\}/).flatten.uniq
+          issues << err("#{w}.template uses #{tokens.map { |t| "{#{t}}" }.join(', ')}; a slot's template may use only its own {#{sid}} (tokens never cross slots)") unless (tokens - [sid]).empty?
+          issues << warn_("#{w}.template has no {#{sid}} token, so the fact does not change the guess") unless tokens.include?(sid)
+          issues << err("#{w}.template is longer than #{GUESS_WORD_MAX * 2} characters; a guess is a short made-up string") if tpl.length > GUESS_WORD_MAX * 2
+        end
+      end
+      reuse = g['reuseStep']
+      if g.key?('reuseStep')
+        if !reuse.is_a?(Hash)
+          issues << err('awarenessEpisode.guess.reuseStep must be an object { site, domain, factId, landsOn, note }')
+        else
+          issues << err("awarenessEpisode.guess.reuseStep.factId '#{reuse['factId']}' is not a social.intelFacts id; the reused password opens the account only if the learner found where it was reused") if Mail.blank?(reuse['factId']) || !facts.include?(reuse['factId'])
+          issues << err('awarenessEpisode.guess.reuseStep.site is missing; the step has to name the other site the password came from') if Mail.blank?(reuse['site'])
+        end
+      else
+        issues << warn_('awarenessEpisode.guess has no reuseStep; nothing in it can land, so the flip always shows the did-not-land view')
+      end
+      if g.key?('passphraseDemo')
+        demo = g['passphraseDemo']
+        if !demo.is_a?(Hash)
+          issues << err('awarenessEpisode.guess.passphraseDemo must be an object { words, neverLands: true }')
+        else
+          issues << err('awarenessEpisode.guess.passphraseDemo.neverLands must be true; the passphrase is still being tried when the rig is switched off') unless demo['neverLands'] == true
+          words = demo['words']
+          issues << err('awarenessEpisode.guess.passphraseDemo.words must be a list of game words') if !words.is_a?(Array) || words.empty? || words.any? { |x| Mail.blank?(x) }
+        end
+      end
+      issues
+    end
+
+    # No key in the block names a credential: the guesser holds authored guesses, never a password field.
+    def self.guess_credential_checks(node, path)
+      case node
+      when Hash
+        node.flat_map do |k, v|
+          here = "#{path}.#{k}"
+          named = k.to_s.match?(CREDENTIAL_KEY) && !k.to_s.start_with?('_')
+          (named ? [err("#{here} looks like a credential field; the guesser holds authored guesses only, never a password, secret or hash")] : []) +
+            guess_credential_checks(v, here)
+        end
+      when Array
+        node.each_with_index.flat_map { |v, i| guess_credential_checks(v, "#{path}[#{i}]") }
+      else
+        []
       end
     end
 

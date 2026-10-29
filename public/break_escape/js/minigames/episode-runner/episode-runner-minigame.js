@@ -14,6 +14,9 @@
 //            outcome } for the flip and reopens itself once the chat has closed. A reopen
 //            from the kiosk after a reload finds the outcome set and moves on the same way.
 //   mfa      (E3) opens 'authenticator' with episode.mfa { pushes, approvesAt, mode }
+//   guess    (E9, ENG-02) opens 'password-guesser' with episode.guess: an authored guess list stepped
+//            through for one colleague. The scene writes guess.landedGlobal when an account opens; the
+//            flip shows the victim's seat (flipAftermath) only when that global is true
 //   mistake  (consequence episodes, ENG-04) opens 'consequence-sandbox' with episode.mistake; the
 //            beat choices are held in the state for the montage flip (flip.mode "montage")
 //   flip     drawn here with renderFlipView (P7-B): the sent email, the built page (E5) or the
@@ -59,7 +62,7 @@ import {
     stagesFor, stateKey, readState, completeStage, childLaunch, variantOf,
     sentFromRecord, findSentRecord, flipEntry, measurementCtx, defendSummary,
     writeKind, worldFor, sentFromCall, callOutcomeKey, flipPage, flipCall, CALL_LANDED,
-    awarenessSettings, reportRouteFor, flipAftermathFor, isMontage, montageProps,
+    awarenessSettings, reportRouteFor, flipAftermathFor, isMontage, montageProps, guessLanded,
     drillPending, drillLaunchCopy, drillLaunchParams, drillRecord,
     concernPending, concernLaunchCopy, concernLaunchParams, concernRecord,
     privacyPending, privacyLaunchCopy, privacyLaunchParams, privacyRecord
@@ -86,6 +89,7 @@ const STAGE_COPY = Object.freeze({
     build: { heading: 'Build', text: 'Build the page your message will link to. Close the builder when the page is ready.', button: 'Open the page builder' },
     write: { heading: 'Write', text: 'Write one message using what you found. The meter gives you hints before you send. Your first Send is final.', button: 'Open the mail client' },
     mfa: { heading: 'Sign-in prompts', text: 'You have the password, but the account still wants a tap on the target\u2019s phone. Choose when to fire the sign-in prompts and how many, then see what happens. Close it when you have seen enough.', button: 'Open the phone' },
+    guess: { heading: 'Guess list', text: 'Step a made-up guesser through one colleague\u2019s guess list, built from what you found. Nothing real is typed and nothing here is a real password.', button: 'Open the guesser' },
     mistake: { heading: 'Everyday choices', text: 'Work through a few ordinary choices from a normal day. Nothing here is scored, so choose what you would really do.', button: 'Make the choices' },
     defend: { heading: 'Defend', text: 'Now you are on the receiving end. Go through the inbox and decide what to do with each message.', button: 'Open the inbox' },
     check: { heading: 'Check', text: 'Go through these messages and decide what to do with each one. Your answers are recorded.', button: 'Start' }
@@ -571,6 +575,13 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         if (isMontage(this.episode)) return montageProps(this.episode, this.state.mistakeChoices ?? null);
         const sent = this.state.sent;
         const globals = this.globals || {};
+        // ENG-02: a guess stage has no message, page or call to replay. It landed when the guesser wrote
+        // its landed global; the flip then shows the victim's seat, else the did-not-land view.
+        if (sent?.kind === 'guess') {
+            const landed = guessLanded(this.episode, globals);
+            const aftermath = landed ? flipAftermathFor(this.episode, { landed }) : null;
+            return { message: null, page: null, call: null, guess: landed, missed: !landed, ...(aftermath ? { aftermath } : {}) };
+        }
         if (sent?.kind === 'call') {
             const call = flipCall(this.episode, this.social, sent, globals);
             return { message: null, page: null, call, missed: !call };
@@ -697,6 +708,17 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                 ...spec.params,
                 onComplete: (success, result) => {
                     if (isNormal(success, result)) this._completeWhileAway('mfa');
+                }
+            }));
+        } else if (spec.kind === 'guess') {
+            child = this.launchChild(spec.sceneType, socialOverlayParams({
+                ...spec.params,
+                onComplete: (success, result) => {
+                    // Advance only once the rig has been switched off after every guess; closing
+                    // part-way stays on the stage. The scene has already written the landed global.
+                    if (isNormal(success, result) && result?.finished === true) {
+                        this._completeWhileAway('guess', { sent: { kind: 'guess' } });
+                    }
                 }
             }));
         } else if (spec.kind === 'mistake') {
