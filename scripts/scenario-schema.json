@@ -252,11 +252,29 @@
           "type": "array",
           "items": {
             "type": "object",
-            "description": "The landing-page builder (design 07). One record per buildable credential-harvest page. Fields are linted by scripts/validate_social/landing.rb (00 S11 lint field list). No form controls, no network, invented brands, .example hosts.",
-            "required": ["id", "targets", "brands"],
+            "description": "The landing-page builder (design 07). One record per buildable credential-harvest page. Fields are linted by scripts/validate_social/landing.rb (00 S11 lint field list). No form controls, no network, invented brands, .example hosts. A sign-in page needs a non-empty brands array (enforced in landing.rb); a fakeCheck page (ENG-03b) has no brands and carries a check block instead.",
+            "required": ["id", "targets"],
             "properties": {
               "id": {"type": "string"},
               "title": {"type": "string"},
+              "pageType": {"type": "string", "enum": ["signin", "fakeCheck"], "description": "ENG-03b: 'signin' (default) is the built look-alike builder; 'fakeCheck' is the persuasion-scored 'verify you are human' mode on a genuine compromised site (no look-alike domain)"},
+              "check": {
+                "type": "object",
+                "description": "ENG-03b fakeCheck config. The page sits on a genuine (compromised) site, so there is no domain to score; the four persuasion menus and their points live here.",
+                "properties": {
+                  "host": {"type": "string", "description": "The genuine site the check sits on (host-only .example, linted)"},
+                  "heading": {"type": "string"},
+                  "clipboardReveal": {"type": "string", "description": "One harmless description of what the page copied; never a working command (linted for shell metacharacters)"},
+                  "hosts": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "trust": {"type": "string", "enum": ["genuine", "lookalike", "unrelated"]}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
+                  "pretexts": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "match": {"type": "boolean"}, "slips": {"type": "boolean"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
+                  "urgencies": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "match": {"type": "boolean"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
+                  "steps": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "match": {"type": "boolean"}, "slips": {"type": "boolean"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
+                  "points": {"type": "object", "properties": {"borrowedTrust": {"type": "number"}, "pretext": {"type": "number"}, "stepWording": {"type": "number"}, "urgency": {"type": "number"}}, "patternProperties": {"^_": {}}, "additionalProperties": false},
+                  "strings": {"type": "object", "additionalProperties": {"type": "string"}}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              },
               "profile": {"type": "string", "enum": ["student", "awareness", "mission"]},
               "tellCounter": {"type": "boolean"},
               "linkText": {
@@ -1748,11 +1766,15 @@
           "additionalProperties": false
         },
         "page": {
-          "description": "page: the browser card",
+          "description": "page: the browser card. url is required for the web-page states (none, fakeCheck, fakeUpdate, downloadBar, browserWarning) and optional for the chrome/overlay states (relaunchBar, fullScreenAlarm, extensionPermission); the rule is enforced in scripts/validate_social/triage.rb (ENG-03a).",
           "type": "object",
-          "required": ["url"],
           "properties": {
             "url": {"type": "string"},
+            "state": {"type": "string", "enum": ["fakeCheck", "fakeUpdate", "fullScreenAlarm", "extensionPermission", "downloadBar", "browserWarning", "relaunchBar"], "description": "ENG-03a browser-screen state; absent renders the ordinary E5 page"},
+            "clipboardReveal": {"type": "string", "description": "fakeCheck: one authored harmless description of what the page copied, shown by the 'What did this page copy?' reveal; never a working command"},
+            "alarm": {"type": "object", "properties": {"hintAfterMs": {"type": "number"}}, "patternProperties": {"^_": {}}, "additionalProperties": false, "description": "fullScreenAlarm: when to show the way-out hint (default 30000ms)"},
+            "permissions": {"type": "array", "items": {"type": "string"}, "description": "extensionPermission: the 'It can: ...' permission lines"},
+            "download": {"type": "object", "properties": {"filename": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false, "description": "downloadBar: the downloaded file's name"},
             "padlock": {"type": "boolean"},
             "certificate": {
               "description": "The certificate check: who the certificate was issued to (a host name). It proves the connection is encrypted to that host, not that the host is the organisation it claims to be",
@@ -2129,6 +2151,7 @@
         "realLabel": {"type": "string", "minLength": 1, "description": "The noun for the genuine items in the result grid (\"Real texts and notices\"); default follows the queue's channels."},
         "flagPlayerSent": {"type": ["string", "boolean"], "description": "Opt-in (inbox-triage-minigame.js): marks the player's own sends on the review flip; a string is the line shown, true uses a default"},
         "verifyVerdict": {"type": "boolean"},
+        "verdictLabels": {"type": "object", "description": "ENG-03a: relabel the three (or four) verdict buttons and review-card wording for this set, by id (trust, report, delete, verify). The verdict ids and scoring are unchanged. Absent keeps the built Trust/Report/Delete labels.", "properties": {"trust": {"type": "string"}, "report": {"type": "string"}, "delete": {"type": "string"}, "verify": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false},
         "missedPhishLine": {"type": "boolean", "description": "Opt-in (inbox-triage-minigame.js): the result card names the phish the learner trusted. Default off."},
         "genuineFeedback": {"type": "boolean", "description": "false hides the result screen's and debrief's lines on the real items (which were trusted, what made a flagged one safe). Default on."},
         "brief": {"type": "string"},

@@ -48,6 +48,10 @@ module ValidateSocial
     CHIP_STYLES = %w[plain technical character].freeze
     AUTH_VALUES = %w[pass fail none].freeze
     NON_EMAIL_KINDS = %w[sms voicemail qr page call push].freeze
+    # ENG-03a browser-screen states. url is required for the web-page states (none included) and
+    # optional for the chrome/overlay states, which draw no address bar.
+    PAGE_STATES = %w[fakeCheck fakeUpdate fullScreenAlarm extensionPermission downloadBar browserWarning relaunchBar].freeze
+    PAGE_URL_STATES = [nil, 'fakeCheck', 'fakeUpdate', 'downloadBar', 'browserWarning'].freeze
     # The fields each non-email kind reads (triage-kinds.js). Any of them on another kind is ignored.
     KIND_FIELDS = {
       'sms' => %w[earlier], 'voicemail' => %w[duration transcript audio], 'qr' => %w[qr],
@@ -495,11 +499,22 @@ module ValidateSocial
         issues << warn_("#{mw}.subject is empty; the notice would be headed 'Notice'") if blank?(m['subject'])
       when 'page'
         pg = m['page']
-        if !pg.is_a?(Hash) || blank?(pg['url'])
-          issues << err("#{mw}.page.url is missing; the address bar would be blank")
+        if !pg.is_a?(Hash)
+          issues << err("#{mw}.page is missing; the browser card has no page to show")
         else
+          state = pg['state']
+          if !state.nil? && !PAGE_STATES.include?(state)
+            issues << err("#{mw}.page.state '#{state}' is not one of #{PAGE_STATES.join(', ')} (ENG-03a)")
+          end
+          # url is required for the web-page states (none, fakeCheck, fakeUpdate, downloadBar,
+          # browserWarning) and optional for the chrome/overlay states (relaunchBar, fullScreenAlarm,
+          # extensionPermission), which draw no address bar (ENG-03a).
+          if PAGE_URL_STATES.include?(state) && blank?(pg['url'])
+            issues << err("#{mw}.page.url is missing; the address bar would be blank")
+          end
           issues << err("#{mw}.page.padlock must be true or false") if pg.key?('padlock') && ![true, false].include?(pg['padlock'])
           issues << err("#{mw}.page.fields must be an array of non-empty labels") if pg.key?('fields') && !(pg['fields'].is_a?(Array) && pg['fields'].all? { |f| !blank?(f) })
+          issues << err("#{mw}.page.permissions must be an array of non-empty strings") if pg.key?('permissions') && !(pg['permissions'].is_a?(Array) && pg['permissions'].all? { |f| !blank?(f) })
           issues.concat(certificate_checks(pg['certificate'], "#{mw}.page.certificate")) if pg.key?('certificate')
         end
       when 'call'

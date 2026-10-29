@@ -398,10 +398,9 @@ function qr(rec, h) {
     return box;
 }
 
-function page(rec, h) {
-    const p = isObj(rec.page) ? rec.page : {};
-    const box = el('section', 'tri-kind tri-kind-page tri-browser');
-    box.setAttribute('aria-label', 'Web page');
+// The browser chrome (padlock / "Not secure", address button, optional certificate panel),
+// shared by the ordinary page and the ENG-03a web-page states. Returns { bar, certPanel }.
+function browserBar(p, h) {
     const bar = el('div', 'tri-browser-bar');
     if (p.padlock === true) {
         const lock = el('button', 'tri-padlock minigame-button', 'Padlock');
@@ -442,6 +441,29 @@ function page(rec, h) {
             btn.setAttribute('aria-expanded', certPanel.hidden ? 'false' : 'true');
         });
     }
+    return { bar, certPanel };
+}
+
+/** Append the browser chrome to a state surface's box. */
+function appendBar(box, p, h) {
+    const { bar, certPanel } = browserBar(p, h);
+    box.appendChild(bar);
+    if (certPanel) box.appendChild(certPanel);
+}
+
+function page(rec, h) {
+    const p = isObj(rec.page) ? rec.page : {};
+    const state = isStr(p.state) ? p.state : null;
+    const box = el('section', 'tri-kind tri-kind-page tri-browser');
+    box.setAttribute('aria-label', 'Web page');
+    // ENG-03a: an authored browser-screen state draws its own block; absent renders the ordinary
+    // E5 page below, byte-for-byte as before.
+    if (state && PAGE_STATES[state]) {
+        box.classList.add('tri-page-state', `tri-page-${state}`);
+        PAGE_STATES[state](box, rec, p, h);
+        return box;
+    }
+    const { bar, certPanel } = browserBar(p, h);
     box.appendChild(bar);
     if (certPanel) box.appendChild(certPanel);
     const view = el('div', 'tri-browser-view');
@@ -482,6 +504,126 @@ function page(rec, h) {
     box.appendChild(view);
     return box;
 }
+
+// ── ENG-03a web-page states ─────────────────────────────────────────────────────
+// Each draws an authored, static block. Every string goes in with textContent. Nothing runs on
+// the computer and nothing is ever written to the real clipboard; the paste-and-run steps are the
+// authored `rec.body` text, drawn inert, and the only "command" shown is the harmless one-line
+// `page.clipboardReveal` description.
+
+/** A reveal button that toggles one hidden authored line (the fakeCheck clipboard reveal). */
+function revealLine(label, text) {
+    const wrap = el('div', 'tri-page-reveal');
+    const line = el('p', 'tri-page-reveal-text', isStr(text) ? text : '');
+    line.hidden = true;
+    const btn = el('button', 'tri-page-reveal-btn minigame-button', label);
+    btn.type = 'button';
+    btn.setAttribute('aria-expanded', 'false');
+    btn.addEventListener('click', () => { line.hidden = false; btn.setAttribute('aria-expanded', 'true'); });
+    wrap.append(btn, line);
+    return wrap;
+}
+
+function stateFakeCheck(box, rec, p, h) {
+    appendBar(box, p, h);
+    const view = el('div', 'tri-browser-view tri-fakecheck');
+    view.appendChild(heading(p.heading || 'Verify you are human'));
+    if (rec.body) view.appendChild(el('p', 'tri-page-text', rec.body));
+    // The one-line description of what the page copied, behind a reveal; the command is never shown.
+    view.appendChild(revealLine('What did this page copy?', p.clipboardReveal));
+    box.appendChild(view);
+}
+
+function stateFakeUpdate(box, rec, p, h) {
+    appendBar(box, p, h);
+    const view = el('div', 'tri-browser-view tri-fake-update');
+    view.appendChild(heading(p.heading || 'Update required'));
+    if (rec.body) view.appendChild(el('p', 'tri-page-text', rec.body));
+    // A drawn button face only: nothing to click into, no download happens.
+    view.appendChild(el('span', 'tri-page-button', isStr(p.button) ? p.button : 'Download update'));
+    box.appendChild(view);
+}
+
+function stateDownloadBar(box, rec, p, h) {
+    appendBar(box, p, h);
+    const view = el('div', 'tri-browser-view tri-download');
+    view.appendChild(heading(p.heading || 'Download complete'));
+    if (rec.body) view.appendChild(el('p', 'tri-page-text', rec.body));
+    const bar = el('div', 'tri-download-bar');
+    const name = isObj(p.download) && isStr(p.download.filename) ? p.download.filename : '';
+    bar.append(el('span', 'tri-download-name', name), el('span', 'tri-download-face', 'Open file'));
+    view.appendChild(bar);
+    box.appendChild(view);
+}
+
+function stateBrowserWarning(box, rec, p, h) {
+    appendBar(box, p, h);
+    const view = el('div', 'tri-browser-view tri-browser-warning');
+    view.appendChild(heading(p.heading || 'Deceptive site ahead'));
+    if (rec.body) view.appendChild(el('p', 'tri-page-text', rec.body));
+    // A genuine browser warning: the safe move is to go back.
+    view.appendChild(el('span', 'tri-page-button tri-warning-back', 'Go back'));
+    box.appendChild(view);
+}
+
+function stateRelaunchBar(box, rec, p) {
+    // The browser's own menu bar, not a web page: no address bar.
+    const bar = el('div', 'tri-relaunch-bar');
+    bar.appendChild(el('p', 'tri-kind-label', 'Your browser'));
+    bar.appendChild(heading(p.heading || 'An update is ready'));
+    if (rec.body) bar.appendChild(el('p', 'tri-page-text', rec.body));
+    bar.appendChild(el('span', 'tri-page-button', isStr(p.button) ? p.button : 'Relaunch'));
+    box.appendChild(bar);
+}
+
+function stateExtensionPermission(box, rec, p) {
+    // A store listing / permission overlay: no address bar.
+    const view = el('div', 'tri-ext-permission');
+    view.appendChild(heading(p.heading || 'Add this extension?'));
+    if (rec.body) view.appendChild(el('p', 'tri-page-text', rec.body));
+    const perms = Array.isArray(p.permissions) ? p.permissions.filter(isStr) : [];
+    if (perms.length) {
+        view.appendChild(el('p', 'tri-ext-perms-label', 'It can:'));
+        const ul = el('ul', 'tri-ext-perms');
+        for (const perm of perms) ul.appendChild(el('li', 'tri-ext-perm', perm));
+        view.appendChild(ul);
+    }
+    box.appendChild(view);
+}
+
+function stateFullScreenAlarm(box, rec, p) {
+    // A full-screen overlay: no address bar, silent, always a visible way out.
+    const alarm = el('div', 'tri-alarm');
+    // Honour prefers-reduced-motion: no shake or flash when it is set (and stay calm regardless).
+    let reduced = false;
+    try {
+        reduced = !!(typeof window !== 'undefined' && window.matchMedia
+            && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    } catch (e) { reduced = false; }
+    if (!reduced) alarm.classList.add('tri-alarm-pulse');
+    alarm.appendChild(el('p', 'tri-alarm-muted', 'This page is trying to play a loud alarm. The sound is muted.'));
+    alarm.appendChild(heading(p.heading || 'Your computer has been locked'));
+    if (rec.body) alarm.appendChild(el('p', 'tri-page-text', rec.body));
+    // A visible way out, always present.
+    alarm.appendChild(el('span', 'tri-alarm-close', 'Close'));
+    const hint = el('p', 'tri-alarm-hint', 'Can’t close it? Press Esc, or close the tab or the browser.');
+    hint.hidden = true;
+    const ms = isObj(p.alarm) && Number.isFinite(p.alarm.hintAfterMs) ? p.alarm.hintAfterMs : 30000;
+    const t = setTimeout(() => { hint.hidden = false; }, ms);
+    if (t && typeof t.unref === 'function') t.unref();
+    alarm.appendChild(hint);
+    box.appendChild(alarm);
+}
+
+const PAGE_STATES = {
+    fakeCheck: stateFakeCheck,
+    fakeUpdate: stateFakeUpdate,
+    downloadBar: stateDownloadBar,
+    browserWarning: stateBrowserWarning,
+    relaunchBar: stateRelaunchBar,
+    extensionPermission: stateExtensionPermission,
+    fullScreenAlarm: stateFullScreenAlarm
+};
 
 function call(rec) {
     const box = el('section', 'tri-kind tri-kind-call');

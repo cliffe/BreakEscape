@@ -155,9 +155,23 @@ module ValidateSocial
       pid = pg['id']
       where = "social.landingPages[#{pid}]"
 
-      issues.concat(targets_block(ctx, pg, phish, where))
-      issues.concat(pretext_block(pg, where))
-      pg['brands'].is_a?(Array) ? issues.concat(brands_block(ctx, pg, where)) : (issues << err("#{where}.brands must be a non-empty array"))
+      page_type = pg['pageType']
+      unless page_type.nil? || %w[signin fakeCheck].include?(page_type)
+        issues << err("#{where}.pageType '#{page_type}' is not 'signin' or 'fakeCheck' (ENG-03b)")
+      end
+      fake = page_type == 'fakeCheck'
+
+      issues.concat(targets_block(ctx, pg, phish, where, fake_check: fake))
+      if fake
+        # A fake-check page sits on a genuine (compromised) site: no brands, no pretext/domain
+        # scoring. It carries a `check` block instead (ENG-03b).
+        issues.concat(fake_check_block(ctx, pg, where))
+      else
+        issues.concat(pretext_block(pg, where))
+        # A sign-in page needs a non-empty brands array (this error replaces the schema `required`
+        # entry, which was relaxed so a fakeCheck page with no brands validates).
+        pg['brands'].is_a?(Array) ? issues.concat(brands_block(ctx, pg, where)) : (issues << err("#{where}.brands must be a non-empty array"))
+      end
       issues.concat(Osint.lint_field(ctx, pg['linkText'], "#{where}.linkText")) unless Mail.blank?(pg['linkText'])
       issues.concat(capture_block(ctx, pg, where))
       issues.concat(wordings_block(pg, where))
@@ -200,7 +214,7 @@ module ValidateSocial
       issues
     end
 
-    def self.targets_block(ctx, pg, phish, where)
+    def self.targets_block(ctx, pg, phish, where, fake_check: false)
       tgts = pg['targets']
       return [err("#{where}.targets must be an object with at least one phishTargets id as a key")] unless tgts.is_a?(Hash) && !tgts.empty?
 
@@ -210,10 +224,47 @@ module ValidateSocial
           issues << err("#{where}.targets key '#{tid}' is not a social.phishTargets id")
           next
         end
+        # A fake-check page sits on a genuine site, so it is not judged by linkCredible: the
+        # link-credible-required rule is skipped for pageType fakeCheck (ENG-03b).
+        next if fake_check
+
         unless requires_link_credible?(phish_target(ctx, tid))
           issues << err("#{where}.targets key '#{tid}' is a target whose required factors do not include linkCredible; " \
                         'a landing page is judged by linkCredible, so the target must require it')
         end
+      end
+      issues
+    end
+
+    # ---- fake-check block (ENG-03b) -------------------------------------------------
+    # A fakeCheck page carries a `check` object instead of brands/pretext/domain menus. The host
+    # gets the host-only .example / ASCII / denylist lint; the four persuasion menus must each be a
+    # non-empty array; and `clipboardReveal` must be a plain, harmless description, never a working
+    # command (no shell metacharacters and no leading command token), so no payload can be authored.
+    SHELL_META = /[|&;$><`]/.freeze
+    COMMAND_LEAD = %r{\A\s*(?:curl|wget|powershell|pwsh|cmd|bash|sh|mshta|certutil|rundll32|/c\b)}i.freeze
+
+    def self.fake_check_block(ctx, pg, where)
+      chk = pg['check']
+      return [err("#{where}.check is missing; a fakeCheck page needs a check block { host, hosts, pretexts, urgencies, steps, clipboardReveal }")] unless chk.is_a?(Hash)
+
+      issues = []
+      if Mail.blank?(chk['host'])
+        issues << err("#{where}.check.host is missing; it names the genuine site the check sits on")
+      else
+        issues.concat(Osint.lint_field(ctx, chk['host'], "#{where}.check.host"))
+      end
+
+      %w[hosts pretexts urgencies steps].each do |menu|
+        issues << err("#{where}.check.#{menu} must be a non-empty array of options") unless chk[menu].is_a?(Array) && !chk[menu].empty?
+      end
+
+      reveal = chk['clipboardReveal']
+      if Mail.blank?(reveal)
+        issues << err("#{where}.check.clipboardReveal is missing; it is the one-line description the reveal shows")
+      elsif reveal.is_a?(String) && (reveal.match?(SHELL_META) || reveal.match?(COMMAND_LEAD))
+        issues << err("#{where}.check.clipboardReveal must be a plain description, not a command; " \
+                      'it must hold no shell metacharacters (| & ; $ > < `) and must not read as a command (curl, powershell, cmd, ...)')
       end
       issues
     end
