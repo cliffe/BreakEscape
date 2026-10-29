@@ -22,7 +22,7 @@ const copy = (rel, fix = (s) => s) => put(rel, fix(readFileSync(join(js, rel), '
 copy('utils/desktop-app.js');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 put('systems/global-writer.js', 'export function writeGlobal() {}\n');
-put('systems/social-intel.js', 'export function grantFact() {}\nexport function readyToastText() { return ""; }\n');
+put('systems/social-intel.js', 'export function grantFact() {}\nexport function readyToastText() { return ""; }\nexport function readyToastTitle() { return ""; }\n');
 put('events/combat-events.js', 'export const CombatEvents = {};\n');
 put('music/music-controller.js', 'export default { getState() { return {}; } };\n');
 put('ui/info-label.js', 'export function setHudLabel() {}\nexport function clearHudLabel() {}\n');

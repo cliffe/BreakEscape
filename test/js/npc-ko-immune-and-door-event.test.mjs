@@ -41,7 +41,7 @@ const { PlayerCombat } = await import(dataUrl(combatSrc));
 const actionsSrc = readFileSync(join(js, 'systems/apply-actions.js'), 'utf8')
     .split("'../utils/display-dashes.js'").join(`'${dataUrl('export const displayDashes = (s) => s;')}'`)
     .split("'./global-writer.js'").join(`'${dataUrl('export function writeGlobal() {}')}'`)
-    .split("'./social-intel.js'").join(`'${dataUrl('export function grantFact() {} export function readyToastText() { return ""; }')}'`);
+    .split("'./social-intel.js'").join(`'${dataUrl('export function grantFact() {} export function readyToastText() { return ""; } export function readyToastTitle() { return ""; }')}'`);
 const { applyActions } = await import(dataUrl(actionsSrc));
 
 const { resolveObjectField } = await import(dataUrl(readFileSync(join(js, 'utils/conditional-text.js'), 'utf8')));
