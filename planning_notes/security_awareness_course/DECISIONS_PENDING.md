@@ -12,6 +12,14 @@ Questions for the user. Each has a recommendation; the plan follows the recommen
 - **Status:** not answered. No Hacktivity change happens without the user's explicit go-ahead (R8).
 - **Recommendation:** none added here; the options form is the place to answer. It is the only platform change the plan proposes for now.
 
+### E8 to E20 build questions (2026-10-29, `implementation/BUILD_LOG.md`)
+
+- **E13 deepfake demo call:** wired but gated on `e13_demo_offered`, which nothing sets. Reviewer proposal: open it as a spoken debrief once the kiosk work is done (set the flag on the defend-done change); else cut it, since the scored video call already teaches the lesson.
+- **Debrief "habit to keep" outside phishing:** every episode shows the set-wide rule of thumb (`AWARENESS_RULE_OF_THUMB_TEXT`, about money and codes). On E17 acceptable use, E15 shadow IT and E20 Wi-Fi it reads off-topic. Options: keep the one constant everywhere; or let an episode carry its own habit line beside it.
+- **Inboxly:** an invented mail product in built E1, E2 and E4 that matches a live email product. Rename or keep.
+- **E20 host art:** new host art after the 3 Nov PixelLab reset, or reuse a built host.
+- **Orchestrator rulings you may overrule:** E12 §20.2 relabel the reception buttons (now Let them in / Report / Turn away / Check first) and §20.5 keep seven items; E20 home working gets a sixth concept card, brief kept; E19 content note widened to the learner's own machine; E10 high-harm pages count as critical misses.
+
 ## Open
 
 ### D6. Market order and localisation
