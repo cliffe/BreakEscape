@@ -1,0 +1,209 @@
+{
+  "scenario_id": "awareness_core_00_first_play",
+  "scenario_name": "Before you start: how this works",
+  "scenario_brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. This is a short brief before your first episode: how the course works, what is recorded, and how to report. Nothing real is asked for and there is nothing to get wrong.",
+  "endGoal": "Read the brief at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "finish_brief_aim",
+      "title": "Read the brief",
+      "description": "Read the brief at the kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_core_00_first_play_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "You're set",
+        "body": "That's the brief. Start your first episode whenever you're ready."
+      },
+      "tasks": [
+        {
+          "taskId": "complete_brief",
+          "title": "Read the brief",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "se_awareness_records": [],
+    "episode_core_00_first_play_state": {},
+    "episode_core_00_first_play_done": false
+  },
+  "social": {
+    "awarenessEpisode": {
+      "id": "core_00_first_play",
+      "role": "general_staff",
+      "company": "quayholt_insurance",
+      "brand": {
+        "name": "Quayholt Insurance",
+        "logoText": "QUAYHOLT",
+        "accent": "#6b4c9a"
+      },
+      "variant": "brief",
+      "durationTargetMin": 5,
+      "scopeNote": "An authorised exercise at Quayholt Insurance, a fictional company. Everything here is practice; nothing you do leaves the game.",
+      "stages": [
+        "brief"
+      ],
+      "conclusionTaskId": "complete_brief",
+      "doneGlobal": "episode_core_00_first_play_done",
+      "oncePerLearner": true,
+      "strings": {
+        "briefCards": [
+          {
+            "heading": "Welcome",
+            "text": "This is practice at Quayholt Insurance, a company we made up for the course. Nothing here is real, and nobody is trying to catch you out.\n\nYou will meet the kinds of messages, calls and pages that turn up in a normal working day, and take a few minutes to decide what you would do."
+          },
+          {
+            "heading": "How it works",
+            "text": "The kiosk steps through a short brief, then an attack half where you build one message from a company's public details, a flip where you meet it in an inbox, a scored defend half where you sort the post, and a debrief.\n\nIn the defend half you choose Trust, Report, Delete, and sometimes Verify, then tick what gave each item away. Only the defend half is scored. The attack half never is."
+          },
+          {
+            "heading": "Nothing real is asked for",
+            "text": "The course never asks for your real password, bank details or personal information. Any sign-in page or form you see is a model, filled with made-up details, and it captures nothing."
+          },
+          {
+            "heading": "What we record, and who sees it",
+            "text": "We record the items, your verdicts, the flags you tick and the times. There is no free text, and nothing that identifies you.\n\nResults go to you, and to an organiser as a group figure only. Your choices here are practice and are never used for discipline."
+          },
+          {
+            "heading": "Why anyone targets you",
+            "text": "Most attackers are criminals after money, and they want what your access opens: your email, your logins, the data you can see. It is rarely about you in particular.\n\nMost attacks begin with a message, a call or a stolen password, in the middle of normal work."
+          },
+          {
+            "heading": "The habit to keep",
+            "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+          },
+          {
+            "heading": "Report, and no blame",
+            "text": "For emails, use the Report button. For anything else, a call, a text, a visitor, a mistake, tell the security team or the service desk.\n\nReporting is never wrong, and reporting a mistake quickly is thanked, not blamed. The way to report here shows in every debrief."
+          }
+        ],
+        "briefDone": "Got it",
+        "alreadySeen": "You have seen this already. Start your first episode whenever you are ready."
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_quayholt",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_quayholt_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "aw_quayholt_queue": {
+            "color": "#9fc0ff",
+            "radius": 32,
+            "intensity": 0.25,
+            "effect": "screen"
+          },
+          "info_screen": {
+            "intensity": 0.25,
+            "radius": 24
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.3,
+            "color": "#e8f0ff",
+            "radius": 72,
+            "intensity": 0.3
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "anjali_rao",
+          "displayName": "Anjali Rao",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/awareness_core_00_first_play/ink/anjali_rao.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_core_00_first_play_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "complete_brief"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk with a short brief for new learners, ready to read.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_core_00_first_play_done",
+              "value": "A touch-screen kiosk. The brief has been read."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "core_00_first_play"
+          }
+        }
+      ]
+    }
+  }
+}
