@@ -268,7 +268,11 @@ module ValidateSocial
       Array(atk['siteIds']).each do |sid|
         issues << err("attack.siteIds '#{sid}' is not a social.osint.sites id") unless site_ids.include?(sid)
       end
-      issues << err('attack.siteIds is empty; the OSINT stage would show nothing') if Array(atk['siteIds']).empty?
+      # siteIds feed the OSINT stage; an osint-optional mail-write attack (E13: no recon, so
+      # 'osint' is not in stages) legitimately has none. Require them only when osint runs.
+      if Array(ep['stages']).include?('osint') && Array(atk['siteIds']).empty?
+        issues << err('attack.siteIds is empty; the OSINT stage would show nothing')
+      end
 
       account_ids = Mail.hash_list(ctx.social.dig('mailClient', 'accounts')).filter_map { |a| a['id'] }
       Array(atk['accountIds']).each do |aid|
@@ -1242,10 +1246,10 @@ module ValidateSocial
       mode = g.fetch('mode', 'target')
       if GUESS_MODES.include?(mode)
         issues.concat(case mode
-                      when 'spray' then guess_spray_checks(ctx, g)
-                      when 'stuff' then guess_stuff_checks(g)
-                      else guess_target_checks(ctx, g)
-                      end)
+        when 'spray' then guess_spray_checks(ctx, g)
+        when 'stuff' then guess_stuff_checks(g)
+        else guess_target_checks(ctx, g)
+        end)
       else
         issues << err("awarenessEpisode.guess.mode is #{mode.inspect}; it must be one of #{GUESS_MODES.join(', ')}")
       end

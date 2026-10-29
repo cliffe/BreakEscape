@@ -230,6 +230,16 @@ HOSTS = {
         'id': 'julian_sallow', 'displayName': 'Julian Sallow', 'sprite': 'male_office_worker',
         'about': "Merrin & Sallow's co-founding partner, 60s, Black British of Jamaican heritage (e4/defend.json _brandAdditions). Hosts the E4 BA check pair, and here welcomes the learner and receives the reports. Placeholder sprite until the PixelLab reset.",
     },
+    # E10: copied verbatim from gen_e3_e5_shells.py HOSTS['niamh'] (E5's host; built Quayholt cast, no new host art).
+    'niamh': {
+        'id': 'niamh_doherty', 'displayName': 'Niamh Doherty', 'sprite': 'female_telecom',
+        'about': "Quayholt's internal communications officer, mid 20s, Northern Irish (BRAND_SET.md, E5 additions). Quick and friendly. Placeholder sprite until the PixelLab reset.",
+    },
+    # E18: new named Merrin & Sallow host (one new art set), from the 03_WORLD_AND_CAST.md no-clash pool.
+    'ama': {
+        'id': 'ama_owusu', 'displayName': 'Ama Owusu', 'sprite': 'female_scientist',
+        'about': "Security lead on Merrin & Sallow's outsourced IT and security contract (Fenlow Managed IT), 40s, Black British of Ghanaian heritage (BRAND_SET.md, E18 additions). Welcomes the learner, carries the feedback and debrief, and voices the organisation's controls as the provider's. Reuses a built sprite (placeholder until the PixelLab reset).",
+    },
 }
 
 # Host lines: (before, after, choice, reply). One welcome line; the kiosk does the rest.
@@ -283,6 +293,16 @@ LINES = {
         "You're on an authorised exercise. A feed and an inbox: some posts give too much away, some messages fish for how we work. Take each as it comes.",
         "That's the feed and the inbox done, thanks. The tell is always what they ask for, not how friendly they are: share nothing about our systems, and report it.",
         'Thanks, Julian.', 'Any time.'),
+    # E10: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
+    ('e10', 'defend'): (
+        "The kiosk has a morning of web pages, the kind that turn up while you work. For each, decide: carry on, close and report, or go the trusted way.",
+        "That's the morning sorted, thanks. The rule holds every time: no honest web page ever needs you to paste, run, install or call.",
+        'Thanks, Niamh.', 'No bother.'),
+    # E18: the brief's drafted lines ran over the 30-word dialoguelint cap, so they are trimmed here.
+    ('e18', 'defend'): (
+        "Your own seat now. After a sweep the alerts come thick and fast, some real, some fakes. Report the fakes, and never type a password to unlock or check anything.",
+        "That's them sorted, thanks. A genuine alert never asks for your password; the fakes always do. Report the fakes, and change a reused password on the real site.",
+        'Thanks, Ama.', 'Any time.'),
 }
 
 EPISODES = {
@@ -562,6 +582,50 @@ EPISODES = {
             'conclusion': ('Feed and inbox done', "You've sorted the feed and the inbox and tightened the settings, and finished this episode."),
         },
     },
+    'e10': {
+        'frag': f'{AW}/e10/defend.json',
+        'full_id': 'e10_downloads_and_fake_checks',
+        'defend_set': 'e10_browser_morning',
+        'defend_host': 'niamh',
+        'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+                   'keywords': ['Phishing', 'Safe web', 'Malware', 'Security awareness', 'Usable security']}],
+        'defend': {
+            'name': 'Downloads and fake checks: a morning of web pages',
+            'brief': "You're on an authorised exercise at Quayholt Insurance, a fictional company. You've a morning of ordinary work to get through, and the web keeps getting in the way: downloads, 'verify you are human' boxes, pop-ups that want you to call. For each page, decide whether to carry on, close and report, or go the trusted way. Nothing here touches a real site or runs on your computer.",
+            'endGoal': "Sort the morning's web pages at the training kiosk.",
+            'aim': ('browser_morning_aim', "Work through the morning's web pages", 'Work through the browser screens at the training kiosk.'),
+            'task': ('work_browser_morning', 'Work through the web pages'),
+            'kiosk': ("A touch-screen kiosk showing a morning of Quayholt browser screens to sort.",
+                      "A touch-screen kiosk showing a morning of Quayholt browser screens. They are all sorted."),
+            'display': 'Awareness E10: Downloads and fake checks (defend only)',
+            'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. A morning of web pages at Quayholt Insurance, a fictional company: fake checks, fake updates, fake alarms, extension prompts and dangerous downloads, with the genuine ones mixed in. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
+            'minutes': 8,
+            'defendIntro': "Go through the morning's web pages and decide what to do with each one: carry on, close and report, or go the trusted way. The rule holds as you go: no honest web page ever needs you to paste, run, install or call. Take them at your own pace.",
+            'conclusion': ('Web pages sorted', "You've sorted the morning's web pages and finished this episode."),
+        },
+    },
+    'e18': {
+        'frag': f'{AW}/e18/defend.json',
+        'full_id': 'e18_credential_attacks_at_scale',
+        'defend_set': 'e18_atscale_inbox',
+        'defend_host': 'ama',
+        'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+                   'keywords': ['Passwords', 'Credential stuffing', 'Password spraying', 'Security awareness', 'Multi-factor authentication']}],
+        'defend': {
+            'name': 'Credential alerts: tell the real from the fake',
+            'brief': "You're on an authorised exercise at Merrin & Sallow Architects, a fictional company. A campaign has swept the practice, and the alerts are arriving: your account locked, a new sign-in, a breach warning. Some are genuine and some are fakes built to catch you. Handle each one, and never type a password to 'check' or 'unlock' anything. No real password is ever typed here.",
+            'endGoal': 'Handle the security alerts at the training kiosk.',
+            'aim': ('tell_them_apart_aim', 'Tell the real alerts from the fakes', 'Work through the security alerts at the training kiosk.'),
+            'task': ('handle_the_alerts', 'Handle the security alerts'),
+            'kiosk': ("A touch-screen kiosk showing the alerts after a credential sweep of the practice: some genuine, some fakes to catch you.",
+                      "A touch-screen kiosk showing the alerts after a credential sweep. They are all handled."),
+            'display': 'Awareness E18: Credential stuffing and password spraying (defend only)',
+            'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. A campaign has swept Merrin & Sallow Architects, a fictional practice, and the alerts are arriving: a lockout, a sign-in alert, a breach warning, some genuine and some fakes. Each answer is explained, and reporting when you're unsure is always fine and never marked down. No real password is ever typed.",
+            'minutes': 8,
+            'defendIntro': "Go through the security alerts and decide what to do with each one. Genuine notices never need you to type a password to unlock or check anything; the ones that do are fakes. Report the fakes, act on the real ones the safe way, and there's no clock on you here.",
+            'conclusion': ('Alerts handled', "You've sorted the genuine alerts from the fakes and finished this episode."),
+        },
+    },
 }
 
 
@@ -669,7 +733,7 @@ def main():
     if len(sys.argv) < 2:
         sys.exit('usage: gen_e8_e17_shells.py [--repo <checkout>] <out_dir>')
     out = sys.argv[1]
-    built = [defend_only(k) for k in ('e8', 'e11', 'e15', 'e17', 'e19', 'e9', 'e16', 'e20', 'e14', 'e13', 'e12')]
+    built = [defend_only(k) for k in ('e8', 'e11', 'e15', 'e17', 'e19', 'e9', 'e16', 'e20', 'e14', 'e13', 'e12', 'e10', 'e18')]
     for mission, sc, meta, ink_name, ink in built:
         d = os.path.join(out, mission)
         os.makedirs(os.path.join(d, 'ink'), exist_ok=True)

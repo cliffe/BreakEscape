@@ -50,12 +50,16 @@ const EPISODES = [
   { n: 7, dir: 'awareness_e7_voice_ceo' },
   { n: 8, dir: 'awareness_e8_after_the_click' },
   { n: 9, dir: 'awareness_e9_passwords' },
+  { n: 10, dir: 'awareness_e10_downloads_and_fake_checks' },
   { n: 11, dir: 'awareness_e11_misdirected_data' },
+  { n: 13, dir: 'awareness_e13_ai_assistant' },
+  { n: 12, dir: 'awareness_e12_visitor_tailgater' },
   { n: 14, dir: 'awareness_e14_social_media' },
   { n: 15, dir: 'awareness_e15_shadow_it' },
   { n: 16, dir: 'awareness_e16_insider_risk' },
   { n: 19, dir: 'awareness_e19_malware_and_updates' },
   { n: 20, dir: 'awareness_e20_remote_and_mobile_working' },
+  { n: 18, dir: 'awareness_e18_credential_attacks_at_scale' },
 ];
 
 // strings keys whose VALUE is allowed to differ between fragment and erb.

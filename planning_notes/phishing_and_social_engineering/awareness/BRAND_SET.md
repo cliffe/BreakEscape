@@ -281,7 +281,7 @@ E8 is the pilot new episode at **Quayholt Insurance** (`quayholt_insurance`), ho
   - **TidyDocs** (`tidydocs.example`, invites from `invites@tidydocs.example`): a fictional document app that asks to connect (`e19_consent_unknown`). No cast, no art.
   - **Leo Brennan** (`leo.brennan@quayholt.example`): operations colleague, mid 20s, white Irish-English. Text-only, the panicking colleague in `e19_ransom_note`. From the no-clash pool, new to the built cast.
   - **Fake "Quayholt IT Support"** on the look-alike `quayholt-it-support.example` (`support@quayholt-it-support.example`), `e19_disable_protection`. The learnable shape is an added word and hyphen.
-  - **Fernside Catering** (`fernside.example`), sent from the look-alike `fernside-invoices.example` (`e19_enable_content`). Reused from the E10 plan; E10 is not built, so align the look-alike shape with E10's portal shapes (`orders.fernside.example` and `orders-fernside.example`) when it lands.
+  - **Fernside Catering** (`fernside.example`), sent from the look-alike `fernside-invoices.example` (`e19_enable_content`). Reused from the E10 plan; E10 is now built (see the E10 section below) and lands the genuine portal `orders.fernside.example` with the builder look-alike option `orders-fernside.example`. E19's `fernside-invoices.example` and E10's `orders-fernside.example` are sibling look-alikes of the same genuine `fernside.example`; both are kept, each the natural look-alike for its own context (an invoices mail vs the order portal), so the two episodes are consistent on the genuine base and the look-alike family.
   - Reused Quayholt slots, no new names: Quayholt Protect, Quayholt Files (genuine invites from `apps@quayholt.example`), extension 4444 and the "Report an incident" form.
 - **Name-clash search (grep across `scenarios`, `planning_notes`, `docs`, 2026-10-29):** "TidyDocs" and "quayholt-it-support" hit only the E19 brief and README; "Leo Brennan" only the no-clash pool in `03_WORLD_AND_CAST.md` and planning files; "Fernside" only the E10 and core_08 plans. No clash.
 - **Pre-ship:** web-search TidyDocs, Leo Brennan, Quayholt IT Support and Fernside Catering against real businesses and people before release.
@@ -525,3 +525,195 @@ and `merrinsallow-studio.example` are not used by E14 content. The fake Catherin
 Owed before release, per `00_README.md` §12 and P11: **Fenwick** (as a surname / a real business, e.g.
 the department store), and the new one-off names **Elif Demir** and **Harriet Beaumont**. "Dani Fenwick",
 "Jordan Vale", Merrin & Sallow and Kettlewick Talent are already on the standing pre-ship list.
+
+## Additions from E10 (downloads and fake checks, 2026-10-29)
+
+Folded from `awareness/e10/BRAND_ADDITIONS.md`. Company, room, brand block and host are built
+(`quayholt_insurance`, `room_aw_quayholt`, `#6b4c9a`, `QUAYHOLT`, host **Niamh Doherty**). E10 **extends
+E5** at the same company and room, introduces **no new person**, and adds only supplier/vendor brands and
+throwaway hosts, all `.example`. Everyone and every company is fictional; no homographs.
+
+### Cast (all reused; no new person)
+
+- **Niamh Doherty** (host; the only room NPC): internal communications officer / the room's IT trainer,
+  `niamh.doherty@quayholt.example`, mid 20s, Northern Irish. Built E5 host, placeholder sprite
+  `female_telecom` until the PixelLab reset.
+- **Leila Nassar** (the IT explainer, voiced in copy only, **not** placed as a room NPC): Quayholt IT
+  service desk agent, mid 20s, Lebanese-British. Built Quayholt cast (E3 phone NPC). Her three web habits
+  are carried by the concept panel and Niamh's framing lines; a second room NPC would change the room
+  layout, so she stays off-stage.
+- **Leo Brennan** (`leo.brennan@quayholt.example`): **operations colleague** (role label aligned to this
+  file; E10's attack fragment now reads "Operations colleague" to match), mid 20s, white Irish-English.
+  Already built (E19). The attack-half phish target `order_colleague`, who places the weekly Fernside
+  order and meets the built fake check in the flip. E10 also surfaces, as OSINT, the operations reminder
+  sender **Quayholt Operations** (`operations@quayholt.example`), the forged From of the lure.
+
+### Brands and domains
+
+- **Fernside Catering** (`fernside.example`; genuine order portal `orders.fernside.example`): a small
+  family catering supplier Quayholt orders through. Already named by E19. E10 lands the portal shapes: the
+  attack-half fake check sits on the genuine (compromised) `orders.fernside.example`, and defend rows 1-2
+  use it; the builder's look-alike host option is `orders-fernside.example` (the dot-to-hyphen look-alike
+  of the portal). This is a sibling of E19's base-domain look-alike `fernside-invoices.example`; both
+  share the genuine `fernside.example`, so E10 and E19 are consistent (see the E19 note above).
+- **`hauliernews.example`** (`news.hauliernews.example`): a fictional industry-news site; defend row 3 is a
+  genuine news page carrying a fake "your browser is out of date" banner. New name, no repo hits.
+- **`secure-alert.example`, `addons.example`, `downloads.example`**: throwaway scam/store hosts for defend
+  rows 5 (full-screen alarm), 6 (extension store) and 7 (dangerous download). Generic, not real brands.
+- **Software (teaching only, from the core_08/core_07 Quayholt slots):** **Quayholt Apps** (staff software
+  portal), **Quayholt Protect** (security software), **DocShift** (approved PDF converter in Quayholt
+  Apps). Report route: the browser Report button, the "Report an incident" form, or the security team on
+  extension 4444.
+- **Pagewright** (`pagewright.example`; advert look-alike `pagewright-download.example`) and **Ashby
+  Supplies** (`ashbysupplies.example`; look-alike `ashby-trade-login.example`): named in the core_08 module
+  docs, **not used in any E10 item**, carried only to keep the brand set aligned with the module material.
+  The module docs wrote real TLDs (`.co.uk`/`.com`); swapped to `.example` per the awareness domain rule.
+
+### Name-clash search (grep across `scenarios planning_notes docs`, run 2026-10-29)
+
+- **Leo Brennan / Fernside / `orders.fernside.example` / `orders-fernside.example`:** hits are E19's
+  fragment and brand set (which flagged them "from the E10 plan"), the core_08 module docs, and E10's own
+  files. Intended reuse; E10 lands the portal shapes. No clash.
+- **`hauliernews`, `secure-alert.example`:** zero hits anywhere before E10. Clean.
+- **`pagewright-download`, `ashby-trade-login`, `ashbysupplies`:** hits only in the core_08 module docs
+  (real-TLD), swapped to `.example` here.
+- **Niamh Doherty, Leila Nassar, Quayholt Apps, Quayholt Protect, DocShift:** existing Quayholt cast and
+  software slots (E3/E5 and the module docs). Intended reuse.
+
+### Pre-ship web searches owed (companies/people as real businesses)
+
+Owed before release, per `00_README.md` §12 and P11: **Pagewright** (and `pagewright.example` /
+`pagewright-download.example`), **Fernside Catering** (and `fernside.example`), **Ashby Supplies** (and
+`ashbysupplies.example`), and **`hauliernews.example`**. "Leo Brennan" and "Fernside Catering" are already
+on the standing pre-ship list from E19.
+
+## Additions from E18 credential attacks at scale (2026-10-29)
+
+Wiring note: folded in from `awareness/e18/BRAND_ADDITIONS.md`. Set at the built **Merrin & Sallow Architects** (`merrin_sallow`, `merrinsallow.example`, wordmark `MERRIN & SALLOW`, accent `#8a5a2b`), reusing the built E4 room `room_aw_merrin_sallow`. No new company brand; one new named character (Ama Owusu) and one new fictional provider (Fenlow Managed IT). Everyone and every company is fictional; every address and domain ends `.example`; no homographs.
+
+### New cast (one, one new art set)
+
+- **Ama Owusu** (host), security lead on Merrin & Sallow's outsourced IT and security provider, Fenlow Managed IT, `ama.owusu@fenlow.example`. 40s, Black British of Ghanaian heritage; warm, practical. Drawn from the `03_WORLD_AND_CAST.md` no-clash name pool (the retired Larkspur mentor, now a reusable name; `core_15` retires/remaps the old Larkspur cast). New to the built cast and the practice's first IT/security host, so role_03's organisation-scale controls have a natural voice. She welcomes the learner, carries the per-item feedback and debrief, and is the genuine sender in defend rows 1 and 6 (as the provider). Placeholder sprite `female_scientist` (`female_scientist_talk.png`, `female_scientist_visemes.png`) until the PixelLab reset.
+
+Cast diversity: Ama (Black British, Ghanaian heritage, 40s) against the built M&S roster (Catherine Merrin, Julian Sallow, Yasmin Chaudhry, Thandiwe Moyo, Dani Fenwick); learner avatar `female_office_worker_v2`.
+
+### Roster reused by name only (no new cast, no art)
+
+The harvested staff list is the built Merrin & Sallow cast, used by name only and assembled into `firstname.lastname@merrinsallow.example` addresses by the attack half's harvester: **Catherine Merrin**, **Julian Sallow**, **Yasmin Chaudhry**, **Thandiwe Moyo** (built E4 cast) and **Dani Fenwick** (built E14 cast). The accounts that "open" in the spray and stuffing panels are shown as a **count**, never pinned on a named colleague (no-blame).
+
+### New fictional names and words E18 introduces (all `.example`, pre-ship web search owed)
+
+- **Fenlow Managed IT** (`fenlow.example`): the practice's managed IT and security provider; Ama's employer. Genuine sender of the precautionary lockout notice (defend row 1) and the breach-monitoring notice (defend row 6).
+- **breach-check-now.example**: a one-off fictional "free breach checker" scam host, shown only as the `page.url` of the fake breach-checker page (defend row 5). No cast, no inbound mail; learnable added-word/hyphen shape.
+- Website words the attack-half word list is built from: fictional projects **Calderbank Mills** and **Elmgate Pavilion**, the strapline **"Design that lasts"**, and the studio street **Verrow Street** (`attack.json` intelFacts and `full_only.json` `guess.wordList`). The word-list literal `Autumn2026` and the passphrase-demo words `harbour`, `ladder`, `crimson` are baked game strings, not names.
+- Built Merrin & Sallow look-alikes reused (no new look-alike added): row 2's fake lockout uses `merrin-sallow.example`; row 4's fake sign-in alert uses `merrinsallow-studio.example`.
+
+### Name-clash search (`grep -rIl "<name>" scenarios planning_notes docs`, 2026-10-29)
+
+- **Ama Owusu / Owusu, Fenlow, Calderbank, Elmgate Pavilion, Verrow, "Design that lasts", breach-check-now:** hits only in the awareness planning docs (`03_WORLD_AND_CAST.md` pool, `04_BUILT_SO_FAR.md`, `research/built_episodes_vs_plan.md`, `implementation/00_README.md` pre-ship list, `core_15` Larkspur-retirement note) and E18's own files. No built scenario, ink or engine file. Clean for a new episode.
+- **Dani Fenwick / Fenwick:** built E14 cast (plus the healthcare module's unrelated Arthur Fenwick); intended reuse.
+- **Catherine Merrin, Julian Sallow, Yasmin Chaudhry, Thandiwe Moyo:** built E4 cast; intended reuse. (Pre-existing Moyo near-miss already recorded: E2 Tendai Moyo vs E4/E18 Thandiwe Moyo, different companies.)
+
+### Pre-ship web search (required before release, orchestrator to run)
+
+- **Ama Owusu**, **Fenlow Managed IT** (and `fenlow.example`), **breach-check-now.example**
+- **Calderbank Mills**, **Elmgate Pavilion**, the strapline **"Design that lasts"**, **Verrow Street** (projects and strapline especially, as they read as names)
+
+Everyone and every company is fictional; every address and domain ends `.example`.
+
+## Additions from E13 (the AI assistant, 2026-10-29)
+
+Brightwell Foods (E1/E7 flagship). Folded in from `e13/BRAND_ADDITIONS.md`. All fictional; every address and domain ends `.example`.
+
+### No new cast
+
+E13 adds no cast. The host and everyone impersonated are built Brightwell Foods cast, reused deliberately with the real art and voice for the deepfakes (`core_15`):
+
+- **Gwen Pritchard**, IT service desk lead, late 30s, Welsh, `gwen.pritchard@brightwellfoods.example` (host; subject of the announced demo). The same established Gwen, not a new surname. Placeholder sprite `female_telecom_v2` until the PixelLab reset.
+- **Ravinder Sandhu** (CEO) and **Adaeze Okafor** (finance manager): the fake Project Heron video call; the real Ravinder answers his mobile from Lisbon.
+- **Tom Reilly** (accounts payable): the cloned-voice voicemail; the real Tom answers his own phone.
+- **Mei Lin Chau** (procurement): the optional unscored person-chat beat (cut first if over budget).
+
+### New fictional businesses, domains and references
+
+| Name / value | Kind | Domain or address | Used for |
+|---|---|---|---|
+| Mossgate Cleaning Supplies | Fictional supplier | `mossgate-supplies.example` | The supplier whose brief carries the hidden instruction (attack); the genuine monthly invoice (defend item 2) and the planted one (defend item 1) |
+| (look-alike meeting domain) | Look-alike of `brightwellfoods.example` | `brightwell-board.example` | The fake Project Heron meeting link (defend item 5); tagged External. Distinct from the E1 pin look-alike `brightwel1foods.example` |
+| Project Heron | Fictional confidential project | n/a | The pretext on the deepfake video call (defend item 5) |
+| contacts.export@inboxly.example | Exfil drop address | `inboxly.example` (already in the set) | The address the hidden instruction tells the assistant to send the contact list to (attack `inject_contacts`; defend item 1 `hiddenText`). Only the local part `contacts.export` is new |
+
+### Phone number (Ofcom drama range)
+
+- The cloned-voice voicemail (defend item 3) comes from **07700 900812** (not in contacts). Distinct from E7's 07700 900771 and 07700 900418. Tom's genuine mobile (item 4) is shown as "Tom (mobile), in your contacts", no raw number (E7 convention).
+
+### Not instantiated
+
+- A **decoy exfil address** (the "which drop address" sub-choice) is not used: the built mail composer sources address blanks only from held OSINT `provides`, and E13 has no osint stage, so the drop address is hard-coded in `inject_contacts`.
+
+### Name-clash search (`grep -rn "<name>" scenarios planning_notes docs | grep -v BRAND_SET`, 2026-10-29)
+
+- **Mossgate / mossgate-supplies, brightwell-board, Project Heron, contacts.export:** hits only in the `core_15` module design docs and E13's own files (`e13/*`, this episode's shells). No built-scenario, ink or engine clash. `inboxly.example` is a pre-existing shared invented freemail.
+
+### Pre-ship web search (required before release, orchestrator to run)
+
+- **Mossgate Cleaning Supplies**, **Project Heron** (reads as a project name), `brightwell-board.example`.
+
+Everyone and every company is fictional; every address and domain ends `.example`.
+
+## Additions from E12 (visitor and tailgater, 2026-10-29)
+
+Wiring note: folded in from `awareness/e12/BRAND_ADDITIONS.md`. Company **Merrin & Sallow Architects**
+(`merrin_sallow`), already in the section 2 roster (E4), reused for E12. Brand block
+`{ "name": "Merrin & Sallow Architects", "logoText": "MERRIN & SALLOW", "accent": "#8a5a2b" }`; domain
+`merrinsallow.example`; look-alikes `merrin-sallow.example`, `merrinsallow-studio.example`. E12 adds a
+second room (`lobby`, map `room_aw_merrin_lobby`, reusing the Merrin & Sallow tile sheet) and two new
+front-of-house cast, distinct from the E4 M&S cast (Catherine Merrin, Tomás Carvalho, Yasmin Chaudhry,
+Julian Sallow, Thandiwe Moyo, Oskar Berglund, Leah Abramson).
+
+### Cast
+
+- **Delphine Arvanitis** (lobby pretext mark), Front-of-House Coordinator, `reception@merrinsallow.example`.
+  50s, Greek-Cypriot British, fifteen years on the desk. The courier talks past her and she buzzes the
+  badge door (`character: "delphine"`, record `delphine_reception`, `npcType: "person"`,
+  `"unlockable": ["training_room"]`). Carries the person-chat influence conversation, so she needs a
+  distinct portrait; placeholder sprite **female_telecom_v2** until the PixelLab reset.
+- **Lorna Easton** (studio kiosk host), Reception & Facilities Lead, `lorna.easton@merrinsallow.example`.
+  40s, white, north-west England. Welcomes the learner at the kiosk, carries the per-item feedback and
+  the debrief, and holds the N16 done-event `eventMappings`. No influence bust, so she **reuses a built
+  sprite**: placeholder **female_office_worker_v2** (talk `female_office_worker_talk.png`, visemes
+  `female_office_worker_visemes.png`).
+
+Cast diversity across the named people: Delphine (Greek-Cypriot British, 50s), Lorna (white, north-west
+England, 40s), Yasmin Chaudhry (British Pakistani, 40s, named on the expected-client defend item); the
+learner avatar is `female_office_worker_v2`. Catherine Merrin (late 50s, white English) is reused by name
+only in the attack-half OSINT and is not met.
+
+Red-team persona (brief and debrief framing only, not a world NPC): **Jo Fairweather**, Northlight
+Security, the authorised ethical social engineer who recurs as the course's red-team persona across the
+module `game_design.md` files (consistent use, not a clash).
+
+### New fictional names E12 introduces
+
+- **Northlight Security**: Jo Fairweather's firm, the authorised red-team supplier. Brief/strings only.
+- **Maintenance-contractor firm** and **fire-safety firm** (both `.example`): named on the fire-inspector
+  defend item (item 3). The firm on Merrin & Sallow's service contract and the firm the fake inspector
+  claims do not match, which is how the item fails. Plain invented `.example` names, never senders.
+- The design-studio fiction is carried by the room's `door_sign` ("Studio"), not by a room id; the kiosk
+  room id stays `training_room` and the attack room is `lobby`.
+- The retired `core_10` draft name **Maureen Gallagher** is NOT reused; `BRAND_SET.md` bars `Gallagher`.
+
+### Name-clash search (grep across `scenarios`, `planning_notes`, `docs`, `public/break_escape/js`, 2026-10-29)
+
+- `Arvanitis`, `Delphine`, `Easton`, `Lorna`: no conflicting hits (clash check 2026-10-28; `Easton` and
+  `Lorna` returned zero hits). Clean for new cast.
+- `Northlight Security` / `Fairweather`: recurring red-team persona across the module `game_design.md`
+  drafts; intended consistent use, not a clash.
+- `Merrin`, `Sallow`, `merrinsallow`, `Catherine Merrin`: existing E4 roster, intended reuse.
+
+### Pre-ship web search (required before release, orchestrator to run)
+
+Web-search against real businesses, firms and people: **Arvanitis** and **Easton** (as Merrin & Sallow
+staff names), **Northlight Security**, and the two invented `.example` firm names chosen for defend item 3.
+
+Everyone and every company is fictional; every address and domain ends `.example`.

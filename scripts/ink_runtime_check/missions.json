@@ -2633,6 +2633,41 @@
       }
     ]
   },
+  "awareness_e10_downloads_and_fake_checks": {
+    "globals": {
+      "episode_e10_downloads_and_fake_checks_defend_percent": 0,
+      "episode_e10_downloads_and_fake_checks_defend_reportRate": 0,
+      "episode_e10_downloads_and_fake_checks_defend_done": false,
+      "episode_e10_downloads_and_fake_checks_defend_pass": false,
+      "phish_order_colleague_attempts": 0
+    },
+    "npcs": [
+      {
+        "id": "niamh_doherty",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e10_downloads_and_fake_checks/ink/niamh_doherty.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e10_downloads_and_fake_checks_defend": {
+    "globals": {
+      "episode_e10_downloads_and_fake_checks_defend_defend_percent": 0,
+      "episode_e10_downloads_and_fake_checks_defend_defend_reportRate": 0,
+      "episode_e10_downloads_and_fake_checks_defend_defend_done": false,
+      "episode_e10_downloads_and_fake_checks_defend_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "niamh_doherty",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e10_downloads_and_fake_checks_defend/ink/niamh_doherty.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
   "awareness_e8_after_the_click": {
     "globals": {
       "episode_e8_after_the_click_defend_percent": 0,
@@ -2703,6 +2738,41 @@
       }
     ]
   },
+  "awareness_e13_ai_assistant": {
+    "globals": {
+      "episode_e13_ai_assistant_defend_percent": 0,
+      "episode_e13_ai_assistant_defend_reportRate": 0,
+      "episode_e13_ai_assistant_defend_done": false,
+      "episode_e13_ai_assistant_defend_pass": false,
+      "phish_assist_reader_landed": false
+    },
+    "npcs": [
+      {
+        "id": "gwen_pritchard",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e13_ai_assistant/ink/gwen_pritchard.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e13_ai_assistant_defend": {
+    "globals": {
+      "episode_e13_ai_assistant_defend_defend_percent": 0,
+      "episode_e13_ai_assistant_defend_defend_reportRate": 0,
+      "episode_e13_ai_assistant_defend_defend_done": false,
+      "episode_e13_ai_assistant_defend_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "gwen_pritchard",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e13_ai_assistant_defend/ink/gwen_pritchard.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
   "awareness_e9_passwords": {
     "globals": {
       "episode_e9_passwords_defend_percent": 0,
@@ -2733,6 +2803,41 @@
         "id": "nilesh_solanki",
         "npcType": "person",
         "storyPath": "scenarios/awareness_e9_passwords_defend/ink/nilesh_solanki.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e18_credential_attacks_at_scale": {
+    "globals": {
+      "episode_e18_credential_attacks_at_scale_defend_percent": 0,
+      "episode_e18_credential_attacks_at_scale_defend_reportRate": 0,
+      "episode_e18_credential_attacks_at_scale_defend_done": false,
+      "episode_e18_credential_attacks_at_scale_defend_pass": false,
+      "guess_e18_landed": false
+    },
+    "npcs": [
+      {
+        "id": "ama_owusu",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e18_credential_attacks_at_scale/ink/ama_owusu.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e18_credential_attacks_at_scale_defend": {
+    "globals": {
+      "episode_e18_credential_attacks_at_scale_defend_defend_percent": 0,
+      "episode_e18_credential_attacks_at_scale_defend_defend_reportRate": 0,
+      "episode_e18_credential_attacks_at_scale_defend_defend_done": false,
+      "episode_e18_credential_attacks_at_scale_defend_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "ama_owusu",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e18_credential_attacks_at_scale_defend/ink/ama_owusu.json",
         "currentKnot": "start",
         "room": "training_room"
       }

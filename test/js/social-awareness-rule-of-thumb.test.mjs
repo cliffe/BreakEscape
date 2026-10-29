@@ -34,12 +34,16 @@ const FULL_EPISODES = [
   'awareness_e7_voice_ceo',
   'awareness_e8_after_the_click',
   'awareness_e9_passwords',
+  'awareness_e10_downloads_and_fake_checks',
   'awareness_e11_misdirected_data',
+  'awareness_e13_ai_assistant',
+  'awareness_e12_visitor_tailgater',
   'awareness_e14_social_media',
   'awareness_e15_shadow_it',
   'awareness_e16_insider_risk',
   'awareness_e19_malware_and_updates',
   'awareness_e20_remote_and_mobile_working',
+  'awareness_e18_credential_attacks_at_scale',
 ];
 // One line per check role; each is four shells (pre and post, each in ab and ba order).
 const CHECK_ROLES = [
