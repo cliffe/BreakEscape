@@ -36,8 +36,7 @@
 
 .sd-toolbar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 2px solid var(--sd-line); background: var(--sd-raised); }
 .sd-title { flex: 1 1 auto; margin: 0; font-size: 18px; }
-.sd-live { margin: 0; min-height: 0; font-size: 13px; color: var(--sd-dim); }
-.sd-live:empty { display: none; }
+.sd-live { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .sd-stage { flex: 1; min-height: 0; overflow-y: auto; }
 
 .sd-panel { padding: 14px 16px; max-width: 920px; }
