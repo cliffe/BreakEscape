@@ -34,6 +34,7 @@ SAFETYNET.
 | `tarrowby_logistics` | Tarrowby Logistics | `tarrowby.example` | `tarrowby-careers.example`, `tarrowbey.example` | `TARROWBY` | `#3b5b8c` | A regional haulier and warehousing firm in West Yorkshire, hiring drivers and warehouse staff all year | E2 (HR, CVs), E6 (mobile) |
 | `quayholt_insurance` | Quayholt Insurance | `quayholt.example` | `quayholt-sso.example`, `quayho1t.example`, `quayholt-support.example` | `QUAYHOLT` | `#6b4c9a` | A commercial insurer in Bristol with an in-house IT service desk and single sign-on for staff | E3 (helpdesk), E5 (sign-in page) |
 | `merrin_sallow` | Merrin & Sallow Architects | `merrinsallow.example` | `merrin-sallow.example`, `merrinsallow-studio.example` | `MERRIN & SALLOW` | `#8a5a2b` | A London architecture practice whose partners travel to sites and speak at events, so their diaries are partly public | E4 (executive and PA) |
+| `carrholme_services` | Carrholme Services | `carrholme.example` | `carrholme-payroll.example` (added word, used in the E11 defend phish `e11_payroll_lookalike`), `carrholme-hr.example`, `carholme.example` (dropped letter) | `CARRHOLME` | `#4a6b57` (a muted green, distinct from Brightwell's `#2f6f5e`) | A support-services firm (Care Laundry, claims, contact centre) for the care sector; mixed, largely non-technical workforce; controller for its own staff data and processor for some client data. **New name: needs a real-business web search before release.** | E11 (data protection and handling information) |
 
 The episode block carries the brand as `{ "name", "logoText", "accent" }` (`PHASE7_PACKETS.md` §2.1). Only
 Brightwell's is in a fragment so far (`e1/defend.json`); the others are set when their episodes are written.
@@ -91,6 +92,24 @@ haulier Brightwell has never used. Neither is ever genuine in these sets.
 | Catherine Merrin | Managing partner, the executive whose voice and travel are borrowed | late 50s, white English |
 | Tomás Carvalho | Her PA, the E4 inbox owner | 30s, Portuguese, in London ten years |
 | Yasmin Chaudhry | Finance controller, the person the PA should ring | 40s, British Pakistani |
+
+### Carrholme Services (E11; new company, needs a real-business web search before release)
+
+Ages are bands, for the concept prompts. All fictional; every address ends `.example`. The host id is ASCII (`tomasz_wisniewski`); the non-ASCII "ś" is display-only.
+
+| Person | Role | Age, background | Address | Used in |
+|--------|------|-----------------|---------|---------|
+| Tomasz Wiśniewski | Data Protection Officer (host) | 50s, Polish, in the UK 25 years | `tomasz.wisniewski@carrholme.example` | Host; per-item feedback; debrief. Receives the reports. Not a defend-set sender. |
+| Shauna Campbell | Contact Centre Team Leader | 40s, white, Glasgow | `shauna.campbell@carrholme.example` | Sets the sandbox tasks (`overtime_sheet`, `redaction_send`) by chat. Named on screen, not a sender. |
+| Martin Fletcher | Sales Director | 50s, white, Manchester | `martin.fletcher@carrholme.example` | The marketing-export sandbox beat. Named on screen, not a sender. |
+| Sam Whitaker | Payroll Officer | 30s, British Caribbean | `sam.whitaker@carrholme.example` | The correct recipient of the overtime sheet. Named on screen, not a sender. |
+| Sam Whitlow | Manager, Hollinsbrook House (client care home, `hollinsbrookhouse.example`) | 50s, white, Yorkshire | `sam.whitlow@hollinsbrookhouse.example` | The wrong "Sam" the breach goes to; genuine sender in defend items 1 and 6. |
+| Gareth Hale | Son of a resident (Hollinsbrook House) | 40s, white | `gareth.hale@inboxly.example` (freemail) | Genuine sender of the subject access request inside a complaint, defend item 4. |
+| Kestrel Court | Client care home (`kestrelcourt.example`) | n/a | `laundry@kestrelcourt.example` | Genuine sender of the misdirected care summary, defend item 5. |
+
+On screen only (no art, no sender): Edna Hale (87, Hollinsbrook House, Room 12), Albert Finch (Room 14), Pauline Grant (Room 9), Bernadette Lyons (Carrholme cleaner), Lee Corrigan (Care Laundry driver), the nine contact-centre staff on the overtime sheet, "Carol" (the caller in `caller_bernadette`). Impostors, not cast: "Carrholme Payroll" on `carrholme-payroll.example` (defend item 3) and **DC Rowley, North Pennine Police** (voice-only caller, defend item 2; renamed from the brief's "DC Hendry", see below).
+
+Cast-diversity note (standing rule): the cast spans 30s to 50s and mixes Polish, white British (Glasgow, Yorkshire, Manchester) and British Caribbean backgrounds.
 
 ### Shared invented services
 
@@ -267,13 +286,20 @@ E8 is the pilot new episode at **Quayholt Insurance** (`quayholt_insurance`), ho
 - **Name-clash search (grep across `scenarios`, `planning_notes`, `docs`, 2026-10-29):** "TidyDocs" and "quayholt-it-support" hit only the E19 brief and README; "Leo Brennan" only the no-clash pool in `03_WORLD_AND_CAST.md` and planning files; "Fernside" only the E10 and core_08 plans. No clash.
 - **Pre-ship:** web-search TidyDocs, Leo Brennan, Quayholt IT Support and Fernside Catering against real businesses and people before release.
 
-## Additions from E17 and E19 (2026-10-29)
-- **E17 (acceptable use, Tarrowby, defend-only, one shell):** no new names. The host is **Nilesh Solanki** (above); the "can I?" cards and the inbox use Tarrowby's own addresses.
-- **E19 (malware and updates, Quayholt, host Anjali Rao).** Full list in `awareness/e19/BRAND_ADDITIONS.md`.
-  - **TidyDocs** (`tidydocs.example`, invites from `invites@tidydocs.example`): a fictional document app that asks to connect (`e19_consent_unknown`). No cast, no art.
-  - **Leo Brennan** (`leo.brennan@quayholt.example`): operations colleague, mid 20s, white Irish-English. Text-only, the panicking colleague in `e19_ransom_note`. From the no-clash pool, new to the built cast.
-  - **Fake "Quayholt IT Support"** on the look-alike `quayholt-it-support.example` (`support@quayholt-it-support.example`), `e19_disable_protection`. The learnable shape is an added word and hyphen.
-  - **Fernside Catering** (`fernside.example`), sent from the look-alike `fernside-invoices.example` (`e19_enable_content`). Reused from the E10 plan; E10 is not built, so align the look-alike shape with E10's portal shapes (`orders.fernside.example` and `orders-fernside.example`) when it lands.
-  - Reused Quayholt slots, no new names: Quayholt Protect, Quayholt Files (genuine invites from `apps@quayholt.example`), extension 4444 and the "Report an incident" form.
-- **Name-clash search (grep across `scenarios`, `planning_notes`, `docs`, 2026-10-29):** "TidyDocs" and "quayholt-it-support" hit only the E19 brief and README; "Leo Brennan" only the no-clash pool in `03_WORLD_AND_CAST.md` and planning files; "Fernside" only the E10 and core_08 plans. No clash.
-- **Pre-ship:** web-search TidyDocs, Leo Brennan, Quayholt IT Support and Fernside Catering against real businesses and people before release.
+## Additions from E11 (misdirected data, 2026-10-29)
+- **New company: Carrholme Services** (`carrholme_services`, room `room_aw_carrholme`, host Tomasz Wiśniewski). Row in section 2, cast above. Full record in `awareness/e11/BRAND_ADDITIONS.md`.
+- Shared invented services: `hollinsbrookhouse.example` (Hollinsbrook House) and `kestrelcourt.example` (Kestrel Court), both fictional clients of the Care Laundry line. `inboxly.example` is the existing shared freemail.
+- **Name-clash search (grep across `scenarios`, `planning_notes`, `docs`, 2026-10-29, re-run at wiring):**
+  - Carrholme, Wiśniewski, Whitlow, Whitaker, Hollinsbrook, Kestrel Court, Corrigan, Rowley: hits only in the course modules, the `data_conduct` check material (which names Carrholme and Tomasz) and E11's own files. No built scenario, ink or engine file. Clean.
+  - **Resolved clash:** the brief's "DC Hendry" became **DC Rowley**, because Pauline Hendry (Payroll) is a built genuine colleague in the check forms. "Sam Whitlow" is used instead of "Sam Whitfield" for the same reason (Graham Whitfield, finance check host).
+  - **Recorded near-miss:** Gareth and Edna **Hale** at Carrholme versus Marcus Hale, the E3 remote-access fraudster at Quayholt. Different people, firms and episodes; not renamed.
+  - Marcus Webb is not printed on screen in E11 (the most reused name in the product); the driver is Lee Corrigan.
+- **Pre-ship:** web-search Carrholme Services, Hollinsbrook House, Kestrel Court, North Pennine Police, Tomasz Wiśniewski, Shauna Campbell, Martin Fletcher, Sam Whitaker, Sam Whitlow and Gareth Hale against real businesses and people before release.
+
+## Additions from E15 (shadow IT, 2026-10-29)
+- **Tarrowby Logistics, no new cast.** Host Nilesh Solanki; Colin Mather (warehouse manager, offers the shortcuts) and Shauna Lofthouse (rota) are built Tarrowby cast. Do not reintroduce "Dev Mistry". Full record in `awareness/e15/BRAND_ADDITIONS.md`.
+- **New third parties (unapproved outside services, each a different shape from Tarrowby's own domain):** SwiftDrop (`swiftdrop-free.example`, a free file-transfer site, defend row 2); Benmoor Packaging (`benmoor-packaging.example`, a trade-fair supplier that posts a branded giveaway USB, row 3); PDFMerge Free (`pdfmerge-free.example`, a free PDF editor, row 4).
+- **New Tarrowby service host:** `fileshare.tarrowby.example`, the approved file-sharing service (named people, end date), row 5 and the approved swap in the Swap Shop. Follows the E6 sub-service host pattern.
+- **Phone number:** the only number on screen is the note's `07700 900142`, in Ofcom's drama range.
+- **Name-clash search (2026-10-29):** SwiftDrop, Benmoor and PDFMerge have no hits in `scenarios`, `planning_notes` or `docs` outside E15's own files. Clean.
+- **Pre-ship:** web-search SwiftDrop, Benmoor Packaging and PDFMerge Free against real businesses before release.
