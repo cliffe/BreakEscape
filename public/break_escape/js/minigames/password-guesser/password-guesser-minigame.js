@@ -14,8 +14,10 @@
 //           globals?: the globals the facts are read from (default gameState.globalVariables),
 //           write?: (name, value) => void   the writer for config.landedGlobal (default writeGlobal) }
 // Result: { finished: boolean, landed: boolean }
-//   finished is true once the rig has been switched off after every guess was reached; the runner
-//   advances on that alone, so closing part-way leaves the stage where it was.
+//   finished is true once every guess has been reached (the rig is ready to switch off). It is set
+//   by the switch-off button, and also by Close or Esc on a finished run: a completed run is kept
+//   the same way the switch-off button keeps it, so a learner can no longer lose it by closing the
+//   overlay (E18 F1). Closing part-way still leaves the stage where it was, to be resumed.
 //   On any normal close with a landed account the scene writes config.landedGlobal = true.
 //
 // Nothing here is typed and nothing typed is a password: there is no text field, no clipboard write
@@ -196,6 +198,18 @@ export class PasswordGuesserMinigame extends SocialOverlayScene {
     }
 
     // ── exit and test bridge ───────────────────────────────────────────────────
+
+    /**
+     * The overlay's Close and Esc. On a finished run (every guess reached) they complete the stage
+     * the same way the switch-off button does, rather than silently discarding it: reopening the
+     * kiosk would otherwise reset the guesser to the start with no warning (E18 F1). A part-way run
+     * is unaffected — it closes as before and the stage stays put, to be resumed. The unsupported
+     * build (no rows) never auto-finishes, so a misconfigured stage is not marked done.
+     */
+    requestClose() {
+        if (this.built && this.run.switchOffReady) this.switchedOff = true;
+        super.requestClose();
+    }
 
     /** A normal close with a landed account writes the config's landed global (true), once. */
     close() {
