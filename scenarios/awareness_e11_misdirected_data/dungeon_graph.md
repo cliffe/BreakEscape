@@ -2,7 +2,7 @@
 
 # awareness_e11_misdirected_data — Scenario Graph Reference
 
-You're on an authorised exercise at Carrholme Services, a fictional firm. You are covering the Care Laundry desk this morning, clearing the queue. First you make some of the ordinary calls anyone would under a busy morning; then you see, six months on, where each one led. Then you take the desk's inbox one item at a time. Only the inbox is scored.
+You're on an authorised exercise at Carrholme Services, a fictional firm. You are covering the Care Laundry desk this morning, clearing the queue. First you make some of the ordinary choices anyone would make on a busy morning; then you see, six months on, where each one led. Then you take the desk's inbox one item at a time. Only the inbox is scored.
 
 ## Scenario Statistics
 

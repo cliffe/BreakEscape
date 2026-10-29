@@ -51,19 +51,19 @@
   "flipMontageByChoice": {
     "_use": "The full text of the montage lines. Lives at social.awarenessEpisode.strings.flipMontageByChoice in the full erb.",
     "overtime_sheet": {
-      "send_wrong_sam": "Your choice. The overtime sheet, with the back-injury and union-meeting notes, sat in a care home manager's inbox for three days before anyone noticed. Three days the DPO never had, to warn the staff and limit the harm.",
+      "send_wrong_sam": "The overtime sheet, with the back-injury and union-meeting notes, sat in a care home manager's inbox for three days before anyone noticed. Three days the DPO never had, to warn the staff and limit the harm.",
       "check_then_send": "The version where it went to the first Sam instead: staff health notes reached someone outside Carrholme, unnoticed for three days. A glance at the address stopped it here."
     },
     "caller_bernadette": {
-      "give_details": "Your choice. Two weeks on, a stranger was waiting for Bernadette outside her school. The birthday-surprise call was how he learned where a lone worker would be, and when.",
+      "give_details": "Two weeks on, a stranger was waiting for Bernadette outside her school. The birthday-surprise call was how he learned where a lone worker would be, and when.",
       "take_message": "The version where the school and the time were given out: a stranger learned where a lone worker would be. Offering to pass a message gave the caller nothing."
     },
     "marketing_export": {
-      "export_list": "Your choice. A month on, three families complained and one wrote to the regulator. The contacts had been given to sort out a lost cardigan, not to hear about offers.",
+      "export_list": "A month on, three families complained and one wrote to the regulator. The contacts had been given to sort out a lost cardigan, not to hear about offers.",
       "ask_dpo": "The version where the list was exported: families who had given their details to sort a claim got a marketing email, and complained. Asking first turned it into a proper sign-up box."
     },
     "redaction_send": {
-      "send_as_is": "Your choice. Mr Hale opened the report and read another resident's continence-care note and a driver's mobile number. One mistake, two more people's data exposed.",
+      "send_as_is": "Mr Hale opened the report and read another resident's continence-care note and a driver's mobile number. One mistake, two more people's data exposed.",
       "redact_first": "The version where the report went as it was: another resident's care note and a driver's mobile reached a stranger. Taking the extra details out first left only what Mr Hale was owed."
     }
   }

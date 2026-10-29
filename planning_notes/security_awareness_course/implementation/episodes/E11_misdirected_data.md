@@ -130,7 +130,7 @@ Cast (all fictional; ages are bands for the concept prompts; all need the pre-sh
 People named on screen only (no art, no sender): Edna Hale (87, Hollinsbrook House, Room 12), Albert
 Finch (Room 14), Pauline Grant (Room 9), Bernadette Lyons (Carrholme cleaner), Lee Corrigan and Marcus
 Webb (Care Laundry drivers), "Carol" (the caller in the `caller_bernadette` sandbox beat, section 9),
-"DC Hendry" (the voice-only police-impersonation caller in defend item 2, section 11), the nine
+"DC Rowley" (the voice-only police-impersonation caller in defend item 2, section 11), the nine
 contact-centre staff on the overtime sheet.
 
 **Cast-diversity note (standing rule):** the cast spans 30s to 50s and mixes Polish, white British
@@ -170,7 +170,7 @@ montage mode ENG-04 adds (section 10a). `brief`, `defend` and `debrief` are buil
   "This episode includes personal information, including health information, being shared by mistake."
 - **Brief** (`strings.brief`, full version): "You're on an authorised exercise at Carrholme Services, a
   fictional firm. You are covering the Care Laundry desk this morning, clearing the queue. First you
-  make some of the ordinary calls anyone would under a busy morning; then you see, six months on, where
+  make some of the ordinary choices anyone would make on a busy morning; then you see, six months on, where
   each one led. Then you take the desk's inbox one item at a time. Only the inbox is scored."
 - **Defend-only brief** (`_defendOnly.brief`): "You're on an authorised exercise at Carrholme Services,
   a fictional firm. You are covering the Care Laundry desk this morning. Items are waiting in the inbox:
@@ -285,12 +285,12 @@ spelling. This `brief` is the same text as section 13's defend-only brief (keep 
 defend-only shell id is `e11_misdirected_data_defend`, prefix `episode_e11_misdirected_data_defend_defend_`
 (section 13). The defend-only `scopeNote`/`_defendOnly` strings are in the fragment (section 13).
 
-### Defend-host lines: generator `LINES[('e11', 'defend')]` (the tuple `(before, after, choice, reply)`, Tomasz's voice)
+### Defend-host lines: generator `LINES[('e11', 'defend')]` (as shipped; the drafted lines ran over the 30-word cap and were trimmed; the tuple `(before, after, choice, reply)`, Tomasz's voice)
 
 ```python
 ('e11', 'defend'): (
-    "You're covering the Care Laundry desk inbox this morning. Some of it is routine, some is a request or a complaint that belongs with me as the DPO, and one or two were sent to catch you out. Take each as it comes, and report or check anything that doesn't sit right.",
-    "That's the inbox sorted, thanks. Anything about someone's personal data, a request to see it, a breach, a complaint, comes to the DPO the same day: that's the one move that always works.",
+    "You're covering the Care Laundry desk inbox. Some of it is routine, some belongs with me as DPO, some was sent to catch you out. Report anything that doesn't sit right.",
+    "That's the inbox sorted, thanks. Anything about someone's personal data, a request, a breach or a complaint, comes to the DPO the same day.",
     'Thanks, Tomasz.', 'Any time.'),
 ```
 
@@ -327,28 +327,28 @@ title case: the misdirected email with the health notes.
 ## 10. Flip (the montage)
 
 The flip runs in montage mode (ENG-04, section 10a), headed **"Six months later"**. It shows every beat:
-the option the learner took is framed "Your choice"; an untaken consequential option is framed "the
+the engine tags the option the learner took "Your call" (so the authored text does not repeat it); an untaken consequential option is framed "the
 version where it was taken instead", so a careful learner still sees the cost. The `flipBeat`
 (`overtime_sheet`) is shown first. Then the defend half begins.
 
 Montage lines (`strings.flipMontageByChoice`, keyed beat then option; full text):
 
-- `overtime_sheet` / `send_wrong_sam`: "Your choice. The overtime sheet, with the back-injury and
-  union-meeting notes, sat in a care home manager's inbox for three days before anyone noticed. By the
-  time it reached the DPO, the first 72 hours were gone."
+- `overtime_sheet` / `send_wrong_sam`: "The overtime sheet, with the back-injury and
+  union-meeting notes, sat in a care home manager's inbox for three days before anyone noticed. Three
+  days the DPO never had, to warn the staff and limit the harm."
 - `overtime_sheet` / `check_then_send`: "The version where it went to the first Sam instead: staff
   health notes reached someone outside Carrholme, unnoticed for three days. A glance at the address
   stopped it here."
-- `caller_bernadette` / `give_details`: "Your choice. Two weeks on, a man was waiting for Bernadette at
-  her school. He had told the desk he was her brother. A stranger learned where a lone worker would be."
+- `caller_bernadette` / `give_details`: "Two weeks on, a stranger was waiting for Bernadette
+  outside her school. The birthday-surprise call was how he learned where a lone worker would be, and when."
 - `caller_bernadette` / `take_message`: "The version where the school and the time were given out: a
   stranger learned where a lone worker would be. Offering to pass a message gave the caller nothing."
-- `marketing_export` / `export_list`: "Your choice. A month on, three families complained and one wrote
+- `marketing_export` / `export_list`: "A month on, three families complained and one wrote
   to the regulator. The contacts had been given to sort out a lost cardigan, not to hear about offers."
 - `marketing_export` / `ask_dpo`: "The version where the list was exported: families who had given
   their details to sort a claim got a marketing email, and complained. Asking first turned it into a
   proper sign-up box."
-- `redaction_send` / `send_as_is`: "Your choice. Mr Hale opened the report and read another resident's
+- `redaction_send` / `send_as_is`: "Mr Hale opened the report and read another resident's
   continence-care note and a driver's mobile number. One mistake, two more people's data exposed."
 - `redaction_send` / `redact_first`: "The version where the report went as it was: another resident's
   care note and a driver's mobile reached a stranger. Taking the extra details out first left only what
@@ -396,7 +396,7 @@ E11's `flip.mode` and montage strings (full text in section 10):
   "flipHeading": "Six months later",
   "flipMontageByChoice": {
     "overtime_sheet": {
-      "send_wrong_sam":  "Your choice. The overtime sheet ... sat in a care home manager's inbox ...",
+      "send_wrong_sam":  "The overtime sheet ... sat in a care home manager's inbox ...",
       "check_then_send": "The version where it went to the first Sam instead ..."
     }
   }
@@ -408,8 +408,9 @@ E11-specific authoring notes:
   the montage still shows every beat).
 - E11 authors a line for **both** options of every beat (section 10), so ENG-04's unsafe-option fallback
   (for an untaken beat) never fires for E11.
-- The "Your choice" / "the version where it was taken instead" framing is authored into the string text,
-  not applied by the engine.
+- The "Your call" tag on the option the learner took is applied by the engine (`flip-view.js`), so the
+  unsafe lines carry no "Your choice." prefix. The "the version where it was taken instead" framing of an
+  untaken option is authored into the string text.
 
 **E14 does not use ENG-04**: it keeps the built attack stages `osint` and `write` and the built
 defender-inbox flip.
@@ -432,7 +433,7 @@ chosen so the high-scoring verdict is unambiguous.
 | # | Id | Kind / from | Subject or line | Tells and flags | Correct verdict | Verify | Reason text (debrief card) |
 |---|----|-------------|-----------------|-----------------|-----------------|:------:|----------------------------|
 | 1 | `e11_wrong_sam_breach` | email, Sam Whitlow (`sam.whitlow@hollinsbrookhouse.example`), genuine | "I think this wasn't meant for me?" | none (a genuine heads-up; isPhish false) | **Report** (report the breach to the DPO) | on | "Sam has flagged that your staff's overtime, with health notes, reached her by mistake. That is a personal data breach: report it the same way you would report anything, and say it involves personal data, so it reaches the DPO. Asking her to delete it is a good next step, not instead of reporting." |
-| 2 | `e11_police_disclosure` | call, "DC Hendry, North Pennine Police" (number withheld), isPhish true | "I need Lee Corrigan's mobile and his route this afternoon. Road traffic matter. Urgent." | `vish_callback_pressure`, `borrowed_authority`, `secrecy_or_bypass` | **Verify** (take his name, force and switchboard number; the DPO handles police requests) or **Report** | on | "A caller cannot prove who they are by phone, and people pretend to be police to get an address. Give nothing out. Take his details, tell him the DPO handles police requests and is quick, and pass it on. Real police expect that and usually put it in writing." |
+| 2 | `e11_police_disclosure` | call, "DC Rowley, North Pennine Police" (number withheld), isPhish true | "I need Lee Corrigan's mobile and his route this afternoon. Road traffic matter. Urgent." | `vish_callback_pressure`, `borrowed_authority`, `secrecy_or_bypass` | **Verify** (take his name, force and switchboard number; the DPO handles police requests) or **Report** | on | "A caller cannot prove who they are by phone, and people pretend to be police to get an address. Give nothing out. Take his details, tell him the DPO handles police requests and is quick, and pass it on. Real police expect that and usually put it in writing." |
 | 3 | `e11_payroll_lookalike` | email, "Carrholme Payroll" (`payroll@carrholme-payroll.example`), isPhish true | "Confirm your bank and National Insurance details to be paid this month" | `lookalike_domain`, `senderTrust` | **Report** | on | "The name says Carrholme Payroll, but the address is on carrholme-payroll.example, with an added word; Carrholme is carrholme.example. Payroll does not collect bank or NI details by email like this. Report it." (The normal-looking phish half of the mirror pair.) |
 | 4 | `e11_sar_everything` | email, Gareth Hale (`gareth.hale@inboxly.example`), genuine | "Mum's cardigan is missing again. I want EVERYTHING you hold on Mum and me. Every note, every call." | none (a genuine request inside a complaint; isPhish false) | **Report** (pass to the DPO the same day) or **Verify** | on | "It is angry and broad, but it is a valid request to see personal data, and it does not have to use the words 'subject access'. Pass it to the DPO the same day and send the holding reply; do not gather or send anything yourself. Carry on with the cardigan complaint as normal work. Handling it yourself and quietly, or deleting it, is the wrong move." (The suspicious-looking genuine half of the mirror pair.) |
 | 5 | `e11_kestrel_inbound` | email, Kestrel Court (`laundry@kestrelcourt.example`), genuine sender, misdirected | "This week's laundry list" with a wrong attachment: the home's full residents' care summary | none (isPhish false; a received-in-error breach) | **Report** | on | "The sender is real, but the attachment is theirs to hold, not ours: names, conditions and medicines. Do not open it further, do not forward it. Tell the sender, report it, and delete it when the DPO says so. We now hold data we should not." |
