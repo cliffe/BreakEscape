@@ -51,12 +51,13 @@ function cpuSample() {
   return { idle, total: l.reduce((a, b) => a + b, 0) };
 }
 
-async function startFfmpeg({ display, sink, fps, size, outFile, logFile, pixFmt, crf, preset }) {
+async function startFfmpeg({ display, sink, fps, size, outFile, logFile, pixFmt, crf, preset, audioDelayMs = 0 }) {
   const args = [
     '-y', '-hide_banner',
     '-thread_queue_size', '1024', '-use_wallclock_as_timestamps', '1',
     '-f', 'x11grab', '-draw_mouse', '0', '-framerate', String(fps), '-video_size', size, '-i', `:${display}`,
     '-thread_queue_size', '1024', '-use_wallclock_as_timestamps', '1',
+    ...(audioDelayMs ? ['-itsoffset', String(audioDelayMs / 1000)] : []),   // audio leads picture: delay it
     '-f', 'pulse', '-ar', '48000', '-ac', '2', '-i', `${sink}.monitor`,
     '-fps_mode', 'cfr', '-r', String(fps),
     '-c:v', 'libx264', '-crf', String(crf), '-preset', preset, '-pix_fmt', pixFmt,
@@ -116,7 +117,7 @@ export async function recordTake(o) {
   const {
     display, url, outBase, fps = 30, size = '1920x1080', takeFile,
     volumes = {}, zoomStep, noSandbox, bridge: useBridge = true, mode = 'kiosk',
-    pixFmt = 'yuv420p', crf = 14, preset = 'veryfast', titleTimeoutMs = 90000,
+    pixFmt = 'yuv420p', crf = 14, preset = 'veryfast', audioDelayMs = 0, titleTimeoutMs = 90000,
   } = o;
   const [w, h] = size.split('x').map(Number);
   const sink = o.sink || `be_rec_${display}`;
@@ -159,7 +160,7 @@ export async function recordTake(o) {
 
     // 3. start recording, start slate
     const cpu0 = cpuSample();
-    ff = await startFfmpeg({ display, sink, fps, size, outFile, logFile, pixFmt, crf, preset });
+    ff = await startFfmpeg({ display, sink, fps, size, outFile, logFile, pixFmt, crf, preset, audioDelayMs });
     report.ffmpegSpawnedAt = ff.startedAt; report.ffmpegFirstFrameAt = ff.firstFrameAt;
     await sleep(700);
     const bridge = useBridge ? makeBridge(page) : null;
@@ -224,14 +225,14 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   const a = {};
   const av = process.argv.slice(2);
   for (let i = 0; i < av.length; i++) if (av[i].startsWith('--')) a[av[i].slice(2)] = (av[i + 1] && !av[i + 1].startsWith('--')) ? av[++i] : true;
-  if (!a.display || !a.url || !a.out) { console.error('usage: record-take.mjs --display N --url URL --out BASE [--take FILE] [--fps 30] [--size 1920x1080] [--music 0] [--zoom N] [--no-sandbox true|false] [--no-bridge]'); process.exit(2); }
+  if (!a.display || !a.url || !a.out) { console.error('usage: record-take.mjs --display N --url URL --out BASE [--take FILE] [--fps 30] [--size 1920x1080] [--music 0] [--zoom N] [--no-sandbox true|false] [--no-bridge] [--preset veryfast|ultrafast] [--audio-delay-ms 65]'); process.exit(2); }
   const volumes = {};
   for (const k of ['music', 'sfx', 'voice', 'master']) if (a[k] !== undefined) volumes[k] = Number(a[k]);
   const r = await recordTake({
     display: a.display, url: a.url, outBase: a.out, takeFile: a.take, fps: Number(a.fps) || 30, size: a.size || '1920x1080',
     volumes, zoomStep: a.zoom !== undefined ? Number(a.zoom) : undefined,
     noSandbox: a['no-sandbox'] === undefined ? undefined : a['no-sandbox'] === 'true',
-    bridge: !a['no-bridge'], mode: a.mode || 'kiosk', pixFmt: a['pix-fmt'] || 'yuv420p', preset: a.preset || 'veryfast',
+    bridge: !a['no-bridge'], mode: a.mode || 'kiosk', pixFmt: a['pix-fmt'] || 'yuv420p', preset: a.preset || 'veryfast', audioDelayMs: Number(a['audio-delay-ms']) || 0,
   });
   console.log(JSON.stringify(r, null, 2));
   process.exit(r.ok ? 0 : 1);
