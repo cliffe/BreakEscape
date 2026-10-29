@@ -1828,7 +1828,7 @@
         "scopeNote": {"type": "string"},
         "stages": {
           "type": "array",
-          "items": {"type": "string", "enum": ["brief", "osint", "build", "write", "flip", "defend", "debrief", "check", "mfa"]}
+          "items": {"type": "string", "enum": ["brief", "osint", "build", "write", "flip", "defend", "debrief", "check", "mfa", "mistake"]}
         },
         "conclusionTaskId": {"type": "string", "description": "The task the host NPC's mapping completes; passed to the triage starter"},
         "standalone": {"type": "boolean", "description": "Default true. False makes the episode one beat in a bigger mission: awareness.rb then skips the missionConclusion, host-NPC and conclusionTaskId checks"},
@@ -1918,6 +1918,27 @@
               "patternProperties": {"^_": {}}
             },
             "flipNoSend": {"type": "string"},
+            "flipMontageByChoice": {
+              "type": "object",
+              "description": "ENG-04: the montage flip's line per beat and option, { <beatId>: { <optionId>: string } }. The learner's own option shows when it has a line, else the beat's unsafe option's. Keys are awarenessEpisode.mistake beat and option ids. Full consequence episodes only (the defend-only shell has no flip)",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": {"type": "string"},
+                "patternProperties": {"^_": {}}
+              },
+              "patternProperties": {"^_": {}}
+            },
+            "flipMontageIntro": {"type": "string", "description": "ENG-04: the line above the montage; default 'Here is where each of those choices led.'"},
+            "sandbox": {
+              "type": "object",
+              "description": "ENG-04: the consequence sandbox's own lines over its defaults (consequence-sandbox.js). progress may hold {n} and {total}",
+              "properties": {
+                "intro": {"type": "string"}, "progress": {"type": "string"}, "legend": {"type": "string"},
+                "empty": {"type": "string"}, "next": {"type": "string"}, "finish": {"type": "string"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
             "noBlameLine": {"type": "string", "description": "The debrief's no-blame line. It shows only after a wrong verdict (a phish not caught, a real one deleted or complied with), never after missed ticks alone (P5-5/P5-15); after a critical miss noBlameLineCritical stands in for it"},
             "noBlameLineCritical": {"type": "string", "description": "The no-blame line after a critical miss (the result has just said what it cost), so it must not claim nobody is marked down. Default: the engine's own line"},
             "mondayCard": {"type": "string"},
@@ -1931,7 +1952,7 @@
             "continue": {"type": "string", "description": "The label of the Continue button"},
             "stages": {
               "type": "object",
-              "description": "Per-stage panel copy over the runner's fixed lines, keyed by stage id (brief, osint, build, write, mfa, flip, defend, debrief, check)",
+              "description": "Per-stage panel copy over the runner's fixed lines, keyed by stage id (brief, osint, build, write, mfa, mistake, flip, defend, debrief, check)",
               "additionalProperties": {
                 "type": "object",
                 "properties": {"heading": {"type": "string"}, "text": {"type": "string"}, "button": {"type": "string"}},
@@ -1943,10 +1964,10 @@
             "stepLabels": {"type": "object", "description": "Step-strip labels keyed by stage id", "additionalProperties": {"type": "string"}},
             "facilitator": {
               "type": "object",
-              "description": "Facilitator notes: one string per stage id (brief, osint, build, write, mfa, flip, defend, debrief, check) plus 'pause'",
+              "description": "Facilitator notes: one string per stage id (brief, osint, build, write, mfa, mistake, flip, defend, debrief, check) plus 'pause'",
               "properties": {
                 "brief": {"type": "string"}, "osint": {"type": "string"}, "build": {"type": "string"},
-                "write": {"type": "string"}, "mfa": {"type": "string"}, "flip": {"type": "string"},
+                "write": {"type": "string"}, "mfa": {"type": "string"}, "mistake": {"type": "string"}, "flip": {"type": "string"},
                 "defend": {"type": "string"}, "debrief": {"type": "string"}, "check": {"type": "string"}, "pause": {"type": "string"}
               },
               "patternProperties": {"^_": {}},
@@ -1976,6 +1997,54 @@
           "properties": {
             "mondayCard": {"type": "string", "description": "'slot:customer_report_route' is the only value the runner reads"},
             "noBlameLine": {"type": "boolean"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "mistake": {
+          "type": "object",
+          "description": "ENG-04: the consequence stage of a consequence-flip episode (E11, E15, E16, E19, E20). The learner makes a few everyday choices in a sandbox (the consequence-sandbox scene), unscored; the flip then runs as a montage (flip.mode). Linted by awareness.rb: exactly one safe option per beat, flipBeat is a beat, absent on a defendOnly shell",
+          "required": ["beats", "flipBeat"],
+          "properties": {
+            "scored": {"type": "boolean", "description": "Always false; the sandbox is never scored"},
+            "beats": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "situation", "options"],
+                "properties": {
+                  "id": {"type": "string", "description": "Stable beat id; the montage and strings.flipMontageByChoice key on it"},
+                  "situation": {"type": "string", "description": "The on-screen prompt for this everyday choice"},
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["id", "label", "safe"],
+                      "properties": {
+                        "id": {"type": "string"},
+                        "label": {"type": "string"},
+                        "safe": {"type": "boolean", "description": "True for the approved route; exactly one per beat"},
+                        "approvedRoute": {"type": "boolean", "description": "Marks the single modelled best move (a safe option)"}
+                      },
+                      "patternProperties": {"^_": {}},
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "flipBeat": {"type": "string", "description": "The beat whose branch heads the montage (aw2's one consequential choice); a beat id"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "flip": {
+          "type": "object",
+          "description": "ENG-04: how the flip stage is drawn. mode 'montage' replays the consequence sandbox's choices as a montage (needs awarenessEpisode.mistake)",
+          "properties": {
+            "mode": {"type": "string", "enum": ["montage"]}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false

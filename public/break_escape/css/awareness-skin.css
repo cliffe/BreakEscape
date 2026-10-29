@@ -151,3 +151,11 @@
 .aw-rule-text, .aw-report-route-text { margin: 4px 0; font-size: 15px; }
 .aw-report-route { margin: 0 0 10px; padding: 10px 14px; background: #fff; border: 1px dashed var(--aw-accent); border-radius: 4px; }
 @media (prefers-reduced-motion: reduce) { .aw-team-pop { animation: none; } }
+
+/* The montage flip of a consequence episode (ENG-04): one block per beat, the headline beat first. */
+.aw-montage { margin: 0 0 12px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; max-width: 70ch; }
+.aw-montage-beat { margin: 0; padding: 10px 12px; background: #fff; border: 1px solid var(--aw-line); border-left: 4px solid var(--aw-line); }
+.aw-montage-headline { border-left-color: var(--aw-accent); border-width: 2px; border-left-width: 6px; }
+.aw-montage-taken { border-left-color: var(--aw-warn); }
+.aw-montage-situation { margin: 0 0 4px; font-size: 14px; color: #52606d; }
+.aw-montage-line { margin: 0; font-size: 16px; font-weight: 600; }

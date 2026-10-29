@@ -15,7 +15,7 @@
 # what binds the set to the episode: ids, counts, the done global, the host NPC and the carry-over.
 module ValidateSocial
   module Awareness
-    STAGES = %w[brief osint build write flip defend debrief check mfa].freeze
+    STAGES = %w[brief osint build write flip defend debrief check mfa mistake].freeze
     STAGES_BY_VARIANT = {
       'full' => %w[brief osint write flip defend debrief],
       'defendOnly' => %w[brief defend debrief]
@@ -26,6 +26,13 @@ module ValidateSocial
     # E5: the landing-page builder, straight after `osint` and before `write`. It needs
     # attack.landingPageId and is never in a defendOnly or check shell.
     BUILD_AFTER = 'osint'
+    # ENG-04 (E11, E15, E16, E19, E20): a consequence-flip episode. No attacker and no target: the
+    # learner makes everyday choices in a sandbox (`mistake`, with awarenessEpisode.mistake), then the
+    # flip runs as a montage (flip.mode "montage"). No `osint`, `build`, `write`, `mfa` or `guess`.
+    MISTAKE_ORDER = %w[brief mistake flip defend debrief].freeze
+    # The stages that make something the attack half's checks read (the attack block).
+    ATTACK_ARTEFACT_STAGES = %w[osint build write mfa guess].freeze
+    FLIP_MODES = %w[montage].freeze
     CHECK_STAGES = %w[pre post].freeze
     EPISODE_MESSAGES = (4..8) # 4 since the E3 timing trim (TIMING_TRIM_PLAN Cut D)
     CHECK_MESSAGES = 10
@@ -50,7 +57,8 @@ module ValidateSocial
       issues.concat(kiosk_checks(kiosks, id))
       issues.concat(stage_checks(ep))
       issues.concat(id_suffix_checks(ep))
-      issues.concat(attack_checks(ctx, ep)) if full?(ep)
+      issues.concat(attack_checks(ctx, ep)) if full?(ep) && attack_artefact_stage?(ep)
+      issues.concat(mistake_checks(ep))
       issues.concat(string_checks(ctx, ep))
       issues.concat(settings_checks(ctx, ep))
       issues.concat(mfa_checks(ep))
@@ -87,6 +95,16 @@ module ValidateSocial
 
     def self.full?(ep)
       ep['variant'] == 'full' && !check_mission?(ep)
+    end
+
+    # Whether the stage list has an attack-artefact stage (osint, build, write, mfa, guess). A
+    # consequence episode (ENG-04) has none, so it has no attack block to lint. With no usable stage
+    # list the stage lint reports it and the attack block is linted as before.
+    def self.attack_artefact_stage?(ep)
+      stages = ep['stages']
+      return true unless stages.is_a?(Array)
+
+      stages.any? { |s| ATTACK_ARTEFACT_STAGES.include?(s) }
     end
 
     def self.kiosk_objects(ctx)
@@ -141,7 +159,7 @@ module ValidateSocial
       elsif STAGES_BY_VARIANT.key?(ep['variant'])
         want = STAGES_BY_VARIANT[ep['variant']]
         unless stage_orders(ep['variant'], want).include?(stages)
-          extra = ep['variant'] == 'full' ? " (or the same with 'build' straight after 'osint', and/or 'mfa' straight after 'write' or straight after 'flip')" : ''
+          extra = ep['variant'] == 'full' ? " (or the same with 'build' straight after 'osint', and/or 'mfa' straight after 'write' or straight after 'flip'; or a consequence episode, #{MISTAKE_ORDER.inspect})" : ''
           issues << err("variant '#{ep['variant']}' has stages #{stages.inspect}; it must be #{want.inspect}#{extra}")
         end
       elsif !ep.key?('variant')
@@ -163,7 +181,7 @@ module ValidateSocial
           i = base.index(after)
           base[0..i] + ['mfa'] + base[(i + 1)..]
         end
-      end
+      end + [MISTAKE_ORDER]
     end
 
     def self.id_suffix_checks(ep)
@@ -291,7 +309,7 @@ module ValidateSocial
 
     # ---- strings ---------------------------------------------------------------------
 
-    FACILITATOR_KEYS = %w[brief osint build write mfa flip defend debrief check pause].freeze
+    FACILITATOR_KEYS = %w[brief osint build write mfa mistake flip defend debrief check pause].freeze
 
     def self.string_checks(ctx, ep)
       strings = ep['strings']
@@ -350,6 +368,153 @@ module ValidateSocial
         elsif !pretext_ids.include?(key)
           issues << warn_("strings.flipDefenderLineByChoice.#{key} is the template '#{key}', which is not a 'pretext'; only the chosen pretext is recorded as the flip's templateId, so this line would never be shown")
         end
+      end
+      issues
+    end
+
+    # ---- the consequence stage (ENG-04) ----------------------------------------------
+
+    def self.mistake_checks(ep)
+      stages = Array(ep['stages'])
+      has_stage = stages.include?('mistake')
+      has_block = ep.key?('mistake')
+      has_mode = ep['flip'].is_a?(Hash) && ep['flip'].key?('mode')
+      montage_lines = ep['strings'].is_a?(Hash) && ep['strings'].key?('flipMontageByChoice')
+      issues = []
+      if ep['variant'] == 'defendOnly'
+        issues << err('a defendOnly episode has an awarenessEpisode.mistake block; the shell drops the mistake stage, so remove it') if has_block
+        issues << err('a defendOnly episode has an awarenessEpisode.flip block; the shell drops the flip, so remove it') if ep.key?('flip')
+        issues << warn_('a defendOnly episode has strings.flipMontageByChoice; its shell has no flip, so the line is never shown') if montage_lines
+        return issues
+      end
+      if has_stage
+        issues << err("stages lists 'mistake' but there is no awarenessEpisode.mistake block (beats and flipBeat); the sandbox would open on nothing") unless has_block
+        issues << err('a mistake episode has an attack block; it has no attacker and no target, so remove it') if ep.key?('attack')
+        unless has_mode && ep['flip']['mode'] == 'montage'
+          issues << err('stages lists \'mistake\' but awarenessEpisode.flip.mode is not "montage"; the flip would look for a sent message and find none')
+        end
+      elsif has_block
+        issues << warn_("awarenessEpisode.mistake is set but stages has no 'mistake'; the sandbox is never played")
+      end
+      if ep.key?('flip')
+        flip = ep['flip']
+        if !flip.is_a?(Hash)
+          issues << err('awarenessEpisode.flip must be an object { mode }')
+        elsif has_mode && !FLIP_MODES.include?(flip['mode'])
+          issues << err("awarenessEpisode.flip.mode is #{flip['mode'].inspect}; the only mode is \"montage\"")
+        elsif flip['mode'] == 'montage' && !has_block
+          issues << err('awarenessEpisode.flip.mode is "montage" but there is no awarenessEpisode.mistake block to replay')
+        end
+      end
+      return issues unless has_block
+
+      mistake = ep['mistake']
+      return issues << err('awarenessEpisode.mistake must be an object { scored, beats, flipBeat }') unless mistake.is_a?(Hash)
+
+      issues << err("awarenessEpisode.mistake.scored is #{mistake['scored'].inspect}; it must be false (the sandbox is never scored)") if mistake.key?('scored') && mistake['scored'] != false
+      beats = mistake['beats']
+      if !beats.is_a?(Array) || beats.empty?
+        issues << err('awarenessEpisode.mistake.beats must be a non-empty array; the sandbox has nothing to ask')
+        beats = []
+      end
+      beat_ids = []
+      option_ids = {}
+      beats.each_with_index do |beat, i|
+        w = "awarenessEpisode.mistake.beats[#{i}]"
+        unless beat.is_a?(Hash)
+          issues << err("#{w} must be an object { id, situation, options }")
+          next
+        end
+        bid = beat['id']
+        if Mail.blank?(bid)
+          issues << err("#{w}.id is empty or missing; the montage and the state key on it")
+        elsif beat_ids.include?(bid)
+          issues << err("#{w}.id '#{bid}' is used by an earlier beat; beat ids are unique")
+        else
+          beat_ids << bid
+        end
+        w = "awarenessEpisode.mistake.beats[#{bid || i}]"
+        issues << err("#{w}.situation is empty or missing; the learner sees nothing to decide") if Mail.blank?(beat['situation'])
+        options = beat['options']
+        unless options.is_a?(Array) && options.length >= 2
+          issues << err("#{w}.options must list at least two options; one choice is not a choice")
+          next
+        end
+        ids = []
+        safe = 0
+        approved = 0
+        options.each_with_index do |opt, j|
+          ow = "#{w}.options[#{j}]"
+          unless opt.is_a?(Hash)
+            issues << err("#{ow} must be an object { id, label, safe }")
+            next
+          end
+          if Mail.blank?(opt['id'])
+            issues << err("#{ow}.id is empty or missing")
+          elsif ids.include?(opt['id'])
+            issues << err("#{ow}.id '#{opt['id']}' is used by an earlier option of this beat")
+          else
+            ids << opt['id']
+          end
+          issues << err("#{ow}.label is empty or missing; the learner sees a blank option") if Mail.blank?(opt['label'])
+          issues << err("#{ow}.safe is #{opt['safe'].inspect}; it must be true or false") unless [true, false].include?(opt['safe'])
+          safe += 1 if opt['safe'] == true
+          next unless opt['approvedRoute'] == true
+
+          approved += 1
+          issues << err("#{ow} is marked approvedRoute but is not safe; the approved route is the safe option") unless opt['safe'] == true
+        end
+        issues << err("#{w} has #{safe} options with safe: true; it must have exactly one (the approved route)") unless safe == 1
+        issues << err("#{w} has #{approved} options marked approvedRoute; at most one is the modelled best move") if approved > 1
+        option_ids[bid] = ids if bid.is_a?(String)
+      end
+
+      flip_beat = mistake['flipBeat']
+      if Mail.blank?(flip_beat)
+        issues << err('awarenessEpisode.mistake.flipBeat is missing; the montage needs the one consequential choice to lead with')
+      elsif !beat_ids.include?(flip_beat)
+        issues << err("awarenessEpisode.mistake.flipBeat '#{flip_beat}' is not a beat id (#{beat_ids.join(', ')})")
+      end
+      issues.concat(montage_line_checks(ep, option_ids))
+      issues
+    end
+
+    # strings.flipMontageByChoice: { <beatId>: { <optionId>: line } }. Every key is real, every line has
+    # text. A beat with no lines at all shows only its situation in the montage.
+    def self.montage_line_checks(ep, option_ids)
+      strings = ep['strings']
+      by = strings.is_a?(Hash) ? strings['flipMontageByChoice'] : nil
+      if by.nil?
+        return [err('a mistake episode needs strings.flipMontageByChoice; the montage has no lines to show')] if Array(ep['stages']).include?('mistake')
+
+        return []
+      end
+      return [err('strings.flipMontageByChoice must be an object { <beatId>: { <optionId>: string } }')] unless by.is_a?(Hash)
+
+      issues = []
+      by.each do |bid, lines|
+        next if bid.to_s.start_with?('_')
+
+        unless option_ids.key?(bid)
+          issues << err("strings.flipMontageByChoice.#{bid} is not a beat id of awarenessEpisode.mistake (#{option_ids.keys.join(', ')})")
+          next
+        end
+        unless lines.is_a?(Hash)
+          issues << err("strings.flipMontageByChoice.#{bid} must be an object { <optionId>: string }")
+          next
+        end
+        lines.each do |oid, line|
+          next if oid.to_s.start_with?('_')
+
+          if !option_ids[bid].include?(oid)
+            issues << err("strings.flipMontageByChoice.#{bid}.#{oid} is not an option of beat '#{bid}' (#{option_ids[bid].join(', ')})")
+          elsif !line.is_a?(String) || line.strip.empty?
+            issues << err("strings.flipMontageByChoice.#{bid}.#{oid} has no text; the montage would show a blank line")
+          end
+        end
+      end
+      option_ids.each_key do |bid|
+        issues << warn_("strings.flipMontageByChoice has no lines for beat '#{bid}'; the montage would show only its situation") unless by.key?(bid)
       end
       issues
     end
