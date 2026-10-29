@@ -1412,7 +1412,10 @@
                   {"type": "string"},
                   {
                     "type": "object",
-                    "properties": {"landed": {"type": "string"}, "missed": {"type": "string"}},
+                    "properties": {
+                      "landed": {"type": "string"}, "missed": {"type": "string"},
+                      "sentLine": {"description": "batch-5 (E13 F-2): the send-result banner for this sent pretext, beside the reply. A plain string overrides the landing banner only; { landed, missed } picks by whether the send landed. Default: 'It landed. They acted on it.' / 'It did not land.'", "oneOf": [{"type": "string"}, {"type": "object", "properties": {"landed": {"type": "string"}, "missed": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}]}
+                    },
                     "patternProperties": {"^_": {}},
                     "additionalProperties": false
                   }
@@ -1423,6 +1426,12 @@
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": {"type": "string"}
+        },
+        "sentLines": {
+          "type": "object",
+          "description": "batch-5 (E13 F-2): the send-result banner by the sent template id, a fallback for when the replies.byChoice entry is a plain-string reply with no room for a sentLine. A plain string overrides the landing banner only; { landed, missed } picks by whether the send landed.",
+          "additionalProperties": {"oneOf": [{"type": "string"}, {"type": "object", "properties": {"landed": {"type": "string"}, "missed": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}]},
+          "patternProperties": {"^_": {}}
         },
         "outcome": {
           "type": "object",
@@ -1719,6 +1728,17 @@
             "verifyLine": {"type": "string", "minLength": 1, "description": "Phish items only (optional): the whole Verify feedback line, for an item where \"Checking first is a sound habit\" pulls against the lesson (a compromise sign where Verify is the fast report), e.g. \"Calling it in straight away is exactly right.\" Default: \"Checking first is a sound habit. \" + kindLine or the phish wording (ENG-03a / E19 D1)."},
             "reportLine": {"type": "string", "minLength": 1, "description": "Phish items only (optional): the whole Report feedback line, for an item where \"A report warns everyone else\" is wrong (reporting a locked-out colleague is not warning the team about an attack), e.g. \"Right to flag it. The service desk can reset his login the proper way.\" Default: \"Right call: reported. A report warns everyone else.\" (E16 F-E16-1)."},
             "falseAlarmCost": {"type": "string", "description": "Real items only (optional): one sentence on what reporting or deleting this real one would cost (a payment held up, a colleague left waiting). Shown after what made it safe on the result screen and the debrief (disc_visible)."},
+            "verdictPoints": {
+              "type": "object",
+              "properties": {
+                "trust": {"type": "number", "minimum": 0, "maximum": 60},
+                "report": {"type": "number", "minimum": 0, "maximum": 60},
+                "delete": {"type": "number", "minimum": 0, "maximum": 60},
+                "verify": {"type": "number", "minimum": 0, "maximum": 60}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false,
+              "description": "Optional per-item override of the verdict points (out of 60), opt-in (batch-5 F-E12-1, E13 F-10): e.g. a reception desk that gives full marks for letting in an expected client ({\"trust\": 60}). Names any subset of verdicts; an omitted one keeps the profile/kind default. Wins over set.scoring.kindPoints. Default: scoring unchanged."},
             "headerNote": {"type": "string"},
             "reportReply": {"type": "string"},
             "correct": {"type": "string", "enum": ["trust", "report", "delete", "verify"], "description": "choice only: the verdict of the right option (it must score full marks for isPhish)"}
@@ -2778,6 +2798,13 @@
       "patternProperties": {"^_": {}},
       "additionalProperties": false
     },
+    "socialTriageVerdictFeedbackLine": {
+      "type": "object",
+      "description": "The feedback line a verdict shows, by truth: phish (when the item is a phish) and real (when it is genuine). Each a non-empty string.",
+      "properties": {"phish": {"type": "string", "minLength": 1}, "real": {"type": "string", "minLength": 1}},
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
     "socialTriageSet": {
       "type": "object",
       "description": "An inbox triage set (design 05; triage-starter.js, inbox-triage-minigame.js)",
@@ -2795,6 +2822,27 @@
         "realLabel": {"type": "string", "minLength": 1, "description": "The noun for the genuine items in the result grid (\"Real texts and notices\"); default follows the queue's channels."},
         "flagPlayerSent": {"type": ["string", "boolean"], "description": "Opt-in (inbox-triage-minigame.js): marks the player's own sends on the review flip; a string is the line shown, true uses a default"},
         "verifyVerdict": {"type": "boolean"},
+        "scoring": {
+          "type": "object",
+          "properties": {
+            "kindPoints": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "trust": {"type": "number", "minimum": 0, "maximum": 60},
+                  "report": {"type": "number", "minimum": 0, "maximum": 60},
+                  "delete": {"type": "number", "minimum": 0, "maximum": 60},
+                  "verify": {"type": "number", "minimum": 0, "maximum": 60}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              },
+              "description": "Optional per-kind override of the verdict points (out of 60), keyed by kind (email, call, push, page, sms, qr, voicemail, choice), opt-in (batch-5 F-E12-1, E13 F-10): e.g. a visitor queue where Comply on a genuine caller is full marks ({\"call\": {\"trust\": 60}}). A message's own truth.verdictPoints wins over this. An omitted verdict keeps the profile/kind default. Default: scoring unchanged."}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false,
+          "description": "Optional scoring overrides for this set (batch-5)."},
         "verdictLabels": {"type": "object", "description": "ENG-03a: relabel the three (or four) verdict buttons and review-card wording for this set, by id (trust, report, delete, verify). The verdict ids and scoring are unchanged. Absent keeps the built Trust/Report/Delete labels.", "properties": {"trust": {"type": "string"}, "report": {"type": "string"}, "delete": {"type": "string"}, "verify": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false},
         "missedPhishLine": {"type": "boolean", "description": "Opt-in (inbox-triage-minigame.js): the result card names the phish the learner trusted. Default off."},
         "genuineFeedback": {"type": "boolean", "description": "false hides the result screen's and debrief's lines on the real items (which were trusted, what made a flagged one safe). Default on."},
@@ -2808,7 +2856,8 @@
           "description": "Replaces the result screen's two follow-up lines (default: the mail-client and lab-sheet wording, or the awareness wording). {it} in weakest becomes it or them.",
           "properties": {
             "weakest": {"type": "string", "description": "After 'Weakest skill: ...'"},
-            "noFlags": {"type": "string", "description": "When the learner named no flags"}
+            "noFlags": {"type": "string", "description": "When the learner named no flags"},
+            "noFlagsLead": {"type": "string", "description": "batch-5 (E17): the sentence before noFlags (default \"You didn't name any flags on these messages, so there's nothing to grade skill by skill.\"). For a non-phishing set where 'name any flags' reads wrongly."}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
@@ -2832,9 +2881,23 @@
               "additionalProperties": false
             },
             "verdict": {"type": "object", "description": "Email verdict buttons and brief legend by trust, report, delete, verify: { label?, past?, hint? }", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
+            "verdictFeedback": {
+              "type": "object",
+              "description": "batch-5 (F-E10-2): override the per-item feedback line a verdict shows the learner, so a relabelled verdict does not leak the engine word ('Deleting protects you' on a page named 'Go the trusted way'). By verdict, each { phish?, real? }. A per-item truth.reportLine / verifyLine still wins. Absent keeps the default lines.",
+              "properties": {
+                "trust": {"$ref": "#/definitions/socialTriageVerdictFeedbackLine"},
+                "report": {"$ref": "#/definitions/socialTriageVerdictFeedbackLine"},
+                "delete": {"$ref": "#/definitions/socialTriageVerdictFeedbackLine"},
+                "verify": {"$ref": "#/definitions/socialTriageVerdictFeedbackLine"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
             "callActions": {"type": "object", "description": "By action id comply, escalate, refuse, verify_callback", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
             "pushActions": {"type": "object", "description": "By action id approve, deny, deny_report", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
             "smsHeading": {"type": "string", "description": "The 'Text message' heading on a text (default 'Text message')"},
+            "itemNoun": {"description": "batch-5 (F-E10-8 / F-E12-6): a blanket item-noun override for a set whose kind the derived noun names wrongly ('visitor' on a reception desk). A string gives [noun, noun+'s']; a [singular, plural] pair is taken as-is. A per-queue labels.queue.<key>.item wins over it.", "oneOf": [{"type": "string", "minLength": 1}, {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "string", "minLength": 1}}]},
+            "next": {"type": "string", "minLength": 1, "description": "batch-5 (F-E10-8 / F-E12-6): the 'Next message' button in immediate feedback. Default follows the item noun ('Next call', 'Next visitor')."},
             "teamBadge": {"type": "string", "description": "aw-ux2: the triage team badge, with {n} for the count (default 'Phish stopped for the team: {n}'). For sets whose reported items are not all phish"},
             "teamBadgeTitle": {"type": "string", "description": "aw-ux2: the badge's hover text (default 'Phish you reported or checked by another route this round')"},
             "phishCaughtLabel": {"type": "string", "description": "The result counter's label (default 'Phish caught'). For a non-phishing set (E17 acceptable-use) where 'Phish caught' is wrong, e.g. 'Requests handled'"},

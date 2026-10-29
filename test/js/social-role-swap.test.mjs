@@ -221,8 +221,10 @@ test('with the awareness skin a report plays the win once and thanks the learner
     assert.equal(t.skin, 'awareness');
     assert.equal(t.reportThanks, true);
     assert.equal(t.reportWin, true);
-    assert.ok(q('.tri-locked.aw-report-win'));
-    assert.equal(q('.aw-report-thanks').textContent, 'Thanks for reporting. That warns everyone else.');
+    // F-E19-3: immediate mode carries the pop and the thanks beat on the review card's verdict
+    // line (the single confirmation), not a separate .tri-locked / .aw-report-thanks paragraph.
+    assert.ok(q('.tri-card-verdict.aw-report-win'));
+    assert.match(q('.tri-card-verdict.aw-report-thanks').textContent, /warn everyone/);
     // a re-render keeps the thanks but does not replay the animation
     scene.reader.render();
     t = scene.getTestState().triage;

@@ -31,7 +31,7 @@ import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { MailReader } from './mail-reader.js';
 import { MailComposer } from './mail-composer.js';
 import { registerOpenClient, notifyAccountCreated } from './mail-notification.js';
-import { performSend, renderChecklist, rejudgeForChecklist, resolveTarget, applyFactorBias } from './mail-bridge.js';
+import { performSend, renderChecklist, rejudgeForChecklist, resolveTarget, applyFactorBias, sentTemplateIdOf } from './mail-bridge.js';
 import { evaluateMessage } from '../../systems/phish-rules.js';
 import { writeGlobal } from '../../systems/global-writer.js';
 import {
@@ -869,6 +869,9 @@ export class MailClientMinigame extends SocialOverlayScene {
             account: this.account,
             showReplyToNote,
             showReplyPending,
+            // The banner may read per the pretext the learner sent (E13 F-2), matching the
+            // immediate reply's byChoice branch (sentTemplateIdOf resolves the same pick).
+            sentTemplateId: sentTemplateIdOf(sendInfo.record || this.lastComposed),
             onEdit: () => { this._dismissChecklist(); if ((sendInfo.result && sendInfo.result.landed) || this._sendCapReached()) this.closeCompose(); }
         });
         // With no resend left, "Edit & resend" would be a lie.

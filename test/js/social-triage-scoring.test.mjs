@@ -242,3 +242,47 @@ test('falseAlarms: real mail reported or deleted counts; a false chip on trusted
     ] });
     assert.equal(verdicts.falseAlarms, 2);
 });
+
+// ── batch-5: opt-in verdict-points override (F-E12-1, E13 F-10) ────────────────
+const { verdictPointsOverride } = S;
+
+test('verdictPointsOverride: truth.verdictPoints wins over set.scoring.kindPoints; null when nothing authored', () => {
+    assert.equal(verdictPointsOverride({}, 'call', null), null);
+    assert.equal(verdictPointsOverride({}, 'call', { kindPoints: {} }), null);
+    assert.deepEqual(verdictPointsOverride(null, 'call', { kindPoints: { call: { trust: 60 } } }), { trust: 60 });
+    // Per-item wins per verdict; per-kind fills the rest.
+    assert.deepEqual(
+        verdictPointsOverride({ verdictPoints: { trust: 50 } }, 'call', { kindPoints: { call: { trust: 60, report: 30 } } }),
+        { trust: 50, report: 30 });
+});
+
+test('verdictPoints honours an override but cannot resurrect a verdict the profile lacks', () => {
+    // A real call normally scores Comply (trust) at 30 (KIND_VERDICT_POINTS); an override lifts it.
+    assert.equal(verdictPoints('awareness', false, 'trust', 'call'), 30);
+    assert.equal(verdictPoints('awareness', false, 'trust', 'call', { trust: 60 }), 60);
+    // An omitted verdict keeps the kind default.
+    assert.equal(verdictPoints('awareness', false, 'report', 'call', { trust: 60 }), 60);
+    // Analyst has no Verify, override or not.
+    assert.throws(() => verdictPoints('analyst', true, 'verify', 'email', { verify: 60 }), RangeError);
+});
+
+test('scoreTriage: a genuine call scores 70 by default, 100 with a per-item or per-kind override', () => {
+    const msgs = [{ id: 'visitor', kind: 'call', truth: { isPhish: false, flags: [] } }];
+    const ans = [{ id: 'visitor', verdict: 'trust', flags: ['none'] }];
+    // Default: 30 verdict + 40 reasons (awareness real) = 70, not handled right.
+    const base = scoreTriage({ messages: msgs, answers: ans });
+    assert.equal(base.perMessage[0].score, 70);
+    assert.equal(base.perMessage[0].handledRight, false);
+    assert.equal(base.realHandledRight, 0);
+    // Per-item override: full marks.
+    const perItem = scoreTriage({ messages: [{ id: 'visitor', kind: 'call', truth: { isPhish: false, flags: [], verdictPoints: { trust: 60 } } }], answers: ans });
+    assert.equal(perItem.perMessage[0].score, 100);
+    assert.equal(perItem.perMessage[0].handledRight, true);
+    assert.equal(perItem.realHandledRight, 1);
+    // Per-set per-kind override: same effect, no truth change.
+    const perSet = scoreTriage({ messages: msgs, answers: ans, scoring: { kindPoints: { call: { trust: 60 } } } });
+    assert.equal(perSet.perMessage[0].score, 100);
+    assert.equal(perSet.realHandledRight, 1);
+    // Default (no scoring arg) is byte-for-byte unchanged against the worked example.
+    assert.deepEqual(scores(scoreTriage({ messages, answers })), scores(scoreTriage({ messages, answers, scoring: null })));
+});

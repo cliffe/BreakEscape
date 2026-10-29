@@ -104,6 +104,48 @@ test('the minimal inline scenario is clean (guards the mutation tests below)', {
   assert.deepEqual(lintJson(mini()), []);
 });
 
+test('batch-5: a valid verdict-points override (per-item and per-set) raises nothing', { skip }, () => {
+    const j = mini();
+    j.social.triageSets[0].scoring = { kindPoints: { call: { trust: 60, report: 30 } } };
+    j.social.triageSets[0].messages[0].truth.verdictPoints = { trust: 60 };
+    assert.deepEqual(lintJson(j), []);
+});
+
+test('batch-5: labels.itemNoun and labels.next validate their shape', { skip }, () => {
+    const ok = mini();
+    ok.social.triageSets[0].labels = { itemNoun: 'visitor', next: 'Next visitor' };
+    assert.deepEqual(lintJson(ok), []);
+    const ok2 = mini();
+    ok2.social.triageSets[0].labels = { itemNoun: ['network', 'networks'] };
+    assert.deepEqual(lintJson(ok2), []);
+    const bad = mini();
+    bad.social.triageSets[0].labels = { itemNoun: ['only-one'], next: '' };
+    const out = lintJson(bad);
+    expectIn(out, /labels\.itemNoun must be a non-empty string or a \[singular, plural\] pair/);
+    expectIn(out, /labels\.next must be a non-empty string/);
+});
+
+test('batch-5: a valid labels.verdictFeedback raises nothing; a bad shape is refused', { skip }, () => {
+    const ok = mini();
+    ok.social.triageSets[0].labels = { verdictFeedback: { delete: { phish: 'Use the service desk.', real: 'It was real.' } } };
+    assert.deepEqual(lintJson(ok), []);
+    const bad = mini();
+    bad.social.triageSets[0].labels = { verdictFeedback: { delete: { phish: '' }, nope: { phish: 'x' } } };
+    const out = lintJson(bad);
+    expectIn(out, /labels\.verdictFeedback\.delete\.phish is empty/);
+    expectIn(out, /labels\.verdictFeedback has the key 'nope'/);
+});
+
+test('batch-5: verdict-points out of range or a bad verdict key is refused', { skip }, () => {
+    const j = mini();
+    j.social.triageSets[0].messages[0].truth.verdictPoints = { trust: 80, bogus: 10 };
+    j.social.triageSets[0].scoring = { kindPoints: { call: { report: -5 } } };
+    const out = lintJson(j);
+    expectIn(out, /truth\.verdictPoints\.trust must be a number from 0 to 60/);
+    expectIn(out, /truth\.verdictPoints: 'bogus' is not a verdict/);
+    expectIn(out, /scoring\.kindPoints\.call\.report must be a number from 0 to 60/);
+});
+
 test('without a social key the triage lints do not run', { skip }, () => {
   const script = `require ${JSON.stringify(join(root, 'scripts/validate_social.rb'))}
     ctx = ValidateSocial::Context.new(json: {}, repo_root: '.', social: nil)

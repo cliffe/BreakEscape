@@ -41,7 +41,7 @@
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { MailReader } from '../mail-client/mail-reader.js';
-import { scoreTriage, weakestFactor, bandFor, verdictPoints, FULL_VERDICT_POINTS, CRITICAL_PENALTY, criticalWhat,
+import { scoreTriage, weakestFactor, bandFor, verdictPoints, verdictPointsOverride, FULL_VERDICT_POINTS, CRITICAL_PENALTY, criticalWhat,
     genuineFeedback, genuineFeedbackText, dedupeSentences, missedPhishText } from './triage-scoring.js';
 import { buildTriageMessages } from './triage-messages.js';
 import { buildHeaderPanel } from './header-panel.js';
@@ -50,7 +50,7 @@ import {
 } from './triage-flags.js';
 import {
     kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, kindLabel, kindLabelFor, verdictAction, emailHiddenReveal,
-    shortTitle, realNounFor, choiceOptions, choiceOptionFor, choiceText
+    shortTitle, realNounFor, choiceOptions, choiceOptionFor, choiceText, verdictFeedbackOverride
 } from './triage-kinds.js';
 import { comparisonFor, comparisonText } from './triage-comparison.js';
 
@@ -363,13 +363,24 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const every = (allow) => kinds.length > 0 && kinds.every((k) => allow.includes(k));
         // set.labels.queue[key] is layered over the entry for that key (see triage-kinds.js).
         const pick = (key, info) => {
-            const own = this.labels?.queue?.[key];
-            if (!isObj(own)) return info;
             const out = { ...info };
-            if (typeof own.label === 'string' && own.label) out.label = own.label;
-            if (Array.isArray(own.item) && own.item.length === 2 && own.item.every((w) => typeof w === 'string' && w)) out.item = [...own.item];
-            if (typeof own.real === 'string' && own.real) out.real = own.real;
-            if (typeof own.reportLabel === 'string' && own.reportLabel) out.reportLabel = own.reportLabel;
+            let itemSet = false;
+            const own = this.labels?.queue?.[key];
+            if (isObj(own)) {
+                if (typeof own.label === 'string' && own.label) out.label = own.label;
+                if (Array.isArray(own.item) && own.item.length === 2 && own.item.every((w) => typeof w === 'string' && w)) { out.item = [...own.item]; itemSet = true; }
+                if (typeof own.real === 'string' && own.real) out.real = own.real;
+                if (typeof own.reportLabel === 'string' && own.reportLabel) out.reportLabel = own.reportLabel;
+            }
+            // labels.itemNoun (batch-5 F-E10-8 / F-E12-6): a blanket item-noun override for a set
+            // whose kind the derived noun names wrongly ("visitor" on a reception desk, not "call").
+            // A string gives [noun, noun+'s']; a [singular, plural] pair is taken as-is. A per-queue
+            // labels.queue.<key>.item wins over it. Absent, the derived default stands.
+            if (!itemSet) {
+                const n = this.labels?.itemNoun;
+                if (typeof n === 'string' && n.trim()) out.item = [n.trim(), `${n.trim()}s`];
+                else if (Array.isArray(n) && n.length === 2 && n.every((w) => typeof w === 'string' && w)) out.item = [...n];
+            }
             return out;
         };
         if (kinds.some((k) => k === 'email' || k === 'playerSent')) {
@@ -607,32 +618,52 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             }
             box.appendChild(group);
         } else {
-            const lock = el('p', 'tri-locked');
-            lock.append(icon('mark-tick'), el('span', null, `Your verdict: ${this._actionLabel(rec, ans)}. Locked in.`));
-            box.appendChild(lock);
-            if (this.awarenessSkin && ans.verdict === 'report' && kindOf(rec) !== 'choice') {
-                // The positive beat for a report: it plays once, on the render right after
-                // the report was locked; later renders show the line without the animation.
-                const win = this._reportWin === rec.id;
-                const thanks = el('p', `aw-report-thanks${win ? ' aw-report-win' : ''}`,
-                    rec.truth?.isPhish === true ? REPORT_THANKS : REPORT_THANKS_REAL);
-                if (win) {
-                    lock.classList.add('aw-report-win');
-                    this._reportWin = null;
-                }
-                box.appendChild(thanks);
-            }
+            // The report's positive beat plays once, on the render right after the report was locked.
+            const isReport = this.awarenessSkin && ans.verdict === 'report' && kindOf(rec) !== 'choice';
+            const win = isReport && this._reportWin === rec.id;
             if (this.feedbackMode === 'immediate') {
-                box.appendChild(this._card(rec));
+                // F-E19-3: in immediate mode the review card's verdict line is the single
+                // confirmation. The separate "Your verdict: … Locked in." lock line and the
+                // standalone thanks line are dropped (three near-identical lines → one); the card
+                // verdict line carries the report-win pop and thanks beat via the same classes.
+                const card = this._card(rec);
+                if (isReport) {
+                    const vEl = card.querySelector?.('.tri-card-verdict');
+                    if (vEl) {
+                        vEl.classList.add('aw-report-thanks');
+                        if (win) { vEl.classList.add('aw-report-win'); this._reportWin = null; }
+                    }
+                }
+                box.appendChild(card);
                 const next = el('button', 'tri-next minigame-button');
                 next.type = 'button';
                 const nextRec = this._nextUnanswered(rec.id);
-                next.textContent = nextRec ? 'Next message' : 'See result';
+                // labels.next (batch-5 F-E10-8 / F-E12-6) overrides the "Next message" button; the
+                // default follows the queue's item noun ("Next call", "Next visitor"), so a non-email
+                // set no longer reads "Next message". Unchanged for an email set (noun 'message').
+                next.textContent = nextRec
+                    ? (isStr(this.labels?.next) ? this.labels.next : `Next ${this._queueInfo().item[0]}`)
+                    : 'See result';
                 next.addEventListener('click', () => {
                     if (nextRec) this.reader.select(nextRec.id);
                     else this._finishSort();
                 });
                 box.appendChild(next);
+            } else {
+                // End mode keeps the lock line: there is no review card during the sort, so this is
+                // the only confirmation until the Review step.
+                const lock = el('p', 'tri-locked');
+                lock.append(icon('mark-tick'), el('span', null, `Your verdict: ${this._actionLabel(rec, ans)}. Locked in.`));
+                box.appendChild(lock);
+                if (isReport) {
+                    const thanks = el('p', `aw-report-thanks${win ? ' aw-report-win' : ''}`,
+                        rec.truth?.isPhish === true ? REPORT_THANKS : REPORT_THANKS_REAL);
+                    if (win) {
+                        lock.classList.add('aw-report-win');
+                        this._reportWin = null;
+                    }
+                    box.appendChild(thanks);
+                }
             }
         }
         pane.appendChild(box);
@@ -797,7 +828,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
      */
     _scrollToFeedback() {
         const pane = this.reader?.readPane;
-        const target = pane?.querySelector?.('.tri-locked');
+        // Immediate mode drops the .tri-locked line (F-E19-3), so fall back to the review card's
+        // verdict line, which is now the single confirmation.
+        const target = pane?.querySelector?.('.tri-locked') || pane?.querySelector?.('.tri-card-verdict');
         if (!target || typeof target.scrollIntoView !== 'function') return;
         let reduce = false;
         try { reduce = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches; } catch (e) { /* default */ }
@@ -809,7 +842,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     _scoreOne(rec) {
         const ans = this.answers.get(rec.id);
         if (!ans) return null;
-        return scoreTriage({ messages: [rec], answers: [ans], profile: this.profile }).perMessage[0];
+        return scoreTriage({ messages: [rec], answers: [ans], profile: this.profile, scoring: this.set?.scoring }).perMessage[0];
     }
 
     _verdictLine(rec, verdict) {
@@ -817,6 +850,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const aware = this.profile === 'awareness';
         const own = kindVerdictLine(kindOf(rec), phish, verdict);
         if (own) return own;
+        // A set may override the per-verdict feedback line (F-E10-2) so a relabelled verdict does
+        // not leak the engine word; a per-item truth.reportLine / verifyLine still wins (below).
+        const fb = verdictFeedbackOverride(this.labels, verdict, phish);
         if (phish) {
             // truth.kindLine (optional) says what this item really was, for a genuine message the
             // learner should still report, where "This one was a phish" would be false.
@@ -830,15 +866,15 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // where "A report warns everyone else" is wrong (reporting a locked-out colleague is not
             // warning the team about an attack). When absent, the default stands.
             const report = isStr(rec.truth.reportLine) ? rec.truth.reportLine
-                : 'Right call: reported. A report warns everyone else.';
+                : (fb || 'Right call: reported. A report warns everyone else.');
             return {
                 report,
-                delete: 'Safe, but not reported. Deleting protects you; reporting warns everyone else.',
-                trust: `Not this time. ${what}`,
-                verify
+                delete: fb || 'Safe, but not reported. Deleting protects you; reporting warns everyone else.',
+                trust: fb || `Not this time. ${what}`,
+                verify: isStr(rec.truth.verifyLine) ? verify : (fb || verify)
             }[verdict];
         }
-        return {
+        return fb || {
             trust: 'Right call. This one was real.',
             report: aware
                 ? "Reported, and that's never wrong. For next time, here is why this one was fine."
@@ -857,8 +893,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     _rightCallLine(rec) {
         const phish = rec.truth.isPhish === true;
         const kind = kindOf(rec);
+        const override = verdictPointsOverride(rec.truth, kind, this.set?.scoring);
         const full = actionsFor(kind, this.verifyEnabled, this.labels)
-            .filter((a) => verdictPoints(this.profile, phish, a.verdict, kind) >= FULL_VERDICT_POINTS);
+            .filter((a) => verdictPoints(this.profile, phish, a.verdict, kind, override) >= FULL_VERDICT_POINTS);
         const order = phish ? ['report', 'verify'] : ['trust', 'verify', 'report'];
         const rank = (a) => { const i = order.indexOf(a.verdict); return i < 0 ? 99 : i; };
         const sorted = [...full].sort((a, b) => rank(a) - rank(b));
@@ -869,7 +906,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
     /** Right means full verdict marks under the set's profile, the same rule the result grid uses. */
     _isRight(rec, verdict) {
-        return verdictPoints(this.profile, rec.truth.isPhish === true, verdict, kindOf(rec)) >= FULL_VERDICT_POINTS;
+        const kind = kindOf(rec);
+        return verdictPoints(this.profile, rec.truth.isPhish === true, verdict, kind,
+            verdictPointsOverride(rec.truth, kind, this.set?.scoring)) >= FULL_VERDICT_POINTS;
     }
 
     /**
@@ -1088,19 +1127,25 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const own = isObj(this.set?.resultCopy) ? this.set.resultCopy : {};
         if (typeof own.weakest === 'string' && own.weakest) copy.weakest = own.weakest.split('{it}').join(it);
         if (typeof own.noFlags === 'string' && own.noFlags) copy.noFlags = own.noFlags;
+        if (typeof own.noFlagsLead === 'string' && own.noFlagsLead) copy.noFlagsLead = own.noFlagsLead;
         return copy;
     }
 
     _defaultResultCopy(it) {
+        // noFlagsLead (batch-5 E17): the sentence before noFlags, overridable for a non-phishing set
+        // where "name any flags" reads wrongly. Default unchanged.
+        const noFlagsLead = "You didn't name any flags on these messages, so there's nothing to grade skill by skill.";
         if (this.awarenessSkin || this.profile === 'awareness') {
             return {
                 weakest: this._awarenessWeakestLine(it),
-                noFlags: 'Next time, tick what looks off. The review cards show what gave each fake one away.'
+                noFlags: 'Next time, tick what looks off. The review cards show what gave each fake one away.',
+                noFlagsLead
             };
         }
         return {
             weakest: `Practise ${it} in the mail client, then look ${it} up in your lab sheet.`,
-            noFlags: 'Tick what looks off next time, then check your lab sheet.'
+            noFlags: 'Tick what looks off next time, then check your lab sheet.',
+            noFlagsLead
         };
     }
 
@@ -1135,7 +1180,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     _score() {
         return scoreTriage({
             messages: this.messages, answers: this._answerList(), profile: this.profile,
-            bands: this.set.bands, passPercent: this.passPercent
+            bands: this.set.bands, passPercent: this.passPercent, scoring: this.set.scoring
         });
     }
 
@@ -1283,8 +1328,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                             (nudges[weak.id] || this._resultCopy(Array.isArray(weak.ties) && weak.ties.length > 1).weakest)));
                     }
                 } else {
-                    p.appendChild(el('p', 'tri-weakest',
-                        'You didn\'t name any flags on these messages, so there\'s nothing to grade skill by skill. ' + this._resultCopy().noFlags));
+                    const copy = this._resultCopy();
+                    p.appendChild(el('p', 'tri-weakest', `${copy.noFlagsLead} ${copy.noFlags}`));
                 }
             }
         }

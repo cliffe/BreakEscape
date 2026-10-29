@@ -180,6 +180,33 @@ test('truth.verifyLine overrides the Verify feedback line; absent keeps the prea
     assert.match($(s2, '.tri-card-verdict').textContent, /Checking first is a sound habit\./);
 });
 
+// ── labels.verdictFeedback (batch-5 F-E10-2) ─────────────────────────────────────
+test('labels.verdictFeedback overrides the per-verdict feedback line; truth.reportLine still wins', () => {
+    const over = awareSet({
+        labels: {
+            verdict: { delete: { label: 'Go the trusted way' } },
+            verdictFeedback: { delete: { phish: 'Skip it and use Quayholt Apps or the service desk number you hold.' } }
+        }
+    });
+    const s = open(over);
+    click($(s, '.tri-start'));
+    click($(s, '.mail-row[data-id="p1"]'));
+    click($(s, '.tri-verdict[data-verdict="delete"]'));
+    click($(s, '.tri-confirm'));
+    const text = $(s, '.tri-card-verdict').textContent;
+    assert.match(text, /You chose Go the trusted way\./, 'the relabelled verdict word');
+    assert.match(text, /Skip it and use Quayholt Apps/);
+    assert.doesNotMatch(text, /Deleting protects you/);
+
+    // Without the override the default line returns.
+    const s2 = open(awareSet());
+    click($(s2, '.tri-start'));
+    click($(s2, '.mail-row[data-id="p1"]'));
+    click($(s2, '.tri-verdict[data-verdict="delete"]'));
+    click($(s2, '.tri-confirm'));
+    assert.match($(s2, '.tri-card-verdict').textContent, /Deleting protects you/);
+});
+
 // ── labels.scoreLine (E8 weak-line #5) ───────────────────────────────────────────
 test('labels.scoreLine overrides the scored-round brief line; absent keeps the default', () => {
     const s = open(awareSet());
@@ -187,6 +214,50 @@ test('labels.scoreLine overrides the scored-round brief line; absent keeps the d
     const s2 = open(awareSet({ labels: { scoreLine: 'Getting the call right is most of it.' } }));
     assert.match($(s2, '.tri-brief').textContent, /Getting the call right is most of it\./);
     assert.doesNotMatch($(s2, '.tri-brief').textContent, /naming the flags/);
+});
+
+// ── labels.itemNoun / labels.next (batch-5 F-E10-8 / F-E12-6) ────────────────────
+test('labels.itemNoun renames the item noun in the brief and the Next button; labels.next wins; email default unchanged', () => {
+    const answerP1 = (s) => {
+        click($(s, '.tri-start'));
+        click($(s, '.mail-row[data-id="p1"]'));
+        click($(s, '.tri-verdict[data-verdict="report"]'));
+        click($(s, '.tri-confirm'));
+    };
+    const s = open(awareSet({ labels: { itemNoun: 'request' } }));
+    assert.match($(s, '.tri-brief').textContent, /requests/);
+    answerP1(s);
+    assert.equal($(s, '.tri-next').textContent, 'Next request');
+
+    const s2 = open(awareSet({ labels: { next: 'Next one' } }));
+    answerP1(s2);
+    assert.equal($(s2, '.tri-next').textContent, 'Next one');
+
+    const s3 = open(awareSet());
+    answerP1(s3);
+    assert.equal($(s3, '.tri-next').textContent, 'Next message');
+});
+
+// ── resultCopy.noFlagsLead (batch-5 E17) ─────────────────────────────────────────
+test('resultCopy.noFlagsLead overrides the "You didn\'t name any flags" lead; default otherwise', () => {
+    const playNoFlags = (s) => {
+        click($(s, '.tri-start'));
+        click($(s, '.mail-row[data-id="p1"]'));
+        click($(s, '.tri-verdict[data-verdict="report"]'));
+        click($(s, '.tri-confirm')); // no chips ticked
+        click($(s, '.mail-row[data-id="r1"]'));
+        click($(s, '.tri-verdict[data-verdict="trust"]'));
+        click($(s, '.tri-confirm'));
+        click($(s, '.tri-next')); // See result
+    };
+    const s = open(awareSet());
+    playNoFlags(s);
+    assert.match($(s, '.tri-weakest').textContent, /You didn't name any flags/);
+
+    const s2 = open(awareSet({ resultCopy: { noFlagsLead: 'You ticked nothing, so there is no skill breakdown.' } }));
+    playNoFlags(s2);
+    assert.match($(s2, '.tri-weakest').textContent, /You ticked nothing/);
+    assert.doesNotMatch($(s2, '.tri-weakest').textContent, /name any flags/);
 });
 
 // ── labels.phishCaughtLabel (E17-M2) ─────────────────────────────────────────────

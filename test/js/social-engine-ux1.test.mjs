@@ -252,7 +252,8 @@ test('the verdict row is marked sticky until answered; Confirm scrolls the feedb
         click($(s, '.tri-confirm'));
         assert.equal($(s, '.tri-actions-open'), null, 'no sticky row once locked in');
         assert.equal(calls.length, 1);
-        assert.match(calls[0].cls, /tri-locked/);
+        // F-E19-3: immediate mode drops .tri-locked, so Confirm scrolls the review card's verdict line.
+        assert.match(calls[0].cls, /tri-card-verdict/);
         assert.deepEqual(calls[0].opts, { block: 'start', behavior: 'smooth' });
         window.matchMedia = (q) => ({ matches: /reduce/.test(q) });
         pick(s, 'm_phish');

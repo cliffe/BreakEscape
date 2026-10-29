@@ -205,7 +205,10 @@ test('picking records no flags, opens no "What made you say that?" sheet and loc
     assert.equal(t.sheet.open, false);
     assert.equal(s.answers.get('c_words').flags.length, 0);
     assert.equal(s.answers.get('c_words').action, 'words');
-    assert.match($(s, '.tri-locked').textContent, /three random words/);
+    // F-E19-3: immediate mode drops the separate .tri-locked line; the review card's verdict line
+    // (naming the chosen option) is the single confirmation.
+    assert.equal($(s, '.tri-locked'), null);
+    assert.match($(s, '.tri-card-verdict').textContent, /three random words/);
     assert.equal($$(s, '.tri-choice-option').length, 0, 'the options are gone once locked');
     assert.equal(t.messages.find((m) => m.id === 'c_words').kind, 'choice');
 });

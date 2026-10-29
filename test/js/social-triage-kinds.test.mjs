@@ -316,7 +316,8 @@ test('a push Deny and report and a call Ring back: review cards, row badges and 
     assert.deepEqual([...card.querySelectorAll('.tri-flag.caught')].map((x) => x.dataset.flag), ['unrequested_mfa_push']);
     assert.match(card.textContent, /IT Security: Thanks\. We've reset your password/);
     assert.match(card.textContent, /An MFA prompt you didn't trigger/);
-    assert.match($(s, '.tri-locked').textContent, /Your verdict: Deny and report\. Locked in\./);
+    // F-E19-3: immediate mode has no separate .tri-locked line; the card verdict above is the one confirmation.
+    assert.equal($(s, '.tri-locked'), null);
 
     act(s, 'call_helpdesk', 'verify_callback', ['vish_callback_pressure']);
     card = $(s, '.tri-review-card[data-message-id="call_helpdesk"]');

@@ -241,7 +241,8 @@ const localSet = (extra = {}) => makeSet({
 test('flags: skillName and redFlagString fall back to the raw id, then to set.skillNames and set.tellStrings', () => {
     assert.equal(F.skillName('badge_tailgate'), 'badge_tailgate');
     assert.equal(F.skillName('badge_tailgate', { skillNames: { badge_tailgate: 'Tailgating' } }), 'Tailgating');
-    assert.equal(F.skillName('senderTrust', { skillNames: { senderTrust: 'Mine' } }), 'Sender address', 'built-in tells keep their names');
+    assert.equal(F.skillName('senderTrust', { skillNames: { senderTrust: 'Mine' } }), 'Mine', 'a set skillNames override now renames a built-in tell (F-E9 precedence)');
+    assert.equal(F.skillName('senderTrust'), 'Sender address', 'with no override the built-in name is unchanged');
     assert.equal(F.redFlagString('badge_tailgate', {}), 'badge_tailgate');
     assert.equal(F.redFlagString('badge_tailgate', {}, { tellStrings: { badge_tailgate: 'They had no badge.' } }), 'They had no badge.');
     assert.equal(F.redFlagString('badge_tailgate', { factorStrings: { badge_tailgate: { redFlag: 'Per message.' } } },

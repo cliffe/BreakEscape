@@ -38,7 +38,24 @@ console.log = () => {};
 console.error = () => {};
 
 const mod = await import(pathToFileURL(join(dir, 'minigames/mail-client/mail-composer.js')));
-const { MailComposer, optionsForSlot, heldFactIds, heldProvides, PRE_SEND_GATE_LINE } = mod;
+const { MailComposer, optionsForSlot, heldFactIds, heldProvides, PRE_SEND_GATE_LINE, appendWithAddresses, isAddressValue } = mod;
+
+test('appendWithAddresses wraps an address in the address-font span and leaves prose plain (F-E10-9)', () => {
+    const host = document.getElementById('host');
+    const p = document.createElement('p');
+    appendWithAddresses(p, "sender's address: operations@quayholt.example");
+    const span = p.querySelector('.mail-blank-address');
+    assert.ok(span, 'the address part is wrapped');
+    assert.equal(span.textContent, 'operations@quayholt.example');
+    assert.match(p.textContent, /^sender's address: /);
+    // Prose with no address gets a single text node, unchanged.
+    const q = document.createElement('p');
+    appendWithAddresses(q, 'Please action this invoice.');
+    assert.equal(q.querySelector('.mail-blank-address'), null);
+    assert.equal(q.textContent, 'Please action this invoice.');
+    assert.equal(isAddressValue('operations@quayholt.example'), true);
+    assert.equal(isAddressValue('Quayholt Operations'), false);
+});
 const data = await import(pathToFileURL(join(dir, 'minigames/mail-client/mail-data.js')));
 const { MailClientMinigame } = await import(pathToFileURL(join(dir, 'minigames/mail-client/mail-client-minigame.js')));
 
@@ -459,4 +476,35 @@ test('a blank with only wrong options shows its stuckUntil pointer until the rig
     const held = fixture();
     held.templates.from_named.slots = held.templates.from_named.slots.map((sl) => (sl.id === 'sender_name' ? { ...sl, stuckUntil: { target: 'pierce', value: 'baker_full', text: 'x' } } : sl));
     assert.equal(build(grant('pierce_trusts_jed'), held.templates).querySelector('.mail-blank-stuck'), null, 'gone once the named option is offered');
+});
+
+// E10 F-E10-9: an address inside a composed value reads in the address font, not the pixel font.
+test('appendWithAddresses wraps an email/URL in a .mail-blank-address span and leaves prose alone', () => {
+    const a = document.createElement('div');
+    mod.appendWithAddresses(a, 'operations@quayholt.example');
+    const span = a.querySelector('.mail-blank-address');
+    assert.ok(span, 'the email is wrapped');
+    assert.equal(span.textContent, 'operations@quayholt.example');
+    assert.equal(a.textContent, 'operations@quayholt.example');
+
+    const b = document.createElement('div');
+    mod.appendWithAddresses(b, 'Reply to accounts@fernside.example now.');
+    assert.equal(b.querySelector('.mail-blank-address').textContent, 'accounts@fernside.example',
+        'trailing punctuation stays outside the address span');
+    assert.equal(b.textContent, 'Reply to accounts@fernside.example now.');
+
+    const c = document.createElement('div');
+    mod.appendWithAddresses(c, 'Quayholt Operations');
+    assert.equal(c.querySelector('.mail-blank-address'), null, 'a plain name is not wrapped');
+    assert.equal(c.childNodes.length, 1);
+    assert.equal(c.childNodes[0].nodeType, 3, 'plain text stays a single text node');
+});
+
+test('isAddressValue is true only for a value that is wholly an address', () => {
+    assert.equal(mod.isAddressValue('operations@quayholt.example'), true);
+    assert.equal(mod.isAddressValue(' https://orders.fernside.example '), true);
+    assert.equal(mod.isAddressValue('Quayholt Operations'), false);
+    assert.equal(mod.isAddressValue('From operations@quayholt.example'), false);
+    assert.equal(mod.isAddressValue(''), false);
+    assert.equal(mod.isAddressValue(null), false);
 });

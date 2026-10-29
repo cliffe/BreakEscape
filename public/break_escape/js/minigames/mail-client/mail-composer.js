@@ -153,6 +153,44 @@ function el(tag, className, text) {
     return node;
 }
 
+// Fonts rule (00 §address): a web/email address reads in the address font (--se-font-address),
+// prose in the readable pixel font. The same regex mail-reader._appendBodyText uses, so a composed
+// chip's address reads as it does in the inbox (E10 F-E10-9: "operations@quayholt.example" was in
+// the pixel font). Nothing is hardcoded; detection is by the value itself.
+const ADDRESS_RE = /(https?:\/\/[^\s]+|www\.[^\s]+|[^\s@]+@[^\s@]+\.[^\s@]+)/g;
+
+/** Append `text` to `node`, wrapping any web/email address in a `.mail-blank-address` span. */
+export function appendWithAddresses(node, text) {
+    const s = typeof text === 'string' ? text : '';
+    if (!s) return;
+    ADDRESS_RE.lastIndex = 0;
+    let last = 0;
+    let m;
+    while ((m = ADDRESS_RE.exec(s)) !== null) {
+        let token = m[0];
+        const start = m.index;
+        const trail = (token.match(/[.,;:!?)\]}>'"]+$/) || [''])[0];
+        if (trail) token = token.slice(0, token.length - trail.length);
+        if (!token) continue;
+        if (start > last) node.appendChild(document.createTextNode(s.slice(last, start)));
+        node.appendChild(el('span', 'mail-blank-address', token));
+        if (trail) node.appendChild(document.createTextNode(trail));
+        last = start + m[0].length;
+    }
+    if (last === 0) { node.appendChild(document.createTextNode(s)); return; }
+    if (last < s.length) node.appendChild(document.createTextNode(s.slice(last)));
+}
+
+/** True when the trimmed value is, in whole, a single web/email address (so it belongs in the
+ *  address font): used to style a native <option> whose text is just an address. */
+export function isAddressValue(text) {
+    const t = String(text == null ? '' : text).trim();
+    if (!t) return false;
+    ADDRESS_RE.lastIndex = 0;
+    const m = ADDRESS_RE.exec(t);
+    return !!m && m.index === 0 && m[0].length === t.length;
+}
+
 export class MailComposer {
     /**
      * @param {HTMLElement} parent
@@ -950,7 +988,11 @@ export class MailComposer {
                 // record it, not a greyed-out disabled control (P1-T).
                 if (!this.choice[part]) this.choice[part] = set[0];
                 const only = templateOf(this.templates, set[0]);
-                row.appendChild(el('p', 'mail-compose-value mail-compose-fixed', only ? this._fillPreview(only) : set[0]));
+                // An address in a single-option fixed value (a lone From sender, a reply-to) reads
+                // in the address font too, like the chosen-blank and select cases (E10 F-E10-9).
+                const fixed = el('p', 'mail-compose-value mail-compose-fixed');
+                appendWithAddresses(fixed, String(only ? this._fillPreview(only) : set[0]));
+                row.appendChild(fixed);
             } else {
                 this._renderPartSelect(row, part);
             }
@@ -974,9 +1016,20 @@ export class MailComposer {
         }
         for (const id of set) {
             const tpl = templateOf(this.templates, id);
-            const opt = el('option', null, tpl ? this._fillPreview(tpl) : id);
+            const preview = tpl ? this._fillPreview(tpl) : id;
+            const opt = el('option', null, preview);
             opt.value = id;
-            if (id === this.choice[part]) opt.selected = true;
+            // A native <option> cannot split fonts, but one whose whole text is an address (a
+            // From sender address) should read in the address font, not the pixel font (E10 F-E10-9).
+            if (isAddressValue(preview)) {
+                opt.classList.add('mail-compose-template-address');
+                opt.style.fontFamily = 'var(--se-font-address)';
+            }
+            if (id === this.choice[part]) {
+                opt.selected = true;
+                // Reflect the selected option's face on the closed select box.
+                select.style.fontFamily = isAddressValue(preview) ? 'var(--se-font-address)' : '';
+            }
             select.appendChild(opt);
         }
         select.addEventListener('change', () => this.chooseTemplate(part, select.value));
@@ -1019,7 +1072,14 @@ export class MailComposer {
                 // never the value, so the gate line itself stays neutral.
                 if (isStr(slot.stuck) && slot.stuck.trim()) field.appendChild(this._stuckPointer(slot.stuck));
             } else {
-                btn.textContent = chosenOpt ? `${blankLabel}: ${chosenOpt.label}` : `${blankLabel}: choose…`;
+                if (chosenOpt) {
+                    // The label prefix stays in the readable pixel font; an address in the chosen
+                    // value (a From sender address, a reply-to) renders in the address font.
+                    btn.appendChild(document.createTextNode(`${blankLabel}: `));
+                    appendWithAddresses(btn, String(chosenOpt.label ?? ''));
+                } else {
+                    btn.textContent = `${blankLabel}: choose…`;
+                }
                 btn.dataset.chosen = chosen || '';
                 btn.setAttribute('aria-haspopup', 'listbox');
                 btn.addEventListener('click', () => this.openPicker(slot, btn));

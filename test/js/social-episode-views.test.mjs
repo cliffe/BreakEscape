@@ -273,6 +273,42 @@ test('debrief: call and prompt cards use their own action words and lines (D3), 
     assert.match(push.querySelector('.aw-card-verdict').textContent, /^You chose Approve\./, 'the prompt action label');
 });
 
+test('debrief summary counter follows labels.phishCaughtLabel for a non-phishing set (E17)', () => {
+    const h = host();
+    const set2 = { id: 'e17', labels: { phishCaughtLabel: 'Requests handled' },
+        messages: [{ id: 'm', kind: 'email', subject: 'S', truth: { isPhish: true, flags: ['x'] } }] };
+    const r = { percent: 80, headline: 'ok', phishTotal: 1, phishCaught: 1, reportCount: 1,
+        answers: [{ id: 'm', verdict: 'report', flags: ['x'], score: 100, isPhish: true }] };
+    renderDebrief(h, { result: r, set: set2, strings: {}, variant: 'full', onFinish() {} });
+    const summary = h.querySelector('.aw-summary').textContent;
+    assert.match(summary, /Requests handled: 1 of 1/);
+    assert.doesNotMatch(summary, /Phish caught/);
+});
+
+test('debrief: a relabelled email verdict uses the set label and an overridable feedback line (F-E10-2)', () => {
+    const h = host();
+    const relSet = {
+        id: 'e10',
+        labels: {
+            verdict: { delete: { label: 'Go the trusted way' } },
+            verdictFeedback: { delete: { phish: 'Skip it and use Quayholt Apps or the service desk number you hold.' } }
+        },
+        messages: [{ id: 'e10_lock', kind: 'email', subject: 'Your computer is locked', from: { name: 'Support' },
+            truth: { isPhish: true, flags: ['urgencyCalibrated'] } }]
+    };
+    const r = { percent: 70, headline: 'x', answers: [
+        { id: 'e10_lock', verdict: 'delete', action: 'delete', flags: [], score: 30, isPhish: true }
+    ] };
+    renderDebrief(h, { result: r, set: relSet, strings: {}, variant: 'full', onFinish() {} });
+    const card = h.querySelector('[data-message-id="e10_lock"]');
+    const verdict = card.querySelector('.aw-card-verdict').textContent;
+    // The relabelled word, not "Delete"; the override line, not "Deleting protects you".
+    assert.match(verdict, /^You chose Go the trusted way\./);
+    assert.ok(!/Delete/.test(verdict), 'the engine word does not leak');
+    assert.match(verdict, /Skip it and use Quayholt Apps/);
+    assert.ok(!/Deleting protects you/.test(verdict));
+});
+
 test('debrief defendOnly shows its string and no flip wording', () => {
     const h = host();
     renderDebrief(h, { result: result(), set: set(), strings: { defendOnly: 'You skipped the writing step.' }, variant: 'defendOnly', onFinish() {} });

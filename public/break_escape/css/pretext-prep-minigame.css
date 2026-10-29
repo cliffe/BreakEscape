@@ -229,3 +229,71 @@
         scroll-behavior: auto !important;
     }
 }
+
+/* The end-of-call debrief (person-chat-pretext.js renderDebrief), batch-5 F-E12-3. It was an
+   unstyled node bottom-left over the open chat; it is now a centred modal over a full backdrop
+   that covers the chat (nothing hidden, the live bar not read beside the outcome). The panel
+   keeps its own solid surface and dark ink so it reads over either the neutral awareness chat or
+   the dark lab chat behind it. Every string is set in the readable body face; targets are >=44px. */
+.pretext-debrief-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+    background: rgba(8, 12, 20, 0.74);
+    font-family: var(--se-font-readable, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
+}
+
+.pretext-debrief {
+    width: 100%;
+    max-width: 460px;
+    max-height: 100%;
+    overflow-y: auto;
+    box-sizing: border-box;
+    padding: 20px;
+    background: #f5f7fa;
+    color: #1b2230;
+    border: 1px solid #c9d3e0;
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+.pretext-debrief-title {
+    margin: 0 0 8px;
+    font-size: 20px;
+}
+
+.pretext-debrief-outcome {
+    margin: 0 0 12px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.pretext-debrief-lines,
+.pretext-debrief-defender {
+    margin: 0 0 12px;
+    padding-left: 20px;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+.pretext-debrief-lines li,
+.pretext-debrief-defender li {
+    margin: 4px 0;
+}
+
+.pretext-debrief-done {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 88px;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-family: inherit;
+    cursor: pointer;
+}

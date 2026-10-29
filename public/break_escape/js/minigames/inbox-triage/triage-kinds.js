@@ -93,6 +93,21 @@ export function verdictAction(verdict, labels) {
     return relabel(VERDICT_ACTIONS[verdict] || VERDICT_ACTIONS.trust, labels?.verdict?.[verdict]);
 }
 
+/**
+ * A set may override the feedback line a verdict shows the learner (batch-5 F-E10-2), so a
+ * relabelled verdict (verdictLabels / labels.verdict) does not leak the engine word — "Deleting
+ * protects you" on a page nobody deleted, named "Go the trusted way". `labels.verdictFeedback` is
+ * `{ <verdict>: { phish?: string, real?: string } }`; returns the matching line, or null to keep
+ * the default. A per-item truth.reportLine / truth.verifyLine still wins over this.
+ */
+export function verdictFeedbackOverride(labels, verdict, isPhish) {
+    const vf = labels && typeof labels === 'object' ? labels.verdictFeedback : null;
+    const entry = vf && typeof vf === 'object' ? vf[verdict] : null;
+    if (!entry || typeof entry !== 'object') return null;
+    const line = entry[isPhish ? 'phish' : 'real'];
+    return typeof line === 'string' && line ? line : null;
+}
+
 const VERDICT_ACTIONS = Object.freeze({
     trust: { id: 'trust', verdict: 'trust', label: 'Trust', past: 'Trusted', hint: "This is real. I'd open it or act on it." },
     report: { id: 'report', verdict: 'report', label: 'Report', past: 'Reported', hint: 'This is a phish. Send it to security.' },

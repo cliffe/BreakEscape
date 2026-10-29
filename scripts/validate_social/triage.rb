@@ -117,6 +117,7 @@ module ValidateSocial
       issues.concat(chip_checks(set, universe, where))
       issues.concat(wording_checks(set, universe, where))
       issues.concat(band_checks(set, where))
+      issues.concat(scoring_checks(set, where))
       issues.concat(profile_checks(set, where))
       issues.concat(message_checks(ctx, set, universe, where))
       issues.concat(player_sent_auth_checks(ctx, set, where))
@@ -127,6 +128,27 @@ module ValidateSocial
           issues << err("#{where}.pairedWith '#{pw}' is not a social.triageSets id")
         elsif pw == set['id']
           issues << err("#{where}.pairedWith names the set itself")
+        end
+      end
+      issues
+    end
+
+    # set.scoring (batch-5): optional per-kind verdict-points overrides. A message's own
+    # truth.verdictPoints wins over these. Absent, scoring is unchanged.
+    def self.scoring_checks(set, where)
+      return [] unless set.key?('scoring')
+      sc = set['scoring']
+      return [err("#{where}.scoring must be an object")] unless sc.is_a?(Hash)
+      issues = []
+      if sc.key?('kindPoints')
+        kp = sc['kindPoints']
+        if !kp.is_a?(Hash)
+          issues << err("#{where}.scoring.kindPoints must be an object of kind -> { verdict: points }")
+        else
+          kp.each do |kind, points|
+            next if kind.to_s.start_with?('_')
+            issues.concat(verdict_points_checks(points, "#{where}.scoring.kindPoints.#{kind}"))
+          end
         end
       end
       issues
@@ -257,9 +279,9 @@ module ValidateSocial
       if set.key?('resultCopy')
         rc = set['resultCopy']
         if rc.is_a?(Hash)
-          rc.each { |k, v| issues << err("#{where}.resultCopy.#{k} is empty") if %w[weakest noFlags].include?(k) && blank?(v) }
+          rc.each { |k, v| issues << err("#{where}.resultCopy.#{k} is empty") if %w[weakest noFlags noFlagsLead].include?(k) && blank?(v) }
         else
-          issues << err("#{where}.resultCopy must be an object { weakest?, noFlags? }")
+          issues << err("#{where}.resultCopy must be an object { weakest?, noFlags?, noFlagsLead? }")
         end
       end
       issues << err("#{where}.reportReplyFrom must be a non-empty string") if set.key?('reportReplyFrom') && blank?(set['reportReplyFrom'])
@@ -304,11 +326,16 @@ module ValidateSocial
       return [err("#{where}.labels must be an object")] unless labels.is_a?(Hash)
 
       issues = []
-      known = %w[kind verdict callActions pushActions smsHeading queue choice teamBadge teamBadgeTitle phishCaughtLabel scoreLine]
+      known = %w[kind verdict verdictFeedback callActions pushActions smsHeading itemNoun next queue choice teamBadge teamBadgeTitle phishCaughtLabel scoreLine]
       labels.each_key { |k| issues << err("#{where}.labels has the key '#{k}', which is not one of #{known.join(', ')}") unless known.include?(k) }
       issues << err("#{where}.labels.smsHeading is empty") if labels.key?('smsHeading') && blank?(labels['smsHeading'])
-      %w[teamBadge teamBadgeTitle phishCaughtLabel scoreLine].each do |key|
+      %w[teamBadge teamBadgeTitle phishCaughtLabel scoreLine next].each do |key|
         issues << err("#{where}.labels.#{key} must be a non-empty string") if labels.key?(key) && blank?(labels[key])
+      end
+      if labels.key?('itemNoun')
+        n = labels['itemNoun']
+        ok = (n.is_a?(String) && !blank?(n)) || (n.is_a?(Array) && n.length == 2 && n.none? { |w| blank?(w) })
+        issues << err("#{where}.labels.itemNoun must be a non-empty string or a [singular, plural] pair") unless ok
       end
       if labels['teamBadge'].is_a?(String) && !labels['teamBadge'].include?('{n}')
         issues << warn_("#{where}.labels.teamBadge has no {n}; the badge would not show the count")
@@ -347,6 +374,26 @@ module ValidateSocial
       group.call('verdict', %w[trust report delete verify])
       group.call('callActions', %w[comply escalate refuse verify_callback])
       group.call('pushActions', %w[approve deny deny_report])
+      if labels.key?('verdictFeedback')
+        vf = labels['verdictFeedback']
+        if !vf.is_a?(Hash)
+          issues << err("#{where}.labels.verdictFeedback must be an object of verdict -> { phish?, real? }")
+        else
+          vf.each do |id, v|
+            next if id.to_s.start_with?('_')
+            issues << warn_("#{where}.labels.verdictFeedback has the key '#{id}', which is not one of trust, report, delete, verify; it is never read") unless BUILT_VERDICTS.include?(id)
+            if !v.is_a?(Hash)
+              issues << err("#{where}.labels.verdictFeedback.#{id} must be an object { phish?, real? } of feedback lines")
+            else
+              v.each do |truth, line|
+                next if truth.to_s.start_with?('_')
+                issues << err("#{where}.labels.verdictFeedback.#{id} has the key '#{truth}', which is not phish or real") unless %w[phish real].include?(truth)
+                issues << err("#{where}.labels.verdictFeedback.#{id}.#{truth} is empty") if %w[phish real].include?(truth) && blank?(line)
+              end
+            end
+          end
+        end
+      end
       if labels.key?('queue')
         q = labels['queue']
         if q.is_a?(Hash)
@@ -603,6 +650,29 @@ module ValidateSocial
     # VERDICT_POINTS): the right option must be one of them.
     FULL_MARKS_VERDICTS = { true => %w[report verify], false => %w[trust report verify] }.freeze
     BUILT_VERDICTS = %w[trust report delete verify].freeze
+    # A verdict-points override is worth 0..60 (the verdict is 60 of the 100-point item;
+    # triage-scoring.js VERDICT_POINTS_MIN/MAX). Shared by truth.verdictPoints and
+    # set.scoring.kindPoints[kind] (batch-5 F-E12-1, E13 F-10).
+    VERDICT_POINTS_MIN = 0
+    VERDICT_POINTS_MAX = 60
+
+    # Validate a verdict-points override map { trust?, report?, delete?, verify? }: a Hash with only
+    # built-verdict keys and numeric values in range. Returns issue list.
+    def self.verdict_points_checks(points, where)
+      return [err("#{where} must be an object of verdict -> points, e.g. { \"trust\": 60 }")] unless points.is_a?(Hash)
+      issues = []
+      points.each do |v, n|
+        next if v.to_s.start_with?('_')
+        unless BUILT_VERDICTS.include?(v)
+          issues << err("#{where}: '#{v}' is not a verdict (one of #{BUILT_VERDICTS.join(', ')})")
+          next
+        end
+        if !n.is_a?(Numeric) || n < VERDICT_POINTS_MIN || n > VERDICT_POINTS_MAX
+          issues << err("#{where}.#{v} must be a number from #{VERDICT_POINTS_MIN} to #{VERDICT_POINTS_MAX} (the verdict is worth #{VERDICT_POINTS_MAX} of the item's 100 points)")
+        end
+      end
+      issues
+    end
     # A bare token of 8+ characters that mixes three kinds of character reads like a pasted password.
     CREDENTIAL_RE = /\A(?=\S{8,}\z)(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])\S+\z/.freeze
 
@@ -877,6 +947,7 @@ module ValidateSocial
         issues << err("#{mw}.truth.#{f} is empty; leave it out to keep the phish wording") if t.key?(f) && blank?(t[f])
         issues << warn_("#{mw}.truth.#{f} is on a real item (isPhish false); it only replaces phish wording, so it is never seen") if t.key?(f) && !t['isPhish']
       end
+      issues.concat(verdict_points_checks(t['verdictPoints'], "#{mw}.truth.verdictPoints")) if t.key?('verdictPoints')
       if t['isPhish'] && t.key?('falseAlarmCost')
         issues << warn_("#{mw}.truth.falseAlarmCost is on a phish; it is shown only for a real item reported or deleted, so it is never seen")
       end

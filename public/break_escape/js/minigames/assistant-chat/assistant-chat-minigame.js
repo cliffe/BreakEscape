@@ -107,6 +107,51 @@ export class AssistantChatMinigame extends SocialOverlayScene {
         this._buildExchanges(arr(this.config.exchanges));
     }
 
+    /**
+     * Split a string into text nodes with any web/email address in the address font
+     * (--se-font-address, class ac-address), the same way mail-reader does (E8 F15, E13 F-14),
+     * so a hidden line's address reads as it would in a browser bar rather than in a third
+     * typeface. Trailing sentence punctuation is left outside the address span. Returns an array
+     * of nodes; a string with no address returns a single text node.
+     */
+    _addressy(text) {
+        const s = typeof text === 'string' ? text : '';
+        const nodes = [];
+        if (!s) return nodes;
+        const re = /(https?:\/\/[^\s]+|www\.[^\s]+|[^\s@]+@[^\s@]+\.[^\s@]+)/g;
+        let last = 0, m;
+        while ((m = re.exec(s)) !== null) {
+            let token = m[0];
+            const start = m.index;
+            const trail = (token.match(/[.,;:!?)\]}>'"]+$/) || [''])[0];
+            if (trail) token = token.slice(0, token.length - trail.length);
+            if (!token) continue;
+            if (start > last) nodes.push(document.createTextNode(s.slice(last, start)));
+            nodes.push(h('span', { class: 'ac-address', text: token }));
+            if (trail) nodes.push(document.createTextNode(trail));
+            last = start + m[0].length;
+        }
+        if (last === 0) { nodes.push(document.createTextNode(s)); return nodes; }
+        if (last < s.length) nodes.push(document.createTextNode(s.slice(last)));
+        return nodes;
+    }
+
+    /**
+     * Mark a beat's section visibly done once it has produced its result (E13 F-7): a running
+     * progress signal so the learner can see a beat is finished and that they may close the
+     * window. Idempotent; adds the badge once. Default-safe: a beat with no result shows nothing.
+     */
+    _markDone(sec) {
+        if (!sec || sec.classList?.contains?.('ac-done')) return;
+        sec.classList.add('ac-done');
+        sec.appendChild(h('p', { class: 'ac-done-badge', role: 'status', 'aria-label': 'Done' }, '✓ Done'));
+    }
+
+    /** Bring a newly shown result/verdict into view (E13 F-9). No-op where unsupported (jsdom). */
+    _scrollIntoView(node) {
+        try { node?.scrollIntoView?.({ block: 'nearest' }); } catch (e) { /* headless */ }
+    }
+
     /** An assistant reply bubble, with the "can make mistakes" disclaimer when authored. */
     _reply(text, cls = 'ac-reply') {
         const bubble = h('div', { class: cls }, h('p', { class: 'ac-reply-text', text }));
@@ -142,7 +187,7 @@ export class AssistantChatMinigame extends SocialOverlayScene {
             if (hid && isStr(hid.text)) {
                 const hbtn = h('button', { type: 'button', class: 'minigame-button ac-hidden-btn',
                     text: isStr(hid.button) ? hid.button : 'Show hidden text', 'aria-expanded': 'false' });
-                const htext = h('p', { class: 'ac-hidden-text', text: hid.text, hidden: true });
+                const htext = h('p', { class: 'ac-hidden-text', hidden: true }, ...this._addressy(hid.text));
                 this.addEventListener(hbtn, 'click', (ev) => {
                     ev.preventDefault?.();
                     htext.hidden = false;
@@ -150,6 +195,8 @@ export class AssistantChatMinigame extends SocialOverlayScene {
                 });
                 out.append(hbtn, htext);
             }
+            this._markDone(sec);
+            this._scrollIntoView(out);
         });
         sec.append(btn, out);
         this.body.appendChild(sec);
@@ -224,6 +271,10 @@ export class AssistantChatMinigame extends SocialOverlayScene {
                     out.append(rep, rout);
                 }
             }
+            this._markDone(sec);
+            // Scroll the verdict (or the summary) into view: it sits below the line list and the
+            // learner otherwise could not tell anything happened (E13 F-9).
+            this._scrollIntoView(out.querySelector('.ac-paste-feedback') || out.querySelector('.ac-paste-warning') || out);
         });
         sec.append(sumBtn, out);
         this.body.appendChild(sec);
@@ -268,7 +319,7 @@ export class AssistantChatMinigame extends SocialOverlayScene {
                     ev.preventDefault?.();
                     docPanel.hidden = false;
                     csBtn.setAttribute('aria-expanded', 'true');
-                    if (verdict && isStr(fb.caught)) { verdict.textContent = fb.caught; verdict.dataset.verdict = 'caught'; }
+                    if (verdict && isStr(fb.caught)) { verdict.textContent = fb.caught; verdict.dataset.verdict = 'caught'; this._scrollIntoView(verdict); }
                     if (sendBtn) sendBtn.disabled = true; // checked, so "send without checking" no longer applies
                 });
                 out.append(csBtn, docPanel);
@@ -281,10 +332,13 @@ export class AssistantChatMinigame extends SocialOverlayScene {
                     verdict.textContent = fb.missed;
                     verdict.dataset.verdict = 'missed';
                     sendBtn.disabled = true;
+                    this._scrollIntoView(verdict);
                 });
                 out.appendChild(sendBtn);
             }
             if (verdict) out.appendChild(verdict);
+            this._markDone(sec);
+            this._scrollIntoView(out);
         });
         sec.append(btn, out);
         this.body.appendChild(sec);
