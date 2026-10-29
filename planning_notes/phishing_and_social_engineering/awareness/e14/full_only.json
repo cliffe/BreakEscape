@@ -39,6 +39,7 @@
       { "id": "pp_security_answer", "label": "Use a made-up security-question answer kept in your password manager, not your real pet's name", "closesFacts": ["se_intel_df_pet"], "default": "open" }
     ],
     "_note_defendOnly": "MA2 (E14_DESIGN_C1): this note is the one the GENERATOR copies into the defend-only shell, which has no OSINT board and no Dani, so it is self-framed (second person, no 'board', no 'Dani'). The FULL erb keeps its own board/Dani-framed note ('Each change closes a found fact on the board. Tighten Dani's profile first, then do the same on your own.'), which is coherent there because its OSINT stage introduces Dani; that erb copy is intentionally NOT regenerated from here. privacyPanel is not checked by the fragment<->erb parity test, so the divergence is safe.",
+    "strings": { "leaveOff": "Why it matters: " },
     "note": "Each switch closes one of the things an attacker could piece together about you from a public profile. Tighten these on your own profile."
   },
 
