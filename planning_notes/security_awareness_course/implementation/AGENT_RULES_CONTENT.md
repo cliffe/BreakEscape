@@ -16,6 +16,6 @@ Writing rules: UK English, "cyber security" two words, no em or en dashes, plain
 
 Checks: `python3 -m json.tool` on each JSON file; compile the ink; prove the defend set validates by copying the E8 defend-only shell (`scenarios/awareness_e8_after_the_click_defend/scenario.json.erb`) into your scratch folder with your set and strings swapped in and running `bundle exec ruby scripts/validate_scenario.rb <scratch erb> --strict-social --no-graph --skip-ink`.
 
-Shared tree: other agents are working. Never `git stash`, `git checkout -- <file>`, `git reset`. Commit only your files, always as `git commit -m "..." -- <your paths>` (never a bare `git commit`, even when the index looks clean: another agent can stage files between your check and your commit, and a bare commit sweeps them in or loses yours to theirs), no attribution lines.
+Shared tree: other agents are working. Never `git stash`, `git checkout -- <file>`, `git reset`. Commit only your files, always as `git commit -m "..." -- <your paths>` (`git add -- <path>` new files first; never a bare `git commit`, even when the index looks clean: another agent can stage files between your check and your commit, and a bare commit sweeps them in or loses yours to theirs), no attribution lines.
 
 Return: files and commit hash; a summary of the attack (or sandbox) artefact, the defend items (id, kind, phish or genuine, tell), the flip and the debrief panels; where the brief was wrong or thin and what you chose; questions for the wiring agent.
