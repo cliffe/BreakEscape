@@ -1606,6 +1606,15 @@ module ValidateSocial
       if d.key?('alwaysScoresBin') && !ids.include?(d['alwaysScoresBin'])
         issues << err("sortDrill.alwaysScoresBin '#{d['alwaysScoresBin']}' is not one of the bins (#{ids.join(', ')})")
       end
+      if d.key?('acceptable')
+        acc = d['acceptable']
+        if !acc.is_a?(Array) || acc.empty?
+          issues << err('sortDrill.acceptable must be a non-empty array of bin ids')
+        else
+          acc.each { |a| issues << err("sortDrill.acceptable '#{a}' is not one of the bins (#{ids.join(', ')})") unless ids.include?(a) }
+        end
+        issues << warn_('sortDrill.acceptable is set on an unscored drill; it is never read') if scored == false
+      end
       issues.concat(sort_drill_card_checks(d, ids))
       issues
     end
@@ -1639,8 +1648,9 @@ module ValidateSocial
         end
         if c.key?('acceptable')
           accept = c['acceptable']
-          if !accept.is_a?(Array) || accept.empty?
-            issues << err("#{cw}.acceptable must be a non-empty array of bin ids")
+          if !accept.is_a?(Array)
+            # An empty array is allowed: it switches the drill-level acceptable off for this card.
+            issues << err("#{cw}.acceptable must be an array of bin ids (an empty array switches off the drill default)")
           else
             accept.each do |a|
               issues << err("#{cw}.acceptable '#{a}' is not one of the bins (#{ids.join(', ')})") unless ids.include?(a)
