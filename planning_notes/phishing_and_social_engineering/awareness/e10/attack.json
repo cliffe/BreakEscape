@@ -90,7 +90,8 @@
               "fact": "quayholt_fernside_portal" } ] },
           { "id": "people", "title": "Our people", "blocks": [
             { "id": "blk_leo", "kind": "staff", "person": "leo", "name": "Leo Brennan",
-              "role": "Operations colleague", "address": "leo.brennan@quayholt.example" } ] } ] },
+              "role": "Operations colleague", "address": "leo.brennan@quayholt.example",
+              "note": "Leo is the colleague on your brief, and his address is here. What lets you write to him is the supplier portal his team orders through: note it from 'Suppliers and ordering'." } ] } ] },
 
       { "id": "fernside_site", "name": "Fernside Catering", "url": "fernside.example", "type": "company-site",
         "pages": [

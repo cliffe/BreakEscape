@@ -59,6 +59,27 @@
   "social": {
     "triageSets": [
       {
+        "bands": [
+          {
+            "min": 85,
+            "headline": "Sharp: you caught the fake pages and knew why"
+          },
+          {
+            "min": 60,
+            "headline": "Getting there: a few signs slipped past"
+          },
+          {
+            "min": 0,
+            "headline": "Worth practising: here's where to look first"
+          }
+        ],
+        "reportReply": "Thanks. Security has the page and is blocking it. Please don't reopen it.",
+        "resultCopy": {
+          "noFlags": "Next time, tick what looks off. The review cards show what gave each fake page away.",
+          "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+          "criticalLead": "put the computer at risk",
+          "reportedPct": "Reported {pct}% of the fake pages"
+        },
         "id": "e10_browser_morning",
         "title": "A morning of Quayholt web pages",
         "brief": "The kiosk has a morning's worth of web pages open, the kind that turn up while you're trying to work: fake downloads, 'verify you are human' boxes, pop-ups that want you to call. For each one, decide whether you'd carry on, close and report it, or go the trusted way, then tick what you noticed. The rule holds every time: no honest web page ever needs you to paste, run, install or call. Reporting when you're unsure is always fine and never marked down, and reporting fast after you've clicked or pasted is what limits the damage.",
@@ -82,6 +103,9 @@
           "delete": "Go the trusted way"
         },
         "labels": {
+          "teamBadgeTitle": "Fake pages you reported or went round the trusted way this round",
+          "teamBadge": "Fake pages stopped for the team: {n}",
+          "phishCaughtLabel": "Fake pages caught",
           "itemNoun": "page",
           "next": "Next page",
           "verdictFeedback": {
@@ -377,9 +401,11 @@
         "reportAlwaysVisible": true
       },
       "strings": {
+        "teamLine": "By reporting or avoiding {n} of these pages rather than carrying on, you kept a fake page away from the rest of your team.",
+        "weakestTells": "The signs most often missed: {names} ({counts} each).",
+        "weakestTell": "The sign most often missed: {names} ({counts}).",
         "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. You've a morning of ordinary work to get through, and the web keeps getting in the way: downloads, 'verify you are human' boxes, pop-ups that want you to call. For each page, decide whether to carry on, close and report, or go the trusted way. Nothing here touches a real site or runs on your computer.",
         "allPhishRight": "Every fake page was caught, with every tell named.",
-        "reportedPct": "Reported {pct}% of the fake pages",
         "noBlameLine": "These pages are built to look ordinary, and a familiar site that has been hacked is the hardest of all. A miss here just shows what to look for; reporting fast, even after you've clicked or pasted, is what limits the damage, and nobody is in trouble for it.",
         "mondayCard": "On Monday: get software from Quayholt Apps, not from adverts or search results; read the address before you sign in; and if a page ever tells you to paste, run, install, update, call or allow, close it. If you did any of those, report it straight away using the route in the box below, and don't restart or clear anything.",
         "defendOnly": "These pages are built to look like an ordinary morning's browsing, and anyone can be caught by one, a familiar site that has been hacked most of all. Any you were caught out by are shown below, with what gave each one away and the safe way through.",
