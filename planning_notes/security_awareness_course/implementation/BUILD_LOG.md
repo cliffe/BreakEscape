@@ -142,3 +142,4 @@ Merges now happen in the orchestrator's own worktree (`.claude/worktrees/orch-me
 
 Content fixers start once the engine UX batch lands (some fixes need its per-message verdict line).
 - E20 design C1: 0/1/2. MA1 (Wi-Fi card painted open networks red, secured green: the misconception core_09 debunks) fixed by the orchestrator: one neutral ink for both, lock shape and words carry the difference. MI1 single aim confirmed (matches E11; ENG-04 has no global for a first aim). MI2 to the content fixer.
+- E14 wired (825fd8834, e1daa745f, fd32a25f2; bridge 19/19): ask templates added and `df_pretext_catchup` made a slot-free decoy (opus48 authored); the generator injects `social.intelFacts` into E14's defend-only shell for the privacy panel. Design C1 running. The 'event-mapping-unlock-door fails in isolation' claim was checked by the orchestrator and is false: 4/4 standalone; it fails only under the parallel runner on Node 22.
