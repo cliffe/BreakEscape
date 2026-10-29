@@ -30,8 +30,13 @@
           "delete": { "hint": "This is junk. Ignore it." },
           "verify": { "hint": "I'd check first: ask the venue, or ring a number I already hold." }
         },
+        "next": "Next one",
+        "teamBadge": "Traps stopped for the team: {n}",
+        "teamBadgeTitle": "Look-alike networks, pages and messages you reported or checked this round rather than acting on them",
+        "phishCaughtLabel": "Traps spotted",
+        "scoreLine": "Right call is most of the score; naming what you noticed is the rest.",
         "queue": {
-          "inbox": { "label": "On the road", "item": ["network, page or message", "networks, pages and messages"] }
+          "inbox": { "label": "On the road", "reportLabel": "Reported rather than just ignored", "item": ["network, page or message", "networks, pages and messages"] }
         }
       },
       "channelTells": ["lookalike_domain", "lookalike_network", "wifi_page_credentials", "found_device_lure"],
@@ -39,6 +44,24 @@
         "lookalike_network": "A public Wi-Fi network named to look like the venue's, often with a stronger signal",
         "wifi_page_credentials": "A Wi-Fi sign-in page asking for your work password, or for more than accepting the terms",
         "found_device_lure": "A message offering to locate or recover a lost device if you sign in"
+      },
+      "bands": [
+        {
+          "min": 85,
+          "headline": "Sharp: you spotted the traps and knew why"
+        },
+        {
+          "min": 60,
+          "headline": "Getting there: a few traps slipped past"
+        },
+        {
+          "min": 0,
+          "headline": "Worth practising: here's where to look first"
+        }
+      ],
+      "resultCopy": {
+        "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+        "noFlags": "Next time, tick what looks off. The review cards show what to look for in each one."
       },
       "skillNames": {
         "lookalike_network": "Spotting a look-alike public Wi-Fi network",
@@ -216,6 +239,7 @@
       "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier. First you spend two days working away from the depot, and make five everyday calls on the road: on the train, in the café and its queue, and when a tablet goes missing. You make each call, then you see where it led. After that you sort the safe networks and pages from the look-alikes, a hotel's among them. Only that last part is scored. Nothing you tap is a real network, and no real password is ever typed.",
       "flipHeading": "Later that day",
       "noBlameLine": "Reading a screen over someone's shoulder, joining a network named like the café, or leaving a bag for a minute are ordinary slips that happen to careful people; the harm is in the hours before anyone says so, not in the slip. A miss here just shows what to change.",
+      "teamLine": "By reporting or checking {n} of these rather than acting on them, you kept a trap away from the rest of your team.",
       "mondayCard": "On Monday, three things: turn on the screen lock and auto-lock on your own phone if they're not on already; set your devices to forget public Wi-Fi networks and turn off auto-join, so they don't rejoin a look-alike by themselves; and save the 24/7 service desk number in your phone, so if you lose a work device you can report it on the spot. Report anything at work using the route in the box below.",
       "defendOnly": "A look-alike network, or a page after your work password, catches careful people on the road. Any you were caught out by are shown below, with what gives each one away.",
       "_conceptPanel": "B1 m4 (2026-10-29): this fragment carries the DEFEND-ONLY concept set, the four panels that match what the sort itself covers (public Wi-Fi, the look-alike and over-asking page, the lost device, Tarrowby's controls). The full-episode 'Out of sight, out of earshot' and 'At home, mind the camera' panels are dropped here because the defend-only learner never sees the train/queue/home scenes they summarise; they stay in the FULL erb's conceptPanel (six panels). conceptPanel value is allow-listed to differ between fragment and full erb (social-awareness-fragment-erb-parity.test.mjs STRINGS_VALUE_EXEMPT), and the generator copies this fragment set into the defend-only shell.",
