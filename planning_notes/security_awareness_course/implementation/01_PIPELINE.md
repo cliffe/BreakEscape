@@ -20,7 +20,7 @@ Every generator and room script writes files. Never point one at the repo.
 2. **Set the repo the generator reads, by one rule.** A generator needs two paths: the repo it reads source and existing shells from, and the output folder it writes to. Always pass the output folder (step 3 on). For the repo:
    - **The built generators** (`gen_e6_e7_shells.py` and the like) hard-code `REPO = '/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape'` and default their output to `REPO + '/scenarios'`. In the scratch copy only, change `REPO` to the checkout you are in (`/home/user/BreakEscape` in this container), and restore it before copying the script back (step 6).
    - **The new generator (P4)** does not hard-code a home folder and takes no source edit. It reads the repo from the `BREAKESCAPE_REPO` environment variable or a `--repo` argument, and falls back to its own path (`Path(__file__).resolve().parents[3]`, correct only when it is run from `AW/` in the real checkout). Because P0 runs it from `SCRATCH/tools/`, where the path fallback would resolve to a scratch folder, **export `BREAKESCAPE_REPO=<checkout>` (or pass `--repo <checkout>`) when you run it from scratch**. No source edit, so step 6's "restore REPO" does not apply to it.
-3. **No-change run first.** Run the unchanged scratch copy into `SCRATCH/out-before/`. Every file it writes must be byte-identical to the repo's:
+3. **No-change run first.** (A new generator such as `gen_e8_e17_shells.py` has no earlier output in the repo to compare with. For it, run the scratch copy twice into two folders and `diff -r` them: that is the byte-identical proof. The comparison below is for a built generator.) Run the unchanged scratch copy into `SCRATCH/out-before/`. Every file it writes must be byte-identical to the repo's:
 
    ```
    REPO=/home/user/BreakEscape          # the checkout you are in
@@ -52,6 +52,8 @@ Every generator and room script writes files. Never point one at the repo.
 **Shape of `attack.json`.** Copy `AW/e1/attack.json` for a mail attack: `people`, `intelFacts`, `templates`, `mailClient`, `osint`, `phishTargets`. Copy `AW/e3/attack.json` for a call attack: `characters`, `pretextNpcs` and `_episodeAttack`. Copy `AW/e5/attack.json` for a page attack: `landingPages` and `conceptCards`. An attack shape added by an engine packet (`guess`, `mistake`, `world`, `assistant`) takes the fragment shape that packet gives.
 
 **Full-episode-only episode keys (`flipAftermath`, `stepLabels`, `guess`, `mistake`, `flip.mode`, `world`, `assistant`, `privacyPanel`, `sortDrill`, `concernForm`).** These are episode-level (not in `strings`) and are not shared with the defend-only shell. The generator's `defend_only()` builds the defend-only `awarenessEpisode` from named fields, so it never copies them, and the parity test does not compare them. Author each one by hand into the **full erb** `social.awarenessEpisode` (P2). Record it in `AW/eN/defend.json` `awarenessEpisode` as well if you want the fragment to hold the full record; the generator ignores it either way. `flipAftermath` (ENG-01) follows this rule: hand-authored into the full erb, inline (`heading`, `victimName`, `intro`, `items[]`, `line`), not pointed at a defend-set id.
+
+**Underscore rule.** An authoring note must start with `_` (for example `_playerSentAuth_note`). The generator, the parity test and the validator strip only `_`-prefixed keys, so a note such as `playerSentAuth_note` leaks into the shell and fails parity (found on E8).
 
 **Check:** `python3 -m json.tool AW/eN/defend.json >/dev/null && python3 -m json.tool AW/eN/attack.json >/dev/null`. Expected: no output.
 
@@ -99,6 +101,7 @@ Expected: the JSON parses; the validator exits 0 with no `SOCIAL:` error; the do
 - **Where it lives:** `scenarios/<folder>/ink/<host_id>.ink`, compiled to `<host_id>.json` beside it. Each shell has its own copy (the defend-only shell's is generated).
 - **The full episode's host ink is hand-authored.** Copy `scenarios/awareness_e1_invoice_fraud/ink/adaeze_okafor.ink`. It has a header comment, `VAR` declarations for exactly the globals it reads (the attack's attempts global and `episode_<id>_defend_done`), a `start` knot that diverts to `hub`, and the m03 `hub_quiet` pattern (one welcome line chosen by progress, one choice, `#exit_conversation`, back to `hub`).
 - **Any other NPC** (a phone NPC for a call, or a world NPC for E12) gets its own ink file. Copy `scenarios/awareness_e3_helpdesk_reset/ink/leila_servicedesk.ink` for a call target. For an NPC who opens a door on influence, copy the turnstile pattern in `scenarios/m02_ransomed_trust/ink/m02_npc_security_guard.ink` (around line 309: `#unlock_door:<roomId>`, honoured for an NPC whose record lists the room in `unlockable`).
+- **Line length:** `dialoguelint` raises an ERROR for any ink line over 30 words, and the generated host's `LINES` text is linted too. Keep each `before`, `after` and `reply` line to 30 words or fewer (E8's drafted defend line was 50 words and was shortened).
 - **Rules:** no printed variables in voiced lines. Lines are attributed `Name: text`. Follow `README_ink_best_practices.md`.
 
 **Check:**
@@ -177,7 +180,7 @@ The output gives `scenario.lighting`, `startPosition`, `host.position` and `room
 ## P6. The shared rule of thumb (`AW/awareness_deploy.py`) and its test
 
 - Generated shells get the rule from `awareness_deploy.awareness_block()`. The hand-authored full erb carries the same literal (P2). Never change the text.
-- `test/js/social-awareness-rule-of-thumb.test.mjs` asserts that every `scenarios/awareness_*` folder carries the identical `social.awareness.ruleOfThumb`, **and that there are exactly 38 such folders** (`assert.equal(shells.length, 38, ...)`). Each new shell changes that count. Either update the number in the same change that adds the shells (each new episode adds 2 folders, E17 adds 1, and each new check role adds 4), or land ENG-09d first, which replaces the bare number with a checked list.
+- `test/js/social-awareness-rule-of-thumb.test.mjs` asserts that every `scenarios/awareness_*` folder carries the identical `social.awareness.ruleOfThumb`, **and (since ENG-09d) that the folders on disk are exactly the registered list**: `FULL_EPISODES` (one line per full episode; the `_defend` twin is derived) plus `CHECK_ROLES`. There is no bare count to edit. Add one line, `'awareness_eN_<slug>',`, to `FULL_EPISODES`.
 
 **Check:** `node --test test/js/social-awareness-rule-of-thumb.test.mjs`. Expected: pass, with the new total.
 
@@ -185,7 +188,7 @@ The output gives `scenario.lighting`, `startPosition`, `host.position` and `room
 
 `test/js/social-awareness-fragment-erb-parity.test.mjs` compares the fragment with the full erb for `awarenessEpisode.strings`, `awarenessEpisode.debrief` and the episode triage set (set-level keys and every message by id), after stripping `_` keys.
 
-- Add the episode to `EPISODES`: `{ n: 8, dir: 'awareness_e8_<slug>' }`. The fragment path is built as `.../awareness/e${n}/defend.json`, so the folder must be `AW/e8/`. The template literal `e${n}` already gives `e10` for `n: 10`, so the path logic needs **no code change** to cover E10 to E17; ENG-09d's only job here is to add each new episode's row to this `EPISODES` list (and the count/allow-list guards below), not to change how `n` is formatted.
+- Add the episode to `EPISODES` (one line): `{ n: 8, dir: 'awareness_e8_<slug>' }`. The fragment path is built as `.../awareness/e${n}/defend.json`, so the folder must be `AW/e8/`. The template literal `e${n}` already gives `e10` for `n: 10`, so the path logic needs **no code change** to cover E10 to E17; ENG-09d's only job here is to add each new episode's row to this `EPISODES` list (and the count/allow-list guards below), not to change how `n` is formatted.
 - **Allow-listed differences today:** `STRINGS_VALUE_EXEMPT` (`defendIntro`, `conceptPanel`), `STRINGS_ERB_ONLY_OK` (`conceptPanel`, `flipCallIntro`, `flipPageIntro`, `voicePanel`, `defendIntro`, `flipDefenderLineByChoice`) and `SET_ERB_ONLY_OK` (`playerSentAuth`). A new erb-only string key needs a new entry with a one-line reason in the header comment. Engine packets put full-episode-only data outside `strings` where they can (for example `awarenessEpisode.flipAftermath` in ENG-01), so that no allow-list entry is needed.
 
 **Check:** `node --test test/js/social-awareness-fragment-erb-parity.test.mjs`. Expected: one more passing test than before.
@@ -219,10 +222,11 @@ A bridge is a JSONL script for `.claude/skills/playtest-scenario/scripts/playtes
 7. `waitFor` the global `episode_<id>_defend_done` set to `true`; an eval on the debrief (`.aw-card`, `.aw-monday`, `.aw-no-blame`, a record in `se_awareness_records`); `clickText` "Finish"; `waitFor` both tasks;
 8. the closing eval that no `minigame_failed` event fired after the `RUN` note; then `sync`, `drain` and `quit`.
 
-Change every id (episode, globals, set, messages, selectors) to the new episode's. Drive OSINT by clicking the site's own `data-id` and `data-focus` selectors, as E1 does, never by setting globals.
+Change every id (episode, globals, set, messages, selectors) to the new episode's. In the defend round, `.mail-row[data-id=...]` also opens push and page cards, but a push card needs `.tri-verdict[data-action="deny_report"]` (its buttons are approve, deny and deny_report), and a scenario-local tell is ticked with `input[data-chip=<tellId>]`. For a flip with an aftermath assert `.aw-flip-aftermath` (its `data-victim`) and each `.aw-aftermath-item[data-id]`; for a concept-panel array assert `.aw-concept-panel .aw-panel-heading`. For screenshots, copy the bridge to scratch with `{"cmd":"screenshot","path":...}` lines inserted before the `Continue` and `Finish` clicks; do not commit those lines. Drive OSINT by clicking the site's own `data-id` and `data-focus` selectors, as E1 does, never by setting globals.
 
 **Register and run it:**
 
+- **Seed the new shells into the dev database first**: `BREAK_ESCAPE_STANDALONE=true bin/rails db:seed`. Until you do, `new-game.rb` answers "No mission 'awareness_eN_<slug>'. Available: ..." and the run table shows `FAIL 0/?` with a dash for the game id.
 - Add `eN-full:awareness_eN_<slug>` to the `JOBS` array in `tools/playtest/se/run-suite.sh`, beside `e7-full:awareness_e7_voice_ceo`.
 - Run it alone: `ONLY="eN-full" tools/playtest/se/run-suite.sh tmp/se-eN` (it starts the keyless server on :3001 if needed, makes a fresh game with `tools/playtest/new-game.rb` and scores the log). Use Node 24: `NODE=$HOME/.cache/ms-playwright-go/1.57.0/node` on the user's machine.
 
@@ -274,3 +278,20 @@ Run these after P1 to P9 are clean, in this order. Each round uses a fresh revie
 | Audio | `tts-audio` | only when the user asks | P10 |
 
 Log every round in the episode's log, every design decision in `AW/DESIGN_LOG.md` and every dialogue round in `AW/DIALOG_LOG.md`, as HANDOVER §4 says.
+
+## Pilot notes (E8, 2026-10-29)
+
+What was wrong or missing, in step order. Fixes are already applied to the step text above unless noted.
+
+- **P0 step 3.** A new generator has nothing in the repo to compare against, so "no-change run" cannot be done. The proof is two runs into two folders and `diff -r` (done, identical). Step text amended.
+- **P1.** A fragment note key without a leading underscore (`playerSentAuth_note` in `e8/defend.json` set `e8_used_account`) is not stripped by the generator or the parity test, so it would have leaked into the defend-only shell and failed parity. Renamed to `_playerSentAuth_note` (the one content fix). Underscore rule added to P1.
+- **P2.** The brief's field list is right but long; the full erb is quickest to assemble with a one-off script that loads E1's frame, `attack.json`, `defend.json` (underscore keys stripped) and `full_only.json` and writes the file with `json.dump(indent=2)`. `training_room.room_fields()` already gives `type`, `chatBackground` and `lighting`; only `door_sign` and `connections` are added by hand. The new validator suggestion "phish_<target>_landed is declared but nothing reads it" is a warning that E1 and E5 also give; it is not an error.
+- **P3.** `dialoguelint` fails any line over 30 words. The brief's `LINES[('e8','defend')]` first line was 50 words and failed on the generated defend shell; shortened in the generator (brief section 8b should be updated to match). Rule added to P3. `reopencheck` lists phone NPCs only (person hosts like Anjali give no line), so the `missions.json` blocks cannot be proved by it; the baseline 4 problems stay at 4.
+- **P4.** The helpers copy cleanly from `gen_e6_e7_shells.py`; drop `PERMUTE`, `CHECK_LINES` and `check()`. The brief's `EPISODES['e8']` carries `role_word` and `role_label`, which the defend-only path never reads (harmless). The `--repo` argument has to be removed from `sys.argv` before the output folder is read. `python3 -I` works because the script adds its own folder to `sys.path`.
+- **P6.** The text said to bump a count of 38; ENG-09d replaced it with the `FULL_EPISODES` list, so it is one line. Text corrected.
+- **P7.** One line in `EPISODES`; `flipAftermath` and `stepLabels` need no allow-list entry.
+- **P8.** Validating the full shell without `--no-graph --skip-ink` writes `dungeon_graph.html`, `.json` and `.md`; commit them with the shell (E1 does).
+- **P9.** `new-game.rb` cannot find a new shell until `bin/rails db:seed` has run (step missing; added). Push cards need `data-action="deny_report"`. The first run of the copied bridge passed 13/13.
+- **Shared index.** Another agent had staged a file; commit with `git commit -m ... -- <explicit paths>` so only your paths go in.
+
+Content issues seen but not fixed (for the content owner): (1) the composed email reads "moving the the SSO move this month to a new provider this month" because the `portal` fact label (`the SSO move this month`) is dropped into a template that already says "the" and "this month"; (2) `flipIntro` reads "This is your email as Ayaan, the claims handler you sent it to, met it, and this time he signed in", which is not grammatical.
