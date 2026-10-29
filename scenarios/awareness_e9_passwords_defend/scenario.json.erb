@@ -59,6 +59,36 @@
   "social": {
     "triageSets": [
       {
+        "labels": {
+          "teamBadgeTitle": "Risky sign-in prompts and choices you reported or checked this round rather than going along with",
+          "teamBadge": "Risks reported for the team: {n}",
+          "phishCaughtLabel": "Risks spotted"
+        },
+        "bands": [
+          {
+            "min": 85,
+            "headline": "Sharp: you spotted the risks and knew why"
+          },
+          {
+            "min": 60,
+            "headline": "Getting there: a few risks slipped past"
+          },
+          {
+            "min": 0,
+            "headline": "Worth practising: here's where to look first"
+          }
+        ],
+        "criticalWhat": {
+          "push": "approving a sign-in you didn't start",
+          "email": "doing what a fake 'IT' message asked"
+        },
+        "reportReply": "Thanks. We'll look at the account and reset whatever needs it.",
+        "resultCopy": {
+          "noFlags": "Next time, tick what looks off. The review cards show what each risk was.",
+          "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+          "criticalLead": "let someone into the account",
+          "reportedPct": "Reported {pct}% of the risks"
+        },
         "id": "e9_lock_it_down",
         "title": "Your Tarrowby account under attack",
         "brief": "It's your own Tarrowby account now, and someone has a password of yours. Eight things come up: sign-in prompts, a message dressed up as IT, and a few password choices. Approve a prompt only if you started it; otherwise deny and report. No clock, and no real password is typed. Reporting when you're unsure is always fine.",
@@ -342,9 +372,11 @@
         "reportAlwaysVisible": true
       },
       "strings": {
+        "teamLine": "By reporting or checking {n} of these rather than going along with them, you kept a risk away from the rest of your team.",
+        "weakestTells": "The risks most often missed: {names} ({counts} each).",
+        "weakestTell": "The risk most often missed: {names} ({counts}).",
         "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down. No real password is ever typed here.",
         "allPhishRight": "Every risk was caught, with every reason named.",
-        "reportedPct": "Reported {pct}% of the risks",
         "noBlameLine": "Reusing a password is ordinary and common; this is how most accounts are broken into, not a sign anyone was careless. A miss here just shows what to change tonight.",
         "mondayCard": "On Monday, three things at home: turn on 2-step verification, or a passkey, for your personal email first; check your personal email address on a breach-checking site (the NCSC suggests Have I Been Pwned); and switch on a password manager, starting with your email. Report anything at work using the route in the box below.",
         "defendOnly": "Everything here follows one reused password doing the rounds. Anything you were caught out by is shown below, with what to do instead.",

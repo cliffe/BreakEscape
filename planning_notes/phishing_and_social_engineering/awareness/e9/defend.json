@@ -9,6 +9,36 @@
 
   "triageSets": [
     {
+      "labels": {
+        "teamBadgeTitle": "Risky sign-in prompts and choices you reported or checked this round rather than going along with",
+        "teamBadge": "Risks reported for the team: {n}",
+        "phishCaughtLabel": "Risks spotted"
+      },
+      "bands": [
+        {
+          "min": 85,
+          "headline": "Sharp: you spotted the risks and knew why"
+        },
+        {
+          "min": 60,
+          "headline": "Getting there: a few risks slipped past"
+        },
+        {
+          "min": 0,
+          "headline": "Worth practising: here's where to look first"
+        }
+      ],
+      "criticalWhat": {
+        "push": "approving a sign-in you didn't start",
+        "email": "doing what a fake 'IT' message asked"
+      },
+      "reportReply": "Thanks. We'll look at the account and reset whatever needs it.",
+      "resultCopy": {
+        "noFlags": "Next time, tick what looks off. The review cards show what each risk was.",
+        "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+        "criticalLead": "let someone into the account",
+        "reportedPct": "Reported {pct}% of the risks"
+      },
       "id": "e9_lock_it_down",
       "_prefix": "Prefix for the full episode (id e9_passwords). The defend-only shell (id e9_passwords_defend) sets episode_e9_passwords_defend_defend_ instead. No stage on purpose, as in E1/E6: the effective stage is 'mission', and an explicit stage with passPercent 0 draws a validator warning.",
       "_localTells": "mfa_number_relay is an account-takeover/MFA sign scored only by E9 today (the shipped E3 push defend set does not carry it, it is not in the shared CHANNEL_TELLS, and no general_v2 check item scores it), so it stays scenario-local: declared in channelTells with a flagChips label, a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's skill name), and a factorStrings.mfa_number_relay.redFlag sentence on the one card that flags it (e9_fake_it_number). Do not append it to the shared CHANNEL_TELLS / SKILL_NAMES. Promote it only if a second set uses it or a 10 check item scores it. unrequested_mfa_push and secrecy_or_bypass are shared-library tells and need no label.",
@@ -220,6 +250,9 @@
     "defend": { "setId": "e9_lock_it_down", "reportAlwaysVisible": true },
     "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
     "strings": {
+      "teamLine": "By reporting or checking {n} of these rather than going along with them, you kept a risk away from the rest of your team.",
+      "weakestTells": "The risks most often missed: {names} ({counts} each).",
+      "weakestTell": "The risk most often missed: {names} ({counts}).",
       "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier, in the depot office. First you're on the red team: look at what a colleague has put online (click a line to note it), build a guess list from it, and watch how fast a reused password opens his work account. Then it's your own account under attack, and you lock it down. Only the lock-down part is scored.",
       "flipHeading": "Now it's your phone.",
       "flipGuessIntro": "You watched a reused password open a colleague's account. Here is the other end: your own phone.",
@@ -230,7 +263,6 @@
       "flipMissedHeading": "Nothing landed this time",
       "flipLandedNoTells": "It opened on a reused password with nothing clever at all. Next, you lock your own account down.",
       "allPhishRight": "Every risk was caught, with every reason named.",
-      "reportedPct": "Reported {pct}% of the risks",
       "noBlameLine": "Reusing a password is ordinary and common; this is how most accounts are broken into, not a sign anyone was careless. A miss here just shows what to change tonight.",
       "mondayCard": "On Monday, three things at home: turn on 2-step verification, or a passkey, for your personal email first; check your personal email address on a breach-checking site (the NCSC suggests Have I Been Pwned); and switch on a password manager, starting with your email. Report anything at work using the route in the box below.",
       "defendOnly": "Everything here follows one reused password doing the rounds. Anything you were caught out by is shown below, with what to do instead.",
