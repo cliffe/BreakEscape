@@ -85,3 +85,11 @@ Merges now happen in the orchestrator's own worktree (`.claude/worktrees/orch-me
 - E8 C1 fixed (fb4690af9, outcomes 6c49bf7c7): MA1, MA2, MI1, MI3 (six items), MI4, MI6, MI7 fixed; MI5 kept (E1 and E5 keep the same unread landed global; bridges read it); MI8 withdrawn; MA3/MI2 fixed by the engine display fix (merged). Spoken host lines changed: 3 (listed in the C1 outcomes). Bridge e8-full 13/13. E8 design C2 running.
 - ENG-02 merged (bc7144995): `guess` stage, `password-guesser` scene; a pattern slot needs a `word`. 311/312 JS files (the known Node 22 IPC flake). Content committed: E11 (full-only fragment named `mistake.json`; DC Hendry renamed DC Rowley to avoid a built genuine colleague's surname), E13 (no osint, so the pretext is the one send-gating choice; drop address hard-coded), E15 (sortDrill in defend.json so both shells carry it), E16 (03d1cd26d).
 - Running: wiring E17+E19, E9+E16, E11+E15 (Sonnet); ENG-02b (Sonnet); ENG-06/07 (opus48); fakeCheck builder UI (opus48); ENG-14 (Sonnet); content E10, E12, E14, E20, core_00 + data_conduct (opus48); W1 design C1 fixes (opus48).
+
+### Wave 1 checks/WP-15/annual design review
+
+| Cycle | Blocker | Major | Minor | Notes |
+|---|---:|---:|---:|---|
+| C1 | 0 | 1 | 8 | `reviews/build/WAVE1_DESIGN_C1.md`; fixed edf453778 (item 8 scores senderTrust only, per the built forms' C2-M6; retitled "Everyday threats check"; Marcus Webb -> Wesley Tan; E6 unused chip dropped; annual "Caller" restored, brief reworded); P1-m2 fixed by the engine display fix; P3-m2 withdrawn (built E5 item) |
+
+- ENG-14 Wi-Fi list merged. Every SSID uses the address font, so the look-alike is not singled out (ruling: keep). E14 content committed (7bc4ae036); E14 wiring started.
