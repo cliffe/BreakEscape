@@ -61,3 +61,4 @@ Shared rules: `AGENT_RULES_ENGINE.md`, `AGENT_RULES_CONTENT.md`. Content agents 
 | c-e9, c-e11, c-e13, c-e14, c-e15, c-e16, c-e17, c-e19 | opus48 | episode content |
 
 Held back: E12 content (after ENG-05a/b and the lobby land), E18 (after ENG-02b), E20 (after ENG-14, which follows ENG-03a), core_00 content (after ENG-10), `data_conduct` (after the Carrholme room).
+- eng-0607 (Sonnet) stopped by a safety classifier before writing code (likely the E13 subject matter; not reworded). Retried on opus48 (eng-0607b, worktree) per the user's 2026-10-29 rule, with the first attempt's code seams; the stopped agent was stopped by TaskStop so it cannot resume and duplicate.
