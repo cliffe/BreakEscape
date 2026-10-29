@@ -204,6 +204,9 @@
               "url": "http://tarrowby-wifi.example/login",
               "padlock": false,
               "autofill": "none",
+              "autofillNote": {
+                "none": "Your password manager did not fill this in, because it does not recognise the page."
+              },
               "heading": "Free Wi-Fi sign-in",
               "fields": [
                 "Work email",
@@ -244,7 +247,10 @@
               },
               "heading": "The Bean and Barrow free Wi-Fi",
               "fields": [
-                "I accept the terms"
+                {
+                  "label": "I accept the terms",
+                  "type": "tick"
+                }
               ],
               "button": "Connect"
             },

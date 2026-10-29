@@ -115,6 +115,7 @@
             "url": "http://tarrowby-wifi.example/login",
             "padlock": false,
             "autofill": "none",
+            "autofillNote": { "none": "Your password manager did not fill this in, because it does not recognise the page." },
             "heading": "Free Wi-Fi sign-in",
             "fields": ["Work email", "Work password"],
             "button": "Get online"
@@ -145,7 +146,7 @@
             "padlock": true,
             "certificate": { "issuedTo": "thebeanandbarrow.example", "issuer": "Open Certs Ltd" },
             "heading": "The Bean and Barrow free Wi-Fi",
-            "fields": ["I accept the terms"],
+            "fields": [{ "label": "I accept the terms", "type": "tick" }],
             "button": "Connect"
           },
           "truth": {
