@@ -87,6 +87,7 @@
             "isPhish": true,
             "kindLine": "This was a real ransom message on a colleague's screen, and it needed reporting fast.",
             "missLabel": "a colleague's locked screen going unreported",
+            "verifyLine": "Calling it in straight away is exactly right.",
             "flags": ["ransomware_note"],
             "perFlagNote": {
               "ransomware_note": "A screen saying files are locked, with a countdown and a demand to pay, is ransomware. Get the security team on extension 4444 straight away, from another phone if Leo's is affected; reporting fast is what limits how far it spreads"
