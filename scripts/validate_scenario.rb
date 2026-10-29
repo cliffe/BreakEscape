@@ -327,7 +327,7 @@ def check_unknown_fields(json_data)
   known_event_mapping_fields = %w[
     eventPattern condition onceOnly maxTriggers cooldown fireOnlyWhenLoaded delayMs
     bark message barkDelay
-    targetKnot conversationMode background disableClose resume voiced
+    targetKnot conversationMode background disableClose resume voiced videoLabel participantTag
     patrolOverride setPatrolSpeed setDwellMultiplier setVisible
     sendTimedMessage setGlobal completeTask skipTask unlockTask unlockAim unlockDoor
     _comment
