@@ -44,18 +44,24 @@ const CHECK_ROLES = [
   'hr',
   'mobile',
 ];
+// Single shells that are neither a full episode nor a check role (no defend twin, no pre/post pair),
+// such as the core_17 annual edition. One line per shell, the folder name as it is.
+const STANDALONE_SHELLS = [
+  'awareness_core_17_annual_2027_defend',
+];
 const registered = [
   ...FULL_EPISODES,
   ...FULL_EPISODES.map((d) => `${d}_defend`),
   ...CHECK_ROLES.flatMap((r) => ['pre', 'post'].flatMap((st) => ['ab', 'ba'].map((o) => `awareness_${st}_${r}_${o}`))),
+  ...STANDALONE_SHELLS,
 ].sort();
 
 test('the registered awareness shells are exactly the shells on disk (ENG-09d)', () => {
   assert.equal(registered.length, new Set(registered).size, 'a shell is registered twice');
-  assert.equal(registered.length, 2 * FULL_EPISODES.length + 4 * CHECK_ROLES.length);
+  assert.equal(registered.length, 2 * FULL_EPISODES.length + 4 * CHECK_ROLES.length + STANDALONE_SHELLS.length);
   const extra = shells.filter((d) => !registered.includes(d));
   const missing = registered.filter((d) => !shells.includes(d));
-  assert.deepEqual(extra, [], `awareness shell(s) on disk that this guard does not register (add to FULL_EPISODES or CHECK_ROLES): ${extra.join(', ')}`);
+  assert.deepEqual(extra, [], `awareness shell(s) on disk that this guard does not register (add to FULL_EPISODES, CHECK_ROLES or STANDALONE_SHELLS): ${extra.join(', ')}`);
   assert.deepEqual(missing, [], `registered shell(s) with no folder under scenarios/: ${missing.join(', ')}`);
 });
 

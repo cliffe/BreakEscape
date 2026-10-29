@@ -3321,5 +3321,22 @@
         "room": "training_room"
       }
     ]
+  },
+  "awareness_core_17_annual_2027_defend": {
+    "globals": {
+      "episode_core_17_annual_2027_defend_defend_percent": 0,
+      "episode_core_17_annual_2027_defend_defend_reportRate": 0,
+      "episode_core_17_annual_2027_defend_defend_done": false,
+      "episode_core_17_annual_2027_defend_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "graham_whitfield",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_core_17_annual_2027_defend/ink/graham_whitfield.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
   }
 }
