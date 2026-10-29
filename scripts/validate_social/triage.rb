@@ -290,12 +290,17 @@ module ValidateSocial
       if set.key?('resultCopy')
         rc = set['resultCopy']
         if rc.is_a?(Hash)
-          rc.each { |k, v| issues << err("#{where}.resultCopy.#{k} is empty") if %w[weakest noFlags noFlagsLead].include?(k) && blank?(v) }
+          rc.each { |k, v| issues << err("#{where}.resultCopy.#{k} is empty") if %w[weakest noFlags noFlagsLead reportedPct criticalLead].include?(k) && blank?(v) }
+          # batch-8: reportedPct carries the percentage through {pct}; without it the figure is lost.
+          if rc['reportedPct'].is_a?(String) && !rc['reportedPct'].strip.empty? && !rc['reportedPct'].include?('{pct}')
+            issues << warn_("#{where}.resultCopy.reportedPct has no {pct}; the line would not show the percentage")
+          end
         else
-          issues << err("#{where}.resultCopy must be an object { weakest?, noFlags?, noFlagsLead? }")
+          issues << err("#{where}.resultCopy must be an object { weakest?, noFlags?, noFlagsLead?, reportedPct?, criticalLead? }")
         end
       end
       issues << err("#{where}.reportReplyFrom must be a non-empty string") if set.key?('reportReplyFrom') && blank?(set['reportReplyFrom'])
+      issues << err("#{where}.reportReply must be a non-empty string") if set.key?('reportReply') && blank?(set['reportReply'])
       %w[skillNames tellStrings].each do |key|
         next unless set.key?(key)
 
