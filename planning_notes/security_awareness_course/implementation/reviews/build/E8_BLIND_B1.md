@@ -99,7 +99,7 @@ Run 1 full, about 15 min. Run 2 full (struggling), about 9 min. Run 3 defend-onl
 
 | # | Severity | Finding | Tag | Where |
 |---|---|---|---|---|
-| F1 | major | Defend decisions are largely given away: the four real signs are obviously bad on opening, the two ordinary messages are obviously fine, the tick list names the exact signs ("Ransom note", "Sent item you didn't send"), and the defend-only intro says to report every real sign. Little left to deduce. | content | p1 lines 100-140 (Defend), p3 Defend page |
+| F1 | major | Defend decisions are largely given away: the four real signs are obviously bad on opening, the two ordinary messages are obviously fine, the tick list names the exact signs ("Ransom note", "Sent item you didn't send"), and the defend-only intro says to report every real sign. Little left to deduce. | content | game 4992 Defend stage (p1b.jsonl), game 4999 Defend page (p3.jsonl) |
 | F2 | minor | Write sender and sign-on blanks say "no evidence yet" without saying to go back to the browser; a skimming player makes three trips to research. | content | p2 compose |
 | F3 | minor | Sender name, sender address and the sign-on blank each offer a single option, so they are not decisions. | content | p1 compose |
 | F4 | minor | A 100% debrief says "Nothing to pick over here" and never returns to the email the player wrote (why it landed, what the pretext did). Teaching of the red-team half is only in the pre-send meter and the flip page. | content | p1 debrief |
