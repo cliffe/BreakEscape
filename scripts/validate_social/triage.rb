@@ -50,7 +50,7 @@ module ValidateSocial
     NON_EMAIL_KINDS = %w[sms voicemail qr page call push choice].freeze
     # ENG-03a browser-screen states. url is required for the web-page states (none included) and
     # optional for the chrome/overlay states, which draw no address bar.
-    PAGE_STATES = %w[fakeCheck fakeUpdate fullScreenAlarm extensionPermission downloadBar browserWarning relaunchBar].freeze
+    PAGE_STATES = %w[fakeCheck fakeUpdate fullScreenAlarm extensionPermission downloadBar browserWarning relaunchBar wifiList].freeze
     PAGE_URL_STATES = [nil, 'fakeCheck', 'fakeUpdate', 'downloadBar', 'browserWarning'].freeze
     # The fields each non-email kind reads (triage-kinds.js). Any of them on another kind is ignored.
     KIND_FIELDS = {
@@ -531,6 +531,7 @@ module ValidateSocial
           issues << err("#{mw}.page.fields must be an array of non-empty labels") if pg.key?('fields') && !(pg['fields'].is_a?(Array) && pg['fields'].all? { |f| !blank?(f) })
           issues << err("#{mw}.page.permissions must be an array of non-empty strings") if pg.key?('permissions') && !(pg['permissions'].is_a?(Array) && pg['permissions'].all? { |f| !blank?(f) })
           issues.concat(certificate_checks(pg['certificate'], "#{mw}.page.certificate")) if pg.key?('certificate')
+          issues.concat(wifi_list_checks(pg, "#{mw}.page")) if state == 'wifiList'
         end
       when 'call'
         issues.concat(transcript_checks(m['transcript'], "#{mw}.transcript", required: true))
@@ -541,6 +542,38 @@ module ValidateSocial
         pu = m['push']
         issues << err("#{mw}.push.app is missing; the prompt would not say which app is asking") if !pu.is_a?(Hash) || blank?(pu['app'])
         issues << warn_("#{mw}.time is empty; the prompt's time is often the tell (an odd hour)") if blank?(m['time'])
+      end
+      issues
+    end
+
+    # ---- page.state wifiList (ENG-14) ---------------------------------------------
+    # A network list is authored display data: names, a lock flag and a signal. Nothing is typed and
+    # nothing is joined, so a credential-like field on an entry is refused outright.
+    WIFI_SIGNAL_WORDS = %w[strong good fair weak].freeze
+    WIFI_CREDENTIAL_KEY_RE = /pass|pwd|psk|secret|credential|\bkey\b|token/i.freeze
+
+    def self.wifi_list_checks(pg, where)
+      nets = pg['networks']
+      unless nets.is_a?(Array) && !nets.empty?
+        return [err("#{where}.networks is missing or empty; a wifiList card with no networks would show a blank list")]
+      end
+
+      issues = []
+      nets.each_with_index do |n, i|
+        w = "#{where}.networks[#{i}]"
+        unless n.is_a?(Hash)
+          issues << err("#{w} must be an object { ssid, signal, secured, note }")
+          next
+        end
+        n.each_key do |k|
+          issues << err("#{w}.#{k} looks like a credential field; a network entry shows names and signal only, never a password or key") if k.to_s.match?(WIFI_CREDENTIAL_KEY_RE)
+        end
+        issues << err("#{w}.ssid is empty; the row would show no network name") if blank?(n['ssid'])
+        sig = n['signal']
+        ok = (sig.is_a?(Numeric) && sig >= 0 && sig <= 100) || (sig.is_a?(String) && WIFI_SIGNAL_WORDS.include?(sig.strip.downcase))
+        issues << err("#{w}.signal must be a number 0-100 (0-4 reads as bars) or one of #{WIFI_SIGNAL_WORDS.join(', ')}") unless ok
+        issues << err("#{w}.secured must be true or false") if n.key?('secured') && ![true, false].include?(n['secured'])
+        issues << warn_("#{w}.secured is not set; the row would show no lock, so the lock cue is missing") unless n.key?('secured')
       end
       issues
     end

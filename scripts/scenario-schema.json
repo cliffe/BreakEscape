@@ -1794,15 +1794,33 @@
           "additionalProperties": false
         },
         "page": {
-          "description": "page: the browser card. url is required for the web-page states (none, fakeCheck, fakeUpdate, downloadBar, browserWarning) and optional for the chrome/overlay states (relaunchBar, fullScreenAlarm, extensionPermission); the rule is enforced in scripts/validate_social/triage.rb (ENG-03a).",
+          "description": "page: the browser card. url is required for the web-page states (none, fakeCheck, fakeUpdate, downloadBar, browserWarning) and optional for the chrome/overlay states (relaunchBar, fullScreenAlarm, extensionPermission, wifiList); the rule is enforced in scripts/validate_social/triage.rb (ENG-03a).",
           "type": "object",
           "properties": {
             "url": {"type": "string"},
-            "state": {"type": "string", "enum": ["fakeCheck", "fakeUpdate", "fullScreenAlarm", "extensionPermission", "downloadBar", "browserWarning", "relaunchBar"], "description": "ENG-03a browser-screen state; absent renders the ordinary E5 page"},
+            "state": {"type": "string", "enum": ["fakeCheck", "fakeUpdate", "fullScreenAlarm", "extensionPermission", "downloadBar", "browserWarning", "relaunchBar", "wifiList"], "description": "ENG-03a browser-screen state, plus ENG-14 wifiList (a Wi-Fi network list, no address bar); absent renders the ordinary E5 page"},
             "clipboardReveal": {"type": "string", "description": "fakeCheck: one authored harmless description of what the page copied, shown by the 'What did this page copy?' reveal; never a working command"},
             "alarm": {"type": "object", "properties": {"hintAfterMs": {"type": "number"}}, "patternProperties": {"^_": {}}, "additionalProperties": false, "description": "fullScreenAlarm: when to show the way-out hint (default 30000ms)"},
             "permissions": {"type": "array", "items": {"type": "string"}, "description": "extensionPermission: the 'It can: ...' permission lines"},
             "download": {"type": "object", "properties": {"filename": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false, "description": "downloadBar: the downloaded file's name"},
+            "networks": {
+              "type": "array",
+              "description": "wifiList: the network names in range, shown as static rows (nothing can be joined). At least one; the validator refuses any credential-like field",
+              "items": {
+                "type": "object",
+                "required": ["ssid", "signal"],
+                "properties": {
+                  "ssid": {"type": "string"},
+                  "signal": {"type": ["string", "number"], "description": "0-4 as bars, above 4 as a percentage, or strong/good/fair/weak"},
+                  "secured": {"type": "boolean", "description": "true shows a closed lock and the word 'Secured', false an open lock and 'Open'"},
+                  "note": {"type": "string"}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "venueNote": {"type": "string", "description": "wifiList: the context line above the list, e.g. what the venue's sign says the network is called"},
+            "labels": {"type": "object", "properties": {"secured": {"type": "string"}, "open": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false, "description": "wifiList: replaces the lock words (defaults 'Secured (password needed)' and 'Open (no password)')"},
             "padlock": {"type": "boolean"},
             "certificate": {
               "description": "The certificate check: who the certificate was issued to (a host name). It proves the connection is encrypted to that host, not that the host is the organisation it claims to be",

@@ -654,6 +654,71 @@ function stateFullScreenAlarm(box, rec, p) {
     box.appendChild(alarm);
 }
 
+// ENG-14: a Wi-Fi network list. Not a web page, so no address bar and no url. Each row is static
+// (nothing to click or type, no network is joined): the network name in the address font (a name
+// is an identifier whose exact letters matter, so every row uses it and none stands out), a lock in
+// words as well as a drawn icon, and signal as bars plus a word. The learner's answer is the
+// ordinary page verdict.
+const WIFI_SIGNAL_WORDS = Object.freeze({ strong: 4, good: 3, fair: 2, weak: 1 });
+const WIFI_BAR_WORDS = ['No signal', 'Weak', 'Fair', 'Good', 'Strong'];
+
+/** Signal bars 0-4 for a number (0-4 as bars, above 4 as a percentage) or a word (strong/good/fair/weak). */
+function wifiBars(signal) {
+    if (typeof signal === 'number' && Number.isFinite(signal)) {
+        const n = signal > 4 ? Math.ceil(signal / 25) : Math.round(signal);
+        return Math.max(0, Math.min(4, n));
+    }
+    if (isStr(signal)) {
+        const known = WIFI_SIGNAL_WORDS[signal.trim().toLowerCase()];
+        if (known !== undefined) return known;
+    }
+    return null;
+}
+
+function wifiRow(n, labels) {
+    const row = el('li', 'tri-wifi-row');
+    row.appendChild(el('span', 'tri-wifi-ssid', n.ssid));
+    const meta = el('div', 'tri-wifi-meta');
+    if (typeof n.secured === 'boolean') {
+        const lock = el('span', `tri-wifi-lock-wrap ${n.secured ? 'tri-wifi-secured' : 'tri-wifi-open'}`);
+        const icon = el('span', 'tri-wifi-lock');
+        icon.setAttribute('aria-hidden', 'true');
+        lock.append(icon, el('span', 'tri-wifi-lock-word', n.secured ? labels.secured : labels.open));
+        meta.appendChild(lock);
+    }
+    const bars = wifiBars(n.signal);
+    const sig = el('span', 'tri-wifi-signal');
+    const meter = el('span', 'tri-wifi-bars');
+    meter.setAttribute('aria-hidden', 'true');
+    for (let i = 1; i <= 4; i++) meter.appendChild(el('span', `tri-wifi-bar tri-wifi-bar-${i}${bars !== null && i <= bars ? ' on' : ''}`));
+    const word = bars !== null ? WIFI_BAR_WORDS[bars] : (isStr(n.signal) ? n.signal : '');
+    sig.append(meter, el('span', 'tri-wifi-signal-word', word ? `${word} signal` : ''));
+    meta.appendChild(sig);
+    row.appendChild(meta);
+    if (isStr(n.note)) row.appendChild(el('p', 'tri-wifi-note', n.note));
+    return row;
+}
+
+function stateWifiList(box, rec, p) {
+    const labels = {
+        secured: isObj(p.labels) && isStr(p.labels.secured) ? p.labels.secured : 'Secured (password needed)',
+        open: isObj(p.labels) && isStr(p.labels.open) ? p.labels.open : 'Open (no password)'
+    };
+    box.setAttribute('aria-label', 'Wi-Fi networks');
+    const view = el('div', 'tri-browser-view tri-wifi');
+    view.appendChild(el('p', 'tri-kind-label', 'Wi-Fi'));
+    view.appendChild(heading(p.heading || 'Wi-Fi networks nearby'));
+    if (isStr(p.venueNote)) view.appendChild(el('p', 'tri-wifi-venue', p.venueNote));
+    if (rec.body) view.appendChild(el('p', 'tri-page-text', rec.body));
+    const list = el('ul', 'tri-wifi-list');
+    list.setAttribute('aria-label', 'Networks in range (nothing here can be joined)');
+    for (const n of Array.isArray(p.networks) ? p.networks : []) {
+        if (isObj(n) && isStr(n.ssid)) list.appendChild(wifiRow(n, labels));
+    }
+    view.appendChild(list);
+    box.appendChild(view);
+}
+
 const PAGE_STATES = {
     fakeCheck: stateFakeCheck,
     fakeUpdate: stateFakeUpdate,
@@ -661,7 +726,8 @@ const PAGE_STATES = {
     browserWarning: stateBrowserWarning,
     relaunchBar: stateRelaunchBar,
     extensionPermission: stateExtensionPermission,
-    fullScreenAlarm: stateFullScreenAlarm
+    fullScreenAlarm: stateFullScreenAlarm,
+    wifiList: stateWifiList
 };
 
 function call(rec) {

@@ -394,6 +394,25 @@
 .tri-page-field-box { display: block; height: 28px; background: #ffffff; border: 2px solid #8792ad; }
 .tri-page-button { align-self: flex-start; padding: 6px 14px; font-weight: 700; color: #ffffff; background: #3b5bcc; border: 2px solid #233b8f; }
 
+/* ENG-14: Wi-Fi network list state of the page card (no address bar) */
+.tri-wifi .tri-kind-label { color: #4a5578; }
+.tri-wifi-venue { margin: 0 0 10px; font-style: italic; }
+.tri-wifi-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tri-wifi-row { padding: 8px 10px; background: #ffffff; border: 2px solid #8792ad; }
+.tri-wifi-ssid { display: block; font-family: var(--se-font-address); font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+.tri-wifi-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin-top: 4px; font-size: 13px; }
+.tri-wifi-lock-wrap, .tri-wifi-signal { display: inline-flex; align-items: center; gap: 6px; }
+.tri-wifi-secured { color: #1f5d33; }
+.tri-wifi-open { color: #8f2a1f; }
+.tri-wifi-lock { position: relative; display: inline-block; width: 12px; height: 8px; margin-top: 7px; background: currentColor; }
+.tri-wifi-lock::before { content: ''; position: absolute; left: 2px; bottom: 8px; width: 4px; height: 5px; border: 2px solid currentColor; border-bottom: 0; }
+.tri-wifi-open .tri-wifi-lock::before { left: 6px; height: 4px; border-right-color: transparent; }
+.tri-wifi-bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+.tri-wifi-bar { display: block; width: 4px; background: #c9d0e0; border: 1px solid #8792ad; }
+.tri-wifi-bar.on { background: #233b8f; border-color: #233b8f; }
+.tri-wifi-bar-1 { height: 4px; } .tri-wifi-bar-2 { height: 7px; } .tri-wifi-bar-3 { height: 10px; } .tri-wifi-bar-4 { height: 14px; }
+.tri-wifi-note { margin: 4px 0 0; font-size: 13px; }
+
 /* 11 N14: phone body around an sms thread */
 .tri-phone-frame { border-radius: 0; border-width: 6px; border-color: #1c2440; padding-top: 6px; }
 .tri-phone-status { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 13px; color: var(--ui-text-dim, #a8b2c8); }
