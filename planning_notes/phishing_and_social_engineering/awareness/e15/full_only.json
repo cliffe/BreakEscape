@@ -1,0 +1,70 @@
+{
+  "_about": "Full-episode-only keys for E15 (Shadow IT) that the wiring agent pastes into the FULL erb only (scenarios/awareness_e15_shadow_it/scenario.json.erb). The defend-only shell (e15_shadow_it_defend) carries NONE of these: its stages are brief, defend, debrief, with no mistake and no flip. Each key below has a _notes line saying exactly where it goes. E15 carries only three full-only keys (mistake, flip, and the erb-only string flipMontageByChoice). NOTE on sortDrill: unlike the generic AGENT_RULES_CONTENT list, E15's sortDrill (Swap Shop) is NOT full-only: E15 section 13 keeps it in the defend-only shell too, so it lives in defend.json's awarenessEpisode and is NOT repeated here. There is no guess, assistant, privacyPanel, concernForm, flipAftermath, stepLabels or playerSentAuth for E15.",
+
+  "mistake": {
+    "_notes": "Goes into the FULL erb only, at social.awarenessEpisode.mistake (sibling of defend/strings). Identical to mistake.json's mistake block. Absent from the defend-only shell. ENG-04 lint: exactly one safe:true option per beat; flipBeat names a real beat. Safe-option position varies across beats (not always first).",
+    "scored": false,
+    "beats": [
+      {
+        "id": "personal_email",
+        "situation": "The share has crawled to a halt and the pack is due Monday. Colin: \"Just email the pack to your personal address and finish it off at home.\" The compose window offers \"Me (personal)\" in the autocomplete.",
+        "options": [
+          { "id": "send_personal", "label": "Send the pack to your personal email", "safe": false },
+          { "id": "ask_nilesh", "label": "Ask Nilesh, and work from home through remote access", "safe": true, "approvedRoute": true }
+        ]
+      },
+      {
+        "id": "free_transfer",
+        "situation": "The site-survey video is too big to email. Colin: \"Use a free transfer site, everyone does.\"",
+        "options": [
+          { "id": "use_fileshare", "label": "Share it from the file-sharing service, to a named person, with an end date", "safe": true, "approvedRoute": true },
+          { "id": "use_free_site", "label": "Upload it to the free transfer site", "safe": false }
+        ]
+      },
+      {
+        "id": "posted_stick",
+        "situation": "A padded envelope arrives: \"From the client: survey results, please add to the pack.\" Inside is a USB stick and a note with a phone number.",
+        "options": [
+          { "id": "plug_in", "label": "Plug the stick in to read it", "safe": false },
+          { "id": "to_it", "label": "Leave it unplugged, ring the client on a number you already hold, give the stick to IT", "safe": true, "approvedRoute": true }
+        ]
+      },
+      {
+        "id": "rota_app",
+        "situation": "Shauna rings: the delivery rota lives in a free app on a former temp's personal account, and anyone with the link can edit it. She wants this week's slots added.",
+        "options": [
+          { "id": "ask_it", "label": "Add nothing there; ask IT to move it into the team space and remove the old access", "safe": true, "approvedRoute": true },
+          { "id": "use_app", "label": "Add this week's slots in the app", "safe": false }
+        ]
+      }
+    ],
+    "flipBeat": "personal_email"
+  },
+
+  "flip": {
+    "_notes": "Goes into the FULL erb only, at social.awarenessEpisode.flip. Absent from the defend-only shell.",
+    "mode": "montage"
+  },
+
+  "strings": {
+    "_notes": "flipMontageByChoice goes into the FULL erb only, at social.awarenessEpisode.strings.flipMontageByChoice. It is ERB-ONLY and must be added to STRINGS_ERB_ONLY_OK in test/js/social-awareness-fragment-erb-parity.test.mjs (ENG-04 adds it there, like flipDefenderLineByChoice). flipHeading ('Six months later') is NOT here: it lives in defend.json's strings and is shared by both shells. Keyed beat then option; every outer key is a real beat and every inner key a real option of that beat (ENG-04 lint). personal_email is shown first (it is the flipBeat); the montage still shows every beat. Text is verbatim from E15 section 10. The 'Your choice' / 'the version where it was taken instead' framing is in the text, not applied by the engine, so a line is authored for BOTH options of every beat (the unsafe-option fallback never fires for E15).",
+    "flipMontageByChoice": {
+      "personal_email": {
+        "send_personal": "Your choice. Months on, the personal inbox was broken into with a reused password; the pack sat in its sent items, and the client got a convincing fake invoice built from it.",
+        "ask_nilesh": "The version where the pack went to a personal inbox instead: it was broken into with a reused password and the pack was copied. Remote access left nothing outside the firm to find."
+      },
+      "free_transfer": {
+        "use_free_site": "Your choice. The free transfer site was breached; old public links, including a video with people in the background, turned up in search results.",
+        "use_fileshare": "The version where a free site was used: its old links were still live when it was breached. The firm's link expired after seven days, so there was nothing to find."
+      },
+      "posted_stick": {
+        "plug_in": "Your choice. The same stick reached four other firms; one plugged it in and was down for nine days.",
+        "to_it": "The version where the stick was plugged in: it carried malware and took a firm offline for nine days. The client confirmed they had posted nothing; IT checked the stick safely."
+      },
+      "rota_app": {
+        "use_app": "Your choice. The rota stayed editable by the departed temp, then vanished when the free app closed the unused account, the week before a busy run.",
+        "ask_it": "The version where the rota stayed in the free app: the departed temp could still edit it, and it was lost when the account was closed. IT moved it to the team space in minutes."
+      }
+    }
+  }
+}

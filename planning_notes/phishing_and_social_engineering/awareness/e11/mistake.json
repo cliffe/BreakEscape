@@ -1,0 +1,70 @@
+{
+  "_about": "E11 full-episode-only fragment (the full_only.json equivalent for E11, named mistake.json per the brief section 15). Consequence-flip episode (ENG-04): in place of an attack half, the learner makes four everyday choices in a safe sandbox (the `mistake` stage), then a montage flip shows where each led. These keys are pasted into scenarios/awareness_e11_misdirected_data/scenario.json.erb (the FULL shell) ONLY; the generated defend-only shell never carries them. None is in the fragment-erb parity comparison (the mistake and flip blocks are episode-level; strings.flipMontageByChoice is erb-only, added to STRINGS_ERB_ONLY_OK by ENG-04). Shapes follow test/js/fixtures/social_awareness/clean_mistake.json, scripts/validate_social/awareness.rb mistake_checks/montage_line_checks, and public/break_escape/js/minigames/episode-runner/consequence-sandbox.js. All people fictional; see defend.json and BRAND_ADDITIONS.md.",
+
+  "_notes": {
+    "mistake": "Paste at social.awarenessEpisode.mistake (ENG-04). The sandbox of four everyday choices, unscored. Exactly one safe:true option per beat (the approved route); the safe option is NOT first every time (consequence-sandbox radios are shown in authored order, so the position is varied: safe first in caller_bernadette and marketing_export, safe second in overtime_sheet and redaction_send). flipBeat is overtime_sheet, the episode's title case (the misdirected email with the health notes), quoted back as the montage headline.",
+    "flip": "Paste at social.awarenessEpisode.flip (ENG-04). mode 'montage' makes the flip replay the sandbox choices instead of looking for a sent message; required when stages lists 'mistake' (awareness.rb). flipHeading ('Six months later') lives in defend.json strings, shared by both variants.",
+    "flipMontageByChoice": "Paste at social.awarenessEpisode.strings.flipMontageByChoice (ENG-04), FULL shell only. Keyed beatId then optionId; a line is authored for BOTH options of every beat (brief section 10a), so ENG-04's unsafe-option fallback never fires for E11. The 'Your choice' / 'the version where it was taken instead' framing is in the text, not applied by the engine. Erb-only: it must NOT appear in the defend-only shell (parity test); add flipMontageByChoice to STRINGS_ERB_ONLY_OK in test/js/social-awareness-fragment-erb-parity.test.mjs (ENG-04 owns this)."
+  },
+
+  "mistake": {
+    "scored": false,
+    "beats": [
+      {
+        "id": "caller_bernadette",
+        "situation": "Carol rings the desk: \"I'm Bernadette's sister, it's her fiftieth and I'm planning a surprise. Which school is she cleaning at today, and what time does she finish?\" Bernadette Lyons is one of Carrholme's cleaners.",
+        "options": [
+          { "id": "take_message", "label": "Offer to pass a message to Bernadette, and give nothing out", "safe": true, "approvedRoute": true },
+          { "id": "give_details", "label": "Tell her: Ashgrove Primary, till three", "safe": false }
+        ]
+      },
+      {
+        "id": "overtime_sheet",
+        "situation": "Shauna asks you to send this month's overtime sheet to Sam in Payroll. The sheet lists nine staff, their hours, and a notes column (\"hospital appointment\", \"back injury\", \"union meeting\"). Typing \"Sam\" offers Sam Whitlow (Hollinsbrook House) first, with an 'External recipient' chip, and Sam Whitaker (Payroll) second.",
+        "options": [
+          { "id": "send_wrong_sam", "label": "Send it to the first Sam", "safe": false },
+          { "id": "check_then_send", "label": "Check the address, then send to Sam Whitaker in Payroll", "safe": true, "approvedRoute": true }
+        ]
+      },
+      {
+        "id": "marketing_export",
+        "situation": "Martin, the Sales Director, messages you: \"We're launching a cleaning service for families. Export the family contacts from the claims system and I'll send them a discount.\"",
+        "options": [
+          { "id": "ask_dpo", "label": "Tell Martin those were given to sort claims, and ask the DPO first", "safe": true, "approvedRoute": true },
+          { "id": "export_list", "label": "Export the list for Martin", "safe": false }
+        ]
+      },
+      {
+        "id": "redaction_send",
+        "situation": "Shauna: \"Send Mr Hale a copy of the incident report for his complaint.\" The one-page report names Edna Hale's missing cardigan and the date (fine to send), and also Albert Finch (Room 14, with a continence-care note), Pauline Grant (Room 9), and a driver's personal mobile.",
+        "options": [
+          { "id": "send_as_is", "label": "Send the report as it is", "safe": false },
+          { "id": "redact_first", "label": "Remove the other residents, the care note and the mobile, then send", "safe": true, "approvedRoute": true }
+        ]
+      }
+    ],
+    "flipBeat": "overtime_sheet"
+  },
+
+  "flip": { "mode": "montage" },
+
+  "flipMontageByChoice": {
+    "_use": "The full text of the montage lines. Lives at social.awarenessEpisode.strings.flipMontageByChoice in the full erb.",
+    "overtime_sheet": {
+      "send_wrong_sam": "Your choice. The overtime sheet, with the back-injury and union-meeting notes, sat in a care home manager's inbox for three days before anyone noticed. By the time it reached the DPO, the first 72 hours were gone.",
+      "check_then_send": "The version where it went to the first Sam instead: staff health notes reached someone outside Carrholme, unnoticed for three days. A glance at the address stopped it here."
+    },
+    "caller_bernadette": {
+      "give_details": "Your choice. Two weeks on, a man was waiting for Bernadette at her school. He had told the desk he was her brother. A stranger learned where a lone worker would be.",
+      "take_message": "The version where the school and the time were given out: a stranger learned where a lone worker would be. Offering to pass a message gave the caller nothing."
+    },
+    "marketing_export": {
+      "export_list": "Your choice. A month on, three families complained and one wrote to the regulator. The contacts had been given to sort out a lost cardigan, not to hear about offers.",
+      "ask_dpo": "The version where the list was exported: families who had given their details to sort a claim got a marketing email, and complained. Asking first turned it into a proper sign-up box."
+    },
+    "redaction_send": {
+      "send_as_is": "Your choice. Mr Hale opened the report and read another resident's continence-care note and a driver's mobile number. One mistake, two more people's data exposed.",
+      "redact_first": "The version where the report went as it was: another resident's care note and a driver's mobile reached a stranger. Taking the extra details out first left only what Mr Hale was owed."
+    }
+  }
+}
