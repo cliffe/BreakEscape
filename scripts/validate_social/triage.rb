@@ -326,11 +326,16 @@ module ValidateSocial
       return [err("#{where}.labels must be an object")] unless labels.is_a?(Hash)
 
       issues = []
-      known = %w[kind verdict verdictFeedback callActions pushActions smsHeading queue choice teamBadge teamBadgeTitle phishCaughtLabel scoreLine]
+      known = %w[kind verdict verdictFeedback callActions pushActions smsHeading itemNoun next queue choice teamBadge teamBadgeTitle phishCaughtLabel scoreLine]
       labels.each_key { |k| issues << err("#{where}.labels has the key '#{k}', which is not one of #{known.join(', ')}") unless known.include?(k) }
       issues << err("#{where}.labels.smsHeading is empty") if labels.key?('smsHeading') && blank?(labels['smsHeading'])
-      %w[teamBadge teamBadgeTitle phishCaughtLabel scoreLine].each do |key|
+      %w[teamBadge teamBadgeTitle phishCaughtLabel scoreLine next].each do |key|
         issues << err("#{where}.labels.#{key} must be a non-empty string") if labels.key?(key) && blank?(labels[key])
+      end
+      if labels.key?('itemNoun')
+        n = labels['itemNoun']
+        ok = (n.is_a?(String) && !blank?(n)) || (n.is_a?(Array) && n.length == 2 && n.none? { |w| blank?(w) })
+        issues << err("#{where}.labels.itemNoun must be a non-empty string or a [singular, plural] pair") unless ok
       end
       if labels['teamBadge'].is_a?(String) && !labels['teamBadge'].include?('{n}')
         issues << warn_("#{where}.labels.teamBadge has no {n}; the badge would not show the count")

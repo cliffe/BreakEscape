@@ -111,6 +111,20 @@ test('batch-5: a valid verdict-points override (per-item and per-set) raises not
     assert.deepEqual(lintJson(j), []);
 });
 
+test('batch-5: labels.itemNoun and labels.next validate their shape', { skip }, () => {
+    const ok = mini();
+    ok.social.triageSets[0].labels = { itemNoun: 'visitor', next: 'Next visitor' };
+    assert.deepEqual(lintJson(ok), []);
+    const ok2 = mini();
+    ok2.social.triageSets[0].labels = { itemNoun: ['network', 'networks'] };
+    assert.deepEqual(lintJson(ok2), []);
+    const bad = mini();
+    bad.social.triageSets[0].labels = { itemNoun: ['only-one'], next: '' };
+    const out = lintJson(bad);
+    expectIn(out, /labels\.itemNoun must be a non-empty string or a \[singular, plural\] pair/);
+    expectIn(out, /labels\.next must be a non-empty string/);
+});
+
 test('batch-5: a valid labels.verdictFeedback raises nothing; a bad shape is refused', { skip }, () => {
     const ok = mini();
     ok.social.triageSets[0].labels = { verdictFeedback: { delete: { phish: 'Use the service desk.', real: 'It was real.' } } };

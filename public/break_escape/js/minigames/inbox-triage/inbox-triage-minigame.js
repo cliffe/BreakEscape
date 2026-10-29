@@ -363,13 +363,24 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const every = (allow) => kinds.length > 0 && kinds.every((k) => allow.includes(k));
         // set.labels.queue[key] is layered over the entry for that key (see triage-kinds.js).
         const pick = (key, info) => {
-            const own = this.labels?.queue?.[key];
-            if (!isObj(own)) return info;
             const out = { ...info };
-            if (typeof own.label === 'string' && own.label) out.label = own.label;
-            if (Array.isArray(own.item) && own.item.length === 2 && own.item.every((w) => typeof w === 'string' && w)) out.item = [...own.item];
-            if (typeof own.real === 'string' && own.real) out.real = own.real;
-            if (typeof own.reportLabel === 'string' && own.reportLabel) out.reportLabel = own.reportLabel;
+            let itemSet = false;
+            const own = this.labels?.queue?.[key];
+            if (isObj(own)) {
+                if (typeof own.label === 'string' && own.label) out.label = own.label;
+                if (Array.isArray(own.item) && own.item.length === 2 && own.item.every((w) => typeof w === 'string' && w)) { out.item = [...own.item]; itemSet = true; }
+                if (typeof own.real === 'string' && own.real) out.real = own.real;
+                if (typeof own.reportLabel === 'string' && own.reportLabel) out.reportLabel = own.reportLabel;
+            }
+            // labels.itemNoun (batch-5 F-E10-8 / F-E12-6): a blanket item-noun override for a set
+            // whose kind the derived noun names wrongly ("visitor" on a reception desk, not "call").
+            // A string gives [noun, noun+'s']; a [singular, plural] pair is taken as-is. A per-queue
+            // labels.queue.<key>.item wins over it. Absent, the derived default stands.
+            if (!itemSet) {
+                const n = this.labels?.itemNoun;
+                if (typeof n === 'string' && n.trim()) out.item = [n.trim(), `${n.trim()}s`];
+                else if (Array.isArray(n) && n.length === 2 && n.every((w) => typeof w === 'string' && w)) out.item = [...n];
+            }
             return out;
         };
         if (kinds.some((k) => k === 'email' || k === 'playerSent')) {
@@ -627,7 +638,12 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 const next = el('button', 'tri-next minigame-button');
                 next.type = 'button';
                 const nextRec = this._nextUnanswered(rec.id);
-                next.textContent = nextRec ? 'Next message' : 'See result';
+                // labels.next (batch-5 F-E10-8 / F-E12-6) overrides the "Next message" button; the
+                // default follows the queue's item noun ("Next call", "Next visitor"), so a non-email
+                // set no longer reads "Next message". Unchanged for an email set (noun 'message').
+                next.textContent = nextRec
+                    ? (isStr(this.labels?.next) ? this.labels.next : `Next ${this._queueInfo().item[0]}`)
+                    : 'See result';
                 next.addEventListener('click', () => {
                     if (nextRec) this.reader.select(nextRec.id);
                     else this._finishSort();

@@ -2886,6 +2886,8 @@
             "callActions": {"type": "object", "description": "By action id comply, escalate, refuse, verify_callback", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
             "pushActions": {"type": "object", "description": "By action id approve, deny, deny_report", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
             "smsHeading": {"type": "string", "description": "The 'Text message' heading on a text (default 'Text message')"},
+            "itemNoun": {"description": "batch-5 (F-E10-8 / F-E12-6): a blanket item-noun override for a set whose kind the derived noun names wrongly ('visitor' on a reception desk). A string gives [noun, noun+'s']; a [singular, plural] pair is taken as-is. A per-queue labels.queue.<key>.item wins over it.", "oneOf": [{"type": "string", "minLength": 1}, {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "string", "minLength": 1}}]},
+            "next": {"type": "string", "minLength": 1, "description": "batch-5 (F-E10-8 / F-E12-6): the 'Next message' button in immediate feedback. Default follows the item noun ('Next call', 'Next visitor')."},
             "teamBadge": {"type": "string", "description": "aw-ux2: the triage team badge, with {n} for the count (default 'Phish stopped for the team: {n}'). For sets whose reported items are not all phish"},
             "teamBadgeTitle": {"type": "string", "description": "aw-ux2: the badge's hover text (default 'Phish you reported or checked by another route this round')"},
             "phishCaughtLabel": {"type": "string", "description": "The result counter's label (default 'Phish caught'). For a non-phishing set (E17 acceptable-use) where 'Phish caught' is wrong, e.g. 'Requests handled'"},

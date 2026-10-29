@@ -216,6 +216,28 @@ test('labels.scoreLine overrides the scored-round brief line; absent keeps the d
     assert.doesNotMatch($(s2, '.tri-brief').textContent, /naming the flags/);
 });
 
+// ── labels.itemNoun / labels.next (batch-5 F-E10-8 / F-E12-6) ────────────────────
+test('labels.itemNoun renames the item noun in the brief and the Next button; labels.next wins; email default unchanged', () => {
+    const answerP1 = (s) => {
+        click($(s, '.tri-start'));
+        click($(s, '.mail-row[data-id="p1"]'));
+        click($(s, '.tri-verdict[data-verdict="report"]'));
+        click($(s, '.tri-confirm'));
+    };
+    const s = open(awareSet({ labels: { itemNoun: 'request' } }));
+    assert.match($(s, '.tri-brief').textContent, /requests/);
+    answerP1(s);
+    assert.equal($(s, '.tri-next').textContent, 'Next request');
+
+    const s2 = open(awareSet({ labels: { next: 'Next one' } }));
+    answerP1(s2);
+    assert.equal($(s2, '.tri-next').textContent, 'Next one');
+
+    const s3 = open(awareSet());
+    answerP1(s3);
+    assert.equal($(s3, '.tri-next').textContent, 'Next message');
+});
+
 // ── labels.phishCaughtLabel (E17-M2) ─────────────────────────────────────────────
 test('labels.phishCaughtLabel overrides the result counter label; absent keeps "Phish caught"', () => {
     const play = (s) => {
