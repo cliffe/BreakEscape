@@ -5,8 +5,7 @@ Scope: the draft shot list in `docs/video/M01_TRIAL_PLAN.md` section 6, and the 
 **Headline results**
 
 - Part A: 8 of the 9 requested shot types are located. The guard with a sight cone does not exist in m01.
-- Part B: 32 lines tested, 27 with cached audio that resolves (predicted 200), 5 with none (503). All 5 misses are Agent HaX's phone lines (`agent_0x99`).
-- Live HTTP testing did not run. The live app returns 500 because its database is not provisioned in this container (see "Test status"). The Part B results are an offline replica of the controller's checks, not HTTP responses.
+- Part B (live, rerun against `POST /break_escape/games/1/tts` after the database was provisioned): 32 lines tested, 27 return 200 `audio/mpeg` with a playable clip, 5 return 503. All 5 misses are Agent HaX's phone lines (`agent_0x99`), which have no cached clip. The live results match the offline prediction exactly, with no differences.
 
 Coordinates are `scenarios/m01_first_contact/scenario.json.erb` (`scenario`) unless stated, with the ink path shown in full.
 
@@ -53,7 +52,7 @@ Derek's computer glow (`derek_office`, `:1908-1914`) is not in the list above, b
 
 **Speaker ids.** Agent HaX has two ids. The briefing is `briefing_cutscene` and the phone is `agent_0x99`. Both use the Aoede voice with different styles, so their cached clips differ.
 
-| ID | Speaker (npc id) | Ink file:line | Text (raw ink) | Words | Status | Clip | Notes |
+| ID | Speaker (npc id) | Ink file:line | Text (raw ink) | Words | Live HTTP | Clip | Notes |
 |---|---|---|---|---|---|---|---|
 | hax_1 | Agent HaX (briefing_cutscene) | m01_opening_briefing.ink:41 | Whatever they're planning, it's active. And it's dangerous. | 8 | 200 | 3.5 s | Good opener |
 | hax_2 | Agent HaX (briefing_cutscene) | m01_opening_briefing.ink:69 | Large-scale data aggregation. Personal profiles, vulnerability assessments. | 7 | 200 | 5.4 s | Ominous |
@@ -88,23 +87,25 @@ Derek's computer glow (`derek_office`, `:1908-1914`) is not in the list above, b
 | maya_7 | Maya Chen (maya_chen) | m01_npc_maya.ink:180 | Anyone who gets too close gets removed. | 7 | 200 | 3.5 s | Ominous, no name |
 | maya_8 | Maya Chen (maya_chen) | m01_npc_maya.ink:198 | I was starting to think no one cared about stopping this. | 11 | 200 | 4.1 s | Soft |
 
-**Totals.** 32 tested. 27 with a clip that resolves (predicted 200). 5 without (predicted 503): all of Agent HaX's phone lines. Durations are from `ffprobe` on the copied clips in `.../scratchpad/video-scout/clips/`. The line list is in `.../scratchpad/video-scout/candidates.json`, and the results are in `.../scratchpad/video-scout/offline_results.json`.
+**Totals (live).** 32 tested. 27 returned 200 `audio/mpeg` (`ffprobe` durations shown). 5 returned 503 `{"error":"TTS not configured (missing GEMINI_API_KEY) and no cached audio available"}`, all of Agent HaX's phone lines. The live bodies are in `.../scratchpad/video-scout/live/`, the statuses in `.../scratchpad/video-scout/live_results.json`, and the line list in `.../scratchpad/video-scout/candidates.json`. The earlier offline replica is kept at `.../scratchpad/video-scout/offline_results.json`; it agrees with the live run on all 32.
+
+**Finale state for the Derek lines.** All 8 Derek lines are in the finale. Derek's `start` knot gates on `entropy_reveal_read` (`ink/m01_derek_confrontation.ink:33`, which sends a player to `insufficient_evidence` otherwise, `:66-78`). Lines 106 and 110 are in `derek_calm_response` (`:105-110`). 152 is in `derek_admits_casualties` (`:145-152`). 170 is in `evil_monologue_part1` (`:169-176`). 234 is in `architect_reference` (`:231-234`). 251 and 255 are in `derek_final_philosophy` (`:244-255`). Line 39 is in `start` after the gate (`:37-39`). The TTS endpoint does not check game state, so the live 200s do not prove that the line is reachable in play.
+
+**Is `entropy_reveal_read` a real global?** Yes. It is declared in the scenario's `globalVariables` block (`scenarios/m01_first_contact/scenario.json.erb:2180`, value `false` at `:2211`). It is set to `true` by the onPickup of the ENTROPY Network Architecture document (`:2150-2152`). The head-start `--set entropy_reveal_read=true` therefore names a real global. I did not test the head-start in a browser.
 
 ---
 
 ## Test status
 
-**The live HTTP test did not run.** It needs a running database.
+**The live HTTP test ran (second pass, after the coordinator provisioned the database).**
 
-- `tools/playtest/start-keyless-server.sh` fails. Its `bundle exec rails server` cannot find the `rails` binstub. `bin/rails server` works, so I ran the same server with `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true bin/rails server -b 127.0.0.1 -p 3001`. It is up on port 3001 (Puma PID 3756), and I left it running. Port 3000 was not touched.
-- The app's `development` database (`test/dummy/config/database.yml`, `deploy` role over peer auth) is not provisioned. The Postgres 16 cluster was **down**. I started it with `pg_ctlcluster 16 main start`, and it is now running. It has no `deploy` role and no `break_escape_development` database. Creating those is outside this scout, so I stopped there.
-- Because of this, `new-game.rb` cannot create a game, and the TTS route returns 500 (`POST /break_escape/games/1/tts`, log shows `DatabaseConnectionError`).
-- The Part B status is therefore **predicted**. For each line, the check replicates the controller in order: (1) ink validation (`InkTextValidator`, which gives 403 if the text is not in the ink); (2) the current cache key, then the legacy key, under `tts_cache/m01_first_contact/` (which gives 200); (3) otherwise 503 (no key set). Voice name, style and language come from `scenario.json.erb`. The database's `current_voice_configs` override is not applied, which may change keys if a voice was restyled.
-- A 200 means a clip resolves and `ffprobe` reads it. It does not show that the browser plays it.
+- The keyless server on :3001 is up (orchestrator-managed; not restarted or stopped by this scout). Game 1 (`/break_escape/games/1`) is the m01 game used.
+- The client (`public/break_escape/js/api-client.js:129-149`, `getTTS`) sends `POST ${apiBasePath}/tts` with `Content-Type: application/json`, `X-CSRF-Token`, `credentials: 'same-origin'`, and body `{npc_id, text}`. `apiBasePath` is `/break_escape/games/1` (`app/views/break_escape/games/show.html.erb:221`). The token is `window.breakEscapeConfig.csrfToken` (the same value as the page's `csrf-token` meta; `public/break_escape/js/config.js:13-16`). Each request used the session cookie from a `GET /break_escape/games/1` and the page's CSRF token, with the raw ink line as `text`.
+- Controller order (`app/controllers/break_escape/games_controller.rb:579-690`): text validation (403 if not in the ink or barks), then the cached clip (200), otherwise 503 with no key.
+- Results: see Part B. The statuses match the offline prediction on all 32. No differences.
+- The first run for this scout had no database. The earlier offline replica (ink validator plus cache lookup) is in `.../scratchpad/video-scout/offline_results.json`.
 
-**Phone audio.** The cache holds no clip for `agent_0x99` at all (no sidecar with that npc). Generating phone-style clips needs `GEMINI_API_KEY`, which is not set here. So the phone Agent HaX lines are not usable for the trailer as things stand. Agent HaX's briefing voice (`briefing_cutscene`) is cached and usable.
-
-**Re-run once the database is provisioned.** Run `bin/rails runner tools/playtest/new-game.rb m01_first_contact`, then POST each line as the client does (JSON `{npc_id, text}` with the CSRF token to `/break_escape/games/<id>/tts`). Compare the result with the predicted status above.
+**Phone audio.** The cache holds no clip for `agent_0x99` (no sidecar with that npc). Generating phone-style clips needs `GEMINI_API_KEY`, which is not set here. The phone Agent HaX lines are therefore not usable for the trailer as things stand. Agent HaX's briefing voice (`briefing_cutscene`) is cached and usable.
 
 ## Notes
 
@@ -112,3 +113,4 @@ Derek's computer glow (`derek_office`, `:1908-1914`) is not in the list above, b
 - `entropy_reveal_read` is an ink variable as well as a scenario global. The `--set` head-start for Derek is expected to work but needs a browser check.
 - `SOLUTION_GUIDE.md` lists three VM flags, but the scenario has four (`submit_launch_code`). The scenario is the authority.
 - Nothing in the repo changed except this file. `git status` also shows an untracked `tools/video/` directory, which was already there before this scout.
+- The coordinator provisioned the database after the first pass. The Postgres cluster I had started earlier is now used by the app; no roles or databases were created by this scout.
