@@ -1,6 +1,6 @@
 # Resume note: video pipeline m01 trial (started 2026-10-29)
 
-Plan `docs/video/M01_TRIAL_PLAN.md` (revised after review R1, `docs/video/reviews/`); log `docs/video/TRIAL_LOG.md`. Branch `claude/break-escape-video-creation-wk365q`. User brief saved on artifact 9ewiCXuTDXZ88YU43EHzpE. Stage 0 (capture tooling, Sonnet) and stage 1 (scout, Haiku) started; see the log for status. Haiku/Sonnet wherever possible (user). Renders go to git-ignored `video_out/`.
+Plan `docs/video/M01_TRIAL_PLAN.md`; log `docs/video/TRIAL_LOG.md`; style and how-to `docs/video/GUIDELINES.md`. Branch `claude/break-escape-video-creation-wk365q`. Status 2026-10-29: trial delivered. m01 teaser rendered (16:9, 9:16, 1:1) and slideshow, review page https://claude.ai/artifact/HhdmENxRVcGuCa5BiZS5Gd (feedback in its db doc `feedback/m01`). Renders live in git-ignored `video_out/` (lost with the container). Next: read the user's feedback, fix m01, then whatever they pick (skill, other missions, cinematic mode, lectures). Haiku/Sonnet wherever possible (user).
 
 # Resume note: awareness course plan and implementation briefs (planning branch ccr-8675a21c-vu1k0k)
 
