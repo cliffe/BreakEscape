@@ -171,6 +171,10 @@
               "perFlagNote": {
                 "unapproved_tool": "Installing an app a client sent is not your call; unknown software can carry malware. Ask the service desk, or suggest our own meeting tool."
               },
+              "whyFine": {
+                "urgencyCalibrated": "'Install it before Tuesday' is an ordinary meeting date, not pressure. The tell is being asked to install an app that wasn't your call to add.",
+                "linkCredible": "The link text is the real address it leads to, so it isn't a disguised link. The tell is installing an unchecked app, whoever sent it."
+              },
               "ifTrusted": "You install software the firm hasn't checked onto a work laptop.",
               "reportReply": "Thanks, the service desk can set the meeting up on our approved tool instead."
             },
@@ -207,6 +211,12 @@
               "isPhish": true,
               "flags": [
                 "no_work_reason"
+              ],
+              "flagAlternatives": [
+                [
+                  "no_work_reason",
+                  "pretextRelevant"
+                ]
               ],
               "kindLine": "A personal lookup isn't allowed.",
               "missLabel": "a personal lookup in the system",
@@ -335,6 +345,9 @@
               "missLabel": "an unapproved online tool",
               "perFlagNote": {
                 "unapproved_tool": "A free online tool hands the file to a provider we haven't checked; there's an approved way. Ask first, the service desk usually answers the same day."
+              },
+              "whyFine": {
+                "pretextRelevant": "An unsolicited 'everyone uses it' pitch turns up in real and fake mail alike, so it isn't the tell. The tell is handing the firm's file to an unapproved tool."
               },
               "ifTrusted": "The firm's file goes to an unchecked third party.",
               "reportReply": "Thanks, the service desk can point you to the approved converter, usually the same day."
