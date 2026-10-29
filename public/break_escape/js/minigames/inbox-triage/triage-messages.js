@@ -234,6 +234,7 @@ export function resolvePlayerSent(entry, set, mailState, social, opts = {}) {
         links,
         attachments,
         auth: row,
+        ...(isStr(rec.hiddenText) && rec.hiddenText ? { hiddenText: rec.hiddenText, ...(isStr(rec.hiddenTextLabel) ? { hiddenTextLabel: rec.hiddenTextLabel } : {}) } : {}),
         ...(factorStrings ? { factorStrings } : {}),
         truth: { ...notes, isPhish: true, flags }
     });
@@ -261,6 +262,7 @@ export function plainSentMessage(rec, entry = null) {
         body,
         links: [],
         attachments: [],
+        ...(isStr(rec.hiddenText) && rec.hiddenText ? { hiddenText: rec.hiddenText, ...(isStr(rec.hiddenTextLabel) ? { hiddenTextLabel: rec.hiddenTextLabel } : {}) } : {}),
         truth: { isPhish: true, flags: [] }
     });
 }
