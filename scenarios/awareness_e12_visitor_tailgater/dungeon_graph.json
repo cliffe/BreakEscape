@@ -1,0 +1,25 @@
+{
+  "scenario": "awareness_e12_visitor_tailgater",
+  "start_room": "training_room",
+  "nodes": [
+    {
+      "id": "door_training_room",
+      "label": "Studio<br/>Key lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "training_room",
+      "label": "Studio",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_training_room",
+      "to": "training_room",
+      "soft": false
+    }
+  ]
+}
