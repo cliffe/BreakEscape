@@ -141,3 +141,4 @@ Merges now happen in the orchestrator's own worktree (`.claude/worktrees/orch-me
 | E19 | 0 | 0 | 4 | content |
 
 Content fixers start once the engine UX batch lands (some fixes need its per-message verdict line).
+- E20 design C1: 0/1/2. MA1 (Wi-Fi card painted open networks red, secured green: the misconception core_09 debunks) fixed by the orchestrator: one neutral ink for both, lock shape and words carry the difference. MI1 single aim confirmed (matches E11; ENG-04 has no global for a first aim). MI2 to the content fixer.
