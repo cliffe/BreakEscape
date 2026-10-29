@@ -95,3 +95,11 @@ Merges now happen in the orchestrator's own worktree (`.claude/worktrees/orch-me
 - ENG-14 Wi-Fi list merged. Every SSID uses the address font, so the look-alike is not singled out (ruling: keep). E14 content committed (7bc4ae036); E14 wiring started.
 - E8 design C2 (`reviews/build/E8_DESIGN_C2.md`): 0/0/1. All C1 findings closed except MI5 (kept by design). New N1 (minor): the defend-only `defendIntro` still gives "leave the device as it is" as the universal move; goes to the dialogue fixer. A design C3 confirmation follows the dialogue fixes. E8 dialogue review C1 running (opus48).
 - E14 wiring (Sonnet) stopped by a safety classifier mid-run, with two content gaps the validator found (no ask template; no pretext decoy). Handed to opus48 to finish both wiring and content (wire-e14b), per the user's rule.
+
+### Wave 3 (2026-10-29)
+
+- Merged to main: ENG-06/07 (assistant overlay, video-call label; opus48 retry), ENG-02b (spray/stuff). 314-315 of 317 JS files; failures are the known Node 22 IPC flake plus the two registry guards reacting to E14/E16 ink folders committed before their shells (resolves when their wiring lands).
+- Wired: E17 + E19 (45012d5fe; bridges e17-defend 14/14, e19-full 15/15). The generator now carries `sortDrill`/`concernForm`/`privacyPanel` into defend-only shells. E9 wired (fec29ec20). Content committed: E10 (5dd8bf749), E12 (3ca56d43a), E20 (dbfeed9f7), data_conduct (b64a5ad3e).
+- E8 dialogue C1 (`reviews/build/E8_DIALOG_C1.md`): 0/0/3; fixing (Sonnet fix-e8d) with the sort-drill summary live-region glitch.
+- Rulings: E20 host stays Zainab Hussain on a placeholder sprite (whether to reuse a built host instead is for the user, with the art schedule); E10's fifth concept card carries its module line (fine; the same pattern as E11 and E20); E12's costume is a stock placeholder until art is approved.
+- Running: wiring E9+E16 (finishing E16), E11+E15, E14 (opus48), E13 (opus48), E12, E20; fakeCheck builder UI (opus48); content E18, core_00 (opus48); E8 dialogue fixes.
