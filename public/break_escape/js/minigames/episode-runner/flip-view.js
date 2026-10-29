@@ -103,9 +103,11 @@ function aftermathItems(block) {
 function aftermathEmailRow(it) {
     const row = el('div', 'aw-aftermath-email');
     const dl = el('dl', 'aw-aftermath-fields');
-    const add = (k, v) => { if (isStr(v)) dl.append(el('dt', null, k), el('dd', null, v)); };
+    // Addresses use the address font, like the flip's own From/To lines.
+    const add = (k, v, cls = null) => { if (isStr(v)) dl.append(el('dt', null, k), el('dd', cls, v)); };
     add('Folder', isStr(it.folder) ? it.folder.charAt(0).toUpperCase() + it.folder.slice(1) : 'Sent');
-    add('To', it.to);
+    add('From', it.from, 'aw-aftermath-address');
+    add('To', it.to, 'aw-aftermath-address');
     add('Subject', it.subject);
     add('Time', it.time);
     row.appendChild(dl);

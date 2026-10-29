@@ -126,3 +126,38 @@ test('flipAftermathFor: null for landed false and for an episode with no block',
     assert.equal(flipAftermathFor(ep, { landed: true }), ep.flipAftermath);
     assert.equal(flipAftermathFor(ep), ep.flipAftermath, 'landed defaults to true');
 });
+
+test('aftermath email row: To and From values carry the address class, other values do not (MI2)', () => {
+    const h = host();
+    renderFlipView(h, {
+        message: sent(), strings: {}, onContinue() {},
+        aftermath: { items: [{ id: 'fa_sent', kind: 'email', folder: 'sent', from: 'kieran@fixture.example', to: 'finance@fixture.example', subject: 'Invoice', time: '15:08' }] }
+    });
+    const dds = [...h.querySelectorAll('.aw-aftermath-fields dd')];
+    const addr = dds.filter((d) => d.classList.contains('aw-aftermath-address')).map((d) => d.textContent);
+    assert.deepEqual(addr, ['kieran@fixture.example', 'finance@fixture.example']);
+    assert.equal(dds.length, 5, 'folder, from, to, subject, time');
+    const css = readFileSync(join(here, '../../public/break_escape/css/awareness-skin.css'), 'utf8');
+    assert.match(css, /\.aw-aftermath-address\s*\{[^}]*--se-font-address/);
+});
+
+test('aftermath cards for push, sms, voicemail and call are drawn and re-skinned light inside .aw-flip-aftermath (MA3)', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/awareness-skin.css'), 'utf8');
+    for (const sel of ['.tri-phone', '.tri-kind-voicemail', '.tri-kind-call', '.tri-sms-bubble']) {
+        assert.ok(css.includes(`.aw-flip-aftermath ${sel}`), sel);
+    }
+    const h = host();
+    renderFlipView(h, {
+        message: sent(), strings: {}, onContinue() {},
+        aftermath: { items: [
+            { id: 'p', kind: 'push', push: { app: 'Authenticator', account: 'k@fixture.example', location: 'Elsewhere', device: 'Unknown' } },
+            { id: 's', kind: 'sms', from: { name: '', address: '+44 7700 900123' }, body: 'Hello' },
+            { id: 'v', kind: 'voicemail', from: { name: 'Bank' }, body: 'Call us' },
+            { id: 'c', kind: 'call', callerId: 'Unknown', transcript: [{ who: 'Caller', text: 'Hi' }] }
+        ] }
+    });
+    for (const id of ['p', 's', 'v', 'c']) {
+        const item = h.querySelector(`.aw-flip-aftermath .aw-aftermath-item[data-id="${id}"]`);
+        assert.ok(item && item.querySelector('.tri-kind'), `${id} drawn inside .aw-flip-aftermath`);
+    }
+});

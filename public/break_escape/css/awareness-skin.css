@@ -99,6 +99,33 @@
 .aw-aftermath-fields dd { margin: 0; overflow-wrap: anywhere; }
 .aw-aftermath-note { margin: 6px 0 0; font-size: 15px; font-style: italic; }
 .aw-aftermath-line { margin: 8px 0 0; font-weight: 600; }
+.aw-aftermath-fields dd.aw-aftermath-address { font-family: var(--se-font-address); }
+/* The triage cards for push, sms, voicemail and call are dark panels with light text; inside the
+   light flip the text inherits dark ink and vanished on them (E8 MA3). Re-skin them light here:
+   dark ink on a pale panel, the accent stripes kept. Page and qr cards are already light. */
+.aw-flip-aftermath .tri-kind { color: var(--aw-ink); }
+.aw-flip-aftermath .tri-phone,
+.aw-flip-aftermath .tri-kind-voicemail,
+.aw-flip-aftermath .tri-kind-call { background: #eef2f1; color: var(--aw-ink); border-color: #52606d; }
+.aw-flip-aftermath .tri-kind-voicemail { border-left-color: #5b4bc4; }
+.aw-flip-aftermath .tri-kind-call { border-left-color: var(--aw-accent); }
+.aw-flip-aftermath .tri-phone-top { border-bottom-color: #52606d; }
+.aw-flip-aftermath .tri-phone-speaker { background: #cfd8d4; border-color: #52606d; }
+.aw-flip-aftermath .tri-phone-battery { border-color: #52606d; background: linear-gradient(90deg, #52606d 70%, transparent 70%); }
+.aw-flip-aftermath .tri-kind-label,
+.aw-flip-aftermath .tri-phone-number,
+.aw-flip-aftermath .tri-phone-status,
+.aw-flip-aftermath .tri-vm-meta,
+.aw-flip-aftermath .tri-call-meta,
+.aw-flip-aftermath .tri-push-details dt,
+.aw-flip-aftermath .tri-line-who,
+.aw-flip-aftermath .tri-call-claims-label { color: #3e4c59; }
+.aw-flip-aftermath .tri-line-you .tri-line-who { color: var(--aw-ink); text-decoration: underline; }
+.aw-flip-aftermath .tri-vm-bar { background: #5b4bc4; }
+.aw-flip-aftermath .tri-call-claims { border-color: #52606d; }
+.aw-flip-aftermath .tri-sms-bubble { background: #fff; border-color: #52606d; color: var(--aw-ink); }
+.aw-flip-aftermath .tri-sms-time { color: #3e4c59; }
+.aw-flip-aftermath .tri-notice, .aw-flip-aftermath .tri-browser { color: #1d2333; }
 .aw-defender-line { margin: 12px 0 0; padding: 10px 12px; border-left: 4px solid var(--aw-accent); background: #fff; font-weight: 600; }
 
 /* debrief */
