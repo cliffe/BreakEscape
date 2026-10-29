@@ -65,6 +65,7 @@ module ValidateSocial
       issues.concat(settings_checks(ctx, ep))
       issues.concat(mfa_checks(ep))
       issues.concat(sort_drill_checks(ep)) if ep.key?('sortDrill')
+      issues.concat(privacy_panel_checks(ctx, ep)) if ep.key?('privacyPanel')
       set = defend_set(ctx, ep, issues)
       done = nil
       if set
@@ -1096,6 +1097,63 @@ module ValidateSocial
         issues << err('sortDrill.drawCount must be a whole number of cards, 1 or more')
       elsif count && rules.is_a?(Hash) && rules['oneOfEachAnswer'] == true && count < answered.uniq.length
         issues << err("sortDrill.drawCount #{count} is below the #{answered.uniq.length} bins the cards answer, so oneOfEachAnswer cannot hold")
+      end
+      issues
+    end
+
+    # ---- the privacy-settings panel (ENG-13) ---------------------------------------
+
+    PRIVACY_STATES = %w[open tight].freeze
+    PRIVACY_SECRET_KEY = /pass(word)?|secret|credential|token/i.freeze
+
+    # `privacyPanel` runs in the defend stage and closes found facts in its own view (unscored,
+    # view-only). Each setting must name facts the scenario declares, so it can never close a fact
+    # the board does not know. A fact id may carry the `se_intel_` prefix or not.
+    def self.privacy_panel_checks(ctx, ep)
+      p = ep['privacyPanel']
+      return [err('privacyPanel must be an object { settings, note? }')] unless p.is_a?(Hash)
+
+      issues = []
+      stages = ep['stages']
+      if check_mission?(ep) || !(stages.is_a?(Array) && stages.include?('defend'))
+        issues << err("privacyPanel runs inside the defend stage; this episode's stages #{stages.inspect} have none to host it")
+      end
+      declared = ctx.social['intelFacts'].is_a?(Hash) ? ctx.social['intelFacts'].keys : []
+      settings = p['settings']
+      return issues << err('privacyPanel.settings must be a non-empty array') unless settings.is_a?(Array) && !settings.empty?
+
+      seen = []
+      settings.each_with_index do |s, i|
+        unless s.is_a?(Hash)
+          issues << err("privacyPanel.settings[#{i}] must be an object")
+          next
+        end
+        w = "privacyPanel.settings[#{s['id'] || i}]"
+        issues << err("#{w} needs a non-empty id") if Mail.blank?(s['id'])
+        issues << err("privacyPanel.settings: id '#{s['id']}' is used more than once") if !Mail.blank?(s['id']) && seen.include?(s['id'])
+        seen << s['id']
+        issues << err("#{w}.label is empty or missing") if Mail.blank?(s['label'])
+        if s.key?('default') && !PRIVACY_STATES.include?(s['default'])
+          issues << err("#{w}.default #{s['default'].inspect} must be 'open' or 'tight'")
+        end
+        s.each_key do |k|
+          issues << err("#{w}.#{k} looks like a credential field; the panel is a teaching view and never holds one") if k.to_s.match?(PRIVACY_SECRET_KEY)
+        end
+        closes = s['closesFacts']
+        unless closes.is_a?(Array) && !closes.empty?
+          issues << err("#{w}.closesFacts must be a non-empty array of se_intel_* fact ids")
+          next
+        end
+        closes.each do |f|
+          id = f.is_a?(String) ? f.sub(/\Ase_intel_/, '') : nil
+          if id.nil? || id.empty?
+            issues << err("#{w}.closesFacts holds an entry that is not a fact id")
+          elsif !declared.include?(id)
+            issues << err("#{w}.closesFacts: '#{f}' is not a declared social.intelFacts id (#{declared.empty? ? 'none are declared' : declared.join(', ')}); the panel would close nothing")
+          end
+        end
+        dup = closes.select { |f| f.is_a?(String) }.map { |f| f.sub(/\Ase_intel_/, '') }
+        issues << warn_("#{w}.closesFacts names the same fact more than once") if dup.uniq.length != dup.length
       end
       issues
     end

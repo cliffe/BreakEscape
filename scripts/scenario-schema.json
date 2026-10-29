@@ -2010,6 +2010,35 @@
           "patternProperties": {"^_": {}},
           "additionalProperties": false
         },
+        "privacyPanel": {
+          "type": "object",
+          "description": "ENG-13: a privacy-settings panel that runs in the defend stage after the sort drill and before the inbox (privacy-panel-minigame.js). Turning a setting to tight marks the social.intelFacts it names as closed in the panel's own view. View-only and unscored: no global is written, so the intel board and OSINT browser are unchanged. Linted by awareness.rb.",
+          "required": ["settings"],
+          "properties": {
+            "settings": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["id", "label", "closesFacts"],
+                "properties": {
+                  "id": {"type": "string", "minLength": 1},
+                  "label": {"type": "string", "minLength": 1, "description": "The setting as the learner reads it, e.g. 'Posts: connections only'"},
+                  "closesFacts": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "description": "social.intelFacts ids this setting closes (an se_intel_ prefix is allowed and ignored)"},
+                  "default": {"type": "string", "enum": ["open", "tight"], "description": "Starting position (default open)"},
+                  "hint": {"type": "string", "description": "One line under the switch"},
+                  "section": {"type": "string", "description": "A heading shown above this setting and the ones after it (for example the subject's profile, then the learner's own)"}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "note": {"type": "string", "description": "A line under the intro, e.g. a teaching reminder"},
+            "strings": {"type": "object", "description": "Wording over the panel's defaults (privacy-model.js DEFAULT_TEXT) and the launch panel (launchHeading, launchText, launchButton), keyed by line", "additionalProperties": {"type": "string"}}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
         "strings": {
           "type": "object",
           "description": "Every learner-facing line of the episode, as data",
