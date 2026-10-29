@@ -21,7 +21,7 @@ VAR hub_quiet = false
     { episode_e12_visitor_tailgater_defend_defend_done:
         Lorna Easton: That's the desk cleared, thanks. The move that works for every pushy visitor is the same: check the list, escort them, and report anyone who won't be checked.
     - else:
-        Lorna Easton: You're on reception this morning. Visitors come one at a time: some are on the list, some aren't, and one or two will try it on. Take each as it comes, sign people in and escort them, and check or report anyone who pushes past a check.
+        Lorna Easton: You're on reception this morning. Visitors arrive one at a time, some expected and some not. Sign people in, escort them, and report anyone who won't be checked.
     }
 }
 + [Thanks, Lorna.]

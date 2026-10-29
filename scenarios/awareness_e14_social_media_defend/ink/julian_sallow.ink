@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e14_social_media_defend_defend_done:
-        Julian Sallow: That's the feed and the inbox done, thanks. The tell is always what they ask for, not how friendly they are: share nothing about our systems, and report it.
+        Julian Sallow: That's the feed and the inbox done, thanks. The tell is always what they ask for, not how friendly they are. Report anything that asks about our systems.
     - else:
         Julian Sallow: You're on an authorised exercise. A feed and an inbox: some posts give too much away, some messages fish for how we work. Take each as it comes.
     }

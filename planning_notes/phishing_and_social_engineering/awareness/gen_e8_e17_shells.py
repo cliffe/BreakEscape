@@ -247,10 +247,10 @@ LINES = {
     # E13: the brief's drafted lines ran over the 30-word dialoguelint cap, so they are trimmed here.
     ('e13', 'defend'): (
         "Brightwell's switched on its assistant, and the kiosk has the inbox beside it: a supplier email, a voicemail and a video call. Some are real, some aren't.",
-        "That's them all handled, thanks. Whoever the voice or the face belongs to, checking another way on a number you already hold is the move that always works.",
+        "That's them all handled, thanks. A voice or a face can be faked. Check another way, on a number you already hold: that always works.",
         'Thanks, Gwen.', 'Any time.'),
     ('e12', 'defend'): (
-        "You're on reception this morning. Visitors come one at a time: some are on the list, some aren't, and one or two will try it on. Take each as it comes, sign people in and escort them, and check or report anyone who pushes past a check.",
+        "You're on reception this morning. Visitors arrive one at a time, some expected and some not. Sign people in, escort them, and report anyone who won't be checked.",
         "That's the desk cleared, thanks. The move that works for every pushy visitor is the same: check the list, escort them, and report anyone who won't be checked.",
         'Thanks, Lorna.', 'Any time.'),
     ('e8', 'defend'): (
@@ -264,7 +264,7 @@ LINES = {
         'Thanks, Nilesh.', 'Any time.'),
     ('e19', 'defend'): (
         "You're covering this desk inbox. Some of it is ordinary, some of it tries to open a door. If you didn't expect it or start it, report it.",
-        "That's the inbox sorted, thanks. If you didn't start it, deny it and report it. If a screen locks, call it in, don't pay and don't touch it.",
+        "That's the inbox sorted, thanks. If you didn't start it, deny it and report it. If a screen locks, call me straight away, and don't pay or touch it.",
         'Thanks, Anjali.', 'Any time.'),
     # E11 and E15: the brief's drafted lines ran over the 30-word cap, so they are trimmed here.
     ('e11', 'defend'): (
@@ -285,13 +285,13 @@ LINES = {
         "That's it locked down, thanks. A different password for every account, kept in a manager, and deny what you didn't start: that's the whole of it.",
         'Thanks, Nilesh.', 'Any time.'),
     ('e16', 'defend'): (
-        "Anjali Rao, information security. It's a leaver's week. You're not here to catch anyone: keep your login yours, tell me what you're offered, and bring me facts, not a theory.",
+        "Anjali Rao, information security. You're not here to catch anyone: keep your login yours, tell me what you're offered, and bring me facts, not a theory.",
         "That's them sorted, thanks. Your login is you, offers get reported, and a concern goes to the right person as facts, never a verdict on anyone.",
         'Thanks, Anjali.', 'Any time.'),
     # E14: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
     ('e14', 'defend'): (
         "You're on an authorised exercise. A feed and an inbox: some posts give too much away, some messages fish for how we work. Take each as it comes.",
-        "That's the feed and the inbox done, thanks. The tell is always what they ask for, not how friendly they are: share nothing about our systems, and report it.",
+        "That's the feed and the inbox done, thanks. The tell is always what they ask for, not how friendly they are. Report anything that asks about our systems.",
         'Thanks, Julian.', 'Any time.'),
     # E10: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
     ('e10', 'defend'): (
@@ -409,7 +409,7 @@ EPISODES = {
                    'keywords': ['Malware', 'Ransomware', 'Software updates', 'Security awareness', 'Incident reporting']}],
         'defend': {
             'name': 'Malware and updates: the desk inbox',
-            'brief': "You're on an authorised exercise at Quayholt Insurance, a fictional company. You're covering a desk inbox this afternoon. Some of what turns up is ordinary, some is a program or a page trying to get you to open a door, and one is a colleague whose screen has just locked. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down. No real malware runs here.",
+            'brief': "You're on an authorised exercise at Quayholt Insurance, a fictional company. You're covering a desk inbox this afternoon. Some of what turns up is ordinary, and some is trying to catch you out. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down. No real malware runs here.",
             'endGoal': 'Sort the desk inbox at the training kiosk.',
             'aim': ('lock_the_doors_aim', 'Sort the desk inbox', 'Sort the items waiting at the desk at the training kiosk.'),
             'task': ('lock_the_doors', 'Sort the desk inbox'),
@@ -418,7 +418,7 @@ EPISODES = {
             'display': 'Awareness E19: Malware, ransomware and updates (defend only)',
             'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Cover a desk inbox at Quayholt Insurance, a fictional company: a document that wants you to switch something on, an app that wants to read your mail, a warning from the security software, a colleague whose screen has locked, and the genuine ones mixed in. Each answer is explained, and reporting when you're unsure is always fine and never marked down. No real malware runs.",
             'minutes': 8,
-            'defendIntro': "Take the desk inbox one item at a time and decide what to do with each. A program, a file or an app that wants to run or wants your access can do whatever you can do, so if you didn't expect it, don't open the door: report it. If a screen has locked, get it to the security team straight away. There's no clock on you here.",
+            'defendIntro': "Take the desk inbox one item at a time and decide what to do with each. A program, a file or an app that wants to run or wants your access can do whatever you can do, so if you didn't expect it, don't open the door: report it. There's no clock on you here.",
             'conclusion': ('Desk inbox sorted', "You've sorted the desk inbox and finished this episode."),
         },
     },
@@ -678,11 +678,17 @@ def defend_only(ekey):
     s = clean_set(sets, cfg['defend_set'])
     s['outcome']['setGlobalPrefix'] = prefix
     strings = strip_private(copy.deepcopy(EP['strings']))
-    # m27: a defend-only shell has no flip stage, so drop the flip-only strings
-    # (the runner never reads them). Keep noBlameLine, defendOnly, mondayCard, brief.
-    for _flip_key in ('flipHeading', 'flipIntro', 'flipDefenderLine', 'flipNoSend',
-                      'flipMissed', 'flipPageIntro', 'flipCallIntro'):
+    # m27 / aw2 pass 2: a defend-only shell has only brief/defend/debrief stages and no flip stage,
+    # so drop every flip* string by prefix (not a fixed list; the runner never reads them) and drop
+    # any strings.stages.<id> for a stage this shell doesn't have (E18 carried a dead stages.osint).
+    # Keep noBlameLine, defendOnly, mondayCard, brief, conceptPanel, defendIntro.
+    for _flip_key in [k for k in strings if k.startswith('flip')]:
         strings.pop(_flip_key, None)
+    if isinstance(strings.get('stages'), dict):
+        strings['stages'] = {k: v for k, v in strings['stages'].items()
+                             if k in ('brief', 'defend', 'debrief')}
+        if not strings['stages']:
+            strings.pop('stages', None)
     strings['brief'] = EP['_defendOnly']['brief']
     strings['defendIntro'] = d['defendIntro']
     if 'voicePanel' in d:
@@ -733,10 +739,26 @@ def defend_only(ekey):
     return mission, sc, meta, ink_name, ink
 
 
+USAGE = 'usage: gen_e8_e17_shells.py [--repo <checkout>] <out_dir>'
+HELP = (f'{USAGE}\n\n'
+        'Build the E8-E20 awareness defend-only shells into <out_dir> (one folder per episode).\n'
+        '  --repo <checkout>   repo root (default: $BREAKESCAPE_REPO, else this script\'s checkout)\n'
+        '  -h, --help          show this message and exit\n\n'
+        '<out_dir> is required and must not start with "-".')
+
+
 def main():
-    if len(sys.argv) < 2:
-        sys.exit('usage: gen_e8_e17_shells.py [--repo <checkout>] <out_dir>')
-    out = sys.argv[1]
+    # --repo was already consumed by _arg_repo() at import; argv here is [--help?] <out_dir>.
+    argv = sys.argv[1:]
+    if '-h' in argv or '--help' in argv:
+        print(HELP)
+        return
+    if not argv:
+        sys.exit(USAGE)
+    out = argv[0]
+    if out.startswith('-'):
+        # Two agents created a stray ./--help/ folder by running this with --help; refuse it.
+        sys.exit(f'refusing an output folder that starts with "-": {out!r}\n{USAGE}')
     built = [defend_only(k) for k in ('e8', 'e11', 'e15', 'e17', 'e19', 'e9', 'e16', 'e20', 'e14', 'e13', 'e12', 'e10', 'e18')]
     for mission, sc, meta, ink_name, ink in built:
         d = os.path.join(out, mission)
