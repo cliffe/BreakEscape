@@ -120,3 +120,4 @@ Merges now happen in the orchestrator's own worktree (`.claude/worktrees/orch-me
 | Playtest | P1 persona + reload running | |
 
 - Wired E9 + E16 (bridges 14/14, 17/17). E9 got an `attack` block (validator requires it), slot `word`s and `stepLabels.flip`; E16's concern-form keys were reshaped to the schema. Design C1 now running for E9, E11, E15, E16, E17, E19 (opus48, one each; shared `REVIEWER_BRIEF.md`).
+- E17 design C1: 0/0/3. Rulings: MI1 E17's 12-minute target governs (it is the whole episode in one defend-only shell, by design); MI2 take the tighter monitoring line; MI3 sync the spec's card table. Fix with the other C1 fixes.
