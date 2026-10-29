@@ -32,6 +32,7 @@ const FULL_EPISODES = [
   'awareness_e5_signin_pages',
   'awareness_e6_texts_and_qr',
   'awareness_e7_voice_ceo',
+  'awareness_e8_after_the_click',
 ];
 // One line per check role; each is four shells (pre and post, each in ab and ba order).
 const CHECK_ROLES = [

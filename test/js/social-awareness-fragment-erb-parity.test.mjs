@@ -48,6 +48,7 @@ const EPISODES = [
   { n: 5, dir: 'awareness_e5_signin_pages' },
   { n: 6, dir: 'awareness_e6_texts_and_qr' },
   { n: 7, dir: 'awareness_e7_voice_ceo' },
+  { n: 8, dir: 'awareness_e8_after_the_click' },
 ];
 
 // strings keys whose VALUE is allowed to differ between fragment and erb.

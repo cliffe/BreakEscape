@@ -2593,6 +2593,41 @@
       }
     ]
   },
+  "awareness_e8_after_the_click": {
+    "globals": {
+      "episode_e8_after_the_click_defend_percent": 0,
+      "episode_e8_after_the_click_defend_reportRate": 0,
+      "episode_e8_after_the_click_defend_done": false,
+      "episode_e8_after_the_click_defend_pass": false,
+      "phish_takeover_victim_landed": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e8_after_the_click/ink/anjali_rao.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e8_after_the_click_defend": {
+    "globals": {
+      "episode_e8_after_the_click_defend_defend_percent": 0,
+      "episode_e8_after_the_click_defend_defend_reportRate": 0,
+      "episode_e8_after_the_click_defend_defend_done": false,
+      "episode_e8_after_the_click_defend_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e8_after_the_click_defend/ink/anjali_rao.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
   "awareness_pre_finance_ab": {
     "globals": {
       "triage_pre_percent": 0,
