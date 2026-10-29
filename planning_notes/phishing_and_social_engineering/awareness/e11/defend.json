@@ -20,16 +20,28 @@
       "id": "e11_carrholme_desk",
       "_prefix": "Full-episode prefix (id e11_misdirected_data). The defend-only shell (id e11_misdirected_data_defend) sets episode_e11_misdirected_data_defend_defend_ instead (the built double-suffix rule for an id already ending _defend). No stage on purpose (as E1, E4).",
       "_order": "Teaching order (brief section 11): the genuine breach heads-up first (so the flip's misdirected sheet is met at once by the safe response), then the disclosure call, the look-alike payroll phish, the subject access request inside a complaint, the inbound breach, then the calibration item that data protection is not a reason to refuse help.",
-      "_mirror": "Mirror pair (aw5): item 3 e11_payroll_lookalike is the normal-looking phish catchable on screen (verdict Report); item 4 e11_sar_everything is the suspicious-looking genuine request (verdict Report/Verify, never Trust-and-ignore). Feedback is immediate so item 3's miss is explained before the similar item 4.",
-      "_scorerLimit": "Known limitation (brief section 11, open question): the built awareness scorer gives full marks for Trust, Report or Verify on genuine mail and for Report or Verify on a phish. The DPO-routing nuance ('pass this to the DPO today', 'report this breach') is carried by the immediate per-item card and the debrief, not by the score. Every item's high-scoring verdict is unambiguous.",
+      "_mirror": "Mirror pair (aw5): item 3 e11_payroll_lookalike is the normal-looking phish catchable on screen (verdict Report); item 4 e11_sar_everything is the suspicious-looking genuine request that must still be actioned (verdict Report/Verify, never Trust-and-ignore). Feedback is immediate so item 3's miss is explained before the similar item 4.",
+      "_localTells": "personal_data_breach and data_rights_request are scenario-local tells (not in the shared CHANNEL_TELLS / SKILL_NAMES and scored only by E11), declared in channelTells with flagChips labels, set-level skillNames names and tellStrings red-flag sentences. They carry the data-protection items that the built awareness scorer cannot otherwise mark on the lesson (F-E11-1, F-E11-2): items 1, 4 and 5 are genuine messages that must still be reported or routed, so they use the ENG-03a genuine-but-report vehicle (isPhish true as the scoring vehicle, with kindLine and missLabel rewording the card and result so they never say 'phish'), exactly as E8's genuine takeover signs and E16's genuine-but-report asks do. Report or Verify is then the full-marks answer; Trust scores 0 and is a critical miss, with the result line reading 'missed something that needed reporting' (every critical miss on items 1/4/5 carries a missLabel). Do not append these two to the shared library; promote only if a second set uses one.",
       "title": "Care Laundry desk inbox",
-      "brief": "You're covering the Care Laundry desk at Carrholme Services this morning. Some items are routine, some are requests or complaints that belong with the DPO, and one or two were made to trick you. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. Anything about someone's personal data, a request to see, correct or delete it, or a breach, goes to the DPO the same day. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+      "brief": "You're covering the Care Laundry desk at Carrholme Services this morning. Some items are routine, some belong with the data protection lead, and one or two were made to trick you. For each one, choose Trust, Report, Delete or Verify (ring back on a number you already hold), then tick what you noticed. Reporting or checking when you're unsure is always fine, though a real one does take a colleague's time to check.",
       "scoringProfile": "awareness",
       "verifyVerdict": true,
       "feedbackMode": "immediate",
       "headerPanel": "off",
       "glossary": "closed",
-      "channelTells": ["lookalike_domain", "secrecy_or_bypass", "vish_callback_pressure", "borrowed_authority"],
+      "channelTells": ["lookalike_domain", "secrecy_or_bypass", "vish_callback_pressure", "borrowed_authority", "personal_data_breach", "data_rights_request"],
+      "flagChips": {
+        "personal_data_breach": "Personal data has reached someone who shouldn't have it",
+        "data_rights_request": "Someone is asking to see, correct or delete their data"
+      },
+      "skillNames": {
+        "personal_data_breach": "Spotting a data breach",
+        "data_rights_request": "Spotting a data rights request"
+      },
+      "tellStrings": {
+        "personal_data_breach": "Personal data has reached someone who should not have it, or we have been sent data we should not hold",
+        "data_rights_request": "Someone is asking to see, correct or delete the personal data held about them"
+      },
       "outcome": { "setGlobalPrefix": "episode_e11_misdirected_data_defend_", "passPercent": 0 },
       "messages": [
         {
@@ -41,11 +53,15 @@
           "body": "Hi,\nA spreadsheet has just landed in my inbox from your desk, 'Carrholme overtime, this month'. It's got nine of your staff on it, their hours, and a notes column with things like a hospital appointment and a back injury. I'm the manager here at Hollinsbrook House, so I don't think this was meant for me. I haven't opened it any further. Do you want me to delete it?\nSam Whitlow\nHollinsbrook House",
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hollinsbrookhouse.example", "replyTo": "sam.whitlow@hollinsbrookhouse.example" },
           "truth": {
-            "isPhish": false,
-            "flags": [],
-            "whyFine": {
-              "default": "Sam has flagged that your staff's overtime, with health notes, reached her by mistake. That is a personal data breach: report it the same way you would report anything, and say it involves personal data, so it reaches the DPO. Asking her to delete it is a good next step, not instead of reporting."
-            }
+            "isPhish": true,
+            "flags": ["personal_data_breach"],
+            "kindLine": "This really is from Sam, but your staff's overtime and health notes have reached a manager outside Carrholme. That is a personal data breach: report it so it reaches the data protection lead.",
+            "missLabel": "leaving a personal data breach unreported",
+            "perFlagNote": {
+              "personal_data_breach": "Your staff's overtime, with health notes, reached a manager outside Carrholme by mistake. That is a personal data breach. Report it the same way you report anything, and say it involves personal data, so it reaches the DPO; asking Sam to delete it is a good next step, not instead of reporting."
+            },
+            "ifTrusted": "Treat it as normal and the breach goes unreported: the staff affected are not warned, and the DPO never gets the chance to limit the harm.",
+            "reportReply": "Thanks, logged as a personal data breach and passed to the DPO, who will warn the staff affected and decide what has to be done. Reporting it fast is what limits the harm."
           }
         },
         {
@@ -87,7 +103,7 @@
               "lookalike_domain": "Carrholme is carrholme.example. This came from carrholme-payroll.example, with an added word, which is a separate domain anyone can register.",
               "senderTrust": "The name says Carrholme Payroll, but the address is on carrholme-payroll.example, which isn't Carrholme's. Payroll does not collect your bank or NI details by email like this."
             },
-            "headerNote": "All three checks passed because the sender owns carrholme-payroll.example. A pass tells you which domain sent it, not that it is Carrholme.",
+            "headerNote": "The message did pass the technical checks, but that only proves which address really sent it, not that the sender is Carrholme. Carrholme is carrholme.example; this came from carrholme-payroll.example, a separate address anyone can register.",
             "ifTrusted": "Your bank and National Insurance details would go to a stranger, enough to redirect your pay or set up accounts in your name.",
             "reportReply": "Thanks. Carrholme's payroll is on carrholme.example and never asks for bank or NI details by email. The look-alike address has been blocked."
           }
@@ -101,11 +117,15 @@
           "body": "This is the second time Mum's cardigan has gone missing from the laundry. Edna Hale, Room 12 at Hollinsbrook House. I'm her son. Frankly I've had enough, and I want EVERYTHING you hold on Mum and on me. Every note, every call, every email. I want to see the lot.\nGareth Hale",
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "gareth.hale@inboxly.example" },
           "truth": {
-            "isPhish": false,
-            "flags": [],
-            "whyFine": {
-              "default": "It is angry and broad, but it is a valid request to see personal data, and it does not have to use the words 'subject access'. Pass it to the DPO the same day and send the holding reply; do not gather or send anything yourself. Carry on with the cardigan complaint as normal work. Handling it yourself and quietly, or deleting it, is the wrong move."
-            }
+            "isPhish": true,
+            "flags": ["data_rights_request"],
+            "kindLine": "This is a genuine request to see personal data, even though it is angry and does not use the words 'subject access'. Pass it to the data protection lead the same day; do not gather or send anything yourself.",
+            "missLabel": "sitting on a request to see personal data",
+            "perFlagNote": {
+              "data_rights_request": "A request to see, correct or delete the personal data held about someone is a legal right with a deadline, and it does not have to use the words 'subject access'. Pass it to the DPO the same day and send the holding reply; carry on with the cardigan complaint as normal work."
+            },
+            "ifTrusted": "Reply to it yourself, or leave it, and you risk missing the legal deadline and sending the wrong things. The DPO has to handle it.",
+            "reportReply": "Thanks, passed to the DPO, who will send the formal reply and handle it inside the time limit. You were right not to start gathering or sending anything yourself."
           }
         },
         {
@@ -118,12 +138,15 @@
           "attachments": [ { "label": "Kestrel-Court-residents-care-summary.xlsx", "kind": "spreadsheet" } ],
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "kestrelcourt.example", "replyTo": "laundry@kestrelcourt.example" },
           "truth": {
-            "isPhish": false,
-            "flags": [],
-            "whyFine": {
-              "attachmentPlausible": "A laundry list from a client home is ordinary, but the file attached is not the list: it is their residents' full care summary.",
-              "default": "The sender is real, but the attachment is theirs to hold, not ours: names, conditions and medicines. Do not open it further and do not forward it. Tell the sender, report it, and delete it when the DPO says so. We now hold data we should not."
-            }
+            "isPhish": true,
+            "flags": ["personal_data_breach"],
+            "kindLine": "Kestrel Court is real, but the file attached is their residents' care summary, not a laundry list: personal data we should not hold. Report it so the data protection lead can decide what to do.",
+            "missLabel": "holding personal data we were sent in error",
+            "perFlagNote": {
+              "personal_data_breach": "The sender is real, but the file is their residents' full care summary: names, conditions and medicines, which are theirs to hold, not ours. Do not open it further or forward it. Tell the sender, report it, and delete it when the DPO says so."
+            },
+            "ifTrusted": "Treat it as a normal laundry list and the care summary sits in our inbox unreported: we hold data we should not, and nobody decides what to do with it.",
+            "reportReply": "Thanks, reported. The DPO will tell Kestrel Court and decide how to delete it safely. Don't open or forward the file in the meantime."
           }
         },
         {
@@ -156,18 +179,18 @@
     "strings": {
       "brief": "You're on an authorised exercise at Carrholme Services, a fictional firm. You are covering the Care Laundry desk this morning, clearing the queue. First you make some of the ordinary choices anyone would make on a busy morning; then you see, six months on, where each one led. Then you take the desk's inbox one item at a time. Only the inbox is scored.",
       "flipHeading": "Six months later",
-      "defendIntro": "Take the Care Laundry desk inbox one item at a time and decide what to do with each. Anything about someone's personal data, a request to see, correct or delete it, or a breach, goes to the DPO the same day; report or check anything that doesn't sit right. There's no clock on you here.",
+      "defendIntro": "Take the Care Laundry desk inbox one item at a time. Anything about someone's personal data, a request to see, correct or delete it, or a breach, goes to the data protection officer (the DPO, who handles personal data mistakes) the same day. Report or check anything else that doesn't sit right.",
       "mondayCard": "If personal data goes somewhere it should not, or someone asks to see, correct or delete their data, or complains about how we used it, tell your DPO the same day. Do not wait to be sure, and do not try to fix it alone.",
       "noBlameLine": "Mistakes with personal data happen to careful people, usually when they are busy. What turns a mistake into harm is silence. Nobody at Carrholme is in trouble for reporting, including their own slip.",
       "defendOnly": "Any of these can catch a careful person on a busy morning. The ones you were caught out by are shown below, with what good looks like. Reporting fast is what limits the harm.",
       "conceptPanel": {
         "heading": "Behind every row is a person",
-        "text": "Behind every row in a spreadsheet is a person. If it goes wrong, tell the DPO straight away."
+        "text": "If a spreadsheet, a form or an email about someone goes astray, tell the data protection lead straight away. Reporting fast is what limits the harm."
       }
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e11_misdirected_data_defend), which has no mistake or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (flipHeading is carried in both and simply never shown in the defend-only shell).",
-      "brief": "You're on an authorised exercise at Carrholme Services, a fictional firm. You are covering the Care Laundry desk this morning. Items are waiting in the inbox: some are routine, some are requests or complaints that belong with someone else, and one or two were made to trick you. Sort them, and check or report anything that doesn't sit right. Reporting or checking when you are unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+      "brief": "You're on an authorised exercise at Carrholme Services, a fictional firm, covering the Care Laundry desk this morning. Items are waiting in the inbox: some routine, some for someone else to handle, one or two made to trick you. Sort them, and check or report anything that doesn't sit right.",
       "scopeNote": "Authorised exercise at Carrholme Services, a fictional firm. In scope: the Care Laundry desk inbox."
     }
   }

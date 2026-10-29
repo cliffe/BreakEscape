@@ -29,10 +29,10 @@
 
   "flipAftermath": {
     "victimName": "you",
-    "intro": "It opened Colin's account in seconds, no clever cracking at all. A few minutes after someone got hold of a password of yours, this is what your phone shows.",
+    "intro": "No clever cracking, just a password that worked. A few minutes later, this is what your phone starts showing.",
     "items": [
-      { "id": "fa_push_flood", "kind": "push", "push": { "app": "Tarrowby Sign-in", "account": "you@tarrowby.example", "location": "Unknown location, outside the UK", "device": "Windows PC" }, "note": "A sign-in prompt you did not start, at 02:40, then another, then another. Someone has your password but not your phone." },
-      { "id": "fa_it_text", "kind": "sms", "from": "Tarrowby IT", "subject": "A message that says it's IT", "body": "We can see the failed sign-ins. Read back the number on your screen and we'll stop the prompts.", "note": "A message dressed up as IT, offering to make the prompts stop if you read back the number. The number is on their screen, not IT's." }
+      { "id": "fa_push_flood", "kind": "push", "push": { "app": "Tarrowby Sign-in", "account": "you@tarrowby.example", "location": "Unknown location, outside the UK", "device": "Windows PC" }, "note": "A sign-in prompt you did not start, at 02:40, then another, then another." },
+      { "id": "fa_it_text", "kind": "sms", "from": "Tarrowby IT", "subject": "A message that says it's IT", "body": "We can see the failed sign-ins. Read back the number on your screen and we'll stop the prompts.", "note": "A message dressed up as IT, offering to make the prompts stop if you read back the number." }
     ]
   },
 

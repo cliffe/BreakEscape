@@ -13,7 +13,7 @@
       "_prefix": "Prefix for the full episode (id e9_passwords). The defend-only shell (id e9_passwords_defend) sets episode_e9_passwords_defend_defend_ instead. No stage on purpose, as in E1/E6: the effective stage is 'mission', and an explicit stage with passPercent 0 draws a validator warning.",
       "_localTells": "mfa_number_relay is an account-takeover/MFA sign scored only by E9 today (the shipped E3 push defend set does not carry it, it is not in the shared CHANNEL_TELLS, and no general_v2 check item scores it), so it stays scenario-local: declared in channelTells with a flagChips label, a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's skill name), and a factorStrings.mfa_number_relay.redFlag sentence on the one card that flags it (e9_fake_it_number). Do not append it to the shared CHANNEL_TELLS / SKILL_NAMES. Promote it only if a second set uses it or a 10 check item scores it. unrequested_mfa_push and secrecy_or_bypass are shared-library tells and need no label.",
       "title": "Your Tarrowby account under attack",
-      "brief": "It's your own Tarrowby account now, and someone has a password of yours. Eight things come up: sign-in prompts, a message dressed up as IT, and a few password choices. On a prompt, Approve only one you started yourself; otherwise Deny and report. On an email, choose Trust, Report, Delete or Verify, then tick what you noticed. On a choice card, pick the option you think is best. There's no clock, and no real password is typed here. Reporting when you're unsure is always fine and never marked down.",
+      "brief": "It's your own Tarrowby account now, and someone has a password of yours. Eight things come up: sign-in prompts, a message dressed up as IT, and a few password choices. Approve a prompt only if you started it; otherwise deny and report. No clock, and no real password is typed. Reporting when you're unsure is always fine.",
       "scoringProfile": "awareness",
       "verifyVerdict": true,
       "feedbackMode": "immediate",
@@ -24,7 +24,7 @@
         "mfa_number_relay": "A message asking you to type or read back a sign-in number or code"
       },
       "skillNames": {
-        "mfa_number_relay": "Spotting a message that asks you to type or read back a sign-in number"
+        "mfa_number_relay": "Sign-in number requests"
       },
       "outcome": { "setGlobalPrefix": "episode_e9_passwords_defend_", "passPercent": 0 },
       "messages": [
@@ -124,7 +124,7 @@
               { "id": "unique", "label": "A unique password the manager generates, used only on this portal", "verdict": "report" },
               { "id": "reuse", "label": "Your usual password, the one you already use for other sign-ins", "verdict": "trust" }
             ],
-            "note": "No real password is typed; the manager fills it in for you."
+            "note": "No real password is typed; the password manager fills it in for you."
           },
           "truth": {
             "isPhish": true,
@@ -214,14 +214,14 @@
       "flipHeading": "Now it's your phone.",
       "flipGuessIntro": "You watched a reused password open a colleague's account. Here is the other end: your own phone.",
       "flipIntro": "You watched a reused password open a colleague's account. Here is the other end: your own phone, buzzing with sign-in prompts you didn't start, and a message from 'IT' telling you how to make them stop.",
-      "flipDefenderLine": "Someone has a password of yours, from a breach of a site you forgot you used. They can't get past your phone, so they are leaning on it: prompt after prompt, then a message dressed up as IT with a number 'to stop the prompts'. The number is on their screen, not IT's. Deny what you didn't start, and report it.",
+      "flipDefenderLine": "Someone has a password of yours, from a breach of a site you forgot you used, and they're leaning on your phone because they can't get past it. The number any 'IT' message asks you to read back is on their screen, not IT's, so deny what you didn't start and report it.",
       "flipNoSend": "Nothing of the colleague's is here to replay, but the lesson is the same: a reused password is what opens an account. Next, you lock your own account down.",
       "flipMissed": "The guesser didn't land this time, but a reused password is still what opens an account. Next, you lock your own account down.",
       "flipMissedHeading": "Nothing landed this time",
       "flipLandedNoTells": "It opened on a reused password with nothing clever at all. Next, you lock your own account down.",
       "noBlameLine": "Reusing a password is ordinary and common; this is how most accounts are broken into, not a sign anyone was careless. A miss here just shows what to change tonight.",
       "mondayCard": "On Monday, three things at home: turn on 2-step verification, or a passkey, for your personal email first; check your personal email address on a breach-checking site (the NCSC suggests Have I Been Pwned); and switch on a password manager, starting with your email. Report anything at work using the route in the box below.",
-      "defendOnly": "These prompts and choices follow one reused password doing the rounds, and anyone can be caught out by them. Any you were caught out by are shown below, with what to do instead.",
+      "defendOnly": "Everything here follows one reused password doing the rounds. Anything you were caught out by is shown below, with what to do instead.",
       "conceptPanel": [
         { "heading": "How passwords get stolen", "text": "Most passwords aren't cracked by genius. They're guessed from the obvious first (123456, a team, a pet, the company name and a year), reused from a breach of another site, phished through a fake sign-in page, or simply handed over. A different password for every account, kept in a manager, is the one habit that blunts all of those at once." },
         { "heading": "The sign-in ladder", "text": "Turn on a second step beyond the password wherever you can. A passkey is best: it only works on the real site, so it can't be phished or relayed. An authenticator app with number matching is next. A text code is a last resort, but still far better than a password alone." },
@@ -231,7 +231,7 @@
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e9_passwords_defend), which has no osint, guess or flip stage. The generator copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared (the flip strings are never shown). The conceptPanel array is carried over, so all four concept cards show in the defend-only debrief (ENG-09b).",
-      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down: handle the prompts, choose stronger passwords, and don't hand anything to a message dressed up as IT. No real password is ever typed here.",
+      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down. No real password is ever typed here.",
       "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: your own sign-in prompts and password choices. No real password is ever typed or stored."
     }
   }

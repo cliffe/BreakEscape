@@ -1,7 +1,7 @@
 {
   "scenario_id": "awareness_e9_passwords_defend",
   "scenario_name": "Passwords and sign-in: lock the account down",
-  "scenario_brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down: handle the prompts, choose stronger passwords, and don't hand anything to a message dressed up as IT. No real password is ever typed here.",
+  "scenario_brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down. No real password is ever typed here.",
   "endGoal": "Lock the account down at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
@@ -61,7 +61,7 @@
       {
         "id": "e9_lock_it_down",
         "title": "Your Tarrowby account under attack",
-        "brief": "It's your own Tarrowby account now, and someone has a password of yours. Eight things come up: sign-in prompts, a message dressed up as IT, and a few password choices. On a prompt, Approve only one you started yourself; otherwise Deny and report. On an email, choose Trust, Report, Delete or Verify, then tick what you noticed. On a choice card, pick the option you think is best. There's no clock, and no real password is typed here. Reporting when you're unsure is always fine and never marked down.",
+        "brief": "It's your own Tarrowby account now, and someone has a password of yours. Eight things come up: sign-in prompts, a message dressed up as IT, and a few password choices. Approve a prompt only if you started it; otherwise deny and report. No clock, and no real password is typed. Reporting when you're unsure is always fine.",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
         "feedbackMode": "immediate",
@@ -76,7 +76,7 @@
           "mfa_number_relay": "A message asking you to type or read back a sign-in number or code"
         },
         "skillNames": {
-          "mfa_number_relay": "Spotting a message that asks you to type or read back a sign-in number"
+          "mfa_number_relay": "Sign-in number requests"
         },
         "outcome": {
           "setGlobalPrefix": "episode_e9_passwords_defend_defend_",
@@ -205,7 +205,7 @@
                   "verdict": "trust"
                 }
               ],
-              "note": "No real password is typed; the manager fills it in for you."
+              "note": "No real password is typed; the password manager fills it in for you."
             },
             "truth": {
               "isPhish": true,
@@ -331,13 +331,13 @@
         "reportAlwaysVisible": true
       },
       "strings": {
-        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down: handle the prompts, choose stronger passwords, and don't hand anything to a message dressed up as IT. No real password is ever typed here.",
+        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down. No real password is ever typed here.",
         "flipGuessIntro": "You watched a reused password open a colleague's account. Here is the other end: your own phone.",
         "flipMissedHeading": "Nothing landed this time",
         "flipLandedNoTells": "It opened on a reused password with nothing clever at all. Next, you lock your own account down.",
         "noBlameLine": "Reusing a password is ordinary and common; this is how most accounts are broken into, not a sign anyone was careless. A miss here just shows what to change tonight.",
         "mondayCard": "On Monday, three things at home: turn on 2-step verification, or a passkey, for your personal email first; check your personal email address on a breach-checking site (the NCSC suggests Have I Been Pwned); and switch on a password manager, starting with your email. Report anything at work using the route in the box below.",
-        "defendOnly": "These prompts and choices follow one reused password doing the rounds, and anyone can be caught out by them. Any you were caught out by are shown below, with what to do instead.",
+        "defendOnly": "Everything here follows one reused password doing the rounds. Anything you were caught out by is shown below, with what to do instead.",
         "conceptPanel": [
           {
             "heading": "How passwords get stolen",
@@ -356,7 +356,7 @@
             "text": "A passkey replaces the password with a secret kept on your device or in your manager, unlocked the way you unlock your phone. Because it is tied to the real website, it can't be typed into a fake page, reused on another site, or leaked in someone else's breach."
           }
         ],
-        "defendIntro": "Go through the sign-in prompts and password choices and decide what to do with each one. If you didn't start a prompt, deny it and report it. Pick the stronger option each time. There's no clock on you, and no real password is typed here."
+        "defendIntro": "Go through the sign-in prompts and password choices one at a time. Deny any prompt you didn't start, and pick the stronger option each time."
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",

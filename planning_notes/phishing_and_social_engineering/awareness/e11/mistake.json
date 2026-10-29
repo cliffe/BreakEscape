@@ -30,7 +30,7 @@
         "id": "marketing_export",
         "situation": "Martin, the Sales Director, messages you: \"We're launching a cleaning service for families. Export the family contacts from the claims system and I'll send them a discount.\"",
         "options": [
-          { "id": "ask_dpo", "label": "Tell Martin those were given to sort claims, and ask the DPO first", "safe": true, "approvedRoute": true },
+          { "id": "ask_dpo", "label": "Tell Martin those were given to sort claims, and ask the data protection lead first", "safe": true, "approvedRoute": true },
           { "id": "export_list", "label": "Export the list for Martin", "safe": false }
         ]
       },
@@ -51,7 +51,7 @@
   "flipMontageByChoice": {
     "_use": "The full text of the montage lines. Lives at social.awarenessEpisode.strings.flipMontageByChoice in the full erb.",
     "overtime_sheet": {
-      "send_wrong_sam": "The overtime sheet, with the back-injury and union-meeting notes, sat in a care home manager's inbox for three days before anyone noticed. Three days the DPO never had, to warn the staff and limit the harm.",
+      "send_wrong_sam": "The overtime sheet, with the back-injury and union-meeting notes, sat in a care home manager's inbox for three days before anyone noticed. Three days the data protection lead never had, to warn the staff and limit the harm.",
       "check_then_send": "The version where it went to the first Sam instead: staff health notes reached someone outside Carrholme, unnoticed for three days. A glance at the address stopped it here."
     },
     "caller_bernadette": {

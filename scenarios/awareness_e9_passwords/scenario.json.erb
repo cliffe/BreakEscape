@@ -83,7 +83,7 @@
       {
         "id": "e9_lock_it_down",
         "title": "Your Tarrowby account under attack",
-        "brief": "It's your own Tarrowby account now, and someone has a password of yours. Eight things come up: sign-in prompts, a message dressed up as IT, and a few password choices. On a prompt, Approve only one you started yourself; otherwise Deny and report. On an email, choose Trust, Report, Delete or Verify, then tick what you noticed. On a choice card, pick the option you think is best. There's no clock, and no real password is typed here. Reporting when you're unsure is always fine and never marked down.",
+        "brief": "It's your own Tarrowby account now, and someone has a password of yours. Eight things come up: sign-in prompts, a message dressed up as IT, and a few password choices. Approve a prompt only if you started it; otherwise deny and report. No clock, and no real password is typed. Reporting when you're unsure is always fine.",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
         "feedbackMode": "immediate",
@@ -98,7 +98,7 @@
           "mfa_number_relay": "A message asking you to type or read back a sign-in number or code"
         },
         "skillNames": {
-          "mfa_number_relay": "Spotting a message that asks you to type or read back a sign-in number"
+          "mfa_number_relay": "Sign-in number requests"
         },
         "outcome": {
           "setGlobalPrefix": "episode_e9_passwords_defend_",
@@ -227,7 +227,7 @@
                   "verdict": "trust"
                 }
               ],
-              "note": "No real password is typed; the manager fills it in for you."
+              "note": "No real password is typed; the password manager fills it in for you."
             },
             "truth": {
               "isPhish": true,
@@ -414,7 +414,7 @@
       },
       "flipAftermath": {
         "victimName": "you",
-        "intro": "It opened Colin's account in seconds, no clever cracking at all. A few minutes after someone got hold of a password of yours, this is what your phone shows.",
+        "intro": "No clever cracking, just a password that worked. A few minutes later, this is what your phone starts showing.",
         "items": [
           {
             "id": "fa_push_flood",
@@ -425,7 +425,7 @@
               "location": "Unknown location, outside the UK",
               "device": "Windows PC"
             },
-            "note": "A sign-in prompt you did not start, at 02:40, then another, then another. Someone has your password but not your phone."
+            "note": "A sign-in prompt you did not start, at 02:40, then another, then another."
           },
           {
             "id": "fa_it_text",
@@ -433,7 +433,7 @@
             "from": "Tarrowby IT",
             "subject": "A message that says it's IT",
             "body": "We can see the failed sign-ins. Read back the number on your screen and we'll stop the prompts.",
-            "note": "A message dressed up as IT, offering to make the prompts stop if you read back the number. The number is on their screen, not IT's."
+            "note": "A message dressed up as IT, offering to make the prompts stop if you read back the number."
           }
         ]
       },
@@ -442,14 +442,14 @@
         "flipHeading": "Now it's your phone.",
         "flipGuessIntro": "You watched a reused password open a colleague's account. Here is the other end: your own phone.",
         "flipIntro": "You watched a reused password open a colleague's account. Here is the other end: your own phone, buzzing with sign-in prompts you didn't start, and a message from 'IT' telling you how to make them stop.",
-        "flipDefenderLine": "Someone has a password of yours, from a breach of a site you forgot you used. They can't get past your phone, so they are leaning on it: prompt after prompt, then a message dressed up as IT with a number 'to stop the prompts'. The number is on their screen, not IT's. Deny what you didn't start, and report it.",
+        "flipDefenderLine": "Someone has a password of yours, from a breach of a site you forgot you used, and they're leaning on your phone because they can't get past it. The number any 'IT' message asks you to read back is on their screen, not IT's, so deny what you didn't start and report it.",
         "flipNoSend": "Nothing of the colleague's is here to replay, but the lesson is the same: a reused password is what opens an account. Next, you lock your own account down.",
         "flipMissed": "The guesser didn't land this time, but a reused password is still what opens an account. Next, you lock your own account down.",
         "flipMissedHeading": "Nothing landed this time",
         "flipLandedNoTells": "It opened on a reused password with nothing clever at all. Next, you lock your own account down.",
         "noBlameLine": "Reusing a password is ordinary and common; this is how most accounts are broken into, not a sign anyone was careless. A miss here just shows what to change tonight.",
         "mondayCard": "On Monday, three things at home: turn on 2-step verification, or a passkey, for your personal email first; check your personal email address on a breach-checking site (the NCSC suggests Have I Been Pwned); and switch on a password manager, starting with your email. Report anything at work using the route in the box below.",
-        "defendOnly": "These prompts and choices follow one reused password doing the rounds, and anyone can be caught out by them. Any you were caught out by are shown below, with what to do instead.",
+        "defendOnly": "Everything here follows one reused password doing the rounds. Anything you were caught out by is shown below, with what to do instead.",
         "conceptPanel": [
           {
             "heading": "How passwords get stolen",
