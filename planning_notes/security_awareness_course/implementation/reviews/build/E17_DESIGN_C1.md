@@ -159,3 +159,13 @@ deployment, and the monitoring limits are stated fairly and accurately. The thre
 minute target question the orchestrator should settle (MI1), an optional tightening of the monitoring
 limit wording (MI2), and a stale spec table (MI3) — none block ship. Recommend confirming the duration
 target and, if the budget allows, one timed run to replace the 12-minute estimate with a measured figure.
+
+## C1 outcomes (2026-10-29, content fixer)
+
+Rulings applied (BUILD_LOG 2026-10-29):
+
+- **MI1 (duration).** No change: the 12-minute target governs, and the shell/mission/description already agree. Nothing to fix.
+- **MI2 (monitoring panel).** Fixed. The "What's monitored, and the limits" concept panel now states the strongest limit explicitly: ".. the law sets limits that protect you: the content of your messages is looked at only in rare, serious cases, and you'd be told first. If monitoring worries you, ask the DPO." Changed in `e17/defend.json` (the panel) and regenerated into the one shell `awareness_e17_acceptable_use_defend/scenario.json.erb`. The genuine triage item `e17_monitoring_notice` was left as it was (the finding was panel-only).
+- **MI3 (stale spec table).** Fixed. The §11a card bank in `episodes/E17_acceptable_use.md` was synced to the shipped reasons: S03/S14/S20 name "ask the service desk", S11 adds "first", S12 names "ask your manager, then the service desk", S16 says "proper access". Bin assignments and the seven locked answers are unchanged, and a dated note records the sync below the table. No shipped file changed for MI3.
+
+Checks after the fix: `validate_scenario.rb --strict-social --no-graph --skip-ink` on the shell passes, exit 0, no social errors/warnings (only the 22 generic m01 suggestions). `dialoguelint.mjs` clean (person lines=3, max=27, no rule hits; no ink was touched). Rule-of-thumb guard passes for this shell. Parity: E17 is defend-only, correctly outside the parity set. Bridge `e17-defend` on the keyless :3001 server (Node 24): **14/14 PASS** (game 4799). Changed spoken/learner-facing line: the monitoring concept panel text only.

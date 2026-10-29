@@ -36,12 +36,13 @@ names plus one reused supplier look-alike.
   slots (defend row 3; debrief report-route slot). Existing.
 - **Fernside Catering** (`fernside.example`), sent from the look-alike
   `fernside-invoices.example` (defend row 4, `e19_enable_content`, the unexpected
-  enable-content document). Reused from E10's `_brandAdditions` supplier. **E10 is not yet
-  built**, so confirm the look-alike shape against E10's additions once E10 lands: E10's
-  OSINT uses the portal shapes `orders.fernside.example` (genuine) and
-  `orders-fernside.example` (look-alike). If the invoices look-alike shape clashes with
-  E10's chosen register, align E19 to it, or fall back to a generic external supplier on a
-  look-alike address (per E19 spec section 5).
+  enable-content document). Reused from E10's `_brandAdditions` supplier. **E10 is now
+  built**; its Fernside register is `fernside.example` (genuine), `orders.fernside.example`
+  (genuine portal) and `orders-fernside.example` (look-alike portal). E19's
+  `fernside-invoices.example` is a deliberate, distinct invoice-email look-alike, accepted as
+  intended rather than re-pointed to an E10 shape: a portal look-alike would not fit an
+  invoice sender, and E19 never reuses the genuine `fernside.example` as a phish, so there is
+  no learner-facing clash (design review C1 MI2, BUILD_LOG 2026-10-29).
 
 ## Name-clash grep (across `scenarios planning_notes docs`, run 2026-10-29)
 

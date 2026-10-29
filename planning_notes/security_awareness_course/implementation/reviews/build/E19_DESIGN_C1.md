@@ -178,3 +178,16 @@ are all low-impact: a dropped content-warning line with no engine slot (MI1), a 
 the second Fernside look-alike now that E10 is built (MI2), two stale `_`-notes in the fragment (MI3), and
 one cold "infostealer" in the montage (MI4). None blocks ship. Recommend the user decide MI1 and MI2,
 fold MI3/MI4 into the next fragment touch, and run one timed full-episode playtest to confirm the budget.
+
+## C1 outcomes (2026-10-29, content fixer)
+
+Rulings applied (BUILD_LOG 2026-10-29):
+
+- **MI1 (content note).** Fixed by folding one calm clause into the full `strings.brief` (no new engine slot): ".. Only the inbox is scored. This one shows a ransomware message on a colleague's screen; there are no alarms or flashing screens." Changed in `e19/defend.json` strings.brief and the full shell `awareness_e19_malware_and_updates/scenario.json.erb`. The defend-only brief already names "a colleague whose screen has just locked", so it was left as it was.
+- **MI2 (Fernside look-alike).** Accepted `fernside-invoices.example` as a deliberate, distinct invoice-email look-alike (a portal shape would not fit an invoice sender, and E19 never reuses the genuine `fernside.example` as a phish). Updated the stale "align with E10 when it lands" notes in `e19/defend.json` (the `e19_enable_content` `_note`) and `e19/BRAND_ADDITIONS.md` to record it as intended. `BRAND_SET.md:284` carries the same stale note but is out of the content fixer's scope (orchestrator-owned); flagged for the orchestrator to update.
+- **MI3 (stale `_` notes).** Fixed. The `_moduleLine` and `_orgSlotLine` planning notes in `e19/defend.json` now read "FOLDED into the Monday card (BUILD_LOG 2026-10-29)" with the exact carrying clauses named. `_`-prefixed, so no shipped/runtime impact.
+- **MI4 (unglossed "infostealer").** Fixed. The two `security_alert` montage lines now say "a hidden program .. one built to copy your saved passwords" / "a hidden program would have run unseen and copied your saved passwords". Changed in `e19/full_only.json` and the full shell (montage is full-episode-only).
+
+Also applied the task's engine-copy ruling: the ransom-note item `e19_ransom_note` is a real message the learner should still report, so it now carries `truth.kindLine` ("This was a real ransom message on a colleague's screen, and it needed reporting fast.") and `truth.missLabel` ("a colleague's locked screen going unreported"). On a Trust/Verify verdict the feedback and debrief read the kindLine instead of "This one was a phish", and the critical-miss tally reads the missLabel instead of "let an attacker straight in". Added to `e19/defend.json`, the full shell and (via regeneration) the defend-only shell.
+
+Checks after the fixes: `validate_scenario.rb --strict-social --no-graph --skip-ink` on both shells passes, exit 0, no social errors/warnings. `dialoguelint.mjs` clean on both (no ink touched). E19's parity and rule-of-thumb subtests pass. Bridge `e19-full` on the keyless :3001 server (Node 24): **15/15 PASS** (game 4800). Changed spoken/learner-facing lines: the full `strings.brief` (content-note clause), the two `security_alert` montage lines (infostealer -> hidden program), and the new ransom-item `kindLine`/`missLabel` (which surface in feedback/debrief copy).

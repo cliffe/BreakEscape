@@ -126,3 +126,13 @@ for a neutral restyle before this card state ships widely. MI1 (one aim vs the s
 the user but matches the real E11 reference. MI2 is an optional wording tighten.
 
 Recommend: route MA1 to the engine owner, confirm MI1 with the user, and this episode is done for C1.
+
+## C1 outcomes (2026-10-29, content fixer)
+
+Rulings applied (BUILD_LOG 2026-10-29):
+
+- **MA1 (red/green Wi-Fi palette).** Out of the content fixer's hands: fixed by the orchestrator in CSS/the `wifiList` surface (one neutral ink for both labels; the lock shape and the words carry the difference). No E20 content change.
+- **MI1 (single aim).** Confirmed intended: a single `tell_them_apart_aim`, matching the built E11 reference (ENG-04 has no global for a first aim). No change.
+- **MI2 (card 3 per-flag note).** Fixed. The `wifi_page_credentials` `perFlagNote` is tightened: ".. The bar here also reads 'Not secure'. Even with a padlock, no Wi-Fi page needs your work password: a padlock only means the connection is encrypted, not that the page is honest (see E5)." (The reviewer's suggested em dash was replaced with a colon, per the no-dash writing rule.) Changed in `e20/defend.json` and both shells (the full shell by hand, the defend-only shell by regeneration from the fragment).
+
+Checks after the fix: `validate_scenario.rb --strict-social --no-graph --skip-ink` on both shells passes, exit 0, no social errors/warnings. `dialoguelint.mjs` clean on both (no ink touched). E20's parity and rule-of-thumb subtests pass. Bridge `e20-full` on the keyless :3001 server (Node 24): **16/16 PASS** (game 4798). Changed learner-facing line: card 3's `wifi_page_credentials` per-flag note only.

@@ -233,7 +233,7 @@ Full card bank (from `core_16/game_design.md`; Tarrowby defaults, each `id | sit
 
 - S01 | Stream the football on your work laptop at lunch | Allowed | Reasonable personal use in your own time is fine |
 - S02 | Check your own bank account on the work laptop at lunch | Allowed | Personal use in your own time; type the bank's address yourself |
-- S03 | Install a free PDF editor you found online | Ask first (service desk) | There's an approved one; unknown software can carry malware |
+- S03 | Install a free PDF editor you found online | Ask first (service desk) | There's an approved one; unknown software can carry malware. Ask the service desk |
 - S04 | Lend your badge to a colleague who left theirs at home | Not allowed | Everything done with your badge looks like you; reception issues day passes | Locked
 - S05 | Use your work email to sign up to a personal shopping site | Not allowed | Work accounts are for work; if the shop leaks, your work address gets the scams |
 - S06 | Forward a client file to your personal email to finish at home | Not allowed | It leaves the firm's protection; use approved remote access (core_13) |
@@ -241,18 +241,20 @@ Full card bank (from `core_16/game_design.md`; Tarrowby defaults, each `id | sit
 - S08 | Use the company's AI assistant to summarise a public report | Allowed | It's approved, and public information is fine (core_15) |
 - S09 | Paste a customer's complaint into a free public chatbot | Not allowed | Personal data to a firm we have no contract with; use the approved assistant without names (core_15) |
 - S10 | Connect your own phone to the guest Wi-Fi | Allowed | That's what the guest network is for |
-- S11 | Plug in a USB stick a supplier handed you at a fair | Not allowed | Hand it to IT to check (core_13) |
-- S12 | Take your work laptop on holiday abroad | Ask first (manager, then service desk) | Some countries and some data need extra care (core_09) |
+- S11 | Plug in a USB stick a supplier handed you at a fair | Not allowed | Hand it to IT to check first (core_13) |
+- S12 | Take your work laptop on holiday abroad | Ask first (manager, then service desk) | Some countries and some data need extra care; ask your manager, then the service desk (core_09) |
 - S13 | Use the team chat to moan about a colleague | Not allowed | Messages are records and the colleague could read it; talk to your manager |
-- S14 | Install a game on your work phone | Ask first (service desk) | Only apps from the company app store go on work devices |
+- S14 | Install a game on your work phone | Ask first (service desk) | Only apps from the company app store go on work devices; ask the service desk |
 - S15 | Set an out-of-office saying you're away for a fortnight | Allowed | Fine, but say less: your return date and who to contact, not where you are (core_12) |
-- S16 | Log in as a colleague who's off sick, with their permission | Not allowed | It hides who did what; the service desk can give you access | Locked
+- S16 | Log in as a colleague who's off sick, with their permission | Not allowed | It hides who did what; the service desk can give you proper access | Locked
 - S17 | Read out the code from your phone to "IT" on a call | Not allowed | IT never asks for codes; hang up and ring the service desk (core_03) | Locked
 - S18 | Turn off the antivirus because it slows your laptop | Not allowed | It's there to stop malware; ask the service desk to fix the slowness | Locked
 - S19 | Look up a famous customer's address, just to see | Not allowed | Looking without a work reason can be a crime (Data Protection Act 2018, s.170) | Locked
-- S20 | Use your own laptop for work while yours is repaired | Ask first (service desk) | Only through the remote desktop service |
+- S20 | Use your own laptop for work while yours is repaired | Ask first (service desk) | Only through the remote desktop service; ask the service desk |
 - S21 | You think you've sent a file to the wrong customer. Can you wait and say nothing in case it was fine? | Not allowed | Report a suspected mistake straight away; reporting is a duty and the sooner the better (core_04) | Locked
 - S22 | Tell a colleague your password to watch your inbox while you're off | Not allowed | Ask the service desk for shared access; your password is yours alone (core_03) | Locked
+
+(Reasons synced to the shipped bank in `e17/full_only.json` and the shell, design review C1 MI3, 2026-10-29. S03/S14/S20 name "ask the service desk", S11 adds "first", S12 names "ask your manager, then the service desk", S16 says "proper access". All bin assignments and the seven locked answers are unchanged.)
 
 ### 11b. The scored six-item triage set (awareness profile, with a mirror pair)
 
