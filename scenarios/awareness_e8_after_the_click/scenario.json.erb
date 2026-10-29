@@ -51,7 +51,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "After the click episode done",
-        "body": "You've seen both sides of a click: you took the red team's seat, then sat in the colleague's seat and sorted the signs that followed in their account, so this episode is finished."
+        "body": "You've seen both sides of a click: you took the red team's seat, then sorted the signs in the colleague's account. If it ever happens to you, report it straight away, change your password on the real site, and leave the device as it is."
       },
       "tasks": [
         {
@@ -152,6 +152,8 @@
             },
             "truth": {
               "isPhish": true,
+              "kindLine": "This really did leave your mailbox, but you did not write it, so someone is signed in as you. Report it straight away.",
+              "missLabel": "leaving a message the attacker sent from your account",
               "flags": [
                 "unexpected_sent_item",
                 "secrecy_or_bypass"
@@ -172,7 +174,7 @@
             },
             "to": "ayaan.warsame@quayholt.example",
             "subject": "Your password was changed",
-            "time": "11:52",
+            "time": "15:05",
             "body": "Hello,\nThis confirms that the password for your Quayholt account was changed successfully. If you made this change, no action is needed.\nIf you did not make this change, contact the service desk straight away.\nQuayholt IT Service Desk",
             "auth": {
               "spf": "pass",
@@ -188,6 +190,8 @@
             },
             "truth": {
               "isPhish": true,
+              "kindLine": "This confirmation is genuine, but you did not change your password, so someone else did. Report it, or ring the service desk.",
+              "missLabel": "ignoring a password change you didn't make",
               "flags": [
                 "unrequested_reset"
               ],
@@ -201,7 +205,7 @@
           {
             "id": "e8_push_abroad",
             "kind": "push",
-            "time": "11:48",
+            "time": "15:02",
             "push": {
               "app": "Quayholt Sign-in",
               "request": "Are you trying to sign in?",
@@ -249,11 +253,11 @@
           {
             "id": "e8_locked_files",
             "kind": "page",
-            "subject": "Read README_UNLOCK.txt",
-            "time": "14:30",
+            "subject": "Your files are locked",
+            "time": "15:40",
             "body": "Your files are locked. To get them back, follow the instructions in README_UNLOCK.txt.",
             "page": {
-              "url": "README_UNLOCK (shared drive)",
+              "url": "Shared drive",
               "padlock": false,
               "heading": "Your files are locked"
             },
@@ -264,6 +268,7 @@
             },
             "truth": {
               "isPhish": true,
+              "kindLine": "This is a ransom note. Report it at once and leave the device as it is.",
               "flags": [
                 "ransomware_note"
               ],
@@ -384,7 +389,7 @@
         "flipLandedNoTells": "It landed clean, with nothing in it to catch this time. Next, you're the one whose account is being used, sorting the signs that follow.",
         "noBlameLine": "Everyone clicks something eventually, and a colleague who reports their own slip is doing exactly the right thing. A miss here just shows where to look next time; nobody is in trouble for reporting.",
         "mondayCard": "On Monday: if you think you have clicked, signed in or spotted something odd on your account or a colleague's, report it straight away, change your password on the real site, and leave the device as it is. Reporting fast, even your own slip, is what limits the damage, and report it using the route in the box below.",
-        "defendOnly": "These signs were set off by an email built to look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
+        "defendOnly": "These signs were set off by an email built to look right, and anyone can be caught by one. Anything worth another look is shown below, with what gave each one away.",
         "conceptPanel": [
           {
             "heading": "The five questions a report answers",
@@ -583,7 +588,7 @@
           },
           "to": "analyst@quayholt.example",
           "subject": "Authorised exercise: Quayholt Insurance",
-          "body": "Hello,\n\nThis is the authorised Quayholt Insurance exercise. In scope: this inbox and the colleague on it. Research the service desk notices staff act on, then write one message asking a colleague to sign in again. Nothing leaves this account.\n\nRed team lead",
+          "body": "Hello,\n\nThis is the authorised Quayholt Insurance exercise. In scope: this inbox and the colleague on it. Research the service desk notices staff act on, then write one message asking a colleague to sign in again. Nothing you write leaves this exercise.\n\nRed team lead",
           "time": "09:05",
           "unread": true,
           "folder": "inbox"
@@ -742,7 +747,7 @@
             "redFlag": "The From line carries the service desk's real address, so it reads as the IT notice Ayaan acts on, but it was forged: the service desk never sent it."
           },
           "pretextRelevant": {
-            "pass": "✓ Matches the SSO move he was told about",
+            "pass": "✓ Matches the single sign-on move he was told about",
             "fail": "No change he can match this to, so no reason to sign in again.",
             "redFlag": null
           },

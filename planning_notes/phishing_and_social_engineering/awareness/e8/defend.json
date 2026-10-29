@@ -46,6 +46,8 @@
           },
           "truth": {
             "isPhish": true,
+            "kindLine": "This really did leave your mailbox, but you did not write it, so someone is signed in as you. Report it straight away.",
+            "missLabel": "leaving a message the attacker sent from your account",
             "flags": ["unexpected_sent_item", "secrecy_or_bypass"],
             "perFlagNote": {
               "unexpected_sent_item": "This is in your own Sent folder at 15:08, but you did not write it, which means someone is signed in as you right now",
@@ -61,7 +63,7 @@
           "from": { "name": "Quayholt IT", "address": "it-servicedesk@quayholt.example" },
           "to": "ayaan.warsame@quayholt.example",
           "subject": "Your password was changed",
-          "time": "11:52",
+          "time": "15:05",
           "body": "Hello,\nThis confirms that the password for your Quayholt account was changed successfully. If you made this change, no action is needed.\nIf you did not make this change, contact the service desk straight away.\nQuayholt IT Service Desk",
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "it-servicedesk@quayholt.example" },
           "factorStrings": {
@@ -69,6 +71,8 @@
           },
           "truth": {
             "isPhish": true,
+            "kindLine": "This confirmation is genuine, but you did not change your password, so someone else did. Report it, or ring the service desk.",
+            "missLabel": "ignoring a password change you didn't make",
             "flags": ["unrequested_reset"],
             "perFlagNote": {
               "unrequested_reset": "The address is really Quayholt's and this is a genuine confirmation, but you did not change your password, so someone else did"
@@ -81,7 +85,7 @@
           "id": "e8_push_abroad",
           "_note": "Row 3. Authenticator prompt the learner did not start, from a device that is not theirs. Built from the E3 e3_push_early card (account and time changed; perFlagNote reworded for the daytime context: the E3 wording references 02:14 and being asleep, which does not fit 11:48). Deny and report; the push deny_report action scores as Report.",
           "kind": "push",
-          "time": "11:48",
+          "time": "15:02",
           "push": {
             "app": "Quayholt Sign-in",
             "request": "Are you trying to sign in?",
@@ -120,11 +124,11 @@
           "id": "e8_locked_files",
           "_note": "Row 5. Malware sign: an on-screen ransom note on the shared drive. Built page card (no ENG-03 states), padlock false, no certificate. No ransom amount, no countdown, no pay button: E8 stops at 'report at once and leave the device as it is' (core_07 owns recovery). Mirror-pairs with row 6 (genuine IT maintenance) so 'anything to do with IT is bad' does not win.",
           "kind": "page",
-          "subject": "Read README_UNLOCK.txt",
-          "time": "14:30",
+          "subject": "Your files are locked",
+          "time": "15:40",
           "body": "Your files are locked. To get them back, follow the instructions in README_UNLOCK.txt.",
           "page": {
-            "url": "README_UNLOCK (shared drive)",
+            "url": "Shared drive",
             "padlock": false,
             "heading": "Your files are locked"
           },
@@ -133,6 +137,7 @@
           },
           "truth": {
             "isPhish": true,
+            "kindLine": "This is a ransom note. Report it at once and leave the device as it is.",
             "flags": ["ransomware_note"],
             "perFlagNote": {
               "ransomware_note": "Files that will not open and a note demanding payment is a sign to report at once and leave the device as it is: do not restart it, do not delete the note, do not try to open the files again"
@@ -180,7 +185,7 @@
       "flipLandedNoTells": "It landed clean, with nothing in it to catch this time. Next, you're the one whose account is being used, sorting the signs that follow.",
       "noBlameLine": "Everyone clicks something eventually, and a colleague who reports their own slip is doing exactly the right thing. A miss here just shows where to look next time; nobody is in trouble for reporting.",
       "mondayCard": "On Monday: if you think you have clicked, signed in or spotted something odd on your account or a colleague's, report it straight away, change your password on the real site, and leave the device as it is. Reporting fast, even your own slip, is what limits the damage, and report it using the route in the box below.",
-      "defendOnly": "These signs were set off by an email built to look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
+      "defendOnly": "These signs were set off by an email built to look right, and anyone can be caught by one. Anything worth another look is shown below, with what gave each one away.",
       "conceptPanel": [
         { "heading": "The five questions a report answers", "text": "A useful report answers five questions, as far as you know: what you noticed, when, where (which account, device or system), who is affected, and what you have done so far. Be honest about the last one: 'I clicked the link', 'I signed in', 'I restarted it'. A rough report now beats a perfect one later; the team will ask for the rest." },
         { "heading": "First steps and recovery", "text": "If you clicked or signed in: report it, change the password on the real site (not through any link), then change it anywhere you used the same one, and follow the service desk. For anything on a device: leave it as it is. Do not switch it off unless you are told to, do not delete the evidence, and do not try to fix it. If the service desk asks, unplug the network cable or turn off Wi-Fi and leave it on." }
@@ -188,7 +193,7 @@
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e8_after_the_click_defend), which has no OSINT, write or flip stage. The generator copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared (the flip strings are never shown). The conceptPanel array is carried over, so both concept cards show in the defend-only debrief (ENG-09b).",
-      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. A colleague clicked a convincing email and signed in, and now their account is being used. You're covering their inbox. Some of what turns up is a real sign that something is wrong, and some is ordinary. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down.",
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. A colleague, Ayaan, clicked a convincing email and signed in, and now his account is being used. You're covering his inbox at the kiosk. Some of what turns up is a real sign that something is wrong, and some is ordinary. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down.",
       "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: the signs that follow in a colleague's inbox after a click."
     }
   }

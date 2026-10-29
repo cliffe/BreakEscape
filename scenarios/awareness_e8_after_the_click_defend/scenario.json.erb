@@ -113,6 +113,8 @@
             },
             "truth": {
               "isPhish": true,
+              "kindLine": "This really did leave your mailbox, but you did not write it, so someone is signed in as you. Report it straight away.",
+              "missLabel": "leaving a message the attacker sent from your account",
               "flags": [
                 "unexpected_sent_item",
                 "secrecy_or_bypass"
@@ -133,7 +135,7 @@
             },
             "to": "ayaan.warsame@quayholt.example",
             "subject": "Your password was changed",
-            "time": "11:52",
+            "time": "15:05",
             "body": "Hello,\nThis confirms that the password for your Quayholt account was changed successfully. If you made this change, no action is needed.\nIf you did not make this change, contact the service desk straight away.\nQuayholt IT Service Desk",
             "auth": {
               "spf": "pass",
@@ -149,6 +151,8 @@
             },
             "truth": {
               "isPhish": true,
+              "kindLine": "This confirmation is genuine, but you did not change your password, so someone else did. Report it, or ring the service desk.",
+              "missLabel": "ignoring a password change you didn't make",
               "flags": [
                 "unrequested_reset"
               ],
@@ -162,7 +166,7 @@
           {
             "id": "e8_push_abroad",
             "kind": "push",
-            "time": "11:48",
+            "time": "15:02",
             "push": {
               "app": "Quayholt Sign-in",
               "request": "Are you trying to sign in?",
@@ -210,11 +214,11 @@
           {
             "id": "e8_locked_files",
             "kind": "page",
-            "subject": "Read README_UNLOCK.txt",
-            "time": "14:30",
+            "subject": "Your files are locked",
+            "time": "15:40",
             "body": "Your files are locked. To get them back, follow the instructions in README_UNLOCK.txt.",
             "page": {
-              "url": "README_UNLOCK (shared drive)",
+              "url": "Shared drive",
               "padlock": false,
               "heading": "Your files are locked"
             },
@@ -225,6 +229,7 @@
             },
             "truth": {
               "isPhish": true,
+              "kindLine": "This is a ransom note. Report it at once and leave the device as it is.",
               "flags": [
                 "ransomware_note"
               ],
@@ -287,12 +292,12 @@
         "reportAlwaysVisible": true
       },
       "strings": {
-        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. A colleague clicked a convincing email and signed in, and now their account is being used. You're covering their inbox. Some of what turns up is a real sign that something is wrong, and some is ordinary. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down.",
+        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. A colleague, Ayaan, clicked a convincing email and signed in, and now his account is being used. You're covering his inbox at the kiosk. Some of what turns up is a real sign that something is wrong, and some is ordinary. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down.",
         "flipMissedHeading": "Nothing to replay this time",
         "flipLandedNoTells": "It landed clean, with nothing in it to catch this time. Next, you're the one whose account is being used, sorting the signs that follow.",
         "noBlameLine": "Everyone clicks something eventually, and a colleague who reports their own slip is doing exactly the right thing. A miss here just shows where to look next time; nobody is in trouble for reporting.",
         "mondayCard": "On Monday: if you think you have clicked, signed in or spotted something odd on your account or a colleague's, report it straight away, change your password on the real site, and leave the device as it is. Reporting fast, even your own slip, is what limits the damage, and report it using the route in the box below.",
-        "defendOnly": "These signs were set off by an email built to look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
+        "defendOnly": "These signs were set off by an email built to look right, and anyone can be caught by one. Anything worth another look is shown below, with what gave each one away.",
         "conceptPanel": [
           {
             "heading": "The five questions a report answers",

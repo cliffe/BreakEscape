@@ -78,7 +78,7 @@
       { "id": "brief", "mailbox": "analyst",
         "from": { "name": "Red team lead", "address": "lead@redteam.example", "avatar": "npc_neutral" },
         "to": "analyst@quayholt.example", "subject": "Authorised exercise: Quayholt Insurance",
-        "body": "Hello,\n\nThis is the authorised Quayholt Insurance exercise. In scope: this inbox and the colleague on it. Research the service desk notices staff act on, then write one message asking a colleague to sign in again. Nothing leaves this account.\n\nRed team lead",
+        "body": "Hello,\n\nThis is the authorised Quayholt Insurance exercise. In scope: this inbox and the colleague on it. Research the service desk notices staff act on, then write one message asking a colleague to sign in again. Nothing you write leaves this exercise.\n\nRed team lead",
         "time": "09:05", "unread": true, "folder": "inbox" }
     ],
     "checklistTiming": "onSend",
@@ -143,7 +143,7 @@
       "factorStrings": {
         "open": { "pass": "✓ He would open it", "fail": "Nothing about the sender or the subject made him open it.", "redFlag": null },
         "senderTrust": { "pass": "✓ From the IT service desk he acts on", "fail": "He does not recognise this sender. IT notices reach him from the service desk address.", "redFlag": "The From line carries the service desk's real address, so it reads as the IT notice Ayaan acts on, but it was forged: the service desk never sent it." },
-        "pretextRelevant": { "pass": "✓ Matches the SSO move he was told about", "fail": "No change he can match this to, so no reason to sign in again.", "redFlag": null },
+        "pretextRelevant": { "pass": "✓ Matches the single sign-on move he was told about", "fail": "No change he can match this to, so no reason to sign in again.", "redFlag": null },
         "urgencyCalibrated": { "pass": "✓ The pressure reads as believable", "fail": "A deadline to sign in quickly is the kind of pressure that gets someone to sign in before they stop to check the address.", "failMissed": "", "redFlag": "This pushes him to sign in quickly, before he stops to check that the service desk never asks this by email." }
       },
       "replies": {

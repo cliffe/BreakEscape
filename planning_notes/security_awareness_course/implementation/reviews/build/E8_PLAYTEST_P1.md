@@ -163,3 +163,30 @@ No stuck-for-minutes moment, no softlock. Every stage showed a clear next contro
 ## Scores (1 to 5)
 
 Fun 3, pacing 4, clarity of goals 3 (down because of the below-the-fold controls), openness of decisions 3 (verdicts are clear, red-team choices are nearly single-answer: one sender name, one address, one system), teaching 4.
+
+## P1 outcomes (content fixer, 2026-10-29)
+
+Scope: the content findings only. Engine findings F2 to F5 and readability were handled in the engine UX batch on main; the three new keys that batch added (`truth.kindLine`, `truth.missLabel`, the tick sheet listing the set's own tells first) are used below. Changes went into both the fragment (`awareness/e8/{attack,defend}.json`) and the full erb (`scenarios/awareness_e8_after_the_click/scenario.json.erb`), and the defend-only shell was regenerated with `gen_e8_e17_shells.py`. Checks rerun clean for E8: parity, rule-of-thumb, `--strict-social --no-graph --skip-ink` on both shells, dialoguelint, and `e8-full` on the keyless :3001 bridge (13/13). Ink structure unchanged (tagdiff), and no spoken host line was changed.
+
+| # | Outcome | Detail |
+| --- | --- | --- |
+| F1 | **Fixed (content)** | `truth.kindLine` and `truth.missLabel` added to `e8_reset_confirm` and `e8_sent_invoice`; `kindLine` added to `e8_locked_files` (ransom note). On `e8_reset_confirm` the verdict line now reads "Not this time. This confirmation is genuine, but you did not change your password, so someone else did. Report it, or ring the service desk." (drops "This one was a phish"); the debrief card drops "built to look right" for the same line. With the single miss labelled, the result line now reads "One answer missed something that needed reporting (ignoring a password change you didn't make)" instead of "let an attacker straight in (trusting a phish email)". `e8_locked_files` has no `missLabel`: a `page` is not a critical-miss kind, so a label there would never render. |
+| F2 | Engine | Compose window sizing. Engine UX batch (main). |
+| F3 | Engine | Triage pane scroll / verdict grid. Engine UX batch (main). |
+| F4 | Engine (content part resolved) | Tick sheet now lists the set's own tells first (engine UX batch). The set already declares the takeover tells in `channelTells`/`flagChips`/`skillNames`, so no content change was needed. |
+| F5 | Engine | Result-page skill lines under the footer. Engine UX batch (main). |
+| F6 | Engine | "Click a card to note it" affordance and the "find out what you can" stage text are osint-browser / episode-runner engine strings, not episode content. |
+| F7 | **Partly fixed (content)** | "SSO" → "single sign-on" in the `pretextRelevant` pass line (the only jargon in episode-owned copy). "reply-to", "MFA prompt", "pretext", "tells", "flags" and the "Red flags" meter label are engine / shared-library strings (`mail-bridge.js`, `phish-rules.js`, `triage-flags.js`, `inbox-triage-minigame.js`); left as engine. |
+| F8 | Engine | "Fewer flags means harder to spot" guidance above the compose meter is meter UI copy. |
+| F9 | Engine | Kiosk not reopening after reload. |
+| F10 | **Fixed (full) / generator (defend-only)** | Full end card now carries the lesson: "...If it ever happens to you, report it straight away, change your password on the real site, and leave the device as it is." The defend-only end card body is generator-held (`EPISODES['e8']['defend']['conclusion']` in `gen_e8_e17_shells.py`); not edited, because the content rules say do not touch generators. Recommend the orchestrator fold the same lesson sentence into that tuple. |
+| F11 | Engine | "Phish stopped for the team" counter and "kept N phish away" debrief line are engine strings (`inbox-triage-minigame.js`, team-line helper). |
+| F12 | **Fixed (content)** | `e8_locked_files`: sender url "README_UNLOCK (shared drive)" → "Shared drive" (shows lower-cased in the address font as the list-row sender), subject "Read README_UNLOCK.txt" → "Your files are locked". The "Web page" chip is the engine kind label; left. |
+| F13 | Engine | Measure / body size / flip heading contrast / Continue below the fold. |
+| F14 | Engine | Grey-on-blue sublabels and the push-options paragraph. |
+| F15 | Engine | Address font selection for the "Noted:" and triage-brief addresses is engine rendering. |
+| F16 | **Fixed (content)** | Takeover-sign times clustered after the ~15:00 click so the "after the click" framing holds: push 11:48 → 15:02, reset 11:52 → 15:05, ransom 14:30 → 15:40 (sent stays 15:08, matching the flip); the genuine colleague slip (09:21) and Saturday maintenance notice (08:05) are unrelated and unchanged. Scope phrasing aligned: the red-team lead email now says "Nothing you write leaves this exercise." (was "Nothing leaves this account"), echoing the scope note. Inbox list order is by item, not time (engine); left. |
+| F17 | **Partly fixed (content)** | Defend-only kiosk brief now names the colleague and the kiosk: "A colleague, Ayaan, clicked... now his account is being used. You're covering his inbox at the kiosk." The top-level `scenario_brief` popup and the host's one welcome line are generator-held (`gen_e8_e17_shells.py`); left. The objective description already names the kiosk. |
+| F18 | **Fixed (content)** | Defend-only debrief intro "Any you were caught out by are shown below" → "Anything worth another look is shown below" (the card can be a correct report). |
+
+Five weakest lines: #1 (verdict "This one was a phish") and #2 (result "trusting a phish email") fixed by F1; #4 (full end card) fixed by F10; #3 ("their reply is on its way... unless you set a reply-to", `mail-bridge.js`) and #5 ("Right call is most of the score; naming the flags is the rest", `inbox-triage-minigame.js`) are engine strings and left. Nothing withdrawn.
