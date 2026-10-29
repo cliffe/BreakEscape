@@ -1,6 +1,6 @@
 {
   "scenario_id": "awareness_post_general_v2_ab",
-  "scenario_name": "Everyday threats check (part two): after (AB)",
+  "scenario_name": "Everyday threats check: after (AB)",
   "scenario_brief": "The second of two short checks for all staff at Quayholt Insurance, a fictional company. Ten new items from a Quayholt inbox, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
   "endGoal": "Go through the ten items at the training kiosk.",
   "version": "1.0",
@@ -84,7 +84,7 @@
     "triageSets": [
       {
         "id": "general_v2_form_b",
-        "title": "Everyday threats check (part two)",
+        "title": "Everyday threats check",
         "brief": "Ten items from a Quayholt Insurance inbox: emails, a web page and a sign-in prompt. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
         "stage": "post",
         "scoringProfile": "awareness",
@@ -94,8 +94,7 @@
         "channelTells": [
           "lookalike_domain",
           "padlock_myth",
-          "unrequested_mfa_push",
-          "reply_to_differs"
+          "unrequested_mfa_push"
         ],
         "outcome": {
           "setGlobalPrefix": "triage_{stage}_",
@@ -260,14 +259,12 @@
             "truth": {
               "isPhish": true,
               "flags": [
-                "senderTrust",
-                "reply_to_differs"
+                "senderTrust"
               ],
               "perFlagNote": {
-                "senderTrust": "The name reads like IT, but the address is an outside inbox at itrollout-support.example, not quayholt.example. Quayholt IT writes from the Quayholt domain.",
-                "reply_to_differs": "Open the header and the reply-to is a different outside address again (quickpost-mail.example), so a reply wouldn't reach anyone at Quayholt."
+                "senderTrust": "The name reads like IT, but the address is an outside inbox at itrollout-support.example, not quayholt.example. Quayholt IT writes from the Quayholt domain."
               },
-              "headerNote": "The automatic checks pass because the message really was sent from itrollout-support.example, a domain the sender owns. A pass shows which mail system sent it, not that the sender is Quayholt IT.",
+              "headerNote": "The automatic checks pass because the message really was sent from itrollout-support.example, a domain the sender owns. A pass shows which mail system sent it, not that the sender is Quayholt IT. You could also see, if you open the header, that the reply-to is a different outside address again (quickpost-mail.example), so a reply wouldn't reach anyone at Quayholt.",
               "ifTrusted": "Plugging in an unexpected USB and running a file on it can install malware before you've done anything else. Real IT doesn't post you a USB to run yourself; a parcel or a message you weren't expecting is one to check, not to act on.",
               "reportReply": "Thanks. There's no Dale Ferris on quayholt.example, and we don't post USBs for you to run. If a stick turns up, don't plug it in; hand it to the service desk."
             }

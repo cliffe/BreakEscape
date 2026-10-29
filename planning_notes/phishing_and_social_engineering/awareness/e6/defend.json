@@ -47,7 +47,7 @@
       "feedbackMode": "immediate",
       "headerPanel": "off",
       "glossary": "closed",
-      "channelTells": ["unexpected_qr", "smish_shortlink_urgency", "reply_stop_trick", "lookalike_domain", "secrecy_or_bypass"],
+      "channelTells": ["unexpected_qr", "smish_shortlink_urgency", "lookalike_domain", "secrecy_or_bypass"],
       "outcome": { "setGlobalPrefix": "episode_e6_texts_and_qr_defend_", "passPercent": 0 },
       "messages": [
         {

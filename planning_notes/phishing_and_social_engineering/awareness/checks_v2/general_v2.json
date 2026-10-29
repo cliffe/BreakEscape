@@ -3,7 +3,7 @@
   "_brandAdditions": {
     "_use": "For BRAND_SET.md section 3 (Quayholt Insurance) and section 1 (look-alikes). All invented names must be web-searched against real businesses before release (00_README.md section 12).",
     "cast": [
-      "Marcus Webb: an internal-sounding name an impostor uses on an outside inbox in general_v2_form_a row 8. Nobody of that name is a genuine sender in these forms",
+      "Wesley Tan: an internal-sounding name (British-Chinese, 30s) an impostor uses on an outside inbox in general_v2_form_a row 8. Nobody of that name is a genuine sender in these forms. Renamed from Marcus Webb (C1 P1-m3): Marcus Webb is used elsewhere (sis02, SAFETYNET planning), and E3's WP-15 call uses impostor Marcus Hale, so a distinct name keeps the cast clean",
       "Dale Ferris: an internal-sounding name an impostor uses on an outside inbox in general_v2_form_b row 8 (with an 'engineer Ross' it names). Genuine in neither form",
       "Priya Nadar: a name an impostor uses on a personal inbox in general_v2_form_b row 6. Genuine in neither form",
       "Helen Achterberg: Quayholt chief executive (already in BRAND_SET via E3), impersonated on a personal inbox in general_v2_form_a row 6. Reused only as an impostor, never genuine, so no name sits on both sides of the phish/genuine line (audit m7)",
@@ -14,7 +14,7 @@
     "thirdParties": "Outside inboxes an impostor owns, so their automatic checks pass: inboxly.example and quickpost-mail.example (already in the roster), fastmail-pro.example and itrollout-support.example (new)."
   },
   "_formPairing": {
-    "_use": "Item n in form A matches item n in form B on kind, phish or genuine, the scored-flag multiset and difficulty; only the lure content differs. Per form: 10 items (4 phish, 6 genuine; 8 emails, 1 page, 1 sign-in prompt). Scored-flag multiset per form: senderTrust 2, linkCredible 1, lookalike_domain 1, padlock_myth 1, unrequested_mfa_push 1, reply_to_differs 1 (7 scored flags, identical in A and B). Difficulty mix per form: 5 easy, 4 medium, 1 hard, identical in A and B. Phish at ordinal slots 2, 4, 6, 8 before the generator's PERMUTE. Row 8 is the pass-but-bad phish (SPF, DKIM, DMARC all pass); row 5 is the fail-but-fine genuine item (DKIM fail). Verify is off: no call or voicemail item, and the page (row 2) offers Trust/Report/Delete only.",
+    "_use": "Item n in form A matches item n in form B on kind, phish or genuine, the scored-flag multiset and difficulty; only the lure content differs. Per form: 10 items (4 phish, 6 genuine; 8 emails, 1 page, 1 sign-in prompt). Scored-flag multiset per form: senderTrust 2, linkCredible 1, lookalike_domain 1, padlock_myth 1, unrequested_mfa_push 1 (6 scored flags, identical in A and B). Row 8 no longer scores reply_to_differs (C1 P1-M1, following the built forms' C2-M6 decision: episode defend rounds run headerPanel off, so no episode teaches header reading); the reply-to point is kept in each item's headerNote as a 'you could also see' line, and reply_to_differs is removed from channelTells. Difficulty mix per form: 5 easy, 4 medium, 1 hard, identical in A and B. Phish at ordinal slots 2, 4, 6, 8 before the generator's PERMUTE. Row 8 is the pass-but-bad phish (SPF, DKIM, DMARC all pass); row 5 is the fail-but-fine genuine item (DKIM fail). Verify is off: no call or voicemail item, and the page (row 2) offers Trust/Report/Delete only.",
     "rows": [
       "1 | email | genuine | all pass | easy | core_04 | A: Anjali, your report actioned | B: Anjali, report closed",
       "2 | page | phish | lookalike_domain, padlock_myth | (no header) | medium | core_08 | A: 'verify you are human' on quayho1t-check.example | B: 'update required' on quayholt-update.example",
@@ -23,7 +23,7 @@
       "5 | email | genuine, honest link, fail-but-fine (DKIM fail) | SPF pass, DKIM fail, DMARC pass | medium | core_07/core_08 | A: IT, updates on Tuesday | B: IT, monthly patches",
       "6 | email | phish | senderTrust, linkCredible | all pass (outside inbox owns its domain) | medium | core_15 | A: 'CEO video' from Helen on a personal inbox | B: 'new AI assistant' from Priya on a personal inbox",
       "7 | email | genuine | all pass | easy | core_13 | A: IT, the approved way to move a big file | B: IT, the approved way to use cloud storage",
-      "8 | email | phish, pass-but-bad, tell in the reply-to | SPF pass, DKIM pass, DMARC pass | hard | core_13 (B also core_10) | A: Marcus, free converter workaround | B: Dale, posted USB to run",
+      "8 | email | phish, pass-but-bad, scored on senderTrust (visible From on an outside inbox) | SPF pass, DKIM pass, DMARC pass | hard | core_13 (B also core_10) | A: Wesley, free converter workaround | B: Dale, posted USB to run",
       "9 | email | genuine, honest link | all pass | medium | core_04/core_16 | A: Sofia, confirm you've read the guide | B: People Team, pulse survey open",
       "10 | email | genuine | all pass | easy | core_10 | A: Facilities, contractors on site Thursday | B: Facilities, fire drill Friday"
     ]
@@ -32,7 +32,7 @@
     {
       "id": "general_v2_form_a",
       "_form": "general_v2 parallel form A. Authored as pre; the BA check pair launches it as post (the generator sets stage). Item n matches item n in general_v2_form_b; the table is in _formPairing above.",
-      "title": "Everyday threats check (part two)",
+      "title": "Everyday threats check",
       "brief": "Ten items from a Quayholt Insurance inbox: emails, a web page and a sign-in prompt. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "stage": "pre",
       "pairedWith": "general_v2_form_b",
@@ -40,7 +40,7 @@
       "feedbackMode": "end",
       "headerPanel": "collapsed",
       "glossary": "closed",
-      "channelTells": ["lookalike_domain", "padlock_myth", "unrequested_mfa_push", "reply_to_differs"],
+      "channelTells": ["lookalike_domain", "padlock_myth", "unrequested_mfa_push"],
       "outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 },
       "messages": [
         {
@@ -178,22 +178,21 @@
         },
         {
           "id": "gva_free_converter",
-          "from": { "name": "Marcus Webb", "address": "marcus.webb@fastmail-pro.example" },
+          "from": { "name": "Wesley Tan", "address": "wesley.tan@fastmail-pro.example" },
           "to": "you@quayholt.example",
           "subject": "Quicker way to turn the client files round",
           "time": "11:40",
-          "body": "Hi,\nI know IT are backed up, so here's a shortcut while we wait. Rather than raise a ticket, run the client files through a free converter site and send them straight on. I've used it plenty. Reply to me and I'll send you the link.\nSaves us a few days.\nMarcus",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "fastmail-pro.example", "replyTo": "m.webb.docs@quickpost-mail.example" },
+          "body": "Hi,\nI know IT are backed up, so here's a shortcut while we wait. Rather than raise a ticket, run the client files through a free converter site and send them straight on. I've used it plenty. Reply to me and I'll send you the link.\nSaves us a few days.\nWesley",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "fastmail-pro.example", "replyTo": "w.tan.docs@quickpost-mail.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderTrust", "reply_to_differs"],
+            "flags": ["senderTrust"],
             "perFlagNote": {
-              "senderTrust": "The name reads like a colleague, but the address is an outside inbox at fastmail-pro.example, not quayholt.example. A workmate writes to you from the Quayholt domain.",
-              "reply_to_differs": "Open the header and the reply-to is a different outside address again (quickpost-mail.example). Your reply would go there, not to anyone at Quayholt."
+              "senderTrust": "The name reads like a colleague, but the address is an outside inbox at fastmail-pro.example, not quayholt.example. A workmate writes to you from the Quayholt domain."
             },
-            "headerNote": "The automatic checks pass because the message really was sent from fastmail-pro.example, a domain the sender owns. A pass tells you which mail system sent it, not that the sender is who the name suggests.",
+            "headerNote": "The automatic checks pass because the message really was sent from fastmail-pro.example, a domain the sender owns. A pass tells you which mail system sent it, not that the sender is who the name suggests. You could also see, if you open the header, that the reply-to is a different outside address again (quickpost-mail.example), so a reply would go there, not to anyone at Quayholt.",
             "ifTrusted": "A free converter site can keep a copy of every file you put through it, so the client files would leave Quayholt. The 'shortcut' is also how an attacker gets you to skip the approved route. The approved way is to ask IT.",
-            "reportReply": "Thanks. There's no Marcus Webb on quayholt.example, and client files should never go through a random converter. We've blocked the address."
+            "reportReply": "Thanks. There's no Wesley Tan on quayholt.example, and client files should never go through a random converter. We've blocked the address."
           }
         },
         {
@@ -235,7 +234,7 @@
     {
       "id": "general_v2_form_b",
       "_form": "general_v2 parallel form B. Authored as post; the BA check pair launches it as pre (the generator sets stage). Item n matches item n in general_v2_form_a; the table is in _formPairing above.",
-      "title": "Everyday threats check (part two)",
+      "title": "Everyday threats check",
       "brief": "Ten items from a Quayholt Insurance inbox: emails, a web page and a sign-in prompt. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "stage": "post",
       "pairedWith": "general_v2_form_a",
@@ -243,7 +242,7 @@
       "feedbackMode": "end",
       "headerPanel": "collapsed",
       "glossary": "closed",
-      "channelTells": ["lookalike_domain", "padlock_myth", "unrequested_mfa_push", "reply_to_differs"],
+      "channelTells": ["lookalike_domain", "padlock_myth", "unrequested_mfa_push"],
       "outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 },
       "messages": [
         {
@@ -389,12 +388,11 @@
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "itrollout-support.example", "replyTo": "d.ferris@quickpost-mail.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["senderTrust", "reply_to_differs"],
+            "flags": ["senderTrust"],
             "perFlagNote": {
-              "senderTrust": "The name reads like IT, but the address is an outside inbox at itrollout-support.example, not quayholt.example. Quayholt IT writes from the Quayholt domain.",
-              "reply_to_differs": "Open the header and the reply-to is a different outside address again (quickpost-mail.example), so a reply wouldn't reach anyone at Quayholt."
+              "senderTrust": "The name reads like IT, but the address is an outside inbox at itrollout-support.example, not quayholt.example. Quayholt IT writes from the Quayholt domain."
             },
-            "headerNote": "The automatic checks pass because the message really was sent from itrollout-support.example, a domain the sender owns. A pass shows which mail system sent it, not that the sender is Quayholt IT.",
+            "headerNote": "The automatic checks pass because the message really was sent from itrollout-support.example, a domain the sender owns. A pass shows which mail system sent it, not that the sender is Quayholt IT. You could also see, if you open the header, that the reply-to is a different outside address again (quickpost-mail.example), so a reply wouldn't reach anyone at Quayholt.",
             "ifTrusted": "Plugging in an unexpected USB and running a file on it can install malware before you've done anything else. Real IT doesn't post you a USB to run yourself; a parcel or a message you weren't expecting is one to check, not to act on.",
             "reportReply": "Thanks. There's no Dale Ferris on quayholt.example, and we don't post USBs for you to run. If a stick turns up, don't plug it in; hand it to the service desk."
           }

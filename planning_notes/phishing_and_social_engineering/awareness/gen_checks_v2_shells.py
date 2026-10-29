@@ -257,7 +257,7 @@ EPISODES = {
         'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
                    'keywords': ['Security awareness', 'Phishing', 'Multi-factor authentication', 'Deepfakes']}],
         'check': {
-            'name': 'Everyday threats check (part two)',
+            'name': 'Everyday threats check',
             'items_pre': 'Ten items from a Quayholt inbox: emails, a browser page and a sign-in prompt.',
             'items_post': 'Ten new items from a Quayholt inbox, the same kinds as before.',
             'scope': 'Authorised exercise at Quayholt Insurance, a fictional company. In scope: ten items in a Quayholt inbox.',

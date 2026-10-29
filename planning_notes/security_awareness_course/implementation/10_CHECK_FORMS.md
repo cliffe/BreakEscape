@@ -399,6 +399,15 @@ Phish at slots 2, 4, 6, 8 (before permute). Per-form flag multiset: `lookalike_d
 `senderTrust` (items 6 and 8) and `linkCredible` (item 6), are scored through the factor path and are
 **not** listed in `channelTells` (they are always in `FACTORS`; `triage.rb` rejects a factor id there).
 
+> Divergence (2026-10-29, design review C1 P1-M1): the shipped `general_v2` drops `reply_to_differs`
+> from item 8 (both forms) and from `channelTells`, following the built forms' C2-M6 decision (episode
+> defend rounds run `headerPanel: "off"`, so no episode teaches opening a header). Item 8 now scores
+> `senderTrust` only; the reply-to point lives in each item's `headerNote` as a "you could also see"
+> line. The per-form flag multiset above is therefore `senderTrust` 2, `linkCredible` 1,
+> `lookalike_domain` 1, `padlock_myth` 1, `unrequested_mfa_push` 1 (6 scored flags), and `channelTells`
+> is `["lookalike_domain", "padlock_myth", "unrequested_mfa_push"]`. This row's spec above is kept as
+> authored for the record.
+
 Note on card kinds: item 2 is a `page` (verdicts Trust/Report/Delete; `padlock_myth` is offered only
 on a page, `triage-flags.js` `KIND_TELL_EXCLUDE`). Item 4 is a `push` (verdicts Approve/Deny/Deny and
 report; scored only on `unrequested_mfa_push`). No calls or voicemails, so Verify stays off.
