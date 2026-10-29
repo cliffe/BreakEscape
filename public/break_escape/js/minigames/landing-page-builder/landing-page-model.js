@@ -650,6 +650,24 @@ export function linkInfoFor(record, pageDef, kitId) {
   if (!isObj(record) || record.built !== true) {
     return { kitId: kitId == null ? null : kitId, state: 'missing' };
   }
+  // Fake-check page (ENG-03b): no look-alike domain, so there is no domain option to resolve. The
+  // page sits on the authored genuine site (check.host), and the chosen host-option id rides back
+  // out. E10 sends a link-less lure, so the mail client never reads a link domain from this.
+  if (isObj(pageDef) && pageDef.pageType === 'fakeCheck') {
+    const check = isObj(pageDef.check) ? pageDef.check : {};
+    const sel = record.choices && isObj(record.choices.check) ? record.choices.check : {};
+    const out = {
+      kitId: kitId == null ? null : kitId,
+      pageId: record.pageId,
+      pageType: 'fakeCheck',
+      host: typeof check.host === 'string' ? check.host : null,
+      hostId: sel.hostId == null ? null : sel.hostId,
+      credibility: Number(record.credibility) || 0,
+      gatesPassed: record.gatesPassed === true,
+      meetsThreshold: record.meetsThreshold === true
+    };
+    return out;
+  }
   const option = findDomainOption(pageDef, record.choices && record.choices.brand, record.choices && record.choices.domainId);
   const out = {
     kitId: kitId == null ? null : kitId,
