@@ -51,7 +51,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "After the click episode done",
-        "body": "You've seen both sides of a click: you took the red team's seat, then sorted the signs in the colleague's account. If it ever happens to you, report it straight away, change your password on the real site, and leave the device as it is."
+        "body": "You've sat in both seats: the red team's, writing the email, then the colleague's, sorting the signs that an account takeover leaves behind. If it ever happens to you, report it straight away, change your password on the real site, and leave the device as it is."
       },
       "tasks": [
         {
@@ -73,6 +73,7 @@
     "se_osint_state": {},
     "se_intel_quayholt_it_desk": false,
     "se_intel_quayholt_sso_migration": false,
+    "se_intel_quayholt_general_contact": false,
     "se_intel_quayholt_ayaan_claims": false,
     "se_intel_quayholt_ayaan_busy": false,
     "phish_takeover_victim_landed": false,
@@ -114,14 +115,19 @@
           "secrecy_or_bypass"
         ],
         "flagChips": {
-          "unexpected_sent_item": "Sent item you didn't send",
-          "unrequested_reset": "Reset you didn't ask for",
-          "ransomware_note": "Ransom note"
+          "unexpected_sent_item": "Something sent that you didn't write",
+          "unrequested_reset": "A change you didn't make",
+          "ransomware_note": "A demand to unlock your files"
         },
         "skillNames": {
           "unexpected_sent_item": "Noticing a sent item you didn't send",
-          "unrequested_reset": "Noticing a reset you didn't ask for",
+          "unrequested_reset": "Noticing a change you didn't make",
           "ransomware_note": "Recognising a ransom note"
+        },
+        "labels": {
+          "verdict": {
+            "report": { "hint": "Something here is wrong. Send it to security." }
+          }
         },
         "outcome": {
           "setGlobalPrefix": "episode_e8_after_the_click_defend_",
@@ -135,9 +141,9 @@
               "address": "ayaan.warsame@quayholt.example"
             },
             "to": "claims-client@marsden-holloway.example",
-            "subject": "Updated payment details for your settlement",
+            "subject": "Your settlement payment",
             "time": "15:08",
-            "body": "Hello,\nPlease note our bank details for your settlement have changed. Use the account on the attached remittance for this and any future payments, and treat this as confidential until it is processed.\nKind regards,\nAyaan Warsame\nClaims, Quayholt Insurance",
+            "body": "Hello,\nWe're ready to settle your claim. Please make the payment to the account on the attached remittance, and use that account for any future invoices too, as our details have changed. Grateful if you'd keep this to yourself until it has gone through.\nKind regards,\nAyaan Warsame\nClaims, Quayholt Insurance",
             "auth": {
               "spf": "pass",
               "dkim": "pass",
@@ -160,7 +166,7 @@
               ],
               "perFlagNote": {
                 "unexpected_sent_item": "This is in your own Sent folder at 15:08, but you did not write it, which means someone is signed in as you right now",
-                "secrecy_or_bypass": "It tells the client to change the paying account and keep it quiet, which is how a mailbox takeover is cashed out"
+                "secrecy_or_bypass": "It quietly moves the client to a new account and asks them to keep it quiet, which is how a mailbox takeover is cashed out"
               },
               "ifTrusted": "If you leave it, the client pays a criminal's account and your mailbox keeps sending in your name.",
               "reportReply": "Thanks. We've locked the account, warned the client not to pay, and started the recovery. You caught it from the Sent folder, which is exactly the sign."
@@ -288,7 +294,7 @@
             "to": "all-staff@quayholt.example",
             "subject": "Planned maintenance on the claims system, Saturday 08:00 to 12:00",
             "time": "08:05",
-            "body": "Hello all,\nThe claims system will be unavailable for planned maintenance this Saturday from 08:00 to 12:00. There is nothing you need to do. This notice is also on the intranet.\nQuayholt IT Service Desk",
+            "body": "Hello all,\nThe claims system will be down for planned maintenance this Saturday from 08:00 to 12:00. You don't need to do anything now. When it is back you may be signed out and asked to sign in again as usual. This notice is also on the intranet.\nQuayholt IT Service Desk",
             "auth": {
               "spf": "pass",
               "dkim": "pass",
@@ -300,7 +306,7 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "IT's real address, a planned-outage notice that asks you for nothing and is on the intranet too; after a run of real signs it is tempting to report everything, but trusting this is right and verifying or reporting it still scores full."
+                "default": "IT's real address, a planned-outage notice that is on the intranet too and asks nothing of you now. It mentions signing in again, which can read like the signs above, but this is a planned notice with no link and no rush: after a run of real signs it is tempting to report everything, and trusting this is right, while verifying or reporting it still scores full."
               }
             }
           }
@@ -360,7 +366,7 @@
             "kind": "email",
             "folder": "sent",
             "to": "claims-client@marsden-holloway.example",
-            "subject": "Updated payment details for your settlement",
+            "subject": "Your settlement payment",
             "time": "15:08",
             "note": "Ayaan did not write this; it is in his Sent folder, sent while someone else was signed in as him."
           },
@@ -450,7 +456,7 @@
         "reduceNote": "Publishing the address staff already trust for IT notices lets an attacker spoof a sender nobody questions."
       },
       "quayholt_sso_migration": {
-        "text": "Quayholt is moving single sign-on to a new provider this month; staff were told they may be asked to sign in again.",
+        "text": "Quayholt is moving single sign-on to a new provider this month, and staff are being moved to a new sign-in portal; staff were told they may be asked to sign in again.",
         "subject": "itdesk",
         "source": "blk_news",
         "provides": [
@@ -460,9 +466,37 @@
             "value": "sso_migration",
             "label": "single sign-on",
             "kind": "distinctive"
+          },
+          {
+            "type": "reference",
+            "about": "portal",
+            "value": "staff_portal",
+            "label": "the staff portal",
+            "kind": "generic"
           }
         ],
         "reduceNote": "A public change notice hands the attacker a ready-made reason for an unexpected sign-in prompt."
+      },
+      "quayholt_general_contact": {
+        "text": "Quayholt's general enquiries reach the company on enquiries@quayholt.example.",
+        "subject": "itdesk",
+        "source": "blk_contact",
+        "provides": [
+          {
+            "type": "name",
+            "about": "sender",
+            "value": "quaygen_full",
+            "label": "Quayholt Insurance",
+            "kind": "generic"
+          },
+          {
+            "type": "address",
+            "value": "quaygen_address",
+            "label": "enquiries@quayholt.example",
+            "kind": "generic"
+          }
+        ],
+        "reduceNote": "A general company name and address is less convincing to forge than the service desk address staff act on, but it is still an identity an attacker could borrow."
       },
       "quayholt_ayaan_claims": {
         "text": "Ayaan Warsame is a claims handler at Quayholt, ayaan.warsame@quayholt.example.",
@@ -488,12 +522,14 @@
             "id": "sender_name",
             "type": "name",
             "about": "sender",
-            "label": "sender's name"
+            "label": "sender's name",
+            "stuck": "Open the research browser; the 'Signing in' page says who Quayholt's IT notices come from."
           },
           {
             "id": "sender_address",
             "type": "address",
-            "label": "sender's address"
+            "label": "sender's address",
+            "stuck": "Open the research browser; the 'Signing in' page gives the address staff trust for IT notices."
           }
         ]
       },
@@ -510,7 +546,8 @@
             "id": "portal",
             "type": "reference",
             "about": "portal",
-            "label": "which sign-on system"
+            "label": "which sign-on system",
+            "stuck": "Open the research browser; the 'Company news' page says what IT is changing."
           }
         ],
         "urgency": "high"
@@ -523,7 +560,8 @@
             "id": "portal",
             "type": "reference",
             "about": "portal",
-            "label": "which sign-on system"
+            "label": "which sign-on system",
+            "stuck": "Open the research browser; the 'Company news' page says what IT is changing."
           }
         ],
         "urgency": "low"
@@ -632,6 +670,12 @@
                   "kind": "field",
                   "text": "IT notices come from the service desk, it-servicedesk@quayholt.example.",
                   "fact": "quayholt_it_desk"
+                },
+                {
+                  "id": "blk_contact",
+                  "kind": "field",
+                  "text": "General enquiries: enquiries@quayholt.example.",
+                  "fact": "quayholt_general_contact"
                 }
               ]
             },
@@ -642,7 +686,7 @@
                 {
                   "id": "blk_news",
                   "kind": "p",
-                  "text": "We are upgrading single sign-on this month. You may be asked to sign in again while the move completes.",
+                  "text": "We are upgrading single sign-on this month and moving staff to a new sign-in portal. You may be asked to sign in again while the move completes.",
                   "fact": "quayholt_sso_migration"
                 }
               ]

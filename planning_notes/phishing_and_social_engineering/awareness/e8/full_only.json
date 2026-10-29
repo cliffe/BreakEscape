@@ -13,7 +13,7 @@
     "victimName": "Ayaan Warsame",
     "intro": "Ayaan read it between two claims, in the week his team was clearing a backlog. The service desk's own address was on it, and it only asked him to sign in again, which IT had said would happen while single sign-on moved. So he did. That was not carelessness: it was built to pass for the notice he acts on. Here is his account a few minutes later.",
     "items": [
-      { "id": "fa_sent", "kind": "email", "folder": "sent", "to": "claims-client@marsden-holloway.example", "subject": "Updated payment details for your settlement", "time": "15:08", "note": "Ayaan did not write this; it is in his Sent folder, sent while someone else was signed in as him." },
+      { "id": "fa_sent", "kind": "email", "folder": "sent", "to": "claims-client@marsden-holloway.example", "subject": "Your settlement payment", "time": "15:08", "note": "Ayaan did not write this; it is in his Sent folder, sent while someone else was signed in as him." },
       { "id": "fa_push", "kind": "push", "push": { "app": "Quayholt Sign-in", "account": "ayaan.warsame@quayholt.example", "location": "Unknown location, outside the UK", "device": "Windows PC" }, "note": "A sign-in prompt he did not start, from a device that is not his." }
     ],
     "line": "Most of the damage happens between noticing and reporting."

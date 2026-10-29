@@ -19,12 +19,23 @@
       "reduceNote": "Publishing the address staff already trust for IT notices lets an attacker spoof a sender nobody questions."
     },
     "quayholt_sso_migration": {
-      "text": "Quayholt is moving single sign-on to a new provider this month; staff were told they may be asked to sign in again.",
+      "text": "Quayholt is moving single sign-on to a new provider this month, and staff are being moved to a new sign-in portal; staff were told they may be asked to sign in again.",
       "subject": "itdesk", "source": "blk_news",
       "provides": [
-        { "type": "reference", "about": "portal", "value": "sso_migration", "label": "single sign-on", "kind": "distinctive" }
+        { "type": "reference", "about": "portal", "value": "sso_migration", "label": "single sign-on", "kind": "distinctive" },
+        { "type": "reference", "about": "portal", "value": "staff_portal", "label": "the staff portal", "kind": "generic" }
       ],
       "reduceNote": "A public change notice hands the attacker a ready-made reason for an unexpected sign-in prompt."
+    },
+    "quayholt_general_contact": {
+      "_note": "F3 decoy: a plausible-but-weaker sender identity for the From blanks. Values quaygen_full / quaygen_address strip to person 'quaygen' (phish-rules personOfValue), which is not in the target's trusts, so picking it fails senderTrust on the meter. The right pick stays the service desk identity staff act on. enquiries@quayholt.example is the same fictional Quayholt domain, not new cast.",
+      "text": "Quayholt's general enquiries reach the company on enquiries@quayholt.example.",
+      "subject": "itdesk", "source": "blk_contact",
+      "provides": [
+        { "type": "name", "about": "sender", "value": "quaygen_full", "label": "Quayholt Insurance", "kind": "generic" },
+        { "type": "address", "value": "quaygen_address", "label": "enquiries@quayholt.example", "kind": "generic" }
+      ],
+      "reduceNote": "A general company name and address is less convincing to forge than the service desk address staff act on, but it is still an identity an attacker could borrow."
     },
     "quayholt_ayaan_claims": {
       "text": "Ayaan Warsame is a claims handler at Quayholt, ayaan.warsame@quayholt.example.",
@@ -42,16 +53,16 @@
 
   "templates": {
     "e8_from": { "part": "from", "text": "{sender_name} <{sender_address}>",
-      "slots": [ { "id": "sender_name", "type": "name", "about": "sender", "label": "sender's name" },
-                 { "id": "sender_address", "type": "address", "label": "sender's address" } ] },
+      "slots": [ { "id": "sender_name", "type": "name", "about": "sender", "label": "sender's name", "stuck": "Open the research browser; the 'Signing in' page says who Quayholt's IT notices come from." },
+                 { "id": "sender_address", "type": "address", "label": "sender's address", "stuck": "Open the research browser; the 'Signing in' page gives the address staff trust for IT notices." } ] },
     "e8_greet": { "part": "greeting", "text": "Hello,", "slots": [] },
     "e8_pretext_reauth": { "part": "pretext",
       "text": "We are moving {portal} to a new provider and your session has ended. Please sign in again today to keep your access while the claims backlog is cleared.",
-      "slots": [ { "id": "portal", "type": "reference", "about": "portal", "label": "which sign-on system" } ],
+      "slots": [ { "id": "portal", "type": "reference", "about": "portal", "label": "which sign-on system", "stuck": "Open the research browser; the 'Company news' page says what IT is changing." } ],
       "urgency": "high" },
     "e8_pretext_reauth_calm": { "part": "pretext",
       "text": "We are moving {portal} to a new provider this month, so you may be asked to sign in again. When you have a moment, please sign in to confirm your access.",
-      "slots": [ { "id": "portal", "type": "reference", "about": "portal", "label": "which sign-on system" } ],
+      "slots": [ { "id": "portal", "type": "reference", "about": "portal", "label": "which sign-on system", "stuck": "Open the research browser; the 'Company news' page says what IT is changing." } ],
       "urgency": "low" },
     "e8_pretext_newsletter": { "part": "pretext",
       "text": "Here is this month's staff newsletter from around Quayholt.",
@@ -98,10 +109,13 @@
           { "id": "it", "title": "Signing in", "blocks": [
             { "id": "blk_itdesk", "kind": "field",
               "text": "IT notices come from the service desk, it-servicedesk@quayholt.example.",
-              "fact": "quayholt_it_desk" } ] },
+              "fact": "quayholt_it_desk" },
+            { "id": "blk_contact", "kind": "field",
+              "text": "General enquiries: enquiries@quayholt.example.",
+              "fact": "quayholt_general_contact" } ] },
           { "id": "news", "title": "Company news", "blocks": [
             { "id": "blk_news", "kind": "p",
-              "text": "We are upgrading single sign-on this month. You may be asked to sign in again while the move completes.",
+              "text": "We are upgrading single sign-on this month and moving staff to a new sign-in portal. You may be asked to sign in again while the move completes.",
               "fact": "quayholt_sso_migration" } ] } ] },
 
       { "id": "quayholt_social", "name": "Friendface", "url": "friendface.example", "type": "social",

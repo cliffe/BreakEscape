@@ -75,14 +75,21 @@
           "secrecy_or_bypass"
         ],
         "flagChips": {
-          "unexpected_sent_item": "Sent item you didn't send",
-          "unrequested_reset": "Reset you didn't ask for",
-          "ransomware_note": "Ransom note"
+          "unexpected_sent_item": "Something sent that you didn't write",
+          "unrequested_reset": "A change you didn't make",
+          "ransomware_note": "A demand to unlock your files"
         },
         "skillNames": {
           "unexpected_sent_item": "Noticing a sent item you didn't send",
-          "unrequested_reset": "Noticing a reset you didn't ask for",
+          "unrequested_reset": "Noticing a change you didn't make",
           "ransomware_note": "Recognising a ransom note"
+        },
+        "labels": {
+          "verdict": {
+            "report": {
+              "hint": "Something here is wrong. Send it to security."
+            }
+          }
         },
         "outcome": {
           "setGlobalPrefix": "episode_e8_after_the_click_defend_defend_",
@@ -96,9 +103,9 @@
               "address": "ayaan.warsame@quayholt.example"
             },
             "to": "claims-client@marsden-holloway.example",
-            "subject": "Updated payment details for your settlement",
+            "subject": "Your settlement payment",
             "time": "15:08",
-            "body": "Hello,\nPlease note our bank details for your settlement have changed. Use the account on the attached remittance for this and any future payments, and treat this as confidential until it is processed.\nKind regards,\nAyaan Warsame\nClaims, Quayholt Insurance",
+            "body": "Hello,\nWe're ready to settle your claim. Please make the payment to the account on the attached remittance, and use that account for any future invoices too, as our details have changed. Grateful if you'd keep this to yourself until it has gone through.\nKind regards,\nAyaan Warsame\nClaims, Quayholt Insurance",
             "auth": {
               "spf": "pass",
               "dkim": "pass",
@@ -121,7 +128,7 @@
               ],
               "perFlagNote": {
                 "unexpected_sent_item": "This is in your own Sent folder at 15:08, but you did not write it, which means someone is signed in as you right now",
-                "secrecy_or_bypass": "It tells the client to change the paying account and keep it quiet, which is how a mailbox takeover is cashed out"
+                "secrecy_or_bypass": "It quietly moves the client to a new account and asks them to keep it quiet, which is how a mailbox takeover is cashed out"
               },
               "ifTrusted": "If you leave it, the client pays a criminal's account and your mailbox keeps sending in your name.",
               "reportReply": "Thanks. We've locked the account, warned the client not to pay, and started the recovery. You caught it from the Sent folder, which is exactly the sign."
@@ -249,7 +256,7 @@
             "to": "all-staff@quayholt.example",
             "subject": "Planned maintenance on the claims system, Saturday 08:00 to 12:00",
             "time": "08:05",
-            "body": "Hello all,\nThe claims system will be unavailable for planned maintenance this Saturday from 08:00 to 12:00. There is nothing you need to do. This notice is also on the intranet.\nQuayholt IT Service Desk",
+            "body": "Hello all,\nThe claims system will be down for planned maintenance this Saturday from 08:00 to 12:00. You don't need to do anything now. When it is back you may be signed out and asked to sign in again as usual. This notice is also on the intranet.\nQuayholt IT Service Desk",
             "auth": {
               "spf": "pass",
               "dkim": "pass",
@@ -261,7 +268,7 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "IT's real address, a planned-outage notice that asks you for nothing and is on the intranet too; after a run of real signs it is tempting to report everything, but trusting this is right and verifying or reporting it still scores full."
+                "default": "IT's real address, a planned-outage notice that is on the intranet too and asks nothing of you now. It mentions signing in again, which can read like the signs above, but this is a planned notice with no link and no rush: after a run of real signs it is tempting to report everything, and trusting this is right, while verifying or reporting it still scores full."
               }
             }
           }
@@ -306,7 +313,7 @@
             "text": "If you clicked or signed in: report it, change the password on the real site (not through any link), then change it anywhere you used the same one, and follow the service desk. For anything on a device: leave it as it is. Do not switch it off unless you are told to, do not delete the evidence, and do not try to fix it. If the service desk asks, unplug the network cable or turn off Wi-Fi and leave it on."
           }
         ],
-        "defendIntro": "Go through the signs in the colleague's inbox and decide what to do with each one. Some are a real sign that someone else is in the account, and some are ordinary; the one move that works for every real sign is to report it and let the team act. Take them at your own pace."
+        "defendIntro": "Go through the signs in the colleague's inbox and decide what to do with each one. Some mean someone else is in the account, and some are ordinary, and it is not always obvious which from the first line. Take them at your own pace."
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",

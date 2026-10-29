@@ -21,25 +21,30 @@
       "glossary": "closed",
       "channelTells": ["unexpected_sent_item", "unrequested_reset", "unrequested_mfa_push", "ransomware_note", "secrecy_or_bypass"],
       "flagChips": {
-        "unexpected_sent_item": "Sent item you didn't send",
-        "unrequested_reset": "Reset you didn't ask for",
-        "ransomware_note": "Ransom note"
+        "unexpected_sent_item": "Something sent that you didn't write",
+        "unrequested_reset": "A change you didn't make",
+        "ransomware_note": "A demand to unlock your files"
       },
       "skillNames": {
         "unexpected_sent_item": "Noticing a sent item you didn't send",
-        "unrequested_reset": "Noticing a reset you didn't ask for",
+        "unrequested_reset": "Noticing a change you didn't make",
         "ransomware_note": "Recognising a ransom note"
+      },
+      "labels": {
+        "verdict": {
+          "report": { "hint": "Something here is wrong. Send it to security." }
+        }
       },
       "outcome": { "setGlobalPrefix": "episode_e8_after_the_click_defend_", "passPercent": 0 },
       "messages": [
         {
           "id": "e8_sent_invoice",
-          "_note": "Row 1. Takeover: a message in the victim's own Sent folder, sent by whoever is signed in as Ayaan. Spoofed-but-passing: it really left Ayaan's authenticated mailbox, so SPF/DKIM/DMARC all pass on quayholt.example; the tell is not the headers but that Ayaan never wrote it. An inline copy of the flip's fa_sent sign, with a distinct id.",
+          "_note": "Row 1. Takeover disguised as routine claims work: a settlement email in the victim's own Sent folder, sent by whoever is signed in as Ayaan. It reads like ordinary business on a skim; the tell is that Ayaan did not write it, and the detail that it quietly moves the client to a new account and asks them to keep it quiet. Spoofed-but-passing: it really left Ayaan's authenticated mailbox, so SPF/DKIM/DMARC all pass on quayholt.example. An inline copy of the flip's fa_sent sign, with a distinct id.",
           "from": { "name": "Ayaan Warsame", "address": "ayaan.warsame@quayholt.example" },
           "to": "claims-client@marsden-holloway.example",
-          "subject": "Updated payment details for your settlement",
+          "subject": "Your settlement payment",
           "time": "15:08",
-          "body": "Hello,\nPlease note our bank details for your settlement have changed. Use the account on the attached remittance for this and any future payments, and treat this as confidential until it is processed.\nKind regards,\nAyaan Warsame\nClaims, Quayholt Insurance",
+          "body": "Hello,\nWe're ready to settle your claim. Please make the payment to the account on the attached remittance, and use that account for any future invoices too, as our details have changed. Grateful if you'd keep this to yourself until it has gone through.\nKind regards,\nAyaan Warsame\nClaims, Quayholt Insurance",
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "ayaan.warsame@quayholt.example" },
           "factorStrings": {
             "unexpected_sent_item": { "redFlag": "A message or item in your own Sent folder that you did not send" }
@@ -51,7 +56,7 @@
             "flags": ["unexpected_sent_item", "secrecy_or_bypass"],
             "perFlagNote": {
               "unexpected_sent_item": "This is in your own Sent folder at 15:08, but you did not write it, which means someone is signed in as you right now",
-              "secrecy_or_bypass": "It tells the client to change the paying account and keep it quiet, which is how a mailbox takeover is cashed out"
+              "secrecy_or_bypass": "It quietly moves the client to a new account and asks them to keep it quiet, which is how a mailbox takeover is cashed out"
             },
             "ifTrusted": "If you leave it, the client pays a criminal's account and your mailbox keeps sending in your name.",
             "reportReply": "Thanks. We've locked the account, warned the client not to pay, and started the recovery. You caught it from the Sent folder, which is exactly the sign."
@@ -148,18 +153,18 @@
         },
         {
           "id": "e8_maintenance",
-          "_note": "Row 6. Genuine: the calibration mirror. A planned-outage notice from IT's real address, also on the intranet, asking you to do nothing. After a run of real signs it is tempting to report everything; Trusting is right, and Verifying or Reporting still score full.",
+          "_note": "Row 6. Genuine: the calibration mirror, reworded so it looks a little alarming after a run of real signs. A planned-outage notice from IT's real address, on the intranet too, that mentions being signed out and signing in again (which echoes rows 2 and 3) but has no link and no rush and asks nothing of you now. Trusting is right; Verifying or Reporting still score full.",
           "from": { "name": "Quayholt IT", "address": "it-servicedesk@quayholt.example" },
           "to": "all-staff@quayholt.example",
           "subject": "Planned maintenance on the claims system, Saturday 08:00 to 12:00",
           "time": "08:05",
-          "body": "Hello all,\nThe claims system will be unavailable for planned maintenance this Saturday from 08:00 to 12:00. There is nothing you need to do. This notice is also on the intranet.\nQuayholt IT Service Desk",
+          "body": "Hello all,\nThe claims system will be down for planned maintenance this Saturday from 08:00 to 12:00. You don't need to do anything now. When it is back you may be signed out and asked to sign in again as usual. This notice is also on the intranet.\nQuayholt IT Service Desk",
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "it-servicedesk@quayholt.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "default": "IT's real address, a planned-outage notice that asks you for nothing and is on the intranet too; after a run of real signs it is tempting to report everything, but trusting this is right and verifying or reporting it still scores full."
+              "default": "IT's real address, a planned-outage notice that is on the intranet too and asks nothing of you now. It mentions signing in again, which can read like the signs above, but this is a planned notice with no link and no rush: after a run of real signs it is tempting to report everything, and trusting this is right, while verifying or reporting it still scores full."
             }
           }
         }

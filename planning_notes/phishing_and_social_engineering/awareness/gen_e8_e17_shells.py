@@ -374,7 +374,7 @@ EPISODES = {
             'display': 'Awareness E8: After the click (defend only)',
             'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Sit in a colleague's seat at Quayholt Insurance, a fictional company, after they clicked a convincing email: some of what turns up in their account is a real sign that something is wrong, and some is ordinary. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
             'minutes': 8,
-            'defendIntro': "Go through the signs in the colleague's inbox and decide what to do with each one. Some are a real sign that someone else is in the account, and some are ordinary; the one move that works for every real sign is to report it and let the team act. Take them at your own pace.",
+            'defendIntro': "Go through the signs in the colleague's inbox and decide what to do with each one. Some mean someone else is in the account, and some are ordinary, and it is not always obvious which from the first line. Take them at your own pace.",
             'conclusion': ('Signs sorted', "You've sorted the signs in the colleague's inbox and finished this episode. If it ever happens to you, report it straight away, change your password on the real site, and leave the device as it is."),
         },
     },
