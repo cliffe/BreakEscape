@@ -59,6 +59,7 @@
   "social": {
     "triageSets": [
       {
+        "reportReply": "Thanks. The service desk has it and will tell you the approved way.",
         "id": "e17_acceptable_use_inbox",
         "title": "Tarrowby inbox: acceptable use",
         "brief": "A short inbox at Tarrowby Logistics, a fictional haulier: everyday requests and reminders. For each one, choose Trust, Report, Delete or Verify (ask the service desk, or check with the sender on a route you already use), then tick what you noticed. When you're not sure, ask first, it's never the wrong answer, and reporting is never marked down, though a real one does take a colleague's time to check.",
@@ -94,6 +95,8 @@
           }
         ],
         "resultCopy": {
+          "criticalLead": "let a rule slip",
+          "reportedPct": "Raised {pct}% of the rule-breaking requests",
           "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
           "noFlags": "Next time, tick what you noticed. The review cards give the reason behind each one."
         },
@@ -369,6 +372,8 @@
         "reportAlwaysVisible": true
       },
       "strings": {
+        "weakestTells": "The reasons most often missed: {names} ({counts} each).",
+        "weakestTell": "The reason most often missed: {names} ({counts}).",
         "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. Three answers: Allowed, Not allowed, Ask first. You'll sort a set of everyday 'can I?' moments against the firm's own rules, with the reason on screen, and handle a few messages that arrive in the inbox. When you're not sure, ask first.",
         "defendOnly": "Every one of these was an everyday call, the kind you make without thinking. When you're not sure, ask first, and an honest mistake reported quickly is fixed, not punished. Any you read the wrong way are picked out below, with the reason on screen. Not sure? Ask first. Made a mistake? Report it.",
         "conceptPanel": [
@@ -385,7 +390,6 @@
         "mondayCard": "Pick the one person you'd ask when you're unsure: the service desk for software and devices, the security team for anything suspicious, the DPO for personal data, your manager for how your team works.",
         "allRight": "You handled every one of these the right way. Nothing to pick over here.",
         "allPhishRight": "Every rule-breaking request was raised, with every reason named.",
-        "reportedPct": "Raised {pct}% of the rule-breaking requests",
         "noBlameLine": "Honest mistakes reported quickly are fixed, not punished. Deliberate misuse is different, and the policy says what happens. The difference is intent and openness.",
         "noBlameLineCritical": "Rules are hard to carry in your head, so a miss here is no fault of yours. The points only show where to look next time.",
         "defendIntro": "Sort the everyday 'can I?' moments into Allowed, Not allowed or Ask first, with the reason on screen, then handle the short inbox. When you're not sure, Ask first. There's no clock on you here."

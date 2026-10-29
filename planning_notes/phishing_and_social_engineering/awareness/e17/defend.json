@@ -3,6 +3,7 @@
   "_sortDrill": "The 'can I?' sort is not in this fragment. It lives in e17/full_only.json (the sortDrill block, section 11a) and the wiring agent pastes it into the one defend-only shell's social.awarenessEpisode.sortDrill, because E17 has no full erb to carry a full-only key.",
   "triageSets": [
     {
+      "reportReply": "Thanks. The service desk has it and will tell you the approved way.",
       "id": "e17_acceptable_use_inbox",
       "_prefix": "The one defend-only shell has id e17_acceptable_use_defend, so its set prefix is episode_e17_acceptable_use_defend_defend_ (the built double-suffix rule for an id ending _defend, matching the E6 defend-only shell). No stage on purpose, as in E1/E6: the effective stage is 'mission', and an explicit stage with passPercent 0 draws a validator warning.",
       "_localTell": "unapproved_tool is scenario-local to this set (and, separately, to E15's set): a free app or online service with no contract, handing the firm's data to a provider we have not checked. There is no built equivalent, so 00 section 2's CHANNEL_TELLS and phish-rules.js/triage.rb SKILL_NAMES are untouched: it is declared in channelTells with a flagChips label and a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's skill name), and the two messages that raise it (items 1 and 6) carry a message-level factorStrings.unapproved_tool.redFlag sentence (a sibling of truth, never inside it: truth is additionalProperties:false under --strict-social). Promote it to the shared library only if a 10 check item later scores it; no 10 item scores it, so it stays local in both E17 and E15. secrecy_or_bypass is a shared-library tell and needs no flagChips/skillNames. lookalike_domain is NOT declared: no item in this set flags it (matching E8's convention of not declaring a tell no item flags).",
@@ -36,6 +37,8 @@
         }
       ],
       "resultCopy": {
+        "criticalLead": "let a rule slip",
+        "reportedPct": "Raised {pct}% of the rule-breaking requests",
         "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
         "noFlags": "Next time, tick what you noticed. The review cards give the reason behind each one."
       },
@@ -181,6 +184,8 @@
     "defend": { "setId": "e17_acceptable_use_inbox", "reportAlwaysVisible": true },
     "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
     "strings": {
+      "weakestTells": "The reasons most often missed: {names} ({counts} each).",
+      "weakestTell": "The reason most often missed: {names} ({counts}).",
       "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. Three answers: Allowed, Not allowed, Ask first. You'll sort a set of everyday 'can I?' moments against the firm's own rules, with the reason on screen, and handle a few messages that arrive in the inbox. When you're not sure, ask first.",
       "defendOnly": "Every one of these was an everyday call, the kind you make without thinking. When you're not sure, ask first, and an honest mistake reported quickly is fixed, not punished. Any you read the wrong way are picked out below, with the reason on screen. Not sure? Ask first. Made a mistake? Report it.",
       "conceptPanel": [
@@ -192,7 +197,6 @@
       "mondayCard": "Pick the one person you'd ask when you're unsure: the service desk for software and devices, the security team for anything suspicious, the DPO for personal data, your manager for how your team works.",
       "allRight": "You handled every one of these the right way. Nothing to pick over here.",
       "allPhishRight": "Every rule-breaking request was raised, with every reason named.",
-      "reportedPct": "Raised {pct}% of the rule-breaking requests",
       "noBlameLine": "Honest mistakes reported quickly are fixed, not punished. Deliberate misuse is different, and the policy says what happens. The difference is intent and openness.",
       "noBlameLineCritical": "Rules are hard to carry in your head, so a miss here is no fault of yours. The points only show where to look next time."
     },
