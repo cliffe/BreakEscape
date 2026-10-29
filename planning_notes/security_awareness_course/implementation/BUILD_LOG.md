@@ -62,3 +62,11 @@ Shared rules: `AGENT_RULES_ENGINE.md`, `AGENT_RULES_CONTENT.md`. Content agents 
 
 Held back: E12 content (after ENG-05a/b and the lobby land), E18 (after ENG-02b), E20 (after ENG-14, which follows ENG-03a), core_00 content (after ENG-10), `data_conduct` (after the Carrholme room).
 - eng-0607 (Sonnet) stopped by a safety classifier before writing code (likely the E13 subject matter; not reworded). Retried on opus48 (eng-0607b, worktree) per the user's 2026-10-29 rule, with the first attempt's code seams; the stopped agent was stopped by TaskStop so it cannot resume and duplicate.
+
+## E8 design review
+
+| Cycle | Blocker | Major | Minor | Notes |
+|---|---:|---:|---:|---|
+| C1 | 0 | 3 | 8 | `reviews/build/E8_DESIGN_C1.md`; fixing: content (opus48 fix-e8), engine MA3/MI2 + triage list address font (Sonnet eng-fix1, worktree) |
+
+Rulings: MI3 cut the parcel item (six items, the target); MI8 withdrawn (the defend-only shell keeps `flipMissedHeading`/`flipLandedNoTells` by the generator's documented rule, as the built episodes do). By design, not a finding: under the awareness scoring profile, reporting a genuine item still scores full, so the awkward-genuine lesson is carried by feedback.
