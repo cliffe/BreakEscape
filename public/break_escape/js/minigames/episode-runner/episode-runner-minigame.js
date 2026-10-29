@@ -643,6 +643,8 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         const child = this.launchChild('assistant-chat', socialOverlayParams({
             config,
             episodeId: this.episode.id ?? null,
+            // E13 MA3: the sent pretext, so the summarise mode surfaces the branch the learner wrote.
+            sentTemplateId: this.state.sent?.templateId ?? null,
             onComplete: (success, result) => { if (isNormal(success, result)) this._completeWhileAway('flip'); }
         }));
         this._launching = null;

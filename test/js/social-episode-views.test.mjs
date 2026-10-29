@@ -342,6 +342,24 @@ test('flip with a built page draws the page card and its tells; with the email t
     assert.equal(h2.querySelectorAll('.aw-defender-line').length, 1);
 });
 
+test('the page section heading defaults to "The page it links to" and is overridable (E10 MA4)', () => {
+    const message = { ...sent(), truth: { isPhish: true, flags: ['senderTrust'] } };
+    const page = { url: 'https://fernside.example/verify', padlock: true, heading: 'Verify you are human',
+        fields: ['Tick to continue'], button: 'Continue', tells: ['wording'] };
+
+    // Default: unchanged for every built episode.
+    const h = host();
+    renderFlipView(h, { message, page, strings: {}, onContinue() {} });
+    const headings = [...h.querySelectorAll('.aw-flip-section')].map((n) => n.textContent);
+    assert.deepEqual(headings, ['The message', 'The page it links to']);
+
+    // Override: a no-link fake-check design names the page without claiming a link.
+    const h2 = host();
+    renderFlipView(h2, { message, page, strings: { flipPageHeading: 'The page you built' }, onContinue() {} });
+    const headings2 = [...h2.querySelectorAll('.aw-flip-section')].map((n) => n.textContent);
+    assert.deepEqual(headings2, ['The message', 'The page you built']);
+});
+
 test('flip with a built page and its choices draws it with the builder renderer: same button face and logo (P4-1)', () => {
     const h = host();
     const pageDef = { id: 'sso', brands: [{ id: 'quayholt', name: 'Quayholt', domains: [{ id: 'd1', domain: 'quayholt-sso.example' }] }],

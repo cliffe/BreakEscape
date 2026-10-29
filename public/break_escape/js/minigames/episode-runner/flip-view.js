@@ -60,10 +60,13 @@ const DEFAULTS = Object.freeze({
     flipNoSend: 'You did not send a message this time, so there is nothing to flip. On to the next step.',
     flipMissed: 'Your attempt did not land this time, so there is nothing to show from the other side. The defence is the same either way. On to the next step.',
     flipMissedHeading: 'Nothing to replay this time',
+    // E10 MA4: the page section's heading. Default unchanged; a no-link design (a fake check on the
+    // site's own address) overrides it (e.g. "The page you built") so it does not claim a link.
+    flipPageHeading: 'The page it links to',
     continue: 'Continue'
 });
 
-const SECTION = Object.freeze({ message: 'The message', page: 'The page it links to' });
+const SECTION = Object.freeze({ message: 'The message' });
 
 // The landing-page tells a built page stores (07 TELL_IDS) have no library sentence yet.
 const PAGE_TELLS = Object.freeze({
@@ -228,7 +231,7 @@ export function renderFlipView(container, { message = null, page = null, call = 
 
     if (hasPage) {
         parts.push('page');
-        if (both) root.appendChild(el('h3', 'aw-flip-section', SECTION.page));
+        if (both) root.appendChild(el('h3', 'aw-flip-section', str(strings, 'flipPageHeading')));
         root.appendChild(el('p', 'aw-lead', str(strings, 'flipPageIntro')));
         const note = el('p', 'aw-flip-note');
         note.setAttribute('aria-live', 'polite');
