@@ -613,9 +613,28 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             // aw2: the pretext the learner chose, so the flip can quote back a per-choice defender
             // line (strings.flipDefenderLineByChoice). A call has no pretext template; null there.
             templateId: this.state.sent?.templateId ?? null,
-            onContinue: () => this._complete('flip')
+            onContinue: () => this._flipContinue()
         });
         this._prependPrompt('flip');
+    }
+
+    /**
+     * The flip's Continue. When the episode authors an assistant block (ENG-06, E13), Continue
+     * opens the authored assistant overlay in the flip region; on its normal close the runner
+     * reopens (returnTo) and the stage advances to defend. Without the key, Continue completes
+     * the flip exactly as before, so every built episode is unchanged.
+     */
+    _flipContinue() {
+        const config = this.episode.assistant;
+        if (!isObj(config)) { this._complete('flip'); return; }
+        this._launching = 'flip';
+        const child = this.launchChild('assistant-chat', socialOverlayParams({
+            config,
+            episodeId: this.episode.id ?? null,
+            onComplete: (success, result) => { if (isNormal(success, result)) this._completeWhileAway('flip'); }
+        }));
+        this._launching = null;
+        if (!child) this._complete('flip'); // the scene did not open: do not strand the learner
     }
 
     /** Above a P7-B view, the stage's group prompt (facilitated mode). */

@@ -85,10 +85,17 @@ class StubMail extends StubOverlay {
     }
 }
 class StubTriage extends StubOverlay {}
+// ENG-06: a stub assistant overlay. It records the config it was opened with; a Close is a
+// normal exit, so the runner's onComplete advances the flip stage.
+let assistantOpens = [];
+class StubAssistant extends StubOverlay {
+    init() { super.init(); assistantOpens.push(this.params.config || null); }
+}
 FW.registerScene('episode-runner', EpisodeRunnerMinigame);
 FW.registerScene('osint-browser', StubOverlay);
 FW.registerScene('mail-client', StubMail);
 FW.registerScene('inbox-triage', StubTriage);
+FW.registerScene('assistant-chat', StubAssistant);
 
 // ── fixture data ─────────────────────────────────────────────────────────────
 const fullEpisode = () => ({
@@ -150,6 +157,7 @@ function setup(episode, globals = {}) {
     alerts.length = 0;
     errors.length = 0;
     calls.strip = 0; calls.flip = []; calls.debrief = []; calls.measure = []; calls.triage = [];
+    assistantOpens = [];
     triageMode = { readOnly: false };
     stub.mailAbort = false; stub.mailSend = true;
     window.gameState = { globalVariables: { [M.stateKey(episode.id)]: {}, se_awareness_records: {}, ...globals } };
@@ -288,6 +296,33 @@ test('the flip shows no message when nothing usable was sent', () => {
     assert.equal(epState().stage, 'flip');
     assert.equal(calls.flip[0].message, null);
     assert.equal(calls.flip[0].strings.flipNoSend, 'Nothing sent.');
+});
+
+// ── ENG-06: the flip opens the authored assistant when authored ───────────────
+test('no assistant block: flip Continue completes the flip directly, no assistant-chat opens', () => {
+    const ep = fullEpisode();
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write'] } });
+    open(ep);
+    assert.equal(epState().stage, 'flip');
+    click('.stub-continue');
+    assert.equal(assistantOpens.length, 0, 'no assistant scene opened');
+    assert.ok(stored(ep.id).done.includes('flip'), 'the flip is completed');
+    assert.equal(scene(), 'episode-runner', 'the runner stays on top (no child opened)');
+});
+
+test('assistant block: flip Continue opens assistant-chat with the config; its close advances to defend', () => {
+    const ep = { ...fullEpisode(), assistant: { title: 'Brightwell Assist', summarise: { button: 'Go', reply: 'Hi' } } };
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write'] } });
+    open(ep);
+    assert.equal(epState().stage, 'flip');
+    click('.stub-continue');
+    assert.equal(scene(), 'assistant-chat', 'the assistant overlay opened');
+    assert.equal(assistantOpens.length, 1);
+    assert.equal(assistantOpens[0].title, 'Brightwell Assist', 'the authored config was passed through');
+    closeChild(); // a normal close returns to the runner and advances the flip
+    assert.equal(scene(), 'episode-runner');
+    assert.ok(stored(ep.id).done.includes('flip'), 'the flip is done once the assistant closes');
+    assert.equal(epState().stage, 'defend');
 });
 
 test('a defendOnly episode never launches OSINT or mail', () => {

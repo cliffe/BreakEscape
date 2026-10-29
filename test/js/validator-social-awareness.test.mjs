@@ -874,3 +874,30 @@ test('guess schema: strings.guessNote, strings.flipGuessIntro and a guess facili
   const j = withGuess((g, jj, e) => { e.strings.guessNote = 'x'; e.strings.flipGuessIntro = 'y'; e.strings.facilitator = { guess: 'Discuss.' }; e.strings.stages = { guess: { heading: 'h', text: 't', button: 'b' } }; e.stepLabels = { guess: 'Guess list' }; });
   assert.deepEqual(schemaRun([j])[0], { social: [], other: [] });
 });
+
+test('ENG-08: a full episode may author the osint-optional order brief write flip defend debrief (E13)', { skip }, () => {
+  const j = fx('clean_full.json');
+  ep(j).stages = ['brief', 'write', 'flip', 'defend', 'debrief'];
+  expectIn(lint(j), /has stages/, 0); // the stage-order lint accepts it
+});
+
+test('ENG-06: the assistant block is authored-only (no model field, replies are literal strings)', { skip }, () => {
+  // a clean assistant adds no issue
+  let j = fx('clean_full.json');
+  ep(j).assistant = {
+    title: 'Assist',
+    summarise: { button: 'Go', reply: 'The summary line.' },
+    exchanges: [{ id: 'e1', prompt: 'Q?', reply: 'A.' }]
+  };
+  expectIn(lint(j), /assistant/, 0);
+
+  // a model/free-text field is refused
+  j = fx('clean_full.json');
+  ep(j).assistant = { title: 'Assist', model: 'gpt-x', summarise: { button: 'Go', reply: 'ok' } };
+  expectIn(lint(j), /assistant\.model is not allowed/);
+
+  // a non-string reply is refused
+  j = fx('clean_full.json');
+  ep(j).assistant = { title: 'Assist', exchanges: [{ id: 'e1', prompt: 'Q?', reply: { live: true } }] };
+  expectIn(lint(j), /reply must be a literal string/);
+});

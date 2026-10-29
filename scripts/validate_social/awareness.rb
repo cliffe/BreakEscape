@@ -84,6 +84,7 @@ module ValidateSocial
       issues.concat(concern_form_checks(ep)) if ep.key?('concernForm')
       issues.concat(privacy_panel_checks(ctx, ep)) if ep.key?('privacyPanel')
       issues.concat(world_checks(ctx, ep)) if ep.key?('world')
+      issues.concat(assistant_checks(ep))
       set = defend_set(ctx, ep, issues)
       done = nil
       if set
@@ -198,11 +199,16 @@ module ValidateSocial
     end
 
     # The stage lists a variant may author: its own order, and for a full episode that order with
-    # `build` inserted after `osint` and/or `mfa` inserted after `write` or after `flip`.
+    # `build` inserted after `osint` and/or `mfa` inserted after `write` or after `flip`, and the
+    # same order with `osint` dropped (E13: a mail-write attack that needs no recon, giving
+    # `brief write flip defend debrief`; `build` applies only to the osint base, as it inserts
+    # after `osint`).
     def self.stage_orders(variant, want)
       return [want] unless variant == 'full'
 
+      without_osint = want.reject { |s| s == 'osint' }
       bases = [want, want.dup.insert(want.index(BUILD_AFTER) + 1, 'build')]
+      bases << without_osint unless without_osint == want
       bases.flat_map do |base|
         [base] + MFA_AFTER.map do |after|
           i = base.index(after)
@@ -882,6 +888,42 @@ module ValidateSocial
       return nil unless m && m[1].to_i < 24 && m[2].to_i < 60
 
       (m[1].to_i * 60) + m[2].to_i
+    end
+
+    # ENG-06 (E13): the authored AI-assistant overlay. Every reply is authored data and there is
+    # no runtime language model, so the block must carry no model/free-text/network field and
+    # every `reply` must be a literal string (no object or array standing in for a generated one).
+    ASSISTANT_FORBIDDEN_KEYS = %w[
+      model apiKey api_key endpoint apiUrl api_url systemPrompt system_prompt
+      temperature maxTokens max_tokens stream freeText free_text completion
+    ].freeze
+
+    def self.assistant_checks(ep)
+      return [] unless ep.key?('assistant')
+
+      a = ep['assistant']
+      return [err('awarenessEpisode.assistant must be an object (the authored assistant config; ENG-06)')] unless a.is_a?(Hash)
+
+      issues = []
+      assistant_walk(a, 'assistant', issues)
+      issues
+    end
+
+    # Walk the assistant config: reject any model/free-text key and any non-string `reply`.
+    def self.assistant_walk(node, path, issues)
+      if node.is_a?(Hash)
+        node.each do |k, v|
+          if ASSISTANT_FORBIDDEN_KEYS.include?(k)
+            issues << err("awarenessEpisode.#{path}.#{k} is not allowed: the assistant's replies are authored data, with no runtime language model (ENG-06)")
+          end
+          if k == 'reply' && !v.is_a?(String)
+            issues << err("awarenessEpisode.#{path}.reply must be a literal string (authored reply), not #{v.class} (ENG-06)")
+          end
+          assistant_walk(v, "#{path}.#{k}", issues)
+        end
+      elsif node.is_a?(Array)
+        node.each_with_index { |v, i| assistant_walk(v, "#{path}[#{i}]", issues) }
+      end
     end
 
     def self.mfa_checks(ep)

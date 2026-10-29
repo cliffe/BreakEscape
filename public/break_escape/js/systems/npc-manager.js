@@ -790,6 +790,8 @@ export default class NPCManager {
         disableClose:  mapping.disableClose  || false,  // hide × and block Esc for this conversation
         resume:        mapping.resume === true,         // phone-chat: reopen the saved thread, no knot jump
         voiced:        mapping.voiced === true,         // phone-chat: speak the NPC's lines through TTS (F17)
+        videoLabel:    mapping.videoLabel    || null,   // ENG-07 (video-call): meeting-tool label (default SECURE VIDEO LINK)
+        participantTag: mapping.participantTag || null, // ENG-07 (video-call): participant tag (e.g. External)
         background:    mapping.background    || null,    // optional background image path
         // NEW ACTION FIELDS [Phase 2-4]
         setVisible:         mapping.setVisible          ?? undefined,
@@ -1265,7 +1267,9 @@ export default class NPCManager {
             background: config.background || null,
             scenario: window.gameScenario,
             disableClose: config.disableClose || false,
-            videoCall: true
+            videoCall: true,
+            videoLabel: config.videoLabel || null,          // ENG-07: label on the video-call bar
+            participantTag: config.participantTag || null   // ENG-07: participant tag (e.g. External)
           }),
           onStart: () => {
             persistOnClose();

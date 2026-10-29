@@ -1,0 +1,178 @@
+/* Authored AI-assistant overlay (engine packet ENG-06, for E13).
+   The assistant runs in the episode runner's flip region; this skins its chat window,
+   paste panel, draft answer and documents. Authored replies only; no live model. */
+
+.ac-game-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.ac-root {
+    width: 100%;
+    max-width: 720px;
+    outline: none;
+    color: #10241f;
+}
+
+.ac-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 2px solid #2f6f5e;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+}
+
+.ac-title {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.ac-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.ac-section {
+    background: #f4f8f6;
+    border: 1px solid #cfe0d9;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.ac-intro {
+    margin: 0 0 4px;
+}
+
+.ac-reply {
+    background: #ffffff;
+    border: 1px solid #cfe0d9;
+    border-left: 4px solid #2f6f5e;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-top: 8px;
+}
+
+.ac-reply-text {
+    margin: 0;
+}
+
+.ac-disclaimer {
+    margin: 8px 0 0;
+    font-size: 0.8rem;
+    color: #5a6b65;
+    font-style: italic;
+}
+
+.ac-empathy {
+    margin: 10px 0 0;
+    font-weight: 600;
+}
+
+.ac-hidden-text {
+    margin: 8px 0 0;
+    padding: 8px;
+    background: #fff7e6;
+    border: 1px dashed #c9a227;
+    border-radius: 6px;
+    font-family: monospace;
+}
+
+/* Paste panel */
+.ac-paste-lines {
+    list-style: none;
+    margin: 8px 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ac-paste-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 6px 8px;
+    background: #ffffff;
+    border: 1px solid #e0e8e5;
+    border-radius: 6px;
+}
+
+.ac-paste-line.ac-struck .ac-paste-line-text {
+    text-decoration: line-through;
+    color: #8a9994;
+}
+
+.ac-paste-line-text {
+    flex: 1 1 auto;
+}
+
+.ac-class-tag {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: #e7efeb;
+    color: #35564d;
+    border-radius: 999px;
+    padding: 2px 8px;
+}
+
+.ac-paste-summary-list {
+    margin: 6px 0 0;
+    padding-left: 18px;
+}
+
+.ac-paste-warning {
+    margin: 10px 0 0;
+    color: #8a2b2b;
+    font-weight: 600;
+}
+
+/* Draft answer */
+.ac-draft-sentence {
+    margin: 6px 0;
+}
+
+.ac-draft-wrong {
+    /* No colour tell by default: the learner is meant to check, not spot a highlight.
+       The hook is kept for optional authored styling. */
+}
+
+.ac-document {
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: #ffffff;
+    border: 1px solid #cfe0d9;
+    border-radius: 6px;
+}
+
+.ac-document-title {
+    margin: 0 0 6px;
+    font-size: 0.95rem;
+}
+
+.ac-document-body {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+/* Exchanges */
+.ac-exchange-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ac-exchange-prompt {
+    margin: 10px 0 0;
+    font-weight: 600;
+}

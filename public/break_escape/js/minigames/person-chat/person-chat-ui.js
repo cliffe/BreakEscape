@@ -35,7 +35,11 @@ export default class PersonChatUI {
         this.characters = params.characters || {}; // Multi-character support
         this.background = params.background; // Optional background image path
         this.videoCall = params.videoCall || false; // Render as a framed video call with a self-view PiP
-        
+        // ENG-07: the (scenario-authored) meeting-tool label and participant tag on the video-call
+        // bar. Absent, the label stays "SECURE VIDEO LINK" and no tag shows (m02 unchanged).
+        this.videoLabel = (typeof params.videoLabel === 'string' && params.videoLabel.length) ? params.videoLabel : null;
+        this.participantTag = (typeof params.participantTag === 'string' && params.participantTag.length) ? params.participantTag : null;
+
         // UI elements
         this.elements = {
             root: null,
@@ -261,13 +265,22 @@ export default class PersonChatUI {
             statusBar.className = 'person-chat-vc-statusbar';
             statusBar.innerHTML = `
                 <span class="person-chat-vc-live"><span class="person-chat-vc-dot"></span>LIVE</span>
-                <span class="person-chat-vc-link">SECURE VIDEO LINK</span>
+                <span class="person-chat-vc-link"></span>
                 <span class="person-chat-vc-peer"></span>
+                <span class="person-chat-vc-tag" hidden></span>
                 <span class="person-chat-vc-timer" id="vc-timer">00:00</span>
             `;
-            // Set the (scenario-authored) peer name via textContent so a displayName containing
-            // <, & or " can't break out of the markup.
+            // Set the (scenario-authored) label, peer name and tag via textContent so a value
+            // containing <, & or " can't break out of the markup. ENG-07: videoLabel replaces the
+            // default "SECURE VIDEO LINK" and participantTag shows an External-style tag; both are
+            // absent for m02, which keeps the default and no tag.
+            statusBar.querySelector('.person-chat-vc-link').textContent = this.videoLabel || 'SECURE VIDEO LINK';
             statusBar.querySelector('.person-chat-vc-peer').textContent = npcName;
+            if (this.participantTag) {
+                const tagEl = statusBar.querySelector('.person-chat-vc-tag');
+                tagEl.textContent = this.participantTag;
+                tagEl.hidden = false;
+            }
             this.elements.root.appendChild(statusBar);
             this.elements.vcStatusBar = statusBar;
             this.elements.vcTimer = statusBar.querySelector('#vc-timer');
