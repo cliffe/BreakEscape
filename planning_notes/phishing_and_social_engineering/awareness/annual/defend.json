@@ -1,0 +1,252 @@
+{
+  "_about": "WP-12 Part B fragment for core_17, the annual mixed edition (Edition 2027). A defendOnly variant whose one combined set holds 8 messages drawn from the year's episode defend sets (E1 Brightwell, E3 Quayholt, E5 Quayholt, E6 Tarrowby, E7 Brightwell). It is assembled, not generated: the runner runs one set, so all 8 live in annual_2027_mixed.messages. The two E3 calls (items 4 and 5) are reshaped here as plain triage 'call' messages (data only); the annual edition has no role swap and no defend.calls key, so awareness.rb call_checks does not run and no pretextNpcs are needed. Every reused item keeps its id, truth, flags, perFlagNote, whyFine, ifTrusted, reportReply and flagAlternatives exactly as in its source fragment, so the measurement is the same measurement. This fragment is not generated into a shell by a parity test (core_17 is not episode 17); the shell is hand-built by the wiring agent from annual/WIRING_NOTES.md and carries this set verbatim. All names and companies are fictional and every web address ends .example; the only real organisations named are the UK reporting services (concepts.md core_02). 8 source ids confirmed present in their source fragments on 2026-10-29.",
+  "_sources": {
+    "_use": "Where each of the 8 messages came from (episode fragment -> item id). Copy verbatim; strip only the source items' _worked/_note/_clip authoring notes.",
+    "items": [
+      "1 e1_lookalike_bank  (e1/defend.json e1_payments_inbox)  email phish  Brightwell  bank-detail-change look-alike",
+      "2 e1_bank_confirmed  (e1/defend.json e1_payments_inbox)  email genuine Brightwell  the confirmed-by-phone bank change",
+      "3 e3_push_early      (e3/defend.json e3_service_desk_queue) push phish Quayholt  unrequested MFA prompt",
+      "4 e3_call_gordon_impostor (e3/defend.json defend.calls)   call phish Quayholt  mirror pair A, reshaped as a call message",
+      "5 e3_call_gordon_real     (e3/defend.json defend.calls)   call genuine Quayholt mirror pair B, reshaped as a call message",
+      "6 e5_sso_lookalike  (e5/defend.json e5_links_inbox)       page phish Quayholt  look-alike sign-in page",
+      "7 e6_shift_moved    (e6/defend.json e6_phone_messages)    sms  genuine Tarrowby  genuine shift-change text",
+      "8 e7_vm_ravinder_cloned (e7/defend.json e7_finance_line)  voicemail phish Brightwell cloned-voice voicemail (truth.critical kept)"
+    ],
+    "channels": "email (1,2), call (4,5), voicemail (8), sms (7), push (3), sign-in page (6). 5 phish, 3 genuine. Companies: Brightwell, Quayholt, Tarrowby.",
+    "mirrorPair": "item 4 (normal-looking impostor Gordon) before item 5 (suspicious-looking genuine Gordon), the two sides of one line.",
+    "reshape": "The one non-trivial step (WP-12 Part B): items 4 and 5 were awarenessEpisode.defend.calls entries in E3 { id, genuine, callerId, claims, tells, transcript, notes }. Here each becomes a triage 'call' message: genuine -> truth.isPhish (negated), tells -> truth.flags, notes.perFlagNote/whyFine/ifTrusted/reportReply -> truth.*, and claims dropped (a triage call message does not read them). A time was added for the queue; everything scored is unchanged."
+  },
+  "triageSets": [
+    {
+      "id": "annual_2027_mixed",
+      "_prefix": "Prefix for the core_17 defendOnly shell (id core_17_annual_2027_defend). The id already ends _defend, so the prefix reads episode_core_17_annual_2027_defend_defend_ and the done global is episode_core_17_annual_2027_defend_defend_done (the runner's defendPrefix() builds it the same way).",
+      "_order": "Each impostor sits before its genuine twin: item 4 (impostor Gordon) before item 5 (real Gordon). The set moves the learner between seats, which the brief flags: a payments inbox (1,2), a service-desk queue (3,4,5), then a phone (6,7,8).",
+      "title": "The year in review",
+      "brief": "A mixed run of the year's messages across email, calls, a voicemail, a text, a sign-in prompt and a page, from Brightwell, Quayholt and Tarrowby. Some are real; some are the year's scams. For each, decide and say why. The sitting moves you between seats: a payments inbox, then a service-desk queue, then a phone.",
+      "realLabel": "Real messages",
+      "scoringProfile": "awareness",
+      "verifyVerdict": true,
+      "feedbackMode": "immediate",
+      "headerPanel": "off",
+      "glossary": "closed",
+      "channelTells": ["unrequested_mfa_push", "vish_callback_pressure", "borrowed_authority", "lookalike_domain", "padlock_myth", "changed_bank_details", "secrecy_or_bypass"],
+      "outcome": { "setGlobalPrefix": "episode_core_17_annual_2027_defend_defend_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "e1_lookalike_bank",
+          "from": {
+            "name": "Brightwell Foods Accounts",
+            "address": "accounts@brightwel1foods.example"
+          },
+          "to": "payments@brightwellfoods.example",
+          "subject": "Updated bank details — please action today",
+          "time": "10:12",
+          "body": "Hi team,\nHarlow Packaging have moved to a new bank. Please change the payee account on invoice INV-2217 before today's payment run, so the payment doesn't bounce.\nNew account name: Harlow Packaging Ltd\nNew account number ending 7716\nThanks,\nAccounts",
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "bounce.brightwel1foods.example",
+            "replyTo": "accounts@brightwel1foods.example"
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "lookalike_domain", "changed_bank_details", "urgencyCalibrated"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
+            "perFlagNote": {
+              "senderTrust": "It signs off as Brightwell Accounts, but the address only looks like Brightwell's: it's brightwel1foods.example, a 1 in place of the l, not the real brightwellfoods.example",
+              "lookalike_domain": "The display name is right, but the address is brightwel1foods, with a digit 1 where the l should be",
+              "changed_bank_details": "A bank-detail change on an open invoice is the commonest invoice-fraud move. The safe step is to ring the supplier on the number you already hold",
+              "urgencyCalibrated": "'Before today's payment run' pushes you to change the account before you'd stop to ring Harlow and check"
+            },
+            "ifTrusted": "Harlow's payment would go to an account the sender controls, and Harlow would still be waiting to be paid.",
+            "reportReply": "Thanks. That address isn't ours: brightwel1foods has a digit 1 in it. We've blocked the domain and warned the rest of finance."
+          }
+        },
+        {
+          "id": "e1_bank_confirmed",
+          "from": {
+            "name": "Adaeze Okafor",
+            "address": "adaeze.okafor@brightwellfoods.example"
+          },
+          "to": "payments@brightwellfoods.example",
+          "subject": "Marsh End Eggs: new bank details (confirmed by phone)",
+          "time": "13:20",
+          "body": "Hi team,\nMarsh End Eggs wrote last week to say they've changed bank. Before acting on it, I rang them on the number in our supplier file (not the one on their letter) and spoke to Joyce in their accounts office. She confirmed the new account.\nI've updated the supplier record and signed off the change, so their next invoice can go to the new account in Friday's run.\nConfirmed by phone: Adaeze Okafor, 21 October\nAdaeze",
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "brightwellfoods.example",
+            "replyTo": "adaeze.okafor@brightwellfoods.example"
+          },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "changed_bank_details": "It is a bank change, but it was checked the safe way: Adaeze rang Marsh End on the number already in the supplier file, not one from their letter, and logged it.",
+              "senderTrust": "The address is Adaeze's real Brightwell one, and the name matches it.",
+              "default": "It comes from your own finance manager, it doesn't hurry you, and it tells you how the change was confirmed. If you still wanted to check, ringing Adaeze on her extension would be a fine Verify."
+            }
+          }
+        },
+        {
+          "id": "e3_push_early",
+          "kind": "push",
+          "time": "02:14",
+          "push": {
+            "app": "Quayholt Sign-in",
+            "request": "Are you trying to sign in?",
+            "account": "leila.nassar@quayholt.example",
+            "location": "Unknown location, outside the UK",
+            "device": "Windows PC"
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["unrequested_mfa_push"],
+            "perFlagNote": {
+              "unrequested_mfa_push": "That prompt arrived at 02:14, when you were asleep and nowhere near a sign-in, so someone else has your password and is hoping you'll tap Approve"
+            },
+            "ifTrusted": "Approving would let the sender into your account, with your service desk access, from a computer you've never used.",
+            "reportReply": "Thanks. We've reset your password and blocked that sign-in. The prompt is what stopped them."
+          }
+        },
+        {
+          "id": "e3_call_gordon_impostor",
+          "kind": "call",
+          "callerId": "Gordon McLeish, Claims (calling from a mobile)",
+          "time": "10:35",
+          "transcript": [
+            { "who": "Gordon", "text": "Hello, Gordon McLeish, Claims Manager. I'm locked out of my account and I'm at the airport." },
+            { "who": "Gordon", "text": "QH-20719. I report to Ngozi Okonkwo, and she needs the claims report from me before the board meets at ten." },
+            { "who": "Gordon", "text": "No sense ringing the desk, I'm not there, I'm boarding in ten minutes. Just reset it and read me the new password." }
+          ],
+          "truth": {
+            "isPhish": true,
+            "flags": ["vish_callback_pressure", "borrowed_authority"],
+            "perFlagNote": {
+              "vish_callback_pressure": "His name, team, manager and staff number were all right and all findable online; the tell was refusing the callback to the number on file and asking for the new password on the call",
+              "borrowed_authority": "Ngozi and 'the board at ten' are there to make checking feel like holding things up"
+            },
+            "ifTrusted": "The caller would have Gordon's account: his email, the claims system, and a way to ring the desk again as Gordon.",
+            "reportReply": "Thanks. We rang Gordon's mobile on file. He's at the conference and hadn't called."
+          }
+        },
+        {
+          "id": "e3_call_gordon_real",
+          "kind": "call",
+          "callerId": "Gordon McLeish, Claims (calling from a mobile)",
+          "time": "10:52",
+          "transcript": [
+            { "who": "Gordon", "text": "Gordon McLeish. My password's expired while I was on leave and now nothing works. I've a settlement call at twelve." },
+            { "who": "Gordon", "text": "QH-20719, Ngozi Okonkwo. Twenty-two years I've been here, and I still get the questions." },
+            { "who": "Gordon", "text": "Fine. Whatever you need to do, just make it quick, I've that call at twelve." }
+          ],
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "vish_callback_pressure": "He's grumpy about the questions, but he doesn't fight them or push you to skip a step. Offer to ring him back on the number on file and he'll take it; refusing a callback is what marks out an impostor.",
+              "borrowed_authority": "He mentions his own meeting, not someone senior who wants the check skipped.",
+              "default": "This is the real Gordon, giving the same four facts as the earlier caller. The facts couldn't tell them apart; the callback could. Ring him back and reset it. Refusing would leave a real colleague stuck, so if you're unsure, offer the callback rather than saying no."
+            }
+          }
+        },
+        {
+          "id": "e5_sso_lookalike",
+          "kind": "page",
+          "subject": "From an email: 'Your session has expired'",
+          "time": "08:47",
+          "body": "Your session has expired for security reasons. Sign in again to carry on. This is a secure page: look for the padlock in your address bar.",
+          "page": {
+            "url": "https://quayholt-sso.example/login?return=mail",
+            "padlock": true,
+            "certificate": { "issuedTo": "quayholt-sso.example", "issuer": "Open Certs Ltd" },
+            "autofill": "none",
+            "heading": "Quayholt Single Sign-On",
+            "fields": ["Work email", "Password"],
+            "button": "Sign in"
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["lookalike_domain", "padlock_myth"],
+            "perFlagNote": {
+              "lookalike_domain": "Quayholt's sign-in page is sso.quayholt.example. This is quayholt-sso.example, a different site with the words joined by a hyphen, which is also why your password manager would offer nothing",
+              "padlock_myth": "The padlock and the certificate are real, but they were issued to quayholt-sso.example. They show the connection is private to whoever runs that site, not that the site is Quayholt's"
+            },
+            "ifTrusted": "Your Quayholt email address and password would go to whoever runs quayholt-sso.example, who could then sign in as you and read your mail.",
+            "reportReply": "Thanks. That isn't our sign-in page. We've blocked quayholt-sso.example and pulled the email that linked to it from everyone's inbox."
+          }
+        },
+        {
+          "id": "e6_shift_moved",
+          "kind": "sms",
+          "from": { "name": "Shauna Lofthouse (Transport)", "address": "Shauna (mobile), in your contacts" },
+          "time": "10:15",
+          "earlier": [
+            { "text": "Thanks for covering Tuesday. Shauna", "time": "Mon 16:40" }
+          ],
+          "body": "Hi, Thursday's Halifax run now starts at 6am, not 7. It's updated on the staff app. No need to reply. Shauna",
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "smish_shortlink_urgency": "There's no link at all. It points you to the staff app you already use, so you can check it there.",
+              "default": "It's from Shauna's number, which is already saved on your phone with earlier messages in the thread. It tells you about a change and asks you to do nothing except turn up."
+            },
+            "falseAlarmCost": "Dismissed as a scam, the new start time gets missed and the early run goes short-handed."
+          }
+        },
+        {
+          "id": "e7_vm_ravinder_cloned",
+          "kind": "voicemail",
+          "from": { "address": "07700 900771 (not in your contacts)" },
+          "time": "14:48",
+          "duration": "0:38",
+          "audio": { "clipId": "VO8_ravinder_cloned" },
+          "transcript": [
+            { "who": "Ravinder", "text": "Hi, it's Ravinder. I'm on a borrowed phone, mine's died, so don't bother trying my mobile." },
+            { "who": "Ravinder", "text": "The Leeds site: the agent needs the deposit, eighteen thousand four hundred, before five today or it goes to the other bidder. I've emailed you about it." },
+            { "who": "Ravinder", "text": "Keep it between us until the board announces it, and don't wait for Adaeze. I'm signing it off myself. I'm going into a meeting, so just email me when it's gone. Thanks." }
+          ],
+          "truth": {
+            "isPhish": true,
+            "critical": true,
+            "flags": ["vish_callback_pressure", "secrecy_or_bypass", "borrowed_authority"],
+            "perFlagNote": {
+              "vish_callback_pressure": "'Don't bother trying my mobile' and 'just email me' shut off the one check that works whoever is speaking: ringing Ravinder back on the number you already hold. The borrowed phone is the excuse.",
+              "secrecy_or_bypass": "'Keep it between us' and 'don't wait for Adaeze' ask you to skip the approval that would catch this, and 'before five today' leaves no time to ask anyone",
+              "borrowed_authority": "The chief executive's own voice is doing the job the approval process should do. It sounded like him, and a voice on its own doesn't prove who is speaking"
+            },
+            "ifTrusted": "£18,400 would go to an account the caller controls. Ravinder was on the train from Leeds and never made this call.",
+            "reportReply": "Thanks. We rang Ravinder on his usual mobile: he hadn't called, and there is no deposit due on a Leeds site. We've warned finance and the other directors' assistants."
+          }
+        }
+      ]
+    }
+  ],
+  "awarenessEpisode": {
+    "id": "core_17_annual_2027_defend",
+    "role": "general_staff",
+    "company": "brightwell_foods",
+    "brand": { "name": "Brightwell Foods", "logoText": "BRIGHTWELL", "accent": "#2f6f5e" },
+    "variant": "defendOnly",
+    "durationTargetMin": 10,
+    "scopeNote": "Authorised exercise, a fictional year-end edition. In scope: eight messages from across the year at the training kiosk, from three fictional companies. Everything here is practice; nothing you do leaves the game.",
+    "stages": ["brief", "defend", "debrief"],
+    "conclusionTaskId": "check_annual_edition",
+    "defend": {
+      "setId": "annual_2027_mixed",
+      "stage": null,
+      "reportAlwaysVisible": true
+    },
+    "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
+    "strings": {
+      "brief": "Welcome to this year's edition. It isn't a lecture, just three things that changed this year and then some practice.\n\nScams switch channels. A text, then a call, then an email. Check another way, every time.\n\nA voice isn't proof. A voice note or call from someone you know can be faked. Call back on the number you already have.\n\nYour login is the prize. A prompt you didn't start, a caller who wants a code, a colleague who wants your password: all the same request.\n\nWhen a message pressures you, break the chain at the first link: pause, check another way, report. Now the practice.",
+      "defendIntro": "A mixed run of this year's messages, real and fake, across email, calls, a voicemail, a text, a sign-in prompt and a page. The sitting moves you between seats: a payments inbox, then a service-desk queue, then a phone. Take them one at a time, and say why on each.",
+      "defendOnly": "These are this year's messages, real ones among the scams, and they were built to catch a busy day. Anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
+      "noBlameLine": "Being caught by one of these is no fault of yours. Testers are professionals, and the year's scams were built to look ordinary. Reporting what you noticed is the win, and reporting your own slip quickly is what the course rewards most.",
+      "mondayCard": "On Monday: break the chain at the first link. A scam that switches from a text to a call to an email is still one attack: pause at the first step, check another way on a number or app you already trust, and report it using the route in the box below. A familiar voice is not proof; ring back on the number you already have."
+    }
+  }
+}
