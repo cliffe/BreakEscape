@@ -1203,9 +1203,17 @@ module ValidateSocial
 
     # ---- the password guesser (ENG-02) -------------------------------------------------
 
-    # `guess.mode` picks the guesser's builder. ENG-02b appends 'spray' and 'stuff' here, with their own
-    # lints (a branch beside guess_target_checks); E9's block authors no mode and is the 'target' mode.
-    GUESS_MODES = %w[target].freeze
+    # `guess.mode` picks the guesser's builder, and the lints below follow it: guess_target_checks for
+    # 'target' (E9, which authors no mode), guess_spray_checks for 'spray' and guess_stuff_checks for 'stuff'
+    # (ENG-02b, E18's organisation-scale console).
+    GUESS_MODES = %w[target spray stuff].freeze
+    # Caps for the organisation-scale sub-blocks: short authored data, never a pasted list.
+    GUESS_ROSTER_MAX = 10
+    GUESS_SLOTS_MAX = 8
+    GUESS_SEASON_MAX = 4
+    GUESS_PASSES_MAX = 6
+    GUESS_STUFF_MAX = 8
+    GUESS_LABEL_MAX = 48
     # The guesser is a made-up model, never a password list: a short common list, patterns from collected
     # facts, one reuse step. These caps keep a pasted list out of the data.
     GUESS_COMMON_MAX = 8
@@ -1233,7 +1241,11 @@ module ValidateSocial
       issues = []
       mode = g.fetch('mode', 'target')
       if GUESS_MODES.include?(mode)
-        issues.concat(guess_target_checks(ctx, g))
+        issues.concat(case mode
+                      when 'spray' then guess_spray_checks(ctx, g)
+                      when 'stuff' then guess_stuff_checks(g)
+                      else guess_target_checks(ctx, g)
+                      end)
       else
         issues << err("awarenessEpisode.guess.mode is #{mode.inspect}; it must be one of #{GUESS_MODES.join(', ')}")
       end
@@ -1321,16 +1333,206 @@ module ValidateSocial
       else
         issues << warn_('awarenessEpisode.guess has no reuseStep; nothing in it can land, so the flip always shows the did-not-land view')
       end
-      if g.key?('passphraseDemo')
-        demo = g['passphraseDemo']
-        if !demo.is_a?(Hash)
-          issues << err('awarenessEpisode.guess.passphraseDemo must be an object { words, neverLands: true }')
+      issues.concat(guess_passphrase_checks(g))
+      issues
+    end
+
+    # The passphrase hold-out (target and spray): game words that are still being tried when the rig stops.
+    def self.guess_passphrase_checks(g)
+      return [] unless g.key?('passphraseDemo')
+
+      demo = g['passphraseDemo']
+      return [err('awarenessEpisode.guess.passphraseDemo must be an object { words, neverLands: true }')] unless demo.is_a?(Hash)
+
+      issues = []
+      issues << err('awarenessEpisode.guess.passphraseDemo.neverLands must be true; the passphrase is still being tried when the rig is switched off') unless demo['neverLands'] == true
+      words = demo['words']
+      issues << err('awarenessEpisode.guess.passphraseDemo.words must be a list of game words') if !words.is_a?(Array) || words.empty? || words.any? { |x| Mail.blank?(x) }
+      issues
+    end
+
+    # mode "spray" (ENG-02b, E18): a roster from two collected facts, a word list from the practice's own
+    # facts, spray passes of one candidate each, and optionally a masked stuffing panel and the passphrase.
+    # The target-only keys have no place here, so a copied E9 block is caught.
+    def self.guess_spray_checks(ctx, g)
+      issues = []
+      facts = Mail.facts(ctx).keys
+      %w[patternSlots reuseStep commonList target].each do |k|
+        issues << err("awarenessEpisode.guess.#{k} belongs to mode \"target\"; a mode \"spray\" block reads roster, wordList, spray, stuff and passphraseDemo") if g.key?(k)
+      end
+      %w[roster wordList spray].each do |k|
+        issues << err("awarenessEpisode.guess.mode is \"spray\" but there is no awarenessEpisode.guess.#{k} block") unless g.key?(k)
+      end
+      roster = g['roster']
+      sample = []
+      if g.key?('roster')
+        if !roster.is_a?(Hash)
+          issues << err('awarenessEpisode.guess.roster must be an object { namesFactId, patternFactId, domain, sample, note }')
         else
-          issues << err('awarenessEpisode.guess.passphraseDemo.neverLands must be true; the passphrase is still being tried when the rig is switched off') unless demo['neverLands'] == true
-          words = demo['words']
-          issues << err('awarenessEpisode.guess.passphraseDemo.words must be a list of game words') if !words.is_a?(Array) || words.empty? || words.any? { |x| Mail.blank?(x) }
+          %w[namesFactId patternFactId].each do |k|
+            issues << err("awarenessEpisode.guess.roster.#{k} '#{roster[k]}' is not a social.intelFacts id; the roster is built only from facts the learner collected") if Mail.blank?(roster[k]) || !facts.include?(roster[k])
+          end
+          if roster['namesFactId'] && roster['namesFactId'] == roster['patternFactId']
+            issues << warn_('awarenessEpisode.guess.roster names and address pattern read the same fact; they are meant to be two (the team page, the address shape)')
+          end
+          issue = Osint::HostLint.field_issue(roster['domain'], 'awarenessEpisode.guess.roster.domain')
+          issues << err(issue) if issue
+          sample = roster['sample']
+          if !sample.is_a?(Array) || sample.empty?
+            issues << err('awarenessEpisode.guess.roster.sample must be a list of made-up staff names')
+            sample = []
+          else
+            issues << err("awarenessEpisode.guess.roster.sample has #{sample.length} names; keep it to #{GUESS_ROSTER_MAX}") if sample.length > GUESS_ROSTER_MAX
+            sample.each_with_index do |n, i|
+              issues << err("awarenessEpisode.guess.roster.sample[#{i}] must be a short made-up name (#{GUESS_WORD_MAX + 8} characters at most, no address)") if !n.is_a?(String) || n.strip.empty? || n.length > GUESS_WORD_MAX + 8 || n.include?('@')
+            end
+          end
         end
       end
+      slot_ids = guess_wordlist_checks(g, facts, issues)
+      guess_spray_pass_checks(g, slot_ids, sample, issues)
+      issues.concat(guess_stuff_checks(g, required: false)) if g.key?('stuff')
+      issues.concat(guess_passphrase_checks(g))
+      issues
+    end
+
+    # The word list: one fact per slot, the template uses only its own token (as a target pattern slot does).
+    def self.guess_wordlist_checks(g, facts, issues)
+      return [] unless g.key?('wordList')
+
+      list = g['wordList']
+      unless list.is_a?(Hash)
+        issues << err('awarenessEpisode.guess.wordList must be an object { slots, seasonYear, note }')
+        return []
+      end
+      slots = list['slots']
+      if !slots.is_a?(Array) || slots.empty?
+        issues << err('awarenessEpisode.guess.wordList.slots must be a list of { id, factId, word, template }')
+        slots = []
+      end
+      issues << err("awarenessEpisode.guess.wordList.slots has #{slots.length} entries; keep it to #{GUESS_SLOTS_MAX}") if slots.length > GUESS_SLOTS_MAX
+      ids = []
+      slots.each_with_index do |slot, i|
+        w = "awarenessEpisode.guess.wordList.slots[#{i}]"
+        unless slot.is_a?(Hash)
+          issues << err("#{w} must be an object { id, factId, word, template }")
+          next
+        end
+        sid = slot['id']
+        if Mail.blank?(sid)
+          issues << err("#{w}.id is missing; it names the one token the template may use")
+        else
+          issues << err("#{w}.id '#{sid}' is used by an earlier slot") if ids.include?(sid)
+          ids << sid
+        end
+        issues << err("#{w}.factId '#{slot['factId']}' is not a social.intelFacts id; a word is built only from a fact the learner collected") if Mail.blank?(slot['factId']) || !facts.include?(slot['factId'])
+        issues << err("#{w}.word is missing; it is the made-up word the fact stands for, put in the template's {#{sid}} token") if Mail.blank?(slot['word'])
+        issues << err("#{w}.word is longer than #{GUESS_WORD_MAX} characters; a word is a short made-up string") if slot['word'].is_a?(String) && slot['word'].length > GUESS_WORD_MAX
+        tpl = slot['template']
+        if Mail.blank?(tpl)
+          issues << err("#{w}.template is missing")
+        else
+          tokens = tpl.scan(/\{([^}]*)\}/).flatten.uniq
+          issues << err("#{w}.template uses #{tokens.map { |t| "{#{t}}" }.join(', ')}; a slot's template may use only its own {#{sid}} (tokens never cross slots)") unless (tokens - [sid]).empty?
+          issues << warn_("#{w}.template has no {#{sid}} token, so the fact does not change the word") unless tokens.include?(sid)
+          issues << err("#{w}.template is longer than #{GUESS_WORD_MAX * 2} characters; a word is a short made-up string") if tpl.length > GUESS_WORD_MAX * 2
+        end
+      end
+      if list.key?('seasonYear')
+        sy = list['seasonYear']
+        if !sy.is_a?(Array)
+          issues << err('awarenessEpisode.guess.wordList.seasonYear must be a list of short made-up strings')
+        else
+          issues << err("awarenessEpisode.guess.wordList.seasonYear has #{sy.length} entries; keep it to #{GUESS_SEASON_MAX}") if sy.length > GUESS_SEASON_MAX
+          sy.each_with_index do |w, i|
+            issues << err("awarenessEpisode.guess.wordList.seasonYear[#{i}] must be a short string (#{GUESS_WORD_MAX} characters at most)") if !w.is_a?(String) || w.strip.empty? || w.length > GUESS_WORD_MAX
+          end
+        end
+      end
+      ids
+    end
+
+    # Spray passes: exactly one of fromSlot (a real word-list slot) or literal, and an opensCount a roster can hold.
+    def self.guess_spray_pass_checks(g, slot_ids, sample, issues)
+      return unless g.key?('spray')
+
+      spray = g['spray']
+      unless spray.is_a?(Hash)
+        issues << err('awarenessEpisode.guess.spray must be an object { passes, opensCount, note }')
+        return
+      end
+      passes = spray['passes']
+      if !passes.is_a?(Array) || passes.empty?
+        issues << err('awarenessEpisode.guess.spray.passes must be a list of { id, fromSlot | literal }')
+        passes = []
+      end
+      issues << err("awarenessEpisode.guess.spray.passes has #{passes.length} entries; keep it to #{GUESS_PASSES_MAX}") if passes.length > GUESS_PASSES_MAX
+      seen = []
+      passes.each_with_index do |pass, i|
+        w = "awarenessEpisode.guess.spray.passes[#{i}]"
+        unless pass.is_a?(Hash)
+          issues << err("#{w} must be an object { id, fromSlot | literal }")
+          next
+        end
+        issues << err("#{w}.id is missing") if Mail.blank?(pass['id'])
+        issues << err("#{w}.id '#{pass['id']}' is used by an earlier pass") if pass['id'] && seen.include?(pass['id'])
+        seen << pass['id']
+        from = pass.key?('fromSlot')
+        lit = pass.key?('literal')
+        if from == lit
+          issues << err("#{w} must have exactly one of fromSlot (a wordList slot) or literal (an authored string), not #{from ? 'both' : 'neither'}")
+        elsif from
+          issues << err("#{w}.fromSlot '#{pass['fromSlot']}' is not a wordList.slots id") if Mail.blank?(pass['fromSlot']) || !slot_ids.include?(pass['fromSlot'])
+        elsif !pass['literal'].is_a?(String) || pass['literal'].strip.empty? || pass['literal'].length > GUESS_WORD_MAX
+          issues << err("#{w}.literal must be a short made-up string (#{GUESS_WORD_MAX} characters at most)")
+        end
+      end
+      count = spray['opensCount']
+      if !count.is_a?(Integer) || count.negative?
+        issues << err('awarenessEpisode.guess.spray.opensCount must be a whole number, 0 or more (how many accounts open; shown as a count, never named)')
+      elsif !sample.empty? && count > sample.length
+        issues << err("awarenessEpisode.guess.spray.opensCount is #{count} but the roster sample has #{sample.length} accounts")
+      end
+    end
+
+    # mode "stuff" (and the stuff panel of "spray"): masked rows of { label, opens } and nothing else. A
+    # row never carries an address or a password: the label is a generic account name.
+    def self.guess_stuff_checks(g, required: true)
+      issues = []
+      if required
+        %w[patternSlots reuseStep commonList target].each do |k|
+          issues << err("awarenessEpisode.guess.#{k} belongs to mode \"target\"; a mode \"stuff\" block reads only stuff") if g.key?(k)
+        end
+        issues << err('awarenessEpisode.guess.mode is "stuff" but there is no awarenessEpisode.guess.stuff block') unless g.key?('stuff')
+      end
+      return issues unless g.key?('stuff')
+
+      stuff = g['stuff']
+      return issues + [err('awarenessEpisode.guess.stuff must be an object { rows, note }')] unless stuff.is_a?(Hash)
+
+      rows = stuff['rows']
+      if !rows.is_a?(Array) || rows.empty?
+        issues << err('awarenessEpisode.guess.stuff.rows must be a list of { label, opens }')
+        rows = []
+      end
+      issues << err("awarenessEpisode.guess.stuff.rows has #{rows.length} entries; keep it to #{GUESS_STUFF_MAX}") if rows.length > GUESS_STUFF_MAX
+      rows.each_with_index do |row, i|
+        w = "awarenessEpisode.guess.stuff.rows[#{i}]"
+        unless row.is_a?(Hash)
+          issues << err("#{w} must be an object { label, opens }")
+          next
+        end
+        extra = (row.keys - %w[label opens]).reject { |k| k.to_s.start_with?('_') }
+        issues << err("#{w} carries #{extra.join(', ')}; a stuffing row is only { label, opens }, with no value of any kind") unless extra.empty?
+        label = row['label']
+        if !label.is_a?(String) || label.strip.empty? || label.length > GUESS_LABEL_MAX
+          issues << err("#{w}.label must be a short generic account name (#{GUESS_LABEL_MAX} characters at most)")
+        elsif label.match?(/[@:=]/)
+          issues << err("#{w}.label #{label.inspect} looks like an address or an address-and-password pair; use a generic account name such as 'Supplier portal login'")
+        end
+        issues << err("#{w}.opens must be true or false") unless [true, false].include?(row['opens'])
+      end
+      issues << warn_('awarenessEpisode.guess.stuff has no row that opens; nothing in the stuffing panel shows a reused password') if !rows.empty? && rows.none? { |r| r.is_a?(Hash) && r['opens'] == true }
       issues
     end
 

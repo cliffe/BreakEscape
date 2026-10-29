@@ -2268,10 +2268,10 @@
         },
         "guess": {
           "type": "object",
-          "description": "ENG-02: the guess stage's authored guesser (E9; the password-guesser scene). Every guess is authored data: no real password, list, tool or method is held or shown. mode picks the render ('target' is the default and the only mode so far; ENG-02b adds spray and stuff as further modes of this block). Linted by awareness.rb (guess_checks): each patternSlots factId and the reuseStep factId name a social.intelFacts id, landedGlobal is declared false, commonList is short, and no key names a credential.",
+          "description": "ENG-02: the guess stage's authored guesser (E9; the password-guesser scene). Every guess is authored data: no real password, list, tool or method is held or shown. mode picks the render ('target' is the default; 'spray' and 'stuff' are the organisation-scale modes, ENG-02b, E18). The spray and stuff sub-blocks hold authored data only: no real name, password or breach, and stuff rows are masked. Linted by awareness.rb (guess_checks): each patternSlots factId and the reuseStep factId name a social.intelFacts id, landedGlobal is declared false, commonList is short, and no key names a credential.",
           "required": ["landedGlobal"],
           "properties": {
-            "mode": {"type": "string", "enum": ["target"], "description": "Which render builds the guess list. Default 'target' (one colleague, E9)"},
+            "mode": {"type": "string", "enum": ["target", "spray", "stuff"], "description": "Which render builds the guess list. Default 'target' (one colleague, E9). 'spray' (ENG-02b, E18) is the organisation-scale console: roster, wordList, spray, optional stuff and passphraseDemo. 'stuff' shows the stuff panel alone"},
             "target": {"type": "string", "description": "A social.people id, display only"},
             "commonList": {"type": "array", "maxItems": 8, "items": {"type": "string", "minLength": 1, "maxLength": 24}, "description": "The usual first guesses, shown struck through as already tried. Short and made up"},
             "patternSlots": {
@@ -2309,6 +2309,95 @@
               "properties": {
                 "words": {"type": "array", "minItems": 1, "items": {"type": "string"}},
                 "neverLands": {"type": "boolean", "enum": [true]}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "roster": {
+              "type": "object",
+              "description": "mode spray: the staff list, built from two collected facts (the team-page names and the address pattern). Half a roster that was not collected shows as not found",
+              "required": ["namesFactId", "patternFactId", "domain", "sample"],
+              "properties": {
+                "namesFactId": {"type": "string", "description": "A social.intelFacts id (bare): the team-page names"},
+                "patternFactId": {"type": "string", "description": "A social.intelFacts id (bare): the email address pattern"},
+                "domain": {"type": "string", "description": "An .example domain; addresses are firstname.lastname@domain"},
+                "sample": {"type": "array", "minItems": 1, "maxItems": 10, "items": {"type": "string", "minLength": 1, "maxLength": 32}, "description": "Made-up staff names, shown as addresses"},
+                "note": {"type": "string"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "wordList": {
+              "type": "object",
+              "description": "mode spray: candidate words built from the practice's own website facts, one fact per slot, plus the season and year",
+              "required": ["slots"],
+              "properties": {
+                "slots": {
+                  "type": "array", "maxItems": 8,
+                  "items": {
+                    "type": "object",
+                    "required": ["id", "factId", "word", "template"],
+                    "properties": {
+                      "id": {"type": "string", "description": "Also the one token the template may use, in braces"},
+                      "factId": {"type": "string", "description": "A social.intelFacts id (bare)"},
+                      "word": {"type": "string", "description": "The made-up word the fact stands for; it replaces the {id} token"},
+                      "template": {"type": "string"},
+                      "label": {"type": "string", "description": "What the row says when the fact has not been collected"}
+                    },
+                    "patternProperties": {"^_": {}},
+                    "additionalProperties": false
+                  }
+                },
+                "seasonYear": {"type": "array", "maxItems": 4, "items": {"type": "string", "minLength": 1, "maxLength": 24}, "description": "Authored season-plus-year strings, always tried"},
+                "note": {"type": "string"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "spray": {
+              "type": "object",
+              "description": "mode spray: each pass is one candidate tried once on every roster account. opensCount accounts open, shown as a count and never named",
+              "required": ["passes", "opensCount"],
+              "properties": {
+                "passes": {
+                  "type": "array", "minItems": 1, "maxItems": 6,
+                  "items": {
+                    "type": "object",
+                    "required": ["id"],
+                    "properties": {
+                      "id": {"type": "string"},
+                      "fromSlot": {"type": "string", "description": "A wordList.slots id. Exactly one of fromSlot or literal"},
+                      "literal": {"type": "string", "maxLength": 24, "description": "An authored made-up string, such as a season plus a year"}
+                    },
+                    "patternProperties": {"^_": {}},
+                    "additionalProperties": false
+                  }
+                },
+                "opensCount": {"type": "integer", "minimum": 0, "maximum": 10},
+                "note": {"type": "string"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "stuff": {
+              "type": "object",
+              "description": "modes spray and stuff: a masked credential-stuffing panel. A password leaked from another site was tried here; a row that opens is where a person reused it. Rows carry a label and a flag only, never a value",
+              "required": ["rows"],
+              "properties": {
+                "rows": {
+                  "type": "array", "minItems": 1, "maxItems": 8,
+                  "items": {
+                    "type": "object",
+                    "required": ["label", "opens"],
+                    "properties": {
+                      "label": {"type": "string", "minLength": 1, "maxLength": 48, "description": "A generic account label (no address, no password)"},
+                      "opens": {"type": "boolean"}
+                    },
+                    "patternProperties": {"^_": {}},
+                    "additionalProperties": false
+                  }
+                },
+                "note": {"type": "string"}
               },
               "patternProperties": {"^_": {}},
               "additionalProperties": false

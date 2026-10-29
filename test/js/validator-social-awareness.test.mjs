@@ -830,7 +830,7 @@ test('guess: landedGlobal is declared false; the passphrase never lands; the com
   expectIn(lint(withGuess((g) => { g.passphraseDemo.words = []; })), /words must be a list of game words/);
   expectIn(lint(withGuess((g) => { g.commonList = Array.from({ length: 9 }, (_, i) => `w${i}`); })), /has 9 entries; keep it to 8/);
   expectIn(lint(withGuess((g) => { g.commonList[0] = 'y'.repeat(30); })), /commonList\[0\] must be a short string/);
-  expectIn(lint(withGuess((g) => { g.mode = 'spray'; })), /guess\.mode is "spray"; it must be one of target/);
+  expectIn(lint(withGuess((g) => { g.mode = 'sweep'; })), /guess\.mode is "sweep"; it must be one of target, spray, stuff/);
 });
 
 test('guess: nothing in the block names a credential', { skip }, () => {
@@ -838,6 +838,121 @@ test('guess: nothing in the block names a credential', { skip }, () => {
   expectIn(lint(withGuess((g) => { g.patternSlots[0].secret = 'x'; })), /patternSlots\[0\]\.secret looks like a credential field/);
   expectIn(lint(withGuess((g) => { g.reuseStep.passwordHash = 'x'; })), /reuseStep\.passwordHash looks like a credential field/);
   assert.deepEqual(lint(withGuess()), [], 'passphraseDemo is not a credential field');
+});
+
+// ── ENG-02b: the organisation-scale modes (guess.mode "spray" and "stuff") ───────
+const sprayBlock = () => ({
+  mode: 'spray',
+  roster: { namesFactId: 'g_names', patternFactId: 'g_pattern', domain: 'practice.example', sample: ['Ann Example', 'Bo Sample', 'Cy Placeholder'], note: 'From the team page.' },
+  wordList: {
+    slots: [{ id: 'project', factId: 'g_project', word: 'Harbour', template: '{project}' }, { id: 'place', factId: 'g_place', word: 'Quayside', template: '{place}1' }],
+    seasonYear: ['Autumn2099'], note: 'From the practice website.'
+  },
+  spray: { passes: [{ id: 'p1', fromSlot: 'project' }, { id: 'p2', literal: 'Autumn2099' }], opensCount: 2, note: 'Once per account.' },
+  stuff: { rows: [{ label: 'Supplier portal login', opens: true }, { label: 'Staff wiki login', opens: false }], note: 'A leaked password from elsewhere.' },
+  passphraseDemo: { words: ['otter', 'ladder', 'crimson'], neverLands: true },
+  landedGlobal: 'guess_stub_landed',
+  note: 'Nothing real is used here.'
+});
+const withSpray = (mutate, block = sprayBlock) => {
+  const j = fx('clean_full.json');
+  const e = ep(j);
+  e.stages = ['brief', 'osint', 'guess', 'flip', 'defend', 'debrief'];
+  e.attack = { siteIds: ['supplier_site'], scored: false };
+  e.guess = block();
+  for (const id of ['g_names', 'g_pattern', 'g_project', 'g_place']) { j.social.intelFacts[id] = guessFact(id); j.globalVariables[`se_intel_${id}`] = false; }
+  j.globalVariables.guess_stub_landed = false;
+  if (mutate) mutate(e.guess, j, e);
+  return j;
+};
+const stuffOnly = () => ({ mode: 'stuff', stuff: sprayBlock().stuff, landedGlobal: 'guess_stub_landed' });
+
+test('guess spray: a clean E18-shaped block raises nothing; the optional parts may be left out', { skip }, () => {
+  assert.deepEqual(lint(withSpray()), []);
+  assert.deepEqual(lint(withSpray((g) => { delete g.stuff; delete g.passphraseDemo; delete g.note; })), []);
+});
+
+test('guess spray: roster, wordList and spray are all required', { skip }, () => {
+  for (const k of ['roster', 'wordList', 'spray']) {
+    expectIn(lint(withSpray((g) => { delete g[k]; })), new RegExp(`mode is "spray" but there is no awarenessEpisode\\.guess\\.${k} block`));
+  }
+});
+
+test('guess spray: the roster facts must be declared; the domain is a host-only .example', { skip }, () => {
+  expectIn(lint(withSpray((g) => { g.roster.namesFactId = 'ghost'; })), /roster\.namesFactId 'ghost' is not a social\.intelFacts id/);
+  expectIn(lint(withSpray((g) => { g.roster.patternFactId = 'ghost'; })), /roster\.patternFactId 'ghost' is not a social\.intelFacts id/);
+  expectIn(lint(withSpray((g) => { g.roster.domain = 'practice.com'; })), /does not end \.example/);
+  expectIn(lint(withSpray((g) => { g.roster.sample = []; })), /roster\.sample must be a list of made-up staff names/);
+  expectIn(lint(withSpray((g) => { g.roster.sample = Array.from({ length: 11 }, (_, i) => `Person ${i}`); })), /has 11 names; keep it to 10/);
+  expectIn(lint(withSpray((g) => { g.roster.sample[0] = 'ann@practice.example'; })), /sample\[0\] must be a short made-up name/);
+});
+
+test('guess spray: every word-list slot names a declared fact and uses only its own token', { skip }, () => {
+  expectIn(lint(withSpray((g) => { g.wordList.slots[0].factId = 'ghost'; })), /wordList\.slots\[0\]\.factId 'ghost' is not a social\.intelFacts id/);
+  expectIn(lint(withSpray((g) => { g.wordList.slots[0].template = '{project}{place}'; })), /may use only its own \{project\}/);
+  expectIn(lint(withSpray((g) => { delete g.wordList.slots[1].word; })), /wordList\.slots\[1\]\.word is missing/);
+  expectIn(lint(withSpray((g) => { g.wordList.slots[1].id = 'project'; })), /id 'project' is used by an earlier slot/);
+  expectIn(lint(withSpray((g) => { g.wordList.seasonYear = ['a', 'b', 'c', 'd', 'e']; })), /seasonYear has 5 entries; keep it to 4/);
+  expectIn(lint(withSpray((g) => { g.wordList.slots = []; })), /wordList\.slots must be a list/);
+});
+
+test('guess spray: a pass has exactly one of fromSlot (a real slot) or literal', { skip }, () => {
+  expectIn(lint(withSpray((g) => { g.spray.passes[0].literal = 'x'; })), /passes\[0\] must have exactly one of fromSlot .* or literal .*, not both/);
+  expectIn(lint(withSpray((g) => { delete g.spray.passes[0].fromSlot; })), /passes\[0\] must have exactly one of .*not neither/);
+  expectIn(lint(withSpray((g) => { g.spray.passes[0].fromSlot = 'ghost'; })), /passes\[0\]\.fromSlot 'ghost' is not a wordList\.slots id/);
+  expectIn(lint(withSpray((g) => { g.spray.passes[1].literal = 'y'.repeat(30); })), /passes\[1\]\.literal must be a short made-up string/);
+  expectIn(lint(withSpray((g) => { g.spray.opensCount = 9; })), /opensCount is 9 but the roster sample has 3 accounts/);
+  expectIn(lint(withSpray((g) => { g.spray.opensCount = 'two'; })), /opensCount must be a whole number/);
+});
+
+test('guess spray: a stuffing row is a generic label and a flag, never a value', { skip }, () => {
+  expectIn(lint(withSpray((g) => { g.stuff.rows[0].value = 'x'; })), /stuff\.rows\[0\] carries value/);
+  expectIn(lint(withSpray((g) => { g.stuff.rows[0].password = 'x'; })), /stuff\.rows\[0\]\.password looks like a credential field/);
+  expectIn(lint(withSpray((g) => { g.stuff.rows[0].label = 'ann@practice.example'; })), /stuff\.rows\[0\]\.label .* looks like an address/);
+  expectIn(lint(withSpray((g) => { g.stuff.rows[0].label = 'ann: hunter'; })), /stuff\.rows\[0\]\.label .* looks like an address/);
+  expectIn(lint(withSpray((g) => { delete g.stuff.rows[1].opens; })), /stuff\.rows\[1\]\.opens must be true or false/);
+  expectIn(lint(withSpray((g) => { g.stuff.rows = Array.from({ length: 9 }, (_, i) => ({ label: `Login ${i}`, opens: false })); })), /stuff\.rows has 9 entries; keep it to 8/);
+  expectIn(lint(withSpray((g) => { g.stuff.rows.forEach((r) => { r.opens = false; }); })), /stuff has no row that opens/);
+});
+
+test('guess spray: the common checks still apply (landedGlobal, credential keys); target-only keys are caught', { skip }, () => {
+  expectIn(lint(withSpray((g) => { delete g.landedGlobal; })), /landedGlobal is missing/);
+  expectIn(lint(withSpray((g) => { g.landedGlobal = 'undeclared_global'; })), /landedGlobal 'undeclared_global' is not declared/);
+  expectIn(lint(withSpray((g) => { g.secret = 'x'; })), /guess\.secret looks like a credential field/);
+  expectIn(lint(withSpray((g) => { g.passphraseDemo.neverLands = false; })), /neverLands must be true/);
+  expectIn(lint(withSpray((g) => { g.patternSlots = []; })), /guess\.patternSlots belongs to mode "target"/);
+});
+
+test('guess stuff: a stuff-only block is clean; it needs stuff and the same no-credential check', { skip }, () => {
+  assert.deepEqual(lint(withSpray(null, stuffOnly)), []);
+  expectIn(lint(withSpray((g) => { delete g.stuff; }, stuffOnly)), /mode is "stuff" but there is no awarenessEpisode\.guess\.stuff block/);
+  expectIn(lint(withSpray((g) => { g.stuff.rows[0].hash = 'x'; }, stuffOnly)), /stuff\.rows\[0\]\.hash looks like a credential field/);
+  expectIn(lint(withSpray((g) => { delete g.landedGlobal; }, stuffOnly)), /landedGlobal is missing/);
+  expectIn(lint(withSpray((g) => { g.reuseStep = { site: 'x', factId: 'g_names' }; }, stuffOnly)), /guess\.reuseStep belongs to mode "target"/);
+});
+
+test('guess spray schema: the clean blocks pass; mistyped keys, extra row keys and bad shapes fail', { skip }, () => {
+  const cases = [
+    ['a mistyped roster key', (g) => { g.roster.domian = 'x'; }, 'domian'],
+    ['a missing roster sample', (g) => { delete g.roster.sample; }, 'sample'],
+    ['a long roster sample', (g) => { g.roster.sample = Array.from({ length: 11 }, (_, i) => `P${i}`); }, 'sample'],
+    ['a slot without a word', (g) => { delete g.wordList.slots[0].word; }, 'word'],
+    ['five season strings', (g) => { g.wordList.seasonYear = ['a', 'b', 'c', 'd', 'e']; }, 'seasonYear'],
+    ['a pass key', (g) => { g.spray.passes[0].pwd = 'x'; }, 'pwd'],
+    ['no opensCount', (g) => { delete g.spray.opensCount; }, 'opensCount'],
+    ['a value on a stuff row', (g) => { g.stuff.rows[0].value = 'x'; }, 'value'],
+    ['a stuff row without opens', (g) => { delete g.stuff.rows[0].opens; }, 'opens'],
+    ['a mistyped stuff key', (g) => { g.stuff.row = []; }, 'row']
+  ];
+  const scenarios = [withSpray(), withSpray(null, stuffOnly), ...cases.map(([, mutate]) => withSpray(mutate))];
+  const results = schemaRun(scenarios);
+  assert.deepEqual(results[0], { social: [], other: [] });
+  assert.deepEqual(results[1], { social: [], other: [] });
+  cases.forEach(([name, , detail], i) => {
+    const { social, other } = results[i + 2];
+    assert.deepEqual(other, [], `${name}: an error outside #/social`);
+    assert.ok(social.some((e) => e.includes('guess') && e.includes(detail)), `${name}: no error naming ${detail}\n${social.join('\n')}`);
+  });
 });
 
 test('a full episode with a write stage still needs its mail attack block', { skip }, () => {
@@ -854,7 +969,7 @@ test('guess schema: the clean block passes; a mistyped key, a long common list, 
     ['a mistyped key', (g) => { g.landedGlobl = 'x'; }, 'landedGlobl'],
     ['a mistyped slot key', (g) => { g.patternSlots[0].facId = 'x'; }, 'facId'],
     ['nine common guesses', (g) => { g.commonList = Array.from({ length: 9 }, (_, i) => `w${i}`); }, 'commonList'],
-    ['a bad mode', (g) => { g.mode = 'spray'; }, 'mode'],
+    ['a bad mode', (g) => { g.mode = 'sweep'; }, 'mode'],
     ['a slot without a word', (g) => { delete g.patternSlots[0].word; }, 'word'],
     ['no landedGlobal', (g) => { delete g.landedGlobal; }, 'landedGlobal'],
     ['neverLands false', (g) => { g.passphraseDemo.neverLands = false; }, 'neverLands'],
