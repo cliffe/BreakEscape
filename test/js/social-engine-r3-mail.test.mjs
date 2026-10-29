@@ -124,6 +124,42 @@ test('P3 N4: an awareness miss gets no reply made of meter text; replies.missed 
     assert.equal(bridge.dataOnlyText({ id: 't' }, failResult([pretextFail]), {}), pretextFail.reply);
 });
 
+test('E13 D1: replies.byChoice keys the data-only reply on the sent template', () => {
+    const aw = { awarenessEpisode: { id: 'e13' } };
+    const landedRes = { landed: true, factors: [] };
+    const target = { id: 'assist_reader', replies: {
+        landed: 'top-level landed',
+        byChoice: {
+            inject_contacts: 'injection reply',
+            pretext_invoice: 'plain reply'
+        }
+    } };
+    // the chosen template wins over replies.landed
+    assert.equal(bridge.dataOnlyText(target, landedRes, aw, 'pretext_invoice'), 'plain reply');
+    assert.equal(bridge.dataOnlyText(target, landedRes, aw, 'inject_contacts'), 'injection reply');
+    // a template with no byChoice entry, or none passed, falls back to replies.landed (unchanged)
+    assert.equal(bridge.dataOnlyText(target, landedRes, aw, 'unknown_tpl'), 'top-level landed');
+    assert.equal(bridge.dataOnlyText(target, landedRes, aw, null), 'top-level landed');
+    // absent byChoice: behaviour is exactly as before
+    assert.equal(bridge.dataOnlyText({ id: 't', replies: { landed: 'ok' } }, landedRes, aw, 'inject_contacts'), 'ok');
+
+    // the { landed, missed } object form picks by whether the send landed
+    const pairTarget = { id: 't', replies: { byChoice: { tpl: { landed: 'won', missed: 'lost' } } } };
+    assert.equal(bridge.dataOnlyText(pairTarget, landedRes, aw, 'tpl'), 'won');
+    assert.equal(bridge.dataOnlyText(pairTarget, failResult([pretextFail]), aw, 'tpl'), 'lost');
+    // an object form missing the needed branch falls through to the default
+    const halfPair = { id: 't', replies: { landed: 'default landed', byChoice: { tpl: { missed: 'lost' } } } };
+    assert.equal(bridge.dataOnlyText(halfPair, landedRes, aw, 'tpl'), 'default landed');
+});
+
+test('E13 D1: sentTemplateIdOf picks the pretext part, else the first chosen template', () => {
+    assert.equal(bridge.sentTemplateIdOf({ templates: { from: 'f', pretext: 'pretext_invoice', ask: 'a' } }), 'pretext_invoice');
+    assert.equal(bridge.sentTemplateIdOf({ templates: { from: 'f', ask: 'a' } }), 'f');
+    assert.equal(bridge.sentTemplateIdOf({ templates: {} }), null);
+    assert.equal(bridge.sentTemplateIdOf({}), null);
+    assert.equal(bridge.sentTemplateIdOf(null), null);
+});
+
 test('P3 N4: an awareness send that misses schedules no reply text and promises none', () => {
     const { scene, scheduler, social: sc } = open();
     sc.awarenessEpisode = { id: 'e2' };

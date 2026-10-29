@@ -128,7 +128,8 @@ module ValidateSocial
         where = "social.phishTargets[#{id}]"
         list(t['hints']).each_with_index { |h, i| issues << err("#{where}.hints[#{i}] is empty; a hint stage would show nothing") if blank?(h) }
         if t['replies'].is_a?(Hash)
-          t['replies'].each { |k, v| issues << err("#{where}.replies.#{k} is empty; the reply would be blank") if blank?(v) }
+          # byChoice is a nested object (checked by target_replies), not a reply string.
+          t['replies'].each { |k, v| next if k == 'byChoice'; issues << err("#{where}.replies.#{k} is empty; the reply would be blank") if blank?(v) }
         end
         issues.concat(factor_strings(t['factorStrings'], "#{where}.factorStrings")) if t.key?('factorStrings')
       end
@@ -247,6 +248,34 @@ module ValidateSocial
         issues.concat(target_requires_intel(ctx, t, where))
         issues.concat(target_sender_values(ctx, t, tpls, where))
         issues.concat(target_factor_bias(ctx, t, where))
+        issues.concat(target_replies(t, tpls, where))
+      end
+      issues
+    end
+
+    # E13 D1: replies.byChoice gives a data-only target a reply per sent pretext. Each key names a
+    # social.templates id (the pick the write-stage reply branches on), and each value is a reply
+    # string or a { landed, missed } pair of reply strings.
+    def self.target_replies(t, tpls, where)
+      issues = []
+      replies = t['replies']
+      return issues unless replies.is_a?(Hash) && replies.key?('byChoice')
+      by = replies['byChoice']
+      unless by.is_a?(Hash)
+        return [err("#{where}.replies.byChoice must be an object keyed by template id")]
+      end
+      by.each do |tid, v|
+        next if tid.start_with?('_')
+        issues << err("#{where}.replies.byChoice names template '#{tid}', which is not in social.templates") unless tpls.key?(tid)
+        if v.is_a?(String)
+          issues << err("#{where}.replies.byChoice.#{tid} is empty; the reply would be blank") if blank?(v)
+        elsif v.is_a?(Hash)
+          present = %w[landed missed].select { |k| v.key?(k) }
+          issues << err("#{where}.replies.byChoice.#{tid} has neither a landed nor a missed reply") if present.empty?
+          present.each { |k| issues << err("#{where}.replies.byChoice.#{tid}.#{k} is empty; the reply would be blank") if blank?(v[k]) }
+        else
+          issues << err("#{where}.replies.byChoice.#{tid} must be a reply string or a { landed, missed } object")
+        end
       end
       issues
     end

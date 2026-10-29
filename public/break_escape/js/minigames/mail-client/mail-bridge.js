@@ -418,7 +418,7 @@ export function performSend(scene, message) {
     } else if (opened) {
         const outcomeGlobal = target.outcome && target.outcome.setGlobal;
         const firstGlobal = isObject(outcomeGlobal) ? Object.keys(outcomeGlobal)[0] : (isStr(outcomeGlobal) ? outcomeGlobal : null);
-        const replyText = dataOnlyText(target, result, social);
+        const replyText = dataOnlyText(target, result, social, sentTemplateIdOf(message));
         // The job runs even with no text, so withReply timing still reveals the checklist; an
         // empty text delivers no message (mail-scheduler _deliverText).
         scheduler?.scheduleTextJob({
@@ -478,14 +478,38 @@ function resolveClaimedFrom(social, account, claimed) {
 }
 
 /**
+ * The sent template id a by-choice reply keys on (E13): the chosen pretext part, else the first
+ * chosen template. Mirrors episode-model sentFromRecord so the write-stage reply branches on the
+ * same pick the flip and the assistant overlay do. Returns null when nothing was chosen.
+ */
+export function sentTemplateIdOf(message) {
+    const parts = isObject(message && message.templates) ? message.templates : {};
+    if (isStr(parts.pretext)) return parts.pretext;
+    return Object.values(parts).find(isStr) ?? null;
+}
+
+/**
  * The data-only reply text: replies.landed, else replies.missed, else the first failed factor's
  * line (00 §10, N7). An awareness episode's factor lines are written as the red-flag meter's
  * narration ("No open invoice she can match this to..."), not in the target's voice, so there a
  * miss gets a reply only when the target authors `replies.missed`; otherwise nothing comes back
  * (P3 N4/N-5). Returns '' for no reply.
+ *
+ * E13 D1: an open target (primedFor.trusts ["*"]) lands for every pretext, so replies.landed is
+ * the only branch the immediate reply can reach. replies.byChoice[<sentTemplateId>] lets such a
+ * target answer per the pretext the learner actually sent, matching the flip/assistant surfacing.
+ * The entry is a plain string (used as-is) or { landed, missed } (picked by result.landed); it
+ * wins over replies.landed/missed when the sent template has an entry. Absent, behaviour is
+ * exactly as before.
  */
-export function dataOnlyText(target, result, social = null) {
+export function dataOnlyText(target, result, social = null, sentTemplateId = null) {
     const replies = isObject(target && target.replies) ? target.replies : {};
+    const byChoice = isObject(replies.byChoice) && isStr(sentTemplateId) ? replies.byChoice[sentTemplateId] : null;
+    if (isStr(byChoice)) return byChoice;
+    if (isObject(byChoice)) {
+        const picked = result.landed ? byChoice.landed : byChoice.missed;
+        if (isStr(picked)) return picked;
+    }
     if (result.landed) return isStr(replies.landed) ? replies.landed : 'Thanks, received.';
     const byCause = causeMissReply(target, result); // P7-1: name the cause of a link miss
     if (byCause) return byCause;

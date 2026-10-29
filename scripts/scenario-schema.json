@@ -1402,7 +1402,26 @@
         },
         "replies": {
           "type": "object",
-          "description": "Reply text; the judge reads `landed`",
+          "description": "Reply text; the judge reads `landed`. `byChoice` (optional, E13 D1) lets a data-only (open) target answer per the sent pretext: it wins over landed/missed.",
+          "properties": {
+            "byChoice": {
+              "type": "object",
+              "description": "Per-sent-pretext reply, keyed by the template id the learner picked (a social.templates id, the same pick state.sent.templateId carries). The value is a plain string (used as-is) or { landed, missed } chosen by whether the send landed. Checked by validate_social/mail.rb against social.templates.",
+              "additionalProperties": {
+                "oneOf": [
+                  {"type": "string"},
+                  {
+                    "type": "object",
+                    "properties": {"landed": {"type": "string"}, "missed": {"type": "string"}},
+                    "patternProperties": {"^_": {}},
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "patternProperties": {"^_": {}}
+            }
+          },
+          "patternProperties": {"^_": {}},
           "additionalProperties": {"type": "string"}
         },
         "outcome": {
