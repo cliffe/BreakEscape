@@ -34,7 +34,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -78,6 +78,23 @@ function stripNotes(v) {
   return v;
 }
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+// ENG-09d: a full episode on disk must be registered in EPISODES, or it slips past parity. A full
+// episode is awareness_e<N>_<name> without the _defend suffix (the defend-only twin and the
+// pre/post check shells are generated from the fragment, so they are not compared here).
+test('every full awareness episode under scenarios/ is registered for parity', () => {
+  const onDisk = readdirSync(join(root, 'scenarios'), { withFileTypes: true })
+    .filter((d) => d.isDirectory() && /^awareness_e\d+_/.test(d.name) && !d.name.endsWith('_defend'))
+    .map((d) => d.name).sort();
+  const registered = EPISODES.map((e) => e.dir).sort();
+  assert.deepEqual(onDisk.filter((d) => !registered.includes(d)), [],
+    'full episode(s) with no EPISODES entry (add { n, dir } here and a fragment under planning_notes/.../awareness/e<N>/)');
+  assert.deepEqual(registered.filter((d) => !onDisk.includes(d)), [], 'EPISODES entry with no folder under scenarios/');
+  for (const { n, dir } of EPISODES) {
+    assert.ok(new RegExp(`^awareness_e${n}_`).test(dir), `EPISODES entry n=${n} does not match its folder ${dir}`);
+  }
+  assert.equal(new Set(EPISODES.map((e) => e.n)).size, EPISODES.length, 'an episode number is registered twice');
+});
 
 for (const { n, dir } of EPISODES) {
   test(`E${n}: fragment and full erb share the same learner-facing copy`, () => {

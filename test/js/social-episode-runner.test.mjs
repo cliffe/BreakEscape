@@ -1104,3 +1104,38 @@ test('a null conclusionTaskId reaches the triage options as null (standalone bea
     assert.equal(o.kind, 'triage');
     assert.equal(o.options.conclusionTaskId, null);
 });
+
+// ── ENG-01: the flip aftermath and episode-level stepLabels ──────────────────
+test('ENG-01: the flip is handed episode.flipAftermath only when the send landed', () => {
+    const block = { heading: 'Now you are Kieran', items: [{ id: 'fa_sent', kind: 'email', to: 'x@fixture.example', subject: 's' }] };
+    const flipState = () => ({ [M.stateKey('e1_fixture')]: { v: 1, stage: 'flip', done: ['brief', 'osint', 'write'],
+        sent: { recordId: 'sent_1', targetId: 'supplier_contact', templateId: 'tpl_bank', blankIds: [] } } });
+    const record = (landed) => window.mailState.mailboxes.analyst.messages.push({
+        id: 'sent_1', folder: 'sent', fromAccount: 'analyst', targetId: 'supplier_contact', gameTime: 100,
+        subject: 'Updated bank details', templates: { opening: 'tpl_bank' }, slots: {}, landed, tells: ['senderTrust']
+    });
+    const ep = { ...fullEpisode(), flipAftermath: block };
+    setup(ep, flipState()); record(true); open(ep);
+    assert.deepEqual(calls.flip[0].aftermath, block);
+    setup(ep, flipState()); record(false); open(ep);
+    assert.equal('aftermath' in calls.flip[0], false, 'a miss gets none');
+    // key absent: the props are exactly as before
+    const plain = fullEpisode();
+    setup(plain, flipState()); record(true); open(plain);
+    assert.equal('aftermath' in calls.flip[0], false);
+    // nothing sent: no replay, so no aftermath
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write'], sent: null } }); open(ep);
+    assert.equal('aftermath' in calls.flip[0], false);
+});
+
+test('ENG-01: episode.stepLabels overrides flip and keeps the call default otherwise', () => {
+    const call = { ...fullEpisode(), attack: { callId: 'a_call' }, stepLabels: { osint: 'Recon' } };
+    setup(call); open(call);
+    assert.deepEqual(cur()._stripLabels(), { flip: 'The call', osint: 'Recon' });
+    const click1 = { ...fullEpisode(), stepLabels: { flip: 'The click' } };
+    setup(click1); open(click1);
+    assert.deepEqual(cur()._stripLabels(), { flip: 'The click' });
+    const both = { ...call, stepLabels: { flip: 'The vishing call' }, strings: { stepLabels: { flip: 'ignored', defend: 'Triage' } } };
+    setup(both); open(both);
+    assert.deepEqual(cur()._stripLabels(), { flip: 'The vishing call', defend: 'Triage' }, 'episode-level wins over strings');
+});

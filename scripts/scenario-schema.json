@@ -1826,6 +1826,34 @@
         "variant": {"type": "string", "enum": ["full", "defendOnly"], "description": "Optional on a check mission (stages [\"check\"]); required for the other two kinds (awareness.rb says so)"},
         "durationTargetMin": {"type": "number", "minimum": 0},
         "scopeNote": {"type": "string"},
+        "flipAftermath": {
+          "type": "object",
+          "description": "ENG-01: after a landed attack the flip shows the victim's seat. items are authored inline: an 'email' (one read-only sent-items row) or a non-email kind (sms, voicemail, qr, page, call, push). Shown only when the attack landed",
+          "required": ["items"],
+          "properties": {
+            "heading": {"type": "string"},
+            "victimName": {"type": "string", "description": "The colleague whose account is now in use"},
+            "intro": {"type": "string"},
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["id", "kind"],
+                "properties": {
+                  "id": {"type": "string"},
+                  "kind": {"type": "string", "enum": ["email", "sms", "voicemail", "qr", "page", "call", "push"]},
+                  "note": {"type": "string"}
+                },
+                "additionalProperties": true
+              }
+            },
+            "line": {"type": "string"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "stepLabels": {"type": "object", "description": "ENG-01: step-strip labels keyed by stage id; wins over strings.stepLabels", "additionalProperties": {"type": "string"}},
         "stages": {
           "type": "array",
           "items": {"type": "string", "enum": ["brief", "osint", "build", "write", "flip", "defend", "debrief", "check", "mfa"]}
@@ -1953,10 +1981,11 @@
               "additionalProperties": false
             },
             "conceptPanel": {
-              "description": "A short concept panel for the debrief (E2: macros). A string, or { heading, text }",
+              "description": "A short concept panel for the debrief (E2: macros). A string, or { heading, text }, or an array of { heading?, text } for several panels (ENG-09b)",
               "oneOf": [
                 {"type": "string"},
-                {"type": "object", "required": ["text"], "properties": {"heading": {"type": "string"}, "text": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}
+                {"type": "object", "required": ["text"], "properties": {"heading": {"type": "string"}, "text": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false},
+                {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["text"], "properties": {"heading": {"type": "string"}, "text": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}}
               ]
             },
             "voicePanel": {
