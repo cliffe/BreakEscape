@@ -252,6 +252,70 @@
     font-weight: 700;
 }
 
+/* ── fake-check preview (ENG-03b): a "verify you are human" modal over a faded genuine site ── */
+.lpb-preview.lpb-fakecheck { position: relative; min-height: 260px; }
+
+/* The faded genuine page behind the panel: suggested, not readable (decoration only). */
+.lpb-fakecheck-behind {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 46px;           /* below the address chrome */
+    bottom: 0;
+    padding: 18px;
+    background:
+        linear-gradient(#e9ecf3, #e9ecf3) 18px 24px / 40% 16px no-repeat,
+        linear-gradient(#eef1f6, #eef1f6) 18px 56px / 72% 10px no-repeat,
+        linear-gradient(#eef1f6, #eef1f6) 18px 74px / 64% 10px no-repeat,
+        linear-gradient(#eef1f6, #eef1f6) 18px 92px / 68% 10px no-repeat,
+        #f4f5f8;
+    opacity: 0.6;
+}
+
+/* The modal check panel, centred over the faded site. */
+.lpb-fakecheck-panel {
+    position: relative;
+    z-index: 1;
+    margin: 28px auto;
+    max-width: 340px;
+    padding: 18px 18px 16px;
+    background: #ffffff;
+    color: #1b2030;
+    border: 1px solid #c3c9d8;
+    border-top: 4px solid #2f6db0;
+    border-radius: 6px;
+    box-shadow: 0 8px 28px rgba(12, 18, 36, 0.28);
+}
+
+.lpb-fakecheck-heading { margin: 0 0 10px; font-size: 18px; }
+.lpb-fakecheck-steps { margin: 0 0 14px; font-size: 15px; line-height: 1.4; }
+
+.lpb-fakecheck-reveal { margin-top: 4px; }
+.lpb-fakecheck-reveal-btn {
+    display: inline-block;
+    padding: 6px 12px;
+    font-size: 14px;
+    color: #1b2030;
+    background: #eef1f6;
+    border: 1px solid #b4b9c7;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.lpb-fakecheck-reveal-btn:focus-visible { outline: 3px solid var(--ui-accent, #ffcc44); outline-offset: 2px; }
+.lpb-fakecheck-reveal-text {
+    margin: 10px 0 0;
+    padding: 8px 10px;
+    font-size: 14px;
+    color: #1b2030;
+    background: #fff4d6;
+    border: 1px solid #d8b24a;
+    border-left: 5px solid #d8b24a;
+    border-radius: 3px;
+}
+
+/* In step 6 the steps line is the one hot-spot; the shared .lpb-hotspot rules give focus/found. */
+.lpb-fakecheck .lpb-fakecheck-steps.lpb-hotspot { padding: 4px 6px; margin: -4px -6px 10px; border-radius: 3px; }
+
 /* step-6 hot-spots (role=button divs) and the inspect panel (P5-E) */
 .lpb-hotspot {
     cursor: pointer;
