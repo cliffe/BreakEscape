@@ -19,7 +19,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e8_after_the_click_defend_defend_done:
-        Anjali Rao: That's the inbox sorted, thanks. The one move that works for every real sign is the same: report it and leave it be.
+        Anjali Rao: That's the inbox sorted, thanks. The one move that works for every real sign is the same: report it and let the team act.
     - else:
         Anjali Rao: You're covering a colleague's inbox. They clicked a convincing email, so someone else is using their account. Some signs are real, some are ordinary. Report anything that doesn't sit right.
     }

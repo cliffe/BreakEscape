@@ -22,7 +22,7 @@
       "text": "Quayholt is moving single sign-on to a new provider this month; staff were told they may be asked to sign in again.",
       "subject": "itdesk", "source": "blk_news",
       "provides": [
-        { "type": "reference", "about": "portal", "value": "sso_migration", "label": "the SSO move this month", "kind": "distinctive" }
+        { "type": "reference", "about": "portal", "value": "sso_migration", "label": "single sign-on", "kind": "distinctive" }
       ],
       "reduceNote": "A public change notice hands the attacker a ready-made reason for an unexpected sign-in prompt."
     },
@@ -46,11 +46,11 @@
                  { "id": "sender_address", "type": "address", "label": "sender's address" } ] },
     "e8_greet": { "part": "greeting", "text": "Hello,", "slots": [] },
     "e8_pretext_reauth": { "part": "pretext",
-      "text": "We are moving the {portal} to a new provider and your session has ended. Please sign in again today to keep your access while the claims backlog is cleared.",
+      "text": "We are moving {portal} to a new provider and your session has ended. Please sign in again today to keep your access while the claims backlog is cleared.",
       "slots": [ { "id": "portal", "type": "reference", "about": "portal", "label": "which sign-on system" } ],
       "urgency": "high" },
     "e8_pretext_reauth_calm": { "part": "pretext",
-      "text": "We are moving the {portal} to a new provider this month, so you may be asked to sign in again. When you have a moment, please sign in to confirm your access.",
+      "text": "We are moving {portal} to a new provider this month, so you may be asked to sign in again. When you have a moment, please sign in to confirm your access.",
       "slots": [ { "id": "portal", "type": "reference", "about": "portal", "label": "which sign-on system" } ],
       "urgency": "low" },
     "e8_pretext_newsletter": { "part": "pretext",

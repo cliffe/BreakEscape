@@ -51,7 +51,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "After the click episode done",
-        "body": "You've seen both sides of a click: you sent one email, then sat in the colleague's seat and sorted the signs that followed in their account, so this episode is finished."
+        "body": "You've seen both sides of a click: you took the red team's seat, then sat in the colleague's seat and sorted the signs that followed in their account, so this episode is finished."
       },
       "tasks": [
         {
@@ -100,7 +100,7 @@
           }
         },
         "title": "Ayaan's inbox after the click",
-        "brief": "You're covering Ayaan's inbox after the click. Seven things have turned up. For each one, choose Trust, Report, Delete or Verify (ring the service desk or Anjali on a number you already hold), then tick what you noticed. Reporting when you're unsure is always fine and never marked down.",
+        "brief": "You're covering Ayaan's inbox after the click. Six things have turned up. For each one, choose Trust, Report, Delete or Verify (ring the service desk or Anjali on a number you already hold), then tick what you noticed. Reporting when you're unsure is always fine and never marked down.",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
         "feedbackMode": "immediate",
@@ -298,31 +298,6 @@
                 "default": "IT's real address, a planned-outage notice that asks you for nothing and is on the intranet too; after a run of real signs it is tempting to report everything, but trusting this is right and verifying or reporting it still scores full."
               }
             }
-          },
-          {
-            "id": "e8_parcel",
-            "from": {
-              "name": "Quayholt Reception",
-              "address": "reception@quayholt.example"
-            },
-            "to": "ayaan.warsame@quayholt.example",
-            "subject": "A parcel is waiting for you at the front desk",
-            "time": "10:40",
-            "body": "Hi Ayaan,\nThere's a parcel for you at the front desk whenever you're passing.\nReception",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "quayholt.example",
-              "replyTo": "reception@quayholt.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "default": "An ordinary reception notice from Quayholt's own address, nothing to sign in to or pay. Not everything in a bad hour is an attack."
-              }
-            }
           }
         ]
       }
@@ -371,7 +346,7 @@
         "reportAlwaysVisible": true
       },
       "flipAftermath": {
-        "heading": "Now you are Ayaan, and it is ten past three",
+        "heading": "Now you are Ayaan, and it is just gone three",
         "victimName": "Ayaan Warsame",
         "intro": "Ayaan read it between two claims, in the week his team was clearing a backlog. The service desk's own address was on it, and it only asked him to sign in again, which IT had said would happen while single sign-on moved. So he did. That was not carelessness: it was built to pass for the notice he acts on. Here is his account a few minutes later.",
         "items": [
@@ -401,7 +376,7 @@
       "strings": {
         "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: look at what's public about a Quayholt colleague, then write one email, dressed up as the IT service desk, that asks them to sign in again. Then you swap seats. The colleague clicked, and now you're the one whose account is being used. Sort the signs that follow. Only that second part is scored.",
         "flipHeading": "Now it lands on you",
-        "flipIntro": "This is your email as Ayaan, the claims handler you sent it to, met it, and this time he signed in.",
+        "flipIntro": "This is your email as Ayaan met it. He is the claims handler you sent it to, and this time he signed in.",
         "flipDefenderLine": "The service desk never sends sign-in requests by email, whatever address they come from; that is the one thing that would have given it away.",
         "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, you're the one whose account is being used, sorting the signs that follow.",
         "flipMissed": "The defence is the same either way: next, you're the one whose account is being used, sorting the signs that follow.",
@@ -478,7 +453,7 @@
             "type": "reference",
             "about": "portal",
             "value": "sso_migration",
-            "label": "the SSO move this month",
+            "label": "single sign-on",
             "kind": "distinctive"
           }
         ],
@@ -524,7 +499,7 @@
       },
       "e8_pretext_reauth": {
         "part": "pretext",
-        "text": "We are moving the {portal} to a new provider and your session has ended. Please sign in again today to keep your access while the claims backlog is cleared.",
+        "text": "We are moving {portal} to a new provider and your session has ended. Please sign in again today to keep your access while the claims backlog is cleared.",
         "slots": [
           {
             "id": "portal",
@@ -537,7 +512,7 @@
       },
       "e8_pretext_reauth_calm": {
         "part": "pretext",
-        "text": "We are moving the {portal} to a new provider this month, so you may be asked to sign in again. When you have a moment, please sign in to confirm your access.",
+        "text": "We are moving {portal} to a new provider this month, so you may be asked to sign in again. When you have a moment, please sign in to confirm your access.",
         "slots": [
           {
             "id": "portal",

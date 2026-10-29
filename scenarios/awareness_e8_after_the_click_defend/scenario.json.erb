@@ -61,7 +61,7 @@
       {
         "id": "e8_used_account",
         "title": "Ayaan's inbox after the click",
-        "brief": "You're covering Ayaan's inbox after the click. Seven things have turned up. For each one, choose Trust, Report, Delete or Verify (ring the service desk or Anjali on a number you already hold), then tick what you noticed. Reporting when you're unsure is always fine and never marked down.",
+        "brief": "You're covering Ayaan's inbox after the click. Six things have turned up. For each one, choose Trust, Report, Delete or Verify (ring the service desk or Anjali on a number you already hold), then tick what you noticed. Reporting when you're unsure is always fine and never marked down.",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
         "feedbackMode": "immediate",
@@ -257,31 +257,6 @@
               "flags": [],
               "whyFine": {
                 "default": "IT's real address, a planned-outage notice that asks you for nothing and is on the intranet too; after a run of real signs it is tempting to report everything, but trusting this is right and verifying or reporting it still scores full."
-              }
-            }
-          },
-          {
-            "id": "e8_parcel",
-            "from": {
-              "name": "Quayholt Reception",
-              "address": "reception@quayholt.example"
-            },
-            "to": "ayaan.warsame@quayholt.example",
-            "subject": "A parcel is waiting for you at the front desk",
-            "time": "10:40",
-            "body": "Hi Ayaan,\nThere's a parcel for you at the front desk whenever you're passing.\nReception",
-            "auth": {
-              "spf": "pass",
-              "dkim": "pass",
-              "dmarc": "pass",
-              "envelopeFrom": "quayholt.example",
-              "replyTo": "reception@quayholt.example"
-            },
-            "truth": {
-              "isPhish": false,
-              "flags": [],
-              "whyFine": {
-                "default": "An ordinary reception notice from Quayholt's own address, nothing to sign in to or pay. Not everything in a bad hour is an attack."
               }
             }
           }

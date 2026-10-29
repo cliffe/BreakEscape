@@ -211,7 +211,7 @@ HOSTS = {
 LINES = {
     ('e8', 'defend'): (
         "You're covering a colleague's inbox. They clicked a convincing email, so someone else is using their account. Some signs are real, some are ordinary. Report anything that doesn't sit right.",
-        "That's the inbox sorted, thanks. The one move that works for every real sign is the same: report it and leave it be.",
+        "That's the inbox sorted, thanks. The one move that works for every real sign is the same: report it and let the team act.",
         'Thanks, Anjali.', 'Any time.'),
 }
 

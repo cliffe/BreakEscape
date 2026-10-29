@@ -24,8 +24,8 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e8_after_the_click_defend_done:
-        Anjali Rao: That's both sides done: you sent the email, then you sorted what it set off.
-        Anjali Rao: The one move that works for every real sign is the same, report it and leave it be. Nobody's ever in trouble for reporting.
+        Anjali Rao: That's both sides done: you took the red team's seat, then you sorted what turned up in the colleague's account.
+        Anjali Rao: The one move that works for every real sign is the same, report it and let the team act. Nobody's ever in trouble for reporting.
     - else:
         { phish_takeover_victim_attempts > 0:
             Anjali Rao: Good. The email's gone, and your colleague fell for it, the way most people eventually do. Now take their seat and see what someone else is doing with their account.

@@ -13,7 +13,7 @@
       "_localTells": "unexpected_sent_item, unrequested_reset and ransomware_note are account-takeover and malware signs with no built equivalent, so they are scenario-local to this set (00 section 2's CHANNEL_TELLS is untouched, and no SKILL_NAMES entry is added to phish-rules.js/triage.rb). Each is declared in channelTells with a flagChips label and a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's skill name), and every flagging message carries a factorStrings.<id>.redFlag sentence. Promote one to the shared library only if a 10 check item later scores it. unrequested_mfa_push and secrecy_or_bypass are shared-library tells and need no label.",
       "_playerSentAuth_note": "playerSentAuth is NOT carried in this fragment: it is erb-only (SET_ERB_ONLY_OK) and the flip-only auth read of the sent email, so it lives in full_only.json for the full erb and is kept out of the generated defend-only shell.",
       "title": "Ayaan's inbox after the click",
-      "brief": "You're covering Ayaan's inbox after the click. Seven things have turned up. For each one, choose Trust, Report, Delete or Verify (ring the service desk or Anjali on a number you already hold), then tick what you noticed. Reporting when you're unsure is always fine and never marked down.",
+      "brief": "You're covering Ayaan's inbox after the click. Six things have turned up. For each one, choose Trust, Report, Delete or Verify (ring the service desk or Anjali on a number you already hold), then tick what you noticed. Reporting when you're unsure is always fine and never marked down.",
       "scoringProfile": "awareness",
       "verifyVerdict": true,
       "feedbackMode": "immediate",
@@ -157,23 +157,6 @@
               "default": "IT's real address, a planned-outage notice that asks you for nothing and is on the intranet too; after a run of real signs it is tempting to report everything, but trusting this is right and verifying or reporting it still scores full."
             }
           }
-        },
-        {
-          "id": "e8_parcel",
-          "_note": "Row 7. Genuine, plain-ordinary: a reception notice from Quayholt's own address, nothing to sign in to or pay. Not everything in a bad hour is an attack. May be cut to reach six items.",
-          "from": { "name": "Quayholt Reception", "address": "reception@quayholt.example" },
-          "to": "ayaan.warsame@quayholt.example",
-          "subject": "A parcel is waiting for you at the front desk",
-          "time": "10:40",
-          "body": "Hi Ayaan,\nThere's a parcel for you at the front desk whenever you're passing.\nReception",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "reception@quayholt.example" },
-          "truth": {
-            "isPhish": false,
-            "flags": [],
-            "whyFine": {
-              "default": "An ordinary reception notice from Quayholt's own address, nothing to sign in to or pay. Not everything in a bad hour is an attack."
-            }
-          }
         }
       ]
     }
@@ -189,7 +172,7 @@
     "strings": {
       "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: look at what's public about a Quayholt colleague, then write one email, dressed up as the IT service desk, that asks them to sign in again. Then you swap seats. The colleague clicked, and now you're the one whose account is being used. Sort the signs that follow. Only that second part is scored.",
       "flipHeading": "Now it lands on you",
-      "flipIntro": "This is your email as Ayaan, the claims handler you sent it to, met it, and this time he signed in.",
+      "flipIntro": "This is your email as Ayaan met it. He is the claims handler you sent it to, and this time he signed in.",
       "flipDefenderLine": "The service desk never sends sign-in requests by email, whatever address they come from; that is the one thing that would have given it away.",
       "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, you're the one whose account is being used, sorting the signs that follow.",
       "flipMissed": "The defence is the same either way: next, you're the one whose account is being used, sorting the signs that follow.",
