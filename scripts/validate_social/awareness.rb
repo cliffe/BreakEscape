@@ -1637,6 +1637,18 @@ module ValidateSocial
           issues << err("#{cw}.answer lists the same bin twice") if answers.uniq.length != answers.length
           answered << answers.first
         end
+        if c.key?('acceptable')
+          accept = c['acceptable']
+          if !accept.is_a?(Array) || accept.empty?
+            issues << err("#{cw}.acceptable must be a non-empty array of bin ids")
+          else
+            accept.each do |a|
+              issues << err("#{cw}.acceptable '#{a}' is not one of the bins (#{ids.join(', ')})") unless ids.include?(a)
+              issues << warn_("#{cw}.acceptable '#{a}' is already an answer, so it is simply right, not cautious") if answers.include?(a)
+            end
+          end
+          issues << warn_("#{cw}.acceptable is set on an unscored drill; it is never read") if d['scored'] == false
+        end
         if c['locked'] == true
           issues << err("#{cw} is locked but has more than one accepted answer; a locked card has one fixed answer") if answers.length > 1
           issues << err("#{cw} is locked and confirmed: false; a locked card is always drawn") if c['confirmed'] == false

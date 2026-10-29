@@ -142,6 +142,11 @@ export class SortDrillMinigame extends SocialOverlayScene {
             dl.append(el('dt', null, `${i + 1}. ${b.label}`), el('dd', null, b.hint || ''));
         });
         if (this.config.bins.some((b) => b.hint)) p.appendChild(dl);
+        // Reopening after a close or reload starts the bank again (progress is not kept, by
+        // design); say so once so the learner is not surprised by a fresh card set (E17-m5). An
+        // explicit empty override (strings.reloadNote: '') suppresses the line.
+        const reload = this.config.strings?.reloadNote === '' ? '' : this.text('reloadNote');
+        if (reload) p.appendChild(el('p', 'sd-reload-note', reload));
         const start = el('button', 'sd-start sd-button minigame-button', this.text('start'));
         start.type = 'button';
         this.addEventListener(start, 'click', () => this._showStep('sort'));
@@ -253,7 +258,25 @@ export class SortDrillMinigame extends SocialOverlayScene {
 
     // ── bins board ───────────────────────────────────────────────────────────
 
-    /** Every bin as a column listing the cards put in it. `detail` adds each card's reason and, if scored, the answer. */
+    /**
+     * One card's verdict for the summary: the learner's pick is the column it sits in, this names
+     * whether that pick was right, an accepted cautious choice (neutral, never red), or wrong (with
+     * the right bin). An unscored drill marks only whether the pick fits the author's answer.
+     * Returns { tone, text }.
+     */
+    _summaryMark(card, binId) {
+        const names = answersOf(card).map((a) => this.binLabel(a)).join(' or ');
+        if (this.config.scored) {
+            const s = scoreCard(this.config, card, binId);
+            if (s.correct) return { tone: 'right', text: this.text('summaryRight') };
+            if (s.caution) return { tone: 'caution', text: this.text('summaryAcceptable', { bin: names }) };
+            return { tone: 'wrong', text: this.text('summaryWrong', { bin: names }) };
+        }
+        if (answersOf(card).includes(binId)) return { tone: 'fits', text: this.text('summaryFits') };
+        return { tone: 'suggest', text: this.text('summarySuggest', { bin: names }) };
+    }
+
+    /** Every bin as a column listing the cards put in it. `detail` adds each card's reason and its verdict. */
     _board(detail) {
         const board = el('div', `sd-board${detail ? ' sd-board-detail' : ''}`);
         board.setAttribute('role', 'group');
@@ -270,12 +293,11 @@ export class SortDrillMinigame extends SocialOverlayScene {
                 li.dataset.cardId = c.id;
                 li.appendChild(el('span', 'sd-col-text', c.situation));
                 if (detail) {
+                    const mark = this._summaryMark(c, b.id);
+                    li.dataset.mark = mark.tone;
+                    if (mark.tone === 'wrong') li.classList.add('sd-miss');
+                    li.appendChild(el('span', `sd-col-mark sd-mark-${mark.tone}`, mark.text));
                     if (c.reason) li.appendChild(el('span', 'sd-col-reason', c.reason));
-                    if (this.config.scored && !answersOf(c).includes(b.id)) {
-                        li.classList.add('sd-miss');
-                        li.appendChild(el('span', 'sd-col-answer',
-                            this.text('wrong', { bin: answersOf(c).map((a) => this.binLabel(a)).join(' or ') })));
-                    }
                 }
                 ul.appendChild(li);
             }

@@ -234,6 +234,23 @@
     color: #1d6a35;
 }
 
+/* The opt-in "pin" affordance (osint.pinHints): a visible cue that a block can be added to notes. */
+.ob-pin {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    margin-top: 4px;
+    padding: 2px 10px;
+    font-weight: 700;
+    font-size: 14px;
+    color: #4a3f22;
+    background: #fff3cf;
+    border: 2px solid #c9b878;
+}
+.ob-block:hover .ob-pin,
+.ob-block:focus-visible .ob-pin { background: #ffe9a8; border-color: #6b5f45; }
+
 .ob-icon { width: 16px; height: 16px; flex: 0 0 auto; image-rendering: pixelated; }
 
 .ob-feedback {

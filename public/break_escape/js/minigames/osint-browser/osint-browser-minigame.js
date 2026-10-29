@@ -615,10 +615,18 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         const held = fact ? isHeld(this.globals, fact) : false;
         const fb = this._feedback.get(id);
         const item = h('div', { class: `ob-item ob-${block.kind || 'p'}${this._flash === id ? ' just-noted' : ''}`, 'data-id': id });
+        // A visible "pin" affordance (opt-in: osint.pinHints) so it is clear a block can be
+        // selected to add it to notes; the 1px screen-reader hint alone left keyboard and sighted
+        // users with no cue (E14-M1). The block button is already the control, so the label on it
+        // is reachable. Default off keeps every other deployment unchanged.
+        const pin = this.osint.pinHints === true && !held
+            ? h('span', { class: 'ob-pin' }, icon('pin'),
+                h('span', { class: 'ob-pin-word', text: this.osint.pinLabel || 'Pin' }))
+            : null;
         const btn = h('button', { type: 'button', class: `ob-block${held ? ' is-noted' : ''}`, 'data-id': id,
             'data-kind': block.kind || 'p', 'data-fact': fact, 'data-focus': `block:${id}`, 'aria-describedby': HINT_ID },
             ...this._lines(block),
-            held ? h('span', { class: 'ob-badge' }, icon('mark-tick'), h('span', { class: 'ob-badge-word', text: 'Noted' })) : null);
+            held ? h('span', { class: 'ob-badge' }, icon('mark-tick'), h('span', { class: 'ob-badge-word', text: 'Noted' })) : pin);
         this.addEventListener(btn, 'click', (e) => {
             e.preventDefault?.();
             this.selectBlock(block);

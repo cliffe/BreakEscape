@@ -242,6 +242,8 @@
           "properties": {
             "profile": {"type": "string", "description": "Which showIf/profile set the browser reads (for example 'student')"},
             "title": {"type": "string"},
+            "pinHints": {"type": "boolean", "description": "Show a visible 'Pin' affordance on each not-yet-noted selectable block, so it is clear a block can be clicked to add it to notes. Default off (unchanged). Set true for learners unfamiliar with the browse-and-pin pattern"},
+            "pinLabel": {"type": "string", "description": "The word on the pin affordance when pinHints is on; default 'Pin'"},
             "sites": {"type": "array", "items": {"$ref": "#/definitions/socialOsintSite"}},
             "tools": {"type": "array", "items": {"$ref": "#/definitions/socialOsintTool"}}
           },
@@ -2104,6 +2106,7 @@
                   "id": {"type": "string", "minLength": 1},
                   "situation": {"type": "string", "minLength": 1},
                   "answer": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}, "minItems": 1}], "description": "A bin id, or a list of bin ids that are all accepted"},
+                  "acceptable": {"type": "array", "items": {"type": "string", "minLength": 1}, "description": "Scored drills only: extra bin ids (not the answer) that score as a cautious choice, earning a point and shown neutrally in the summary (never marked red). Use for a safe/ask-first option the brief promises is never wrong"},
                   "reason": {"type": "string", "minLength": 1},
                   "locked": {"type": "boolean", "description": "A deployment's overrides never change or drop this card"},
                   "confirmed": {"type": "boolean", "description": "false: never drawn (an organisation has not confirmed the card). Default true"},

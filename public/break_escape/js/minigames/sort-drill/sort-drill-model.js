@@ -12,10 +12,11 @@
 //   scoreCard(config, card, binId)  { correct, caution, points, max } for one drop
 //   scoreDrill(config, placements)  the whole drill's score, or an unscored summary
 //
-// Scoring (scored drills only): the right bin earns POINTS.correct, the config's
-// `alwaysScoresBin` earns POINTS.caution on a card it is not the answer to (so caution is never
-// punished to zero), any other bin earns nothing. An unscored drill (`scored: false`) gives no
-// points and no mark anywhere: `scoreDrill` returns the placements and nothing to show as a mark.
+// Scoring (scored drills only): the right bin earns POINTS.correct. A cautious bin earns
+// POINTS.caution instead of nothing (so playing safe is never punished to zero): a card may name
+// its own `acceptable` bins, and a drill may name one `alwaysScoresBin` that is cautious on every
+// card. Any other bin earns nothing. An unscored drill (`scored: false`) gives no points: it marks
+// each drop only as fitting the author's answer or not. `scoreDrill` returns the placements.
 //
 // Every string the learner reads has a default in DEFAULT_TEXT and a data override in
 // `config.strings`; bin labels and card text are data.
@@ -41,12 +42,19 @@ export const DEFAULT_TEXT = Object.freeze({
     newBadge: 'New',
     right: 'Right.',
     wrong: 'Not this one. It goes in {bin}.',
-    caution: 'Playing safe is never wrong. This one goes in {bin}.',
+    caution: 'Playing safe is never wrong. The clear-cut answer is {bin}.',
     teach: 'Suggested: {bin}.',
     teachFits: 'That works.',
     next: 'Next card',
     finish: 'See where they went',
     summaryHeading: 'Where the cards went',
+    reloadNote: 'If you close or reload, the cards start again from the top.',
+    // The summary's one-word verdict per card, in words as well as colour.
+    summaryRight: 'Right',
+    summaryAcceptable: 'Safe choice — never marked wrong',
+    summaryWrong: 'Best answer: {bin}',
+    summaryFits: 'That works',
+    summarySuggest: 'Better: {bin}',
     scoreLine: 'You put {correct} of {total} in the right bin.',
     doneLine: 'You sorted {total} cards.',
     done: 'Done',
@@ -89,6 +97,10 @@ function cleanCards(raw, binIds) {
         if (!isObj(c) || !isStr(c.id) || !isStr(c.situation) || seen.has(c.id)) continue;
         const answer = answersOf(c).filter((a) => binIds.includes(a));
         if (!answer.length) continue;
+        // `acceptable`: extra bins scored as caution (partly right, shown neutrally), not wrong.
+        // Real bins only, and never a bin already in the answer (that is simply right).
+        const acceptable = [...new Set((Array.isArray(c.acceptable) ? c.acceptable : [])
+            .filter((a) => isStr(a) && binIds.includes(a) && !answer.includes(a)))];
         seen.add(c.id);
         out.push({
             id: c.id,
@@ -97,7 +109,8 @@ function cleanCards(raw, binIds) {
             reason: isStr(c.reason) ? c.reason : '',
             locked: c.locked === true,
             confirmed: c.confirmed !== false,
-            new: c.new === true
+            new: c.new === true,
+            ...(acceptable.length ? { acceptable } : {})
         });
     }
     return out;
@@ -193,7 +206,8 @@ export function drawCards(config, { overrides = null, rng = Math.random } = {}) 
 export function scoreCard(config, card, binId) {
     if (!config.scored) return { correct: null, caution: false, points: 0, max: 0 };
     const correct = answersOf(card).includes(binId);
-    const caution = !correct && isStr(config.alwaysScoresBin) && binId === config.alwaysScoresBin;
+    const accept = Array.isArray(card.acceptable) ? card.acceptable : [];
+    const caution = !correct && ((isStr(config.alwaysScoresBin) && binId === config.alwaysScoresBin) || accept.includes(binId));
     return {
         correct,
         caution,

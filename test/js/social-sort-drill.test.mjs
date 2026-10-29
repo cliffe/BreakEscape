@@ -93,6 +93,23 @@ test('scoring: the right bin earns the most, the caution bin always earns a poin
     assert.equal(Model.scoreCard(noCaution, noCaution.cards[1], 'ask').points, 0);
 });
 
+test('a card can name its own acceptable bins, scored as caution (E17-M1)', () => {
+    const cfg = Model.normaliseConfig(scoredConfig({
+        alwaysScoresBin: undefined,
+        cards: [card('A', 'keep', { acceptable: ['ask'] }), card('B', 'bin')]
+    }));
+    assert.deepEqual(cfg.cards[0].acceptable, ['ask']);
+    assert.deepEqual(Model.scoreCard(cfg, cfg.cards[0], 'ask'), { correct: false, caution: true, points: 1, max: 2 });
+    assert.equal(Model.scoreCard(cfg, cfg.cards[0], 'keep').correct, true, 'the answer is still simply right');
+    assert.equal(Model.scoreCard(cfg, cfg.cards[0], 'bin').points, 0, 'any other bin still earns nothing');
+    // a card without acceptable and no caution bin behaves exactly as before (opt-in only)
+    assert.equal('acceptable' in cfg.cards[1], false);
+    assert.equal(Model.scoreCard(cfg, cfg.cards[1], 'ask').caution, false);
+    // bad entries drop: an id that is not a bin, or one already in the answer
+    const cfg2 = Model.normaliseConfig(scoredConfig({ cards: [card('A', 'keep', { acceptable: ['keep', 'ghost', 'ask', 'ask'] })] }));
+    assert.deepEqual(cfg2.cards[0].acceptable, ['ask']);
+});
+
 test('scoreDrill: counts, points and percent against the key; an unscored drill gives no mark', () => {
     const cfg = Model.normaliseConfig(scoredConfig());
     const r = Model.scoreDrill(cfg, cfg.cards, [{ id: 'A', bin: 'keep' }, { id: 'B', bin: 'ask' }, { id: 'C', bin: 'keep' }, { id: 'D', bin: 'bin' }]);
@@ -222,7 +239,15 @@ test('scored: a right drop is marked right, a wrong one gives the answer, and As
     const r = st(s).result;
     assert.deepEqual([r.correct, r.points, r.max, r.percent], [1, 3, 8, 38]);
     assert.match($(s, '.sd-score').textContent, /1 of 4/);
-    assert.equal($$(s, '.sd-miss').length, 3);
+    // The summary marks each card in words: right, a neutral cautious pick, or a red miss with the
+    // right bin. The caution pick (D in Ask first) is no longer marked a miss (E17-M1).
+    assert.equal($$(s, '.sd-miss').length, 2);
+    const marks = (bin) => $$(s, `.sd-col[data-bin="${bin}"] .sd-col-card`).map((n) => n.dataset.mark).sort();
+    assert.deepEqual(marks('keep'), ['right', 'wrong'], 'A right, B wrong');
+    assert.deepEqual(marks('bin'), ['wrong'], 'C wrong');
+    assert.deepEqual(marks('ask'), ['caution'], 'D is a cautious choice, not a miss');
+    assert.match($(s, '.sd-col[data-bin="ask"] .sd-mark-caution').textContent, /safe/i);
+    assert.match($(s, '.sd-col[data-bin="bin"] .sd-mark-wrong').textContent, /Ask first/);
 });
 
 test('a double drop is ignored: the first answer stands', () => {
@@ -264,6 +289,29 @@ test('unscored: teaching only, no mark anywhere and nothing recorded as one', ()
     assert.doesNotMatch($(s, '.sd-summary').textContent, /\d+ of \d+|%|score|right/i);
     assert.equal($$(s, '.sd-miss').length, 0);
     assert.match($(s, '.sd-score').textContent, /You sorted 3 cards/);
+    // E14-M4: even unscored, the summary says in words whether each pick fits the author's answer
+    // or there is a better bin; nothing is marked red.
+    assert.deepEqual($$(s, '.sd-col-card').map((n) => n.dataset.mark).sort(), ['fits', 'fits', 'suggest']);
+    assert.match($(s, '.sd-mark-suggest').textContent, /Better: Post/);
+});
+
+test('a per-card acceptable pick shows a neutral summary mark, never a red miss (E17-M1)', () => {
+    const s = open(scoredConfig({ alwaysScoresBin: undefined, cards: [card('A', 'keep', { acceptable: ['ask'] })] }));
+    click($(s, '.sd-start'));
+    drop(s, 'ask');
+    assert.equal(st(s).feedbackTone, 'caution');
+    click($(s, '.sd-next'));
+    assert.equal($$(s, '.sd-miss').length, 0);
+    assert.equal($(s, '.sd-col[data-bin="ask"] .sd-col-card').dataset.mark, 'caution');
+});
+
+test('the intro warns that closing or reloading restarts the cards, and the line is data (E17-m5)', () => {
+    const s = open(scoredConfig());
+    assert.match($(s, '.sd-reload-note').textContent, /start again/i);
+    const s2 = open(scoredConfig({ strings: { reloadNote: 'Reopening starts over.' } }));
+    assert.equal($(s2, '.sd-reload-note').textContent, 'Reopening starts over.');
+    const s3 = open(scoredConfig({ strings: { reloadNote: '' } }));
+    assert.equal($(s3, '.sd-reload-note'), null, 'an empty override hides the line');
 });
 
 test('the same overlay serves other bins and wording with no awareness ids', () => {
