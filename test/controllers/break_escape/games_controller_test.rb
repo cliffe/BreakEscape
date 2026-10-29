@@ -180,6 +180,50 @@ module BreakEscape
       assert_not_includes @game.player_state['unlockedRooms'], 'office'
     end
 
+    # Awareness world-play: the episode runner calls window.loadRoom(world.room),
+    # which fetches the room endpoint. Only the declared world room is opened.
+    test 'room endpoint serves the declared awareness world room without a key' do
+      data = @game.scenario_data.deep_dup
+      data['social'] = { 'awarenessEpisode' => { 'world' => { 'room' => 'office', 'startRoom' => 'reception' } } }
+      @game.update!(scenario_data: data)
+
+      get room_game_url(@game, room_id: 'office')
+
+      assert_response :success
+      assert_equal 'office', response.parsed_body['room_id']
+      assert_includes @game.reload.player_state['unlockedRooms'], 'office'
+    end
+
+    test 'room endpoint still returns 403 for a locked room the episode does not declare' do
+      data = @game.scenario_data.deep_dup
+      data['rooms']['vault'] = { 'type' => 'office', 'connections' => {}, 'locked' => true,
+                                 'lockType' => 'pin', 'requires' => '9999', 'objects' => [] }
+      data['social'] = { 'awarenessEpisode' => { 'world' => { 'room' => 'office', 'startRoom' => 'reception' } } }
+      @game.update!(scenario_data: data)
+
+      get room_game_url(@game, room_id: 'vault')
+
+      assert_response :forbidden
+      assert_not_includes @game.reload.player_state['unlockedRooms'], 'vault'
+    end
+
+    test 'room endpoint is unchanged for a scenario with no world block' do
+      data = @game.scenario_data.deep_dup
+      data['social'] = { 'awarenessEpisode' => { 'id' => 'e_no_world' } }
+      @game.update!(scenario_data: data)
+
+      get room_game_url(@game, room_id: 'office')
+
+      assert_response :forbidden
+      assert_not_includes @game.reload.player_state['unlockedRooms'], 'office'
+    end
+
+    test 'room endpoint is unchanged for a scenario with no social block' do
+      get room_game_url(@game, room_id: 'office')
+
+      assert_response :forbidden
+    end
+
     test 'SECURITY: submittedFlags pre-injection via update_task_progress is blocked' do
       # Build a game that has a submit_flags objective task.
       # Abandon @game first so the unique partial index allows the new in_progress record.
