@@ -342,10 +342,11 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     const reviewed = answers.filter((a) => reviewNeeded(a, messageFor(set, a.id)));
 
     // The defendOnly lead stands in for the write-stage recap, but its wording points at "the ones
-    // you were caught out by ... shown below" (E19 m-2); on a clean round nothing is below and the
-    // "nothing to pick over here" line carries it instead, so the lead is shown only when something
-    // was reviewed. On a non-clean round it reads as before.
-    if (variant === 'defendOnly' && reviewed.length) root.appendChild(el('p', 'aw-lead aw-defend-only', str(strings, 'defendOnly')));
+    // you were caught out by ... shown below" (E19 m-2); on a clean round (answers, nothing to
+    // review) nothing is below and the "nothing to pick over here" line carries it instead, so the
+    // lead is suppressed there. With no answers at all (nothing carries it) it still shows.
+    const cleanRound = reviewed.length === 0 && answers.length > 0;
+    if (variant === 'defendOnly' && !cleanRound) root.appendChild(el('p', 'aw-lead aw-defend-only', str(strings, 'defendOnly')));
 
     const summary = el('p', 'aw-summary');
     const bits = [];

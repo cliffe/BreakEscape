@@ -255,7 +255,8 @@ test('a local tell shows its skill name and red-flag sentence in the review and 
     click($(own, '.tri-start'));
     verdict(own, 'm1_it', 'trust');
     verdict(own, 'm2_payroll', 'report', ['senderTrust']);
-    assert.match($(own, '.tri-review-card').textContent, /Missed:.*They followed me through the door\./);
+    // F-E9-6: Report on a phish is the right verdict, so an un-ticked tell reads "Also worth noticing:".
+    assert.match($(own, '.tri-review-card').textContent, /Also worth noticing:.*They followed me through the door\./);
     verdict(own, 'm3_parcel', 'delete');
     verdict(own, 'm4_jed', 'trust');
     click($(own, '.tri-next'));
@@ -265,7 +266,7 @@ test('a local tell shows its skill name and red-flag sentence in the review and 
     click($(plain, '.tri-start'));
     verdict(plain, 'm1_it', 'trust');
     verdict(plain, 'm2_payroll', 'report', ['senderTrust']);
-    assert.match($(plain, '.tri-review-card').textContent, /Missed:.*badge_tailgate/);
+    assert.match($(plain, '.tri-review-card').textContent, /Also worth noticing:.*badge_tailgate/);
 });
 
 // ---- validator (items 3 to 6) -------------------------------------------------------------------
