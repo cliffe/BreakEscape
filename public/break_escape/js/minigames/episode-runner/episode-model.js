@@ -9,7 +9,10 @@
 //   readState(episode, raw)       a clean state from the stored global (or a fresh one)
 //   completeStage(episode, state, stageId, patch)   the state after a stage ends
 //   childLaunch(episode, stage)   what the stage opens: osint, build, mail or call, mfa,
-//                                 triage or nothing
+//                                 mistake (the consequence sandbox), triage or nothing
+//   mistakeBeats(episode)         the authored consequence beats, cleaned (ENG-04)
+//   montageProps(episode, choices)  what the montage flip shows: every beat with the line for the
+//                                 learner's option, else the unsafe option's (ENG-04)
 //   writeKind(episode)            'call' when attack.callId is set (E3), else 'mail'
 //   sentFromRecord(rec, targetId) the ids the write stage holds for the flip
 //   sentFromCall(callId, outcome) the same for a pretext call
@@ -27,8 +30,8 @@
 
 import { fieldLabel } from '../landing-page-builder/landing-page-model.js';
 
-export const STAGE_IDS = Object.freeze(['brief', 'osint', 'build', 'write', 'mfa', 'flip', 'defend', 'debrief', 'check']);
-export const ATTACK_STAGES = Object.freeze(['osint', 'build', 'write', 'mfa', 'flip']);
+export const STAGE_IDS = Object.freeze(['brief', 'osint', 'build', 'write', 'mfa', 'mistake', 'flip', 'defend', 'debrief', 'check']);
+export const ATTACK_STAGES = Object.freeze(['osint', 'build', 'write', 'mfa', 'mistake', 'flip']);
 /** The pretext call's outcome that counts as landed (06 N7). */
 export const CALL_LANDED = 'got_it';
 export const DEFAULT_STAGES = Object.freeze({
@@ -99,6 +102,16 @@ function cleanSent(raw) {
     };
 }
 
+/** The consequence sandbox's choices: { <beatId>: <optionId> }, strings only; null when there are none. */
+export function cleanMistake(raw) {
+    if (!isObj(raw)) return null;
+    const out = {};
+    for (const [beat, option] of Object.entries(raw)) {
+        if (isStr(beat) && isStr(option)) out[beat] = option;
+    }
+    return Object.keys(out).length ? out : null;
+}
+
 function cleanDefend(raw) {
     if (!isObj(raw)) return null;
     const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
@@ -144,14 +157,17 @@ export function readState(episode, raw) {
         sent: cleanSent(src.sent),
         defend: cleanDefend(src.defend)
     };
+    // Only a consequence episode holds choices (ENG-04); other states keep their exact shape.
+    const mistakeChoices = cleanMistake(src.mistakeChoices);
+    if (mistakeChoices) state.mistakeChoices = mistakeChoices;
     state.stage = nextStage(episode, state);
     return state;
 }
 
 /**
  * The state after `stageId` ends: it joins `done`, `stage` moves to the next
- * stage not done (null when finished), and `patch` (sent, defend) is merged.
- * The flip clears `sent`: it is held only to feed the flip (11 §5.2).
+ * stage not done (null when finished), and `patch` (sent, defend, mistakeChoices) is merged.
+ * The flip clears `sent` and `mistakeChoices`: they are held only to feed the flip (11 §5.2).
  */
 export function completeStage(episode, state, stageId, patch = {}) {
     const base = readState(episode, state);
@@ -160,7 +176,15 @@ export function completeStage(episode, state, stageId, patch = {}) {
     const next = { ...base, done };
     if ('sent' in patch) next.sent = cleanSent(patch.sent);
     if ('defend' in patch) next.defend = cleanDefend(patch.defend);
-    if (stageId === 'flip') next.sent = null;
+    if ('mistakeChoices' in patch) {
+        const choices = cleanMistake(patch.mistakeChoices);
+        if (choices) next.mistakeChoices = choices;
+        else delete next.mistakeChoices;
+    }
+    if (stageId === 'flip') {
+        next.sent = null;
+        delete next.mistakeChoices;
+    }
     next.stage = nextStage(episode, next);
     return next;
 }
@@ -177,6 +201,7 @@ export function writeKind(episode) {
  *   { kind: 'mail', sceneType: 'mail-client', params: { accountIds, defaultAccount, maxSends: 1, layout? } }
  *   { kind: 'call', sceneType: 'pretext-prep', params: { callId } }  (write, when attack.callId is set)
  *   { kind: 'mfa', sceneType: 'authenticator', params: { pushes, approvesAt, mode } }  (from episode.mfa)
+ *   { kind: 'mistake', sceneType: 'consequence-sandbox', params: { config, strings? } }  (from episode.mistake)
  *   { kind: 'triage', options: { triageSetId, stage?, conclusionTaskId } }
  *   null for brief, flip and debrief (drawn by the runner itself)
  */
@@ -205,6 +230,13 @@ export function childLaunch(episode, stage) {
         if (isObj(mfa.strings)) params.strings = mfa.strings;
         return { kind: 'mfa', sceneType: 'authenticator', params };
     }
+    if (stage === 'mistake') {
+        if (!isObj(episode?.mistake)) return null;
+        const params = { config: episode.mistake };
+        // strings.sandbox { intro?, progress?, confirm?, next?, finish? } over the scene's own lines.
+        if (isObj(episode.strings?.sandbox)) params.strings = episode.strings.sandbox;
+        return { kind: 'mistake', sceneType: 'consequence-sandbox', params };
+    }
     if (stage === 'write' && writeKind(episode) === 'call') {
         return { kind: 'call', sceneType: 'pretext-prep', params: { callId: attack.callId } };
     }
@@ -224,6 +256,52 @@ export function childLaunch(episode, stage) {
     }
     return null;
 }
+
+/**
+ * The consequence beats (ENG-04), cleaned: [{ id, situation, options: [{ id, label, safe, approvedRoute }] }].
+ * A beat without an id, or an option without an id, is dropped. Empty when `episode.mistake` is absent.
+ */
+export function mistakeBeats(episode) {
+    const beats = isObj(episode?.mistake) && Array.isArray(episode.mistake.beats) ? episode.mistake.beats : [];
+    return beats.filter((b) => isObj(b) && isStr(b.id)).map((b) => ({
+        id: b.id,
+        situation: isStr(b.situation) ? b.situation : '',
+        options: (Array.isArray(b.options) ? b.options : []).filter((o) => isObj(o) && isStr(o.id)).map((o) => ({
+            id: o.id, label: isStr(o.label) ? o.label : o.id, safe: o.safe === true, approvedRoute: o.approvedRoute === true
+        }))
+    }));
+}
+
+/**
+ * What the montage flip shows (ENG-04). One entry per beat, in the authored order, with the line
+ * from strings.flipMontageByChoice[beatId][optionId] for the option the learner took; when that
+ * option has no line (or the beat was not taken) the beat's unsafe option's line stands in, so a
+ * careful learner still sees the cost. `taken` is true when the option shown is the one the learner took.
+ *   { montage: true, flipBeat, beats: [{ id, situation, optionId, taken, safe, line }], lines: { <beatId>: line } }
+ */
+export function montageProps(episode, choices = null) {
+    const byChoice = isObj(episode?.strings?.flipMontageByChoice) ? episode.strings.flipMontageByChoice : {};
+    const picked = isObj(choices) ? choices : {};
+    const beats = mistakeBeats(episode).map((beat) => {
+        const lines = isObj(byChoice[beat.id]) ? byChoice[beat.id] : {};
+        const own = beat.options.find((o) => o.id === picked[beat.id]);
+        const unsafe = beat.options.find((o) => !o.safe) ?? null;
+        const useOwn = !!own && isStr(lines[own.id]);
+        const shown = useOwn ? own : unsafe;
+        return {
+            id: beat.id, situation: beat.situation,
+            optionId: shown?.id ?? null, taken: !!own && shown?.id === own.id, safe: shown?.safe === true,
+            line: shown && isStr(lines[shown.id]) ? lines[shown.id] : ''
+        };
+    });
+    const lines = {};
+    for (const b of beats) lines[b.id] = b.line;
+    const flipBeat = isObj(episode?.mistake) && isStr(episode.mistake.flipBeat) ? episode.mistake.flipBeat : null;
+    return { montage: true, flipBeat, beats, lines };
+}
+
+/** Whether the episode's flip is the montage (flip.mode "montage"). */
+export const isMontage = (episode) => isObj(episode?.flip) && episode.flip.mode === 'montage';
 
 /**
  * The ids the write stage holds for the flip; never the message text (11 §5.2).

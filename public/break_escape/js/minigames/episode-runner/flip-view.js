@@ -28,7 +28,13 @@
 // chosen pretext, state.sent.templateId) and a matching strings.flipDefenderLineByChoice entry, the
 // per-branch line shows (in the .aw-defender-line node); otherwise the single
 // strings.flipDefenderLine (see defenderLine()).
-// getState() -> { shown: 'message' | 'page' | 'call' | 'missed' | 'landedNoTells' | 'noSend', parts,
+// Montage mode (ENG-04, a consequence episode with flip.mode "montage"): the runner passes
+// { montage: true, beats: [{ id, situation, optionId, taken, safe, line }], flipBeat } instead. The view
+// draws flipHeading, an optional flipMontageIntro, then one .aw-montage-beat per beat, the flipBeat first
+// (marked .aw-montage-headline) and the rest in authored order, each a situation and the line for the
+// option shown. A learner's own option is marked .aw-montage-taken. The framing ("Your choice", "the
+// version where it was taken instead") is in the authored lines. flipDefenderLine is shown only when authored.
+// getState() -> { shown: 'message' | 'page' | 'call' | 'missed' | 'landedNoTells' | 'noSend' | 'montage', parts,
 // tells } (`shown` is the first part shown; `parts` lists every part; `tells` the sentences on screen).
 // Every string goes in with textContent.
 
@@ -43,6 +49,8 @@ const DEFAULTS = Object.freeze({
     flipPageIntro: 'This is the page you built, as the person who follows the link would see it.',
     flipCallIntro: 'This is your call from the other end of the line. Here is what would have caught it.',
     flipDefenderLine: 'People who fall for messages like this are not stupid. This one was built to look right.',
+    flipMontageHeading: 'Where each choice led',
+    flipMontageIntro: 'Here is where each of those choices led.',
     flipNoSend: 'You did not send a message this time, so there is nothing to flip. On to the next step.',
     flipMissed: 'Your attempt did not land this time, so there is nothing to show from the other side. The defence is the same either way. On to the next step.',
     flipMissedHeading: 'Nothing to replay this time',
@@ -113,8 +121,47 @@ export function tellSentence(id, message) {
     return PAGE_TELLS[id] || UNKNOWN_TELL;
 }
 
-export function renderFlipView(container, { message = null, page = null, call = null, aftermath = null, missed = false, landedNoTells = false, templateId = null, strings = {}, onContinue } = {}) {
+/** The montage: the flipBeat first, then the rest in order. Returns the beat ids shown. */
+function renderMontage(root, container, { beats, flipBeat, strings, onContinue }) {
+    const list = Array.isArray(beats) ? beats.filter((b) => isObj(b) && isStr(b.id)) : [];
+    const head = list.find((b) => b.id === flipBeat);
+    const ordered = head ? [head, ...list.filter((b) => b !== head)] : list;
+    root.appendChild(el('p', 'aw-lead aw-montage-intro', str(strings, 'flipMontageIntro')));
+    const wrap = el('ol', 'aw-montage');
+    wrap.setAttribute('aria-label', 'Where each choice led');
+    for (const b of ordered) {
+        const item = el('li', 'aw-montage-beat');
+        item.dataset.beat = b.id;
+        if (b === head) item.classList.add('aw-montage-headline');
+        if (b.taken) item.classList.add('aw-montage-taken');
+        if (isStr(b.optionId)) item.dataset.option = b.optionId;
+        if (isStr(b.situation)) item.appendChild(el('p', 'aw-montage-situation', b.situation));
+        if (isStr(b.line)) item.appendChild(el('p', 'aw-montage-line', b.line));
+        wrap.appendChild(item);
+    }
+    root.appendChild(wrap);
+    if (isStr(strings?.flipDefenderLine)) root.appendChild(el('p', 'aw-defender-line', strings.flipDefenderLine));
+    const next = el('button', 'aw-button aw-continue', str(strings, 'continue'));
+    next.type = 'button';
+    next.addEventListener('click', () => { if (typeof onContinue === 'function') onContinue(); });
+    root.appendChild(next);
+    container.appendChild(root);
+    const ids = ordered.map((b) => b.id);
+    return {
+        destroy() { root.remove(); },
+        getState() { return { shown: 'montage', parts: ['montage'], tells: [], beats: [...ids] }; }
+    };
+}
+
+export function renderFlipView(container, { message = null, page = null, call = null, aftermath = null, missed = false, landedNoTells = false, templateId = null, montage = false, beats = null, flipBeat = null, strings = {}, onContinue } = {}) {
     const root = el('section', 'aw-flip');
+    if (montage === true) {
+        const own = isStr(strings?.flipHeading) ? strings.flipHeading : DEFAULTS.flipMontageHeading;
+        const h = el('h2', 'aw-heading', own);
+        h.tabIndex = -1;
+        root.appendChild(h);
+        return renderMontage(root, container, { beats, flipBeat, strings, onContinue });
+    }
     const heading = el('h2', 'aw-heading', str(strings, 'flipHeading'));
     heading.tabIndex = -1;
     root.appendChild(heading);

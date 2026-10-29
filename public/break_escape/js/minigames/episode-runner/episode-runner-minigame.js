@@ -14,6 +14,8 @@
 //            outcome } for the flip and reopens itself once the chat has closed. A reopen
 //            from the kiosk after a reload finds the outcome set and moves on the same way.
 //   mfa      (E3) opens 'authenticator' with episode.mfa { pushes, approvesAt, mode }
+//   mistake  (consequence episodes, ENG-04) opens 'consequence-sandbox' with episode.mistake; the
+//            beat choices are held in the state for the montage flip (flip.mode "montage")
 //   flip     drawn here with renderFlipView (P7-B): the sent email, the built page (E5) or the
 //            call (E3); flipMissed when something went but did not land. Continue clears the
 //            held ids
@@ -57,7 +59,7 @@ import {
     stagesFor, stateKey, readState, completeStage, childLaunch, variantOf,
     sentFromRecord, findSentRecord, flipEntry, measurementCtx, defendSummary,
     writeKind, sentFromCall, callOutcomeKey, flipPage, flipCall, CALL_LANDED,
-    awarenessSettings, reportRouteFor, flipAftermathFor
+    awarenessSettings, reportRouteFor, flipAftermathFor, isMontage, montageProps
 } from './episode-model.js';
 
 /**
@@ -81,6 +83,7 @@ const STAGE_COPY = Object.freeze({
     build: { heading: 'Build', text: 'Build the page your message will link to. Close the builder when the page is ready.', button: 'Open the page builder' },
     write: { heading: 'Write', text: 'Write one message using what you found. The meter gives you hints before you send. Your first Send is final.', button: 'Open the mail client' },
     mfa: { heading: 'Sign-in prompts', text: 'You have the password, but the account still wants a tap on the target\u2019s phone. Choose when to fire the sign-in prompts and how many, then see what happens. Close it when you have seen enough.', button: 'Open the phone' },
+    mistake: { heading: 'Everyday choices', text: 'Work through a few ordinary choices from a normal day. Nothing here is scored, so choose what you would really do.', button: 'Make the choices' },
     defend: { heading: 'Defend', text: 'Now you are on the receiving end. Go through the inbox and decide what to do with each message.', button: 'Open the inbox' },
     check: { heading: 'Check', text: 'Go through these messages and decide what to do with each one. Your answers are recorded.', button: 'Start' }
 });
@@ -440,7 +443,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         // strings.stepLabels is the built home; ENG-01 adds episode.stepLabels, which wins.
         const own = isObj(this.strings.stepLabels) ? this.strings.stepLabels : null;
         const top = isObj(this.episode.stepLabels) ? this.episode.stepLabels : null;
-        const base = writeKind(this.episode) === 'call' ? { flip: 'The call' } : undefined;
+        let base = writeKind(this.episode) === 'call' ? { flip: 'The call' } : undefined;
+        // A consequence episode's flip is the montage of where the choices led (ENG-04).
+        if (isMontage(this.episode)) base = { ...base, flip: 'Where it led' };
         return own || top ? { ...base, ...own, ...top } : base;
     }
 
@@ -478,6 +483,8 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
      * tells, or a call that did not land.
      */
     _flipProps() {
+        // flip.mode "montage" (ENG-04): every beat, with where the learner's choice led.
+        if (isMontage(this.episode)) return montageProps(this.episode, this.state.mistakeChoices ?? null);
         const sent = this.state.sent;
         const globals = this.globals || {};
         if (sent?.kind === 'call') {
@@ -604,6 +611,16 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                 ...spec.params,
                 onComplete: (success, result) => {
                     if (isNormal(success, result)) this._completeWhileAway('mfa');
+                }
+            }));
+        } else if (spec.kind === 'mistake') {
+            child = this.launchChild(spec.sceneType, socialOverlayParams({
+                ...spec.params,
+                onComplete: (success, result) => {
+                    // Advance only once every beat is answered; closing part-way stays on the stage.
+                    if (isNormal(success, result) && result?.finished === true) {
+                        this._completeWhileAway('mistake', { mistakeChoices: result.mistakeChoices ?? {} });
+                    }
                 }
             }));
         } else if (spec.kind === 'call') {
@@ -752,6 +769,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                 stage: s.stage,
                 done: [...s.done],
                 sentHeld: !!s.sent,
+                mistakeHeld: !!s.mistakeChoices,
                 facilitated: this.facilitated,
                 paused: !!(this.pauseAfter && s.stage)
             }
