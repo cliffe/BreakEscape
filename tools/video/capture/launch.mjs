@@ -48,6 +48,7 @@ export const HUD_CSS = [
   '#health-ui-container',                                 // hearts
   '#combat-buttons',                                      // Block / Punch
   '#player-hud-buttons',                                  // top-right buttons (avatar etc.)
+  '#hud-info-label',                                      // the "A chair." / object description text box
   '#music-widget-btn-anchor', '#scenario-timer-display', '#toggle-buttons-container',
 ].join(',') + '{display:none !important}';
 
