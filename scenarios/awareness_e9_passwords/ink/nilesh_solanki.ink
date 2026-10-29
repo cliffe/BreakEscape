@@ -22,7 +22,7 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     { episode_e9_passwords_defend_done:
-        Nilesh Solanki: That's both sides done. A different password for every account, kept in a manager, three random words where you must remember one, and deny what you didn't start.
+        Nilesh Solanki: Both sides done. A different password for every account, kept in a manager, three random words for the few you must remember by heart, and deny what you didn't start.
         Nilesh Solanki: Nobody's ever in trouble for reporting.
     - else:
         { guess_e9_landed:
