@@ -4,7 +4,7 @@
   "_notes": {
     "mistake": "Paste at social.awarenessEpisode.mistake (ENG-04). The four everyday choices across the afternoon, unscored, one safe option per beat (the awareness.rb lint requires exactly one safe:true per beat, and approvedRoute must be the safe one). flipBeat is restart_prompt (aw2's one consequential choice, quoted back as the montage headline; the montage still shows every beat). A defendOnly shell must NOT carry this block (mistake_checks errors), which is why it lives here, not in defend.json.",
     "flip": "Paste at social.awarenessEpisode.flip (ENG-04). mode is 'montage', the only mode; with a mistake block present the flip replays the sandbox as a calm montage. A defendOnly shell must NOT carry this block either.",
-    "flipMontageByChoice": "Paste at social.awarenessEpisode.strings.flipMontageByChoice in the FULL erb only. Erb-only (STRINGS_ERB_ONLY_OK, added by ENG-04); on the parity allow-list (ENG-09d). Keyed beat then option; a line is authored for BOTH options of every beat, so ENG-04's unsafe-option fallback never fires for E19. The 'Your choice' / 'the version where it was taken instead' framing is in the text, not applied by the engine. flipHeading ('Later that afternoon') is NOT here: it stays in defend.json strings (E19 spec section 10), shared by both shells.",
+    "flipMontageByChoice": "Paste at social.awarenessEpisode.strings.flipMontageByChoice in the FULL erb only. Erb-only (STRINGS_ERB_ONLY_OK, added by ENG-04); on the parity allow-list (ENG-09d). Keyed beat then option; a line is authored for BOTH options of every beat, so ENG-04's unsafe-option fallback never fires for E19. The montage shows the line for the option the learner actually took, and the engine renders its own 'Your call' / 'Your call: the safe route' tag (flip-view.js), so the authored lines are plain sentences with no 'Your choice.' prefix (dropped 2026-10-29 to stop duplicating the engine tag, as E11 and E15 did). flipHeading ('Later that afternoon') is NOT here: it stays in defend.json strings (E19 spec section 10), shared by both shells.",
     "conceptPanel": "Paste at social.awarenessEpisode.strings.conceptPanel (ENG-09b array form) in the full erb. IDENTICAL to the value in e19/defend.json awarenessEpisode.strings.conceptPanel: the generator carries that into the defend-only shell too, so all four cards show in both variants (E19 spec section 12). Reproduced here only so the full erb's strings block carries the array. conceptPanel is value-exempt and erb-only-OK in the parity allow-list, so no allow-list change is needed."
   },
 
@@ -51,19 +51,19 @@
 
   "flipMontageByChoice": {
     "restart_prompt": {
-      "postpone_again": "Your choice. At a quarter to four, ransomware swept the floor, and the machines that had never restarted were the ones it locked. The fix that would have shut the door it used came out last month.",
+      "postpone_again": "At a quarter to four, ransomware swept the floor, and the machines that had never restarted were the ones it locked. The fix that would have shut the door it used came out last month.",
       "restart_or_schedule": "The version where you postponed it again: the machine that had missed last month's fix was the one the ransomware locked at a quarter to four. The ones that had restarted held."
     },
     "enable_content": {
-      "enable_it": "Your choice. The credit note had nothing to show. The moment you enabled it, a hidden program ran with your access and reached the shared drive you reach. Quayholt Protect caught this one, but it doesn't catch every one.",
+      "enable_it": "The credit note had nothing to show. The moment you enabled it, a hidden program ran with your access and reached the shared drive you reach. Quayholt Protect caught this one, but it doesn't catch every one.",
       "report_dont_enable": "The version where you enabled it: a hidden program would have run as you, reaching whatever you can reach. Reporting it and leaving it shut left nothing to clean up."
     },
     "security_alert": {
-      "allow_it": "Your choice. Allowing it let a hidden program run, quietly, one built to copy your saved passwords. Nothing looked wrong that afternoon; days later your saved password was used to sign in from a place you have never been.",
+      "allow_it": "Allowing it let a hidden program run, quietly, one built to copy your saved passwords. Nothing looked wrong that afternoon; days later your saved password was used to sign in from a place you have never been.",
       "keep_on_report": "The version where you turned it off: a hidden program would have run unseen and copied your saved passwords. Leaving protection on and telling the service desk got the file blocked for everyone."
     },
     "save_location": {
-      "leave_on_desktop": "Your choice. The file on the desktop was locked with everything else, and the desktop isn't backed up. The team spent Saturday rebuilding it by hand.",
+      "leave_on_desktop": "The file on the desktop was locked with everything else, and the desktop isn't backed up. The team spent Saturday rebuilding it by hand.",
       "move_to_drive": "The version where you left it on the desktop: it was locked with everything else, and the desktop isn't backed up. On the team drive it was restored by Monday."
     }
   },
