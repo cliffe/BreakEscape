@@ -1,0 +1,247 @@
+{
+  "_about": "E10 downloads-and-fake-checks defend fragment (opus48, awareness, Quayholt Insurance). Quayholt Insurance and everyone in it are fictional; every web address ends .example. triageSets holds only the episode set e10_browser_morning: a morning of browser screens on the E5 `page` card, extended with ENG-03a's new `page.state` values. E10's measurable topic (core_08/core_07) feeds the general_v2 check pair, built by 10_CHECK_FORMS.md's own generator, not this fragment (see E10_downloads_and_fake_checks.md section 14), so none of E10's five web tells is scored in any form. Copy triageSets and the awarenessEpisode keys into the E10 shells: the wiring agent builds the full erb, the generator (gen_e8_e17_shells.py) builds the defend-only shell. Depends on ENG-03a (the `page.state` browser screens and the `verdictLabels` relabel) for BOTH variants. Brand roster and cast: ../BRAND_SET.md (Quayholt Insurance). See e10/BRAND_ADDITIONS.md for the P11 entry.",
+
+  "_brandAdditions": {
+    "_use": "For BRAND_SET.md (Quayholt Insurance additions from E10). Fuller P11 entry is in e10/BRAND_ADDITIONS.md. E10 reuses E5's host Niamh Doherty and the built Quayholt IT agent Leila Nassar (voiced through the concept panel and Niamh's framing, not placed as a room NPC). It names Leo Brennan (operations assistant, the attack-half colleague, a 03_WORLD_AND_CAST no-clash pool name) and adds fictional supplier and vendor brands, all .example.",
+    "newNames": "Leo Brennan (leo.brennan@quayholt.example): operations assistant, the colleague who places the weekly Fernside order and meets the built fake check in the attack-half flip. A 03_WORLD_AND_CAST no-clash pool name (mid 20s, white Irish-English). Fernside Catering (fernside.example; order portal orders.fernside.example): a small family catering supplier Quayholt orders through; its genuine (compromised) portal hosts the attack-half fake check and defend rows 1-2. Fernside is from the core_08 Quayholt slots in concepts.md. Pagewright (pagewright.example; advert look-alike pagewright-download.example): a PDF software vendor from the module docs, used only in the concept teaching about software sources (the module docs wrote .co.uk/.com; swapped to .example per the awareness domain rule). Ashby Supplies (ashbysupplies.example; look-alike ashby-trade-login.example): a supplier from the module docs; not used in any item here, carried for the brand set. hauliernews.example: a fictional industry-news site (defend row 3's genuine page carrying a fake-update banner). secure-alert.example, addons.example, downloads.example: throwaway scam/store hosts for defend rows 5-7.",
+    "software": "Quayholt Apps (the staff software portal), Quayholt Protect (security software), DocShift (the approved PDF converter in Quayholt Apps): all from the core_08/core_07 Quayholt slots. Report route: the browser Report button, the 'Report an incident' form, or the security team on extension 4444.",
+    "domainSwapNote": "The module docs (core_08) write Pagewright as pagewright.co.uk / pagewright-download.com and Fernside/Ashby with mixed suffixes. The awareness product rule is every domain ends .example, so all are swapped to .example here. Flagged for the pre-ship web search (Pagewright, Fernside Catering, Ashby Supplies)."
+  },
+
+  "_mirrorPairs": {
+    "_use": "Two mirror pairs so 'anything unusual is a trap' cannot win (aw5). The hardest item (row 1, the fake check on a familiar hacked site) is taught in the brief and the concept panel before it appears (core_08 no-gotchas rule).",
+    "pair1": "Rows 1 and 2: the fake check (paste these keys to prove you are human) against the genuine CAPTCHA (tick a box). The tell is the instruction to your computer, not the word 'verify'.",
+    "pair2": "Rows 3 and 4: the fake update (a web page offering a browser update) against the genuine browser relaunch bar (the browser's own menu bar). The tell is whether it comes from a web page or from the browser itself."
+  },
+
+  "triageSets": [
+    {
+      "id": "e10_browser_morning",
+      "_prefix": "Prefix for the full episode (id e10_downloads_and_fake_checks). The defend-only shell (id e10_downloads_and_fake_checks_defend) sets episode_e10_downloads_and_fake_checks_defend_defend_ instead. No stage on purpose, as in E5/E9: the effective stage is 'mission', and an explicit stage with passPercent 0 draws a validator warning.",
+      "_localTells": "fake_check_paste, fake_update_prompt, dangerous_download, fake_alarm_callback and browser_permission_grab are all scenario-local to E10 (a tell used by only one set today, scored by no `10` check item). Each is declared in channelTells with a flagChips label, a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's result-breakdown name), and a factorStrings.<id>.redFlag sentence on the one card that flags it. Do NOT append any to the shared CHANNEL_TELLS / SKILL_NAMES. Promote one only if a second set uses it or a `10` check item scores it (ENG-08). lookalike_domain and padlock_myth are shared-library tells (reused from E5) and need no label; they are listed so the learner can still reach for them as chips.",
+      "_states": "Each item is the built `page` kind with an optional ENG-03a `page.state`. A genuine page with no state renders as the built E5 page. The set relabels the built three verdicts (trust -> 'Carry on', report -> 'Close and report', delete -> 'Go the trusted way', set.verdictLabels); the verdict ids and the awareness scoring are unchanged (report = full 60, delete = safe-but-partial 30, trust = miss 0 on a phish; trust = full 60 on a genuine page).",
+      "title": "A morning of Quayholt web pages",
+      "brief": "The kiosk has a morning's worth of web pages open, the kind that turn up while you're trying to work: fake downloads, 'verify you are human' boxes, pop-ups that want you to call. For each one, decide whether you'd carry on, close and report it, or go the trusted way, then tick what you noticed. The rule holds every time: no honest web page ever needs you to paste, run, install or call. Reporting when you're unsure is always fine and never marked down, and reporting fast after you've clicked or pasted is what limits the damage.",
+      "scoringProfile": "awareness",
+      "verifyVerdict": false,
+      "feedbackMode": "immediate",
+      "headerPanel": "off",
+      "glossary": "closed",
+      "channelTells": ["lookalike_domain", "padlock_myth", "fake_check_paste", "fake_update_prompt", "fake_alarm_callback", "browser_permission_grab", "dangerous_download"],
+      "verdictLabels": { "trust": "Carry on", "report": "Close and report", "delete": "Go the trusted way" },
+      "flagChips": {
+        "fake_check_paste": "A page telling you to paste or run something to prove you are human or to fix an error",
+        "fake_update_prompt": "A web page saying your browser or software is out of date and offering the update",
+        "dangerous_download": "A download you did not ask for, or a program pretending to be a document",
+        "fake_alarm_callback": "A full-screen alarm with a phone number to call",
+        "browser_permission_grab": "A page or extension asking to read or change everything in your browser, or to send you notifications"
+      },
+      "skillNames": {
+        "fake_check_paste": "Spotting a page that tells you to paste or run something",
+        "fake_update_prompt": "Spotting a fake 'your browser is out of date' prompt",
+        "dangerous_download": "Spotting a program pretending to be a document",
+        "fake_alarm_callback": "Spotting a fake alarm with a number to call",
+        "browser_permission_grab": "Judging what an extension or page is asking to read or change"
+      },
+      "outcome": { "setGlobalPrefix": "episode_e10_downloads_and_fake_checks_defend_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "e10_fake_check",
+          "_row": "1. Fake 'verify you are human' on a hacked familiar site. Phish -> Close and report. The clipboard reveal shows one plain-English line; the command is never shown.",
+          "kind": "page",
+          "subject": "From a bookmark: Fernside Catering order portal",
+          "time": "09:12",
+          "body": "To continue to the order portal, confirm you are human:\n1. Press Windows + R.\n2. Press Ctrl + V.\n3. Press Enter.",
+          "page": {
+            "url": "https://orders.fernside.example/verify",
+            "padlock": true,
+            "state": "fakeCheck",
+            "heading": "Verify you are human",
+            "clipboardReveal": "A hidden command that would run a program on your computer"
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["fake_check_paste"],
+            "perFlagNote": { "fake_check_paste": "A real check happens on the page: you tick a box or pick pictures. No genuine check ever tells you to press keys or paste something into your computer, and this one has quietly copied a command for you to run. The site is Fernside's own, but a familiar site is not a reason to do what it suddenly tells you; it has been broken into." },
+            "ifTrusted": "Following the steps would have run a hidden program, with nothing showing on screen. If you did it, report it straight away, do not restart, and do not clear anything.",
+            "reportReply": "Thanks. We've blocked that page, warned Fernside their site was hacked, and reported it. Fernside's own site is fine; it was broken into."
+          },
+          "factorStrings": { "fake_check_paste": { "redFlag": "A page telling you to paste or run something to prove you are human or to fix an error" } }
+        },
+        {
+          "id": "e10_genuine_captcha",
+          "_row": "2. Genuine CAPTCHA on Fernside's real site (no state; a tick field approximates the picture grid). Genuine -> Carry on. Mirror for row 1.",
+          "kind": "page",
+          "subject": "From a bookmark: Fernside Catering order portal",
+          "time": "09:20",
+          "body": "Confirm you are not a robot to continue.",
+          "page": {
+            "url": "https://orders.fernside.example/login",
+            "padlock": true,
+            "heading": "Order portal sign-in",
+            "fields": ["I am not a robot"],
+            "button": "Continue"
+          },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "fake_check_paste": "A genuine check only asks you to tick a box or pick pictures on the page; it never tells you to do anything to your computer.",
+              "default": "Fernside's own address, and a check that stays on the page: tick the box and carry on. The tell on row 1 was the instruction to your computer, not the word 'verify'."
+            }
+          }
+        },
+        {
+          "id": "e10_fake_update",
+          "_row": "3. Fake 'your browser is out of date' banner on a genuine news page. Phish -> Close and report.",
+          "kind": "page",
+          "subject": "From a link the manager asked you to read: industry news",
+          "time": "10:05",
+          "body": "Your browser is out of date and may be insecure. Download the latest version to continue.",
+          "page": {
+            "url": "https://news.hauliernews.example/article/depot-rates",
+            "padlock": true,
+            "state": "fakeUpdate",
+            "heading": "Update required",
+            "button": "Download update"
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["fake_update_prompt"],
+            "perFlagNote": { "fake_update_prompt": "A web page cannot know your browser needs updating, and no genuine update ever comes from a page; browsers update themselves and finish when you close and reopen them. At work, IT manages that." },
+            "ifTrusted": "The download would be a program pretending to be an update. Close the tab and report it.",
+            "reportReply": "Thanks. That's not how browsers update. We've reported the page and left a note for the news site."
+          },
+          "factorStrings": { "fake_update_prompt": { "redFlag": "A web page saying your browser or software is out of date and offering the update" } }
+        },
+        {
+          "id": "e10_browser_relaunch",
+          "_row": "4. The browser's own relaunch bar (genuine chrome, no address bar). Genuine -> Carry on (relaunch). Mirror for row 3.",
+          "kind": "page",
+          "subject": "Your browser's own menu bar",
+          "time": "10:18",
+          "body": "An update is ready. Relaunch to finish.",
+          "page": {
+            "url": "about:browser",
+            "padlock": false,
+            "state": "relaunchBar",
+            "heading": "An update is ready",
+            "button": "Relaunch"
+          },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "fake_update_prompt": "This one is the browser itself, in its own menu bar, not a web page; it downloaded the update in the background and only needs a relaunch.",
+              "default": "The browser's own bar, not a page: relaunching to finish an update is the normal, safe thing. A page offering an update is the trap; the browser's own bar is genuine."
+            }
+          }
+        },
+        {
+          "id": "e10_fake_alarm",
+          "_row": "5. Full-screen fake alarm with a support number. Phish -> Close and report; do not call. The alarm is silent, calm, always has a way out, hint after 30s (core_08 pitfall).",
+          "kind": "page",
+          "subject": "A page that took the whole screen",
+          "time": "11:02",
+          "body": "Your computer has been locked. Call support now on 0800 496 0000 to unlock it.",
+          "page": {
+            "url": "https://secure-alert.example/locked",
+            "padlock": true,
+            "state": "fullScreenAlarm",
+            "heading": "Your computer has been locked",
+            "alarm": { "hintAfterMs": 30000 }
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["fake_alarm_callback"],
+            "perFlagNote": { "fake_alarm_callback": "A genuine error message never includes a phone number. The alarm and the lock are just a web page; the number reaches whoever made it, who would ask you to install a remote-access tool. Don't call: press Esc, close the tab or the browser, and if it will not close, ring the service desk on the number you already hold." },
+            "ifTrusted": "Calling connects you to the scammer, not support. Press Esc, close the tab or the browser; if it will not close, ring the service desk on the number you already hold, and do not call the number on screen.",
+            "reportReply": "Thanks. Your computer was never locked; that was a page pretending. We've blocked it and reported it."
+          },
+          "factorStrings": { "fake_alarm_callback": { "redFlag": "A full-screen alarm with a phone number to call" } }
+        },
+        {
+          "id": "e10_extension_permission",
+          "_row": "6. Extension-permission grab. Phish -> Close and report (full marks); Go the trusted way (DocShift in Quayholt Apps, or ask IT) is safe-but-partial.",
+          "kind": "page",
+          "subject": "An extension store page a search result led to",
+          "time": "13:40",
+          "body": "Free PDF Tools. 4.8 stars, 2 million users. Add to your browser.",
+          "page": {
+            "url": "https://addons.example/free-pdf-tools",
+            "padlock": true,
+            "state": "extensionPermission",
+            "heading": "Add 'Free PDF Tools'?",
+            "permissions": ["Read and change all your data on all websites", "Read your browsing history"]
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["browser_permission_grab"],
+            "perFlagNote": { "browser_permission_grab": "An extension with that access can see and change everything you do in the browser, the finance system and the intranet included, and it can change what it does when it updates. Stars and a user count do not make it safe." },
+            "ifTrusted": "Adding it hands a stranger everything you do in the browser. Close and report it; get a PDF tool from Quayholt Apps (DocShift), or ask the service desk.",
+            "reportReply": "Thanks. We've reported that extension. DocShift in Quayholt Apps does the same job and is approved."
+          },
+          "factorStrings": { "browser_permission_grab": { "redFlag": "A page or extension asking to read or change everything in your browser, or to send you notifications" } }
+        },
+        {
+          "id": "e10_download_exe",
+          "_row": "7. Dangerous download (a program pretending to be a document). Phish -> Close and report.",
+          "kind": "page",
+          "subject": "A download that started from a link",
+          "time": "14:22",
+          "body": "Fernside_pricelist.pdf.exe has finished downloading. Open file?",
+          "page": {
+            "url": "https://downloads.example/fernside",
+            "padlock": true,
+            "state": "downloadBar",
+            "heading": "Download complete",
+            "download": { "filename": "Fernside_pricelist.pdf.exe" }
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["dangerous_download"],
+            "perFlagNote": { "dangerous_download": "You asked for a price list, which is a PDF or a spreadsheet, not a program. A name ending .pdf.exe is a program dressed up as a document." },
+            "ifTrusted": "Opening it would run a program, not show a price list. Don't open it; close and report it.",
+            "reportReply": "Thanks. We've removed it and asked Fernside to send the price list as a normal PDF."
+          },
+          "factorStrings": { "dangerous_download": { "redFlag": "A download you did not ask for, or a program pretending to be a document" } }
+        }
+      ]
+    }
+  ],
+
+  "awarenessEpisode": {
+    "role": "general_staff",
+    "company": "quayholt_insurance",
+    "brand": { "name": "Quayholt Insurance", "logoText": "QUAYHOLT", "accent": "#6b4c9a" },
+    "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: one practice page from ready-made parts, and the web pages you meet in a morning's work. No real site is touched and nothing runs on your computer.",
+    "defend": { "setId": "e10_browser_morning", "reportAlwaysVisible": true },
+    "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
+    "strings": {
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. First you're on the red team: build a fake 'verify you are human' check from ready-made parts on a supplier site, and send one email to bring a colleague to it. Then you swap seats and work through a morning of web pages, the kind that try to get you to download, paste or call. Only the pages are scored. Nothing is built for real and nothing is collected.",
+      "flipHeading": "Now it lands on a colleague",
+      "flipIntro": "This is the page you built, as Leo Brennan, the colleague you nudged to the Fernside portal, meets it when he opens the portal from his own bookmark. The parts picked out below are what make it believable.",
+      "flipDefenderLine": "Leo opened the Fernside portal between jobs, the way he does every week. The page sat on Fernside's own address, with the padlock and all, so nothing warned him off. The one thing it could not hide is the last step: whatever the pretext, the page still had to tell him to paste and run something on his computer, and no real check ever does.",
+      "flipNoSend": "Your page didn't go out this time, so there's nothing of yours to show. Next, the same kind of page turns up in a morning's browsing, and you're the one deciding what to do with it.",
+      "flipMissed": "The defence is the same either way: next, the same kind of page turns up in a morning's browsing, and you're the one deciding what to do with it.",
+      "flipMissedHeading": "Nothing to replay this time",
+      "flipLandedNoTells": "The page passed without a slip this time, but the paste-and-run step is always there to catch. Next, the same kind of page turns up in a morning's browsing, and you're the one deciding what to do with it.",
+      "noBlameLine": "These pages are built to look ordinary, and a familiar site that has been hacked is the hardest of all. A miss here just shows what to look for; reporting fast, even after you've clicked or pasted, is what limits the damage, and nobody is in trouble for it.",
+      "mondayCard": "On Monday: get software from Quayholt Apps, not from adverts or search results; read the address before you sign in; and if a page ever tells you to paste, run, install, update, call or allow, close it. If you did any of those, report it straight away using the route in the box below, and don't restart or clear anything.",
+      "defendOnly": "These pages are built to look like an ordinary morning's browsing, and anyone can be caught by one, a familiar site that has been hacked most of all. Any you were caught out by are shown below, with what gave each one away and the safe way through.",
+      "defendIntro": "Go through the morning's web pages and decide what to do with each one: carry on, close and report, or go the trusted way. The rule holds as you go: no honest web page ever needs you to paste, run, install or call. Take them at your own pace.",
+      "conceptPanel": [
+        { "heading": "Where software comes from", "text": "Start software and sites from a place you trust: the Quayholt Apps portal, a bookmark, or an address you typed yourself, never an advert or a search result. If the software you need isn't in Quayholt Apps, ask the service desk; they would rather help you find it than clean up afterwards." },
+        { "heading": "Read the address", "text": "Read the address from the right-hand end, where the real name sits. A padlock only means nobody can listen in on the connection; it does not make a site honest, and a fake page can show one too. A familiar address is still no reason to do what a site suddenly tells you: sites get hacked." },
+        { "heading": "The four tricks", "text": "A web page cannot run anything on your computer by itself, so it tries to get you to: a 'verify you are human' box that wants you to paste and run something, a fake 'your browser is out of date' prompt, a full-screen alarm with a number to call, or an extension that asks to read and change everything. None of them is real. Close the page." },
+        { "heading": "If you slipped", "text": "If a page talked you into pasting, running, installing, calling or allowing, report it straight away: the browser Report button, the 'Report an incident' form, or the security team on extension 4444. Don't restart the computer, don't clear anything, and don't run tools from the web. If you're asked to, unplug the network cable or turn off Wi-Fi and leave the machine on." },
+        { "heading": "The one rule", "text": "Start from a place you trust. Never let a web page drive your computer. If in doubt, close it and report it." }
+      ]
+    },
+    "_defendOnly": {
+      "_use": "Strings for the defend-only shell (e10_downloads_and_fake_checks_defend), which has no osint, build, write or flip stage. The generator copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown). The conceptPanel array is carried over, so all five concept cards show in the defend-only debrief (ENG-09b). This brief is identical to section 8b's defend-only brief; keep them the same.",
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. You've a morning of ordinary work to get through, and the web keeps getting in the way: downloads, 'verify you are human' boxes, pop-ups that want you to call. For each page, decide whether to carry on, close and report, or go the trusted way. Nothing here touches a real site or runs on your computer.",
+      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: a morning of web pages at a training kiosk. No real site is touched and nothing runs on your computer."
+    }
+  }
+}
