@@ -87,6 +87,7 @@ export function sourceRef(shot) {
   const src = shot.source; if (!src?.file) return null;
   return { dir: src.type === 'clip' ? 'clips' : 'takes', file: src.file };
 }
-export const isPlaceholderShot = (s) => !!s.placeholder;
+/** `placeholder: true` marks stand-in footage (the lint lists it; --final refuses it). A string `placeholder` is only the label of the test pattern shown when a take is missing. */
+export const isPlaceholderShot = (s) => s.placeholder === true;
 /** Shot types that count as a "card" for the join rule (text cards, the title card, logo cards). */
 export const isCardLike = (s) => s.type === 'card' || s.type === 'title';

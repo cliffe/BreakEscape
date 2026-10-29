@@ -1,0 +1,1062 @@
+{
+ "id": "m01_trailer60",
+ "title": "SAFETYNET: Licence to Hack, m01 60 s trailer (draft)",
+ "fps": 30,
+ "length": 60,
+ "status": "draft v1: structure per M01_TRAILER_V2_PLAN.md sections 2 and 8; several shots are placeholders (lint lists them)",
+ "music": {
+  "track": "Noir/Midnight Cipher Chase.mp3",
+  "analysis": "midnight_cipher_chase.json",
+  "start": 109.023,
+  "length": 60,
+  "gain_db": 0,
+  "fade_in": 0,
+  "fade_out": 2.0,
+  "alternatives": [
+   "SpyAction/Cold Bond Circuit.mp3 @53.847",
+   "SpyAction/Midnight Trigger.mp3 @92.994",
+   "CutScene/Shadow Code 1.mp3 @114.322"
+  ],
+  "analysis_60": "midnight_cipher_chase_60.json"
+ },
+ "beat": {
+  "bpm": 120,
+  "period": 0.5,
+  "offset": 0,
+  "note": "window start 109.023 s is a downbeat. Lifts at 12/18/26/34/52 s (RMS jumps x3.4, x1.4, x1.4, x1.3, x2.0); quiet bar at 48 s; strong hits at 52, 54, 56, 58 s."
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "spoiler_rules": [
+  "no full codes, PINs or passwords",
+  "no identity reveal",
+  "no ending or choice screens",
+  "keypad only partly entered"
+ ],
+ "aspects": {
+  "16:9": [
+   1920,
+   1080
+  ],
+  "9:16": [
+   1080,
+   1920
+  ],
+  "1:1": [
+   1080,
+   1080
+  ]
+ },
+ "source_size": [
+  1920,
+  1080
+ ],
+ "shots": [
+  {
+   "id": "title",
+   "type": "title",
+   "duration": 4.5,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "title": {
+    "art": "brand/c1_keyhole_hookpick6.png",
+    "svg": "brand/safetynet_licence_to_hack.svg",
+    "scale": {
+     "16:9": 12,
+     "9:16": 16,
+     "1:1": 15
+    },
+    "reveal_start": 3,
+    "reveal_frames": 30
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "title art only"
+   }
+  },
+  {
+   "id": "hax_hook",
+   "type": "gameplay",
+   "duration": 6,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t02_hax_briefing.trimmed.mkv",
+    "in": 2.0,
+    "out": 8.5
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Agent HaX",
+     "text": "We have a situation at Viral Dynamics Media. ENTROPY's Social Fabric cell is operating there.",
+     "start": 0.17,
+     "end": 6.23
+    }
+   ],
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.698,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.4635,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "caption": {
+    "9:16": true
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "HaX briefing line: names the cell and company, no culprit, code or ending"
+   }
+  },
+  {
+   "id": "card_mission",
+   "type": "card",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Your Mission",
+    "Begins NOW"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "m_lights",
+   "type": "gameplay",
+   "duration": 1,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t03_lights_on.trimmed.mkv",
+    "in": 5.05,
+    "out": 6.05
+   },
+   "note": "lights strike on the drop at 12.0 s (marker lights-on at 5.13 s in the take)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.58,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "lit reception and office, no text, no code"
+   }
+  },
+  {
+   "id": "m_lockpick",
+   "type": "gameplay",
+   "duration": 1,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04_lockpick.trimmed.mkv",
+    "in": 8.9,
+    "out": 9.9
+   },
+   "note": "minigame fills the screen: 1x shows the whole panel",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.36,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.36,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "lockpick minigame, pins setting"
+   }
+  },
+  {
+   "id": "m_phone",
+   "type": "gameplay",
+   "duration": 1,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_phone.trimmed.mkv",
+    "in": 5.0,
+    "out": 6.0
+   },
+   "note": "phone panel x .40-.61, y .02-.67 of the frame: 1.3x keeps it whole with margin",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.385,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.35,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.385,
+     "zoom": 1.3
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "phone chat before the HaX reply (no Maya reply visible)"
+   }
+  },
+  {
+   "id": "m_keypad",
+   "type": "gameplay",
+   "duration": 1,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06_keypad.trimmed.mkv",
+    "in": 4.75,
+    "out": 5.75
+   },
+   "note": "keypad panel is full height: 1x",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": true,
+    "note": "keypad shows two digits of four: partial and not the real code"
+   }
+  },
+  {
+   "id": "m_server",
+   "type": "gameplay",
+   "duration": 1,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t08_flag_station.trimmed.mkv",
+    "in": 0.5,
+    "out": 1.5
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.38,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "server room, no text"
+   }
+  },
+  {
+   "id": "m_replace",
+   "type": "gameplay",
+   "duration": 1,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "placeholder": true,
+   "placeholder_note": "montage A replacement shot (scout v2 part B): minigame, whole panel with margin, at most 2x",
+   "source": {
+    "file": "montageA_replacement.trimmed.mkv",
+    "in": 0,
+    "out": 1
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "placeholder"
+   }
+  },
+  {
+   "id": "card_real",
+   "type": "card",
+   "duration": 2,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Real",
+    "Hacking"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "real_clip",
+   "type": "gameplay",
+   "duration": 3.5,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "placeholder": true,
+   "placeholder_note": "old-trailer Kali footage until in-game VM capture exists (password on the Hydra line mosaicked in the clip)",
+   "source": {
+    "type": "clip",
+    "file": "real_hacking_kali.mp4",
+    "in": 0,
+    "out": 3.85
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "VM terminal footage; cracked password mosaicked; no flag values"
+   }
+  },
+  {
+   "id": "card_choices",
+   "type": "card",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Choices with",
+    "Consequences"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "npc_1",
+   "type": "gameplay",
+   "duration": 3.5,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "placeholder": true,
+   "placeholder_note": "NPC line 1: portrait view with the game's subtitle bar (take being recorded; 4.5 s max)",
+   "source": {
+    "file": "npc_line_1.trimmed.mkv",
+    "in": 0,
+    "out": 3.5
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "NPC 1",
+     "text": "(line to come)",
+     "start": 0.2,
+     "end": 3.3
+    }
+   ],
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.65,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.4635,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "caption": {
+    "9:16": true
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "placeholder"
+   }
+  },
+  {
+   "id": "npc_2",
+   "type": "gameplay",
+   "duration": 3.5,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "placeholder": true,
+   "placeholder_note": "NPC line 2: portrait view with the game's subtitle bar (take being recorded; 4.5 s max)",
+   "source": {
+    "file": "npc_line_2.trimmed.mkv",
+    "in": 0,
+    "out": 3.5
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "NPC 2",
+     "text": "(line to come)",
+     "start": 0.2,
+     "end": 3.3
+    }
+   ],
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.65,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.4635,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "caption": {
+    "9:16": true
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "placeholder"
+   }
+  },
+  {
+   "id": "npc_3",
+   "type": "gameplay",
+   "duration": 3.5,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "placeholder": true,
+   "placeholder_note": "NPC line 3: portrait view with the game's subtitle bar (take being recorded; 4.5 s max)",
+   "source": {
+    "file": "npc_line_3.trimmed.mkv",
+    "in": 0,
+    "out": 3.5
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "NPC 3",
+     "text": "(line to come)",
+     "start": 0.2,
+     "end": 3.3
+    }
+   ],
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.65,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.4635,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "caption": {
+    "9:16": true
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "placeholder"
+   }
+  },
+  {
+   "id": "card_uncover",
+   "type": "card",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Uncover",
+    "the Mystery"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "mb_1",
+   "type": "gameplay",
+   "duration": 1,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "placeholder": true,
+   "placeholder_note": "montage B: rooms and characters walking (take being recorded)",
+   "source": {
+    "file": "montageB_1.trimmed.mkv",
+    "in": 0,
+    "out": 1
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "placeholder"
+   }
+  },
+  {
+   "id": "mb_2",
+   "type": "gameplay",
+   "duration": 1,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "placeholder": true,
+   "placeholder_note": "montage B: rooms and characters walking (take being recorded)",
+   "source": {
+    "file": "montageB_2.trimmed.mkv",
+    "in": 0,
+    "out": 1
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "placeholder"
+   }
+  },
+  {
+   "id": "mb_3",
+   "type": "gameplay",
+   "duration": 1,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "placeholder": true,
+   "placeholder_note": "montage B: rooms and characters walking (take being recorded)",
+   "source": {
+    "file": "montageB_3.trimmed.mkv",
+    "in": 0,
+    "out": 1
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "placeholder"
+   }
+  },
+  {
+   "id": "mb_4",
+   "type": "gameplay",
+   "duration": 1,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "placeholder": true,
+   "placeholder_note": "montage B: rooms and characters walking (take being recorded)",
+   "source": {
+    "file": "montageB_4.trimmed.mkv",
+    "in": 0,
+    "out": 1
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "placeholder"
+   }
+  },
+  {
+   "id": "card_entropy",
+   "type": "card",
+   "duration": 2,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "And Hold Back",
+    "The Entropy!"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "derek_entropy",
+   "type": "gameplay",
+   "duration": 9,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t09_derek.trimmed.mkv",
+    "in": 46.7,
+    "out": 55.72
+   },
+   "dialogue": true,
+   "note": "derek_6 window 46.77-55.71: after the choice buttons (gone by 45.9 s) and before the next line (56.5 s)",
+   "lines": [
+    {
+     "speaker": "Derek Lawson",
+     "text": "Entropy is inevitable. Trust is a lie. Security through obscurity fails.",
+     "start": 0.07,
+     "end": 9.01
+    }
+   ],
+   "pushin": {
+    "from_zoom": 1,
+    "to_zoom": 3,
+    "focus": {
+     "x": 0.648,
+     "y": 0.2
+    },
+    "focus_by_aspect": {
+     "9:16": {
+      "x": 0.648,
+      "y": 0.3
+     },
+     "1:1": {
+      "x": 0.648,
+      "y": 0.2
+     }
+    },
+    "to_zoom_by_aspect": {
+     "9:16": 1.5
+    },
+    "ease": "inOut",
+    "crops_ui": true,
+    "ui_bottom_fraction": 0.24,
+    "start": 0.1,
+    "end": 0.75
+   },
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.65,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.453,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "caption": {
+    "9:16": true
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "antagonist line; no casualty figures, no Architect, no culprit-naming text"
+   }
+  },
+  {
+   "id": "card_play",
+   "type": "card",
+   "duration": 2,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Play Mission 1",
+    "Free!"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "card_now",
+   "type": "card",
+   "duration": 2,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Play Now!",
+    {
+     "text": "hacktivity.co.uk",
+     "scale": 0.4,
+     "gap": 0.9
+    }
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "end_logos",
+   "type": "card",
+   "kind": "logo",
+   "duration": 4,
+   "snap": true,
+   "join": {
+    "type": "glitch"
+   },
+   "logo": {
+    "assemble_frames": 24,
+    "morph_at": 0.5,
+    "morph_frames": 12
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Hacktivity Cyber Security Labs to Hacktivity Games"
+   }
+  }
+ ],
+ "effects": {
+  "cardJoin": "glitch",
+  "note": "set to 'dissolve' to render the pixel-dissolve version of the same edit; blur joins are never changed"
+ }
+}

@@ -31,7 +31,7 @@ mf += `,volume='${duckExpr}':eval=frame[music]`;
 parts.push(mf); mixIn.push('[music]');
 const used = [];
 for (const s of tl.shots) {
-  if (s.type !== 'gameplay' || !s.source?.file) continue;
+  if (s.type !== 'gameplay' || !s.source?.file || s.source.type === 'clip') continue; // clips (old-trailer placeholders) are silent
   const f = path.join(takesDir, s.source.file); if (!fs.existsSync(f)) continue;
   const has = spawnSync('ffprobe', ['-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=index', '-of', 'csv=p=0', f], { encoding: 'utf8' }).stdout.trim();
   if (!has) { console.error(`mix: ${s.id}: take has no audio stream`); continue; }

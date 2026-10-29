@@ -10,7 +10,7 @@ export const Placeholder: React.FC<{ shot: any; localSec: number; sourceSec: num
   const hue = (shot.index * 47) % 360;
   const x = 200 + ((localSec * 360) % 1500);
   const dialogue = !!shot.dialogue;
-  const label = shot.placeholder || shot.id;
+  const label = typeof shot.placeholder === 'string' ? shot.placeholder : (shot.placeholder_note || shot.id);
   return (
     <div style={{ position: 'absolute', left: 0, top: 0, width: 1920, height: 1080, overflow: 'hidden', background: `hsl(${hue} 35% 14%)`, imageRendering: 'pixelated' }}>
       <div style={{ position: 'absolute', inset: 0, backgroundImage: `linear-gradient(45deg, hsl(${hue} 30% 20%) 25%, transparent 25%, transparent 75%, hsl(${hue} 30% 20%) 75%), linear-gradient(45deg, hsl(${hue} 30% 20%) 25%, transparent 25%, transparent 75%, hsl(${hue} 30% 20%) 75%)`, backgroundSize: '128px 128px', backgroundPosition: '0 0, 64px 64px' }} />

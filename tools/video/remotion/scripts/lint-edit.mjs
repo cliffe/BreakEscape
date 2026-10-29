@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // Edit-list lint. Usage: lint-edit.mjs <edit.json> [--final] [--takes-dir DIR]
-// Errors stop the render. --final turns placeholder sources and unreviewed spoiler fields into errors.
+// Errors stop the render. --final turns placeholder shots, missing sources and unreviewed spoiler fields into errors.
+// Shot types: card, gameplay, title (first shot only). Joins: cut | glitch | blur | dissolve (glitch/blur/dissolve only next to a card or the title; 'card' follows effects.cardJoin).
 import fs from 'node:fs'; import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildTimeline, framingAt, visibleRect, ASPECTS } from '../src/timeline.js';
+import { buildTimeline, framingAt, visibleRect, ASPECTS, JOIN_FRAMES, isCardLike, sourceRef } from '../src/timeline.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '../../../..');
 const args = process.argv.slice(2); const final = args.includes('--final');
@@ -34,24 +35,35 @@ if (music.start != null && music.start + music.length > 0) {
 if (edit.duck?.db == null || edit.duck.db > -8 || edit.duck.db < -10.5) W('duck', 'plan asks for -8 to -10 dB under dialogue');
 if (!edit.audio?.fade_ms || edit.audio.fade_ms < 5 || edit.audio.fade_ms > 10) E('audio', 'fade_ms must be 5-10');
 const takeFiles = fs.existsSync(takesDir) ? new Set(fs.readdirSync(takesDir)) : new Set();
+const clipDirs = [path.join(repo, 'tools/video/assets/placeholders'), ...(process.env.BE_CLIPS_DIR ? [process.env.BE_CLIPS_DIR] : [])];
+const clipFiles = new Set(clipDirs.flatMap((d) => (fs.existsSync(d) ? fs.readdirSync(d) : [])));
+const brandDir = path.join(repo, 'tools/video/assets/brand');
+const placeholders = [];
+if (edit.effects?.cardJoin != null && !['glitch', 'dissolve'].includes(edit.effects.cardJoin)) E('edit', `effects.cardJoin must be glitch|dissolve, got ${edit.effects.cardJoin}`);
 const ids = new Set();
 
 tl.shots.forEach((s, i) => {
   const id = s.id || `shot#${i}`;
   if (!s.id) E(id, 'missing id'); else if (ids.has(s.id)) E(id, 'duplicate id'); ids.add(s.id);
-  if (!['card', 'gameplay'].includes(s.type)) E(id, `type must be card|gameplay, got ${s.type}`);
+  if (!['card', 'gameplay', 'title'].includes(s.type)) E(id, `type must be card|gameplay|title, got ${s.type}`);
+  if (s.type === 'title' && i !== 0) E(id, 'a title shot is only allowed as the first shot');
   if (!(s.duration > 0)) E(id, 'duration must be > 0');
-  const jt = s.join?.type || 'cut';
-  if (!['cut', 'glitch', 'blur'].includes(jt)) E(id, `join type must be cut|glitch|blur, got ${jt}`);
-  // join rule: anything other than a cut needs a card on at least one side
+  const raw = s.join?.type || 'cut';
+  if (!['cut', 'glitch', 'blur', 'dissolve', 'card'].includes(raw)) E(id, `join type must be cut|glitch|blur|dissolve, got ${raw}`);
+  const jt = s.joinType; // after effects.cardJoin
+  // join rule: anything other than a cut needs a card (or the title) on at least one side
   if (jt !== 'cut') {
     const prev = tl.shots[i - 1];
-    const cardSide = s.type === 'card' || (prev && prev.type === 'card');
+    const cardSide = isCardLike(s) || (prev && isCardLike(prev));
     if (!cardSide) E(id, `join '${jt}' between two gameplay shots (${prev ? prev.id : 'start'} -> ${id}): only cuts allowed`);
-    if (i === 0 && s.type !== 'card') E(id, `first shot has join '${jt}' but is not a card`);
-    const n = s.join?.frames;
-    if (jt === 'glitch' && !(n >= 6 && n <= 10)) E(id, `glitch frames must be 6-10, got ${n}`);
-    if (jt === 'blur' && !(n >= 6 && n <= 14)) E(id, `blur frames must be 6-14, got ${n}`);
+    if (i === 0 && !isCardLike(s)) E(id, `first shot has join '${jt}' but is not a card or title`);
+    if (i === 0 && jt === 'dissolve') E(id, 'dissolve needs an outgoing shot: not allowed on the first shot');
+    const n = s.joinFrames, fr = JOIN_FRAMES[jt];
+    if (fr && !(n >= fr.min && n <= fr.max)) E(id, `${jt} frames must be ${fr.min}-${fr.max}, got ${n}`);
+    if (jt === 'dissolve') {
+      const b = s.join?.block ?? edit.effects?.dissolveBlock ?? 24;
+      if (!Number.isInteger(b) || b < 8 || b % 4) E(id, `dissolve block must be an integer multiple of 4 (>= 8), got ${b}`);
+    }
   }
   if (s.type === 'gameplay' && i > 0 && tl.shots[i - 1].type === 'gameplay' && jt !== 'cut') { /* covered above */ }
   // beat snapping
@@ -71,17 +83,26 @@ tl.shots.forEach((s, i) => {
     if (final && sp.reviewed !== true) E(id, 'spoiler not reviewed (--final)');
     else if (sp.reviewed !== true) W(id, 'spoiler not yet reviewed');
   }
-  if (s.type === 'card') {
+  if (s.type === 'title') {
+    const t = s.title || {};
+    for (const f of [t.art || 'brand/c1_keyhole_hookpick6.png', t.svg || 'brand/safetynet_licence_to_hack.svg']) if (!fs.existsSync(path.join(repo, 'tools/video/assets', f))) E(id, `title asset not found in tools/video/assets: ${f}`);
+    for (const [a, v] of Object.entries(t.scale || {})) if (!Number.isInteger(v) || v < 1) E(id, `title.scale.${a} must be an integer >= 1, got ${v}`);
+    if (s.source) W(id, 'title has a source (ignored)');
+  } else if (s.type === 'card') {
     if (s.kind !== 'logo' && s.kind !== 'logo_end' && !(s.text?.length)) E(id, 'card needs text[]');
     if (s.source) W(id, 'card has a source (ignored)');
   } else {
     const src = s.source;
     if (!src?.file) E(id, 'gameplay shot needs source.file');
     else {
+      if (src.type && !['take', 'clip'].includes(src.type)) E(id, `source.type must be take|clip, got ${src.type}`);
       if (!(src.out > src.in)) E(id, 'source.out must be > source.in');
       if (src.out - src.in + 1e-6 < s.duration) E(id, `source span ${(src.out - src.in).toFixed(2)} s is shorter than duration ${s.duration} s`);
-      if (!takeFiles.has(src.file)) (final ? E : W)(id, `take file not found yet (${src.file}): placeholder pattern will render`);
+      const isClip = src.type === 'clip';
+      if (!(isClip ? clipFiles : takeFiles).has(src.file)) (final ? E : W)(id, `${isClip ? 'clip' : 'take'} file not found yet (${src.file}): placeholder pattern will render`);
+      if (isClip && s.placeholder !== true) W(id, 'clip source without placeholder: true (set it unless the clip is final footage)');
     }
+    if (s.placeholder === true) { placeholders.push(`${id}${src?.type === 'clip' ? ` (clip ${src.file} ${src.in}-${src.out})` : src?.file ? ` (take ${src.file})` : ' (no footage yet)'}${s.placeholder_note ? ': ' + s.placeholder_note : ''}`); if (final) E(id, 'placeholder shot (--final)'); }
     if (!s.audio || typeof s.audio.gain_db !== 'number') E(id, 'audio.gain_db missing');
     if (s.dialogue) {
       if (!s.audio?.dialogue || !s.audio.duck_music) E(id, 'dialogue shot needs audio.dialogue and audio.duck_music true');
@@ -99,7 +120,8 @@ tl.shots.forEach((s, i) => {
     }
   }
 });
-if (tl.shots.length && tl.shots[0].type !== 'card') W('edit', 'first shot is not a card');
+if (tl.shots.length && !isCardLike(tl.shots[0])) W('edit', 'first shot is not a card or title');
+if (placeholders.length) { console.log(`PLACEHOLDERS (${placeholders.length}):`); for (const p of placeholders) console.log('  -', p); }
 for (const w of warns) console.log('WARN ', w);
 for (const e of errors) console.log('ERROR', e);
 console.log(`lint ${path.basename(file)}: ${tl.shots.length} shots, ${total.toFixed(2)} s, ${errors.length} error(s), ${warns.length} warning(s)`);

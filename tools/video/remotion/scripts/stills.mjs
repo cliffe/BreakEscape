@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// stills.mjs <edit.json> <aspect> <outDir> [--only substr] [--edges]: (--edges adds the first and last clean frame of every gameplay shot) one still per card midpoint, transition boundaries and logo morph points.
+// stills.mjs <edit.json> <aspect> <outDir> [--only a,b] [--edges] [--at name=frame,name=frame]: one still per card midpoint, title (start/mid/end), end logos (labs/morph/games),
+// join (three points per effect: glitch/blur/dissolve) and gameplay shot midpoint; --edges adds the first and last clean frame of every gameplay shot; --at renders exactly the named global frames.
 // Bundles once and uses the renderer API (cheaper than a CLI call per frame). Run under nice -n 19.
 import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
 import { bundleWithTakes, cleanupBundle, reniceChildren, readProps, browserExecutable } from './bundle-lib.mjs';
@@ -11,11 +12,18 @@ const only = process.argv.includes('--only') ? process.argv[process.argv.indexOf
 const inputProps = readProps(editFile, aspect); const edit = inputProps.edit;
 const tl = buildTimeline(edit);
 const frames = [];
+const at = process.argv.includes('--at') ? process.argv[process.argv.indexOf('--at') + 1].split(',').map((x) => x.split('=')) : null;
+if (at) for (const [n, f] of at) frames.push([n, Number(f)]);
+else {
 for (const s of tl.shots) {
-  if (s.type === 'card') {
-    frames.push([`card_${s.id}_mid`, s.startFrame + Math.floor(s.frames * 0.55)]);
-    if (s.kind === 'logo') for (const [n, f] of [['labs', 0.2], ['morph1', 0.4 + 3 / s.frames], ['games', 0.58], ['morph2', 0.72 + 3 / s.frames], ['wordmark', 0.92]]) frames.push([`logo_${n}`, s.startFrame + Math.floor(s.frames * f)]);
-    if (s.kind === 'logo_end') frames.push([`logo_end_mid`, s.startFrame + Math.floor(s.frames * 0.5)]);
+  if (s.type === 'title') {
+    frames.push([`title_${s.id}_start`, s.startFrame + 4], [`title_${s.id}_mid`, s.startFrame + 14], [`title_${s.id}_end`, s.startFrame + Math.min(s.frames - 1, 60)]);
+  } else if (s.type === 'card') {
+    if (s.kind === 'logo') {
+      const c = s.logo || {}; const t1 = Math.round(s.frames * (c.morph_at ?? 0.5)), M = c.morph_frames ?? 12;
+      for (const [n, f] of [['assemble', 10], ['labs', Math.max(12, t1 - 8)], ['morph', t1 + Math.floor(M / 2)], ['games', Math.min(s.frames - 1, t1 + M + 20)]]) frames.push([`logo_${n}`, s.startFrame + f]);
+    } else if (s.kind === 'logo_end') frames.push([`logo_end_mid`, s.startFrame + Math.floor(s.frames * 0.5)]);
+    else frames.push([`card_${s.id}_mid`, s.startFrame + Math.floor(s.frames * 0.55)]);
   } else {
     frames.push([`shot_${s.id}_mid`, s.startFrame + Math.floor(s.frames * 0.5)]);
     if (process.argv.includes('--edges')) {
@@ -25,7 +33,12 @@ for (const s of tl.shots) {
     if (s.pushin) frames.push([`shot_${s.id}_end`, s.endFrame - 1]);
   }
 }
-tl.joins.forEach((j, i) => { if (!j) return; const s = tl.shots[i]; frames.push([`join_${j.type}_${s.id}_peak`, j.boundary - (i === 0 ? 0 : 1)]); if (i > 0) frames.push([`join_${j.type}_${s.id}_after`, j.boundary + 1]); });
+tl.joins.forEach((j, i) => {
+  if (!j) return; const s = tl.shots[i];
+  const pts = j.type === 'dissolve' ? [j.boundary, j.boundary + Math.floor((j.frames - 1) / 2), j.boundary + j.frames - 1] : [Math.max(0, j.from), j.boundary, j.to - 1];
+  pts.forEach((f, n) => frames.push([`join_${j.type}_${s.id}_${'abc'[n]}`, f]));
+});
+}
 fs.mkdirSync(outDir, { recursive: true });
 const serveUrl = await bundleWithTakes();
 reniceChildren();

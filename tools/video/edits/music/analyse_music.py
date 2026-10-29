@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Music analysis for the trailer edits. Usage (venv with librosa):
-  analyse_music.py <out_dir> <track.mp3> [<track.mp3> ...]
+  analyse_music.py [--length SECONDS] <out_dir> <track.mp3> [<track.mp3> ...]
+  (--length picks the window length to score, default 30; the output file is then <slug>_<length>.json)
 Writes <out_dir>/<slug>.json per track: duration, bpm, beat offset, bar grid,
 strongest hits, per-bar energy, and a best 30 s window (bar aligned) with a
 score for strong start / build / clean end. Run under `nice -n 19`."""
@@ -85,9 +86,11 @@ def analyse(path, target=30.0):
                 best_windows=cands[:3])
 
 if __name__ == "__main__":
-    out = sys.argv[1]; os.makedirs(out, exist_ok=True)
-    for p in sys.argv[2:]:
-        r = analyse(p); r["source"] = os.path.relpath(p, "/home/user/BreakEscape")
-        json.dump(r, open(os.path.join(out, slug(p) + ".json"), "w"), indent=1, default=float)
+    argv = sys.argv[1:]; target = 30.0; suffix = ""
+    if argv and argv[0] == "--length": target = float(argv[1]); suffix = "_%d" % round(target); argv = argv[2:]
+    out = argv[0]; os.makedirs(out, exist_ok=True)
+    for p in argv[1:]:
+        r = analyse(p, target); r["source"] = os.path.relpath(p, "/home/user/BreakEscape")
+        json.dump(r, open(os.path.join(out, slug(p) + suffix + ".json"), "w"), indent=1, default=float)
         w = r["best_windows"][0] if r["best_windows"] else {}
         print(slug(p), r["duration"], "bpm", r["bpm"], "off", r["beat_offset"], "best", w, flush=True)

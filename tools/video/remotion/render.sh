@@ -25,6 +25,8 @@ echo "== mux"
 $N ffmpeg -v error -y -i "$SCR/$TAG.silent.mp4" -i "$SCR/$TAG.norm.wav" -map 0:v -map 1:a -c:v copy -c:a aac -b:a 192k -movflags +faststart -shortest "$OUT/$TAG.mp4"
 echo "== srt + contact sheet"
 $N node scripts/make-srt.mjs "$EDIT" "$OUT/${ID}.srt"
-$N ffmpeg -v error -y -i "$OUT/$TAG.mp4" -vf "fps=1,scale=384:-2:flags=neighbor,tile=6x5:padding=4:color=black" -frames:v 1 "$OUT/$TAG.contact.png"
+# contact sheet: 30 frames spread over the whole video (1 per second for 30 s, 1 per 2 s for 60 s)
+CFPS=$(node -e "console.log(Math.min(1, 30 / JSON.parse(require('fs').readFileSync('$EDIT','utf8')).length))")
+$N ffmpeg -v error -y -i "$OUT/$TAG.mp4" -vf "fps=$CFPS,scale=384:-2:flags=neighbor,tile=6x5:padding=4:color=black" -frames:v 1 "$OUT/$TAG.contact.png"
 echo "done: $OUT/$TAG.mp4"
 rm -rf "$SCR"
