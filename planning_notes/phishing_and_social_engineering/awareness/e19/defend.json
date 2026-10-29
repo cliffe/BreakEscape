@@ -98,7 +98,7 @@
         },
         {
           "id": "e19_enable_content",
-          "_note": "Row 4. An unexpected 'enable content' document from a supplier look-alike. Builds on E2's macro concept (a recruiter's CV at Tarrowby) as an ordinary internal/supplier document; does not repeat E2's cards. The macro is described in plain words, never demonstrated: no payload, no file-format trick. Fernside Catering is reused from E10's _brandAdditions. E10 is now built; its Fernside register is fernside.example (genuine), orders.fernside.example (genuine portal) and orders-fernside.example (look-alike portal). E19's accounts@fernside-invoices.example is a deliberate, distinct invoice-email look-alike (a portal shape would not fit an invoice sender), accepted as intended rather than re-pointed (design review C1 MI2, BUILD_LOG 2026-10-29); see BRAND_ADDITIONS.md. The look-alike domain is NOT a scored flag here (the scored tell is the enable-content ask), so the reportReply no longer calls it a look-alike: it would contradict the engine's 'not a flag here' note on an unticked sender-mismatch chip (playtest F-E19-2, 2026-10-29).",
+          "_note": "Row 4. An unexpected 'enable content' document from a supplier look-alike. Builds on E2's macro concept (a recruiter's CV at Tarrowby) as an ordinary internal/supplier document; does not repeat E2's cards. The macro is described in plain words, never demonstrated: no payload, no file-format trick. Fernside Catering is reused from E10's _brandAdditions. E10 is now built; its Fernside register is fernside.example (genuine), orders.fernside.example (genuine portal) and orders-fernside.example (look-alike portal). E19's accounts@fernside-invoices.example is a deliberate, distinct invoice-email look-alike (a portal shape would not fit an invoice sender), accepted as intended rather than re-pointed (design review C1 MI2, BUILD_LOG 2026-10-29); see BRAND_ADDITIONS.md. The look-alike sender domain IS scored (senderTrust, the sender-address chip) beside the enable-content ask; ruling after blind playtest E19 B1 M-1, 2026-10-29: a careful player who ticks the sender chip must not be told 'Not a flag here'. The reportReply still names only the enable-content ask.",
           "from": { "name": "Fernside Catering", "address": "accounts@fernside-invoices.example" },
           "to": "you@quayholt.example",
           "subject": "Credit note 0423",
@@ -110,8 +110,9 @@
           },
           "truth": {
             "isPhish": true,
-            "flags": ["macro_enable_content"],
+            "flags": ["macro_enable_content", "senderTrust"],
             "perFlagNote": {
+              "senderTrust": "The sender's address is on fernside-invoices.example, with an added word. Fernside Catering is fernside.example, so this came from a separate domain anyone can register",
               "macro_enable_content": "'Enable content' switches on the small program (a macro) inside the file, and it runs with your access, able to reach what you can reach. A real document shows up as soon as you open it"
             },
             "ifTrusted": "Enabling it would run the file's hidden program as you, reaching whatever you can reach, before you ever saw a credit note.",
@@ -120,7 +121,7 @@
         },
         {
           "id": "e19_disable_protection",
-          "_note": "Row 5. A fake 'Quayholt IT Support' on a look-alike address asking the learner to allow or override what Quayholt Protect blocked. Teaches 'never switch off or override security software' (LO3). The look-alike IT address reuses the E5/E8 Quayholt look-alike shape; flagged in BRAND_ADDITIONS.md.",
+          "_note": "Row 5. A fake 'Quayholt IT Support' on a look-alike address asking the learner to allow or override what Quayholt Protect blocked. Teaches 'never switch off or override security software' (LO3). The look-alike IT address reuses the E5/E8 Quayholt look-alike shape; flagged in BRAND_ADDITIONS.md. It is scored as senderTrust beside disable_security_software (blind playtest E19 B1 M-1 ruling, 2026-10-29).",
           "from": { "name": "Quayholt IT Support", "address": "support@quayholt-it-support.example" },
           "to": "you@quayholt.example",
           "subject": "Action needed: allow the required update",
@@ -132,8 +133,9 @@
           },
           "truth": {
             "isPhish": true,
-            "flags": ["disable_security_software"],
+            "flags": ["disable_security_software", "senderTrust"],
             "perFlagNote": {
+              "senderTrust": "The sender's address is on quayholt-it-support.example, with extra words added. Quayholt is quayholt.example, so this came from a separate domain anyone can register",
               "disable_security_software": "Genuine IT never asks you to allow or turn off what the security software blocked; that's how an attacker gets their program to run as you. Leave protection on and allow nothing it blocked"
             },
             "ifTrusted": "Allowing what Quayholt Protect blocked would let the attacker's program run as you, the very thing the block stopped.",

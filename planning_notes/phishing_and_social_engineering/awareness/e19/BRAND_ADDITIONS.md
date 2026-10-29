@@ -43,6 +43,10 @@ names plus one reused supplier look-alike.
   intended rather than re-pointed to an E10 shape: a portal look-alike would not fit an
   invoice sender, and E19 never reuses the genuine `fernside.example` as a phish, so there is
   no learner-facing clash (design review C1 MI2, BUILD_LOG 2026-10-29).
+  The look-alike sender domain is a scored tell on this item (`senderTrust`, the sender-address
+  chip), as it is on the IT Support look-alike in defend row 5 (ruling after blind playtest
+  E19 B1 M-1, 2026-10-29); earlier text here that said it was deliberately not scored is
+  superseded.
 
 ## Name-clash grep (across `scenarios planning_notes docs`, run 2026-10-29)
 

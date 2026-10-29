@@ -263,7 +263,7 @@ LINES = {
         "That's the lot, thanks. When you're not sure, ask first, the service desk usually answers the same day; and if you make a mistake, report it.",
         'Thanks, Nilesh.', 'Any time.'),
     ('e19', 'defend'): (
-        "You're covering this desk inbox. Some of it is ordinary, some tries to open a door, and one colleague's screen has locked. Didn't expect it? Report it.",
+        "You're covering this desk inbox. Some of it is ordinary, some of it tries to open a door. If you didn't expect it or start it, report it.",
         "That's the inbox sorted, thanks. If you didn't start it, deny it and report it. If a screen locks, call it in, don't pay and don't touch it.",
         'Thanks, Anjali.', 'Any time.'),
     # E11 and E15: the brief's drafted lines ran over the 30-word cap, so they are trimmed here.
