@@ -1,0 +1,52 @@
+{
+  "_about": "Paste-ready data for the Sonnet agent who edits gen_checks_v2_shells.py (10_CHECK_FORMS.md). Holds the PERMUTE arrays for data_conduct's two forms (disjoint phish slots) and the CHECK_LINES host text for the two Carrholme hosts (Tomasz Wisniewski, the DPO, for the AB pair; Yusuf Demir, the information security lead, for the BA pair). JSON cannot hold Python tuple keys, so CHECK_LINES is given host-by-host, stage-by-stage; the generator's gen_e6_e7 check() keys CHECK_LINES by a (host_id, stage) tuple, and the 'python' block below shows the exact literal to paste. Hosts and sprite keys are placeholders until PixelLab. data_conduct is set at Carrholme Services (room_aw_carrholme / carrholme_services, on main in training_room.py); the EPISODES entry's company is 'Carrholme Services, a fictional company' and the item wording is Carrholme throughout.",
+  "forms": ["data_conduct_form_a", "data_conduct_form_b"],
+  "check_hosts": { "ab": "tomasz", "ba": "yusuf" },
+  "PERMUTE": {
+    "_about": "new[i] = old[order[i]]. Forms authored with phish at ordinal slots 2, 4, 6, 8 (0-based indices 1, 3, 5, 7). These two arrays put the phish in DISJOINT output slots: form A phish at 1-based slots {1, 3, 5, 7}, form B phish at 1-based slots {2, 4, 6, 8}. No ordinal slot is a phish in both forms (CHECK_PARITY_AUDIT B1). This is the same verified-disjoint pair general_v2 uses (same authored phish indices), re-confirmed by hand for data_conduct in the content agent's report. A pure reorder changes no counts and no flag multiset, so parity holds.",
+    "data_conduct_form_a": [1, 0, 3, 2, 5, 4, 7, 6, 9, 8],
+    "data_conduct_form_b": [0, 3, 2, 1, 4, 7, 6, 5, 8, 9]
+  },
+  "HOSTS": {
+    "_about": "Add these two HOSTS entries to gen_checks_v2_shells.py. Placeholder sprite keys until PixelLab. Both are Carrholme cast: Tomasz Wisniewski is E11's DPO (host and report recipient); Yusuf Demir is the new Carrholme information security lead (this fragment's _brandAdditions).",
+    "tomasz": { "id": "tomasz_wisniewski", "displayName": "Tomasz Wisniewski", "sprite": "male_office_worker_v2", "about": "Carrholme Services' data protection officer, 50s, Polish, in the UK 25 years (BRAND_SET.md, E11 additions). Receives the reports. Runs the before-and-after checks for the AB pair. Placeholder sprite until PixelLab." },
+    "yusuf": { "id": "yusuf_demir", "displayName": "Yusuf Demir", "sprite": "male_telecom", "about": "Carrholme Services' information security lead, 40s, British Turkish (this fragment's _brandAdditions). Runs the before-and-after checks for the BA pair; steady, practical. Placeholder sprite until PixelLab." }
+  },
+  "CHECK_LINES": {
+    "_about": "Each entry is [opening, saved, player-thanks, host-reply], the four strings ink_source() reads (before, after, choice, reply). The dialogue reviewer polishes these. Both hosts are new to the generator (neither appears in gen_e3_e5_shells.py), so author both in the tuple-keyed form the gen_e6_e7 check() expects.",
+    "tomasz_wisniewski": {
+      "pre": [
+        "I'm Tomasz, the data protection officer here. There's a short check on the kiosk first: ten items about data and conduct from a Carrholme inbox. Do what you'd normally do.",
+        "That's your first check saved. We'll do another after the training and see how the two compare.",
+        "Thanks, Tomasz.",
+        "You're welcome."
+      ],
+      "post": [
+        "Welcome back. Ten fresh items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.",
+        "Check saved. Thank you for doing it.",
+        "Thanks, Tomasz.",
+        "You're welcome."
+      ]
+    },
+    "yusuf_demir": {
+      "pre": [
+        "Yusuf here, I look after information security at Carrholme. Quick check on the kiosk before the training: ten items from a Carrholme inbox. Just do what you'd normally do.",
+        "First check's saved. You'll do another afterwards and we'll compare the two.",
+        "Thanks, Yusuf.",
+        "No problem."
+      ],
+      "post": [
+        "Back again. Ten new items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.",
+        "Check saved. Thanks for doing it.",
+        "Thanks, Yusuf.",
+        "No problem."
+      ]
+    }
+  },
+  "python": {
+    "_about": "The literals to paste into gen_checks_v2_shells.py. PERMUTE entries are added to the existing PERMUTE dict; CHECK_LINES is the tuple-keyed form the gen_e6_e7 check() expects. The EPISODES 'data_conduct' entry in 10_CHECK_FORMS.md sets company 'Carrholme Services, a fictional company', forms ('data_conduct_form_a', 'data_conduct_form_b'), check_hosts {'ab': 'tomasz', 'ba': 'yusuf'}, and verifyVerdict follows from the set (the set carries verifyVerdict: true).",
+    "PERMUTE_entries": "    'data_conduct_form_a': [1, 0, 3, 2, 5, 4, 7, 6, 9, 8],\n    'data_conduct_form_b': [0, 3, 2, 1, 4, 7, 6, 5, 8, 9],",
+    "CHECK_LINES_entries": "    ('tomasz_wisniewski', 'pre'): (\n        \"I'm Tomasz, the data protection officer here. There's a short check on the kiosk first: ten items about data and conduct from a Carrholme inbox. Do what you'd normally do.\",\n        \"That's your first check saved. We'll do another after the training and see how the two compare.\",\n        'Thanks, Tomasz.', \"You're welcome.\"),\n    ('tomasz_wisniewski', 'post'): (\n        \"Welcome back. Ten fresh items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.\",\n        \"Check saved. Thank you for doing it.\",\n        'Thanks, Tomasz.', \"You're welcome.\"),\n    ('yusuf_demir', 'pre'): (\n        \"Yusuf here, I look after information security at Carrholme. Quick check on the kiosk before the training: ten items from a Carrholme inbox. Just do what you'd normally do.\",\n        \"First check's saved. You'll do another afterwards and we'll compare the two.\",\n        'Thanks, Yusuf.', 'No problem.'),\n    ('yusuf_demir', 'post'): (\n        \"Back again. Ten new items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.\",\n        \"Check saved. Thanks for doing it.\",\n        'Thanks, Yusuf.', 'No problem.'),",
+    "EPISODES_entry": "'data_conduct': {\n    'frag': f'{AW}/checks_v2/data_conduct.json',\n    'role_word': 'data_conduct',\n    'role_label': 'all staff',\n    'company': 'Carrholme Services, a fictional company',\n    'forms': ('data_conduct_form_a', 'data_conduct_form_b'),\n    'check_hosts': {'ab': 'tomasz', 'ba': 'yusuf'},\n    'cybok': [{'ka': 'HF', 'topic': 'Human Factors',\n               'keywords': ['Security awareness', 'Data protection', 'Insider risk', 'Acceptable use']}],\n    'check': {\n        'name': 'Data and conduct check',\n        'items_pre': 'Ten items from a Carrholme inbox and phone: emails and a call about data and conduct.',\n        'items_post': 'Ten new items from a Carrholme inbox and phone, the same kinds as before.',\n        'scope': 'Authorised exercise at Carrholme Services, a fictional company. In scope: ten items from a Carrholme inbox and phone.',\n        'kiosk': 'A touch-screen kiosk set up as a Carrholme inbox and phone, with ten items ready for the {nth} check.',\n        'aim_desc': 'Go through ten items at the training kiosk.',\n        'end': 'Go through the ten items at the training kiosk.',\n        'minutes': 9,\n    },\n},"
+  }
+}
