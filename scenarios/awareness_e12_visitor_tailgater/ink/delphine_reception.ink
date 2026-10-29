@@ -51,7 +51,7 @@ Delphine Arvanitis: Morning. Can I help you?
     -> reaction(pretext_say("open_parcel"), "open_parcel")
 + { se_intel_merrin_partner_travel and pretext_recipient_name != "" } [It's the sample box for {pretext_recipient_name}, she's expecting it today.]
     -> reaction(pretext_say("name_drop_partner"), "name_drop_partner")
-+ { se_intel_merrin_badge_door } [My hands are full, could you just buzz me through?]
++ { se_intel_merrin_badge_door } [My hands are full and the badge's back in the van.]
     -> reaction(pretext_say("hands_full"), "hands_full")
 + [I'm double-parked with a full run on, any chance you can be quick?]
     -> reaction(pretext_say("double_parked"), "double_parked")

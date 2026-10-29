@@ -96,7 +96,7 @@
       {
         "id": "e12_reception_desk",
         "title": "Visitor and tailgater: the reception desk",
-        "brief": "You're on the Merrin & Sallow reception desk. Visitors come one at a time: some are expected, some are not, and one or two are trying to talk their way in. For each, choose Comply, Escalate, Refuse or Ring back, then tick what you noticed. Ring back here means check the day's list or call the host. There's no clock, and checking or reporting when you're unsure is always fine and never marked down.",
+        "brief": "You're on the Merrin & Sallow reception desk. Visitors come one at a time: some are expected, some are not, and one or two are trying to talk their way in. For each, choose Let them in, Report, Turn away or Check first, then tick what you noticed. Check first here means check the day's list or call the host. There's no clock, and checking or reporting when you're unsure is always fine and never marked down.",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
         "feedbackMode": "immediate",
@@ -124,6 +124,14 @@
           "uniform_pretext": "Seeing through a hi-vis, a clipboard or a job title used as proof",
           "not_expected": "Checking a visitor against today's list and their paperwork",
           "unlocked_screen": "Spotting a screen left unlocked and unattended"
+        },
+        "labels": {
+          "callActions": {
+            "comply": { "label": "Let them in", "hint": "Sign them in and let them through.", "past": "Let in" },
+            "escalate": { "label": "Report", "hint": "Tell facilities or security.", "past": "Reported" },
+            "refuse": { "label": "Turn away", "hint": "Politely decline and don't let them through.", "past": "Turned away" },
+            "verify_callback": { "label": "Check first", "hint": "Check the day's list or call the host.", "past": "Checked" }
+          }
         },
         "outcome": {
           "setGlobalPrefix": "episode_e12_visitor_tailgater_defend_",
