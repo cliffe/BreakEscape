@@ -343,7 +343,7 @@ EPISODES = {
                    'keywords': ['Deepfakes', 'Prompt injection', 'AI assistants', 'Security awareness']}],
         'defend': {
             'name': 'The AI assistant: what comes at you',
-            'brief': "You're on an authorised exercise at Brightwell Foods, a fictional company, which has switched on its own approved assistant. Messages are waiting: a supplier email, a voicemail and a video call. Some are real and some were built to look right, a voice you know, a face you trust. Decide what to do with each, and check another way when a message pushes you to move money, send data or sign in. Reporting or checking when you're unsure is always fine and never marked down.",
+            'brief': "You're on an authorised exercise at Brightwell Foods, a fictional company, which has switched on its own approved assistant. Messages are waiting: a supplier email, a voicemail and a video call. Some are real and some were built to look right, a voice you know, a face you trust, or a line slipped into an email for the assistant to act on. Decide what to do with each, and check another way when a message pushes you to move money, send data or sign in. Reporting or checking when you're unsure is always fine and never marked down.",
             'endGoal': 'Handle the supplier email, the voicemail and the video call at the training kiosk.',
             'aim': ('assistant_inbox_aim', 'Handle what comes at you', 'Go through the supplier email, the voicemail and the video call at the training kiosk.'),
             'task': ('handle_assistant_inbox', 'Handle the messages'),

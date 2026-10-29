@@ -9,7 +9,7 @@
   "flipStrings": {
     "_note": "Erb-only flip string for the FULL erb (scenarios/awareness_e13_ai_assistant/scenario.json.erb, social.awarenessEpisode.strings.flipDefenderLineByChoice). Moved out of e13/defend.json by the E13 MA2 fix (2026-10-29): the generator does NOT strip flipDefenderLineByChoice, so it leaked into the generated defend-only shell (which has no flip stage) and tripped strict-social ('... is not a social.templates id ... never shown'). Keyed on the attack's sent pretext template, so it only makes sense in a full episode; it is allow-listed as erb-only in test/js/social-awareness-fragment-erb-parity.test.mjs. The other flip strings (flipHeading, flipIntro, flipDefenderLine, flipNoSend, flipMissed, flipMissedHeading, flipLandedNoTells) stay in defend.json: the generator strips the first five for the defend-only shell, and flipMissedHeading/flipLandedNoTells remain there harmlessly (they reference no template id). The full shell carries this inline; this is the authoring record of where it belongs.",
     "flipDefenderLineByChoice": {
-      "inject_contacts": "You wrote that line to be read by a machine, and here it is, doing exactly what you meant: the assistant turned it into 'Mossgate also needs the full site contact list sent to a new address today'. The assistant read your hidden note as an instruction, because it cannot tell one from a real request.",
+      "inject_contacts": "You wrote that line to be read by a machine, and here it is, doing exactly what you meant: the assistant turned it into 'Mossgate also needs the full site contact list sent to a new address today'. The assistant read your hidden note as an instruction, because it cannot tell one from a real request. A real one hides where you would skim past it, white text, a tiny font or a comment, but the assistant reads every line the same.",
       "pretext_invoice": "You left the brief plain, so the assistant's summary is just the invoice, with nothing to act on. That is the difference one buried line makes: the assistant would have passed it on as readily as the invoice, because it cannot tell an instruction from a request."
     }
   },
@@ -38,7 +38,7 @@
         },
         "pretext_invoice": {
           "reply": "One cleaning invoice from Mossgate, due for payment. Nothing else to action.",
-          "empathy": "You left the brief plain, so there was nothing to surface. The assistant would have passed a hidden line on as readily as the invoice.",
+          "empathy": "You left the brief plain, so there was nothing for the assistant to surface here.",
           "hidden": {
             "button": "Show hidden text",
             "text": "Nothing is hidden in this brief. If you had buried a note for the assistant, it would have come back out here as a suggestion, because the assistant reads every line the same way."
@@ -55,43 +55,38 @@
       "_feedback": "WIRED 2026-10-29 into assistant.paste.feedback (clean/leftPersonal kept verbatim; leftPassword replaced with a short distinct verdict so it does not duplicate the paste.secretWarning that still shows on that path). One source.",
       "feedback": {
         "clean": "That's the way: you took out the child's health detail and the password, and the assistant still had everything it needed for the summary.",
-        "leftPersonal": "The summary came out fine, but a named child's health detail went into the tool with it, and it didn't need to. Take out what the task doesn't need.",
+        "leftPersonal": "The summary came out fine, but a named child's health detail went into the assistant with it, and it didn't need to. Take out what the task doesn't need.",
         "leftPassword": "A password slipped through, the worst one to leave in."
       },
       "lines": [
         {
           "id": "p_late",
           "text": "Order 4821 arrived two days late; customer wants a refund.",
-          "classLabel": "Fine to paste",
           "safe": true
         },
         {
           "id": "p_damaged",
           "text": "Chilled box 7745 arrived warm; reported as a cold-chain fault.",
-          "classLabel": "Fine to paste",
           "safe": true
         },
         {
           "id": "p_child",
           "text": "Caller mentioned her son Leo's nut allergy as the reason the order mattered.",
-          "classLabel": "Someone's personal detail",
           "safe": false
         },
         {
           "id": "p_password",
           "text": "Agent note: logged in as rota@brightwellfoods.example, password Autumn2026! to pull the record.",
-          "classLabel": "A secret, never paste",
           "safe": false,
           "secret": true
         },
         {
           "id": "p_refunds",
           "text": "Three refund requests this week, all on chilled lines.",
-          "classLabel": "Fine to paste",
           "safe": true
         }
       ],
-      "secretWarning": "A password went into the tool. Nothing the assistant does needs one, and now it's somewhere it shouldn't be. Report it so it can be changed.",
+      "secretWarning": "A password went into the assistant, and nothing it does needs one; now it's somewhere it shouldn't be. Report it so it can be changed.",
       "reportButton": "Report the password",
       "reportReply": "Thanks, we've changed that rota password and reminded the team never to paste one in."
     },

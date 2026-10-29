@@ -23,8 +23,8 @@
   "objectives": [
     {
       "aimId": "red_team_aim",
-      "title": "Plant the hidden instruction",
-      "description": "Write a supplier brief with a line hidden in it meant for the assistant to act on.",
+      "title": "Write the supplier brief",
+      "description": "Write a supplier brief for the assistant to summarise. You choose whether to slip in a line meant for it to act on.",
       "status": "active",
       "order": 0,
       "tasks": [
@@ -51,7 +51,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "AI assistant episode done",
-        "body": "You've planted one hidden line, then sat with the assistant and handled a supplier email, a voicemail and a video call yourself, so this episode is finished."
+        "body": "You've written a supplier brief and seen how the assistant handled it, then sat with the assistant and dealt with a supplier email, a voicemail and a video call yourself, so this episode is finished."
       },
       "tasks": [
         {
@@ -142,7 +142,7 @@
                 "hidden_instruction"
               ],
               "perFlagNote": {
-                "hidden_instruction": "The line was written for the assistant, not for you; the assistant can't tell it from a real request."
+                "hidden_instruction": "The line was written for the assistant, not for you; the assistant can't tell it from a real request. A real one hides as white text or a tiny font you skim past, but the assistant reads it like any other line."
               },
               "ifTrusted": "Brightwell's site contact list would go to an address the sender controls.",
               "reportReply": "Thanks, we pulled the brief and warned anyone whose assistant summarises the shared inbox."
@@ -200,12 +200,10 @@
               "isPhish": true,
               "critical": true,
               "flags": [
-                "deepfake_request",
-                "vish_callback_pressure"
+                "deepfake_request"
               ],
               "perFlagNote": {
-                "deepfake_request": "It sounds exactly like Tom, and a voice on its own proves nothing; the number isn't his.",
-                "vish_callback_pressure": "The one check that works whoever is speaking is ringing Tom on the number you already hold."
+                "deepfake_request": "It sounds exactly like Tom, and a voice on its own proves nothing; the number isn't his. Ringing Tom on the number you already hold is the one check that works."
               },
               "ifTrusted": "£200 goes to a stranger; the real Tom never called.",
               "reportReply": "Thanks, the real Tom answered his own phone and hadn't called."
@@ -278,13 +276,15 @@
                 "deepfake_request",
                 "secrecy_or_bypass",
                 "borrowed_authority",
-                "lookalike_domain"
+                "lookalike_domain",
+                "vish_callback_pressure"
               ],
               "perFlagNote": {
                 "deepfake_request": "Both faces are perfect and both are fake; a video call is not proof of who is on it.",
                 "lookalike_domain": "The meeting link is brightwell-board.example, not brightwellfoods.example, and the call is tagged External.",
                 "secrecy_or_bypass": "'In confidence, today, before the board' leaves no time and no one to check with.",
-                "borrowed_authority": "The CEO's and finance manager's faces are doing the job a check should do."
+                "borrowed_authority": "The CEO's and finance manager's faces are doing the job a check should do.",
+                "vish_callback_pressure": "You offered to ring back on the directory number and the caller shut it down with 'there's no time'; a genuine colleague never stops you checking."
               },
               "ifTrusted": "Brightwell's customer list leaks to the people who staged the call.",
               "reportReply": "Thanks, the real Ravinder was on his mobile in Lisbon and knew nothing about it."
@@ -378,7 +378,7 @@
         "flipIntro": "Here is the brief you wrote, through the eyes of Brightwell Assist, the firm's new helper. The assistant has just summarised the shared inbox.",
         "flipDefenderLine": "An assistant can't tell an instruction in an email from a request from your boss, so a line hidden in a supplier brief becomes a suggestion it hands to a colleague. You don't need to spot a deepfake or a planted line every time. You need to check another way before you move money, send data or sign in.",
         "flipDefenderLineByChoice": {
-          "inject_contacts": "You wrote that line to be read by a machine, and here it is, doing exactly what you meant: the assistant turned it into 'Mossgate also needs the full site contact list sent to a new address today'. The assistant read your hidden note as an instruction, because it cannot tell one from a real request.",
+          "inject_contacts": "You wrote that line to be read by a machine, and here it is, doing exactly what you meant: the assistant turned it into 'Mossgate also needs the full site contact list sent to a new address today'. The assistant read your hidden note as an instruction, because it cannot tell one from a real request. A real one hides where you would skim past it, white text, a tiny font or a comment, but the assistant reads every line the same.",
           "pretext_invoice": "You left the brief plain, so the assistant's summary is just the invoice, with nothing to act on. That is the difference one buried line makes: the assistant would have passed it on as readily as the invoice, because it cannot tell an instruction from a request."
         },
         "flipNoSend": "Your brief didn't go out this time, so there's nothing of yours to show. Next you sit with the assistant for real work and handle what comes at you.",
@@ -387,7 +387,7 @@
         "flipLandedNoTells": "It read as an ordinary brief with nothing to catch this time. Next you sit with the assistant for real work and handle what comes at you.",
         "defendIntro": "Go through the messages and decide what to do with each one. You can't reliably spot a fake voice or face, so when a message asks for money, data or a sign-in, check another way, on a number or channel you already hold. Work through them at your own pace.",
         "noBlameLine": "The demo fools nearly everyone, and it was built to; the assistant is useful and most of what it writes is right. A miss just shows where to check next time.",
-        "mondayCard": "On Monday: before you paste into the assistant, take out what the task doesn't need and never paste a password; before you send what it writes, check the figures and the claims against the source; and if a call, video or email pushes you to move money, send data or sign in, stop and check another way, using the route in the box below.",
+        "mondayCard": "On Monday: an assistant can't tell an instruction in an email from a request from a colleague, so when a summary suggests you do something, check where that came from before you act on it. Keep passwords and personal details out of anything you paste into it, and check the figures and claims in what it writes against the source. And if a call, video or email pushes you to move money, send data or sign in, stop and check another way, using the route in the box below.",
         "defendOnly": "These messages were built to look right, a real supplier's address, a voice you know, a face you trust. Any you were caught out by are shown below, with what gave each one away and why checking another way works whoever is speaking.",
         "conceptPanel": {
           "heading": "Where the fakes came from",
@@ -420,7 +420,7 @@
             },
             "pretext_invoice": {
               "reply": "One cleaning invoice from Mossgate, due for payment. Nothing else to action.",
-              "empathy": "You left the brief plain, so there was nothing to surface. The assistant would have passed a hidden line on as readily as the invoice.",
+              "empathy": "You left the brief plain, so there was nothing for the assistant to surface here.",
               "hidden": {
                 "button": "Show hidden text",
                 "text": "Nothing is hidden in this brief. If you had buried a note for the assistant, it would have come back out here as a suggestion, because the assistant reads every line the same way."
@@ -437,41 +437,36 @@
             {
               "id": "p_late",
               "text": "Order 4821 arrived two days late; customer wants a refund.",
-              "classLabel": "Fine to paste",
               "safe": true
             },
             {
               "id": "p_damaged",
               "text": "Chilled box 7745 arrived warm; reported as a cold-chain fault.",
-              "classLabel": "Fine to paste",
               "safe": true
             },
             {
               "id": "p_child",
               "text": "Caller mentioned her son Leo's nut allergy as the reason the order mattered.",
-              "classLabel": "Someone's personal detail",
               "safe": false
             },
             {
               "id": "p_password",
               "text": "Agent note: logged in as rota@brightwellfoods.example, password Autumn2026! to pull the record.",
-              "classLabel": "A secret, never paste",
               "safe": false,
               "secret": true
             },
             {
               "id": "p_refunds",
               "text": "Three refund requests this week, all on chilled lines.",
-              "classLabel": "Fine to paste",
               "safe": true
             }
           ],
-          "secretWarning": "A password went into the tool. Nothing the assistant does needs one, and now it's somewhere it shouldn't be. Report it so it can be changed.",
+          "secretWarning": "A password went into the assistant, and nothing it does needs one; now it's somewhere it shouldn't be. Report it so it can be changed.",
           "reportButton": "Report the password",
           "reportReply": "Thanks, we've changed that rota password and reminded the team never to paste one in.",
           "feedback": {
             "clean": "That's the way: you took out the child's health detail and the password, and the assistant still had everything it needed for the summary.",
-            "leftPersonal": "The summary came out fine, but a named child's health detail went into the tool with it, and it didn't need to. Take out what the task doesn't need.",
+            "leftPersonal": "The summary came out fine, but a named child's health detail went into the assistant with it, and it didn't need to. Take out what the task doesn't need.",
             "leftPassword": "A password slipped through, the worst one to leave in."
           }
         },

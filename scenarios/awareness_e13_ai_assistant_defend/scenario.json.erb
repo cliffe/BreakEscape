@@ -1,7 +1,7 @@
 {
   "scenario_id": "awareness_e13_ai_assistant_defend",
   "scenario_name": "The AI assistant: what comes at you",
-  "scenario_brief": "You're on an authorised exercise at Brightwell Foods, a fictional company, which has switched on its own approved assistant. Messages are waiting: a supplier email, a voicemail and a video call. Some are real and some were built to look right, a voice you know, a face you trust. Decide what to do with each, and check another way when a message pushes you to move money, send data or sign in. Reporting or checking when you're unsure is always fine and never marked down.",
+  "scenario_brief": "You're on an authorised exercise at Brightwell Foods, a fictional company, which has switched on its own approved assistant. Messages are waiting: a supplier email, a voicemail and a video call. Some are real and some were built to look right, a voice you know, a face you trust, or a line slipped into an email for the assistant to act on. Decide what to do with each, and check another way when a message pushes you to move money, send data or sign in. Reporting or checking when you're unsure is always fine and never marked down.",
   "endGoal": "Handle the supplier email, the voicemail and the video call at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
@@ -117,7 +117,7 @@
                 "hidden_instruction"
               ],
               "perFlagNote": {
-                "hidden_instruction": "The line was written for the assistant, not for you; the assistant can't tell it from a real request."
+                "hidden_instruction": "The line was written for the assistant, not for you; the assistant can't tell it from a real request. A real one hides as white text or a tiny font you skim past, but the assistant reads it like any other line."
               },
               "ifTrusted": "Brightwell's site contact list would go to an address the sender controls.",
               "reportReply": "Thanks, we pulled the brief and warned anyone whose assistant summarises the shared inbox."
@@ -175,12 +175,10 @@
               "isPhish": true,
               "critical": true,
               "flags": [
-                "deepfake_request",
-                "vish_callback_pressure"
+                "deepfake_request"
               ],
               "perFlagNote": {
-                "deepfake_request": "It sounds exactly like Tom, and a voice on its own proves nothing; the number isn't his.",
-                "vish_callback_pressure": "The one check that works whoever is speaking is ringing Tom on the number you already hold."
+                "deepfake_request": "It sounds exactly like Tom, and a voice on its own proves nothing; the number isn't his. Ringing Tom on the number you already hold is the one check that works."
               },
               "ifTrusted": "£200 goes to a stranger; the real Tom never called.",
               "reportReply": "Thanks, the real Tom answered his own phone and hadn't called."
@@ -253,13 +251,15 @@
                 "deepfake_request",
                 "secrecy_or_bypass",
                 "borrowed_authority",
-                "lookalike_domain"
+                "lookalike_domain",
+                "vish_callback_pressure"
               ],
               "perFlagNote": {
                 "deepfake_request": "Both faces are perfect and both are fake; a video call is not proof of who is on it.",
                 "lookalike_domain": "The meeting link is brightwell-board.example, not brightwellfoods.example, and the call is tagged External.",
                 "secrecy_or_bypass": "'In confidence, today, before the board' leaves no time and no one to check with.",
-                "borrowed_authority": "The CEO's and finance manager's faces are doing the job a check should do."
+                "borrowed_authority": "The CEO's and finance manager's faces are doing the job a check should do.",
+                "vish_callback_pressure": "You offered to ring back on the directory number and the caller shut it down with 'there's no time'; a genuine colleague never stops you checking."
               },
               "ifTrusted": "Brightwell's customer list leaks to the people who staged the call.",
               "reportReply": "Thanks, the real Ravinder was on his mobile in Lisbon and knew nothing about it."
@@ -325,12 +325,12 @@
         "reportAlwaysVisible": true
       },
       "strings": {
-        "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company, which has switched on its own approved assistant. Messages are waiting: a supplier email, a voicemail and a video call. Some are real and some were built to look right, a voice you know, a face you trust. Decide what to do with each, and check another way when a message pushes you to move money, send data or sign in. Reporting or checking when you're unsure is always fine and never marked down.",
+        "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company, which has switched on its own approved assistant. Messages are waiting: a supplier email, a voicemail and a video call. Some are real and some were built to look right, a voice you know, a face you trust, or a line slipped into an email for the assistant to act on. Decide what to do with each, and check another way when a message pushes you to move money, send data or sign in. Reporting or checking when you're unsure is always fine and never marked down.",
         "flipMissedHeading": "Nothing to replay this time",
         "flipLandedNoTells": "It read as an ordinary brief with nothing to catch this time. Next you sit with the assistant for real work and handle what comes at you.",
         "defendIntro": "Go through the messages and decide what to do with each one. You can't reliably spot a fake voice or face, so when a message asks for money, data or a sign-in, check another way, on a number or channel you already hold. Work through them at your own pace.",
         "noBlameLine": "The demo fools nearly everyone, and it was built to; the assistant is useful and most of what it writes is right. A miss just shows where to check next time.",
-        "mondayCard": "On Monday: before you paste into the assistant, take out what the task doesn't need and never paste a password; before you send what it writes, check the figures and the claims against the source; and if a call, video or email pushes you to move money, send data or sign in, stop and check another way, using the route in the box below.",
+        "mondayCard": "On Monday: an assistant can't tell an instruction in an email from a request from a colleague, so when a summary suggests you do something, check where that came from before you act on it. Keep passwords and personal details out of anything you paste into it, and check the figures and claims in what it writes against the source. And if a call, video or email pushes you to move money, send data or sign in, stop and check another way, using the route in the box below.",
         "defendOnly": "These messages were built to look right, a real supplier's address, a voice you know, a face you trust. Any you were caught out by are shown below, with what gave each one away and why checking another way works whoever is speaking.",
         "conceptPanel": {
           "heading": "Where the fakes came from",
