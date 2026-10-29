@@ -258,10 +258,12 @@
               "isPhish": true,
               "kindLine": "This page was a fake, after your work password; a real Wi-Fi page never needs it.",
               "flags": [
-                "wifi_page_credentials"
+                "wifi_page_credentials",
+                "lookalike_domain"
               ],
               "perFlagNote": {
-                "wifi_page_credentials": "A venue's Wi-Fi page asks you to accept the terms, sometimes an email or a room number. It has no reason to want your work password; one that does is a fake. The bar here also reads 'Not secure'. Even with a padlock, no Wi-Fi page needs your work password: a padlock only means the connection is encrypted, not that the page is honest."
+                "wifi_page_credentials": "A venue's Wi-Fi page asks you to accept the terms, sometimes an email or a room number. It has no reason to want your work password; one that does is a fake. The bar here also reads 'Not secure'. Even with a padlock, no Wi-Fi page needs your work password: a padlock only means the connection is encrypted, not that the page is honest.",
+                "lookalike_domain": "The page is on tarrowby-wifi.example, Tarrowby's name joined to a separate domain anyone can register; it isn't tarrowby.example. A venue's own Wi-Fi page is not hosted on a look-alike of your employer's name."
               },
               "ifTrusted": "Your work email and password would go to whoever put the page up, and they could sign in as you from anywhere.",
               "reportReply": "Thanks. No Wi-Fi page needs your work password. Close it, join the network the venue names or use your phone's hotspot, and report the page."
@@ -320,6 +322,8 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
+                "urgencyCalibrated": "'Ring straight away, day or night' is advice to report fast, not a deadline or a threat, and there is no link to click. Reporting quickly is exactly the point.",
+                "addressedTo": "'A reminder for everyone on the road' is an all-staff notice, so it isn't addressed to you by name. A broadcast reminder like this is normal, not a tell.",
                 "default": "A genuine reminder from the service desk on Tarrowby's own address, asking for nothing and naming the usual route. The lock buys time; reporting at once is what lets them lock, wipe and sign the device out. Keep the 24/7 number to hand."
               },
               "falseAlarmCost": "Reported as if it were a scam, you might not save the one number that matters when a device actually goes missing, and the hours before you ring are the ones that count."
@@ -359,11 +363,21 @@
               "kindLine": "This was a fake lost-device message, after your work password; it wasn't from the service desk.",
               "flags": [
                 "found_device_lure",
-                "lookalike_domain"
+                "lookalike_domain",
+                "urgencyCalibrated",
+                "linkCredible"
+              ],
+              "flagAlternatives": [
+                [
+                  "senderTrust",
+                  "lookalike_domain"
+                ]
               ],
               "perFlagNote": {
                 "found_device_lure": "You find a lost device by ringing the service desk, never by signing in to a message that found you first. The 24-hour clock is there to rush you past that thought.",
-                "lookalike_domain": "The address is tarrowbey.example, not tarrowby.example: a look-alike with an added letter. The 'Locate my device' link goes to a sign-in page on that same look-alike."
+                "lookalike_domain": "The address is tarrowbey.example, not tarrowby.example: a look-alike with an added letter. The 'Locate my device' link goes to a sign-in page on that same look-alike.",
+                "urgencyCalibrated": "'Sign in within 24 hours or it will be wiped' is a countdown made to rush you past the one safe step, ringing the service desk. A real recovery process does not threaten to wipe your device if you don't click.",
+                "linkCredible": "The button reads 'Locate my device' but points to tarrowbey.example/locate/signin; the words hide where the link really goes. Reading the address before you trust it shows the look-alike."
               },
               "ifTrusted": "The link opens a sign-in page that takes your work password; nothing is ever located.",
               "reportReply": "Thanks. The service desk doesn't email you to locate a device, and tarrowbey.example isn't ours. You report lost kit by ringing the desk, day or night."
