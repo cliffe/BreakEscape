@@ -13,10 +13,12 @@
 //   scoreDrill(config, placements)  the whole drill's score, or an unscored summary
 //
 // Scoring (scored drills only): the right bin earns POINTS.correct. A cautious bin earns
-// POINTS.caution instead of nothing (so playing safe is never punished to zero): a card may name
-// its own `acceptable` bins, and a drill may name one `alwaysScoresBin` that is cautious on every
-// card. Any other bin earns nothing. An unscored drill (`scored: false`) gives no points: it marks
-// each drop only as fitting the author's answer or not. `scoreDrill` returns the placements.
+// POINTS.caution instead of nothing (so playing safe is never punished to zero). Cautious bins come
+// from the drill-level `acceptable` list (applied to every card), a per-card `acceptable` list
+// (which overrides the drill default for that card, an empty list switching it off), and the legacy
+// single `alwaysScoresBin`. Any other bin earns nothing. An unscored drill (`scored: false`) gives
+// no points: it marks each drop only as fitting the author's answer or not. `scoreDrill` returns the
+// placements.
 //
 // Every string the learner reads has a default in DEFAULT_TEXT and a data override in
 // `config.strings`; bin labels and card text are data.
@@ -90,7 +92,13 @@ function cleanBins(raw) {
     return out;
 }
 
-function cleanCards(raw, binIds) {
+/** Keep the real-bin ids of a list, de-duplicated, dropping any already in `exclude`. */
+function cleanBinList(raw, binIds, exclude = []) {
+    return [...new Set((Array.isArray(raw) ? raw : [])
+        .filter((a) => isStr(a) && binIds.includes(a) && !exclude.includes(a)))];
+}
+
+function cleanCards(raw, binIds, drillAcceptable = []) {
     const seen = new Set();
     const out = [];
     for (const c of Array.isArray(raw) ? raw : []) {
@@ -98,9 +106,11 @@ function cleanCards(raw, binIds) {
         const answer = answersOf(c).filter((a) => binIds.includes(a));
         if (!answer.length) continue;
         // `acceptable`: extra bins scored as caution (partly right, shown neutrally), not wrong.
-        // Real bins only, and never a bin already in the answer (that is simply right).
-        const acceptable = [...new Set((Array.isArray(c.acceptable) ? c.acceptable : [])
-            .filter((a) => isStr(a) && binIds.includes(a) && !answer.includes(a)))];
+        // A card that names its own list overrides the drill-level default (an empty list switches
+        // it off for that card); a card that omits the key inherits the default. Real bins only,
+        // and never a bin already in the answer (that is simply right).
+        const hasOwnAcceptable = Object.prototype.hasOwnProperty.call(c, 'acceptable');
+        const acceptable = cleanBinList(hasOwnAcceptable ? c.acceptable : drillAcceptable, binIds, answer);
         seen.add(c.id);
         out.push({
             id: c.id,
@@ -126,12 +136,16 @@ export function normaliseConfig(raw) {
     const bins = cleanBins(src.bins);
     const ids = bins.map((b) => b.id);
     const rules = isObj(src.drawRules) ? src.drawRules : {};
+    // Drill-level `acceptable`: caution bins applied to every card, so a drill with one safe bin
+    // (ask first) need not repeat it on 18 cards. A card can override or switch it off (cleanCards).
+    const acceptable = cleanBinList(src.acceptable, ids);
     return {
         bins,
         scored: src.scored === true,
         answerKeyProfile: isStr(src.answerKeyProfile) ? src.answerKeyProfile : null,
         alwaysScoresBin: isStr(src.alwaysScoresBin) && ids.includes(src.alwaysScoresBin) ? src.alwaysScoresBin : null,
-        cards: cleanCards(src.cards, ids),
+        acceptable,
+        cards: cleanCards(src.cards, ids, acceptable),
         drawRules: { oneOfEachAnswer: rules.oneOfEachAnswer === true, newFirst: rules.newFirst === true },
         drawCount: Number.isInteger(src.drawCount) && src.drawCount > 0 ? src.drawCount : null,
         strings: isObj(src.strings) ? { ...src.strings } : {}

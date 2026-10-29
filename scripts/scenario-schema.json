@@ -2096,6 +2096,7 @@
             "scored": {"type": "boolean"},
             "answerKeyProfile": {"type": "string", "description": "Scored drills only: names the answer key the cards' answers come from (kept in the result)"},
             "alwaysScoresBin": {"type": "string", "description": "Scored drills only: a bin id. Choosing it on a card it is not the answer to still earns a point (caution is never marked as nothing)"},
+            "acceptable": {"type": "array", "items": {"type": "string", "minLength": 1}, "description": "Scored drills only: bin ids treated as a cautious choice (a point, shown neutrally, never red) on every card whose answer is not already that bin, so a safe 'ask first' bin need not be repeated on every card. A card's own acceptable overrides this for that card; an empty card list switches it off"},
             "cards": {
               "type": "array",
               "minItems": 1,
@@ -2106,7 +2107,7 @@
                   "id": {"type": "string", "minLength": 1},
                   "situation": {"type": "string", "minLength": 1},
                   "answer": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}, "minItems": 1}], "description": "A bin id, or a list of bin ids that are all accepted"},
-                  "acceptable": {"type": "array", "items": {"type": "string", "minLength": 1}, "description": "Scored drills only: extra bin ids (not the answer) that score as a cautious choice, earning a point and shown neutrally in the summary (never marked red). Use for a safe/ask-first option the brief promises is never wrong"},
+                  "acceptable": {"type": "array", "items": {"type": "string", "minLength": 1}, "description": "Scored drills only: extra bin ids (not the answer) that score as a cautious choice, earning a point and shown neutrally in the summary (never marked red). Use for a safe/ask-first option the brief promises is never wrong. Overrides the drill-level sortDrill.acceptable for this card; an empty array switches it off here"},
                   "reason": {"type": "string", "minLength": 1},
                   "locked": {"type": "boolean", "description": "A deployment's overrides never change or drop this card"},
                   "confirmed": {"type": "boolean", "description": "false: never drawn (an organisation has not confirmed the card). Default true"},

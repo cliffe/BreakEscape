@@ -534,12 +534,18 @@ test('sortDrill: a scored drill names its answer key; alwaysScoresBin names a bi
   expectIn(lint(withDrill((d) => { d.scored = 'yes'; })), /scored must be true or false/);
 });
 
-test('sortDrill: a card acceptable list names real bins and is read only when scored (E17-M1)', { skip }, () => {
-  assert.deepEqual(lint(withDrill((d) => { d.cards[0].acceptable = ['ask']; })), [], 'an acceptable bin is fine');
+test('sortDrill: acceptable bins (drill-level and per-card) name real bins and are read only when scored (E17-M1)', { skip }, () => {
+  // drill-level default applies to every card; a card can switch it off with an empty list
+  assert.deepEqual(lint(withDrill((d) => { d.acceptable = ['ask']; })), [], 'a drill-level acceptable bin is fine');
+  assert.deepEqual(lint(withDrill((d) => { d.acceptable = ['ask']; d.cards[0].acceptable = []; })), [], 'a card switches the default off with an empty list');
+  expectIn(lint(withDrill((d) => { d.acceptable = ['maybe']; })), /sortDrill\.acceptable 'maybe' is not one of the bins/);
+  expectIn(lint(withDrill((d) => { d.acceptable = []; })), /sortDrill\.acceptable must be a non-empty array/);
+  // per-card list
+  assert.deepEqual(lint(withDrill((d) => { d.cards[0].acceptable = ['ask']; })), [], 'a per-card acceptable bin is fine');
   expectIn(lint(withDrill((d) => { d.cards[0].acceptable = ['ask', 'maybe']; })), /acceptable 'maybe' is not one of the bins/);
-  expectIn(lint(withDrill((d) => { d.cards[0].acceptable = []; })), /acceptable must be a non-empty array/);
+  expectIn(lint(withDrill((d) => { d.cards[0].acceptable = 'ask'; })), /acceptable must be an array of bin ids/);
   expectIn(lint(withDrill((d) => { d.cards[0].acceptable = ['yes']; })), /acceptable 'yes' is already an answer/);
-  expectIn(lint(withDrill((d) => { d.scored = false; delete d.answerKeyProfile; delete d.alwaysScoresBin; d.cards[0].acceptable = ['ask']; })),
+  expectIn(lint(withDrill((d) => { d.scored = false; delete d.answerKeyProfile; delete d.alwaysScoresBin; d.acceptable = ['ask']; })),
     /acceptable is set on an unscored drill/);
 });
 

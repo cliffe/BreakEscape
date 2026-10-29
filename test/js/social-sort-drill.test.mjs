@@ -110,6 +110,31 @@ test('a card can name its own acceptable bins, scored as caution (E17-M1)', () =
     assert.deepEqual(cfg2.cards[0].acceptable, ['ask']);
 });
 
+test('a drill-level acceptable applies to every card, with per-card override and off (E17-M1)', () => {
+    const cfg = Model.normaliseConfig(scoredConfig({
+        alwaysScoresBin: undefined,
+        acceptable: ['ask'],
+        cards: [
+            card('A', 'keep'),                          // inherits ['ask']
+            card('B', 'ask'),                           // answer is ask, so not also acceptable
+            card('C', 'bin', { acceptable: [] }),       // switched off for this card
+            card('D', 'bin', { acceptable: ['keep'] })  // overrides the default
+        ]
+    }));
+    assert.deepEqual(cfg.acceptable, ['ask']);
+    assert.deepEqual(cfg.cards[0].acceptable, ['ask']);
+    assert.equal('acceptable' in cfg.cards[1], false, 'the answer bin is never also acceptable');
+    assert.equal('acceptable' in cfg.cards[2], false, 'an empty card list switches the default off');
+    assert.deepEqual(cfg.cards[3].acceptable, ['keep']);
+    assert.equal(Model.scoreCard(cfg, cfg.cards[0], 'ask').caution, true, 'the inherited bin scores cautious');
+    assert.equal(Model.scoreCard(cfg, cfg.cards[2], 'ask').caution, false, 'switched off: ask is a plain miss here');
+    assert.equal(Model.scoreCard(cfg, cfg.cards[3], 'keep').caution, true, 'the override bin scores cautious');
+    // a drill-level default also leaves scoring unchanged for a drill that sets none
+    const none = Model.normaliseConfig(scoredConfig({ alwaysScoresBin: undefined, cards: [card('A', 'keep')] }));
+    assert.deepEqual(none.acceptable, []);
+    assert.equal(Model.scoreCard(none, none.cards[0], 'ask').caution, false);
+});
+
 test('scoreDrill: counts, points and percent against the key; an unscored drill gives no mark', () => {
     const cfg = Model.normaliseConfig(scoredConfig());
     const r = Model.scoreDrill(cfg, cfg.cards, [{ id: 'A', bin: 'keep' }, { id: 'B', bin: 'ask' }, { id: 'C', bin: 'keep' }, { id: 'D', bin: 'bin' }]);
