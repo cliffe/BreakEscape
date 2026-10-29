@@ -499,6 +499,17 @@
     .mail-picker-list { width: 100%; min-width: 0; max-height: 60%; }
 }
 
+/* A short window with a pointer: a tighter composer so the form down to Ask fits above the pinned
+   meter and Send (E8 F2). Touch screens keep the 44 px controls. */
+@media (min-width: 768px) and (max-height: 820px) and (hover: hover) {
+    .mail-composer { gap: 4px; padding: 10px 14px; }
+    .mail-composer select { min-height: 34px; padding: 3px 6px; }
+    .mail-composer .mail-blank { min-height: 34px; }
+    .mail-compose-foot { bottom: -10px; margin: auto -14px -10px; padding: 6px 14px 8px; }
+    .mail-compose-foot > .mail-redflag-meter { max-height: 24vh; }
+    .mail-compose-send-bar .minigame-button { min-height: 38px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .mail-client *,
     .mail-client *::before,

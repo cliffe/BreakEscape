@@ -206,7 +206,18 @@
 /* E8 F5 (replaces the P5-1 sticky bar, which hid the skill lines under Finish): the result panel is a
    column, the text scrolls in .tri-result-body and the action bar sits below it, never over it. */
 .tri-result { display: flex; flex-direction: column; overflow: hidden; padding: 0; }
-.tri-result > .tri-result-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 16px 16px 8px; }
+/* The shadows at the foot (and head) of the text appear only while there is more to scroll to. */
+.tri-result > .tri-result-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px 16px 8px;
+    background:
+        linear-gradient(var(--ui-surface-raised, rgba(38, 48, 74, 1)) 30%, rgba(38, 48, 74, 0)) top / 100% 24px no-repeat local,
+        linear-gradient(rgba(38, 48, 74, 0), var(--ui-surface-raised, rgba(38, 48, 74, 1)) 70%) bottom / 100% 24px no-repeat local,
+        linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0)) top / 100% 10px no-repeat scroll,
+        linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.45)) bottom / 100% 10px no-repeat scroll;
+}
 .tri-result > .tri-result-bar {
     flex: none;
     padding: 0 16px 12px;
@@ -261,6 +272,15 @@
     background: color-mix(in srgb, var(--ui-accent, #ffcc44) 14%, transparent);
 }
 .tri-chip-none { margin-top: 2px; flex: none; }
+/* A short window with a pointer: tighter rows so the whole list (and Nothing looks wrong) fits with no
+   inner scrolling. Touch screens keep the 44 px rows. */
+@media (max-height: 820px) and (hover: hover) {
+    .tri-sheet { gap: 6px; padding: 12px 16px; }
+    .tri-chips { gap: 2px; }
+    .tri-chip { min-height: 32px; padding: 1px 8px; font-size: 15px; }
+    .tri-chip input { width: 20px; height: 20px; }
+    .tri-sheet-bar .minigame-button { min-height: 40px; }
+}
 .tri-sheet-bar { display: flex; gap: 8px; justify-content: flex-end; flex: none; padding-top: 8px; }
 
 .triage-client button:focus-visible,
