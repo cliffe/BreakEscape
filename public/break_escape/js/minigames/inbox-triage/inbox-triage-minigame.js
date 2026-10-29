@@ -229,6 +229,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         this.reader = new MailReader(this.sortEl, {
             pushLayer: (close, name) => this.pushLayer(close, name),
             influence: false,
+            // Triage renders its own hidden-text reveal through _afterBody (ENG-06), placed after
+            // the status line, so the reader must not also add one (it would show twice).
+            hiddenReveal: false,
             linkPrefix: 'This would have gone to: ',
             detailsLabels: { show: 'Show details', hide: 'Hide details' },
             detailsAlwaysOpen: this.set.headerPanel === 'open',
@@ -783,7 +786,17 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const ms = Number.isFinite(opened) ? Math.max(0, Date.now() - opened) : 0;
         const answer = { id: s.messageId, verdict: s.verdict, flags, ms };
         if (s.action && s.action !== s.verdict) answer.action = s.action;
+        // E8 F11: Confirm is allowed with nothing ticked (naming a flag is never required), but mark
+        // it so the immediate review card can nudge the learner to tick next time. Choosing
+        // "Nothing looks wrong" is a deliberate answer and is not nudged.
+        if (!flags.length && !s.inputs.get(NONE_ID)?.checked) answer.unflagged = true;
         this._lockAnswer(s.messageId, answer);
+    }
+
+    /** The one-line nudge shown when Confirm is pressed with nothing ticked (E8 F11); overridable. */
+    _nudgeLine() {
+        return isStr(this.set?.sheetNudge) ? this.set.sheetNudge
+            : 'Tick what made you decide, or choose ‘Nothing looks wrong’. Then Confirm again.';
     }
 
     /** A choice card's option is the whole answer: no flags, no sheet (ENG-09a). */
@@ -851,31 +864,32 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         // A set may override the per-verdict feedback line (F-E10-2) so a relabelled verdict does
         // not leak the engine word; a per-item truth.reportLine / verifyLine still wins (below).
         const fb = verdictFeedbackOverride(this.labels, verdict, phish);
+        const kind = kindOf(rec);
+        // batch-6 (item over set, C5): an item's own feedback line always wins, for every kind.
+        // A per-item reportLine / verifyLine, or a kindLine that says what a genuine-but-report
+        // item really was, beats both the set's labels.verdictFeedback and the kind's built line.
+        if (phish) {
+            if (verdict === 'report' && isStr(rec.truth.reportLine)) return rec.truth.reportLine;
+            if (verdict === 'verify' && isStr(rec.truth.verifyLine)) return rec.truth.verifyLine;
+            if (verdict === 'trust' && isStr(rec.truth.kindLine)) return `Not this time. ${rec.truth.kindLine}`;
+        }
         // The call and push kinds carry their own built lines (phone wording: "ring back on the
         // number you hold"); a set that relabels them for another setting (E12's reception desk)
-        // overrides them through the same labels.verdictFeedback (batch-5 E12 follow-up).
-        const kind = kindOf(rec);
+        // overrides them through the same labels.verdictFeedback (batch-5 E12 follow-up, 844177620).
         const own = (fb && (kind === 'call' || kind === 'push')) ? fb : kindVerdictLine(kind, phish, verdict);
         if (own) return own;
         if (phish) {
             // truth.kindLine (optional) says what this item really was, for a genuine message the
             // learner should still report, where "This one was a phish" would be false.
             const what = isStr(rec.truth.kindLine) ? rec.truth.kindLine : 'This one was a phish.';
-            // truth.verifyLine (optional, E19 D1): the whole Verify feedback line, for an item where
-            // "Checking first is a sound habit" pulls against the lesson (a compromise sign where
-            // Verify IS the fast report, e.g. "Calling it in straight away is exactly right."). When
-            // absent, the generic preamble plus `what` reads as before.
-            const verify = isStr(rec.truth.verifyLine) ? rec.truth.verifyLine : `Checking first is a sound habit. ${what}`;
-            // truth.reportLine (optional, E16 F-E16-1): the whole Report feedback line, for an item
-            // where "A report warns everyone else" is wrong (reporting a locked-out colleague is not
-            // warning the team about an attack). When absent, the default stands.
-            const report = isStr(rec.truth.reportLine) ? rec.truth.reportLine
-                : (fb || 'Right call: reported. A report warns everyone else.');
+            // The item's own reportLine/verifyLine/kindLine were handled above; here only the set
+            // override (fb) and the generic defaults remain.
+            const verify = `Checking first is a sound habit. ${what}`;
             return {
-                report,
+                report: fb || 'Right call: reported. A report warns everyone else.',
                 delete: fb || 'Safe, but not reported. Deleting protects you; reporting warns everyone else.',
                 trust: fb || `Not this time. ${what}`,
-                verify: isStr(rec.truth.verifyLine) ? verify : (fb || verify)
+                verify: fb || verify
             }[verdict];
         }
         return fb || {
@@ -897,7 +911,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     _rightCallLine(rec) {
         const phish = rec.truth.isPhish === true;
         const kind = kindOf(rec);
-        const override = verdictPointsOverride(rec.truth, kind, this.set?.scoring);
+        const override = verdictPointsOverride(rec.truth, kind, this.set?.scoring, phish);
         const full = actionsFor(kind, this.verifyEnabled, this.labels)
             .filter((a) => verdictPoints(this.profile, phish, a.verdict, kind, override) >= FULL_VERDICT_POINTS);
         const order = phish ? ['report', 'verify'] : ['trust', 'verify', 'report'];
@@ -912,7 +926,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     _isRight(rec, verdict) {
         const kind = kindOf(rec);
         return verdictPoints(this.profile, rec.truth.isPhish === true, verdict, kind,
-            verdictPointsOverride(rec.truth, kind, this.set?.scoring)) >= FULL_VERDICT_POINTS;
+            verdictPointsOverride(rec.truth, kind, this.set?.scoring, rec.truth.isPhish === true)) >= FULL_VERDICT_POINTS;
     }
 
     /**
@@ -969,8 +983,13 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // learner ticked (its own note), or under its first member when missed.
             const ul = el('ul', 'tri-flags');
             const units = Array.isArray(per.units) ? per.units : [];
+            // F-E9-6: when the verdict itself was right (full marks), an un-ticked tell is not a
+            // "Missed:" failure — the player handled the item correctly, they just did not name
+            // this sign. Soften those rows to "Also worth noticing:" so a correct call does not
+            // read as a mistake. A wrong verdict keeps "Missed:".
+            const softMiss = this._isRight(rec, ans.verdict);
             for (const u of units) if (u.caught) ul.appendChild(this._flagRow(rec, u.shown, true, notes[u.shown] || notes[u.note]));
-            for (const u of units) if (!u.caught) ul.appendChild(this._flagRow(rec, u.note, false, notes[u.note]));
+            for (const u of units) if (!u.caught) ul.appendChild(this._flagRow(rec, u.note, false, notes[u.note], softMiss));
             card.appendChild(ul);
         }
         // whyFine sentences already printed on a "Not a flag here" line, so the "why this one was
@@ -982,10 +1001,17 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             for (const id of per.falseClaims) {
                 const li = el('li', 'tri-false-flag');
                 li.dataset.flag = id;
-                const reason = why[id] || why.default || "It wasn't one of this message's tells.";
-                shownWhy.add(String(reason).trim());
+                // E19 m-5: use a flag-specific reason when the author gave one; otherwise the short
+                // generic line. The message's general whyFine.default is no longer pulled onto the
+                // false-flag row (it read as "Not a flag here: <chip>. <whole-message explanation>",
+                // the chip label and the explanation running together); it stays in the why-fine
+                // list below. The chip label and its reason are separate spans so they do not read
+                // as one run-on sentence.
+                const reason = isStr(why[id]) ? why[id] : "It wasn't one of this message's tells.";
+                if (isStr(why[id])) shownWhy.add(String(why[id]).trim());
                 li.append(icon('mark-question'), el('span', 'tri-flag-word', 'Not a flag here:'),
-                    el('span', 'tri-flag-text', `${chipLabel(this.set, id)}. ${reason}`));
+                    el('span', 'tri-flag-label', `${chipLabel(this.set, id)}.`),
+                    el('span', 'tri-flag-text', reason));
                 ul.appendChild(li);
             }
             card.appendChild(ul);
@@ -1021,6 +1047,10 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 : null;
             if (reply) card.appendChild(el('p', 'tri-it-reply', `${this._replyFrom()}: ${reply}`));
         }
+        // E8 F11: the learner confirmed without ticking anything (and did not choose "Nothing looks
+        // wrong"), so a one-line nudge invites naming what they noticed next time. Allowed, never
+        // blocked; shown only on the immediate review card, only when truly nothing was ticked.
+        if (ans.unflagged === true) card.appendChild(el('p', 'tri-card-nudge', this._nudgeLine()));
         card.appendChild(el('p', 'tri-card-score', `Score for this message: ${per.score} of 100`));
         return card;
     }
@@ -1057,11 +1087,14 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         return card;
     }
 
-    _flagRow(rec, id, caught, note) {
-        const li = el('li', `tri-flag ${caught ? 'caught' : 'missed'}`);
+    _flagRow(rec, id, caught, note, softMiss = false) {
+        // softMiss (F-E9-6): the verdict was right, so an un-ticked tell is "Also worth noticing:",
+        // a neutral question mark, not a danger-red "Missed:" cross.
+        const soft = !caught && softMiss;
+        const li = el('li', `tri-flag ${caught ? 'caught' : 'missed'}${soft ? ' tri-flag-soft' : ''}`);
         li.dataset.flag = id;
-        li.append(icon(caught ? 'mark-tick' : 'mark-cross'),
-            el('span', 'tri-flag-word', caught ? 'Caught:' : 'Missed:'),
+        li.append(icon(caught ? 'mark-tick' : (soft ? 'mark-question' : 'mark-cross')),
+            el('span', 'tri-flag-word', caught ? 'Caught:' : (soft ? 'Also worth noticing:' : 'Missed:')),
             el('span', 'tri-flag-text', note ? `${redFlagString(id, rec, this.set)} (${note})` : redFlagString(id, rec, this.set)));
         return li;
     }
@@ -1284,7 +1317,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 : '';
             p.appendChild(el('p', 'tri-critical',
                 `${result.criticalMisses.length === 1 ? 'One answer' : `${result.criticalMisses.length} answers`} ${allLabelled ? 'missed something that needed reporting' : 'let an attacker straight in'} ` +
-                `(${criticalWhat(result.criticalKinds, labels) || "approving a sign-in you didn't start, or doing what an impostor asked on a call"}).` + nameLine + ` ` +
+                `(${criticalWhat(result.criticalKinds, labels, this.set?.criticalWhat) || "approving a sign-in you didn't start, or doing what an impostor asked on a call"}).` + nameLine + ` ` +
                 `That costs ${CRITICAL_PENALTY} points off the round${result.criticalMisses.length === 1 ? "" : " each"}, on top of the item itself.`));
         }
         // The genuine items (FUN_DECISIONS disc_visible): which real ones the learner trusted, what
@@ -1432,7 +1465,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         if (this.set?.genuineFeedback === false) return null;
         return genuineFeedback({
             messages: this.messages, answers: this._answerList(), profile: this.profile,
-            titleOf: (m) => shortTitle(m) || this._cardTitle(m), actionLabel: (m, a) => this._actionLabel(m, a)
+            titleOf: (m) => shortTitle(m) || this._cardTitle(m), actionLabel: (m, a) => this._actionLabel(m, a),
+            actionPast: (m, a) => actionById(isNonEmail(m) ? kindOf(m) : 'email', a.action, a.verdict, this.labels).past
         });
     }
 
@@ -1443,7 +1477,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
      * episode debrief follows (params.debriefFollows), the cost and why lines are left to it.
      */
     _genuineSummary(genuine) {
-        const text = genuineFeedbackText(genuine, { detail: false });
+        const text = genuineFeedbackText(genuine, { detail: false, strings: this.set?.genuineCopy });
         if (!text) return null;
         const box = el('section', 'tri-genuine');
         box.setAttribute('aria-label', 'The real ones');

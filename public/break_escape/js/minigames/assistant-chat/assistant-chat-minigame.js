@@ -215,20 +215,21 @@ export class AssistantChatMinigame extends SocialOverlayScene {
             const li = h('li', { class: 'ac-paste-line', 'data-id': line.id });
             li.appendChild(h('span', { class: 'ac-paste-line-text', text: line.text }));
             if (isStr(line.classLabel)) li.appendChild(h('span', { class: 'ac-class-tag', text: line.classLabel }));
-            // Only lines that do not belong offer a strike-out toggle.
-            if (line.safe !== true) {
-                const strike = h('button', { type: 'button', class: 'minigame-button ac-strike-btn',
-                    text: 'Strike out', 'aria-pressed': 'false' });
-                this.addEventListener(strike, 'click', (e) => {
-                    e.preventDefault?.();
-                    const on = !struck.has(line.id);
-                    if (on) struck.add(line.id); else struck.delete(line.id);
-                    li.classList.toggle('ac-struck', on);
-                    strike.setAttribute('aria-pressed', on ? 'true' : 'false');
-                    strike.textContent = on ? 'Put back' : 'Strike out';
-                });
-                li.appendChild(strike);
-            }
+            // E13 F-8: every line offers a strike-out toggle, not only the lines that do not belong
+            // (a strike button only on the unsafe lines gave the answer away). The learner judges
+            // which to take out; the summary is built from whatever is left in, and the verdict
+            // still keys off whether a secret / personal line was left in.
+            const strike = h('button', { type: 'button', class: 'minigame-button ac-strike-btn',
+                text: 'Strike out', 'aria-pressed': 'false' });
+            this.addEventListener(strike, 'click', (e) => {
+                e.preventDefault?.();
+                const on = !struck.has(line.id);
+                if (on) struck.add(line.id); else struck.delete(line.id);
+                li.classList.toggle('ac-struck', on);
+                strike.setAttribute('aria-pressed', on ? 'true' : 'false');
+                strike.textContent = on ? 'Put back' : 'Strike out';
+            });
+            li.appendChild(strike);
             list.appendChild(li);
         }
         sec.appendChild(list);

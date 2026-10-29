@@ -236,7 +236,9 @@
    keeps its own solid surface and dark ink so it reads over either the neutral awareness chat or
    the dark lab chat behind it. Every string is set in the readable body face; targets are >=44px. */
 .pretext-debrief-backdrop {
-    position: absolute;
+    /* fixed, not absolute (m2): inset:0 then covers the viewport regardless of whether the chat's
+       container is a positioned ancestor, so the "covers the open chat" guarantee always holds. */
+    position: fixed;
     inset: 0;
     z-index: 60;
     display: flex;

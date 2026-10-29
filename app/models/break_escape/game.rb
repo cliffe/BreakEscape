@@ -2121,7 +2121,7 @@ module BreakEscape
     MAIL_MESSAGE_KEYS = %w[
       id thread mailbox folder fromAccount from to targetId subject templates slots body
       attachment link landed tells time gameTime read kind seeded links attachments highlights
-      pendingMessage
+      pendingMessage hiddenText hiddenTextLabel
     ].freeze
     MAIL_JOB_KINDS = %w[ink text seed].freeze
     MAIL_JOB_STRING_KEYS = %w[character npcId accountId msgId knot targetId messageId mailbox global outcomeGlobal].freeze
@@ -2330,7 +2330,7 @@ module BreakEscape
 
         value = msg[key]
         case key
-        when 'body'
+        when 'body', 'hiddenText', 'hiddenTextLabel'
           clean[key] = value[0, MAX_MAIL_BODY_CHARS] if value.is_a?(String)
         when 'folder'
           clean[key] = value if %w[inbox sent].include?(value)
