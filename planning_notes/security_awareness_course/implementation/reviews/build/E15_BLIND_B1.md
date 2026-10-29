@@ -116,7 +116,7 @@ Makes sense to someone who never saw the full episode. The intro says it is a fi
 | 12 | nit | Verdict banner reads "Verdict locked: Trust." above the finished list. Meaning unclear. | content | Inbox, after item 6 |
 | 13 | nit | After a Resume, the player stands at the room start (192,198); fine, noted only. | engine | Reload |
 
-0 blockers, 2 majors, 8 minors, 4 nits (counts include the nit rows above).
+0 blockers, 2 majors, 7 minors, 4 nits.
 
 I did not classify any of these as game bugs. Rows tagged engine are where the behaviour looked like the interface rather than the writing; a human should rule.
 
