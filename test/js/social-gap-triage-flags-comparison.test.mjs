@@ -114,6 +114,18 @@ test('skillName falls back to the id', () => {
     assert.equal(F.skillName(undefined), undefined);
 });
 
+test('skillName: the set override wins over the built-in table (F-E9 precedence)', () => {
+    const set = { skillNames: { unrequested_mfa_push: 'Sign-in approval requests', mystery: 'Local tell' } };
+    // A shared built-in tell can now be renamed by the set.
+    assert.equal(F.skillName('unrequested_mfa_push', set), 'Sign-in approval requests');
+    // A scenario-local tell still resolves through the override.
+    assert.equal(F.skillName('mystery', set), 'Local tell');
+    // With no override for an id, the built-in table is unchanged.
+    assert.equal(F.skillName('senderTrust', set), 'Sender address');
+    // With no set, behaviour is exactly as before.
+    assert.equal(F.skillName('unrequested_mfa_push'), 'MFA prompts');
+});
+
 test('normaliseResult: only pass and fail are kept; everything else reads as none', () => {
     for (const [v, want] of [['pass', 'pass'], ['fail', 'fail'], ['PASS', 'none'], ['none', 'none'], [undefined, 'none'], [null, 'none'], [true, 'none'], ['softfail', 'none']]) {
         assert.equal(F.normaliseResult(v), want, String(v));

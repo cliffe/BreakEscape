@@ -220,10 +220,14 @@ export function redFlagString(id, message, set = null) {
     return isObj(set?.tellStrings) && isStr(set.tellStrings[id]) ? set.tellStrings[id] : id;
 }
 
-/** The skill name for a tell id: the built-in table, else set.skillNames for a local tell, else the id. */
+/**
+ * The skill name for a tell id: the set's `skillNames` override wins (so an episode can rename a
+ * shared tell, e.g. E9 "MFA prompts" -> "Sign-in approval requests"), then the built-in table,
+ * then the id. With no override the result is unchanged (F-E9, skillName precedence).
+ */
 export function skillName(id, set = null) {
-    if (SKILL_NAMES[id]) return SKILL_NAMES[id];
-    return isObj(set?.skillNames) && isStr(set.skillNames[id]) ? set.skillNames[id] : id;
+    if (isObj(set?.skillNames) && isStr(set.skillNames[id])) return set.skillNames[id];
+    return SKILL_NAMES[id] || id;
 }
 
 // ── Header panel wording (05 "The header panel"; concept level, fictional) ───────────
