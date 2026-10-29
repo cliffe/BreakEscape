@@ -83,6 +83,10 @@
           "redFlag": null
         }
       },
+      "sentLines": {
+        "inject_contacts": "It landed. The assistant acted on it.",
+        "pretext_invoice": "Sent. The assistant found nothing in it to act on."
+      },
       "replies": {
         "_byChoice_note": "E13 D1 fix, 2026-10-29: this open target (trusts ['*']) lands for every pretext, so a flat replies.landed asserted the injection even on the plain brief, and replies.missed was dead (mail-bridge dataOnlyText). byChoice keys the immediate write-stage reply on the sent pretext (mirrors the flip's flipDefenderLineByChoice and the assistant summarise.byChoice), so the plain path reads true before the flip/assistant. Engine reads replies.byChoice[sentTemplateId]; mail.rb target_replies checks the ids against social.templates.",
         "byChoice": {

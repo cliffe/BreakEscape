@@ -18,6 +18,7 @@
     "_stateGlobal": "e13_assistant_state",
     "_byChoice_pretext_invoice": "WIRED 2026-10-29 into assistant.summarise.byChoice.pretext_invoice (reply <- summary, empathy <- empathyLine, hidden.text <- hiddenText). One source.",
     "title": "Brightwell Assist",
+    "intro": "Try each task below, in any order, then close this window.",
     "disclaimer": "Brightwell Assist can make mistakes. Check important information.",
     "summarise": {
       "button": "Summarise my emails",
