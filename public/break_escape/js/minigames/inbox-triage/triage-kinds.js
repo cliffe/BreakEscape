@@ -34,7 +34,11 @@ export function isNonEmail(recOrKind) {
 /** Short word for the kind, used in the message list and the brief. */
 export const KIND_LABEL = Object.freeze({
     email: 'Email', sms: 'Text', voicemail: 'Voicemail', qr: 'QR notice',
-    page: 'Web page', call: 'Call', push: 'Sign-in prompt', choice: 'Question'
+    page: 'Web page', call: 'Call', push: 'Sign-in prompt', choice: 'Question',
+    // ENG-14 / E20: a Wi-Fi network list is a `page` kind with `page.state: "wifiList"`. In the
+    // list and results it reads as "Wi-Fi networks", not "Web page" (overridable as
+    // labels.kind.wifiList). Keyed off the state, not the kind, through kindLabelFor below.
+    wifiList: 'Wi-Fi networks'
 });
 
 /**
@@ -53,6 +57,23 @@ export const KIND_LABEL = Object.freeze({
 export function kindLabel(kind, labels) {
     const own = labels?.kind?.[kind];
     return isStr(own) ? own : (KIND_LABEL[kind] || '');
+}
+
+/**
+ * The list/results short label for a record, honouring the page `state` where that changes the
+ * noun. A `page` card in the `wifiList` state is a Wi-Fi network list, not a web page, so it reads
+ * "Wi-Fi networks" (overridable as labels.kind.wifiList). Every other record uses kindLabel.
+ */
+export function kindLabelFor(rec, labels) {
+    // A single item may set its own tag (rec.kindTag), so a set that relabels a kind through
+    // labels.kind.<kind> does not also rename an item that is really something else (e.g. a genuine
+    // sign-in page among wifiList cards). This wins over both the state and the set default.
+    if (isStr(rec?.kindTag)) return rec.kindTag;
+    if (kindOf(rec) === 'page' && isObj(rec?.page) && rec.page.state === 'wifiList') {
+        const own = labels?.kind?.wifiList;
+        return isStr(own) ? own : KIND_LABEL.wifiList;
+    }
+    return kindLabel(kindOf(rec), labels);
 }
 
 export function smsHeading(labels) {
@@ -244,7 +265,9 @@ export function defaultSubject(msg, labels = null) {
     case 'sms': return first(msg.body) || smsHeading(labels);
     case 'voicemail': return isStr(msg.duration) ? `Voicemail (${msg.duration})` : 'Voicemail';
     case 'qr': return 'Printed notice';
-    case 'page': return isObj(msg.page) && isStr(msg.page.heading) ? msg.page.heading : 'Web page';
+    case 'page': return isObj(msg.page) && isStr(msg.page.heading)
+        ? msg.page.heading
+        : (isObj(msg.page) && msg.page.state === 'wifiList' ? kindLabelFor(msg, labels) : 'Web page');
     case 'call': return 'Incoming call';
     case 'push': return isObj(msg.push) && isStr(msg.push.app) ? `${msg.push.app}: sign-in request` : 'Sign-in request';
     case 'choice': return isObj(msg.choice) && isStr(msg.choice.prompt) ? first(msg.choice.prompt) : kindLabel('choice', labels);
@@ -256,6 +279,29 @@ export function defaultSubject(msg, labels = null) {
 export function hostOf(url) {
     const s = String(url || '').trim().replace(/^[a-z][a-z0-9+.-]*:\/\//i, '');
     return s.split(/[/?#]/)[0].replace(/:\d+$/, '').toLowerCase();
+}
+
+/**
+ * Append a URL to `node` as text with soft break opportunities (`<wbr>`) after each `.`, `/`, `?`
+ * and `#`, so a long address wraps at a sensible point (a dot or a path segment) rather than through
+ * the middle of a label (F-E20-3). The whole address stays selectable and is unchanged in the
+ * aria-label and the "Full address" note. With no such character it is one run, which the CSS then
+ * breaks only if it overflows.
+ */
+export function appendUrlText(node, url) {
+    const s = String(url || '');
+    if (!s) return node;
+    let run = '';
+    for (const ch of s) {
+        run += ch;
+        if (ch === '.' || ch === '/' || ch === '?' || ch === '#') {
+            node.appendChild(document.createTextNode(run));
+            node.appendChild(document.createElement('wbr'));
+            run = '';
+        }
+    }
+    if (run) node.appendChild(document.createTextNode(run));
+    return node;
 }
 
 // ── decorative patterns (pure) ──────────────────────────────────────────────────
@@ -453,7 +499,8 @@ function browserBar(p, h) {
     } else {
         bar.appendChild(el('span', 'tri-no-padlock', 'Not secure'));
     }
-    const addr = el('button', 'tri-address minigame-button', p.url || '');
+    const addr = el('button', 'tri-address minigame-button');
+    appendUrlText(addr, p.url || '');
     addr.type = 'button';
     addr.setAttribute('aria-label', `Address bar: ${p.url || ''}`);
     addr.addEventListener('click', () => h.showNote(`Full address: ${p.url || ''}. The site is ${hostOf(p.url)}.`));
@@ -510,13 +557,27 @@ function page(rec, h) {
     const view = el('div', 'tri-browser-view');
     view.appendChild(heading(p.heading || rec.subject || 'Web page'));
     if (rec.body) view.appendChild(el('p', 'tri-page-text', rec.body));
-    const fields = Array.isArray(p.fields) ? p.fields.filter(isStr) : [];
+    // A field is either a plain label string (drawn as a labelled text box, as before) or, opt-in
+    // (ENG-03a tick, E10 MI2), an object { label, type: "tick", checked? } drawn as a tick box so a
+    // genuine "I am not a robot" check does not read as "type this". Nothing here can be ticked or
+    // typed; `checked` only shows the drawn state. Any other object is ignored.
+    const fields = (Array.isArray(p.fields) ? p.fields : [])
+        .map((f) => (isStr(f) ? { label: f, type: 'text' }
+            : (isObj(f) && isStr(f.label) ? { label: f.label, type: f.type === 'tick' ? 'tick' : 'text', checked: f.checked === true } : null)))
+        .filter((f) => f);
     if (fields.length) {
         const form = el('div', 'tri-page-form');
         form.setAttribute('aria-label', 'Sign-in form (nothing can be typed)');
         for (const f of fields) {
-            const row = el('div', 'tri-page-field');
-            row.append(el('span', 'tri-page-field-label', f), el('span', 'tri-page-field-box'));
+            const row = el('div', `tri-page-field${f.type === 'tick' ? ' tri-page-field-tick' : ''}`);
+            if (f.type === 'tick') {
+                const box2 = el('span', `tri-page-tick${f.checked ? ' tri-page-tick-on' : ''}`);
+                box2.setAttribute('role', 'img');
+                box2.setAttribute('aria-label', f.checked ? 'Tick box, ticked' : 'Tick box, empty');
+                row.append(box2, el('span', 'tri-page-field-label tri-page-tick-label', f.label));
+            } else {
+                row.append(el('span', 'tri-page-field-label', f.label), el('span', 'tri-page-field-box'));
+            }
             form.appendChild(row);
         }
         if (isStr(p.button)) form.appendChild(el('span', 'tri-page-button', p.button));
@@ -526,11 +587,17 @@ function page(rec, h) {
         // form that asks for one (E5-10, accuracy). It is not printed on the page: a line on every
         // page read as the answer to every item (P3 E5-10). The learner checks for it, the way
         // they would at a real sign-in box, with "Try your password manager", which reveals it.
-        const hasPassword = fields.some((f) => /pass(word|code)/i.test(f));
+        const hasPassword = fields.some((f) => f.type === 'text' && /pass(word|code)/i.test(f.label));
         if (hasPassword && (p.autofill === 'none' || p.autofill === 'filled')) {
             const filled = p.autofill === 'filled';
-            const cue = el('p', `tri-autofill ${filled ? 'tri-autofill-filled' : 'tri-autofill-none'}`,
-                filled ? 'Your password manager filled this in.' : 'Your password manager did not fill this in.');
+            // page.autofillNote ({ none?, filled? }) overrides the cue, so an episode can say WHY it
+            // matters (e.g. "...a real page it already knows would have filled this in"). Default
+            // unchanged (F-E20-8).
+            const over = isObj(p.autofillNote) ? p.autofillNote : {};
+            const text = filled
+                ? (isStr(over.filled) ? over.filled : 'Your password manager filled this in.')
+                : (isStr(over.none) ? over.none : 'Your password manager did not fill this in.');
+            const cue = el('p', `tri-autofill ${filled ? 'tri-autofill-filled' : 'tri-autofill-none'}`, text);
             cue.hidden = true;
             const btn = el('button', 'tri-autofill-btn minigame-button', 'Try your password manager');
             btn.type = 'button';

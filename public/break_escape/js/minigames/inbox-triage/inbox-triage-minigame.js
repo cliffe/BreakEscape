@@ -49,7 +49,7 @@ import {
     FACTOR_ORDER, NONE_ID, chipIdsFor, chipLabel, redFlagString, skillName
 } from './triage-flags.js';
 import {
-    kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, kindLabel, verdictAction, emailHiddenReveal,
+    kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, kindLabel, kindLabelFor, verdictAction, emailHiddenReveal,
     shortTitle, realNounFor, choiceOptions, choiceOptionFor, choiceText
 } from './triage-kinds.js';
 import { comparisonFor, comparisonText } from './triage-comparison.js';
@@ -197,7 +197,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
         const root = el('div', 'mail-client triage-client');
         root.setAttribute('role', 'region');
-        root.setAttribute('aria-label', 'Inbox check');
+        root.setAttribute('aria-label', this._headerNoun());
         // The awareness skin (11 N8, P7-P): the episode runner passes skin 'awareness', which
         // gives the Report action its positive animation and a thank-you line.
         if (this.awarenessSkin) root.classList.add('aw-skin');
@@ -241,7 +241,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // read "Voicemail Voicemail (0:24)", P3 N-16).
             rowTag: (rec) => {
                 if (!isNonEmail(rec)) return null;
-                const tag = kindLabel(kindOf(rec), this.labels);
+                const tag = kindLabelFor(rec, this.labels);
                 return String(rec.subject || '').toLowerCase().startsWith(String(tag).toLowerCase()) ? null : tag;
             },
             rowBadge: (rec) => {
@@ -282,7 +282,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
     _buildToolbar(root) {
         const bar = el('div', 'mail-toolbar tri-toolbar');
-        this.titleEl = el('h2', 'tri-title', this.set.title || 'Inbox check');
+        this.titleEl = el('h2', 'tri-title', this._headerNoun());
         this.stepsEl = el('ol', 'tri-steps');
         this.stepsEl.setAttribute('aria-label', 'Steps');
         bar.append(this.titleEl, this.stepsEl);
@@ -378,12 +378,34 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             reportLabel: 'Escalated or reported rather than just refused', dropLegend: true });
         if (every(['voicemail'])) return pick('voicemail', { label: 'Voicemail', item: ['voicemail', 'voicemails'], real: 'Real voicemails',
             reportLabel: 'Reported rather than just deleted', dropLegend: true });
-        if (every(['page'])) return pick('page', { label: 'Pages to check', item: ['page', 'pages'], real: 'Real pages',
-            reportLabel: 'Reported rather than just deleted', dropLegend: false });
+        if (every(['page'])) {
+            // E20: a page queue may hold Wi-Fi network lists (page.state "wifiList"). Name the queue
+            // for what is in it so the brief and title don't call networks "pages".
+            const isWifi = (m) => kindOf(m) === 'page' && isObj(m.page) && m.page.state === 'wifiList';
+            if (this.messages.every(isWifi)) {
+                return pick('page', { label: 'Wi-Fi networks', item: ['network', 'networks'], real: 'Safe networks',
+                    reportLabel: 'Reported rather than just deleted', dropLegend: false });
+            }
+            if (this.messages.some(isWifi)) {
+                return pick('page', { label: 'Pages and networks', item: ['item', 'items'], real: 'Safe ones',
+                    reportLabel: 'Reported rather than just deleted', dropLegend: false });
+            }
+            return pick('page', { label: 'Pages to check', item: ['page', 'pages'], real: 'Real pages',
+                reportLabel: 'Reported rather than just deleted', dropLegend: false });
+        }
         if (every(['sms', 'qr'])) return pick('sms', { label: 'Messages', item: ['message', 'messages'], real: 'Real messages',
             reportLabel: 'Reported rather than just deleted', dropLegend: false });
         return pick('other', { label: 'Messages to check', item: ['message', 'messages'], real: 'Real messages',
             reportLabel: 'Reported rather than just deleted', dropLegend: false });
+    }
+
+    /**
+     * The noun for the overlay title and region label. A set may name it with `set.title`; otherwise
+     * it follows the kinds present (the queue label), so a set of pages or Wi-Fi lists is not called
+     * "Inbox check". An email or email-mixed set still defaults to "Inbox check".
+     */
+    _headerNoun() {
+        return (isStr(this.set?.title) && this.set.title) ? this.set.title : this._queueInfo().label;
     }
 
     _renderBrief() {
@@ -424,7 +446,11 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         if (['pre', 'post'].includes(this.stage)) {
             p.appendChild(el('p', 'tri-brief-score', 'Finishing the check is what counts here; the flags you tick shape your feedback.'));
         } else {
-            p.appendChild(el('p', 'tri-brief-score', 'Right call is most of the score; naming the flags is the rest.'));
+            // labels.scoreLine (optional) overrides this, for a set where "flags" collides with the
+            // compose meter's "Red flags" (weak-line #5). Absent, the default reads as before.
+            p.appendChild(el('p', 'tri-brief-score', isStr(this.labels?.scoreLine)
+                ? this.labels.scoreLine
+                : 'Right call is most of the score; naming the flags is the rest.'));
         }
         // The set's own brief often already says "You'll see how you did at the end"; the engine
         // line then says it once, not twice (P3 N13/N-9). An end-of-round set shows each item
@@ -787,11 +813,16 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // truth.kindLine (optional) says what this item really was, for a genuine message the
             // learner should still report, where "This one was a phish" would be false.
             const what = isStr(rec.truth.kindLine) ? rec.truth.kindLine : 'This one was a phish.';
+            // truth.verifyLine (optional, E19 D1): the whole Verify feedback line, for an item where
+            // "Checking first is a sound habit" pulls against the lesson (a compromise sign where
+            // Verify IS the fast report, e.g. "Calling it in straight away is exactly right."). When
+            // absent, the generic preamble plus `what` reads as before.
+            const verify = isStr(rec.truth.verifyLine) ? rec.truth.verifyLine : `Checking first is a sound habit. ${what}`;
             return {
                 report: 'Right call: reported. A report warns everyone else.',
                 delete: 'Safe, but not reported. Deleting protects you; reporting warns everyone else.',
                 trust: `Not this time. ${what}`,
-                verify: `Checking first is a sound habit. ${what}`
+                verify
             }[verdict];
         }
         return {
@@ -1161,7 +1192,10 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // the review card uses: Trust, Verify / Ring back, and (under awareness) Report, which
             // is "never wrong" (D4, P3 N-2). Comply on an unchecked genuine caller is not. The
             // noun follows the queue's kind.
-            addNum('Phish caught', `${result.phishCaught} of ${result.phishTotal}`, 'phishCaught');
+            // labels.phishCaughtLabel (optional) overrides the counter label, for a non-phishing set
+            // (E17 acceptable-use) where "Phish caught" is wrong; default unchanged (E17-M2).
+            addNum(isStr(this.labels?.phishCaughtLabel) ? this.labels.phishCaughtLabel : 'Phish caught',
+                `${result.phishCaught} of ${result.phishTotal}`, 'phishCaught');
             // A phish checked by another route (Verify, Ring back) was caught, not missed: say so
             // on the same line, so "1 of 4" beside two correct Ring backs is not read as a miss (N7).
             addNum(info.reportLabel, `${result.reportCount} of ${result.phishTotal}` +
@@ -1390,7 +1424,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         this.stored = null;
         this.saving = false;
         this.saveFailed = false;
-        this.titleEl.textContent = set.title || 'Inbox check';
+        this.titleEl.textContent = this._headerNoun();
         this.reader.opts.detailsAlwaysOpen = set.headerPanel === 'open';
         this.reader.opts.noDetails = set.headerPanel === 'off';
         this.reader.selectedId = null;

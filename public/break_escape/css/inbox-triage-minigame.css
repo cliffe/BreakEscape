@@ -334,7 +334,8 @@
     box-shadow: inset 0 0 0 2px #10152a;
 }
 .tri-phone-top { padding-bottom: 6px; margin-bottom: 8px; border-bottom: 2px solid #3a4566; text-align: center; }
-.tri-phone-number { margin: 0; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+/* A phone handle/number is an address: the address font, so look-alike letters read (E14-m1). */
+.tri-phone-number { margin: 0; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); font-family: var(--se-font-address); }
 .tri-sms-thread { display: flex; flex-direction: column; gap: 8px; }
 .tri-sms-bubble {
     align-self: flex-start;
@@ -420,7 +421,11 @@
 .tri-browser { max-width: 520px; background: #e9edf5; border: 2px solid #8792ad; color: #1d2333; }
 .tri-browser-bar { display: flex; align-items: center; gap: 6px; padding: 6px; background: #c9d0e0; border-bottom: 2px solid #8792ad; }
 .tri-header-address { font-family: var(--se-font-address); }
-.tri-address { flex: 1; min-height: 36px; text-align: left; overflow-wrap: anywhere; font-family: var(--se-font-address); }
+/* The address bar is a .minigame-button, whose base rule sets the pixel font; the descendant
+   selector raises specificity so the address font wins (F-E20-2). break-word + the <wbr> break
+   opportunities after dots and slashes let a long URL wrap at a sensible point, not mid-label
+   (F-E20-3). */
+.tri-browser-bar .tri-address { flex: 1; min-height: 36px; text-align: left; overflow-wrap: break-word; word-break: normal; font-family: var(--se-font-address); }
 .tri-padlock, .tri-no-padlock { flex: none; min-height: 36px; font-size: 13px; }
 .tri-no-padlock { padding: 0 6px; font-weight: 700; color: #8f2a1f; }
 .tri-browser-view { padding: 12px 14px; }
@@ -429,6 +434,12 @@
 .tri-page-form { display: flex; flex-direction: column; gap: 6px; max-width: 300px; }
 .tri-page-field { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
 .tri-page-field-box { display: block; height: 28px; background: #ffffff; border: 2px solid #8792ad; }
+/* A drawn tick box for a genuine "I am not a robot" check (E10 MI2): a square, with a tick when
+   page.fields[].checked is set. Nothing can be ticked; it is static art, like the text box. */
+.tri-page-field-tick { flex-direction: row; align-items: center; gap: 8px; }
+.tri-page-tick { position: relative; flex: none; width: 22px; height: 22px; background: #ffffff; border: 2px solid #8792ad; }
+.tri-page-tick-on::after { content: ""; position: absolute; left: 5px; top: 1px; width: 7px; height: 13px; border: solid #233b8f; border-width: 0 3px 3px 0; transform: rotate(45deg); }
+.tri-page-tick-label { font-weight: 700; }
 .tri-page-button { align-self: flex-start; padding: 6px 14px; font-weight: 700; color: #ffffff; background: #3b5bcc; border: 2px solid #233b8f; }
 
 /* ENG-14: Wi-Fi network list state of the page card (no address bar) */
