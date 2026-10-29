@@ -12,7 +12,8 @@
  *   width, height   window size (default 1920x1080)
  *   noSandbox true/false (default: auto - only when running as root)
  *   volumes   { music, sfx, voice, master } 0..1 -> localStorage be_*_vol
- *   zoomStep  number -> be_display_settings.zoomStep
+ *   zoomStep  number -> be_display_settings.zoomStep (+1 = 3x scale for overworld shots)
+ *   hideHud   true -> inject CSS hiding HUD overlays (see HUD_CSS); minigame and dialogue overlays stay visible
  *   profileDir  fresh dir per run (default: mkdtemp under $VIDEO_STATE_DIR or os tmpdir)
  */
 import { createRequire } from 'node:module';
@@ -37,6 +38,19 @@ function findChromium() {
   throw new Error('full Chromium not found under ' + base);
 }
 
+// HUD elements hidden by --hide-hud (ids/classes from ui/*.js, systems/notifications.js, systems/npc-barks.js, show.html.erb).
+// Not touched: minigame overlays, person-chat/phone-chat, game-confirm dialogs, tutorial prompts, the subtitle bar.
+export const HUD_CSS = [
+  '#objectives-panel', '.objectives-panel',               // objectives panel
+  '#notification-container',                              // toasts
+  '#npc-bark-container', '.npc-bark-clear-all',           // HaX / NPC message popups and "Clear all"
+  '#inventory-container',                                 // inventory bar
+  '#health-ui-container',                                 // hearts
+  '#combat-buttons',                                      // Block / Punch
+  '#player-hud-buttons',                                  // top-right buttons (avatar etc.)
+  '#music-widget-btn-anchor', '#scenario-timer-display', '#toggle-buttons-container',
+].join(',') + '{display:none !important}';
+
 export function withSkipResume(url) {
   return url + (url.includes('?') ? '&' : '?') + 'skip_resume=1';
 }
@@ -44,7 +58,7 @@ export function withSkipResume(url) {
 export async function launchGame(opts) {
   const {
     display, url, mode = 'kiosk', width = 1920, height = 1080,
-    volumes = {}, zoomStep, profileDir,
+    volumes = {}, zoomStep, profileDir, hideHud = false,
   } = opts;
   if (display === undefined) throw new Error('launchGame: display required');
   const sink = opts.sink || `be_rec_${display}`;
@@ -82,6 +96,12 @@ export async function launchGame(opts) {
   // Settings must exist before any game script runs.
   const vols = {};
   for (const k of ['music', 'sfx', 'voice', 'master']) if (volumes[k] !== undefined) vols[`be_${k}_vol`] = String(volumes[k]);
+  if (hideHud) {
+    await context.addInitScript((css) => {
+      const add = () => { const st = document.createElement('style'); st.id = 'be-hide-hud'; st.textContent = css; (document.head || document.documentElement).appendChild(st); };
+      if (document.documentElement) add(); else document.addEventListener('DOMContentLoaded', add);
+    }, HUD_CSS);
+  }
   await context.addInitScript(({ vols, zoomStep }) => {
     try {
       for (const [k, v] of Object.entries(vols)) localStorage.setItem(k, v);
@@ -98,7 +118,8 @@ export async function launchGame(opts) {
   if (!page) page = await context.newPage();
   // Auto-accept native dialogs (as the playtest harness does).
   page.on('dialog', d => d.accept().catch(() => {}));
-  if (gameUrl && mode !== 'app') await page.goto(gameUrl, { waitUntil: 'domcontentloaded' });
+  if (opts.noGoto) { /* caller navigates (title-screen take) */ }
+  else if (gameUrl && mode !== 'app') await page.goto(gameUrl, { waitUntil: 'domcontentloaded' });
   else if (gameUrl) await page.waitForLoadState('domcontentloaded').catch(() => {});
 
   const close = async () => {

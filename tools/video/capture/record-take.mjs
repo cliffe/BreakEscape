@@ -6,23 +6,25 @@
  *   VIDEO_STATE_DIR=<dir> NODE_PATH=/opt/node-tools/node_modules \
  *   node record-take.mjs --display 97 --url http://127.0.0.1:3001/break_escape/games/<id> \
  *        --take ../takes/m01/foo.mjs --out <dir>/foo [--fps 30] [--size 1920x1080] [--music 0] \
- *        [--sfx 1 --voice 1 --master 1] [--zoom 0] [--no-sandbox true|false] [--no-bridge]
+ *        [--sfx 1 --voice 1 --master 1] [--zoom-step 1] [--hide-hud] [--title-take] [--no-sandbox true|false] [--no-bridge]
  *   Writes <out>.mkv, <out>.markers.json, <out>.ffmpeg.log
  *
  * Library: import { recordTake } from './record-take.mjs'.
  *
  * A take module: export default async (page, bridge, mark) => { ... }
+ *   optional: export async function setup(page, bridge) { ... }  runs after the title is passed and BEFORE recording starts
+
  *   page    Playwright page
  *   bridge  proxy for window.__test: await bridge.getState(); await bridge.minigame.choose(1)
  *           (also bridge.eval(fn, arg) for an arbitrary page.evaluate)
- *   mark    mark('label', {any: 'data'}) -> logs a take-relative time (ms from the start slate)
+ *   mark    mark('label', {any: 'data'}, atEpochMs?) -> logs a take-relative time (ms from the start slate); atEpochMs overrides 'now'
  */
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { pathToFileURL, fileURLToPath } from 'node:url';
-import { launchGame } from './launch.mjs';
+import { launchGame, withSkipResume } from './launch.mjs';
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -94,29 +96,31 @@ async function startFfmpeg({ display, sink, fps, size, outFile, logFile, pixFmt,
 }
 
 /** Injected into the page: white full-screen div for `ms` (3 capture frames)  + tone on the game's context. */
-async function slate(page, { ms = 100, toneMs = 100, hz = 1000 } = {}) {
-  return page.evaluate(({ ms, toneMs, hz }) => new Promise((resolve) => {
-    const ctx = (window.MusicController && window.MusicController.context) || window.__beCtx;
+async function slate(page, { ms = 100, toneMs = 100, hz = 1000, videoOnly = false } = {}) {
+  return page.evaluate(({ ms, toneMs, hz, videoOnly }) => new Promise((resolve) => {
+    const ctx = videoOnly ? null : ((window.MusicController && window.MusicController.context) || window.__beCtx);
     const d = document.createElement('div');
     d.style.cssText = 'position:fixed;inset:0;background:#fff;z-index:2147483647;pointer-events:none';
     requestAnimationFrame(() => {
       document.documentElement.appendChild(d);
       const epochMs = performance.timeOrigin + performance.now();
-      const osc = ctx.createOscillator(); const g = ctx.createGain();
-      osc.frequency.value = hz; g.gain.value = 0.8;
-      osc.connect(g); g.connect(ctx.destination);
-      osc.start(); osc.stop(ctx.currentTime + toneMs / 1000);
+      if (ctx) {
+        const osc = ctx.createOscillator(); const g = ctx.createGain();
+        osc.frequency.value = hz; g.gain.value = 0.8;
+        osc.connect(g); g.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + toneMs / 1000);
+      }
       const t0 = performance.now();
-      const tick = () => { if (performance.now() - t0 >= ms) { d.remove(); resolve({ epochMs, ctxState: ctx.state }); } else requestAnimationFrame(tick); };
+      const tick = () => { if (performance.now() - t0 >= ms) { d.remove(); resolve({ epochMs, ctxState: ctx ? ctx.state : null }); } else requestAnimationFrame(tick); };
       requestAnimationFrame(tick);
     });
-  }), { ms, toneMs, hz });
+  }), { ms, toneMs, hz, videoOnly });
 }
 
 export async function recordTake(o) {
   const {
     display, url, outBase, fps = 30, size = '1920x1080', takeFile,
-    volumes = {}, zoomStep, noSandbox, bridge: useBridge = true, mode = 'kiosk',
+    volumes = {}, zoomStep, noSandbox, bridge: useBridge = true, mode = 'kiosk', hideHud = false, titleTake = false,
     pixFmt = 'yuv420p', crf = 14, preset = 'veryfast', audioDelayMs = 0, titleTimeoutMs = 90000,
   } = o;
   const [w, h] = size.split('x').map(Number);
@@ -126,15 +130,56 @@ export async function recordTake(o) {
   const slateMs = Math.max(60, Math.ceil(3000 / fps) + 20);   // 3 capture frames of white, 1 kHz tone alongside
   const markers = [], events = [];
   const report = { ok: false, url, fps, size, outFile, notes: [] };
-  let takeFn = null;
-  if (takeFile) { const m = await import(pathToFileURL(path.resolve(takeFile)).href); takeFn = m.default || m.take; }
+  let takeFn = null, takeSetup = null;
+  if (takeFile) { const m = await import(pathToFileURL(path.resolve(takeFile)).href); takeFn = m.default || m.take; takeSetup = m.setup || null; }
 
-  const g = await launchGame({ display, url, width: w, height: h, volumes, zoomStep, noSandbox, mode });
+  const g = await launchGame({ display, url, width: w, height: h, volumes, zoomStep, noSandbox, mode, hideHud, noGoto: titleTake });
   const { page } = g;
   let ff = null, poll = null, t0 = null;
   const errors = [];
   page.on('pageerror', e => errors.push(String(e.message)));
   try {
+    if (titleTake) {
+      // Title-screen take: recording starts on a black page BEFORE the game loads, so the logo and the typed
+      // mission name are captured. The AudioContext cannot run before the title's gesture, so the start slate
+      // is video-only; the end slate (after the trusted click) has the tone. check-take --video-only trims on picture.
+      // warm the HTTP cache with one unrecorded load, so the recorded load is light enough not to drop frames
+      await page.goto(withSkipResume(url), { waitUntil: 'load' }).catch(() => {});
+      await sleep(4000);
+      await page.goto('data:text/html,<body style="margin:0;background:%23000"></body>');
+      await sleep(600);
+      const cpu0 = cpuSample();
+      ff = await startFfmpeg({ display, sink, fps, size, outFile, logFile, pixFmt, crf, preset, audioDelayMs });
+      report.ffmpegSpawnedAt = ff.startedAt; report.ffmpegFirstFrameAt = ff.firstFrameAt; report.videoOnlyStartSlate = true;
+      await sleep(700);
+      const s1 = await slate(page, { ms: slateMs, videoOnly: true });
+      t0 = s1.epochMs; report.startSlate = { epochMs: s1.epochMs, ctxState: null };
+      await sleep(500);
+      const mark = (label, data, atEpochMs) => { const t = (atEpochMs ?? Date.now()) - t0; markers.push({ tMs: Math.round(t), label, data: data ?? null }); return t; };
+      mark('take-begin');
+      await page.goto(withSkipResume(url), { waitUntil: 'domcontentloaded' });
+      mark('game-navigated');
+      if (takeFn) await takeFn(page, null, mark);
+      // pass the title with trusted clicks until the AudioContext runs and the title is gone
+      const tS = Date.now();
+      while (Date.now() - tS < titleTimeoutMs) {
+        const st = await page.evaluate(() => ({ ctx: window.MusicController && window.MusicController.context.state, title: !!document.querySelector('.title-screen-container') })).catch(() => ({}));
+        if (st.ctx === 'running' && !st.title) break;
+        await page.mouse.click(Math.round(w / 2), Math.round(h / 2));
+        await sleep(900);
+      }
+      mark('take-end');
+      report.audioContextState = await page.evaluate(() => window.MusicController && window.MusicController.context.state);
+      if (report.audioContextState !== 'running') throw new Error('AudioContext not running after title');
+      await sleep(1200);
+      const s2 = await slate(page, { ms: slateMs, toneMs: slateMs });
+      report.endSlate = { epochMs: s2.epochMs, ctxState: s2.ctxState };
+      await sleep(700);
+      const cpu1 = cpuSample();
+      await ff.stop();
+      report.cpuBusyPct = +(100 * (1 - (cpu1.idle - cpu0.idle) / (cpu1.total - cpu0.total))).toFixed(1);
+      report.loadavg = fs.readFileSync('/proc/loadavg', 'utf8').trim().split(' ').slice(0, 3).map(Number);
+    } else {
     // 1. wait for game, pass title screen with trusted clicks
     if (useBridge) {
       await page.waitForFunction(() => !!window.__test, null, { timeout: 120000 });
@@ -156,6 +201,8 @@ export async function recordTake(o) {
     if (state !== 'running') throw new Error(`AudioContext is '${state}', not 'running'`);
     if (useBridge) await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 30000 })).catch(() => {});
     report.window = await page.evaluate(() => ({ iw: innerWidth, ih: innerHeight, ow: outerWidth, oh: outerHeight, dpr: devicePixelRatio }));
+    // optional take-module setup(page, bridge): runs before recording starts (close the Mission Brief, dismiss tutorial prompts, ...)
+    if (takeSetup && useBridge) { await takeSetup(page, makeBridge(page)); await sleep(500); }
     await sleep(500);
 
     // 3. start recording, start slate
@@ -179,7 +226,7 @@ export async function recordTake(o) {
       }, 400);
     }
     await sleep(500);
-    const mark = (label, data) => { const t = Date.now() - t0; markers.push({ tMs: Math.round(t), label, data: data ?? null }); return t; };
+    const mark = (label, data, atEpochMs) => { const t = (atEpochMs ?? Date.now()) - t0; markers.push({ tMs: Math.round(t), label, data: data ?? null }); return t; };
     mark('take-begin');
 
     // 4. the take
@@ -196,6 +243,7 @@ export async function recordTake(o) {
     await ff.stop();
     report.cpuBusyPct = +(100 * (1 - (cpu1.idle - cpu0.idle) / (cpu1.total - cpu0.total))).toFixed(1);
     report.loadavg = fs.readFileSync('/proc/loadavg', 'utf8').trim().split(' ').slice(0, 3).map(Number);
+    }
     report.ok = true;
   } catch (e) {
     report.error = String(e && e.stack || e);
@@ -216,6 +264,7 @@ export async function recordTake(o) {
     };
   }
   report.pageErrors = errors.slice(0, 20);
+  markers.sort((a, b) => a.tMs - b.tMs);
   fs.writeFileSync(markFile, JSON.stringify({ ...report, t0EpochMs: t0, markers, events }, null, 2));
   return { ...report, markFile };
 }
@@ -225,12 +274,13 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   const a = {};
   const av = process.argv.slice(2);
   for (let i = 0; i < av.length; i++) if (av[i].startsWith('--')) a[av[i].slice(2)] = (av[i + 1] && !av[i + 1].startsWith('--')) ? av[++i] : true;
-  if (!a.display || !a.url || !a.out) { console.error('usage: record-take.mjs --display N --url URL --out BASE [--take FILE] [--fps 30] [--size 1920x1080] [--music 0] [--zoom N] [--no-sandbox true|false] [--no-bridge] [--preset veryfast|ultrafast] [--audio-delay-ms 65]'); process.exit(2); }
+  if (!a.display || !a.url || !a.out) { console.error('usage: record-take.mjs --display N --url URL --out BASE [--take FILE] [--fps 30] [--size 1920x1080] [--music 0] [--zoom-step N] [--hide-hud] [--title-take] [--no-sandbox true|false] [--no-bridge] [--preset veryfast|ultrafast] [--audio-delay-ms 65]'); process.exit(2); }
   const volumes = {};
   for (const k of ['music', 'sfx', 'voice', 'master']) if (a[k] !== undefined) volumes[k] = Number(a[k]);
   const r = await recordTake({
     display: a.display, url: a.url, outBase: a.out, takeFile: a.take, fps: Number(a.fps) || 30, size: a.size || '1920x1080',
-    volumes, zoomStep: a.zoom !== undefined ? Number(a.zoom) : undefined,
+    volumes, zoomStep: (a['zoom-step'] ?? a.zoom) !== undefined ? Number(a['zoom-step'] ?? a.zoom) : undefined,
+    hideHud: !!a['hide-hud'], titleTake: !!a['title-take'],
     noSandbox: a['no-sandbox'] === undefined ? undefined : a['no-sandbox'] === 'true',
     bridge: !a['no-bridge'], mode: a.mode || 'kiosk', pixFmt: a['pix-fmt'] || 'yuv420p', preset: a.preset || 'veryfast', audioDelayMs: Number(a['audio-delay-ms']) || 0,
   });

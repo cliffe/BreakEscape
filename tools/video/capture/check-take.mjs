@@ -4,6 +4,8 @@
  * Finds the start and end slates (white frames in picture, 1 kHz tone in sound), reports the A/V
  * offset at each end (positive = audio late), duplicated/dropped frames, and writes a copy trimmed
  * between the slates (audio shifted by the start-slate offset unless --no-correct).
+ * --video-only: title-screen takes, whose start slate has no tone: trims on the two picture slates, no offset check.
+ * Also writes <base>.contact.jpg: a contact sheet of the trimmed take (1 frame per second, tiled 6 across, 320 px wide tiles, time-labelled).
  * Exit 0 = pass (offset < threshold ms at both ends and drops+dups < 1%).
  */
 import fs from 'node:fs';
@@ -52,7 +54,7 @@ const aRuns = []; for (let i = 0; i < tone.length; i++) if (tone[i]) { let j = i
 
 const res = { file, fps, videoStart: vStart, audioStart: aStart, durationS: Number(probe.format.duration), videoSlates: vSlates, audioSlates: aRuns, pass: false, problems: [] };
 if (vSlates.length < 2) res.problems.push(`found ${vSlates.length} picture slate(s), need 2`);
-if (aRuns.length < 2) res.problems.push(`found ${aRuns.length} tone slate(s), need 2`);
+if (!opt['video-only'] && aRuns.length < 2) res.problems.push(`found ${aRuns.length} tone slate(s), need 2`);
 
 // ---- frames: count vs expected, ffmpeg dup/drop from sidecar ----
 const nb = frames.length;
@@ -64,7 +66,18 @@ if (fs.existsSync(base + '.markers.json')) { const m = JSON.parse(fs.readFileSyn
 const lost = (dup || 0) + (drop || 0) + gaps;
 res.dropPct = +(100 * lost / nb).toFixed(2);
 
-if (vSlates.length >= 2 && aRuns.length >= 2) {
+if (opt['video-only'] && vSlates.length >= 2) {
+  const vs0 = vSlates[0], vs1 = vSlates[vSlates.length - 1];
+  res.slateGapS = +(vs1.start - vs0.end).toFixed(2);
+  res.offsetMode = 'video-only';
+  res.pass = res.dropPct < 1;
+  if (!opt['no-trim']) {
+    const out = opt.out || base + '.trimmed.mkv';
+    const t0 = vs0.end + 0.05, t1 = vs1.start - 0.05;
+    const r = run('ffmpeg', ['-y', '-v', 'error', '-ss', String(t0), '-i', file, '-t', String(t1 - t0), '-map', '0:v', '-map', '0:a', '-c:v', 'libx264', '-crf', '14', '-preset', 'veryfast', '-pix_fmt', vs.pix_fmt, '-c:a', 'pcm_s16le', out]);
+    res.trimmed = r.status === 0 ? { out, fromS: +t0.toFixed(3), toS: +t1.toFixed(3), audioShiftMs: 0 } : { error: r.stderr.toString().slice(-300) };
+  }
+} else if (vSlates.length >= 2 && aRuns.length >= 2) {
   const vs0 = vSlates[0], vs1 = vSlates[vSlates.length - 1], as0 = aRuns[0], as1 = aRuns[aRuns.length - 1];
   res.offsetStartMs = Math.round((as0.start - vs0.start) * 1000);
   res.offsetEndMs = Math.round((as1.start - vs1.start) * 1000);
@@ -84,6 +97,26 @@ if (vSlates.length >= 2 && aRuns.length >= 2) {
       '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-crf', '14', '-preset', 'veryfast', '-pix_fmt', vs.pix_fmt, '-c:a', 'pcm_s16le', out];
     const r = run('ffmpeg', args); res.trimmed = r.status === 0 ? { out, fromS: +t0.toFixed(3), toS: +t1.toFixed(3), audioShiftMs: Math.round(corr * 1000) } : { error: r.stderr.toString().slice(-300) };
   }
+}
+// ---- markers re-timed to the trimmed file: trimmed_t = (slate-relative t) + slateStart - trimFrom ----
+if (res.trimmed && res.trimmed.out && vSlates.length && fs.existsSync(base + '.markers.json')) {
+  const m = JSON.parse(fs.readFileSync(base + '.markers.json', 'utf8'));
+  const shift = vSlates[0].start - res.trimmed.fromS;       // seconds to add to a slate-relative time
+  const f = (ms) => Math.round(ms + shift * 1000);
+  const out = { trimmedFile: res.trimmed.out, shiftMs: Math.round(shift * 1000), durationS: +(res.trimmed.toS - res.trimmed.fromS).toFixed(2),
+    markers: m.markers.map(x => ({ ...x, tMs: f(x.tMs) })), events: (m.events || []).map(x => ({ ...x, tMs: f(x.tMs) })) };
+  fs.writeFileSync(base + '.trimmed.markers.json', JSON.stringify(out, null, 2));
+  res.trimmedMarkers = base + '.trimmed.markers.json';
+}
+// ---- contact sheet of the trimmed take ----
+if (res.trimmed && res.trimmed.out) {
+  const d = Number(JSON.parse(run('ffprobe', ['-v', 'error', '-show_format', '-of', 'json', res.trimmed.out]).stdout.toString()).format.duration);
+  const n = Math.max(1, Math.ceil(d)), cols = Math.min(6, n), rows = Math.ceil(n / cols);
+  const font = ['/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf'].find(f => fs.existsSync(f));
+  const label = font ? `drawtext=fontfile=${font}:text='%{pts\\:hms}':x=4:y=4:fontsize=18:fontcolor=white:box=1:boxcolor=black@0.6,` : '';
+  const sheet = base + '.contact.jpg';
+  const r = run('ffmpeg', ['-y', '-v', 'error', '-i', res.trimmed.out, '-an', '-vf', `fps=1,scale=320:-1,${label}tile=${cols}x${rows}`, '-frames:v', '1', '-q:v', '3', sheet]);
+  res.contactSheet = r.status === 0 ? { file: sheet, tiles: n, cols, rows } : { error: r.stderr.toString().slice(-300) };
 }
 console.log(JSON.stringify(res, null, 2));
 process.exit(res.pass ? 0 : 1);
