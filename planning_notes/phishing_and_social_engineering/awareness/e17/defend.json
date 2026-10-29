@@ -24,6 +24,8 @@
       },
       "_labels": "E17-M2 (E14_E17_PLAYTEST_P1): this set is acceptable-use, not phishing. The running team tally defaults to 'Phish stopped for the team: N'; teamBadge/teamBadgeTitle reword it for a set whose flagged items are unsafe requests, not phish (inbox-triage-minigame.js _renderTeamTally).",
       "labels": {
+        "phishCaughtLabel": "Requests handled the right way",
+        "scoreLine": "Right call is most of the score; naming the reasons is the rest.",
         "teamBadge": "Requests handled the right way: {n}",
         "teamBadgeTitle": "Requests you reported or checked this round rather than just acting on them"
       },
