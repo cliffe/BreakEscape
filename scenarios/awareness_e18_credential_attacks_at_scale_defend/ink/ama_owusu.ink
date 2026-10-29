@@ -21,7 +21,7 @@ VAR hub_quiet = false
     { episode_e18_credential_attacks_at_scale_defend_defend_done:
         Ama Owusu: That's them sorted, thanks. A genuine alert never asks for your password; the fakes always do. Report the fakes, and change a reused password on the real site.
     - else:
-        Ama Owusu: Your own seat now. After a sweep the alerts come thick and fast, some real, some fakes. Report the fakes, and never type a password to unlock or check anything.
+        Ama Owusu: Your own seat now. After a sweep the alerts come thick, some real, some fakes. Report the fakes, and never type a password to unlock or check anything.
     }
 }
 + [Thanks, Ama.]

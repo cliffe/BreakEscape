@@ -21,7 +21,7 @@ VAR hub_quiet = false
     { episode_e11_misdirected_data_defend_defend_done:
         Tomasz Wiśniewski: That's the inbox sorted, thanks. Anything about someone's personal data, a request, a breach or a complaint, comes to the DPO the same day.
     - else:
-        Tomasz Wiśniewski: You're covering the Care Laundry desk inbox. Some of it is routine, some belongs with me as DPO, some was sent to catch you out. Report anything that doesn't sit right.
+        Tomasz Wiśniewski: You're covering the Care Laundry desk inbox. Some of it is routine, some belongs with the DPO, some was sent to catch you out. Report anything that doesn't sit right.
     }
 }
 + [Thanks, Tomasz.]
