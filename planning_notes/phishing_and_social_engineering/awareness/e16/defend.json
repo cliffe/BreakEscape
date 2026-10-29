@@ -1,0 +1,180 @@
+{
+  "_about": "E16 Insider risk defend fragment (consequence-flip episode). Quayholt Insurance and everyone in it are fictional; every address ends .example. triageSets holds only the episode set e16_leaver_week_inbox (E16's judgement topic feeds the shared data_conduct check pair, built by 10_CHECK_FORMS.md's own generator, not this fragment: E16 brief section 14). Copy triageSets and the awarenessEpisode keys into the E16 shells: the wiring agent builds the full erb, the generator (gen_e8_e17_shells.py) builds the defend-only shell. Full-episode-only keys (the mistake sandbox, the montage flip, the raise-a-concern form, the full-shell defendIntro) are in full_only.json, not here, so the generated defend-only shell stays clean. Brand roster and cast: ../BRAND_SET.md (Quayholt Insurance) plus the three new cast in _brandAdditions below. ENG-04 (mistake/montage), ENG-12 (concernForm) and ENG-08 (schema) must have landed before the full shell validates; only the triage set validates without them. TONE (E16 section 18, a blocker): no blame, no surveillance framing; the set teaches noticing and routing a concern fairly, never suspicion of colleagues.",
+
+  "_brandAdditions": {
+    "_use": "For BRAND_SET.md (Quayholt Insurance additions from E16). Full table and diversity note in e16/BRAND_ADDITIONS.md. Three new Quayholt cast; the other people E16 names (Anjali Rao host, Reuben Ofori, Hana Novak) are built Quayholt cast.",
+    "ross_garside": "Ross Garside, senior account manager on his notice period (ross.garside@quayholt.example), 50s, white, north-east England. The leaver; the favour and last-day login beats and defend row 4. Liked, passed over last spring, joining a competitor. Not a villain. Pre-ship: web-search 'Ross Garside' against real people with the usual check (owed).",
+    "samira_nawaz": "Samira Nawaz, account handler (samira.nawaz@quayholt.example), 40s, British Pakistani. The colleague the office whispers about; innocent, her father in hospital this week. Nawaz, not game_design.md's default 'Haddad' (which clashes with the deduction sidecar fixture B). Pre-ship: web-search 'Samira Nawaz' (owed).",
+    "craig_pickering": "Craig Pickering, account handler (craig.pickering@quayholt.example), 30s, white, Bristol. The lunch-room theory; not malicious. Pre-ship: web-search 'Craig Pickering' (owed).",
+    "opportunities_handle": "'Opportunities', the unknown messaging contact behind the outside offer (defend row 1 and the outside_offer sandbox beat). A stock-style avatar, text only, never voiced, never a real brand; distinct from E14's 'Jordan Vale'. Not a person in the roster and not an address: it appears only as a messaging handle."
+  },
+
+  "triageSets": [
+    {
+      "id": "e16_leaver_week_inbox",
+      "title": "A leaver's week",
+      "brief": "It's a colleague's last week and messages are waiting: an offer, a request to borrow a login, some sign-in prompts, a favour and a couple of calls. For each one, choose Trust, Report, Delete or Verify (ring the service desk, or confirm on a number you already hold), then tick what you noticed. Keep your login to yourself, report what gets offered to you, and deny any sign-in prompt you didn't start. Reporting or checking when you're unsure is always fine and never marked down, and you are not being asked to investigate anyone.",
+      "scoringProfile": "awareness",
+      "verifyVerdict": true,
+      "feedbackMode": "immediate",
+      "headerPanel": "off",
+      "glossary": "closed",
+      "channelTells": ["insider_offer", "secrecy_or_bypass", "borrowed_authority", "unrequested_mfa_push", "lookalike_domain"],
+      "flagChips": {
+        "insider_offer": "Offer of money or favours for access"
+      },
+      "skillNames": {
+        "insider_offer": "Recognising an offer for access or data"
+      },
+      "_localTells": "insider_offer is an offer-of-money-for-access sign with no built-library equivalent, so it is scenario-local to this set (00 section 2's CHANNEL_TELLS is untouched, and no SKILL_NAMES entry is added to phish-rules.js/triage.rb). It is declared in channelTells with a flagChips label and a set-level skillNames name, and the one flagging message (row 1) carries a factorStrings.insider_offer.redFlag sentence. Promote it to the shared library only if a 10 check item later scores it. secrecy_or_bypass, borrowed_authority, unrequested_mfa_push and lookalike_domain are shared-library tells (00 section 2) and need no label.",
+      "outcome": { "setGlobalPrefix": "episode_e16_insider_risk_defend_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "e16_offer",
+          "_note": "Row 1. The outside offer: an unknown messaging contact pays staff for access. sms kind, the handle in from.address, text only. The scenario-local insider_offer tell lives here. Correct verdict Report: screenshot and report, without replying. Nothing technical is explained; it offers money and asks for 'access'.",
+          "kind": "sms",
+          "from": { "address": "Opportunities (unknown contact)" },
+          "time": "19:42",
+          "body": "We pay people at firms like yours for remote access. 25%. Anonymous. Interested?",
+          "factorStrings": {
+            "insider_offer": { "redFlag": "An offer of money or favours for access to systems or data" }
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["insider_offer", "secrecy_or_bypass"],
+            "perFlagNote": {
+              "insider_offer": "An offer of a cut for remote access. Don't reply, negotiate or play along to find out more; the same message often goes to several people, and one report warns everyone.",
+              "secrecy_or_bypass": "Anonymous and paid off the books: it only works if you keep it off the record, which is the sign to report it, not to engage."
+            },
+            "ifTrusted": "Replying, even just to find out how it works, invites more pressure and marks you as someone who might say yes.",
+            "reportReply": "Thanks. Screenshotting it and reporting it, with no word back, is exactly right. The same message had gone to others, and your report warned them. Nobody is in trouble for being approached."
+          }
+        },
+        {
+          "id": "e16_shared_login_req",
+          "_note": "Row 2. A genuine colleague (Reuben Ofori, built Quayholt cast) making a bad ask: borrow your login. isPhish true with one flag (borrowed_authority) so Trust scores 0 and the modelled decline/route scores full, which is the behaviour measured. Reuben is honest, not an attacker; the ASK is the unsafe thing. Correct verdict Verify (route to the service desk with him) or Report. The human nuance (help him the safe way) is in the feedback.",
+          "from": { "name": "Reuben Ofori", "address": "reuben.ofori@quayholt.example" },
+          "to": "you@quayholt.example",
+          "subject": "Can I use your login for ten minutes? I'm locked out.",
+          "time": "09:34",
+          "body": "Morning,\nI'm locked out and I've a report due at ten. Any chance I could just use your login for ten minutes? I'll be quick, promise.\nReuben",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "reuben.ofori@quayholt.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["borrowed_authority"],
+            "perFlagNote": {
+              "borrowed_authority": "Lending your login hands someone your access under your name; whatever they open goes on your record, and it may show him more than he should see."
+            },
+            "ifTrusted": "His actions for those ten minutes are logged as yours, and he may reach data he has no business in.",
+            "reportReply": "Thanks, the service desk reset his own login in minutes. Reuben is a genuine colleague, so the move is to decline the login and point him to the safe route, not to leave him stuck."
+          }
+        },
+        {
+          "id": "e16_mfa_storm",
+          "_note": "Row 3. A run of sign-in prompts the learner did not start, late at night, from a device that is not theirs. The built authenticator push card (E3 e3_push_early shape). Deny and report scores as Report; Approve as Trust (0), Deny as Delete. Correct verdict Report (Deny and report; deny them all).",
+          "kind": "push",
+          "time": "23:51",
+          "push": {
+            "app": "Quayholt Sign-in",
+            "request": "Are you trying to sign in?",
+            "account": "you@quayholt.example",
+            "location": "Unknown location, outside the UK",
+            "device": "Windows PC"
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["unrequested_mfa_push"],
+            "perFlagNote": {
+              "unrequested_mfa_push": "You didn't start these. A flood of prompts late at night is someone with your password trying to wear you into tapping Approve. Deny every one."
+            },
+            "ifTrusted": "Approving one would let whoever has your password into your Quayholt account, from a computer you've never used.",
+            "reportReply": "Thanks. Denying them all and ringing the service desk, at any hour, is exactly right. The prompts are what stopped them."
+          }
+        },
+        {
+          "id": "e16_leaver_favour",
+          "_note": "Row 4. The leaver's favour: Ross Garside (new cast, on his notice period) asks you to export his accounts to his personal email 'for the handover'. A genuine leaver's ask that is the unsafe one, so it is flagged (secrecy_or_bypass) and isPhish true, matching row 2's pattern. Correct verdict Verify (ask what the handover needs; route to his manager) or Report. Ross is not a villain; help him do the handover properly.",
+          "from": { "name": "Ross Garside", "address": "ross.garside@quayholt.example" },
+          "to": "you@quayholt.example",
+          "subject": "Export my accounts to my personal email for the handover, would you?",
+          "time": "11:05",
+          "body": "Hi,\nBefore I'm gone Friday, could you export my accounts and send them to my personal email so I've got the handover to hand? They're my contacts really, so it's easier if I keep a copy.\nCheers,\nRoss",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "ross.garside@quayholt.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["secrecy_or_bypass"],
+            "perFlagNote": {
+              "secrecy_or_bypass": "Sending the client list to a personal inbox takes the firm's data outside its protection. Handover notes go in the shared place; the client list belongs to the firm, not to whoever looked after it."
+            },
+            "ifTrusted": "The accounts would sit in a personal inbox outside the firm, and taking data to a new job can be a crime.",
+            "reportReply": "Thanks. Declining the personal-email export and asking his manager what the handover actually needs is right, and it still gets Ross a proper handover."
+          }
+        },
+        {
+          "id": "e16_it_approve",
+          "_note": "Row 5. The normal-looking phish half of the mirror pair. A look-alike 'IT Service Desk' on quayholt-support.example (a declared Quayholt look-alike) primes you to approve a prompt you didn't start. Correct verdict Report. Mirror-pairs with row 6 (genuine, suspicious-looking locked-out colleague).",
+          "from": { "name": "IT Service Desk", "address": "it@quayholt-support.example" },
+          "to": "you@quayholt.example",
+          "subject": "We're migrating your account tonight",
+          "time": "16:20",
+          "body": "Hello,\nWe're migrating your account tonight. When the sign-in prompt arrives, please approve it so the move completes. No need to raise a ticket.\nIT Service Desk",
+          "auth": { "spf": "fail", "dkim": "fail", "dmarc": "fail", "envelopeFrom": "quayholt-support.example", "replyTo": "it@quayholt-support.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["secrecy_or_bypass", "lookalike_domain"],
+            "perFlagNote": {
+              "secrecy_or_bypass": "This primes you to approve a prompt you didn't start and tells you not to raise a ticket; real IT never asks that.",
+              "lookalike_domain": "The address is on quayholt-support.example, not quayholt.example: a look-alike with an added word."
+            },
+            "ifTrusted": "If you approve the prompt that follows, you let whoever sent this into your account.",
+            "reportReply": "Thanks. Reporting it is right. IT never asks you to approve a prompt by email, and the address is a look-alike of Quayholt's own."
+          }
+        },
+        {
+          "id": "e16_genuine_lockout",
+          "_note": "Row 6. The suspicious-looking genuine half of the mirror pair. A real colleague (Hana Novak, built Quayholt cast) locked out before a client deadline, genuine and a bit pushy, but she lets you ring back on the number on file. Correct verdict Verify (ring the service desk, or confirm on the number on file); not a flat refusal. Under the awareness profile a genuine item scores full on Trust, Verify or Report; the feedback models offering the safe route rather than refusing.",
+          "kind": "call",
+          "callerId": "Hana Novak, claims (calling from her mobile)",
+          "from": { "name": "Hana Novak", "address": "Hana (mobile), in your contacts" },
+          "time": "14:10",
+          "transcript": [
+            { "who": "Hana", "text": "It's Hana from claims. I'm locked out and I've a client on at half two, I'm really stuck. Can you not just sort me out?" },
+            { "who": "Hana", "text": "I know, I know, ring the desk. Go on then, ring me back on my mobile if you need to check it's me. Just be quick, honestly." }
+          ],
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "Genuine and awkward, not a trick: she lets you ring back on the number on file, which is the difference from an impostor. The safe route still serves her: the service desk resets her login in minutes, or a manager can arrange temporary access. Refusing flat, with no safe route offered, helps nobody."
+            }
+          }
+        }
+      ]
+    }
+  ],
+
+  "awarenessEpisode": {
+    "role": "general_staff",
+    "company": "quayholt_insurance",
+    "brand": { "name": "Quayholt Insurance", "logoText": "QUAYHOLT", "accent": "#6b4c9a" },
+    "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional firm. It's a leaver's last week. In scope: your own choices, and what you notice. You are not being asked to investigate anyone.",
+    "defend": { "setId": "e16_leaver_week_inbox", "reportAlwaysVisible": true },
+    "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
+    "strings": {
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm. A colleague is leaving on Friday, and the office is talking. Your job is not to solve anything: keep your access to yourself, report what's offered to you, notice what you actually see, and pass facts to the right person, fairly, including about the colleague everyone is whispering about. First you make this week's ordinary calls; then you see where each led. Then a short set of messages, and a fair way to raise a concern. Only the set is scored.",
+      "flipHeading": "A week later",
+      "noBlameLine": "A well-made offer or a plausible rumour fools decent people. Raising an honest concern that turns out to be nothing is never a failure, and nobody is in trouble for being approached.",
+      "mondayCard": "On Monday: think of the one person here you'd tell if you noticed something, and keep your login and your prompts to yourself.",
+      "defendOnly": "The offers and the rumours here are the kind that catch decent people. The ones you were caught out by are shown below, with what good looks like, and a fair way to raise a concern.",
+      "conceptPanel": [
+        { "heading": "Seen, said, true", "text": "What the office saw about Samira: in early, taking calls in the stairwell, visiting HR. What was said: she was 'going with Ross'. What was true: her father was in hospital all week. Unusual is not the same as wrong, and a kind word comes first. Rumours tend to land on the person already having the hardest week." },
+        { "heading": "Three things to keep", "text": "Your login is you: never share it, never borrow one. Offers get reported: don't reply, screenshot and send it on. Concerns go to the right person as facts, not a verdict on anyone. You don't have to be sure; you do have to be fair." }
+      ]
+    },
+    "_defendOnly": {
+      "_use": "Strings for the defend-only shell (e16_insider_risk_defend), which has no mistake or flip stage. The generator copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared (flipHeading is popped, the flip strings are never shown). conceptPanel is carried over, so both concept cards show in the defend-only debrief (ENG-09b). This brief is identical to the gen EPISODES['e16'] defend brief (section 8b): keep them in step.",
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm, during a leaver's last week. Messages are waiting: an offer, a request to borrow a login, some sign-in prompts, a favour. Sort them, and learn to raise a concern as facts, not a verdict on anyone. Reporting or checking when you're unsure is always fine and never marked down. You are not being asked to investigate anyone.",
+      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional firm. In scope: a short set of messages, and a fair way to raise a concern."
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "_about": "Full-episode-only keys for scenarios/awareness_e16_insider_risk/scenario.json.erb (the E16 full shell). The wiring agent pastes each value into the full erb at the path its _notes line gives. None of these is carried into the generated defend-only shell by gen_e8_e17_shells.py EXCEPT concernForm (see its _notes): the sandbox and the montage are full-only; the raise-a-concern step is kept in both variants (E16 section 13), which the generator does not do today, so that carry is a wiring/generator action, flagged below. Authored by opus48. ENG-04 (mistake stage + montage flip), ENG-12 (concernForm) and ENG-08 (schema) must have landed before the full erb validates. TONE (E16 section 18, a blocker): no blame, no surveillance framing; the flip ends on the kind, fair Samira outcome, and the concern form favours facts over a verdict.",
+
+  "_notes": {
+    "mistake": "Paste at social.awarenessEpisode.mistake (ENG-04). The five everyday choices of the leaver's week, in authored order. Exactly one safe:true option per beat; the safe option's position is varied beat to beat (2nd, 1st, 2nd, 1st, 2nd) so it is never always first. flipBeat is outside_offer (the one consequential choice quoted first in the montage). beats are authored shared_login, rumour, outside_offer, leaver_favour, samira so that the montage (flipBeat first, then the rest in authored order) ENDS on the samira beat's kind resolution. Never scored. Full-only: dropped from the defend-only shell with the mistake stage.",
+    "flip": "Paste at social.awarenessEpisode.flip (ENG-04). mode montage. Full-only.",
+    "flipMontageByChoice": "Paste at social.awarenessEpisode.strings.flipMontageByChoice (ENG-04). Keyed beat then option; a line for BOTH options of every beat (the 'your choice' version and the 'the version where it happened instead' version), so the engine's unsafe-option fallback never fires. Erb-only and on the parity allow-list (STRINGS_ERB_ONLY_OK), like flipDefenderLineByChoice: the defend-only shell has no flip, so the generator never carries it. flipHeading ('A week later') stays in the defend.json fragment strings (E16 section 10), NOT here.",
+    "defendIntro": "Paste at social.awarenessEpisode.strings.defendIntro in the FULL erb only. The host's hand-off line from the flip into the defend half (E16 section 8). The defend-only shell takes its own defendIntro from gen EPISODES['e16']['defend']['defendIntro'] (section 8b), so this full-shell line is not in the fragment.",
+    "concernForm": "Paste at social.awarenessEpisode.concernForm (ENG-12). The unscored raise-a-concern step that runs inside the defend stage. KEPT IN BOTH VARIANTS (E16 section 13): the full erb gets it from here; the defend-only shell must ALSO carry it, but gen_e8_e17_shells.py defend_only() builds the awarenessEpisode dict from a fixed key list and does not copy concernForm today, so either the generator's ep-build gains concernForm or EPISODES['e16'] carries it. Flagged for the wiring/generator owner (question below). guidance is authored as an object; if ENG-12's schema types guidance as a string, align it (coordination note for the ENG-12 engine agent). Unscored teaching, never the awareness profile.",
+    "hostHandoffLine": "Not a paste target: Anjali's spoken hand-off line is delivered as strings.defendIntro above (the runner shows it entering the defend stage). It is reproduced in ink/anjali_rao.ink as a comment only; the host ink hub carries the welcome and completion lines (see that file's header)."
+  },
+
+  "mistake": {
+    "scored": false,
+    "beats": [
+      {
+        "id": "shared_login",
+        "situation": "Reuben is locked out with a report due at ten. \"Can I just use yours? Two minutes.\"",
+        "options": [
+          { "id": "log_in_for_him", "label": "Log in for him", "safe": false },
+          { "id": "service_desk", "label": "Ring the service desk with him; they reset it in minutes", "safe": true, "approvedRoute": true }
+        ]
+      },
+      {
+        "id": "rumour",
+        "situation": "At lunch, Craig floats that Samira is leaving with Ross and taking the client list.",
+        "options": [
+          { "id": "route", "label": "If he's actually seen something, point him to the security team or his manager, not the kitchen; otherwise leave it", "safe": true, "approvedRoute": true },
+          { "id": "add", "label": "Add to the theory", "safe": false }
+        ]
+      },
+      {
+        "id": "outside_offer",
+        "situation": "An unknown contact messages you: \"We pay people at firms like yours for remote access. 25% of what we make. Totally anonymous. Interested?\"",
+        "options": [
+          { "id": "engage", "label": "Reply to find out how it works", "safe": false },
+          { "id": "report", "label": "Screenshot it and report it to the security team, without replying", "safe": true, "approvedRoute": true }
+        ]
+      },
+      {
+        "id": "leaver_favour",
+        "situation": "Ross asks you to export his accounts to his personal email \"for the handover\".",
+        "options": [
+          { "id": "handover", "label": "Ask what the handover actually needs; put handover notes in the shared place; route anything else to his manager", "safe": true, "approvedRoute": true },
+          { "id": "personal_email", "label": "Send them to his personal email", "safe": false }
+        ]
+      },
+      {
+        "id": "samira",
+        "situation": "Samira has been in early, taking calls in the stairwell, and visiting HR.",
+        "options": [
+          { "id": "confront", "label": "Ask her outright if she's going with Ross, or report her as a suspect", "safe": false },
+          { "id": "kind", "label": "Offer a kind word; if you're worried about her, tell her manager or HR privately", "safe": true, "approvedRoute": true }
+        ]
+      }
+    ],
+    "flipBeat": "outside_offer"
+  },
+
+  "flip": { "mode": "montage" },
+
+  "flipMontageByChoice": {
+    "outside_offer": {
+      "engage": "Your choice. A reply drew more pressure, then a flood of sign-in prompts that night. The same message had gone to several people; the one who reported it warned everyone.",
+      "report": "The version where someone replied instead: the pressure grew and the sign-in prompts came that night. Reporting it, without a word back, stopped it and warned the team. You are not in trouble for being approached."
+    },
+    "shared_login": {
+      "log_in_for_him": "Your choice. Reuben clicked the wrong shortcut and opened the HR drive, under your name, on the record until it was explained. Harmless this time; a reset would have cost two minutes.",
+      "service_desk": "The version where a login was shared: whatever was opened went on the lender's record. The service desk reset it in minutes instead."
+    },
+    "rumour": {
+      "add": "Your choice. The theory reached Samira, who had been at the hospital every night. It wasn't true, and it landed on someone already having the worst week.",
+      "route": "The version where the theory spread: it reached Samira, and it wasn't true. Facts to the right person help; a theory in the kitchen only hurts."
+    },
+    "leaver_favour": {
+      "personal_email": "Your choice. The client list sat in a personal inbox outside the firm. Company data belongs to the company, and the people in it belong to themselves.",
+      "handover": "The version where accounts went to a personal inbox: the firm's data left its protection. Handover notes in the shared place did the job and kept it in."
+    },
+    "samira": {
+      "confront": "Your choice. Samira, whose father was in hospital, was asked if she was 'in on it'. She wasn't. The question made a hard week harder.",
+      "kind": "A kind word, and a quiet word to her manager because you were worried: Samira's father was in hospital. Nobody was accused, and she got support. That is what good looks like."
+    }
+  },
+
+  "defendIntro": "That's where this week's choices led. Now a short set of messages, and a fair way to raise a concern, facts, not a verdict on anyone. Take them at your own pace.",
+
+  "concernForm": {
+    "title": "Raise a concern",
+    "intro": "Write it as facts you saw yourself, not a verdict on anyone. Pick what to put in the report, then choose who to send it to.",
+    "factChips": [
+      { "id": "fc_offer_what", "kind": "what", "label": "An unknown contact offered payment for remote access" },
+      { "id": "fc_offer_when", "kind": "when", "label": "The message came on Tuesday evening" },
+      { "id": "fc_offer_where", "kind": "where", "label": "Through a messaging app, from the handle 'Opportunities'" },
+      { "id": "fc_offer_who", "kind": "who", "label": "It came to me; I gather others were messaged too" },
+      { "id": "fc_care_what", "kind": "what", "label": "A colleague has seemed to be having a hard week" },
+      { "id": "fc_care_who", "kind": "who", "label": "I don't know why, and it may well be nothing" }
+    ],
+    "conclusionChips": [
+      { "id": "cc_ross", "label": "Ross is stealing the client list" },
+      { "id": "cc_samira", "label": "Samira is in on it with Ross" },
+      { "id": "cc_craig", "label": "Craig reckons Samira's involved" }
+    ],
+    "guidance": {
+      "favourFacts": "Good. Facts, routed to the right person, are what a fair concern looks like. You don't have to be sure, and you may not hear the outcome, because that is confidential too.",
+      "onVerdict": "That's a conclusion, not something you saw. Leave the verdict to the people whose job and lawful process it is; give them what you actually noticed instead. If you're wrong, a verdict is unfair to someone who has done nothing.",
+      "teamChatNote": "Posting it in the team chat counts as spreading it, not raising it.",
+      "routes": [
+        { "id": "security", "label": "The security team", "when": "An outside offer, a sign-in prompt you didn't start, or data or access being misused" },
+        { "id": "manager", "label": "Your manager", "when": "A colleague's conduct, or you're worried about their wellbeing" },
+        { "id": "hr", "label": "HR", "when": "A colleague's wellbeing, or you feel pressured or threatened yourself" },
+        { "id": "speakup", "label": "The Speak Up line", "when": "You'd rather raise it anonymously, or your manager is part of it" },
+        { "id": "dpo", "label": "The DPO", "when": "It involves personal data (or the security team, who will pass it on)" }
+      ]
+    }
+  }
+}
