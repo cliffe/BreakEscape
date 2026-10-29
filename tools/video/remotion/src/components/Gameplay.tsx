@@ -1,0 +1,32 @@
+import React from 'react';
+import { OffthreadVideo, staticFile } from 'remotion';
+import { Placeholder } from './Placeholder';
+import { framingAt, visibleRect } from '../timeline.js';
+
+/**
+ * A gameplay shot: the 1920x1080 take (or a placeholder pattern) scaled with nearest-neighbour (image-rendering: pixelated),
+ * cropped to the aspect by per-shot framing (default centred), with an optional slow push-in (framingAt handles both).
+ * Audio is not taken from the video here: render is silent and scripts/mix-audio.mjs builds the mix.
+ */
+export const Gameplay: React.FC<{ shot: any; w: number; h: number; aspect: string; frame: number; frames: number; fps: number; available: Record<string, boolean>; source: [number, number] }> = ({ shot, w, h, aspect, frame, frames, fps, available, source }) => {
+  const t = frames > 1 ? frame / (frames - 1) : 0;
+  const fr = framingAt(shot, aspect, t);
+  const r = visibleRect(fr, w, h, source);
+  const [sw, sh] = source;
+  const tx = -(r.x0 * sw * r.scale), ty = -(r.y0 * sh * r.scale);
+  const has = shot.source?.file && available[`takes/${shot.source.file}`];
+  const inSec = shot.source?.in ?? 0;
+  const startFrom = Math.round(inSec * fps);
+  const sourceSec = inSec + frame / fps;
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: '#000' }}>
+      <div style={{ position: 'absolute', left: 0, top: 0, width: sw, height: sh, transformOrigin: '0 0', transform: `translate(${tx}px, ${ty}px) scale(${r.scale})`, imageRendering: 'pixelated' }}>
+        {has ? (
+          <OffthreadVideo src={staticFile(`takes/${shot.source.file}`)} startFrom={startFrom} muted pauseWhenBuffering={false} style={{ width: sw, height: sh, imageRendering: 'pixelated' }} />
+        ) : (
+          <Placeholder shot={shot} localSec={frame / fps} sourceSec={sourceSec} />
+        )}
+      </div>
+    </div>
+  );
+};

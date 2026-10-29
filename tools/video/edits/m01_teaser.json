@@ -1,0 +1,549 @@
+{
+ "id": "m01_teaser",
+ "title": "Break Escape m01 First Contact: 30 s teaser",
+ "fps": 30,
+ "length": 30.0,
+ "status": "placeholder: takes not yet recorded; shots without an existing take file render a generated test pattern",
+ "music": {
+  "track": "Noir/Midnight Cipher Chase.mp3",
+  "analysis": "midnight_cipher_chase.json",
+  "start": 107.023,
+  "length": 30.0,
+  "gain_db": 0,
+  "fade_in": 0.0,
+  "fade_out": 0.9,
+  "alternatives": [
+   "SpyAction/Cold Bond Circuit.mp3 @53.847",
+   "SpyAction/Midnight Trigger.mp3 @92.994",
+   "CutScene/Shadow Code 1.mp3 @114.322"
+  ]
+ },
+ "beat": {
+  "bpm": 120.0,
+  "period": 0.5,
+  "offset": 0.0,
+  "note": "window start is a downbeat of the track; offset is beat 1 within the window. Quiet breakdown at 6-14 s (briefing and card), drop at 14 s (montage)."
+ },
+ "duck": {
+  "db": -9.0,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "spoiler_rules": [
+  "no full codes, PINs or passwords",
+  "no identity reveal",
+  "no ending or choice screens",
+  "keypad only partly entered"
+ ],
+ "aspects": {
+  "16:9": [
+   1920,
+   1080
+  ],
+  "9:16": [
+   1080,
+   1920
+  ],
+  "1:1": [
+   1080,
+   1080
+  ]
+ },
+ "source_size": [
+  1920,
+  1080
+ ],
+ "shots": [
+  {
+   "id": "logo_morph",
+   "type": "card",
+   "duration": 3.0,
+   "snap": true,
+   "join": {
+    "type": "glitch",
+    "frames": 8
+   },
+   "kind": "logo",
+   "morph": [
+    "Cyber Security Labs",
+    "Games",
+    "BREAK ESCAPE"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "title_screen",
+   "type": "gameplay",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "glitch",
+    "frames": 8
+   },
+   "source": {
+    "file": "t01_title.trimmed.mkv",
+    "in": 10.6,
+    "out": 12.1
+   },
+   "placeholder": "IN-GAME TITLE: typing 'First Contact'",
+   "framing": {
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "title screen only"
+   }
+  },
+  {
+   "id": "hax_briefing",
+   "type": "gameplay",
+   "duration": 4.0,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t02_hax_briefing.trimmed.mkv",
+    "in": 1.0,
+    "out": 5.0
+   },
+   "placeholder": "AGENT HAX BRIEFING (portrait dialogue)",
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Agent HaX",
+     "text": "Once you know what we're dealing with, contact me. We'll figure out how to stop it.",
+     "start": 0.3,
+     "end": 3.9
+    }
+   ],
+   "framing": {
+    "9:16": {
+     "cx": 0.68,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.62,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "briefing line, no names of culprits or codes"
+   }
+  },
+  {
+   "id": "card_mission",
+   "type": "card",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "blur",
+    "frames": 10
+   },
+   "text": [
+    "Your Mission",
+    "Begins NOW"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "m_lights",
+   "type": "gameplay",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "glitch",
+    "frames": 8
+   },
+   "source": {
+    "file": "t03_lights.trimmed.mkv",
+    "in": 2.0,
+    "out": 3.5
+   },
+   "placeholder": "WALK LIT ROOM -> DARK ROOM, LIGHTS SNAP ON",
+   "framing": {
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.55,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": ""
+   }
+  },
+  {
+   "id": "m_lockpick",
+   "type": "gameplay",
+   "duration": 1.0,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04_lockpick.trimmed.mkv",
+    "in": 1.0,
+    "out": 2.0
+   },
+   "placeholder": "LOCKPICKING MINIGAME",
+   "framing": {
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": ""
+   }
+  },
+  {
+   "id": "m_phone",
+   "type": "gameplay",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_phone.trimmed.mkv",
+    "in": 1.0,
+    "out": 2.5
+   },
+   "placeholder": "PHONE CHAT",
+   "framing": {
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": ""
+   }
+  },
+  {
+   "id": "m_keypad",
+   "type": "gameplay",
+   "duration": 1.0,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06_keypad.trimmed.mkv",
+    "in": 1.0,
+    "out": 2.0
+   },
+   "placeholder": "KEYPAD (partial entry only)",
+   "framing": {
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": true,
+    "note": "must show a partial code only"
+   }
+  },
+  {
+   "id": "m_siem",
+   "type": "gameplay",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t07_siem.trimmed.mkv",
+    "in": 1.0,
+    "out": 2.5
+   },
+   "placeholder": "SIEM / LOG TERMINAL",
+   "framing": {
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": ""
+   }
+  },
+  {
+   "id": "card_hacking",
+   "type": "card",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "glitch",
+    "frames": 8
+   },
+   "text": [
+    "Real Hacking"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "flag_station",
+   "type": "gameplay",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "glitch",
+    "frames": 8
+   },
+   "source": {
+    "file": "t08_flagstation.trimmed.mkv",
+    "in": 1.0,
+    "out": 2.5
+   },
+   "placeholder": "DROP-SITE FLAG STATION (stands in for VM)",
+   "framing": {
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "no flag value visible"
+   }
+  },
+  {
+   "id": "card_entropy",
+   "type": "card",
+   "duration": 1.5,
+   "snap": true,
+   "join": {
+    "type": "glitch",
+    "frames": 8
+   },
+   "text": [
+    "Hold Back",
+    "The Entropy!"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "derek_pushin",
+   "type": "gameplay",
+   "duration": 4.0,
+   "snap": true,
+   "join": {
+    "type": "glitch",
+    "frames": 8
+   },
+   "source": {
+    "file": "t09_derek.trimmed.mkv",
+    "in": 1.0,
+    "out": 5.0
+   },
+   "placeholder": "DEREK PORTRAIT: push-in to UI-free close-up",
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Derek Lawson",
+     "text": "Murder? No. Think of it as... forced education.",
+     "start": 0.4,
+     "end": 3.6
+    }
+   ],
+   "pushin": {
+    "from_zoom": 1.0,
+    "to_zoom": 2.1,
+    "focus": {
+     "x": 0.5,
+     "y": 0.36
+    },
+    "ease": "inOut",
+    "crops_ui": true,
+    "ui_bottom_fraction": 0.24,
+    "start": 0.0,
+    "end": 1.0
+   },
+   "framing": {
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.0
+    }
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": false,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "antagonist shown as in the reference trailer; no culprit-naming text on screen"
+   }
+  },
+  {
+   "id": "card_play",
+   "type": "card",
+   "duration": 2.5,
+   "snap": true,
+   "join": {
+    "type": "glitch",
+    "frames": 8
+   },
+   "text": [
+    "Play Mission 1",
+    "Free!",
+    {
+     "text": "hacktivity.co.uk",
+     "scale": 0.3,
+     "gap": 0.9
+    }
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "logo_end",
+   "type": "card",
+   "duration": 2.5,
+   "snap": true,
+   "join": {
+    "type": "glitch",
+    "frames": 8
+   },
+   "kind": "logo_end",
+   "text": [],
+   "morph": [
+    "Cyber Security Labs",
+    "Games"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  }
+ ]
+}
