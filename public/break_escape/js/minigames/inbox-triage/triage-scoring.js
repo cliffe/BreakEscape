@@ -587,10 +587,15 @@ export function genuineFeedbackText(fb, { detail = false, strings = null } = {})
         // unchanged for an email-only round (every verb is "trusted").
         const groups = new Map();
         for (const t of trusted) { const v = isStr(t.verb) ? t.verb : 'trusted'; (groups.get(v) || groups.set(v, []).get(v)).push(t); }
+        // F-E13-5: a trusted real item earned full marks, so the line is led by praise — it used to
+        // read like the caught items below it ("You trusted these real ones: ..." under a "tells
+        // slipped past" headline). The checked sentence already carries its own praise.
+        const trustedSentences = [];
         for (const [verb, items] of groups) {
             const all = groups.size === 1 && items.length === realTotal && items.length > 1;
-            sentences.push(`You ${verb} ${these(items.length, all)}: ${names(items)}.`);
+            trustedSentences.push(`You ${verb} ${these(items.length, all)}: ${names(items)}.`);
         }
+        sentences.push(`Right call. ${trustedSentences.join(' ')}`);
     }
     if (checked.length) {
         const all = checked.length === realTotal && checked.length > 1;

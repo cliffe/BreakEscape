@@ -32,6 +32,9 @@ const isStr = (v) => typeof v === 'string' && v.length > 0;
 export const DEFAULT_TEXT = Object.freeze({
     heading: 'Guess list',
     note: 'No real password is typed or stored here. Every guess is made up for the exercise.',
+    // E9 F1: the other stages warn that a reload restarts the round; the guesser did not, so a
+    // reload mid-run silently reset the tried guesses. This line says so (strings.reloadNote wins).
+    reloadNote: 'If you close or reload before you switch the rig off, the guess list starts again from the top.',
     commonHeading: 'The usual first guesses',
     commonIntro: 'Tried first, because plenty of people use them.',
     patternsHeading: 'Built from what you found',

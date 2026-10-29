@@ -104,6 +104,9 @@ export class PasswordGuesserMinigame extends SocialOverlayScene {
         }
         // The on-screen "nothing real here" line (strings.guessNote, else the block's note, else the default).
         card.appendChild(el('p', 'epr-gs-note', this.built.note));
+        // E9 F1: a reload restarts the guess list, as the other stages warn for their rounds.
+        const reload = this._text('reloadNote');
+        if (isStr(reload)) card.appendChild(el('p', 'epr-gs-reload-note', reload));
 
         this.rowNodes = [];
         for (const panel of this.built.panels) {

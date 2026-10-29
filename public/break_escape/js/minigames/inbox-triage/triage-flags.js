@@ -180,6 +180,18 @@ export function chipIdsFor(set, kind = 'email', message = null, opts = {}) {
         const extra = FACTOR_ORDER.filter((id) => keep.has(id) && !ids.includes(id));
         if (extra.length) ids = [...extra, ...ids];
     }
+    // E11 F8 (opt-in): an item may narrow its own chip list. truth.chips keeps only the listed ids
+    // (plus anything the item is scored on, which is never hidden); truth.chipsOmit drops the listed
+    // ids. Both leave the set-wide list unchanged for every other item. Absent, nothing changes.
+    const truth = isObj(message?.truth) ? message.truth : null;
+    if (truth && Array.isArray(truth.chips)) {
+        const only = new Set(truth.chips.filter(isStr));
+        ids = ids.filter((id) => only.has(id) || keep.has(id));
+    }
+    if (truth && Array.isArray(truth.chipsOmit)) {
+        const drop = new Set(truth.chipsOmit.filter(isStr));
+        ids = ids.filter((id) => !drop.has(id) || keep.has(id));
+    }
     if (opts.hideHeaderTells) ids = ids.filter((id) => !HEADER_TELLS.includes(id));
     // Opt-in order (F4): the set's own tells first, then the channel tells for this kind, then the
     // generic email factors. The same order for every message of a kind, so it never hints at the
