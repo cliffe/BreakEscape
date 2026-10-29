@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the defend-only shells for the new awareness episodes (E8 now; E9 to E17 are added to
+"""Build the defend-only shells for the new awareness episodes (E8, E17 and E19 now; the rest are added to
 EPISODES and HOSTS as each is wired), from awareness/eN/defend.json.
 
 New generator for the E8 to E17 wave (implementation/01_PIPELINE.md P4). Its helpers are copied
@@ -205,6 +205,10 @@ HOSTS = {
         'id': 'anjali_rao', 'displayName': 'Anjali Rao', 'sprite': 'female_scientist',
         'about': "Quayholt's information security analyst, 30s, Indian, moved from Bengaluru; she receives the reports (BRAND_SET.md). Placeholder sprite until the PixelLab reset.",
     },
+    'nilesh': {
+        'id': 'nilesh_solanki', 'displayName': 'Nilesh Solanki', 'sprite': 'male_telecom',
+        'about': "Tarrowby's IT service desk analyst, 30s, Gujarati-British, grew up in Leicester (BRAND_SET.md, E6 additions). The natural 'ask first' voice for acceptable use. Placeholder sprite until the PixelLab reset.",
+    },
 }
 
 # Host lines: (before, after, choice, reply). One welcome line; the kiosk does the rest.
@@ -212,6 +216,15 @@ LINES = {
     ('e8', 'defend'): (
         "You're covering a colleague's inbox. They clicked a convincing email, so someone else is using their account. Some signs are real, some are ordinary. Report anything that doesn't sit right.",
         "That's the inbox sorted, thanks. The one move that works for every real sign is the same: report it and let the team act.",
+        'Thanks, Anjali.', 'Any time.'),
+    # E17 and E19: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
+    ('e17', 'defend'): (
+        "Nilesh, service desk. Every rule here has a 'because'. Allowed, Not allowed, Ask first, and Ask first is never wrong. Sort the cards, then a short inbox.",
+        "That's the lot, thanks. When you're not sure, ask first, the software portal usually answers the same day; and if you make a mistake, report it.",
+        'Thanks, Nilesh.', 'Any time.'),
+    ('e19', 'defend'): (
+        "You're covering this desk inbox. Some of it is ordinary, some tries to open a door, and one colleague's screen has locked. Didn't expect it? Report it.",
+        "That's the inbox sorted, thanks. If you didn't start it, deny it and report it. If a screen locks, call it in, don't pay and don't touch it.",
         'Thanks, Anjali.', 'Any time.'),
 }
 
@@ -238,12 +251,67 @@ EPISODES = {
             'conclusion': ('Signs sorted', "You've sorted the signs in the colleague's inbox and finished this episode."),
         },
     },
+    'e17': {
+        'frag': f'{AW}/e17/defend.json',
+        'full_id': 'e17_acceptable_use',
+        'defend_set': 'e17_acceptable_use_inbox',
+        'defend_host': 'nilesh',
+        'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+                   'keywords': ['Acceptable use', 'Security policy', 'Monitoring', 'Security awareness']}],
+        'defend': {
+            'name': 'Acceptable use: can I?',
+            'brief': "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. Three answers: Allowed, Not allowed, Ask first. You'll sort a set of everyday 'can I?' moments against the firm's own rules, with the reason on screen, and handle a few messages that arrive in the inbox. When you're not sure, ask first.",
+            'endGoal': 'Sort the "can I?" cards and handle the inbox at the training kiosk.',
+            'aim': ('acceptable_use_aim', 'Sort the can I moments', 'Sort the "can I?" cards and handle the inbox at the training kiosk.'),
+            'task': ('sort_can_i', 'Sort the can I moments'),
+            'kiosk': ("A touch-screen kiosk showing the 'can I?' cards and a short inbox at Tarrowby Logistics: everyday moments to sort against the firm's rules.",
+                      "A touch-screen kiosk showing the 'can I?' cards and a short inbox at Tarrowby Logistics. The cards and the inbox are all done."),
+            'display': 'Awareness E17: Acceptable use',
+            'desc': "An awareness episode of about 12 minutes for all staff. Sort everyday 'can I?' moments against Tarrowby Logistics' own rules, a fictional haulier, and handle a short inbox. Each answer has its reason on screen, Ask first is never the wrong answer, and reporting when you're unsure is always fine and never marked down.",
+            'minutes': 12,
+            'defendIntro': "Sort the everyday 'can I?' moments into Allowed, Not allowed or Ask first, with the reason on screen, then handle the short inbox. When you're not sure, Ask first, it's never the wrong answer. There's no clock on you here.",
+            'conclusion': ('Acceptable use done', "You've sorted the 'can I?' moments and handled the inbox, and finished this episode."),
+        },
+    },
+    'e19': {
+        'frag': f'{AW}/e19/defend.json',
+        'full_id': 'e19_malware_and_updates',
+        'defend_set': 'e19_lock_the_doors',
+        'defend_host': 'anjali',
+        'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+                   'keywords': ['Malware', 'Ransomware', 'Software updates', 'Security awareness', 'Incident reporting']}],
+        'defend': {
+            'name': 'Malware and updates: the desk inbox',
+            'brief': "You're on an authorised exercise at Quayholt Insurance, a fictional company. You're covering a desk inbox this afternoon. Some of what turns up is ordinary, some is a program or a page trying to get you to open a door, and one is a colleague whose screen has just locked. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down. No real malware runs here.",
+            'endGoal': 'Sort the desk inbox at the training kiosk.',
+            'aim': ('lock_the_doors_aim', 'Sort the desk inbox', 'Sort the items waiting at the desk at the training kiosk.'),
+            'task': ('lock_the_doors', 'Sort the desk inbox'),
+            'kiosk': ("A touch-screen kiosk showing a Quayholt desk inbox: a handful of items to sort, some of them trying to open a door.",
+                      "A touch-screen kiosk showing a Quayholt desk inbox. The items are all sorted."),
+            'display': 'Awareness E19: Malware, ransomware and updates (defend only)',
+            'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Cover a desk inbox at Quayholt Insurance, a fictional company: a document that wants you to switch something on, an app that wants to read your mail, a warning from the security software, a colleague whose screen has locked, and the genuine ones mixed in. Each answer is explained, and reporting when you're unsure is always fine and never marked down. No real malware runs.",
+            'minutes': 8,
+            'defendIntro': "Take the desk inbox one item at a time and decide what to do with each. A program, a file or an app that wants to run or wants your access can do whatever you can do, so if you didn't expect it, don't open the door: report it. If a screen has locked, get it to the security team straight away. There's no clock on you here.",
+            'conclusion': ('Desk inbox sorted', "You've sorted the desk inbox and finished this episode."),
+        },
+    },
 }
 
 
 def load(ekey):
     frag = json.load(open(EPISODES[ekey]['frag']))
     return {s['id']: s for s in frag['triageSets']}, frag['awarenessEpisode']
+
+
+DEFEND_HALF_KEYS = ('sortDrill', 'concernForm', 'privacyPanel')
+
+
+def defend_half_keys(cfg):
+    path = cfg.get('full_only') or os.path.join(os.path.dirname(cfg['frag']), 'full_only.json')
+    if not os.path.exists(path):
+        return {}
+    fo = json.load(open(path))
+    return {k: strip_private(copy.deepcopy(fo[k])) for k in DEFEND_HALF_KEYS if k in fo}
 
 
 def meta_for(display, desc, minutes, cybok):
@@ -295,6 +363,10 @@ def defend_only(ekey):
         'strings': strings,
         'debrief': strip_private(copy.deepcopy(EP['debrief'])),
     }
+    # Defend-half episode keys run inside the defend stage, so a defend-only shell carries them too.
+    # They are read from the episode's full_only.json (or an explicit EPISODES 'full_only' path), never
+    # from defend.json. mistake, flip, flipMontageByChoice, flipAftermath, guess and world stay out.
+    ep.update(defend_half_keys(cfg))
     globals_ = {
         f'episode_{ep_id}_state': {},
         'se_awareness_records': [],
@@ -316,7 +388,7 @@ def main():
     if len(sys.argv) < 2:
         sys.exit('usage: gen_e8_e17_shells.py [--repo <checkout>] <out_dir>')
     out = sys.argv[1]
-    built = [defend_only('e8')]
+    built = [defend_only(k) for k in ('e8', 'e17', 'e19')]
     for mission, sc, meta, ink_name, ink in built:
         d = os.path.join(out, mission)
         os.makedirs(os.path.join(d, 'ink'), exist_ok=True)

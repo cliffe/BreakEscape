@@ -266,3 +266,14 @@ E8 is the pilot new episode at **Quayholt Insurance** (`quayholt_insurance`), ho
   - Reused Quayholt slots, no new names: Quayholt Protect, Quayholt Files (genuine invites from `apps@quayholt.example`), extension 4444 and the "Report an incident" form.
 - **Name-clash search (grep across `scenarios`, `planning_notes`, `docs`, 2026-10-29):** "TidyDocs" and "quayholt-it-support" hit only the E19 brief and README; "Leo Brennan" only the no-clash pool in `03_WORLD_AND_CAST.md` and planning files; "Fernside" only the E10 and core_08 plans. No clash.
 - **Pre-ship:** web-search TidyDocs, Leo Brennan, Quayholt IT Support and Fernside Catering against real businesses and people before release.
+
+## Additions from E17 and E19 (2026-10-29)
+- **E17 (acceptable use, Tarrowby, defend-only, one shell):** no new names. The host is **Nilesh Solanki** (above); the "can I?" cards and the inbox use Tarrowby's own addresses.
+- **E19 (malware and updates, Quayholt, host Anjali Rao).** Full list in `awareness/e19/BRAND_ADDITIONS.md`.
+  - **TidyDocs** (`tidydocs.example`, invites from `invites@tidydocs.example`): a fictional document app that asks to connect (`e19_consent_unknown`). No cast, no art.
+  - **Leo Brennan** (`leo.brennan@quayholt.example`): operations colleague, mid 20s, white Irish-English. Text-only, the panicking colleague in `e19_ransom_note`. From the no-clash pool, new to the built cast.
+  - **Fake "Quayholt IT Support"** on the look-alike `quayholt-it-support.example` (`support@quayholt-it-support.example`), `e19_disable_protection`. The learnable shape is an added word and hyphen.
+  - **Fernside Catering** (`fernside.example`), sent from the look-alike `fernside-invoices.example` (`e19_enable_content`). Reused from the E10 plan; E10 is not built, so align the look-alike shape with E10's portal shapes (`orders.fernside.example` and `orders-fernside.example`) when it lands.
+  - Reused Quayholt slots, no new names: Quayholt Protect, Quayholt Files (genuine invites from `apps@quayholt.example`), extension 4444 and the "Report an incident" form.
+- **Name-clash search (grep across `scenarios`, `planning_notes`, `docs`, 2026-10-29):** "TidyDocs" and "quayholt-it-support" hit only the E19 brief and README; "Leo Brennan" only the no-clash pool in `03_WORLD_AND_CAST.md` and planning files; "Fernside" only the E10 and core_08 plans. No clash.
+- **Pre-ship:** web-search TidyDocs, Leo Brennan, Quayholt IT Support and Fernside Catering against real businesses and people before release.

@@ -2628,6 +2628,57 @@
       }
     ]
   },
+  "awareness_e17_acceptable_use_defend": {
+    "globals": {
+      "episode_e17_acceptable_use_defend_defend_percent": 0,
+      "episode_e17_acceptable_use_defend_defend_reportRate": 0,
+      "episode_e17_acceptable_use_defend_defend_done": false,
+      "episode_e17_acceptable_use_defend_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "nilesh_solanki",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e17_acceptable_use_defend/ink/nilesh_solanki.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e19_malware_and_updates": {
+    "globals": {
+      "episode_e19_malware_and_updates_defend_percent": 0,
+      "episode_e19_malware_and_updates_defend_reportRate": 0,
+      "episode_e19_malware_and_updates_defend_done": false,
+      "episode_e19_malware_and_updates_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e19_malware_and_updates/ink/anjali_rao.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e19_malware_and_updates_defend": {
+    "globals": {
+      "episode_e19_malware_and_updates_defend_defend_percent": 0,
+      "episode_e19_malware_and_updates_defend_defend_reportRate": 0,
+      "episode_e19_malware_and_updates_defend_defend_done": false,
+      "episode_e19_malware_and_updates_defend_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e19_malware_and_updates_defend/ink/anjali_rao.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
   "awareness_pre_finance_ab": {
     "globals": {
       "triage_pre_percent": 0,

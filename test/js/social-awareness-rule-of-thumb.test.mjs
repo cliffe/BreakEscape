@@ -33,6 +33,7 @@ const FULL_EPISODES = [
   'awareness_e6_texts_and_qr',
   'awareness_e7_voice_ceo',
   'awareness_e8_after_the_click',
+  'awareness_e19_malware_and_updates',
 ];
 // One line per check role; each is four shells (pre and post, each in ab and ba order).
 const CHECK_ROLES = [
@@ -48,6 +49,8 @@ const CHECK_ROLES = [
 // such as the core_17 annual edition. One line per shell, the folder name as it is.
 const STANDALONE_SHELLS = [
   'awareness_core_17_annual_2027_defend',
+  // E17 is defend-only: one shell, no full twin, listed in both courses.
+  'awareness_e17_acceptable_use_defend',
 ];
 const registered = [
   ...FULL_EPISODES,

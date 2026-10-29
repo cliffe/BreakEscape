@@ -35,6 +35,8 @@ JOBS=(
   e5-full:awareness_e5_signin_pages e6-full:awareness_e6_texts_and_qr
   e7-full:awareness_e7_voice_ceo
   e8-full:awareness_e8_after_the_click
+  e19-full:awareness_e19_malware_and_updates
+  e17-defend:awareness_e17_acceptable_use_defend
 )
 
 new_game() { # scenario -> game id
