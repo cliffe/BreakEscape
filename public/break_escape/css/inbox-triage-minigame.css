@@ -417,6 +417,91 @@
 .tri-autofill-none { color: #8f2a1f; }
 .tri-autofill-filled { color: #1f6b3a; }
 
+/* ── ENG-03a web-page states ────────────────────────────────────────────────────
+   Each draws inside the light browser card. Every string is authored data; nothing runs and
+   nothing is ever written to the real clipboard. The one "command" shown is the harmless one-line
+   clipboardReveal description, behind a reveal. Motion is gentle and honours prefers-reduced-motion. */
+
+/* The fake "verify you are human" check: a panel feel, with the reveal under the steps. */
+.tri-fakecheck { background: #f4f6fb; }
+.tri-page-reveal { margin: 10px 0 0; }
+.tri-page-reveal-btn { font-size: 14px; }
+.tri-page-reveal-text {
+    margin: 8px 0 0;
+    padding: 8px 10px;
+    font-size: 14px;
+    color: #1d2333;
+    background: #fff4d6;
+    border: 2px solid #d8b24a;
+    border-left: 6px solid #d8b24a;
+}
+
+/* Fake update banner: a drawn Download button face, no download happens. */
+.tri-fake-update .tri-page-button { background: #2f7d4f; border-color: #1f5a37; }
+
+/* Dangerous download bar: a filename row with a drawn Open face. The .exe tail reads plainly. */
+.tri-download-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0 0;
+    padding: 8px 10px;
+    background: #ffffff;
+    border: 2px solid #8792ad;
+}
+.tri-download-name { flex: 1; font-family: var(--se-font-address); overflow-wrap: anywhere; font-weight: 700; }
+.tri-download-face { flex: none; padding: 4px 12px; font-weight: 700; color: #ffffff; background: #3b5bcc; border: 2px solid #233b8f; }
+
+/* A genuine browser warning (the correct move is to go back): a red interstitial. */
+.tri-page-browserWarning { background: #a32318; border-color: #7a1710; }
+.tri-browser-warning { color: #ffffff; }
+.tri-browser-warning .tri-kind-title { color: #ffffff; }
+.tri-browser-warning .tri-page-text { color: #ffe9e6; }
+.tri-warning-back { align-self: flex-start; background: #ffffff; color: #a32318; border-color: #ffffff; }
+
+/* The browser's own relaunch menu bar (not a web page). */
+.tri-relaunch-bar { padding: 12px 14px; background: #e4e8f1; color: #1d2333; }
+.tri-relaunch-bar .tri-kind-label { color: #51607f; }
+.tri-relaunch-bar .tri-kind-title { color: #1d2333; }
+
+/* Extension-permission prompt: a store listing with the permission list. */
+.tri-ext-permission { padding: 14px 16px; background: #f4f6fb; color: #1d2333; }
+.tri-ext-permission .tri-kind-title { color: #1d2333; }
+.tri-ext-perms-label { margin: 10px 0 4px; font-weight: 700; }
+.tri-ext-perms { margin: 0; padding-left: 20px; }
+.tri-ext-perm { margin: 2px 0; font-size: 15px; }
+
+/* Full-screen alarm overlay: silent, calm, always a visible way out. No flashing. */
+.tri-page-fullScreenAlarm { background: #161b2e; border-color: #3a4566; }
+.tri-alarm { padding: 20px 18px; color: #f2f4fb; text-align: center; }
+.tri-alarm .tri-kind-title { color: #ffd2cc; }
+.tri-alarm-muted {
+    margin: 0 0 10px;
+    font-size: 14px;
+    color: #c3ccdf;
+    font-style: italic;
+}
+.tri-alarm .tri-page-text { color: #e7ebf6; }
+.tri-alarm-close {
+    display: inline-block;
+    margin: 12px 0 0;
+    padding: 8px 20px;
+    font-weight: 700;
+    color: #161b2e;
+    background: #ffffff;
+    border: 2px solid #ffffff;
+}
+.tri-alarm-hint { margin: 10px 0 0; font-size: 14px; color: #c3ccdf; }
+/* A gentle, slow breathing of the border only; no colour flash, no shake. */
+.tri-alarm-pulse { animation: tri-alarm-breathe 2.4s ease-in-out infinite; }
+@keyframes tri-alarm-breathe {
+    0%, 100% { box-shadow: inset 0 0 0 2px rgba(255, 120, 108, 0.25); }
+    50% { box-shadow: inset 0 0 0 2px rgba(255, 120, 108, 0.6); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .tri-alarm-pulse { animation: none; }
+}
+
 /* MFA prompt */
 .tri-kind-push .tri-kind-title { text-align: center; }
 .tri-kind-push .tri-kind-label { text-align: center; }

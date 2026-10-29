@@ -300,14 +300,24 @@ function renderFakeCheck({ pageDef, choices, mode, make, doc }) {
     behind.setAttribute('aria-hidden', 'true');
     root.appendChild(behind);
 
+    const inspect = mode === 'inspect';
     const panel = make('div', 'lpb-fakecheck-panel');
     const heading = typeof check.heading === 'string' && check.heading ? check.heading : 'Verify you are human';
     panel.appendChild(pageText(make('h3', 'lpb-fakecheck-heading', heading)));
     // The chosen step wording (authored label), shown as inert text. No real shortcut is ever
     // synthesised here; the renderer only prints what the step option names.
     const stepOpt = labelFromList(check.steps, sel.stepsId);
-    panel.appendChild(pageText(make('p', 'lpb-fakecheck-steps',
-        stepOpt || 'Follow the on-screen steps to continue.')));
+    const steps = pageText(make('p', 'lpb-fakecheck-steps',
+        stepOpt || 'Follow the on-screen steps to continue.'));
+    steps.setAttribute('data-region', 'steps');
+    // In step 6 (Inspect) the steps panel is the one focusable hot-spot: the fake_check_paste tell
+    // (07 §6; div role="button", never a real control).
+    if (inspect) {
+        steps.setAttribute('role', 'button');
+        steps.setAttribute('tabindex', '0');
+        steps.classList.add('lpb-hotspot');
+    }
+    panel.appendChild(steps);
 
     // "What did this page copy?" reveal: a hot-spot that shows one harmless description.
     const revealText = typeof check.clipboardReveal === 'string' ? check.clipboardReveal : '';
@@ -325,7 +335,7 @@ function renderFakeCheck({ pageDef, choices, mode, make, doc }) {
     panel.appendChild(reveal);
     root.appendChild(panel);
 
-    const regions = { padlock, addressBar, logo: null, wording: null, form: null };
+    const regions = { padlock, addressBar, logo: null, wording: null, form: null, steps };
     return { root, blocked: false, regions };
 }
 
