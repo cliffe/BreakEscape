@@ -1050,6 +1050,48 @@ test('flip split: a landed send with no tells to replay is landedNoTells, not mi
     assert.equal(f.landedNoTells, true);
 });
 
+test('aw-ux2: a landed send with no tells replays the message when flipDefenderLineByChoice has the chosen pretext', () => {
+    const run = (strings) => {
+        const ep = { ...fullEpisode(), strings: { ...fullEpisode().strings, ...strings } };
+        setup(ep, { [M.stateKey(ep.id)]: { v: 1, stage: 'flip', done: ['brief', 'osint', 'write'],
+            sent: { recordId: 'sent_1', targetId: 'supplier_contact', templateId: 'tpl_bank', blankIds: [] } } });
+        window.mailState.mailboxes.analyst.messages.push({
+            id: 'sent_1', folder: 'sent', fromAccount: 'analyst', targetId: 'supplier_contact', gameTime: 100,
+            from: { name: 'Analyst', address: 'analyst@harlowpackaging.example' }, to: 'tom.reilly@fixture.example',
+            subject: 'Updated bank details', body: 'Please use the new account. {{link:x}}', templates: { opening: 'tpl_bank' },
+            slots: {}, landed: true, tells: []
+        });
+        open(ep);
+        return calls.flip.at(-1);
+    };
+    const f = run({ flipDefenderLineByChoice: { tpl_bank: 'You chose the bank pretext.' } });
+    assert.equal(f.landedNoTells, false);
+    assert.equal(f.missed, false);
+    assert.equal(f.message.subject, 'Updated bank details');
+    assert.equal(f.message.body, 'Please use the new account.', 'link tokens are dropped');
+    assert.deepEqual(f.message.truth.flags, [], 'no tells to list');
+    assert.equal(f.templateId, 'tpl_bank');
+    // A line authored for another pretext, or none at all, leaves the old view.
+    const other = run({ flipDefenderLineByChoice: { tpl_other: 'Other.' } });
+    assert.equal(other.message, null);
+    assert.equal(other.landedNoTells, true);
+    const none = run({});
+    assert.equal(none.message, null);
+    assert.equal(none.landedNoTells, true);
+});
+
+test('aw-ux2: getTestState reports variant brief for a brief episode, defendOnly and full as before', () => {
+    assert.equal(M.variantOf({ variant: 'brief' }), 'brief');
+    assert.equal(M.variantOf({ variant: 'defendOnly' }), 'defendOnly');
+    assert.equal(M.variantOf({ variant: 'full' }), 'full');
+    assert.equal(M.variantOf({}), 'full');
+    assert.deepEqual(M.stagesFor({ variant: 'brief' }), ['brief']);
+    const ep = { ...fullEpisode(), variant: 'brief', stages: ['brief'] };
+    setup(ep);
+    open(ep);
+    assert.equal(epState().variant, 'brief');
+});
+
 test('aw1/aw4/aw6: the debrief gets the report route, rule of thumb and team size; the host page wins', () => {
     const ep = { ...fullEpisode(), id: 'e1_fixture_defend', variant: 'defendOnly', debrief: { mondayCard: 'slot:customer_report_route' } };
     setup(ep);

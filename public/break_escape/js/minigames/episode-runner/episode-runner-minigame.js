@@ -53,7 +53,7 @@
 import { SocialOverlayScene, socialOverlayParams } from '../framework/social-overlay.js';
 import { writeGlobal } from '../../systems/global-writer.js';
 import { recordTriageResult } from '../../systems/awareness-measure.js';
-import { resolvePlayerSent } from '../inbox-triage/triage-messages.js';
+import { resolvePlayerSent, plainSentMessage } from '../inbox-triage/triage-messages.js';
 import { renderStepStrip, applyBrand } from './step-strip.js';
 import { renderFlipView } from './flip-view.js';
 import { renderDebrief } from './debrief-view.js';
@@ -552,6 +552,12 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         return out;
     }
 
+    /** True when strings.flipDefenderLineByChoice has a non-empty line for this pretext template id. */
+    _hasChoiceLine(templateId) {
+        const by = this.strings?.flipDefenderLineByChoice;
+        return isObj(by) && isStr(templateId) && isStr(by[templateId]);
+    }
+
     _flipMessage() {
         if (!this.state.sent) return null;
         const set = this.defendSet;
@@ -591,7 +597,13 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         // narrative would be false — so show the did-not-land view, as a failed call does (N2).
         const rec = sent?.recordId ? findSentRecord(this.mailState, sent.targetId ?? null, [sent.recordId]) : null;
         if (rec && rec.landed === false) return { message: null, page: null, call: null, missed: true };
-        const message = this._flipMessage();
+        let message = this._flipMessage();
+        // aw-ux2: a landed message with no scored tell is replayed (tells list empty) instead of the
+        // "nothing to replay" view, but only when the episode authors a defender line for the pretext
+        // the learner chose (strings.flipDefenderLineByChoice[templateId]); otherwise unchanged.
+        if (!message && rec?.landed === true && this._hasChoiceLine(sent?.templateId)) {
+            message = plainSentMessage(rec, flipEntry(this.episode, this.defendSet));
+        }
         let page = null;
         try { page = flipPage(this.episode, this.social, globals); } catch (e) { console.error('[episode] could not rebuild the page:', e); }
         // Something went but there is nothing to replay. When the record says it landed (a careful

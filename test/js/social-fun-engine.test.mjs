@@ -166,6 +166,16 @@ test('aw6: the debrief thanks the learner for phish kept from the team, with no 
     assert.equal(h.querySelector('.aw-team').textContent, 'Your reports and checks this round kept 2 phish away from the 8 people on your team.');
     assert.equal(d.getState().teamProtected, 2);
     assert.ok(!/missed|of 3|fell/i.test(h.querySelector('.aw-team').textContent));
+    // aw-ux2: strings.teamLine overrides the wording; {n} and {team} are filled, defaults otherwise.
+    assert.equal(teamLine(2, null, 'Your reports kept {n} items from the team.'), 'Your reports kept 2 items from the team.');
+    assert.equal(teamLine(2, 12, '{n} items, {team} people.'), '2 items, 12 people.');
+    assert.equal(teamLine(2, null, '{n} items, {team} people.'), 'Your reports and checks this round kept 2 phish away from the rest of your team.',
+        '{team} with no team size falls back to the default');
+    assert.equal(teamLine(0, 12, '{n} items'), '');
+    assert.equal(teamLine(3, 12, '  '), 'Your reports and checks this round kept 3 phish away from the 12 people on your team.');
+    const hT = host();
+    renderDebrief(hT, { result: { reportCount: 1, phishVerified: 0, answers: [] }, set: set(), strings: { teamLine: 'You stopped {n} for the team.' }, onFinish() {} });
+    assert.equal(hT.querySelector('.aw-team').textContent, 'You stopped 1 for the team.');
     const h2 = host();
     const d2 = renderDebrief(h2, { result: { reportCount: 0, phishVerified: 0, answers: [] }, set: set(), onFinish() {} });
     assert.equal(h2.querySelector('.aw-team'), null, 'nothing reported or checked: no line at all');
@@ -228,6 +238,19 @@ test('aw6: the report sting plays a sound and the pop; the tally counts phish re
     assert.equal(scene.getTestState().triage.teamTally, 2);
     assert.equal(tally().textContent, 'Phish stopped for the team: 2');
     delete window.soundManager;
+});
+
+test('aw-ux2: set.labels.teamBadge and teamBadgeTitle reword the tally; unset keeps the phish wording', () => {
+    const m = merged({ labels: { teamBadge: 'Reports made for the team: {n}', teamBadgeTitle: 'Items you reported this round' } });
+    const scene = openTriage(m, { skin: 'awareness' });
+    q('.tri-start')?.click();
+    assert.equal(q('.aw-team-tally').textContent, 'Reports made for the team: 0');
+    assert.equal(q('.aw-team-tally').title, 'Items you reported this round');
+    answer(scene, 'e3_call_gordon_impostor', 'escalate');
+    assert.equal(q('.aw-team-tally').textContent, 'Reports made for the team: 1');
+    openTriage(merged({ labels: { smsHeading: 'Text' } }), { skin: 'awareness' });
+    q('.tri-start')?.click();
+    assert.equal(q('.aw-team-tally').textContent, 'Phish stopped for the team: 0');
 });
 
 test('aw6: no tally without the skin, or with end-of-round feedback (it would give the answers away)', () => {

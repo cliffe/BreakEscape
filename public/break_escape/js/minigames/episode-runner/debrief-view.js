@@ -250,11 +250,19 @@ function teamProtectedOf(result) {
     return n(result.reportCount) + (n(result.phishVerified) ?? 0);
 }
 
-/** The team line (aw6), or '' when there is nothing to thank the learner for. */
-export function teamLine(count, teamSize) {
+/**
+ * The team line (aw6), or '' when there is nothing to thank the learner for. `template` is the
+ * optional strings.teamLine override (aw-ux2): `{n}` becomes the count and `{team}` the team size.
+ * A template that uses {team} when no team size is set falls back to the default wording.
+ */
+export function teamLine(count, teamSize, template = null) {
     if (!Number.isFinite(count) || count < 1) return '';
+    const sized = Number.isInteger(teamSize) && teamSize >= 2;
+    if (typeof template === 'string' && template.trim() && (sized || !template.includes('{team}'))) {
+        return template.replace(/\{n\}/g, String(count)).replace(/\{team\}/g, String(teamSize));
+    }
     const what = count === 1 ? 'one phish' : `${count} phish`;
-    return Number.isInteger(teamSize) && teamSize >= 2
+    return sized
         ? `Your reports and checks this round kept ${what} away from the ${teamSize} people on your team.`
         : `Your reports and checks this round kept ${what} away from the rest of your team.`;
 }
@@ -386,7 +394,7 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     // aw6: a thank-you for the phish the learner kept from the team. Positive only: no
     // denominator and nothing about what was missed.
     const team = teamProtectedOf(result);
-    const teamText = teamLine(team, teamSize);
+    const teamText = teamLine(team, teamSize, isObj(strings) ? strings.teamLine : null);
     if (teamText) root.appendChild(el('p', 'aw-team', teamText));
 
     // aw4: one rule of thumb, the same in every debrief of a deployment.

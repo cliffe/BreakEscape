@@ -284,6 +284,34 @@ test('strings.flipDefenderLineByChoice: pretext keys clean, others warn, empty e
   expectIn(lint(j), /❌.*flipDefenderLineByChoice must be an object/);
 });
 
+// aw-ux2: strings.teamLine ({n}, optional {team}) is a non-empty string; a line with no {n} warns.
+test('strings.teamLine: a good line is clean, empty errors, no {n} warns', { skip }, () => {
+  let j = fx('clean_full.json');
+  ep(j).strings.teamLine = 'Your reports kept {n} items from the {team} people on your team.';
+  assert.deepEqual(lint(j), []);
+
+  j = fx('clean_full.json');
+  ep(j).strings.teamLine = '  ';
+  expectIn(lint(j), /❌.*strings\.teamLine must be a non-empty string/);
+
+  j = fx('clean_full.json');
+  ep(j).strings.teamLine = 'Thanks for reporting.';
+  expectIn(lint(j), /⚠️.*strings\.teamLine has no \{n\}/);
+});
+
+test('set.labels.teamBadge: a good badge is clean, empty errors, no {n} warns', { skip }, () => {
+  const labelIssues = (labels) => {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_social.rb'))}
+      puts JSON.generate(ValidateSocial::Triage.label_checks(JSON.parse(${JSON.stringify(JSON.stringify({ labels }))}), 'set'))`;
+    const r = spawnSync('ruby', ['-e', script], { encoding: 'utf8', env });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+  };
+  assert.deepEqual(labelIssues({ teamBadge: 'Reports made for the team: {n}', teamBadgeTitle: 'Items you reported' }), []);
+  expectIn(labelIssues({ teamBadge: ' ' }), /❌.*labels\.teamBadge must be a non-empty string/);
+  expectIn(labelIssues({ teamBadge: 'Reports made' }), /⚠️.*labels\.teamBadge has no \{n\}/);
+});
+
 test('the real validator: schema passes on test_social_episode; the only social error is the missing kiosk sprite', { skip }, () => {
   const r = spawnSync('ruby', ['scripts/validate_scenario.rb', 'scenarios/test_social_episode/scenario.json.erb',
     '--no-graph', '--skip-ink', '--strict-social'], { cwd: root, encoding: 'utf8', env });

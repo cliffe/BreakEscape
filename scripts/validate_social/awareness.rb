@@ -466,6 +466,14 @@ module ValidateSocial
       end
       issues.concat(flip_by_choice_checks(ctx, strings['flipDefenderLineByChoice'])) if strings.key?('flipDefenderLineByChoice')
       issues.concat(brief_card_checks(strings))
+      if strings.key?('teamLine')
+        t = strings['teamLine']
+        if !t.is_a?(String) || t.strip.empty?
+          issues << err('strings.teamLine must be a non-empty string; drop the key to keep the default team line')
+        elsif !t.include?('{n}')
+          issues << warn_('strings.teamLine has no {n}; the line would not show the count')
+        end
+      end
       %w[conceptPanel voicePanel].each do |key|
         next unless strings.key?(key)
 
