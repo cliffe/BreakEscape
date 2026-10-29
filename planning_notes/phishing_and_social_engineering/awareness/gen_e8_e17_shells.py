@@ -217,6 +217,10 @@ HOSTS = {
 
 # Host lines: (before, after, choice, reply). One welcome line; the kiosk does the rest.
 LINES = {
+    'zainab': {
+        'id': 'zainab_hussain', 'displayName': 'Zainab Hussain', 'sprite': 'female_blowse',
+        'about': "Tarrowby's field service engineer, 30s, British Bangladeshi, wears a hijab; eight years working from vans, cafés and trains (BRAND_SET.md, E20 additions). The on-the-road explainer; welcomes the learner, carries the feedback and debrief, and voices Tarrowby's controls. Placeholder sprite female_blowse until the PixelLab reset.",
+    },
     ('e8', 'defend'): (
         "You're covering a colleague's inbox. They clicked a convincing email, so someone else is using their account. Some signs are real, some are ordinary. Report anything that doesn't sit right.",
         "That's the inbox sorted, thanks. The one move that works for every real sign is the same: report it and let the team act.",
@@ -261,6 +265,11 @@ EPISODES = {
             'name': 'After the click: the signs that follow',
             'brief': "You're on an authorised exercise at Quayholt Insurance, a fictional company. A colleague clicked a convincing email and signed in, and now their account is being used. You're covering their inbox. Some of what turns up is a real sign that something is wrong, and some is ordinary. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down.",
             'endGoal': "Sort the signs in the colleague's inbox at the training kiosk.",
+    # E20: the brief's drafted lines ran over the 30-word cap, so they are trimmed here.
+    ('e20', 'defend'): (
+        "The kiosk has the networks and pages you meet on the road. Connect, report, or ask the venue first. A page wanting your work password is a trap. Nothing's real.",
+        "That's them sorted, thanks. On the venue's network with the VPN, ordinary work is fine. A Wi-Fi page wanting your work password is a fake; if unsure, use your hotspot.",
+        'Thanks, Zainab.', 'Any time.'),
             'aim': ('used_account_aim', 'Sort the signs that follow', "Work through the signs in the colleague's inbox at the training kiosk."),
             'task': ('sort_the_signs', 'Sort the signs that follow'),
             'kiosk': ("A touch-screen kiosk showing the colleague's Quayholt inbox after a click: a handful of signs to sort.",
@@ -368,6 +377,28 @@ EPISODES = {
         'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
                    'keywords': ['Passwords', 'Passphrases', 'Multi-factor authentication', 'Security awareness', 'Usable security']}],
         'defend': {
+    'e20': {
+        'frag': f'{AW}/e20/defend.json',
+        'full_id': 'e20_remote_and_mobile_working',
+        'defend_set': 'e20_on_the_road_inbox',
+        'defend_host': 'zainab',
+        'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+                   'keywords': ['Remote working', 'Mobile devices', 'Public Wi-Fi', 'Shoulder surfing', 'Security awareness']}],
+        'defend': {
+            'name': 'On the road: tell the safe networks and pages from the fakes',
+            'brief': "You're on an authorised exercise at Tarrowby Logistics, a fictional company. You're working away from the depot and the public networks and sign-in pages keep coming up: the café's Wi-Fi and a look-alike, a page that wants your work password, a notice about a lost device. Some are safe and some are built to catch you. Handle each one, and never type your work password into a Wi-Fi page. No real network is joined and no real password is typed here.",
+            'endGoal': 'Sort the networks and pages at the training kiosk.',
+            'aim': ('tell_them_apart_aim', 'Tell the safe networks and pages from the fakes', 'Work through the public networks and sign-in pages at the training kiosk.'),
+            'task': ('tell_them_apart', 'Sort the networks and pages'),
+            'kiosk': ("A touch-screen kiosk showing the public networks and sign-in pages you meet on the road: some safe, some look-alikes to catch you.",
+                      "A touch-screen kiosk showing the public networks and sign-in pages. They are all sorted."),
+            'display': 'Awareness E20: Remote and mobile working (defend only)',
+            'desc': "An awareness episode of about 8 minutes for staff who work away from the office, on the sorting side only. Working away from Tarrowby Logistics, a fictional haulier: the café's real Wi-Fi and a look-alike, a page that wants your work password, a genuine lost-device notice and a fake one. Each answer is explained, and reporting when you're unsure is always fine and never marked down. No real network is joined and no real password is typed.",
+            'minutes': 8,
+            'defendIntro': "Go through the public networks and sign-in pages and decide what to do with each one. On the venue's own network, with the VPN, ordinary work is fine; a page that wants your work password, or a network named to look like the venue's, is the trap. Ask the venue for the network's name if you're unsure, and there's no clock on you here.",
+            'conclusion': ('Networks and pages sorted', "You've sorted the safe networks and pages from the look-alikes and finished this episode."),
+        },
+    },
             'name': 'Passwords and sign-in: lock the account down',
             'brief': "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down: handle the prompts, choose stronger passwords, and don't hand anything to a message dressed up as IT. No real password is ever typed here.",
             'endGoal': 'Lock the account down at the training kiosk.',
@@ -501,7 +532,7 @@ def main():
     if len(sys.argv) < 2:
         sys.exit('usage: gen_e8_e17_shells.py [--repo <checkout>] <out_dir>')
     out = sys.argv[1]
-    built = [defend_only(k) for k in ('e8', 'e11', 'e15', 'e17', 'e19', 'e9', 'e16')]
+    built = [defend_only(k) for k in ('e8', 'e11', 'e15', 'e17', 'e19', 'e9', 'e16', 'e20')]
     for mission, sc, meta, ink_name, ink in built:
         d = os.path.join(out, mission)
         os.makedirs(os.path.join(d, 'ink'), exist_ok=True)

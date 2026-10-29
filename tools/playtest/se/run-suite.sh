@@ -40,6 +40,7 @@ JOBS=(
   e15-full:awareness_e15_shadow_it
   e16-full:awareness_e16_insider_risk
   e19-full:awareness_e19_malware_and_updates
+  e20-full:awareness_e20_remote_and_mobile_working
   e17-defend:awareness_e17_acceptable_use_defend
 )
 

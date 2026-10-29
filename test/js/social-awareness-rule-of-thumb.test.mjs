@@ -39,6 +39,7 @@ const FULL_EPISODES = [
   'awareness_e16_insider_risk',
   'awareness_e19_malware_and_updates',
 ];
+  'awareness_e20_remote_and_mobile_working',
 // One line per check role; each is four shells (pre and post, each in ab and ba order).
 const CHECK_ROLES = [
   'executive',

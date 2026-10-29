@@ -1,0 +1,571 @@
+{
+  "scenario_id": "awareness_e20_remote_and_mobile_working",
+  "scenario_name": "Remote and mobile working: two days on the road",
+  "scenario_brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier. First you spend two days working away from the depot: a train, a café, a hotel, a morning at home. You make the everyday calls anyone makes on the road, then you see where each one led. After that you tell the safe public networks and sign-in pages from the look-alikes. Only that last part is scored. Nothing you tap is a real network, and no real password is ever typed.",
+  "endGoal": "Walk the two days, then sort the networks and pages at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "tell_them_apart_aim",
+      "title": "Tell the safe networks and pages from the fakes",
+      "description": "Walk two days on the road, then work through the public networks and sign-in pages at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e20_remote_and_mobile_working_defend_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Remote and mobile working episode done",
+        "body": "You've walked two days on the road and seen where each choice led, then sorted the safe networks and pages from the look-alikes, so this episode is finished."
+      },
+      "tasks": [
+        {
+          "taskId": "tell_them_apart",
+          "title": "Sort the networks and pages",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e20_remote_and_mobile_working_state": {},
+    "se_awareness_records": [],
+    "episode_e20_remote_and_mobile_working_defend_percent": 0,
+    "episode_e20_remote_and_mobile_working_defend_reportRate": 0,
+    "episode_e20_remote_and_mobile_working_defend_done": false,
+    "episode_e20_remote_and_mobile_working_defend_pass": false
+  },
+  "social": {
+    "triageSets": [
+      {
+        "id": "e20_on_the_road_inbox",
+        "title": "On the road",
+        "brief": "You're working away from the depot and the public networks and sign-in pages keep coming up: a café's Wi-Fi list, a hotel's, a page that wants your work password, a notice about a lost device. For each one, choose Trust (you'd connect or carry on), Report, Delete, or Verify (ask the venue for the network's name, or ring the service desk). On the venue's own network, with the VPN, ordinary work is fine; a page that wants your work password, or a network named to look like the venue's, is the trap. Never type your work password into a Wi-Fi page. Reporting or checking when you're unsure is always fine and never marked down, and no real network is joined and no real password is typed here.",
+        "realLabel": "Safe networks and pages",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "lookalike_network",
+          "wifi_page_credentials",
+          "found_device_lure"
+        ],
+        "flagChips": {
+          "lookalike_network": "A public Wi-Fi network named to look like the venue's, often with a stronger signal",
+          "wifi_page_credentials": "A Wi-Fi sign-in page asking for your work password, or for more than accepting the terms",
+          "found_device_lure": "A message offering to locate or recover a lost device if you sign in"
+        },
+        "skillNames": {
+          "lookalike_network": "Spotting a look-alike public Wi-Fi network",
+          "wifi_page_credentials": "Spotting a Wi-Fi page that wants your work password",
+          "found_device_lure": "Spotting a lost-device sign-in lure"
+        },
+        "outcome": {
+          "setGlobalPrefix": "episode_e20_remote_and_mobile_working_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e20_wifi_venue",
+            "kind": "page",
+            "subject": "At The Bean and Barrow: the Wi-Fi list",
+            "time": "09:50",
+            "body": "You're after a seat and a coffee, and you open the Wi-Fi list to get online.",
+            "page": {
+              "state": "wifiList",
+              "venueNote": "The chalkboard by the till names the guest network 'BeanBarrow Guest'.",
+              "networks": [
+                {
+                  "ssid": "BeanBarrow Guest",
+                  "signal": "good",
+                  "secured": false,
+                  "note": "The name written up on the chalkboard by the till"
+                },
+                {
+                  "ssid": "BeanBarrow Free",
+                  "signal": "strong",
+                  "secured": false
+                }
+              ]
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "lookalike_network": "'BeanBarrow Free' has the stronger signal, but strongest is not safest. Here the board tells you which one is the café's, so you are not left guessing.",
+                "default": "The café names its guest network on the board. Joining the one the staff name, and letting the VPN come up, is the right move, and ordinary work on it is fine. Asking staff to confirm the name does the same job."
+              },
+              "falseAlarmCost": "Reported instead of joined, you spend the afternoon on your phone's data and the VPN never comes up, over a network the café's own staff named on the board."
+            }
+          },
+          {
+            "id": "e20_wifi_eviltwin",
+            "kind": "page",
+            "subject": "At Haverbridge Lodge: the Wi-Fi list",
+            "time": "18:20",
+            "body": "You've checked in and you open the Wi-Fi list in your room.",
+            "page": {
+              "state": "wifiList",
+              "venueNote": "No sign names the Wi-Fi here, and the strongest network is already selected for you.",
+              "networks": [
+                {
+                  "ssid": "Haverbridge Lodge Guest",
+                  "signal": "fair",
+                  "secured": false
+                },
+                {
+                  "ssid": "Haverbridge Lodge FREE",
+                  "signal": "strong",
+                  "secured": false,
+                  "note": "Already selected for you"
+                }
+              ]
+            },
+            "factorStrings": {
+              "lookalike_network": {
+                "redFlag": "A public Wi-Fi network named to look like the venue's, often with a stronger signal"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_network"
+              ],
+              "perFlagNote": {
+                "lookalike_network": "'Haverbridge Lodge FREE', in capitals with the strongest signal, sits right next to 'Haverbridge Lodge Guest'. Anyone can name a hotspot to look like the venue's, and a stronger signal says nothing about who runs it."
+              },
+              "ifTrusted": "Joining it would run your traffic through whoever set it up, and the sign-in page it opens is the next step of the trap.",
+              "reportReply": "Thanks. With no sign to tell you the real name, the move is to ask the front desk, or use your phone's hotspot, never to pick the strongest signal. Reporting it warns the next guest."
+            }
+          },
+          {
+            "id": "e20_wifi_page_fake",
+            "kind": "page",
+            "subject": "From the Wi-Fi: 'Sign in to get online'",
+            "time": "10:05",
+            "body": "Sign in with your work account to get free Wi-Fi.",
+            "page": {
+              "url": "http://tarrowby-wifi.example/login",
+              "padlock": false,
+              "autofill": "none",
+              "heading": "Free Wi-Fi sign-in",
+              "fields": [
+                "Work email",
+                "Work password"
+              ],
+              "button": "Get online"
+            },
+            "factorStrings": {
+              "wifi_page_credentials": {
+                "redFlag": "A Wi-Fi sign-in page asking for your work password, or for more than accepting the terms"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "wifi_page_credentials"
+              ],
+              "perFlagNote": {
+                "wifi_page_credentials": "A venue's Wi-Fi page asks you to accept the terms, sometimes an email or a room number. It has no reason to want your work password; one that does is a fake. The bar here also reads 'Not secure', so others on the network could read what you send. Even behind a padlock, a Wi-Fi page asking for your work sign-in is a fake: a padlock only means the connection is encrypted, not that the page is honest (see E5)."
+              },
+              "ifTrusted": "Your work email and password would go to whoever put the page up, and they could sign in as you from anywhere.",
+              "reportReply": "Thanks. No Wi-Fi page needs your work password. Close it, join the network the venue names or use your phone's hotspot, and report the page."
+            }
+          },
+          {
+            "id": "e20_wifi_page_genuine",
+            "kind": "page",
+            "subject": "From the café Wi-Fi: accept and connect",
+            "time": "09:52",
+            "body": "Welcome to The Bean and Barrow. Tick to accept the terms and connect.",
+            "page": {
+              "url": "https://thebeanandbarrow.example/wifi",
+              "padlock": true,
+              "certificate": {
+                "issuedTo": "thebeanandbarrow.example",
+                "issuer": "Open Certs Ltd"
+              },
+              "heading": "The Bean and Barrow free Wi-Fi",
+              "fields": [
+                "I accept the terms"
+              ],
+              "button": "Connect"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "wifi_page_credentials": "It asks for no password, just the terms. A Wi-Fi page turning up is not the tell; what it asks for is.",
+                "default": "A real venue page asks you to accept the terms and nothing more. Tick and connect, and let the VPN cover the rest."
+              },
+              "falseAlarmCost": "Reported instead of accepted, you never get on the café's Wi-Fi and spend the afternoon on your phone's data, over a page that only asked you to tick a box."
+            }
+          },
+          {
+            "id": "e20_lost_device_genuine",
+            "from": {
+              "name": "Tarrowby IT Service Desk",
+              "address": "it-servicedesk@tarrowby.example"
+            },
+            "to": "you@tarrowby.example",
+            "subject": "If you lose a work device, ring us straight away",
+            "time": "16:40",
+            "body": "A reminder for everyone on the road: if you lose a work phone, tablet or laptop, ring the 24/7 service desk straight away, day or night, even if it's locked and even if you think it'll turn up. Tell us what it was, when and where you last had it, and what was on it. We can lock or wipe it, but only once you tell us. We'll never ask for your password.\nThe IT Service Desk",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "it-servicedesk@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "A genuine reminder from the service desk on Tarrowby's own address, asking for nothing and naming the usual route. The lock buys time; reporting at once is what lets them lock, wipe and sign the device out. Keep the 24/7 number to hand."
+              },
+              "falseAlarmCost": "Reported as if it were a scam, you might not save the one number that matters when a device actually goes missing, and the hours before you ring are the ones that count."
+            }
+          },
+          {
+            "id": "e20_lost_device_fake",
+            "from": {
+              "name": "Device Recovery",
+              "address": "alerts@tarrowbey.example"
+            },
+            "to": "you@tarrowby.example",
+            "subject": "We've detected your lost work device",
+            "time": "21:10",
+            "body": "We've detected your lost work device. Sign in here within 24 hours to locate it, or it will be wiped.\n{{link:locate}}\nDevice Recovery",
+            "links": [
+              {
+                "id": "locate",
+                "text": "Locate my device",
+                "destination": "https://tarrowbey.example/locate/signin"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowbey.example",
+              "replyTo": "alerts@tarrowbey.example"
+            },
+            "factorStrings": {
+              "found_device_lure": {
+                "redFlag": "A message offering to locate or recover a lost device if you sign in"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "found_device_lure",
+                "lookalike_domain"
+              ],
+              "perFlagNote": {
+                "found_device_lure": "You find a lost device by ringing the service desk, never by signing in to a message that found you first. The 24-hour clock is there to rush you past that thought.",
+                "lookalike_domain": "The address is tarrowbey.example, not tarrowby.example: a look-alike with an added letter. The 'Locate my device' link goes to a sign-in page on that same look-alike."
+              },
+              "ifTrusted": "The link opens a sign-in page that takes your work password; nothing is ever located.",
+              "reportReply": "Thanks. The service desk doesn't email you to locate a device, and tarrowbey.example isn't ours. You report lost kit by ringing the desk, day or night."
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e20_remote_and_mobile_working",
+      "role": "mobile",
+      "company": "tarrowby_logistics",
+      "brand": {
+        "name": "Tarrowby Logistics",
+        "logoText": "TARROWBY",
+        "accent": "#3b5b8c"
+      },
+      "variant": "full",
+      "durationTargetMin": 15,
+      "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: the everyday choices you make working away from the office, and the public networks and sign-in pages you sort afterwards. No real network is joined and no real password is ever typed; every network, page, venue and message is made up.",
+      "stages": [
+        "brief",
+        "mistake",
+        "flip",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "tell_them_apart",
+      "defend": {
+        "setId": "e20_on_the_road_inbox",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "mistake": {
+        "scored": false,
+        "beats": [
+          {
+            "id": "train_screen",
+            "situation": "On the 07:42, you open the client list to check it before the meeting. Where do you work on it?",
+            "options": [
+              {
+                "id": "back_to_wall",
+                "label": "Move to the seat with its back to the wall, privacy screen on, and leave the sensitive bits for later",
+                "safe": true,
+                "approvedRoute": true
+              },
+              {
+                "id": "aisle_open",
+                "label": "Here, in the aisle seat, with people in the row behind",
+                "safe": false
+              }
+            ]
+          },
+          {
+            "id": "cafe_call",
+            "situation": "In the café queue, a client rings and asks you to read out the building's alarm code and the room list. What do you say?",
+            "options": [
+              {
+                "id": "read_it_out",
+                "label": "Read it out quietly over the phone",
+                "safe": false
+              },
+              {
+                "id": "call_back",
+                "label": "\"I'll call you back from somewhere private,\" or send it through the approved route",
+                "safe": true,
+                "approvedRoute": true
+              }
+            ]
+          },
+          {
+            "id": "mind_laptop",
+            "situation": "You go to the counter. The friendly person at the next table offers to watch your laptop. What do you do?",
+            "options": [
+              {
+                "id": "take_it",
+                "label": "Thank them, and take the laptop and tablet with you",
+                "safe": true,
+                "approvedRoute": true
+              },
+              {
+                "id": "leave_it",
+                "label": "Thank them and leave it with them, you'll only be a minute",
+                "safe": false
+              }
+            ]
+          },
+          {
+            "id": "cafe_wifi",
+            "situation": "The café Wi-Fi list shows two networks that look like the venue's. The stronger one's page asks for your work email and password to get online. What do you do?",
+            "options": [
+              {
+                "id": "sign_in_fake",
+                "label": "Join the stronger one and sign in with your work account",
+                "safe": false
+              },
+              {
+                "id": "venue_or_hotspot",
+                "label": "Join the network the staff name, wait for the VPN, or use your phone's hotspot",
+                "safe": true,
+                "approvedRoute": true
+              }
+            ]
+          },
+          {
+            "id": "lost_tablet",
+            "situation": "That evening the survey tablet isn't in your bag. It's locked. What do you do?",
+            "options": [
+              {
+                "id": "ring_now",
+                "label": "Ring the service desk now, day or night, and say what it was and where you last had it",
+                "safe": true,
+                "approvedRoute": true
+              },
+              {
+                "id": "wait_morning",
+                "label": "Wait until the morning, it's locked and might turn up",
+                "safe": false
+              }
+            ]
+          }
+        ],
+        "flipBeat": "cafe_wifi"
+      },
+      "flip": {
+        "mode": "montage"
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier. First you spend two days working away from the depot: a train, a café, a hotel, a morning at home. You make the everyday calls anyone makes on the road, then you see where each one led. After that you tell the safe public networks and sign-in pages from the look-alikes. Only that last part is scored. Nothing you tap is a real network, and no real password is ever typed.",
+        "flipHeading": "Through their eyes.",
+        "noBlameLine": "Reading a screen over someone's shoulder, joining a network named like the café, or leaving a bag for a minute are ordinary slips that happen to careful people; the harm is in the hours before anyone says so, not in the slip. A miss here just shows what to change.",
+        "mondayCard": "On Monday, three things: turn on the screen lock and auto-lock on your own phone if they're not on already; set your devices to forget public Wi-Fi networks and turn off auto-join, so they don't rejoin a look-alike by themselves; and save the 24/7 service desk number in your phone, so if you lose a work device you can report it on the spot. Report anything at work using the route in the box below.",
+        "defendOnly": "A look-alike network, or a page after your work password, catches careful people on the road. Any you were caught out by are shown below, with what gives each one away.",
+        "conceptPanel": [
+          {
+            "heading": "Public Wi-Fi, in proportion",
+            "text": "Nearly everything you do now is encrypted, and Tarrowby's laptops add a VPN on top, so ordinary work on the venue's own network is mostly fine. The old 'anyone on the café Wi-Fi can read your email' is out of date. What still catches people is a network named to look like the venue's, and a page that asks for your work password."
+          },
+          {
+            "heading": "The look-alike and the over-asking page",
+            "text": "You can't tell who runs a hotspot, so ask the venue for the network's name, and don't just pick the strongest signal. A venue's page asks you to accept the terms, sometimes an email or a room number. It never needs your work password; if one asks, close it, use your phone's hotspot, and report it."
+          },
+          {
+            "heading": "Out of sight, out of earshot",
+            "text": "In public, someone can see your screen and hear your call. Sit with your back to a wall, use a privacy screen, and lock the screen whenever you look away. On a call, no names, codes or client details; 'I'll call you back' is a complete answer."
+          },
+          {
+            "heading": "With you, or locked away. Lost it? Report it now",
+            "text": "A device never sits unattended in a café, a train or a car, even for two minutes. If you lose one, ring the service desk straight away, day or night, even if it's locked: the lock buys time, and the hours before you report are what matter."
+          },
+          {
+            "heading": "What Tarrowby has set up",
+            "text": "On Tarrowby's side: the laptops carry a VPN that connects by itself (Tarrowby Connect), every phone, tablet and laptop is encrypted and can be locked or wiped remotely, and the 24/7 service desk can sort a lost device the moment you ring. These are set up for you; your part is to keep the device with you and ring straight away if it goes missing."
+          }
+        ],
+        "flipMontageByChoice": {
+          "cafe_wifi": {
+            "sign_in_fake": "The stronger network wasn't the café's; it was named to look like it. Your work password went to whoever set it up, and by mid-afternoon someone had signed in as you from across town.",
+            "venue_or_hotspot": "You joined the network the staff named and waited for the VPN. The look-alike with the stronger signal got nothing from you. This is the one the attackers were counting on."
+          },
+          "train_screen": {
+            "aisle_open": "The student in the row behind read three clients' names off your screen before you closed it. She wasn't being nosy; the screen was just there.",
+            "back_to_wall": "With your back to the wall and the privacy screen on, the names stayed yours. The student behind you saw a spreadsheet of nothing in particular."
+          },
+          "cafe_call": {
+            "read_it_out": "Everyone in the queue heard the alarm code and which rooms to go to. By the next day the client had changed the code, and every cleaner needed the new one.",
+            "call_back": "\"I'll call you back\" was a complete answer. You rang from outside, and nobody in the queue heard a thing."
+          },
+          "mind_laptop": {
+            "leave_it": "The stranger was lovely and touched nothing. The couple at the next table, though, could read your open inbox for the whole four minutes you were at the counter.",
+            "take_it": "The laptop and tablet came with you to the counter, so there was nothing on the table for anyone to read, and nothing to walk off."
+          },
+          "lost_tablet": {
+            "wait_morning": "The tablet sat in the café overnight, still signed in to the survey app. By the time you reported it next morning, it had been out of your hands for twelve hours.",
+            "ring_now": "You rang the service desk that evening. They locked the tablet within minutes, and when the café found it the next day it was switched back on. The hours that matter never happened."
+          }
+        },
+        "defendIntro": "See how little it took? A screen someone read on the train, a code someone heard in the queue, a bag left for a minute, and one password typed into a network that wasn't the café's. None of it was clever. Now it's the kiosk: tell the safe networks and pages from the look-alikes."
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on",
+    "ambient": "#bcc2cc"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_tarrowby",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_tarrowby_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "drinks_vending": {
+            "color": "#e0f0ff",
+            "radius": 40,
+            "intensity": 0.45
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 4.5,
+            "y": 5,
+            "color": "#dfe8f4",
+            "radius": 110,
+            "intensity": 0.25
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "zainab_hussain",
+          "displayName": "Zainab Hussain",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/awareness_e20_remote_and_mobile_working/ink/zainab_hussain.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_e20_remote_and_mobile_working_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "tell_them_apart"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen training kiosk for the Tarrowby remote-working exercise: first two days on the road to walk through, then the public networks and sign-in pages to sort.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e20_remote_and_mobile_working_defend_done",
+              "value": "A touch-screen training kiosk for the Tarrowby remote-working exercise. The two days are done and the networks and pages are all sorted."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e20_remote_and_mobile_working"
+          }
+        }
+      ]
+    }
+  }
+}
