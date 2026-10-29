@@ -37,7 +37,7 @@
     "line": "They can't get past your phone, so they lean on it. Deny what you didn't start, report it, and let the service desk change the password."
   },
 
-  "stepLabels": { "guess": "Guess list" },
+  "stepLabels": { "guess": "Guess list", "flip": "Your phone" },
 
   "conceptPanel": [
     { "heading": "How passwords get stolen", "text": "Most passwords aren't cracked by genius. They're guessed from the obvious first (123456, a team, a pet, the company name and a year), reused from a breach of another site, phished through a fake sign-in page, or simply handed over. A different password for every account, kept in a manager, is the one habit that blunts all of those at once." },
