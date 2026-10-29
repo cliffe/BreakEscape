@@ -130,7 +130,7 @@
         "techniques": {
           "authority_borrowed": "Borrowed authority. A partner's name on the box does not make the delivery expected.",
           "urgency": "Urgency. Being in a hurry is the oldest line for skipping a check.",
-          "deflect": "Dodging the check. Buzzing you through blind, rather than signing you in and walking you up, is exactly what a genuine courier never needs."
+          "deflect": "Dodging the check. A genuine courier is happy to sign in and be walked up; trying to skip that is the tell."
         },
         "ask": {
           "accepted": "She buzzed the door on the partner's name and the hurry, and neither of those proved the delivery was expected.",

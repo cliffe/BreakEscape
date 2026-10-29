@@ -162,6 +162,12 @@
               "hint": "Check the day's list or call the host.",
               "past": "Checked"
             }
+          },
+          "queue": {
+            "call": {
+              "real": "Genuine visitors",
+              "reportLabel": "Reported rather than just turned away"
+            }
           }
         },
         "outcome": {
@@ -302,7 +308,7 @@
             "transcript": [
               {
                 "who": "Courier",
-                "text": "Sample box for one of your partners, hands full, could you buzz me through?"
+                "text": "Sample box for one of your partners, they said to send me straight up. Hands full, could you buzz me through?"
               },
               {
                 "who": "Courier",
@@ -316,14 +322,16 @@
                 "borrowed_authority",
                 "secrecy_or_bypass",
                 "uniform_pretext",
-                "not_expected"
+                "not_expected",
+                "no_escort"
               ],
               "perFlagNote": {
-                "borrowed_authority": "Dropping a partner's name doesn't make the delivery expected.",
+                "borrowed_authority": "'A partner said to send me straight up' leans on a name you can't check to wave away the sign-in; a name is not a booking.",
                 "secrecy_or_bypass": "'Don't bother signing me in' is the ask to skip the one check.",
                 "tailgating": "Buzzing the door without a badge is letting them tailgate on your say-so.",
                 "uniform_pretext": "The hi-vis and the parcel say 'courier', but neither proves this delivery was expected.",
-                "not_expected": "An unbooked drop-off: nothing on the day's list says a parcel for a partner was due."
+                "not_expected": "An unbooked drop-off: nothing on the day's list says a parcel for a partner was due.",
+                "no_escort": "Buzzed through with nobody to sign him in or walk him up, he's loose on the studio floor."
               },
               "ifTrusted": "A stranger is through the badge door and onto the studio floor.",
               "reportReply": "Thanks, real couriers leave the parcel at the desk; we logged it."
@@ -337,6 +345,9 @@
               },
               "not_expected": {
                 "redFlag": "The visitor is not on today's list and their paperwork does not match."
+              },
+              "no_escort": {
+                "redFlag": "A visitor or contractor left to move around unescorted."
               }
             }
           },
