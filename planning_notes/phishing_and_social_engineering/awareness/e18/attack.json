@@ -51,6 +51,7 @@
 
   "osint": {
     "profile": "awareness",
+    "pinHints": true,
     "sites": [
       { "id": "merrin_site", "name": "Merrin & Sallow Architects", "url": "merrinsallow.example", "type": "company-site",
         "pages": [

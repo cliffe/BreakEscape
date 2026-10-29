@@ -299,8 +299,9 @@ LINES = {
         "That's the morning sorted, thanks. The rule holds every time: no honest web page ever needs you to paste, run, install or call.",
         'Thanks, Niamh.', 'No bother.'),
     # E18: the brief's drafted lines ran over the 30-word dialoguelint cap, so they are trimmed here.
+    # P1 C2 MIN-3: "come thick" (clipped from "thick and fast") -> "come fast"; P1 plain-words: "sweep" -> "an attack".
     ('e18', 'defend'): (
-        "Your own seat now. After a sweep the alerts come thick, some real, some fakes. Report the fakes, and never type a password to unlock or check anything.",
+        "Your own seat now. After an attack the alerts come fast, some real, some fakes. Report the fakes, and never type a password to unlock or check anything.",
         "That's them sorted, thanks. A genuine alert never asks for your password; the fakes always do. Report the fakes, and change a reused password on the real site.",
         'Thanks, Ama.', 'Any time.'),
 }
@@ -616,16 +617,16 @@ EPISODES = {
                    'keywords': ['Passwords', 'Credential stuffing', 'Password spraying', 'Security awareness', 'Multi-factor authentication']}],
         'defend': {
             'name': 'Credential alerts: tell the real from the fake',
-            'brief': "You're on an authorised exercise at Merrin & Sallow Architects, a fictional company. A campaign has swept the practice, and the alerts are arriving: your account locked, a new sign-in, a breach warning. Some are genuine and some are fakes built to catch you. Handle each one, and never type a password to 'check' or 'unlock' anything. No real password is ever typed here.",
+            'brief': "You're on an authorised exercise at Merrin & Sallow Architects, a fictional company. Someone has run a password-guessing campaign across the whole practice, and now a wave of alerts is arriving: a lockout, a new sign-in, a breach warning. Some are genuine; some are fakes built to catch you.",
             'endGoal': 'Handle the security alerts at the training kiosk.',
             'aim': ('tell_them_apart_aim', 'Tell the real alerts from the fakes', 'Work through the security alerts at the training kiosk.'),
             'task': ('handle_the_alerts', 'Handle the security alerts'),
-            'kiosk': ("A touch-screen kiosk showing the alerts after a credential sweep of the practice: some genuine, some fakes to catch you.",
-                      "A touch-screen kiosk showing the alerts after a credential sweep. They are all handled."),
+            'kiosk': ("A touch-screen kiosk showing the alerts after a password-guessing campaign against the practice: some genuine, some fakes to catch you.",
+                      "A touch-screen kiosk showing the alerts after a password-guessing campaign. They are all handled."),
             'display': 'Awareness E18: Credential stuffing and password spraying (defend only)',
-            'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. A campaign has swept Merrin & Sallow Architects, a fictional practice, and the alerts are arriving: a lockout, a sign-in alert, a breach warning, some genuine and some fakes. Each answer is explained, and reporting when you're unsure is always fine and never marked down. No real password is ever typed.",
+            'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. A password-guessing campaign has hit Merrin & Sallow Architects, a fictional practice, and the alerts are arriving: a lockout, a sign-in alert, a breach warning, some genuine and some fakes. Each answer is explained, and reporting when you're unsure is always fine and never marked down. No real password is ever typed.",
             'minutes': 8,
-            'defendIntro': "Go through the security alerts and decide what to do with each one. Genuine notices never need you to type a password to unlock or check anything; the ones that do are fakes. Report the fakes, act on the real ones the safe way, and there's no clock on you here.",
+            'defendIntro': "Go through the security alerts and decide what to do with each one. Report the fakes, act on the real ones the safe way, and there's no clock on you here.",
             'conclusion': ('Alerts handled', "You've sorted the genuine alerts from the fakes and finished this episode."),
         },
     },

@@ -1,7 +1,7 @@
 {
   "scenario_id": "awareness_e18_credential_attacks_at_scale",
   "scenario_name": "Credential stuffing and password spraying: both sides",
-  "scenario_brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team: you don't attack one person, you go after the whole practice at once. Gather who works here and how their email addresses are built, make a word list out of the practice's own website, then try one likely password against every account in one go, and a stolen breach list across lots of services. Then it's your own seat: the alerts start arriving, and you tell the real ones from the fakes. Only that part is scored.",
+  "scenario_brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team: you don't go after one person, you go after the whole practice at once. Gather the staff and how their email addresses are built, build a word list from the practice's own website, then try one likely password against every account, and a stolen breach list across many services. Then it's your own seat: the alerts arrive, and you tell the real from the fake. Only that part is scored.",
   "endGoal": "Run the campaign, then handle the security alerts at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
@@ -82,8 +82,8 @@
     "triageSets": [
       {
         "id": "e18_atscale_inbox",
-        "title": "After the sweep: your alerts",
-        "brief": "A campaign has just swept Merrin & Sallow, and the alerts are arriving in your inbox. Six things have turned up: lockout notices, sign-in alerts and a breach warning. Some are genuine and some are fakes built to finish the job. For each one, choose Trust, Report, Delete or Verify (check it through a route you already trust, not the link in the message), then tick what you noticed. Never type a password to 'unlock' or 'check' anything. Reporting when you're unsure is always fine and never marked down.",
+        "title": "After the attack: your alerts",
+        "brief": "A password-guessing campaign has just hit Merrin & Sallow, and the alerts are arriving in your inbox: six in all, some genuine and some fakes built to finish the job. For each one, choose Trust, Report, Delete or Verify (check it through a route you already trust, not the link in the message), then tick what you noticed. Never type a password to 'unlock' or 'check' anything. Reporting when you're unsure is always fine and never marked down.",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
         "feedbackMode": "immediate",
@@ -91,7 +91,6 @@
         "glossary": "closed",
         "channelTells": [
           "lookalike_domain",
-          "secrecy_or_bypass",
           "fake_lockout_notice",
           "fake_signin_alert",
           "fake_breach_alert"
@@ -163,15 +162,13 @@
               "isPhish": true,
               "flags": [
                 "lookalike_domain",
-                "fake_lockout_notice",
-                "secrecy_or_bypass"
+                "fake_lockout_notice"
               ],
               "perFlagNote": {
                 "lookalike_domain": "The address is merrin-sallow.example, a hyphen added to the real merrinsallow.example. A real notice from the practice's provider does not come from a changed address.",
-                "fake_lockout_notice": "A genuine lockout never asks you to unlock through a link. The provider's notice (row 1) tells you to use the usual service-desk route, not to click.",
-                "secrecy_or_bypass": "The threat of deletion in 24 hours is there to rush you past the one check that would catch it: open the link and you hand over your password."
+                "fake_lockout_notice": "A genuine lockout never asks you to unlock through a link, and the threat of deletion in 24 hours is only there to rush you. The provider's own notice tells you to use the usual service-desk route."
               },
-              "ifTrusted": "Clicking through and signing in would hand your password straight to whoever is running the sweep.",
+              "ifTrusted": "Clicking through and signing in would hand your password straight to whoever is running the attack.",
               "reportReply": "Thanks. That wasn't us: the address is a look-alike, and we never ask you to unlock through a link. Reporting it is exactly right."
             }
           },
@@ -231,7 +228,7 @@
               ],
               "perFlagNote": {
                 "fake_signin_alert": "A genuine alert never makes you 'review' a sign-in by signing in through its link. This one sends you to a page built to capture your password.",
-                "lookalike_domain": "The address is merrinsallow-studio.example, an extra word added to the real merrinsallow.example. The real sign-in alert (row 3) comes from the practice's own address."
+                "lookalike_domain": "The address is merrinsallow-studio.example, an extra word added to the real merrinsallow.example. The genuine sign-in alert comes from the practice's own address."
               },
               "ifTrusted": "Signing in through the link would hand your password to the page behind it.",
               "reportReply": "Thanks. The real alert sends you to the site yourself; this one wanted you to sign in through its link. Reporting it is the right move."
@@ -256,12 +253,10 @@
             "truth": {
               "isPhish": true,
               "flags": [
-                "fake_breach_alert",
-                "secrecy_or_bypass"
+                "fake_breach_alert"
               ],
               "perFlagNote": {
-                "fake_breach_alert": "Nothing genuine asks for your password to tell you whether it has leaked. A real breach check uses only your email address, never your password.",
-                "secrecy_or_bypass": "Typing your password into a 'checker' hands it over directly. The whole trick is to get you to type it somewhere you shouldn't, instead of checking the safe way."
+                "fake_breach_alert": "Nothing genuine asks for your password to tell you whether it has leaked. A real breach check uses only your email address, never your password."
               },
               "ifTrusted": "Typing your password into the box hands it straight to whoever set the page up.",
               "reportReply": "Thanks. A real breach check only ever needs your email address. Never type a password to 'check' it; reporting this is exactly right."
@@ -330,6 +325,12 @@
       },
       "guess": {
         "mode": "spray",
+        "strings": {
+          "found": "collected",
+          "opened": "opened",
+          "trying": "did not open",
+          "switchOff": "Stop the test"
+        },
         "roster": {
           "namesFactId": "ms_team_roster",
           "patternFactId": "ms_email_pattern",
@@ -427,7 +428,7 @@
       "flipAftermath": {
         "heading": "A few minutes later, at your desk",
         "victimName": "you",
-        "intro": "The sweep set alarms ringing across the practice. Here are the first two that reached you.",
+        "intro": "The attack set alarms ringing across the practice. These first two alerts are already in your inbox; you handle the full set next.",
         "items": [
           {
             "id": "fa_signin",
@@ -449,17 +450,22 @@
         "line": "Most of the harm comes from acting on the fake alert instead of the real one."
       },
       "strings": {
-        "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team: you don't attack one person, you go after the whole practice at once. Gather who works here and how their email addresses are built, make a word list out of the practice's own website, then try one likely password against every account in one go, and a stolen breach list across lots of services. Then it's your own seat: the alerts start arriving, and you tell the real ones from the fakes. Only that part is scored.",
+        "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team: you don't go after one person, you go after the whole practice at once. Gather the staff and how their email addresses are built, build a word list from the practice's own website, then try one likely password against every account, and a stolen breach list across many services. Then it's your own seat: the alerts arrive, and you tell the real from the fake. Only that part is scored.",
+        "stages": {
+          "osint": {
+            "text": "Open the browser and read the practice's public pages. Click a line to add it to your notes; you need five useful facts before you close the browser."
+          }
+        },
         "flipHeading": "Now it's your inbox.",
         "flipGuessIntro": "You watched one password open the predictable accounts across the whole practice, and a stolen one open the accounts where it had been reused. Here is the other end: your own seat, with the alerts starting to arrive.",
         "flipDefenderLine": "One password off the website, tried once across everyone, opened the predictable accounts. No clever cracking, just reuse and words anyone could read. A different password for every account, and not a word off the website, is what would have stopped it. Now the alerts are arriving, and some are fakes.",
         "flipNoSend": "Nothing of the practice's was opened to replay, but the lesson holds: a reused password, or a word off the website, is what opens an account. Next, you tell the real alerts from the fakes.",
-        "flipMissed": "The sweep opened nothing this time, but a reused password or a company word is still what opens accounts at scale. Next, you tell the real alerts from the fakes.",
+        "flipMissed": "The attack opened nothing this time, but a reused password or a company word is still what opens accounts at scale. Next, you tell the real alerts from the fakes.",
         "flipMissedHeading": "Nothing landed this time",
         "flipLandedNoTells": "It opened the predictable accounts with nothing clever at all, just reuse and words off the website. Next, you tell the real alerts from the fakes.",
         "noBlameLine": "Reusing a password, or using a word off the website, is ordinary and common; this is how accounts are opened at scale, not a sign anyone was careless. A miss here just shows what to change tonight.",
         "mondayCard": "On Monday, three things at home: switch on a password manager and let it make a different password for every account, starting with your email; check your personal email address on a breach-checking site (the NCSC suggests Have I Been Pwned); and turn on 2-step verification, or a passkey, for your email first. Report anything at work using the route in the box below.",
-        "defendOnly": "These alerts follow a sweep of the whole practice, and anyone can be caught out by a convincing fake. Any you were caught out by are shown below, with what gave each one away.",
+        "defendOnly": "These alerts follow an attack on the whole practice, and anyone can be caught out by a convincing fake. Any you were caught out by are shown below, with what gave each one away.",
         "conceptPanel": [
           {
             "heading": "Password spraying",
@@ -575,6 +581,7 @@
     },
     "osint": {
       "profile": "awareness",
+      "pinHints": true,
       "sites": [
         {
           "id": "merrin_site",
