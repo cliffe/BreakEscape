@@ -12,7 +12,7 @@ Draft from the m01 trial (October 2026). The later video skill builds on this. P
 - **Dialogue:** use the game's own portrait view and subtitle bar. Never add a second subtitle layer on top of it. Where a crop loses the bar (9:16), add a small Press Start 2P caption from the line text instead. Strong lines get a slow push-in ending on a UI-free close-up.
 - **Sound:** live game audio (sound effects and voice) under a music bed. Game music muted during capture (`be_music_vol=0`). 5-10 ms fades at every cut; montage audio about -6 dB; dialogue at full with the music ducked 10 dB; final loudness -14 LUFS, true peak under -1 dBTP.
 - **Music:** from the game's own sets (`public/break_escape/assets/music/`). Analyse the beat grid first (`tools/video/edits/music/analyse_music.py`); card changes land on strong hits, montage cuts on beats.
-- **Spoilers:** show mechanics, hide answers. No full codes, PINs, passwords or flag values; partial keypad entry only with digits that aren't the code; no text naming a culprit (logs, notes) unless the antagonist reveal is the point and the user has approved it; no casualty figures; no ending or choice screens.
+- **Spoilers:** show mechanics, hide answers. No full codes, PINs, passwords or flag values; partial keypad entry only with digits that aren't the code; naming the antagonist is fine when he is plain from the start (m01's Derek, user 2026-10-29), but pixelate any real answer on screen (passwords, codes, flags); no casualty figures; no ending or choice screens.
 
 ## By kind of video
 

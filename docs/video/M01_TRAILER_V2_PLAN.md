@@ -88,7 +88,7 @@ Review: `reviews/M01_TRAILER_V2_PLAN_R1.md` (0 blocker, 9 major, 9 minor). The o
 
 | # | Outcome |
 |---|---|
-| 1, 2 | **Real Hacking placeholder is 20.80-23.40 s only** (browser, then sqlmap/dirb). The 19.53-20.80 Hydra shot is dropped: it names Derek and shows a cracked password. Check every cut frame for names, hosts and credentials. |
+| 1, 2 | **Real Hacking placeholder is 19.55-23.40 s.** User (2026-10-29): Derek is obviously the villain from the start, so naming him is fine. The Hydra shot stays, but the cracked password `0419Marketing` is m01's real answer (`scenario.json.erb`, `SOLUTION_GUIDE.md`), so that word is pixelated in the clip. |
 | 3 | Glitch v2 at 6 frames minimum, or change the lint and `timeline.js` together; the lint gets a `title` shot type allowed first, and `dissolve` as a join type with the same card-adjacent rule. |
 | 4 | Pre-cut the placeholder to 30 fps and commit it small under `tools/video/assets/placeholders/` with its source URL (`https://hacktivity.co.uk/assets/HacktivityGamesTrailer1-29f3078d52acbd4a8b7e6701f80e023f94cb3f3360f49af6141956d381237e3f.mp4`) and the in/out times in a README. |
 | 5 | Copy `hacktivity-logo.svg`, `hacktivity-games-logo.svg`, `safetynet_licence_to_hack.svg` and the keyhole art into `tools/video/assets/brand/` (with a note of their source repo paths); extend `sync-assets.mjs` and `Gameplay.tsx` to take a general `clip` source, not only takes. |
