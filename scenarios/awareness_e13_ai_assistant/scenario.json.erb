@@ -86,7 +86,7 @@
       {
         "id": "e13_assistant_inbox",
         "title": "Brightwell inbox, beside the assistant",
-        "brief": "You're at the training kiosk with Brightwell's inbox open next to the assistant. Six things have come in: a supplier email, two voicemails and two video calls. For each one, choose Trust, Report, Delete or Verify (ring the person back on a number you already hold, or check on a channel you trust), then tick what you noticed. Nobody will ask whether a voice or a face looked real: what counts is what each message asks you to do. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to confirm.",
+        "brief": "You're at the training kiosk with Brightwell's inbox open next to the assistant. Six things have come in: two supplier emails, two voicemails and two video calls. For each one, choose Trust, Report, Delete or Verify (ring the person back on a number you already hold, or check on a channel you trust), then tick what you noticed. Nobody will ask whether a voice or a face looked real: what counts is what each message asks you to do. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to confirm.",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
         "feedbackMode": "immediate",
@@ -713,8 +713,8 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:phish_assist_reader_attempts",
-              "condition": "value > 0",
+              "eventPattern": "global_variable_changed:phish_assist_reader_landed",
+              "condition": "value === true",
               "onceOnly": true,
               "completeTask": "plant_hidden_instruction"
             },

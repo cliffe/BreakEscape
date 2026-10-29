@@ -92,6 +92,7 @@
         "The one deliberate choice is the body you pick: the plain invoice, or the one with the line added for the assistant.",
         "A machine reads every line the same way, so a note addressed to 'AI assistants' is read as an instruction, not ignored."
       ],
+      "_outcome_note": "E13 MI1 fix, 2026-10-29: phish_assist_reader_landed was declared but read nowhere (a data-only target still needs an outcome.setGlobal, so it cannot just be dropped, mail.rb target_outcome). In the full erb the host NPC's plant_hidden_instruction eventMapping now keys on phish_assist_reader_landed (value === true) instead of phish_assist_reader_attempts > 0, so the outcome global is genuinely read. attempts stays as the engine send-counter the host ink line keys on.",
       "outcome": { "setGlobal": { "phish_assist_reader_landed": true } }
     }
   ]
