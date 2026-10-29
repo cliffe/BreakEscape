@@ -11,18 +11,18 @@
     "bins": [
       { "id": "allowed", "label": "Allowed" },
       { "id": "not_allowed", "label": "Not allowed" },
-      { "id": "ask", "label": "Ask first", "hint": "Not sure? Choose this. Ask first is never the wrong answer." }
+      { "id": "ask", "label": "Ask first", "hint": "Not sure which bin? Choose this one." }
     ],
     "drawRules": { "oneOfEachAnswer": true, "newFirst": true },
     "strings": {
       "title": "Can I?",
       "heading": "Sort the 'can I?' moments",
-      "intro": "Each card is an everyday moment at work. Put it in Allowed, Not allowed or Ask first, and the reason shows straight after. Not sure? Ask first, it's never the wrong answer.",
+      "intro": "Each card is an everyday moment at work. Put it in Allowed, Not allowed or Ask first, and the reason shows straight after. Not sure? Ask first.",
       "start": "Start sorting",
       "finish": "See where they went",
       "summaryHeading": "Where the cards went",
       "launchHeading": "The 'can I?' sort",
-      "launchText": "Sort the everyday 'can I?' moments into Allowed, Not allowed or Ask first, with the reason on screen. Ask first is never the wrong answer, and there's no clock on you.",
+      "launchText": "Sort the everyday 'can I?' moments into Allowed, Not allowed or Ask first, with the reason on screen. Not sure? Ask first, and there's no clock on you.",
       "launchButton": "Open the cards"
     },
     "cards": [
@@ -31,23 +31,23 @@
       { "id": "S03", "situation": "Install a free PDF editor you found online", "answer": "ask", "reason": "There's an approved one; unknown software can carry malware. Ask the service desk.", "confirmed": true },
       { "id": "S04", "situation": "Lend your badge to a colleague who left theirs at home", "answer": "not_allowed", "reason": "Everything done with your badge looks like you; reception issues day passes.", "locked": true, "confirmed": true },
       { "id": "S05", "situation": "Use your work email to sign up to a personal shopping site", "answer": "not_allowed", "reason": "Work accounts are for work; if the shop leaks, your work address gets the scams.", "confirmed": true },
-      { "id": "S06", "situation": "Forward a client file to your personal email to finish at home", "answer": "not_allowed", "reason": "It leaves the firm's protection; use approved remote access (core_13).", "confirmed": true },
-      { "id": "S07", "situation": "Post a photo of the team's new depot on social media", "answer": "allowed", "reason": "As long as no screens, whiteboards or badges are in shot (core_12).", "confirmed": true },
-      { "id": "S08", "situation": "Use the company's AI assistant to summarise a public report", "answer": "allowed", "reason": "It's approved, and public information is fine (core_15).", "confirmed": true },
-      { "id": "S09", "situation": "Paste a customer's complaint into a free public chatbot", "answer": "not_allowed", "reason": "Personal data to a firm we have no contract with; use the approved assistant without names (core_15).", "confirmed": true },
+      { "id": "S06", "situation": "Forward a client file to your personal email to finish at home", "answer": "not_allowed", "reason": "It leaves the firm's protection; use approved remote access.", "confirmed": true },
+      { "id": "S07", "situation": "Post a photo of the team's depot on social media", "answer": "allowed", "reason": "As long as no screens, whiteboards or badges are in shot.", "confirmed": true },
+      { "id": "S08", "situation": "Use the company's AI assistant to summarise a public report", "answer": "allowed", "reason": "It's approved, and public information is fine.", "confirmed": true },
+      { "id": "S09", "situation": "Paste a customer's complaint into a free public chatbot", "answer": "not_allowed", "reason": "Personal data to a firm we have no contract with; use the approved assistant without names.", "confirmed": true },
       { "id": "S10", "situation": "Connect your own phone to the guest Wi-Fi", "answer": "allowed", "reason": "That's what the guest network is for.", "confirmed": true },
-      { "id": "S11", "situation": "Plug in a USB stick a supplier handed you at a fair", "answer": "not_allowed", "reason": "Hand it to IT to check first (core_13).", "confirmed": true },
-      { "id": "S12", "situation": "Take your work laptop on holiday abroad", "answer": "ask", "reason": "Some countries and some data need extra care; ask your manager, then the service desk (core_09).", "confirmed": true },
+      { "id": "S11", "situation": "Plug in a USB stick a supplier handed you at a fair", "answer": "not_allowed", "reason": "Hand it to IT to check first.", "confirmed": true },
+      { "id": "S12", "situation": "Take your work laptop on holiday abroad", "answer": "ask", "reason": "Some countries and some data need extra care; ask your manager, then the service desk.", "confirmed": true },
       { "id": "S13", "situation": "Use the team chat to moan about a colleague", "answer": "not_allowed", "reason": "Messages are records and the colleague could read it; talk to your manager.", "confirmed": true },
       { "id": "S14", "situation": "Install a game on your work phone", "answer": "ask", "reason": "Only apps from the company app store go on work devices; ask the service desk.", "confirmed": true },
-      { "id": "S15", "situation": "Set an out-of-office saying you're away for a fortnight", "answer": "allowed", "reason": "Fine, but say less: your return date and who to contact, not where you are (core_12).", "confirmed": true },
+      { "id": "S15", "situation": "Set an out-of-office saying you're away for a fortnight", "answer": "allowed", "reason": "Fine, but say less: your return date and who to contact, not where you are.", "confirmed": true },
       { "id": "S16", "situation": "Log in as a colleague who's off sick, with their permission", "answer": "not_allowed", "reason": "It hides who did what; the service desk can give you proper access.", "locked": true, "confirmed": true },
-      { "id": "S17", "situation": "Read out the code from your phone to \"IT\" on a call", "answer": "not_allowed", "reason": "IT never asks for codes; hang up and ring the service desk (core_03).", "locked": true, "confirmed": true },
+      { "id": "S17", "situation": "Read out the code from your phone to \"IT\" on a call", "answer": "not_allowed", "reason": "IT never asks for codes; hang up and ring the service desk.", "locked": true, "confirmed": true },
       { "id": "S18", "situation": "Turn off the antivirus because it slows your laptop", "answer": "not_allowed", "reason": "It's there to stop malware; ask the service desk to fix the slowness.", "locked": true, "confirmed": true },
       { "id": "S19", "situation": "Look up a famous customer's address, just to see", "answer": "not_allowed", "reason": "Looking without a work reason can be a crime (Data Protection Act 2018, s.170).", "locked": true, "confirmed": true },
       { "id": "S20", "situation": "Use your own laptop for work while yours is repaired", "answer": "ask", "reason": "Only through the remote desktop service; ask the service desk.", "confirmed": true },
-      { "id": "S21", "situation": "You think you've sent a file to the wrong customer. Can you wait and say nothing in case it was fine?", "answer": "not_allowed", "reason": "Report a suspected mistake straight away; reporting is a duty and the sooner the better (core_04).", "locked": true, "confirmed": true },
-      { "id": "S22", "situation": "Tell a colleague your password to watch your inbox while you're off", "answer": "not_allowed", "reason": "Ask the service desk for shared access; your password is yours alone (core_03).", "locked": true, "confirmed": true }
+      { "id": "S21", "situation": "You think you've sent a file to the wrong customer. Can you wait and say nothing in case it was fine?", "answer": "not_allowed", "reason": "Report a suspected mistake straight away; reporting is a duty and the sooner the better.", "locked": true, "confirmed": true },
+      { "id": "S22", "situation": "Tell a colleague your password to watch your inbox while you're off", "answer": "not_allowed", "reason": "Ask the service desk for shared access; your password is yours alone.", "locked": true, "confirmed": true }
     ]
   }
 }

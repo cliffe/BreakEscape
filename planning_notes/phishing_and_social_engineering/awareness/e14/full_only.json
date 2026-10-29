@@ -38,13 +38,14 @@
       { "id": "pp_photos", "label": "Check the background before posting; crop out badges and screens, and turn off location tags", "closesFacts": ["se_intel_df_badge"], "default": "open" },
       { "id": "pp_security_answer", "label": "Use a made-up security-question answer kept in your password manager, not your real pet's name", "closesFacts": ["se_intel_df_pet"], "default": "open" }
     ],
-    "note": "Each change closes a found fact on the board. Tighten Dani's profile first, then do the same on your own."
+    "_note_defendOnly": "MA2 (E14_DESIGN_C1): this note is the one the GENERATOR copies into the defend-only shell, which has no OSINT board and no Dani, so it is self-framed (second person, no 'board', no 'Dani'). The FULL erb keeps its own board/Dani-framed note ('Each change closes a found fact on the board. Tighten Dani's profile first, then do the same on your own.'), which is coherent there because its OSINT stage introduces Dani; that erb copy is intentionally NOT regenerated from here. privacyPanel is not checked by the fragment<->erb parity test, so the divergence is safe.",
+    "note": "Each switch closes one of the things an attacker could piece together about you from a public profile. Tighten these on your own profile."
   },
 
   "flipDefenderLineByChoice": {
     "_notes": "Goes in the FULL erb social.awarenessEpisode.strings.flipDefenderLineByChoice (erb-only; allow-listed in the parity test's STRINGS_ERB_ONLY_OK, so it needs no new allow-list entry). aw2: the built defender-inbox flip reads the chosen pretext templateId and shows the matching line in place of strings.flipDefenderLine. Keys are the pretext template ids in attack.json. The defend-only shell has no write/flip stage and does not carry this key.",
     "df_pretext_access_now": "Yasmin read it between two things. It named Dani's leave, the new system and Thandiwe, so it fitted the week, and the rush left no room to check. When a message fits the week, a colleague acting on it is the ordinary thing to do.",
-    "df_pretext_access_calm": "No deadline and no secrecy, just an easy favour that matched a week she knew about. The ease is exactly what slipped it past her.",
+    "df_pretext_access_calm": "It named a week she knew Dani was away and asked one easy favour, so Yasmin set the access up without a second thought. The ease is exactly what slipped it past her.",
     "df_pretext_catchup": "A catch-up asks for nothing, so there was nothing to question. It is the ask for access that turns a friendly note into a way in."
   }
 }

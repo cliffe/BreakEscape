@@ -259,7 +259,7 @@ LINES = {
         'Thanks, Anjali.', 'Any time.'),
     # E17 and E19: the brief's drafted lines ran over the dialoguelint 30-word cap, so they are trimmed here.
     ('e17', 'defend'): (
-        "Nilesh, service desk. Every rule here has a 'because'. Allowed, Not allowed, Ask first, and Ask first is never wrong. Sort the cards, then a short inbox.",
+        "Nilesh, service desk. Every rule here has a 'because'. Allowed, Not allowed, Ask first, and when you're not sure, ask first. Sort the cards, then a short inbox.",
         "That's the lot, thanks. When you're not sure, ask first, the service desk usually answers the same day; and if you make a mistake, report it.",
         'Thanks, Nilesh.', 'Any time.'),
     ('e19', 'defend'): (
@@ -395,7 +395,7 @@ EPISODES = {
             'display': 'Awareness E17: Acceptable use',
             'desc': "An awareness episode of about 12 minutes for all staff. Sort everyday 'can I?' moments against Tarrowby Logistics' own rules, a fictional haulier, and handle a short inbox. Each answer has its reason on screen, Ask first is never the wrong answer, and reporting when you're unsure is always fine and never marked down.",
             'minutes': 12,
-            'defendIntro': "Sort the everyday 'can I?' moments into Allowed, Not allowed or Ask first, with the reason on screen, then handle the short inbox. When you're not sure, Ask first, it's never the wrong answer. There's no clock on you here.",
+            'defendIntro': "Sort the everyday 'can I?' moments into Allowed, Not allowed or Ask first, with the reason on screen, then handle the short inbox. When you're not sure, Ask first. There's no clock on you here.",
             'conclusion': ('Acceptable use done', "You've sorted the 'can I?' moments and handled the inbox, and finished this episode."),
         },
     },
@@ -543,25 +543,28 @@ EPISODES = {
         # closesFacts id as undeclared. Smallest fix: carry the five facts (text + reduceNote only,
         # the two keys privacy-model.js reads) here and inject them into the defend-only social below;
         # no provides/subject/source, so board.rb needs nothing more and nothing else references them.
+        # MA2 (E14_DESIGN_C1): the defend-only shell has no OSINT stage and no Dani, so its privacy-panel
+        # fact rows are self-framed (second person), unlike the full shell's board, which carries Dani's
+        # collected facts from attack.json. These feed only the generated defend-only shell.
         'defend_intel_facts': {
             'df_profile': {
-                'text': "Dani Fenwick is a junior architect at Merrin & Sallow, on the studio team, and his manager is the studio manager, Thandiwe Moyo.",
+                'text': "Your profile shows your employer, your team and your manager's name, there for anyone to read.",
                 'reduceNote': "Lock your profile down: an attacker reads your employer, team and manager straight off a public profile.",
             },
             'df_system': {
-                'text': "A job advert Dani reposted names the practice's new finance system by name.",
+                'text': "A job advert you shared names one of the firm's internal systems.",
                 'reduceNote': "Don't name internal systems, security tools or suppliers; a hiring post can give one away.",
             },
             'df_badge': {
-                'text': "Dani's 'new kit' photo shows a lanyard and a whiteboard in shot, confirming the system and his level of access.",
+                'text': "A 'new kit' photo has your lanyard and a whiteboard in shot.",
                 'reduceNote': "No badge, pass or screen in a photo; check what's behind you before you post.",
             },
             'df_leave': {
-                'text': "Dani's leave countdown says he is away all next week.",
+                'text': "A leave countdown says you're away all next week.",
                 'reduceNote': "Keep leave private: 'away all week' tells an attacker when to strike and who's covering.",
             },
             'df_pet': {
-                'text': "Dani's dog photo, captioned as a 'name a pet' answer, gives his dog's name, a common security-question answer.",
+                'text': "A dog photo, captioned as a 'name a pet' answer, gives your pet's name, a common security-question answer.",
                 'reduceNote': "Keep pet, school, birthday and first car out of public view; use a made-up security answer kept in your manager.",
             },
         },
