@@ -44,6 +44,7 @@ JOBS=(
   e15-full:awareness_e15_shadow_it
   e16-full:awareness_e16_insider_risk
   e18-full:awareness_e18_credential_attacks_at_scale
+  e18-close:awareness_e18_credential_attacks_at_scale
   e19-full:awareness_e19_malware_and_updates
   e20-full:awareness_e20_remote_and_mobile_working
   e17-defend:awareness_e17_acceptable_use_defend

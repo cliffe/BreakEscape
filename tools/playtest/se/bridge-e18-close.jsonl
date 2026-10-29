@@ -1,0 +1,24 @@
+{"cmd": "note", "message": "RUN"}
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "new", "autoBrief": true}
+{"cmd": "moveToNear", "id": "training_kiosk"}
+{"cmd": "interact", "id": "training_kiosk"}
+{"cmd": "waitFor", "kind": "minigame", "id": "episode-runner", "timeoutMs": 20000}
+{"cmd": "eval", "fn": "() => { const ep = window.MinigameFramework.currentMinigame.getTestState().episode; return ep.id === 'e18_credential_attacks_at_scale' && ep.variant === 'full' && ep.stage === 'brief' && ep.done.length === 0; }"}
+{"cmd": "mg", "action": "clickText", "args": ["Start"]}
+{"cmd": "eval", "fn": "() => { const ep = window.MinigameFramework.currentMinigame.getTestState().episode; return ep.stage === 'osint' && ep.done.includes('brief'); }"}
+{"cmd": "mg", "action": "clickText", "args": ["Open the browser"]}
+{"cmd": "waitFor", "kind": "minigame", "id": "osint-browser", "timeoutMs": 20000}
+{"cmd": "mg", "action": "pressKey", "args": ["Escape"]}
+{"cmd": "waitFor", "kind": "minigame", "id": "episode-runner", "timeoutMs": 20000}
+{"cmd": "eval", "fn": "() => { const ep = window.MinigameFramework.currentMinigame.getTestState().episode; return ep.stage === 'guess' && ep.done.includes('osint'); }"}
+{"cmd": "mg", "action": "clickText", "args": ["Open the guesser"]}
+{"cmd": "waitFor", "kind": "minigame", "id": "password-guesser", "timeoutMs": 20000}
+{"cmd": "eval", "fn": "async () => { const mg = window.MinigameFramework.currentMinigame; const C = mg.container; const sleep = ms => new Promise(r=>setTimeout(r,ms)); const all = C.querySelector('.epr-gs-all'); if (!all) return { fail: 'no run-all' }; all.click(); await sleep(60); const gs = mg.getTestState().guesser; if (gs.revealed !== gs.total) return { fail: 'not all revealed', gs }; if (gs.switchedOff !== false) return { fail: 'switch-off should not be pressed yet', gs }; const off = C.querySelector('.epr-gs-off'); if (!off || off.disabled) return { fail: 'switch-off not enabled after run-all' }; return gs.landed === true; }"}
+{"cmd": "eval", "fn": "() => { const mg = window.MinigameFramework.currentMinigame; const C = mg.container; const close = C.querySelector('.se-overlay-close'); if (!close) return { fail: 'no overlay Close control' }; if (mg.getTestState().guesser.switchedOff !== false) return { fail: 'switch-off was pressed' }; close.click(); return true; }"}
+{"cmd": "waitFor", "kind": "minigame", "id": "episode-runner", "timeoutMs": 20000}
+{"cmd": "waitFor", "kind": "global", "name": "guess_e18_landed", "expected": true, "timeoutMs": 20000}
+{"cmd": "eval", "fn": "() => { const ep = window.MinigameFramework.currentMinigame.getTestState().episode; return ep.done.includes('guess') && ep.stage !== 'guess'; }"}
+{"cmd": "eval", "fn": "() => { const started = []; const fw = window.MinigameFramework; const orig = fw.startMinigame.bind(fw); fw.startMinigame = (t,c,p) => { started.push(t); return orig(t,c,p); }; try { fw.forceCloseMinigame && fw.forceCloseMinigame(); } catch(e){} window.__e18ReopenStarted = started; return true; }"}
+{"cmd": "interact", "id": "training_kiosk"}
+{"cmd": "waitFor", "kind": "minigame", "id": "episode-runner", "timeoutMs": 20000}
+{"cmd": "eval", "fn": "() => { const ep = window.MinigameFramework.currentMinigame.getTestState().episode; const reopenedGuesser = (window.__e18ReopenStarted||[]).includes('password-guesser'); return ep.done.includes('guess') && ep.stage !== 'guess' && !reopenedGuesser; }"}
