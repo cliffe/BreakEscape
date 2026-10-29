@@ -1635,6 +1635,7 @@
       "properties": {
         "id": {"type": "string"},
         "kind": {"type": "string", "enum": ["email", "playerSent", "sms", "voicemail", "qr", "page", "call", "push", "choice"]},
+        "kindTag": {"type": "string", "minLength": 1, "description": "Optional: the short kind word for THIS item in the list and results, overriding the kind default and any labels.kind.<kind>. For one item that is really something else among a relabelled set (e.g. a genuine sign-in page among Wi-Fi lists)."},
         "from": {
           "oneOf": [
             {"type": "string"},
@@ -1694,6 +1695,7 @@
             "ifTrusted": {"type": "string"},
             "kindLine": {"type": "string", "minLength": 1, "description": "Phish items only (optional): a genuine message the learner should still report (isPhish true is the scoring vehicle). Replaces \"This one was a phish.\" on the review card (after Trust or Verify) and \"built to look right\" in the debrief, e.g. \"This one was a real notice, but you did not ask for it.\" Default: the phish wording."},
             "missLabel": {"type": "string", "minLength": 1, "description": "Phish items only (optional): the phrase for a critical miss on this item in the result line, in place of \"trusting a phish email\", e.g. \"acting on a reset notice you did not ask for\". When every critical miss has one, the line also says the answer \"missed something that needed reporting\" instead of \"let an attacker straight in\"."},
+            "verifyLine": {"type": "string", "minLength": 1, "description": "Phish items only (optional): the whole Verify feedback line, for an item where \"Checking first is a sound habit\" pulls against the lesson (a compromise sign where Verify is the fast report), e.g. \"Calling it in straight away is exactly right.\" Default: \"Checking first is a sound habit. \" + kindLine or the phish wording (ENG-03a / E19 D1)."},
             "falseAlarmCost": {"type": "string", "description": "Real items only (optional): one sentence on what reporting or deleting this real one would cost (a payment held up, a colleague left waiting). Shown after what made it safe on the result screen and the debrief (disc_visible)."},
             "headerNote": {"type": "string"},
             "reportReply": {"type": "string"},
@@ -1841,8 +1843,12 @@
               "additionalProperties": false
             },
             "autofill": {"type": "string", "enum": ["filled", "none"], "description": "Whether the password manager filled the fields in. 'none' shows the 'did not fill this in' cue"},
+            "autofillNote": {"type": "object", "properties": {"none": {"type": "string"}, "filled": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false, "description": "Overrides the autofill cue text, e.g. to add why it matters (F-E20-8). Defaults 'Your password manager did not fill this in.' / '... filled this in.'"},
             "heading": {"type": "string"},
-            "fields": {"type": "array", "items": {"type": "string"}},
+            "fields": {"type": "array", "description": "Form rows. A string is a labelled (static) text box, as before. An object { label, type: \"tick\", checked? } is a drawn tick box for a genuine check (E10 MI2 CAPTCHA); nothing can be ticked or typed.", "items": {"oneOf": [
+              {"type": "string"},
+              {"type": "object", "required": ["label"], "properties": {"label": {"type": "string", "minLength": 1}, "type": {"type": "string", "enum": ["text", "tick"]}, "checked": {"type": "boolean"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}
+            ]}},
             "button": {"type": "string"}
           },
           "patternProperties": {"^_": {}},
@@ -2764,6 +2770,8 @@
             "smsHeading": {"type": "string", "description": "The 'Text message' heading on a text (default 'Text message')"},
             "teamBadge": {"type": "string", "description": "aw-ux2: the triage team badge, with {n} for the count (default 'Phish stopped for the team: {n}'). For sets whose reported items are not all phish"},
             "teamBadgeTitle": {"type": "string", "description": "aw-ux2: the badge's hover text (default 'Phish you reported or checked by another route this round')"},
+            "phishCaughtLabel": {"type": "string", "description": "The result counter's label (default 'Phish caught'). For a non-phishing set (E17 acceptable-use) where 'Phish caught' is wrong, e.g. 'Requests handled'"},
+            "scoreLine": {"type": "string", "description": "The scored-round brief line (default 'Right call is most of the score; naming the flags is the rest.'). For a set where 'flags' collides with the compose meter's 'Red flags' (E8 weak-line #5)"},
             "queue": {
               "type": "object",
               "description": "The brief's wording by queue: inbox, call, push, callPush, voicemail, page, sms, choice, other",

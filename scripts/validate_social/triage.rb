@@ -304,10 +304,10 @@ module ValidateSocial
       return [err("#{where}.labels must be an object")] unless labels.is_a?(Hash)
 
       issues = []
-      known = %w[kind verdict callActions pushActions smsHeading queue choice teamBadge teamBadgeTitle]
+      known = %w[kind verdict callActions pushActions smsHeading queue choice teamBadge teamBadgeTitle phishCaughtLabel scoreLine]
       labels.each_key { |k| issues << err("#{where}.labels has the key '#{k}', which is not one of #{known.join(', ')}") unless known.include?(k) }
       issues << err("#{where}.labels.smsHeading is empty") if labels.key?('smsHeading') && blank?(labels['smsHeading'])
-      %w[teamBadge teamBadgeTitle].each do |key|
+      %w[teamBadge teamBadgeTitle phishCaughtLabel scoreLine].each do |key|
         issues << err("#{where}.labels.#{key} must be a non-empty string") if labels.key?(key) && blank?(labels[key])
       end
       if labels['teamBadge'].is_a?(String) && !labels['teamBadge'].include?('{n}')
@@ -535,7 +535,20 @@ module ValidateSocial
             issues << err("#{mw}.page.url is missing; the address bar would be blank")
           end
           issues << err("#{mw}.page.padlock must be true or false") if pg.key?('padlock') && ![true, false].include?(pg['padlock'])
-          issues << err("#{mw}.page.fields must be an array of non-empty labels") if pg.key?('fields') && !(pg['fields'].is_a?(Array) && pg['fields'].all? { |f| !blank?(f) })
+          # A field is a non-empty label string, or an object { label, type: "text"|"tick", checked? }
+          # (E10 MI2 tick box). Any other shape is refused.
+          if pg.key?('fields')
+            ok = pg['fields'].is_a?(Array) && pg['fields'].all? do |f|
+              if f.is_a?(Hash)
+                !blank?(f['label']) && (f['type'].nil? || %w[text tick].include?(f['type'])) &&
+                  (!f.key?('checked') || [true, false].include?(f['checked'])) &&
+                  (f.keys - %w[label type checked]).all? { |k| k.to_s.start_with?('_') }
+              else
+                !blank?(f)
+              end
+            end
+            issues << err("#{mw}.page.fields must be an array of non-empty labels or { label, type: text|tick, checked? } objects") unless ok
+          end
           issues << err("#{mw}.page.permissions must be an array of non-empty strings") if pg.key?('permissions') && !(pg['permissions'].is_a?(Array) && pg['permissions'].all? { |f| !blank?(f) })
           issues.concat(certificate_checks(pg['certificate'], "#{mw}.page.certificate")) if pg.key?('certificate')
           issues.concat(wifi_list_checks(pg, "#{mw}.page")) if state == 'wifiList'

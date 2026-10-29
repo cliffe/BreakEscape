@@ -653,8 +653,10 @@ export function renderChecklist(result, target, { claimedFrom = null, account = 
     }
 
     if (showReplyToNote && claimedFrom && account) {
+        // Plain-English, no "reply-to" jargon for non-technical staff (E8 weak-line #3): the point
+        // is that a forged From sends the reply to the real person, not back to the sender.
         panel.appendChild(cl('p', 'mail-checklist-replyto',
-            `In real life this reply would go to ${claimedFrom}'s inbox unless you set a reply-to; here it comes to ${account.address || account.id}.`));
+            `In real life a reply to this would land in ${claimedFrom}'s own inbox, not yours; here it comes to ${account.address || account.id}.`));
     }
 
     // After a landing there is nothing to resend, so offer "Done" rather than

@@ -89,3 +89,27 @@ test('extensionPermission permissions must be non-empty strings', { skip }, () =
   const bad = lintJson(base(pageMsg('p', { state: 'extensionPermission', heading: 'Add?', permissions: ['', 'x'] })));
   assert.ok(errors(bad).some((e) => /permissions must be an array of non-empty strings/.test(e)), bad.join('\n'));
 });
+
+// E10 MI2: page.fields may carry a tick-box object { label, type, checked? }.
+test('page.fields accepts a tick object and a string, and rejects an object with no label', { skip }, () => {
+  const good = lintJson(base(pageMsg('p', { url: 'https://c.example/verify', padlock: true,
+    fields: ['Email', { label: 'I am not a robot', type: 'tick', checked: false }] })));
+  assert.deepEqual(errors(good), [], good.join('\n'));
+  const bad = lintJson(base(pageMsg('p', { url: 'https://c.example/verify', padlock: true, fields: [{ type: 'tick' }] })));
+  assert.ok(errors(bad).some((e) => /page\.fields must be an array/.test(e)), bad.join('\n'));
+  const badType = lintJson(base(pageMsg('p', { url: 'https://c.example/verify', padlock: true, fields: [{ label: 'x', type: 'radio' }] })));
+  assert.ok(errors(badType).some((e) => /page\.fields must be an array/.test(e)), badType.join('\n'));
+});
+
+// Batch 3: set-level label overrides phishCaughtLabel and scoreLine.
+const withLabels = (labels) => {
+  const b = base(pageMsg('p', { url: 'https://x.example', padlock: true, heading: 'Sign in' }));
+  b.social.triageSets[0].labels = labels;
+  return b;
+};
+test('labels.phishCaughtLabel and labels.scoreLine validate, and empty is rejected', { skip }, () => {
+  assert.deepEqual(errors(lintJson(withLabels({ phishCaughtLabel: 'Requests handled', scoreLine: 'Right call is most of it.' }))), []);
+  assert.ok(errors(lintJson(withLabels({ phishCaughtLabel: '' }))).some((e) => /labels\.phishCaughtLabel must be a non-empty string/.test(e)));
+  assert.ok(errors(lintJson(withLabels({ scoreLine: '  ' }))).some((e) => /labels\.scoreLine must be a non-empty string/.test(e)));
+  assert.ok(errors(lintJson(withLabels({ nope: 'x' }))).some((e) => /labels has the key 'nope'/.test(e)));
+});
