@@ -52,6 +52,7 @@ const EPISODES = [
   { n: 9, dir: 'awareness_e9_passwords' },
   { n: 11, dir: 'awareness_e11_misdirected_data' },
   { n: 15, dir: 'awareness_e15_shadow_it' },
+  { n: 16, dir: 'awareness_e16_insider_risk' },
   { n: 19, dir: 'awareness_e19_malware_and_updates' },
 ];
 

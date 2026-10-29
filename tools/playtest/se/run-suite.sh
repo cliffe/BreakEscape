@@ -38,6 +38,7 @@ JOBS=(
   e9-full:awareness_e9_passwords
   e11-full:awareness_e11_misdirected_data
   e15-full:awareness_e15_shadow_it
+  e16-full:awareness_e16_insider_risk
   e19-full:awareness_e19_malware_and_updates
   e17-defend:awareness_e17_acceptable_use_defend
 )

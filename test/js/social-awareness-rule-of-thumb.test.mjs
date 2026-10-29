@@ -36,6 +36,7 @@ const FULL_EPISODES = [
   'awareness_e9_passwords',
   'awareness_e11_misdirected_data',
   'awareness_e15_shadow_it',
+  'awareness_e16_insider_risk',
   'awareness_e19_malware_and_updates',
 ];
 // One line per check role; each is four shells (pre and post, each in ab and ba order).

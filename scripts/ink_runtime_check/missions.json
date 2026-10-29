@@ -2663,6 +2663,40 @@
       }
     ]
   },
+  "awareness_e16_insider_risk": {
+    "globals": {
+      "episode_e16_insider_risk_defend_percent": 0,
+      "episode_e16_insider_risk_defend_reportRate": 0,
+      "episode_e16_insider_risk_defend_done": false,
+      "episode_e16_insider_risk_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e16_insider_risk/ink/anjali_rao.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e16_insider_risk_defend": {
+    "globals": {
+      "episode_e16_insider_risk_defend_defend_percent": 0,
+      "episode_e16_insider_risk_defend_defend_reportRate": 0,
+      "episode_e16_insider_risk_defend_defend_done": false,
+      "episode_e16_insider_risk_defend_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e16_insider_risk_defend/ink/anjali_rao.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
   "awareness_e17_acceptable_use_defend": {
     "globals": {
       "episode_e17_acceptable_use_defend_defend_percent": 0,
