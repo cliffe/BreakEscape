@@ -91,6 +91,8 @@ export class MailReader {
      * @param {string} [opts.linkPrefix]  the pinned link line's lead ("This would go to: ")
      * @param {{show:string, hide:string}} [opts.detailsLabels]  the details toggle's two labels
      * @param {boolean} [opts.noDetails]  no details toggle or panel at all
+     * @param {boolean} [opts.hiddenReveal]  false: do not render the rec.hiddenText "Show hidden text"
+     *        reveal (the host draws its own, e.g. the triage card's _afterBody). Default: render it.
      * @param {boolean} [opts.detailsAlwaysOpen]  show the details panel with no toggle and no Esc layer
      * @param {(record: object) => Node|null} [opts.detailsRenderer]  builds the details panel (the header panel)
      * @param {(record: object, pane: HTMLElement) => void} [opts.afterBody]  appends controls under the message
@@ -375,6 +377,7 @@ export class MailReader {
      * the button toggling `aria-expanded`. `rec.hiddenTextLabel` overrides the button label.
      */
     _hiddenReveal(rec) {
+        if (this.opts.hiddenReveal === false) return null; // the host renders its own (triage's _afterBody)
         if (!rec || typeof rec.hiddenText !== 'string' || !rec.hiddenText) return null;
         const box = el('div', 'tri-hidden');
         const btn = el('button', 'tri-hidden-btn minigame-button',

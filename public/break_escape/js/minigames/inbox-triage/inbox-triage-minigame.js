@@ -229,6 +229,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         this.reader = new MailReader(this.sortEl, {
             pushLayer: (close, name) => this.pushLayer(close, name),
             influence: false,
+            // Triage renders its own hidden-text reveal through _afterBody (ENG-06), placed after
+            // the status line, so the reader must not also add one (it would show twice).
+            hiddenReveal: false,
             linkPrefix: 'This would have gone to: ',
             detailsLabels: { show: 'Show details', hide: 'Hide details' },
             detailsAlwaysOpen: this.set.headerPanel === 'open',
