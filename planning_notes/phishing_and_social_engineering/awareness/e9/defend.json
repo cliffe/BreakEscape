@@ -84,10 +84,9 @@
           },
           "truth": {
             "isPhish": true,
-            "flags": ["mfa_number_relay", "secrecy_or_bypass"],
+            "flags": ["mfa_number_relay"],
             "perFlagNote": {
-              "mfa_number_relay": "No genuine IT team asks you to type a number, read back a code or approve a prompt. The number is on the attacker's screen; reading it back, or approving, hands them the account.",
-              "secrecy_or_bypass": "'To stop them, just approve the next one' is talking you into the one step that lets them in. The prompts stop when the password is changed, not when you approve."
+              "mfa_number_relay": "No genuine IT team asks you to type a number, read back a code or approve a prompt. The number is on the attacker's screen; reading it back, or approving, hands them the account."
             },
             "ifTrusted": "Reading back the number, or approving, lets the sender straight into your account.",
             "reportReply": "Thanks. That wasn't IT: we never ask you to read back a number or approve a prompt. We've reset the password and the prompts have stopped."

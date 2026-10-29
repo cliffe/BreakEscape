@@ -41,10 +41,9 @@
           },
           "truth": {
             "isPhish": true,
-            "flags": ["insider_offer", "secrecy_or_bypass"],
+            "flags": ["insider_offer"],
             "perFlagNote": {
-              "insider_offer": "An offer of a cut for remote access. Don't reply, negotiate or play along to find out more; the same message often goes to several people, and one report warns everyone.",
-              "secrecy_or_bypass": "Anonymous and paid off the books: it only works if you keep it off the record, which is the sign to report it, not to engage."
+              "insider_offer": "An offer of a cut for remote access. Don't reply, negotiate or play along to find out more; the same message often goes to several people, and one report warns everyone."
             },
             "ifTrusted": "Replying, even just to find out how it works, invites more pressure and marks you as someone who might say yes.",
             "reportReply": "Thanks. Screenshotting it and reporting it, with no word back, is exactly right. The same message had gone to others, and your report warned them. Nobody is in trouble for being approached."

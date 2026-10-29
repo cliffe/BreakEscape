@@ -70,13 +70,19 @@
         "glossary": "closed",
         "channelTells": [
           "secrecy_or_bypass",
-          "unapproved_tool"
+          "unapproved_tool",
+          "no_work_reason",
+          "shared_login"
         ],
         "flagChips": {
-          "unapproved_tool": "Unapproved tool or app"
+          "unapproved_tool": "Unapproved tool or app",
+          "no_work_reason": "Asked to look something up with no work reason",
+          "shared_login": "Asked to use or share someone's login"
         },
         "skillNames": {
-          "unapproved_tool": "Spotting an unapproved tool or app"
+          "unapproved_tool": "Spotting an unapproved tool or app",
+          "no_work_reason": "Noticing a request with no work reason",
+          "shared_login": "Noticing a request to share a login"
         },
         "labels": {
           "phishCaughtLabel": "Requests handled the right way",
@@ -144,15 +150,20 @@
               "envelopeFrom": "tarrowby.example",
               "replyTo": "shauna.lofthouse@tarrowby.example"
             },
+            "factorStrings": {
+              "no_work_reason": {
+                "redFlag": "A request to look up information with no work reason given, or one that is personal"
+              }
+            },
             "truth": {
               "isPhish": true,
               "flags": [
-                "secrecy_or_bypass"
+                "no_work_reason"
               ],
               "kindLine": "A personal lookup isn't allowed.",
               "missLabel": "a personal lookup in the system",
               "perFlagNote": {
-                "secrecy_or_bypass": "A personal lookup has no work reason; looking at data your job doesn't need can be an offence (Data Protection Act 2018, s.170). Decline, and suggest another way."
+                "no_work_reason": "A personal lookup has no work reason; looking at data your job doesn't need can be an offence (Data Protection Act 2018, s.170). Decline, and suggest another way."
               },
               "ifTrusted": "You use your access to the system for something personal, which is a misuse even for a colleague.",
               "reportReply": "Thanks, declining and pointing her to another way was the right call."
@@ -176,15 +187,20 @@
               "envelopeFrom": "tarrowby.example",
               "replyTo": "colin.mather@tarrowby.example"
             },
+            "factorStrings": {
+              "shared_login": {
+                "redFlag": "A request to log in as someone else, or to use or share their password"
+              }
+            },
             "truth": {
               "isPhish": true,
               "flags": [
-                "secrecy_or_bypass"
+                "shared_login"
               ],
               "kindLine": "Sharing a login isn't allowed.",
               "missLabel": "a shared login",
               "perFlagNote": {
-                "secrecy_or_bypass": "Your login is you; a shared password hides who did what and can breach the firm's access controls. Ask the service desk for proper shared access."
+                "shared_login": "Your login is you; a shared password hides who did what and can breach the firm's access controls. Ask the service desk for proper shared access."
               },
               "ifTrusted": "Anything done under his login looks like him, and the record is wrong.",
               "reportReply": "Thanks, the service desk can give you proper shared access to his inbox."

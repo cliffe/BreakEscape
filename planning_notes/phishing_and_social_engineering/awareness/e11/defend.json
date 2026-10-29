@@ -62,11 +62,10 @@
           ],
           "truth": {
             "isPhish": true,
-            "flags": ["vish_callback_pressure", "borrowed_authority", "secrecy_or_bypass"],
+            "flags": ["vish_callback_pressure", "borrowed_authority"],
             "perFlagNote": {
               "vish_callback_pressure": "A withheld number and 'there isn't time to call back' close off the one check that works: ring the force's switchboard yourself and ask for him. A caller cannot prove who they are by phone.",
-              "borrowed_authority": "'Police, and it's urgent' leans on an authority you can't see to make you skip the check. People pretend to be police to get someone's address.",
-              "secrecy_or_bypass": "Pushing you to read it out now, rather than take details and let the DPO handle it, is the move that skips the people who would check."
+              "borrowed_authority": "'Police, and it's urgent' leans on an authority you can't see to make you skip the check. People pretend to be police to get someone's address."
             },
             "ifTrusted": "A stranger would have a lone worker's mobile and exactly where he will be this afternoon.",
             "reportReply": "Give nothing out. Take his name and force, ring the force's switchboard on a number you look up yourself, and pass it to the DPO: the DPO handles police requests and is quick. Real police expect that and usually put it in writing."
