@@ -2662,6 +2662,74 @@
       }
     ]
   },
+  "awareness_e11_misdirected_data": {
+    "globals": {
+      "episode_e11_misdirected_data_defend_percent": 0,
+      "episode_e11_misdirected_data_defend_reportRate": 0,
+      "episode_e11_misdirected_data_defend_done": false,
+      "episode_e11_misdirected_data_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "tomasz_wisniewski",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e11_misdirected_data/ink/tomasz_wisniewski.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e11_misdirected_data_defend": {
+    "globals": {
+      "episode_e11_misdirected_data_defend_defend_percent": 0,
+      "episode_e11_misdirected_data_defend_defend_reportRate": 0,
+      "episode_e11_misdirected_data_defend_defend_done": false,
+      "episode_e11_misdirected_data_defend_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "tomasz_wisniewski",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e11_misdirected_data_defend/ink/tomasz_wisniewski.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e15_shadow_it": {
+    "globals": {
+      "episode_e15_shadow_it_defend_percent": 0,
+      "episode_e15_shadow_it_defend_reportRate": 0,
+      "episode_e15_shadow_it_defend_done": false,
+      "episode_e15_shadow_it_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "nilesh_solanki",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e15_shadow_it/ink/nilesh_solanki.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e15_shadow_it_defend": {
+    "globals": {
+      "episode_e15_shadow_it_defend_defend_percent": 0,
+      "episode_e15_shadow_it_defend_defend_reportRate": 0,
+      "episode_e15_shadow_it_defend_defend_done": false,
+      "episode_e15_shadow_it_defend_defend_pass": false
+    },
+    "npcs": [
+      {
+        "id": "nilesh_solanki",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e15_shadow_it_defend/ink/nilesh_solanki.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
   "awareness_e19_malware_and_updates_defend": {
     "globals": {
       "episode_e19_malware_and_updates_defend_defend_percent": 0,

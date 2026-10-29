@@ -1,0 +1,400 @@
+{
+  "scenario_id": "awareness_e11_misdirected_data_defend",
+  "scenario_name": "Misdirected data: the Care Laundry desk inbox",
+  "scenario_brief": "You're on an authorised exercise at Carrholme Services, a fictional firm. You are covering the Care Laundry desk this morning. Items are waiting in the inbox: some are routine, some are requests or complaints that belong with someone else, and one or two were made to trick you. Sort them, and check or report anything that doesn't sit right. Reporting or checking when you are unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+  "endGoal": "Sort the Care Laundry desk inbox at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "desk_inbox_aim",
+      "title": "Clear the Care Laundry desk inbox",
+      "description": "Sort the items waiting at the Care Laundry desk at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e11_misdirected_data_defend_defend_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Desk inbox sorted",
+        "body": "You've sorted the Care Laundry desk inbox and finished this episode."
+      },
+      "tasks": [
+        {
+          "taskId": "sort_desk_inbox",
+          "title": "Sort the Care Laundry desk inbox",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e11_misdirected_data_defend_state": {},
+    "se_awareness_records": [],
+    "episode_e11_misdirected_data_defend_defend_percent": 0,
+    "episode_e11_misdirected_data_defend_defend_reportRate": 0,
+    "episode_e11_misdirected_data_defend_defend_done": false,
+    "episode_e11_misdirected_data_defend_defend_pass": false
+  },
+  "social": {
+    "triageSets": [
+      {
+        "id": "e11_carrholme_desk",
+        "title": "Care Laundry desk inbox",
+        "brief": "You're covering the Care Laundry desk at Carrholme Services this morning. Some items are routine, some are requests or complaints that belong with the DPO, and one or two were made to trick you. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. Anything about someone's personal data, a request to see, correct or delete it, or a breach, goes to the DPO the same day. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "secrecy_or_bypass",
+          "vish_callback_pressure",
+          "borrowed_authority"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "episode_e11_misdirected_data_defend_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e11_wrong_sam_breach",
+            "from": {
+              "name": "Sam Whitlow",
+              "address": "sam.whitlow@hollinsbrookhouse.example"
+            },
+            "to": "carelaundry@carrholme.example",
+            "subject": "I think this wasn't meant for me?",
+            "time": "08:52",
+            "body": "Hi,\nA spreadsheet has just landed in my inbox from your desk, 'Carrholme overtime, this month'. It's got nine of your staff on it, their hours, and a notes column with things like a hospital appointment and a back injury. I'm the manager here at Hollinsbrook House, so I don't think this was meant for me. I haven't opened it any further. Do you want me to delete it?\nSam Whitlow\nHollinsbrook House",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "hollinsbrookhouse.example",
+              "replyTo": "sam.whitlow@hollinsbrookhouse.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Sam has flagged that your staff's overtime, with health notes, reached her by mistake. That is a personal data breach: report it the same way you would report anything, and say it involves personal data, so it reaches the DPO. Asking her to delete it is a good next step, not instead of reporting."
+              }
+            }
+          },
+          {
+            "id": "e11_police_disclosure",
+            "kind": "call",
+            "callerId": "Caller says: DC Rowley, North Pennine Police (number withheld)",
+            "from": {
+              "name": "DC Rowley",
+              "address": "Number withheld"
+            },
+            "subject": "Phone call: caller says North Pennine Police",
+            "time": "09:20",
+            "transcript": [
+              {
+                "who": "Caller",
+                "text": "This is DC Rowley, North Pennine Police. I need the mobile number for one of your drivers, Lee Corrigan, and his route for this afternoon. It's a road traffic matter and it's urgent, so I can't really wait or go round the houses on this one."
+              },
+              {
+                "who": "You",
+                "text": "Can I take your details and call you back?"
+              },
+              {
+                "who": "Caller",
+                "text": "There isn't time for that, I'm about to go out. Just read me the number and the stops and I'll let you get on."
+              }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "vish_callback_pressure",
+                "borrowed_authority",
+                "secrecy_or_bypass"
+              ],
+              "perFlagNote": {
+                "vish_callback_pressure": "A withheld number and 'there isn't time to call back' close off the one check that works: ring the force's switchboard yourself and ask for him. A caller cannot prove who they are by phone.",
+                "borrowed_authority": "'Police, and it's urgent' leans on an authority you can't see to make you skip the check. People pretend to be police to get someone's address.",
+                "secrecy_or_bypass": "Pushing you to read it out now, rather than take details and let the DPO handle it, is the move that skips the people who would check."
+              },
+              "ifTrusted": "A stranger would have a lone worker's mobile and exactly where he will be this afternoon.",
+              "reportReply": "Give nothing out. Take his name and force, ring the force's switchboard on a number you look up yourself, and pass it to the DPO: the DPO handles police requests and is quick. Real police expect that and usually put it in writing."
+            }
+          },
+          {
+            "id": "e11_payroll_lookalike",
+            "from": {
+              "name": "Carrholme Payroll",
+              "address": "payroll@carrholme-payroll.example"
+            },
+            "to": "carelaundry@carrholme.example",
+            "subject": "Confirm your bank and National Insurance details to be paid this month",
+            "time": "09:35",
+            "body": "Dear colleague,\nWe are updating payroll records before this month's run. To make sure you are paid on time, please reply to confirm your bank account number, sort code and National Insurance number. Anyone who does not confirm today may see their payment held.\nCarrholme Payroll",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.carrholme-payroll.example",
+              "replyTo": "payroll@carrholme-payroll.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "senderTrust"
+              ],
+              "flagAlternatives": [
+                [
+                  "senderTrust",
+                  "lookalike_domain"
+                ]
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "Carrholme is carrholme.example. This came from carrholme-payroll.example, with an added word, which is a separate domain anyone can register.",
+                "senderTrust": "The name says Carrholme Payroll, but the address is on carrholme-payroll.example, which isn't Carrholme's. Payroll does not collect your bank or NI details by email like this."
+              },
+              "headerNote": "All three checks passed because the sender owns carrholme-payroll.example. A pass tells you which domain sent it, not that it is Carrholme.",
+              "ifTrusted": "Your bank and National Insurance details would go to a stranger, enough to redirect your pay or set up accounts in your name.",
+              "reportReply": "Thanks. Carrholme's payroll is on carrholme.example and never asks for bank or NI details by email. The look-alike address has been blocked."
+            }
+          },
+          {
+            "id": "e11_sar_everything",
+            "from": {
+              "name": "Gareth Hale",
+              "address": "gareth.hale@inboxly.example"
+            },
+            "to": "carelaundry@carrholme.example",
+            "subject": "Mum's cardigan is missing AGAIN",
+            "time": "10:04",
+            "body": "This is the second time Mum's cardigan has gone missing from the laundry. Edna Hale, Room 12 at Hollinsbrook House. I'm her son. Frankly I've had enough, and I want EVERYTHING you hold on Mum and on me. Every note, every call, every email. I want to see the lot.\nGareth Hale",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "inboxly.example",
+              "replyTo": "gareth.hale@inboxly.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "It is angry and broad, but it is a valid request to see personal data, and it does not have to use the words 'subject access'. Pass it to the DPO the same day and send the holding reply; do not gather or send anything yourself. Carry on with the cardigan complaint as normal work. Handling it yourself and quietly, or deleting it, is the wrong move."
+              }
+            }
+          },
+          {
+            "id": "e11_kestrel_inbound",
+            "from": {
+              "name": "Kestrel Court Laundry",
+              "address": "laundry@kestrelcourt.example"
+            },
+            "to": "carelaundry@carrholme.example",
+            "subject": "This week's laundry list",
+            "time": "10:48",
+            "body": "Morning,\nHere's this week's list for collection. Let me know if the Thursday slot still works.\nThanks,\nKestrel Court",
+            "attachments": [
+              {
+                "label": "Kestrel-Court-residents-care-summary.xlsx",
+                "kind": "spreadsheet"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "kestrelcourt.example",
+              "replyTo": "laundry@kestrelcourt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "attachmentPlausible": "A laundry list from a client home is ordinary, but the file attached is not the list: it is their residents' full care summary.",
+                "default": "The sender is real, but the attachment is theirs to hold, not ours: names, conditions and medicines. Do not open it further and do not forward it. Tell the sender, report it, and delete it when the DPO says so. We now hold data we should not."
+              }
+            }
+          },
+          {
+            "id": "e11_cardigan_update",
+            "from": {
+              "name": "Sam Whitlow",
+              "address": "sam.whitlow@hollinsbrookhouse.example"
+            },
+            "to": "carelaundry@carrholme.example",
+            "subject": "Mrs Hale's son has a new mobile, and good news",
+            "time": "11:15",
+            "body": "Hi again,\nTwo things. Mrs Hale's son, Gareth, has a new mobile number for the claim: it's the one he's emailing you from today, so please update the contact on file. And the good news, the cardigan has turned up, it was in the wrong bag. So you can close that one.\nThanks,\nSam Whitlow\nHollinsbrook House",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "hollinsbrookhouse.example",
+              "replyTo": "sam.whitlow@hollinsbrookhouse.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Correcting a contact detail on a claim is ordinary work and a person's right. Data protection is not a reason to stop helping. Handle it."
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e11_misdirected_data_defend",
+      "role": "general",
+      "company": "carrholme_services",
+      "brand": {
+        "name": "Carrholme Services",
+        "logoText": "CARRHOLME",
+        "accent": "#4a6b57"
+      },
+      "variant": "defendOnly",
+      "durationTargetMin": 8,
+      "scopeNote": "Authorised exercise at Carrholme Services, a fictional firm. In scope: the Care Laundry desk inbox.",
+      "stages": [
+        "brief",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "sort_desk_inbox",
+      "defend": {
+        "setId": "e11_carrholme_desk",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Carrholme Services, a fictional firm. You are covering the Care Laundry desk this morning. Items are waiting in the inbox: some are routine, some are requests or complaints that belong with someone else, and one or two were made to trick you. Sort them, and check or report anything that doesn't sit right. Reporting or checking when you are unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "defendIntro": "Take the Care Laundry desk inbox one item at a time and decide what to do with each. Anything about someone's personal data, a request to see, correct or delete it, or a breach, goes to the DPO the same day; report or check anything that doesn't sit right. There's no clock on you here.",
+        "mondayCard": "If personal data goes somewhere it should not, or someone asks to see, correct or delete their data, or complains about how we used it, tell your DPO the same day. Do not wait to be sure, and do not try to fix it alone.",
+        "noBlameLine": "Mistakes with personal data happen to careful people, usually when they are busy. What turns a mistake into harm is silence. Nobody at Carrholme is in trouble for reporting, including their own slip.",
+        "defendOnly": "Any of these can catch a careful person on a busy morning. The ones you were caught out by are shown below, with what good looks like. Reporting fast is what limits the harm.",
+        "conceptPanel": {
+          "heading": "Behind every row is a person",
+          "text": "Behind every row in a spreadsheet is a person. If it goes wrong, tell the DPO straight away."
+        }
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_carrholme",
+      "door_sign": "Training Room",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "info_screen": {
+            "intensity": 0.25,
+            "radius": 24
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.3,
+            "color": "#e8f0ff",
+            "radius": 72,
+            "intensity": 0.3
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "tomasz_wisniewski",
+          "displayName": "Tomasz Wiśniewski",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/awareness_e11_misdirected_data_defend/ink/tomasz_wisniewski.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_e11_misdirected_data_defend_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "sort_desk_inbox"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk showing the Care Laundry desk inbox at Carrholme Services: a handful of items to sort.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e11_misdirected_data_defend_defend_done",
+              "value": "A touch-screen kiosk showing the Care Laundry desk inbox at Carrholme Services. The items are all sorted."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e11_misdirected_data_defend"
+          }
+        }
+      ]
+    }
+  }
+}

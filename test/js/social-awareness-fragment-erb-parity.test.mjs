@@ -49,6 +49,8 @@ const EPISODES = [
   { n: 6, dir: 'awareness_e6_texts_and_qr' },
   { n: 7, dir: 'awareness_e7_voice_ceo' },
   { n: 8, dir: 'awareness_e8_after_the_click' },
+  { n: 11, dir: 'awareness_e11_misdirected_data' },
+  { n: 15, dir: 'awareness_e15_shadow_it' },
   { n: 19, dir: 'awareness_e19_malware_and_updates' },
 ];
 

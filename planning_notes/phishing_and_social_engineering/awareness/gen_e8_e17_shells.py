@@ -209,6 +209,10 @@ HOSTS = {
         'id': 'nilesh_solanki', 'displayName': 'Nilesh Solanki', 'sprite': 'male_telecom',
         'about': "Tarrowby's IT service desk analyst, 30s, Gujarati-British, grew up in Leicester (BRAND_SET.md, E6 additions). The natural 'ask first' voice for acceptable use. Placeholder sprite until the PixelLab reset.",
     },
+    'tomasz': {
+        'id': 'tomasz_wisniewski', 'displayName': 'Tomasz Wiśniewski', 'sprite': 'male_office_worker',
+        'about': "Carrholme Services' data protection officer, 50s, Polish, in the UK 25 years (BRAND_SET.md, Carrholme section). Precise, kind, dry; he receives the reports. Placeholder sprite until the PixelLab reset.",
+    },
 }
 
 # Host lines: (before, after, choice, reply). One welcome line; the kiosk does the rest.
@@ -225,6 +229,23 @@ LINES = {
     ('e19', 'defend'): (
         "You're covering this desk inbox. Some of it is ordinary, some tries to open a door, and one colleague's screen has locked. Didn't expect it? Report it.",
         "That's the inbox sorted, thanks. If you didn't start it, deny it and report it. If a screen locks, call it in, don't pay and don't touch it.",
+        'Thanks, Anjali.', 'Any time.'),
+    # E11 and E15: the brief's drafted lines ran over the 30-word cap, so they are trimmed here.
+    ('e11', 'defend'): (
+        "You're covering the Care Laundry desk inbox. Some of it is routine, some belongs with me as DPO, some was sent to catch you out. Report anything that doesn't sit right.",
+        "That's the inbox sorted, thanks. Anything about someone's personal data, a request, a breach or a complaint, comes to the DPO the same day.",
+        'Thanks, Tomasz.', 'Any time.'),
+    ('e15', 'defend'): (
+        "Nilesh, service desk. Found sticks, 'quicker way' messages, then a board to match each shortcut to its approved swap. Ask us first, we'd rather help than clean up.",
+        "That's the lot sorted, thanks. If the official way's ever slow, tell us and we'll fix it, we can't mend what we don't know about.",
+        'Thanks, Nilesh.', 'Any time.'),
+    ('e9', 'defend'): (
+        "Right, the kiosk's your own account now, with prompts coming in and a few password choices to make. Deny anything you didn't start, and pick the stronger option each time. No rush, and nothing you type here is real.",
+        "That's it locked down, thanks. A different password for every account, kept in a manager, and deny what you didn't start: that's the whole of it.",
+        'Thanks, Nilesh.', 'Any time.'),
+    ('e16', 'defend'): (
+        "Anjali Rao, information security. It's a leaver's week and there's a bit of talk about. You're not here to catch anyone: keep your login yours, tell me what gets offered to you, and bring me facts, not a theory.",
+        "That's them sorted, thanks. Your login is you, offers get reported, and a concern goes to the right person as facts, never a verdict on anyone.",
         'Thanks, Anjali.', 'Any time.'),
 }
 
@@ -295,6 +316,94 @@ EPISODES = {
             'conclusion': ('Desk inbox sorted', "You've sorted the desk inbox and finished this episode."),
         },
     },
+    'e11': {
+        'frag': f'{AW}/e11/defend.json',
+        'full_id': 'e11_misdirected_data',
+        'defend_set': 'e11_carrholme_desk',
+        'defend_host': 'tomasz',
+        'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+                   'keywords': ['Data protection', 'Information handling', 'Incident reporting', 'Security awareness']}],
+        'defend': {
+            'name': 'Misdirected data: the Care Laundry desk inbox',
+            'brief': "You're on an authorised exercise at Carrholme Services, a fictional firm. You are covering the Care Laundry desk this morning. Items are waiting in the inbox: some are routine, some are requests or complaints that belong with someone else, and one or two were made to trick you. Sort them, and check or report anything that doesn't sit right. Reporting or checking when you are unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+            'endGoal': 'Sort the Care Laundry desk inbox at the training kiosk.',
+            'aim': ('desk_inbox_aim', 'Clear the Care Laundry desk inbox', 'Sort the items waiting at the Care Laundry desk at the training kiosk.'),
+            'task': ('sort_desk_inbox', 'Sort the Care Laundry desk inbox'),
+            'kiosk': ("A touch-screen kiosk showing the Care Laundry desk inbox at Carrholme Services: a handful of items to sort.",
+                      "A touch-screen kiosk showing the Care Laundry desk inbox at Carrholme Services. The items are all sorted."),
+            'display': 'Awareness E11: Misdirected data (defend only)',
+            'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Cover the Care Laundry desk inbox at Carrholme Services, a fictional support-services firm: some items are routine, some are requests or complaints that belong with the DPO, and one or two were made to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
+            'minutes': 8,
+            'defendIntro': "Take the Care Laundry desk inbox one item at a time and decide what to do with each. Anything about someone's personal data, a request to see, correct or delete it, or a breach, goes to the DPO the same day; report or check anything that doesn't sit right. There's no clock on you here.",
+            'conclusion': ('Desk inbox sorted', "You've sorted the Care Laundry desk inbox and finished this episode."),
+        },
+    },
+    'e15': {
+        'frag': f'{AW}/e15/defend.json',
+        'full_id': 'e15_shadow_it',
+        'defend_set': 'e15_shortcuts_inbox',
+        'defend_host': 'nilesh',
+        'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+                   'keywords': ['Removable media', 'Cloud storage', 'Shadow IT', 'Security awareness']}],
+        'defend': {
+            'name': 'Shadow IT: the shortcuts',
+            'brief': "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack is due by Monday and the share is slow. Found sticks and 'quicker way' messages are waiting: some are safe, some aren't. Sort them, and match each shortcut to the approved way. Reporting or checking when you're unsure is always fine and never marked down.",
+            'endGoal': 'Sort the inbox and match the swaps at the training kiosk.',
+            'aim': ('shortcuts_aim', 'Sort the shortcuts', 'Go through the found sticks and shortcut messages and match each to the approved way at the training kiosk.'),
+            'task': ('sort_shortcuts', 'Sort the shortcuts'),
+            'kiosk': ("A touch-screen kiosk showing a Tarrowby desktop: found sticks, shortcut messages and the approved swaps to match.",
+                      "A touch-screen kiosk showing a Tarrowby desktop. The sticks and messages are sorted and the swaps are matched."),
+            'display': 'Awareness E15: Shadow IT (defend only)',
+            'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Sort found sticks and shortcut messages at Tarrowby Logistics, a fictional haulier, and match each shortcut to its approved way. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
+            'minutes': 8,
+            'defendIntro': "Go through the found sticks and 'quicker way' messages and decide what to do with each, then match each shortcut to its approved swap. A found or posted stick goes to IT unplugged; if the official way is slow, ask IT rather than build a way round it. There's no clock on you here.",
+            'conclusion': ('Shortcuts sorted', "You've sorted the inbox and matched the approved swaps, and finished this episode."),
+        },
+    },
+    'e9': {
+        'frag': f'{AW}/e9/defend.json',
+        'full_id': 'e9_passwords',
+        'defend_set': 'e9_lock_it_down',
+        'defend_host': 'nilesh',
+        'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+                   'keywords': ['Passwords', 'Passphrases', 'Multi-factor authentication', 'Security awareness', 'Usable security']}],
+        'defend': {
+            'name': 'Passwords and sign-in: lock the account down',
+            'brief': "You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down: handle the prompts, choose stronger passwords, and don't hand anything to a message dressed up as IT. No real password is ever typed here.",
+            'endGoal': 'Lock the account down at the training kiosk.',
+            'aim': ('lock_down_aim', 'Lock your account down', 'Work through the sign-in prompts and password choices at the training kiosk.'),
+            'task': ('lock_the_account', 'Lock your account down'),
+            'kiosk': ("A touch-screen kiosk set up as your Tarrowby account under attack: sign-in prompts to handle and password choices to make.",
+                      "A touch-screen kiosk set up as your Tarrowby account. The prompts are handled and the account is locked down."),
+            'display': 'Awareness E9: Passwords and password managers (defend only)',
+            'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Your own account at Tarrowby Logistics, a fictional haulier, is under attack: sign-in prompts you didn't start, a message dressed up as IT, and password choices to make. Each answer is explained, and reporting when you're unsure is always fine and never marked down. No real password is ever typed.",
+            'minutes': 8,
+            'defendIntro': "Go through the sign-in prompts and password choices and decide what to do with each one. If you didn't start a prompt, deny it and report it. Pick the stronger option each time. There's no clock on you, and no real password is typed here.",
+            'conclusion': ('Account locked down', "You've handled the prompts and chosen the stronger options, and finished this episode."),
+        },
+    },
+    'e16': {
+        'frag': f'{AW}/e16/defend.json',
+        'full_id': 'e16_insider_risk',
+        'defend_set': 'e16_leaver_week_inbox',
+        'defend_host': 'anjali',
+        'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+                   'keywords': ['Insider risk', 'Incident reporting', 'Access control', 'Security awareness']}],
+        'defend': {
+            'name': "Insider risk: a leaver's week",
+            'brief': "You're on an authorised exercise at Quayholt Insurance, a fictional firm, during a leaver's last week. Messages are waiting: an offer, a request to borrow a login, some sign-in prompts, a favour. Sort them, and learn to raise a concern as facts, not a verdict on anyone. Reporting or checking when you're unsure is always fine and never marked down. You are not being asked to investigate anyone.",
+            'endGoal': 'Sort the messages and raise a concern fairly at the training kiosk.',
+            'aim': ('leaver_week_aim', 'Handle the leaver week', 'Go through the messages and the raise-a-concern step at the training kiosk.'),
+            'task': ('handle_leaver_week', 'Handle the messages'),
+            'kiosk': ("A touch-screen kiosk showing a short set of messages from a leaver's last week at Quayholt, and a fair way to raise a concern.",
+                      "A touch-screen kiosk showing a short set of messages from a leaver's last week at Quayholt. The messages are sorted and the concern step is done."),
+            'display': 'Awareness E16: Insider risk (defend only)',
+            'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Sort a short set of messages from a leaver's last week at Quayholt Insurance, a fictional insurer, and learn to raise a concern as facts, not a verdict. Each answer is explained, reporting when you're unsure is always fine and never marked down, and you are never asked to investigate anyone.",
+            'minutes': 8,
+            'defendIntro': "Go through the messages and decide what to do with each one, then raise a concern as facts, not a verdict on anyone. Keep your login to yourself, report what gets offered to you, and deny any sign-in prompt you didn't start. There's no clock on you here, and you are not being asked to investigate anyone.",
+            'conclusion': ('Leaver week handled', "You've sorted the messages and raised a concern fairly, and finished this episode."),
+        },
+    },
 }
 
 
@@ -306,12 +415,16 @@ def load(ekey):
 DEFEND_HALF_KEYS = ('sortDrill', 'concernForm', 'privacyPanel')
 
 
-def defend_half_keys(cfg):
+def defend_half_keys(cfg, ep=None):
+    """Defend-half keys come from full_only.json; a key that is not there is taken from the shared
+    fragment's awarenessEpisode (`ep`), as E15's sortDrill is (it lives in defend.json)."""
     path = cfg.get('full_only') or os.path.join(os.path.dirname(cfg['frag']), 'full_only.json')
-    if not os.path.exists(path):
-        return {}
-    fo = json.load(open(path))
-    return {k: strip_private(copy.deepcopy(fo[k])) for k in DEFEND_HALF_KEYS if k in fo}
+    fo = json.load(open(path)) if os.path.exists(path) else {}
+    out = {k: strip_private(copy.deepcopy(fo[k])) for k in DEFEND_HALF_KEYS if k in fo}
+    for k in DEFEND_HALF_KEYS:
+        if k not in out and isinstance(ep, dict) and k in ep:
+            out[k] = strip_private(copy.deepcopy(ep[k]))
+    return out
 
 
 def meta_for(display, desc, minutes, cybok):
@@ -366,7 +479,7 @@ def defend_only(ekey):
     # Defend-half episode keys run inside the defend stage, so a defend-only shell carries them too.
     # They are read from the episode's full_only.json (or an explicit EPISODES 'full_only' path), never
     # from defend.json. mistake, flip, flipMontageByChoice, flipAftermath, guess and world stay out.
-    ep.update(defend_half_keys(cfg))
+    ep.update(defend_half_keys(cfg, EP))
     globals_ = {
         f'episode_{ep_id}_state': {},
         'se_awareness_records': [],
@@ -388,7 +501,7 @@ def main():
     if len(sys.argv) < 2:
         sys.exit('usage: gen_e8_e17_shells.py [--repo <checkout>] <out_dir>')
     out = sys.argv[1]
-    built = [defend_only(k) for k in ('e8', 'e17', 'e19')]
+    built = [defend_only(k) for k in ('e8', 'e11', 'e15', 'e17', 'e19', 'e9', 'e16')]
     for mission, sc, meta, ink_name, ink in built:
         d = os.path.join(out, mission)
         os.makedirs(os.path.join(d, 'ink'), exist_ok=True)

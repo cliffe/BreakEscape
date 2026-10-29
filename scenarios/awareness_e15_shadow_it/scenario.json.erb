@@ -1,0 +1,595 @@
+{
+  "scenario_id": "awareness_e15_shadow_it",
+  "scenario_name": "Shadow IT: the shortcuts",
+  "scenario_brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack is due at a client by Monday and the file share has slowed to a crawl. First you make the calls anyone would under a deadline; then you see, six months on, where each shortcut led. Then you sort a short set of found sticks and shortcut messages, and match each shortcut to the approved way. Only the sort is scored.",
+  "endGoal": "Play out the Friday, then sort the inbox and match the swaps at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "shortcuts_aim",
+      "title": "Sort the shortcuts",
+      "description": "Go through the found sticks and shortcut messages and match each to the approved way at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e15_shadow_it_defend_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Shadow IT episode done",
+        "body": "You've seen where an ordinary Friday shortcut leads and sorted the inbox yourself, so this episode is finished."
+      },
+      "tasks": [
+        {
+          "taskId": "sort_shortcuts",
+          "title": "Sort the shortcuts",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e15_shadow_it_state": {},
+    "se_awareness_records": [],
+    "episode_e15_shadow_it_defend_percent": 0,
+    "episode_e15_shadow_it_defend_reportRate": 0,
+    "episode_e15_shadow_it_defend_done": false,
+    "episode_e15_shadow_it_defend_pass": false
+  },
+  "social": {
+    "triageSets": [
+      {
+        "id": "e15_shortcuts_inbox",
+        "title": "Shadow IT: the shortcuts",
+        "brief": "It's Friday at Tarrowby, the pack is due Monday and the share is slow. Six things are waiting: found and posted sticks, 'quicker way' messages, and a couple of genuine ones. For each, choose Trust, Report, Delete or Verify (ring the sender or ask IT on a number you already hold), then tick what you noticed. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "realLabel": "Real notices and replies",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "found_media",
+          "unapproved_tool",
+          "lookalike_domain",
+          "vish_callback_pressure"
+        ],
+        "flagChips": {
+          "found_media": "Found or posted media",
+          "unapproved_tool": "Unapproved tool or app"
+        },
+        "skillNames": {
+          "found_media": "Spotting a found or posted stick",
+          "unapproved_tool": "Spotting an unapproved tool or app"
+        },
+        "outcome": {
+          "setGlobalPrefix": "episode_e15_shadow_it_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e15_posted_stick",
+            "from": {
+              "name": "Tarrowby Reception",
+              "address": "reception@tarrowby.example"
+            },
+            "to": "you@tarrowby.example",
+            "subject": "A padded envelope came in for you, marked from the client",
+            "time": "13:20",
+            "body": "Hi,\nA padded envelope came in for you this morning, marked from the client. Inside there's a USB stick and a handwritten note: 'Survey results for the Monday pack, please load these on. Any problems call me on 07700 900142.'\nIt's at the front desk whenever you want it.\nReception",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "reception@tarrowby.example"
+            },
+            "factorStrings": {
+              "found_media": {
+                "redFlag": "A found, posted or giveaway stick or device"
+              },
+              "vish_callback_pressure": {
+                "redFlag": "A number to ring that came with the message itself, not one you already hold"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "found_media",
+                "vish_callback_pressure"
+              ],
+              "perFlagNote": {
+                "found_media": "A stick that came in the post is a found stick: don't plug it in, not even to see what's on it or who it's from. Hand it to IT, who can check it safely.",
+                "vish_callback_pressure": "The number is written on the note itself, so it only proves whoever sent the stick wrote it down. Ring the client on a number you already hold, not the one on the note."
+              },
+              "ifTrusted": "Plugging it in could run malware the moment a file is opened, on your machine and then the share.",
+              "reportReply": "Thanks. We'll take the stick and hand it to IT to check safely. We rang the client on the number already on file, and they'd posted nothing. A note's number proves nothing; the stick goes to IT."
+            }
+          },
+          {
+            "id": "e15_free_transfer",
+            "from": {
+              "name": "SwiftDrop",
+              "address": "no-reply@swiftdrop-free.example"
+            },
+            "to": "you@tarrowby.example",
+            "subject": "Too big for email? Upload it here, free",
+            "time": "11:48",
+            "body": "Your file is too large to email. Upload it to SwiftDrop for free and we'll make a link anyone can download, no account needed. Files up to 5GB, just drag and drop.\n{{link:send}}",
+            "links": [
+              {
+                "id": "send",
+                "text": "swiftdrop-free.example/upload",
+                "destination": "https://swiftdrop-free.example/upload"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "swiftdrop-free.example",
+              "replyTo": "no-reply@swiftdrop-free.example"
+            },
+            "factorStrings": {
+              "unapproved_tool": {
+                "redFlag": "A free app or online service with no contract, no control and no off switch"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unapproved_tool"
+              ],
+              "perFlagNote": {
+                "unapproved_tool": "A free transfer site has no contract with Tarrowby, no control over who downloads the link, and no off switch: old links stay live for good. Share big files from the file-sharing service instead, to a named person, with an end date."
+              },
+              "ifTrusted": "The pack would sit on a service nobody at Tarrowby has checked, behind a link anyone could pass on.",
+              "reportReply": "Thanks. For big files there's an approved way: a file-sharing link to named people that expires. The service desk sets it up in a couple of minutes."
+            }
+          },
+          {
+            "id": "e15_giveaway_stick",
+            "from": {
+              "name": "Benmoor Packaging",
+              "address": "hello@benmoor-packaging.example"
+            },
+            "to": "you@tarrowby.example",
+            "subject": "Great to meet you at the Expo, here's our catalogue on a USB",
+            "time": "09:30",
+            "body": "Hi,\nGreat to chat at the Logistics Expo last week. As promised, we've posted you a branded USB stick with our full catalogue and price list on it. Plug it in to browse the range, and do get in touch for a quote.\nBest,\nDanielle, Benmoor Packaging",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "benmoor-packaging.example",
+              "replyTo": "hello@benmoor-packaging.example"
+            },
+            "factorStrings": {
+              "found_media": {
+                "redFlag": "A found, posted or giveaway stick or device"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "found_media"
+              ],
+              "perFlagNote": {
+                "found_media": "A giveaway stick from a stand is still a stick you didn't buy and can't vouch for. A real supplier is happy to email a catalogue or send a link; the stick goes to IT."
+              },
+              "ifTrusted": "A stick handed out to a crowd is an easy way to get malware onto a firm's machines, whoever printed the logo on it.",
+              "reportReply": "Thanks. We'll pass the stick to IT. Kindness and curiosity are why people plug these in, so the kind move is to hand it in rather than plug it in."
+            }
+          },
+          {
+            "id": "e15_free_pdf_tool",
+            "from": {
+              "name": "PDFMerge Free",
+              "address": "download@pdfmerge-free.example"
+            },
+            "to": "you@tarrowby.example",
+            "subject": "Edit any PDF free, everyone's using it",
+            "time": "10:05",
+            "body": "Need to tidy the PDF before it goes out? PDFMerge Free merges, splits and edits PDFs in your browser, or as a one-click install. It's free and everyone's using it.\n{{link:get}}",
+            "links": [
+              {
+                "id": "get",
+                "text": "pdfmerge-free.example/install",
+                "destination": "https://pdfmerge-free.example/install"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "pdfmerge-free.example",
+              "replyTo": "download@pdfmerge-free.example"
+            },
+            "factorStrings": {
+              "unapproved_tool": {
+                "redFlag": "A free app or online service with no contract, no control and no off switch"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unapproved_tool"
+              ],
+              "perFlagNote": {
+                "unapproved_tool": "'Everyone uses it' is how an unapproved tool spreads. A one-click install can carry malware, and a free online editor hands whatever you upload to a provider nobody has checked. There's an approved tool; the service desk will point you to it."
+              },
+              "ifTrusted": "Either the install puts something on your machine, or the file you upload lands with a provider Tarrowby has no agreement with.",
+              "reportReply": "Thanks. There's an approved PDF tool already, so there's no need for this one. Report or delete it, and ask the service desk if you're not sure which tool to use."
+            }
+          },
+          {
+            "id": "e15_fileshare_notice",
+            "from": {
+              "name": "Tarrowby File Share",
+              "address": "no-reply@tarrowby.example"
+            },
+            "to": "you@tarrowby.example",
+            "subject": "Shauna Lofthouse shared 'Monday pack, final' with you",
+            "time": "14:10",
+            "body": "Shauna Lofthouse has shared a file with you through the Tarrowby file-sharing service.\nFile: Monday pack, final\nThis link is for you only and expires in 7 days.\n{{link:open}}",
+            "links": [
+              {
+                "id": "open",
+                "text": "fileshare.tarrowby.example/s/monday-pack",
+                "destination": "https://fileshare.tarrowby.example/s/monday-pack"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "no-reply@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "unapproved_tool": "This is the approved file-sharing service, not a free site: it's on tarrowby.example, shared to a named person, and the link expires. That's exactly the safe way to send a big file.",
+                "default": "A share-link email is just what a phish copies, so it's fair to look twice. But this one is Tarrowby's own service on tarrowby.example, from a colleague you know, to you by name, with an end date. Open it."
+              },
+              "falseAlarmCost": "Reported as a scam, the Monday pack sits unread and the deadline slips while someone checks a genuine share."
+            }
+          },
+          {
+            "id": "e15_it_tool_reply",
+            "from": {
+              "name": "Nilesh Solanki",
+              "address": "nilesh.solanki@tarrowby.example"
+            },
+            "to": "you@tarrowby.example",
+            "subject": "Re: Request a tool, your PDF editor is approved",
+            "time": "11:15",
+            "body": "Hi,\nThanks for asking rather than installing one off the web. The editor you wanted is fine, and it's already on the software portal under Tools, so you can add it yourself now. If you hit the slow share again, let me know and we'll sort it.\nNilesh\nIT Service Desk",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "nilesh.solanki@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "You asked IT for a tool and they've answered from Nilesh's real address with the approved one. Asking first is exactly what turns a workaround into a quick yes. Handle it."
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e15_shadow_it",
+      "role": "general_staff",
+      "company": "tarrowby_logistics",
+      "brand": {
+        "name": "Tarrowby Logistics",
+        "logoText": "TARROWBY",
+        "accent": "#3b5b8c"
+      },
+      "variant": "full",
+      "durationTargetMin": 15,
+      "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional firm. In scope: a short set of found sticks and 'quicker way' messages, and the approved swaps. Nothing you do here leaves the game.",
+      "stages": [
+        "brief",
+        "mistake",
+        "flip",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "sort_shortcuts",
+      "defend": {
+        "setId": "e15_shortcuts_inbox",
+        "reportAlwaysVisible": true
+      },
+      "mistake": {
+        "scored": false,
+        "beats": [
+          {
+            "id": "personal_email",
+            "situation": "The share has crawled to a halt and the pack is due Monday. Colin: \"Just email the pack to your personal address and finish it off at home.\" The compose window offers \"Me (personal)\" in the autocomplete.",
+            "options": [
+              {
+                "id": "send_personal",
+                "label": "Send the pack to your personal email",
+                "safe": false
+              },
+              {
+                "id": "ask_nilesh",
+                "label": "Ask Nilesh, and work from home through remote access",
+                "safe": true,
+                "approvedRoute": true
+              }
+            ]
+          },
+          {
+            "id": "free_transfer",
+            "situation": "The site-survey video is too big to email. Colin: \"Use a free transfer site, everyone does.\"",
+            "options": [
+              {
+                "id": "use_fileshare",
+                "label": "Share it from the file-sharing service, to a named person, with an end date",
+                "safe": true,
+                "approvedRoute": true
+              },
+              {
+                "id": "use_free_site",
+                "label": "Upload it to the free transfer site",
+                "safe": false
+              }
+            ]
+          },
+          {
+            "id": "posted_stick",
+            "situation": "A padded envelope arrives: \"From the client: survey results, please add to the pack.\" Inside is a USB stick and a note with a phone number.",
+            "options": [
+              {
+                "id": "plug_in",
+                "label": "Plug the stick in to read it",
+                "safe": false
+              },
+              {
+                "id": "to_it",
+                "label": "Leave it unplugged, ring the client on a number you already hold, give the stick to IT",
+                "safe": true,
+                "approvedRoute": true
+              }
+            ]
+          },
+          {
+            "id": "rota_app",
+            "situation": "Shauna rings: the delivery rota lives in a free app on a former temp's personal account, and anyone with the link can edit it. She wants this week's slots added.",
+            "options": [
+              {
+                "id": "ask_it",
+                "label": "Add nothing there; ask IT to move it into the team space and remove the old access",
+                "safe": true,
+                "approvedRoute": true
+              },
+              {
+                "id": "use_app",
+                "label": "Add this week's slots in the app",
+                "safe": false
+              }
+            ]
+          }
+        ],
+        "flipBeat": "personal_email"
+      },
+      "flip": {
+        "mode": "montage"
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack is due at a client by Monday and the file share has slowed to a crawl. First you make the calls anyone would under a deadline; then you see, six months on, where each shortcut led. Then you sort a short set of found sticks and shortcut messages, and match each shortcut to the approved way. Only the sort is scored.",
+        "flipHeading": "Six months later",
+        "noBlameLine": "Shortcuts are well meant, usually taken under a deadline. Being caught by one is no fault of yours; Colin was right that the share was slow. The move is to tell IT so the data gets somewhere safe.",
+        "mondayCard": "On Monday: pick the shortcut you reach for most, and learn the approved swap for it. A found or posted stick goes to IT unplugged. Work stays in work places, not your personal email, personal cloud or a free online service. If the official way is slow, tell IT rather than build your own way round, and report what you're unsure about using the route in the box below. If personal data went to a personal account, that route brings in the DPO.",
+        "defendIntro": "Go through the found sticks and 'quicker way' messages and decide what to do with each, then match each shortcut to its approved swap. A found or posted stick goes to IT unplugged; if the official way is slow, ask IT rather than build a way round it. There's no clock on you here.",
+        "defendOnly": "Every shortcut here is the kind a busy person takes with good intentions, and every one has a quiet cost. The ones you were caught out by are shown below, with the approved way.",
+        "flipMontageByChoice": {
+          "personal_email": {
+            "send_personal": "Your choice. Months on, the personal inbox was broken into with a reused password; the pack sat in its sent items, and the client got a convincing fake invoice built from it.",
+            "ask_nilesh": "The version where the pack went to a personal inbox instead: it was broken into with a reused password and the pack was copied. Remote access left nothing outside the firm to find."
+          },
+          "free_transfer": {
+            "use_free_site": "Your choice. The free transfer site was breached; old public links, including a video with people in the background, turned up in search results.",
+            "use_fileshare": "The version where a free site was used: its old links were still live when it was breached. The firm's link expired after seven days, so there was nothing to find."
+          },
+          "posted_stick": {
+            "plug_in": "Your choice. The same stick reached four other firms; one plugged it in and was down for nine days.",
+            "to_it": "The version where the stick was plugged in: it carried malware and took a firm offline for nine days. The client confirmed they had posted nothing; IT checked the stick safely."
+          },
+          "rota_app": {
+            "use_app": "Your choice. The rota stayed editable by the departed temp, then vanished when the free app closed the unused account, the week before a busy run.",
+            "ask_it": "The version where the rota stayed in the free app: the departed temp could still edit it, and it was lost when the account was closed. IT moved it to the team space in minutes."
+          }
+        }
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      },
+      "sortDrill": {
+        "scored": false,
+        "bins": [
+          {
+            "id": "laptop_remote",
+            "label": "Work laptop and remote access"
+          },
+          {
+            "id": "fileshare_link",
+            "label": "File-sharing link with an end date"
+          },
+          {
+            "id": "team_space",
+            "label": "The team space (ask IT)"
+          },
+          {
+            "id": "hand_to_it",
+            "label": "Hand it to IT"
+          }
+        ],
+        "cards": [
+          {
+            "id": "sw_personal_email",
+            "situation": "Emailing the pack to your personal address to finish it at home",
+            "answer": "laptop_remote",
+            "reason": "Work stays in work places. Pick it up again on the work laptop through remote access, where the firm can still protect and back up the data."
+          },
+          {
+            "id": "sw_free_transfer",
+            "situation": "A video too big for email, sent through a free transfer site",
+            "answer": "fileshare_link",
+            "reason": "Share it from the file-sharing service, to a named person, with a link that expires, instead of a free site with no off switch."
+          },
+          {
+            "id": "sw_rota_app",
+            "situation": "The delivery rota kept in a free app on someone's personal account",
+            "answer": "team_space",
+            "reason": "Ask IT to move it into the team space, where access ends when someone leaves and it's backed up."
+          },
+          {
+            "id": "sw_found_stick",
+            "situation": "A USB stick that turned up in the post or on a desk",
+            "answer": "hand_to_it",
+            "reason": "Don't plug it in. Hand it to IT, who can check it safely and find the owner."
+          }
+        ],
+        "drawRules": {
+          "oneOfEachAnswer": false,
+          "newFirst": false
+        },
+        "strings": {
+          "title": "Swap Shop",
+          "heading": "Match each shortcut to the approved way",
+          "intro": "Each card is a shortcut someone might reach for under a deadline. Drop it on the approved way that does the same job safely, and the reason shows straight after. Nothing here is marked.",
+          "pickLabel": "Which approved way?",
+          "teach": "Approved way: {bin}.",
+          "teachFits": "That's the one.",
+          "summaryHeading": "The approved swaps",
+          "doneLine": "You matched all {total} shortcuts to their approved way."
+        }
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on",
+    "ambient": "#bcc2cc"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_tarrowby",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_tarrowby_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "drinks_vending": {
+            "color": "#e0f0ff",
+            "radius": 40,
+            "intensity": 0.45
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 4.5,
+            "y": 5,
+            "color": "#dfe8f4",
+            "radius": 110,
+            "intensity": 0.25
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "nilesh_solanki",
+          "displayName": "Nilesh Solanki",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/awareness_e15_shadow_it/ink/nilesh_solanki.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_e15_shadow_it_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "sort_shortcuts"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen training kiosk for the Tarrowby shadow-IT exercise: first the Friday shortcuts to take or not, then where each led, then the found sticks and shortcut messages to sort.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e15_shadow_it_defend_done",
+              "value": "A touch-screen training kiosk for the Tarrowby shadow-IT exercise. The Friday is played out and the inbox is all sorted."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e15_shadow_it"
+          }
+        }
+      ]
+    }
+  }
+}
