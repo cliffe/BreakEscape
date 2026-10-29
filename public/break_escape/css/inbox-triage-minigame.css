@@ -451,3 +451,26 @@
 }
 .tri-close-ask-text { margin: 0 0 8px; }
 .tri-close-ask-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ENG-07: the video-call meeting-tool name and participant tag on a `call` card. */
+.tri-call-video { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 4px 0 8px; }
+.tri-call-video-label { font-weight: 600; }
+.tri-call-video-tag {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    padding: 2px 8px;
+}
+
+/* ENG-06: the "show hidden text" reveal on an email card carrying a hidden AI instruction. */
+.tri-hidden { margin: 10px 0 0; }
+.tri-hidden-text {
+    margin: 8px 0 0;
+    padding: 8px;
+    border: 1px dashed currentColor;
+    border-radius: 6px;
+    font-family: monospace;
+    white-space: pre-wrap;
+}

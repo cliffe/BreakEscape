@@ -492,6 +492,14 @@ function call(rec) {
     if (rec.from?.address) meta.push(rec.from.address);
     if (rec.time) meta.push(rec.time);
     if (meta.length) box.appendChild(el('p', 'tri-call-meta', meta.join(' · ')));
+    // ENG-07: a video call carries the meeting-tool name and a participant tag (e.g.
+    // "Brightwell Meet / External"). Absent, the call card reads exactly as before.
+    if (isStr(rec.videoLabel) || isStr(rec.participantTag)) {
+        const vrow = el('div', 'tri-call-video');
+        if (isStr(rec.videoLabel)) vrow.appendChild(el('span', 'tri-call-video-label', rec.videoLabel));
+        if (isStr(rec.participantTag)) vrow.appendChild(el('span', 'tri-call-video-tag', rec.participantTag));
+        box.appendChild(vrow);
+    }
     // 11 N15, the role swap: what the caller claims, fact by fact. These are the facts the
     // learner used in the attack call, so the card shows what there is to check.
     const claims = (Array.isArray(rec.claims) ? rec.claims : []).filter((c) => isObj(c) && isStr(c.fact));
@@ -542,6 +550,29 @@ function push(rec) {
 }
 
 const SURFACES = { sms, voicemail, qr, page, call, push };
+
+/**
+ * ENG-06: the "show hidden text" reveal for an email that carries a white-text line meant for
+ * an AI assistant (E13's `e13_supplier_injection`). Returns a node with a reveal button that
+ * shows `rec.hiddenText`, or null when the email authors no `hiddenText` (so every other email
+ * card, in every mission and the lab, is unchanged). `rec.hiddenTextLabel` overrides the button
+ * label. Every string goes in with textContent.
+ */
+export function emailHiddenReveal(rec) {
+    if (!isObj(rec) || !isStr(rec.hiddenText)) return null;
+    const box = el('div', 'tri-hidden');
+    const btn = el('button', 'tri-hidden-btn minigame-button', isStr(rec.hiddenTextLabel) ? rec.hiddenTextLabel : 'Show hidden text');
+    btn.type = 'button';
+    btn.setAttribute('aria-expanded', 'false');
+    const text = el('p', 'tri-hidden-text', rec.hiddenText);
+    text.hidden = true;
+    btn.addEventListener('click', () => {
+        text.hidden = false;
+        btn.setAttribute('aria-expanded', 'true');
+    });
+    box.append(btn, text);
+    return box;
+}
 
 /**
  * The reading-pane surface for a non-email message, or null for email.

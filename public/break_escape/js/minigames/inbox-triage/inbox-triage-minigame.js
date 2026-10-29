@@ -49,7 +49,7 @@ import {
     FACTOR_ORDER, NONE_ID, chipIdsFor, chipLabel, redFlagString, skillName
 } from './triage-flags.js';
 import {
-    kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, kindLabel, verdictAction,
+    kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, kindLabel, verdictAction, emailHiddenReveal,
     shortTitle, realNounFor
 } from './triage-kinds.js';
 import { comparisonFor, comparisonText } from './triage-comparison.js';
@@ -500,6 +500,13 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     }
 
     _afterBody(rec, pane) {
+        // ENG-06: an email that carries a white-text "note for AI assistants" line shows a
+        // "show hidden text" reveal on its surface, in any step. Guarded by rec.hiddenText, so
+        // every other email card (every mission and the lab) is unchanged.
+        if (!isNonEmail(rec)) {
+            const reveal = emailHiddenReveal(rec);
+            if (reveal) pane.appendChild(reveal);
+        }
         if (this.step !== 'sort') return;
         const ans = this.answers.get(rec.id);
         const box = el('div', 'tri-actions');

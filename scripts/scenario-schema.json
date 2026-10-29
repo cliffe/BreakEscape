@@ -1728,6 +1728,10 @@
           "additionalProperties": false
         },
         "callerId": {"type": "string", "description": "call: the caller id line"},
+        "videoLabel": {"type": "string", "description": "call (ENG-07): the meeting-tool name shown on a video-call card (e.g. 'Brightwell Meet'). Absent, the card has no meeting-tool line"},
+        "participantTag": {"type": "string", "description": "call (ENG-07): a participant tag shown beside the meeting-tool name (e.g. 'External')"},
+        "hiddenText": {"type": "string", "description": "email (ENG-06): a white-text line hidden in the email (a 'note for AI assistants'), shown by a 'show hidden text' reveal on the email surface. Absent, the email card is unchanged"},
+        "hiddenTextLabel": {"type": "string", "description": "email (ENG-06): overrides the reveal button label (default 'Show hidden text')"},
         "transcript": {
           "description": "call (required) and voicemail (optional, else body): the lines spoken",
           "type": "array",
@@ -2101,7 +2105,119 @@
           "patternProperties": {"^_": {}},
           "additionalProperties": false
         },
-        "facilitated": {"type": "boolean"}
+        "facilitated": {"type": "boolean"},
+        "assistant": {
+          "type": "object",
+          "description": "ENG-06 (E13): the authored AI-assistant overlay, opened in the flip region (assistant-chat-minigame.js). AUTHORED replies only, no runtime language model and no network. Linted by awareness.rb: no model/free-text field, and every reply is a literal string.",
+          "properties": {
+            "title": {"type": "string"},
+            "intro": {"type": "string"},
+            "disclaimer": {"type": "string", "description": "The 'can make mistakes, check important information' line shown under each answer"},
+            "summarise": {
+              "type": "object",
+              "description": "The 'summarise my emails' mode: the reply surfaces the planted hidden instruction as a suggestion; hidden reveals the original white line",
+              "properties": {
+                "button": {"type": "string"},
+                "reply": {"type": "string"},
+                "empathy": {"type": "string"},
+                "hidden": {
+                  "type": "object",
+                  "properties": {"button": {"type": "string"}, "text": {"type": "string"}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "paste": {
+              "type": "object",
+              "description": "The paste-hygiene panel: a source log of lines with information-class tags; the summary lists only the lines left in",
+              "properties": {
+                "heading": {"type": "string"},
+                "task": {"type": "string"},
+                "summaryButton": {"type": "string"},
+                "summaryHeading": {"type": "string"},
+                "lines": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["id", "text"],
+                    "properties": {
+                      "id": {"type": "string"},
+                      "text": {"type": "string"},
+                      "classLabel": {"type": "string"},
+                      "safe": {"type": "boolean", "description": "true: a line that belongs; it offers no strike-out. false/unset: it offers a strike-out toggle"},
+                      "secret": {"type": "boolean", "description": "true: a secret left in the summary draws the warning and the one-click report"}
+                    },
+                    "patternProperties": {"^_": {}},
+                    "additionalProperties": false
+                  }
+                },
+                "secretWarning": {"type": "string"},
+                "reportButton": {"type": "string"},
+                "reportReply": {"type": "string"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "draft": {
+              "type": "object",
+              "description": "The output-check panel: an authored draft whose sentences the learner reads; 'Check source' opens an authored document",
+              "properties": {
+                "button": {"type": "string"},
+                "heading": {"type": "string"},
+                "sentences": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["id", "text"],
+                    "properties": {
+                      "id": {"type": "string"},
+                      "text": {"type": "string"},
+                      "wrong": {"type": "boolean", "description": "true: an invented figure or an unsupported claim. No colour tell by default: the learner checks, not spots a highlight"}
+                    },
+                    "patternProperties": {"^_": {}},
+                    "additionalProperties": false
+                  }
+                },
+                "checkSource": {
+                  "type": "object",
+                  "required": ["documentId"],
+                  "properties": {"button": {"type": "string"}, "documentId": {"type": "string", "description": "An assistant.documents id"}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "documents": {
+              "type": "array",
+              "description": "Authored documents the 'Check source' action opens",
+              "items": {
+                "type": "object",
+                "required": ["id"],
+                "properties": {"id": {"type": "string"}, "title": {"type": "string"}, "body": {"type": "string"}},
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "exchanges": {
+              "type": "array",
+              "description": "Generic authored question -> answer pairs; each press shows the same reply",
+              "items": {
+                "type": "object",
+                "required": ["id", "prompt", "reply"],
+                "properties": {"id": {"type": "string"}, "prompt": {"type": "string"}, "reply": {"type": "string"}},
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            }
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        }
       },
       "patternProperties": {"^_": {}},
       "additionalProperties": false
@@ -3346,6 +3462,14 @@
           "type": "string",
           "enum": ["person-chat", "phone-chat", "video-call"],
           "description": "Trigger a cutscene. 'person-chat' opens a full-screen overlay. 'phone-chat' opens the phone-chat minigame. 'video-call' opens the person-chat overlay framed as a secure video call with a player self-view PiP (works for phone NPCs too). All require targetKnot."
+        },
+        "videoLabel": {
+          "type": "string",
+          "description": "ENG-07 (conversationMode 'video-call'): the meeting-tool name on the video-call bar (e.g. 'Brightwell Meet'). Absent, the bar keeps the default 'SECURE VIDEO LINK'."
+        },
+        "participantTag": {
+          "type": "string",
+          "description": "ENG-07 (conversationMode 'video-call'): a participant tag beside the peer name (e.g. 'External'). Absent, no tag shows."
         },
         "background": { "type": "string" },
         "disableClose": {
