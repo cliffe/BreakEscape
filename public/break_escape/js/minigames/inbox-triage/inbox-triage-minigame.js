@@ -144,7 +144,17 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
     /** The set's wording overrides (`set.labels`, see triage-kinds.js), or null. */
     get labels() {
-        return isObj(this.set?.labels) ? this.set.labels : null;
+        const base = isObj(this.set?.labels) ? this.set.labels : null;
+        // ENG-03a: fold the `verdictLabels` shorthand ({ trust, report, delete, verify }) into
+        // labels.verdict.<v>.label, so the existing label mechanism relabels the buttons and the
+        // review-card wording with no second code path. Absent, returns `base` unchanged.
+        const vl = this.set?.verdictLabels;
+        if (!isObj(vl)) return base;
+        const verdict = { ...(isObj(base?.verdict) ? base.verdict : {}) };
+        for (const v of ['trust', 'report', 'delete', 'verify']) {
+            if (typeof vl[v] === 'string' && vl[v]) verdict[v] = { ...(isObj(verdict[v]) ? verdict[v] : {}), label: vl[v] };
+        }
+        return { ...(base || {}), verdict };
     }
 
     get passPercent() {

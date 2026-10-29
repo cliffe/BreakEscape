@@ -544,6 +544,24 @@ export function flipPage(episode, social, globals) {
     const pages = Array.isArray(social?.landingPages) ? social.landingPages : [];
     const def = pages.find((p) => isObj(p) && p.id === pageId) || {};
     const choices = isObj(rec.choices) ? rec.choices : {};
+    // Fake-check page (ENG-03b): no look-alike domain, so the host is the authored genuine site
+    // (def.check.host), not a chosen domain option. The flip draws it with the builder's renderer
+    // (flip-view passes pageDef + choices to renderLandingPage), and the one tell is fake_check_paste.
+    if (def.pageType === 'fakeCheck') {
+        const check = isObj(def.check) ? def.check : {};
+        const chost = isStr(check.host) ? check.host : '';
+        if (!chost) return null;
+        return {
+            url: /^[a-z]+:\/\//i.test(chost) ? chost : `https://${chost}/`,
+            padlock: true,
+            heading: isStr(check.heading) ? check.heading : '',
+            fields: [],
+            button: '',
+            tells: ['fake_check_paste'],
+            pageDef: isStr(def.id) ? def : null,
+            choices: { ...choices }
+        };
+    }
     // Domain options may sit at the page top level or, as the builder authors them, nested under
     // each brand (brands[].domains). Search both, by the chosen option id (E5-3).
     const topMenu = [def.domainMenu, def.domains, def.domainOptions].find(Array.isArray) || [];
