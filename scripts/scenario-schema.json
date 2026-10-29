@@ -2213,6 +2213,7 @@
             "flipLandedNoTells": {"type": "string", "description": "The flip's line after a send that landed but has nothing to replay (no tells); falls back to flipMissed"},
             "flipMissedHeading": {"type": "string", "description": "The flip's heading when nothing is replayed (a miss, or a landing with no tells); default 'Nothing to replay this time'"},
             "flipPageIntro": {"type": "string", "description": "The flip's intro when it shows a built landing page"},
+            "flipPageHeading": {"type": "string", "description": "E10 MA4: the heading over the page section when the flip shows both a message and a page; default 'The page it links to'. A no-link design (a fake check on the site's own address) overrides it, e.g. 'The page you built', so it does not claim a link"},
             "flipCallIntro": {"type": "string", "description": "The flip's intro when it shows a pretext call"},
             "flipGuessIntro": {"type": "string", "description": "ENG-02: the flip's intro after a landed password guess (the guess stage), before flipAftermath"},
             "guessNote": {"type": "string", "description": "ENG-02: the on-screen line in the password guesser saying nothing real is typed; wins over guess.note (default: 'No real password is typed or stored here. Every guess is made up for the exercise.')"},
@@ -2594,13 +2595,33 @@
               "description": "The 'summarise my emails' mode: the reply surfaces the planted hidden instruction as a suggestion; hidden reveals the original white line",
               "properties": {
                 "button": {"type": "string"},
-                "reply": {"type": "string"},
+                "reply": {"type": "string", "description": "The flat surfacing, shown when no byChoice branch matches the sent pretext (E13 MA3 fallback)"},
                 "empathy": {"type": "string"},
                 "hidden": {
                   "type": "object",
                   "properties": {"button": {"type": "string"}, "text": {"type": "string"}},
                   "patternProperties": {"^_": {}},
                   "additionalProperties": false
+                },
+                "byChoice": {
+                  "type": "object",
+                  "description": "E13 MA3: the surfacing per sent pretext, keyed by the template id the learner picked (state.sent.templateId, a social.templates id). The matching branch's reply/empathy/hidden win; any field it omits (and the whole block, if the learner's branch is absent) falls back to the flat summarise above",
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "reply": {"type": "string"},
+                      "empathy": {"type": "string"},
+                      "hidden": {
+                        "type": "object",
+                        "properties": {"button": {"type": "string"}, "text": {"type": "string"}},
+                        "patternProperties": {"^_": {}},
+                        "additionalProperties": false
+                      }
+                    },
+                    "patternProperties": {"^_": {}},
+                    "additionalProperties": false
+                  },
+                  "patternProperties": {"^_": {}}
                 }
               },
               "patternProperties": {"^_": {}},
@@ -2632,7 +2653,18 @@
                 },
                 "secretWarning": {"type": "string"},
                 "reportButton": {"type": "string"},
-                "reportReply": {"type": "string"}
+                "reportReply": {"type": "string"},
+                "feedback": {
+                  "type": "object",
+                  "description": "E13 MI2: a verdict after the themes summary confirming the lesson. `clean` when every line that does not belong was struck out, `leftPersonal` when a personal detail slipped through, `leftPassword` when a secret did. All optional; absent, the beat is unchanged",
+                  "properties": {
+                    "clean": {"type": "string"},
+                    "leftPersonal": {"type": "string"},
+                    "leftPassword": {"type": "string"}
+                  },
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                }
               },
               "patternProperties": {"^_": {}},
               "additionalProperties": false
@@ -2661,6 +2693,17 @@
                   "type": "object",
                   "required": ["documentId"],
                   "properties": {"button": {"type": "string"}, "documentId": {"type": "string", "description": "An assistant.documents id"}},
+                  "patternProperties": {"^_": {}},
+                  "additionalProperties": false
+                },
+                "sendButton": {"type": "string", "description": "E13 MI2: the label of the 'send without checking' button that lands the `missed` verdict; default 'Send without checking'. Shown only when feedback.missed is authored"},
+                "feedback": {
+                  "type": "object",
+                  "description": "E13 MI2: a verdict so the output-check beat lands its point. `caught` fires when the learner opens Check source (the right move); `missed` when they send the draft without checking (via the sendButton). Both optional; absent, the beat is unchanged",
+                  "properties": {
+                    "caught": {"type": "string"},
+                    "missed": {"type": "string"}
+                  },
                   "patternProperties": {"^_": {}},
                   "additionalProperties": false
                 }

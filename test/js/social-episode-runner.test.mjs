@@ -88,8 +88,9 @@ class StubTriage extends StubOverlay {}
 // ENG-06: a stub assistant overlay. It records the config it was opened with; a Close is a
 // normal exit, so the runner's onComplete advances the flip stage.
 let assistantOpens = [];
+let assistantParams = [];
 class StubAssistant extends StubOverlay {
-    init() { super.init(); assistantOpens.push(this.params.config || null); }
+    init() { super.init(); assistantOpens.push(this.params.config || null); assistantParams.push(this.params); }
 }
 FW.registerScene('episode-runner', EpisodeRunnerMinigame);
 FW.registerScene('osint-browser', StubOverlay);
@@ -158,6 +159,7 @@ function setup(episode, globals = {}) {
     errors.length = 0;
     calls.strip = 0; calls.flip = []; calls.debrief = []; calls.measure = []; calls.triage = [];
     assistantOpens = [];
+    assistantParams = [];
     triageMode = { readOnly: false };
     stub.mailAbort = false; stub.mailSend = true;
     window.gameState = { globalVariables: { [M.stateKey(episode.id)]: {}, se_awareness_records: {}, ...globals } };
@@ -323,6 +325,16 @@ test('assistant block: flip Continue opens assistant-chat with the config; its c
     assert.equal(scene(), 'episode-runner');
     assert.ok(stored(ep.id).done.includes('flip'), 'the flip is done once the assistant closes');
     assert.equal(epState().stage, 'defend');
+});
+
+test('assistant: the sent pretext is passed through so the summarise mode can surface it by choice (E13 MA3)', () => {
+    const ep = { ...fullEpisode(), assistant: { title: 'Brightwell Assist', summarise: { button: 'Go', reply: 'Hi' } } };
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write'],
+        sent: { recordId: 'sent_1', targetId: 'supplier_contact', templateId: 'inject_contacts', blankIds: [] } } });
+    open(ep);
+    click('.stub-continue');
+    assert.equal(assistantParams.length, 1);
+    assert.equal(assistantParams[0].sentTemplateId, 'inject_contacts', 'the chosen pretext reaches the assistant');
 });
 
 test('a defendOnly episode never launches OSINT or mail', () => {

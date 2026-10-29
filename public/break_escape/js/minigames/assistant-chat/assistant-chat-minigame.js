@@ -13,14 +13,20 @@
 //
 //   summarise  the "summarise my emails" mode: a button whose authored reply surfaces the
 //              planted hidden instruction as a suggestion, plus a "show hidden text" reveal of
-//              the white line and a no-blame empathy line (E13 §9.2 beat 1).
+//              the white line and a no-blame empathy line (E13 §9.2 beat 1). With `byChoice`
+//              (keyed by the sent pretext, params.sentTemplateId) the surfacing follows what the
+//              learner actually wrote, falling back per field to the flat reply/empathy/hidden
+//              (E13 MA3).
 //   paste      the paste-hygiene panel: a source log of lines, each with an information-class
 //              tag; the learner strikes lines out, then asks for a themes summary that lists
 //              only the lines left in. A secret line left in draws a warning and a one-click
-//              report (E13 §9.2 beat 2).
+//              report. An optional `feedback` (clean/leftPersonal/leftPassword) confirms the
+//              lesson after the summary (E13 §9.2 beat 2, MI2).
 //   draft      the output-check panel: an authored draft whose sentences the learner reads, a
 //              "Check source" action that opens an authored document, and the "can make
-//              mistakes, check important information" disclaimer under the answer (beat 3).
+//              mistakes, check important information" disclaimer under the answer (beat 3). An
+//              optional `feedback` (caught/missed) lands a verdict: `caught` on Check source,
+//              `missed` on an optional "send without checking" button (MI2).
 //   exchanges  generic authored question -> answer buttons, each showing the same reply every
 //              time it is pressed.
 //
@@ -54,6 +60,9 @@ export class AssistantChatMinigame extends SocialOverlayScene {
     constructor(container, params) {
         super(container, params);
         this.config = isObj(this.params.config) ? this.params.config : {};
+        // The pretext the learner actually sent (state.sent.templateId), so the summarise mode can
+        // surface the branch for what they wrote rather than always the injection branch (E13 MA3).
+        this.sentTemplateId = isStr(this.params.sentTemplateId) ? this.params.sentTemplateId : null;
     }
 
     init() {
@@ -107,6 +116,18 @@ export class AssistantChatMinigame extends SocialOverlayScene {
 
     // ── beat 1: summarise my emails (injection surfacing) ───────────────────────
     _buildSummarise(cfg) {
+        // E13 MA3: key the surfacing on the pretext the learner sent. byChoice[sentTemplateId] wins
+        // per field; any field it omits (and the whole block, if the learner's branch is absent)
+        // falls back to the flat summarise reply/empathy/hidden, so a single-reply episode is
+        // unchanged. A learner who left the brief plain reads their own "nothing to action" summary
+        // instead of the injection branch, matching the flip's by-choice defender line.
+        const byChoice = isObj(cfg.byChoice) ? cfg.byChoice : null;
+        const chosen = byChoice && isStr(this.sentTemplateId) && isObj(byChoice[this.sentTemplateId])
+            ? byChoice[this.sentTemplateId] : null;
+        const reply = chosen && isStr(chosen.reply) ? chosen.reply : cfg.reply;
+        const empathy = chosen && isStr(chosen.empathy) ? chosen.empathy : cfg.empathy;
+        const hidden = chosen && isObj(chosen.hidden) ? chosen.hidden : cfg.hidden;
+
         const sec = h('section', { class: 'ac-section ac-summarise', 'aria-label': 'Summarise my emails' });
         const btn = h('button', { type: 'button', class: 'minigame-button ac-summarise-btn',
             text: isStr(cfg.button) ? cfg.button : 'Summarise my emails' });
@@ -114,10 +135,10 @@ export class AssistantChatMinigame extends SocialOverlayScene {
         this.addEventListener(btn, 'click', (e) => {
             e.preventDefault?.();
             out.textContent = '';
-            // Authored suggestion that carries the planted line (same reply every press).
-            if (isStr(cfg.reply)) out.appendChild(this._reply(cfg.reply, 'ac-reply ac-summary-reply'));
-            if (isStr(cfg.empathy)) out.appendChild(h('p', { class: 'ac-empathy', text: cfg.empathy }));
-            const hid = isObj(cfg.hidden) ? cfg.hidden : null;
+            // Authored suggestion for the sent pretext (same reply every press).
+            if (isStr(reply)) out.appendChild(this._reply(reply, 'ac-reply ac-summary-reply'));
+            if (isStr(empathy)) out.appendChild(h('p', { class: 'ac-empathy', text: empathy }));
+            const hid = isObj(hidden) ? hidden : null;
             if (hid && isStr(hid.text)) {
                 const hbtn = h('button', { type: 'button', class: 'minigame-button ac-hidden-btn',
                     text: isStr(hid.button) ? hid.button : 'Show hidden text', 'aria-expanded': 'false' });
@@ -179,6 +200,17 @@ export class AssistantChatMinigame extends SocialOverlayScene {
             for (const l of kept) ul.appendChild(h('li', { class: 'ac-paste-summary-line', 'data-id': l.id, text: l.text }));
             summary.appendChild(ul);
             out.appendChild(summary);
+            // E13 MI2: a feedback slot so the beat confirms the lesson. `clean` when every line that
+            // does not belong was struck out, `leftPersonal` when a personal detail slipped through,
+            // `leftPassword` when a secret did (the strongest). Opt-in on cfg.feedback; absent, the
+            // beat is exactly as before.
+            const fb = isObj(cfg.feedback) ? cfg.feedback : null;
+            if (fb) {
+                const secretLeft = lines.some((l) => l.secret === true && !struck.has(l.id));
+                const personalLeft = lines.some((l) => l.safe !== true && l.secret !== true && !struck.has(l.id));
+                const verdict = secretLeft ? 'leftPassword' : (personalLeft ? 'leftPersonal' : 'clean');
+                if (isStr(fb[verdict])) out.appendChild(h('p', { class: 'ac-paste-feedback', 'data-verdict': verdict, text: fb[verdict] }));
+            }
             // A line flagged secret left in: warn and offer a one-click report.
             const secretLeftIn = lines.some((l) => l.secret === true && !struck.has(l.id));
             if (secretLeftIn && isStr(cfg.secretWarning)) {
@@ -216,6 +248,13 @@ export class AssistantChatMinigame extends SocialOverlayScene {
             }
             if (this._disclaimer) answer.appendChild(h('p', { class: 'ac-disclaimer', text: this._disclaimer }));
             out.appendChild(answer);
+            // E13 MI2: a verdict slot so the beat lands its point. Opt-in on cfg.feedback; absent, the
+            // beat is exactly as before (Check source opens the document, no verdict). `caught` fires
+            // when the learner checks the source (the right move); `missed` when they send it without
+            // checking, via an optional "send without checking" button.
+            const fb = isObj(cfg.feedback) ? cfg.feedback : null;
+            const verdict = fb ? h('p', { class: 'ac-draft-verdict', 'aria-live': 'polite' }) : null;
+            let sendBtn = null;
             // "Check source" opens the authored document, never a live one.
             const cs = isObj(cfg.checkSource) ? cfg.checkSource : null;
             const doc = cs && isStr(cs.documentId) ? docs.find((d) => d.id === cs.documentId) : null;
@@ -229,9 +268,23 @@ export class AssistantChatMinigame extends SocialOverlayScene {
                     ev.preventDefault?.();
                     docPanel.hidden = false;
                     csBtn.setAttribute('aria-expanded', 'true');
+                    if (verdict && isStr(fb.caught)) { verdict.textContent = fb.caught; verdict.dataset.verdict = 'caught'; }
+                    if (sendBtn) sendBtn.disabled = true; // checked, so "send without checking" no longer applies
                 });
                 out.append(csBtn, docPanel);
             }
+            if (fb && isStr(fb.missed)) {
+                sendBtn = h('button', { type: 'button', class: 'minigame-button ac-draft-send',
+                    text: isStr(cfg.sendButton) ? cfg.sendButton : 'Send without checking' });
+                this.addEventListener(sendBtn, 'click', (ev) => {
+                    ev.preventDefault?.();
+                    verdict.textContent = fb.missed;
+                    verdict.dataset.verdict = 'missed';
+                    sendBtn.disabled = true;
+                });
+                out.appendChild(sendBtn);
+            }
+            if (verdict) out.appendChild(verdict);
         });
         sec.append(btn, out);
         this.body.appendChild(sec);
