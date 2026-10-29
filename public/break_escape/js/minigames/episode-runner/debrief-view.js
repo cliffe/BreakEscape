@@ -395,7 +395,11 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
         // hidden entirely when the set has no phish at all (total 0), where the line is meaningless.
         if (Number.isFinite(result?.reportRate)) {
             const pct = Math.round(result.reportRate * 100);
-            const tmpl = isObj(strings) && isStr(strings.reportedPct) ? strings.reportedPct : 'Reported {pct}% of the phish';
+            // batch-8: the set's resultCopy.reportedPct is the single source shared with the reopened
+            // result card (inbox-triage-minigame.js); the debrief's own strings.reportedPct still wins
+            // where it is set, then the default. {pct} is the percentage.
+            const fromSet = isObj(set?.resultCopy) && isStr(set.resultCopy.reportedPct) ? set.resultCopy.reportedPct : null;
+            const tmpl = fromSet || (isObj(strings) && isStr(strings.reportedPct) ? strings.reportedPct : 'Reported {pct}% of the phish');
             bits.push(tmpl.replace(/\{pct\}/g, String(pct)));
         }
         if (Number.isFinite(result?.verifyCount) && result.verifyCount > 0) bits.push(`Checked by another route: ${result.verifyCount}`);
@@ -416,9 +420,15 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
             const ids = Array.isArray(weak.ties) && weak.ties.length ? weak.ties : [weak.id];
             const counts = `caught ${weak.caught} of ${weak.caught + weak.missed}`;
             const names = ids.map((id) => skillName(id, set));
-            root.appendChild(el('p', 'aw-weakest', names.length === 1
-                ? `The tell most often missed: ${names[0]} (${counts}).`
-                : `The tells most often missed: ${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} (${counts} each).`));
+            // batch-8: the "tell(s) most often missed" frame is overridable (strings.weakestTell /
+            // weakestTells, with {names} and {counts}) for a non-phishing set where "tell" reads as
+            // phishing jargon; the skill names themselves already follow set.skillNames. Default unchanged.
+            const one = names.length === 1;
+            const joined = one ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+            const tmpl = one
+                ? (isObj(strings) && isStr(strings.weakestTell) ? strings.weakestTell : 'The tell most often missed: {names} ({counts}).')
+                : (isObj(strings) && isStr(strings.weakestTells) ? strings.weakestTells : 'The tells most often missed: {names} ({counts} each).');
+            root.appendChild(el('p', 'aw-weakest', tmpl.replace(/\{names\}/g, joined).replace(/\{counts\}/g, counts)));
         }
     }
     // disc_visible: the real items, after the cards it may point at.

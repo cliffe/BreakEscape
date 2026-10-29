@@ -2267,7 +2267,9 @@
             "defendOnly": {"type": "string"},
             "allRight": {"type": "string", "description": "The debrief line on a round with nothing to review (default 'You read every one of these the right way. Nothing to pick over here.'). Honoured by debrief-view.js; add here so an episode can set it (E19 B1)"},
             "allPhishRight": {"type": "string", "description": "The debrief line on a clean round where a real one was reported (default 'Every phish was caught, with every tell named.'). For a non-phishing set where 'phish' is wrong (batch-6 C2)"},
-            "reportedPct": {"type": "string", "description": "The stored-reopen summary line 'Reported {pct}% of the phish' ({pct} is the percentage). Hidden when the set has no phish at all. For a non-phishing set (batch-6 C3)"},
+            "reportedPct": {"type": "string", "description": "The stored-reopen summary line 'Reported {pct}% of the phish' ({pct} is the percentage). Hidden when the set has no phish at all. For a non-phishing set (batch-6 C3). batch-8: the defend set's resultCopy.reportedPct wins over this and also covers the reopened result card; prefer setting it there so both read the same"},
+            "weakestTell": {"type": "string", "description": "batch-8: the debrief's weakest-skill line when one skill was missed most ({names} is the skill, {counts} is 'caught X of Y'; default 'The tell most often missed: {names} ({counts}).'). For a non-phishing set where 'tell' reads as phishing jargon"},
+            "weakestTells": {"type": "string", "description": "batch-8: the debrief's weakest-skill line when skills tied ({names} is the joined list, {counts} is 'caught X of Y'; default 'The tells most often missed: {names} ({counts} each).'). For a non-phishing set where 'tells' reads as phishing jargon"},
             "defendIntro": {"type": "string", "description": "Replaces the runner's fixed defend-stage intro, which talks about an inbox (wrong for a page or call set)"},
             "writeReloadNote": {"type": "string", "description": "batch-6 (E14 F11): the write-stage launch note that a close/reload starts the compose draft again (default 'If you close or reload before you send, your draft starts again.'). '' suppresses it"},
             "flipMissed": {"type": "string", "description": "The flip's line after a send that did not land"},
@@ -2906,12 +2908,15 @@
           "properties": {
             "weakest": {"type": "string", "description": "After 'Weakest skill: ...'"},
             "noFlags": {"type": "string", "description": "When the learner named no flags"},
-            "noFlagsLead": {"type": "string", "description": "batch-5 (E17): the sentence before noFlags (default \"You didn't name any flags on these messages, so there's nothing to grade skill by skill.\"). For a non-phishing set where 'name any flags' reads wrongly."}
+            "noFlagsLead": {"type": "string", "description": "batch-5 (E17): the sentence before noFlags (default \"You didn't name any flags on these messages, so there's nothing to grade skill by skill.\"). For a non-phishing set where 'name any flags' reads wrongly."},
+            "reportedPct": {"type": "string", "description": "batch-8: the reopened result card's report line AND the debrief's stored-reopen summary, one shared source ({pct} is the percentage; default 'Reported {pct}% of the phish'). On reopen a set value replaces the 'Reported rather than just deleted' / 'N% of the phish' label-value pair with one sentence; in the debrief it wins over strings.reportedPct. For a non-phishing set."},
+            "criticalLead": {"type": "string", "description": "batch-8: the result card's critical-miss lead, the phrase after 'One answer'/'N answers' (default 'let an attacker straight in'). For a non-phishing set where no attacker is let in; the labelled-miss branch ('missed something that needed reporting') is used unchanged."}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
         },
         "reportReplyFrom": {"type": "string", "minLength": 1, "description": "The prefix on the reply shown after a correct report (default 'IT Security')"},
+        "reportReply": {"type": "string", "minLength": 1, "description": "batch-8: the set-wide default reply body shown after a correct report (default \"Thanks. Confirmed as a phish, we've pulled it from the other inboxes.\"). A per-item truth.reportReply still wins. For a non-phishing set where 'phish'/'inboxes' is wrong across every reported item."},
         "skillNames": {"type": "object", "additionalProperties": {"type": "string"}, "description": "Skill name per scenario-local tell id, for the result breakdown (built-in tells keep theirs)"},
         "tellStrings": {"type": "object", "additionalProperties": {"type": "string"}, "description": "Red-flag sentence per scenario-local tell id, for the review card (built-in tells keep theirs; a message's factorStrings still win)"},
         "labels": {

@@ -474,6 +474,18 @@ module ValidateSocial
           issues << warn_('strings.teamLine has no {n}; the line would not show the count')
         end
       end
+      # batch-8: the weakest-skill line overrides carry the skill name and the catch count through
+      # {names} and {counts}; a non-empty string with neither would drop both.
+      %w[weakestTell weakestTells].each do |key|
+        next unless strings.key?(key)
+
+        t = strings[key]
+        if !t.is_a?(String) || t.strip.empty?
+          issues << err("strings.#{key} must be a non-empty string; drop the key to keep the default line")
+        elsif !t.include?('{names}')
+          issues << warn_("strings.#{key} has no {names}; the line would not show the skill")
+        end
+      end
       %w[conceptPanel voicePanel].each do |key|
         next unless strings.key?(key)
 

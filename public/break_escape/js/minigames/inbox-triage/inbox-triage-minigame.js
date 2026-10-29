@@ -1042,8 +1042,12 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             card.appendChild(el('p', 'tri-header-note', `Header note: ${truth.headerNote}`));
         }
         if (ans.verdict === 'report') {
+            // batch-8: a per-item truth.reportReply wins; else the set's own reportReply default
+            // (set.reportReply), for a non-phishing set where "Confirmed as a phish ... inboxes" is
+            // wrong across every reported item; else the built phish wording, unchanged.
             const reply = truth.isPhish
-                ? (truth.reportReply || "Thanks. Confirmed as a phish, we've pulled it from the other inboxes.")
+                ? (truth.reportReply || (isStr(this.set?.reportReply) && this.set.reportReply.trim() ? this.set.reportReply
+                    : "Thanks. Confirmed as a phish, we've pulled it from the other inboxes."))
                 : null;
             if (reply) card.appendChild(el('p', 'tri-it-reply', `${this._replyFrom()}: ${reply}`));
         }
@@ -1279,8 +1283,21 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
         const nums = el('dl', 'tri-numbers');
         const addNum = (k, v, key) => { const dd = el('dd', null, v); dd.dataset.number = key; nums.append(el('dt', null, k), dd); };
+        let appendNums = true;
         if (stored) {
-            addNum('Reported rather than just deleted', `${Math.round(reportRate * 100)}% of the phish`, 'reportRate');
+            // batch-8: the reopened result card shares the debrief's reportedPct override
+            // (set.resultCopy.reportedPct, {pct} is the percentage), so a non-phishing set reads the
+            // same on reopen as it does in the debrief. The debrief's reportRate line (debrief-view.js)
+            // reads the same key off the set. Set → one sentence in place of the label/value pair;
+            // unset → the default "Reported rather than just deleted" / "N% of the phish", unchanged.
+            const reopenTmpl = isObj(this.set?.resultCopy) && isStr(this.set.resultCopy.reportedPct) && this.set.resultCopy.reportedPct.trim()
+                ? this.set.resultCopy.reportedPct : null;
+            if (reopenTmpl) {
+                p.appendChild(el('p', 'tri-reported', reopenTmpl.replace(/\{pct\}/g, String(Math.round(reportRate * 100)))));
+                appendNums = false;
+            } else {
+                addNum('Reported rather than just deleted', `${Math.round(reportRate * 100)}% of the phish`, 'reportRate');
+            }
         } else {
             const info = this._queueInfo();
             // A genuine item is handled right when its verdict earned full marks, the same rule
@@ -1299,7 +1316,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             if (this.profile === 'analyst') addNum('False alarms', String(result.falseAlarms), 'falseAlarms');
             if (this.verifyEnabled && result.verifyCount) addNum('Checked by another route', String(result.verifyCount), 'verify');
         }
-        p.appendChild(nums);
+        if (appendNums) p.appendChild(nums);
 
         if (!stored && result.criticalMisses?.length) {
             // When every critical miss carries its own truth.missLabel (a genuine item that should
@@ -1315,8 +1332,13 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             const nameLine = missItems.length
                 ? ` ${missItems.length === 1 ? 'The item was' : 'The items were'} ${missItems.map((t) => `'${t}'`).join(missItems.length === 2 ? ' and ' : ', ')}.`
                 : '';
+            // batch-8: the "let an attacker straight in" lead is overridable (set.resultCopy.criticalLead)
+            // for a non-phishing set where no attacker is let in (an acceptable-use or data-handling
+            // miss); default unchanged. The allLabelled branch already reads without "attacker".
+            const criticalLead = (isObj(this.set?.resultCopy) && isStr(this.set.resultCopy.criticalLead) && this.set.resultCopy.criticalLead.trim())
+                ? this.set.resultCopy.criticalLead : 'let an attacker straight in';
             p.appendChild(el('p', 'tri-critical',
-                `${result.criticalMisses.length === 1 ? 'One answer' : `${result.criticalMisses.length} answers`} ${allLabelled ? 'missed something that needed reporting' : 'let an attacker straight in'} ` +
+                `${result.criticalMisses.length === 1 ? 'One answer' : `${result.criticalMisses.length} answers`} ${allLabelled ? 'missed something that needed reporting' : criticalLead} ` +
                 `(${criticalWhat(result.criticalKinds, labels, this.set?.criticalWhat) || "approving a sign-in you didn't start, or doing what an impostor asked on a call"}).` + nameLine + ` ` +
                 `That costs ${CRITICAL_PENALTY} points off the round${result.criticalMisses.length === 1 ? "" : " each"}, on top of the item itself.`));
         }
