@@ -110,7 +110,7 @@ function verdictWordAndLine(answer, msg, phish, labels = null, scoring = null) {
     }
     if (kind === 'call' || kind === 'push') {
         const action = actionById(kind, answer.action, answer.verdict, labels);
-        return { word: action.label, line: kindVerdictLine(kind, phish, answer.verdict) || '' };
+        return { word: action.label, line: verdictFeedbackOverride(labels, answer.verdict, phish) || kindVerdictLine(kind, phish, answer.verdict) || '' };
     }
     // truth.kindLine (optional): what a genuine-but-report item really was, in place of "built to look right".
     const kindLine = phish && answer.verdict === 'trust' && isObj(msg?.truth) && isStr(msg.truth.kindLine) ? msg.truth.kindLine : null;

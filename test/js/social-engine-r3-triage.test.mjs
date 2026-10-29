@@ -128,6 +128,23 @@ test('P3 N16: Comply on a genuine, unchecked caller is not full marks; Ring back
     assert.equal(num(s, 'realTrusted'), '0 of 1');
 });
 
+test('batch-5 E12: labels.verdictFeedback replaces the built call line; verdictPoints makes Comply full marks', () => {
+    const desk = { ...genuineCall, id: 'call_client', truth: { ...genuineCall.truth, verdictPoints: { trust: 60 } } };
+    const s = open(awareSet([desk], { labels: { verdictFeedback: { trust: { real: 'That visitor was genuine and on the list.' } } } }));
+    click($(s, '.tri-start'));
+    act(s, 'call_client', 'comply');
+    const text = $(s, '.tri-card-verdict').textContent;
+    assert.match(text, /That visitor was genuine and on the list\./);
+    assert.doesNotMatch(text, /ring back|without checking/);
+    // without the override the built phone line is unchanged
+    const s2 = open(awareSet([genuineCall]));
+    click($(s2, '.tri-start'));
+    act(s2, 'call_gordon', 'comply');
+    assert.match($(s2, '.tri-card-verdict').textContent, /ring back/);
+    // verdictPoints: Comply scores full marks on the item that opts in
+    assert.equal(scoreTriage({ messages: [desk], answers: [{ id: 'call_client', verdict: 'trust', action: 'comply', flags: [] }] }).perMessage[0].score, 100);
+});
+
 test('P3 N17: an approved attacker prompt costs CRITICAL_PENALTY more and caps the band below the top', () => {
     const msgs = [pushPhish, ...Array.from({ length: 9 }, (_, i) => ({ ...realMail, id: `r${i}` }))];
     const answers = [{ id: 'push_night', verdict: 'trust', action: 'approve', flags: [] },

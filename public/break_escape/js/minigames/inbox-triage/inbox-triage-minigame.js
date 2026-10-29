@@ -848,11 +848,15 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     _verdictLine(rec, verdict) {
         const phish = rec.truth.isPhish === true;
         const aware = this.profile === 'awareness';
-        const own = kindVerdictLine(kindOf(rec), phish, verdict);
-        if (own) return own;
         // A set may override the per-verdict feedback line (F-E10-2) so a relabelled verdict does
         // not leak the engine word; a per-item truth.reportLine / verifyLine still wins (below).
         const fb = verdictFeedbackOverride(this.labels, verdict, phish);
+        // The call and push kinds carry their own built lines (phone wording: "ring back on the
+        // number you hold"); a set that relabels them for another setting (E12's reception desk)
+        // overrides them through the same labels.verdictFeedback (batch-5 E12 follow-up).
+        const kind = kindOf(rec);
+        const own = (fb && (kind === 'call' || kind === 'push')) ? fb : kindVerdictLine(kind, phish, verdict);
+        if (own) return own;
         if (phish) {
             // truth.kindLine (optional) says what this item really was, for a genuine message the
             // learner should still report, where "This one was a phish" would be false.
