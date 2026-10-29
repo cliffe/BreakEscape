@@ -1,0 +1,48 @@
+{
+  "_about": "Full-episode-only keys for scenarios/awareness_e9_passwords/scenario.json.erb. The wiring agent pastes each value into the full erb at the path its note gives. None of these is in the fragment-erb parity comparison (episode-level, or allow-listed erb-only), and the generated defend-only shell never carries them. Authored by opus48. ENG-02 (the guess stage), ENG-01 (flipAftermath, stepLabels), ENG-09b (conceptPanel array) and ENG-08 (schema) must have landed before the full shell validates.",
+
+  "_notes": {
+    "guess": "Paste at social.awarenessEpisode.guess (ENG-02). Episode-level, full-only; dropped from the defend-only shell because `guess` is an ATTACK_STAGES id. Each patternSlots[].factId and reuseStep.factId names a declared se_intel_* fact (attack.json intelFacts); landedGlobal (guess_e9_landed) must be a declared global. Each slot's template interpolates ONLY its own fact's token (attack.json provides[0].value: team->Pennington, pet->Bramble, year->1994), fixed characters are literals, and tokens never cross slots. E09_passwords.md section 9 puts this in attack.json; it is episode-level (social.awarenessEpisode.guess, ENG-02), so it is authored here as a full-only key like flipAftermath, and the wiring agent pastes it into the full erb. See the open question for the ENG-02 owner.",
+    "flipAftermath": "Paste at social.awarenessEpisode.flipAftermath (ENG-01). Episode-level, items authored inline; the runner shows it only when the attack landed (guess_e9_landed true). Re-seats the learner in their own account under the prompt flood. The watch-only flood itself (the authenticator mfaDecision { pushes, approvesAt } / pushTemplate reused from E3, E09 section 10) is flip-view wiring the Sonnet wiring agent copies from scenarios/awareness_e3_helpdesk_reset; it is not an episode-level key, so it is not reproduced here. The aftermath items carry no id used by the defend set (the fake-IT sign here is fa_it_text; the scored defend card is e9_fake_it_number).",
+    "stepLabels": "Paste at social.awarenessEpisode.stepLabels (ENG-01, reused by ENG-02). Labels the guess step 'Guess list'. The built shells author none, so they are unchanged.",
+    "conceptPanel": "Paste at social.awarenessEpisode.strings.conceptPanel (ENG-09b array form). IDENTICAL to the value in e9/defend.json awarenessEpisode.strings.conceptPanel: the generator carries that into the defend-only shell too, so all four cards show in both variants. Reproduced here only so the full erb's strings block carries them. conceptPanel is value-exempt and erb-only-OK in the parity allow-list, so no allow-list change is needed."
+  },
+
+  "guess": {
+    "target": "colin",
+    "commonList": ["123456", "password", "qwerty", "tarrowby"],
+    "patternSlots": [
+      { "id": "team", "factId": "tarrowby_mather_team", "template": "{team}1994" },
+      { "id": "pet",  "factId": "tarrowby_mather_pet",  "template": "{pet}!" },
+      { "id": "year", "factId": "tarrowby_founded",     "template": "Tarrowby{year}" }
+    ],
+    "reuseStep": {
+      "site": "RiverReach Angling", "domain": "riverreachangling.example",
+      "factId": "tarrowby_mather_forum", "landsOn": "work",
+      "note": "One breach of a small site opened the work account."
+    },
+    "passphraseDemo": { "words": ["otter", "ladder", "crimson"], "neverLands": true },
+    "landedGlobal": "guess_e9_landed",
+    "note": "No real password is typed here; every guess is made up."
+  },
+
+  "flipAftermath": {
+    "heading": "Now it's your phone",
+    "victimName": "you",
+    "intro": "A reused password opened Colin's account in seconds, no clever cracking at all. The other end of that is a phone buzzing in the dark. Here is yours, a few minutes after someone got hold of a password of yours.",
+    "items": [
+      { "id": "fa_push_flood", "kind": "push", "push": { "app": "Tarrowby Sign-in", "account": "you@tarrowby.example", "location": "Unknown location, outside the UK", "device": "Windows PC" }, "note": "A sign-in prompt you did not start, at 02:40, then another, then another. Someone has your password but not your phone." },
+      { "id": "fa_it_text", "kind": "sms", "subject": "A message that says it's IT", "body": "We can see the failed sign-ins. Read back the number on your screen and we'll stop the prompts.", "note": "A message dressed up as IT, offering to make the prompts stop if you read back the number. The number is on their screen, not IT's." }
+    ],
+    "line": "They can't get past your phone, so they lean on it. Deny what you didn't start, report it, and let the service desk change the password."
+  },
+
+  "stepLabels": { "guess": "Guess list" },
+
+  "conceptPanel": [
+    { "heading": "How passwords get stolen", "text": "Most passwords aren't cracked by genius. They're guessed from the obvious first (123456, a team, a pet, the company name and a year), reused from a breach of another site, phished through a fake sign-in page, or simply handed over. A different password for every account, kept in a manager, is the one habit that blunts all of those at once." },
+    { "heading": "The sign-in ladder", "text": "Turn on a second step beyond the password wherever you can. A passkey is best: it only works on the real site, so it can't be phished or relayed. An authenticator app with number matching is next. A text code is a last resort, but still far better than a password alone." },
+    { "heading": "Browsers, notes and managers", "text": "A password manager makes and remembers a different password for every account and fills it in only on the right site. Your browser's own manager is fine for personal accounts on your own devices; at work, use what the organisation provides. Never leave a password on a note on a shared desk, monitor or keyboard." },
+    { "heading": "What a passkey is", "text": "A passkey replaces the password with a secret kept on your device or in your manager, unlocked the way you unlock your phone. Because it is tied to the real website, it can't be typed into a fake page, reused on another site, or leaked in someone else's breach." }
+  ]
+}
