@@ -17,6 +17,27 @@
 
   "triageSets": [
     {
+      "bands": [
+        {
+          "min": 85,
+          "headline": "Sharp: you passed on the right items and knew why"
+        },
+        {
+          "min": 60,
+          "headline": "Getting there: a few reasons slipped past"
+        },
+        {
+          "min": 0,
+          "headline": "Worth practising: here's where to look first"
+        }
+      ],
+      "reportReply": "Thanks. The DPO has it and will take it from here.",
+      "resultCopy": {
+        "noFlags": "Next time, tick what you noticed. The review cards show what each item was really about.",
+        "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+        "criticalLead": "let a data issue go unseen",
+        "reportedPct": "Passed on {pct}% of the data issues and fakes"
+      },
       "id": "e11_carrholme_desk",
       "_prefix": "Full-episode prefix (id e11_misdirected_data). The defend-only shell (id e11_misdirected_data_defend) sets episode_e11_misdirected_data_defend_defend_ instead (the built double-suffix rule for an id already ending _defend). No stage on purpose (as E1, E4).",
       "_order": "Teaching order (brief section 11): the genuine breach heads-up first (so the flip's misdirected sheet is met at once by the safe response), then the disclosure call, the look-alike payroll phish, the subject access request inside a complaint, the inbound breach, then the calibration item that data protection is not a reason to refuse help.",
@@ -203,13 +224,14 @@
     "defend": { "setId": "e11_carrholme_desk", "reportAlwaysVisible": true },
     "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
     "strings": {
+      "weakestTells": "The reasons most often missed: {names} ({counts} each).",
+      "weakestTell": "The reason most often missed: {names} ({counts}).",
       "brief": "You're on an authorised exercise at Carrholme Services, a fictional firm. You are covering the Care Laundry desk this morning, clearing the queue. First you make some of the ordinary choices anyone would make on a busy morning; then you see, six months on, where each one led. Then you take the desk's inbox one item at a time. Only the inbox is scored.",
       "flipHeading": "Six months later",
       "teamLine": "By reporting or checking {n} of these rather than handling them alone, you got the right person looking at the data issues and the fakes.",
       "defendIntro": "Take the Care Laundry desk inbox one item at a time. Anything about someone's personal data, a request to see, correct or delete it, or a breach, goes to the data protection officer (the DPO, who handles personal data mistakes) the same day. Report or check anything else that doesn't sit right.",
       "mondayCard": "If personal data goes somewhere it should not, or someone asks to see, correct or delete their data, or complains about how we used it, tell your DPO the same day. Do not wait to be sure, and do not try to fix it alone.",
       "allPhishRight": "Every data issue and fake was passed on, with every reason named.",
-      "reportedPct": "Passed on {pct}% of the data issues and fakes",
       "noBlameLine": "Mistakes with personal data happen to careful people, usually when they are busy. What turns a mistake into harm is silence. Nobody at Carrholme is in trouble for reporting, including their own slip.",
       "defendOnly": "Any of these can catch a careful person on a busy morning. The ones you were caught out by are shown below, with what good looks like. Reporting fast is what limits the harm.",
       "conceptPanel": {
