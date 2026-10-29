@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// render.mjs <edit.json> <aspect> <out.mp4> : silent video render through the renderer API, concurrency 1 (run under nice -n 19).
+// render.mjs <edit.json> <aspect> <out.mp4> : silent video render through the renderer API, concurrency 1 (BE_CONCURRENCY overrides; run under nice -n 19).
 import fs from 'node:fs'; import path from 'node:path';
 import { selectComposition, renderMedia } from '@remotion/renderer';
 import { bundleWithTakes, cleanupBundle, reniceChildren, readProps, browserExecutable } from './bundle-lib.mjs';
@@ -14,7 +14,7 @@ try {
   let last = -1;
   await renderMedia({
     composition, serveUrl, inputProps, browserExecutable, outputLocation: out,
-    codec: 'h264', crf: 14, pixelFormat: 'yuv420p', imageFormat: 'png', muted: true, concurrency: 1, logLevel: 'error',
+    codec: 'h264', crf: 14, pixelFormat: 'yuv420p', imageFormat: 'png', muted: true, concurrency: Math.max(1, Number(process.env.BE_CONCURRENCY) || 1), logLevel: 'error',
     onProgress: ({ renderedFrames }) => { const p = Math.floor((renderedFrames / composition.durationInFrames) * 10); if (p !== last) { last = p; console.log(`  ${renderedFrames}/${composition.durationInFrames}`); } },
   });
 } finally { cleanupBundle(serveUrl); }

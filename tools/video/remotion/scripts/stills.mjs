@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// stills.mjs <edit.json> <aspect> <outDir> [--only substr]: one still per card midpoint, transition boundaries and logo morph points.
+// stills.mjs <edit.json> <aspect> <outDir> [--only substr] [--edges]: (--edges adds the first and last clean frame of every gameplay shot) one still per card midpoint, transition boundaries and logo morph points.
 // Bundles once and uses the renderer API (cheaper than a CLI call per frame). Run under nice -n 19.
 import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
 import { bundleWithTakes, cleanupBundle, reniceChildren, readProps, browserExecutable } from './bundle-lib.mjs';
@@ -18,6 +18,10 @@ for (const s of tl.shots) {
     if (s.kind === 'logo_end') frames.push([`logo_end_mid`, s.startFrame + Math.floor(s.frames * 0.5)]);
   } else {
     frames.push([`shot_${s.id}_mid`, s.startFrame + Math.floor(s.frames * 0.5)]);
+    if (process.argv.includes('--edges')) {
+      const nxt = tl.joins[s.index + 1];
+      frames.push([`shot_${s.id}_first`, s.startFrame + (tl.joins[s.index] ? 5 : 0)], [`shot_${s.id}_last`, s.endFrame - 1 - (nxt ? 5 : 0)]);
+    }
     if (s.pushin) frames.push([`shot_${s.id}_end`, s.endFrame - 1]);
   }
 }

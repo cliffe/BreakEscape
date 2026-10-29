@@ -2,6 +2,7 @@ import React from 'react';
 import { OffthreadVideo, staticFile } from 'remotion';
 import { Placeholder } from './Placeholder';
 import { framingAt, visibleRect } from '../timeline.js';
+import { Caption } from './Caption';
 
 /**
  * A gameplay shot: the 1920x1080 take (or a placeholder pattern) scaled with nearest-neighbour (image-rendering: pixelated),
@@ -13,7 +14,8 @@ export const Gameplay: React.FC<{ shot: any; w: number; h: number; aspect: strin
   const fr = framingAt(shot, aspect, t);
   const r = visibleRect(fr, w, h, source);
   const [sw, sh] = source;
-  const tx = -(r.x0 * sw * r.scale), ty = -(r.y0 * sh * r.scale);
+  // whole output pixels: keeps integer zooms (2x, 3x) on the pixel grid, so source pixels stay square
+  const tx = -Math.round(r.x0 * sw * r.scale), ty = -Math.round(r.y0 * sh * r.scale);
   const has = shot.source?.file && available[`takes/${shot.source.file}`];
   const inSec = shot.source?.in ?? 0;
   const startFrom = Math.round(inSec * fps);
@@ -27,6 +29,7 @@ export const Gameplay: React.FC<{ shot: any; w: number; h: number; aspect: strin
           <Placeholder shot={shot} localSec={frame / fps} sourceSec={sourceSec} />
         )}
       </div>
+      {shot.caption?.[aspect] ? <Caption shot={shot} w={w} h={h} localSec={frame / fps} /> : null}
     </div>
   );
 };

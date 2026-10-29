@@ -42,7 +42,7 @@ export function framingAt(shot, aspect, t, sourceSize = [1920, 1080]) {
   if (p) {
     const a = p.start ?? 0, b = p.end ?? 1; let u = Math.max(0, Math.min(1, (t - a) / Math.max(1e-6, b - a)));
     if (p.ease === 'inOut') u = u * u * (3 - 2 * u); else if (p.ease === 'out') u = 1 - (1 - u) * (1 - u);
-    const fz = p.from_zoom ?? 1, tz = p.to_zoom ?? 2; const foc = (p.focus_by_aspect && p.focus_by_aspect[aspect]) || p.focus || { x: cx, y: cy };
+    const fz = p.from_zoom ?? 1, tz = (p.to_zoom_by_aspect && p.to_zoom_by_aspect[aspect]) ?? p.to_zoom ?? 2; const foc = (p.focus_by_aspect && p.focus_by_aspect[aspect]) || p.focus || { x: cx, y: cy };
     zoom = zoom * (fz + (tz - fz) * u);
     cx = cx + (foc.x - cx) * u; cy = cy + (foc.y - cy) * u;
   }

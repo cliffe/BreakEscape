@@ -2,15 +2,15 @@
  "id": "m01_teaser",
  "title": "Break Escape m01 First Contact: 30 s teaser",
  "fps": 30,
- "length": 30.0,
- "status": "placeholder: takes not yet recorded; shots without an existing take file render a generated test pattern",
+ "length": 30,
+ "status": "final selects: M01_TEASER_SELECTS.md (stage 3)",
  "music": {
   "track": "Noir/Midnight Cipher Chase.mp3",
   "analysis": "midnight_cipher_chase.json",
-  "start": 107.023,
-  "length": 30.0,
+  "start": 109.023,
+  "length": 30,
   "gain_db": 0,
-  "fade_in": 0.0,
+  "fade_in": 0,
   "fade_out": 0.9,
   "alternatives": [
    "SpyAction/Cold Bond Circuit.mp3 @53.847",
@@ -19,13 +19,13 @@
   ]
  },
  "beat": {
-  "bpm": 120.0,
+  "bpm": 120,
   "period": 0.5,
-  "offset": 0.0,
-  "note": "window start is a downbeat of the track; offset is beat 1 within the window. Quiet breakdown at 6-14 s (briefing and card), drop at 14 s (montage)."
+  "offset": 0,
+  "note": "window start (109.023 s in the track) is a downbeat; offset is beat 1 within the window. Quiet breakdown ~6-12 s, groove drop at 12.0 s (lights snap on), fade out over the last 0.9 s."
  },
  "duck": {
-  "db": -9.0,
+  "db": -10,
   "attack": 0.12,
   "release": 0.3
  },
@@ -62,7 +62,7 @@
   {
    "id": "logo_morph",
    "type": "card",
-   "duration": 3.0,
+   "duration": 2.5,
    "snap": true,
    "join": {
     "type": "glitch",
@@ -94,63 +94,81 @@
    },
    "source": {
     "file": "t01_title.trimmed.mkv",
-    "in": 10.6,
-    "out": 12.1
+    "in": 7.85,
+    "out": 9.35
    },
    "placeholder": "IN-GAME TITLE: typing 'First Contact'",
    "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.468,
+     "zoom": 3
+    },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.0
+     "cy": 0.468,
+     "zoom": 1.6875
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.468,
+     "zoom": 3
     }
    },
    "audio": {
     "gain_db": -6
    },
    "spoiler": {
-    "reviewed": false,
+    "reviewed": true,
     "shows_code": false,
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "title screen only"
+    "note": "title screen typing \"First Contact\" only"
    }
   },
   {
    "id": "hax_briefing",
    "type": "gameplay",
-   "duration": 4.0,
+   "duration": 4,
    "snap": true,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t02_hax_briefing.trimmed.mkv",
-    "in": 1.0,
-    "out": 5.0
+    "in": 19.4,
+    "out": 23.4
    },
-   "placeholder": "AGENT HAX BRIEFING (portrait dialogue)",
+   "placeholder": "AGENT HAX BRIEFING",
    "dialogue": true,
    "lines": [
     {
      "speaker": "Agent HaX",
-     "text": "Once you know what we're dealing with, contact me. We'll figure out how to stop it.",
-     "start": 0.3,
-     "end": 3.9
+     "text": "Whatever they're planning, it's active. And it's dangerous.",
+     "start": 0.2,
+     "end": 3.78
     }
    ],
    "framing": {
-    "9:16": {
-     "cx": 0.68,
+    "16:9": {
+     "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.698,
+     "cy": 0.444,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.62,
+     "cx": 0.4635,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
     }
+   },
+   "caption": {
+    "9:16": true
    },
    "audio": {
     "gain_db": 0,
@@ -158,12 +176,12 @@
     "duck_music": true
    },
    "spoiler": {
-    "reviewed": false,
+    "reviewed": true,
     "shows_code": false,
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "briefing line, no names of culprits or codes"
+    "note": "HaX briefing line: names no culprit, code or ending"
    }
   },
   {
@@ -191,222 +209,303 @@
   {
    "id": "m_lights",
    "type": "gameplay",
-   "duration": 1.5,
+   "duration": 3,
    "snap": true,
    "join": {
     "type": "glitch",
     "frames": 8
    },
    "source": {
-    "file": "t03_lights.trimmed.mkv",
-    "in": 2.0,
-    "out": 3.5
+    "file": "t03_lights_on.trimmed.mkv",
+    "in": 2.63,
+    "out": 5.63
    },
-   "placeholder": "WALK LIT ROOM -> DARK ROOM, LIGHTS SNAP ON",
+   "placeholder": "LIGHTS SNAP ON",
    "framing": {
-    "9:16": {
+    "16:9": {
      "cx": 0.5,
-     "cy": 0.55,
-     "zoom": 1.0
-    }
-   },
-   "audio": {
-    "gain_db": -6
-   },
-   "spoiler": {
-    "reviewed": false,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": ""
-   }
-  },
-  {
-   "id": "m_lockpick",
-   "type": "gameplay",
-   "duration": 1.0,
-   "snap": true,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t04_lockpick.trimmed.mkv",
-    "in": 1.0,
-    "out": 2.0
-   },
-   "placeholder": "LOCKPICKING MINIGAME",
-   "framing": {
+     "cy": 0.5,
+     "zoom": 1
+    },
     "9:16": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.0
-    }
-   },
-   "audio": {
-    "gain_db": -6
-   },
-   "spoiler": {
-    "reviewed": false,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": ""
-   }
-  },
-  {
-   "id": "m_phone",
-   "type": "gameplay",
-   "duration": 1.5,
-   "snap": true,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t05_phone.trimmed.mkv",
-    "in": 1.0,
-    "out": 2.5
-   },
-   "placeholder": "PHONE CHAT",
-   "framing": {
-    "9:16": {
-     "cx": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.58,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
     }
    },
    "audio": {
     "gain_db": -6
    },
-   "spoiler": {
-    "reviewed": false,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": ""
-   }
-  },
-  {
-   "id": "m_keypad",
-   "type": "gameplay",
-   "duration": 1.0,
-   "snap": true,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t06_keypad.trimmed.mkv",
-    "in": 1.0,
-    "out": 2.0
-   },
-   "placeholder": "KEYPAD (partial entry only)",
-   "framing": {
-    "9:16": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.0
-    }
-   },
-   "audio": {
-    "gain_db": -6
-   },
-   "spoiler": {
-    "reviewed": false,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": true,
-    "note": "must show a partial code only"
-   }
-  },
-  {
-   "id": "m_siem",
-   "type": "gameplay",
-   "duration": 1.5,
-   "snap": true,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t07_siem.trimmed.mkv",
-    "in": 1.0,
-    "out": 2.5
-   },
-   "placeholder": "SIEM / LOG TERMINAL",
-   "framing": {
-    "9:16": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.0
-    }
-   },
-   "audio": {
-    "gain_db": -6
-   },
-   "spoiler": {
-    "reviewed": false,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": ""
-   }
-  },
-  {
-   "id": "card_hacking",
-   "type": "card",
-   "duration": 1.5,
-   "snap": true,
-   "join": {
-    "type": "glitch",
-    "frames": 8
-   },
-   "text": [
-    "Real Hacking"
-   ],
    "spoiler": {
     "reviewed": true,
     "shows_code": false,
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "card text only"
+    "note": "lit reception and office, no text, no code"
    }
   },
   {
-   "id": "flag_station",
+   "id": "m_lockpick",
    "type": "gameplay",
-   "duration": 1.5,
+   "duration": 1,
    "snap": true,
    "join": {
-    "type": "glitch",
-    "frames": 8
+    "type": "cut"
    },
    "source": {
-    "file": "t08_flagstation.trimmed.mkv",
-    "in": 1.0,
-    "out": 2.5
+    "file": "t04_lockpick.trimmed.mkv",
+    "in": 9,
+    "out": 10
    },
-   "placeholder": "DROP-SITE FLAG STATION (stands in for VM)",
+   "placeholder": "LOCKPICK",
    "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.375,
+     "zoom": 3
+    },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1.0
+     "cy": 0.45,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.36,
+     "zoom": 2
     }
    },
    "audio": {
     "gain_db": -6
    },
    "spoiler": {
-    "reviewed": false,
+    "reviewed": true,
     "shows_code": false,
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "no flag value visible"
+    "note": "lockpick minigame, pins setting"
+   }
+  },
+  {
+   "id": "m_phone",
+   "type": "gameplay",
+   "duration": 1,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_phone.trimmed.mkv",
+    "in": 5,
+    "out": 6
+   },
+   "placeholder": "PHONE",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.27,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.27,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "phone chat before the HaX reply (no Maya reply visible)"
+   }
+  },
+  {
+   "id": "m_keypad",
+   "type": "gameplay",
+   "duration": 1,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06_keypad.trimmed.mkv",
+    "in": 4.75,
+    "out": 5.75
+   },
+   "placeholder": "KEYPAD",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.37,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.37,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": true,
+    "note": "keypad shows two digits \"19__\" of four: partial and not the real code"
+   }
+  },
+  {
+   "id": "m_unlock",
+   "type": "gameplay",
+   "duration": 1,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04_lockpick.trimmed.mkv",
+    "in": 10.6,
+    "out": 11.6
+   },
+   "placeholder": "LOCK SPRINGS OPEN",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.375,
+     "zoom": 3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.45,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.36,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "lock opens, no code"
+   }
+  },
+  {
+   "id": "m_server",
+   "type": "gameplay",
+   "duration": 1,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t08_flag_station.trimmed.mkv",
+    "in": 0.5,
+    "out": 1.5
+   },
+   "placeholder": "SERVER ROOM",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.38,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "server room, no text"
+   }
+  },
+  {
+   "id": "m_flag",
+   "type": "gameplay",
+   "duration": 1,
+   "snap": true,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t08_flag_station.trimmed.mkv",
+    "in": 6,
+    "out": 7
+   },
+   "placeholder": "FLAG INPUT",
+   "framing": {
+    "16:9": {
+     "cx": 0.25,
+     "cy": 0.435,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.094,
+     "cy": 0.35,
+     "zoom": 1.6875
+    },
+    "1:1": {
+     "cx": 0.14,
+     "cy": 0.4,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "flag input field shows only \"flag{\": no flag value"
    }
   },
   {
@@ -419,7 +518,7 @@
     "frames": 8
    },
    "text": [
-    "Hold Back",
+    "And Hold Back",
     "The Entropy!"
    ],
    "spoiler": {
@@ -434,7 +533,7 @@
   {
    "id": "derek_pushin",
    "type": "gameplay",
-   "duration": 4.0,
+   "duration": 7.5,
    "snap": true,
    "join": {
     "type": "glitch",
@@ -442,43 +541,64 @@
    },
    "source": {
     "file": "t09_derek.trimmed.mkv",
-    "in": 1.0,
-    "out": 5.0
+    "in": 18,
+    "out": 25.5
    },
-   "placeholder": "DEREK PORTRAIT: push-in to UI-free close-up",
+   "placeholder": "DEREK",
    "dialogue": true,
    "lines": [
     {
      "speaker": "Derek Lawson",
      "text": "Murder? No. Think of it as... forced education.",
-     "start": 0.4,
-     "end": 3.6
+     "start": 0.23,
+     "end": 7.4
     }
    ],
    "pushin": {
-    "from_zoom": 1.0,
-    "to_zoom": 2.1,
+    "from_zoom": 1,
+    "to_zoom": 3,
     "focus": {
-     "x": 0.5,
-     "y": 0.36
+     "x": 0.648,
+     "y": 0.2
+    },
+    "focus_by_aspect": {
+     "9:16": {
+      "x": 0.648,
+      "y": 0.3
+     },
+     "1:1": {
+      "x": 0.648,
+      "y": 0.2
+     }
+    },
+    "to_zoom_by_aspect": {
+     "9:16": 1.5
     },
     "ease": "inOut",
     "crops_ui": true,
     "ui_bottom_fraction": 0.24,
-    "start": 0.0,
-    "end": 1.0
+    "start": 0,
+    "end": 0.867
    },
    "framing": {
-    "9:16": {
+    "16:9": {
      "cx": 0.5,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.65,
+     "cy": 0.444,
+     "zoom": 1.125
     },
     "1:1": {
-     "cx": 0.5,
+     "cx": 0.453,
      "cy": 0.5,
-     "zoom": 1.0
+     "zoom": 1
     }
+   },
+   "caption": {
+    "9:16": true
    },
    "audio": {
     "gain_db": 0,
@@ -486,12 +606,12 @@
     "duck_music": true
    },
    "spoiler": {
-    "reviewed": false,
+    "reviewed": true,
     "shows_code": false,
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "antagonist shown as in the reference trailer; no culprit-naming text on screen"
+    "note": "antagonist line as in the existing trailer; no casualty figures or Architect; no culprit-naming text"
    }
   },
   {
@@ -511,30 +631,6 @@
      "scale": 0.3,
      "gap": 0.9
     }
-   ],
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "card text only"
-   }
-  },
-  {
-   "id": "logo_end",
-   "type": "card",
-   "duration": 2.5,
-   "snap": true,
-   "join": {
-    "type": "glitch",
-    "frames": 8
-   },
-   "kind": "logo_end",
-   "text": [],
-   "morph": [
-    "Cyber Security Labs",
-    "Games"
    ],
    "spoiler": {
     "reviewed": true,

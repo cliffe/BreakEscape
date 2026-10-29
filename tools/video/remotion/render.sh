@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # render.sh <edit.json> <aspect: 16:9|9:16|1:1> [--final]
 # sync assets -> lint -> silent Remotion render -> audio mix -> two-pass loudnorm (-14 LUFS) -> mux -> .srt -> contact sheet.
-# Everything runs under nice -n 19 with Remotion concurrency 1 (captures share this machine).
+# Everything runs under nice -n 19 with Remotion concurrency 1 (captures share this machine); BE_CONCURRENCY=2 raises it.
+# Env: BE_VIDEO_SCRATCH (scratch dir), BE_RENDER_DIR (output dir), BE_CONCURRENCY.
 # Outputs in video_out/m01/renders/<edit id>_<aspect>.{mp4,srt,contact.png}.
 set -euo pipefail
 EDIT=${1:?usage: render.sh <edit.json> <aspect> [--final]}; ASPECT=${2:?aspect 16:9|9:16|1:1}; FINAL=${3:-}
