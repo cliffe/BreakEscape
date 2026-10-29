@@ -53,7 +53,7 @@
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "default": "You just entered your password on the real depot sign-in, from the depot, and this prompt is on your own phone from Leeds. A prompt you started yourself is the normal second step, so Approve it. Denying it or reporting it is no error, it just means signing in again."
+              "default": "This prompt is on your own phone, from Leeds, at a normal hour. If you have just signed in yourself, a prompt like this is the normal second step, so Approve it. Denying it or reporting it is no error, it just means signing in again."
             }
           }
         },
@@ -81,7 +81,7 @@
         },
         {
           "id": "e9_fake_it_number",
-          "_note": "Row 3. Phish: the fake 'IT' message that leans on the flood, asking you to read back the number on your screen or tap Approve 'to make them stop'. The scored tell is mfa_number_relay (scenario-local, labelled in flagChips) plus the shared secrecy_or_bypass. Freemail sender, so auth passes; the tell is the ask, not the headers. email kind, so trusting it is a critical miss.",
+          "_note": "Row 3. Phish: the fake 'IT' message that leans on the flood, asking you to read back the number on your screen or tap Approve 'to make them stop'. The scored tell is mfa_number_relay (scenario-local, labelled in flagChips) plus the shared secrecy_or_bypass. Freemail sender, so auth passes; the tells are the ask (mfa_number_relay) and the outside sender address (senderTrust), not the headers. email kind, so trusting it is a critical miss.",
           "from": { "name": "Tarrowby IT Service Desk", "address": "tarrowby.itdesk@mailboxly.example" },
           "to": "you@tarrowby.example",
           "subject": "We can stop those sign-in prompts for you",
@@ -93,8 +93,9 @@
           },
           "truth": {
             "isPhish": true,
-            "flags": ["mfa_number_relay"],
+            "flags": ["mfa_number_relay", "senderTrust"],
             "perFlagNote": {
+              "senderTrust": "The address is an outside mailbox (mailboxly.example), not a Tarrowby one, so it only borrows the service desk's name.",
               "mfa_number_relay": "No genuine IT team asks you to type a number, read back a code or approve a prompt. The number is on the attacker's screen; reading it back, or approving, hands them the account."
             },
             "ifTrusted": "Reading back the number, or approving, lets the sender straight into your account.",
@@ -109,8 +110,8 @@
           "choice": {
             "prompt": "Which of these makes the stronger password?",
             "options": [
-              { "id": "words", "label": "Three random words you don't use anywhere else (for example otter-ladder-crimson)", "verdict": "report" },
-              { "id": "complex", "label": "Your company's name, a year and a symbol on the end (for example Tarrowby2026!)", "verdict": "trust" }
+              { "id": "complex", "label": "Your company's name with a capital, a year and a symbol on the end (for example Tarrowby2026!)", "verdict": "trust" },
+              { "id": "words", "label": "Three random words you don't use anywhere else (for example otter-ladder-crimson)", "verdict": "report" }
             ],
             "note": "These are made up for the exercise; no real password is typed or stored. Never use a training example as your real password."
           },
@@ -130,7 +131,7 @@
           "choice": {
             "prompt": "The new FuelWise supplier portal asks you to set a password. What do you use?",
             "options": [
-              { "id": "unique", "label": "A unique password the manager generates, used only on this portal", "verdict": "report" },
+              { "id": "unique", "label": "A new password made up by your password manager, kept only for this portal", "verdict": "report" },
               { "id": "reuse", "label": "Your usual password, the one you already use for other sign-ins", "verdict": "trust" }
             ],
             "note": "No real password is typed; the password manager fills it in for you."
@@ -151,8 +152,8 @@
           "choice": {
             "prompt": "FuelWise asks for your mother's maiden name as a security question. What do you give it?",
             "options": [
-              { "id": "madeup", "label": "A made-up answer (random words) saved in your password manager", "verdict": "report" },
-              { "id": "true", "label": "Your real mother's maiden name", "verdict": "trust" }
+              { "id": "true", "label": "Your real mother's maiden name, so it is easy to remember", "verdict": "trust" },
+              { "id": "madeup", "label": "A made-up answer saved in your password manager", "verdict": "report" }
             ],
             "note": "The made-up answer is stored with the login, so you never have to remember it."
           },
@@ -172,9 +173,9 @@
           "choice": {
             "prompt": "This service offers three ways to sign in. Pick the strongest it offers.",
             "options": [
-              { "id": "passkey", "label": "A passkey (your fingerprint, face or PIN, tied to the real site)", "verdict": "report" },
-              { "id": "app", "label": "The authenticator app with number matching", "verdict": "trust" },
-              { "id": "sms", "label": "A one-time code sent by text", "verdict": "trust" }
+              { "id": "app", "label": "The authenticator app, matching the number it shows", "verdict": "trust" },
+              { "id": "passkey", "label": "A passkey (fingerprint, face or PIN, tied to the real site)", "verdict": "report" },
+              { "id": "sms", "label": "A one-time code sent by text message", "verdict": "trust" }
             ],
             "note": "Turn on the strongest the service offers; any of these beats a password on its own."
           },
@@ -194,8 +195,8 @@
           "choice": {
             "prompt": "A depot PC has its password on a sticky note on the monitor, readable from the loading bay. You need to use it. What do you do?",
             "options": [
-              { "id": "ask", "label": "Ask the service desk for your own account, or a shared vault in the manager", "verdict": "report" },
-              { "id": "use_note", "label": "Use the password on the note to sign in", "verdict": "trust" }
+              { "id": "use_note", "label": "Use the password on the note, just this once, because the job is urgent", "verdict": "trust" },
+              { "id": "ask", "label": "Ask the service desk for your own account", "verdict": "report" }
             ],
             "note": "Finding a password on a note is common; the fix is the service desk's job, but you can ask for it."
           },
@@ -219,7 +220,7 @@
     "defend": { "setId": "e9_lock_it_down", "reportAlwaysVisible": true },
     "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
     "strings": {
-      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier, in the depot office. First you're on the red team: look at what a colleague has put online, build a guess list from it, and watch how fast a reused password opens his work account. Then it's your own account under attack, and you lock it down. Only the lock-down part is scored.",
+      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier, in the depot office. First you're on the red team: look at what a colleague has put online (click a line to note it), build a guess list from it, and watch how fast a reused password opens his work account. Then it's your own account under attack, and you lock it down. Only the lock-down part is scored.",
       "flipHeading": "Now it's your phone.",
       "flipGuessIntro": "You watched a reused password open a colleague's account. Here is the other end: your own phone.",
       "flipIntro": "You watched a reused password open a colleague's account. Here is the other end: your own phone, buzzing with sign-in prompts you didn't start, and a message from 'IT' telling you how to make them stop.",
