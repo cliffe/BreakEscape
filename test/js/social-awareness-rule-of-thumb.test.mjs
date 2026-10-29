@@ -38,6 +38,7 @@ const CHECK_ROLES = [
   'executive',
   'finance',
   'general',
+  'general_v2',
   'helpdesk',
   'hr',
   'mobile',
