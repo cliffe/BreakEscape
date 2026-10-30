@@ -69,7 +69,7 @@ Rules the lint enforces (read `tools/video/remotion/scripts/lint-edit.mjs` for t
 Brand and card rules (user, 2026-10-30; also in the recipes):
 
 - The game title (`SAFETYNET: Licence to Hack`, pixel SVG over the keyhole art, integer scale 12x/16x/15x) opens the video. **Hacktivity Games signs off at the end, on the red hex curtain** (the `cta` shot's logo morphs Labs to Games). **"Break Escape" never appears on screen**, not in cards, captions, filenames shown on screen or end cards.
-- **The call to action says "Play now".** m01's edit still says "Play Mission 1 / Free!": change the text for any re-render, and do not copy it into a new edit (gap 3 in `docs/video/recipes/README.md`).
+- **The call to action says "Play now".** The v4 edit said "Play Mission 1 / Free!"; the working copy of `m01_trailer60.json` (v5, uncommitted when this was drafted) already reads "Play now". Check the `cta` phase text of any edit you copy from, and never copy the old wording into a new one (gap 3 in `docs/video/recipes/README.md`).
 - Cards are white Press Start 2P on the navy-to-purple gradient with the glitched mirrored reflection. Mission trailers name the mission on the card ("Mission 2 / ...").
 
 ## Step 4: lint, then render

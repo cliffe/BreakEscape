@@ -126,7 +126,7 @@ For each key mark, say in the table "frame at T shows X". Check digits on keypad
 ## Traps
 
 - **Do not capture during a render, and do not render during a capture.** One at a time.
-- **Lip sync:** a late-word mouth bug (the closing pause swallowing a soft last word) was fixed in commit `1f56ea4e`. Takes recorded before it keep the old mouth; re-record dialogue takes of finale lines if they were made earlier (m01 t09 still needed it).
+- **Lip sync:** a late-word mouth bug (the closing pause swallowing a soft last word) was fixed in commit `1f56ea4e`. Takes recorded before it keep the old mouth; re-record dialogue takes of finale lines if they were made earlier (m01's `t09_derek` was redone as `t09_derek_v5.mjs`).
 - Leave nothing changed in the repo: `git status` before and after. A take that edits a sprite or scenario for a check must restore it (`tools/playtest/restore-sprite.rb` exists for the sprite swap the m01 lip-sync check used).
 - The keyless server and Postgres may have been stopped by the scout; restart them (Step 1 of `video-scout`).
 - Leave display 97 and the sink up between batches; stop them at the end of the stage with `env-down.sh 97` unless the next stage is another batch.
