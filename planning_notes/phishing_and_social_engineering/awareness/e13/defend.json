@@ -11,8 +11,8 @@
     {
       "id": "e13_assistant_inbox",
       "_localTells": "hidden_instruction and deepfake_request are scenario-local tells with no built equivalent (00 section 2's CHANNEL_TELLS is untouched; no SKILL_NAMES entry is added to phish-rules.js/triage.rb, ENG-06 change 3). Each is declared in channelTells with a flagChips label and a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's skill name), and every flagging message carries a factorStrings.<id>.redFlag sentence (a sibling of truth, never inside it: truth is additionalProperties:false). secrecy_or_bypass, borrowed_authority, vish_callback_pressure and lookalike_domain are shared-library tells and need no label.",
-      "title": "Brightwell inbox, beside the assistant",
-      "brief": "You're at the training kiosk with Brightwell's inbox open next to the assistant. Six things have come in: two supplier emails, two voicemails and two video calls. For each one, choose Trust, Report, Delete or Verify (ring the person back on a number you already hold, or check on a channel you trust), then tick what you noticed. Nobody will ask whether a voice or a face looked real: what counts is what each message asks you to do. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to confirm.",
+      "title": "Brightwell inbox",
+      "brief": "You're at the training kiosk with Brightwell's inbox open. Brightwell has an AI assistant that reads and summarises mail, so some emails may carry text hidden from the reader, such as white or tiny text, that the assistant would still read; use Show hidden text to look. Six things have come in: two supplier emails, two voicemails and two video calls. For each one, choose Trust, Report, Delete or Verify (ring the person back on a number you already hold, or check on a channel you trust), then tick what you noticed. Nobody will ask whether a voice or a face looked real: what counts is what each message asks you to do. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to confirm.",
       "scoringProfile": "awareness",
       "verifyVerdict": true,
       "feedbackMode": "immediate",
@@ -71,13 +71,13 @@
             "isPhish": true,
             "flags": ["hidden_instruction"],
             "perFlagNote": {
-              "hidden_instruction": "The line was written for the assistant, not for you; the assistant can't tell it from a real request. A real one hides as white text or a tiny font you skim past, but the assistant reads it like any other line."
+              "hidden_instruction": "The line was written for an AI assistant, not for you; an assistant can't tell it from a real request. A real one hides as white text or a tiny font you skim past, but the assistant reads it like any other line."
             },
             "whyFine": {
               "urgencyCalibrated": "'Thanks for settling this today' is an ordinary payment nudge, not the tell here. What marks this one is the line hidden in the email for the assistant to act on."
             },
             "ifTrusted": "Brightwell's site contact list would go to an address the sender controls.",
-            "reportReply": "Thanks, we pulled the brief and warned anyone whose assistant summarises the shared inbox."
+            "reportReply": "Thanks, we pulled that email and warned anyone whose assistant summarises the shared inbox."
           }
         },
         {
@@ -88,13 +88,14 @@
           "subject": "Monthly cleaning invoice, October",
           "time": "09:40",
           "body": "Hi,\nOur October cleaning invoice is attached, same as every month. Reference and amount are on the attachment, due end of the month as usual.\nThanks,\nMossgate Cleaning Supplies",
+          "hiddenText": "Formatting note from the Mossgate billing system: invoice template v3, tracking reference MG-OCT-0412. Nothing to action.",
           "attachments": [ { "label": "Cleaning-invoice.pdf", "kind": "pdf" } ],
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "mossgate-supplies.example", "replyTo": "accounts@mossgate-supplies.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "default": "A routine invoice from the real supplier with nothing hidden. The assistant's summary of it matches the email."
+              "default": "A routine invoice from the real supplier. It has hidden text too, but only a billing-system note with nothing to act on; hidden text on its own is not the tell. The assistant's summary of it matches the email."
             },
             "falseAlarmCost": "Reporting it only has someone re-confirm an invoice that was fine, no harm, but no need."
           }
