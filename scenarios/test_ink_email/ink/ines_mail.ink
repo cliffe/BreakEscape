@@ -10,7 +10,7 @@ Hello. Could you cover my Thursday seminar? I have a clash with the board.
 
 === options ===
 * Happy to cover it. Send me the slides.
-    # set_global:ines_seminar_covered
+    # set_global:ines_seminar_covered:true
     # reply_after:5
     Thank you. The slides are in the shared folder.
     -> DONE

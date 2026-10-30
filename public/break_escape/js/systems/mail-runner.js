@@ -566,7 +566,7 @@ export class MailRunner {
             const same = options.length === arr(thread.expects.options).length && options.every((o, i) => o === thread.expects.options[i]);
             if (!same) {
                 if (options.length) scheduler.setThread(threadKey, { ...thread, expects: { mode: 'choices', options } });
-                else scheduler.setThread(threadKey, null);
+                else scheduler.setThread(threadKey, {});
             }
             return options;
         } catch (e) {
@@ -586,7 +586,7 @@ export class MailRunner {
         const scheduler = this.scheduler;
         const key = plainThreadKey(npcId, accountId);
         const thread = scheduler?.state?.threads?.[key];
-        if (thread && thread.expects && thread.expects.mode === 'waiting') return { state: 'waiting', options: [] };
+        if (thread && thread.expects && thread.expects.mode === 'waiting' && this.hasPendingJob(key)) return { state: 'waiting', options: [] };
         if (thread && thread.expects && thread.expects.mode === 'choices') {
             const options = await this.refreshPlainChoices(key);
             if (options && options.length) return { state: 'choices', options };
@@ -609,6 +609,11 @@ export class MailRunner {
         const pre = steps.length ? steps[steps.length - 1].pre : null;
         if (isStr(pre)) scheduler.setThread(key, { position: pre, expects: { mode: 'choices', options } });
         return { state: 'choices', options };
+    }
+
+    /** Is a job still queued for this thread? A saved "waiting" thread with none is stale and ignored. */
+    hasPendingJob(threadKey) {
+        return arr(this.scheduler?.state?.jobs).some((j) => j && j.kind === 'ink' && j.thread === threadKey);
     }
 
     /** The mailbox a mail account writes to. */
@@ -793,7 +798,7 @@ export class MailRunner {
             try { story.state.LoadJson(thread.position); } catch (e) { console.warn('[MailRunner] could not load thread position', e.message); }
         } else if (job.afterSend === true) {
             console.warn(`[MailRunner] plain job ${job.jobId} has no thread position; nothing to continue`);
-            scheduler.setThread(key, null);
+            scheduler.setThread(key, {});
             return {};
         }
         sm?.syncGlobalVariablesToStory?.(story);
@@ -846,7 +851,9 @@ export class MailRunner {
         if (isStr(split.composeReply)) thr.expects = { mode: 'compose', targetId: split.composeReply };
         else if (options.length > 0) thr.expects = { mode: 'choices', options };
         if (thr.expects && isStr(prePosition)) thr.position = prePosition;
-        scheduler.setThread(key, Object.keys(thr).length ? thr : null);
+        // A finished thread is saved as an empty record, not deleted: after a reload the first sync
+        // sends only what exists, so a deleted thread would leave the server's old "waiting" one.
+        scheduler.setThread(key, Object.keys(thr).length ? thr : {});
 
         if (!alreadyApplied) {
             if (split.mailLater) this._scheduleChaser(scheduler, job, key, split.mailLater);

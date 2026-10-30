@@ -2636,7 +2636,7 @@ The in-game email app (design `01`, `00` §10a). The player composes and sends m
 |---|---|---|
 | `accounts[]` | see below | The sending identities the player can send as. |
 | `mailboxes[]` | `{ id, owner? }` | The mailboxes (folders) the client shows. `owner`, when set, **must be a `social.people` id** (`validate_social/mail.rb` errors on anything else — an account id fails); omit it when the mailbox has no single owning person. A mailbox id must not contain a dot (ids are saved as dotted keys). |
-| `contacts[]` | see below | The address book, revealed entry by entry as intel is earned. |
+| `contacts[]` | see below | The address book, revealed entry by entry as intel is earned. A contact with `npc` is an ink correspondent: see "Ink-driven email". |
 | `seededMessages[]` | see below | Mail placed before play, in an inbox or Sent folder, or scheduled for later. |
 | `payloadKit[]` | `{ id, kind, label, landingPageId? }` | The attachments and links the composer can attach. |
 | `checklistTiming` | `"onSend"` \| `"withReply"` | When the send checklist appears (default `onSend`). Linted by `validate_social/options.rb`. |
@@ -2820,6 +2820,119 @@ The validator requires `on_email` to call `se_influence` on both the landed and 
 **Highlights (`seededMessages[].highlights`).** Each highlight `{ id, text, grants? }` marks an exact substring of the message body (the validator checks the substring and that each granted fact has `source` equal to the highlight `id`, granted by exactly one highlight). In the reading pane a highlighted span is a "Save as evidence" chip: with `grants` set it calls `grantFact(grants)` (one award path, same as the OSINT browser); with no `grants` its text goes to the notepad. Any other text selection can be sent to the notepad too.
 
 **The `found` account kind.** An `accounts[]` entry with `kind: "found"` models credentials the player has obtained (via `unlockedBy`, the global `acct_<id>`). It carries the real person's `address`, `displayName` and `person`, reads from a `mailbox` seeded with that person's history (`seededMessages` with `folder: "inbox"` or `"sent"`, a Sent message naming the account in `fromAccount`), and sends with its own identity forced (a found account is not a spoofer, so its `From` is always its own and sender authentication follows its domain). The ink sees `email_account_kind: "found"`.
+
+### Ink-driven email (`contacts[].npc`)
+
+Plain email that the player answers and that answers back, written in ink the way a phone or person chat is. Nothing is judged and no `social.characters` entry is needed. Use it for a handler who emails, a colleague who chases, a reply that opens a door. Judged phishing (`phishTargets`, `on_email`, `se_influence`) is unchanged and separate. Design: `docs/agents/MAIL_PLAIN_AND_DM_DESIGN.md` (a). Working fixture: `scenarios/test_ink_email/`.
+
+**The model.** Each correspondent is a contact with an `npc` id and one ink story. That story is the email thread. A run of a knot delivers **one email** (the lines are the body, tags give the subject and attachments). When a run ends on ink choices, those choices are the player's **suggested replies**. Mail is never voiced; give the correspondent its own `emailRecord` rather than reusing a voiced person NPC (the validator warns).
+
+```json
+{ "id": "hax", "name": "Agent HaX", "addresses": ["hax@safetynet.example"], "accountIds": ["agent"],
+  "npc": "hax_mail", "replyDelaySeconds": 8,
+  "emailRecord": { "storyPath": "scenarios/x/ink/hax_mail.json", "displayName": "Agent HaX", "unlockable": ["store_room"] },
+  "timedEmails": [ { "knot": "ask_for_log", "waitForEvent": "room_entered:server_room", "delaySeconds": 2 } ] }
+```
+
+| Contact field | Meaning |
+|---|---|
+| `npc` | Makes the contact an ink correspondent: the id of the NPC whose story is the thread. Unique per contact. |
+| `emailRecord` | Defines a headless NPC record under `npc` (server `Game.headless_contact_records`, client `contactNpcRecords`): `storyPath`, `displayName`, `avatar`, `itemsHeld`, `unlockable` and any other NPC field. Omit it to use an NPC defined elsewhere (the validator warns: it shares that NPC's ink state). |
+| `replyDelaySeconds` | Seconds before a reply when the ink gives no `# reply_after` (default 20). |
+| `accountIds` | Which account the thread belongs to. An NPC-started email goes to the first one (else the first account). |
+| `timedEmails[]` | `{ knot, delaySeconds?, waitForEvent?, skipIfGlobal?, account? }`. Starts a thread on its own, once. No `waitForEvent` (or `game_loaded`) sends it from the start, after `delaySeconds`. Each fired entry is marked by the global `mail_timed_<npc>_<index>`, so a reload never repeats it. |
+| `composeKnot` | Knot Compose runs headless for the first suggestions (default `on_compose`). |
+| `targetId`, `judgedWhen` | See "Judged and plain on one contact". |
+
+Threads are keyed `npc:<npcId>:<accountId>` and never collide with `<character>:<accountId>`.
+
+**Starting a thread.** Four ways:
+
+- `timedEmails` on the contact (above).
+- An event mapping action `"sendEmail": { "npc": "hax_mail", "knot": "store_room_note", "delaySeconds": 1 }` on any NPC. `npc` defaults to the NPC that owns the mapping, so name the ink contact explicitly when the owner is a phone NPC. The mapping's `onceOnly`, `condition` and `cooldown` apply as usual.
+- The ink tag `# send_email:<npc>:<knot>[:<seconds>]` in any phone, person or mail story.
+- The player: Compose to the contact, which runs `on_compose` (or `composeKnot`) headless to its first choices. The knot must print nothing before them (the validator warns). If a thread already has pending choices, Compose shows those instead. While a sent message waits for its reply, Compose says so.
+
+`# trigger_minigame:mail_terminal accountIds=["agent"] composeTo=hax` (or `minigameData.composeTo` on a `mail_terminal` object, or an `openMinigame` mapping) opens the client with Compose already on that contact (a contact id or its `npc`). It returns to the chat on a normal close, like any ink-opened minigame.
+
+**Suggested replies: the chip and the body.** The options are written as the **start of the player's own message**, in the player's voice, and shown Outlook style as chips under the open email and in Compose to that contact. Picking a chip opens the composer with the **whole message filled in** (subject, attachments, text); the player presses Send. Ink's own choice syntax carries both halves:
+
+- The **chip** is what ink shows for the choice: the start text plus anything in `[ ]`.
+- The **body** is what ink prints when the choice is taken (the start text plus anything after `]`), followed by the player's continuation lines.
+- With no brackets, chip and first body line are the same text. `* Forwarding the alert.[] Is it ours?` gives the chip "Forwarding the alert." and the body "Forwarding the alert. Is it ours?". A label-only `* [Ask where to look]` prints nothing, so the body is the lines under it, or the label itself if there are none.
+
+Where the player's message ends and the NPC's reply begins, first rule that applies:
+
+1. **`# reply_after:<seconds>`**: the line that carries it is the first line of the reply, delivered after that many seconds. Everything before it (the choice output and any lines) is the player's message. Tags written above a line belong to it, so put `# reply_after` on its own line directly above the reply. Tags in that same group written **before** `reply_after` apply when the player sends; tags after it apply when the reply arrives.
+2. Otherwise the choice output plus the unbroken run of lines tagged `# speaker:player` right after it is the player's message; the rest is the reply, after the contact's `replyDelaySeconds`.
+3. Otherwise the choice output alone is the player's message (the old "Choose a reply" behaviour).
+
+| Tag | Where | Effect |
+|---|---|---|
+| `# subject:<text>` | any email | The subject. Without it a reply is `Re: <thread subject>`, and a thread's first email `(no subject)`. |
+| `# attach:<kitId>` | NPC email or player's part | A `payloadKit` item shown as an attachment chip. Whether the player *has* it is the choice's ink condition, not the tag. |
+| `# forward:<messageId>` | player's part | Quotes a received message (a seeded id, or a delivered `reply_...` id) under the player's lines and keeps `forwardOf` on the Sent record. The choice is refused with a line if that message is not in the inbox. |
+| `# reply_after:<s>` | player's part | See the split above. |
+| `# speaker:player` | player's part | Marks a line as the player's (rule 2). |
+| `# mail_later:<s>:<knot>` | NPC email | A chaser email from the same thread (one pending per thread). |
+| `# compose_reply:<targetId>` | NPC email | Hands the thread to the judged composer for that phish target (any target, not only the same character's). |
+| `# send_email:<npc>:<knot>[:<s>]` | any story | Starts another ink contact's thread. |
+
+Every other tag (`# set_global:name:true`, `# complete_task:`, `# give_item:`, `# unlock_door:`) is an ordinary game tag. In the player's part they apply at send; in the reply they apply on delivery. `# set_global` needs its value: `set_global:report_sent:true`. A reply that unlocks a door needs the NPC's `unlockable` list (put it on the `emailRecord`); a headless record needs no prior encounter. Gate a choice by evidence with an ordinary ink condition on a global (`* {found_jump_log} Log attached...`): the choices are regenerated from the current globals whenever the thread is opened, so the chip appears the moment the global is set, with no new email.
+
+Sends are Sent records with `kind: "plain"`, `targetId: null`. The awareness episodes' sent-record lookups skip them. Events: `mail_sent` and `mail_sent:<npcId>` (with `{ npcId, contactId, accountId, msgId }`), plus the usual `mail_delivered`. A scenario can relabel the few words the plain composer shows through `mailClient.labels` (`suggestedReplies`, `waiting`, `nothing`, `chooseAnother`, `writeYourOwn`, `backToSuggestions`, `send`, ...; defaults in `systems/mail-ink.js`). The plain composer never shows judging, red flags or the account switch.
+
+**Judged and plain on one contact.** A contact may carry both `npc` and `targetId`. The rule:
+
+- Compose to it, or the chips under its email, show the **suggested replies the ink offers**. Whatever the story offers is what appears; no choices means no chips.
+- Beside them sits **"Write your own message"**, the judged composer for that `targetId` (the contact's phishing path, unchanged). It is open whenever the contact is judged, unless `judgedWhen` names a global: then the door shows only once that global is true. Use `judgedWhen` to keep the phishing path closed until the story has earned it.
+- `# compose_reply:<targetId>` in the ink is a second, in-thread door, as before.
+- A contact with only `targetId` is judged exactly as before; a contact with only `npc` has no judged path.
+
+**Worked example.** `ink/hax_mail.ink`:
+
+```ink
+VAR found_jump_log = false
+=== ask_for_log ===
+# subject:Jump server
+You're in. Send me whatever you find on the jump server. Auth logs first.
+-> reply_options
+=== reply_options ===
+* {found_jump_log} Log attached. Logins from 10.0.4.7 at 02:13, outside the change window.
+    -> send_log
+* {not found_jump_log} Nothing yet, still looking.
+    # reply_after:6
+    Keep at it. The auth log should be on the desk in the server room.
+    -> reply_options
+= send_log
+# subject:Re: Jump server
+# attach:kit_jump_log
+# set_global:report_sent_to_hax:true
+# reply_after:8
+02:13 from 10.0.4.7. That is the contractor VPN range, and nobody signed off a change.
+# complete_task:report_findings
+# unlock_door:store_room
+I have opened the store room. The contractor laptop is on the second shelf.
+-> DONE
+=== on_compose ===
+* {found_jump_log} Log attached from the jump server.
+    -> reply_options.send_log
++ Where should I look next?
+    # reply_after:6
+    Server room first. Then tell me what you find.
+    -> DONE
+```
+
+A `timedEmails` entry with `waitForEvent: "room_entered:server_room"` sends `ask_for_log` when the player walks in. The player reads it, picks the log chip once `found_jump_log` is set, sees the subject, the `jump-auth.log` attachment and the message, presses Send, and eight seconds later HaX's reply completes `report_findings` and opens the store room.
+
+**Things to know.**
+
+- Declare every global the ink reads or writes in `globalVariables`, like any ink.
+- Give each correspondent its own story and record id. Sharing a phone NPC's id shares its ink variables and the phone's saved position.
+- Seeded mail stays static. Use `seededMessages` for mail that needs no answer and as the target of `# forward:`; use `timedEmails` with `delaySeconds: 0` for an at-start email the player can answer.
+- A reply that arrives while the client is open appends silently, otherwise a toast. A reload mid-wait keeps the Sent record, the "waiting" thread and the pending reply; nothing is delivered or applied twice.
+- `# trigger_minigame` inside an email story opens over the world on delivery; the validator warns.
+- The validator (`validate_social/mail_ink.rb`) checks the contacts, `timedEmails`/`composeKnot`/`sendEmail` knots, `# attach`, `# forward`, `# subject`, `# reply_after`, `# mail_later`, `# send_email`, `# compose_reply`, `composeTo`, judged vocabulary in a plain story and text before the first compose choice.
 
 ### Pretext calls (`social.pretextNpcs`)
 

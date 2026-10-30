@@ -33,7 +33,7 @@ You're in. Send me whatever you find on the jump server. Auth logs first.
 = send_log
 # subject:Re: Jump server
 # attach:kit_jump_log
-# set_global:report_sent_to_hax
+# set_global:report_sent_to_hax:true
 # complete_task:report_findings
 # reply_after:20
 02:13 from 10.0.4.7. That is the contractor VPN range, and nobody signed off a change.

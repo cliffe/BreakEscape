@@ -42,6 +42,7 @@ import {
 } from './mail-data.js';
 
 const ICON = '/break_escape/assets/icons/';
+const arr = (v) => (Array.isArray(v) ? v : []);
 const NARROW_QUERY = '(max-width: 767px)';
 
 function el(tag, className, text) {
@@ -1125,7 +1126,8 @@ export class MailClientMinigame extends SocialOverlayScene {
         const mode = contactMode(contact, this.globals);
         const expects = thread && thread.expects;
         const wrap = el('div', 'mail-followup mail-suggest');
-        if (expects && expects.mode === 'waiting') {
+        const stillWaiting = expects && expects.mode === 'waiting' && arr(this.mailState?.jobs).some((j) => j && j.kind === 'ink' && j.thread === key);
+        if (stillWaiting) {
             wrap.appendChild(el('p', 'mail-followup-note mail-ink-waiting', L.waiting));
             pane.appendChild(wrap);
             return;

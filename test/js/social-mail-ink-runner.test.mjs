@@ -251,7 +251,7 @@ test('planPlainChoice: the full message, subject and attachment from the tags; n
     assert.equal(plan.subject, 'Re: Jump server');
     assert.deepEqual(plan.attachments, [{ kitId: 'kit_jump_log', kind: 'document', label: 'jump-auth.log' }]);
     assert.equal(plan.replyAfter, 20);
-    assert.deepEqual(plan.gameTags, ['set_global:report_sent_to_hax', 'complete_task:report_findings']);
+    assert.deepEqual(plan.gameTags, ['set_global:report_sent_to_hax:true', 'complete_task:report_findings']);
     assert.equal(JSON.stringify(w.scheduler.state), before, 'a preview changes no state');
     assert.equal(w.tagCalls.length, 0, 'and applies no tags');
 });
@@ -272,7 +272,7 @@ test('sendPlainChoice: Sent record, tags at send, waiting thread, reply after th
     assert.equal(sent[0].targetId, null);
     assert.equal(sent[0].attachments[0].kitId, 'kit_jump_log');
     assert.equal(w.tagCalls.length, 1);
-    assert.deepEqual(w.tagCalls[0].tags, ['set_global:report_sent_to_hax', 'complete_task:report_findings']);
+    assert.deepEqual(w.tagCalls[0].tags, ['set_global:report_sent_to_hax:true', 'complete_task:report_findings']);
     assert.equal(w.scheduler.state.threads[KEY].expects.mode, 'waiting');
     assert.deepEqual(w.events.map((e) => e[0]), ['mail_sent', 'mail_sent:hax_mail']);
     assert.equal(w.events[0][1].npcId, 'hax_mail');
@@ -296,7 +296,7 @@ test('sendPlainChoice: Sent record, tags at send, waiting thread, reply after th
     assert.equal(replies[1].subject, 'Re: Jump server');
     assert.equal(w.tagCalls.length, 1, 'the send-side tags are not applied a second time with the reply');
     assert.equal(w.globals.report_sent_to_hax, true, 'an ink assignment in the reply reaches the globals');
-    assert.equal(w.scheduler.state.threads[KEY], undefined, 'the story ended: no pending expectation');
+    assert.deepEqual(w.scheduler.state.threads[KEY], {}, 'the story ended: an empty record, which overwrites the saved waiting one');
 
     // the chaser from # mail_later
     const chaser = w.scheduler.state.jobs.find((j) => j.chaser);
@@ -440,4 +440,12 @@ test('scheduleChoiceReply refuses a plain thread key (character threads are unch
     const w = makeWorld();
     const { warn } = console; console.warn = () => {};
     try { assert.equal(scheduleChoiceReply(w.scheduler, { threadKey: KEY, choiceIndex: 0, scenario: w.scenario }), null); } finally { console.warn = warn; }
+});
+
+test('a saved "waiting" thread with no pending job is stale: Compose ignores it', async () => {
+    const w = makeWorld();
+    w.scheduler.setThread(KEY, { position: '{}', expects: { mode: 'waiting' } });
+    assert.equal(w.runner.hasPendingJob(KEY), false);
+    const c = await hush(() => w.runner.prepareCompose({ npcId: 'hax_mail', accountId: 'agent' }));
+    assert.equal(c.state, 'choices', 'on_compose runs instead of waiting for a reply that is not coming');
 });
