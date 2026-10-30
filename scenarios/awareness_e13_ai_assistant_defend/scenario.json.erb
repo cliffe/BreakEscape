@@ -103,6 +103,11 @@
           "hidden_instruction": "Spotting an instruction hidden for an AI",
           "deepfake_request": "Knowing a face or voice can't prove who's asking"
         },
+        "bands": [
+          { "min": 85, "headline": "Sharp: you caught the fakes and knew why" },
+          { "min": 60, "headline": "Getting there: a few tells slipped past" },
+          { "min": 0, "headline": "Worth practising: here's where to look first" }
+        ],
         "outcome": {
           "setGlobalPrefix": "episode_e13_ai_assistant_defend_defend_",
           "passPercent": 0
@@ -281,16 +286,10 @@
               "critical": true,
               "flags": [
                 "deepfake_request",
-                "secrecy_or_bypass",
-                "borrowed_authority",
-                "lookalike_domain",
                 "vish_callback_pressure"
               ],
               "perFlagNote": {
                 "deepfake_request": "Both faces are perfect and both are fake; a video call is not proof of who is on it.",
-                "lookalike_domain": "The meeting link is brightwell-board.example, not brightwellfoods.example, and the call is tagged External.",
-                "secrecy_or_bypass": "'In confidence, today, before the board' leaves no time and no one to check with.",
-                "borrowed_authority": "The CEO's and finance manager's faces are doing the job a check should do.",
                 "vish_callback_pressure": "The caller cut off any chance to check, 'no time, the fewer people who know the better'; a genuine colleague never stops you confirming on a number you already hold."
               },
               "ifTrusted": "Brightwell's customer list leaks to the people who staged the call.",
