@@ -62,7 +62,7 @@
         "reportReply": "Thanks. IT has it and will point you to the approved way.",
         "id": "e15_shortcuts_inbox",
         "title": "Shadow IT: the shortcuts",
-        "brief": "It's Friday, the Monday pack is due and the share is slow. Six things are waiting: found sticks, 'quicker way' messages, and a couple of genuine ones. For each, choose Trust, Report, Delete or Verify, then tick what you noticed. Checking when you're unsure is always fine, though a real one does take a colleague's time.",
+        "brief": "It's Friday, the Monday pack is due and the share is slow. Six things are waiting: found sticks, 'quicker way' messages, and a couple of genuine ones. For each, choose Trust, Report, Delete or Verify, then tick what you noticed. Checking when you're unsure is always fine, though a real message does take a colleague's time to check.",
         "realLabel": "Real notices and replies",
         "scoringProfile": "awareness",
         "scoring": { "criticalPenalty": 10 },
@@ -413,34 +413,34 @@
             ]
           },
           {
-            "id": "free_transfer",
-            "situation": "The site-survey video is too big to email. Colin: \"Use a free transfer site, everyone does.\"",
+            "id": "drivers_chat",
+            "situation": "Colin: \"Add the client's night contact to the drivers' group chat on our own phones. It's how we pass round addresses and photos of signed notes anyway.\"",
             "options": [
               {
-                "id": "use_free_site",
-                "label": "Upload it to the free transfer site Colin mentioned",
+                "id": "add_to_group",
+                "label": "Add the client's contact to the drivers' personal group chat",
                 "safe": false
               },
               {
-                "id": "use_fileshare",
-                "label": "Send it through the file-sharing service, with an end date",
+                "id": "ask_channel",
+                "label": "Ask IT for an approved team channel, and share the address there",
                 "safe": true,
                 "approvedRoute": true
               }
             ]
           },
           {
-            "id": "posted_stick",
-            "situation": "A padded envelope arrives: \"From the client: survey results, please add to the pack.\" Inside is a USB stick and a note with a phone number.",
+            "id": "visitor_stick",
+            "situation": "A visiting surveyor holds out their own USB stick with the site drawings on it: \"Just pop it in your laptop, it's quicker than emailing.\"",
             "options": [
               {
-                "id": "plug_in",
-                "label": "Plug the stick in to see what the client sent",
+                "id": "plug_visitor",
+                "label": "Plug the visitor's stick into your laptop",
                 "safe": false
               },
               {
-                "id": "to_it",
-                "label": "Give the stick to IT and ring the client on a number you hold",
+                "id": "send_link",
+                "label": "Ask them to send the drawings through the firm's file-sharing link instead",
                 "safe": true,
                 "approvedRoute": true
               }
@@ -478,10 +478,10 @@
         "allPhishRight": "Every risky shortcut was stopped, with every reason named.",
         "noBlameLine": "Shortcuts are well meant, usually taken under a deadline. Being caught by one is no fault of yours; Colin was right that the share was slow. The move is to tell IT so the data gets somewhere safe.",
         "noBlameLineCritical": "These shortcuts are tempting when a deadline bites, so a miss here says more about the pressure than about you. The points only show where to look next time.",
-        "mondayCard": "On Monday: pick the shortcut you reach for most, and learn the approved swap for it. A found or posted stick goes to IT unplugged. Work stays in work places, not your personal email, personal cloud or a free online service. If the official way is slow, tell IT rather than build your own way round, and report what you're unsure about using the route in the box below. If personal data went to a personal account, the data protection officer needs to know too.",
-        "defendIntro": "Now go through the found sticks and 'quicker way' messages and decide what to do with each. A found or posted stick goes to IT unplugged; if the official way is slow, ask IT rather than build a way round it. There's no clock on you here.",
+        "mondayCard": "On Monday: pick the shortcut you reach for most, and learn the approved swap for it. A found or posted stick goes to IT unplugged. Work stays in work places, not your personal email, personal cloud or a free online service. If the official way is slow, tell IT rather than build your own way round, and if you're unsure about something, report it to IT. If personal data went to a personal account, the data protection officer needs to know too.",
+        "defendIntro": "Now go through the found sticks and 'quicker way' messages and decide what to do with each. Some are safe to act on and some aren't. There's no clock on you here.",
         "defendOnly": "Every shortcut here is the kind a busy person takes with good intentions, and every one has a quiet cost. The ones you were caught out by are shown below, with the approved way.",
-        "teamLine": "By reporting or checking {n} of these rather than acting on them, you kept a found stick or a risky shortcut away from the rest of your team.",
+        "teamLine": "By reporting or checking {n} of the risky ones rather than acting on them, you kept a found stick or a risky shortcut away from the rest of your team.",
         "conceptPanel": {
           "heading": "About that stick",
           "text": "The stick that came in the post was ours: an authorised test, and it only tells us a stick was plugged in. We name nobody. Most people who plug a found stick in are being kind, trying to find the owner, or just curious, so the kind move is to hand it to IT."
@@ -491,13 +491,13 @@
             "send_personal": "Months on, the personal inbox was broken into with a reused password; the pack sat in its sent items, and the client got a convincing fake invoice built from it.",
             "ask_nilesh": "Through remote access the pack never left the firm, so there was nothing outside to find. The version where it went to a personal inbox instead was broken into with a reused password and copied."
           },
-          "free_transfer": {
-            "use_free_site": "The free transfer site was breached; old public links, including a video with people in the background, turned up in search results.",
-            "use_fileshare": "The firm's link expired after seven days, so there was nothing to find. The version where a free site was used had old links still live when it was breached."
+          "drivers_chat": {
+            "add_to_group": "The chat grew to forty people, two of them long gone from the firm. A photo of a delivery note with a customer's home address was passed on outside it.",
+            "ask_channel": "IT set up a team channel within a day, and anyone who left lost access with their account. The version where the personal group chat stayed in use had a delivery note photo passed on outside the firm."
           },
-          "posted_stick": {
-            "plug_in": "The same stick reached four other firms; one plugged it in and was down for nine days.",
-            "to_it": "IT checked the stick safely, and the client confirmed they had posted nothing. The version where it was plugged in carried malware and took a firm offline for nine days."
+          "visitor_stick": {
+            "plug_visitor": "The surveyor's stick had been in three other firms' laptops first. It copied the folders it could reach, and Tarrowby had to tell two clients.",
+            "send_link": "The drawings came through the firm's link and were checked on the way in, so nothing arrived on a stick. The version where the stick went into the laptop carried a program that copied the folders it could reach."
           },
           "rota_app": {
             "use_app": "The rota stayed editable by the departed temp, then vanished when the free app closed the unused account, the week before a busy run.",
@@ -531,28 +531,28 @@
         ],
         "cards": [
           {
-            "id": "sw_personal_email",
-            "situation": "Emailing the pack to your personal address to finish it at home",
+            "id": "sw_partner_computer",
+            "situation": "Finishing Monday's pack on your partner's computer at home because your own is slow",
             "answer": "laptop_remote",
-            "reason": "Work stays in work places. Pick it up again on the work laptop through remote access, where the firm can still protect and back up the data."
+            "reason": "Work stays on the work laptop. Use remote access from home, where the firm can still protect and back up the data."
           },
           {
-            "id": "sw_free_transfer",
-            "situation": "A video too big for email, sent through a free transfer site",
+            "id": "sw_signed_contract",
+            "situation": "A signed contract a client needs today, sent as a link from your own free online drive",
             "answer": "fileshare_link",
-            "reason": "Share it from the file-sharing service, to a named person, with a link that expires, instead of a free site with no off switch."
+            "reason": "Share it from the file-sharing service, to a named person, with a link that expires, instead of a personal drive with no off switch."
           },
           {
-            "id": "sw_rota_app",
-            "situation": "The delivery rota kept in a free app on someone's personal account",
+            "id": "sw_site_photos",
+            "situation": "A folder of site photos kept on a colleague's phone, with everyone told to ask them for a copy",
             "answer": "team_space",
-            "reason": "Ask IT to move it into the team space, where access ends when someone leaves and it's backed up."
+            "reason": "Ask IT for a place in the team space, where everyone who needs the photos can reach them and access ends when someone leaves."
           },
           {
-            "id": "sw_found_stick",
-            "situation": "A USB stick that turned up in the post or on a desk",
+            "id": "sw_old_laptop",
+            "situation": "Your old work laptop, replaced last month and now in a drawer at home",
             "answer": "hand_to_it",
-            "reason": "Don't plug it in. Hand it to IT, who can check it safely and find the owner."
+            "reason": "Hand it to IT, who wipe it properly, keep the asset record straight and recycle it."
           }
         ],
         "drawRules": {

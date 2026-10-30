@@ -24,34 +24,34 @@
         ]
       },
       {
-        "id": "free_transfer",
-        "situation": "The site-survey video is too big to email. Colin: \"Use a free transfer site, everyone does.\"",
+        "id": "drivers_chat",
+        "situation": "Colin: \"Add the client's night contact to the drivers' group chat on our own phones. It's how we pass round addresses and photos of signed notes anyway.\"",
         "options": [
           {
-            "id": "use_free_site",
-            "label": "Upload it to the free transfer site Colin mentioned",
+            "id": "add_to_group",
+            "label": "Add the client's contact to the drivers' personal group chat",
             "safe": false
           },
           {
-            "id": "use_fileshare",
-            "label": "Send it through the file-sharing service, with an end date",
+            "id": "ask_channel",
+            "label": "Ask IT for an approved team channel, and share the address there",
             "safe": true,
             "approvedRoute": true
           }
         ]
       },
       {
-        "id": "posted_stick",
-        "situation": "A padded envelope arrives: \"From the client: survey results, please add to the pack.\" Inside is a USB stick and a note with a phone number.",
+        "id": "visitor_stick",
+        "situation": "A visiting surveyor holds out their own USB stick with the site drawings on it: \"Just pop it in your laptop, it's quicker than emailing.\"",
         "options": [
           {
-            "id": "plug_in",
-            "label": "Plug the stick in to see what the client sent",
+            "id": "plug_visitor",
+            "label": "Plug the visitor's stick into your laptop",
             "safe": false
           },
           {
-            "id": "to_it",
-            "label": "Give the stick to IT and ring the client on a number you hold",
+            "id": "send_link",
+            "label": "Ask them to send the drawings through the firm's file-sharing link instead",
             "safe": true,
             "approvedRoute": true
           }

@@ -23,34 +23,34 @@
         ]
       },
       {
-        "id": "free_transfer",
-        "situation": "The site-survey video is too big to email. Colin: \"Use a free transfer site, everyone does.\"",
+        "id": "drivers_chat",
+        "situation": "Colin: \"Add the client's night contact to the drivers' group chat on our own phones. It's how we pass round addresses and photos of signed notes anyway.\"",
         "options": [
           {
-            "id": "use_free_site",
-            "label": "Upload it to the free transfer site Colin mentioned",
+            "id": "add_to_group",
+            "label": "Add the client's contact to the drivers' personal group chat",
             "safe": false
           },
           {
-            "id": "use_fileshare",
-            "label": "Send it through the file-sharing service, with an end date",
+            "id": "ask_channel",
+            "label": "Ask IT for an approved team channel, and share the address there",
             "safe": true,
             "approvedRoute": true
           }
         ]
       },
       {
-        "id": "posted_stick",
-        "situation": "A padded envelope arrives: \"From the client: survey results, please add to the pack.\" Inside is a USB stick and a note with a phone number.",
+        "id": "visitor_stick",
+        "situation": "A visiting surveyor holds out their own USB stick with the site drawings on it: \"Just pop it in your laptop, it's quicker than emailing.\"",
         "options": [
           {
-            "id": "plug_in",
-            "label": "Plug the stick in to see what the client sent",
+            "id": "plug_visitor",
+            "label": "Plug the visitor's stick into your laptop",
             "safe": false
           },
           {
-            "id": "to_it",
-            "label": "Give the stick to IT and ring the client on a number you hold",
+            "id": "send_link",
+            "label": "Ask them to send the drawings through the firm's file-sharing link instead",
             "safe": true,
             "approvedRoute": true
           }
@@ -89,13 +89,13 @@
         "send_personal": "Months on, the personal inbox was broken into with a reused password; the pack sat in its sent items, and the client got a convincing fake invoice built from it.",
         "ask_nilesh": "Through remote access the pack never left the firm, so there was nothing outside to find. The version where it went to a personal inbox instead was broken into with a reused password and copied."
       },
-      "free_transfer": {
-        "use_free_site": "The free transfer site was breached; old public links, including a video with people in the background, turned up in search results.",
-        "use_fileshare": "The firm's link expired after seven days, so there was nothing to find. The version where a free site was used had old links still live when it was breached."
+      "drivers_chat": {
+        "add_to_group": "The chat grew to forty people, two of them long gone from the firm. A photo of a delivery note with a customer's home address was passed on outside it.",
+        "ask_channel": "IT set up a team channel within a day, and anyone who left lost access with their account. The version where the personal group chat stayed in use had a delivery note photo passed on outside the firm."
       },
-      "posted_stick": {
-        "plug_in": "The same stick reached four other firms; one plugged it in and was down for nine days.",
-        "to_it": "IT checked the stick safely, and the client confirmed they had posted nothing. The version where it was plugged in carried malware and took a firm offline for nine days."
+      "visitor_stick": {
+        "plug_visitor": "The surveyor's stick had been in three other firms' laptops first. It copied the folders it could reach, and Tarrowby had to tell two clients.",
+        "send_link": "The drawings came through the firm's link and were checked on the way in, so nothing arrived on a stick. The version where the stick went into the laptop carried a program that copied the folders it could reach."
       },
       "rota_app": {
         "use_app": "The rota stayed editable by the departed temp, then vanished when the free app closed the unused account, the week before a busy run.",
