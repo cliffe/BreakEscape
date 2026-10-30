@@ -58,6 +58,13 @@
     color: #f4f8f6;
 }
 
+/* E13 B2 finding 10: the restart warning sits on the same dark backdrop; light and quiet. */
+.ac-reload-note {
+    margin: 0 0 8px;
+    color: #cfe0d9;
+    font-size: 0.9rem;
+}
+
 .ac-reply {
     background: #ffffff;
     border: 1px solid #cfe0d9;

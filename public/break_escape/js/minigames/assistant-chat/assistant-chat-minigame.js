@@ -99,6 +99,13 @@ export class AssistantChatMinigame extends SocialOverlayScene {
         this.gameContainer.appendChild(this.root);
 
         if (isStr(this.config.intro)) this.body.appendChild(h('p', { class: 'ac-intro', text: this.config.intro }));
+        // E13 B2 finding 10: the window's finished sub-tasks are not kept across a reload (unlike
+        // a saved stage), so a reopen starts them again. Warn up front, as the inbox and the write
+        // stage do. config.reloadNote: '' suppresses it; a string overrides the default wording.
+        const reloadNote = this.config.reloadNote === '' ? ''
+            : (isStr(this.config.reloadNote) ? this.config.reloadNote
+                : 'If you close or reload this window, these tasks start again.');
+        if (reloadNote) this.body.appendChild(h('p', { class: 'ac-reload-note', text: reloadNote }));
 
         // Fixed section order; only the authored sections appear.
         if (isObj(this.config.summarise)) this._buildSummarise(this.config.summarise);
