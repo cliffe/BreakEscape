@@ -1,0 +1,7 @@
+{
+  "display_name": "Test: exercise stations",
+  "description": "Fixture for the exercise-station object type and the three minigame launch routes: object, ink #trigger_minigame and an event mapping's openMinigame. Five stations (sort drill, concern form, privacy panel, assistant, password guesser) and a vault door gated on a station global.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

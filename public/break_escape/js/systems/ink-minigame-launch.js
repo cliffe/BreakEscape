@@ -2,16 +2,18 @@
  * Open a minigame from an ink tag.
  *
  *   # trigger_minigame:<type>
- *   # trigger_minigame:<type>|key=value|key=value
- *   # trigger_minigame:<type>|{"key":"value"}        (the braces need ink's \{ and \} escapes)
+ *   # trigger_minigame:<type> key=value key=value
+ *   # trigger_minigame:<type> \{"key":"value"\}
  *
  * <type> is a key of the starter registry (systems/minigame-registry.js): the same names an
  * object's `type` takes (mail_terminal, osint-workstation, triage-workstation,
  * authenticator-device, case-file, kiosk, page-builder, report-workstation, exercise-station).
- * The key=value pairs (or the JSON object) become that object's minigameData. A value is read
- * as JSON when it parses as a number, true, false, null, an array, an object or a quoted
- * string, else it is the raw text. A value cannot contain "|"; name a shared entry by id
- * instead (for example `exercise-station|exerciseId=phish_sort|setGlobalPrefix=drill_`).
+ * The key=value pairs (separated by spaces, or by "|"), or the JSON object, become that object's
+ * minigameData. A value is read as JSON when it parses as a number, true, false, null, an array,
+ * an object or a quoted string, else it is the raw text. A pair's value cannot contain a space;
+ * name a shared entry by id instead (for example
+ * `exercise-station exerciseId=phish_sort setGlobalPrefix=drill_`) or use the JSON form.
+ * Ink needs the braces of the JSON form escaped as \{ and \}; unescaped, ink reads them as logic.
  * An unknown type warns and does nothing.
  *
  * Timing and return. In a person-chat the minigame opens once the line carrying the tag has
@@ -40,12 +42,12 @@ function parseValue(raw) {
 
 /**
  * Parse the tag's parameter. Returns { type, minigameData } or { error }.
- * Accepts `type`, `type|k=v|k=v`, `type|{json}` and `type {json}`.
+ * Accepts `type`, `type k=v k=v` (or `|` between pairs), `type {json}` and `type|{json}`.
  */
 export function parseMinigameTag(param) {
     const text = typeof param === 'string' ? param.trim() : '';
     if (!text) return { error: 'trigger_minigame needs a minigame type' };
-    const m = text.match(/^([A-Za-z0-9_-]+)\s*(?:\||\s)?\s*([\s\S]*)$/);
+    const m = text.match(/^([A-Za-z0-9_-]+)[\s|]*([\s\S]*)$/);
     if (!m) return { error: `trigger_minigame: cannot read "${text}"` };
     const type = m[1];
     const rest = m[2].trim();
@@ -58,10 +60,10 @@ export function parseMinigameTag(param) {
         return { error: `trigger_minigame:${type}: the JSON parameters are not valid` };
     }
     const data = {};
-    for (const part of rest.split('|')) {
-        if (!part.trim()) continue;
+    for (const part of rest.split(/[\s|]+/)) {
+        if (!part) continue;
         const eq = part.indexOf('=');
-        if (eq < 1) return { error: `trigger_minigame:${type}: "${part.trim()}" is not key=value` };
+        if (eq < 1) return { error: `trigger_minigame:${type}: "${part}" is not key=value` };
         data[part.slice(0, eq).trim()] = parseValue(part.slice(eq + 1));
     }
     return { type, minigameData: data };

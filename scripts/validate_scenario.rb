@@ -330,6 +330,7 @@ def check_unknown_fields(json_data)
     targetKnot conversationMode background disableClose resume voiced videoLabel participantTag
     patrolOverride setPatrolSpeed setDwellMultiplier setVisible
     sendTimedMessage setGlobal completeTask skipTask unlockTask unlockAim unlockDoor
+    openMinigame
     _comment
   ]
 
@@ -3988,6 +3989,26 @@ def check_recurring_bugs(json_data, repo_root)
       next if globals.include?(var)
       issues << "⚠️ WARNING: '#{rel}' sets global '#{var}' (#set_global), but '#{var}' is not in scenario.globalVariables. " \
                 "Declare it (with its starting value) so it saves, syncs into other inks and can drive mappings, or fix the name."
+    end
+
+    # 10. #trigger_minigame:<type>[ key=value...] must name a registry type, and an exercise-station's
+    #     exerciseId must be in social.exercises (an unknown type only warns in the game and opens nothing)
+    code.scan(/#\s*trigger_minigame:([^\n#]*)/).flatten.each do |param|
+      type = param.strip[/\A[A-Za-z0-9_-]+/]
+      known = ValidateSocial::Exercises::REGISTRY_TYPES
+      unless known.include?(type)
+        issues << "❌ ERROR: '#{rel}' has #trigger_minigame:#{param.strip}, but #{type.inspect} is not a minigame type (#{known.join(', ')}); nothing would open."
+        next
+      end
+      next unless type == 'exercise-station'
+
+      ex_id = param[/[\s|]exerciseId=([^|\s]+)/, 1] || param[/"exerciseId"\s*:\s*"([^"]+)"/, 1]
+      ids = Array(json_data.dig('social', 'exercises')).filter_map { |e| e['id'] if e.is_a?(Hash) }
+      if ex_id && !ids.include?(ex_id.delete('"'))
+        issues << "❌ ERROR: '#{rel}' has #trigger_minigame:#{param.strip}, but exerciseId '#{ex_id}' is not in social.exercises."
+      elsif ex_id.nil? && !param.include?('"config"')
+        issues << "❌ ERROR: '#{rel}' has #trigger_minigame:#{param.strip}, which names no exerciseId; the station would open on nothing."
+      end
     end
   end
 
