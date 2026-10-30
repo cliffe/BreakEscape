@@ -2098,6 +2098,7 @@
             },
             "guidance": {"type": "string", "description": "The route to take, shown on the intro and under the feedback (who to tell, and that posting it in a chat is spreading it, not raising it)"},
             "minFacts": {"type": "integer", "minimum": 1, "description": "How many fact chips make a report (default 2)"},
+            "requireNoConclusion": {"type": "boolean", "description": "batch-11: hold back Done while a conclusion chip is picked (strings.mustRemoveConclusion says why). Default off."},
             "strings": {"type": "object", "description": "Wording over the form's defaults (concern-form-model.js DEFAULT_TEXT) and the runner's launchHeading, launchText and launchButton, keyed by line", "additionalProperties": {"type": "string"}}
           },
           "patternProperties": {"^_": {}},
@@ -2236,6 +2237,10 @@
             "finishedHeading": {"type": "string", "description": "batch-10 (E15/E17 B2): the heading on the end-of-episode panel after Finish; default 'Episode finished'"},
             "finished": {"type": "string", "description": "batch-10: the body line on the end-of-episode panel after Finish; default 'You have finished this exercise. You can close this window.'"},
             "drillRecapHeading": {"type": "string", "description": "batch-10 (E17 B2): the heading over the debrief's sort-drill recap of cards placed in a wrong bin; default 'Cards to look at again'"},
+            "sandboxRecapHeading": {"type": "string", "description": "batch-11: heading over the debrief recap of wrong everyday choices; default Choices worth a second look"},
+            "sandboxRecapMove": {"type": "string", "description": "batch-11: line per recapped choice; {chosen} and {right} placeholders"},
+            "assistantRecapHeading": {"type": "string", "description": "batch-11: heading over the debrief recap of assistant-stage mistakes"},
+            "assistantRecapMove": {"type": "string", "description": "batch-11: line per recapped assistant mistake; {chosen} and {right} placeholders"},
             "flipHeading": {"type": "string"},
             "flipIntro": {"type": "string"},
             "flipDefenderLine": {"type": "string"},
@@ -2661,6 +2666,7 @@
             "title": {"type": "string"},
             "intro": {"type": "string"},
             "disclaimer": {"type": "string", "description": "The 'can make mistakes, check important information' line shown under each answer"},
+            "reloadNote": {"type": "string", "description": "batch-11: the assistant window restart warning; an empty string suppresses it"},
             "summarise": {
               "type": "object",
               "description": "The 'summarise my emails' mode: the reply surfaces the planted hidden instruction as a suggestion; hidden reveals the original white line",
@@ -2906,6 +2912,7 @@
           ]
         },
         "sheetNudge": {"type": "string", "description": "batch-6 (E8 F11): the one-line nudge shown when Confirm is pressed with nothing ticked. Default 'Tick what made you decide, or choose Nothing looks wrong. Then Confirm again.'"},
+        "confirmPrompt": {"oneOf": [{"type": "boolean"}, {"type": "string"}], "description": "batch-11: the first Confirm with nothing ticked shows a prompt instead of locking; a second Confirm locks. true uses the default prompt, a string replaces it. Default off."},
         "brief": {"type": "string"},
         "pairedWith": {"type": "string"},
         "channelTells": {"type": "array", "items": {"type": "string"}},
@@ -2919,7 +2926,10 @@
             "noFlags": {"type": "string", "description": "When the learner named no flags"},
             "noFlagsLead": {"type": "string", "description": "batch-5 (E17): the sentence before noFlags (default \"You didn't name any flags on these messages, so there's nothing to grade skill by skill.\"). For a non-phishing set where 'name any flags' reads wrongly."},
             "reportedPct": {"type": "string", "description": "batch-8: the reopened result card's report line AND the debrief's stored-reopen summary, one shared source ({pct} is the percentage; default 'Reported {pct}% of the phish'). On reopen a set value replaces the 'Reported rather than just deleted' / 'N% of the phish' label-value pair with one sentence; in the debrief it wins over strings.reportedPct. For a non-phishing set."},
-            "criticalLead": {"type": "string", "description": "batch-8: the result card's critical-miss lead, the phrase after 'One answer'/'N answers' (default 'let an attacker straight in'). For a non-phishing set where no attacker is let in; the labelled-miss branch ('missed something that needed reporting') is used unchanged."}
+            "criticalLead": {"type": "string", "description": "batch-8: the result card's critical-miss lead, the phrase after 'One answer'/'N answers' (default 'let an attacker straight in'). For a non-phishing set where no attacker is let in; the labelled-miss branch ('missed something that needed reporting') is used unchanged."},
+            "caughtBreakdown": {"type": "boolean", "description": "batch-11: append the (N reported, M deleted) split to the Phish caught count"},
+            "handledRightLabel": {"type": "string", "description": "batch-11: label for the genuine-items count; {real} is replaced by the item noun"},
+            "clampedNote": {"type": "string", "description": "batch-11: line shown when penalties floored the round at 0%; a default exists"}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
@@ -3236,7 +3246,10 @@
           "additionalProperties": false
         },
         "scope": {"type": "string"},
-        "ethics": {"type": "string"}
+        "ethics": {"type": "string"},
+        "requireFact": {"type": "boolean", "description": "batch-11: block Approach / Make the call until at least one fact is held. Default off."},
+        "requireFactLine": {"type": "string", "description": "batch-11: line shown while requireFact holds Approach back"},
+        "outcomeLabels": {"type": "object", "properties": {"got_it": {"type": "string"}, "reported": {"type": "string"}, "walked_away": {"type": "string"}}, "additionalProperties": false, "description": "batch-11: pretext debrief outcome labels; defaults are phone wording (You rang off.)"}
       },
       "patternProperties": {"^_": {}},
       "additionalProperties": false
