@@ -462,3 +462,13 @@ Recommended option first in each. Decisions A1–A9 replace revision 1's decisio
 - **16. Awareness DM defend items.** (a) Keep triage `sms`; add a `dm` kind with the composed DM work (rec). (b) Add `dm` now.
 - **17. The feed.** Owner accepted: stays in the osint-browser social sites, and DMs link to the profile.
 - **18. Build order.** Updated because batch 14 and 15 are done: (a) the ink mail engine (A1–A8), then the DM theme (rec). (b) The DM theme first (smaller, and Eldritch planning can use it). (c) Both in one pass.
+
+---
+
+## Owner decisions (2026-10-30, revision 2 form)
+
+All ink-email recommendations accepted (A1 one ink story per correspondent; A2 headless `npc` + `emailRecord` on the contact; A4 `# reply_after`, else contact delay; A5 timed emails, `sendEmail` mapping and `# send_email`; A6 Compose shows pending choices or runs `on_compose`; A7 `trigger_minigame` with `composeTo`; A8 `# forward:<messageId>`; A9 seeded mail stays static; 7 `# attach` gated by ink conditions). Build order: ink mail first, then the DM theme. DM decisions 10–17 as recommended; plain mail in m09–m10 and new missions only.
+
+Owner notes that change the design:
+- **A3, what the player sends:** use Outlook's suggested replies as the UI model. The options are written as the start of the player's message to the NPC (in the player's voice, not a "[Send HaX the log]" label), shown as suggested-reply chips under the open message; picking one opens the reply with the full message filled in (choice text plus the player's continuation), then Send.
+- **8, judged and plain on one contact:** allow both. A contact can be phished or an ink correspondent, as the scenario or the ink configures it (for example a contact with both `targetId` and `npc`, with ink or scenario config deciding which the player gets at a given point).
