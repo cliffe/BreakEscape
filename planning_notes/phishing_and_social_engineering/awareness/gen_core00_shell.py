@@ -20,6 +20,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from title_art import with_title_art  # noqa: E402
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
 
@@ -254,6 +255,7 @@ def main():
     with open(os.path.join(d, 'scenario.json.erb'), 'w') as f:
         json.dump(sc, f, indent=2, ensure_ascii=False)
         f.write('\n')
+    meta = with_title_art(meta, mission)
     with open(os.path.join(d, 'mission.json'), 'w') as f:
         json.dump(meta, f, indent=2, ensure_ascii=False)
         f.write('\n')
