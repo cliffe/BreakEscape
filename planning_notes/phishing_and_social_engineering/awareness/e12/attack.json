@@ -118,7 +118,7 @@
       "outcomes": {
         "got_it": {},
         "reported": { "line": "I'm going to stop you there. I'll take the parcel at the desk and ring facilities, and if it's really expected they'll come down for it." },
-        "walked_away": {}
+        "walked_away": { "line": "Right you are. Mind how you go." }
       },
       "tells": {
         "recipient": {

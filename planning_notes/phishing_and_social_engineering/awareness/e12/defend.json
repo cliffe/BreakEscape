@@ -4,7 +4,7 @@
   "_brandAdditions": {
     "_use": "For BRAND_SET.md (Merrin & Sallow Architects additions from E12). Fuller P11 entry is in e12/BRAND_ADDITIONS.md. Two new M&S cast: Delphine Arvanitis (lobby pretext mark, Front-of-House Coordinator) and Lorna Easton (studio kiosk host, Reception & Facilities Lead). Red-team persona Jo Fairweather (Northlight Security) appears only in the seeded brief and strings, not as a world NPC. New fictional firms: a .example maintenance contractor (on the service contract) and a .example fire-safety firm (the fake inspector's claimed firm). Catherine Merrin (E4 partner) is reused by name only in the attack-half OSINT. 'Gallagher' is barred (BRAND_SET.md); the retired core_10 draft name Maureen Gallagher is not reused.",
     "newCast": "Delphine Arvanitis, Front-of-House Coordinator, 50s, Greek-Cypriot British, fifteen years on the desk, reception@merrinsallow.example. Lorna Easton, Reception & Facilities Lead, 40s, white, north-west England, lorna.easton@merrinsallow.example. Both new M&S cast, distinct from the E4 M&S cast. Placeholder stock sprites until the PixelLab queue (Lorna reuses female_office_worker_v2; Delphine reuses female_telecom_v2 as the person-chat placeholder). Clash check done 2026-10-28: Arvanitis, Delphine, Easton, Lorna have no conflicting repo hits.",
-    "newFirms": "Invented .example firms, named on the fire-inspector defend item (item 3): a maintenance contractor on Merrin & Sallow's service contract and a fire-safety firm the fake inspector claims; the two names do not match, which is how the item fails. Pre-ship: web-search Arvanitis, Easton, Northlight Security and the invented firm names for a real business of the same name."
+    "newFirms": "Invented firms named on the fire-inspector defend item (item 3): Thornfield Facilities (the maintenance contractor on Merrin & Sallow's service contract) and Redmarsh Fire Safety (the firm the fake inspector's paperwork names); the two do not match, which is how the item fails. Both now surface on the card's 'Today's list' transcript line and in the not_expected perFlagNote (B2 F2: feedback must cite only what is on screen). Clash grep 2026-10-30 across scenarios planning_notes docs public/break_escape/js: Thornfield and Redmarsh zero hits. Pre-ship: web-search Arvanitis, Easton, Northlight Security, Thornfield Facilities and Redmarsh Fire Safety for a real business of the same name."
   },
 
   "triageSets": [
@@ -71,7 +71,7 @@
             "real": "That visitor was genuine, but reporting when you are unsure is never wrong."
           },
           "delete": {
-            "phish": "Safe, but nobody was told. Reporting lets facilities or security look out for this visitor.",
+            "phish": "Safe: they did not get in. Reporting as well lets facilities or security look out for this visitor.",
             "real": "That visitor was genuine. Turning them away without a way to check left them stuck."
           },
           "verify": {
@@ -94,7 +94,7 @@
       "messages": [
         { "id": "e12_call_tailgater", "kind": "call",
           "_note": "Item 1. Impostor: an unbadged visitor tailgates in behind a badge-holder and heads for the stairs. Stage-direction transcript style. Escalate (report) or Ring back is right; Comply is the miss. Mirror of item 2. Local tells tailgating + no_escort.",
-          "callerId": "A visitor, no badge, following a staff member in",
+          "callerId": "A visitor at the gate, no badge",
           "from": { "name": "Unknown visitor", "address": "At the gate, no badge" }, "time": "09:12",
           "transcript": [
             { "who": "Visitor", "text": "Cheers, I'm with them." },
@@ -115,7 +115,8 @@
           "from": { "name": "Expected client", "address": "At the desk" }, "time": "09:55",
           "transcript": [
             { "who": "Client", "text": "Morning, I've a ten o'clock with Yasmin Chaudhry." },
-            { "who": "Client", "text": "Happy to sign in and wait, no rush." }
+            { "who": "Client", "text": "Happy to sign in and wait, no rush." },
+            { "who": "Today's list", "text": "10:00, client in to see Yasmin Chaudhry. Expected." }
           ],
           "truth": { "verdictPoints": { "trust": 60 }, "isPhish": false, "flags": [],
             "whyFine": {
@@ -124,16 +125,17 @@
             "falseAlarmCost": "Turn them away and a real client is left in the lobby and the meeting is missed." } },
         { "id": "e12_call_fire_inspector", "kind": "call",
           "_note": "Item 3. Impostor: a 'fire-safety inspector' wanting the comms room, not on the list, firm name doesn't match the service contract, asks to let himself in. Ring back then Escalate. Local tells uniform_pretext + not_expected plus shared secrecy_or_bypass.",
-          "callerId": "'Fire-safety inspector', wants the comms room",
-          "from": { "name": "'Fire-safety inspector'", "address": "At the desk, clipboard" }, "time": "11:20",
+          "callerId": "Visitor in hi-vis, wants the comms room",
+          "from": { "name": "Visitor with a clipboard", "address": "At the desk" }, "time": "11:20",
           "transcript": [
             { "who": "Inspector", "text": "Annual check, I just need five minutes in your comms room." },
-            { "who": "Inspector", "text": "I can let myself in, no need to trouble anyone." }
+            { "who": "Inspector", "text": "I can let myself in, no need to trouble anyone." },
+            { "who": "Today's list", "text": "No fire-safety inspection booked today. Maintenance is contracted to Thornfield Facilities; his paperwork names Redmarsh Fire Safety." }
           ],
           "truth": { "isPhish": true, "flags": ["uniform_pretext", "not_expected", "no_escort", "secrecy_or_bypass"],
             "perFlagNote": {
               "uniform_pretext": "A hi-vis and a clipboard are easy to get; neither proves he's expected.",
-              "not_expected": "No entry on today's list and the firm on his order isn't the one on the maintenance contract.",
+              "not_expected": "No inspection on today's list, and his paperwork names Redmarsh Fire Safety, not Thornfield Facilities who hold the maintenance contract.",
               "no_escort": "'I can let myself in' means roaming a secure room with nobody alongside him.",
               "secrecy_or_bypass": "'I can let myself in' asks to skip the escort into a secure room." },
             "ifTrusted": "He'd be alone in the comms room with the building's network.",
@@ -144,13 +146,14 @@
             "no_escort": { "redFlag": "A visitor or contractor left to move around unescorted." } } },
         { "id": "e12_call_courier_push", "kind": "call",
           "_note": "Item 4. Impostor: the exact con the learner just ran, a courier with a parcel and the badge 'in the van' asking to be buzzed through without signing in. Refuse the buzz-through / Ring back (take the parcel at the desk). Local tells tailgating + uniform_pretext (P1 F-E12-7: the hi-vis counts here, same as the fire inspector) plus shared borrowed_authority + secrecy_or_bypass. Mirrors item 5 and closes the loop with the attack.",
-          "callerId": "Courier with a parcel, badge 'in the van'",
+          "callerId": "Courier with a parcel",
           "from": { "name": "Courier", "address": "At the badge door" }, "time": "14:30",
           "transcript": [
             { "who": "Courier", "text": "Sample box for one of your partners, they said to send me straight up. Hands full, could you buzz me through?" },
-            { "who": "Courier", "text": "Don't worry about signing me in, I'll be thirty seconds." }
+            { "who": "Courier", "text": "Don't worry about signing me in, I'll be thirty seconds." },
+            { "who": "Today's list", "text": "No parcels booked for any partner today, and no courier expected." }
           ],
-          "truth": { "isPhish": true, "flags": ["tailgating", "borrowed_authority", "secrecy_or_bypass", "uniform_pretext", "not_expected", "no_escort"],
+          "truth": { "verdictPoints": { "delete": 60 }, "isPhish": true, "flags": ["tailgating", "borrowed_authority", "secrecy_or_bypass", "uniform_pretext", "not_expected", "no_escort"],
             "perFlagNote": {
               "borrowed_authority": "'A partner said to send me straight up' leans on a name you can't check to wave away the sign-in; a name is not a booking.",
               "secrecy_or_bypass": "'Don't bother signing me in' is the ask to skip the one check.",
@@ -173,7 +176,7 @@
             { "who": "Colleague", "text": "First day back, I've left my pass at home, can you let me in?" },
             { "who": "Colleague", "text": "You can check me on the staff list, I don't mind waiting." }
           ],
-          "truth": { "isPhish": false, "flags": [],
+          "truth": { "verdictPoints": { "trust": 60 }, "isPhish": false, "flags": [],
             "whyFine": {
               "default": "A genuine colleague the desk can confirm. Check the staff list and issue a day pass, don't lend your own badge, and don't leave them stuck.",
               "tailgating": "The safe answer is a temporary pass of their own, so the record stays right." },
@@ -187,7 +190,7 @@
             { "who": "Visitor", "text": "(nobody's at the desk; the screen's open and they're having a good look)" },
             { "who": "Visitor", "text": "Oh, I'm just waiting for someone, don't mind me." }
           ],
-          "truth": { "isPhish": true, "flags": ["unlocked_screen", "no_escort"],
+          "truth": { "verdictPoints": { "delete": 60 }, "isPhish": true, "flags": ["unlocked_screen", "no_escort"],
             "perFlagNote": {
               "unlocked_screen": "An open screen is that colleague's email, files and account, there for anyone who sits down.",
               "no_escort": "A visitor left alone by a desk, with nobody signing for them." },
