@@ -103,6 +103,19 @@ test('readOnly: Compose and Contacts are hidden and neither will open; the inbox
     scene.cleanup();
 });
 
+test('readOnly closes normally (no abort, no failure); a plain empty client still aborts', () => {
+    for (const [extra, mode] of [[{ readOnly: true }, 'close'], [{ readOnly: false }, 'abort'], [{}, 'abort']]) {
+        const { scene } = openClient(extra);
+        assert.equal(scene.closeMode, mode, JSON.stringify(extra));
+        const calls = [];
+        scene.abort = () => calls.push('abort');
+        scene.close = () => calls.push('close');
+        scene.requestClose();
+        assert.deepEqual(calls, [mode], JSON.stringify(extra));
+        scene.cleanup();
+    }
+});
+
 // ---- the theme hooks (item 7) -----------------------------------------------------------------
 
 const css = readFileSync(join(root, 'public/break_escape/css/mail-client-minigame.css'), 'utf8');
