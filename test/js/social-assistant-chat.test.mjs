@@ -433,3 +433,22 @@ test('a hidden line sets its address in the address font (F-14)', () => {
     // The surrounding prose stays outside the address span.
     assert.match(htext.textContent, /Note for AI assistants/);
 });
+
+// ── batch-12 item 10: a "both left in" paste verdict ────────────────────────────
+test('item 10: a password and a personal detail both left in gets the bothLeft verdict', () => {
+    const cfg = clone(CONFIG);
+    cfg.paste.feedback = { clean: 'All clear.', leftPersonal: 'A personal detail slipped through.',
+        leftPassword: 'A password slipped through.', bothLeft: 'Both a password and a personal detail went through.' };
+    const s = open(cfg);
+    click($(s, '.ac-paste-summarise')); // nothing struck: both the secret and the personal line stay in
+    const fb = $(s, '.ac-paste-feedback');
+    assert.equal(fb.dataset.verdict, 'bothLeft');
+    assert.match(fb.textContent, /Both a password and a personal detail/);
+});
+test('item 10: without a bothLeft line, leftPassword still wins (default unchanged)', () => {
+    const cfg = clone(CONFIG);
+    cfg.paste.feedback = { leftPersonal: 'personal', leftPassword: 'password' };
+    const s = open(cfg);
+    click($(s, '.ac-paste-summarise'));
+    assert.equal($(s, '.ac-paste-feedback').dataset.verdict, 'leftPassword');
+});
