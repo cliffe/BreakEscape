@@ -204,6 +204,7 @@ Take the counts from the review and playtest files and the logs, not from memory
 
 ## Housekeeping
 
+- **Hacktivity plans live in Hacktivity.** Hacktivity platform details (courses, seeding, scoring, reporting routes, admin) are stored in the Hacktivity repo at `docs/awareness_course/`, not here. Put new platform detail there (Hacktivity repo, main; ask the user before any Hacktivity edit) and keep only feature-level facts in this repo.
 - **The dev database is shared and has no backup.** The main tree, every worktree and the :3000/:3001/:3002 servers all use Postgres `break_escape_development`. Never run `db:create`, `db:schema:load`, `db:migrate`, `db:reset`, `db:drop` or `db:setup` without the user's say-so; `db:seed` is fine. A worktree agent's `schema:load` wiped every game on 2026-10-30.
 - Agents that stop mid-run leave headless browsers and stuck harness commands behind. List them with `ps`, check what they are, and kill them **by PID**. Never use `pkill -f` with a pattern that also appears in your own command line, because it kills your own shell.
 - When taking over from an agent that spawned children, list the live agents first and stop its children, or you get duplicate builders overwriting each other.

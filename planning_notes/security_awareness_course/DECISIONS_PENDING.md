@@ -2,58 +2,30 @@
 
 Questions for the user. Each has a recommendation; the plan follows the recommendation until the user says otherwise. When a question is answered, move it to the "Decided" section with the date, the choice and its source.
 
-**Updated 2026-10-27**, when the plan was reconciled with the built awareness product (`04_BUILT_SO_FAR.md`). Where the build has already answered a question, it is closed below with the source. Evidence: `research/built_episodes_vs_plan.md` §3.
+**Updated 2026-10-30** with the owner's decisions-board answers (see "Decisions board answers (2026-10-30)" under Decided). **Updated 2026-10-27**, when the plan was reconciled with the built awareness product (`04_BUILT_SO_FAR.md`). Where the build has already answered a question, it is closed below with the source. Evidence: `research/built_episodes_vs_plan.md` §3.
 
-## Waiting on the user (from the build)
+## Waiting on the user
 
 ### The customer's reporting route
 
-- **Background:** the debrief's "On Monday" card has a slot for the customer's own reporting route (`slot:customer_report_route`, aw1, built). The user chose to set it as a Hacktivity setting, then asked for options. A proposal and an options form (linked from `awareness/HANDOVER.md` §5) set out approaches A to F, which settings, their scope and the fallback.
-- **Status:** not answered. No Hacktivity change happens without the user's explicit go-ahead (R8).
-- **Recommendation:** none added here; the options form is the place to answer. It is the only platform change the plan proposes for now.
+- **Status (2026-10-30):** the owner said go ahead: draft the pre-canned option table for their approval, then build. The table is not drafted yet; nothing is built until they approve it. Platform detail now lives in the Hacktivity repo (`docs/awareness_course/reporting_route_wp02.md`, D10).
 
-### E8 to E20 build questions (2026-10-29, `implementation/BUILD_LOG.md`)
+### Open from the E8 to E20 build questions
 
-- **E13 deepfake demo call:** wired but gated on `e13_demo_offered`, which nothing sets. Reviewer proposal: open it as a spoken debrief once the kiosk work is done (set the flag on the defend-done change); else cut it, since the scored video call already teaches the lesson.
-- **Debrief "habit to keep" outside phishing:** every episode shows the set-wide rule of thumb (`AWARENESS_RULE_OF_THUMB_TEXT`, about money and codes). On E17 acceptable use, E15 shadow IT and E20 Wi-Fi it reads off-topic. Options: keep the one constant everywhere; or let an episode carry its own habit line beside it.
-- **Inboxly:** an invented mail product in built E1, E2 and E4 that matches a live email product. Rename or keep.
-- **Title-screen name:** the title screen shows each episode's `mission.json` `display_name` ("Awareness E20: Remote and mobile working (full episode)"), the convention on all built episodes. Blind testers read it as an internal code. Options: keep it (it is also the Hacktivity listing name); or show the `scenario_name` ("Remote and mobile working: two days on the road") on the title screen and keep `display_name` for listings.
-- **E20 host art:** new host art after the 3 Nov PixelLab reset, or reuse a built host.
-- **Verdict button colours (2026-10-30):** a blind tester said the green Trust, amber Report and red Delete marks hint at the answer. They are the engine default in every episode. Keep, or make them neutral course-wide?
-- **"Confirm with nothing ticked" prompt (2026-10-30):** batch 11's `set.confirmPrompt` is on in E11, E12, E13, E15 and E16 only. Turn it on in every episode, or keep it where testers hit the problem?
-- **E17 team counter (2026-10-30):** batch 10 updates it after the feedback card draws (same tick). Holding it until Next means rewriting the team-tally tests. Is the reorder enough?
-- **`defend_pass` name (2026-10-30):** it marks completion (no default pass mark), but three testers read it as a pass at 5-35% rounds. Rename to `_complete` (touches records and any reporting that reads it), or keep?
-- **core_17's E3 impostor call (2026-10-30):** the visible-tell fix scored `secrecy_or_bypass` on the annual's copy of E3's impostor call ("No sense ringing the desk" is on screen); E3's own item, outside the E8-E20 scope, still scores two tells. Backport the tell to E3 (an E1-E7 edit), or accept that the annual scores it more fully?
-- **Top result band wording (2026-10-30):** the engine default and most episodes open the top band with "Sharp:"; E18 now says "Well done:" (a blind tester called "Sharp:" gamified). The C4 reviewer recommends standardising on "Well done:" across the course (engine default plus the episodes that set their own bands). Standardise on "Well done:", keep "Sharp:", or leave E18 as the one exception?
-- **E12 badge-less colleague (2026-10-30):** "Let them in" scores full marks because the card now shows them on the staff list. Or should a person without a badge always need a check?
-- **Orchestrator rulings you may overrule:** E12 §20.2 relabel the reception buttons (now Let them in / Report / Turn away / Check first) and §20.5 keep seven items; E20 home working gets a sixth concept card, brief kept; E19 content note widened to the learner's own machine; E10 high-harm pages count as critical misses.
+- **Debrief "habit to keep" outside phishing (2026-10-30, no pick):** the owner's note: "Should the line be specific to groups of episodes?" Open. Background: every episode shows the set-wide rule of thumb (`AWARENESS_RULE_OF_THUMB_TEXT`, about money and codes), which reads off-topic on E17, E15 and E20. Options were one constant everywhere, or a per-episode habit line beside it. A per-group line (for example one for the access and physical episodes, one for data handling) is a third option for the owner to rule on.
+- **`defend_pass` name (2026-10-30, discuss first):** the owner picked "rename to `_complete` everywhere" but noted: "First discuss: why would this require code from Hacktivity?" Open until discussed. Answer to give: the flag is written into the learner's game state by the awareness-measure records, and anything that reads it (the post-check's carry-over, any report built on completion) would need the new name; Hacktivity needs code only if it reads the flag by name. Check that before any rename.
 
 ## Open
 
-### D6. Market order and localisation
+### D9. Accessibility commitment (2026-10-30: pick recorded, owner wants it explained)
 
-- **Background:** the build is UK-flavoured: UK regions, sterling, Ofcom drama numbers, NCSC grounding. Its voiced lines are cached by exact text, so each language needs its own audio.
-- **Recommendation:** UK first, with notes for the EU and the US in each concepts file and the compliance mapping covering both. Translation (BE-06, HA-16) later, and only after the text route exists, since text is cheaper to localise than voiced lines.
+- **Pick:** WCAG 2.2 AA for the episode runner's HTML views, the check forms and the Hacktivity pages; the game accessibility guidelines for the 2D room; an accessibility statement once a text route (BE-03) exists.
+- **Owner note:** "Discuss: explain exactly what this entails." Open until explained. Background: the build has a first-slice baseline (keyboard play, accessible names on report and verdict controls, reduced motion, plain-text alternatives in item data). The full audit and screen-reader work on the canvas surfaces is deferred. See `features/accessibility_and_inclusion.md`.
 
-### D9. Accessibility commitment
+### D11. Compliance gaps the mapping found (2026-10-30: deferred)
 
-- **Background:** the build has a first-slice baseline: keyboard play of the attack and defend beats, accessible names on the report and verdict controls, reduced motion and plain-text alternatives in the item data (`designs/11`). The full audit and screen-reader work on the canvas surfaces is deferred. There is no equivalent text route (BE-03).
-- **Recommendation:** WCAG 2.2 AA for the episode runner's HTML views, the check forms and the Hacktivity pages; the 2D training room follows the game accessibility guidelines, with the text route (BE-03) as the equivalent alternative where it falls short. Publish an accessibility statement once BE-03 is built. See `features/accessibility_and_inclusion.md`.
-
-### D10. Where the Hacktivity plans live
-
-- **Background:** this repo is public; Hacktivity is private. `features/hacktivity.md` is written at feature level. The build's own reporting-route proposal also sits in this public repo, at a more detailed level.
-- **Options:** (a) keep both here; (b) move platform-level detail to the Hacktivity repo and leave a pointer.
-- **Recommendation:** (a) for `features/hacktivity.md`, which stays at feature level (and is now mostly a later wish list, R8). Consider (b) for the route proposal's code-level detail once the route is decided.
-
-### D11. Compliance gaps the mapping found
-
-`02_COMPLIANCE_MAPPING.md` shows four requirements nothing planned or built meets. The mapping is now re-pointed at the built episodes and checks; the gaps carry over:
-
-1. **Specialised data protection training.** The ICO expects extra training for data protection officers, subject access teams and records managers. *Recommendation:* a role episode and check pair later (role_08, data protection specialists), rather than stretching E11.
-2. **Developer and incident-response training under PCI DSS.** The awareness product is awareness level, so it does not meet PCI DSS 6.2.2 or 12.10.4 on its own. *Recommendation:* say so plainly in the sales material, and point to Hacktivity's existing technical labs for those roles.
-3. **Exercising the customer's own incident plan.** Cyber Governance Code D2 asks boards to exercise their own plan at least annually. A role_01 board exercise would use a brand-set company's plan. *Recommendation:* let a facilitated version (the runner's unused `facilitated` flag) load the customer's plan headings and contacts from the organisation profile.
-4. **Advanced persistent threats.** NIST AT-2(5) is not covered. *Recommendation:* a short optional concept panel in a role_01 or role_03 episode, not an episode of its own.
+- **Decision:** deferred. The owner wants detailed plans for these as a possible next round of development, after the current course is release-ready. Note: "Create detailed plans for this as a potential next round of developments."
+- **The four gaps (from `02_COMPLIANCE_MAPPING.md`):** (1) specialised data protection training (ICO; role_08 later); (2) developer and incident-response training under PCI DSS 6.2.2 and 12.10.4 (point to Hacktivity's technical labs); (3) exercising the customer's own incident plan (Cyber Governance Code D2; facilitated version loading the organisation profile); (4) advanced persistent threats (NIST AT-2(5); optional concept panel in role_01 or role_03).
 
 ### D13. Topics with no attacker: consequence flip or defend-only? (decided 2026-10-27, see Decided)
 
@@ -71,45 +43,54 @@ Questions for the user. Each has a recommendation; the plan follows the recommen
 - **Background:** `04_BUILT_SO_FAR.md` §4 proposes E8 after the click (core_04, core_01 LO6), E9 passwords and password managers (core_03), E10 fake downloads and "verify you are human" pages (core_08, core_07), E11 misdirected and overshared data (core_05, core_06), E12 the visitor and the tailgater (core_10), E13 the AI assistant (core_15). Each is a full episode, a defend-only variant and new check items. The built product is on hold and its resume plan comes first.
 - **Recommendation:** keep that order. E8 fills the largest gap (what to do next, which every built episode leads into) and reuses the inbox and report systems as they are. E9 and E10 build on E3's MFA stage and E5's landing-page builder. E11 needs the consequence flip (D13), E12 needs person-chat in the training room, and E13 needs an authored assistant, so they come once those runner changes exist. Companies: `03_WORLD_AND_CAST.md` (E11 and E13 at proposed new companies).
 
-### D16. Smaller calls from the reconciliation
-
-Each has a working answer in the plan; confirm or change.
-
-| Item | Working answer | Where |
-|---|---|---|
-| Induction starter pathway | core_00, then the general check pair with E5, then E1 or E6; about 53 minutes now that episodes run about 15 and checks about 9 | `00_COURSE_OVERVIEW.md` |
-| Facilitated session length | Partly answered: the user chose one facilitator guide for the whole course, written last (FUN_DECISIONS q_facil). Still open: the session length the guide recommends; working answer 30 to 45 minutes | `01_LEARNING_DESIGN.md` |
-| core_00 and core_17 targets | core_00 about 5 minutes, no defend-only variant; core_17 about 20 minutes (mixed defend set plus the post-check) | `00_COURSE_OVERVIEW.md` |
-| Defend-only for every role episode | Recommendation: yes, every episode ships a defend-only variant, as E1 to E7 do (the overview still says "none" for role_01 and role_07) | `00_COURSE_OVERVIEW.md` |
-| Secure / Developing / Not yet | Recommendation: drop them as reported bands; keep as descriptive columns only, since the build reports per-item results, not bands | `MODULE_TEMPLATE.md`, assessment files |
-| Company picks for E8 to E13 | Quayholt (E8), Merrin & Sallow (E9), Tarrowby (E10), Cobbleford Care (E11, proposed), Brightwell (E12), Lintgate Communications (E13, proposed) | `03_WORLD_AND_CAST.md` |
-| Verify in the check forms | The finance, executive, helpdesk and mobile check forms turn Verify on, but `BRAND_SET.md` §6 says the checks measure Trust, Report and Delete only. Confirm which is intended, then update the other (a build question, not plan) | `../phishing_and_social_engineering/awareness/BRAND_SET.md` |
-| Platform priorities | Next: HA-11 (the route setting only); P2: HA-05, 09, 14, 03, 15, 19, 23, 01; P3: the rest, including HA-06, 07, 17 and 26 (were MVP) | `features/hacktivity.md` |
-| Name of the new-starter path | "the new-starter path" for now (was Induction Essentials) | overview, hacktivity |
-| Outcome-rating bands, if ever reported | Starting point only: bands at 80 and 50; pre-check weight 0, post-check weight 2 | `features/assessment_and_evidence.md` |
-| "Delivered today" compliance claims | Check they are not overstated before any customer sees them | `02_COMPLIANCE_MAPPING.md` |
-| Companies for E8 to E13 disagree between files | The module designs say E8 Quayholt, E9 Tarrowby, E10 Quayholt, E11 Carrholme Services (proposed), E12 Merrin & Sallow, E13 Brightwell; `03_WORLD_AND_CAST.md` and `features/explainers_video_and_npc.md` give a different set. Recommendation: adopt the module designs (they hold the detail) and align the other two files. Asked on the build review page | modules, 03, explainers |
-| Proposed new names to add to `BRAND_SET.md` after a web search | Carrholme Services (E11), Cobbleford Care and Lintgate Communications (03 alternatives), Marrowdale Facilities (core_16), Harbreck Facilities Group (role_01 board crisis), Stavely Software (role_04), Beckside Hospitals NHS Trust (sector_01), "Deskmate" (the authored AI assistant), `brightwell-support.example` | modules, minigames |
-| Kids game verdicts and habit | Kids sorter verdicts "Trust" and "Tell a grown-up" (a third, "Leave it", open); fix the kids habit word for word as the adult rule is | `../kids_cyber_game/` |
-
-## Module-level open questions
-
-These are the open questions raised inside individual module READMEs that a stakeholder (rather than an author) should rule on. The plan's cast (Ama, Kai, Hassan and others) is now a pool of names, not a workplace (`03_WORLD_AND_CAST.md`), so the questions are restated without it where they still apply. Questions the build answered are under "Decided".
-
-| Module | Question | Recommendation |
-| --- | --- | --- |
-| core_03 | A prompt flood at 02:13, outside work: right for all staff? (The training-room frame means it would be a scene inside E9's defend half, not the learner's own night.) | Keep it as one defend item; night is when prompt floods happen and it is memorable. Add a daytime variant for organisations that prefer it. |
-| core_04 | Who presses the optional "cut off" step after a report? | The learner, in the E8 debrief or defend half, as a small reward for reporting; it stays optional, and the habit at the learner's own desk is "unplug the cable if we ask you to". |
-| core_05 | Can the learner avoid the misdirected email, and what fills the breach slot if they do? | Yes; the autocomplete is visible and catchable, a learner who catches it is thanked, and the flip shows a different breach (personal data received by mistake) so everyone still practises reporting one. Depends on D13. |
-| core_14 | How much to say about staff monitoring? | One line from the host ("our tools see files moving, but not why; people see the why"), the organisation's own monitoring notice on the "On Monday" card, and never imply staff are watched covertly. |
-| core_14 | The colleague's innocent reason, a parent in hospital: keep this gentle but sensitive detail? | Keep it, told lightly and with no medical detail, with other innocent reasons held for defend items. |
-| core_16 | Which policy answers can an organisation not change (the locked answers)? | Six: never share passwords or MFA codes; never use someone else's login; never lend a badge; never look at data you do not need for your job; never switch off security software; always report a suspected incident. |
-| role_01 | Should paying the ransom be a real option for the board? | Yes; paying is not generally unlawful in the UK and some boards choose it. Assess the process (advice, sanctions check, insurer told, reasons recorded, board agreement), not the verdict, and show realistic consequences without moralising. |
-| role_02 | Should the learner be able to sign off in someone else's name (a password on a sticky note, or leftover approver access)? | Yes, as an ethical choice with a consequence; the finance system cannot tell who was at the keyboard, which is the lesson. |
-| role_05 | How specific to be about recruitment fraud, where the advisories name North Korean IT workers? | Name them in `concepts.md` and on the "On Monday" card, but keep the episode's fraudster an unnamed, faceless network, so no candidate's nationality, accent or appearance becomes the clue; the clues are inconsistencies and refusals. |
-| role_06 | One-time codes: the rule of thumb tells everyone not to read back a code, yet many contact centres verify callers that way. Which rule wins? | The course default never asks a customer to read back a code (as every brand-set company does). Organisations that verify by read-back can switch it on; the episode then adds the safeguards and explains why their procedure differs from the rule of thumb. |
-
 ## Decided
+
+### Decisions board answers (2026-10-30, owner)
+
+Recorded from the owner's decisions board on 2026-10-30. "Differs" means the owner chose something other than the recommendation. Owner notes are verbatim.
+
+#### E8 to E20 build questions
+
+| Item | Decision | Owner note |
+|---|---|---|
+| Top result band wording | Standardise on "Well done:" course-wide (engine default and episodes that set their own bands) | |
+| Verdict button colours | Keep the colours | |
+| "Confirm with nothing ticked" prompt | Turn it on everywhere, E1 to E7 included (differs from the recommendation) | "Is the recommendation only because it touches built episodes?" (unanswered; the recommendation was to keep it where testers hit the problem, which is the cost of editing built episodes) |
+| E13 deepfake demo call | Open it after the kiosk work, as a spoken debrief | |
+| core_17's copy of E3's impostor call | Add the tell to E3 too (an E1 to E7 edit) | |
+| E12 colleague back from leave without a badge | Keep full marks | |
+| E17 team counter timing | Yes, the reorder is enough | |
+| Title-screen name | Title screen shows the episode's own name (`scenario_name`); listings keep `display_name` | |
+| Inboxly | Rename it, after a web search for a clean name | |
+| E20 host art | New host art after 3 Nov | |
+| Episodes over 15 minutes | Trim anything over 17 minutes after timed runs | |
+| Orchestrator rulings that could be overruled | Keep all four | |
+| Habit to keep line; `defend_pass` rename | Not decided; see "Waiting on the user" | |
+
+#### Hacktivity and platform
+
+| Item | Decision | Owner note |
+|---|---|---|
+| Pre-canned reporting-route options | Go ahead: draft the option table for the owner's approval, then build | |
+| Add E8 to E20 to the seeded awareness courses | Yes, add them now (differs) | "We'll ship the full course when these are done" |
+| Dev DB wipe | Nothing lost that matters; nightly pg_dump set up (`tools/backup_dev_dbs.sh`, cron 03:30, `~/backups/pg`, 14 days, commit 148cab701) | |
+
+#### Course plan
+
+| Item | Decision | Owner note |
+|---|---|---|
+| D6 Market order and localisation | UK first; EU and US notes in each concepts file; translation after a text route exists | |
+| D10 Where the Hacktivity plans live | Move all platform detail to Hacktivity now (differs from option a). Done 2026-10-30: see the BUILD_LOG entry | "And add a note to Break Escape repo to note that Hacktivity details should be stored there." (added to `AGENTS.md` Housekeeping and this folder's `README.md`) |
+| D9, D11 | Not fully decided; see "Open" | |
+
+#### D16 smaller calls: all 13 confirmed as the working answer
+
+Induction starter pathway; facilitated session length; core_00 and core_17 targets; defend-only for every role episode; Secure / Developing / Not yet; company picks for E8 to E13 (both rows); "Verify" in the check forms; platform priorities; name of the new-starter path; outcome-rating bands; "Delivered today" compliance claims; new names for `BRAND_SET.md` after a web search; kids game verdicts and habit. The working answers in the earlier D16 table stand.
+
+#### Module-level questions: all 10 confirmed as recommended
+
+core_03 prompt flood at 02:13; core_04 who presses "cut off"; core_05 avoid the misdirected email; core_14 staff monitoring; core_14 the colleague's innocent reason; core_16 locked policy answers; role_01 ransom as a board option; role_02 signing off in someone else's name; role_05 recruitment fraud and named state actors; role_06 code read-back. The recommendations in the earlier module table stand.
+
 
 ### Build review page answers (2026-10-27, https://claude.ai/artifact/KgNmWofGssh2LfPYpLuL3r)
 
@@ -195,3 +176,46 @@ These are the open questions raised inside individual module READMEs that a stak
 | core_02, core_10, core_12, role_03, role_05, role_06, core_15 | Are the ethical tester's authorised-test reveals fair? | Overtaken in the same way: the frame is an openly authorised exercise, so there are no reveals to judge. Source: episode `scopeNote` strings; `research/built_episodes_vs_plan.md` §3. |
 | core_17 | Who sees the learner's year profile? | Scores go to the learner only; the discrimination figure to organisers only, never shown as blame; organiser aggregates are out of scope for now. Source: `FUN_DECISIONS.md` aw3; `designs/11` §4.3 (A4, A7). |
 | BE-05 | How do the customer's reporting details reach the game? | The `customer_report_route` slot is built (aw1). How a deployment sets it waits on the user (see "Waiting on the user"). Source: `FUN_DECISIONS.md`; the route proposal. |
+
+### Earlier D16 table and module questions (confirmed 2026-10-30)
+
+#### D16 table (working answers, all confirmed)
+
+Each has a working answer in the plan; confirm or change.
+
+| Item | Working answer | Where |
+|---|---|---|
+| Induction starter pathway | core_00, then the general check pair with E5, then E1 or E6; about 53 minutes now that episodes run about 15 and checks about 9 | `00_COURSE_OVERVIEW.md` |
+| Facilitated session length | Partly answered: the user chose one facilitator guide for the whole course, written last (FUN_DECISIONS q_facil). Still open: the session length the guide recommends; working answer 30 to 45 minutes | `01_LEARNING_DESIGN.md` |
+| core_00 and core_17 targets | core_00 about 5 minutes, no defend-only variant; core_17 about 20 minutes (mixed defend set plus the post-check) | `00_COURSE_OVERVIEW.md` |
+| Defend-only for every role episode | Recommendation: yes, every episode ships a defend-only variant, as E1 to E7 do (the overview still says "none" for role_01 and role_07) | `00_COURSE_OVERVIEW.md` |
+| Secure / Developing / Not yet | Recommendation: drop them as reported bands; keep as descriptive columns only, since the build reports per-item results, not bands | `MODULE_TEMPLATE.md`, assessment files |
+| Company picks for E8 to E13 | Quayholt (E8), Merrin & Sallow (E9), Tarrowby (E10), Cobbleford Care (E11, proposed), Brightwell (E12), Lintgate Communications (E13, proposed) | `03_WORLD_AND_CAST.md` |
+| Verify in the check forms | The finance, executive, helpdesk and mobile check forms turn Verify on, but `BRAND_SET.md` §6 says the checks measure Trust, Report and Delete only. Confirm which is intended, then update the other (a build question, not plan) | `../phishing_and_social_engineering/awareness/BRAND_SET.md` |
+| Platform priorities | Next: HA-11 (the route setting only); P2: HA-05, 09, 14, 03, 15, 19, 23, 01; P3: the rest, including HA-06, 07, 17 and 26 (were MVP) | `features/hacktivity.md` |
+| Name of the new-starter path | "the new-starter path" for now (was Induction Essentials) | overview, hacktivity |
+| Outcome-rating bands, if ever reported | Starting point only: bands at 80 and 50; pre-check weight 0, post-check weight 2 | `features/assessment_and_evidence.md` |
+| "Delivered today" compliance claims | Check they are not overstated before any customer sees them | `02_COMPLIANCE_MAPPING.md` |
+| Companies for E8 to E13 disagree between files | The module designs say E8 Quayholt, E9 Tarrowby, E10 Quayholt, E11 Carrholme Services (proposed), E12 Merrin & Sallow, E13 Brightwell; `03_WORLD_AND_CAST.md` and `features/explainers_video_and_npc.md` give a different set. Recommendation: adopt the module designs (they hold the detail) and align the other two files. Asked on the build review page | modules, 03, explainers |
+| Proposed new names to add to `BRAND_SET.md` after a web search | Carrholme Services (E11), Cobbleford Care and Lintgate Communications (03 alternatives), Marrowdale Facilities (core_16), Harbreck Facilities Group (role_01 board crisis), Stavely Software (role_04), Beckside Hospitals NHS Trust (sector_01), "Deskmate" (the authored AI assistant), `brightwell-support.example` | modules, minigames |
+| Kids game verdicts and habit | Kids sorter verdicts "Trust" and "Tell a grown-up" (a third, "Leave it", open); fix the kids habit word for word as the adult rule is | `../kids_cyber_game/` |
+
+
+#### Module-level questions (recommendations, all confirmed)
+
+These are the open questions raised inside individual module READMEs that a stakeholder (rather than an author) should rule on. The plan's cast (Ama, Kai, Hassan and others) is now a pool of names, not a workplace (`03_WORLD_AND_CAST.md`), so the questions are restated without it where they still apply. Questions the build answered are under "Decided".
+
+| Module | Question | Recommendation |
+| --- | --- | --- |
+| core_03 | A prompt flood at 02:13, outside work: right for all staff? (The training-room frame means it would be a scene inside E9's defend half, not the learner's own night.) | Keep it as one defend item; night is when prompt floods happen and it is memorable. Add a daytime variant for organisations that prefer it. |
+| core_04 | Who presses the optional "cut off" step after a report? | The learner, in the E8 debrief or defend half, as a small reward for reporting; it stays optional, and the habit at the learner's own desk is "unplug the cable if we ask you to". |
+| core_05 | Can the learner avoid the misdirected email, and what fills the breach slot if they do? | Yes; the autocomplete is visible and catchable, a learner who catches it is thanked, and the flip shows a different breach (personal data received by mistake) so everyone still practises reporting one. Depends on D13. |
+| core_14 | How much to say about staff monitoring? | One line from the host ("our tools see files moving, but not why; people see the why"), the organisation's own monitoring notice on the "On Monday" card, and never imply staff are watched covertly. |
+| core_14 | The colleague's innocent reason, a parent in hospital: keep this gentle but sensitive detail? | Keep it, told lightly and with no medical detail, with other innocent reasons held for defend items. |
+| core_16 | Which policy answers can an organisation not change (the locked answers)? | Six: never share passwords or MFA codes; never use someone else's login; never lend a badge; never look at data you do not need for your job; never switch off security software; always report a suspected incident. |
+| role_01 | Should paying the ransom be a real option for the board? | Yes; paying is not generally unlawful in the UK and some boards choose it. Assess the process (advice, sanctions check, insurer told, reasons recorded, board agreement), not the verdict, and show realistic consequences without moralising. |
+| role_02 | Should the learner be able to sign off in someone else's name (a password on a sticky note, or leftover approver access)? | Yes, as an ethical choice with a consequence; the finance system cannot tell who was at the keyboard, which is the lesson. |
+| role_05 | How specific to be about recruitment fraud, where the advisories name North Korean IT workers? | Name them in `concepts.md` and on the "On Monday" card, but keep the episode's fraudster an unnamed, faceless network, so no candidate's nationality, accent or appearance becomes the clue; the clues are inconsistencies and refusals. |
+| role_06 | One-time codes: the rule of thumb tells everyone not to read back a code, yet many contact centres verify callers that way. Which rule wins? | The course default never asks a customer to read back a code (as every brand-set company does). Organisations that verify by read-back can switch it on; the episode then adds the safeguards and explains why their procedure differs from the rule of thumb. |
+
+
