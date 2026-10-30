@@ -447,6 +447,10 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         criticalPenalty,
         criticalPenaltyPer,
         criticalPenaltyCapped: criticalPenaltyCap !== null && criticalPenaltyPer * criticalMisses.length > criticalPenalty,
+        // E11 B2 finding 8 (nit): the penalties floored the round at 0 (the earned mean was below
+        // the points taken off), so the result screen can say the score stops at 0 rather than
+        // leaving "0%" beside a right answer reading as unexplained.
+        clamped: criticalPenalty > 0 && (mean - criticalPenalty) < 0,
         // Phish answered Verify / Ring back: caught, but not reported (N7: the report line
         // read like a miss beside a near-perfect round).
         phishVerified,
@@ -686,4 +690,41 @@ export function dedupeSentences(lines, seen = []) {
         if (kept.length) out.push(kept.join(' '));
     }
     return out;
+}
+
+/**
+ * How the caught phish were handled, as display fragments ("3 reported", "1 deleted", ...). The
+ * debrief summary computes this inline; the result grid reuses it when a set opts in to a caught
+ * breakdown (E11 B2 / E16 B1: a half-credit Delete reads as a bare "caught" without this split).
+ * `kindOfId(id)` returns a caught phish's kind so a denied push or a refused call is not called
+ * "deleted" (E8 F6 / E13 F-10). Returns [] when there is no phish to break down.
+ */
+export function caughtHow(result, kindOfId) {
+    const total = Number(result?.phishTotal);
+    if (!(Number.isFinite(total) && total > 0)) return [];
+    const reported = Number.isFinite(result.reportCount) ? result.reportCount : Math.round((result.reportRate || 0) * total);
+    const checked = Number.isFinite(result.phishVerified) ? result.phishVerified : 0;
+    const residual = Math.max(0, (Number(result.phishCaught) || 0) - reported - checked);
+    const answers = Array.isArray(result.answers) ? result.answers : [];
+    let denied = 0, refused = 0, deleted = residual;
+    const deleteCatches = answers.filter((a) => isObj(a) && a.isPhish === true && a.verdict === 'delete');
+    if (deleteCatches.length && typeof kindOfId === 'function') {
+        denied = 0; refused = 0; deleted = 0;
+        for (const a of deleteCatches) {
+            const k = kindOfId(a.id);
+            if (k === 'push') denied += 1;
+            else if (k === 'call') refused += 1;
+            else deleted += 1;
+        }
+        if (denied + refused + deleted !== residual && !answers.some((a) => isObj(a) && a.isPhish === true)) {
+            denied = 0; refused = 0; deleted = residual;
+        }
+    }
+    const how = [];
+    if (reported) how.push(`${reported} reported`);
+    if (checked) how.push(`${checked} checked by another route`);
+    if (refused) how.push(`${refused} turned away`);
+    if (denied) how.push(`${denied} denied`);
+    if (deleted) how.push(`${deleted} deleted`);
+    return how;
 }
