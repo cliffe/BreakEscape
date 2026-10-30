@@ -552,6 +552,24 @@ def check(ekey, pair, stage):
     return mission, sc, meta, ink_name, ink
 
 
+# Top-level titleScreenName (engine batch 14), placed right after scenario_name. Values match the committed
+# shells (owner decision 2026-10-30): checks say Starting check / Final check, defend shells use the episode name.
+TITLE_NAMES = {'awareness_e2_cv_lures_defend': 'CV lures', 'awareness_e4_exec_whaling_defend': 'Executive impersonation'}
+
+
+def with_title_screen_name(sc, mission):
+    if '_pre_' in mission:
+        title = 'Starting check'
+    elif '_post_' in mission:
+        title = 'Final check'
+    else:
+        title = TITLE_NAMES.get(mission)
+    if title is None:
+        return sc
+    return {k2: v2 for k, v in sc.items() for k2, v2 in
+            (((k, v), ('titleScreenName', title)) if k == 'scenario_name' else ((k, v),))}
+
+
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else REPO + '/scenarios'
     built = []
@@ -559,6 +577,7 @@ def main():
         built.append(defend_only(ekey))
         built += [check(ekey, p, st) for p in ('ab', 'ba') for st in ('pre', 'post')]
     for mission, sc, meta, ink_name, ink in built:
+        sc = with_title_screen_name(sc, mission)
         d = os.path.join(out, mission)
         os.makedirs(os.path.join(d, 'ink'), exist_ok=True)
         with open(os.path.join(d, 'scenario.json.erb'), 'w') as f:

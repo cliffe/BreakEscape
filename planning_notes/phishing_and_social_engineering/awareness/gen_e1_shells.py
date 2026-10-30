@@ -316,10 +316,29 @@ def check(pair, stage):
     return mission, sc, meta
 
 
+# Top-level titleScreenName (engine batch 14), placed right after scenario_name. Values match the committed
+# shells (owner decision 2026-10-30): checks say Starting check / Final check, defend shells use the episode name.
+TITLE_NAMES = {'awareness_e1_invoice_fraud_defend': 'Invoice fraud'}
+
+
+def with_title_screen_name(sc, mission):
+    if '_pre_' in mission:
+        title = 'Starting check'
+    elif '_post_' in mission:
+        title = 'Final check'
+    else:
+        title = TITLE_NAMES.get(mission)
+    if title is None:
+        return sc
+    return {k2: v2 for k, v in sc.items() for k2, v2 in
+            (((k, v), ('titleScreenName', title)) if k == 'scenario_name' else ((k, v),))}
+
+
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else REPO + '/scenarios'
     built = [defend_only()] + [check(p, st) for p in ('ab', 'ba') for st in ('pre', 'post')]
     for mission, sc, meta in built:
+        sc = with_title_screen_name(sc, mission)
         d = os.path.join(out, mission)
         os.makedirs(os.path.join(d, 'ink'), exist_ok=True)
         with open(os.path.join(d, 'scenario.json.erb'), 'w') as f:
