@@ -54,6 +54,7 @@ export const DEFAULT_TEXT = Object.freeze({
     feedbackFactsVerdict: 'Your facts are what matter here. Leave the conclusion out, and let whoever looks into it reach their own.',
     feedbackVerdictOnly: 'Facts, not a verdict. A conclusion without the facts behind it cannot be checked, and it can hurt someone who has done nothing wrong. Add what you saw.',
     feedbackThinVerdict: 'Add more facts and leave the conclusion out. What you saw is yours to report. What it means is for someone else to find out.',
+    mustRemoveConclusion: 'Take the conclusion out before you send this. A report is for what you saw, not what you think it means.',
     closeAsk: "Close now and your report so far won't be kept.",
     keepGoing: 'Keep going',
     closeAnyway: 'Close anyway'
@@ -104,6 +105,10 @@ export function normaliseConfig(raw) {
         conclusionChips: cleanConclusionChips(src.conclusionChips, factChips.map((c) => c.id)),
         guidance: isStr(src.guidance) ? src.guidance : '',
         minFacts: Math.min(min, Math.max(1, factChips.length)),
+        // E16 B1 row 7 (opt-in): require a verdict chip to be removed before Done is offered, so
+        // the fact-not-verdict lesson is a gate, not a soft nudge. Default false → Done is offered
+        // after any non-empty check as before.
+        requireNoConclusion: src.requireNoConclusion === true,
         strings: isObj(src.strings) ? src.strings : {}
     };
 }
