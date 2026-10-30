@@ -11,7 +11,7 @@
 {"cmd":"eval","fn":"async () => { /* B6 See result: a full score, because every message was answered right with the right flags */ const mg = window.MinigameFramework.currentMinigame;\n  const next = mg.container.querySelector('.tri-next'); if (!next) return false; next.click();\n  const s = mg.getTestState(); const r = s.triage.result;\n  return s.triage.step === 'result' && !!r && r.percent === 100 && r.headline === 'Sharp'\n    && r.phishCaught === 2 && r.phishTotal === 2 && r.falseAlarms === 0; }"}
 {"cmd":"waitFor","kind":"condition","timeoutMs":30000,"fn":"() => { const mg = window.MinigameFramework.currentMinigame; if (!mg || !mg.getTestState) return false; const s = mg.getTestState(); return s.triage.step === 'result' && s.triage.saving === false && window.gameState.globalVariables.slice_triage_done === true; }"}
 {"cmd":"note","message":"B7 finish"}
-{"cmd":"mg","action":"clickText","args":["Finish"]}
+{"cmd": "eval", "fn": "() => { /* Finish (by selector: recap lines can contain the word) */ const mg = window.MinigameFramework.currentMinigame; const b = mg && mg.container && mg.container.querySelector('.aw-finish'); if (!b) return false; b.click(); return true; }"}
 {"cmd":"eval","fn":"async () => { /* B7 Finish completes normally and the task is recorded */ const t = window.__test; await new Promise(r => setTimeout(r, 400));\n  const g = t.getState().globals;\n  return !t.getState().activeMinigame && g.slice_triage_done === true && g.slice_triage_pass === true\n    && t.getState().objectives.completedTasks.includes('triage_sorted'); }"}
 {"cmd":"sync"}
 {"cmd":"drain"}
