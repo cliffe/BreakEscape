@@ -15,6 +15,7 @@
   "triageSets": [
     {
       "labels": {
+        "verdict": { "report": { "hint": "This is a fake. Tell security." } },
         "teamBadgeTitle": "Fake messages you reported this round rather than answering",
         "teamBadge": "Fakes stopped for the team: {n}",
         "phishCaughtLabel": "Fakes caught"
@@ -90,7 +91,7 @@
               "recon_request": "A genuine recruiter never needs a breakdown of your firm's systems or who runs IT. That is scouting, not recruitment"
             },
             "ifTrusted": "A map of the studio's systems and who runs IT would go to a stranger, ready-made for the next scam.",
-            "reportReply": "Thanks. There's no such recruiter; the account is a week old. Share nothing about our systems, and report it. This is the normal-looking phish you'll see most."
+            "reportReply": "Thanks. There's no such recruiter; the account is a week old. Share nothing about our systems, and report it. This is the normal-looking fake you'll see most."
           }
         },
         {
