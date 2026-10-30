@@ -271,6 +271,16 @@ test('the notice goes to the open overlay through setSavingState', async () => {
     assert.deepEqual(window.MinigameFramework.currentMinigame.saving, ['saving', 'saved'], 'shown once, then hidden');
 });
 
+test('skin: a workstation can ask for awareness through minigameData.skin; the launcher option wins; default unchanged', () => {
+    setup();
+    const ws = (md) => ({ scenarioData: { minigameData: { triageSetId: 'lab_triage', ...md } } });
+    assert.equal(startInboxTriageMinigame(ws({})).skin, null, 'no skin anywhere: none, as before');
+    assert.equal(startInboxTriageMinigame(ws({ skin: 'awareness' })).skin, 'awareness');
+    assert.equal(startInboxTriageMinigame(ws({ skin: 'neon' })).skin, null, 'an unknown skin is ignored');
+    assert.equal(startInboxTriageMinigame(ws({}), { skin: 'awareness' }).skin, 'awareness', 'the launcher option still works');
+    assert.equal(startInboxTriageMinigame(ws({ skin: 'awareness' }), { skin: null }).skin, null, 'an explicit launcher null wins');
+});
+
 test('the {stage} prefix takes the launch stage', async () => {
     const env = setup();
     window.stateSync = stubSync();

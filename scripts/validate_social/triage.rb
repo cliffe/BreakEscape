@@ -1287,6 +1287,9 @@ module ValidateSocial
           issues << err("#{path}: minigameData.triageSetId '#{sid}' is not a social.triageSets id")
           next
         end
+        if md.key?('skin') && md['skin'] != 'awareness'
+          issues << err("#{path}: minigameData.skin '#{md['skin']}' is not a known skin; 'awareness' is the only one (leave it out for the default)")
+        end
         issues.concat(launch_checks(ctx, set, md, path))
       end
       issues
