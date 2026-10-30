@@ -155,8 +155,7 @@
     "_note": "On Gwen's NPC record in rooms.training_room.npcs[]. Opened in the flip region by an event mapping with targetKnot 'demo_call' (ink/gwen_pritchard.ink). Internal (no External tag) on purpose: a face you trust on your own meeting tool still proves nothing. The sign-in code the fake Gwen asks for is shown on screen only and is NEVER voiced (E13 section 18)."
   },
   "assistantRecapStrings": {
-    "_note": "HELD BACK: scripts/scenario-schema.json (batch 11) does not yet allow strings.assistantRecapHeading/Move or set.confirmPrompt, so --strict-social fails if they are in the erbs. Add them to the full erb strings (and defend.json, for the parity test) once the schema allows them. The window hands back situation + reason only, so the move line is not drawn today; the engine default heading 'In the assistant window' is already plain.",
-    "assistantRecapHeading": "In the assistant window: what to check next time",
-    "assistantRecapMove": "Next time, ‘{right}’ before you go on."
+    "_note": "In the FULL erb only, at social.awarenessEpisode.strings (not defend.json). assistantRecapMove is skipped: the engine never draws it for the assistant window.",
+    "assistantRecapHeading": "In the assistant window: what to check next time"
   }
 }

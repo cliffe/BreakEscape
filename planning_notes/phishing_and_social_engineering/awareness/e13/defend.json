@@ -16,6 +16,7 @@
       "scoringProfile": "awareness",
       "verifyVerdict": true,
       "feedbackMode": "immediate",
+      "confirmPrompt": true,
       "headerPanel": "off",
       "glossary": "closed",
       "_labels_note": "E13 MA2 fix (blind B1): the genuine internal call (e13_videocall_genuine) gives Comply full marks through truth.verdictPoints, so the built call line 'you did what they asked without checking... ring back first' contradicted the full-marks tick. labels.verdictFeedback.trust.real replaces the Trust/Comply line for every GENUINE item (never a phish: the phish column is left to the built line), so it reads as a right call. Kept generic because it covers the genuine email, voicemail and call.",
