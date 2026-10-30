@@ -89,6 +89,18 @@ module BreakEscape
       SCORING_MODES.include?(mode) ? mode : DEFAULT_SCORING_MODE
     end
 
+    # Painted title art, from mission.json "title_art": a path under
+    # public/break_escape/assets/ (e.g. "title_art/awareness_e12_visitor_tailgater.jpg").
+    # Returns nil when unset or not a plain relative image path. The in-game title
+    # screen shows it as a backdrop; a host (Hacktivity) can show it on course tiles
+    # at /break_escape/assets/<path>. Read at runtime, so no migration is needed.
+    TITLE_ART_PATTERN = %r{\Atitle_art/[A-Za-z0-9_\-]+\.(?:jpg|jpeg|png|webp)\z}
+
+    def title_art_path
+      path = load_mission_metadata&.dig('title_art').to_s
+      TITLE_ART_PATTERN.match?(path) ? path : nil
+    end
+
     # Get all CyBOK entries. Always returns break_escape_cyboks — these are the
     # authoritative source for the mission regardless of host mode. In Hacktivity,
     # the GameSlot syncs these into the host's cyboks table on save so that the

@@ -112,3 +112,25 @@ test('titleScreenName prefers the scenario title name and falls back to display_
     assert.equal(titleScreenName({ missionDisplayName: 'x', missionTitleName: 5 }), 'x');
     assert.equal(titleScreenName(undefined), '');
 });
+
+// Opt-in painted backdrop (mission.json "title_art" -> breakEscapeConfig.missionTitleArt).
+test('titleScreenArt accepts a same-site image path and nothing else', async () => {
+    const { titleScreenArt } = await import(pathToFileURL(join(dir, 'input.mjs')).href);
+    assert.equal(titleScreenArt({ missionTitleArt: '/break_escape/assets/title_art/awareness_e12_visitor_tailgater.jpg' }),
+        '/break_escape/assets/title_art/awareness_e12_visitor_tailgater.jpg');
+    assert.equal(titleScreenArt({ missionTitleArt: '  /break_escape/assets/title_art/a.png ' }), '/break_escape/assets/title_art/a.png');
+    for (const bad of [undefined, null, 5, '', 'title_art/a.jpg', 'https://evil.example/a.jpg', '//evil.example/a.jpg',
+        "/a.jpg');background:url(x", '/break_escape/../a.jpg', '/break_escape/assets/a.svg']) {
+        assert.equal(titleScreenArt({ missionTitleArt: bad }), '', `rejects ${String(bad)}`);
+    }
+    assert.equal(titleScreenArt(undefined), '');
+    assert.equal(titleScreenArt({}), '');
+});
+
+test('title screen CSS and minigame wire the backdrop opt-in with a reduced-motion guard', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/title-screen.css'), 'utf8');
+    const js = readFileSync(join(here, '../../public/break_escape/js/minigames/title-screen/title-screen-minigame.js'), 'utf8');
+    assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.title-screen-art \{ transition: none; \}/);
+    assert.match(js, /titleScreenArt\(window\.breakEscapeConfig\)/);
+    assert.match(js, /artUrl \? ' has-art' : ''/); // no art, no class: other missions unchanged
+});

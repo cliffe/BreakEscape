@@ -81,3 +81,13 @@ export function titleScreenName(config) {
     if (own) return own;
     return config?.missionDisplayName ?? '';
 }
+
+/**
+ * The painted backdrop for the title screen, or '' for none (every mission without mission.json
+ * "title_art"). The server passes the URL as breakEscapeConfig.missionTitleArt. Only a same-site
+ * image path is accepted, since the value is used inside a CSS url().
+ */
+export function titleScreenArt(config) {
+    const url = typeof config?.missionTitleArt === 'string' ? config.missionTitleArt.trim() : '';
+    return /^\/(?!\/)[A-Za-z0-9_\-\/.]+\.(?:jpe?g|png|webp)$/.test(url) && !url.includes('..') ? url : '';
+}
