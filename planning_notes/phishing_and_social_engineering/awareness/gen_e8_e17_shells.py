@@ -268,7 +268,7 @@ LINES = {
         'Thanks, Anjali.', 'Any time.'),
     # E11 and E15: the brief's drafted lines ran over the 30-word cap, so they are trimmed here.
     ('e11', 'defend'): (
-        "You're covering the Care Laundry desk inbox. Some of it is routine, some belongs with the DPO, some was sent to catch you out. Report anything that doesn't sit right.",
+        "You're covering the Care Laundry desk inbox. Some is routine, some needs the data protection lead, and some was sent to catch you out. Report anything that looks wrong.",
         "That's the inbox sorted, thanks. Anything about someone's personal data, a request, a breach or a complaint, comes to the DPO the same day.",
         'Thanks, Tomasz.', 'Any time.'),
     ('e15', 'defend'): (
