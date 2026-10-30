@@ -64,7 +64,7 @@
         "unrequested_reset": "A change you didn't make",
         "ransomware_note": "A demand to unlock your files"
       },
-      "sheetNudge": "Tick what made you decide, or choose Nothing looks wrong. Then press Confirm again.",
+      "sheetNudge": "Next time, tick what made you decide, or choose Nothing looks wrong.",
       "skillNames": {
         "unexpected_sent_item": "Noticing a sent item you didn't send",
         "unrequested_reset": "Noticing a change you didn't make",
