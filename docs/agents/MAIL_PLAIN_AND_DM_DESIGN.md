@@ -485,3 +485,7 @@ Built as designed, with the owner notes applied. Authoring guide: `README_scenar
 - **Finished threads** are saved as an empty record (a delete is not sent after a reload and would leave the server a stale "waiting" thread). A "waiting" thread with no queued job is ignored.
 - **Server.** Contact `emailRecord` headless records, thread mode `waiting`, message key `forwardOf`, job keys `thread`/`inReplyTo`/`plain`/`afterSend`/`chaser`/`loadPosition`, and a headless email record may unlock the doors in its `unlockable` list without a prior encounter.
 - **Not built:** choice tags previewing a subject in the chip (design 3, optional); the DM theme (b).
+
+## Built: ink-driven plain email (engine batch 16, merge 33c4db0d3)
+
+Chip = the ink choice's display text, written as the start of the player's message; body = choice output plus continuation, split at `# reply_after:N` (else a `# speaker:player` run, else choice output only). Judged plus plain: ink chips plus "Write your own message" opening the judged composer, gated by an optional `judgedWhen` global. Fixture `scenarios/test_ink_email/`. Open: closing a composeTo client without sending leaves the phone chat; the choice-tag subject preview is not built. Next: the DM theme on phone-chat.
