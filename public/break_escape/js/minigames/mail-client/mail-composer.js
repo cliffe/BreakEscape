@@ -627,6 +627,25 @@ export class MailComposer {
      * placeholder, and returns as advice — not a counted fault — once a trusted sender is forged,
      * so the meter agrees with the flip and debrief instead of ending at "reads clean".
      */
+    /**
+     * batch-12 item 11: the meter's "fewer flags means harder to spot" line says nothing for a
+     * hidden-line brief, which scores zero visible flags on purpose (E13 F-6). A template may set
+     * its own `meterHint` (or '' to drop it), and a chosen template that carries a hidden line
+     * (`hiddenText`) drops the default line too. An explicit opts.meterHint still wins.
+     */
+    _meterHint() {
+        for (const part of PARTS) {
+            const tpl = templateOf(this.templates, this.choice[part]);
+            if (tpl && typeof tpl.meterHint === 'string') return tpl.meterHint;
+        }
+        if (typeof this.opts.meterHint === 'string') return this.opts.meterHint;
+        const hidesLine = PARTS.some((part) => {
+            const tpl = templateOf(this.templates, this.choice[part]);
+            return tpl && isStr(tpl.hiddenText);
+        });
+        return hidesLine ? '' : 'Fewer flags means harder to spot.';
+    }
+
     _meterData() {
         if (!this._meterOn()) return { on: false, flags: [], advice: [], clean: false, landed: false };
         const result = this._liveResult();
@@ -1031,7 +1050,10 @@ export class MailComposer {
         }
         for (const id of set) {
             const tpl = templateOf(this.templates, id);
-            const preview = tpl ? this._fillPreview(tpl) : id;
+            // batch-12 item 9: a template may name its own `optionLabel` for the dropdown, so the
+            // chooser can read as a short choice while the body stays full prose (and the label text
+            // never leaks into the sent body). Default: the filled preview, as before.
+            const preview = tpl && isStr(tpl.optionLabel) ? tpl.optionLabel : (tpl ? this._fillPreview(tpl) : id);
             const opt = el('option', null, preview);
             opt.value = id;
             // A native <option> cannot split fonts, but one whose whole text is an address (a
@@ -1213,7 +1235,7 @@ export class MailComposer {
         // In the red-team seat a lower count is better, so the meter needs one line to say so, or
         // "Red flags 1" reads as a mistake to fix and 0 looks like nothing matters (E8 F8). Authored
         // override: opts.meterHint; '' hides it.
-        const hint = typeof this.opts.meterHint === 'string' ? this.opts.meterHint : 'Fewer flags means harder to spot.';
+        const hint = this._meterHint();
         if (hint) panel.appendChild(el('p', 'mail-redflag-sub', hint));
         const mark = (cls, src) => {
             const img = el('img', cls);
