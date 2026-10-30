@@ -135,7 +135,7 @@
 }
 
 .title-screen-art.is-in {
-    opacity: 0.62; /* dimmed so the title stays the brightest thing on screen */
+    opacity: 0.8; /* dimmed so the title stays the brightest thing on screen */
 }
 
 .title-screen-art::after {
