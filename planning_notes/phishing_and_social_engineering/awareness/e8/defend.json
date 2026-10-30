@@ -1,11 +1,9 @@
 {
   "_about": "E8 after-the-click defend fragment (awareness pilot). Quayholt Insurance and everyone in it are fictional; every address ends .example. triageSets holds only the episode set e8_used_account (E8's check items feed the general_v2 pair, built by 10_CHECK_FORMS.md's own generator, not this fragment). Copy triageSets and the awarenessEpisode keys into the E8 shells: the wiring agent builds the full erb, the generator (gen_e8_e17_shells.py) builds the defend-only shell. Brand roster and cast: ../BRAND_SET.md (Quayholt Insurance). The one new .example recipient this file adds is _brandAdditions below. ENG-01 (flipAftermath), ENG-09b (conceptPanel array) and ENG-08 (schema) must have landed before the shells validate.",
-
   "_brandAdditions": {
     "_use": "For BRAND_SET.md (Quayholt Insurance additions from E8). E8 adds no cast and no new sender brand: Anjali Rao (host), Ayaan Warsame (attack target and victim seat) and Reuben Ofori (genuine colleague, defend row 4) are all built Quayholt cast. It adds one new .example recipient only.",
     "client": "Marsden Holloway (marsden-holloway.example): a fictional settlement client of Quayholt's claims team, used only as the recipient of the takeover sent-item (flip fa_sent and defend row 1 e8_sent_invoice). No cast member, no inbound mail. 'Marsden' and 'Holloway' each returned zero repo hits on 2026-10-28; it does not reuse 'Fenwick' (E14 subject / healthcare module). Pre-ship: web-search the firm name against real businesses with the usual check."
   },
-
   "triageSets": [
     {
       "genuineCopy": {
@@ -53,7 +51,13 @@
       "feedbackMode": "immediate",
       "headerPanel": "off",
       "glossary": "closed",
-      "channelTells": ["unexpected_sent_item", "unrequested_reset", "unrequested_mfa_push", "ransomware_note", "secrecy_or_bypass"],
+      "channelTells": [
+        "unexpected_sent_item",
+        "unrequested_reset",
+        "unrequested_mfa_push",
+        "ransomware_note",
+        "secrecy_or_bypass"
+      ],
       "flagChips": {
         "unexpected_sent_item": "Something sent that you didn't write",
         "unrequested_reset": "A change you didn't make",
@@ -70,61 +74,16 @@
         "teamBadge": "Signs reported for the team: {n}",
         "phishCaughtLabel": "Signs spotted",
         "verdict": {
-          "report": { "hint": "Something here is wrong. Send it to security." }
+          "report": {
+            "hint": "Something here is wrong. Send it to security."
+          }
         }
       },
-      "outcome": { "setGlobalPrefix": "episode_e8_after_the_click_defend_", "passPercent": 0 },
+      "outcome": {
+        "setGlobalPrefix": "episode_e8_after_the_click_defend_",
+        "passPercent": 0
+      },
       "messages": [
-        {
-          "id": "e8_sent_invoice",
-          "_note": "Row 1. Takeover disguised as routine claims work: a settlement email in the victim's own Sent folder, sent by whoever is signed in as Ayaan. It reads like ordinary business on a skim; the tell is that Ayaan did not write it, and the detail that it quietly moves the client to a new account and asks them to keep it quiet. Spoofed-but-passing: it really left Ayaan's authenticated mailbox, so SPF/DKIM/DMARC all pass on quayholt.example. An inline copy of the flip's fa_sent sign, with a distinct id.",
-          "from": { "name": "Ayaan Warsame", "address": "ayaan.warsame@quayholt.example" },
-          "to": "claims-client@marsden-holloway.example",
-          "subject": "Your settlement payment",
-          "time": "15:08",
-          "body": "Hello,\nWe're ready to settle your claim. Please make the payment to the account on the attached remittance, and use that account for any future invoices too, as our details have changed. Grateful if you'd keep this to yourself until it has gone through.\nKind regards,\nAyaan Warsame\nClaims, Quayholt Insurance",
-          "attachments": [ { "id": "remit", "label": "Remittance_advice.pdf", "kind": "pdf" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "ayaan.warsame@quayholt.example" },
-          "factorStrings": {
-            "unexpected_sent_item": { "redFlag": "A message or item in your own Sent folder that you did not send" }
-          },
-          "truth": {
-            "isPhish": true,
-            "kindLine": "This really did leave your mailbox, but you did not write it, so someone is signed in as you. Report it straight away.",
-            "missLabel": "leaving a message the attacker sent from your account",
-            "flags": ["unexpected_sent_item", "secrecy_or_bypass"],
-            "perFlagNote": {
-              "unexpected_sent_item": "This is in your own Sent folder at 15:08, but you did not write it, which means someone is signed in as you right now",
-              "secrecy_or_bypass": "It quietly moves the client to a new account and asks them to keep it quiet, which is how a mailbox takeover is cashed out"
-            },
-            "ifTrusted": "If you leave it, the client pays a criminal's account and your mailbox keeps sending in your name.",
-            "reportReply": "Thanks. We've locked the account, warned the client not to pay, and started the recovery. You caught it from the Sent folder, which is exactly the sign."
-          }
-        },
-        {
-          "id": "e8_reset_confirm",
-          "_note": "Row 2. Takeover sign from Quayholt's genuine service-desk address: a real confirmation of a change the learner did not make. Pairs softly with row 6 (genuine IT notice from the same real address).",
-          "from": { "name": "Quayholt IT", "address": "it-servicedesk@quayholt.example" },
-          "to": "ayaan.warsame@quayholt.example",
-          "subject": "Your password was changed",
-          "time": "15:05",
-          "body": "Hello,\nThis confirms that the password for your Quayholt account was changed successfully. If you made this change, no action is needed.\nIf you did not make this change, contact the service desk straight away.\nQuayholt IT Service Desk",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "it-servicedesk@quayholt.example" },
-          "factorStrings": {
-            "unrequested_reset": { "redFlag": "A password reset or security change you did not ask for" }
-          },
-          "truth": {
-            "isPhish": true,
-            "kindLine": "This confirmation is genuine, but you did not change your password, so someone else did. Report it, or ring the service desk.",
-            "missLabel": "ignoring a password change you didn't make",
-            "flags": ["unrequested_reset"],
-            "perFlagNote": {
-              "unrequested_reset": "The address is really Quayholt's and this is a genuine confirmation, but you did not change your password, so someone else did"
-            },
-            "ifTrusted": "If you ignore it, the attacker keeps the new password and your access.",
-            "reportReply": "Thanks. We've reset it again to one only you control and locked the old session. A confirmation for a change you didn't make is always worth reporting."
-          }
-        },
         {
           "id": "e8_push_abroad",
           "_note": "Row 3. Authenticator prompt the learner did not start, from a device that is not theirs. Built from the E3 e3_push_early card (account and time changed; perFlagNote reworded for the daytime context: the E3 wording references 02:14 and being asleep, which does not fit 11:48). Deny and report; the push deny_report action scores as Report.",
@@ -139,28 +98,125 @@
           },
           "truth": {
             "isPhish": true,
-            "flags": ["unrequested_mfa_push"],
+            "flags": [
+              "unrequested_mfa_push"
+            ],
             "perFlagNote": {
               "unrequested_mfa_push": "A sign-in prompt you did not start, from a Windows PC outside the UK that is not yours, means someone has your password and is hoping you will tap Approve. Deny it and report it"
             },
             "ifTrusted": "Approving would let the sender into your account, with your Quayholt access, from a computer you've never used.",
-            "reportReply": "Thanks. We've reset your password and blocked that sign-in. The prompt is what stopped them."
+            "reportReply": "Thanks. We've reset your password and blocked that sign-in. The prompt is what stopped them.",
+            "critical": true
+          }
+        },
+        {
+          "id": "e8_sent_invoice",
+          "_note": "Row 1. Takeover disguised as routine claims work: a settlement email in the victim's own Sent folder, sent by whoever is signed in as Ayaan. It reads like ordinary business on a skim; the tell is that Ayaan did not write it, and the detail that it quietly moves the client to a new account and asks them to keep it quiet. Spoofed-but-passing: it really left Ayaan's authenticated mailbox, so SPF/DKIM/DMARC all pass on quayholt.example. An inline copy of the flip's fa_sent sign, with a distinct id.",
+          "from": {
+            "name": "Ayaan Warsame",
+            "address": "ayaan.warsame@quayholt.example"
+          },
+          "to": "claims-client@marsden-holloway.example",
+          "subject": "Your settlement payment",
+          "time": "15:08",
+          "body": "Hello,\nWe're ready to settle your claim. Please make the payment to the account on the attached remittance, and use that account for any future invoices too, as our details have changed. Grateful if you'd keep this to yourself until it has gone through.\nKind regards,\nAyaan Warsame\nClaims, Quayholt Insurance",
+          "attachments": [
+            {
+              "id": "remit",
+              "label": "Remittance_advice.pdf",
+              "kind": "pdf"
+            }
+          ],
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "quayholt.example",
+            "replyTo": "ayaan.warsame@quayholt.example"
+          },
+          "factorStrings": {
+            "unexpected_sent_item": {
+              "redFlag": "A message or item in your own Sent folder that you did not send"
+            }
+          },
+          "truth": {
+            "isPhish": true,
+            "kindLine": "This really did leave your mailbox, but you did not write it, so someone is signed in as you. Report it straight away.",
+            "missLabel": "leaving a message the attacker sent from your account",
+            "flags": [
+              "unexpected_sent_item",
+              "secrecy_or_bypass"
+            ],
+            "perFlagNote": {
+              "unexpected_sent_item": "This is in your own Sent folder at 15:08, but you did not write it, which means someone is signed in as you right now",
+              "secrecy_or_bypass": "It quietly moves the client to a new account and asks them to keep it quiet, which is how a mailbox takeover is cashed out"
+            },
+            "ifTrusted": "If you leave it, the client pays a criminal's account and your mailbox keeps sending in your name.",
+            "reportReply": "Thanks. We've locked the account, warned the client not to pay, and started the recovery. You caught it from the Sent folder, which is exactly the sign.",
+            "critical": true
+          }
+        },
+        {
+          "id": "e8_reset_confirm",
+          "_note": "Row 2. Takeover sign from Quayholt's genuine service-desk address: a real confirmation of a change the learner did not make. Pairs softly with row 6 (genuine IT notice from the same real address).",
+          "from": {
+            "name": "Quayholt IT",
+            "address": "it-servicedesk@quayholt.example"
+          },
+          "to": "ayaan.warsame@quayholt.example",
+          "subject": "Your password was changed",
+          "time": "15:05",
+          "body": "Hello,\nThis confirms that the password for your Quayholt account was changed successfully. If you made this change, no action is needed.\nIf you did not make this change, contact the service desk straight away.\nQuayholt IT Service Desk",
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "quayholt.example",
+            "replyTo": "it-servicedesk@quayholt.example"
+          },
+          "factorStrings": {
+            "unrequested_reset": {
+              "redFlag": "A password reset or security change you did not ask for"
+            }
+          },
+          "truth": {
+            "isPhish": true,
+            "kindLine": "This confirmation is genuine, but you did not change your password, so someone else did. Report it, or ring the service desk.",
+            "missLabel": "ignoring a password change you didn't make",
+            "flags": [
+              "unrequested_reset"
+            ],
+            "perFlagNote": {
+              "unrequested_reset": "The address is really Quayholt's and this is a genuine confirmation, but you did not change your password, so someone else did"
+            },
+            "ifTrusted": "If you ignore it, the attacker keeps the new password and your access.",
+            "reportReply": "Thanks. We've reset it again to one only you control and locked the old session. A confirmation for a change you didn't make is always worth reporting.",
+            "critical": false
           }
         },
         {
           "id": "e8_colleague_slip",
           "_note": "Row 4. Genuine: a colleague owning up to his own mistake and asking for help. Under the awareness profile a genuine email scores full whether Trusted (read it and help him) or Reported. Reuben Ofori is built Quayholt cast (the hb_vm_locked voicemail caller in E3).",
-          "from": { "name": "Reuben Ofori", "address": "reuben.ofori@quayholt.example" },
+          "from": {
+            "name": "Reuben Ofori",
+            "address": "reuben.ofori@quayholt.example"
+          },
           "to": "ayaan.warsame@quayholt.example",
           "subject": "I think I've sent something to the wrong client",
           "time": "09:21",
           "body": "Ayaan,\nI think I've just sent a claims spreadsheet to the wrong client by mistake. I've not heard back yet. What should I do, and who do I tell?\nReuben",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "reuben.ofori@quayholt.example" },
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "quayholt.example",
+            "replyTo": "reuben.ofori@quayholt.example"
+          },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "default": "Reuben's real address, and a colleague owning up to a mistake and asking for help; reading it and helping him report it is the right move, and reporting it yourself also scores full."
+              "default": "Reuben's real address, and a colleague owning up to a mistake and asking for help. Reading it and helping him is the call that fits. A report is never marked down, but it sends security a colleague's honest slip."
             }
           }
         },
@@ -177,12 +233,16 @@
             "heading": "Your files are locked"
           },
           "factorStrings": {
-            "ransomware_note": { "redFlag": "A message or on-screen note claiming your files are locked and demanding payment" }
+            "ransomware_note": {
+              "redFlag": "A message or on-screen note claiming your files are locked and demanding payment"
+            }
           },
           "truth": {
             "isPhish": true,
             "kindLine": "This is a ransom note. Report it at once and leave the device as it is.",
-            "flags": ["ransomware_note"],
+            "flags": [
+              "ransomware_note"
+            ],
             "perFlagNote": {
               "ransomware_note": "Files that will not open and a note demanding payment is a sign to report at once and leave the device as it is: do not restart it, do not delete the note, do not try to open the files again"
             },
@@ -193,31 +253,50 @@
         {
           "id": "e8_maintenance",
           "_note": "Row 6. Genuine: the calibration mirror, reworded so it looks a little alarming after a run of real signs. A planned-outage notice from IT's real address, on the intranet too, that mentions being signed out and signing in again (which echoes rows 2 and 3) but has no link and no rush and asks nothing of you now. Trusting is right; Verifying or Reporting still score full.",
-          "from": { "name": "Quayholt IT", "address": "it-servicedesk@quayholt.example" },
+          "from": {
+            "name": "Quayholt IT",
+            "address": "it-servicedesk@quayholt.example"
+          },
           "to": "all-staff@quayholt.example",
           "subject": "Planned maintenance on the claims system, Saturday 08:00 to 12:00",
           "time": "08:05",
           "body": "Hello all,\nThe claims system will be down for planned maintenance this Saturday from 08:00 to 12:00. You don't need to do anything now. When it is back you may be signed out and asked to sign in again as usual. This notice is also on the intranet.\nQuayholt IT Service Desk",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quayholt.example", "replyTo": "it-servicedesk@quayholt.example" },
+          "auth": {
+            "spf": "pass",
+            "dkim": "pass",
+            "dmarc": "pass",
+            "envelopeFrom": "quayholt.example",
+            "replyTo": "it-servicedesk@quayholt.example"
+          },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "default": "IT's real address, a planned-outage notice that is on the intranet too and asks nothing of you now. It mentions signing in again, which can read like the signs above, but this is a planned notice with no link and no rush: after a run of real signs it is tempting to report everything, and trusting this is right, while verifying or reporting it still scores full."
+              "default": "IT's real address, a planned-outage notice that is on the intranet too and asks nothing of you now. It mentions signing in again, which can read like the signs above, but it has no link and no rush. After a run of real signs it is tempting to report everything. Trusting it is the call that fits, and a report is never marked down."
             }
           }
         }
-      ]
+      ],
+      "_criticalNote": "Only e8_sent_invoice (email) and e8_push_abroad (push) are critical misses (15 points each off the round). e8_reset_confirm is set critical:false and e8_locked_files is a page, so neither stacks a penalty. Blind run B2 saw 0% beside item scores of 100/70/30 when four critical penalties stacked."
     }
   ],
-
   "awarenessEpisode": {
     "role": "general_staff",
     "company": "quayholt_insurance",
-    "brand": { "name": "Quayholt Insurance", "logoText": "QUAYHOLT", "accent": "#6b4c9a" },
+    "brand": {
+      "name": "Quayholt Insurance",
+      "logoText": "QUAYHOLT",
+      "accent": "#6b4c9a"
+    },
     "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: one email to a Quayholt colleague, and the signs that follow in that colleague's inbox. Nothing you write leaves the game.",
-    "defend": { "setId": "e8_used_account", "reportAlwaysVisible": true },
-    "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
+    "defend": {
+      "setId": "e8_used_account",
+      "reportAlwaysVisible": true
+    },
+    "debrief": {
+      "mondayCard": "slot:customer_report_route",
+      "noBlameLine": true
+    },
     "strings": {
       "allPhishRight": "Every sign was caught, with every reason named.",
       "teamLine": "By reporting or checking {n} of these rather than carrying on, you got a taken-over account looked at sooner.",
@@ -228,7 +307,7 @@
       "flipIntro": "This is your email as Ayaan met it. He is the claims handler you sent it to, and this time he signed in.",
       "flipDefenderLine": "The service desk never sends sign-in requests by email, whatever address they come from; that is the one thing that would have given it away.",
       "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, you're the one whose account is being used, sorting the signs that follow.",
-      "flipMissed": "The defence is the same either way: next, you're the one whose account is being used, sorting the signs that follow.",
+      "flipMissed": "Ayaan didn't act on it. A detail didn't match what he'd been told, or the pressure to hurry made him stop and check, and that is how many attacks fail. The one this episode is about did land, in a better-made email. Next, you're the one whose account is being used, sorting the signs that follow.",
       "flipMissedHeading": "Nothing to replay this time",
       "flipLandedNoTells": "It landed clean, with nothing in it to catch this time. Next, you're the one whose account is being used, sorting the signs that follow.",
       "allRight": "You read every sign the right way. They all trace back to one email built to look like the service desk, and the real desk never asks you to sign in by email.",
@@ -236,8 +315,14 @@
       "mondayCard": "On Monday: if you think you have clicked, signed in or spotted something odd on your account or a colleague's, report it straight away, change your password on the real site, and leave the device as it is. Reporting fast, even your own slip, is what limits the damage, and report it using the route in the box below.",
       "defendOnly": "These signs were set off by an email built to look right, and anyone can be caught by one. Anything worth another look is shown below, with what gave each one away.",
       "conceptPanel": [
-        { "heading": "The five questions a report answers", "text": "A useful report answers five questions, as far as you know: what you noticed, when, where (which account, device or system), who is affected, and what you have done so far. Be honest about the last one: 'I clicked the link', 'I signed in', 'I restarted it'. A rough report now beats a perfect one later; the team will ask for the rest." },
-        { "heading": "First steps and recovery", "text": "If you clicked or signed in: report it, change the password on the real site (not through any link), then change it anywhere you used the same one, and follow the service desk. For anything on a device: leave it as it is. Do not switch it off unless you are told to, do not delete the evidence, and do not try to fix it. If the service desk asks, unplug the network cable or turn off Wi-Fi and leave it on." }
+        {
+          "heading": "The five questions a report answers",
+          "text": "A useful report answers five questions, as far as you know: what you noticed, when, where (which account, device or system), who is affected, and what you have done so far. Be honest about the last one: 'I clicked the link', 'I signed in', 'I restarted it'. A rough report now beats a perfect one later; the team will ask for the rest."
+        },
+        {
+          "heading": "First steps and recovery",
+          "text": "If you clicked or signed in: report it, change the password on the real site (not through any link), then change it anywhere you used the same one, and follow the service desk. For anything on a device: leave it as it is. Do not switch it off unless you are told to, do not delete the evidence, and do not try to fix it. If the service desk asks, unplug the network cable or turn off Wi-Fi and leave it on."
+        }
       ]
     },
     "_defendOnly": {
