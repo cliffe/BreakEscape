@@ -19,6 +19,12 @@ Questions for the user. Each has a recommendation; the plan follows the recommen
 - **Inboxly:** an invented mail product in built E1, E2 and E4 that matches a live email product. Rename or keep.
 - **Title-screen name:** the title screen shows each episode's `mission.json` `display_name` ("Awareness E20: Remote and mobile working (full episode)"), the convention on all built episodes. Blind testers read it as an internal code. Options: keep it (it is also the Hacktivity listing name); or show the `scenario_name` ("Remote and mobile working: two days on the road") on the title screen and keep `display_name` for listings.
 - **E20 host art:** new host art after the 3 Nov PixelLab reset, or reuse a built host.
+- **Verdict button colours (2026-10-30):** a blind tester said the green Trust, amber Report and red Delete marks hint at the answer. They are the engine default in every episode. Keep, or make them neutral course-wide?
+- **"Confirm with nothing ticked" prompt (2026-10-30):** batch 11's `set.confirmPrompt` is on in E11, E12, E13, E15 and E16 only. Turn it on in every episode, or keep it where testers hit the problem?
+- **E17 team counter (2026-10-30):** batch 10 updates it after the feedback card draws (same tick). Holding it until Next means rewriting the team-tally tests. Is the reorder enough?
+- **`defend_pass` name (2026-10-30):** it marks completion (no default pass mark), but three testers read it as a pass at 5-35% rounds. Rename to `_complete` (touches records and any reporting that reads it), or keep?
+- **core_17's E3 impostor call (2026-10-30):** the visible-tell fix scored `secrecy_or_bypass` on the annual's copy of E3's impostor call ("No sense ringing the desk" is on screen); E3's own item, outside the E8-E20 scope, still scores two tells. Backport the tell to E3 (an E1-E7 edit), or accept that the annual scores it more fully?
+- **E12 badge-less colleague (2026-10-30):** "Let them in" scores full marks because the card now shows them on the staff list. Or should a person without a badge always need a check?
 - **Orchestrator rulings you may overrule:** E12 §20.2 relabel the reception buttons (now Let them in / Report / Turn away / Check first) and §20.5 keep seven items; E20 home working gets a sixth concept card, brief kept; E19 content note widened to the learner's own machine; E10 high-harm pages count as critical misses.
 
 ## Open
