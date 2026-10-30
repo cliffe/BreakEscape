@@ -19,3 +19,9 @@ Question: can each minigame added since October (plus the video call) be used by
 | Plain email and DMs in the mail client | Design now (plan to come back to the owner) |
 | Concern-form fact kinds (`config.kinds`) | Yes, with the standalone-launch work |
 | One episode, board and report per scenario | Keep; document the limit |
+
+## Built (2026-10-30)
+
+- Engine batch 14 (merge 2dd75b581): the bug and housekeeping batch and the workstation skin pick. The `.cc-*` leak was real: OSINT tool cards rendered dark-on-dark.
+- Engine batch 15 (merge 120a9e850): `systems/minigame-registry.js`; `# trigger_minigame:<type> key=value ...` (or escaped JSON) in ink, reopening the conversation on close; eventMapping `"openMinigame"`; video calls from `timedConversation`; `exercise-station` with `social.exercises[]`; `concernForm.kinds`; inline `privacyPanel.facts`; fixture `scenarios/test_exercise_station/`. Open: `exercise-station.png` is a copy of the kiosk sprite (placeholder); the phone-chat return path after an ink launch is unit-tested only.
+- Plain email and DMs: design in `docs/agents/MAIL_PLAIN_AND_DM_DESIGN.md`, awaiting owner picks.
