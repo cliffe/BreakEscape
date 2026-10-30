@@ -18,6 +18,7 @@
       "scoringProfile": "awareness",
       "scoring": { "criticalPenalty": 5, "criticalPenaltyCap": 10 },
       "verifyVerdict": true,
+      "confirmPrompt": true,
       "feedbackMode": "immediate",
       "headerPanel": "off",
       "glossary": "closed",
@@ -31,7 +32,7 @@
         },
         "teamBadge": "Risks reported for the team: {n}",
         "teamBadgeTitle": "Offers, risky requests and fakes you reported or checked this round rather than acting on them",
-        "phishCaughtLabel": "Handled right",
+        "phishCaughtLabel": "Risks handled right",
         "scoreLine": "Right call is most of the score; naming what you noticed is the rest."
       },
       "channelTells": ["insider_offer", "shared_login_request", "data_to_personal_email", "secrecy_or_bypass", "unrequested_mfa_push", "lookalike_domain"],
@@ -56,9 +57,11 @@
       ],
       "resultCopy": {
         "criticalLead": "let a risk through",
+        "caughtBreakdown": true,
+        "handledRightLabel": "Genuine requests handled right",
         "reportedPct": "Raised {pct}% of the risks",
         "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
-        "noFlags": "Next time, tick what you noticed. The review cards show what each one was really asking for."
+        "noFlags": "Next time, tick what you noticed; the ticks count towards your score. The review cards show what each one was really asking for."
       },
       "genuineCopy": {
         "binnedLeadOne": "One real request was turned down",

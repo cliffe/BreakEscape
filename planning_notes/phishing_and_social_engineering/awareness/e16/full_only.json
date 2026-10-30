@@ -85,6 +85,7 @@
   "defendIntro": "That's where this week's choices led. Now a fair way to raise a concern, facts, not a verdict on anyone, and then a short set of messages. Take them at your own pace.",
 
   "concernForm": {
+    "requireNoConclusion": true,
     "factChips": [
       { "id": "fc_offer_what", "kind": "what", "label": "An unknown contact offered payment for remote access" },
       { "id": "fc_offer_when", "kind": "when", "label": "The message came on Tuesday evening" },
@@ -109,7 +110,8 @@
       "feedbackFacts": "Good. Facts, not a verdict, are what a fair concern looks like. The note below says who to tell. You don't have to be sure, and you may not hear the outcome, because that's confidential too.",
       "feedbackFactsVerdict": "Your facts are exactly what's needed. A conclusion about a person does not belong in the report: take those picks out, leave the conclusion out, and let whoever looks into it reach their own. That's fairer to everyone, and you don't have to be sure to raise a fair concern.",
       "feedbackVerdictOnly": "That's a conclusion, not something you saw, and it does not belong in the report. Take it out and leave the verdict to the people whose job and lawful process it is; give them what you actually noticed instead. If you're wrong, a verdict is unfair to someone who has done nothing.",
-      "feedbackThinVerdict": "Those facts are a good start. A conclusion about a person does not belong in the report, so take those picks out. Then add a couple more of the things you saw yourself."
+      "feedbackThinVerdict": "Those facts are a good start. A conclusion about a person does not belong in the report, so take those picks out. Then add a couple more of the things you saw yourself.",
+      "mustRemoveConclusion": "Take the conclusion out before you finish. A report holds what you saw yourself, not what you think it means. Having a theory is normal; it belongs with the people whose job it is to look into it."
     }
   }
 }
