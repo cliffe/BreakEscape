@@ -3,6 +3,7 @@
 // default export NPCManager
 import { isInLineOfSight, drawLOSCone, clearLOSCone, getNPCFacingDirection, losVisualSuppressed, losVisualOutOfRoom, losCatchSpent } from './npc-los.js';
 import { classifyPhoneLine, phoneStepLines } from '../minigames/phone-chat/phone-chat-speaker.js';
+import { openMinigameFromMapping } from './mapping-minigame.js';
 
 /**
  * Safe condition evaluator — replaces eval() for CSP compliance (unsafe-eval blocked).
@@ -343,7 +344,11 @@ export default class NPCManager {
         skipIfGlobal: entry.timedConversation.skipIfGlobal || null,
         setGlobalOnStart: entry.timedConversation.setGlobalOnStart || null,
         disableClose: entry.timedConversation.disableClose === true,
-        voiced: entry.timedConversation.voiced === true
+        voiced: entry.timedConversation.voiced === true,
+        // A video call, as an event mapping's conversationMode "video-call" opens one
+        videoCall: entry.timedConversation.videoCall === true || entry.timedConversation.conversationMode === 'video-call',
+        videoLabel: entry.timedConversation.videoLabel || null,
+        participantTag: entry.timedConversation.participantTag || null
       });
       console.log(`[NPCManager] Scheduled timed conversation for ${realId} to knot: ${entry.timedConversation.targetKnot}`);
     }
@@ -785,6 +790,7 @@ export default class NPCManager {
         unlockTask: mapping.unlockTask,      // taskId or [taskId] — unlock tasks directly
         unlockAim: mapping.unlockAim,        // aimId or [aimId] — unlock aims directly
         unlockDoor: mapping.unlockDoor,      // roomId or [roomId] — unlock doors on the server (persists)
+        openMinigame:  mapping.openMinigame  || null,   // a minigame registry type, or { type, minigameData }
         emitEvent:     mapping.emitEvent     || null,   // event name to emit when mapping fires
         emitEventData: mapping.emitEventData || {},     // optional payload for that event
         disableClose:  mapping.disableClose  || false,  // hide × and block Esc for this conversation
@@ -912,7 +918,10 @@ export default class NPCManager {
       (config.conversationMode === 'person-chat' && npc.npcType === 'person') ||
       config.conversationMode === 'video-call' ||
       (config.conversationMode === 'phone-chat' && npc.npcType === 'phone');
-    if ((config.once || config.maxTriggers) && !opensConversation) triggered.persist = true;
+    // A handler that opens a minigame is saved once that minigame closes normally (below), the
+    // same way a conversation is, so a reload mid-exercise lets it fire again.
+    const opensMinigame = !!config.openMinigame && !opensConversation;
+    if ((config.once || config.maxTriggers) && !opensConversation && !opensMinigame) triggered.persist = true;
     this.triggeredEvents.set(eventKey, triggered);
     const persistOnClose = (config.once || config.maxTriggers) && opensConversation
       ? () => this._persistTriggerOnClose(npcId, eventKey)
@@ -1003,6 +1012,15 @@ export default class NPCManager {
       const payload = config.emitEventData || {};
       window.eventDispatcher?.emit(config.emitEvent, payload);
       console.log(`📡 Event emitEvent: ${config.emitEvent}`, payload);
+    }
+
+    // Open a minigame from the starter registry (systems/mapping-minigame.js). Once-only,
+    // cooldown, condition and delayMs have already been applied to the mapping as a whole.
+    if (config.openMinigame) {
+      const persisted = (config.once || config.maxTriggers)
+        ? () => { triggered.persist = true; }
+        : undefined;
+      openMinigameFromMapping(config.openMinigame, { onNormalClose: persisted });
     }
 
     // [Phase 2] Handle NPC movement override (emergency responses: nurses abandon patrol)
@@ -1647,7 +1665,7 @@ export default class NPCManager {
   //     }
   //   }
   scheduleTimedConversation(opts) {
-    const { npcId, targetKnot, triggerTime, delay, background, waitForEvent, skipIfGlobal, setGlobalOnStart, disableClose, voiced } = opts;
+    const { npcId, targetKnot, triggerTime, delay, background, waitForEvent, skipIfGlobal, setGlobalOnStart, disableClose, voiced, videoCall, videoLabel, participantTag } = opts;
 
     if (!npcId || !targetKnot) {
       console.error('[NPCManager] scheduleTimedConversation requires npcId and targetKnot');
@@ -1668,7 +1686,10 @@ export default class NPCManager {
       skipIfGlobal: skipIfGlobal || null,     // Skip if this global is already truthy
       setGlobalOnStart: setGlobalOnStart || null, // Set this global to true when conversation fires
       disableClose: disableClose === true, // no ×, no Esc (documented; was dropped before 2026-10-21)
-      voiced: voiced === true // phone-chat: speak the NPC's lines through TTS (F17)
+      voiced: voiced === true, // phone-chat: speak the NPC's lines through TTS (F17)
+      videoCall: videoCall === true,           // open as a person-chat video call (any npcType)
+      videoLabel: videoLabel || null,          // label on the video-call bar
+      participantTag: participantTag || null   // participant tag on the video-call bar
     };
 
     this.timedConversations.push(conversation);
@@ -1866,7 +1887,9 @@ export default class NPCManager {
 
     // Opens at once, as it always has, unless another scripted conversation is
     // starting or open: then it waits its turn (_queueScriptedConversation)
-    const isPhone = npc.npcType === 'phone';
+    // A video call is always a person-chat, whatever the NPC's type (as for an event mapping)
+    const isVideo = conversation.videoCall === true;
+    const isPhone = npc.npcType === 'phone' && !isVideo;
     this._queueScriptedConversation({
       npcId: conversation.npcId,
       label: 'timedConversation',
@@ -1909,7 +1932,12 @@ export default class NPCManager {
           npcId: conversation.npcId,
           title: npc.displayName || conversation.npcId,
           background: conversation.background, // Optional background image path
-          disableClose: conversation.disableClose === true
+          disableClose: conversation.disableClose === true,
+          ...(isVideo ? {
+            videoCall: true,
+            videoLabel: conversation.videoLabel || null,
+            participantTag: conversation.participantTag || null
+          } : {})
         }
     });
 
