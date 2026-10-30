@@ -208,7 +208,8 @@
       "allRight": "You handled every one of these the right way. Nothing to pick over here.",
       "allPhishRight": "Every rule-breaking request was raised, with every reason named.",
       "noBlameLine": "Honest mistakes reported quickly are fixed, not punished. Deliberate misuse is different, and the policy says what happens. The difference is intent and openness.",
-      "noBlameLineCritical": "Rules are hard to carry in your head, so a miss here is no fault of yours. The points only show where to look next time."
+      "noBlameLineCritical": "Rules are hard to carry in your head, so a miss here is no fault of yours. The points only show where to look next time.",
+      "sendOff": "That's the 'can I?' moments done. When you're not sure what the rules allow, ask first: the service desk would rather hear from you."
     },
     "_defendOnly": {
       "_use": "Strings for the one defend-only shell (e17_acceptable_use_defend). The shell copies brief over strings.brief and scopeNote over scopeNote. Because E17 is defend-only only, with no attack beat to strip, brief and scopeNote here EQUAL strings.brief and scopeNote above; there is nothing to trim, and this is not an error. There are no flip strings, because E17 has no flip.",
