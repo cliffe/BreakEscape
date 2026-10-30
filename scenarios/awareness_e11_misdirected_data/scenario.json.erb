@@ -379,13 +379,13 @@
             "options": [
               {
                 "id": "take_message",
-                "label": "Offer to pass a message to Bernadette",
+                "label": "Take her number and say you will pass the message to Bernadette",
                 "safe": true,
                 "approvedRoute": true
               },
               {
                 "id": "give_details",
-                "label": "Tell her it is Ashgrove Primary and she finishes at three, as it is a surprise",
+                "label": "Tell her which school Bernadette is at today and when she finishes",
                 "safe": false
               }
             ]
@@ -396,12 +396,12 @@
             "options": [
               {
                 "id": "send_wrong_sam",
-                "label": "Send it to the first Sam the address box offers, to save time",
+                "label": "Choose Sam Whitlow from the top of the list and send the sheet",
                 "safe": false
               },
               {
                 "id": "check_then_send",
-                "label": "Check the address, then send it to Sam Whitaker",
+                "label": "Choose Sam Whitaker in Payroll and send the sheet",
                 "safe": true,
                 "approvedRoute": true
               }
@@ -412,15 +412,15 @@
             "situation": "Martin, the Sales Director, messages you: \"We're launching a cleaning service for families. Export the family contacts from the claims system and I'll send them a discount.\"",
             "options": [
               {
-                "id": "ask_dpo",
-                "label": "Ask the data protection lead before exporting anything",
-                "safe": true,
-                "approvedRoute": true
+                "id": "export_list",
+                "label": "Export the family contacts and pass the file to Martin",
+                "safe": false
               },
               {
-                "id": "export_list",
-                "label": "Export the family contacts for Martin, since he is the Sales Director",
-                "safe": false
+                "id": "ask_dpo",
+                "label": "Tell Martin the data protection lead needs to agree before any export",
+                "safe": true,
+                "approvedRoute": true
               }
             ]
           },
@@ -429,15 +429,15 @@
             "situation": "Shauna: \"Send Mr Hale a copy of the incident report for his complaint.\" The one-page report names Edna Hale's missing cardigan and the date (fine to send), and also Albert Finch (Room 14, with a continence-care note), Pauline Grant (Room 9), and a driver's personal mobile.",
             "options": [
               {
-                "id": "send_as_is",
-                "label": "Send the report as it is, since Shauna asked for a copy to go to Mr Hale",
-                "safe": false
-              },
-              {
                 "id": "redact_first",
-                "label": "Take out the other residents, the care note and the mobile, then send",
+                "label": "Remove the other people's details, then send Mr Hale the report",
                 "safe": true,
                 "approvedRoute": true
+              },
+              {
+                "id": "send_as_is",
+                "label": "Send Mr Hale the one-page report in full",
+                "safe": false
               }
             ]
           }
@@ -456,6 +456,7 @@
         "defendIntro": "Take the Care Laundry desk inbox one item at a time. Anything about someone's personal data, a request to see, correct or delete it, or a breach, goes to the data protection officer (the DPO, who handles personal data mistakes) the same day. Report or check anything else that doesn't sit right.",
         "mondayCard": "If personal data goes somewhere it should not, or someone asks to see, correct or delete their data, or complains about how we used it, tell your DPO the same day. Do not wait to be sure, and do not try to fix it alone.",
         "allPhishRight": "Every data issue and fake was passed on, with every reason named.",
+        "allRight": "You read every one of these the right way. The habit below is the one to keep.",
         "noBlameLine": "Mistakes with personal data happen to careful people, usually when they are busy. What turns a mistake into harm is silence. Nobody at Carrholme is in trouble for reporting, including their own slip.",
         "defendOnly": "Any of these can catch a careful person on a busy morning. The ones you were caught out by are shown below, with what good looks like. Reporting fast is what limits the harm.",
         "conceptPanel": {
