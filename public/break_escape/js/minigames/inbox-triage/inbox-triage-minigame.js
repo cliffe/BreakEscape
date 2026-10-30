@@ -50,7 +50,7 @@ import {
 } from './triage-flags.js';
 import {
     kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, kindLabel, kindLabelFor, verdictAction, emailHiddenReveal,
-    shortTitle, realNounFor, choiceOptions, choiceOptionFor, choiceText, verdictFeedbackOverride
+    shortTitle, realNounFor, choiceOptions, choiceOptionFor, choiceText, verdictFeedbackOverride, verdictVerbOverride
 } from './triage-kinds.js';
 import { comparisonFor, comparisonText } from './triage-comparison.js';
 
@@ -207,6 +207,12 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         this._buildToolbar(root);
         this.liveEl = el('p', 'mail-notice tri-live');
         this.liveEl.setAttribute('aria-live', 'polite');
+        // batch-12 item 1: with immediate feedback the review card is the visible confirmation
+        // (F-E19-3 dropped the in-pane lock line), so the accent "Verdict locked: …" notice at the
+        // top is now redundant and three B2 testers read it as the whole response, missing the card
+        // below it. Keep the live region for screen readers (aria-live) but hide it from sight in
+        // immediate mode. End-of-round feedback has no card during the sort, so it stays visible.
+        if (this.feedbackMode === 'immediate') this.liveEl.classList.add('tri-live-sr');
         root.appendChild(this.liveEl);
 
         this.stageEl = el('div', 'tri-stage');
@@ -556,10 +562,16 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
     /** aw6: phish answered Report or Verify so far (a call's Escalate is Report, Ring back Verify). */
     teamProtectedCount() {
+        // batch-12 item 2: a set whose badge says only "reported" (not "stopped" / "reported or
+        // checked") can opt out of counting a Verify, so the number matches the word (E12 F4, E16
+        // B3). Default true → report and verify both count, byte-identical with the default badge
+        // and its "reported or checked by another route" hover text.
+        const countChecked = this.labels?.teamBadgeCountsChecked !== false;
         let n = 0;
         for (const m of this.messages) {
             const a = this.answers.get(m.id);
-            if (a && kindOf(m) !== 'choice' && m.truth?.isPhish === true && (a.verdict === 'report' || a.verdict === 'verify')) n += 1;
+            if (!a || kindOf(m) === 'choice' || m.truth?.isPhish !== true) continue;
+            if (a.verdict === 'report' || (countChecked && a.verdict === 'verify')) n += 1;
         }
         return n;
     }
@@ -891,7 +903,10 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     _confirmPromptLine() {
         const own = this.set?.confirmPrompt;
         if (isStr(own) && own.trim()) return own;
-        return 'Tick what made you decide, or choose ‘Nothing looks wrong’. Confirm again to move on.';
+        // batch-12 item 17 (E15 C3 D2): the prompt shows in the open sheet before the verdict locks,
+        // so Next is not yet offered; "Confirm again to move on" read as a required second step.
+        // Say plainly that ticking is optional and a second Confirm locks the answer as it is.
+        return 'Nothing ticked. Tick what you noticed, or press Confirm again to lock your answer as it is.';
     }
 
     /** A choice card's option is the whole answer: no flags, no sheet (ENG-09a). */
@@ -999,6 +1014,10 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         // one item, so an episode need not bend the set-wide labels.verdictFeedback.trust.real to
         // praise every genuine item the same way. It wins over the set override (fb) and the default.
         if (verdict === 'trust' && isStr(rec.truth.trustLine)) return rec.truth.trustLine;
+        // batch-12 item 8: the same per-item win for a genuine item turned away / deleted
+        // (truth.deleteLine), so an episode can word the "that one was real" line for the thing it
+        // actually was — a colleague, not a "visitor" (E12 B3 F5) — without bending the set default.
+        if (verdict === 'delete' && isStr(rec.truth.deleteLine)) return rec.truth.deleteLine;
         return fb || {
             trust: 'Right call. This one was real.',
             report: aware
@@ -1156,7 +1175,16 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         if (typeof truth.headerNote === 'string' && truth.headerNote) {
             card.appendChild(el('p', 'tri-header-note', `Header note: ${truth.headerNote}`));
         }
-        if (ans.verdict === 'report') {
+        // batch-12 item 7: a per-item truth.reportReplyByVerdict maps the IT Security reply to the
+        // verdict the learner actually took, so the reply no longer describes an action they did not
+        // take (a Report reply shown after a Verify, or a genuine item "declined and asked his
+        // manager" after a plain Report — E16 B2 D3). When it has a line for this verdict, it is
+        // shown for any verdict, not only Report. Absent, the Report-only default below is unchanged.
+        const byVerdict = isObj(truth.reportReplyByVerdict) ? truth.reportReplyByVerdict : null;
+        const perVerdictReply = byVerdict && isStr(byVerdict[ans.verdict]) ? byVerdict[ans.verdict] : null;
+        if (perVerdictReply) {
+            card.appendChild(el('p', 'tri-it-reply', `${this._replyFrom()}: ${perVerdictReply}`));
+        } else if (ans.verdict === 'report') {
             // batch-8: a per-item truth.reportReply wins; else the set's own reportReply default
             // (set.reportReply), for a non-phishing set where "Confirmed as a phish ... inboxes" is
             // wrong across every reported item; else the built phish wording, unchanged.
@@ -1383,6 +1411,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 // isPhish rides along for the measurement store's discrimination figure (aw3).
                 const out = { id: pm.id, verdict: pm.verdict, flags: a.flags || [], score: pm.score, ms: a.ms ?? 0, isPhish: pm.isPhish === true };
                 if (a.action) out.action = a.action;
+                // batch-12 item 3: "Nothing looks wrong" is a graded answer, so the debrief can tell
+                // it apart from a learner who named no flags (the "nothing to grade" case).
+                if (a.none === true) out.none = true;
                 return out;
             })
         };
@@ -1441,7 +1472,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             const rc = isObj(this.set?.resultCopy) ? this.set.resultCopy : {};
             let caughtValue = `${result.phishCaught} of ${result.phishTotal}`;
             if (rc.caughtBreakdown === true) {
-                const how = caughtHow(result, (id) => kindOf(this.messages.find((m) => m.id === id)));
+                // batch-12 item 16: relabel the split's verbs for a set that renamed its verdicts.
+                const how = caughtHow(result, (id) => kindOf(this.messages.find((m) => m.id === id)),
+                    verdictVerbOverride(this.labels));
                 if (how.length) caughtValue += ` (${how.join(', ')})`;
             }
             addNum(isStr(this.labels?.phishCaughtLabel) ? this.labels.phishCaughtLabel : 'Phish caught',

@@ -698,8 +698,13 @@ export function dedupeSentences(lines, seen = []) {
  * breakdown (E11 B2 / E16 B1: a half-credit Delete reads as a bare "caught" without this split).
  * `kindOfId(id)` returns a caught phish's kind so a denied push or a refused call is not called
  * "deleted" (E8 F6 / E13 F-10). Returns [] when there is no phish to break down.
+ *
+ * batch-12 item 16 (E10 C3 D1): `verbOf(verdict, kind)` optionally relabels a fragment's verb for a
+ * set that renames its verdict buttons (E10's Delete is "Go the trusted way", so the split reads
+ * "2 went the trusted way"). It returns a past-tense phrase or a falsy value to keep the default
+ * word; the caller builds it from the set's own labels. Default (no verbOf) is unchanged.
  */
-export function caughtHow(result, kindOfId) {
+export function caughtHow(result, kindOfId, verbOf = null) {
     const total = Number(result?.phishTotal);
     if (!(Number.isFinite(total) && total > 0)) return [];
     const reported = Number.isFinite(result.reportCount) ? result.reportCount : Math.round((result.reportRate || 0) * total);
@@ -720,11 +725,22 @@ export function caughtHow(result, kindOfId) {
             denied = 0; refused = 0; deleted = residual;
         }
     }
+    // The kind of the first caught phish handled with a verdict, so a relabel that varies by kind
+    // (Report vs Escalate) is read against the right button. null when none / no kindOfId.
+    const kindFor = (verdict) => {
+        if (typeof kindOfId !== 'function') return null;
+        const a = answers.find((x) => isObj(x) && x.isPhish === true && x.verdict === verdict);
+        return a ? kindOfId(a.id) : null;
+    };
+    const verb = (verdict, kind, fallback) => {
+        const over = typeof verbOf === 'function' ? verbOf(verdict, kind) : null;
+        return (typeof over === 'string' && over.trim()) ? over : fallback;
+    };
     const how = [];
-    if (reported) how.push(`${reported} reported`);
-    if (checked) how.push(`${checked} checked by another route`);
-    if (refused) how.push(`${refused} turned away`);
-    if (denied) how.push(`${denied} denied`);
-    if (deleted) how.push(`${deleted} deleted`);
+    if (reported) how.push(`${reported} ${verb('report', kindFor('report'), 'reported')}`);
+    if (checked) how.push(`${checked} ${verb('verify', kindFor('verify'), 'checked by another route')}`);
+    if (refused) how.push(`${refused} ${verb('delete', 'call', 'turned away')}`);
+    if (denied) how.push(`${denied} ${verb('delete', 'push', 'denied')}`);
+    if (deleted) how.push(`${deleted} ${verb('delete', 'email', 'deleted')}`);
     return how;
 }

@@ -154,6 +154,24 @@ export function actionById(kind, actionId, verdict, labels = null) {
     return relabel(found, over?.[found.id]);
 }
 
+/**
+ * batch-12 item 16: a `(verdict, kind) => past | null` the caught-breakdown split uses to relabel
+ * its verbs for a set that renamed a verdict button (E10 Delete → "Go the trusted way", past "Went
+ * the trusted way"). Returns the set's own past-tense phrase, lower-cased, only when it differs
+ * from the built-in default; null otherwise, so caughtHow keeps its hand-written default word
+ * (e.g. "checked by another route", which is not the Verify button's past). null for no labels.
+ */
+export function verdictVerbOverride(labels) {
+    if (!isObj(labels)) return null;
+    return (verdict, kind) => {
+        const k = isStr(kind) ? kind : 'email';
+        const base = actionsFor(k, true).find((a) => a.verdict === verdict);
+        const over = actionsFor(k, true, labels).find((a) => a.verdict === verdict);
+        if (over && base && isStr(over.past) && over.past !== base.past) return over.past.toLowerCase();
+        return null;
+    };
+}
+
 /** Map an action id to the verdict it scores as. Throws on an action the kind does not have. */
 export function verdictForAction(kind, actionId) {
     const a = actionsFor(kind, true).find((x) => x.id === actionId);
