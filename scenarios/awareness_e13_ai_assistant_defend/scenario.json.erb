@@ -38,7 +38,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "Messages done",
-        "body": "That's the supplier emails, voicemails and video calls finished. The debrief goes through each one."
+        "body": "That's the supplier emails, voicemails and video calls finished. The debrief goes through each one. Before you go, Gwen has an optional short demo of a faked call: close this and talk to her if you'd like it."
       },
       "tasks": [
         {
@@ -56,7 +56,8 @@
     "episode_e13_ai_assistant_defend_defend_percent": 0,
     "episode_e13_ai_assistant_defend_defend_reportRate": 0,
     "episode_e13_ai_assistant_defend_defend_done": false,
-    "episode_e13_ai_assistant_defend_defend_pass": false
+    "episode_e13_ai_assistant_defend_defend_pass": false,
+    "e13_demo_offered": false
   },
   "social": {
     "triageSets": [
@@ -379,6 +380,7 @@
         "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company, which has switched on its own approved assistant. Messages are waiting: supplier emails, voicemails and video calls. Some are real and some were built to look right, a voice you know, a face you trust, or a line slipped into an email for the assistant to act on. Decide what to do with each, and check another way when a message pushes you to move money, send data or sign in. Reporting or checking when you're unsure is always fine and never marked down.",
         "defendIntro": "Go through the messages and decide what to do with each one. You can't reliably spot a fake voice or face, so when a message asks for money, data or a sign-in, check another way, on a number or channel you already hold. Work through them at your own pace.",
         "allPhishRight": "Every fake was caught, with every tell named.",
+        "sendOff": "Thanks for working through this one. Before you go, Gwen has an optional extra: a short faked call, so you can hear what one is like. Talk to her if you'd like it, or leave it.",
         "reportedPct": "Reported {pct}% of the fakes",
         "noBlameLine": "The demo fools nearly everyone, and it was built to; the assistant is useful and most of what it writes is right. A miss just shows where to check next time.",
         "mondayCard": "On Monday: an assistant can't tell an instruction in an email from a request from a colleague, so when a summary or note suggests you do something, check where that came from before you act on it. If you use an assistant yourself, keep passwords and personal details out of what you give it, and check the figures and claims in what it writes against the source. And if a call, video or email pushes you to move money, send data or sign in, stop and check another way, using the route in the box below.",
@@ -461,6 +463,15 @@
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "handle_assistant_inbox"
+            },
+            {
+              "_comment": "Optional deepfake demo (E13 section 9.2 beat 4; owner decision 2026-10-30: open it after the kiosk work, as a spoken debrief). Unscored and skippable: once the round's done global is true, Gwen's hub offers it, and taking it sets e13_demo_offered (#set_global), which opens demo_call here as a video call labelled Brightwell Meet (internal, no participantTag). By then the kiosk runner is closed, so the call does not queue behind it, and the hub's goodbye skips it. The success screen and the runner's sendOff mention it.",
+              "eventPattern": "global_variable_changed:e13_demo_offered",
+              "condition": "value === true",
+              "onceOnly": true,
+              "conversationMode": "video-call",
+              "targetKnot": "demo_call",
+              "videoLabel": "Brightwell Meet"
             }
           ]
         }

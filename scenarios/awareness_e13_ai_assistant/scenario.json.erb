@@ -53,7 +53,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "AI assistant: finished",
-        "body": "You've written a supplier brief and seen how the assistant handled it, then sat with the assistant and worked through the supplier emails, voicemails and video calls yourself. That's this episode finished. The debrief goes through each one."
+        "body": "You've written a supplier brief and seen how the assistant handled it, then sat with the assistant and worked through the supplier emails, voicemails and video calls yourself. That's this episode finished. The debrief goes through each one. Before you go, Gwen has an optional short demo of a faked call: close this and talk to her if you'd like it."
       },
       "tasks": [
         {
@@ -443,6 +443,7 @@
         "allPhishRight": "Every fake was caught, with every tell named.",
         "reportedPct": "Reported {pct}% of the fakes",
         "noBlameLine": "The demo fools nearly everyone, and it was built to; the assistant is useful and most of what it writes is right. A miss just shows where to check next time.",
+        "sendOff": "Thanks for working through this one. Before you go, Gwen has an optional extra: a short faked call, so you can hear what one is like. Talk to her if you'd like it, or leave it.",
         "assistantRecapHeading": "In the assistant window: what to check next time",
         "mondayCard": "On Monday: an assistant can't tell an instruction in an email from a request from a colleague, so when a summary or note suggests you do something, check where that came from before you act on it. If you use an assistant yourself, keep passwords and personal details out of what you give it, and check the figures and claims in what it writes against the source. And if a call, video or email pushes you to move money, send data or sign in, stop and check another way, using the route in the box below.",
         "defendOnly": "These messages were built to look right, a real supplier's address, a voice you know, a face you trust. Any you were caught out by are shown below, with what gave each one away and why checking another way works whoever is speaking.",
@@ -820,7 +821,7 @@
               "completeTask": "handle_assistant_inbox"
             },
             {
-              "_comment": "ENG-07 announced deepfake demo (unscored empathy beat, E13 section 9.2 beat 4): a scripted video-call on Gwen, targetKnot gwen_pritchard.ink 'demo_call', internal (no participantTag), ENG-07 label 'Brightwell Meet'. Trigger gated on a dedicated global e13_demo_offered (declared false, never set by the current flow), so the demo does NOT auto-fire. WHY: the whole episode runs in one kiosk-runner overlay session; a scripted video-call queues behind any open minigame (npc-manager _queueScriptedConversation) and can only open when the runner closes (episode end), and the child-overlay handoff gives no clean mid-flip slot. The demo's placement is the brief's open question #1 (E13 section 20). The NPC record, knot, label and mapping shape are all present and schema-valid; an engine owner sets e13_demo_offered true from the chosen hook (e.g. the flip's Continue after the assistant closes) to fire it. Condition keeps to npc-manager safeEvaluateCondition's simple grammar.",
+              "_comment": "Optional deepfake demo (E13 section 9.2 beat 4; owner decision 2026-10-30: open it after the kiosk work, as a spoken debrief). Unscored and skippable: once the round's done global is true, Gwen's hub offers it, and taking it sets e13_demo_offered (#set_global), which opens demo_call here as a video call labelled Brightwell Meet (internal, no participantTag). By then the kiosk runner is closed, so the call does not queue behind it, and the hub's goodbye skips it. The success screen and the runner's sendOff mention it.",
               "eventPattern": "global_variable_changed:e13_demo_offered",
               "condition": "value === true",
               "onceOnly": true,

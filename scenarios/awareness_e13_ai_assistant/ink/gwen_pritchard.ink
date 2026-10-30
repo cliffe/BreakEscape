@@ -13,13 +13,16 @@
 // on whether it landed (scoring is defence only).
 //
 // === demo_call ===
-// The announced deepfake demo (E13 section 9.2 beat 4). It is opened in the FLIP
-// region as a person-chat conversationMode:"video-call" conversation, by an event
-// mapping with targetKnot "demo_call" (ENG-07 labels the bar "Brightwell Meet";
-// internal, no External tag). The fake Gwen asks for the six-digit code shown on
-// the learner's phone; the code value is on screen only and is NEVER spoken
-// (E13 section 18). No glitch, no freeze frame on the fake (core_15 pitfall):
-// the real Gwen simply ends the call and turns from the next desk.
+// The announced deepfake demo (E13 section 9.2 beat 4), an optional, unscored
+// extra after the round (owner decision 2026-10-30: "Open it after the kiosk
+// work, as a spoken debrief"). Once the round's done global is true, the hub
+// offers it; taking it sets e13_demo_offered, and Gwen's event mapping opens
+// "demo_call" as a person-chat conversationMode:"video-call" (ENG-07 bar label
+// "Brightwell Meet"; internal, no External tag). Leaving it is the hub's normal
+// goodbye, so it never stands in the way of the end of the episode. The caller
+// asks for a six-digit code; no code value is ever spoken (E13 section 18). No
+// glitch, no freeze frame on the fake (core_15 pitfall): the real Gwen ends the
+// call and says what it showed.
 //
 // Resting point is the hub (goodbye parks there quietly; a re-talk re-enters it
 // and says the line that fits the moment).
@@ -27,6 +30,8 @@
 
 VAR phish_assist_reader_attempts = 0
 VAR episode_e13_ai_assistant_defend_done = false
+VAR e13_demo_offered = false
+VAR demo_answer = ""
 VAR hub_quiet = false
 
 === start ===
@@ -49,6 +54,13 @@ VAR hub_quiet = false
         }
     }
 }
++ {episode_e13_ai_assistant_defend_done and not e13_demo_offered} [Optional: hear what a faked call sounds like]
+    Gwen Pritchard: I'll ring you on Brightwell Meet and play the caller, as someone with a copy of my face and voice could.
+    Gwen Pritchard: Answer it any way you like. It takes a minute or two, and nothing is scored.
+    ~ hub_quiet = true
+    #set_global:e13_demo_offered:true
+    #exit_conversation
+    -> hub
 + [Thanks, Gwen.]
     Gwen Pritchard: Any time.
     ~ hub_quiet = true
@@ -58,18 +70,26 @@ VAR hub_quiet = false
 === demo_call ===
 Gwen Pritchard: It's Gwen, on Brightwell Meet. Quick one: read me the six-digit code on your phone so I can clear your assistant access.
 + [Read the code out]
+    ~ demo_answer = "read"
     Gwen Pritchard: Lovely, that's it, you're all set. Speak later.
     -> reveal
 + [Leave the call and check another way]
+    ~ demo_answer = "left"
     -> reveal
 + [Ask a question before answering]
+    ~ demo_answer = "asked"
     Gwen Pritchard: No need, honestly, it's just me, and I'm between meetings. The code's the quick way.
     -> reveal
 
 === reveal ===
-Gwen Pritchard: Right, that was me, but watch. I end the call and turn round from the next desk.
-Gwen Pritchard: Same face, same voice, on our own meeting tool. None of that proved it was me asking.
-Gwen Pritchard: When a call wants a code, money or data, pause. End it, call back on a number you hold, or ask someone. Then report it.
+Gwen Pritchard: That's the demo over. It really was me, but someone with a copy of my face and voice could make that same call.
+{ demo_answer:
+- "read": Gwen Pritchard: You read the code out, as most people do for a familiar face. That code would let someone sign in as you.
+- "left": Gwen Pritchard: You left and checked another way. That's right, even when it turns out to be me.
+- "asked": Gwen Pritchard: Asking is good, but a faker has an answer ready, as I did. Ringing back is the check that holds.
+}
+Gwen Pritchard: Same face, same voice, on our own meeting tool. None of that proved who was asking.
+Gwen Pritchard: When a call wants a code, money or data, pause. End it, ring back on a number you already hold, or ask someone. Then report it.
 + [Understood.]
     Gwen Pritchard: You don't need to spot a deepfake. You need to check another way.
     ~ hub_quiet = true
