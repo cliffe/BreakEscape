@@ -21,6 +21,8 @@ module ValidateSocial
     def self.check(ctx)
       issues = []
       social = ctx.json['social'].is_a?(Hash) ? ctx.json['social'] : {}
+      # The scene lints read ctx.social; a mission with no social block gets an empty one
+      ctx = ctx.dup.tap { |c| c.social = social } if ctx.social.nil?
       entries = exercise_list(ctx, social, issues)
       Mail.each_object(ctx.json) do |obj, path|
         next unless obj['type'] == 'exercise-station'

@@ -1964,12 +1964,12 @@
         "setGlobalPrefix": {"type": "string", "minLength": 1, "description": "Default result-global prefix for stations that use this exercise and set none of their own"},
         "description": {"type": "string"}
       },
-      "allOf": [
-        {"if": {"properties": {"scene": {"const": "sort-drill"}}}, "then": {"properties": {"config": {"$ref": "#/definitions/socialSortDrill"}}}},
-        {"if": {"properties": {"scene": {"const": "concern-form"}}}, "then": {"properties": {"config": {"$ref": "#/definitions/socialConcernForm"}}}},
-        {"if": {"properties": {"scene": {"const": "privacy-panel"}}}, "then": {"properties": {"config": {"$ref": "#/definitions/socialPrivacyPanel"}}}},
-        {"if": {"properties": {"scene": {"const": "assistant-chat"}}}, "then": {"properties": {"config": {"$ref": "#/definitions/socialAssistant"}}}},
-        {"if": {"properties": {"scene": {"const": "password-guesser"}}}, "then": {"properties": {"config": {"$ref": "#/definitions/socialGuess"}}}}
+      "oneOf": [
+        {"properties": {"scene": {"enum": ["sort-drill"]}, "config": {"$ref": "#/definitions/socialSortDrill"}}},
+        {"properties": {"scene": {"enum": ["concern-form"]}, "config": {"$ref": "#/definitions/socialConcernForm"}}},
+        {"properties": {"scene": {"enum": ["privacy-panel"]}, "config": {"$ref": "#/definitions/socialPrivacyPanel"}}},
+        {"properties": {"scene": {"enum": ["assistant-chat"]}, "config": {"$ref": "#/definitions/socialAssistant"}}},
+        {"properties": {"scene": {"enum": ["password-guesser"]}, "config": {"$ref": "#/definitions/socialGuess"}}}
       ],
       "patternProperties": {"^_": {}},
       "additionalProperties": false
@@ -2058,7 +2058,7 @@
             "properties": {
               "id": {"type": "string", "minLength": 1},
               "label": {"type": "string", "minLength": 1},
-              "kind": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "One of the form's kinds: what, when, where and who by default, or an id from config.kinds. The lint checks it against that list."},
+              "kind": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "One of the form's kinds: what, when, where and who by default, or an id from config.kinds. The validator lint (awareness.rb concern_form_config_checks) checks it against that list."},
               "required": {"type": "boolean", "description": "batch-12 item 15: this fact must be in the report before Done is offered (the outside offer in E16, so a report of only the colleague's hard week cannot be finished — E16 B4 minor 1). strings.feedbackRequired ({missing} = the missing labels) names what is still needed. Default (unset): no fact is compulsory, so Done appears after any non-empty check, as before."}
             },
             "patternProperties": {"^_": {}},
@@ -2080,8 +2080,6 @@
         "requireNoConclusion": {"type": "boolean", "description": "batch-11: hold back Done while a conclusion chip is picked (strings.mustRemoveConclusion says why). Default off."},
         "strings": {"type": "object", "description": "Wording over the form's defaults (concern-form-model.js DEFAULT_TEXT) and the runner's launchHeading, launchText and launchButton, keyed by line. Includes conclusionsNote (batch-12 item 4: the 'only one conclusion is kept' note shown when more than one is offered; '' suppresses it) and feedbackRequired (batch-12 item 15: the line naming the missing required fact, {missing} = labels), and feedbackFactsMissing (batch-13 item 1: the feedback line in place of the feedbackFacts praise while a required fact is still unpicked).", "additionalProperties": {"type": "string"}}
       },
-      "if": {"not": {"required": ["kinds"]}},
-      "then": {"properties": {"factChips": {"items": {"properties": {"kind": {"enum": ["what", "when", "where", "who"]}}}}}},
       "patternProperties": {"^_": {}},
       "additionalProperties": false
     },

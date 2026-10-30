@@ -712,7 +712,7 @@ test('concernForm schema: the clean form passes; a mistyped key, a bad kind and 
   const cases = [
     ['a mistyped key', (c) => { c.guidence = 'x'; }, 'guidence'],
     ['a mistyped chip key', (c) => { c.factChips[0].lable = 'x'; }, 'lable'],
-    ['a bad kind', (c) => { c.factChips[0].kind = 'why'; }, 'kind'],
+    ['a bad kind', (c) => { c.factChips[0].kind = 'Why Not'; }, 'kind'],
     ['a missing label', (c) => { delete c.factChips[0].label; }, 'label'],
     ['no fact chips', (c) => { delete c.factChips; }, 'factChips'],
     ['minFacts as a string', (c) => { c.minFacts = 'two'; }, 'minFacts'],

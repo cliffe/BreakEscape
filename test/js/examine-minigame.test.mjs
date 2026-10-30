@@ -42,7 +42,9 @@ const stubs = {
     './combat-input.js': dataUrl(readFileSync(join(js, 'systems/combat-input.js'), 'utf8')),
     './consumables.js': dataUrl(readFileSync(join(js, 'systems/consumables.js'), 'utf8')),
     './interaction-walls.js': dataUrl(readFileSync(join(js, 'systems/interaction-walls.js'), 'utf8')),
-    './interaction-reach.js': dataUrl(readFileSync(join(js, 'systems/interaction-reach.js'), 'utf8'))
+    './interaction-reach.js': dataUrl(readFileSync(join(js, 'systems/interaction-reach.js'), 'utf8')),
+    // the starter registry: none of these cases opens a registered minigame
+    './minigame-registry.js': dataUrl('export const hasMinigameStarter = () => false; export const startRegisteredMinigame = () => false;')
 };
 
 const started = [];
