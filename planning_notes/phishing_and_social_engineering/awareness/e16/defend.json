@@ -194,11 +194,10 @@
           "auth": { "spf": "fail", "dkim": "fail", "dmarc": "fail", "envelopeFrom": "quayholt-support.example", "replyTo": "it@quayholt-support.example" },
           "truth": {
             "isPhish": true,
-            "flags": ["secrecy_or_bypass", "lookalike_domain", "senderTrust", "senderAuth"],
+            "flags": ["secrecy_or_bypass", "lookalike_domain", "senderTrust"],
             "flagAlternatives": [["senderTrust", "lookalike_domain"]],
             "perFlagNote": {
               "senderTrust": "The name says IT Service Desk, but the address is on quayholt-support.example, not Quayholt's own quayholt.example.",
-              "senderAuth": "All three automatic checks failed, which fits an address that is not Quayholt's own. Treat it as a reason to look closer, together with the look-alike address.",
               "secrecy_or_bypass": "This primes you to approve a prompt you didn't start and tells you not to raise a ticket; real IT never asks that.",
               "lookalike_domain": "The address is on quayholt-support.example, not quayholt.example: a look-alike with an added word."
             },
@@ -240,7 +239,7 @@
     "strings": {
       "weakestTells": "The signs most often missed: {names} ({counts} each).",
       "weakestTell": "The sign most often missed: {names} ({counts}).",
-      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm. A colleague is leaving on Friday and the office is talking. Your job is not to solve anything: keep your access to yourself, report what's offered to you, and pass on facts, not a verdict on anyone. First you make this week's calls and see where each led; then a fair way to raise a concern, and a short set of messages. Only the set is scored.",
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm, hosted by Anjali Rao from information security. A colleague is leaving on Friday and the office is talking. Your job is not to solve anything: keep your access to yourself, report what's offered to you, and pass on facts, not a verdict on anyone. First you make this week's calls and see where each led; then a fair way to raise a concern, and a short set of messages. Only the set is scored.",
       "flipHeading": "A week later",
       "allRight": "You handled every one of these the right way. Nothing to pick over here.",
       "allPhishRight": "Every risk was raised, with every sign named.",

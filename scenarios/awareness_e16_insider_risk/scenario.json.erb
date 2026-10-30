@@ -291,13 +291,11 @@
               "flags": [
                 "secrecy_or_bypass",
                 "lookalike_domain",
-                "senderTrust",
-                "senderAuth"
+                "senderTrust"
               ],
               "flagAlternatives": [["senderTrust", "lookalike_domain"]],
               "perFlagNote": {
                 "senderTrust": "The name says IT Service Desk, but the address is on quayholt-support.example, not Quayholt's own quayholt.example.",
-                "senderAuth": "All three automatic checks failed, which fits an address that is not Quayholt's own. Treat it as a reason to look closer, together with the look-alike address.",
                 "secrecy_or_bypass": "This primes you to approve a prompt you didn't start and tells you not to raise a ticket; real IT never asks that.",
                 "lookalike_domain": "The address is on quayholt-support.example, not quayholt.example: a look-alike with an added word."
               },
@@ -365,12 +363,12 @@
             "options": [
               {
                 "id": "log_in_for_him",
-                "label": "Log him in on your own account, just this once",
+                "label": "Let him use your login while you sit beside him",
                 "safe": false
               },
               {
                 "id": "service_desk",
-                "label": "Ring the service desk; they reset it in minutes",
+                "label": "Send him to the service desk to get a reset",
                 "safe": true,
                 "approvedRoute": true
               }
@@ -382,13 +380,13 @@
             "options": [
               {
                 "id": "route",
-                "label": "Point him to security or his manager",
+                "label": "Suggest he takes it to security or his manager",
                 "safe": true,
                 "approvedRoute": true
               },
               {
                 "id": "add",
-                "label": "Add your own theory about where she's going",
+                "label": "Say you'd wondered about her leaving too",
                 "safe": false
               }
             ]
@@ -399,12 +397,12 @@
             "options": [
               {
                 "id": "engage",
-                "label": "Reply to find out how it works",
+                "label": "Write back and ask what exactly is on offer",
                 "safe": false
               },
               {
                 "id": "report",
-                "label": "Screenshot it and report it, without replying",
+                "label": "Screenshot it and send it to security",
                 "safe": true,
                 "approvedRoute": true
               }
@@ -416,13 +414,13 @@
             "options": [
               {
                 "id": "handover",
-                "label": "Ask what the handover needs; route it to his manager",
+                "label": "Check with his manager what the handover needs",
                 "safe": true,
                 "approvedRoute": true
               },
               {
                 "id": "personal_email",
-                "label": "Export them to his personal email for safekeeping",
+                "label": "Export the accounts to his personal email as asked",
                 "safe": false
               }
             ]
@@ -433,12 +431,12 @@
             "options": [
               {
                 "id": "confront",
-                "label": "Ask her outright if she's leaving with Ross",
+                "label": "Ask her directly whether she's leaving with Ross",
                 "safe": false
               },
               {
                 "id": "kind",
-                "label": "Ask how she is, kindly, and leave it there",
+                "label": "Ask how her week is going and leave it at that",
                 "safe": true,
                 "approvedRoute": true
               }
@@ -518,9 +516,17 @@
         }
       },
       "strings": {
+        "sandbox": {
+          "intro": "A few ordinary choices from an ordinary day. They aren't scored, but the debrief comes back to any that are worth a second look, so choose what you would really do."
+        },
+        "stages": {
+          "mistake": {
+            "text": "Work through a few ordinary choices from a normal day. They aren't scored, and the debrief comes back to any worth a second look, so choose what you would really do."
+          }
+        },
         "weakestTells": "The signs most often missed: {names} ({counts} each).",
         "weakestTell": "The sign most often missed: {names} ({counts}).",
-        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm. A colleague is leaving on Friday and the office is talking. Your job is not to solve anything: keep your access to yourself, report what's offered to you, and pass on facts, not a verdict on anyone. First you make this week's calls and see where each led; then a fair way to raise a concern, and a short set of messages. Only the set is scored.",
+        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm, hosted by Anjali Rao from information security. A colleague is leaving on Friday and the office is talking. Your job is not to solve anything: keep your access to yourself, report what's offered to you, and pass on facts, not a verdict on anyone. First you make this week's calls and see where each led; then a fair way to raise a concern, and a short set of messages. Only the set is scored.",
         "flipHeading": "A week later",
         "allRight": "You handled every one of these the right way. Nothing to pick over here.",
         "allPhishRight": "Every risk was raised, with every sign named.",
@@ -549,15 +555,15 @@
             "service_desk": "The version where a login was shared: whatever was opened went on the record of whoever's login it was. The service desk reset it in minutes instead."
           },
           "rumour": {
-            "add": "The theory reached Samira, who had been at the hospital every night. It wasn't true, and it landed on someone already having the worst week.",
+            "add": "Your remark reached Samira, who had been at the hospital every night. It wasn't true, and it landed on someone already having the worst week.",
             "route": "The version where the theory spread: it reached Samira, and it wasn't true. Facts to the right person help; a theory in the kitchen only hurts."
           },
           "leaver_favour": {
             "personal_email": "The client list sat in a personal inbox outside the firm. Company data belongs to the company, and the people in it belong to themselves.",
-            "handover": "The version where accounts went to a personal inbox: the firm's data left its protection. Handover notes in the shared place did the job and kept it in."
+            "handover": "The version where accounts went to a personal inbox: the firm's data left its protection. Handover notes agreed with his manager and kept in the shared place did the job and kept the data in."
           },
           "samira": {
-            "confront": "Samira, whose father was in hospital, was asked if she was 'in on it'. She wasn't. The question made a hard week harder.",
+            "confront": "Samira, whose father was in hospital, was asked whether she was leaving with Ross. She wasn't. The question made a hard week harder.",
             "kind": "A kind word, and nothing more: Samira's father was in hospital, and she told you when she was ready. Nobody was accused, and she got support from the people she chose. That is what good looks like."
           }
         },

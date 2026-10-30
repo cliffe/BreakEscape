@@ -17,40 +17,40 @@
         "id": "shared_login",
         "situation": "Reuben is locked out with a report due at ten. \"Can I just use yours? Two minutes.\"",
         "options": [
-          { "id": "log_in_for_him", "label": "Log him in on your own account, just this once", "safe": false },
-          { "id": "service_desk", "label": "Ring the service desk; they reset it in minutes", "safe": true, "approvedRoute": true }
+          { "id": "log_in_for_him", "label": "Let him use your login while you sit beside him", "safe": false },
+          { "id": "service_desk", "label": "Send him to the service desk to get a reset", "safe": true, "approvedRoute": true }
         ]
       },
       {
         "id": "rumour",
         "situation": "At lunch, Craig floats that Samira is leaving with Ross and taking the client list.",
         "options": [
-          { "id": "route", "label": "Point him to security or his manager", "safe": true, "approvedRoute": true },
-          { "id": "add", "label": "Add your own theory about where she's going", "safe": false }
+          { "id": "route", "label": "Suggest he takes it to security or his manager", "safe": true, "approvedRoute": true },
+          { "id": "add", "label": "Say you'd wondered about her leaving too", "safe": false }
         ]
       },
       {
         "id": "outside_offer",
         "situation": "An unknown contact messages you: \"We pay people at firms like yours for remote access. 25% of what we make. Totally anonymous. Interested?\"",
         "options": [
-          { "id": "engage", "label": "Reply to find out how it works", "safe": false },
-          { "id": "report", "label": "Screenshot it and report it, without replying", "safe": true, "approvedRoute": true }
+          { "id": "engage", "label": "Write back and ask what exactly is on offer", "safe": false },
+          { "id": "report", "label": "Screenshot it and send it to security", "safe": true, "approvedRoute": true }
         ]
       },
       {
         "id": "leaver_favour",
         "situation": "Ross asks you to export his accounts to his personal email \"for the handover\".",
         "options": [
-          { "id": "handover", "label": "Ask what the handover needs; route it to his manager", "safe": true, "approvedRoute": true },
-          { "id": "personal_email", "label": "Export them to his personal email for safekeeping", "safe": false }
+          { "id": "handover", "label": "Check with his manager what the handover needs", "safe": true, "approvedRoute": true },
+          { "id": "personal_email", "label": "Export the accounts to his personal email as asked", "safe": false }
         ]
       },
       {
         "id": "samira",
         "situation": "Samira has been in early, taking calls in the stairwell, and visiting HR.",
         "options": [
-          { "id": "confront", "label": "Ask her outright if she's leaving with Ross", "safe": false },
-          { "id": "kind", "label": "Ask how she is, kindly, and leave it there", "safe": true, "approvedRoute": true }
+          { "id": "confront", "label": "Ask her directly whether she's leaving with Ross", "safe": false },
+          { "id": "kind", "label": "Ask how her week is going and leave it at that", "safe": true, "approvedRoute": true }
         ]
       }
     ],
@@ -69,18 +69,26 @@
       "service_desk": "The version where a login was shared: whatever was opened went on the record of whoever's login it was. The service desk reset it in minutes instead."
     },
     "rumour": {
-      "add": "The theory reached Samira, who had been at the hospital every night. It wasn't true, and it landed on someone already having the worst week.",
+      "add": "Your remark reached Samira, who had been at the hospital every night. It wasn't true, and it landed on someone already having the worst week.",
       "route": "The version where the theory spread: it reached Samira, and it wasn't true. Facts to the right person help; a theory in the kitchen only hurts."
     },
     "leaver_favour": {
       "personal_email": "The client list sat in a personal inbox outside the firm. Company data belongs to the company, and the people in it belong to themselves.",
-      "handover": "The version where accounts went to a personal inbox: the firm's data left its protection. Handover notes in the shared place did the job and kept it in."
+      "handover": "The version where accounts went to a personal inbox: the firm's data left its protection. Handover notes agreed with his manager and kept in the shared place did the job and kept the data in."
     },
     "samira": {
-      "confront": "Samira, whose father was in hospital, was asked if she was 'in on it'. She wasn't. The question made a hard week harder.",
+      "confront": "Samira, whose father was in hospital, was asked whether she was leaving with Ross. She wasn't. The question made a hard week harder.",
       "kind": "A kind word, and nothing more: Samira's father was in hospital, and she told you when she was ready. Nobody was accused, and she got support from the people she chose. That is what good looks like."
     }
   },
+
+  "sandboxStrings": {
+    "_notes": "Paste at social.awarenessEpisode.strings.sandbox and strings.stages.mistake (erb-only; parity allow-listed). Blind B3 finding 2: the engine default said 'Nothing here is scored' but the debrief recaps wrong choices as 'Choices worth a second look'.",
+    "sandbox": { "intro": "A few ordinary choices from an ordinary day. They aren't scored, but the debrief comes back to any that are worth a second look, so choose what you would really do." },
+    "stages": { "mistake": { "text": "Work through a few ordinary choices from a normal day. They aren't scored, and the debrief comes back to any worth a second look, so choose what you would really do." } }
+  },
+
+  "briefHostNote": "Full erb strings.brief now names the host: 'hosted by Anjali Rao from information security' (B3 minor 8).",
 
   "defendIntro": "That's where this week's choices led. Now a fair way to raise a concern, facts, not a verdict on anyone, and then a short set of messages. Take them at your own pace.",
 
