@@ -1,8 +1,8 @@
 {
   "scenario_id": "awareness_e14_social_media",
   "scenario_name": "Social media and oversharing: both sides",
-  "scenario_brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. First you're on the red team: look at what one colleague, Dani Fenwick, has posted in public, pin what an attacker would use, then write one short message built from it. Then you swap sides: you spot the same tricks in a feed and an inbox, and close the gaps, on Dani's profile. Only the inbox is scored.",
-  "endGoal": "Write the pretext message, then sort the feed and inbox at the training kiosk.",
+  "scenario_brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. First you play the attacker's side: look at what one colleague, Dani Fenwick, has posted in public, pin what an attacker would use, then write one short message built from it. Then you swap sides: you spot the same tricks in a feed and an inbox, and close the gaps, on Dani's profile. Only the inbox is scored.",
+  "endGoal": "Write the test message, then sort the feed and inbox at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
   "startRoom": "training_room",
@@ -30,7 +30,7 @@
       "tasks": [
         {
           "taskId": "write_pretext_message",
-          "title": "Send the pretext message",
+          "title": "Send the test message",
           "type": "manual",
           "status": "active"
         }
@@ -174,8 +174,8 @@
                 "recon_request"
               ],
               "perFlagNote": {
-                "fake_profile": "A brand-new account, almost no history, and it moved to the systems question fast: a fake recruiter profile used for reconnaissance",
-                "recon_request": "A genuine recruiter never needs a breakdown of your firm's systems or who runs IT. That is reconnaissance, not recruitment"
+                "fake_profile": "A brand-new account, almost no history, and it moved to the systems question fast: a fake recruiter profile used to scout your firm",
+                "recon_request": "A genuine recruiter never needs a breakdown of your firm's systems or who runs IT. That is scouting, not recruitment"
               },
               "ifTrusted": "A map of the studio's systems and who runs IT would go to a stranger, ready-made for the next scam.",
               "reportReply": "Thanks. There's no such recruiter; the account is a week old. Share nothing about our systems, and report it. This is the normal-looking phish you'll see most."
@@ -244,9 +244,9 @@
                 "recon_request"
               ],
               "perFlagNote": {
-                "recon_request": "A friendly opener that steers to the tools the studio runs is still reconnaissance. You don't owe a stranger your firm's systems"
+                "recon_request": "A friendly opener that steers to the tools the studio runs is still scouting. You don't owe a stranger your firm's systems"
               },
-              "ifTrusted": "Naming the studio's software hands a stranger the first piece of a convincing pretext.",
+              "ifTrusted": "Naming the studio's software hands a stranger the first piece of a convincing cover story.",
               "reportReply": "Thanks. The compliment was real enough; the question wasn't their business. Share nothing about our tools with a stranger, and report it."
             }
           },
@@ -373,7 +373,7 @@
             "id": "e14_feed_system",
             "situation": "'Buried in the new finance system this week but getting there!'",
             "answer": "hold",
-            "reason": "Hold this: naming an internal system tells an attacker exactly which pretext to use. Keep the system out of it."
+            "reason": "Hold this: naming an internal system tells an attacker exactly which cover story to use. Keep the system out of it."
           },
           {
             "id": "e14_feed_whiteboard",
@@ -459,7 +459,7 @@
         "teamLine": "By reporting {n} of these rather than answering, you kept a fake message away from the rest of your team.",
         "weakestTells": "The signs most often missed: {names} ({counts} each).",
         "weakestTell": "The sign most often missed: {names} ({counts}).",
-        "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. First you're on the red team: look at what one colleague, Dani Fenwick, has posted in public, pin what an attacker would use, then write one short message built from it. Then you swap sides: you spot the same tricks in a feed and an inbox, and close the gaps, on Dani's profile. Only the inbox is scored.",
+        "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. First you play the attacker's side: look at what one colleague, Dani Fenwick, has posted in public, pin what an attacker would use, then write one short message built from it. Then you swap sides: you spot the same tricks in a feed and an inbox, and close the gaps, on Dani's profile. Only the inbox is scored.",
         "flipHeading": "Now you're Yasmin",
         "flipIntro": "This is the message you just sent, as Yasmin read it while covering for Dani. The lines picked out below are what make it fit the week.",
         "flipDefenderLine": "It named Dani's leave, the new system and his manager, and asked for one small thing, all built from public posts. When a message fits the week, a colleague acting on it is the ordinary thing to do.",
@@ -469,13 +469,12 @@
         "flipLandedNoTells": "It read as an ordinary note from a colleague, with nothing in it to question. Next, you spot the same moves in a feed and an inbox, and close the gaps.",
         "allPhishRight": "Every fake was caught, with every tell named.",
         "noBlameLine": "A convincing profile of a person is built from scraps anyone could find. Nobody is foolish for having posted them; the fix is a setting and a pause, not shame.",
-        "defendIntro": "Now the inbox: mark each message Trust, Report or Delete, and tick what gave it away. A friendly opener that steers to your firm's systems or who runs IT is still reconnaissance; report it. There's no clock on you here.",
+        "defendIntro": "Now the inbox: mark each message Trust, Report or Delete, and tick what gave it away. A friendly opener that steers to your firm's systems or who runs IT is still scouting; report it. There's no clock on you here.",
         "mondayCard": "On Monday: tighten one privacy setting today, and check what's behind you before your next post or video call. And if a stranger asks about your firm's systems or who runs IT, share nothing and report it using the route in the box below.",
         "defendOnly": "A well-made message is built from scraps anyone could find online, and anyone can be pulled in by one. The ones you were caught out by are shown below, with what gave each one away.",
         "flipDefenderLineByChoice": {
           "df_pretext_access_now": "Yasmin read it between two things. It named Dani's leave, the new system and Thandiwe, so it fitted the week, and the rush left no room to check. When a message fits the week, a colleague acting on it is the ordinary thing to do.",
-          "df_pretext_access_calm": "It named a week she knew Dani was away and asked one easy favour, so Yasmin set the access up without a second thought. The ease is exactly what slipped it past her.",
-          "df_pretext_catchup": "A catch-up asks for nothing, so there was nothing to question. It is the ask for access that turns a friendly note into a way in."
+          "df_pretext_access_calm": "It named a week she knew Dani was away and asked one easy favour, so Yasmin set the access up without a second thought. The ease is exactly what slipped it past her."
         }
       },
       "debrief": {
@@ -678,13 +677,13 @@
           "id": "brief",
           "mailbox": "dani_exercise",
           "from": {
-            "name": "Red team lead",
+            "name": "Exercise lead",
             "address": "lead@redteam.example",
             "avatar": "npc_neutral"
           },
           "to": "dani.fenwick@merrinsallow.example",
           "subject": "Authorised exercise: Merrin & Sallow",
-          "body": "Hello,\n\nThis is the authorised Merrin & Sallow exercise. In scope: Dani Fenwick's public posts and this exercise account, set up in his name. Pin what an attacker would use, then write one message to Yasmin, who covers finance while Dani is away. Nothing leaves this account.\n\nRed team lead",
+          "body": "Hello,\n\nThis is the authorised Merrin & Sallow exercise. In scope: Dani Fenwick's public posts and this exercise account, set up in his name. Pin what an attacker would use, then write one message to Yasmin, who covers finance while Dani is away. Nothing leaves this account.\n\nExercise lead",
           "time": "09:02",
           "unread": true,
           "folder": "inbox"

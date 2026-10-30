@@ -89,9 +89,9 @@
     ],
     "seededMessages": [
       { "id": "brief", "mailbox": "dani_exercise",
-        "from": { "name": "Red team lead", "address": "lead@redteam.example", "avatar": "npc_neutral" },
+        "from": { "name": "Exercise lead", "address": "lead@redteam.example", "avatar": "npc_neutral" },
         "to": "dani.fenwick@merrinsallow.example", "subject": "Authorised exercise: Merrin & Sallow",
-        "body": "Hello,\n\nThis is the authorised Merrin & Sallow exercise. In scope: Dani Fenwick's public posts and this exercise account, set up in his name. Pin what an attacker would use, then write one message to Yasmin, who covers finance while Dani is away. Nothing leaves this account.\n\nRed team lead",
+        "body": "Hello,\n\nThis is the authorised Merrin & Sallow exercise. In scope: Dani Fenwick's public posts and this exercise account, set up in his name. Pin what an attacker would use, then write one message to Yasmin, who covers finance while Dani is away. Nothing leaves this account.\n\nExercise lead",
         "time": "09:02", "unread": true, "folder": "inbox" }
     ],
     "checklistTiming": "onSend",
