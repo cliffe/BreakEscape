@@ -9,32 +9,68 @@
         "id": "personal_email",
         "situation": "The share has crawled to a halt and the pack is due Monday. Colin: \"Just email the pack to your personal address and finish it off at home.\" The compose window offers \"Me (personal)\" in the autocomplete.",
         "options": [
-          { "id": "send_personal", "label": "Send the pack to your personal email", "safe": false },
-          { "id": "ask_nilesh", "label": "Ask Nilesh, and work from home through remote access", "safe": true, "approvedRoute": true }
+          {
+            "id": "ask_nilesh",
+            "label": "Ask Nilesh about remote access and work from home that way",
+            "safe": true,
+            "approvedRoute": true
+          },
+          {
+            "id": "send_personal",
+            "label": "Send the pack to your personal email to finish at home",
+            "safe": false
+          }
         ]
       },
       {
         "id": "free_transfer",
         "situation": "The site-survey video is too big to email. Colin: \"Use a free transfer site, everyone does.\"",
         "options": [
-          { "id": "use_fileshare", "label": "Share it from the file-sharing service, to a named person, with an end date", "safe": true, "approvedRoute": true },
-          { "id": "use_free_site", "label": "Upload it to the free transfer site", "safe": false }
+          {
+            "id": "use_free_site",
+            "label": "Upload it to the free transfer site Colin mentioned",
+            "safe": false
+          },
+          {
+            "id": "use_fileshare",
+            "label": "Send it through the file-sharing service, with an end date",
+            "safe": true,
+            "approvedRoute": true
+          }
         ]
       },
       {
         "id": "posted_stick",
         "situation": "A padded envelope arrives: \"From the client: survey results, please add to the pack.\" Inside is a USB stick and a note with a phone number.",
         "options": [
-          { "id": "plug_in", "label": "Plug the stick in to read it", "safe": false },
-          { "id": "to_it", "label": "Leave it unplugged, ring the client on a number you already hold, give the stick to IT", "safe": true, "approvedRoute": true }
+          {
+            "id": "plug_in",
+            "label": "Plug the stick in to see what the client sent",
+            "safe": false
+          },
+          {
+            "id": "to_it",
+            "label": "Give the stick to IT and ring the client on a number you hold",
+            "safe": true,
+            "approvedRoute": true
+          }
         ]
       },
       {
         "id": "rota_app",
         "situation": "Shauna rings: the delivery rota lives in a free app on a former temp's personal account, and anyone with the link can edit it. She wants this week's slots added.",
         "options": [
-          { "id": "ask_it", "label": "Add nothing there; ask IT to move it into the team space and remove the old access", "safe": true, "approvedRoute": true },
-          { "id": "use_app", "label": "Add this week's slots in the app", "safe": false }
+          {
+            "id": "ask_it",
+            "label": "Hold off, and ask IT to move the rota into the team space",
+            "safe": true,
+            "approvedRoute": true
+          },
+          {
+            "id": "use_app",
+            "label": "Add this week's slots to the free app, and sort the rest later",
+            "safe": false
+          }
         ]
       }
     ],

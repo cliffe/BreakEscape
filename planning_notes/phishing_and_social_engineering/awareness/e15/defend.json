@@ -15,7 +15,8 @@
       "_prefix": "Prefix for the full episode (id e15_shadow_it): episode_e15_shadow_it_defend_. The defend-only shell (id e15_shadow_it_defend) sets episode_e15_shadow_it_defend_defend_ instead (the built double-suffix rule for an id that already ends _defend). No stage key on purpose, as in E1/E5/E8.",
       "_localTells": "found_media and unapproved_tool are shadow-IT signs with no built equivalent, so they are scenario-local to this set (00 section 2's CHANNEL_TELLS is untouched, and no SKILL_NAMES entry is added to phish-rules.js/triage.rb). Each is declared in channelTells with a flagChips label and a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's skill name), and every flagging message carries a factorStrings.<id>.redFlag sentence (a sibling of truth, never inside it: truth is additionalProperties:false). unapproved_tool is also used by E17's set, but both tells stay scenario-local because no 10 check-form item scores them (ENG-08's shared-vs-local rule); the two sets never merge, so each declares its own flagChips label. lookalike_domain and vish_callback_pressure are shared-library tells and need no label.",
       "_order": "Teaching order, so a likely miss is followed by a similar item (11 section 4.3): the posted stick (ties straight to the flip), the free transfer site, the giveaway stick, then the mirror pair (the free PDF tool phish, row 4, followed by the genuine file-sharing notice it mimics, row 5), then the quick-yes IT reply so the set does not end on 'refuse everything'.",
-      "title": "Shadow IT: the shortcuts",
+      "_critical": "B1 blind fix: phish emails are critical by default, so four trusted risky items took 60 points off on top of the item scores and a rushed run floored at 0. Only e15_posted_stick keeps truth.critical true (a plugged-in stick runs code with no further step, and it arrives from a trusted sender, so it is the one miss worth the extra 15). The other three risky items set critical false; the band still drops out of the top for any trusted phish. Trust on all four risky items and the two real ones right now scores 13 percent, not 0.",
+          "title": "Shadow IT: the shortcuts",
       "brief": "It's Friday, the Monday pack is due and the share is slow. Six things are waiting: found sticks, 'quicker way' messages, and a couple of genuine ones. For each, choose Trust, Report, Delete or Verify, then tick what you noticed. Checking when you're unsure is always fine, though a real one does take a colleague's time.",
       "realLabel": "Real notices and replies",
       "scoringProfile": "awareness",
@@ -31,6 +32,7 @@
           "delete": { "hint": "This is junk. I'd just delete it." },
           "verify": { "hint": "I'd check first: ring the sender, or ask IT on a number I already hold." }
         },
+        "verdictFeedback": {"delete": {"real": "That one was real, and deleting it left a colleague or a useful tool unseen. Acting on it, or checking it first, was the right call here."}},
         "teamBadge": "Risky shortcuts stopped for the team: {n}",
         "teamBadgeTitle": "Found sticks and unsafe shortcuts you reported or checked this round rather than acting on them",
         "phishCaughtLabel": "Caught in time",
@@ -90,6 +92,7 @@
           },
           "truth": {
             "isPhish": true,
+            "critical": true,
             "flags": ["found_media"],
             "perFlagNote": {
               "found_media": "A stick that came in the post is a found stick: don't plug it in, not even to see what's on it or who it's from. Hand it to IT, who can check it safely."
@@ -115,6 +118,7 @@
           },
           "truth": {
             "isPhish": true,
+            "critical": false,
             "flags": ["unapproved_tool"],
             "perFlagNote": {
               "unapproved_tool": "A free transfer site has no contract with Tarrowby, no control over who downloads the link, and no off switch: old links stay live for good. Share big files from the file-sharing service instead, to a named person, with an end date."
@@ -143,6 +147,7 @@
           },
           "truth": {
             "isPhish": true,
+            "critical": false,
             "flags": ["found_media"],
             "perFlagNote": {
               "found_media": "A giveaway stick from a stand is still a stick you didn't buy and can't vouch for. A real supplier is happy to email a catalogue or send a link; the stick goes to IT."
@@ -168,6 +173,7 @@
           },
           "truth": {
             "isPhish": true,
+            "critical": false,
             "flags": ["unapproved_tool"],
             "perFlagNote": {
               "unapproved_tool": "'Everyone uses it' is how an unapproved tool spreads. A one-click install can carry malware, and a free online editor hands whatever you upload to a provider nobody has checked. There's an approved tool; the service desk will point you to it."
@@ -197,9 +203,9 @@
             "flags": [],
             "whyFine": {
               "unapproved_tool": "This is the approved file-sharing service, not a free site: it's on tarrowby.example, shared to a named person, and the link expires. That's exactly the safe way to send a big file.",
-              "default": "A share-link email is just what a phish copies, so it's fair to look twice. But this one is Tarrowby's own service on tarrowby.example, from a colleague you know, to you by name, with an end date. Open it."
+              "default": "A share-link email is just what a phish copies, so it's fair to look twice. But this one is Tarrowby's own service on tarrowby.example, from a colleague you know, to you, with an end date. Open it."
             },
-            "falseAlarmCost": "Reported as a scam, the Monday pack sits unread and the deadline slips while someone checks a genuine share."
+            "falseAlarmCost": "If a genuine share goes unopened, the Monday pack sits unread and the deadline slips while Shauna waits or someone checks it."
           }
         },
         {
@@ -207,17 +213,17 @@
           "_note": "Row 6. Genuine, from Nilesh on Tarrowby's real address: the quick yes after you asked IT. Ends the set on 'asking works' rather than 'refuse everything'. isPhish false. Trust.",
           "from": { "name": "Nilesh Solanki", "address": "nilesh.solanki@tarrowby.example" },
           "to": "you@tarrowby.example",
-          "subject": "Re: Request a tool, your PDF editor is approved",
+          "subject": "The approved PDF editor is on the software portal",
           "time": "11:15",
-          "body": "Hi,\nThanks for asking rather than installing one off the web. The editor you wanted is fine, and it's already on the software portal under Tools, so you can add it yourself now. If you hit the slow share again, let me know and we'll sort it.\nNilesh\nIT Service Desk",
+          "body": "Hi,\nA few people have asked about editing PDFs, so the approved editor is now on the software portal under Tools. You can add it yourself, no ticket needed. If the share is slow again, tell us and we'll sort it.\nNilesh\nIT Service Desk",
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "nilesh.solanki@tarrowby.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "default": "You asked IT for a tool and they've answered from Nilesh's real address with the approved one. Asking first is exactly what turns a workaround into a quick yes. This one was safe to act on."
+              "default": "This is IT's own announcement, from Nilesh's real address on tarrowby.example, pointing to the firm's software portal rather than a link or an installer. It is the approved version of what the free PDF tool offer pretends to be. Safe to act on."
             },
-            "falseAlarmCost": "Reported as a scam, a genuine reply from IT sits in a queue while someone checks it."
+            "falseAlarmCost": "Reported or deleted, a genuine note from IT goes unread, and the approved tool stays unused while the free one stays tempting."
           }
         }
       ]
@@ -250,7 +256,7 @@
       "strings": {
         "title": "Swap Shop",
         "heading": "Match each shortcut to the approved way",
-        "intro": "Each card is a shortcut someone might reach for under a deadline. Drop it on the approved way that does the same job safely, and the reason shows straight after. Nothing here is marked.",
+        "intro": "Each card is a shortcut someone might reach for under a deadline. Pick the approved way that does the same job safely, and the reason shows straight after. Nothing here is marked.",
         "pickLabel": "Which approved way?",
         "teach": "Approved way: {bin}.",
         "teachFits": "That's the one.",
