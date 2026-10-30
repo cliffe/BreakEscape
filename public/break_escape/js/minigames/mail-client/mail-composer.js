@@ -998,6 +998,21 @@ export class MailComposer {
             }
             this.root.appendChild(row);
             this._renderPartBlanks(part);
+            // E13 B2 finding 12: a template may carry a line in white text "for the assistant"
+            // (hiddenText). It is invisible to the reader by design, so choosing the hidden-line
+            // pretext changed nothing in the preview. Show it as a labelled, visually distinct
+            // "hidden from the reader" line so the learner sees what their choice plants. Nothing
+            // renders for a template without hiddenText (every existing one), so defaults hold.
+            const chosenTpl = templateOf(this.templates, this.choice[part]);
+            if (chosenTpl && isStr(chosenTpl.hiddenText) && chosenTpl.hiddenText.trim()) {
+                const hid = el('div', 'mail-compose-hidden');
+                hid.dataset.part = part;
+                hid.appendChild(el('span', 'mail-compose-hidden-label', 'Hidden from the reader'));
+                const body = el('p', 'mail-compose-hidden-text');
+                appendWithAddresses(body, chosenTpl.hiddenText);
+                hid.appendChild(body);
+                this.root.appendChild(hid);
+            }
         }
     }
 
