@@ -35,7 +35,7 @@ These are the user's decisions (2026-10-29 and 2026-10-30) and the m01 lessons, 
 - **Spoilers.** Show mechanics, hide answers. No full codes, PINs, passwords or flag values. Keypads show 3 digits that are not the code. Pixelate real answers on screen (post-its, voicemail subtitles, the old-trailer Hydra line). No casualty figures, no ending, no choice screens. An antagonist is shown or named only where the recipe or the user says so (m01's Derek, 2026-10-29).
 - **Capture and render.** 30 fps only. Never capture during a render, and never run renders in parallel (memory). `BE_VIDEO_SCRATCH` is deleted by `render.sh`.
 - **Review.** A review page (artifact) with the videos and a feedback form every round, same link. Orchestrator (Opus) does selects and reviews; Sonnet and Haiku do the rest.
-- **Storage.** Google Drive is the permanent home. The export is one marked stage at the end of `video-review` (mechanism not settled).
+- **Storage.** Finals are committed straight to `master` in the `cliffe/hacktivity-videos` repo (user, 2026-10-30); `video-review` Step 6 does the export.
 - **Writing.** Plain UK English, no em dashes, no AI-sounding filler.
 
 ## Mission-to-music record
@@ -75,6 +75,6 @@ Draft (2026-10-30). The mission-generalisation pass (same day) closed gaps 1, 4,
 9. **The Veo prompts the user used for the m01 pair were not saved** (only the outputs and source URLs in `tools/video/assets/clips/README.md`). `title-launch-clips.md` drafts new ones and asks that the final prompts go into that README.
 10. **No real VM footage.** The "Real Hacking" slot uses `real_hacking_kali.mp4` (the old trailer's Kali footage, m01-specific: its Hydra shot names user `derek`). Fix: in-game VM capture (coming).
 11. **HaX narration needs fixed ink text.** The TTS endpoint voices only lines the NPC's ink says. Briefings and explainers voiced by HaX therefore need new fixed lines added to ink (or to a narration source) and a paid generation. `hax-briefing.md` and `concept-explainer.md` mark this.
-12. **Export to Google Drive has no mechanism yet.** `video-review` Step 6 is a marked stage.
+12. **Closed (2026-10-30): export goes to the `cliffe/hacktivity-videos` repo, `master`.** (Drive was blocked: the connector carries files as text, and FTP is blocked by the network policy.)
 15. **Not yet run on a second mission.** The generalised tooling was checked on m01 only (lint, one Remotion frame, three stills, the TTS tester, frame extraction); no capture or render ran. A dry run on m02 is the real test: expect to find that mission's opening-cutscene gate and VM shots.
 16. **The platform crops of the stills pack (9:16, 1:1) are by hand**, and the stills script does not check spoilers.

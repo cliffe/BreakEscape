@@ -44,7 +44,7 @@ Cards between movements, as the old 1:15 reference trailer and the m01 trailer d
 
 ## Inputs
 
-- The mission trailers' scout reports (`docs/video/scout/<mission>_scout.md`), picks, takes tables and takes (`video_out/<mission>/takes/`), kept via the Drive export if the local copies are gone.
+- The mission trailers' scout reports (`docs/video/scout/<mission>_scout.md`), picks, takes tables and takes (`video_out/<mission>/takes/`), kept in the hacktivity-videos export if the local copies are gone.
 - A signature-moment list, one per mission, proposed by the orchestrator and approved by the user (a short question on the review page).
 - The game's Veo pair, brand art, the music table.
 - The user's answers: who is shown, which missions are in.
@@ -54,7 +54,7 @@ Cards between movements, as the old 1:15 reference trailer and the m01 trailer d
 1. `video-scout`: only to fill gaps (a mission with no scout yet). Otherwise read the existing reports.
 2. `video-takes`: only for missing signature shots, per mission.
 3. `video-edit`: selects across missions (the orchestrator, using frames), music analysis for a new track, an edit list built from several missions' takes (the takes folder gap in `README.md` item 1 matters most here: take ids must carry the mission prefix), lint `--final`, render 16:9, then the cut-downs.
-4. `video-review`: page with the render and the signature list; Drive export.
+4. `video-review`: page with the render and the signature list; export to hacktivity-videos.
 
 Models: Haiku for gathering, Sonnet for takes and the edit, Opus for the signature list, selects and reviews.
 

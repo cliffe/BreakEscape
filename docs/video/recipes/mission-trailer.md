@@ -78,7 +78,7 @@ Total 60.0 s. Cards are 1.5 s, in white Press Start 2P on the navy-to-purple gra
 2. `video-takes`: one take per slot (record `t10` to `t18`-style takes for hook, NPCs, keypads, walking, antagonist), checked and tabled.
 3. `video-edit`: selects checked against frames; music analysis; `tools/video/edits/<mission>_trailer60.json` copied from the m01 file; lint `--final`; render 16:9 (glitch), and a dissolve A/B if the user wants it.
 4. `video-stills` in parallel: the stills pack from the same takes.
-5. `video-review`: the page with the 16:9 render, stills and the questions below; later the 9:16 and 1:1 renders and the Drive export.
+5. `video-review`: the page with the 16:9 render, stills and the questions below; later the 9:16 and 1:1 renders and the export to hacktivity-videos.
 
 Models: Haiku scout, Sonnet takes and edit, Opus picks and reviews. m01 took four review rounds (the 30 s teaser, then v2, v3 and v4); plan for three or four.
 

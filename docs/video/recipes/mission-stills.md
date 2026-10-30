@@ -47,7 +47,7 @@ Number the files in the order a viewer should read them.
 1. `video-scout` (light): only if no scout exists; the trailer's scout report is enough when the trailer is done.
 2. `video-takes`: only for moments the trailer's takes lack (a lit room with no HUD, an NPC portrait for a character the trailer skips).
 3. `video-stills`: candidate frames (Haiku), the orchestrator's picks and spoiler check, crops and captions (Sonnet).
-4. `video-review`: a gallery on the page with a "drop this" tick on each still; the Drive export holds the final pack.
+4. `video-review`: a gallery on the page with a "drop this" tick on each still; the hacktivity-videos export holds the final pack.
 
 Models: Haiku extraction, Opus picks, Sonnet assembly.
 

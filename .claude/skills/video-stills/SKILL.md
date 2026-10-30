@@ -96,7 +96,7 @@ Record the outcome per still (kept, dropped and why). Fewer clean stills beat mo
 | Hacktivity pages | the PNG set and `captions.json`, in `video_out/<mission>/stills/` for the shell to pick up; page integration is the Hacktivity repo's job |
 | YouTube community, LinkedIn, social | the 9:16 and 1:1 crops, captions on a card if needed |
 
-Google Drive export is the last stage of `video-review` ("Export"), not here.
+Export to the hacktivity-videos repo is the last stage of `video-review` ("Export"), not here.
 
 ## Gates
 

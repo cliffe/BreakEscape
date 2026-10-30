@@ -1,11 +1,11 @@
 ---
 name: video-review
-description: Builds the review page for a SAFETYNET video round: a private artifact with the renders (compressed copies), the stills, the recipe's review questions and a feedback form that saves the user's answers, republished at the same link every round; then reads the feedback, logs decisions, and runs the Google Drive export stage once the user signs off. Final stage of the video family (video-scout, video-takes, video-edit, video-stills, video-review). Trigger when the user asks to "put the trailer on a review page", "send me the video for review", "get my feedback", "publish the render", "read the feedback", "round 2 of the trailer", "export to Drive", "archive the final video", or when a render or stills pack is finished and the user has not seen it.
+description: Builds the review page for a SAFETYNET video round: a private artifact with the renders (compressed copies), the stills, the recipe's review questions and a feedback form that saves the user's answers, republished at the same link every round; then reads the feedback, logs decisions, and exports the finals to the hacktivity-videos repo once the user signs off. Final stage of the video family (video-scout, video-takes, video-edit, video-stills, video-review). Trigger when the user asks to "put the trailer on a review page", "send me the video for review", "get my feedback", "publish the render", "read the feedback", "round 2 of the trailer", "export the video", "archive the final video", or when a render or stills pack is finished and the user has not seen it.
 ---
 
 # Video review and export
 
-Every round of every video goes to the user on a **review page**: videos you can play, stills you can look at, a feedback form that saves. This is the user's preferred way to review (AGENTS.md, "Asking the user for input"; the m01 trailer went through four rounds on one page: v1 to v4, with `feedback/m01_v1` to `feedback/m01_v4`). The last stage is **Export** to Google Drive, the permanent home.
+Every round of every video goes to the user on a **review page**: videos you can play, stills you can look at, a feedback form that saves. This is the user's preferred way to review (AGENTS.md, "Asking the user for input"; the m01 trailer went through four rounds on one page: v1 to v4, with `feedback/m01_v1` to `feedback/m01_v4`). The last stage is **Export** to the `cliffe/hacktivity-videos` repo, the permanent home.
 
 Part of the video family. It follows `video-edit` (renders) and `video-stills` (the pack). Read `AGENTS.md` first for how rounds work, then this file.
 
@@ -39,7 +39,7 @@ nice -n 19 ffmpeg -v error -y -i video_out/<mission>/renders/<id>_16x9.mp4 \
 ls -l <scratch>/review/    # every file under 14 MB; lower the crf or the bitrate if not
 ```
 
-Review copies are for viewing only; the Drive export (Step 6) uses the full renders. Stills for the page: JPG copies of the pack, pixel art shown at 2x with `image-rendering: pixelated` (review thumbnails only, never a game asset).
+Review copies are for viewing only; the export (Step 6) uses the full renders. Stills for the page: JPG copies of the pack, pixel art shown at 2x with `image-rendering: pixelated` (review thumbnails only, never a game asset).
 
 ## Step 3: build the page
 
@@ -82,26 +82,30 @@ When the user says they have answered, read the feedback document (the `Artifact
 
 Stop rounds when the verdict is `ship`, or when two rounds in a row find only taste notes (say so and ask).
 
-## Step 6: EXPORT to Google Drive (stage, mechanism not settled)
+## Step 6: EXPORT to the hacktivity-videos repo
 
-> **This is the only stage that depends on how Drive access works.** The user has said Google Drive is the permanent home and that the mechanism is still being settled. Do not guess it. When the user signs off ("ship"), tell them export is ready, ask which mechanism to use (a first-party Drive connector, a synced folder, a script), and rewrite only this section once decided. Nothing else in the family depends on it.
+Finished videos live in the GitHub repo `cliffe/hacktivity-videos` (user, 2026-10-30): "a place for video files to be hosted on Hacktivity, kept out of the main repo". Commit **straight to `master`** (the user's choice: one branch keeps every file in one place). Export only after the user's "ship" verdict; review rounds stay on the review page. `video_out/` is git-ignored, so this repo is the only permanent copy.
 
-What to export, whatever the mechanism. `video_out/` is git-ignored, so Drive is the only permanent copy:
+Attach and clone it if it isn't in the session (`add_repo` cliffe/hacktivity-videos, push access; `git clone --depth 1 https://github.com/cliffe/hacktivity-videos /home/user/hacktivity-videos`). Before pushing, `git fetch origin master` and rebase so the push is a thin pack (a stale shallow clone re-uploads everything and is refused with HTTP 413).
+
+Layout (lower-case, hyphens, no spaces, so Hacktivity can link the files directly):
 
 ```
-Hacktivity Games / SAFETYNET Licence to Hack / <mission> /
-  <kind>_<version>/                      for example trailer_v4_final
-    <edit id>_16x9.mp4  _9x16.mp4  _1x1.mp4       full renders, not the review copies
-    <edit id>.srt
-    stills/  (PNG pack + captions.json + contact.png)         if a stills pack was made
-    sources/  edit list JSON, selects note, takes table, music record line, EXPORT_MANIFEST.md
+<game-slug>/                                  e.g. safetynet-licence-to-hack
+  <mission-slug>/                             e.g. m01-first-contact
+    <kind>/                                   e.g. trailer-60s, teaser-30s
+      <mission>-<kind>-<version>-16x9.mp4     full renders, not the review copies
+      <mission>-<kind>-<version>-9x16.mp4     social cut, captions burned in
+      <mission>-<kind>-<version>-1x1.mp4
+      <mission>-<kind>-<version>.srt
+      MANIFEST.md
+    stills/                                   PNG pack + captions.json + contact.png
+README.md                                     index of every export (newest first)
 ```
 
-`EXPORT_MANIFEST.md`: the commit hash of the repo at render, the edit id, the music track and window, the list of takes (id, entry state), the placeholders still in the cut, the date, the review page link and the verdict. Also add the mission-to-music row in `docs/video/recipes/README.md` if it is not there.
+`MANIFEST.md`: the Break Escape commit at render, the edit id, the music track and window, the takes used (id, entry state), placeholders still in the cut, the date, the review page link and the verdict. Add a line to the root README index, and the mission-to-music row in `docs/video/recipes/README.md` if it is not there.
 
-Checks: file sizes match local; each file opens; the folder is shared the way the user said; the link goes in the video log. Only after the user agrees to the mechanism and the folder.
-
-If the Google Drive tools are attached in the session, load them with the tool search (names begin `mcp__Google_Drive__`) and read the `google-workspace` skill first, but this draft does not assume they can carry large video files: check the file size limit with one small test file before uploading anything real, and tell the user if they cannot.
+Checks: each file is under GitHub's 100 MB per-file limit (a 60 s 1080p master is about 30 MB); sizes match local; `ffprobe` reads each file after the push (re-clone or `git show`); only finals are committed, never every review round, so history stays small. Put the commit link in the video log.
 
 ## Gates
 
