@@ -66,12 +66,12 @@ test('verdictPoints honours the phish-side split for a Comply-on-phish call', ()
 test('genuineFeedbackText: the trusted verb follows the item (approved, not trusted)', () => {
     const fb = { realTotal: 1, trusted: [{ id: 'p', title: 'Sign-in', verb: 'approved' }], checked: [], flagged: [] };
     const out = genuineFeedbackText(fb, { detail: false });
-    assert.equal(out.trusted, 'You approved this real one: ‘Sign-in’.');
+    assert.equal(out.trusted, 'Right call. You approved this real one: ‘Sign-in’.');
 });
 
 test('genuineFeedbackText: an email-only round still reads "You trusted"', () => {
     const fb = { realTotal: 1, trusted: [{ id: 'e', title: 'Invoice', verb: 'trusted' }], checked: [], flagged: [] };
-    assert.equal(genuineFeedbackText(fb, { detail: false }).trusted, 'You trusted this real one: ‘Invoice’.');
+    assert.equal(genuineFeedbackText(fb, { detail: false }).trusted, 'Right call. You trusted this real one: ‘Invoice’.');
 });
 
 test('genuineFeedbackText: a mixed round groups by verb', () => {

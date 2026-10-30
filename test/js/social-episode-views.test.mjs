@@ -237,6 +237,16 @@ test('debrief summary (N7): phish caught, and how, instead of a bare report perc
     assert.doesNotMatch(t, /Reported 67%/);
 });
 
+test('F-E10-2: the debrief summary keeps the score but does not repeat the band headline (the result card above shows it)', () => {
+    const h = host();
+    renderDebrief(h, { result: { percent: 72, headline: 'Getting there: a few tells slipped past',
+        phishTotal: 1, phishCaught: 1, reportCount: 1, answers: [{ id: 'm1', verdict: 'report', flags: [], score: 100, isPhish: true }] },
+        set: set(), strings: {}, onFinish() {} });
+    const t = h.querySelector('.aw-summary').textContent;
+    assert.match(t, /Round score: 72%/);
+    assert.doesNotMatch(t, /Getting there/, 'the band headline is the result card title, not repeated in the summary');
+});
+
 test('debrief (Cut A): a weakest-skill line appears when a tell was missed and perFactor is present', () => {
     const h = host();
     const r = {

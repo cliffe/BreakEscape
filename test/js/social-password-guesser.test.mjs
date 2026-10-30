@@ -391,6 +391,17 @@ test('lines come from config.strings and params.note over the defaults; text is 
     assert.equal(root.querySelector('[data-row="reuse"] .epr-gs-status').textContent, 'IN');
 });
 
+test('E9 F1: the guesser shows a reload note (a reload restarts the list); config.strings.reloadNote wins', () => {
+    openScene(guessBlock(), allFound, { note: 'My note.' });
+    const root = cur().container;
+    const note = root.querySelector('.epr-gs-reload-note');
+    assert.ok(note, 'a reload note is shown, as the other stages warn for their rounds');
+    assert.match(note.textContent, /starts again from the top/);
+    // an episode may reword it through the guesser's own strings
+    openScene({ ...guessBlock(), strings: { reloadNote: 'Reloading restarts the guesses.' } }, allFound);
+    assert.equal(cur().container.querySelector('.epr-gs-reload-note').textContent, 'Reloading restarts the guesses.');
+});
+
 test('an unregistered mode draws one line and a Close, and never reports finished', () => {
     const { writes, results } = openScene({ ...guessBlock(), mode: 'sweep' }, allFound);
     const root = cur().container;
