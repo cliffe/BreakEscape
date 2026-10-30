@@ -1,6 +1,6 @@
-# Resume note: video pipeline m01 trial (started 2026-10-29)
+# Resume note: video pipeline m01 trailer (started 2026-10-29)
 
-Plans `docs/video/M01_TRIAL_PLAN.md`, `docs/video/M01_TRAILER_V2_PLAN.md`; log `docs/video/TRIAL_LOG.md`; style and how-to `docs/video/GUIDELINES.md`. Branch `claude/break-escape-video-creation-wk365q`. Status 2026-10-29: v2 60 s trailer (SAFETYNET: Licence to Hack) rendered A/B and on the review page https://claude.ai/artifact/HhdmENxRVcGuCa5BiZS5Gd (feedback in db doc `feedback/m01_v2`). Next: read feedback; then 9:16, 1:1, 30 s cut-down; Veo opening if approved. Rails needs BE_DB_USER=root etc. (see TRIAL_LOG). Haiku/Sonnet wherever possible (user).
+Log `docs/video/TRIAL_LOG.md`; style `docs/video/GUIDELINES.md`; recipes and open gaps `docs/video/recipes/README.md`; skills `.claude/skills/video-*`. Status 2026-10-30: m01 60 s trailer v6 final, exported to cliffe/hacktivity-videos master (d0f8357). Review page https://claude.ai/artifact/HhdmENxRVcGuCa5BiZS5Gd. Hacktivity shell title intro + launch curtain: PR cliffe/Hacktivity#77. Lip-sync fix 1f56ea4e. Next: m01 stills pack refresh and export; m02 dry run of the skills; 30 s teaser cut-down. Haiku/Sonnet wherever possible (user). Rails env needs BE_DB_USER=root etc. (see the log).
 
 # Resume note: awareness course plan and implementation briefs (planning branch ccr-8675a21c-vu1k0k)
 
