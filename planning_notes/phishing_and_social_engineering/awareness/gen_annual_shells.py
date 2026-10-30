@@ -240,11 +240,11 @@ CFG = {
     'aim': ('annual_edition_aim', 'Work through the year in review', 'Go through the eight messages at the training kiosk.'),
     'task': ('check_annual_edition', 'Work through the year in review'),
     'kiosk': ('A touch-screen kiosk with eight messages from across the year, waiting to be checked.',
-              'A touch-screen kiosk with the year in review. The messages are all checked.'),
+              'A touch-screen kiosk with the year in review. The messages have all been gone through.'),
     'display': 'Year End: the annual mixed edition',
     'desc': "An awareness edition of about 10 minutes for all staff, on the defending side only. A mixed run of the year's messages across email, calls, a voicemail, a text, a sign-in prompt and a web page, from three fictional companies. Your organiser places your existing role post-check after it, which compares against your role pre-check. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
     'minutes': 10,
-    'conclusion': ('Year in review done', "You've worked through the year's messages and finished the annual edition."),
+    'conclusion': ('Year in review done', "You've been through the year's messages and finished the annual edition. The debrief covers each one."),
 }
 
 
