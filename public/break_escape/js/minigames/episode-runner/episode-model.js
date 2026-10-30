@@ -806,7 +806,7 @@ export function findSentRecord(mailState, targetId, sentIds = null) {
     const all = [];
     for (const box of Object.values(boxes)) {
         for (const rec of Array.isArray(box?.messages) ? box.messages : []) {
-            if (!isObj(rec) || rec.folder !== 'sent' || rec.seeded === true || rec.kind === 'quickReply') continue;
+            if (!isObj(rec) || rec.folder !== 'sent' || rec.seeded === true || rec.kind === 'quickReply' || rec.kind === 'plain') continue;
             if (isStr(targetId) && rec.targetId !== targetId) continue;
             all.push(rec);
         }

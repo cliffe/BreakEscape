@@ -255,6 +255,13 @@ export class MailComposer {
         this.root.setAttribute('aria-label', 'New message');
         parent.appendChild(this.root);
 
+        // Ink-driven plain email (systems/mail-ink.js; README_scenario_design.md "Ink-driven email"):
+        // a contact the host calls 'ink' or 'both' gets suggested replies instead of the judged form.
+        // opts.inkMode(contact) -> 'ink' | 'both' | other; opts.ink = { labels, prepare, plan, send };
+        // opts.inkChoice picks a suggested reply on open; opts.onInkSent(result, contact) closes up.
+        this.ink = null;
+        this.judgedChosen = false;
+        this.destroyed = false;
         this._restoreDraft(opts.draft);
         this._selectDefaultContact();
         // "Send as" changed mid-draft: keep what is still valid for the new account (R19 F19-1).
@@ -264,6 +271,7 @@ export class MailComposer {
         this.edited = false;
         if (isObject(opts.carryDraft)) this._carryOver(opts.carryDraft);
         this.render();
+        this._startInk();
     }
 
     /**
@@ -424,6 +432,8 @@ export class MailComposer {
 
     selectContact(id, rerender = true) {
         const c = this.contacts.find((x) => x && x.id === id);
+        this.judgedChosen = false;
+        this.ink = null;
         this.contactId = c ? c.id : null;
         this.toAddress = c ? (arr(c.addresses)[0] || '') : '';
         this.choice = {};
@@ -438,7 +448,168 @@ export class MailComposer {
             const set = this.templateSet(part);
             if (set.length) this.choice[part] = this._defaultTemplate(set);
         }
-        if (rerender) { this._emitChange(); this.render(); }
+        if (rerender) { this._emitChange(); this.render(); this._startInk(); }
+    }
+
+    // ── ink-driven plain email ─────────────────────────────────────────────────
+
+    _inkMode() {
+        const c = this.contact;
+        if (!c || isStr(this.opts.forceTargetId) || typeof this.opts.inkMode !== 'function' || !this.opts.ink) return 'none';
+        return this.opts.inkMode(c);
+    }
+
+    /** True while the plain (suggested replies) form is showing for the selected contact. */
+    _inkActive() {
+        const mode = this._inkMode();
+        return (mode === 'ink' || mode === 'both') && !this.judgedChosen;
+    }
+
+    _inkLabels() {
+        return (this.opts.ink && this.opts.ink.labels) || {};
+    }
+
+    /** Ask the host what this contact offers: pending choices, on_compose's, or a wait. */
+    _startInk() {
+        if (!this._inkActive()) return;
+        const contact = this.contact;
+        const id = contact.id;
+        this.ink = { contactId: id, state: 'loading', options: [], index: null, plan: null, error: '', busy: false };
+        this.render();
+        Promise.resolve(this.opts.ink.prepare(contact)).then((res) => {
+            if (this.destroyed || !this.ink || this.contactId !== id) return;
+            this.ink.state = res && res.state ? res.state : 'none';
+            this.ink.options = res && Array.isArray(res.options) ? res.options : [];
+            const want = this.opts.inkChoice;
+            this.opts.inkChoice = null;
+            if (this.ink.state === 'choices' && Number.isInteger(want)) return this.pickInk(want);
+            this.render();
+            return undefined;
+        }).catch((err) => {
+            console.error('mail ink prepare failed:', err);
+            if (this.destroyed || !this.ink) return;
+            this.ink.state = 'none';
+            this.render();
+        });
+    }
+
+    /** The player picks a suggested reply: show the whole message it would send. */
+    async pickInk(index) {
+        const ink = this.ink;
+        if (!ink || ink.busy) return;
+        const L = this._inkLabels();
+        ink.busy = true; ink.error = '';
+        let plan = null;
+        try { plan = await this.opts.ink.plan(this.contact, index); } catch (err) { console.error('mail ink plan failed:', err); }
+        if (this.destroyed || this.ink !== ink) return;
+        ink.busy = false;
+        if (plan && plan.ok) { ink.index = index; ink.plan = plan; ink.error = ''; }
+        else { ink.index = null; ink.plan = null; ink.error = plan && plan.reason === 'forward-missing' ? L.forwardMissing : L.unavailable; }
+        this.render();
+    }
+
+    /** Back from a filled message to the list of suggestions. */
+    chooseAnotherInk() {
+        if (!this.ink) return;
+        this.ink.index = null; this.ink.plan = null; this.ink.error = '';
+        this.render();
+    }
+
+    /** Send the filled message; the host queues the reply and closes the composer. */
+    async sendInk() {
+        const ink = this.ink;
+        if (!ink || ink.busy || !ink.plan || !Number.isInteger(ink.index)) return;
+        const L = this._inkLabels();
+        ink.busy = true; ink.error = '';
+        this.render();
+        let res = null;
+        try { res = await this.opts.ink.send(this.contact, ink.index, this.opts.inReplyTo || null); } catch (err) { console.error('mail ink send failed:', err); }
+        if (this.destroyed || this.ink !== ink) return;
+        ink.busy = false;
+        if (res && res.ok) {
+            try { this.opts.onInkSent?.(res, this.contact); } catch (err) { console.error('mail onInkSent failed:', err); }
+            return;
+        }
+        ink.error = res && res.reason === 'forward-missing' ? L.forwardMissing : L.unavailable;
+        this.render();
+    }
+
+    _renderInk() {
+        const L = this._inkLabels();
+        const ink = this.ink || { state: 'loading', options: [], plan: null, error: '', busy: false };
+        const wrap = el('div', 'mail-ink-compose');
+        const acct = this.account;
+        const fromRow = el('div', 'mail-compose-row');
+        fromRow.append(el('span', 'mail-compose-label', L.from || 'From'),
+            el('span', 'mail-compose-value', acct ? (acct.address || acct.displayName || '') : ''));
+        wrap.appendChild(fromRow);
+        const plan = ink.plan;
+        if (plan) {
+            if (plan.subject !== undefined) {
+                const row = el('div', 'mail-compose-row');
+                row.append(el('span', 'mail-compose-label', L.subject), el('span', 'mail-compose-value mail-ink-subject', plan.subject || ''));
+                wrap.appendChild(row);
+            }
+            if (Array.isArray(plan.attachments) && plan.attachments.length) {
+                const row = el('div', 'mail-compose-row');
+                row.appendChild(el('span', 'mail-compose-label', L.attachments));
+                const chips = el('span', 'mail-chips');
+                for (const a of plan.attachments) chips.appendChild(el('span', 'mail-chip mail-chip-attachment mail-ink-attachment', a.label || a.kitId || 'Attachment'));
+                row.appendChild(chips);
+                wrap.appendChild(row);
+            }
+            wrap.appendChild(el('div', 'mail-ink-body', plan.body || ''));
+        } else if (ink.state === 'loading') {
+            wrap.appendChild(el('p', 'mail-compose-note', L.loading));
+        } else if (ink.state === 'waiting') {
+            wrap.appendChild(el('p', 'mail-compose-note mail-ink-waiting', L.waiting));
+        } else if (ink.state === 'choices' && ink.options.length) {
+            wrap.appendChild(el('p', 'mail-followup-label', L.suggestedReplies));
+            const list = el('div', 'mail-suggest-list');
+            list.setAttribute('role', 'group');
+            list.setAttribute('aria-label', L.suggestedReplies);
+            ink.options.forEach((text, i) => {
+                const chip = el('button', 'mail-suggest-chip minigame-button', text);
+                chip.type = 'button';
+                chip.title = text;
+                chip.dataset.choice = String(i);
+                chip.disabled = ink.busy === true;
+                chip.addEventListener('click', () => this.pickInk(i));
+                list.appendChild(chip);
+            });
+            wrap.appendChild(list);
+        } else {
+            wrap.appendChild(el('p', 'mail-compose-note mail-ink-nothing', L.nothing));
+        }
+        if (ink.error) {
+            const err = el('p', 'mail-compose-gate mail-ink-error', ink.error);
+            err.setAttribute('role', 'alert');
+            wrap.appendChild(err);
+        }
+        const bar = el('div', 'mail-compose-send-bar');
+        const back = el('button', 'mail-compose-back minigame-button', 'Back');
+        back.type = 'button';
+        back.addEventListener('click', () => { try { this.opts.onClose?.(); } catch (e) { /* host owns close */ } });
+        bar.appendChild(back);
+        if (plan) {
+            const another = el('button', 'mail-ink-another minigame-button', L.chooseAnother);
+            another.type = 'button';
+            another.disabled = ink.busy === true;
+            another.addEventListener('click', () => this.chooseAnotherInk());
+            const send = el('button', 'mail-compose-send mail-ink-send minigame-button', ink.busy ? L.sending : L.send);
+            send.type = 'button';
+            send.disabled = ink.busy === true;
+            send.addEventListener('click', () => this.sendInk());
+            bar.append(another, send);
+            this.sendButton = send;
+        } else if (this._inkMode() === 'both') {
+            const own = el('button', 'mail-ink-own minigame-button', L.writeYourOwn);
+            own.type = 'button';
+            own.addEventListener('click', () => { this.judgedChosen = true; this.render(); });
+            bar.appendChild(own);
+        }
+        wrap.appendChild(bar);
+        this.root.appendChild(wrap);
     }
 
     chooseTemplate(part, id) {
@@ -821,6 +992,8 @@ export class MailComposer {
     }
 
     _emitChange() {
+        // The plain (suggested replies) form has no draft: leave the judged one the player may be keeping.
+        if (this._inkActive()) return;
         this.carryNotice = '';
         this.edited = true;
         try { this.opts.onChange?.(this.draft()); } catch (err) { console.error('composer onChange failed:', err); }
@@ -853,9 +1026,17 @@ export class MailComposer {
         this.evaluateGate();
         this.root.textContent = '';
         this.root.appendChild(el('h2', 'mail-compose-title', 'New message'));
-        this._renderSendAs();
-        if (this.carryNotice) this.root.appendChild(el('p', 'mail-compose-hint mail-compose-carry', this.carryNotice));
+        const inkForm = this._inkActive();
+        if (!inkForm) this._renderSendAs();
+        if (this.carryNotice && !inkForm) this.root.appendChild(el('p', 'mail-compose-hint mail-compose-carry', this.carryNotice));
         this._renderTo();
+        if (inkForm) { this._renderInk(); return; }
+        if (this.judgedChosen && this._inkMode() === 'both') {
+            const back = el('button', 'mail-ink-suggestions minigame-button', this._inkLabels().backToSuggestions);
+            back.type = 'button';
+            back.addEventListener('click', () => { this.judgedChosen = false; this._startInk(); });
+            this.root.appendChild(back);
+        }
         if (this.contact && !this.target) {
             this.root.appendChild(el('p', 'mail-compose-note',
                 'This recipient is not a phishing target: the message is kept in Sent but is not judged and delivers nothing.'));
@@ -1414,6 +1595,7 @@ export class MailComposer {
     }
 
     destroy() {
+        this.destroyed = true;
         this._closePicker();
         this.root.remove?.();
     }

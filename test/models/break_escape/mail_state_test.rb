@@ -354,5 +354,41 @@ module BreakEscape
 
       assert_equal({ 'expects' => { 'mode' => 'choices' } }, mail.dig('threads', 'pierce:guest'))
     end
+
+    test 'an ink-email thread keeps a waiting expectation and its position' do
+      @game.merge_mail_state!('threads.npc:hax_mail:agent' => { 'position' => '{"x":1}', 'expects' => { 'mode' => 'waiting' } })
+
+      assert_equal({ 'position' => '{"x":1}', 'expects' => { 'mode' => 'waiting' } }, mail.dig('threads', 'npc:hax_mail:agent'))
+    end
+
+    test 'an unknown expectation mode is still dropped' do
+      @game.merge_mail_state!('threads.npc:hax_mail:agent' => { 'expects' => { 'mode' => 'nonsense' } })
+
+      assert_equal({}, mail.dig('threads', 'npc:hax_mail:agent'))
+    end
+
+    test 'forwardOf and the plain kind survive on a sent message' do
+      sent = msg('sent_p1', folder: 'sent').merge('kind' => 'plain', 'forwardOf' => 'seed_alert',
+                                                  'attachments' => [{ 'kitId' => 'kit_log', 'kind' => 'document', 'label' => 'Log' }])
+      @game.merge_mail_state!(keyed('guest', [sent]))
+
+      saved = mail.dig('mailboxes', 'guest', 'messages', 0)
+      assert_equal 'seed_alert', saved['forwardOf']
+      assert_equal 'plain', saved['kind']
+      assert_equal 'kit_log', saved.dig('attachments', 0, 'kitId')
+    end
+
+    test 'an ink-email job keeps its thread key and restart flags' do
+      job = { 'jobId' => 'plain_1', 'kind' => 'ink', 'npcId' => 'hax_mail', 'accountId' => 'agent', 'knot' => 'k',
+              'thread' => 'npc:hax_mail:agent', 'plain' => true, 'afterSend' => true, 'chaser' => false,
+              'remainingMs' => 5000, 'choice' => 1 }
+      @game.merge_mail_state!('jobs' => [job])
+
+      saved = mail['jobs'].first
+      assert_equal 'npc:hax_mail:agent', saved['thread']
+      assert_equal true, saved['plain']
+      assert_equal true, saved['afterSend']
+      assert_equal false, saved['chaser']
+    end
   end
 end

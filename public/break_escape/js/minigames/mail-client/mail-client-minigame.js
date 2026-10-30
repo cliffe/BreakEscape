@@ -34,6 +34,7 @@ import { registerOpenClient, notifyAccountCreated } from './mail-notification.js
 import { performSend, renderChecklist, rejudgeForChecklist, resolveTarget, applyFactorBias, sentTemplateIdOf } from './mail-bridge.js';
 import { evaluateMessage } from '../../systems/phish-rules.js';
 import { writeGlobal } from '../../systems/global-writer.js';
+import { contactMode, isPlainThreadKey, parsePlainThreadKey, contactForNpc, plainLabels } from '../../systems/mail-ink.js';
 import {
     resolveAccounts, visibleContacts, emptyMailState, ensureMailbox,
     recountUnread, seedMailState, folderMessages,
@@ -41,6 +42,7 @@ import {
 } from './mail-data.js';
 
 const ICON = '/break_escape/assets/icons/';
+const arr = (v) => (Array.isArray(v) ? v : []);
 const NARROW_QUERY = '(max-width: 767px)';
 
 function el(tag, className, text) {
@@ -207,6 +209,15 @@ export class MailClientMinigame extends SocialOverlayScene {
         }) || null;
         // Reopened from the landing-page builder (01 §2): restore the draft into Compose and
         // attach the link if its page is now built.
+        // composeTo: open Compose on this ink contact (a contact id or its npc id), from
+        // `# trigger_minigame:mail_terminal composeTo=<contact>` or an openMinigame mapping.
+        if (this.params.composeTo && !this.params.reopenCompose) {
+            const want = this.params.composeTo;
+            this.params.composeTo = null;
+            const c = this.contacts().find((x) => x && (x.id === want || x.npc === want));
+            if (c) this.openCompose({ presetContactId: c.id });
+            else console.warn(`[mail-client] composeTo "${want}" is not a visible contact on this device`);
+        }
         if (this.params.reopenCompose) {
             this.params.reopenCompose = false;
             const kitId = this.params.attachLinkKit || null;
@@ -708,7 +719,8 @@ export class MailClientMinigame extends SocialOverlayScene {
         this.composeOpen = true;
         const social = this.social;
         // A judged follow-up does not reuse the unsent draft of a fresh message.
-        const draft = extra.forceTargetId ? null : (this.mailState.drafts && this.mailState.drafts[this.account.id]);
+        // A preset recipient (an ink reply, composeTo) never reuses an unsent draft: the draft's own contact would win.
+        const draft = (extra.forceTargetId || extra.presetContactId) ? null : (this.mailState.drafts && this.mailState.drafts[this.account.id]);
         this.composer = new MailComposer(this.root, {
             people: social.people,
             templates: social.templates,
@@ -727,6 +739,10 @@ export class MailClientMinigame extends SocialOverlayScene {
             inReplyTo: extra.inReplyTo || '',
             presetContactId: extra.presetContactId || null,
             carryDraft: extra.carryDraft || null,
+            inkMode: (c) => contactMode(c, this.globals),
+            ink: this._inkApi(),
+            inkChoice: Number.isInteger(extra.inkChoice) ? extra.inkChoice : null,
+            onInkSent: (res, contact) => this._onInkSent(res, contact),
             meterDefault: this.config.showRedFlagMeter === true,
             // Free-text flavour body (01 §2, 00 §13): the scenario turns the extra box on
             // with mailClient.bodyMode "freeText" or freeTextFlavour; the composer keeps it
@@ -997,6 +1013,7 @@ export class MailClientMinigame extends SocialOverlayScene {
     _renderFollowups(rec, pane) {
         if (!rec || rec.folder === 'sent' || rec.kind === 'quickReply') return;
         const { key, thread } = this._threadFor(rec);
+        if (isPlainThreadKey(key)) { this._renderPlainFollowups(rec, pane, key, thread); return; }
         const expects = thread && thread.expects;
         if (!key || !expects || !this._isLatestInThread(rec)) return;
 
@@ -1074,12 +1091,116 @@ export class MailClientMinigame extends SocialOverlayScene {
         return true;
     }
 
+    // ── ink-driven plain email (suggested replies) ───────────────────────────
+
+    /** The mail runner, installed on first use. */
+    async _runner() {
+        const m = await import('../../systems/mail-runner.js');
+        return m.getMailRunner() || m.installMailRunner({ scheduler: this.scheduler });
+    }
+
+    /** The host hooks the composer's plain form calls. */
+    _inkApi() {
+        const keyOf = (contact) => `npc:${contact.npc}:${this.account.id}`;
+        return {
+            labels: plainLabels(this.config),
+            prepare: async (contact) => (await this._runner()).prepareCompose({ npcId: contact.npc, accountId: this.account.id }),
+            plan: async (contact, index) => (await this._runner()).planPlainChoice({ threadKey: keyOf(contact), index, mailboxId: this.account.mailbox }),
+            send: async (contact, index, inReplyTo) => (await this._runner()).sendPlainChoice({
+                threadKey: keyOf(contact), index, accountId: this.account.id, mailboxId: this.account.mailbox, inReplyTo
+            })
+        };
+    }
+
+    /**
+     * Suggested replies under the newest message of an ink thread (Outlook style): one chip
+     * per pending choice, shown as the start of the player's own message. A chip opens the
+     * composer with the whole message filled in. A contact that is also a phishing target
+     * (judged door open) adds "Write your own message".
+     */
+    _renderPlainFollowups(rec, pane, key, thread) {
+        const parsed = parsePlainThreadKey(key);
+        if (!parsed || !this._isLatestInThread(rec) || this.params.readOnly === true) return;
+        const contact = contactForNpc(this.config, parsed.npcId);
+        if (!contact) return;
+        const L = plainLabels(this.config);
+        const mode = contactMode(contact, this.globals);
+        const expects = thread && thread.expects;
+        const wrap = el('div', 'mail-followup mail-suggest');
+        const stillWaiting = expects && expects.mode === 'waiting' && arr(this.mailState?.jobs).some((j) => j && j.kind === 'ink' && j.thread === key);
+        if (stillWaiting) {
+            wrap.appendChild(el('p', 'mail-followup-note mail-ink-waiting', L.waiting));
+            pane.appendChild(wrap);
+            return;
+        }
+        const fill = (options) => {
+            list.textContent = '';
+            options.forEach((text, i) => {
+                const chip = el('button', 'mail-suggest-chip minigame-button', text);
+                chip.type = 'button';
+                chip.title = text;
+                chip.dataset.choice = String(i);
+                this.addEventListener(chip, 'click', () => this.openPlainReply(contact, i, rec));
+                list.appendChild(chip);
+            });
+            label.hidden = options.length === 0;
+        };
+        const label = el('p', 'mail-followup-label', L.suggestedReplies);
+        const list = el('div', 'mail-suggest-list');
+        list.setAttribute('role', 'group');
+        list.setAttribute('aria-label', L.suggestedReplies);
+        wrap.append(label, list);
+        const shown = expects && expects.mode === 'choices' && Array.isArray(expects.options) ? expects.options : [];
+        fill(shown);
+        if (mode === 'both') {
+            const own = el('button', 'mail-ink-own minigame-button', L.writeYourOwn);
+            own.type = 'button';
+            this.addEventListener(own, 'click', () => this.openPlainOwn(contact));
+            wrap.appendChild(own);
+        }
+        pane.appendChild(wrap);
+        if (shown.length) {
+            // The chips shown were made when the email arrived; resume the thread with the
+            // current globals so a reply gated on something found since appears now.
+            this._runner().then((r) => r.refreshPlainChoices(key)).then((options) => {
+                if (!options || !wrap.isConnected) return;
+                if (options.length !== shown.length || options.some((o, i) => o !== shown[i])) fill(options);
+            }).catch((err) => console.error('mail refresh suggestions failed:', err));
+        }
+    }
+
+    /** A chip was clicked: open the composer on this contact with that reply filled in. */
+    openPlainReply(contact, index, rec) {
+        if (!contact) return false;
+        if (this.composeOpen) this.closeCompose(false);
+        this.openCompose({ presetContactId: contact.id, inkChoice: index, inReplyTo: rec ? rec.id : '' });
+        return true;
+    }
+
+    /** "Write your own message" under a message from a contact who is also a phishing target. */
+    openPlainOwn(contact) {
+        const target = contact && contact.targetId;
+        if (!target || !resolveTarget(this.social, target)) return false;
+        if (this.composeOpen) this.closeCompose(false);
+        this.openCompose({ forceTargetId: target, inReplyTo: '', presetContactId: contact.id });
+        return true;
+    }
+
+    /** The composer sent a suggested reply. */
+    _onInkSent(res, contact) {
+        this.recordSend({ targetId: null, landed: null, redFlags: [], tells: [], outcome: 'sent' });
+        this.closeCompose(false);
+        this.notice = plainLabels(this.config).sentNote;
+        this._refresh();
+        this._changed({ type: 'plainSend', mailbox: this.account ? this.account.mailbox : null, id: res ? res.sentId : null });
+    }
+
     /** Open the composer for a judged follow-up (#compose_reply target), pre-addressed to the thread. */
     openComposeReply(targetId, inReplyToId) {
         const target = resolveTarget(this.social, targetId);
         if (!target) return false;
         const character = target.character;
-        const contact = this.contacts().find((c) => c && (c.targetId === targetId || c.character === character)) || null;
+        const contact = this.contacts().find((c) => c && (c.targetId === targetId || (character && c.character === character))) || null;
         if (this.composeOpen) this.closeCompose(false);
         this.openCompose({ forceTargetId: targetId, inReplyTo: inReplyToId || '', presetContactId: contact ? contact.id : null });
         return true;

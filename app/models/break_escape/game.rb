@@ -1329,8 +1329,9 @@ module BreakEscape
         return false
       end
 
-      # Check if player has encountered this NPC
-      unless player_state['encounteredNPCs']&.include?(npc_id)
+      # Check if player has encountered this NPC. A headless email record has no room to be
+      # met in: its emails are the encounter, as for give_item (games_controller headless_email_record?).
+      unless player_state['encounteredNPCs']&.include?(npc_id) || headless_email_npc?(npc_id)
         Rails.logger.warn "[BreakEscape] Player has not encountered NPC: #{npc_id}"
         return false
       end
@@ -1344,6 +1345,18 @@ module BreakEscape
 
       Rails.logger.info "[BreakEscape] NPC unlock validated: #{npc_id} can unlock #{target_id}"
       true
+    end
+
+    # True when the id is a headless email record (a character's or an ink contact's
+    # emailRecord) and no room NPC holds the same id.
+    def headless_email_npc?(npc_id)
+      return false unless npc_id.is_a?(String) && !npc_id.empty?
+
+      rooms = scenario_data['rooms']
+      in_a_room = rooms.is_a?(Hash) && rooms.each_value.any? do |room|
+        room.is_a?(Hash) && room['npcs'].is_a?(Array) && room['npcs'].any? { |n| n.is_a?(Hash) && n['id'] == npc_id }
+      end
+      !in_a_room && self.class.headless_npc_records(scenario_data).any? { |record| record['id'] == npc_id }
     end
 
     # Find an NPC record in the scenario: a room NPC, or a headless record
@@ -1385,7 +1398,7 @@ module BreakEscape
     def self.headless_npc_records(data)
       social = data.is_a?(Hash) ? data['social'] : nil
       characters = social.is_a?(Hash) ? social['characters'] : nil
-      return [] unless characters.is_a?(Hash)
+      characters = {} unless characters.is_a?(Hash)
 
       characters.filter_map do |_character_id, character|
         next unless character.is_a?(Hash)
@@ -1397,6 +1410,36 @@ module BreakEscape
         record.merge(
           'id' => record_id,
           'displayName' => record['displayName'] || character['displayName'] || record_id,
+          'npcType' => 'phone',
+          'phoneId' => HEADLESS_PHONE_ID,
+          'itemsHeld' => record['itemsHeld'].is_a?(Array) ? record['itemsHeld'] : []
+        )
+      end + headless_contact_records(data, characters)
+    end
+
+    # Ink-email correspondents: a social.mailClient.contacts entry with an `npc`
+    # id and an `emailRecord` defines a headless record under that id, with no
+    # social.characters entry. A character's record with the same id wins.
+    def self.headless_contact_records(data, characters)
+      social = data['social']
+      mail_client = social.is_a?(Hash) ? social['mailClient'] : nil
+      contacts = mail_client.is_a?(Hash) ? mail_client['contacts'] : nil
+      return [] unless contacts.is_a?(Array)
+
+      taken = characters.values.filter_map do |ch|
+        ch['channels']['email'] if ch.is_a?(Hash) && ch['emailRecord'].is_a?(Hash) && ch['channels'].is_a?(Hash)
+      end
+      contacts.filter_map do |contact|
+        next unless contact.is_a?(Hash)
+
+        record = contact['emailRecord']
+        npc_id = contact['npc']
+        next unless record.is_a?(Hash) && npc_id.is_a?(String) && !npc_id.empty? && !taken.include?(npc_id)
+
+        taken << npc_id
+        record.merge(
+          'id' => npc_id,
+          'displayName' => record['displayName'] || contact['name'] || npc_id,
           'npcType' => 'phone',
           'phoneId' => HEADLESS_PHONE_ID,
           'itemsHeld' => record['itemsHeld'].is_a?(Array) ? record['itemsHeld'] : []
@@ -1942,7 +1985,10 @@ module BreakEscape
         found = self.class.where(id: id).pick(
           Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*].id')"),
           Arel.sql("jsonb_path_query_array(scenario_data, " \
-                   "'$.social.characters.* ? (@.emailRecord.type() == \"object\").channels.email')")
+                   "'$.social.characters.* ? (@.emailRecord.type() == \"object\").channels.email')"),
+          # ink-email contacts with their own emailRecord (headless_contact_records)
+          Arel.sql("jsonb_path_query_array(scenario_data, " \
+                   "'$.social.mailClient.contacts[*] ? (@.emailRecord.type() == \"object\").npc')")
         )
         Array(found).each do |list|
           list = JSON.parse(list) if list.is_a?(String)
@@ -2121,10 +2167,13 @@ module BreakEscape
     MAIL_MESSAGE_KEYS = %w[
       id thread mailbox folder fromAccount from to targetId subject templates slots body
       attachment link landed tells time gameTime read kind seeded links attachments highlights
-      pendingMessage hiddenText hiddenTextLabel
+      pendingMessage hiddenText hiddenTextLabel forwardOf
     ].freeze
     MAIL_JOB_KINDS = %w[ink text seed].freeze
-    MAIL_JOB_STRING_KEYS = %w[character npcId accountId msgId knot targetId messageId mailbox global outcomeGlobal].freeze
+    MAIL_JOB_STRING_KEYS = %w[character npcId accountId msgId knot targetId messageId mailbox global outcomeGlobal thread inReplyTo].freeze
+    # Ink-email jobs (plain: true) and their restart flags; without these a job restored
+    # after a reload would lose its thread key and where it resumes.
+    MAIL_JOB_BOOL_KEYS = %w[plain afterSend chaser loadPosition].freeze
     MAIL_DRAFT_KEYS = %w[to subject templates slots attachment link targetId headerFrom contactId freeText].freeze
     MAIL_METRIC_COUNTS = %w[sent failed landed].freeze
 
@@ -2358,6 +2407,7 @@ module BreakEscape
         MAIL_JOB_STRING_KEYS.each do |key|
           clean[key] = job[key] if job[key].is_a?(String) && job[key].length <= MAX_MAIL_ID_LENGTH
         end
+        MAIL_JOB_BOOL_KEYS.each { |key| clean[key] = job[key] if [true, false].include?(job[key]) }
         clean['outcomeGlobal'] = nil if job.key?('outcomeGlobal') && job['outcomeGlobal'].nil?
         clean['remainingMs'] = job['remainingMs'].to_i.clamp(0, MAX_TIMED_MESSAGE_DELAY_MS) if job['remainingMs'].is_a?(Numeric)
         clean['choice'] = job['choice'].to_i if job['choice'].is_a?(Numeric)
@@ -2381,7 +2431,7 @@ module BreakEscape
         end
         entry['choices'] = sanitize_mail_json(thread['choices'].first(20)) if thread['choices'].is_a?(Array)
         expects = thread['expects']
-        if expects.is_a?(Hash) && %w[choices compose].include?(expects['mode'])
+        if expects.is_a?(Hash) && %w[choices compose waiting].include?(expects['mode'])
           entry['expects'] = { 'mode' => expects['mode'] }
           entry['expects']['targetId'] = expects['targetId'] if expects['targetId'].is_a?(String) && expects['targetId'].length <= 100
           # The "Choose a reply" option texts (01 N8): kept so the follow-up control

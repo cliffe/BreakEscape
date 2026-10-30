@@ -98,7 +98,7 @@ function classifySent(mailState, targetId, fromMailbox) {
         for (const rec of Array.isArray(box?.messages) ? box.messages : []) {
             order += 1;
             if (!isObj(rec) || rec.folder !== 'sent' || rec.seeded === true) continue;
-            if (rec.kind === 'quickReply' || rec.targetId !== targetId) continue;
+            if (rec.kind === 'quickReply' || rec.kind === 'plain' || rec.targetId !== targetId) continue;
             const tells = Array.isArray(rec.tells) ? rec.tells.filter(isStr) : [];
             if (!tells.length) { tellless = true; continue; }
             withTells.push({ rec, order, tells, time: Number.isFinite(rec.gameTime) ? rec.gameTime : 0 });

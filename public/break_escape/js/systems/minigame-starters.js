@@ -1150,6 +1150,8 @@ export function startMailClientMinigame(sprite, options = {}) {
         maxSends: data.maxSends,
         layout: data.layout,
         readOnly: data.readOnly,
+        // Open Compose on this ink contact (contact id or npc id): ink-driven plain email.
+        composeTo: data.composeTo,
         onComplete: (success, result) => {
             if (typeof options.onComplete === 'function') options.onComplete(success, result);
         },

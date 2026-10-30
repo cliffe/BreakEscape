@@ -329,7 +329,7 @@ def check_unknown_fields(json_data)
     bark message barkDelay
     targetKnot conversationMode background disableClose resume voiced videoLabel participantTag
     patrolOverride setPatrolSpeed setDwellMultiplier setVisible
-    sendTimedMessage setGlobal completeTask skipTask unlockTask unlockAim unlockDoor
+    sendTimedMessage sendEmail setGlobal completeTask skipTask unlockTask unlockAim unlockDoor
     openMinigame
     _comment
   ]
@@ -2614,7 +2614,7 @@ def check_common_issues(json_data, valid_item_types = nil)
                   # phone-chat trigger mappings are self-evidently visible (they open the chat), so skip that check.
                   has_effect = phone_chat_trigger || mapping['setGlobal'] || mapping['sendTimedMessage'] ||
                                mapping['completeTask'] || mapping['unlockTask'] || mapping['unlockAim'] ||
-                               mapping['unlockDoor'] || mapping['bark']
+                               mapping['unlockDoor'] || mapping['bark'] || mapping['sendEmail']
                   unless has_effect
                     issues << "⚠️ WARNING: '#{mapping_path}' is a phone NPC event mapping with no visible effect (no setGlobal, sendTimedMessage, completeTask, unlockTask, unlockAim, unlockDoor, bark or phone-chat trigger). Use 'sendTimedMessage' to notify the player, and 'setGlobal' to flag that a new hub option is available. Example: { \"eventPattern\": \"...\", \"onceOnly\": true, \"setGlobal\": { \"flag_var\": true }, \"sendTimedMessage\": { \"delay\": 1000, \"message\": \"...\" } }"
                   end
@@ -4147,6 +4147,12 @@ def check_globals_never_read(json_data, repo_root)
       sp = npc.is_a?(Hash) ? npc['storyPath'] : nil
       queue << File.join(repo_root, sp.sub(/\.json\z/, '.ink')) if sp.is_a?(String)
     end
+  end
+  # Ink-email correspondents (social.mailClient.contacts[].emailRecord.storyPath) read and set globals too
+  contacts = json_data.dig('social', 'mailClient', 'contacts')
+  Array(contacts.is_a?(Array) ? contacts : nil).each do |c|
+    sp = c.is_a?(Hash) && c['emailRecord'].is_a?(Hash) ? c['emailRecord']['storyPath'] : nil
+    queue << File.join(repo_root, sp.sub(/\.json\z/, '.ink')) if sp.is_a?(String)
   end
   until queue.empty?
     f = queue.shift
