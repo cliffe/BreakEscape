@@ -73,7 +73,10 @@ const STRINGS_VALUE_EXEMPT = new Set(['defendIntro', 'conceptPanel']);
 //     flipDefenderLineByChoice).
 //   - stages (E13 B2): per-stage text overrides for the red-team stages (write), which the defend-only
 //     shell does not have.
-const STRINGS_ERB_ONLY_OK = new Set(['conceptPanel', 'flipCallIntro', 'flipPageIntro', 'flipPageHeading', 'voicePanel', 'defendIntro', 'flipDefenderLineByChoice', 'flipMontageByChoice', 'flipMontageIntro', 'sandbox', 'stages']);
+//   - sandboxRecapHeading/Move, assistantRecapHeading/Move (batch 11): debrief recaps of the
+//     consequence sandbox and the assistant stage, which only a full episode has.
+const STRINGS_ERB_ONLY_OK = new Set(['conceptPanel', 'flipCallIntro', 'flipPageIntro', 'flipPageHeading', 'voicePanel', 'defendIntro', 'flipDefenderLineByChoice', 'flipMontageByChoice', 'flipMontageIntro', 'sandbox', 'stages',
+    'sandboxRecapHeading', 'sandboxRecapMove', 'assistantRecapHeading', 'assistantRecapMove']);
 // triage-set-level keys allowed to exist only in the erb.
 const SET_ERB_ONLY_OK = new Set(['playerSentAuth']);
 
