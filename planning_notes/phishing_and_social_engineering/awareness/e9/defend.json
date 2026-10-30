@@ -11,7 +11,7 @@
     {
       "labels": {
         "teamBadgeTitle": "Risky sign-in prompts and choices you reported or checked this round rather than going along with",
-        "teamBadge": "Risks reported for the team: {n}",
+        "teamBadge": "Risks reported or checked for the team: {n}",
         "phishCaughtLabel": "Risks spotted"
       },
       "bands": [

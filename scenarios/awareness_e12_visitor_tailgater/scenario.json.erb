@@ -150,7 +150,7 @@
         "labels": {
           "itemNoun": "visitor",
           "next": "Next visitor",
-          "teamBadge": "Visitors reported for the team: {n}",
+          "teamBadge": "Visitors reported or checked for the team: {n}",
           "teamBadgeTitle": "Visitors you reported or checked this round rather than letting through",
           "phishCaughtLabel": "Risky visitors caught",
           "verdictFeedback": {
@@ -216,7 +216,7 @@
                 "no_escort": "Heading up alone, with nobody signing for them."
               },
               "ifTrusted": "An unbadged stranger is loose on the studio floor, where client plans and screens are open.",
-              "reportReply": "Thanks, we caught them on the stairs; they weren't expected."
+              "reportReply": "Thanks, we caught them on the stairs; they weren't expected.", "reportReplyByVerdict": {"report": "Thanks, we caught them on the stairs; they weren't expected.", "verify": "Thanks for checking: they weren't on the list, and we've sent someone to find them."}
             },
             "factorStrings": {
               "tailgating": {
@@ -253,6 +253,8 @@
             "truth": {
               "verdictPoints": { "trust": 60 },
               "isPhish": false,
+              "deleteLine": "That client was on the day's list to see Yasmin Chaudhry. Turning them away left a real client in the lobby; signing them in, or a quick look at the list first, was all it needed.",
+              "reportReplyByVerdict": {"report": "Thanks, they were on the day's list, so no harm done. A quick check of the list is enough next time."},
               "flags": [],
               "whyFine": {
                 "default": "They're on the day's list for a named meeting and happy to be signed in. Signing them in and walking them up is the right call, and a glance at the list or a quick word with Yasmin confirms it.",
@@ -309,7 +311,7 @@
                 "secrecy_or_bypass": "'I can let myself in' asks to skip the escort into a secure room."
               },
               "ifTrusted": "He'd be alone in the comms room with the building's network.",
-              "reportReply": "Thanks, facilities confirmed no inspection was booked and the firm's name was wrong."
+              "reportReply": "Thanks, facilities confirmed no inspection was booked and the firm's name was wrong.", "reportReplyByVerdict": {"report": "Thanks, facilities confirmed no inspection was booked and the firm's name was wrong.", "verify": "Thanks for checking: no inspection was booked and the firm's name was wrong, so facilities have been told."}
             },
             "factorStrings": {
               "uniform_pretext": {
@@ -375,7 +377,7 @@
                 "no_escort": "Buzzed through with nobody to sign him in or walk him up, he's loose on the studio floor."
               },
               "ifTrusted": "A stranger is through the badge door and onto the studio floor.",
-              "reportReply": "Thanks, real couriers leave the parcel at the desk; we logged it."
+              "reportReply": "Thanks, real couriers leave the parcel at the desk; we logged it.", "reportReplyByVerdict": {"report": "Thanks, real couriers leave the parcel at the desk; we logged it.", "verify": "Thanks for checking: real couriers leave the parcel at the desk, and we've logged this one."}
             },
             "factorStrings": {
               "tailgating": {
@@ -420,6 +422,8 @@
                 "trust": 60
               },
               "isPhish": false,
+              "deleteLine": "That was a colleague back from leave, and the staff list confirms it. Turning them away left them locked out; checking the list and issuing a day pass was the answer.",
+              "reportReplyByVerdict": {"report": "Thanks, the staff list shows them back from leave today. A day pass would have sorted it."},
               "flags": [],
               "whyFine": {
                 "default": "A genuine colleague the desk can confirm. Check the staff list and issue a day pass, don't lend your own badge, and don't leave them stuck.",
@@ -462,7 +466,7 @@
                 "no_escort": "A visitor left alone by a desk, with nobody signing for them."
               },
               "ifTrusted": "A stranger reads client plans and the colleague's account over an unlocked screen.",
-              "reportReply": "Thanks, we locked it and had a quiet word; nobody's in trouble."
+              "reportReply": "Thanks, we locked it and had a quiet word; nobody's in trouble.", "reportReplyByVerdict": {"report": "Thanks, we locked it and had a quiet word; nobody's in trouble.", "verify": "Thanks for checking: the screen was open, so we locked it and had a quiet word. Nobody's in trouble."}
             },
             "factorStrings": {
               "unlocked_screen": {
@@ -496,6 +500,8 @@
             "truth": {
               "verdictPoints": { "trust": 60 },
               "isPhish": false,
+              "deleteLine": "Nothing was wrong here. The screen was locked and the visitor was where they had been left, so there was no one to turn away.",
+              "reportReplyByVerdict": {"report": "Thanks, the screen was locked and the visitor was waiting where they were put. Nothing to act on."},
               "flags": [],
               "whyFine": {
                 "default": "The screen's locked and the visitor is where they were left, so there's nothing open to read. Carrying on is fine, and a quick glance to confirm is the same good habit.",
