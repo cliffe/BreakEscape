@@ -1,9 +1,9 @@
 {
- "id": "m01_trailer60",
+ "id": "m01_trailer60_v3",
  "title": "SAFETYNET: Licence to Hack, m01 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v2: real takes t10-t18 in place; only the Real Hacking clip is a placeholder",
+ "status": "v3: Veo opening and CTA clips, Derek wide-to-close cut, glitched card reflections, per-join dissolve pins, longer phone and keypad shots",
  "music": {
   "track": "Noir/Midnight Cipher Chase.mp3",
   "analysis": "midnight_cipher_chase.json",
@@ -76,8 +76,12 @@
      "9:16": 16,
      "1:1": 15
     },
-    "reveal_start": 3,
-    "reveal_frames": 30
+    "reveal_start": 72,
+    "reveal_frames": 30,
+    "pos": {
+     "x": 0.583,
+     "y": 0.5
+    }
    },
    "spoiler": {
     "reviewed": true,
@@ -85,7 +89,14 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "title art only"
+    "note": "Veo opening clip (agent walks into the keyhole) with the title; no spoilers"
+   },
+   "clip": {
+    "file": "spy_into_frame.mp4",
+    "frames": 117,
+    "audio": {
+     "gain_db": -4
+    }
    }
   },
   {
@@ -169,7 +180,7 @@
   {
    "id": "m_lights",
    "type": "gameplay",
-   "duration": 2.5,
+   "duration": 1.5,
    "snap": true,
    "join": {
     "type": "glitch"
@@ -177,7 +188,7 @@
    "source": {
     "file": "t03_lights_on.trimmed.mkv",
     "in": 3.55,
-    "out": 6.05
+    "out": 5.05
    },
    "note": "2.5 s: 1.5 s dark office lead-in (player through the door), lights strike on the drop at 12.0 s (marker lights-on at 5.13 s in the take; draft in-point 5.05 kept)",
    "framing": {
@@ -255,17 +266,17 @@
   {
    "id": "m_phone",
    "type": "gameplay",
-   "duration": 1,
+   "duration": 1.5,
    "snap": true,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t05_phone.trimmed.mkv",
-    "in": 5.0,
-    "out": 6.0
+    "in": 7.4,
+    "out": 8.9
    },
-   "note": "phone panel x .40-.61, y .02-.67 of the frame: 1.3x keeps it whole with margin",
+   "note": "phone panel x .40-.61, y .02-.67 of the frame: 1.3x keeps it whole. 7.4-8.9: HaX reply on screen, then the reply choices appear at 7.83 (the later Maya reply starts at 9.4, not shown)",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -292,23 +303,23 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "phone chat before the HaX reply (no Maya reply visible)"
+    "note": "phone chat: HaX general-advice reply and the next reply choices; no Maya reply visible"
    }
   },
   {
    "id": "m_keypad",
    "type": "gameplay",
-   "duration": 1,
+   "duration": 1.5,
    "snap": true,
    "join": {
     "type": "cut"
    },
    "source": {
-    "file": "t06_keypad.trimmed.mkv",
-    "in": 4.75,
-    "out": 5.75
+    "file": "t06_keypad_v3.trimmed.mkv",
+    "in": 5.3,
+    "out": 6.8
    },
-   "note": "keypad panel is full height: 1x",
+   "note": "v3: 5.3-6.8 shows digit 2 (5.27) and digit 3 (5.92) land and hold; whole panel at 1x",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -335,7 +346,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": true,
-    "note": "keypad shows two digits of four: partial and not the real code"
+    "note": "v3 take: three digits typed (1, 9, 3), ENTER never pressed; keypad shows three of four"
    }
   },
   {
@@ -687,7 +698,8 @@
    "duration": 1.5,
    "snap": true,
    "join": {
-    "type": "glitch"
+    "type": "dissolve",
+    "pin": true
    },
    "text": [
     "Uncover",
@@ -705,17 +717,18 @@
   {
    "id": "mb_keypad",
    "type": "gameplay",
-   "duration": 1,
+   "duration": 1.5,
    "snap": true,
    "join": {
-    "type": "glitch"
+    "type": "dissolve",
+    "pin": true
    },
    "source": {
-    "file": "t15_cabinet_keypad.trimmed.mkv",
-    "in": 4.6,
-    "out": 5.6
+    "file": "t15_cabinet_keypad_v3.trimmed.mkv",
+    "in": 5.3,
+    "out": 6.8
    },
-   "note": "filing cabinet keypad 4.6-5.6: '7___' to '72__' (not the code; ENTER never pressed); whole panel at 1x",
+   "note": "v3: 5.3-6.8 shows digit 2 (5.35) and digit 3 (6.01) land and hold; whole panel at 1x",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -742,7 +755,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": true,
-    "note": "filing cabinet keypad, two of four digits entered, not the real code"
+    "note": "v3 take: filing cabinet keypad, three digits (7, 2, 5) typed, ENTER never pressed"
    }
   },
   {
@@ -877,7 +890,7 @@
   {
    "id": "card_entropy",
    "type": "card",
-   "duration": 2,
+   "duration": 1.5,
    "snap": true,
    "join": {
     "type": "glitch"
@@ -896,54 +909,28 @@
    }
   },
   {
-   "id": "derek_entropy",
+   "id": "derek_wide",
    "type": "gameplay",
-   "duration": 9,
-   "snap": true,
+   "duration": 4.8,
+   "snap": false,
    "join": {
     "type": "glitch"
    },
    "source": {
     "file": "t09_derek.trimmed.mkv",
     "in": 46.7,
-    "out": 55.72
+    "out": 51.5
    },
    "dialogue": true,
-   "note": "derek_6 window 46.77-55.71: after the choice buttons (gone by 45.9 s) and before the next line (56.5 s)",
+   "note": "derek_6 wide portrait view with the game subtitle, to the silence before \"Security\" (take 51.19-51.79 s, cut at 51.5)",
    "lines": [
     {
      "speaker": "Derek Lawson",
-     "text": "Entropy is inevitable. Trust is a lie. Security through obscurity fails.",
+     "text": "Entropy is inevitable. Trust is a lie.",
      "start": 0.07,
-     "end": 9.01
+     "end": 4.8
     }
    ],
-   "pushin": {
-    "from_zoom": 1,
-    "to_zoom": 3,
-    "focus": {
-     "x": 0.648,
-     "y": 0.2
-    },
-    "focus_by_aspect": {
-     "9:16": {
-      "x": 0.648,
-      "y": 0.3
-     },
-     "1:1": {
-      "x": 0.648,
-      "y": 0.2
-     }
-    },
-    "to_zoom_by_aspect": {
-     "9:16": 1.5
-    },
-    "ease": "inOut",
-    "crops_ui": true,
-    "ui_bottom_fraction": 0.24,
-    "start": 0.1,
-    "end": 0.75
-   },
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -979,49 +966,123 @@
    }
   },
   {
-   "id": "card_play",
-   "type": "card",
-   "duration": 2,
-   "snap": true,
+   "id": "derek_close",
+   "type": "gameplay",
+   "duration": 4.2,
+   "snap": false,
    "join": {
-    "type": "glitch"
+    "type": "cut"
    },
-   "text": [
-    "Play Mission 1",
-    "Free!"
+   "source": {
+    "file": "t09_derek.trimmed.mkv",
+    "in": 51.5,
+    "out": 55.72
+   },
+   "dialogue": true,
+   "note": "hard cut to a 3x close-up of the face (no UI), 3-frame glitch on the cut",
+   "lines": [
+    {
+     "speaker": "Derek Lawson",
+     "text": "Security through obscurity fails.",
+     "start": 0.0,
+     "end": 4.2
+    }
    ],
+   "framing": {
+    "16:9": {
+     "cx": 0.65,
+     "cy": 0.185,
+     "zoom": 3
+    },
+    "9:16": {
+     "cx": 0.65,
+     "cy": 0.185,
+     "zoom": 1.6875
+    },
+    "1:1": {
+     "cx": 0.65,
+     "cy": 0.185,
+     "zoom": 3
+    }
+   },
+   "caption": {
+    "9:16": true
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
    "spoiler": {
     "reviewed": true,
     "shows_code": false,
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "card text only"
+    "note": "antagonist line close-up; no UI, no text"
+   },
+   "hit": {
+    "frames": 3,
+    "k": 0.55,
+    "shift": 0.05,
+    "pix": 0.12
    }
   },
   {
-   "id": "card_now",
-   "type": "card",
-   "duration": 2,
+   "id": "cta",
+   "type": "cta",
+   "duration": 4,
    "snap": true,
    "join": {
     "type": "glitch"
    },
-   "text": [
-    "Play Now!",
+   "clip": {
+    "file": "spy_laptop_out.mp4",
+    "frames": 117,
+    "audio": {
+     "gain_db": -4
+    }
+   },
+   "phases": [
     {
-     "text": "hacktivity.co.uk",
-     "scale": 0.4,
-     "gap": 0.9
+     "duration": 2,
+     "text": [
+      "Play Mission 1",
+      "Free!"
+     ]
+    },
+    {
+     "duration": 2,
+     "text": [
+      "Play Now!",
+      {
+       "text": "hacktivity.co.uk",
+       "scale": 0.4,
+       "gap": 0.9
+      }
+     ]
     }
    ],
+   "rain": {
+    "color": "#c4252b",
+    "head": "#ff8a80",
+    "size": 18,
+    "build_frames": 110,
+    "cover": 0.85,
+    "opacity": 0.8
+   },
+   "text_box": {
+    "x": 0.53,
+    "w": 0.43,
+    "cy": 0.5
+   },
    "spoiler": {
     "reviewed": true,
     "shows_code": false,
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "card text only"
+    "note": "call to action over the laptop clip with hex rain"
    }
   },
   {

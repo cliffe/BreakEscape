@@ -35,7 +35,7 @@ if (music.start != null && music.start + music.length > 0) {
 if (edit.duck?.db == null || edit.duck.db > -8 || edit.duck.db < -10.5) W('duck', 'plan asks for -8 to -10 dB under dialogue');
 if (!edit.audio?.fade_ms || edit.audio.fade_ms < 5 || edit.audio.fade_ms > 10) E('audio', 'fade_ms must be 5-10');
 const takeFiles = fs.existsSync(takesDir) ? new Set(fs.readdirSync(takesDir)) : new Set();
-const clipDirs = [path.join(repo, 'tools/video/assets/placeholders'), ...(process.env.BE_CLIPS_DIR ? [process.env.BE_CLIPS_DIR] : [])];
+const clipDirs = [path.join(repo, 'tools/video/assets/placeholders'), path.join(repo, 'tools/video/assets/clips'), ...(process.env.BE_CLIPS_DIR ? [process.env.BE_CLIPS_DIR] : [])];
 const clipFiles = new Set(clipDirs.flatMap((d) => (fs.existsSync(d) ? fs.readdirSync(d) : [])));
 const brandDir = path.join(repo, 'tools/video/assets/brand');
 const placeholders = [];
@@ -45,7 +45,7 @@ const ids = new Set();
 tl.shots.forEach((s, i) => {
   const id = s.id || `shot#${i}`;
   if (!s.id) E(id, 'missing id'); else if (ids.has(s.id)) E(id, 'duplicate id'); ids.add(s.id);
-  if (!['card', 'gameplay', 'title'].includes(s.type)) E(id, `type must be card|gameplay|title, got ${s.type}`);
+  if (!['card', 'gameplay', 'title', 'cta'].includes(s.type)) E(id, `type must be card|gameplay|title|cta, got ${s.type}`);
   if (s.type === 'title' && i !== 0) E(id, 'a title shot is only allowed as the first shot');
   if (!(s.duration > 0)) E(id, 'duration must be > 0');
   const raw = s.join?.type || 'cut';
@@ -88,6 +88,11 @@ tl.shots.forEach((s, i) => {
     for (const f of [t.art || 'brand/c1_keyhole_hookpick6.png', t.svg || 'brand/safetynet_licence_to_hack.svg']) if (!fs.existsSync(path.join(repo, 'tools/video/assets', f))) E(id, `title asset not found in tools/video/assets: ${f}`);
     for (const [a, v] of Object.entries(t.scale || {})) if (!Number.isInteger(v) || v < 1) E(id, `title.scale.${a} must be an integer >= 1, got ${v}`);
     if (s.source) W(id, 'title has a source (ignored)');
+    if (s.clip) { if (!clipFiles.has(s.clip.file)) E(id, `title clip not found: ${s.clip.file}`); if (s.clip.audio && typeof s.clip.audio.gain_db !== 'number') E(id, 'clip.audio.gain_db missing'); }
+  } else if (s.type === 'cta') {
+    if (!s.clip?.file || !clipFiles.has(s.clip.file)) E(id, `cta needs clip.file in tools/video/assets/clips (${s.clip?.file})`);
+    if (!s.phases?.length) E(id, 'cta needs phases[]');
+    else { const sum = s.phases.reduce((a, p) => a + p.duration, 0); if (Math.abs(sum - s.duration) > 1 / fps) E(id, `cta phases total ${sum} s, shot is ${s.duration} s`); }
   } else if (s.type === 'card') {
     if (s.kind !== 'logo' && s.kind !== 'logo_end' && !(s.text?.length)) E(id, 'card needs text[]');
     if (s.source) W(id, 'card has a source (ignored)');

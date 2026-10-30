@@ -43,3 +43,10 @@ Draft from the m01 trial (October 2026). The later video skill builds on this. P
 - `--give` can't supply items an NPC hands over in conversation (Kevin's lockpick kit); play the conversation in the take's `setup()`.
 - Agent HaX's phone lines have no cached audio in m01.
 - No Break Escape logo art yet; no real VM footage in the container.
+
+## v3 additions (m01 trailer)
+
+- **Veo clips** (`tools/video/assets/clips/`, conformed 1920x1080 30 fps, smooth scale because painted): title shot `clip` (plays, freezes on its last frame, title assembles on the right) and `cta` shot type (clip, hex curtain, phased text). Clip sound is mixed via `clip.audio.gain_db`.
+- **Hex curtain:** red falling hex characters with a ragged, dripping leading edge (`HexRain.tsx`), after the Bond gun-barrel blood; text on the right sits on a dark panel.
+- **Joins:** `join.pin: true` keeps a join's own type when `effects.cardJoin` is set (the two joins around "Uncover the Mystery" are pinned dissolves). `shot.hit` adds a 2-3 frame glitch inside a shot's first frames (Derek's cut to the close-up); consecutive dialogue shots share one music duck.
+- **Card reflections:** glitched (low-intensity GlitchFX bands and colour split), not mosaic.

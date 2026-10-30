@@ -9,6 +9,8 @@ import { PixelDissolve } from './components/PixelDissolve';
 import { Gameplay } from './components/Gameplay';
 import { GlitchTransition } from './components/GlitchTransition';
 import { BlurStreak } from './components/BlurStreak';
+import { CtaShot } from './components/CtaShot';
+import { GlitchFX } from './components/GlitchFX';
 
 export const Teaser: React.FC<{ edit: any; aspect: string; available: Record<string, boolean> }> = ({ edit, aspect, available }) => {
   loadFonts();
@@ -47,9 +49,17 @@ export const Teaser: React.FC<{ edit: any; aspect: string; available: Record<str
 const ShotView: React.FC<any> = ({ shot, w, h, aspect, fps, available, source }) => {
   const frame = useCurrentFrame();
   if (shot.type === 'title') return <TitleCard shot={shot} w={w} h={h} aspect={aspect} frame={frame} frames={shot.frames} />;
+  if (shot.type === 'cta') return <CtaShot shot={shot} w={w} h={h} frame={frame} frames={shot.frames} fps={fps} aspect={aspect} />;
   if (shot.type === 'card') {
     if (shot.kind === 'logo' || shot.kind === 'logo_end') return <EndLogos shot={shot} w={w} h={h} frame={frame} frames={shot.frames} fps={fps} />;
     return <TextCard shot={shot} w={w} h={h} />;
   }
-  return <Gameplay shot={shot} w={w} h={h} aspect={aspect} frame={frame} frames={shot.frames} fps={fps} available={available} source={source} />;
+  const g = <Gameplay shot={shot} w={w} h={h} aspect={aspect} frame={frame} frames={shot.frames} fps={fps} available={available} source={source} />;
+  // shot.hit = { frames: 3, k, ... }: a 2-3 frame glitch on the shot's first frames (an impact on a hard cut), same engine as the joins
+  const hit = shot.hit;
+  if (hit && frame < (hit.frames ?? 3)) {
+    const k = (hit.k ?? 0.7) * (1 - frame / ((hit.frames ?? 3) + 1));
+    return <GlitchFX id={`hit-${shot.id}`} w={w} h={h} params={{ seed: frame * 41 + 9, k, maxShift: Math.round(w * (hit.shift ?? 0.07)), split: Math.round(w * 0.006), pix: hit.pix ?? 0.1, block: Math.max(8, Math.round(w / 100)), thick: 0.06 }}>{g}</GlitchFX>;
+  }
+  return g;
 };

@@ -50,7 +50,7 @@ if (fs.existsSync(takesDir)) {
 fs.mkdirSync(path.join(pub, 'clips'), { recursive: true });
 for (const f of fs.readdirSync(path.join(pub, 'clips'))) fs.rmSync(path.join(pub, 'clips', f), { force: true });
 manifest.clips = {};
-for (const dir of [path.join(repo, 'tools/video/assets/placeholders'), ...(process.env.BE_CLIPS_DIR ? [process.env.BE_CLIPS_DIR] : [])]) {
+for (const dir of [path.join(repo, 'tools/video/assets/placeholders'), path.join(repo, 'tools/video/assets/clips'), ...(process.env.BE_CLIPS_DIR ? [process.env.BE_CLIPS_DIR] : [])]) {
   if (!fs.existsSync(dir)) continue;
   for (const f of fs.readdirSync(dir)) {
     if (!/\.(mp4|mkv|mov|webm)$/i.test(f)) continue;

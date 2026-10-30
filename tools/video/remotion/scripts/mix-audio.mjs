@@ -18,8 +18,10 @@ const inputs = ['-ss', String(m.start), '-t', String(total + 0.05), '-i', musicF
 const parts = []; const mixIn = [];
 // duck envelope: product of per-window dips with attack/release ramps
 const duckK = Math.pow(10, (edit.duck?.db ?? -9) / 20), att = edit.duck?.attack ?? 0.12, rel = edit.duck?.release ?? 0.3;
-const dips = tl.shots.filter((s) => s.type === 'gameplay' && s.audio?.duck_music).map((s) => {
-  const t0 = s.startSec, t1 = s.endSec;
+// consecutive dialogue shots (e.g. a wide shot and its close-up) are one duck window, so the dips don't multiply at the cut
+const duckWins = [];
+for (const s of tl.shots) { if (!(s.type === 'gameplay' && s.audio?.duck_music)) continue; const l = duckWins[duckWins.length - 1]; if (l && Math.abs(l[1] - s.startSec) < 1e-6) l[1] = s.endSec; else duckWins.push([s.startSec, s.endSec]); }
+const dips = duckWins.map(([t0, t1]) => {
   return `(1-${(1 - duckK).toFixed(5)}*min(clip((t-${(t0 - att).toFixed(4)})/${att},0,1),clip((${(t1 + rel).toFixed(4)}-t)/${rel},0,1)))`;
 });
 const duckExpr = dips.length ? dips.join('*') : '1';
@@ -31,13 +33,17 @@ mf += `,volume='${duckExpr}':eval=frame[music]`;
 parts.push(mf); mixIn.push('[music]');
 const used = [];
 for (const s of tl.shots) {
-  if (s.type !== 'gameplay' || !s.source?.file || s.source.type === 'clip') continue; // clips (old-trailer placeholders) are silent
-  const f = path.join(takesDir, s.source.file); if (!fs.existsSync(f)) continue;
+  // title/cta shots carry a Veo clip whose own sound is mixed (clip.audio.gain_db); the clip freezes on its last frame, so its audio is limited to the clip's length
+  const isClipAudio = (s.type === 'title' || s.type === 'cta') && s.clip?.audio;
+  if (!isClipAudio && (s.type !== 'gameplay' || !s.source?.file || s.source.type === 'clip')) continue; // clips (old-trailer placeholders) are silent
+  const src0 = isClipAudio ? { file: s.clip.file, in: s.clip.in ?? 0 } : s.source;
+  const f = isClipAudio ? path.join(repo, 'tools/video/assets/clips', src0.file) : path.join(takesDir, src0.file); if (!fs.existsSync(f)) continue;
   const has = spawnSync('ffprobe', ['-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=index', '-of', 'csv=p=0', f], { encoding: 'utf8' }).stdout.trim();
   if (!has) { console.error(`mix: ${s.id}: take has no audio stream`); continue; }
-  inputs.push('-ss', String(s.source.in), '-t', String(s.duration), '-i', f);
+  const gdb = isClipAudio ? s.clip.audio.gain_db : s.audio.gain_db;
+  inputs.push('-ss', String(src0.in), '-t', String(s.duration), '-i', f);
   const d = s.duration, ms = Math.round(s.startSec * 1000);
-  parts.push(`[${n}:a]aresample=48000,aformat=channel_layouts=stereo,atrim=0:${d},asetpts=PTS-STARTPTS,volume=${s.audio.gain_db}dB,afade=t=in:d=${fade},afade=t=out:st=${(d - fade).toFixed(4)}:d=${fade},adelay=${ms}|${ms}[t${n}]`);
+  parts.push(`[${n}:a]aresample=48000,aformat=channel_layouts=stereo,atrim=0:${d},asetpts=PTS-STARTPTS,volume=${gdb}dB,afade=t=in:d=${fade},afade=t=out:st=${(d - fade).toFixed(4)}:d=${fade},adelay=${ms}|${ms}[t${n}]`);
   mixIn.push(`[t${n}]`); used.push(s.id); n++;
 }
 parts.push(`${mixIn.join('')}amix=inputs=${mixIn.length}:normalize=0:duration=longest,atrim=0:${total},alimiter=limit=0.95[out]`);

@@ -1,6 +1,7 @@
 import React from 'react';
 import { staticFile } from 'remotion';
 import { GlitchFX } from './GlitchFX';
+import { ClipBg } from './ClipBg';
 
 const BG = '#070409';
 const ART_W = 1376, ART_H = 768; // c1_keyhole_hookpick6.png
@@ -22,20 +23,22 @@ export const TitleCard: React.FC<{ shot: any; w: number; h: number; aspect: stri
   const scale: number = Math.round((cfg.scale && cfg.scale[aspect]) || DEFAULT_SCALE[aspect] || 12);
   const tw = 57 * scale, th = 25 * scale;
   const portrait = h > w, square = w === h;
+  const clip = !portrait && !square && shot.clip?.file ? shot.clip : null; // the Veo clip replaces the still on 16:9; stacked aspects keep the still art
 
   // layout (all integers)
   let artBox: { x: number; y: number; w: number; h: number }, tx: number, ty: number;
-  if (!portrait && !square) { artBox = { x: 0, y: 0, w, h }; tx = Math.round(w * 0.525); ty = Math.round(h * 0.237); }
+  if (!portrait && !square) { artBox = { x: 0, y: 0, w, h }; tx = clip ? Math.round(w * (cfg.pos?.x ?? 0.583)) : Math.round(w * 0.525); ty = clip ? Math.round(h * (cfg.pos?.y ?? 0.5) - 25 * scale / 2) : Math.round(h * 0.237); }
   else if (portrait) { artBox = { x: 0, y: 0, w, h: Math.round(h * 0.65) }; tx = Math.round((w - tw) / 2); ty = Math.round(h * 0.675); }
   else { artBox = { x: 0, y: 0, w, h: Math.round(h * 0.7) }; tx = Math.round((w - tw) / 2); ty = Math.round(h * 0.64); }
-  const cover = Math.max(artBox.w / ART_W, artBox.h / ART_H) * (1 + 0.05 * (frames > 1 ? frame / (frames - 1) : 0)); // slow push-in, 5%
+  const cover = Math.max(artBox.w / ART_W, artBox.h / ART_H) * (clip ? 1 : 1 + 0.05 * (frames > 1 ? frame / (frames - 1) : 0)); // slow push-in, 5%
   const aw = Math.round(ART_W * cover), ah = Math.round(ART_H * cover);
   let ax = Math.round(artBox.w / 2 - KEY_X * aw); ax = Math.min(0, Math.max(artBox.w - aw, ax));
   const ay = Math.round((artBox.h - ah) / 2);
 
   const rs = cfg.reveal_start ?? 3, rf = cfg.reveal_frames ?? 30;
   const u = Math.max(0, Math.min(1, (frame - rs) / rf));       // 0..1 reveal progress
-  const fadeIn = Math.min(1, frame / (cfg.art_fade ?? 8));
+  const fadeIn = clip ? 1 : Math.min(1, frame / (cfg.art_fade ?? 8));
+  const glowIn = clip ? Math.min(1, Math.max(0, (frame - (cfg.reveal_start ?? 3) + 8) / 16)) : fadeIn;
   const k = u >= 1 ? 0 : Math.pow(1 - u, 0.8);
   const hide = u >= 1 ? 0 : Math.pow(1 - u, 1.4) * 0.95 + (frame < rs ? 0.05 : 0);
   const step = Math.floor(frame / 2); // strips re-roll every second frame (stepped, like the reference)
@@ -46,12 +49,12 @@ export const TitleCard: React.FC<{ shot: any; w: number; h: number; aspect: stri
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', background: BG }}>
       <div style={{ position: 'absolute', left: artBox.x, top: artBox.y, width: artBox.w, height: artBox.h, overflow: 'hidden', opacity: fadeIn }}>
-        <img src={staticFile(art)} style={{ position: 'absolute', left: ax, top: ay, width: aw, height: ah, maxWidth: 'none' }} />
+        {clip ? <ClipBg file={clip.file} frame={frame} frames={clip.frames ?? 117} w={w} h={h} /> : <img src={staticFile(art)} style={{ position: 'absolute', left: ax, top: ay, width: aw, height: ah, maxWidth: 'none' }} />}
         {/* the art's dark side gets darker still behind the title; stacked layouts fade the art into the page colour */}
         {!portrait && !square ? <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(7,4,9,0) 38%, rgba(7,4,9,0.55) 62%, rgba(7,4,9,0.7) 100%)' }} /> : <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, rgba(7,4,9,0) 62%, ${BG} 100%)` }} />}
       </div>
       {/* soft glow behind the title for contrast */}
-      <div style={{ position: 'absolute', left: tx - th * 0.5, top: ty - th * 0.45, width: tw + th, height: th * 1.9, background: 'radial-gradient(ellipse 50% 50% at 50% 50%, rgba(7,4,9,0.72) 0%, rgba(7,4,9,0.45) 55%, rgba(7,4,9,0) 100%)', opacity: fadeIn }} />
+      <div style={{ position: 'absolute', left: tx - th * 0.5, top: ty - th * 0.45, width: tw + th, height: th * 1.9, background: 'radial-gradient(ellipse 50% 50% at 50% 50%, rgba(7,4,9,0.72) 0%, rgba(7,4,9,0.45) 55%, rgba(7,4,9,0) 100%)', opacity: glowIn }} />
       <div style={{ position: 'absolute', left: tx, top: ty, width: tw, height: th, filter: 'drop-shadow(0 0 22px rgba(208,53,58,0.30))' }}>
         {glitching ? <GlitchFX id="ttl" w={tw} h={th} params={bandParams}>{titleImg}</GlitchFX> : titleImg}
       </div>
