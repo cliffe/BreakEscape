@@ -1,5 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
-import { attachContinueHandlers, startDesktopHold, DESKTOP_HOLD_MS } from './title-screen-input.js';
+import { attachContinueHandlers, startDesktopHold, DESKTOP_HOLD_MS, titleScreenName } from './title-screen-input.js';
 import { isDesktopApp } from '../../utils/desktop-app.js';
 
 // Load title screen CSS
@@ -14,7 +14,7 @@ if (!document.getElementById('title-screen-css')) {
 /**
  * Title Screen Minigame
  * Phase 1: Hacktivity logo fades in, zooms to 200%, fades out.
- * Phase 2: Mission display_name typed out terminal-style with blinking cursor.
+ * Phase 2: Mission display_name (or the scenario's titleScreenName, see titleScreenName) typed out terminal-style with blinking cursor.
  * Phase 3: "Continue?" prompt — player gesture required before closing.
  *          This also satisfies the browser's autoplay policy for audio.
  *          In the Hacktivity desktop app (isDesktopApp) there is no prompt: the player has just
@@ -126,7 +126,7 @@ export class TitleScreenMinigame extends MinigameScene {
         if (this._ended || this._typingStarted) return;
         this._typingStarted = true;
 
-        const name = window.breakEscapeConfig?.missionDisplayName ?? '';
+        const name = titleScreenName(window.breakEscapeConfig);
         const CHAR_DELAY = 85;
         let i = 0;
 

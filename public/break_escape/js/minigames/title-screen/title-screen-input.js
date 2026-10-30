@@ -69,3 +69,15 @@ export function startDesktopHold(container, doc, holdMs, onProceed, timers = glo
     timer = timers.setTimeout(proceed, holdMs);
     return cancel;
 }
+
+/**
+ * The name the title screen types. A scenario may set a top-level `titleScreenName` (the server
+ * passes it as breakEscapeConfig.missionTitleName); without it the mission's display_name is used,
+ * so every existing mission is unchanged. Awareness episodes use it to show the episode's own name
+ * while listings keep the longer display_name.
+ */
+export function titleScreenName(config) {
+    const own = typeof config?.missionTitleName === 'string' ? config.missionTitleName.trim() : '';
+    if (own) return own;
+    return config?.missionDisplayName ?? '';
+}

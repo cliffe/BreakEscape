@@ -241,6 +241,8 @@
       missionConcludedAt: <%= raw(@game.mission_concluded_at&.iso8601.to_json) %>,
       missionId: <%= @game.mission_id %>,
       missionDisplayName: <%= raw(@mission.display_name.to_json) %>,
+      <% _title_name = @game.scenario_data.is_a?(Hash) ? @game.scenario_data['titleScreenName'].to_s.gsub(/[[:cntrl:]]/, ' ').strip[0, 80] : '' %>
+      <% if _title_name.present? %>missionTitleName: <%= raw(_title_name.to_json) %>,<% end %>
       <% if _awareness.present? %>awareness: <%= raw json_escape(_awareness.to_json) %>,<% end %>
       uiTheme: '<%= ui_theme %>',
       // Set when a host game shell launched this mission (BreakEscape.configuration.shell_links)

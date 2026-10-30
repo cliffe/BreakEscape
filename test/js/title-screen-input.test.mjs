@@ -11,7 +11,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '../../public/break_escape/js/minigames/title-screen/title-screen-input.js');
 const dir = mkdtempSync(join(tmpdir(), 'title-screen-input-'));
 writeFileSync(join(dir, 'input.mjs'), readFileSync(src, 'utf8'));
-const { isContinueKey, attachContinueHandlers, startDesktopHold, DESKTOP_HOLD_MS } = await import(pathToFileURL(join(dir, 'input.mjs')).href);
+const { titleScreenName, isContinueKey, attachContinueHandlers, startDesktopHold, DESKTOP_HOLD_MS } = await import(pathToFileURL(join(dir, 'input.mjs')).href);
 
 function target() {
     const t = new EventTarget();
@@ -103,4 +103,12 @@ test('desktop hold: cancel stops it', () => {
     const cancel = startDesktopHold(c, d, 1200, () => calls++, t);
     cancel(); t.fire(); c.dispatchEvent(new Event('click'));
     assert.equal(calls, 0);
+});
+
+test('titleScreenName prefers the scenario title name and falls back to display_name', () => {
+    assert.equal(titleScreenName({ missionDisplayName: 'Awareness E8: After the click', missionTitleName: 'After the click' }), 'After the click');
+    assert.equal(titleScreenName({ missionDisplayName: 'm01 First Contact' }), 'm01 First Contact');
+    assert.equal(titleScreenName({ missionDisplayName: 'm01 First Contact', missionTitleName: '   ' }), 'm01 First Contact');
+    assert.equal(titleScreenName({ missionDisplayName: 'x', missionTitleName: 5 }), 'x');
+    assert.equal(titleScreenName(undefined), '');
 });
