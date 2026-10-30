@@ -50,7 +50,7 @@
         "situation": "Samira has been in early, taking calls in the stairwell, and visiting HR.",
         "options": [
           { "id": "confront", "label": "Ask her outright if she's leaving with Ross", "safe": false },
-          { "id": "kind", "label": "Offer a kind word; tell her manager if you're worried", "safe": true, "approvedRoute": true }
+          { "id": "kind", "label": "Ask how she is, kindly, and leave it there", "safe": true, "approvedRoute": true }
         ]
       }
     ],
@@ -78,7 +78,7 @@
     },
     "samira": {
       "confront": "Samira, whose father was in hospital, was asked if she was 'in on it'. She wasn't. The question made a hard week harder.",
-      "kind": "A kind word, and a quiet word to her manager because you were worried: Samira's father was in hospital. Nobody was accused, and she got support. That is what good looks like."
+      "kind": "A kind word, and nothing more: Samira's father was in hospital, and she told you when she was ready. Nobody was accused, and she got support from the people she chose. That is what good looks like."
     }
   },
 
@@ -107,9 +107,9 @@
       "launchButton": "Open the form",
       "intro": "Write it as facts you saw yourself, not a verdict on anyone. Pick the facts to put in the report.",
       "feedbackFacts": "Good. Facts, not a verdict, are what a fair concern looks like. The note below says who to tell. You don't have to be sure, and you may not hear the outcome, because that's confidential too.",
-      "feedbackFactsVerdict": "Your facts are exactly what's needed. Just leave the conclusion out, and let whoever looks into it reach their own. That's fairer to everyone, and you don't have to be sure to raise a fair concern.",
-      "feedbackVerdictOnly": "That's a conclusion, not something you saw. Leave the verdict to the people whose job and lawful process it is; give them what you actually noticed instead. If you're wrong, a verdict is unfair to someone who has done nothing.",
-      "feedbackThinVerdict": "Those facts are a good start. Add a couple more of the things you saw yourself, and leave the conclusion out for whoever looks into it."
+      "feedbackFactsVerdict": "Your facts are exactly what's needed. A conclusion about a person does not belong in the report, so take those picks out and let whoever looks into it reach their own. That's fairer to everyone, and you don't have to be sure to raise a fair concern.",
+      "feedbackVerdictOnly": "That's a conclusion, not something you saw, and it does not belong in the report. Take it out and leave the verdict to the people whose job and lawful process it is; give them what you actually noticed instead. If you're wrong, a verdict is unfair to someone who has done nothing.",
+      "feedbackThinVerdict": "Those facts are a good start. A conclusion about a person does not belong in the report, so take those picks out. Then add a couple more of the things you saw yourself."
     }
   }
 }
