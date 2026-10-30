@@ -990,6 +990,11 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             if (verdict === 'report' && isStr(rec.truth.reportLine)) return rec.truth.reportLine;
             if (verdict === 'verify' && isStr(rec.truth.verifyLine)) return rec.truth.verifyLine;
             if (verdict === 'trust' && isStr(rec.truth.kindLine)) return `Not this time. ${rec.truth.kindLine}`;
+        } else {
+            // E12 C4: a genuine item's own trustLine / deleteLine must also win before the call and
+            // push kinds' set override below, or a call set with labels.verdictFeedback never shows them.
+            if (verdict === 'trust' && isStr(rec.truth.trustLine)) return rec.truth.trustLine;
+            if (verdict === 'delete' && isStr(rec.truth.deleteLine)) return rec.truth.deleteLine;
         }
         // The call and push kinds carry their own built lines (phone wording: "ring back on the
         // number you hold"); a set that relabels them for another setting (E12's reception desk)

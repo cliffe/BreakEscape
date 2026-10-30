@@ -144,6 +144,17 @@ test('item 8: truth.deleteLine is used for a genuine item turned away / deleted'
     act(s, 'r1', 'delete');
     assert.match($(s, '.tri-card-verdict').textContent, /nobody was left stuck/);
 });
+test('item 8 (E12 C4): a call item\'s deleteLine beats the set-wide verdictFeedback.delete.real', () => {
+    const call = { id: 'c1', kind: 'call', callerId: 'Visitor at the desk', time: '09:20',
+        transcript: [{ who: 'Caller', text: 'Morning, I am here to see Yasmin.' }],
+        truth: { isPhish: false, flags: [], whyFine: { default: 'On the list.' }, deleteLine: 'They were on today\'s list and were left in the lobby.' } };
+    const s = open(awareSet([call, phish('p1')], { labels: { verdictFeedback: { delete: { real: 'Turning them away was not needed.' } } } }));
+    click($(s, '.tri-start'));
+    act(s, 'c1', 'refuse');
+    const line = $(s, '.tri-card-verdict').textContent;
+    assert.match(line, /left in the lobby/, 'the item line wins');
+    assert.doesNotMatch(line, /was not needed/, 'the set line does not');
+});
 
 // ── item 17: the no-ticks confirm prompt reads as optional ─────────────────────
 test('item 17: the default confirm prompt names the second Confirm as optional', () => {
