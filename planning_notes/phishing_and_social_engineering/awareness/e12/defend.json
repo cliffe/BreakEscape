@@ -39,7 +39,7 @@
       "criticalWhat": "letting in a visitor you hadn't checked",
       "_bands": "B1 major F-E12-1: the default band headlines read 'you caught the phish and knew why', which is wrong for a visitor episode (no phish). Reworded for a reception desk; same 85/60/0 cut points as every other awareness set.",
       "bands": [
-        { "min": 85, "headline": "Sharp: you spotted the risky visitors and knew why" },
+        { "min": 85, "headline": "Well done: you spotted the risky visitors and knew why" },
         { "min": 60, "headline": "Getting there: a few tells slipped past" },
         { "min": 0, "headline": "Worth practising: here's where to look first" }
       ],

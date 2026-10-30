@@ -51,7 +51,7 @@
         "deepfake_request": "Knowing a face or voice can't prove who's asking"
       },
       "bands": [
-        { "min": 85, "headline": "Sharp: you caught the fakes and knew why" },
+        { "min": 85, "headline": "Well done: you caught the fakes and knew why" },
         { "min": 60, "headline": "Getting there: a few tells slipped past" },
         { "min": 0, "headline": "Worth practising: here's where to look first" }
       ],
