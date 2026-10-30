@@ -652,3 +652,38 @@
 .mail-chip .mail-chip-address {
     font-family: var(--se-font-address);
 }
+
+/* Ink-driven plain email: suggested-reply chips under an open message and in Compose
+   (systems/mail-ink.js; README_scenario_design.md "Ink-driven email"). */
+.mail-suggest { margin: 12px 0 0; }
+.mail-suggest-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+.mail-suggest-chip {
+    max-width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 6px 14px;
+    text-align: left;
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+    line-height: 1.3;
+    border-radius: 18px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+.mail-suggest-chip:hover, .mail-suggest-chip:focus-visible { border-color: var(--ui-accent, #ffcc44); }
+.mail-ink-compose { display: flex; flex-direction: column; gap: 10px; }
+.mail-ink-body {
+    white-space: pre-wrap;
+    padding: 10px 12px;
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+    line-height: 1.45;
+    color: inherit;
+    border: 1px solid var(--ui-border, rgba(168, 178, 200, 0.4));
+    background: var(--ui-slot-bg, rgba(66, 80, 118, 0.4));
+    overflow-wrap: anywhere;
+}
+.mail-ink-waiting, .mail-ink-nothing { font-style: italic; }
+.mail-ink-own, .mail-ink-suggestions, .mail-ink-another { margin: 6px 0; }

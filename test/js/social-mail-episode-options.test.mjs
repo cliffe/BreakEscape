@@ -18,7 +18,7 @@ for (const rel of [
     'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
     'utils/display-dashes.js', 'ui/modal-stack.js',
     'systems/phish-rules.js', 'systems/global-writer.js', 'systems/social-influence.js', 'ui/influence-bar.js', 'systems/mail-scheduler.js',
-    'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
+    'systems/mail-ink.js', 'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
     'minigames/mail-client/mail-data.js', 'minigames/mail-client/mail-notification.js',
     'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js',
     'minigames/landing-page-builder/landing-page-model.js'

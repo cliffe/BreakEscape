@@ -106,6 +106,38 @@ export function contactAddress(contact) {
     return arr(contact && contact.addresses).find(isStr) || '';
 }
 
+// ───────────────────────────────────────────────── labels
+
+/**
+ * The few words the plain (ink) composer and the suggested-reply chips show. A scenario
+ * overrides any of them with `social.mailClient.labels`; nothing here mentions judging or red
+ * flags, which the plain composer never shows.
+ */
+export const PLAIN_LABELS = Object.freeze({
+    suggestedReplies: 'Suggested replies',
+    loading: 'Loading suggestions...',
+    waiting: 'Message sent. Waiting for a reply.',
+    nothing: 'Nothing to write to them about yet.',
+    chooseAnother: 'Choose another reply',
+    writeYourOwn: 'Write your own message',
+    backToSuggestions: 'Back to suggested replies',
+    from: 'From',
+    subject: 'Subject',
+    attachments: 'Attachments',
+    send: 'Send',
+    sending: 'Sending...',
+    sentNote: 'Message sent.',
+    unavailable: 'That reply is no longer available.',
+    forwardMissing: 'The message you meant to forward is not in this inbox.'
+});
+
+export function plainLabels(config) {
+    const own = config && isObject(config.labels) ? config.labels : {};
+    const out = { ...PLAIN_LABELS };
+    for (const key of Object.keys(PLAIN_LABELS)) if (isStr(own[key])) out[key] = own[key];
+    return out;
+}
+
 // ───────────────────────────────────────────────── tags
 
 /** { action, param } for one raw tag ("reply_after:20" -> reply_after / "20"). */

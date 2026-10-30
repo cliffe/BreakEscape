@@ -20,7 +20,7 @@ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of ['systems/phish-rules.js',
     'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
     'utils/display-dashes.js', 'ui/modal-stack.js',
-    'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
+    'systems/mail-ink.js', 'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
     'minigames/mail-client/mail-data.js', 'minigames/mail-client/mail-notification.js',
     'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js',
     'minigames/landing-page-builder/landing-page-model.js',

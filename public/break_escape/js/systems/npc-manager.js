@@ -783,6 +783,7 @@ export default class NPCManager {
         conversationMode: mapping.conversationMode,  // Add conversation mode (e.g., 'person-chat')
         changeStoryPath: mapping.changeStoryPath,  // Change the NPC's story file
         sendTimedMessage: mapping.sendTimedMessage,  // Send a timed message when event triggers
+        sendEmail:     mapping.sendEmail     || null,   // { npc?, knot, delaySeconds?, account? }: an ink contact emails the player
         setGlobal: mapping.setGlobal,        // { varName: value } — set global variables directly
         completeTask: mapping.completeTask,  // taskId or [taskId] — complete tasks directly
         skipTask: mapping.skipTask,          // taskId or [taskId] — mark tasks skipped (can no longer be done)
@@ -1119,6 +1120,19 @@ export default class NPCManager {
       console.log(`📨 Scheduled timed message for ${npcId}: "${msgConfig.message}" (delay: ${msgConfig.delay}ms, targetKnot: ${msgConfig.targetKnot || 'default'})`);
     }
     
+    // Ink-driven email (README_scenario_design.md "Ink-driven email"): a contact's story starts a
+    // thread. `npc` defaults to the NPC that owns this mapping.
+    if (config.sendEmail && typeof config.sendEmail === 'object') {
+      const se = config.sendEmail;
+      import('./mail-ink.js').then((m) => {
+        m.queuePlainEmail(window.mailScheduler, window.gameScenario, {
+          npcId: typeof se.npc === 'string' && se.npc ? se.npc : npcId,
+          knot: se.knot, delaySeconds: Number(se.delaySeconds) || 0,
+          accountId: typeof se.account === 'string' ? se.account : null
+        });
+      }).catch((e) => console.warn('[event mapping] sendEmail failed', e));
+    }
+
     // Debug: Log the full config to see what we're working with
     console.log(`🔍 Event config for ${eventPattern}:`, {
       conversationMode: config.conversationMode,

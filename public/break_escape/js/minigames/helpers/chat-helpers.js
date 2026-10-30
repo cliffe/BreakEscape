@@ -187,6 +187,30 @@ export async function processGameActionTags(tags, ui, options = {}) {
                     }
                     break;
                     
+                case 'send_email':
+                    {
+                        // # send_email:<npc>:<knot>[:<seconds>]: an ink contact starts an email thread
+                        // (systems/mail-ink.js queuePlainEmail), from any chat.
+                        const bits = (param || '').split(':').map((b) => b.trim());
+                        if (bits[0] && bits[1]) {
+                            try {
+                                const mailInk = await import('../../systems/mail-ink.js');
+                                const queued = mailInk.queuePlainEmail(window.mailScheduler, window.gameScenario, {
+                                    npcId: bits[0], knot: bits[1], delaySeconds: Number(bits[2]) || 0
+                                });
+                                result.success = !!queued;
+                                result.message = queued ? `Email queued from ${bits[0]}` : `⚠️ send_email: ${bits[0]} is not an ink contact`;
+                            } catch (e) {
+                                result.message = '⚠️ send_email failed';
+                                console.warn(result.message, e);
+                            }
+                        } else {
+                            result.message = '⚠️ send_email needs <npc>:<knot>';
+                            console.warn(result.message);
+                        }
+                    }
+                    break;
+
                 case 'trigger_minigame':
                     {
                         // # trigger_minigame:<type>[|key=value...]: opens the starter registered
