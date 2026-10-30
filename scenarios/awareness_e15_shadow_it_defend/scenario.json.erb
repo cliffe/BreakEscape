@@ -35,8 +35,8 @@
       },
       "conclusionScreen": {
         "type": "success",
-        "title": "Shortcuts sorted",
-        "body": "You've sorted the inbox and matched the approved swaps, and finished this episode."
+        "title": "Shortcuts done",
+        "body": "You've been through the inbox and the approved swaps, and finished this episode. The debrief covers each one."
       },
       "tasks": [
         {
@@ -84,6 +84,7 @@
               "hint": "I'd check first: ring the sender, or ask IT on a number I already hold."
             }
           },
+          "verdictFeedback": {"delete": {"real": "That one was real, and deleting it left a colleague or a useful tool unseen. Acting on it, or checking it first, was the right call here."}},
           "teamBadge": "Risky shortcuts stopped for the team: {n}",
           "teamBadgeTitle": "Found sticks and unsafe shortcuts you reported or checked this round rather than acting on them",
           "phishCaughtLabel": "Caught in time",
@@ -161,6 +162,7 @@
             },
             "truth": {
               "isPhish": true,
+              "critical": true,
               "flags": [
                 "found_media"
               ],
@@ -204,6 +206,7 @@
             },
             "truth": {
               "isPhish": true,
+              "critical": false,
               "flags": [
                 "unapproved_tool"
               ],
@@ -244,6 +247,7 @@
             },
             "truth": {
               "isPhish": true,
+              "critical": false,
               "flags": [
                 "found_media"
               ],
@@ -287,6 +291,7 @@
             },
             "truth": {
               "isPhish": true,
+              "critical": false,
               "flags": [
                 "unapproved_tool"
               ],
@@ -332,9 +337,9 @@
               "flags": [],
               "whyFine": {
                 "unapproved_tool": "This is the approved file-sharing service, not a free site: it's on tarrowby.example, shared to a named person, and the link expires. That's exactly the safe way to send a big file.",
-                "default": "A share-link email is just what a phish copies, so it's fair to look twice. But this one is Tarrowby's own service on tarrowby.example, from a colleague you know, to you by name, with an end date. Open it."
+                "default": "A share-link email is just what a phish copies, so it's fair to look twice. But this one is Tarrowby's own service on tarrowby.example, from a colleague you know, to you, with an end date. Open it."
               },
-              "falseAlarmCost": "Reported as a scam, the Monday pack sits unread and the deadline slips while someone checks a genuine share."
+              "falseAlarmCost": "If a genuine share goes unopened, the Monday pack sits unread and the deadline slips while Shauna waits or someone checks it."
             }
           },
           {
@@ -344,9 +349,9 @@
               "address": "nilesh.solanki@tarrowby.example"
             },
             "to": "you@tarrowby.example",
-            "subject": "Re: Request a tool, your PDF editor is approved",
+            "subject": "The approved PDF editor is on the software portal",
             "time": "11:15",
-            "body": "Hi,\nThanks for asking rather than installing one off the web. The editor you wanted is fine, and it's already on the software portal under Tools, so you can add it yourself now. If you hit the slow share again, let me know and we'll sort it.\nNilesh\nIT Service Desk",
+            "body": "Hi,\nA few people have asked about editing PDFs, so the approved editor is now on the software portal under Tools. You can add it yourself, no ticket needed. If the share is slow again, tell us and we'll sort it.\nNilesh\nIT Service Desk",
             "auth": {
               "spf": "pass",
               "dkim": "pass",
@@ -358,9 +363,9 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "You asked IT for a tool and they've answered from Nilesh's real address with the approved one. Asking first is exactly what turns a workaround into a quick yes. This one was safe to act on."
+                "default": "This is IT's own announcement, from Nilesh's real address on tarrowby.example, pointing to the firm's software portal rather than a link or an installer. It is the approved version of what the free PDF tool offer pretends to be. Safe to act on."
               },
-              "falseAlarmCost": "Reported as a scam, a genuine reply from IT sits in a queue while someone checks it."
+              "falseAlarmCost": "Reported or deleted, a genuine note from IT goes unread, and the approved tool stays unused while the free one stays tempting."
             }
           }
         ]
@@ -463,7 +468,7 @@
         "strings": {
           "title": "Swap Shop",
           "heading": "Match each shortcut to the approved way",
-          "intro": "Each card is a shortcut someone might reach for under a deadline. Drop it on the approved way that does the same job safely, and the reason shows straight after. Nothing here is marked.",
+          "intro": "Each card is a shortcut someone might reach for under a deadline. Pick the approved way that does the same job safely, and the reason shows straight after. Nothing here is marked.",
           "pickLabel": "Which approved way?",
           "teach": "Approved way: {bin}.",
           "teachFits": "That's the one.",
@@ -560,7 +565,7 @@
           "observationVariants": [
             {
               "condition": "globalVars.episode_e15_shadow_it_defend_defend_done",
-              "value": "A touch-screen kiosk showing a Tarrowby desktop. The sticks and messages are sorted and the swaps are matched."
+              "value": "A touch-screen kiosk showing a Tarrowby desktop. The sticks, messages and swaps have all been gone through."
             }
           ],
           "minigameData": {
