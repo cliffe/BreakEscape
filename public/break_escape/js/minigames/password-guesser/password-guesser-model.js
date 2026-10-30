@@ -56,6 +56,7 @@ export const DEFAULT_TEXT = Object.freeze({
     trying: 'still being tried',
     queued: 'waiting',
     found: 'found',
+    blocked: 'not run',
     sprayed: 'tried once on every account',
     noteOrg: 'No real password, list or breach is used here. Every name, word and row is made up for the exercise.',
     rosterHeading: 'Who works here',
@@ -71,6 +72,7 @@ export const DEFAULT_TEXT = Object.freeze({
     sprayPass: '{candidate}',
     sprayMissing: 'A pass you could not run: the word or the staff list is still missing.',
     sprayResult: '{n} of {m} accounts opened',
+    sprayNoTargets: 'No staff accounts were built, so there was nothing to spray.',
     stuffHeading: 'Passwords from somewhere else',
     stuffIntro: 'A password leaked from another site was tried here. Where a person used it twice, the account opens.',
     stuffMasked: '......',
@@ -230,10 +232,16 @@ function sprayPanel(config, roster, words) {
     });
     const authored = Number.isInteger(spray.opensCount) && spray.opensCount > 0 ? spray.opensCount : 0;
     const opens = ran > 0 ? Math.min(authored, roster.accounts) : 0;
+    // E18 B2 item 4: a zero-research run built no roster, so "0 of 0 accounts opened" followed by
+    // the "did not work" status read as a confusing double negative. Give it its own plain line
+    // ("nothing to spray") and a neutral "not run" status instead of a failed-guess one.
+    const noTargets = !roster.accounts;
     rows.push({
         id: 'spray_result',
-        text: textFor(config, 'sprayResult').split('{n}').join(String(opens)).split('{m}').join(String(roster.accounts)),
-        outcome: opens > 0 ? 'opens' : 'struck',
+        text: noTargets
+            ? textFor(config, 'sprayNoTargets')
+            : textFor(config, 'sprayResult').split('{n}').join(String(opens)).split('{m}').join(String(roster.accounts)),
+        outcome: noTargets ? 'blocked' : (opens > 0 ? 'opens' : 'struck'),
         ...(isStr(spray.note) ? { note: spray.note } : {})
     });
     return { id: 'spray', heading: textFor(config, 'sprayHeading'), intro: textFor(config, 'sprayIntro'), rows };
@@ -289,7 +297,7 @@ export function buildRun(config, globals = null) {
     return { mode, note: built.note, panels: built.panels, rows };
 }
 
-const STATE_OF = Object.freeze({ struck: 'struck', missing: 'notfound', opens: 'opened', holds: 'trying', found: 'found', sprayed: 'sprayed' });
+const STATE_OF = Object.freeze({ struck: 'struck', missing: 'notfound', opens: 'opened', holds: 'trying', found: 'found', sprayed: 'sprayed', blocked: 'blocked' });
 
 /** How a row reads: 'queued' until it is reached, then by its outcome. */
 export function rowState(row, resolved) {
