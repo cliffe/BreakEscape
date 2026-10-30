@@ -1,6 +1,6 @@
 {
   "display_name": "Awareness E15: Shadow IT (defend only)",
-  "description": "An awareness episode of about 8 minutes for all staff, on the defending side only. Sort found sticks and shortcut messages at Tarrowby Logistics, a fictional haulier, and match each shortcut to its approved way. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
+  "description": "An awareness episode of about 8 minutes for all staff, on the defending side only. Sort found sticks and shortcut messages at Tarrowby Logistics, a fictional haulier, and match each shortcut to its approved way. Each answer is explained, and reporting when you're unsure is always fine, though a real message does take a colleague's time to check.",
   "difficulty_level": 1,
   "scoring": "completion",
   "secgen_scenario": null,

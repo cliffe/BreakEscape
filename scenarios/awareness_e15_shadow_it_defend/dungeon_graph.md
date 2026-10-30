@@ -2,7 +2,7 @@
 
 # awareness_e15_shadow_it_defend — Scenario Graph Reference
 
-You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack is due by Monday and the share is slow. Found sticks and 'quicker way' messages are waiting: some are safe, some aren't. Sort them, and match each shortcut to the approved way. Reporting or checking when you're unsure is always fine and never marked down.
+You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack is due by Monday and the share is slow. Found sticks and 'quicker way' messages are waiting: some are safe, some aren't. Sort them, and match each shortcut to the approved way. Reporting or checking when you're unsure is always fine, though a real message does take a colleague's time to check.
 
 ## Scenario Statistics
 
