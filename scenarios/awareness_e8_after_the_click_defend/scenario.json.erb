@@ -36,7 +36,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "Signs done",
-        "body": "You've been through the signs in the colleague's inbox and finished this episode. The debrief covers each one. If it ever happens to you, report it straight away, change your password on the real site, and leave the device as it is."
+        "body": "You've worked through the signs in the colleague's inbox. The debrief goes through each one. If it ever happens to you, report it straight away, change your password on the real site, and leave the device as it is."
       },
       "tasks": [
         {
@@ -135,6 +135,30 @@
         },
         "messages": [
           {
+            "id": "e8_push_abroad",
+            "kind": "push",
+            "time": "15:02",
+            "push": {
+              "app": "Quayholt Sign-in",
+              "request": "Are you trying to sign in?",
+              "account": "ayaan.warsame@quayholt.example",
+              "location": "Unknown location, outside the UK",
+              "device": "Windows PC"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unrequested_mfa_push"
+              ],
+              "perFlagNote": {
+                "unrequested_mfa_push": "A sign-in prompt you did not start, from a Windows PC outside the UK that is not yours, means someone has your password and is hoping you will tap Approve. Deny it and report it"
+              },
+              "ifTrusted": "Approving would let the sender into your account, with your Quayholt access, from a computer you've never used.",
+              "reportReply": "Thanks. We've reset your password and blocked that sign-in. The prompt is what stopped them.",
+              "critical": true
+            }
+          },
+          {
             "id": "e8_sent_invoice",
             "from": {
               "name": "Ayaan Warsame",
@@ -176,7 +200,8 @@
                 "secrecy_or_bypass": "It quietly moves the client to a new account and asks them to keep it quiet, which is how a mailbox takeover is cashed out"
               },
               "ifTrusted": "If you leave it, the client pays a criminal's account and your mailbox keeps sending in your name.",
-              "reportReply": "Thanks. We've locked the account, warned the client not to pay, and started the recovery. You caught it from the Sent folder, which is exactly the sign."
+              "reportReply": "Thanks. We've locked the account, warned the client not to pay, and started the recovery. You caught it from the Sent folder, which is exactly the sign.",
+              "critical": true
             }
           },
           {
@@ -212,30 +237,8 @@
                 "unrequested_reset": "The address is really Quayholt's and this is a genuine confirmation, but you did not change your password, so someone else did"
               },
               "ifTrusted": "If you ignore it, the attacker keeps the new password and your access.",
-              "reportReply": "Thanks. We've reset it again to one only you control and locked the old session. A confirmation for a change you didn't make is always worth reporting."
-            }
-          },
-          {
-            "id": "e8_push_abroad",
-            "kind": "push",
-            "time": "15:02",
-            "push": {
-              "app": "Quayholt Sign-in",
-              "request": "Are you trying to sign in?",
-              "account": "ayaan.warsame@quayholt.example",
-              "location": "Unknown location, outside the UK",
-              "device": "Windows PC"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "unrequested_mfa_push"
-              ],
-              "perFlagNote": {
-                "unrequested_mfa_push": "A sign-in prompt you did not start, from a Windows PC outside the UK that is not yours, means someone has your password and is hoping you will tap Approve. Deny it and report it"
-              },
-              "ifTrusted": "Approving would let the sender into your account, with your Quayholt access, from a computer you've never used.",
-              "reportReply": "Thanks. We've reset your password and blocked that sign-in. The prompt is what stopped them."
+              "reportReply": "Thanks. We've reset it again to one only you control and locked the old session. A confirmation for a change you didn't make is always worth reporting.",
+              "critical": false
             }
           },
           {
@@ -259,7 +262,7 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "Reuben's real address, and a colleague owning up to a mistake and asking for help; reading it and helping him report it is the right move, and reporting it yourself also scores full."
+                "default": "Reuben's real address, and a colleague owning up to a mistake and asking for help. Reading it and helping him is the call that fits. A report is never marked down, but it sends security a colleague's honest slip."
               }
             }
           },
@@ -313,7 +316,7 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "IT's real address, a planned-outage notice that is on the intranet too and asks nothing of you now. It mentions signing in again, which can read like the signs above, but this is a planned notice with no link and no rush: after a run of real signs it is tempting to report everything, and trusting this is right, while verifying or reporting it still scores full."
+                "default": "IT's real address, a planned-outage notice that is on the intranet too and asks nothing of you now. It mentions signing in again, which can read like the signs above, but it has no link and no rush. After a run of real signs it is tempting to report everything. Trusting it is the call that fits, and a report is never marked down."
               }
             }
           }
@@ -459,7 +462,7 @@
           "observationVariants": [
             {
               "condition": "globalVars.episode_e8_after_the_click_defend_defend_done",
-              "value": "A touch-screen kiosk showing the colleague's Quayholt inbox after a click. The signs have all been gone through."
+              "value": "A touch-screen kiosk showing the colleague's Quayholt inbox after a click. Nothing left to do here."
             }
           ],
           "minigameData": {

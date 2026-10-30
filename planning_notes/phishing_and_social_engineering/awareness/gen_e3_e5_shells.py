@@ -134,11 +134,11 @@ EPISODES = {
             'aim': ('service_desk_aim', 'Cover the service desk', 'Work through the service desk queue at the training kiosk.'),
             'task': ('work_service_desk_queue', 'Work through the service desk queue'),
             'kiosk': ("A touch-screen kiosk showing the Quayholt service desk queue. Three calls are waiting, and a phone beside it shows a sign-in prompt.",
-             'A touch-screen kiosk showing the Quayholt service desk queue. The calls and the sign-in prompt have all been gone through.'),
+             'A touch-screen kiosk showing the Quayholt service desk queue. Episode finished.'),
             'display': 'Awareness E3: Helpdesk reset (service desk only)',
             'desc': "An awareness episode of about 8 minutes for IT service desk staff, on the defending side only. Sit in the service desk seat at Quayholt Insurance, a fictional company: three callers want password resets or changes to their sign-in, and a sign-in prompt turns up on your own phone. Each answer is explained, and ringing back when you're unsure is always fine and never marked down.",
             'minutes': 8,
-            'ending': ('Service desk queue done', "You've been through all three calls and the sign-in prompt, and finished this episode. The debrief covers each one."),
+            'ending': ('Service desk queue done', "That's the three calls and the sign-in prompt finished. The debrief goes through each one."),
         },
         'check': {
             'items_pre': 'Ten items from the IT service desk queue: calls, a voicemail, emails and a sign-in prompt.',
@@ -173,7 +173,7 @@ EPISODES = {
             'display': 'Awareness E5: Sign-in pages (pages only)',
             'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Five web pages from links in an inbox at Quayholt Insurance, a fictional company: some are the real sign-in, some were built to collect passwords. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
             'minutes': 8,
-            'ending': ('Sign-in pages checked', "You've been through all five pages and finished this episode. The debrief covers each one."),
+            'ending': ('Sign-in pages checked', "That's all five pages finished. The debrief goes through each one."),
         },
         'check': {
             'items_pre': 'Ten items from a Quayholt inbox, emails and pages opened from links.',

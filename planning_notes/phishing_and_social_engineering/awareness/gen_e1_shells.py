@@ -215,8 +215,8 @@ def defend_only():
         done, globals_, {'triageSets': [s], 'awarenessEpisode': ep},
         HOSTS['adaeze'], 'adaeze_okafor',
         ("A touch-screen kiosk showing Brightwell's payments inbox. Six messages are waiting.",
-             "A touch-screen kiosk showing Brightwell's payments inbox. All six messages have been gone through."),
-        success_screen('Payments inbox done', "You've been through all six messages and finished this episode. The debrief covers each one."))
+             "A touch-screen kiosk showing Brightwell's payments inbox. That's this one finished."),
+        success_screen('Payments inbox done', "That's this episode finished. The debrief goes through each one."))
     meta = {
         'display_name': 'Awareness E1: Invoice fraud (inbox only)',
         'description': "An awareness episode of about 8 minutes for finance staff, on the inbox side only. Cover the payments inbox at Brightwell Foods, a fictional company, before the afternoon payment run: six messages, some real and some built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",

@@ -73,7 +73,6 @@
     "se_osint_state": {},
     "se_intel_quayholt_it_desk": false,
     "se_intel_quayholt_sso_migration": false,
-    "se_intel_quayholt_general_contact": false,
     "se_intel_quayholt_ayaan_claims": false,
     "se_intel_quayholt_ayaan_busy": false,
     "phish_takeover_victim_landed": false,
@@ -173,7 +172,33 @@
         },
         "messages": [
           {
+            "id": "e8_push_abroad",
+            "_note": "Row 3. Authenticator prompt the learner did not start, from a device that is not theirs. Built from the E3 e3_push_early card (account and time changed; perFlagNote reworded for the daytime context: the E3 wording references 02:14 and being asleep, which does not fit 11:48). Deny and report; the push deny_report action scores as Report.",
+            "kind": "push",
+            "time": "15:02",
+            "push": {
+              "app": "Quayholt Sign-in",
+              "request": "Are you trying to sign in?",
+              "account": "ayaan.warsame@quayholt.example",
+              "location": "Unknown location, outside the UK",
+              "device": "Windows PC"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unrequested_mfa_push"
+              ],
+              "perFlagNote": {
+                "unrequested_mfa_push": "A sign-in prompt you did not start, from a Windows PC outside the UK that is not yours, means someone has your password and is hoping you will tap Approve. Deny it and report it"
+              },
+              "ifTrusted": "Approving would let the sender into your account, with your Quayholt access, from a computer you've never used.",
+              "reportReply": "Thanks. We've reset your password and blocked that sign-in. The prompt is what stopped them.",
+              "critical": true
+            }
+          },
+          {
             "id": "e8_sent_invoice",
+            "_note": "Row 1. Takeover disguised as routine claims work: a settlement email in the victim's own Sent folder, sent by whoever is signed in as Ayaan. It reads like ordinary business on a skim; the tell is that Ayaan did not write it, and the detail that it quietly moves the client to a new account and asks them to keep it quiet. Spoofed-but-passing: it really left Ayaan's authenticated mailbox, so SPF/DKIM/DMARC all pass on quayholt.example. An inline copy of the flip's fa_sent sign, with a distinct id.",
             "from": {
               "name": "Ayaan Warsame",
               "address": "ayaan.warsame@quayholt.example"
@@ -182,7 +207,13 @@
             "subject": "Your settlement payment",
             "time": "15:08",
             "body": "Hello,\nWe're ready to settle your claim. Please make the payment to the account on the attached remittance, and use that account for any future invoices too, as our details have changed. Grateful if you'd keep this to yourself until it has gone through.\nKind regards,\nAyaan Warsame\nClaims, Quayholt Insurance",
-            "attachments": [ { "id": "remit", "label": "Remittance_advice.pdf", "kind": "pdf" } ],
+            "attachments": [
+              {
+                "id": "remit",
+                "label": "Remittance_advice.pdf",
+                "kind": "pdf"
+              }
+            ],
             "auth": {
               "spf": "pass",
               "dkim": "pass",
@@ -208,11 +239,13 @@
                 "secrecy_or_bypass": "It quietly moves the client to a new account and asks them to keep it quiet, which is how a mailbox takeover is cashed out"
               },
               "ifTrusted": "If you leave it, the client pays a criminal's account and your mailbox keeps sending in your name.",
-              "reportReply": "Thanks. We've locked the account, warned the client not to pay, and started the recovery. You caught it from the Sent folder, which is exactly the sign."
+              "reportReply": "Thanks. We've locked the account, warned the client not to pay, and started the recovery. You caught it from the Sent folder, which is exactly the sign.",
+              "critical": true
             }
           },
           {
             "id": "e8_reset_confirm",
+            "_note": "Row 2. Takeover sign from Quayholt's genuine service-desk address: a real confirmation of a change the learner did not make. Pairs softly with row 6 (genuine IT notice from the same real address).",
             "from": {
               "name": "Quayholt IT",
               "address": "it-servicedesk@quayholt.example"
@@ -244,34 +277,13 @@
                 "unrequested_reset": "The address is really Quayholt's and this is a genuine confirmation, but you did not change your password, so someone else did"
               },
               "ifTrusted": "If you ignore it, the attacker keeps the new password and your access.",
-              "reportReply": "Thanks. We've reset it again to one only you control and locked the old session. A confirmation for a change you didn't make is always worth reporting."
-            }
-          },
-          {
-            "id": "e8_push_abroad",
-            "kind": "push",
-            "time": "15:02",
-            "push": {
-              "app": "Quayholt Sign-in",
-              "request": "Are you trying to sign in?",
-              "account": "ayaan.warsame@quayholt.example",
-              "location": "Unknown location, outside the UK",
-              "device": "Windows PC"
-            },
-            "truth": {
-              "isPhish": true,
-              "flags": [
-                "unrequested_mfa_push"
-              ],
-              "perFlagNote": {
-                "unrequested_mfa_push": "A sign-in prompt you did not start, from a Windows PC outside the UK that is not yours, means someone has your password and is hoping you will tap Approve. Deny it and report it"
-              },
-              "ifTrusted": "Approving would let the sender into your account, with your Quayholt access, from a computer you've never used.",
-              "reportReply": "Thanks. We've reset your password and blocked that sign-in. The prompt is what stopped them."
+              "reportReply": "Thanks. We've reset it again to one only you control and locked the old session. A confirmation for a change you didn't make is always worth reporting.",
+              "critical": false
             }
           },
           {
             "id": "e8_colleague_slip",
+            "_note": "Row 4. Genuine: a colleague owning up to his own mistake and asking for help. Under the awareness profile a genuine email scores full whether Trusted (read it and help him) or Reported. Reuben Ofori is built Quayholt cast (the hb_vm_locked voicemail caller in E3).",
             "from": {
               "name": "Reuben Ofori",
               "address": "reuben.ofori@quayholt.example"
@@ -291,12 +303,13 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "Reuben's real address, and a colleague owning up to a mistake and asking for help; reading it and helping him report it is the right move, and reporting it yourself also scores full."
+                "default": "Reuben's real address, and a colleague owning up to a mistake and asking for help. Reading it and helping him is the call that fits. A report is never marked down, but it sends security a colleague's honest slip."
               }
             }
           },
           {
             "id": "e8_locked_files",
+            "_note": "Row 5. Malware sign: an on-screen ransom note on the shared drive. Built page card (no ENG-03 states), padlock false, no certificate. No ransom amount, no countdown, no pay button: E8 stops at 'report at once and leave the device as it is' (core_07 owns recovery). Mirror-pairs with row 6 (genuine IT maintenance) so 'anything to do with IT is bad' does not win.",
             "kind": "page",
             "subject": "Your files are locked",
             "time": "15:40",
@@ -326,6 +339,7 @@
           },
           {
             "id": "e8_maintenance",
+            "_note": "Row 6. Genuine: the calibration mirror, reworded so it looks a little alarming after a run of real signs. A planned-outage notice from IT's real address, on the intranet too, that mentions being signed out and signing in again (which echoes rows 2 and 3) but has no link and no rush and asks nothing of you now. Trusting is right; Verifying or Reporting still score full.",
             "from": {
               "name": "Quayholt IT",
               "address": "it-servicedesk@quayholt.example"
@@ -345,7 +359,7 @@
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "default": "IT's real address, a planned-outage notice that is on the intranet too and asks nothing of you now. It mentions signing in again, which can read like the signs above, but this is a planned notice with no link and no rush: after a run of real signs it is tempting to report everything, and trusting this is right, while verifying or reporting it still scores full."
+                "default": "IT's real address, a planned-outage notice that is on the intranet too and asks nothing of you now. It mentions signing in again, which can read like the signs above, but it has no link and no rush. After a run of real signs it is tempting to report everything. Trusting it is the call that fits, and a report is never marked down."
               }
             }
           }
@@ -434,7 +448,7 @@
         "flipIntro": "This is your email as Ayaan met it. He is the claims handler you sent it to, and this time he signed in.",
         "flipDefenderLine": "The service desk never sends sign-in requests by email, whatever address they come from; that is the one thing that would have given it away.",
         "flipNoSend": "Your email didn't go out this time, so there's nothing of yours to show. Next, you're the one whose account is being used, sorting the signs that follow.",
-        "flipMissed": "The defence is the same either way: next, you're the one whose account is being used, sorting the signs that follow.",
+        "flipMissed": "Ayaan didn't act on it. A detail didn't match what he'd been told, or the pressure to hurry made him stop and check, and that is how many attacks fail. The one this episode is about did land, in a better-made email. Next, you're the one whose account is being used, sorting the signs that follow.",
         "flipMissedHeading": "Nothing to replay this time",
         "flipLandedNoTells": "It landed clean, with nothing in it to catch this time. Next, you're the one whose account is being used, sorting the signs that follow.",
         "allRight": "You read every sign the right way. They all trace back to one email built to look like the service desk, and the real desk never asks you to sign in by email.",
@@ -480,7 +494,7 @@
     ],
     "intelFacts": {
       "quayholt_it_desk": {
-        "text": "Quayholt's IT notices to staff come from the service desk, it-servicedesk@quayholt.example.",
+        "text": "Quayholt's IT notices to staff come from the service desk, it-servicedesk@quayholt.example. General enquiries reach the company on enquiries@quayholt.example.",
         "subject": "itdesk",
         "source": "blk_itdesk",
         "provides": [
@@ -496,6 +510,19 @@
             "value": "itdesk_address",
             "label": "it-servicedesk@quayholt.example",
             "kind": "distinctive"
+          },
+          {
+            "type": "name",
+            "about": "sender",
+            "value": "quaygen_full",
+            "label": "Quayholt Insurance",
+            "kind": "generic"
+          },
+          {
+            "type": "address",
+            "value": "quaygen_address",
+            "label": "enquiries@quayholt.example",
+            "kind": "generic"
           }
         ],
         "reduceNote": "Publishing the address staff already trust for IT notices lets an attacker spoof a sender nobody questions."
@@ -521,27 +548,6 @@
           }
         ],
         "reduceNote": "A public change notice hands the attacker a ready-made reason for an unexpected sign-in prompt."
-      },
-      "quayholt_general_contact": {
-        "text": "Quayholt's general enquiries reach the company on enquiries@quayholt.example.",
-        "subject": "itdesk",
-        "source": "blk_contact",
-        "provides": [
-          {
-            "type": "name",
-            "about": "sender",
-            "value": "quaygen_full",
-            "label": "Quayholt Insurance",
-            "kind": "generic"
-          },
-          {
-            "type": "address",
-            "value": "quaygen_address",
-            "label": "enquiries@quayholt.example",
-            "kind": "generic"
-          }
-        ],
-        "reduceNote": "A general company name and address is less convincing to forge than the service desk address staff act on, but it is still an identity an attacker could borrow."
       },
       "quayholt_ayaan_claims": {
         "text": "Ayaan Warsame is a claims handler at Quayholt, ayaan.warsame@quayholt.example.",
@@ -713,14 +719,8 @@
                 {
                   "id": "blk_itdesk",
                   "kind": "field",
-                  "text": "IT notices come from the service desk, it-servicedesk@quayholt.example.",
+                  "text": "IT notices come from the service desk, it-servicedesk@quayholt.example. General enquiries: enquiries@quayholt.example.",
                   "fact": "quayholt_it_desk"
-                },
-                {
-                  "id": "blk_contact",
-                  "kind": "field",
-                  "text": "General enquiries: enquiries@quayholt.example.",
-                  "fact": "quayholt_general_contact"
                 }
               ]
             },
@@ -952,7 +952,7 @@
           "observationVariants": [
             {
               "condition": "globalVars.episode_e8_after_the_click_defend_done",
-              "value": "A touch-screen training kiosk for the Quayholt after-the-click exercise. The email is sent and all the signs have been gone through."
+              "value": "A touch-screen training kiosk for the Quayholt after-the-click exercise. That's this one finished."
             }
           ],
           "minigameData": {

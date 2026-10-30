@@ -31,7 +31,7 @@ VAR hub_quiet = false
             Anjali Rao: Good. The email's gone, and your colleague signed in, the way most people eventually do. Now take their seat and see what someone else is doing with their account.
         - else:
             Anjali Rao: Welcome to the Quayholt exercise. Everyone clicks something eventually, so today is about the ten minutes after, and how one quick report changes the ending.
-            Anjali Rao: Start at the kiosk: write the email first, then take the other seat and sort what turns up.
+            Anjali Rao: Start at the kiosk. Write the email first, then switch sides and play the colleague who clicked, sorting what turns up.
         }
     }
 }
