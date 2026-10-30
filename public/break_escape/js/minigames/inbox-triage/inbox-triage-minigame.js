@@ -49,7 +49,7 @@ import {
     FACTOR_ORDER, NONE_ID, chipIdsFor, chipLabel, redFlagString, skillName
 } from './triage-flags.js';
 import {
-    kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, kindLabel, kindLabelFor, verdictAction, emailHiddenReveal,
+    kindOf, isNonEmail, actionsFor, actionById, kindVerdictLine, renderKindSurface, clearKindTimers, kindLabel, kindLabelFor, verdictAction, emailHiddenReveal,
     shortTitle, realNounFor, choiceOptions, choiceOptionFor, choiceText, verdictFeedbackOverride, verdictVerbOverride
 } from './triage-kinds.js';
 import { comparisonFor, comparisonText } from './triage-comparison.js';
@@ -328,6 +328,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
     cleanup() {
         this._closeSheet(false);
+        clearKindTimers();
         this.reader?.destroy?.();
         this.reader = null;
         super.cleanup();

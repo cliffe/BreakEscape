@@ -120,6 +120,31 @@ test('fullScreenAlarm has a way out, and under prefers-reduced-motion adds no sh
     dom.window.matchMedia = base;
 });
 
+test('the alarm hint timer is cleared by clearKindTimers, the next surface and the minigame cleanup', async () => {
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    const alarm = () => surface({ state: 'fullScreenAlarm', heading: 'Locked', alarm: { hintAfterMs: 25 } });
+    // left alone, the hint appears after its delay
+    let node = alarm();
+    await wait(70);
+    assert.equal(node.querySelector('.tri-alarm-hint').hidden, false, 'the hint shows when nothing cancels it');
+    // cancelled directly
+    node = alarm();
+    kinds.clearKindTimers();
+    await wait(70);
+    assert.equal(node.querySelector('.tri-alarm-hint').hidden, true, 'clearKindTimers stops the hint timer');
+    // cancelled by drawing the next surface
+    node = alarm();
+    surface({ state: 'fullScreenAlarm', heading: 'Next', alarm: { hintAfterMs: 5000 } });
+    await wait(70);
+    assert.equal(node.querySelector('.tri-alarm-hint').hidden, true, 'a new surface clears the old pane timer');
+    kinds.clearKindTimers();
+    // cancelled by the minigame's own cleanup
+    node = alarm();
+    try { InboxTriageMinigame.prototype.cleanup.call({ _closeSheet() {}, reader: null }); } catch (e) { /* base cleanup needs a real scene */ }
+    await wait(70);
+    assert.equal(node.querySelector('.tri-alarm-hint').hidden, true, 'cleanup() clears the hint timer');
+});
+
 // ── verdictLabels ──────────────────────────────────────────────────────────────
 const labelsGetter = Object.getOwnPropertyDescriptor(InboxTriageMinigame.prototype, 'labels').get;
 
