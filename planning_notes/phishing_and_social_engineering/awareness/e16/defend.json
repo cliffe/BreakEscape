@@ -16,6 +16,7 @@
       "title": "A leaver's week",
       "brief": "It's a colleague's last week and messages are waiting: an offer, a request to borrow a login, some sign-in prompts, a favour and a couple of calls. For each one, choose Trust, Report, Delete or Verify (ring the service desk, or confirm on a number you already hold), then tick what you noticed. Keep your login to yourself, report what gets offered to you, and deny any sign-in prompt you didn't start. Reporting or checking when you're unsure is always fine and never marked down, and you are not being asked to investigate anyone.",
       "scoringProfile": "awareness",
+      "scoring": { "criticalPenalty": 5, "criticalPenaltyCap": 10 },
       "verifyVerdict": true,
       "feedbackMode": "immediate",
       "headerPanel": "off",
