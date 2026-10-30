@@ -162,6 +162,15 @@ module ValidateSocial
           end
         end
       end
+      # batch-10 (E8/E15/E16): the critical-miss penalty per miss and its optional total cap, each
+      # a number in 0..100. Defaults (15 per miss, no cap) hold when absent.
+      %w[criticalPenalty criticalPenaltyCap].each do |key|
+        next unless sc.key?(key)
+        v = sc[key]
+        unless v.is_a?(Numeric) && v >= 0 && v <= 100
+          issues << err("#{where}.scoring.#{key} must be a number between 0 and 100")
+        end
+      end
       issues
     end
 

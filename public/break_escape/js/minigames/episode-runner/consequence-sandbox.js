@@ -29,7 +29,10 @@ const COPY = Object.freeze({
     legend: 'What do you do?',
     empty: 'There is nothing to choose here.',
     next: 'Next choice',
-    finish: 'See where they led'
+    finish: 'See where they led',
+    // E15 B1 finding: the next/finish button is disabled until a choice is picked; this one-line
+    // prompt says so, so pressing it with nothing selected is never silent. Hidden once a choice is made.
+    pickPrompt: 'Choose an option to continue.'
 });
 
 function el(tag, className, text) {
@@ -119,6 +122,7 @@ export class ConsequenceSandboxMinigame extends SocialOverlayScene {
             this.addEventListener(radio, 'change', () => {
                 this.pending = opt.id;
                 this.confirmButton.disabled = false;
+                if (this.pickHint) this.pickHint.hidden = true;
                 for (const l of group.querySelectorAll('.epr-sbx-option')) l.classList.remove('epr-sbx-picked');
                 label.classList.add('epr-sbx-picked');
             });
@@ -136,6 +140,10 @@ export class ConsequenceSandboxMinigame extends SocialOverlayScene {
             this._confirm();
         });
         card.appendChild(this.confirmButton);
+        // Shown while the button is disabled, so pressing it with nothing picked is never silent.
+        this.pickHint = el('p', 'epr-sbx-hint', this._str('pickPrompt'));
+        this.pickHint.setAttribute('role', 'note');
+        card.appendChild(this.pickHint);
         this._focus();
     }
 

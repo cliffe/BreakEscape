@@ -534,7 +534,8 @@ test('a full guess episode runs every stage brief -> osint -> guess -> flip -> d
     cur().gameResult = { setId: 'fixture_inbox', percent: 80, reportRate: 0.5, verifyCount: 0, answers: [] };
     cur().complete(true);
     click('.aw-finish');
-    assert.equal(cur(), null);
+    // batch-10: Finish shows the end-of-episode panel; the bar's Close then closes the runner.
+    assert.ok(cur().container.querySelector('.epr-finished'), 'the episode-finished panel shows');
     assert.deepEqual(stored(ep.id).done, ['brief', 'osint', 'guess', 'flip', 'defend', 'debrief']);
 });
 

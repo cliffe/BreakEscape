@@ -789,7 +789,11 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         // E8 F11: Confirm is allowed with nothing ticked (naming a flag is never required), but mark
         // it so the immediate review card can nudge the learner to tick next time. Choosing
         // "Nothing looks wrong" is a deliberate answer and is not nudged.
-        if (!flags.length && !s.inputs.get(NONE_ID)?.checked) answer.unflagged = true;
+        const choseNone = !!s.inputs.get(NONE_ID)?.checked;
+        if (!flags.length && !choseNone) answer.unflagged = true;
+        // E17 B2 finding 4: "Nothing looks wrong" is an answer, not silence, so the result screen
+        // must not then say the learner "didn't tick anything you noticed".
+        if (choseNone) answer.none = true;
         this._lockAnswer(s.messageId, answer);
     }
 
@@ -819,7 +823,6 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         }
         this._closeSheet(false);
         const rec = this.messages.find((m) => m.id === messageId);
-        if (this.teamEl) this._renderTeamTally(this.teamProtectedCount() > teamBefore);
         this._announce(this._lockedLine(rec.id));
         this.progressEl.textContent = `${this.answers.size} of ${this.messages.length} sorted`;
 
@@ -828,6 +831,10 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // immediate: the last message's review card stays, with "See result".
         }
         this.reader.render();
+        // E17 B2 finding 10: update the live "team kept safe" tally only after the review card is
+        // drawn, so the counter never ticks up (revealing the answer was right) before the feedback
+        // for the just-answered item is on screen to read.
+        if (this.teamEl) this._renderTeamTally(this.teamProtectedCount() > teamBefore);
         const focus = this.reader.readPane.querySelector?.('.tri-card-title') || this.reader.readPane.querySelector?.('.tri-next');
         if (focus) { focus.tabIndex = focus.tabIndex < 0 ? -1 : focus.tabIndex; focus.focus?.(); }
         else this.reader.readPane.querySelector?.('.tri-next')?.focus?.();
@@ -1262,6 +1269,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             criticalMisses: s.criticalMisses,
             criticalKinds: s.criticalKinds,
             criticalLabels: s.criticalLabels,
+            criticalPenalty: s.criticalPenalty,
+            criticalPenaltyPer: s.criticalPenaltyPer,
+            criticalPenaltyCapped: s.criticalPenaltyCapped,
             phishVerified: s.phishVerified,
             total: this.messages.length,
             skipped: this.skipped.map((x) => x.id),
@@ -1349,10 +1359,19 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // miss); default unchanged. The allLabelled branch already reads without "attacker".
             const criticalLead = (isObj(this.set?.resultCopy) && isStr(this.set.resultCopy.criticalLead) && this.set.resultCopy.criticalLead.trim())
                 ? this.set.resultCopy.criticalLead : 'let an attacker straight in';
+            // P4-batch10: name the points actually taken off. With the default penalty (15) and no
+            // cap the per-miss wording is unchanged; with an authored cap or a custom per-miss rate
+            // the line reads the real total instead ("took 30 points off the round"), so "each" never
+            // overstates a capped round.
+            const per = Number.isFinite(result.criticalPenaltyPer) ? result.criticalPenaltyPer : CRITICAL_PENALTY;
+            const off = Number.isFinite(result.criticalPenalty) ? result.criticalPenalty : per * result.criticalMisses.length;
+            const penaltyLine = (result.criticalPenaltyCapped || per !== CRITICAL_PENALTY)
+                ? `That took ${off} points off the round, on top of the item itself.`
+                : `That costs ${per} points off the round${result.criticalMisses.length === 1 ? "" : " each"}, on top of the item itself.`;
             p.appendChild(el('p', 'tri-critical',
                 `${result.criticalMisses.length === 1 ? 'One answer' : `${result.criticalMisses.length} answers`} ${allLabelled ? 'missed something that needed reporting' : criticalLead} ` +
                 `(${criticalWhat(result.criticalKinds, labels, this.set?.criticalWhat) || "approving a sign-in you didn't start, or doing what an impostor asked on a call"}).` + nameLine + ` ` +
-                `That costs ${CRITICAL_PENALTY} points off the round${result.criticalMisses.length === 1 ? "" : " each"}, on top of the item itself.`));
+                penaltyLine));
         }
         // The genuine items (FUN_DECISIONS disc_visible): which real ones the learner trusted, what
         // made each flagged one safe and why both halves matter. End-of-round feedback puts the
@@ -1377,8 +1396,13 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 // skill (lab R5 J10 / R6 triage card), so hide the whole breakdown and print
                 // only the "nothing to grade" line. Any flag ticked shows up as a catch
                 // (flagRecall) or a false claim (falseByFactor).
+                // Choosing "Nothing looks wrong" on an item is a deliberate answer (E17 B2 finding
+                // 4), so the "you named no flags, nothing to grade" line is wrong for it: the
+                // breakdown stands, showing which tells that answer missed.
+                const choseNone = this._answerList().some((a) => a && a.none === true);
                 const namedAnyFlags = (result.flagRecall?.caught || 0) > 0
-                    || Object.keys(result.falseByFactor || {}).length > 0;
+                    || Object.keys(result.falseByFactor || {}).length > 0
+                    || choseNone;
                 if (namedAnyFlags) {
                     const order = [...FACTOR_ORDER, ...Object.keys(result.perFactor).filter((k) => !FACTOR_ORDER.includes(k))];
                     // F-E11-12: the breakdown said "caught 1 of 2" without saying which message the

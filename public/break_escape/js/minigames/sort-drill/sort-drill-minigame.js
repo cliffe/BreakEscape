@@ -17,7 +17,8 @@
 // layer); on the Summary they are a normal exit with the result.
 //
 // Result (gameResult / closeResult at the Summary): scoreDrill()'s record. An unscored drill's
-// result holds the placements only, no points and no mark.
+// result holds the placements only, no points and no mark. A scored drill with wrong placements
+// also carries `recap`: [{ id, situation, chosen, right, reason }], one per card in a wrong bin.
 //
 // Every string the learner reads goes in with textContent.
 
@@ -331,8 +332,28 @@ export class SortDrillMinigame extends SocialOverlayScene {
     }
 
     _buildResult() {
-        return scoreDrill(this.config, this.cards,
+        const result = scoreDrill(this.config, this.cards,
             this.cards.filter((c) => this.placements.has(c.id)).map((c) => ({ id: c.id, bin: this.placements.get(c.id) })));
+        // A recap of the cards that went in the wrong bin (scored drills only): each with the bin it
+        // went in, the bin(s) the author counts right, and the card's reason, so a caller (the
+        // awareness debrief) can replay them. Generic: any game may read it or ignore it.
+        if (result.scored && Array.isArray(result.placements)) {
+            const recap = [];
+            for (const p of result.placements) {
+                if (!p || p.correct !== false) continue;
+                const card = this.cards.find((c) => c.id === p.id);
+                if (!card) continue;
+                recap.push({
+                    id: card.id,
+                    situation: card.situation,
+                    chosen: this.binLabel(p.bin),
+                    right: answersOf(card).map((a) => this.binLabel(a)).join(' or '),
+                    reason: card.reason || ''
+                });
+            }
+            if (recap.length) result.recap = recap;
+        }
+        return result;
     }
 
     // ── exit ─────────────────────────────────────────────────────────────────

@@ -1,6 +1,9 @@
 // Awareness episodes: the debrief (11 stage 6, packet P7-B).
 //
-// renderDebrief(container, { result, set, strings, variant, onFinish }) -> { destroy, getState }
+// renderDebrief(container, { result, set, strings, variant, onFinish, drillRecap }) -> { destroy, getState }
+// `drillRecap` (optional): the scored sort-drill cards the learner put in a wrong bin, each
+// { situation, chosen, right, reason }. When non-empty, a "Cards to look at again" section lists
+// them with the right bin and reason. Absent or empty draws nothing (E17 B2 finding).
 //
 // `result` is the triage gameResult (answers, percent, reportRate, verifyCount); `set` is the
 // triage set, read for each message's subject and `truth`. One card per answer, then the
@@ -331,7 +334,7 @@ function textBox(tag, className, label, block) {
 }
 
 export function renderDebrief(container, { result, set, strings = {}, variant = 'full', onFinish,
-    reportRoute = null, ruleOfThumb = null, teamSize = null } = {}) {
+    reportRoute = null, ruleOfThumb = null, teamSize = null, drillRecap = [] } = {}) {
     const root = el('section', 'aw-debrief');
     const heading = el('h2', 'aw-heading', DEFAULTS.heading);
     heading.tabIndex = -1;
@@ -443,6 +446,28 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     }
     if (genuine) root.appendChild(genuine.node);
 
+    // E17 B2 finding: recap the scored sort-drill cards the learner put in the wrong bin, with the
+    // right bin and the reason. Present only when the episode ran a scored drill with misses.
+    const recapList = Array.isArray(drillRecap) ? drillRecap.filter((r) => isObj(r) && isStr(r.situation)) : [];
+    if (recapList.length) {
+        const box = el('section', 'aw-drill-recap');
+        box.setAttribute('aria-label', 'Cards to look at again');
+        box.appendChild(el('h3', 'aw-drill-recap-title',
+            isObj(strings) && isStr(strings.drillRecapHeading) ? strings.drillRecapHeading : 'Cards to look at again'));
+        const ul = el('ul', 'aw-drill-recap-list');
+        for (const r of recapList) {
+            const li = el('li', 'aw-drill-recap-item');
+            li.appendChild(el('p', 'aw-drill-recap-situation', r.situation));
+            if (isStr(r.chosen) && isStr(r.right) && r.chosen && r.right) {
+                li.appendChild(el('p', 'aw-drill-recap-move', `You put this in ${r.chosen}. It goes in ${r.right}.`));
+            }
+            if (isStr(r.reason) && r.reason) li.appendChild(el('p', 'aw-drill-recap-reason', r.reason));
+            ul.appendChild(li);
+        }
+        box.appendChild(ul);
+        root.appendChild(box);
+    }
+
     // ENG-09b: conceptPanel may be an array of { heading?, text }, drawn in order; an entry with
     // no text is skipped. A string or one object draws one panel, exactly as before.
     const conceptRaw = isObj(strings) ? strings.conceptPanel : null;
@@ -496,6 +521,7 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
         destroy() { root.remove(); },
         getState() {
             return { items: reviewed.length, mondayCard: true, noBlame, conceptPanel: concept, voicePanel: !!voice,
+                ...(recapList.length ? { drillRecap: recapList.length } : {}),
                 ...(Array.isArray(conceptRaw) ? { conceptPanels: conceptList.length } : {}),
                 reportRoute: route ? (route.configured === true ? 'configured' : 'generic') : null,
                 ruleOfThumb: !!rule, teamProtected: teamText ? team : null,
