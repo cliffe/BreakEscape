@@ -95,7 +95,7 @@
   "concernForm": {
     "requireNoConclusion": true,
     "factChips": [
-      { "id": "fc_offer_what", "kind": "what", "label": "An unknown contact offered payment for remote access" },
+      { "id": "fc_offer_what", "kind": "what", "required": true, "label": "An unknown contact offered payment for remote access" },
       { "id": "fc_offer_when", "kind": "when", "label": "The message came on Tuesday evening" },
       { "id": "fc_offer_where", "kind": "where", "label": "Through a messaging app, from the handle 'Opportunities'" },
       { "id": "fc_offer_who", "kind": "who", "label": "It came to me; I gather others were messaged too" },
@@ -119,6 +119,8 @@
       "feedbackFactsVerdict": "You have facts in there, which is the right idea. A conclusion about a person does not belong in the report: take those picks out, and let whoever looks into it reach their own. Keep anything offered to you in; a worry about a colleague's wellbeing is one for your manager or HR, not this report. That's fairer to everyone, and you don't have to be sure to raise a fair concern.",
       "feedbackVerdictOnly": "That's a conclusion, not something you saw, and it does not belong in the report. Take it out and leave the verdict to the people whose job and lawful process it is; give them what you actually noticed instead. If you're wrong, a verdict is unfair to someone who has done nothing.",
       "feedbackThinVerdict": "Those facts are a good start. A conclusion about a person does not belong in the report, so take those picks out. Then add a couple more of the things you saw yourself.",
+      "feedbackRequired": "The report needs the offer itself, so whoever reads it knows what happened. Add this before you finish: {missing}.",
+      "conclusionsNote": "These are theories about people, not things you saw, and none belongs in the report. Picking another replaces the one you chose.",
       "mustRemoveConclusion": "Take the conclusion out before you finish. A report holds what you saw yourself, not what you think it means. Having a theory is normal; it belongs with the people whose job it is to look into it."
     }
   }

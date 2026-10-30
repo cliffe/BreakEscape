@@ -30,7 +30,7 @@
           "delete": { "hint": "This is junk. I'd just delete it." },
           "verify": { "hint": "I'd check first: ring the service desk, or confirm on a number I already hold." }
         },
-        "teamBadge": "Risks reported for the team: {n}",
+        "teamBadge": "Risks reported or checked: {n}",
         "teamBadgeTitle": "Offers, risky requests and fakes you reported or checked this round rather than acting on them",
         "phishCaughtLabel": "Risks handled right",
         "scoreLine": "Right call is most of the score; naming what you noticed is the rest."
@@ -101,6 +101,7 @@
             },
             "ifTrusted": "Replying, even just to find out how it works, invites more pressure and marks you as someone who might say yes.",
             "reportReply": "Thanks. Reporting it is exactly right. The same message had gone to others, and your report warned them. Nobody is in trouble for being approached.",
+            "reportReplyByVerdict": { "report": "Thanks. Reporting it is exactly right. The same message had gone to others, and your report warned them. Nobody is in trouble for being approached.", "verify": "Thanks for checking before you answered. This was an outside offer to buy access, and the same message had gone to others, so a report to us warns them too. Nobody is in trouble for being approached." },
             "kindLine": "This was an outside offer to buy access, and it needed reporting."
           }
         },
@@ -127,6 +128,7 @@
             },
             "ifTrusted": "His actions for those ten minutes are logged as yours, and he may reach data he has no business in. That is why going along with it counts as a miss here, even though Reuben means no harm: lending a login is never the safe answer. Decline, and point him to the service desk.",
             "reportReply": "Thanks. The service desk reset Reuben's own login in minutes, so he wasn't left stuck and nobody had to share yours. He's a genuine colleague, and nobody is in trouble.",
+            "reportReplyByVerdict": { "report": "Thanks. The service desk reset Reuben's own login in minutes, so he wasn't left stuck and nobody had to share yours. He's a genuine colleague, and nobody is in trouble.", "verify": "Thanks for checking. Reuben is a genuine colleague, but lending a login puts whatever he opens on your record. The service desk can reset his own login in minutes, and nobody is in trouble." },
             "kindLine": "Reuben is a genuine colleague, but lending your login puts whatever he opens on your record.",
             "reportLine": "Right to flag it. The service desk can reset his login the proper way, and nobody is in trouble.",
             "missLabel": "lending out your login"
@@ -151,7 +153,8 @@
               "unrequested_mfa_push": "You didn't start these. A flood of prompts late at night is someone with your password trying to wear you into tapping Approve. Deny every one."
             },
             "ifTrusted": "Approving one would let whoever has your password into your Quayholt account, from a computer you've never used.",
-            "reportReply": "Thanks. We've blocked that sign-in and checked the account. A prompt you didn't start is always worth reporting, at any hour."
+            "reportReply": "Thanks. We've blocked that sign-in and checked the account. A prompt you didn't start is always worth reporting, at any hour.",
+            "reportReplyByVerdict": { "report": "Thanks. We've blocked that sign-in and checked the account. A prompt you didn't start is always worth reporting, at any hour.", "verify": "Thanks for checking. You didn't start those prompts, so deny them and tell us. We'll then block the sign-in and check the account, at any hour." }
           }
         },
         {
@@ -178,6 +181,7 @@
             },
             "ifTrusted": "The accounts would sit in a personal inbox outside the firm, and taking data to a new job can be a crime.",
             "reportReply": "Thanks. We've asked Ross's manager what the handover actually needs, so he still gets a proper one and the data stays inside the firm.",
+            "reportReplyByVerdict": { "report": "Thanks. We've asked Ross's manager what the handover actually needs, so he still gets a proper one and the data stays inside the firm.", "verify": "Thanks for checking. Ross's manager can say what the handover needs, so he still gets a proper one and the client list stays inside the firm." },
             "kindLine": "Ross is a genuine leaver, but the handover goes in the shared place; a personal inbox takes the firm's data outside its protection.",
             "reportLine": "Right to flag it. His manager can set up the handover the proper way, and nobody is in trouble.",
             "missLabel": "sending company data to a personal inbox"
@@ -202,7 +206,8 @@
               "lookalike_domain": "The address is on quayholt-support.example, not quayholt.example: a look-alike with an added word."
             },
             "ifTrusted": "If you approve the prompt that follows, you let whoever sent this into your account.",
-            "reportReply": "Thanks. Reporting it is right. IT never asks you to approve a prompt by email, and the address is a look-alike of Quayholt's own."
+            "reportReply": "Thanks. Reporting it is right. IT never asks you to approve a prompt by email, and the address is a look-alike of Quayholt's own.",
+            "reportReplyByVerdict": { "report": "Thanks. Reporting it is right. IT never asks you to approve a prompt by email, and the address is a look-alike of Quayholt's own.", "verify": "Thanks for checking. IT never asks you to approve a prompt by email, and the address is a look-alike of Quayholt's own. It is worth telling us about one like this." }
           }
         },
         {
@@ -219,6 +224,7 @@
           "truth": {
             "isPhish": false,
             "flags": [],
+            "reportReplyByVerdict": { "report": "Thanks. Hana was genuine and glad to be rung back on her own number, and the service desk reset her login in minutes. A quick check with her was all it needed.", "verify": "Thanks for checking before you helped. Hana was genuine, and the service desk reset her login in minutes." },
             "whyFine": {
               "secrecy_or_bypass": "Hana is asking for help, but she accepts the ring-back and the desk. Nothing is hidden and no step is skipped.",
               "default": "Genuine and awkward, not a trick: she lets you ring back on the number on file, which is the difference from an impostor. The safe route still serves her: the service desk resets her login in minutes, or a manager can arrange temporary access. Refusing flat, with no safe route offered, helps nobody."
