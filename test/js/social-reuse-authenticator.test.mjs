@@ -198,6 +198,39 @@ test('without setGlobalPrefix nothing is written', () => {
     assert.deepEqual(window.gameState.globalVariables, { phone_approved: false });
 });
 
+test('lockUntilOutcome defaults to true: Close and Esc go back to choosing, not out', () => {
+    for (const via of ['close', 'esc']) {
+        const scene = open(DEC());
+        assert.equal(scene.lockUntilOutcome, true);
+        if (via === 'close') scene.requestClose();
+        else document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        assert.equal(scene.gameState.isActive, true, `${via} did not exit`);
+        assert.equal(scene.container.querySelector('.auth-choice').hidden, false);
+        scene.close();
+    }
+});
+
+test('lockUntilOutcome: false lets Close and Esc leave the choosing screen', () => {
+    for (const via of ['close', 'esc']) {
+        const scene = open({ ...DEC(), lockUntilOutcome: false });
+        assert.equal(scene.lockUntilOutcome, false);
+        if (via === 'close') scene.requestClose();
+        else document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        assert.equal(scene.gameState.isActive, false, `${via} exited`);
+    }
+});
+
+test('authenticator-device passes lockUntilOutcome through to the scene', () => {
+    window.gameState = { globalVariables: {} };
+    const { scene, done } = openDevice({ ...DEC(), lockUntilOutcome: false });
+    scene.requestClose();
+    assert.equal(done()[0], true, 'closed normally');
+    const locked = openDevice({ ...DEC() });
+    locked.scene.requestClose();
+    assert.equal(locked.done(), null, 'default still holds the player');
+    locked.scene.close();
+});
+
 // ---- validator ------------------------------------------------------------------------------
 
 const ruby = spawnSync('ruby', ['--version']);
@@ -238,4 +271,10 @@ test('episode mfa: strings are forwarded when authored and absent otherwise', as
     assert.equal('strings' in M.childLaunch({ mfa: SCRIPTED() }, 'mfa').params, false);
     const withStrings = M.childLaunch({ mfa: { ...SCRIPTED(), strings: STRINGS } }, 'mfa');
     assert.deepEqual(withStrings.params.strings, STRINGS);
+});
+
+test('validator: lockUntilOutcome must be a boolean and is not read as part of the stream', { skip }, () => {
+    assert.deepEqual(lint(scenario({ ...DEC(), lockUntilOutcome: false })), []);
+    const bad = lint(scenario({ ...DEC(), lockUntilOutcome: 'no' }));
+    assert.ok(bad.some((s) => /lockUntilOutcome/.test(s)), bad.join('\n'));
 });

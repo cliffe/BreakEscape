@@ -120,7 +120,7 @@
 
   "authenticator-device": {
     "required": [],
-    "optional": ["pushes", "approvesAt", "mode", "choice", "pushTemplate", "defenderNote", "strings", "setGlobalPrefix"]
+    "optional": ["pushes", "approvesAt", "mode", "choice", "pushTemplate", "defenderNote", "strings", "setGlobalPrefix", "lockUntilOutcome"]
   },
   "kiosk": {
     "required": ["episodeId"],
