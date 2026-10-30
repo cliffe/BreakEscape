@@ -1174,6 +1174,8 @@ Trigger a conversation automatically when the player loads the room:
 | `skipIfGlobal` | Skip if this global variable is truthy (prevents cutscene replaying on resume) |
 | `setGlobalOnStart` | Set this global variable to `true` when conversation starts |
 | `disableClose` | `true` prevents player closing the dialog (person-chat and phone; on the phone it also hides the back arrow and ignores Esc). Honoured since 2026-10-21; before that the field was read but dropped. |
+| `videoCall` | `true` opens the conversation as a video call, as an event mapping's `conversationMode: "video-call"` does: person-chat framed as a call, with the player's chosen avatar as a self-view. It works for a phone NPC too (the call is always a person-chat). `conversationMode: "video-call"` is accepted as the same thing. Absent, nothing changes. |
+| `videoLabel`, `participantTag` | With `videoCall`: the meeting-tool name on the call bar (default "SECURE VIDEO LINK") and a tag beside the peer's name (for example "External"). |
 
 #### NPC Event Mappings
 
@@ -1231,6 +1233,7 @@ Event mapping actions (can be combined):
 | `unlockTask: "task_id"` | Unlock a locked task |
 | `unlockAim: "aim_id"` | Unlock a locked objective aim |
 | `unlockDoor: "room_id"` or `["id1","id2"]` | Unlock the door to that room on the server, as this NPC, so it survives a reload (like ink `#unlock_door`, but the NPC needn't have been met or list the room in `unlockable`: the mapping is the permission). Fires `door_unlocked_by_npc`. The validator errors on a room that doesn't exist |
+| `openMinigame: "mail_terminal"` or `{ "type": "exercise-station", "minigameData": { ... }, "name": "..." }` | Open a minigame from the starter registry (see [Opening a minigame from a scenario](#opening-a-minigame-from-a-scenario)). `type` is an object type from that table, `minigameData` is what an object of that type would carry. `onceOnly`, `maxTriggers`, `cooldown`, `condition` and `delayMs` apply as for any action. It opens a moment after the event, and waits behind any minigame that is open (a conversation closing, a scripted call). A `onceOnly` mapping is saved for a reload only once the minigame closes normally, so a reload mid-exercise lets it open again. Use it instead of `conversationMode`, not with it. An unknown type warns and opens nothing; the validator errors. |
 | `onceOnly: true` | Ensure mapping only fires once |
 | `delayMs: ms` | Run the whole mapping this long after the event instead of at once (e.g. `8000` on `room_entered:` so the player can look round before a scene opens). The checks run at the event (nothing is scheduled if the condition fails then) and again when the delay is up, so a `globalVars` term that has stopped holding cancels it. One delay per mapping is pending at a time; if a minigame or conversation is open when it is up, it waits for that to close. A pending delay is not saved, so a reload before it fires leaves the mapping to fire on the next event. Not for `lockpick_used_in_view` (the pick is stopped at once regardless). |
 
@@ -1916,6 +1919,7 @@ These are the mistakes that most often leave a mission unfinishable or silently 
 
 - **Never end an NPC conversation in `DONE` or `END`.** Re-talking an ended story shows "(End of conversation)". Every exit is `#exit_conversation` on its own line, then `-> hub` (or `-> after_choice`).
 - **Guard once-only decision scenes.** Use `{fate != "": -> after_choice}`, or talking again replays the scene and overwrites the outcome.
+- **Open a minigame with `# trigger_minigame:<type> key=value`.** The type is any object type in the [starter registry](#opening-a-minigame-from-a-scenario); it opens once the line has been read and the conversation comes back when the minigame closes. Ink reads `{` as logic, so the pairs are space-separated `key=value`, not JSON (or write the JSON with `\{` and `\}`).
 - **Put action tags above the line they belong to.** A tag on its own line attaches to the next line of text below it, so a tag between two lines of a knot fires with the second; it need not be the knot's first line. Don't leave one after the knot's last line with only a divert, choice or `}` below it (the validator warns). Use `#give_item:<type>:<itemId>`, with the id on the NPC's `itemsHeld` entry, and set "given" globals from an `item_picked_up:<type>` mapping, not in ink.
 - **A mapping's global doesn't reach the chat that is open.** An `eventMappings` `setGlobal` (the `item_picked_up` one above included) writes `gameState` and the cached stories, not the story of the conversation on screen, so a choice or status line guarded on that global changes only when the chat is next opened. Guard a hand-over choice on an ink-local flag as well, set in the hand-over knot before the tag: `VAR key_offered = false`, `~ key_offered = true` in the knot, and `+ {not soc_key_given and not key_offered} [Can I have the SOC key?]`. Picking the choice twice never gives a second key (the first give removes it from `itemsHeld`; the second shows a "doesn't have" or "has no items to give" warning toast), so the flag is there to keep that toast and the stale offer off the screen.
 - **An `EXTERNAL` needs an ink fallback function of the same name and arity.** The engine turns ink fallbacks on, so an unbound external runs its fallback (`=== function se_influence(delta, reason) ===`, returning a neutral value such as 0). Without a fallback it still throws, story-wide, at the first `Continue()`. The chats bind only six read-only externals and the bark path binds none, so every external must have a fallback. For state, prefer synced-global `VAR`s.
@@ -1999,6 +2003,7 @@ Everything lives under one top-level key. `scripts/scenario-schema.json` closes 
 | `pretextNpcs` | Pretext calls | [Pretext calls](#pretext-calls-socialpretextnpcs) |
 | `landingPages` | The landing-page builder | [Landing pages](#landing-pages-sociallandingpages) |
 | `awarenessEpisode` | The episode an awareness shell's kiosk runs: stages, attack and defend halves, strings | [Awareness episodes](#awareness-episodes) |
+| `exercises` | Named scene configs (`{ id, scene, config }`) that exercise stations, ink tags and event mappings open by id | [Exercise stations](#exercise-stations-socialexercises) |
 
 Each overlay opens from an object that carries only a pointer in `minigameData` (checked against `scripts/minigame-data-schemas.json`):
 
@@ -2012,6 +2017,7 @@ Each overlay opens from an object that carries only a pointer in `minigameData` 
 | `page-builder` | `{ landingPageId, targetId? }` | the landing-page builder (attack section) |
 | `authenticator-device` | `{ pushes, approvesAt }` or `{ choice, pushTemplate, defenderNote }`, plus `mode?`, `strings?`, `setGlobalPrefix?`, `lockUntilOutcome?` | a phone in the room that plays a stream of sign-in prompts (see [The authenticator](#the-authenticator-the-mfa-stage)) |
 | `kiosk` | `{ episodeId }` | the awareness episode runner; `episodeId` must equal `social.awarenessEpisode.id` ([Awareness episodes](#the-kiosk)) |
+| `exercise-station` | `{ scene?, exerciseId?, config?, setGlobalPrefix?, skin? }` | one of five exercise scenes (`sort-drill`, `concern-form`, `privacy-panel`, `assistant-chat`, `password-guesser`); on finishing it writes `<setGlobalPrefix>done` and emits `<scene>_completed` ([Exercise stations](#exercise-stations-socialexercises)) |
 
 Lab examples: `{"type": "case-file", "minigameData": {"mode": "scope"}}` is the Rules of Engagement sheet; the report workstation carries `{"requiresGlobal": "phish_lord_landed", "lockedMessage": "Nothing to write up yet. Finish the sending first, then come back to the report."}`. Each object type also needs its sprite, `assets/objects/<type>.png` (a missing one is a social lint error), and the lab places them on real furniture with `"position": "as-type:pc"` and similar.
 
@@ -2487,6 +2493,63 @@ Gotchas:
 - **It took three layers to reach the toast.** The server's bootstrap filter keeps only listed room fields (`lockedHint` is now on that list in `app/models/break_escape/game.rb`), and `doors.js` copies it onto the door sprite. Node tests of the helper passed while the live door still said "Requires key" (lab rounds 5 and 6), so check a new door field in the browser, not only in a unit test.
 - **A player with a lockpick never sees it.** They are offered the pick instead.
 - **Key locks only.** The validator errors on an empty or non-string hint and warns when the hint sits on something unlocked or on another lock type, where it is never shown.
+
+### Opening a minigame from a scenario
+
+Three routes open the same minigames, through one starter registry keyed by object type (`systems/minigame-registry.js`). The types are `case-file`, `osint-workstation`, `triage-workstation`, `authenticator-device`, `kiosk`, `page-builder`, `report-workstation`, `mail_terminal` and `exercise-station`. What each needs in `minigameData` is in the object table above.
+
+| Route | How | Notes |
+|---|---|---|
+| An object | `{ "type": "<type>", "minigameData": { ... } }` in a room | As before. A locked object still reaches its lock first; the report workstation's `requiresGlobal` gate still applies. |
+| An ink tag | `# trigger_minigame:<type>` or `# trigger_minigame:<type> key=value key=value` | The pairs become `minigameData`. A value is read as JSON when it parses (`maxSends=3`, `readOnly=true`, `accountIds=["a","b"]`), else it is the text, and cannot contain a space. For anything bigger name a shared entry by id (`exercise-station exerciseId=phish_sort`) or write a JSON object with ink's escapes: `# trigger_minigame:mail_terminal \{"accountIds":["a"]\}`. Plain `{` in an ink tag is read as logic, and a `|` after dialogue on the same line does not compile (inklecate: "Expected end of line"), so the pairs are separated by spaces. The engine also accepts bars, for tags built outside ink. |
+| An event mapping | `"openMinigame": "<type>"` or `{ "type", "minigameData", "name" }` | See the action table under [NPC Event Mappings](#npc-event-mappings). |
+
+An unknown type warns in the console and opens nothing (the validator errors on it, and on an `exercise-station` tag whose `exerciseId` is not in `social.exercises`).
+
+**What the ink tag does to the conversation.** In a person-chat the minigame opens after the line carrying the tag has been shown (the moment `#exit_conversation` closes a chat), so put the tag on, or just above, the line that introduces it. The chat is paused, not ended: its story is saved, and when the minigame closes normally the same conversation reopens with the same NPC and options, at the choices it showed. A close that is not a normal exit (Esc on a scene that aborts) leaves the player in the world. A phone-chat opens it about a second after the tag and returns to the thread the same way. With no chat open it opens at once. If another minigame is already open the tag is refused. If the chat is closed before its line finishes, nothing opens.
+
+```ink
+=== assistant ===
+Reed: Here it comes. # trigger_minigame:exercise-station exerciseId=assistant_demo setGlobalPrefix=ex_assistant_
+-> hub
+```
+
+`scenarios/test_exercise_station` uses all three routes.
+
+### Exercise stations (`social.exercises`)
+
+Five scenes the awareness episode runner uses can also stand alone in any mission: `sort-drill`, `concern-form`, `privacy-panel`, `assistant-chat` and `password-guesser`. An `exercise-station` object opens one:
+
+```json
+{ "type": "exercise-station", "id": "station_sort", "name": "Sort Drill", "position": { "x": 2, "y": 2 },
+  "minigameData": { "scene": "sort-drill", "exerciseId": "sort_basic", "setGlobalPrefix": "ex_sort_" } }
+```
+
+| `minigameData` key | Meaning |
+|---|---|
+| `scene` | One of the five. Optional when `exerciseId` names an entry (the entry's scene is used); if both are given they must agree. |
+| `exerciseId` | An `id` in `social.exercises[]`. |
+| `config` | An inline config instead of a named one. When both are given, the inline config wins, so a station can override a shared exercise. |
+| `setGlobalPrefix` | Prefix for the result globals. Falls back to the exercise's own `setGlobalPrefix`. With neither, finishing writes no global (the validator warns) and only the event fires. |
+| `skin` | Optional `"awareness"` to use the awareness skin. |
+
+`social.exercises` is a list of named configs: `{ "id", "scene", "config", "setGlobalPrefix"?, "description"? }`. The `config` is exactly the block the awareness episode carries for that scene: `sort-drill` = `sortDrill`, `concern-form` = `concernForm`, `privacy-panel` = `privacyPanel`, `assistant-chat` = `assistant`, `password-guesser` = `guess`. Their schemas (`socialSortDrill` and the others in `scripts/scenario-schema.json`) are shared by the episode and the exercise list, and the same lints run on both (the messages name the exercise or the object instead of the episode). The lints that only make sense inside an episode (a defend stage to host the block, the flip and debrief) do not apply to a station.
+
+**What a finished run writes.** Through the shared writer, so ink and `global_variable_changed:` mappings see them:
+
+- `<prefix>done` is set to `true` and never cleared. Declare it in `globalVariables` (`false`); an undeclared name is not saved, and the validator errors.
+- `<prefix>percent` for a scored sort drill (`scored: true`): the best percent over all rounds. Declare it too (`0`).
+- The event `<scene>_completed` (hyphens as underscores: `sort_drill_completed`, `concern_form_completed`, `privacy_panel_completed`, `assistant_chat_completed`, `password_guesser_completed`) with `{ exerciseId, scene, prefix, percent?, result }`.
+- The password guesser also writes its own `config.landedGlobal`, as in an episode.
+
+What counts as finished: Done on the sort drill, concern form and privacy panel (closing part-way records nothing); a normal close of the assistant; for the password guesser, every guess reached and the rig switched off. After a reload the globals are still true, so a door or objective that waits on them stays open; the scenes themselves can be played again. Gate a door with an event mapping on `global_variable_changed:<prefix>done` that has `unlockDoor` (this is what `test_exercise_station` does), or complete a task from it. Per the rule above, tasks complete on the global and never on the overlay closing.
+
+Two config additions came with this:
+
+- **`concernForm.kinds`**: the fact kinds, in the order the groups are shown. Each entry is an id (`"how"`) or `{ "id": "how", "label": "How it was done" }`. The heading is the `label`, else `strings.kind<Id>` (`kindHow`), else the id. Absent, it is `what`, `when`, `where`, `who`, with their usual headings, so existing forms are unchanged. A fact chip of a kind that is not listed is dropped (the validator errors).
+- **`privacyPanel.facts`**: inline fact text, `{ "<fact id>": { "text": "...", "reduceNote": "..." } }`, read before `social.intelFacts`, so a mission with no OSINT block can name its own facts. An id in both takes the inline text. Without either, the panel shows the raw id as before.
+
+The station's sprite is a copy of the kiosk's (`assets/objects/exercise-station.png`), a placeholder.
 
 ### Writing the ink around the social mechanics
 

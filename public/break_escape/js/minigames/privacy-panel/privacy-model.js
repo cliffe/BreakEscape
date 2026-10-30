@@ -49,6 +49,17 @@ export function factKey(id) {
     return isStr(id) && id.startsWith(INTEL_PREFIX) ? id.slice(INTEL_PREFIX.length) : id;
 }
 
+/** The inline facts of a config: id (any se_intel_ prefix removed) -> { text, reduceNote? }. */
+function inlineFacts(raw) {
+    const out = {};
+    if (!isObj(raw)) return out;
+    for (const [id, f] of Object.entries(raw)) {
+        if (!isObj(f) || !isStr(f.text)) continue;
+        out[factKey(id)] = { text: f.text, ...(isStr(f.reduceNote) ? { reduceNote: f.reduceNote } : {}) };
+    }
+    return out;
+}
+
 /** A clean config: settings with unique ids, a label and at least one fact; null when none are usable. */
 export function normaliseConfig(raw) {
     if (!isObj(raw) || !Array.isArray(raw.settings)) return null;
@@ -72,7 +83,10 @@ export function normaliseConfig(raw) {
     return {
         settings,
         note: isStr(raw.note) ? raw.note : '',
-        strings: isObj(raw.strings) ? raw.strings : {}
+        strings: isObj(raw.strings) ? raw.strings : {},
+        // Inline fact text, so a mission with no social.intelFacts can name its own facts:
+        // { <fact id>: { text, reduceNote? } }. Read before social.intelFacts.
+        facts: inlineFacts(raw.facts)
     };
 }
 
@@ -86,7 +100,12 @@ export function initialTight(config) {
  * Read-only: `social` and `globals` are never changed.
  */
 export function buildView(config, social, globals, tight) {
-    const facts = isObj(social?.intelFacts) ? social.intelFacts : {};
+    const board = isObj(social?.intelFacts) ? social.intelFacts : {};
+    const own = isObj(config.facts) ? config.facts : {};
+    const facts = {};
+    for (const id of new Set([...Object.keys(board), ...Object.keys(own)])) {
+        facts[id] = { ...(isObj(board[id]) ? board[id] : {}), ...(own[id] || {}) };
+    }
     const g = isObj(globals) ? globals : {};
     const on = tight instanceof Set ? tight : new Set(tight || []);
     const closedIds = new Set();

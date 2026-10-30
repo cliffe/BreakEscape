@@ -17,6 +17,9 @@ import { withLockedHint } from '../utils/locked-hint.js';
 import { rejectionAlert } from '../utils/flag-wording.js';
 import { startEpisodeRunner } from './episode-starter.js';
 import { writeGlobal } from './global-writer.js';
+// Side effects: window.inkMinigameLaunch (ink #trigger_minigame) and window.openMinigameFromMapping
+import './ink-minigame-launch.js';
+import './mapping-minigame.js';
 export { startInboxTriageMinigame, startEpisodeRunner };
 
 // Maps Phaser texture keys to their actual filenames (where key !== filename stem)

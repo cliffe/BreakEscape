@@ -127,7 +127,7 @@ export class ConcernFormMinigame extends SocialOverlayScene {
         h.dataset.autofocus = '1';
         p.appendChild(h);
 
-        for (const kind of KINDS) {
+        for (const kind of this.config.kinds.map((k) => k.id)) {
             const chips = this.config.factChips.filter((c) => c.kind === kind);
             if (!chips.length) continue;
             const group = el('div', 'cf-group');

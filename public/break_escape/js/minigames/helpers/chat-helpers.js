@@ -188,16 +188,15 @@ export async function processGameActionTags(tags, ui, options = {}) {
                     break;
                     
                 case 'trigger_minigame':
-                    if (param) {
-                        const minigameName = param;
-                        result.success = true;
-                        result.message = `🎮 Triggering minigame: ${minigameName}`;
-                        if (ui) ui.showNotification(result.message, 'info');
-                        // Note: Actual minigame triggering would be game-specific
-                        console.log('🎮 Minigame trigger tag:', minigameName);
-                    } else {
-                        result.message = '⚠️ trigger_minigame tag missing minigame name';
-                        console.warn(result.message);
+                    {
+                        // # trigger_minigame:<type>[|key=value...]: opens the starter registered
+                        // for that object type (systems/ink-minigame-launch.js). In a person-chat
+                        // it opens after the line is read and the chat comes back on a normal close.
+                        const launch = window.inkMinigameLaunch
+                            ? window.inkMinigameLaunch.request(param)
+                            : { success: false, message: '⚠️ Minigame launcher not loaded' };
+                        result.success = launch.success;
+                        result.message = launch.message;
                     }
                     break;
                     

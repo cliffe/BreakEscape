@@ -83,14 +83,37 @@ export function concernText(key, config = null, tokens = null) {
 
 /** The heading for a fact kind ("what" -> strings.kindWhat, default "What happened"). */
 export function kindLabel(kind, config = null) {
-    return concernText(`kind${kind.charAt(0).toUpperCase()}${kind.slice(1)}`, config);
+    // A scenario-defined kind carries its own heading (config.kinds[].label), else strings.kind<Id>.
+    const own = (Array.isArray(config?.kinds) ? config.kinds : []).find((k) => k.id === kind);
+    if (own && isStr(own.label)) return own.label;
+    const key = `kind${kind.charAt(0).toUpperCase()}${kind.slice(1)}`;
+    const text = concernText(key, config);
+    if (text) return text;
+    return kind.charAt(0).toUpperCase() + kind.slice(1).replace(/_/g, ' ');
 }
 
-function cleanFactChips(raw) {
+/**
+ * The fact kinds a config offers, as [{ id, label? }]. `config.kinds` is a list of ids or of
+ * { id, label }; without one (or with none usable) it is the default four, so a config that does
+ * not set it behaves exactly as before.
+ */
+export function cleanKinds(raw) {
+    const out = [];
+    const seen = new Set();
+    for (const k of Array.isArray(raw) ? raw : []) {
+        const id = isStr(k) ? k : (isObj(k) && isStr(k.id) ? k.id : null);
+        if (!id || !/^[a-z][a-z0-9_]*$/.test(id) || seen.has(id)) continue;
+        seen.add(id);
+        out.push(isObj(k) && isStr(k.label) ? { id, label: k.label } : { id });
+    }
+    return out.length ? out : KINDS.map((id) => ({ id }));
+}
+
+function cleanFactChips(raw, kinds = KINDS) {
     const seen = new Set();
     const out = [];
     for (const c of Array.isArray(raw) ? raw : []) {
-        if (!isObj(c) || !isStr(c.id) || !isStr(c.label) || !KINDS.includes(c.kind) || seen.has(c.id)) continue;
+        if (!isObj(c) || !isStr(c.id) || !isStr(c.label) || !kinds.includes(c.kind) || seen.has(c.id)) continue;
         seen.add(c.id);
         const chip = { id: c.id, label: c.label, kind: c.kind };
         // batch-12 item 15: a fact the report must include (the outside offer in E16). Opt-in.
@@ -114,9 +137,11 @@ function cleanConclusionChips(raw, taken) {
 /** A clean config. Chips without an id, a label or (for facts) a known kind are dropped. */
 export function normaliseConfig(raw) {
     const src = isObj(raw) ? raw : {};
-    const factChips = cleanFactChips(src.factChips);
+    const kinds = cleanKinds(src.kinds);
+    const factChips = cleanFactChips(src.factChips, kinds.map((k) => k.id));
     const min = Number.isInteger(src.minFacts) && src.minFacts >= 1 ? src.minFacts : DEFAULT_MIN_FACTS;
     return {
+        kinds,
         factChips,
         conclusionChips: cleanConclusionChips(src.conclusionChips, factChips.map((c) => c.id)),
         guidance: isStr(src.guidance) ? src.guidance : '',

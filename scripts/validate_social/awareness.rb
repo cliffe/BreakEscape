@@ -103,12 +103,27 @@ module ValidateSocial
 
     # ---- helpers ---------------------------------------------------------------
 
+    # The scene configs (sortDrill, concernForm, privacyPanel, assistant, guess) are linted from two
+    # places: an awareness episode and a social.exercises entry or an exercise-station's inline
+    # config (validate_social/exercises.rb). `with_scope` swaps the message prefix for the second.
+    def self.scope
+      Thread.current[:awareness_lint_scope]
+    end
+
+    def self.with_scope(prefix)
+      before = Thread.current[:awareness_lint_scope]
+      Thread.current[:awareness_lint_scope] = prefix
+      yield
+    ensure
+      Thread.current[:awareness_lint_scope] = before
+    end
+
     def self.err(msg)
-      Mail.err("awarenessEpisode: #{msg}")
+      Mail.err("#{scope || 'awarenessEpisode'}: #{msg}")
     end
 
     def self.warn_(msg)
-      Mail.warn_("awarenessEpisode: #{msg}")
+      Mail.warn_("#{scope || 'awarenessEpisode'}: #{msg}")
     end
 
     def self.check_mission?(ep)
@@ -925,7 +940,11 @@ module ValidateSocial
     def self.assistant_checks(ep)
       return [] unless ep.key?('assistant')
 
-      a = ep['assistant']
+      assistant_config_checks(ep['assistant'])
+    end
+
+    # The assistant's own rules, shared by an episode and a social.exercises entry.
+    def self.assistant_config_checks(a)
       return [err('awarenessEpisode.assistant must be an object (the authored assistant config; ENG-06)')] unless a.is_a?(Hash)
 
       issues = []
@@ -1259,7 +1278,11 @@ module ValidateSocial
       return [err("stages lists 'guess' but there is no awarenessEpisode.guess block; the guesser would open on nothing")] if has_stage && !has_block
       return [warn_("awarenessEpisode.guess is set but stages has no 'guess'; the guesser is never played")] unless has_stage
 
-      g = ep['guess']
+      guess_config_checks(ctx, ep['guess'])
+    end
+
+    # The guesser's own rules, shared by an episode and a social.exercises entry.
+    def self.guess_config_checks(ctx, g)
       return [err('awarenessEpisode.guess must be an object { commonList, patternSlots, reuseStep, passphraseDemo, landedGlobal }')] unless g.is_a?(Hash)
 
       issues = []
@@ -1355,7 +1378,8 @@ module ValidateSocial
           issues << err('awarenessEpisode.guess.reuseStep.site is missing; the step has to name the other site the password came from') if Mail.blank?(reuse['site'])
         end
       else
-        issues << warn_('awarenessEpisode.guess has no reuseStep; nothing in it can land, so the flip always shows the did-not-land view')
+        # An exercise-station has no flip to show, so a guesser that cannot land is fine there
+        issues << warn_('awarenessEpisode.guess has no reuseStep; nothing in it can land, so the flip always shows the did-not-land view') if scope.nil?
       end
       issues.concat(guess_passphrase_checks(g))
       issues
@@ -1592,6 +1616,14 @@ module ValidateSocial
       if check_mission?(ep) || !(stages.is_a?(Array) && stages.include?('defend'))
         issues << err("sortDrill runs inside the defend stage; this episode's stages #{stages.inspect} have none to host it")
       end
+      issues.concat(sort_drill_config_checks(d))
+    end
+
+    # The drill's own rules, shared by an episode and a social.exercises entry.
+    def self.sort_drill_config_checks(d)
+      return [err('sortDrill must be an object { bins, cards, scored?, ... }')] unless d.is_a?(Hash)
+
+      issues = []
       bins = d['bins']
       ids = []
       if bins.is_a?(Array) && SORT_DRILL_BINS.cover?(bins.length)
@@ -1703,6 +1735,33 @@ module ValidateSocial
       if check_mission?(ep) || !(stages.is_a?(Array) && stages.include?('defend'))
         issues << err("concernForm runs inside the defend stage; this episode's stages #{stages.inspect} have none to host it")
       end
+      issues.concat(concern_form_config_checks(f))
+    end
+
+    # The form's own rules, shared by an episode and a social.exercises entry. `kinds` (a list of ids
+    # or { id, label }) replaces the default four; a chip's kind must be one of them.
+    def self.concern_form_config_checks(f)
+      return [err('concernForm must be an object { factChips, conclusionChips?, guidance?, minFacts? }')] unless f.is_a?(Hash)
+
+      issues = []
+      kinds = CONCERN_KINDS
+      if f.key?('kinds')
+        listed = f['kinds']
+        if !listed.is_a?(Array) || listed.empty?
+          issues << err('concernForm.kinds must be a non-empty array of kind ids (or { id, label }); leave it out for what, when, where, who')
+        else
+          kinds = []
+          listed.each_with_index do |k, i|
+            id = k.is_a?(Hash) ? k['id'] : k
+            if !id.is_a?(String) || !id.match?(/\A[a-z][a-z0-9_]*\z/)
+              issues << err("concernForm.kinds[#{i}] needs a lower-case id (letters, digits, underscore)")
+              next
+            end
+            issues << err("concernForm.kinds: id '#{id}' is used more than once") if kinds.include?(id)
+            kinds << id
+          end
+        end
+      end
       chips = f['factChips']
       ids = []
       if chips.is_a?(Array) && !chips.empty?
@@ -1712,7 +1771,7 @@ module ValidateSocial
             next
           end
           cw = "concernForm.factChips[#{c['id']}]"
-          issues << err("#{cw}.kind '#{c['kind']}' is not one of #{CONCERN_KINDS.join(', ')}") unless CONCERN_KINDS.include?(c['kind'])
+          issues << err("#{cw}.kind '#{c['kind']}' is not one of #{kinds.join(', ')}") unless kinds.include?(c['kind'])
           issues << err("concernForm.factChips: id '#{c['id']}' is used more than once") if ids.include?(c['id'])
           ids << c['id']
         end
@@ -1761,7 +1820,27 @@ module ValidateSocial
       if check_mission?(ep) || !(stages.is_a?(Array) && stages.include?('defend'))
         issues << err("privacyPanel runs inside the defend stage; this episode's stages #{stages.inspect} have none to host it")
       end
-      declared = ctx.social['intelFacts'].is_a?(Hash) ? ctx.social['intelFacts'].keys : []
+      issues.concat(privacy_panel_config_checks(ctx, p))
+    end
+
+    # The panel's own rules, shared by an episode and a social.exercises entry. A fact is declared in
+    # social.intelFacts or in the panel's own `facts`.
+    def self.privacy_panel_config_checks(ctx, p)
+      return [err('privacyPanel must be an object { settings, note? }')] unless p.is_a?(Hash)
+
+      issues = []
+      social = ctx.json['social'].is_a?(Hash) ? ctx.json['social'] : {}
+      declared = social['intelFacts'].is_a?(Hash) ? social['intelFacts'].keys : []
+      if p.key?('facts')
+        if p['facts'].is_a?(Hash)
+          p['facts'].each do |fid, fact|
+            issues << err("privacyPanel.facts['#{fid}'] needs a non-empty text") unless fact.is_a?(Hash) && !Mail.blank?(fact['text'])
+            declared << fid.to_s.sub(/\Ase_intel_/, '')
+          end
+        else
+          issues << err('privacyPanel.facts must be an object { <fact id>: { text, reduceNote? } }')
+        end
+      end
       settings = p['settings']
       return issues << err('privacyPanel.settings must be a non-empty array') unless settings.is_a?(Array) && !settings.empty?
 
@@ -1792,7 +1871,7 @@ module ValidateSocial
           if id.nil? || id.empty?
             issues << err("#{w}.closesFacts holds an entry that is not a fact id")
           elsif !declared.include?(id)
-            issues << err("#{w}.closesFacts: '#{f}' is not a declared social.intelFacts id (#{declared.empty? ? 'none are declared' : declared.join(', ')}); the panel would close nothing")
+            issues << err("#{w}.closesFacts: '#{f}' is not a declared social.intelFacts id or privacyPanel.facts id (#{declared.empty? ? 'none are declared' : declared.join(', ')}); the panel would close nothing")
           end
         end
         dup = closes.select { |f| f.is_a?(String) }.map { |f| f.sub(/\Ase_intel_/, '') }
