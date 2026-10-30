@@ -56,7 +56,7 @@ Recorded from the owner's decisions board on 2026-10-30. "Differs" means the own
 | Top result band wording | Standardise on "Well done:" course-wide (engine default and episodes that set their own bands) | |
 | Verdict button colours | Keep the colours | |
 | "Confirm with nothing ticked" prompt | Turn it on everywhere, E1 to E7 included (differs from the recommendation) | "Is the recommendation only because it touches built episodes?" (unanswered; the recommendation was to keep it where testers hit the problem, which is the cost of editing built episodes) |
-| E13 deepfake demo call | Open it after the kiosk work, as a spoken debrief | |
+| E13 deepfake demo call | Open it after the kiosk work, as a spoken debrief. **Applied 2026-10-30** (2519febe2): once the round is done, Gwen offers it as an optional, unscored video call; both E13 shells (BUILD_LOG) | |
 | core_17's copy of E3's impostor call | Add the tell to E3 too (an E1 to E7 edit) | |
 | E12 colleague back from leave without a badge | Keep full marks | |
 | E17 team counter timing | Yes, the reorder is enough | |
