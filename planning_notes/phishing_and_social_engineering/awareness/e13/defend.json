@@ -170,12 +170,16 @@
           "truth": {
             "isPhish": true,
             "critical": true,
-            "flags": [
-              "deepfake_request",
-              "vish_callback_pressure"
+            "flags": ["deepfake_request", "secrecy_or_bypass", "borrowed_authority", "lookalike_domain", "vish_callback_pressure"],
+            "flagAlternatives": [
+              ["deepfake_request", "borrowed_authority", "lookalike_domain"],
+              ["vish_callback_pressure", "secrecy_or_bypass"]
             ],
             "perFlagNote": {
               "deepfake_request": "Both faces are perfect and both are fake; a video call is not proof of who is on it.",
+              "lookalike_domain": "The meeting link is brightwell-board.example, not brightwellfoods.example, and the call is tagged External.",
+              "secrecy_or_bypass": "'In confidence, today, before the board' leaves no time and no one to check with.",
+              "borrowed_authority": "The CEO's and finance manager's faces are doing the job a check should do.",
               "vish_callback_pressure": "The caller cut off any chance to check, 'no time, the fewer people who know the better'; a genuine colleague never stops you confirming on a number you already hold."
             },
             "ifTrusted": "Brightwell's customer list leaks to the people who staged the call.",
