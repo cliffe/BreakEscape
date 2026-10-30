@@ -337,7 +337,10 @@
           "found": "collected",
           "opened": "opened",
           "trying": "did not open",
-          "switchOff": "Finish and see the results"
+          "switchOff": "Finish and see the results",
+          "rosterMissing": "No address list yet: it needs the staff names from the People page and the email pattern from the Contact page.",
+          "wordListMissing": "Not collected yet: this word comes from a page you have not read.",
+          "sprayMissing": "This password can't be tried yet: the address list, or the word it is built from, is still missing."
         },
         "roster": {
           "namesFactId": "ms_team_roster",
@@ -358,19 +361,22 @@
               "id": "project",
               "factId": "ms_projects",
               "word": "Calderbank",
-              "template": "{project}2026"
+              "template": "{project}2026",
+              "label": "A project from the Projects page (not collected yet)"
             },
             {
               "id": "motto",
               "factId": "ms_motto",
               "word": "DesignThatLasts",
-              "template": "{motto}1"
+              "template": "{motto}1",
+              "label": "The strapline from the Home page (not collected yet)"
             },
             {
               "id": "place",
               "factId": "ms_place",
               "word": "Verrow",
-              "template": "{place}!"
+              "template": "{place}!",
+              "label": "The street from the Visit page (not collected yet)"
             }
           ],
           "seasonYear": [
@@ -461,7 +467,7 @@
         "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team: you don't go after one person, you go after the whole practice at once. Gather the staff and how their email addresses are built, build a word list from the practice's own website, then try one likely password against every account, and a stolen breach list across many services. Then it's your own seat: the alerts arrive, and you tell the real from the fake. Only that part is scored.",
         "stages": {
           "osint": {
-            "text": "Open the browser and read the practice's public pages. Click a line to add it to your notes; you need five useful facts before you close the browser."
+            "text": "Open the browser and read the practice's public pages. Click a line to add it to your notes; the useful lines are the patterns and projects, not individual staff. Five useful facts are there to find, and the more you note, the more the campaign has to work with."
           }
         },
         "flipHeading": "Now it's your inbox.",
