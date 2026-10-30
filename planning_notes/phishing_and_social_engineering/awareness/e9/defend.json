@@ -142,7 +142,7 @@
             "prompt": "Which of these makes the stronger password?",
             "options": [
               { "id": "complex", "label": "Your company's name with a capital, a year and a symbol on the end (for example Tarrowby2026!)", "verdict": "trust" },
-              { "id": "words", "label": "Three random words you don't use anywhere else (for example otter-ladder-crimson)", "verdict": "report" }
+              { "id": "words", "label": "Three random words strung together (for example otter-ladder-crimson)", "verdict": "report" }
             ],
             "note": "These are made up for the exercise; no real password is typed or stored. Never use a training example as your real password."
           },
@@ -162,7 +162,7 @@
           "choice": {
             "prompt": "The new FuelWise supplier portal asks you to set a password. What do you use?",
             "options": [
-              { "id": "unique", "label": "A new password made up by your password manager, kept only for this portal", "verdict": "report" },
+              { "id": "unique", "label": "A new password made up by your password manager when you sign up", "verdict": "report" },
               { "id": "reuse", "label": "Your usual password, the one you already use for other sign-ins", "verdict": "trust" }
             ],
             "note": "No real password is typed; the password manager fills it in for you."
