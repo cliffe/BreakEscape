@@ -139,6 +139,7 @@ module ValidateSocial
       issues = []
       people = Mail.people_ids(ctx)
       sites(osint).each do |s|
+        issues << err("social.osint.sites[#{s['id']}].logo is true; give a file under #{ASSETS}/logos/, or false for no logo") if s['logo'] == true
         next if Mail.blank?(s['logo'])
 
         rel = "logos/#{s['logo'].sub(%r{\A/+}, '')}"

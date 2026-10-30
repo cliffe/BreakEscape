@@ -874,7 +874,10 @@
         "title": {"type": "string"},
         "type": {"type": "string", "enum": ["company-site", "social", "document"]},
         "card": {"type": "string", "description": "social.conceptCards id shown with the site"},
-        "logo": {"type": "string"},
+        "logo": {
+          "oneOf": [{"type": "string"}, {"type": "boolean", "enum": [false]}],
+          "description": "Logo file under assets/logos/. false means no logo (the FriendFace default is not added, and the site shows its title)."
+        },
         "logoAlt": {"type": "string"},
         "pages": {"type": "array", "items": {"$ref": "#/definitions/socialOsintPage"}},
         "profiles": {"type": "array", "items": {"$ref": "#/definitions/socialOsintProfile"}},
