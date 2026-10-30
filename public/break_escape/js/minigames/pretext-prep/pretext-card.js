@@ -211,13 +211,27 @@ export function readinessLines(facts, optionsByFact) {
  * has lines with no blanks. An unfilled blank that does have options blocks,
  * and the line names the blank, not the missing value.
  */
-export function callGate(facts, optionsByFact, chosen) {
+export function callGate(facts, optionsByFact, chosen, opts = {}) {
     for (const fact of facts) {
         const options = optionsByFact[fact.factId] || [];
         if (options.length === 0) continue;
         const value = chosen?.[fact.factId];
         if (!options.some((option) => option.value === value)) {
             return { ok: false, reason: 'unchosen', line: `Choose an option for the ${factLabel(fact.factId, fact.label)} blank` };
+        }
+    }
+    // E12 B2 row 6 (opt-in): require at least one fact before the approach/call, so a learner who
+    // found nothing is sent back to research rather than approaching with an empty pretext. Default
+    // off → approaching with nothing held still works (the call degrades gracefully). A fact is
+    // held when a blank has a chosen value among its available options.
+    if (opts && opts.requireFact === true) {
+        const anyChosen = facts.some((fact) => {
+            const options = optionsByFact[fact.factId] || [];
+            return options.some((option) => option.value === chosen?.[fact.factId]);
+        });
+        if (!anyChosen) {
+            return { ok: false, reason: 'noFacts',
+                line: (typeof opts.line === 'string' && opts.line) ? opts.line : 'Go back and research first: you need at least one fact to go on.' };
         }
     }
     return { ok: true, reason: null, line: '' };

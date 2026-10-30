@@ -101,7 +101,9 @@ test('F-E12-5 / F-E13-4: the nudge shows on a phish with tells confirmed with no
     verdict(s, 'p_payroll', 'report'); // right verdict, but no tells ticked
     const nudge = $(s, '.tri-card-nudge');
     assert.ok(nudge, 'a phish with scorable tells nudges when nothing is ticked');
-    assert.match(nudge.textContent, /Tick what made you decide/);
+    assert.match(nudge.textContent, /tick what made you decide/i);
+    // E13 B2 finding 9: the verdict is locked by now, so the nudge never asks to "Confirm again".
+    assert.doesNotMatch(nudge.textContent, /Confirm again/);
 });
 
 test('F-E12-5 / F-E13-4: no nudge on a genuine item confirmed with nothing ticked (ticking never changes its score)', () => {

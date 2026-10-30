@@ -456,7 +456,16 @@ export function renderDebrief(container, { session, spec, onDone } = {}) {
 
     const outcome = document.createElement('p');
     outcome.className = 'pretext-debrief-outcome';
-    const outcomeText = { got_it: 'You got what you came for.', reported: 'The call was reported.', walked_away: 'You rang off.' };
+    // E12 B2 finding 15: the outcome labels are overridable per pretext (spec.outcomeLabels), so
+    // an in-person desk reads "You ended the conversation." rather than "You rang off." The phone
+    // defaults are unchanged (an existing JS assertion and E3/lab voice depend on them), so a
+    // pretext that sets nothing is exactly as before.
+    const ownLabels = isObject(spec?.outcomeLabels) ? spec.outcomeLabels : {};
+    const outcomeText = {
+        got_it: typeof ownLabels.got_it === 'string' && ownLabels.got_it ? ownLabels.got_it : 'You got what you came for.',
+        reported: typeof ownLabels.reported === 'string' && ownLabels.reported ? ownLabels.reported : 'The call was reported.',
+        walked_away: typeof ownLabels.walked_away === 'string' && ownLabels.walked_away ? ownLabels.walked_away : 'You rang off.'
+    };
     const outcomeKey = outcomeFor(session);
     // `got_it` means at least one ask was granted, but the call may also have had an
     // ask refused (an earlier grant, a later refusal). Saying "You got what you came

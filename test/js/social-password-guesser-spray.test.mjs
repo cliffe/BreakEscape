@@ -223,7 +223,10 @@ test('a pass whose word was not found cannot run; with no pass run, or no roster
     assert.equal(noWord.panels[2].rows[1].text, '0 of 4 accounts opened');
     const noRoster = G.buildRun(sprayBlock(), { ...allFacts, se_intel_f_names: false });
     assert.equal(noRoster.panels[2].rows[0].outcome, 'missing', 'no roster, no accounts to try');
-    assert.equal(noRoster.panels[2].rows[2].outcome, 'struck');
+    // E18 B2 item 4: a zero-target run gets its own plain "nothing to spray" line, not
+    // "0 of 0 accounts opened" with a "did not work" status.
+    assert.equal(noRoster.panels[2].rows[2].outcome, 'blocked');
+    assert.match(noRoster.panels[2].rows[2].text, /nothing to spray/);
     const none = G.buildRun({ ...sprayBlock(), spray: { passes: [{ id: 'a', literal: 'Autumn2099' }], opensCount: 0 } }, allFacts);
     assert.equal(none.panels[2].rows[1].outcome, 'struck');
     assert.equal(new G.GuesserRun(G.buildRun({ ...sprayBlock(), stuff: undefined, spray: { passes: [{ id: 'a', literal: 'x' }], opensCount: 0 } }, allFacts)).landed, false);

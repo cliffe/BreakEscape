@@ -42,7 +42,7 @@
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { MailReader } from '../mail-client/mail-reader.js';
 import { scoreTriage, weakestFactor, bandFor, verdictPoints, verdictPointsOverride, FULL_VERDICT_POINTS, CRITICAL_PENALTY, criticalWhat,
-    genuineFeedback, genuineFeedbackText, dedupeSentences, missedPhishText } from './triage-scoring.js';
+    genuineFeedback, genuineFeedbackText, dedupeSentences, missedPhishText, caughtHow } from './triage-scoring.js';
 import { buildTriageMessages } from './triage-messages.js';
 import { buildHeaderPanel } from './header-panel.js';
 import {
@@ -272,9 +272,47 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         this.reader.setMessages(this.messages, 'inbox');
         if (this.stored) {
             this._showStep('result');
+        } else if (this._restoreProgress()) {
+            // item 8: resumed mid-round from saved per-verdict progress (step set inside).
         } else {
             this._showStep('brief');
         }
+    }
+
+    /**
+     * item 8 (opt-in): restore a mid-round triage from the launcher's saved verdicts
+     * (params.restoreAnswers) so a reload resumes where the learner was. Returns false when there
+     * is nothing to restore, so the brief shows as normal. When every item was already answered
+     * before the reload, it finishes the round as the last lock would have.
+     */
+    _restoreProgress() {
+        const list = Array.isArray(this.params?.restoreAnswers) ? this.params.restoreAnswers : null;
+        if (!list || !list.length) return false;
+        const byId = new Map(this.messages.map((m) => [m.id, m]));
+        let restored = 0;
+        for (const a of list) {
+            if (!isObj(a) || !isStr(a.id) || !isStr(a.verdict) || !byId.has(a.id) || this.answers.has(a.id)) continue;
+            const answer = { id: a.id, verdict: a.verdict, flags: Array.isArray(a.flags) ? a.flags.filter(isStr) : [],
+                ms: Number.isFinite(a.ms) ? a.ms : 0 };
+            if (isStr(a.action)) answer.action = a.action;
+            if (a.unflagged === true) answer.unflagged = true;
+            if (a.none === true) answer.none = true;
+            this.answers.set(a.id, answer);
+            byId.get(a.id).read = true;
+            restored += 1;
+        }
+        if (!restored) return false;
+        this.progressEl.textContent = `${this.answers.size} of ${this.messages.length} sorted`;
+        if (this.answers.size >= this.messages.length) {
+            // The whole round was answered before the reload; finish as the last lock would have.
+            if (this.feedbackMode === 'end') { this._showStep('review'); return true; }
+            this._finishSort();
+            return true;
+        }
+        this._showStep('sort');
+        const next = this.messages.find((m) => !this.answers.has(m.id));
+        if (next) this.reader.select(next.id);
+        return true;
     }
 
     start() {
@@ -673,9 +711,14 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     }
 
     _nextUnanswered(afterId) {
-        const i = this.messages.findIndex((m) => m.id === afterId);
-        const order = [...this.messages.slice(i + 1), ...this.messages.slice(0, Math.max(i, 0))];
-        return order.find((m) => !this.answers.has(m.id)) || null;
+        // E11 B2 finding 6: "Next" goes to the first unsorted message in list order, not forward-
+        // and-wrap from the item just answered. A learner who answered an item out of order (for
+        // example opening a later email before a call sitting near the top) would otherwise strand
+        // the earlier unsorted item — the DC Rowley call went unread until it was the only one
+        // left. In a straight top-to-bottom run this is the same next item as before. afterId is
+        // already answered by the time this is called, so it is never the one returned.
+        void afterId;
+        return this.messages.find((m) => !this.answers.has(m.id)) || null;
     }
 
     // ── the "What made you say that?" sheet ────────────────────────────────────
@@ -763,7 +806,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
 
         this.root.appendChild(backdrop);
         this.stageEl.inert = true;
-        this.sheet = { messageId: rec.id, verdict, action, el: backdrop, inputs, returnFocus: document.activeElement };
+        this.sheet = { messageId: rec.id, verdict, action, el: backdrop, sheetEl: sheet, bar, inputs, returnFocus: document.activeElement, prompted: false };
         this._popSheet = this.pushLayer(() => this._closeSheet(true), 'chip-sheet');
         inputs.values().next().value?.focus?.();
     }
@@ -790,6 +833,17 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         // it so the immediate review card can nudge the learner to tick next time. Choosing
         // "Nothing looks wrong" is a deliberate answer and is not nudged.
         const choseNone = !!s.inputs.get(NONE_ID)?.checked;
+        // E11 B2 finding 7 (opt-in): when the set asks for it, the first Confirm with nothing
+        // ticked and no "Nothing looks wrong" shows a gentle prompt on the sheet instead of
+        // locking; a second Confirm locks. Only when there is something worth ticking (a chip
+        // other than "Nothing looks wrong"). Default off → bridges and labs that Confirm once and
+        // expect an immediate lock are unchanged.
+        const hasTickableChip = [...s.inputs.keys()].some((id) => id !== NONE_ID);
+        if (this.set?.confirmPrompt && hasTickableChip && !flags.length && !choseNone && !s.prompted) {
+            s.prompted = true;
+            this._showSheetPrompt(s);
+            return;
+        }
         if (!flags.length && !choseNone) answer.unflagged = true;
         // E17 B2 finding 4: "Nothing looks wrong" is an answer, not silence, so the result screen
         // must not then say the learner "didn't tick anything you noticed".
@@ -797,10 +851,44 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         this._lockAnswer(s.messageId, answer);
     }
 
-    /** The one-line nudge shown when Confirm is pressed with nothing ticked (E8 F11); overridable. */
+    /** Show the gentle "tick something or confirm again" prompt inside the open sheet (item 7). */
+    _showSheetPrompt(s) {
+        if (!s?.sheetEl) return;
+        let note = s.sheetEl.querySelector('.tri-sheet-prompt');
+        if (!note) {
+            note = el('p', 'tri-sheet-prompt');
+            note.setAttribute('role', 'status');
+            note.setAttribute('aria-live', 'polite');
+            if (s.bar && s.bar.parentNode === s.sheetEl) s.sheetEl.insertBefore(note, s.bar);
+            else s.sheetEl.appendChild(note);
+        }
+        note.textContent = this._confirmPromptLine();
+        try { note.focus?.(); } catch (e) { /* focus is a nicety */ }
+    }
+
+    /**
+     * The one-line nudge shown on the review card when Confirm was pressed with nothing ticked
+     * (E8 F11); overridable via set.sheetNudge. E13 B2 finding 9 / E16 B1: the verdict is already
+     * locked and only "Next" is offered by the time this shows, so the line is retrospective
+     * ("next time") and never asks the learner to "Confirm again", an action that is no longer
+     * possible.
+     */
     _nudgeLine() {
         return isStr(this.set?.sheetNudge) ? this.set.sheetNudge
-            : 'Tick what made you decide, or choose ‘Nothing looks wrong’. Then Confirm again.';
+            : 'Next time, tick what made you decide, or choose ‘Nothing looks wrong’.';
+    }
+
+    /**
+     * The gentle one-off prompt shown on the flag sheet when Confirm is pressed with nothing
+     * ticked (E11 B2 finding 7). Opt-in: only when set.confirmPrompt is on, so bridges and labs
+     * that press Confirm once and expect an immediate lock are unchanged. set.confirmPrompt may be
+     * a string (the prompt wording) or true (the default wording); naming a flag is never required,
+     * so a second Confirm always locks.
+     */
+    _confirmPromptLine() {
+        const own = this.set?.confirmPrompt;
+        if (isStr(own) && own.trim()) return own;
+        return 'Tick what made you decide, or choose ‘Nothing looks wrong’. Confirm again to move on.';
     }
 
     /** A choice card's option is the whole answer: no flags, no sheet (ENG-09a). */
@@ -825,6 +913,11 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const rec = this.messages.find((m) => m.id === messageId);
         this._announce(this._lockedLine(rec.id));
         this.progressEl.textContent = `${this.answers.size} of ${this.messages.length} sorted`;
+        // item 8 (opt-in): hand the launcher each locked verdict so a reload mid-round can resume.
+        // Only when the launcher wired params.onProgress (the episode runner); best-effort.
+        if (typeof this.params?.onProgress === 'function') {
+            try { this.params.onProgress([...this.answers.values()]); } catch (e) { /* save is best-effort */ }
+        }
 
         if (this.answers.size >= this.messages.length) {
             if (this.feedbackMode === 'end') { this._showStep('review'); return; }
@@ -1030,7 +1123,12 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             }
             card.appendChild(ul);
         }
-        if (truth.isPhish && (ans.verdict === 'trust' || ans.verdict === 'delete') && truth.ifTrusted) {
+        // E12 B2 finding 14: show "what they were after" only when the verdict let the attacker
+        // in. Trust on a phish always does; a Delete / Refuse does only when it did not earn full
+        // verdict points (a desk visitor turned away at the full 60 stopped the attacker, so the
+        // line would read oddly).
+        const attackerIn = ans.verdict === 'trust' || (ans.verdict === 'delete' && per.verdictPoints < FULL_VERDICT_POINTS);
+        if (truth.isPhish && attackerIn && truth.ifTrusted) {
             // After Trust it is what the learner let happen; after a safe Delete/Refuse nothing
             // happened, so name it as what the attacker was after (E1-E4 P4-6).
             const lead = ans.verdict === 'trust' ? 'What would have happened'
@@ -1272,6 +1370,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             criticalPenalty: s.criticalPenalty,
             criticalPenaltyPer: s.criticalPenaltyPer,
             criticalPenaltyCapped: s.criticalPenaltyCapped,
+            clamped: s.clamped,
             phishVerified: s.phishVerified,
             total: this.messages.length,
             skipped: this.skipped.map((x) => x.id),
@@ -1328,13 +1427,29 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // noun follows the queue's kind.
             // labels.phishCaughtLabel (optional) overrides the counter label, for a non-phishing set
             // (E17 acceptable-use) where "Phish caught" is wrong; default unchanged (E17-M2).
+            // batch-11 item 1: the result-grid count lines can be made to "say what they count"
+            // without changing the pinned default strings. `set.resultCopy.caughtBreakdown` true
+            // appends the same "(N reported, M deleted...)" split the debrief shows, so a
+            // half-credit Delete counted under "Phish caught" is named, not a bare catch (E11 F6,
+            // E16 B1). `set.resultCopy.handledRightLabel` overrides the "{real} handled right"
+            // label so the genuine-items line is not read against "Phish caught" beside it
+            // (E16 F-E16-12, E11 B2 #4); `{real}` expands to the derived real noun. Both default
+            // off → every default line is byte-identical.
+            const rc = isObj(this.set?.resultCopy) ? this.set.resultCopy : {};
+            let caughtValue = `${result.phishCaught} of ${result.phishTotal}`;
+            if (rc.caughtBreakdown === true) {
+                const how = caughtHow(result, (id) => kindOf(this.messages.find((m) => m.id === id)));
+                if (how.length) caughtValue += ` (${how.join(', ')})`;
+            }
             addNum(isStr(this.labels?.phishCaughtLabel) ? this.labels.phishCaughtLabel : 'Phish caught',
-                `${result.phishCaught} of ${result.phishTotal}`, 'phishCaught');
+                caughtValue, 'phishCaught');
             // A phish checked by another route (Verify, Ring back) was caught, not missed: say so
             // on the same line, so "1 of 4" beside two correct Ring backs is not read as a miss (N7).
             addNum(info.reportLabel, `${result.reportCount} of ${result.phishTotal}` +
                 (result.phishVerified ? `, and ${result.phishVerified} more checked by another route` : ''), 'reported');
-            addNum(`${info.real} handled right`, `${result.realHandledRight} of ${result.realTotal}`, 'realTrusted');
+            const handledRightLabel = isStr(rc.handledRightLabel) && rc.handledRightLabel.trim()
+                ? rc.handledRightLabel.split('{real}').join(info.real) : `${info.real} handled right`;
+            addNum(handledRightLabel, `${result.realHandledRight} of ${result.realTotal}`, 'realTrusted');
             if (this.profile === 'analyst') addNum('False alarms', String(result.falseAlarms), 'falseAlarms');
             if (this.verifyEnabled && result.verifyCount) addNum('Checked by another route', String(result.verifyCount), 'verify');
         }
@@ -1372,6 +1487,15 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 `${result.criticalMisses.length === 1 ? 'One answer' : `${result.criticalMisses.length} answers`} ${allLabelled ? 'missed something that needed reporting' : criticalLead} ` +
                 `(${criticalWhat(result.criticalKinds, labels, this.set?.criticalWhat) || "approving a sign-in you didn't start, or doing what an impostor asked on a call"}).` + nameLine + ` ` +
                 penaltyLine));
+            // E11 B2 finding 8: when those penalties floored the round at 0, say the score stops
+            // there, so "0%" beside a right answer does not read as unexplained. Overridable via
+            // set.resultCopy.clampedNote (''/absent keeps the default; shown only when clamped).
+            if (result.clamped && percent === 0) {
+                const own = isObj(this.set?.resultCopy) ? this.set.resultCopy.clampedNote : undefined;
+                const note = own === '' ? '' : (isStr(own) && own.trim() ? own
+                    : 'The round score stops at 0%, so the points taken off do not show below it.');
+                if (note) p.appendChild(el('p', 'tri-clamped', note));
+            }
         }
         // The genuine items (FUN_DECISIONS disc_visible): which real ones the learner trusted, what
         // made each flagged one safe and why both halves matter. End-of-round feedback puts the

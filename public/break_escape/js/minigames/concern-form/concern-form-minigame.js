@@ -165,11 +165,21 @@ export class ConcernFormMinigame extends SocialOverlayScene {
 
         if (this.checked) {
             p.appendChild(this._feedback(this.checked));
-            if (this.checked !== 'empty') {
+            // E16 B1 row 7 (opt-in): when the set requires it, a report that still holds a verdict
+            // chip cannot be finished — Done is held back and a line says to remove it first. The
+            // feedback above already explains why. Default (requireNoConclusion off): Done appears
+            // after any non-empty check, unchanged.
+            const heldByConclusion = this.config.requireNoConclusion
+                && assessReport(this.config, [...this.picks]).conclusions.length > 0;
+            if (this.checked !== 'empty' && !heldByConclusion) {
                 const done = el('button', 'cf-finish cf-button minigame-button', this.text('done'));
                 done.type = 'button';
                 this.addEventListener(done, 'click', () => this.finish());
                 p.appendChild(done);
+            } else if (heldByConclusion) {
+                const note = el('p', 'cf-must-remove', this.text('mustRemoveConclusion'));
+                note.setAttribute('role', 'status');
+                p.appendChild(note);
             }
         }
         this.stageEl.appendChild(p);

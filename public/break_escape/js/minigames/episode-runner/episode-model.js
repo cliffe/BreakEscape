@@ -189,6 +189,69 @@ function cleanDrill(raw) {
     return out;
 }
 
+/**
+ * A recap list kept in the state for the debrief (ENG batch 11): each entry
+ * { situation, chosen?, right?, reason? }, cleaned. Returns null when empty, so an episode that
+ * ran neither the sandbox nor the assistant carries no such key.
+ */
+export function cleanRecapList(raw) {
+    if (!Array.isArray(raw)) return null;
+    const list = raw.filter((r) => isObj(r) && isStr(r.situation)).map((r) => ({
+        situation: r.situation,
+        chosen: isStr(r.chosen) ? r.chosen : '',
+        right: isStr(r.right) ? r.right : '',
+        reason: isStr(r.reason) ? r.reason : ''
+    }));
+    return list.length ? list : null;
+}
+
+/**
+ * E12 B2 finding 3 (item 8): the per-verdict progress of an in-progress triage round, kept in the
+ * state so a reload mid-inbox resumes where the learner was instead of restarting. Each entry is
+ * one locked answer { id, verdict, flags, ms, action?, unflagged?, none? }. Cleared when the round
+ * completes (the 'defend' summary is written). Returns null when empty, so a fresh or finished
+ * round carries no such key.
+ */
+export function cleanAnswerList(raw) {
+    if (!Array.isArray(raw)) return null;
+    const out = [];
+    for (const a of raw) {
+        if (!isObj(a) || !isStr(a.id) || !isStr(a.verdict)) continue;
+        const entry = { id: a.id, verdict: a.verdict, flags: Array.isArray(a.flags) ? a.flags.filter(isStr) : [],
+            ms: typeof a.ms === 'number' && Number.isFinite(a.ms) ? a.ms : 0 };
+        if (isStr(a.action)) entry.action = a.action;
+        if (a.unflagged === true) entry.unflagged = true;
+        if (a.none === true) entry.none = true;
+        out.push(entry);
+    }
+    return out.length ? out : null;
+}
+
+/**
+ * E11 B2 finding 5: the consequence-sandbox beats the learner got wrong (chose a non-safe
+ * option), for the debrief recap. Each item reuses the option labels and the montage "where it
+ * led" line (strings.flipMontageByChoice[beatId][optionId]) as the reason — existing content
+ * only, no new per-option key. Empty when every choice was safe (or none was a sandbox beat).
+ */
+export function sandboxRecap(episode, choices) {
+    const picked = isObj(choices) ? choices : {};
+    const byChoice = isObj(episode?.strings?.flipMontageByChoice) ? episode.strings.flipMontageByChoice : {};
+    const out = [];
+    for (const beat of mistakeBeats(episode)) {
+        const chosen = beat.options.find((o) => o.id === picked[beat.id]);
+        if (!chosen || chosen.safe) continue;
+        const safe = beat.options.find((o) => o.safe) || null;
+        const lines = isObj(byChoice[beat.id]) ? byChoice[beat.id] : {};
+        out.push({
+            situation: beat.situation,
+            chosen: chosen.label,
+            right: safe ? safe.label : '',
+            reason: isStr(lines[chosen.id]) ? lines[chosen.id] : ''
+        });
+    }
+    return out;
+}
+
 // ── the concern form (ENG-12) ────────────────────────────────────────────────────
 // `episode.concernForm` runs inside the defend stage after any sort drill and before the triage
 // set (the 'concern-form' scene). Like the drill, the runner keeps only a small record of it
@@ -346,6 +409,15 @@ export function readState(episode, raw) {
     // Likewise the privacy panel (ENG-13).
     const privacy = cleanPrivacy(src.privacy);
     if (privacy) state.privacy = privacy;
+    // batch 11: recap lists for the debrief (the sandbox choices and the assistant window). Kept
+    // past the flip (unlike mistakeChoices), so the debrief can look back at both stages.
+    const sandbox = cleanRecapList(src.sandbox);
+    if (sandbox) state.sandbox = sandbox;
+    const assistant = cleanRecapList(src.assistant);
+    if (assistant) state.assistant = assistant;
+    // item 8: an in-progress triage round's per-verdict answers, so a reload resumes it.
+    const defendProgress = cleanAnswerList(src.defendProgress);
+    if (defendProgress) state.defendProgress = defendProgress;
     state.stage = nextStage(episode, state);
     return state;
 }
@@ -361,10 +433,17 @@ export function completeStage(episode, state, stageId, patch = {}) {
         ? base.done : [...base.done, stageId];
     const next = { ...base, done };
     if ('sent' in patch) next.sent = cleanSent(patch.sent);
-    if ('defend' in patch) next.defend = cleanDefend(patch.defend);
+    // item 8: writing the defend summary means the round finished, so the saved per-verdict
+    // progress is no longer needed and is cleared.
+    if ('defend' in patch) { next.defend = cleanDefend(patch.defend); delete next.defendProgress; }
+    if ('defendProgress' in patch) { const p = cleanAnswerList(patch.defendProgress); if (p) next.defendProgress = p; else delete next.defendProgress; }
     if ('drill' in patch) { const drill = cleanDrill(patch.drill); if (drill) next.drill = drill; }
     if ('concern' in patch) { const concern = cleanConcern(patch.concern); if (concern) next.concern = concern; }
     if ('privacy' in patch) { const privacy = cleanPrivacy(patch.privacy); if (privacy) next.privacy = privacy; }
+    // batch 11: the sandbox and assistant recap lists are set when their stage ends and are NOT
+    // cleared by the flip (below), so the debrief can still show them.
+    if ('sandbox' in patch) { const s = cleanRecapList(patch.sandbox); if (s) next.sandbox = s; else delete next.sandbox; }
+    if ('assistant' in patch) { const a = cleanRecapList(patch.assistant); if (a) next.assistant = a; else delete next.assistant; }
     if ('mistakeChoices' in patch) {
         const choices = cleanMistake(patch.mistakeChoices);
         if (choices) next.mistakeChoices = choices;

@@ -106,7 +106,8 @@ export class PretextPrepMinigame extends SocialOverlayScene {
     }
 
     gate() {
-        return callGate(this.facts(), this.optionsByFact(), this.chosen);
+        return callGate(this.facts(), this.optionsByFact(), this.chosen,
+            { requireFact: this.spec?.requireFact === true, line: this.spec?.requireFactLine });
     }
 
     payload() {
@@ -120,7 +121,7 @@ export class PretextPrepMinigame extends SocialOverlayScene {
         const options = this.optionsByFact();
         const brief = briefCopy(spec, this.social);
         const held = heldOnBoard(this.social, this.globals);
-        const gate = callGate(facts, options, this.chosen);
+        const gate = this.gate();
         const ready = readinessLines(facts, options);
         const npcMissing = gate.ok && !this.npc();
         const gateText = npcMissing ? 'This call has no contact.' : gate.line;

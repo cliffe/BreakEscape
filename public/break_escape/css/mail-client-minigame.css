@@ -311,6 +311,24 @@
 .mail-compose-from-own { margin: 0; font-family: var(--se-font-address); font-size: 16px; overflow-wrap: anywhere; }
 .mail-compose-fixed { flex: 1 1 auto; min-width: 180px; font-family: var(--se-font-readable); }
 .mail-compose-hint { color: var(--ui-text-dim, #a8b2c8); font-size: 14px; }
+/* E13 B2 finding 12: a template's white-text "line for the assistant", shown in the compose view
+   as a distinct block so the learner can see what the hidden-line pretext plants. */
+.mail-compose-hidden {
+    margin: 2px 0 6px;
+    padding: 8px 10px;
+    border-left: 3px dashed var(--ui-text-dim, #a8b2c8);
+    background: rgba(168, 178, 200, 0.12);
+    border-radius: 4px;
+}
+.mail-compose-hidden-label {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ui-text-dim, #a8b2c8);
+    margin-bottom: 2px;
+}
+.mail-compose-hidden-text { margin: 0; font-family: var(--se-font-readable); font-style: italic; overflow-wrap: anywhere; }
 .mail-burned { color: var(--ui-text-dim, #a8b2c8); text-decoration: line-through; }
 .mail-compose-note { margin: 0; font-family: var(--se-font-readable); font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
 .mail-composer select {
