@@ -27,6 +27,20 @@
 .tri-step.current { color: var(--ui-text, #eef1f8); font-weight: 700; border-bottom-color: var(--ui-accent, #ffcc44); }
 
 .tri-live:empty { min-height: 0; height: 0; overflow: hidden; }
+/* batch-12 item 1: in immediate feedback the review card is the visible confirmation, so the
+   "Verdict locked: …" notice is for screen readers only — present and announced, but not shown. */
+.tri-live-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
 
 .tri-stage { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .tri-stage[inert] { opacity: 0.55; }

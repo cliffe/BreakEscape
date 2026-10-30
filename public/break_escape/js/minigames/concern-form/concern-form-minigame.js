@@ -150,6 +150,13 @@ export class ConcernFormMinigame extends SocialOverlayScene {
             label.id = 'cf-kind-conclusion';
             group.setAttribute('aria-labelledby', label.id);
             group.appendChild(label);
+            // batch-12 item 4: only one conclusion is kept, and a second pick replaces the first.
+            // Say so on screen (it used to swap silently). Shown only when there is more than one to
+            // choose between; strings.conclusionsNote: '' suppresses it.
+            if (this.config.conclusionChips.length > 1) {
+                const note = this.config.strings?.conclusionsNote === '' ? '' : this.text('conclusionsNote');
+                if (note) group.appendChild(el('p', 'cf-conclusions-note', note));
+            }
             const row = el('div', 'cf-chips');
             for (const c of this.config.conclusionChips) row.appendChild(this._chip(c, 'conclusion'));
             group.appendChild(row);
@@ -169,17 +176,28 @@ export class ConcernFormMinigame extends SocialOverlayScene {
             // chip cannot be finished — Done is held back and a line says to remove it first. The
             // feedback above already explains why. Default (requireNoConclusion off): Done appears
             // after any non-empty check, unchanged.
-            const heldByConclusion = this.config.requireNoConclusion
-                && assessReport(this.config, [...this.picks]).conclusions.length > 0;
-            if (this.checked !== 'empty' && !heldByConclusion) {
+            const assess = assessReport(this.config, [...this.picks]);
+            const heldByConclusion = this.config.requireNoConclusion && assess.conclusions.length > 0;
+            // batch-12 item 15: a report missing a `required` fact cannot be finished either. Opt-in
+            // per chip; with none required the list is empty and Done appears as before.
+            const missingRequired = Array.isArray(assess.missingRequired) ? assess.missingRequired : [];
+            if (this.checked !== 'empty' && !heldByConclusion && !missingRequired.length) {
                 const done = el('button', 'cf-finish cf-button minigame-button', this.text('done'));
                 done.type = 'button';
                 this.addEventListener(done, 'click', () => this.finish());
                 p.appendChild(done);
-            } else if (heldByConclusion) {
-                const note = el('p', 'cf-must-remove', this.text('mustRemoveConclusion'));
-                note.setAttribute('role', 'status');
-                p.appendChild(note);
+            } else {
+                if (heldByConclusion) {
+                    const note = el('p', 'cf-must-remove', this.text('mustRemoveConclusion'));
+                    note.setAttribute('role', 'status');
+                    p.appendChild(note);
+                }
+                if (this.checked !== 'empty' && missingRequired.length) {
+                    const names = missingRequired.map((c) => c.label).join(', ');
+                    const note = el('p', 'cf-must-add', this.text('feedbackRequired', { missing: names }));
+                    note.setAttribute('role', 'status');
+                    p.appendChild(note);
+                }
             }
         }
         this.stageEl.appendChild(p);
@@ -271,6 +289,11 @@ export class ConcernFormMinigame extends SocialOverlayScene {
 
     finish() {
         if (!this.gameState.isActive || !this.checked || this.checked === 'empty') return;
+        // batch-12 item 15 (and E16 B1 row 7): never finish while a required fact is missing or a
+        // conclusion must come out, so the gate holds even if Done is reached another way.
+        const assess = assessReport(this.config, [...this.picks]);
+        if (this.config.requireNoConclusion && assess.conclusions.length > 0) return;
+        if (Array.isArray(assess.missingRequired) && assess.missingRequired.length) return;
         this.gameResult = this.buildResult();
         this.complete(true);
     }
@@ -335,6 +358,7 @@ export class ConcernFormMinigame extends SocialOverlayScene {
                 tone: a.tone,
                 checked: this.checked,
                 minFacts: this.config?.minFacts ?? null,
+                missingRequired: Array.isArray(a.missingRequired) ? a.missingRequired.map((c) => c.id) : [],
                 live: this._live
             }
         };

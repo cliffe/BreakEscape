@@ -183,9 +183,11 @@ test('debrief reportedPct: set.resultCopy wins, then strings, then the default',
 
 test('debrief weakest line: default "tell(s) most often missed", overridable per set', () => {
     const set = { messages: [{ id: 'e1', kind: 'email', truth: { isPhish: true, flags: ['senderTrust'] } }] };
+    // batch-12 item 3: the weakest line shows once the learner named at least one flag; here a false
+    // claim stands in for that, so this test still exercises the overridable wording.
     const result = { percent: 0, phishTotal: 1, phishCaught: 0, reportCount: 0, phishVerified: 0,
-        perFactor: { senderTrust: { caught: 0, missed: 1 } },
-        answers: [{ id: 'e1', verdict: 'trust', flags: [], isPhish: true, score: 0 }] };
+        perFactor: { senderTrust: { caught: 0, missed: 1 } }, falseByFactor: { linkCredible: 1 },
+        answers: [{ id: 'e1', verdict: 'trust', flags: ['linkCredible'], isPhish: true, score: 0 }] };
     // default (one skill → singular)
     assert.match(debriefText({ result, set, strings: {}, variant: 'full', onFinish() {} }), /The tell most often missed:/);
     // override
@@ -199,11 +201,13 @@ test('debrief weakest line (tie): the plural weakestTells frame is used', () => 
         { id: 'e1', kind: 'email', truth: { isPhish: true, flags: ['senderTrust'] } },
         { id: 'e2', kind: 'email', truth: { isPhish: true, flags: ['linkCredible'] } }
     ] };
+    // batch-12 item 3: a named flag (a "Nothing looks wrong" pick) satisfies the weakest-line
+    // precondition, so this still tests the tie wording.
     const result = { percent: 0, phishTotal: 2, phishCaught: 0, reportCount: 0, phishVerified: 0,
         perFactor: { senderTrust: { caught: 0, missed: 1 }, linkCredible: { caught: 0, missed: 1 } },
         answers: [
-            { id: 'e1', verdict: 'trust', flags: [], isPhish: true, score: 0 },
-            { id: 'e2', verdict: 'trust', flags: [], isPhish: true, score: 0 }
+            { id: 'e1', verdict: 'trust', flags: [], isPhish: true, score: 0, none: true },
+            { id: 'e2', verdict: 'trust', flags: [], isPhish: true, score: 0, none: true }
         ] };
     assert.match(debriefText({ result, set, strings: {}, variant: 'full', onFinish() {} }), /The tells most often missed:.*each\)/);
     const text = debriefText({ result, set, strings: { weakestTells: 'Both to watch: {names} ({counts} apiece)' }, variant: 'full', onFinish() {} });

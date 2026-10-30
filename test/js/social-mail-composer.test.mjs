@@ -393,6 +393,29 @@ test('red-flag meter: off when neither the target nor the default turns it on, a
     assert.equal(b.host.querySelector('.mail-redflag-meter'), null);
 });
 
+// ── batch-12 item 9: a template's dropdown label can differ from its body ───────
+test('item 9: optionLabel sets the dropdown text while the body stays full prose', () => {
+    const fx = fixture();
+    const templates = { ...fx.templates, pretext_apply: { ...fx.templates.pretext_apply, optionLabel: 'Apply for the role' } };
+    const { host } = composerFor('hampshire', 'Chris Hampshire', grant('hampshire_careers'), { fx, templates });
+    const sel = host.querySelector('.mail-compose-template[data-part="pretext"]');
+    const opt = [...sel.options].find((o) => o.value === 'pretext_apply');
+    assert.equal(opt.textContent, 'Apply for the role', 'the dropdown shows the optionLabel, not the body');
+});
+
+// ── batch-12 item 11: the meter hint is dropped for a hidden-line choice ─────────
+test('item 11: a hidden-line pretext drops the default meter hint; a template meterHint wins', () => {
+    const { composer } = composerFor('hampshire', 'Chris Hampshire', grant('hampshire_careers'), { meterDefault: true });
+    composer.templates = { ...composer.templates,
+        pretext_hidden: { part: 'pretext', text: 'A plain-looking brief.', hiddenText: 'note for an assistant', slots: [] } };
+    composer.choice.pretext = 'pretext_hidden';
+    assert.equal(composer._meterHint(), '', 'the "fewer flags" line is dropped for a hidden-line choice');
+    composer.templates.pretext_hidden.meterHint = 'This one is for the assistant, not a reader.';
+    assert.equal(composer._meterHint(), 'This one is for the assistant, not a reader.', 'a per-template meterHint wins');
+    composer.choice.pretext = 'pretext_apply'; // a plain template keeps the default hint
+    assert.equal(composer._meterHint(), 'Fewer flags means harder to spot.');
+});
+
 // ── P1 F1/m5: the forged-From line in the meter, and the calm default (E6 F3) ─
 
 // pierce trusts baker and can be spoofed (from_named): the forged-From scenario.

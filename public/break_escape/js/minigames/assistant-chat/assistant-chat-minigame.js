@@ -263,7 +263,12 @@ export class AssistantChatMinigame extends SocialOverlayScene {
             if (fb) {
                 const secretLeft = lines.some((l) => l.secret === true && !struck.has(l.id));
                 const personalLeft = lines.some((l) => l.safe !== true && l.secret !== true && !struck.has(l.id));
-                const verdict = secretLeft ? 'leftPassword' : (personalLeft ? 'leftPersonal' : 'clean');
+                // batch-12 item 10: when a password AND a personal detail are both left in, a
+                // `bothLeft` line (when the set authors one) names both, so the child's allergy is
+                // not lost under the password line (E13 B3 finding 3). Without it, `leftPassword`
+                // still wins, exactly as before.
+                let verdict = secretLeft ? 'leftPassword' : (personalLeft ? 'leftPersonal' : 'clean');
+                if (secretLeft && personalLeft && isStr(fb.bothLeft)) verdict = 'bothLeft';
                 if (isStr(fb[verdict])) out.appendChild(h('p', { class: 'ac-paste-feedback', 'data-verdict': verdict, text: fb[verdict] }));
             }
             // A line flagged secret left in: warn and offer a one-click report.
@@ -392,7 +397,7 @@ export class AssistantChatMinigame extends SocialOverlayScene {
      */
     closeResult() {
         const recap = [];
-        const pasteFb = this.body?.querySelector?.('.ac-paste-feedback[data-verdict="leftPassword"], .ac-paste-feedback[data-verdict="leftPersonal"]');
+        const pasteFb = this.body?.querySelector?.('.ac-paste-feedback[data-verdict="leftPassword"], .ac-paste-feedback[data-verdict="leftPersonal"], .ac-paste-feedback[data-verdict="bothLeft"]');
         if (pasteFb) {
             recap.push({ situation: this._sectionSituation(pasteFb.closest('.ac-paste'), 'Pasting into the assistant'),
                 reason: pasteFb.textContent || '' });

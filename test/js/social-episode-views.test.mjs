@@ -249,10 +249,13 @@ test('F-E10-2: the debrief summary keeps the score but does not repeat the band 
 
 test('debrief (Cut A): a weakest-skill line appears when a tell was missed and perFactor is present', () => {
     const h = host();
+    // batch-12 item 3: the weakest line shows once the learner named at least one flag (here a
+    // correct pretextRelevant tick), so it never contradicts the "nothing to grade" lead.
     const r = {
         percent: 60, headline: 'Getting there',
         perFactor: { senderTrust: { caught: 0, missed: 2 }, pretextRelevant: { caught: 1, missed: 0 } },
-        answers: [{ id: 'm1', verdict: 'trust', flags: [], score: 0 }]
+        flagRecall: { caught: 1, total: 3 },
+        answers: [{ id: 'm1', verdict: 'trust', flags: ['pretextRelevant'], score: 0 }]
     };
     renderDebrief(h, { result: r, set: set(), strings: {}, variant: 'full', onFinish() {} });
     assert.equal(h.querySelectorAll('.aw-card').length, 1);

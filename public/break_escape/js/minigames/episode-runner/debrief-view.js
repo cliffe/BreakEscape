@@ -29,8 +29,8 @@
 // Every string goes in with textContent. The wording never blames the learner.
 
 import { redFlagString, skillName } from '../inbox-triage/triage-flags.js';
-import { weakestFactor, flagUnits, unitAccepts, genuineFeedback, genuineFeedbackText, verdictPoints, verdictPointsOverride, FULL_VERDICT_POINTS, dedupeSentences } from '../inbox-triage/triage-scoring.js';
-import { kindOf, isNonEmail, actionById, kindVerdictLine, defaultSubject, choiceOptionFor, choiceText, verdictFeedbackOverride } from '../inbox-triage/triage-kinds.js';
+import { weakestFactor, flagUnits, unitAccepts, genuineFeedback, genuineFeedbackText, verdictPoints, verdictPointsOverride, FULL_VERDICT_POINTS, dedupeSentences, caughtHow } from '../inbox-triage/triage-scoring.js';
+import { kindOf, isNonEmail, actionById, kindVerdictLine, defaultSubject, choiceOptionFor, choiceText, verdictFeedbackOverride, verdictVerbOverride } from '../inbox-triage/triage-kinds.js';
 
 const DEFAULTS = Object.freeze({
     heading: 'What happened',
@@ -374,35 +374,11 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     // back) or deleted. All three are catches.
     const total = Number(result?.phishTotal);
     if (Number.isFinite(total) && total > 0 && Number.isFinite(result?.phishCaught)) {
-        const reported = Number.isFinite(result.reportCount) ? result.reportCount : Math.round((result.reportRate || 0) * total);
-        const checked = Number.isFinite(result.phishVerified) ? result.phishVerified : 0;
         // E8 F6 / E13 F-10: a caught phish handled with a safe refuse is not a "delete" — a push
         // Deny and a call Refuse (both verdict 'delete') read as denied / turned away, never
-        // "deleted". Count the delete-verdict catches by kind from the answers when they carry
-        // the detail; fall back to the old residual (labelled "deleted") when they do not.
-        const residual = Math.max(0, result.phishCaught - reported - checked);
-        let denied = 0, refused = 0, deleted = residual;
-        const deleteCatches = answers.filter((a) => a.isPhish === true && a.verdict === 'delete');
-        if (deleteCatches.length) {
-            denied = 0; refused = 0; deleted = 0;
-            for (const a of deleteCatches) {
-                const k = kindOf(messageFor(set, a.id));
-                if (k === 'push') denied += 1;
-                else if (k === 'call') refused += 1;
-                else deleted += 1;
-            }
-            // Keep the sum consistent with phishCaught if the counts and residual disagree (stored
-            // reopen without per-answer detail): trust the residual as the "deleted" bucket.
-            if (denied + refused + deleted !== residual && !answers.some((a) => a.isPhish === true)) {
-                denied = 0; refused = 0; deleted = residual;
-            }
-        }
-        const how = [];
-        if (reported) how.push(`${reported} reported`);
-        if (checked) how.push(`${checked} checked by another route`);
-        if (refused) how.push(`${refused} turned away`);
-        if (denied) how.push(`${denied} denied`);
-        if (deleted) how.push(`${deleted} deleted`);
+        // "deleted". batch-12 item 16: the split is now the shared caughtHow(), relabelling its
+        // verbs from the set's own verdict names (E10 Delete → "went the trusted way").
+        const how = caughtHow(result, (id) => kindOf(messageFor(set, id)), verdictVerbOverride(set?.labels));
         // batch-5 (E17): the counter label follows the set's labels.phishCaughtLabel, as the result
         // grid does, so a non-phishing set ("Requests handled") reads the same in the debrief.
         const caughtLabel = isObj(set?.labels) && isStr(set.labels.phishCaughtLabel) ? set.labels.phishCaughtLabel : 'Phish caught';
@@ -431,7 +407,14 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     for (const a of reviewed) cards.appendChild(buildCard(a, messageFor(set, a.id), set));
     root.appendChild(cards);
 
-    if (reviewed.length) {
+    // batch-12 item 3: the "signs most often missed" line only makes sense once the learner named at
+    // least one flag (a catch, a false claim, or a deliberate "Nothing looks wrong"). With nothing
+    // named, every skill reads "caught 0 of 1", which contradicts the result's "nothing to grade
+    // skill by skill" lead (E16 B3 persona 2). Same test the result screen uses, so the two agree.
+    const namedAnyFlags = (result?.flagRecall?.caught || 0) > 0
+        || Object.keys(result?.falseByFactor || {}).length > 0
+        || answers.some((a) => a && a.none === true);
+    if (reviewed.length && namedAnyFlags) {
         const weak = weakestFactor(isObj(result?.perFactor) ? result.perFactor : {});
         if (weak && weak.missed > 0) {
             const ids = Array.isArray(weak.ties) && weak.ties.length ? weak.ties : [weak.id];

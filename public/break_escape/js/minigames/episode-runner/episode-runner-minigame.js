@@ -863,6 +863,18 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
     }
 
     /**
+     * The osint-browser launch the prep card uses for its "Back to research" button (item 5): the
+     * same scene and site list the write panel's Back-to-research opens, starting on the first site.
+     * null when the episode has no research stage, so the prep shows no button.
+     */
+    _researchLaunch() {
+        if (!stagesFor(this.episode).includes('osint')) return null;
+        const spec = childLaunch(this.episode, 'osint');
+        if (!spec || spec.kind !== 'osint') return null;
+        return { scene: spec.sceneType, params: { ...spec.params, start: '@home' } };
+    }
+
+    /**
      * Open pretext-prep for the episode's call. A Close on the prep card returns here with the
      * stage unchanged. Begin replaces the prep with the phone chat, which has no way back, so
      * a watcher waits for the outcome global and for every overlay to close, then holds the
@@ -882,7 +894,12 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         const npcId = cfg?.channels?.phone || cfg?.channels?.person || null;
         const before = this._callOutcome();
         const reopen = this._reopenParams();
-        const child = this.launchChild('pretext-prep', socialOverlayParams({ callId, character, npcId }));
+        const child = this.launchChild('pretext-prep', socialOverlayParams({ callId, character, npcId,
+            // batch-12 item 5: when the episode has a research stage, hand the prep card a way back
+            // to it. The prep opens research as its own child (so the player keeps their place and,
+            // in a world-play call, their spot in the lobby) and returns to the card with the fact
+            // now held. Without a research stage the field is absent and no button shows (E12 F1).
+            researchLaunch: this._researchLaunch() }));
         if (child) {
             watchCall({
                 episode: this.episode, callId, before, reopen, handBack,

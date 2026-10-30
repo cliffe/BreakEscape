@@ -1089,6 +1089,8 @@
       "properties": {
         "part": {"type": "string", "enum": ["from", "greeting", "pretext", "ask"]},
         "text": {"type": "string"},
+        "optionLabel": {"type": "string", "description": "batch-12 item 9: the dropdown label for this template, when it should differ from the body text (so a short choice reads in the chooser while the body stays full prose, and the label text never leaks into the sent body — E13 B3 fix notes). Default: the filled body preview."},
+        "meterHint": {"type": "string", "description": "batch-12 item 11: the red-flag meter's hint line while this template is chosen; '' drops it. For a hidden-line brief, where 'fewer flags means harder to spot' says nothing (E13 F-6). A template that carries hiddenText drops the default hint even without this. An explicit target meterHint still wins."},
         "hiddenText": {"type": "string", "description": "batch-6 (E13 F-3): a line planted for a reader that is not the recipient (an AI assistant). Stored apart from the body and concealed behind the mail reader's 'Show hidden text' reveal, never shown in the visible body. Slots fill as in text. Absent: no hidden line"},
         "hiddenTextLabel": {"type": "string", "description": "Overrides the reveal button label (default 'Show hidden text')"},
         "slots": {"type": "array", "items": {"$ref": "#/definitions/socialTemplateSlot"}, "maxItems": 2},
@@ -1736,6 +1738,7 @@
             "verifyLine": {"type": "string", "minLength": 1, "description": "Phish items only (optional): the whole Verify feedback line, for an item where \"Checking first is a sound habit\" pulls against the lesson (a compromise sign where Verify is the fast report), e.g. \"Calling it in straight away is exactly right.\" Default: \"Checking first is a sound habit. \" + kindLine or the phish wording (ENG-03a / E19 D1)."},
             "reportLine": {"type": "string", "minLength": 1, "description": "Phish items only (optional): the whole Report feedback line, for an item where \"A report warns everyone else\" is wrong (reporting a locked-out colleague is not warning the team about an attack), e.g. \"Right to flag it. The service desk can reset his login the proper way.\" Default: \"Right call: reported. A report warns everyone else.\" (E16 F-E16-1)."},
             "trustLine": {"type": "string", "minLength": 1, "description": "Real items only (optional): the genuine-Trust feedback line for this one item, in place of the set-wide labels.verdictFeedback.trust.real, e.g. \"Right call — a real internal call that asked for nothing.\" Wins over the set override and the default (\"Right call. This one was real.\"). Item beats set (E13 F-10)."},
+            "deleteLine": {"type": "string", "minLength": 1, "description": "batch-12 item 8: Real items only (optional): the genuine-Delete/Turn-away feedback line for this one item, e.g. a colleague who locked their screen is not a \"visitor\" and nobody was \"left stuck\" (E12 B3 F5). Wins over the set override and the default. Item beats set, like trustLine."},
             "chips": {"type": "array", "items": {"type": "string"}, "description": "Optional per-item override of the tick list (E11 F8): keep only these tick ids, plus anything the item is scored on (truth.flags and its flagAlternatives are never hidden). Narrows this item's list only; the set-wide list is unchanged for every other item. Default: the set's full list."},
             "chipsOmit": {"type": "array", "items": {"type": "string"}, "description": "Optional per-item override of the tick list (E11 F8): drop these tick ids from this item's list, except anything the item is scored on (truth.flags / flagAlternatives stay). Applied after truth.chips. Default: nothing dropped."},
             "falseAlarmCost": {"type": "string", "description": "Real items only (optional): one sentence on what reporting or deleting this real one would cost (a payment held up, a colleague left waiting). Shown after what made it safe on the result screen and the debrief (disc_visible)."},
@@ -1752,6 +1755,7 @@
               "description": "Optional per-item override of the verdict points (out of 60), opt-in (batch-5 F-E12-1, E13 F-10): e.g. a reception desk that gives full marks for letting in an expected client ({\"trust\": 60}). Names any subset of verdicts; an omitted one keeps the profile/kind default. Wins over set.scoring.kindPoints. Default: scoring unchanged."},
             "headerNote": {"type": "string"},
             "reportReply": {"type": "string"},
+            "reportReplyByVerdict": {"type": "object", "properties": {"trust": {"type": "string", "minLength": 1}, "report": {"type": "string", "minLength": 1}, "delete": {"type": "string", "minLength": 1}, "verify": {"type": "string", "minLength": 1}}, "patternProperties": {"^_": {}}, "additionalProperties": false, "description": "batch-12 item 7: the IT Security reply worded per verdict, so the line matches the action the learner took (a Report reply shown after Verify, or a genuine item's \"declined and asked his manager\" after a plain Report, read as something they did not do — E16 B2 D3). A line here is shown for its verdict (not only Report); a verdict with no entry falls back to the Report-only truth.reportReply / set.reportReply default."},
             "correct": {"type": "string", "enum": ["trust", "report", "delete", "verify"], "description": "choice only: the verdict of the right option (it must score full marks for isPhish)"}
           },
           "patternProperties": {"^_": {}},
@@ -2080,7 +2084,8 @@
                 "properties": {
                   "id": {"type": "string", "minLength": 1},
                   "label": {"type": "string", "minLength": 1},
-                  "kind": {"type": "string", "enum": ["what", "when", "where", "who"]}
+                  "kind": {"type": "string", "enum": ["what", "when", "where", "who"]},
+                  "required": {"type": "boolean", "description": "batch-12 item 15: this fact must be in the report before Done is offered (the outside offer in E16, so a report of only the colleague's hard week cannot be finished — E16 B4 minor 1). strings.feedbackRequired ({missing} = the missing labels) names what is still needed. Default (unset): no fact is compulsory, so Done appears after any non-empty check, as before."}
                 },
                 "patternProperties": {"^_": {}},
                 "additionalProperties": false
@@ -2099,7 +2104,7 @@
             "guidance": {"type": "string", "description": "The route to take, shown on the intro and under the feedback (who to tell, and that posting it in a chat is spreading it, not raising it)"},
             "minFacts": {"type": "integer", "minimum": 1, "description": "How many fact chips make a report (default 2)"},
             "requireNoConclusion": {"type": "boolean", "description": "batch-11: hold back Done while a conclusion chip is picked (strings.mustRemoveConclusion says why). Default off."},
-            "strings": {"type": "object", "description": "Wording over the form's defaults (concern-form-model.js DEFAULT_TEXT) and the runner's launchHeading, launchText and launchButton, keyed by line", "additionalProperties": {"type": "string"}}
+            "strings": {"type": "object", "description": "Wording over the form's defaults (concern-form-model.js DEFAULT_TEXT) and the runner's launchHeading, launchText and launchButton, keyed by line. Includes conclusionsNote (batch-12 item 4: the 'only one conclusion is kept' note shown when more than one is offered; '' suppresses it) and feedbackRequired (batch-12 item 15: the line naming the missing required fact, {missing} = labels).", "additionalProperties": {"type": "string"}}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
@@ -2733,11 +2738,12 @@
                 "reportReply": {"type": "string"},
                 "feedback": {
                   "type": "object",
-                  "description": "E13 MI2: a verdict after the themes summary confirming the lesson. `clean` when every line that does not belong was struck out, `leftPersonal` when a personal detail slipped through, `leftPassword` when a secret did. All optional; absent, the beat is unchanged",
+                  "description": "E13 MI2: a verdict after the themes summary confirming the lesson. `clean` when every line that does not belong was struck out, `leftPersonal` when a personal detail slipped through, `leftPassword` when a secret did, `bothLeft` (batch-12 item 10) when both a password and a personal detail were left in, so the child's detail is not lost under the password line (E13 B3 finding 3). All optional; `bothLeft` absent, `leftPassword` wins as before.",
                   "properties": {
                     "clean": {"type": "string"},
                     "leftPersonal": {"type": "string"},
-                    "leftPassword": {"type": "string"}
+                    "leftPassword": {"type": "string"},
+                    "bothLeft": {"type": "string"}
                   },
                   "patternProperties": {"^_": {}},
                   "additionalProperties": false
@@ -2973,6 +2979,7 @@
             "next": {"type": "string", "minLength": 1, "description": "batch-5 (F-E10-8 / F-E12-6): the 'Next message' button in immediate feedback. Default follows the item noun ('Next call', 'Next visitor')."},
             "teamBadge": {"type": "string", "description": "aw-ux2: the triage team badge, with {n} for the count (default 'Phish stopped for the team: {n}'). For sets whose reported items are not all phish"},
             "teamBadgeTitle": {"type": "string", "description": "aw-ux2: the badge's hover text (default 'Phish you reported or checked by another route this round')"},
+            "teamBadgeCountsChecked": {"type": "boolean", "description": "batch-12 item 2: whether a Verify counts toward the team badge. Default true (report and verify both count, matching the default badge and its 'reported or checked by another route' hover text). Set false for a badge worded only 'reported', so the number matches the word (E12 F4, E16 B3)."},
             "phishCaughtLabel": {"type": "string", "description": "The result counter's label (default 'Phish caught'). For a non-phishing set (E17 acceptable-use) where 'Phish caught' is wrong, e.g. 'Requests handled'"},
             "scoreLine": {"type": "string", "description": "The scored-round brief line (default 'Right call is most of the score; naming the flags is the rest.'). For a set where 'flags' collides with the compose meter's 'Red flags' (E8 weak-line #5)"},
             "queue": {
