@@ -3,6 +3,7 @@
 import { initializeRooms, calculateWorldBounds, calculateRoomPositions, createRoom, revealRoom, updatePlayerRoom, rooms } from './rooms.js';
 import { createPlayer, updatePlayerMovement, movePlayerToPoint, facePlayerToward, startHoldWalk, stopHoldWalk, player } from './player.js';
 import { initializePathfinder } from './pathfinding.js';
+import { resumeSpawnFor } from './resume-spawn.js';
 import { initializeInventory, processInitialInventoryItems } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
 import { wallClearFrom, findClearStandPoint, sameRoomFrom, playerFeet } from '../systems/interaction-walls.js';
@@ -1986,7 +1987,13 @@ export async function create() {
     const startingRoom = rooms[gameScenario.startRoom];
     if (startingRoom) {
         let playerX, playerY;
-        if (gameScenario.startPosition) {
+        // batch 13: a scenario may name where a reloaded player respawns (resumeSpawn, opt-in,
+        // e.g. by an awareness kiosk). Null for a fresh game or a scenario without the key.
+        const resumeAt = resumeSpawnFor(gameScenario, window.gameState?.globalVariables);
+        if (resumeAt) {
+            playerX = startingRoom.position.x + resumeAt.x * TILE_SIZE;
+            playerY = startingRoom.position.y + resumeAt.y * TILE_SIZE;
+        } else if (gameScenario.startPosition) {
             playerX = startingRoom.position.x + gameScenario.startPosition.x * TILE_SIZE;
             playerY = startingRoom.position.y + gameScenario.startPosition.y * TILE_SIZE;
         } else {

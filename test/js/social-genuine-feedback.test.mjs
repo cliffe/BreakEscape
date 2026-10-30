@@ -12,6 +12,10 @@ import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { JSDOM } from 'jsdom';
 
+// batch 13 item 6: the no-ticks confirm prompt is on by default now. These tests predate it and
+// press Confirm once expecting a lock, so their sets pin it off unless they name it themselves.
+const withOneConfirm = (set) => (set && typeof set === 'object' && !('confirmPrompt' in set) ? { ...set, confirmPrompt: false } : set);
+
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '../..');
 const js = join(root, 'public/break_escape/js');
@@ -84,6 +88,7 @@ function open(s, params = {}) {
     document.body.innerHTML = '';
     const container = document.createElement('div');
     document.body.appendChild(container);
+    s = withOneConfirm(s);
     const scene = new InboxTriageMinigame(container, { set: s, social: { triageSets: [s] }, ...params });
     scene._sceneType = 'inbox-triage';
     window.MinigameFramework.currentMinigame = scene;

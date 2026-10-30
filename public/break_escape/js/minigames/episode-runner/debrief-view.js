@@ -1,6 +1,10 @@
 // Awareness episodes: the debrief (11 stage 6, packet P7-B).
 //
-// renderDebrief(container, { result, set, strings, variant, onFinish, drillRecap, sandboxRecap, assistantRecap }) -> { destroy, getState }
+// renderDebrief(container, { result, set, strings, variant, onFinish, drillRecap, sandboxRecap, assistantRecap, concernRecap }) -> { destroy, getState }
+// `concernRecap` (optional, batch 13): the concern form's report, { facts: [label], missing: [label],
+// conclusion: label | '' } (episode-model.js concernRecap). When it holds a fact, a "Your report"
+// section lists the facts filed, any required fact left out and whether a conclusion was left in.
+// Null draws nothing.
 // `drillRecap` (optional): the scored sort-drill cards the learner put in a wrong bin, each
 // { situation, chosen, right, reason }. When non-empty, a "Cards to look at again" section lists
 // them with the right bin and reason. Absent or empty draws nothing (E17 B2 finding).
@@ -107,6 +111,11 @@ function titleOf(msg, id) {
  */
 function verdictWordAndLine(answer, msg, phish, labels = null, scoring = null) {
     const kind = kindOf(msg);
+    // batch-13 item 3 (E17 C4 D2): a genuine item's own truth.trustLine / truth.deleteLine is its
+    // review line on the inbox card (inbox-triage-minigame.js _verdictLine), so the debrief card
+    // uses it too, for every kind, rather than a set-wide or built line that may say otherwise.
+    const ownReal = !phish && isObj(msg?.truth)
+        ? (answer.verdict === 'trust' ? msg.truth.trustLine : (answer.verdict === 'delete' ? msg.truth.deleteLine : null)) : null;
     if (kind === 'choice') {
         // An authored-choice card (ENG-09a): the option's own label, then right or wrong, not the email verdicts.
         const right = wrongVerdict(answer, msg, 'awareness', scoring) === false;
@@ -120,7 +129,7 @@ function verdictWordAndLine(answer, msg, phish, labels = null, scoring = null) {
         // described as a phish by a set-wide feedback line.
         const callKindLine = phish && answer.verdict === 'trust' && isObj(msg?.truth) && isStr(msg.truth.kindLine) ? msg.truth.kindLine : null;
         return { word: action.label,
-            line: callKindLine ? `${callKindLine} Here is what to look for next time.`
+            line: isStr(ownReal) ? ownReal : callKindLine ? `${callKindLine} Here is what to look for next time.`
                 : (verdictFeedbackOverride(labels, answer.verdict, phish) || kindVerdictLine(kind, phish, answer.verdict) || '') };
     }
     // truth.kindLine (optional): what a genuine-but-report item really was, in place of "built to look right".
@@ -130,7 +139,8 @@ function verdictWordAndLine(answer, msg, phish, labels = null, scoring = null) {
     const word = actionById('email', answer.action, answer.verdict, labels).label || String(answer.verdict ?? '');
     const fb = verdictFeedbackOverride(labels, answer.verdict, phish);
     return { word,
-        line: kindLine ? `${kindLine} Here is what to look for next time.` : (fb || LINES[phish ? 'phish' : 'real'][answer.verdict] || '') };
+        line: isStr(ownReal) ? ownReal : kindLine ? `${kindLine} Here is what to look for next time.`
+            : (fb || LINES[phish ? 'phish' : 'real'][answer.verdict] || '') };
 }
 
 /**
@@ -333,6 +343,49 @@ function buildGenuine(set, answers, reviewedIds, profile) {
     return { node: box, trusted: fb.trusted.length, checked: (fb.checked || []).length, flagged: fb.flagged.length };
 }
 
+// batch-13 item 2: the concern form recap's default wording; strings.<key> replaces each line.
+const CONCERN_RECAP = Object.freeze({
+    concernRecapHeading: 'Your report',
+    concernRecapFacts: 'The facts you included:',
+    concernRecapMissing: 'Left out, and it mattered most: {missing}.',
+    concernRecapConclusion: 'You also left in a conclusion: ‘{conclusion}’. Facts on their own let whoever looks into it reach their own view.',
+    concernRecapNoConclusion: 'You kept your conclusion out of it, so the report sticks to what you saw.'
+});
+
+/**
+ * batch-13 item 2: "Your report", the concern form looked back at: the facts filed, any required
+ * fact left out, and the conclusion if one was left in. Null (nothing drawn) without a recap that
+ * holds a fact. An empty string in strings.concernRecapNoConclusion drops that line.
+ */
+function buildConcernRecap(recap, strings) {
+    if (!isObj(recap)) return null;
+    const facts = Array.isArray(recap.facts) ? recap.facts.filter(isStr) : [];
+    if (!facts.length) return null;
+    const missing = Array.isArray(recap.missing) ? recap.missing.filter(isStr) : [];
+    const conclusion = isStr(recap.conclusion) ? recap.conclusion : '';
+    const line = (key) => (isObj(strings) && typeof strings[key] === 'string' ? strings[key] : CONCERN_RECAP[key]);
+    const box = el('section', 'aw-concern-recap');
+    const heading = line('concernRecapHeading') || CONCERN_RECAP.concernRecapHeading;
+    box.setAttribute('aria-label', heading);
+    box.appendChild(el('h3', 'aw-concern-recap-title', heading));
+    box.appendChild(el('p', 'aw-concern-recap-lead', line('concernRecapFacts') || CONCERN_RECAP.concernRecapFacts));
+    const ul = el('ul', 'aw-concern-recap-list');
+    for (const f of facts) ul.appendChild(el('li', 'aw-concern-recap-fact', f));
+    box.appendChild(ul);
+    if (missing.length) {
+        const tmpl = line('concernRecapMissing') || CONCERN_RECAP.concernRecapMissing;
+        box.appendChild(el('p', 'aw-concern-recap-missing', tmpl.split('{missing}').join(missing.join(', '))));
+    }
+    if (conclusion) {
+        const tmpl = line('concernRecapConclusion') || CONCERN_RECAP.concernRecapConclusion;
+        box.appendChild(el('p', 'aw-concern-recap-conclusion', tmpl.split('{conclusion}').join(conclusion)));
+    } else {
+        const none = line('concernRecapNoConclusion');
+        if (none) box.appendChild(el('p', 'aw-concern-recap-no-conclusion', none));
+    }
+    return { node: box, state: { facts: facts.length, missing: missing.length, conclusion: !!conclusion } };
+}
+
 function textBox(tag, className, label, block) {
     const box = el(tag, className);
     box.setAttribute('aria-label', label);
@@ -344,7 +397,8 @@ function textBox(tag, className, label, block) {
 }
 
 export function renderDebrief(container, { result, set, strings = {}, variant = 'full', onFinish,
-    reportRoute = null, ruleOfThumb = null, teamSize = null, drillRecap = [], sandboxRecap = [], assistantRecap = [] } = {}) {
+    reportRoute = null, ruleOfThumb = null, teamSize = null, drillRecap = [], sandboxRecap = [], assistantRecap = [],
+    concernRecap = null } = {}) {
     const root = el('section', 'aw-debrief');
     const heading = el('h2', 'aw-heading', DEFAULTS.heading);
     heading.tabIndex = -1;
@@ -494,6 +548,8 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     const assistantShown = recapSection(assistantRecap, {
         cls: 'aw-assistant-recap', headingKey: 'assistantRecapHeading', headingDefault: 'In the assistant window',
         moveKey: 'assistantRecapMove', moveDefault: 'You chose ‘{chosen}’. The safer move was ‘{right}’.' });
+    const concernShown = buildConcernRecap(concernRecap, strings);
+    if (concernShown) root.appendChild(concernShown.node);
 
     // ENG-09b: conceptPanel may be an array of { heading?, text }, drawn in order; an entry with
     // no text is skipped. A string or one object draws one panel, exactly as before.
@@ -551,6 +607,7 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
                 ...(recapList.length ? { drillRecap: recapList.length } : {}),
                 ...(sandboxShown ? { sandboxRecap: sandboxShown } : {}),
                 ...(assistantShown ? { assistantRecap: assistantShown } : {}),
+                ...(concernShown ? { concernRecap: concernShown.state } : {}),
                 ...(Array.isArray(conceptRaw) ? { conceptPanels: conceptList.length } : {}),
                 reportRoute: route ? (route.configured === true ? 'configured' : 'generic') : null,
                 ruleOfThumb: !!rule, teamProtected: teamText ? team : null,

@@ -40,6 +40,8 @@
 .epr-heading { margin: 0 0 8px; font-size: 22px; color: var(--aw-accent); }
 .epr-heading:focus { outline: none; }
 .epr-text { margin: 0 0 12px; font-size: 16px; max-width: 60ch; }
+/* batch 13: the send-off under the Episode finished panel */
+.epr-send-off { margin: 0 0 12px; padding: 10px 12px; font-size: 16px; max-width: 60ch; border-left: 4px solid var(--aw-accent, #2f6f8f); }
 .epr-scope {
     margin: 0 0 12px;
     padding: 8px 12px;

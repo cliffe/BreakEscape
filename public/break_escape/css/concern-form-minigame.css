@@ -72,7 +72,7 @@
 .cf-feedback p { margin: 4px 0; }
 .cf-feedback-line { font-weight: 700; }
 .cf-facts { border-left-color: var(--cf-good); }
-.cf-facts_verdict, .cf-verdict_only, .cf-thin, .cf-thin_verdict, .cf-empty { border-left-color: var(--cf-accent); }
+.cf-facts_verdict, .cf-facts_missing, .cf-verdict_only, .cf-thin, .cf-thin_verdict, .cf-empty { border-left-color: var(--cf-accent); }
 
 .cf-close-ask { margin: 8px 12px; padding: 10px 12px; border: 2px solid var(--cf-accent); background: var(--cf-raised); }
 .cf-close-ask-text { margin: 0 0 8px; }

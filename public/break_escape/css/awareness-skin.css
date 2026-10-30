@@ -148,6 +148,12 @@
 .aw-genuine-list { margin: 4px 0; padding-left: 20px; }
 .aw-genuine-fold summary { cursor: pointer; min-height: 32px; }
 .aw-genuine-cost, .aw-genuine-why { color: #3e4c59; }
+/* batch 13: the concern form's report, looked back at in the debrief */
+.aw-concern-recap { margin: 0 0 12px; padding: 10px 14px; background: #fff; border: 1px solid var(--aw-line); border-radius: 4px; font-size: 15px; }
+.aw-concern-recap-title { margin: 0 0 4px; font-size: 16px; }
+.aw-concern-recap p { margin: 4px 0; }
+.aw-concern-recap-list { margin: 4px 0; padding-left: 20px; }
+.aw-concern-recap-missing { color: var(--aw-warn); font-weight: 600; }
 /* optional concept and voice panels (strings.conceptPanel, strings.voicePanel) */
 .aw-panel { margin: 0 0 12px; padding: 10px 14px; background: #fff; border: 1px solid var(--aw-line); border-left: 4px solid var(--aw-accent); border-radius: 4px; }
 .aw-panel-heading { margin: 0 0 4px; font-size: 16px; }

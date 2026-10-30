@@ -19,7 +19,7 @@
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import {
-    KINDS, normaliseConfig, concernText, kindLabel, assessReport, feedbackFor, concernRecord
+    KINDS, normaliseConfig, concernText, kindLabel, assessReport, feedbackFor, concernRecord, shownTone
 } from './concern-form-model.js';
 
 function el(tag, className, text) {
@@ -171,12 +171,14 @@ export class ConcernFormMinigame extends SocialOverlayScene {
         p.appendChild(check);
 
         if (this.checked) {
-            p.appendChild(this._feedback(this.checked));
             // E16 B1 row 7 (opt-in): when the set requires it, a report that still holds a verdict
             // chip cannot be finished — Done is held back and a line says to remove it first. The
             // feedback above already explains why. Default (requireNoConclusion off): Done appears
             // after any non-empty check, unchanged.
             const assess = assessReport(this.config, [...this.picks]);
+            // batch-13 item 1: while a required fact is missing, the praise line ('facts') gives way
+            // to a "not finished yet" line, so it never sits above a held-back Done.
+            p.appendChild(this._feedback(shownTone(assess)));
             const heldByConclusion = this.config.requireNoConclusion && assess.conclusions.length > 0;
             // batch-12 item 15: a report missing a `required` fact cannot be finished either. Opt-in
             // per chip; with none required the list is empty and Done appears as before.
@@ -274,9 +276,9 @@ export class ConcernFormMinigame extends SocialOverlayScene {
 
     _check() {
         if (this.step !== 'build') return;
-        const tone = assessReport(this.config, [...this.picks]).tone;
-        this.checked = tone;
-        this._announce(feedbackFor(this.config, tone));
+        const assess = assessReport(this.config, [...this.picks]);
+        this.checked = assess.tone;
+        this._announce(feedbackFor(this.config, shownTone(assess)));
         this._showStep('build');
         this.stageEl.querySelector('.cf-feedback')?.scrollIntoView?.({ block: 'nearest' });
     }

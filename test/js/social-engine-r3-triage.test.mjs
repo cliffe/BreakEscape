@@ -6,6 +6,10 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { JSDOM } from 'jsdom';
 
+// batch 13 item 6: the no-ticks confirm prompt is on by default now. These tests predate it and
+// press Confirm once expecting a lock, so their sets pin it off unless they name it themselves.
+const withOneConfirm = (set) => (set && typeof set === 'object' && !('confirmPrompt' in set) ? { ...set, confirmPrompt: false } : set);
+
 const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 
@@ -52,6 +56,7 @@ function open(set, params = {}) {
     document.body.innerHTML = '';
     const container = document.createElement('div');
     document.body.appendChild(container);
+    set = withOneConfirm(set);
     const scene = new InboxTriageMinigame(container, { set, social: { triageSets: [set] }, ...params });
     scene._sceneType = 'inbox-triage';
     window.MinigameFramework.currentMinigame = scene;
@@ -157,7 +162,7 @@ test('P3 N17: an approved attacker prompt costs CRITICAL_PENALTY more and caps t
     // without the approval the same round is Sharp
     const ok = scoreTriage({ messages: msgs, answers: [{ ...answers[0], verdict: 'report', action: 'deny_report' }, ...answers.slice(1)] });
     assert.equal(ok.criticalMisses.length, 0);
-    assert.match(ok.headline, /^Sharp/);
+    assert.match(ok.headline, /^Well done/);
     // a band cap applies even when the penalty leaves the percent high
     const banded = scoreTriage({ messages: msgs, answers, bands: [{ min: 50, headline: 'Top' }, { min: 0, headline: 'Lower' }] });
     assert.equal(banded.headline, 'Lower');

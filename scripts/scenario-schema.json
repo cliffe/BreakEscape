@@ -20,6 +20,17 @@
       "type": "string",
       "description": "ID of the starting room"
     },
+    "resumeSpawn": {
+      "type": "object",
+      "description": "batch-13 (opt-in): where the player respawns in the startRoom after a reload, in startPosition's tile units, e.g. by an awareness kiosk. Applies only to a resumed game and, when whenGlobal is named, only once that global is set (true, non-zero, non-empty). Default (unset): a reload spawns at startPosition, as before.",
+      "properties": {
+        "x": { "type": "number", "description": "Tile column (0 = left wall)" },
+        "y": { "type": "number", "description": "Tile row (0 = top wall)" },
+        "whenGlobal": { "type": "string", "minLength": 1, "description": "Optional: a global that must be set for the respawn to apply (an episode's state global, say)" }
+      },
+      "required": ["x", "y"],
+      "additionalProperties": false
+    },
     "startPosition": {
       "type": "object",
       "description": "Optional tile coordinates where the player spawns in the startRoom. If omitted the player is placed at the room centre.",
@@ -2104,7 +2115,7 @@
             "guidance": {"type": "string", "description": "The route to take, shown on the intro and under the feedback (who to tell, and that posting it in a chat is spreading it, not raising it)"},
             "minFacts": {"type": "integer", "minimum": 1, "description": "How many fact chips make a report (default 2)"},
             "requireNoConclusion": {"type": "boolean", "description": "batch-11: hold back Done while a conclusion chip is picked (strings.mustRemoveConclusion says why). Default off."},
-            "strings": {"type": "object", "description": "Wording over the form's defaults (concern-form-model.js DEFAULT_TEXT) and the runner's launchHeading, launchText and launchButton, keyed by line. Includes conclusionsNote (batch-12 item 4: the 'only one conclusion is kept' note shown when more than one is offered; '' suppresses it) and feedbackRequired (batch-12 item 15: the line naming the missing required fact, {missing} = labels).", "additionalProperties": {"type": "string"}}
+            "strings": {"type": "object", "description": "Wording over the form's defaults (concern-form-model.js DEFAULT_TEXT) and the runner's launchHeading, launchText and launchButton, keyed by line. Includes conclusionsNote (batch-12 item 4: the 'only one conclusion is kept' note shown when more than one is offered; '' suppresses it) and feedbackRequired (batch-12 item 15: the line naming the missing required fact, {missing} = labels), and feedbackFactsMissing (batch-13 item 1: the feedback line in place of the feedbackFacts praise while a required fact is still unpicked).", "additionalProperties": {"type": "string"}}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
@@ -2241,6 +2252,12 @@
             "alreadySeen": {"type": "string", "description": "ENG-10: the finished panel's line when oncePerLearner finds doneGlobal already true; default 'You have seen this already.'"},
             "finishedHeading": {"type": "string", "description": "batch-10 (E15/E17 B2): the heading on the end-of-episode panel after Finish; default 'Episode finished'"},
             "finished": {"type": "string", "description": "batch-10: the body line on the end-of-episode panel after Finish; default 'You have finished this exercise. You can close this window.'"},
+            "sendOff": {"type": "string", "description": "batch-13 item 4: a short closing line under the end-of-episode panel, shown straight after the debrief's Finish only (not on a reopen); '' drops it. Default: a generic 'stop and check' thank-you."},
+            "concernRecapHeading": {"type": "string", "description": "batch-13 item 2: heading over the debrief's recap of the concern form report; default 'Your report'"},
+            "concernRecapFacts": {"type": "string", "description": "batch-13 item 2: the lead before the list of facts the learner filed; default 'The facts you included:'"},
+            "concernRecapMissing": {"type": "string", "description": "batch-13 item 2: the line naming any required fact left out; {missing} = the labels"},
+            "concernRecapConclusion": {"type": "string", "description": "batch-13 item 2: the line when a conclusion was left in the report; {conclusion} = its label"},
+            "concernRecapNoConclusion": {"type": "string", "description": "batch-13 item 2: the line when no conclusion was left in; '' drops it"},
             "drillRecapHeading": {"type": "string", "description": "batch-10 (E17 B2): the heading over the debrief's sort-drill recap of cards placed in a wrong bin; default 'Cards to look at again'"},
             "sandboxRecapHeading": {"type": "string", "description": "batch-11: heading over the debrief recap of wrong everyday choices; default Choices worth a second look"},
             "sandboxRecapMove": {"type": "string", "description": "batch-11: line per recapped choice; {chosen} and {right} placeholders"},
@@ -2918,7 +2935,7 @@
           ]
         },
         "sheetNudge": {"type": "string", "description": "batch-6 (E8 F11): the one-line nudge shown when Confirm is pressed with nothing ticked. Default 'Tick what made you decide, or choose Nothing looks wrong. Then Confirm again.'"},
-        "confirmPrompt": {"oneOf": [{"type": "boolean"}, {"type": "string"}], "description": "batch-11: the first Confirm with nothing ticked shows a prompt instead of locking; a second Confirm locks. true uses the default prompt, a string replaces it. Default off."},
+        "confirmPrompt": {"oneOf": [{"type": "boolean"}, {"type": "string"}], "description": "batch-11: the first Confirm with nothing ticked shows a prompt instead of locking; a second Confirm locks. A string replaces the default prompt; false turns the prompt off (one Confirm locks). batch-13 (owner decision): default ON for every set."},
         "brief": {"type": "string"},
         "pairedWith": {"type": "string"},
         "channelTells": {"type": "array", "items": {"type": "string"}},

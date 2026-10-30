@@ -64,7 +64,7 @@ import {
     writeKind, worldFor, sentFromCall, callOutcomeKey, flipPage, flipCall, CALL_LANDED,
     awarenessSettings, reportRouteFor, flipAftermathFor, isMontage, montageProps, guessLanded, sandboxRecap,
     drillPending, drillLaunchCopy, drillLaunchParams, drillRecord,
-    concernPending, concernLaunchCopy, concernLaunchParams, concernRecord,
+    concernPending, concernLaunchCopy, concernLaunchParams, concernRecord, concernRecap,
     privacyPending, privacyLaunchCopy, privacyLaunchParams, privacyRecord
 } from './episode-model.js';
 
@@ -113,6 +113,9 @@ const VOICE_DEFEND_ONLY_COPY = Object.freeze({ heading: 'Defend', text: 'Go thro
 // Message kinds read as a work phone (11 E6; push is the authenticator prompt).
 const PHONE_KINDS = new Set(['sms', 'qr', 'push']);
 const FINISHED_TEXT = 'You have finished this exercise. You can close this window.';
+// batch-13 item 4 (E17 C4 N1): a short send-off under the "Episode finished" panel, shown only
+// straight after the debrief's Finish (not on a reopen). strings.sendOff replaces it; '' drops it.
+const SEND_OFF_TEXT = 'Thanks for working through this one. Take the habit with you: if something seems off, stop and check before you act.';
 // ENG-10: the once-per-learner finished line (strings.alreadySeen), and the multi-card brief's
 // button defaults (strings.briefDone). Card copy and the done global are data.
 const ALREADY_SEEN_TEXT = 'You have seen this already. You can close this window.';
@@ -692,10 +695,14 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             // defend-only variant, which runs neither stage.
             sandboxRecap: Array.isArray(this.state.sandbox) ? this.state.sandbox : [],
             assistantRecap: Array.isArray(this.state.assistant) ? this.state.assistant : [],
+            // batch 13: look back at the concern form's report (facts filed, required ones left
+            // out, any conclusion left in). Null, and so not drawn, without a form record.
+            concernRecap: concernRecap(this.episode, this.state.concern),
             onFinish: () => {
                 // E15/E17 B2 finding: Finish must not drop the learner straight back to the world
                 // (two toasts and a narration line were the only end signal). Completing the last
                 // stage renders the clear "Episode finished" panel; the bar's Close then closes it.
+                this._sendOffDue = true; // the send-off shows under this fresh finish only
                 this._complete('debrief');
                 if (!this.gameState.isActive) this.close();
             }
@@ -712,6 +719,12 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         const panel = this._panel(heading, seen && isStr(this.strings.alreadySeen) ? this.strings.alreadySeen
             : (seen ? ALREADY_SEEN_TEXT : (isStr(this.strings.finished) ? this.strings.finished : FINISHED_TEXT)));
         panel.classList.add('epr-finished');
+        // batch-13 item 4: the send-off, once, right after Finish. A reopen of a finished episode
+        // (or a once-per-learner "seen already") shows the panel without it.
+        const due = this._sendOffDue === true && !seen;
+        this._sendOffDue = false;
+        const sendOff = typeof this.strings.sendOff === 'string' ? this.strings.sendOff : SEND_OFF_TEXT;
+        if (due && sendOff.trim()) panel.appendChild(el('p', 'epr-send-off', sendOff));
     }
 
     _complete(stageId, patch = {}) {
