@@ -1397,7 +1397,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                         if (!c) continue;
                         const names = c.missed > 0 ? (missedBy[id] || []) : [];
                         const where = names.length
-                            ? ` — missed on ${names.map((t) => `‘${t}’`).join(names.length === 2 ? ' and ' : ', ')}`
+                            ? `: missed on ${names.map((t) => `‘${t}’`).join(names.length === 2 ? ' and ' : ', ')}`
                             : '';
                         const li = el('li', 'tri-skill', `${skillName(id, this.set)}: caught ${c.caught} of ${c.caught + c.missed}${where}`);
                         li.dataset.factor = id;
