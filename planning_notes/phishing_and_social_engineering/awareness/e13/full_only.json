@@ -8,7 +8,7 @@
   },
   "stagesWrite": {
     "_note": "Paste at social.awarenessEpisode.strings.stages.write. Replaces the built write-stage line 'Write one message using what you found' (E13 has no osint stage, so nothing is found). B2 fix 2026-10-30.",
-    "text": "Write one supplier brief for the assistant to read. You choose whether it carries a hidden line. The meter gives you hints before you send. Your first Send is final."
+    "text": "Write one supplier brief for the assistant to read. You choose the wording, and one wording carries a line hidden for the assistant, which the preview shows once you pick it. The meter gives you hints before you send. Your first Send is final."
   },
   "flipStrings": {
     "_note": "Erb-only flip string for the FULL erb (scenarios/awareness_e13_ai_assistant/scenario.json.erb, social.awarenessEpisode.strings.flipDefenderLineByChoice). Moved out of e13/defend.json by the E13 MA2 fix (2026-10-29): the generator does NOT strip flipDefenderLineByChoice, so it leaked into the generated defend-only shell (which has no flip stage) and tripped strict-social ('... is not a social.templates id ... never shown'). Keyed on the attack's sent pretext template, so it only makes sense in a full episode; it is allow-listed as erb-only in test/js/social-awareness-fragment-erb-parity.test.mjs. The other flip strings (flipHeading, flipIntro, flipDefenderLine, flipNoSend, flipMissed, flipMissedHeading, flipLandedNoTells) stay in defend.json: the generator strips the first five for the defend-only shell, and flipMissedHeading/flipLandedNoTells remain there harmlessly (they reference no template id). The full shell carries this inline; this is the authoring record of where it belongs.",
@@ -59,7 +59,7 @@
       "feedback": {
         "clean": "That's the way: you took out the child's health detail and the password, and the assistant still had everything it needed for the summary.",
         "leftPersonal": "The summary came out fine, but a named child's health detail went into the assistant with it, and it didn't need to. Take out what the task doesn't need.",
-        "leftPassword": "A password slipped through, the worst one to leave in. Nothing the assistant does needs one, so leave it out and report it."
+        "leftPassword": "A password slipped through, the worst one to leave in: nothing the assistant does needs one, and now it is somewhere it shouldn't be. Personal details the task doesn't need, such as a child's health detail, stay out as well."
       },
       "lines": [
         {
@@ -89,7 +89,7 @@
           "safe": true
         }
       ],
-      "secretWarning": "A password went into the assistant, and nothing it does needs one; now it's somewhere it shouldn't be. Report it so it can be changed.",
+      "secretWarning": "Report the password so it can be changed.",
       "reportButton": "Report the password",
       "reportReply": "Thanks, we've changed that rota password and reminded the team never to paste one in."
     },

@@ -41,10 +41,10 @@ VAR hub_quiet = false
         Gwen Pritchard: Check another way, on a number you already hold. Nobody's ever in trouble for checking.
     - else:
         { phish_assist_reader_attempts > 0:
-            Gwen Pritchard: Good, that's your hidden line planted. Now the other side: use the assistant for real, and deal with what lands.
+            Gwen Pritchard: Good, that's your brief sent. Now the other side: use the assistant for real, and deal with what lands.
             Gwen Pritchard: Next, the inbox at the kiosk. Treat what the assistant hands you like a note from a stranger.
         - else:
-            Gwen Pritchard: Welcome. Brightwell Assist is live. First, red team: write a supplier brief with a line hidden in it for the assistant.
+            Gwen Pritchard: Welcome. Brightwell Assist is live. First, red team: write a supplier brief for the assistant to read, with or without a line hidden in it.
             Gwen Pritchard: Then swap seats, use it for real, and handle what comes at you. Start at the kiosk.
         }
     }
