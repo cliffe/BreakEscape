@@ -306,6 +306,16 @@ LINES = {
         'Thanks, Ama.', 'Any time.'),
 }
 
+# The in-game title screen types this (scenario top-level titleScreenName, engine batch 14); listings keep
+# mission.json display_name. Owner decision 2026-10-30. E1 to E7 and the checks are hand-set in their shells.
+TITLE_NAMES = {
+    'e8': 'After the click', 'e9': 'Passwords and password managers', 'e10': 'Fake downloads and checks',
+    'e11': 'Misdirected data', 'e12': 'Visitors and tailgating', 'e13': 'The AI assistant',
+    'e14': 'Social media and oversharing', 'e15': 'Shadow IT', 'e16': 'Insider risk', 'e17': 'Acceptable use',
+    'e18': 'Password guessing at scale', 'e19': 'Malware, ransomware and updates',
+    'e20': 'Working away from the office',
+}
+
 EPISODES = {
     'e12': {
         'frag': f'{AW}/e12/defend.json',
@@ -736,6 +746,9 @@ def defend_only(ekey):
             globals_[f'se_intel_{_fid}'] = False
     sc = scenario(mission, d['name'], d['brief'], d['endGoal'], d['aim'], d['task'], done, globals_,
                        social, host, ink_name, d['kiosk'], d['conclusion'])
+    # titleScreenName sits right after scenario_name.
+    sc = {k2: v2 for k, v in sc.items() for k2, v2 in
+          (((k, v), ('titleScreenName', TITLE_NAMES[ekey])) if k == 'scenario_name' else ((k, v),))}
     if cfg.get('resumeSpawn'):
         # Engine batch 13 (resume-spawn.js): where a reloaded learner respawns. Placed right after startPosition.
         sc = {k2: v2 for k, v in sc.items() for k2, v2 in
