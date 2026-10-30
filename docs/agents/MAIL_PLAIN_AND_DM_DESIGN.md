@@ -472,3 +472,16 @@ All ink-email recommendations accepted (A1 one ink story per correspondent; A2 h
 Owner notes that change the design:
 - **A3, what the player sends:** use Outlook's suggested replies as the UI model. The options are written as the start of the player's message to the NPC (in the player's voice, not a "[Send HaX the log]" label), shown as suggested-reply chips under the open message; picking one opens the reply with the full message filled in (choice text plus the player's continuation), then Send.
 - **8, judged and plain on one contact:** allow both. A contact can be phished or an ink correspondent, as the scenario or the ink configures it (for example a contact with both `targetId` and `npc`, with ink or scenario config deciding which the player gets at a given point).
+
+---
+
+## Build status (2026-10-30): ink-driven email (a) built
+
+Built as designed, with the owner notes applied. Authoring guide: `README_scenario_design.md` "Ink-driven email". Fixture: `scenarios/test_ink_email/`. Where the build departs from or adds to the design:
+
+- **Stored position.** A plain thread keeps the story state from just before the step that made its choices (or, while waiting, just before the reply). Resuming it regenerates the choices from the current globals, so a choice gated on `{found_log}` appears when the global is set, not only when the email arrived. This is what makes the conditional chip work.
+- **Preview then send.** Picking a chip runs the choice without side effects to build the filled message. Send replays it to the boundary with the global observers on, applies the player-part tags once, and queues the reply from the saved boundary.
+- **Judged and plain on one contact.** Suggested replies first; "Write your own message" is the judged door, open unless `judgedWhen` names a global that is still false.
+- **Finished threads** are saved as an empty record (a delete is not sent after a reload and would leave the server a stale "waiting" thread). A "waiting" thread with no queued job is ignored.
+- **Server.** Contact `emailRecord` headless records, thread mode `waiting`, message key `forwardOf`, job keys `thread`/`inReplyTo`/`plain`/`afterSend`/`chaser`/`loadPosition`, and a headless email record may unlock the doors in its `unlockable` list without a prior encounter.
+- **Not built:** choice tags previewing a subject in the chip (design 3, optional); the DM theme (b).

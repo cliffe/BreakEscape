@@ -992,6 +992,8 @@ export class MailComposer {
     }
 
     _emitChange() {
+        // The plain (suggested replies) form has no draft: leave the judged one the player may be keeping.
+        if (this._inkActive()) return;
         this.carryNotice = '';
         this.edited = true;
         try { this.opts.onChange?.(this.draft()); } catch (err) { console.error('composer onChange failed:', err); }

@@ -719,7 +719,8 @@ export class MailClientMinigame extends SocialOverlayScene {
         this.composeOpen = true;
         const social = this.social;
         // A judged follow-up does not reuse the unsent draft of a fresh message.
-        const draft = extra.forceTargetId ? null : (this.mailState.drafts && this.mailState.drafts[this.account.id]);
+        // A preset recipient (an ink reply, composeTo) never reuses an unsent draft: the draft's own contact would win.
+        const draft = (extra.forceTargetId || extra.presetContactId) ? null : (this.mailState.drafts && this.mailState.drafts[this.account.id]);
         this.composer = new MailComposer(this.root, {
             people: social.people,
             templates: social.templates,
@@ -1179,8 +1180,10 @@ export class MailClientMinigame extends SocialOverlayScene {
     /** "Write your own message" under a message from a contact who is also a phishing target. */
     openPlainOwn(contact) {
         const target = contact && contact.targetId;
-        if (!target) return false;
-        return this.openComposeReply(target, '');
+        if (!target || !resolveTarget(this.social, target)) return false;
+        if (this.composeOpen) this.closeCompose(false);
+        this.openCompose({ forceTargetId: target, inReplyTo: '', presetContactId: contact.id });
+        return true;
     }
 
     /** The composer sent a suggested reply. */
@@ -1197,7 +1200,7 @@ export class MailClientMinigame extends SocialOverlayScene {
         const target = resolveTarget(this.social, targetId);
         if (!target) return false;
         const character = target.character;
-        const contact = this.contacts().find((c) => c && (c.targetId === targetId || c.character === character)) || null;
+        const contact = this.contacts().find((c) => c && (c.targetId === targetId || (character && c.character === character))) || null;
         if (this.composeOpen) this.closeCompose(false);
         this.openCompose({ forceTargetId: targetId, inReplyTo: inReplyToId || '', presetContactId: contact ? contact.id : null });
         return true;
