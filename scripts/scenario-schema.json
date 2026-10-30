@@ -20,6 +20,11 @@
       "type": "string",
       "description": "ID of the starting room"
     },
+    "titleScreenName": {
+      "type": "string",
+      "maxLength": 80,
+      "description": "Optional name shown on the title screen in place of the mission's display_name (the server trims it to 80 characters). Blank falls back to display_name."
+    },
     "resumeSpawn": {
       "type": "object",
       "description": "batch-13 (opt-in): where the player respawns in the startRoom after a reload, in startPosition's tile units, e.g. by an awareness kiosk. Applies only to a resumed game and, when whenGlobal is named, only once that global is set (true, non-zero, non-empty). Default (unset): a reload spawns at startPosition, as before.",
