@@ -272,9 +272,47 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         this.reader.setMessages(this.messages, 'inbox');
         if (this.stored) {
             this._showStep('result');
+        } else if (this._restoreProgress()) {
+            // item 8: resumed mid-round from saved per-verdict progress (step set inside).
         } else {
             this._showStep('brief');
         }
+    }
+
+    /**
+     * item 8 (opt-in): restore a mid-round triage from the launcher's saved verdicts
+     * (params.restoreAnswers) so a reload resumes where the learner was. Returns false when there
+     * is nothing to restore, so the brief shows as normal. When every item was already answered
+     * before the reload, it finishes the round as the last lock would have.
+     */
+    _restoreProgress() {
+        const list = Array.isArray(this.params?.restoreAnswers) ? this.params.restoreAnswers : null;
+        if (!list || !list.length) return false;
+        const byId = new Map(this.messages.map((m) => [m.id, m]));
+        let restored = 0;
+        for (const a of list) {
+            if (!isObj(a) || !isStr(a.id) || !isStr(a.verdict) || !byId.has(a.id) || this.answers.has(a.id)) continue;
+            const answer = { id: a.id, verdict: a.verdict, flags: Array.isArray(a.flags) ? a.flags.filter(isStr) : [],
+                ms: Number.isFinite(a.ms) ? a.ms : 0 };
+            if (isStr(a.action)) answer.action = a.action;
+            if (a.unflagged === true) answer.unflagged = true;
+            if (a.none === true) answer.none = true;
+            this.answers.set(a.id, answer);
+            byId.get(a.id).read = true;
+            restored += 1;
+        }
+        if (!restored) return false;
+        this.progressEl.textContent = `${this.answers.size} of ${this.messages.length} sorted`;
+        if (this.answers.size >= this.messages.length) {
+            // The whole round was answered before the reload; finish as the last lock would have.
+            if (this.feedbackMode === 'end') { this._showStep('review'); return true; }
+            this._finishSort();
+            return true;
+        }
+        this._showStep('sort');
+        const next = this.messages.find((m) => !this.answers.has(m.id));
+        if (next) this.reader.select(next.id);
+        return true;
     }
 
     start() {
@@ -875,6 +913,11 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const rec = this.messages.find((m) => m.id === messageId);
         this._announce(this._lockedLine(rec.id));
         this.progressEl.textContent = `${this.answers.size} of ${this.messages.length} sorted`;
+        // item 8 (opt-in): hand the launcher each locked verdict so a reload mid-round can resume.
+        // Only when the launcher wired params.onProgress (the episode runner); best-effort.
+        if (typeof this.params?.onProgress === 'function') {
+            try { this.params.onProgress([...this.answers.values()]); } catch (e) { /* save is best-effort */ }
+        }
 
         if (this.answers.size >= this.messages.length) {
             if (this.feedbackMode === 'end') { this._showStep('review'); return; }

@@ -206,6 +206,28 @@ export function cleanRecapList(raw) {
 }
 
 /**
+ * E12 B2 finding 3 (item 8): the per-verdict progress of an in-progress triage round, kept in the
+ * state so a reload mid-inbox resumes where the learner was instead of restarting. Each entry is
+ * one locked answer { id, verdict, flags, ms, action?, unflagged?, none? }. Cleared when the round
+ * completes (the 'defend' summary is written). Returns null when empty, so a fresh or finished
+ * round carries no such key.
+ */
+export function cleanAnswerList(raw) {
+    if (!Array.isArray(raw)) return null;
+    const out = [];
+    for (const a of raw) {
+        if (!isObj(a) || !isStr(a.id) || !isStr(a.verdict)) continue;
+        const entry = { id: a.id, verdict: a.verdict, flags: Array.isArray(a.flags) ? a.flags.filter(isStr) : [],
+            ms: typeof a.ms === 'number' && Number.isFinite(a.ms) ? a.ms : 0 };
+        if (isStr(a.action)) entry.action = a.action;
+        if (a.unflagged === true) entry.unflagged = true;
+        if (a.none === true) entry.none = true;
+        out.push(entry);
+    }
+    return out.length ? out : null;
+}
+
+/**
  * E11 B2 finding 5: the consequence-sandbox beats the learner got wrong (chose a non-safe
  * option), for the debrief recap. Each item reuses the option labels and the montage "where it
  * led" line (strings.flipMontageByChoice[beatId][optionId]) as the reason — existing content
@@ -393,6 +415,9 @@ export function readState(episode, raw) {
     if (sandbox) state.sandbox = sandbox;
     const assistant = cleanRecapList(src.assistant);
     if (assistant) state.assistant = assistant;
+    // item 8: an in-progress triage round's per-verdict answers, so a reload resumes it.
+    const defendProgress = cleanAnswerList(src.defendProgress);
+    if (defendProgress) state.defendProgress = defendProgress;
     state.stage = nextStage(episode, state);
     return state;
 }
@@ -408,7 +433,10 @@ export function completeStage(episode, state, stageId, patch = {}) {
         ? base.done : [...base.done, stageId];
     const next = { ...base, done };
     if ('sent' in patch) next.sent = cleanSent(patch.sent);
-    if ('defend' in patch) next.defend = cleanDefend(patch.defend);
+    // item 8: writing the defend summary means the round finished, so the saved per-verdict
+    // progress is no longer needed and is cleared.
+    if ('defend' in patch) { next.defend = cleanDefend(patch.defend); delete next.defendProgress; }
+    if ('defendProgress' in patch) { const p = cleanAnswerList(patch.defendProgress); if (p) next.defendProgress = p; else delete next.defendProgress; }
     if ('drill' in patch) { const drill = cleanDrill(patch.drill); if (drill) next.drill = drill; }
     if ('concern' in patch) { const concern = cleanConcern(patch.concern); if (concern) next.concern = concern; }
     if ('privacy' in patch) { const privacy = cleanPrivacy(patch.privacy); if (privacy) next.privacy = privacy; }

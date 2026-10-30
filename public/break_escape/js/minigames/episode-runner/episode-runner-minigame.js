@@ -967,6 +967,11 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                 // A debrief later in this episode carries the real-items cost and why lines, so the
                 // triage result names the items only (disc_visible). A check ends on the result.
                 debriefFollows: debriefAfter(episode, stage),
+                // item 8 (E12 B2 finding 3): save each locked verdict so a reload mid-round resumes
+                // where the learner was, and restore them when the round reopens. The triage
+                // minigame uses these only when present, so every other scenario is unchanged.
+                restoreAnswers: Array.isArray(this.state.defendProgress) ? this.state.defendProgress : null,
+                onProgress: (answers) => this._saveTriageProgress(answers),
                 onComplete: (success, result) => this._triageDone(stage, options, holder, reopenBase, episode, set, success, result)
             });
         } catch (e) {
@@ -975,6 +980,15 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         holder.launched = launched;
         if (!launched) this.params.suspended = false;
         return launched;
+    }
+
+    /** item 8: persist the in-progress triage verdicts without advancing the stage. */
+    _saveTriageProgress(answers) {
+        try {
+            this._saveState({ ...this._readState(), defendProgress: Array.isArray(answers) ? answers : [] });
+        } catch (e) {
+            console.error('[episode] saving triage progress failed:', e);
+        }
     }
 
     _triageDone(stage, options, holder, reopenBase, episode, set, success, result) {
