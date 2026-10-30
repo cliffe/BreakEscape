@@ -44,6 +44,7 @@
       "title": "A morning of Quayholt web pages",
       "brief": "The kiosk has a morning's worth of web pages open, the kind that turn up while you're trying to work: fake downloads, 'verify you are human' boxes, pop-ups that want you to call. For each one, decide whether you'd carry on, close and report it, or go the trusted way, then tick what you noticed. The rule holds every time: no honest web page ever needs you to paste, run, install or call. Reporting when you're unsure is always fine and never marked down, and reporting fast after you've clicked or pasted is what limits the damage.",
       "scoringProfile": "awareness",
+      "scoring": { "criticalPenalty": 5, "criticalPenaltyCap": 10 },
       "verifyVerdict": false,
       "feedbackMode": "immediate",
       "headerPanel": "off",

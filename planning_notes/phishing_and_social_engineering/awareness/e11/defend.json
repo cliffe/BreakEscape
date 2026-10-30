@@ -48,6 +48,7 @@
       "title": "Care Laundry desk inbox",
       "brief": "You're covering the Care Laundry desk at Carrholme Services this morning. Some items are routine, some belong with the data protection lead, and one or two were made to trick you. For each one, choose Trust, Report, Delete or Verify (ring back on a number you already hold), then tick what you noticed. Reporting or checking when you're unsure is always fine, though a real one does take a colleague's time to check.",
       "scoringProfile": "awareness",
+      "scoring": { "criticalPenalty": 5, "criticalPenaltyCap": 10 },
       "verifyVerdict": true,
       "feedbackMode": "immediate",
       "confirmPrompt": true,

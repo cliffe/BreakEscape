@@ -45,6 +45,7 @@
       "title": "Your Tarrowby account under attack",
       "brief": "It's your own Tarrowby account now, and someone has a password of yours. Eight things come up: sign-in prompts, a message dressed up as IT, and a few password choices. Approve a prompt only if you started it; otherwise deny and report. No clock, and no real password is typed. Reporting when you're unsure is always fine.",
       "scoringProfile": "awareness",
+      "scoring": { "criticalPenalty": 5, "criticalPenaltyCap": 5 },
       "verifyVerdict": true,
       "feedbackMode": "immediate",
       "headerPanel": "off",
