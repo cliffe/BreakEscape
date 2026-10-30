@@ -1,10 +1,10 @@
 {
  "mission": "m01",
- "id": "m01_trailer60_v5",
+ "id": "m01_trailer60_v6",
  "title": "SAFETYNET: Licence to Hack, m01 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v5: Derek re-recorded as t09_derek_v5 (lip-sync fix; cut re-derived), CTA reads Play now. v4: title holds 6 s with HaX's line J-cutting in under it, Mission 1 / First Contact card, wavy FX reflections, key-press-timed solid hex curtain with the Hacktivity Games logo in front of it (no separate end card)",
+ "status": "v6: closing shot reworked (no logo plate: transparent SVG logos straight on the red curtain; \"Play now\" above the curtain; URL drawn in the curtain layer and uncovered as it falls; per-aspect closing layouts). v5: Derek re-recorded as t09_derek_v5 (lip-sync fix; cut re-derived), CTA reads Play now. v4: title holds 6 s with HaX's line J-cutting in under it, Mission 1 / First Contact card, wavy FX reflections, key-press-timed solid hex curtain with the Hacktivity Games logo in front of it (no separate end card)",
  "music": {
   "track": "Noir/Midnight Cipher Chase.mp3",
   "analysis": "midnight_cipher_chase.json",
@@ -1064,7 +1064,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "laptop clip with call to action; key press at clip frame 90 (3.0 s); solid red hex curtain from 3.2 s; Hacktivity Games logo and URL in front of it"
+    "note": "laptop clip with call to action; key press at clip frame 90 (3.0 s); solid red hex curtain from 3.2 s; URL uncovered by the falling curtain, Hacktivity Games logo over the red (no plate)"
    },
    "curtain": {
     "start": 96,
@@ -1075,10 +1075,77 @@
     "assemble": 24,
     "morph_at": 27,
     "morph_frames": 12,
-    "url_at": 40,
     "url": "hacktivity.co.uk"
    },
-   "note": "key press: hand lands on the keys and the screen glow steps up at clip frame 90 (3.000 s; face luminance 58 to 70 in one frame, brightest typing burst at frame 98); curtain starts at frame 96 (3.2 s) and covers at frame 153 (5.1 s); the clip freezes on its last frame (117) at 3.9 s"
+   "note": "key press: hand lands on the keys and the screen glow steps up at clip frame 90 (3.000 s; face luminance 58 to 70 in one frame, brightest typing burst at frame 98); curtain starts at frame 96 (3.2 s) and covers at frame 153 (5.1 s); the clip freezes on its last frame (117) at 3.9 s",
+   "layout": {
+    "16:9": {
+     "clip": {
+      "cx": 0.5,
+      "cy": 0.5,
+      "zoom": 1
+     },
+     "play": {
+      "x": 0.515,
+      "w": 0.43,
+      "cy": 0.4
+     },
+     "logo": {
+      "cx": 0.25,
+      "cy": 0.5,
+      "w": 0.4
+     },
+     "url": {
+      "cx": 0.73,
+      "cy": 0.58,
+      "size": 0.029
+     }
+    },
+    "9:16": {
+     "clip": {
+      "cx": 0.34,
+      "cy": 0.5,
+      "zoom": 1
+     },
+     "play": {
+      "x": 0.06,
+      "w": 0.88,
+      "cy": 0.1
+     },
+     "logo": {
+      "cx": 0.5,
+      "cy": 0.42,
+      "w": 0.8
+     },
+     "url": {
+      "cx": 0.5,
+      "cy": 0.62,
+      "size": 0.052
+     }
+    },
+    "1:1": {
+     "clip": {
+      "cx": 0.34,
+      "cy": 0.5,
+      "zoom": 1
+     },
+     "play": {
+      "x": 0.06,
+      "w": 0.88,
+      "cy": 0.1
+     },
+     "logo": {
+      "cx": 0.5,
+      "cy": 0.46,
+      "w": 0.72
+     },
+     "url": {
+      "cx": 0.5,
+      "cy": 0.7,
+      "size": 0.04
+     }
+    }
+   }
   }
  ],
  "effects": {

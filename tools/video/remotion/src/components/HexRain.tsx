@@ -1,4 +1,5 @@
 import React, { useLayoutEffect, useRef } from 'react';
+import { delayRender, continueRender } from 'remotion';
 import { PIXEL_FONT } from '../fonts';
 import { rng } from '../rand';
 
@@ -34,11 +35,27 @@ export function curtainLag(n: number, seed: number): number[] {
   return out;
 }
 
-export const HexRain: React.FC<{ frame: number; w: number; h: number; p: number; cw?: number; ch?: number; seed?: number }> = ({ frame, w, h, p, cw = 20, ch = 28, seed = 5 }) => {
+/** Text drawn in the curtain's own layer: each column shows it only above that column's front, so the falling curtain uncovers it. */
+export type CurtainLabel = { text: string; cx: number; cy: number; size: number; fill?: string; stroke?: string };
+
+export const HexRain: React.FC<{ frame: number; w: number; h: number; p: number; cw?: number; ch?: number; seed?: number; label?: CurtainLabel }> = ({ frame, w, h, p, cw = 20, ch = 28, seed = 5, label }) => {
   const ref = useRef<HTMLCanvasElement>(null);
   useLayoutEffect(() => {
     const cv = ref.current; if (!cv) return;
     const x = cv.getContext('2d'); if (!x) return;
+    // canvas text only uses Press Start 2P once the face is loaded: hold the frame, then draw
+    const fonts: any = (document as any).fonts;
+    const ready = () => Array.from(fonts as Iterable<any>).some((f: any) => /Press Start/.test(f.family) && f.status === 'loaded');
+    if (!ready()) {
+      const hd = delayRender('hexrain font');
+      let tries = 0;
+      const poll = () => { if (ready() || ++tries > 100) { draw(); continueRender(hd); } else setTimeout(poll, 50); };
+      poll();
+      return;
+    }
+    draw();
+    function draw() {
+      if (!x) return;
     const cols = Math.ceil(w / cw), rows = Math.ceil(h / ch);
     const lag = curtainLag(cols, seed);
     const cells = new Uint8Array(cols * rows), flips = new Uint8Array(cols * rows);
@@ -47,7 +64,7 @@ export const HexRain: React.FC<{ frame: number; w: number; h: number; p: number;
     const tick = Math.floor(frame / 2.7); // the shell flips every 90 ms
     x.clearRect(0, 0, w, h);
     x.imageSmoothingEnabled = false;
-    x.font = `${Math.round(cw * 0.9)}px ${PIXEL_FONT}`; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.font = `${Math.round(cw * 0.9)}px monospace`; // as in v5 (the digits always drew in the fallback monospace) x.textAlign = 'center'; x.textBaseline = 'middle';
     x.fillStyle = RED;
     const fronts: number[] = [];
     for (let c = 0; c < cols; c++) {
@@ -69,6 +86,18 @@ export const HexRain: React.FC<{ frame: number; w: number; h: number; p: number;
           x.fillText(HEX[d], c * cw + cw / 2, row * ch + ch / 2 + 1);
         }
       }
+    }
+    if (label) {
+      x.save();
+      x.beginPath();
+      for (let c = 0; c < cols; c++) if (fronts[c] > 0) x.rect(c * cw, 0, cw, Math.min(fronts[c], h));
+      x.clip();
+      x.font = `${label.size}px ${PIXEL_FONT}`; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.lineJoin = 'round'; x.lineWidth = Math.max(4, Math.round(label.size / 4));
+      x.strokeStyle = label.stroke ?? '#3a0409'; x.strokeText(label.text, label.cx, label.cy);
+      x.fillStyle = label.fill ?? '#ffe3e0'; x.fillText(label.text, label.cx, label.cy);
+      x.restore();
+    }
     }
   });
   return <canvas ref={ref} width={w} height={h} style={{ position: 'absolute', left: 0, top: 0, width: w, height: h }} />;
