@@ -338,6 +338,8 @@ EPISODES = {
         'role_label': 'all staff',
         'defend_set': 'e13_assistant_inbox',
         'defend_host': 'gwen',
+        # Respawn by the kiosk after a reload (x 6.6, not 7.4: the kiosk slot's left edge is x 238 = tile 7.44).
+        'resumeSpawn': {'x': 6.6, 'y': 3.6, 'whenGlobal': 'episode_e13_ai_assistant_defend_state'},
         # No 'forms'/'check_hosts': E13 feeds general_v2, built by 10's own generator, not this one.
         'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
                    'keywords': ['Deepfakes', 'Prompt injection', 'AI assistants', 'Security awareness']}],
@@ -734,6 +736,10 @@ def defend_only(ekey):
             globals_[f'se_intel_{_fid}'] = False
     sc = scenario(mission, d['name'], d['brief'], d['endGoal'], d['aim'], d['task'], done, globals_,
                        social, host, ink_name, d['kiosk'], d['conclusion'])
+    if cfg.get('resumeSpawn'):
+        # Engine batch 13 (resume-spawn.js): where a reloaded learner respawns. Placed right after startPosition.
+        sc = {k2: v2 for k, v in sc.items() for k2, v2 in
+              (((k, v), ('resumeSpawn', copy.deepcopy(cfg['resumeSpawn']))) if k == 'startPosition' else ((k, v),))}
     meta = meta_for(d['display'], d['desc'], d['minutes'], cfg['cybok'])
     ink = ink_source(f"Awareness {ekey.upper()}, defend only", host, done, LINES[(ekey, 'defend')])
     return mission, sc, meta, ink_name, ink
