@@ -526,7 +526,23 @@ function substituteFlags(node, at) {
       return r;
     },
     pressKey: async (c) => {
-      const r = await page.evaluate(k => window.__test.pressKey(k), c.key);
+      let r = await page.evaluate(k => window.__test.pressKey(k), c.key);
+      // The "Continue?" title card is a minigame that takes the keyboard (Space, Enter or a click),
+      // but window.__test.pressKey refuses any key while a minigame owns the screen ('minigame-active').
+      // When that card is up, send a real key so a tester can use the keyboard on it, exactly as
+      // bootstrap does — no other minigame gets main-world keys this way.
+      if (r && r.ok === false && r.reason === 'minigame-active') {
+        const onTitle = await page.evaluate(() => {
+          try { return (window.__test.getState().activeMinigame || {}).id === 'title-screen'; }
+          catch (e) { return false; }
+        });
+        if (onTitle) {
+          const map = { ' ': 'Space', space: 'Space', spacebar: 'Space', enter: 'Enter', return: 'Enter' };
+          const key = map[String(c.key).toLowerCase()] || c.key;
+          await page.keyboard.press(key);
+          r = { ok: true, key: c.key, via: 'title-screen keyboard' };
+        }
+      }
       await pause(speed.step);
       return r;
     },
