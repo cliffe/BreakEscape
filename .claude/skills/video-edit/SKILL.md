@@ -7,7 +7,7 @@ description: Selects shots and builds, lints and renders a SAFETYNET video from 
 
 From recorded takes to a finished render. Three jobs in order: the **selects** (orchestrator), the **edit list** (Sonnet fills it from the selects), the **render** (Sonnet runs it, the orchestrator checks it). The recipe for the kind of video (`docs/video/recipes/`) gives the beat sheet; `docs/video/recipes/mission-trailer.md` is the m01 60 s structure as a template. House style is `docs/video/GUIDELINES.md`: read it, it is the source for fonts, cards, joins, pixels and sound.
 
-Worked example to copy: `tools/video/edits/m01_trailer60.json` (v5, 24 shots, 60.00 s). Remotion project: `tools/video/remotion/` (Remotion 4.0.530; the free licence applies, user-confirmed 2026-10-29).
+Worked example to copy: `tools/video/edits/m01_trailer60.json` (v7, 24 shots, 60.00 s; first and last shots are presets). Remotion project: `tools/video/remotion/` (Remotion 4.0.530; the free licence applies, user-confirmed 2026-10-29).
 
 ## Who does this
 
@@ -96,6 +96,12 @@ nice -n 19 tools/video/remotion/render.sh tools/video/edits/<mission>_<kind>.jso
 - **30 fps only.** A different fps in the edit list breaks the beat snap and the takes.
 - Re-render only the aspects that changed; the 9:16 and 1:1 after the user picks glitch or dissolve (m01 rendered A and B in 16:9 only).
 - New effect or component work belongs to a Sonnet agent with a spec, reviewed against the reference frames (GUIDELINES "Joins"), not improvised in an edit.
+
+## Presets, bumpers and restoring takes
+
+- **Presets.** The opening (`title` shot: Veo walk-in plus the Licence to Hack title) and the closing (`cta` shot: laptop clip, Hacktivity Labs to Games logo, key-press curtain, "Play now", hacktivity.co.uk) live in `tools/video/edits/presets/safetynet-open.json` and `hacktivity-close.json`. An edit list uses them as a shot `{"preset": "safetynet-open", ...overrides}`: the preset is merged shallowly, overrides win (for example `"join": {"type": "cut"}`). `scripts/load-edit.mjs` (`loadEdit`) resolves them for lint, props, mix, srt, stills and `render.sh`; any new script that reads an edit list must use it, not `JSON.parse`. A new mission trailer starts from the two presets (first and last shot); `m01_trailer60.json` is the example. After touching a preset or the loader, prove nothing moved: `node tools/video/remotion/scripts/check-preset-equal.mjs <old inline edit.json> <edit.json>` (resolved edit must deep-equal the old one).
+- **Bumpers.** `tools/video/edits/bumpers/{safetynet-open,hacktivity-close}.json` (6 s and 8 s, `mission: "shared"`, `file_sep: "-"`) and their `-silent` twins (`music: {"none": true}`: clip sound only, for editors who add their own music) render with the usual `render.sh` to `video_out/shared/renders/<name>-<aspect>.mp4` (no takes needed). The music is the trailer's track at the matching seconds of its window, with short fades. Render all three aspects of each, one at a time, and check loudness with `ffmpeg -i f -af ebur128=peak=true -f null -` (music versions -14 LUFS; the silent ones are only peak-normalised to -1.5 dBTP via `audio.peak_normalize`, because the Veo clip sound is about -35 LUFS). The finals go to `shared/` in the hacktivity-videos repo.
+- **Restoring takes.** `video_out/` is git-ignored. On a fresh checkout run `tools/video/fetch-wip.sh <mission>` (m01 ...): it clones or fast-forwards hacktivity-videos (cache `BE_VIDEOS_REPO`, default `/home/user/hacktivity-videos` or `~/.cache/hacktivity-videos`) and copies `wip/safetynet-licence-to-hack/<mission-slug>/takes/` into `video_out/<mission>/takes/`, keeping newer local files unless `--force` (`--no-update` skips the network; `BE_VIDEO_OUT` redirects the destination).
 
 ## Gates
 

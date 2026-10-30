@@ -1,11 +1,12 @@
 // Shared by render.mjs / stills.mjs: bundle once, then link the (large) takes into the bundle's public folder.
 // Remotion's own public-dir copy drops symlinks, and copying GBs of capture into the bundle would be wasteful.
 import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
+import { loadEdit } from './load-edit.mjs';
 import { bundle } from '@remotion/bundler';
 const here = path.dirname(fileURLToPath(import.meta.url)); export const root = path.resolve(here, '..');
 export const browserExecutable = [process.env.BE_CHROMIUM, '/opt/pw-browsers/chromium-1243/chrome-linux64/chrome', '/opt/pw-browsers/chromium-1243/chrome-linux/chrome'].filter(Boolean).find((p) => fs.existsSync(p));
 export function readProps(editFile, aspect) {
-  const edit = JSON.parse(fs.readFileSync(editFile, 'utf8'));
+  const edit = loadEdit(editFile);
   const man = JSON.parse(fs.readFileSync(path.join(root, 'public/manifest.json'), 'utf8'));
   const available = {}; for (const k of Object.keys(man.takes)) available[`takes/${k}`] = true;
   for (const k of Object.keys(man.clips || {})) available[`clips/${k}`] = true;

@@ -5,6 +5,7 @@
 import fs from 'node:fs'; import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { takesDirFor } from './mission.mjs';
+import { loadEdit } from './load-edit.mjs';
 import { buildTimeline, framingAt, visibleRect, ASPECTS, JOIN_FRAMES, isCardLike, sourceRef } from '../src/timeline.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '../../../..');
@@ -12,7 +13,7 @@ const args = process.argv.slice(2); const final = args.includes('--final');
 const tdi = args.indexOf('--takes-dir');
 const file = args.find((a, i) => !a.startsWith('--') && !(tdi >= 0 && i === tdi + 1));
 if (!file) { console.error('usage: lint-edit.mjs <edit.json> [--final] [--takes-dir DIR]'); process.exit(2); }
-const edit = JSON.parse(fs.readFileSync(file, 'utf8'));
+const edit = loadEdit(file);
 let takesDir = tdi >= 0 ? args[tdi + 1] : null;   // default video_out/<edit.mission>/takes
 if (!takesDir && edit.mission) takesDir = takesDirFor(repo, edit, file);
 const errors = [], warns = [];
@@ -26,12 +27,13 @@ const beat = edit.beat?.period, boff = edit.beat?.offset ?? 0;
 const halfFrame = 0.5 / fps;
 if (!beat) E('edit', 'beat.period missing');
 const music = edit.music || {};
-if (!music.track) E('music', 'track missing');
+if (music.none) { /* silent bumper: no music bed, clip sound only */ }
+else if (!music.track) E('music', 'track missing');
 else if (!fs.existsSync(path.join(repo, 'public/break_escape/assets/music', music.track))) E('music', `track file not found: ${music.track}`);
-if (music.start == null || music.length == null) E('music', 'start/length missing');
+if (!music.none && (music.start == null || music.length == null)) E('music', 'start/length missing');
 const total = tl.totalFrames / fps;
 if (music.length != null && Math.abs(total - music.length) > 1 / fps + 1e-6) E('music', `shots total ${total.toFixed(3)} s but music window is ${music.length} s`);
-if (music.start != null && music.start + music.length > 0) {
+if (!music.none && music.start != null && music.start + music.length > 0) {
   const an = music.analysis && path.join(repo, 'tools/video/edits/music', music.analysis);
   if (an && fs.existsSync(an)) { const a = JSON.parse(fs.readFileSync(an, 'utf8')); if (music.start + music.length > a.duration) E('music', 'window runs past the end of the track'); }
 }

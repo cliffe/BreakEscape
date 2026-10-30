@@ -38,6 +38,10 @@ These are the user's decisions (2026-10-29 and 2026-10-30) and the m01 lessons, 
 - **Storage.** Finals are committed straight to `master` in the `cliffe/hacktivity-videos` repo (user, 2026-10-30); `video-review` Step 6 does the export.
 - **Writing.** Plain UK English, no em dashes, no AI-sounding filler.
 
+## Presets, bumpers and fetch-wip
+
+New mission trailers and teasers start from the two shot presets in `tools/video/edits/presets/` (`safetynet-open`, `hacktivity-close`), referenced from the edit list as `{"preset": "<name>", ...overrides}` and resolved by `tools/video/remotion/scripts/load-edit.mjs`. The same two shots are rendered as standalone bumpers (`tools/video/edits/bumpers/`: 6 s opening, 8 s closing, 16:9, 9:16, 1:1, with music and `-silent`) into `video_out/shared/renders/` and `shared/` in hacktivity-videos. `tools/video/fetch-wip.sh <mission>` restores a mission's takes from that repo into `video_out/<mission>/takes/`. Details: video-edit skill.
+
 ## Mission-to-music record
 
 One track per mission. Before choosing, read this table; after the edit is final, add the row. The beat grid and windows come from `tools/video/edits/music/analyse_music.py` (analysis files in `tools/video/edits/music/`).

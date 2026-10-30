@@ -107,6 +107,10 @@ README.md                                     index of every export (newest firs
 
 Checks: each file is under GitHub's 100 MB per-file limit (a 60 s 1080p master is about 30 MB); sizes match local; `ffprobe` reads each file after the push (re-clone or `git show`); only finals are committed, never every review round, so history stays small. Put the commit link in the video log.
 
+## Bumpers and restoring takes
+
+The reusable opening and closing bumpers (`safetynet-open-<aspect>.mp4`, `hacktivity-close-<aspect>.mp4` and their `-silent` versions, from `tools/video/edits/bumpers/`, rendered into `video_out/shared/renders/`) are exported to `shared/` in hacktivity-videos, not to a mission folder; export them with the same size and `ffprobe` checks. To work on a mission on a machine without `video_out/`, run `tools/video/fetch-wip.sh <mission>` first: it copies the mission's takes from the repo's `wip/` folder back into `video_out/<mission>/takes/` (see the video-edit skill).
+
 ## Gates
 
 | Gate | Pass when |

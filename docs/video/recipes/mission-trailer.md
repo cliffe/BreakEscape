@@ -72,6 +72,8 @@ Total 60.0 s. Cards are 1.5 s, in white Press Start 2P on the navy-to-purple gra
 - The mission-to-music record in `README.md`.
 - User decisions: who may be named or shown, which NPC lines, the music.
 
+**New missions start from the presets.** The first shot is `{"preset": "safetynet-open"}` and the last is `{"preset": "hacktivity-close"}` (see `tools/video/edits/presets/` and `m01_trailer60.json`); only the shots between them are written per mission. Overrides on the preset shot (join, duration) win.
+
 ## Stage skills, in order
 
 1. `video-scout`: the scout report and the picks file (`docs/video/edits/<mission>_TRAILER60_PICKS.md`). Orchestrator picks.

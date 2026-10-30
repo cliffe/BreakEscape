@@ -9,6 +9,7 @@
 import fs from 'node:fs'; import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { takesDirFor } from './mission.mjs';
+import { loadEdit } from './load-edit.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
 const repo = path.resolve(root, '../../..');
@@ -17,7 +18,7 @@ const assets = path.join(repo, 'public/break_escape/assets');
 // takes dir: --takes-dir DIR, else BE_TAKES_DIR, else video_out/<mission>/takes from the edit list given as the first argument
 const argv = process.argv.slice(2); const ti = argv.indexOf('--takes-dir');
 const editArg = argv.find((a, i) => !a.startsWith('--') && (ti < 0 || i !== ti + 1));
-const takesDir = ti >= 0 ? argv[ti + 1] : process.env.BE_TAKES_DIR || (editArg ? takesDirFor(repo, JSON.parse(fs.readFileSync(editArg, 'utf8')), editArg) : null);
+const takesDir = ti >= 0 ? argv[ti + 1] : process.env.BE_TAKES_DIR || (editArg ? takesDirFor(repo, loadEdit(editArg), editArg) : null);
 if (!takesDir) { console.error('usage: sync-assets.mjs <edit.json> | --takes-dir DIR (or BE_TAKES_DIR)'); process.exit(2); }
 fs.mkdirSync(path.join(pub, 'fonts'), { recursive: true });
 fs.mkdirSync(path.join(pub, 'takes'), { recursive: true });

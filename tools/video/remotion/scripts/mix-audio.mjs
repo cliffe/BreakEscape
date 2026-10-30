@@ -7,17 +7,19 @@
 // Not part of the Remotion render: the render is silent; render.sh muxes this mix and runs loudnorm.
 import fs from 'node:fs'; import path from 'node:path'; import { spawnSync } from 'node:child_process'; import { fileURLToPath } from 'node:url';
 import { takesDirFor } from './mission.mjs';
+import { loadEdit } from './load-edit.mjs';
 import { buildTimeline } from '../src/timeline.js';
 const here = path.dirname(fileURLToPath(import.meta.url)); const repo = path.resolve(here, '../../../..');
 const a = process.argv.slice(2); const [editFile, out] = a;
 const ti = a.indexOf('--takes-dir');
-const edit = JSON.parse(fs.readFileSync(editFile, 'utf8'));
+const edit = loadEdit(editFile);
 const takesDir = ti >= 0 ? a[ti + 1] : takesDirFor(repo, edit, editFile); // default video_out/<edit.mission>/takes
 const tl = buildTimeline(edit);
 const total = tl.totalFrames / tl.fps;
-const m = edit.music; const musicFile = path.join(repo, 'public/break_escape/assets/music', m.track);
+const m = edit.music; const noMusic = !!m.none; // music.none: silent bumper, the clip/take sound only
+const musicFile = noMusic ? null : path.join(repo, 'public/break_escape/assets/music', m.track);
 const fade = (edit.audio?.fade_ms ?? 8) / 1000;
-const inputs = ['-ss', String(m.start), '-t', String(total + 0.05), '-i', musicFile]; let n = 1;
+const inputs = noMusic ? ['-f', 'lavfi', '-t', String(total + 0.05), '-i', 'anullsrc=r=48000:cl=stereo'] : ['-ss', String(m.start), '-t', String(total + 0.05), '-i', musicFile]; let n = 1;
 const parts = []; const mixIn = [];
 // duck envelope: product of per-window dips with attack/release ramps
 const duckK = Math.pow(10, (edit.duck?.db ?? -9) / 20), att = edit.duck?.attack ?? 0.12, rel = edit.duck?.release ?? 0.3;
