@@ -9,7 +9,7 @@
       "_localTell": "unapproved_tool is scenario-local to this set (and, separately, to E15's set): a free app or online service with no contract, handing the firm's data to a provider we have not checked. There is no built equivalent, so 00 section 2's CHANNEL_TELLS and phish-rules.js/triage.rb SKILL_NAMES are untouched: it is declared in channelTells with a flagChips label and a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's skill name), and the two messages that raise it (items 1 and 6) carry a message-level factorStrings.unapproved_tool.redFlag sentence (a sibling of truth, never inside it: truth is additionalProperties:false under --strict-social). Promote it to the shared library only if a 10 check item later scores it; no 10 item scores it, so it stays local in both E17 and E15. secrecy_or_bypass is a shared-library tell and needs no flagChips/skillNames. lookalike_domain is NOT declared: no item in this set flags it (matching E8's convention of not declaring a tell no item flags).",
       "_mirrorPair": "aw5 mirror pair: item 1 (e17_meeting_app, a normal-looking unapproved-install lure, Verify/Report) and item 4 (e17_monitoring_notice, a suspicious-looking genuine monitoring notice, Trust). Items 2 and 3 are flagged (isPhish:true) because the ASK is the unsafe one even though the colleague is genuine; this makes the modelled decline/route the full-mark move under the awareness profile, and the human nuance is in the per-item feedback.",
       "title": "Tarrowby inbox: acceptable use",
-      "brief": "A short inbox at Tarrowby Logistics, a fictional haulier: everyday requests and reminders. For each one, choose Trust, Report, Delete or Verify (ask the service desk, or check with the sender on a route you already use), then tick what you noticed. When you're not sure, ask first, it's never the wrong answer, and reporting is never marked down, though a real one does take a colleague's time to check.",
+      "brief": "A short inbox at Tarrowby Logistics, a fictional haulier: everyday requests and reminders. For each one, choose Trust, Report, Delete or Verify (ask the service desk, or check with the sender on a route you already use), then tick what you noticed. When you're not sure, checking first is fine. Tick the sign that made you stop, because the reason matters as much as the choice, and a real item does take a colleague's time to check.",
       "realLabel": "Genuine messages",
       "scoringProfile": "awareness",
       "verifyVerdict": true,
@@ -68,7 +68,8 @@
             "phish": "Right call: you raised it. Telling the service desk helps the next person who gets the same request."
           },
           "delete": {
-            "phish": "Safe, but not raised. Deleting protects you; telling the service desk helps everyone else."
+            "phish": "Safe, but not raised. Deleting protects you; telling the service desk helps everyone else.",
+            "real": "That one was a genuine notice, and deleting it left it unread. Trusting it, or checking it first, was the right call here."
           }
         },
         "queue": {
@@ -147,7 +148,7 @@
           "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "intranet@tarrowby.example" },
           "truth": { "isPhish": false, "flags": [],
             "whyFine": { "default": "It reads like a warning, but it's the firm telling you plainly what it checks and why, which is exactly what the rules require. Nothing to report." },
-            "falseAlarmCost": "Reporting it only has someone re-confirm a genuine policy notice." }
+            "falseAlarmCost": "A genuine policy notice that goes unread leaves its reason unexplained, and one that gets queried costs a colleague a little time." }
         },
         {
           "id": "e17_personal_use_ok",

@@ -23,7 +23,7 @@
   "objectives": [
     {
       "aimId": "acceptable_use_aim",
-      "title": "Sort the can I moments",
+      "title": "Sort the 'can I?' moments",
       "description": "Sort the \"can I?\" cards and handle the inbox at the training kiosk.",
       "status": "active",
       "order": 0,
@@ -41,7 +41,7 @@
       "tasks": [
         {
           "taskId": "sort_can_i",
-          "title": "Sort the can I moments",
+          "title": "Sort the 'can I?' moments",
           "type": "custom",
           "status": "active"
         }
@@ -62,7 +62,7 @@
         "reportReply": "Thanks. The service desk has it and will tell you the approved way.",
         "id": "e17_acceptable_use_inbox",
         "title": "Tarrowby inbox: acceptable use",
-        "brief": "A short inbox at Tarrowby Logistics, a fictional haulier: everyday requests and reminders. For each one, choose Trust, Report, Delete or Verify (ask the service desk, or check with the sender on a route you already use), then tick what you noticed. When you're not sure, ask first, it's never the wrong answer, and reporting is never marked down, though a real one does take a colleague's time to check.",
+        "brief": "A short inbox at Tarrowby Logistics, a fictional haulier: everyday requests and reminders. For each one, choose Trust, Report, Delete or Verify (ask the service desk, or check with the sender on a route you already use), then tick what you noticed. When you're not sure, checking first is fine. Tick the sign that made you stop, because the reason matters as much as the choice, and a real item does take a colleague's time to check.",
         "realLabel": "Genuine messages",
         "scoringProfile": "awareness",
         "verifyVerdict": true,
@@ -125,7 +125,8 @@
               "phish": "Right call: you raised it. Telling the service desk helps the next person who gets the same request."
             },
             "delete": {
-              "phish": "Safe, but not raised. Deleting protects you; telling the service desk helps everyone else."
+              "phish": "Safe, but not raised. Deleting protects you; telling the service desk helps everyone else.",
+              "real": "That one was a genuine notice, and deleting it left it unread. Trusting it, or checking it first, was the right call here."
             }
           },
           "queue": {
@@ -288,7 +289,7 @@
               "whyFine": {
                 "default": "It reads like a warning, but it's the firm telling you plainly what it checks and why, which is exactly what the rules require. Nothing to report."
               },
-              "falseAlarmCost": "Reporting it only has someone re-confirm a genuine policy notice."
+              "falseAlarmCost": "A genuine policy notice that goes unread leaves its reason unexplained, and one that gets queried costs a colleague a little time."
             }
           },
           {
@@ -438,7 +439,7 @@
         "strings": {
           "title": "Can I?",
           "heading": "Sort the 'can I?' moments",
-          "intro": "Each card is an everyday moment at work. Put it in Allowed, Not allowed or Ask first, and the reason shows straight after. Not sure? Ask first.",
+          "intro": "Our rules in one line each. Personal use in your own time is fine. Work accounts, files and logins are for work only. Software and USB sticks nobody has checked go to the service desk first. Never share a password or read out a code. Look at personal data only with a work reason. A suspected mistake is reported straight away. Each card is an everyday moment at work: put it in Allowed, Not allowed or Ask first, and the reason shows straight after. Not sure? Ask first.",
           "start": "Start sorting",
           "finish": "See where they went",
           "summaryHeading": "Where the cards went",
