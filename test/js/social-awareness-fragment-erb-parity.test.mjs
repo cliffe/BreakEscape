@@ -71,7 +71,9 @@ const STRINGS_VALUE_EXEMPT = new Set(['defendIntro', 'conceptPanel']);
 //   - flipMontageByChoice, flipMontageIntro, sandbox (ENG-04): the montage flip's lines and the sandbox's wording exist only in a full consequence episode; the
 //     defend-only shell has no mistake or flip stage, so its generated fragment never carries them (like
 //     flipDefenderLineByChoice).
-const STRINGS_ERB_ONLY_OK = new Set(['conceptPanel', 'flipCallIntro', 'flipPageIntro', 'flipPageHeading', 'voicePanel', 'defendIntro', 'flipDefenderLineByChoice', 'flipMontageByChoice', 'flipMontageIntro', 'sandbox']);
+//   - stages (E13 B2): per-stage text overrides for the red-team stages (write), which the defend-only
+//     shell does not have.
+const STRINGS_ERB_ONLY_OK = new Set(['conceptPanel', 'flipCallIntro', 'flipPageIntro', 'flipPageHeading', 'voicePanel', 'defendIntro', 'flipDefenderLineByChoice', 'flipMontageByChoice', 'flipMontageIntro', 'sandbox', 'stages']);
 // triage-set-level keys allowed to exist only in the erb.
 const SET_ERB_ONLY_OK = new Set(['playerSentAuth']);
 
