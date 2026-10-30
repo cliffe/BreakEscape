@@ -45,6 +45,13 @@ export const DEFAULT_TEXT = Object.freeze({
     reportEmpty: 'Nothing picked yet.',
     reportFacts: 'Facts',
     reportConclusion: 'Conclusion',
+    // batch-12 item 4: shown under the conclusions when more than one is offered, so the learner
+    // knows a second pick replaces the first rather than adding to it (E16 B3 finding 6).
+    conclusionsNote: 'You can keep one of these. Picking another replaces it.',
+    // batch-12 item 15: shown (and Done withheld) when a fact chip marked `required` is not picked,
+    // so a report built around an offer cannot be finished without naming it (E16 B4 minor 1).
+    // {missing} is the missing chips' labels, joined.
+    feedbackRequired: 'Add the fact that matters most before you finish: {missing}.',
     check: 'Check my report',
     changed: 'You have changed the report. Check it again.',
     done: 'Done',
@@ -79,7 +86,10 @@ function cleanFactChips(raw) {
     for (const c of Array.isArray(raw) ? raw : []) {
         if (!isObj(c) || !isStr(c.id) || !isStr(c.label) || !KINDS.includes(c.kind) || seen.has(c.id)) continue;
         seen.add(c.id);
-        out.push({ id: c.id, label: c.label, kind: c.kind });
+        const chip = { id: c.id, label: c.label, kind: c.kind };
+        // batch-12 item 15: a fact the report must include (the outside offer in E16). Opt-in.
+        if (c.required === true) chip.required = true;
+        out.push(chip);
     }
     return out;
 }
@@ -131,7 +141,12 @@ export function assessReport(config, picks) {
     else if (!conclusions.length) tone = enough ? 'facts' : 'thin';
     else if (!facts.length) tone = 'verdict_only';
     else tone = enough ? 'facts_verdict' : 'thin_verdict';
-    return { tone, facts, conclusions, kinds: [...new Set(facts.map((c) => c.kind))] };
+    // batch-12 item 15: the `required` fact chips not yet picked. The minigame holds Done and names
+    // them while any remain. Empty for a config with no required chips (the default), so nothing
+    // changes there.
+    const picked = new Set(Array.isArray(picks) ? picks : []);
+    const missingRequired = config.factChips.filter((c) => c.required === true && !picked.has(c.id));
+    return { tone, facts, conclusions, kinds: [...new Set(facts.map((c) => c.kind))], missingRequired };
 }
 
 const TONE_KEY = Object.freeze({

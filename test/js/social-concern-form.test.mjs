@@ -429,3 +429,49 @@ test('the Start card warns that a reload starts the picks again (F-E16-8); an ov
     s = open({ ...config(), strings: { reloadNote: '' } });
     assert.equal($(s, '.cf-reload-note'), null, 'an empty override hides the line');
 });
+
+// ── batch-12 item 4: the "only one conclusion is kept" note ─────────────────────
+test('item 4: a note says a second conclusion replaces the first', () => {
+    const s = open(config());
+    begin(s);
+    const note = $(s, '.cf-conclusions-note');
+    assert.ok(note, 'the note shows when more than one conclusion is offered');
+    assert.match(note.textContent, /replaces it/);
+});
+test('item 4: no note when only one conclusion is offered, and the override can hide it', () => {
+    let s = open({ ...config(), conclusionChips: [{ id: 'c_one', label: 'Only one' }] });
+    begin(s);
+    assert.equal($(s, '.cf-conclusions-note'), null, 'one conclusion: nothing to say');
+    s = open({ ...config(), strings: { conclusionsNote: '' } });
+    begin(s);
+    assert.equal($(s, '.cf-conclusions-note'), null, 'an empty override hides the note');
+});
+
+// ── batch-12 item 15: a required fact holds Done until it is included ────────────
+test('item 15: Done is held while a required fact is missing, and the line names it', () => {
+    const s = open(config({ factChips: [
+        { id: 'f_offer', kind: 'what', label: 'An outside offer for access', required: true },
+        { id: 'f_when', kind: 'when', label: 'Tuesday' },
+        { id: 'f_where', kind: 'where', label: 'The east corridor' }
+    ], minFacts: 2 }));
+    begin(s);
+    pick(s, 'f_when', 'f_where'); // enough facts, but not the required one
+    check(s);
+    assert.equal($(s, '.cf-finish'), null, 'Done is withheld');
+    const note = $(s, '.cf-must-add');
+    assert.ok(note, 'a line names the missing fact');
+    assert.match(note.textContent, /An outside offer for access/);
+    assert.deepEqual(st(s).missingRequired, ['f_offer']);
+    pick(s, 'f_offer');
+    check(s);
+    assert.ok($(s, '.cf-finish'), 'Done appears once the required fact is in');
+    assert.deepEqual(st(s).missingRequired, []);
+});
+test('item 15: with no required chips, Done appears as before (default unchanged)', () => {
+    const s = open(config());
+    begin(s);
+    pick(s, 'f_what', 'f_when');
+    check(s);
+    assert.ok($(s, '.cf-finish'), 'a normal report finishes');
+    assert.deepEqual(st(s).missingRequired, []);
+});
