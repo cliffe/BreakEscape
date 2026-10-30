@@ -36,7 +36,9 @@
         "noFlags": "Next time, tick what you noticed. The review cards show what each item was really about.",
         "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
         "criticalLead": "let a data issue go unseen",
-        "reportedPct": "Passed on {pct}% of the data issues and fakes"
+        "reportedPct": "Passed on {pct}% of the data issues and fakes",
+        "caughtBreakdown": true,
+        "handledRightLabel": "Routine messages you handled yourself, rightly"
       },
       "id": "e11_carrholme_desk",
       "_prefix": "Full-episode prefix (id e11_misdirected_data). The defend-only shell (id e11_misdirected_data_defend) sets episode_e11_misdirected_data_defend_defend_ instead (the built double-suffix rule for an id already ending _defend). No stage on purpose (as E1, E4).",
@@ -48,6 +50,7 @@
       "scoringProfile": "awareness",
       "verifyVerdict": true,
       "feedbackMode": "immediate",
+      "confirmPrompt": true,
       "headerPanel": "off",
       "glossary": "closed",
       "labels": {
