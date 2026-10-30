@@ -30,6 +30,12 @@ export type GlitchParams = {
   grid?: number;
   /** displacement-map resolution in px per step (default: smallest that reaches maxShift) */
   unit?: number;
+  /**
+   * Wavy horizontal ripple added on top of the band displacement (water-reflection look): every band is cut into `step`-px slices and
+   * each slice is shifted by amp * (two summed sines of wavelength wl / wl2, phase moving with `phase`); `near` is the share of the
+   * amplitude kept at the bottom of the box (0..1), growing to full at the top.
+   */
+  wave?: { amp: number; wl: number; phase: number; step?: number; near?: number };
 };
 
 type Band = { y: number; h: number; dx: number; moving: boolean; hidden: boolean; pix: boolean };
@@ -51,7 +57,19 @@ export function makeBands(p: GlitchParams, w: number, h: number): Band[] {
     bands.push({ y, h: bh, dx, moving, hidden: r() < (p.hide ?? 0), pix: r() < (p.pix ?? 0) });
     y += bh;
   }
-  return bands;
+  if (!p.wave) return bands;
+  const wv = p.wave, st = Math.max(2, wv.step ?? 3), near = wv.near ?? 0.3;
+  const sliced: Band[] = [];
+  for (const b of bands) {
+    for (let y0 = b.y; y0 < b.y + b.h; y0 += st) {
+      const hh = Math.min(st, b.y + b.h - y0), yc = y0 + hh / 2;
+      const weight = near + (1 - near) * (1 - yc / h);
+      const wdx = wv.amp * weight * (0.62 * Math.sin((2 * Math.PI * yc) / wv.wl + wv.phase) + 0.38 * Math.sin((2 * Math.PI * yc) / (wv.wl * 0.43) - wv.phase * 1.7));
+      const dx = b.dx + Math.round(wdx);
+      sliced.push({ ...b, y: y0, h: hh, dx, moving: b.moving || dx !== 0 });
+    }
+  }
+  return sliced;
 }
 
 // map value for a displacement of dx px: the map holds integer steps of `unit` px around 127.5 (scale = 255 * unit), so multiples of unit are exact

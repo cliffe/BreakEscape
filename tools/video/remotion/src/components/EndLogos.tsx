@@ -15,16 +15,15 @@ import { rng } from '../rand';
 const LABS_RATIO = 10.301043 / 41.199425;   // box height / width of hacktivity-logo.svg
 const GAMES_RATIO = 54.131779 / 172.44057;  // same for hacktivity-games-logo.svg
 
-export const EndLogos: React.FC<{ shot: any; w: number; h: number; frame: number; frames: number; fps: number }> = ({ shot, w, h, frame, frames }) => {
-  const cfg = shot.logo || {};
-  const portrait = h > w, square = w === h;
-  const W = Math.round(w * (portrait ? 0.8 : square ? 0.7 : 0.5));
+export const logoHeight = (W: number) => Math.round(W * GAMES_RATIO);
+
+/**
+ * The logo itself (assemble from strips, Labs -> Games morph), W px wide, `frame` counted from the start of the assembly.
+ * cfg = { assemble_frames, morph_at_frame (absolute frame in this local clock) , morph_frames }. Also used by CtaShot in front of the curtain.
+ */
+export const LogoMorph: React.FC<{ W: number; frame: number; A: number; t1: number; M: number; endOnly?: boolean }> = ({ W, frame, A, t1, M, endOnly = false }) => {
   const H = Math.round(W * GAMES_RATIO);
   const hL = Math.round(W * LABS_RATIO);
-  const endOnly = shot.kind === 'logo_end';
-  const A = endOnly ? 0 : (cfg.assemble_frames ?? 24);
-  const M = cfg.morph_frames ?? 12;
-  const t1 = endOnly ? -1 : Math.round(frames * (cfg.morph_at ?? 0.5));
   const img = (f: string, hh: number) => <img src={staticFile(f)} width={W} height={hh} style={{ position: 'absolute', left: 0, top: 0, display: 'block' }} />;
   const word = img('brand-derived/logo-labs-word.svg', hL);
   const labs = img('brand-derived/logo-labs-sub.svg', hL);
@@ -64,5 +63,17 @@ export const EndLogos: React.FC<{ shot: any; w: number; h: number; frame: number
       </div>
     );
   }
-  return <CardStage w={w} h={h} blockH={H} id="lg-stage">{content}</CardStage>;
+  return <>{content}</>;
+};
+
+export const EndLogos: React.FC<{ shot: any; w: number; h: number; frame: number; frames: number; fps: number }> = ({ shot, w, h, frame, frames }) => {
+  const cfg = shot.logo || {};
+  const portrait = h > w, square = w === h;
+  const W = Math.round(w * (portrait ? 0.8 : square ? 0.7 : 0.5));
+  const H = logoHeight(W);
+  const endOnly = shot.kind === 'logo_end';
+  const A = endOnly ? 0 : (cfg.assemble_frames ?? 24);
+  const M = cfg.morph_frames ?? 12;
+  const t1 = endOnly ? -1 : Math.round(frames * (cfg.morph_at ?? 0.5));
+  return <CardStage w={w} h={h} blockH={H} id="lg-stage"><LogoMorph W={W} frame={frame} A={A} t1={t1} M={M} endOnly={endOnly} /></CardStage>;
 };

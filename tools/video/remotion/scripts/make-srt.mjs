@@ -33,7 +33,7 @@ for (const s of tl.shots) {
   for (const l of lines) {
     // shot.lines times are relative to the shot's in point (start/end), markers are take-absolute (start/end minus in)
     const rel0 = s.lines?.length ? l.start : l.start - inT, rel1 = s.lines?.length ? l.end : l.end - inT;
-    const t0 = s.startSec + Math.max(0, rel0), t1 = s.startSec + Math.min(s.duration, rel1);
+    const t0 = s.startSec + Math.max(-(s.audio?.pre ?? 0), rel0), t1 = s.startSec + Math.min(s.duration, rel1);
     if (t1 > t0) cues.push({ t0, t1, text: (l.speaker ? `${l.speaker}: ` : '') + l.text });
   }
 }

@@ -1,9 +1,9 @@
 {
- "id": "m01_trailer60_v3",
+ "id": "m01_trailer60_v4",
  "title": "SAFETYNET: Licence to Hack, m01 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v3: Veo opening and CTA clips, Derek wide-to-close cut, glitched card reflections, per-join dissolve pins, longer phone and keypad shots",
+ "status": "v4: title holds 6 s with HaX's line J-cutting in under it, Mission 1 / First Contact card, wavy FX reflections, key-press-timed solid hex curtain with the Hacktivity Games logo in front of it (no separate end card)",
  "music": {
   "track": "Noir/Midnight Cipher Chase.mp3",
   "analysis": "midnight_cipher_chase.json",
@@ -63,7 +63,7 @@
   {
    "id": "title",
    "type": "title",
-   "duration": 4.5,
+   "duration": 6.0,
    "snap": true,
    "join": {
     "type": "cut"
@@ -102,23 +102,23 @@
   {
    "id": "hax_hook",
    "type": "gameplay",
-   "duration": 4.5,
+   "duration": 3.0,
    "snap": true,
    "join": {
     "type": "glitch"
    },
    "source": {
     "file": "t10_hax_hook.trimmed.mkv",
-    "in": 18.2,
-    "out": 22.7
+    "in": 19.665,
+    "out": 22.665
    },
    "dialogue": true,
    "lines": [
     {
      "speaker": "Agent HaX",
      "text": "Whatever they're building, it's targeted and sophisticated.",
-     "start": 0.265,
-     "end": 4.091
+     "start": -1.2,
+     "end": 2.626
     }
    ],
    "framing": {
@@ -144,7 +144,8 @@
    "audio": {
     "gain_db": 0,
     "dialogue": true,
-    "duck_music": true
+    "duck_music": true,
+    "pre": 1.3
    },
    "spoiler": {
     "reviewed": true,
@@ -154,7 +155,7 @@
     "keypad_partial": null,
     "note": "HaX hook: names no cell, culprit, code or ending"
    },
-   "note": "t10 18.2-22.7: subtitle on screen throughout, line 18.465-22.291; the next line's subtitle replaces it at 22.75 so the cut must stay before that (a dissolve freezes the last frame); earlier line fragment (17.67-17.96) excluded"
+   "note": "v4 J-cut: HaX's line (take 18.465-22.291) starts 1.2 s before the cut, under the held title (audio from take 18.365 = 1.3 s pre-roll); picture cuts to her portrait at take 19.665 (mid-line, subtitle on screen) and ends 22.665, before the next line's subtitle at 22.75"
   },
   {
    "id": "card_mission",
@@ -165,8 +166,8 @@
     "type": "glitch"
    },
    "text": [
-    "Your Mission",
-    "Begins NOW"
+    "Mission 1",
+    "First Contact"
    ],
    "spoiler": {
     "reviewed": true,
@@ -1031,7 +1032,7 @@
   {
    "id": "cta",
    "type": "cta",
-   "duration": 4,
+   "duration": 8.0,
    "snap": true,
    "join": {
     "type": "glitch"
@@ -1045,32 +1046,13 @@
    },
    "phases": [
     {
-     "duration": 2,
+     "duration": 8.0,
      "text": [
       "Play Mission 1",
       "Free!"
      ]
-    },
-    {
-     "duration": 2,
-     "text": [
-      "Play Now!",
-      {
-       "text": "hacktivity.co.uk",
-       "scale": 0.4,
-       "gap": 0.9
-      }
-     ]
     }
    ],
-   "rain": {
-    "color": "#c4252b",
-    "head": "#ff8a80",
-    "size": 18,
-    "build_frames": 110,
-    "cover": 0.85,
-    "opacity": 0.8
-   },
    "text_box": {
     "x": 0.53,
     "w": 0.43,
@@ -1082,31 +1064,21 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "call to action over the laptop clip with hex rain"
-   }
-  },
-  {
-   "id": "end_logos",
-   "type": "card",
-   "kind": "logo",
-   "duration": 4,
-   "snap": true,
-   "join": {
-    "type": "glitch"
+    "note": "laptop clip with call to action; key press at clip frame 90 (3.0 s); solid red hex curtain from 3.2 s; Hacktivity Games logo and URL in front of it"
    },
-   "logo": {
-    "assemble_frames": 24,
-    "morph_at": 0.5,
-    "morph_frames": 12
+   "curtain": {
+    "start": 96,
+    "fall": 57,
+    "cw": 20,
+    "ch": 28,
+    "seed": 5,
+    "assemble": 24,
+    "morph_at": 27,
+    "morph_frames": 12,
+    "url_at": 40,
+    "url": "hacktivity.co.uk"
    },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "Hacktivity Cyber Security Labs to Hacktivity Games"
-   }
+   "note": "key press: hand lands on the keys and the screen glow steps up at clip frame 90 (3.000 s; face luminance 58 to 70 in one frame, brightest typing burst at frame 98); curtain starts at frame 96 (3.2 s) and covers at frame 153 (5.1 s); the clip freezes on its last frame (117) at 3.9 s"
   }
  ],
  "effects": {

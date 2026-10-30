@@ -1,47 +1,75 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { PIXEL_FONT } from '../fonts';
 import { rng } from '../rand';
 
 /**
- * A curtain of falling red hex characters (0-9A-F, Press Start 2P), after the blood running down in the classic Bond gun-barrel opening:
- * it comes down from the top edge with a ragged, dripping, uneven leading edge (some columns run ahead as long drips, neighbours lag),
- * and by the end covers much of the frame. Each column is one block of hex text clipped at its front; the front glyphs are bright and the
- * body is darker, so the edge reads as a wet leading edge. Glyphs re-roll every few frames. Deterministic from the frame number and a seed.
+ * The solid red hex curtain, ported from the Hacktivity shell's launch curtain (hacktivity app/views/game_shell/_launch_curtain.html.erb), drawn on a canvas:
+ *  - the screen is a grid of cw x ch cells; each column fills SOLID red (#b3151d) from the top down to its own front,
+ *  - hex digits sit inside the red: a pale lead row at the edge (#ffe3e0), a pinker band just behind it (#ff8f8a), then dark digits (#6b0c12 / #8c1119),
+ *  - ragged edge: columns start at slightly different times (a slow swell plus a few narrow drips that run ahead of their neighbours),
+ *  - ease-in gravity: front = q^1.6 of the screen height, q = (p - lag) / 0.65,
+ *  - a share of the digits flip over time.
+ * Deterministic: everything is derived from `seed` and the frame number. `p` is the fall progress 0..1 (0 = not started, 1 = fully covered).
+ * The fall is slowed by `fallFrames` in the caller (shell: 1.9 s).
  */
-export const HexRain: React.FC<{ frame: number; w: number; h: number; build: number; color?: string; head?: string; size?: number; seed?: number; maxOpacity?: number; cover?: number }> = ({ frame, w, h, build, color = '#c4252b', head = '#ff8a80', size = 18, seed = 5, maxOpacity = 0.8, cover = 0.8 }) => {
-  const pitch = size, lh = Math.round(size * 1.25);
-  const cols = Math.ceil(w / pitch);
-  const hex = '0123456789ABCDEF';
-  const base = (h * cover) / build; // average px per frame so the mean front reaches `cover` of the height at the end of `build`
-  // low-frequency raggedness shared by neighbouring columns, plus per-column jitter and a few long drips
-  const lf = rng(seed * 31 + 1); const knots: number[] = []; for (let i = 0; i < Math.ceil(cols / 6) + 2; i++) knots.push(lf());
-  const out: React.ReactNode[] = [];
-  for (let c = 0; c < cols; c++) {
-    const r = rng(seed * 1000 + c);
-    const k = c / 6, i0 = Math.floor(k), t = k - i0;
-    const smooth = knots[i0] * (1 - t) + knots[i0 + 1] * t;
-    const jitter = r();
-    let speed = base * (0.45 + 0.7 * smooth + 0.55 * jitter);
-    if (r() < 0.07) speed *= 1.9;                       // a long drip
-    const start = Math.floor(r() * 10);                 // columns leave the top edge at slightly different frames
-    const front = Math.min(h, Math.max(0, (frame - start) * speed));
-    if (front <= 0) continue;
-    const rows = Math.ceil(front / lh);
-    let txt = '';
-    for (let j = 0; j < rows; j++) txt += hex[Math.floor(rng(seed * 7919 + c * 131 + j * 17 + Math.floor((frame + c * 3 + j * 5) / 4))() * 16)] + '\n';
-    const fade = Math.min(1, frame / 8);
-    out.push(
-      <div key={c} style={{
-        position: 'absolute', left: c * pitch, top: 0, width: pitch, height: front, overflow: 'hidden', whiteSpace: 'pre', fontSize: size, lineHeight: `${lh}px`, textAlign: 'center',
-        // bright wet front, darker body, and a lighter top so the curtain is not a solid slab
-        backgroundImage: `linear-gradient(to top, ${head} 0px, ${color} ${lh * 2}px, ${color} 55%, rgba(120,15,20,0.9) 100%)`,
-        WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent', WebkitTextFillColor: 'transparent',
-        opacity: maxOpacity * fade,
-        WebkitMaskImage: `linear-gradient(to top, #000 0px, #000 ${Math.max(0, front - 40)}px, rgba(0,0,0,0.55) 100%)`, maskImage: `linear-gradient(to top, #000 0px, #000 ${Math.max(0, front - 40)}px, rgba(0,0,0,0.55) 100%)`,
-        // text sits at the bottom of the box so the front glyph is the brightest
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-      }}><div>{txt}</div></div>
-    );
+const HEX = '0123456789ABCDEF';
+const TONES = ['#ffe3e0', '#ff8f8a', '#6b0c12', '#8c1119'];
+const RED = '#b3151d';
+const MAX_LAG = 0.35;
+
+export function curtainLag(n: number, seed: number): number[] {
+  const r = rng(seed * 101 + 7);
+  const waves: Array<{ f: number; p: number; a: number }> = [];
+  for (let j = 0; j < 3; j++) waves.push({ f: 0.15 + r() * 0.35, p: r() * 6.3, a: 0.02 + r() * 0.025 });
+  const count = Math.max(4, Math.round(n / 7));
+  const drips: Array<{ at: number; w: number; d: number }> = [];
+  for (let j = 0; j < count; j++) drips.push({ at: r() * n, w: 0.8 + r() * 2.2, d: 0.08 + r() * 0.2 });
+  const out: number[] = [];
+  for (let i = 0; i < n; i++) {
+    let v = 0.3;
+    for (const w of waves) v += Math.sin(i * w.f + w.p) * w.a;
+    for (const d of drips) v -= d.d * Math.exp(-Math.pow((i - d.at) / d.w, 2));
+    out.push(Math.min(MAX_LAG, Math.max(0, v + (r() - 0.5) * 0.015)));
   }
-  return <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', fontFamily: PIXEL_FONT, textRendering: 'optimizeSpeed' as any, WebkitFontSmoothing: 'none' as any }}>{out}</div>;
+  return out;
+}
+
+export const HexRain: React.FC<{ frame: number; w: number; h: number; p: number; cw?: number; ch?: number; seed?: number }> = ({ frame, w, h, p, cw = 20, ch = 28, seed = 5 }) => {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useLayoutEffect(() => {
+    const cv = ref.current; if (!cv) return;
+    const x = cv.getContext('2d'); if (!x) return;
+    const cols = Math.ceil(w / cw), rows = Math.ceil(h / ch);
+    const lag = curtainLag(cols, seed);
+    const cells = new Uint8Array(cols * rows), flips = new Uint8Array(cols * rows);
+    const r = rng(seed * 13 + 1);
+    for (let i = 0; i < cells.length; i++) { cells[i] = Math.floor(r() * 16); flips[i] = r() < 0.35 ? 1 : 0; }
+    const tick = Math.floor(frame / 2.7); // the shell flips every 90 ms
+    x.clearRect(0, 0, w, h);
+    x.imageSmoothingEnabled = false;
+    x.font = `${Math.round(cw * 0.9)}px ${PIXEL_FONT}`; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillStyle = RED;
+    const fronts: number[] = [];
+    for (let c = 0; c < cols; c++) {
+      const q = Math.min(1, Math.max(0, (p - lag[c]) / 0.65));
+      const f = Math.pow(q, 1.6) * (h + ch * 2);
+      fronts.push(f);
+      if (f > 0) x.fillRect(c * cw, 0, cw, Math.min(f, h));
+    }
+    for (let t = 0; t < TONES.length; t++) {
+      x.fillStyle = TONES[t];
+      for (let c = 0; c < cols; c++) {
+        const f = fronts[c];
+        if (f <= 0) continue;
+        for (let row = 0; row < rows && row * ch < f; row++) {
+          const i = c * rows + row, away = (f - row * ch) / ch;
+          const tone = away < 1 ? 0 : away < 3 ? 1 : (i % 3 ? 2 : 3);
+          if (tone !== t) continue;
+          const d = (cells[i] + (flips[i] ? tick * (1 + (c % 3)) : 0)) & 15;
+          x.fillText(HEX[d], c * cw + cw / 2, row * ch + ch / 2 + 1);
+        }
+      }
+    }
+  });
+  return <canvas ref={ref} width={w} height={h} style={{ position: 'absolute', left: 0, top: 0, width: w, height: h }} />;
 };

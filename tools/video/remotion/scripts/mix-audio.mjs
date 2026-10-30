@@ -20,7 +20,8 @@ const parts = []; const mixIn = [];
 const duckK = Math.pow(10, (edit.duck?.db ?? -9) / 20), att = edit.duck?.attack ?? 0.12, rel = edit.duck?.release ?? 0.3;
 // consecutive dialogue shots (e.g. a wide shot and its close-up) are one duck window, so the dips don't multiply at the cut
 const duckWins = [];
-for (const s of tl.shots) { if (!(s.type === 'gameplay' && s.audio?.duck_music)) continue; const l = duckWins[duckWins.length - 1]; if (l && Math.abs(l[1] - s.startSec) < 1e-6) l[1] = s.endSec; else duckWins.push([s.startSec, s.endSec]); }
+// s.audio.pre (seconds): J-cut, the shot's audio (and its duck window) begins that long before its picture
+for (const s of tl.shots) { if (!(s.type === 'gameplay' && s.audio?.duck_music)) continue; const l = duckWins[duckWins.length - 1]; if (l && Math.abs(l[1] - s.startSec) < 1e-6) l[1] = s.endSec; else duckWins.push([s.startSec - (s.audio.pre ?? 0), s.endSec]); }
 const dips = duckWins.map(([t0, t1]) => {
   return `(1-${(1 - duckK).toFixed(5)}*min(clip((t-${(t0 - att).toFixed(4)})/${att},0,1),clip((${(t1 + rel).toFixed(4)}-t)/${rel},0,1)))`;
 });
@@ -41,8 +42,9 @@ for (const s of tl.shots) {
   const has = spawnSync('ffprobe', ['-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=index', '-of', 'csv=p=0', f], { encoding: 'utf8' }).stdout.trim();
   if (!has) { console.error(`mix: ${s.id}: take has no audio stream`); continue; }
   const gdb = isClipAudio ? s.clip.audio.gain_db : s.audio.gain_db;
-  inputs.push('-ss', String(src0.in), '-t', String(s.duration), '-i', f);
-  const d = s.duration, ms = Math.round(s.startSec * 1000);
+  const pre = isClipAudio ? 0 : (s.audio?.pre ?? 0); // J-cut lead (seconds of audio before the picture)
+  inputs.push('-ss', String(Math.max(0, src0.in - pre)), '-t', String(s.duration + pre), '-i', f);
+  const d = s.duration + pre, ms = Math.round((s.startSec - pre) * 1000);
   parts.push(`[${n}:a]aresample=48000,aformat=channel_layouts=stereo,atrim=0:${d},asetpts=PTS-STARTPTS,volume=${gdb}dB,afade=t=in:d=${fade},afade=t=out:st=${(d - fade).toFixed(4)}:d=${fade},adelay=${ms}|${ms}[t${n}]`);
   mixIn.push(`[t${n}]`); used.push(s.id); n++;
 }
