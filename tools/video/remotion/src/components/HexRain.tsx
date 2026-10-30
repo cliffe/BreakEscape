@@ -38,7 +38,7 @@ export function curtainLag(n: number, seed: number): number[] {
 /** Text drawn in the curtain's own layer: each column shows it only above that column's front, so the falling curtain uncovers it. */
 export type CurtainLabel = { text: string; cx: number; cy: number; size: number; fill?: string; stroke?: string };
 
-export const HexRain: React.FC<{ frame: number; w: number; h: number; p: number; cw?: number; ch?: number; seed?: number; label?: CurtainLabel }> = ({ frame, w, h, p, cw = 20, ch = 28, seed = 5, label }) => {
+export const HexRain: React.FC<{ frame: number; w: number; h: number; p: number; cw?: number; ch?: number; seed?: number; label?: CurtainLabel | CurtainLabel[] }> = ({ frame, w, h, p, cw = 20, ch = 28, seed = 5, label }) => {
   const ref = useRef<HTMLCanvasElement>(null);
   useLayoutEffect(() => {
     const cv = ref.current; if (!cv) return;
@@ -92,10 +92,13 @@ export const HexRain: React.FC<{ frame: number; w: number; h: number; p: number;
       x.beginPath();
       for (let c = 0; c < cols; c++) if (fronts[c] > 0) x.rect(c * cw, 0, cw, Math.min(fronts[c], h));
       x.clip();
-      x.font = `${label.size}px ${PIXEL_FONT}`; x.textAlign = 'center'; x.textBaseline = 'middle';
-      x.lineJoin = 'round'; x.lineWidth = Math.max(4, Math.round(label.size / 4));
-      x.strokeStyle = label.stroke ?? '#3a0409'; x.strokeText(label.text, label.cx, label.cy);
-      x.fillStyle = label.fill ?? '#ffe3e0'; x.fillText(label.text, label.cx, label.cy);
+      x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineJoin = 'round';
+      for (const lb of Array.isArray(label) ? label : [label]) {
+        x.font = `${lb.size}px ${PIXEL_FONT}`;
+        x.lineWidth = Math.max(4, Math.round(lb.size / 4));
+        x.strokeStyle = lb.stroke ?? '#3a0409'; x.strokeText(lb.text, lb.cx, lb.cy);
+        x.fillStyle = lb.fill ?? '#fff4f2'; x.fillText(lb.text, lb.cx, lb.cy);
+      }
       x.restore();
     }
     }
