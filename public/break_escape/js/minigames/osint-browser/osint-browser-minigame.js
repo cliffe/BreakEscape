@@ -37,6 +37,15 @@ const ICON = '/break_escape/assets/icons/';
 // Block `src` and concept-card `image` are relative to assets/ (e.g. "social/osint/foo.png"); site `logo` to assets/logos/.
 const ASSETS = '/break_escape/assets/';
 const LOGOS = '/break_escape/assets/logos/';
+
+// Brands with a shared logo: any site named or hosted as FriendFace gets it unless the scenario sets its own.
+export function brandLogo(site) {
+    if (site?.logo) return { logo: site.logo, logoAlt: site.logoAlt };
+    if (/friend\s*face/i.test(`${site?.name || ''} ${site?.title || ''} ${site?.url || ''} ${site?.id || ''}`)) {
+        return { logo: 'friendface.png', logoAlt: site?.logoAlt || 'Friendface' };
+    }
+    return { logo: null, logoAlt: null };
+}
 const CHARACTERS = '/break_escape/assets/characters/';
 const NOTHING = 'Nothing here you can use.';
 const HINT_ID = 'ob-hint-add';
@@ -315,12 +324,13 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
 
     _siteHeader(site) {
         const head = h('div', { class: 'ob-site-head' });
-        if (site.logo) {
-            head.appendChild(h('img', { class: 'ob-logo', src: LOGOS + String(site.logo).replace(/^\/+/, ''),
-                alt: site.logoAlt || '', 'aria-hidden': site.logoAlt ? false : 'true' }));
+        const brand = brandLogo(site);
+        if (brand.logo) {
+            head.appendChild(h('img', { class: 'ob-logo', src: LOGOS + String(brand.logo).replace(/^\/+/, ''),
+                alt: brand.logoAlt || '', 'aria-hidden': brand.logoAlt ? false : 'true' }));
         }
         // A logo with alt text is the site's wordmark, so it stands in for the title.
-        if (!(site.logo && site.logoAlt)) {
+        if (!(brand.logo && brand.logoAlt)) {
             head.appendChild(h('p', { class: 'ob-site-title', text: site.name || site.title || site.id }));
         }
         return head;
