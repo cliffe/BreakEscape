@@ -53,6 +53,9 @@
 
 .ac-intro {
     margin: 0 0 4px;
+    /* E13 B2 finding 13: the intro sits on the dark overlay backdrop, above the light section
+       panels, so the dark-green .ac-root ink was barely readable. Light it like the title. */
+    color: #f4f8f6;
 }
 
 .ac-reply {
