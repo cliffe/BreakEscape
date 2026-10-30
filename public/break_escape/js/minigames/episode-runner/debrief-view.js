@@ -61,7 +61,9 @@ const LINES = Object.freeze({
         trust: 'Right call. This one was real.',
         report: "Good instinct; here is why this one was safe. Reporting when you are unsure is never wrong.",
         verify: 'Checking first is fine. This one was real.',
-        delete: 'This one was real. If you are unsure, reporting is safer than deleting.'
+        // F-E13-3: the right call named for a deleted real item is Trust or Verify, so the line no
+        // longer recommends reporting (which contradicted it); it names the cost of binning real mail.
+        delete: 'This one was real. Deleting real mail can lose it, and the work it needed waits.'
     }
 });
 
@@ -351,7 +353,9 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     const summary = el('p', 'aw-summary');
     const bits = [];
     if (Number.isFinite(result?.percent)) bits.push(`Round score: ${result.percent}%`);
-    if (typeof result?.headline === 'string' && result.headline) bits.push(result.headline);
+    // F-E10-2: the triage result card above the debrief already shows the band headline as its
+    // title, so the debrief summary does not repeat it ("Round score: N% — headline" alongside the
+    // same headline read as a duplication). The summary keeps the score and the caught counts.
     // N7: "Reported 67% of the phish" beside a 97% round read as a miss. With the counts to hand,
     // say how many phish were caught and how: reported, checked by another route (Verify, Ring
     // back) or deleted. All three are catches.

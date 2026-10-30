@@ -127,6 +127,29 @@ test('tells use the 06 §4.4 lines: delta, band, mark, and the authored reason',
     assert.equal(lines[7], 'ASK REFUSED  needs -20 or better, now at -20. She needs more before doing this.');
 });
 
+test('E12 F3: a still-pending ask reads the current influence, not the value when it was made', () => {
+    // The ask is pending at -10; the player then says two more things that drop influence to -60.
+    const session = {
+        log: [
+            { kind: 'ask', id: 'pw_reset', result: 2, band: 1, entries: [] },
+            { kind: 'say', id: 'push1', band: 2, entries: [{ delta: -25, reason: 'floor', line: 'Floor. She has no way to check this.' }] },
+            { kind: 'say', id: 'push2', band: 2, entries: [{ delta: -25, reason: 'floor', line: 'Floor. She has no way to check this.' }] }
+        ]
+    };
+    const lines = formatPretextTells(session, priyaSpec, -60);
+    // The pending ask shows "now at -60" (current), not "-10" (its walked-back historical value).
+    assert.equal(lines[0], 'ASK PENDING  needs -20 or better, now at -60. She wants to verify you first.');
+    // A resolved ask still walks back: refused-at is the influence it resolved at.
+    const resolved = {
+        log: [
+            { kind: 'ask', id: 'pw_reset', result: 0, band: 1, entries: [] },
+            { kind: 'say', id: 'push1', band: 2, entries: [{ delta: -25, reason: 'floor', line: 'x' }] }
+        ]
+    };
+    const r = formatPretextTells(resolved, priyaSpec, -45);
+    assert.match(r[0], /ASK REFUSED {2}needs -20 or better, now at -20\./);
+});
+
 test('assessment mode keeps the number and the band, and prints the category line', () => {
     const line = 'Manager. That did not match what she can look up.';
     const lines = formatPretextTells({

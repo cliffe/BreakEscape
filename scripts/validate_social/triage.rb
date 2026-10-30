@@ -984,6 +984,25 @@ module ValidateSocial
       %w[headerNote ifTrusted reportReply falseAlarmCost].each do |f|
         issues << err("#{mw}.truth.#{f} is empty; the review card would show a blank line") if t.key?(f) && blank?(t[f])
       end
+      # E13 F-10: a per-item genuine-Trust line, for a real item only (it replaces the genuine
+      # praise line; a phish item never shows it).
+      if t.key?('trustLine')
+        issues << err("#{mw}.truth.trustLine is empty; leave it out to keep the default genuine-Trust line") if blank?(t['trustLine'])
+        issues << warn_("#{mw}.truth.trustLine is on a phish item (isPhish true); it is the genuine-Trust line and is never seen on a phish") if t['isPhish']
+      end
+      # E11 F8: a per-item chip-list override. Each id should be a tick the set offers (a factor or
+      # an enabled channel tell); an authored flag is always kept whether or not it is listed.
+      %w[chips chipsOmit].each do |f|
+        next unless t.key?(f)
+        if !t[f].is_a?(Array) || t[f].any? { |id| !id.is_a?(String) || id.strip.empty? }
+          issues << err("#{mw}.truth.#{f} must be an array of tick ids")
+          next
+        end
+        t[f].each do |id|
+          next if flag_list.include?(id) || universe.include?(id)
+          issues << warn_("#{mw}.truth.#{f}: '#{id}' is not a tick this set offers (a factor or an enabled channel tell), so it changes nothing")
+        end
+      end
       %w[kindLine missLabel].each do |f|
         issues << err("#{mw}.truth.#{f} is empty; leave it out to keep the phish wording") if t.key?(f) && blank?(t[f])
         issues << warn_("#{mw}.truth.#{f} is on a real item (isPhish false); it only replaces phish wording, so it is never seen") if t.key?(f) && !t['isPhish']

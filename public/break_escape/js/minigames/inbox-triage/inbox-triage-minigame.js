@@ -892,13 +892,20 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 verify: fb || verify
             }[verdict];
         }
+        // E13 F-10 (item over set): a per-item truth.trustLine is the genuine-trust line for this
+        // one item, so an episode need not bend the set-wide labels.verdictFeedback.trust.real to
+        // praise every genuine item the same way. It wins over the set override (fb) and the default.
+        if (verdict === 'trust' && isStr(rec.truth.trustLine)) return rec.truth.trustLine;
         return fb || {
             trust: 'Right call. This one was real.',
             report: aware
                 ? "Reported, and that's never wrong. For next time, here is why this one was fine."
                 : "That one was real, but reporting is never wrong when you're unsure. Here's what to check next time.",
+            // F-E13-3: the right call named for a deleted real item is Trust or Verify, so the line
+            // no longer recommends reporting (which contradicted it); it names the cost of binning
+            // real mail instead. A set override (labels.verdictFeedback.delete.real) still wins.
             delete: aware
-                ? 'That one was real. Deleting it is cautious, but reporting an unsure message is safer for everyone.'
+                ? 'That one was real. Deleting real mail can lose it, and the work it needed waits.'
                 : 'That one was real. Deleting real work loses it; if you are unsure, report it.',
             verify: 'Checking first is fine. This one was real.'
         }[verdict];
@@ -1054,7 +1061,12 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         // E8 F11: the learner confirmed without ticking anything (and did not choose "Nothing looks
         // wrong"), so a one-line nudge invites naming what they noticed next time. Allowed, never
         // blocked; shown only on the immediate review card, only when truly nothing was ticked.
-        if (ans.unflagged === true) card.appendChild(el('p', 'tri-card-nudge', this._nudgeLine()));
+        // F-E12-5 / F-E13-4: only when there was something to tick that would have been scored — a
+        // phish with authored tells. On a genuine item (where naming tells never changes the score)
+        // or an item with no scorable tells, "tick what made you decide" read oddly under a right
+        // answer, so it is suppressed.
+        const scorableTells = truth.isPhish === true && Array.isArray(per.units) && per.units.length > 0;
+        if (ans.unflagged === true && scorableTells) card.appendChild(el('p', 'tri-card-nudge', this._nudgeLine()));
         card.appendChild(el('p', 'tri-card-score', `Score for this message: ${per.score} of 100`));
         return card;
     }
@@ -1369,12 +1381,25 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                     || Object.keys(result.falseByFactor || {}).length > 0;
                 if (namedAnyFlags) {
                     const order = [...FACTOR_ORDER, ...Object.keys(result.perFactor).filter((k) => !FACTOR_ORDER.includes(k))];
+                    // F-E11-12: the breakdown said "caught 1 of 2" without saying which message the
+                    // miss was on. Map each tell to the items that missed it, so the line can name them.
+                    const missedBy = {};
+                    for (const m of this.messages) {
+                        const per = this._scoreOne(m);
+                        for (const f of (per && Array.isArray(per.missed) ? per.missed : [])) {
+                            (missedBy[f] = missedBy[f] || []).push(shortTitle(m) || this._cardTitle(m));
+                        }
+                    }
                     const ul = el('ul', 'tri-skills');
                     ul.setAttribute('aria-label', 'Skill breakdown');
                     for (const id of order) {
                         const c = result.perFactor[id];
                         if (!c) continue;
-                        const li = el('li', 'tri-skill', `${skillName(id, this.set)}: caught ${c.caught} of ${c.caught + c.missed}`);
+                        const names = c.missed > 0 ? (missedBy[id] || []) : [];
+                        const where = names.length
+                            ? ` — missed on ${names.map((t) => `‘${t}’`).join(names.length === 2 ? ' and ' : ', ')}`
+                            : '';
+                        const li = el('li', 'tri-skill', `${skillName(id, this.set)}: caught ${c.caught} of ${c.caught + c.missed}${where}`);
                         li.dataset.factor = id;
                         ul.appendChild(li);
                     }
