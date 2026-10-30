@@ -62,6 +62,10 @@
  */
 
 import InkEngineDefault from './ink/ink-engine.js';
+import {
+    splitPlainRun, splitMailTags, plainThreadKey, parsePlainThreadKey, queuePlainEmail,
+    contactForNpc, contactAddress, replyDelaySeconds, newPlainJobId, replyTagsOfFirstLine
+} from './mail-ink.js';
 
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -272,6 +276,7 @@ export class MailRunner {
 
     _threadKey(job) {
         if (isStr(job.thread)) return job.thread;
+        if (job.plain === true) return plainThreadKey(job.npcId, job.accountId);
         return `${isStr(job.character) ? job.character : job.npcId}:${job.accountId}`;
     }
 
@@ -367,6 +372,7 @@ export class MailRunner {
      * nothing).
      */
     async _run(job) {
+        if (job.plain === true) return this._runPlain(job);
         const scheduler = this.scheduler;
         if (!scheduler) return { retry: true };
         const replyId = `reply_${job.jobId}`;
@@ -487,6 +493,372 @@ export class MailRunner {
         return { delivered: !!message };
     }
 
+    // ───────────────────────────────────────── ink-driven plain email
+    //
+    // A plain thread is `npc:<npcId>:<accountId>`. Its stored position is the story state just
+    // BEFORE the step that produced the pending choices (or, while a send waits for its reply,
+    // just before the reply's first line). Resuming a position therefore regenerates the
+    // choices from the current globals, so a suggested reply gated on `{found_log}` appears the
+    // moment the global is set, not only when the NPC's email arrived.
+
+    get _scenario() {
+        return (typeof window !== 'undefined' ? window.gameScenario : null) || null;
+    }
+
+    get _mailConfig() {
+        return this._scenario?.social?.mailClient || {};
+    }
+
+    /** A private engine on the correspondent's story with its saved scalars applied. */
+    async _openPlain(npcId) {
+        const record = this._getNpc(npcId);
+        if (!record) return null;
+        this._encounter(npcId);
+        const storyJson = await this._storyFor(record, npcId);
+        if (!storyJson) return null;
+        const engine = new this.InkEngine(npcId);
+        engine.loadStory(storyJson);
+        const story = engine.story;
+        const sm = this.stateManager;
+        sm?.applySavedInkVariables?.(npcId, story);
+        return { engine, story, record, sm };
+    }
+
+    /** Continue one step at a time to the next choices or the end; each step keeps the state before it. */
+    _stepToChoices(story, { limit = 300 } = {}) {
+        const steps = [];
+        for (let guard = 0; guard < limit && story.canContinue; guard++) {
+            let pre = null;
+            try { pre = story.state.ToJson(); } catch (e) { /* leave null */ }
+            const text = story.Continue();
+            steps.push({ text: typeof text === 'string' ? text : '', tags: arr(story.currentTags).map(String), pre });
+        }
+        return steps;
+    }
+
+    _plainOptions(story) {
+        return arr(story.currentChoices).map((c) => c.text);
+    }
+
+    /** Re-run a stored position up to its choices (no side effects: no observers, nothing written). */
+    _resumeToChoices(story) {
+        for (let guard = 0; guard < 50 && story.canContinue; guard++) story.Continue();
+        return this._plainOptions(story);
+    }
+
+    /**
+     * The choices a plain thread offers now. Resumes the stored position with the current
+     * globals and, if the list changed, stores it. Returns the option texts, or null when the
+     * thread has no pending choices.
+     */
+    async refreshPlainChoices(threadKey) {
+        const scheduler = this.scheduler;
+        const thread = scheduler?.state?.threads?.[threadKey];
+        const parsed = parsePlainThreadKey(threadKey);
+        if (!parsed || !thread || !thread.expects || thread.expects.mode !== 'choices' || !isStr(thread.position)) return null;
+        const opened = await this._openPlain(parsed.npcId);
+        if (!opened) return arr(thread.expects.options);
+        const { story, sm } = opened;
+        try {
+            story.state.LoadJson(thread.position);
+            sm?.syncGlobalVariablesToStory?.(story);
+            const options = this._resumeToChoices(story);
+            const same = options.length === arr(thread.expects.options).length && options.every((o, i) => o === thread.expects.options[i]);
+            if (!same) {
+                if (options.length) scheduler.setThread(threadKey, { ...thread, expects: { mode: 'choices', options } });
+                else scheduler.setThread(threadKey, null);
+            }
+            return options;
+        } catch (e) {
+            console.warn('[MailRunner] could not refresh plain choices', e.message);
+            return arr(thread.expects.options);
+        }
+    }
+
+    /**
+     * Compose to an ink contact: pending choices (refreshed) if the thread has them, "waiting"
+     * while a send is awaiting its reply, else the contact's `on_compose` (or `composeKnot`)
+     * knot run headless to its first choices. The knot must print nothing before the choices;
+     * any text it does print is dropped.
+     * @returns {{state:'choices'|'waiting'|'none', options:string[]}}
+     */
+    async prepareCompose({ npcId, accountId }) {
+        const scheduler = this.scheduler;
+        const key = plainThreadKey(npcId, accountId);
+        const thread = scheduler?.state?.threads?.[key];
+        if (thread && thread.expects && thread.expects.mode === 'waiting') return { state: 'waiting', options: [] };
+        if (thread && thread.expects && thread.expects.mode === 'choices') {
+            const options = await this.refreshPlainChoices(key);
+            if (options && options.length) return { state: 'choices', options };
+        }
+        const contact = contactForNpc(this._mailConfig, npcId);
+        const knot = contact && isStr(contact.composeKnot) ? contact.composeKnot : 'on_compose';
+        const opened = await this._openPlain(npcId);
+        if (!opened) return { state: 'none', options: [] };
+        const { engine, story, sm } = opened;
+        try {
+            sm?.syncGlobalVariablesToStory?.(story);
+            engine.goToKnot(knot);
+        } catch (e) {
+            return { state: 'none', options: [] };
+        }
+        let steps;
+        try { steps = this._stepToChoices(story); } catch (e) { return { state: 'none', options: [] }; }
+        const options = this._plainOptions(story);
+        if (!options.length) return { state: 'none', options: [] };
+        const pre = steps.length ? steps[steps.length - 1].pre : null;
+        if (isStr(pre)) scheduler.setThread(key, { position: pre, expects: { mode: 'choices', options } });
+        return { state: 'choices', options };
+    }
+
+    /** The mailbox a mail account writes to. */
+    _mailboxOf(accountId) {
+        const account = arr(this._mailConfig.accounts).find((a) => a && a.id === accountId);
+        return account ? (account.mailbox || account.id) : accountId;
+    }
+
+    _attachmentOf(kitId) {
+        const item = arr(this._mailConfig.payloadKit).find((k) => k && k.id === kitId);
+        return { kitId, kind: item && isStr(item.kind) ? item.kind : 'document', label: item && isStr(item.label) ? item.label : kitId };
+    }
+
+    /** A received message by id in the mailbox, for `# forward:`. */
+    _findInMailbox(mailboxId, messageId) {
+        const list = this.scheduler?.state?.mailboxes?.[mailboxId]?.messages;
+        return arr(list).find((m) => m && m.id === messageId && m.folder !== 'sent') || null;
+    }
+
+    _forwardBlock(original) {
+        const from = original.from && typeof original.from === 'object' ? original.from : {};
+        const who = [from.name, from.address ? `<${from.address}>` : ''].filter(Boolean).join(' ');
+        return `---------- Forwarded message ----------\nFrom: ${who}\nSubject: ${original.subject || '(no subject)'}\n\n${original.body || ''}`;
+    }
+
+    /**
+     * What picking suggested reply `index` would send, without sending it: the full message
+     * the composer shows (subject, body, attachments, forwarded original). Nothing is written.
+     * @param {Object} o { threadKey, index, mailboxId }
+     * @returns {Promise<Object>} { ok, chip, body, subject, attachments, forwardOf, boundary, replyAfter, gameTags, hasReply }
+     *          or { ok:false, reason }
+     */
+    async planPlainChoice({ threadKey, index, mailboxId = null } = {}) {
+        const scheduler = this.scheduler;
+        const parsed = parsePlainThreadKey(threadKey);
+        const thread = scheduler?.state?.threads?.[threadKey];
+        if (!parsed || !thread || !thread.expects || thread.expects.mode !== 'choices' || !isStr(thread.position)) {
+            return { ok: false, reason: 'no-choices' };
+        }
+        const opened = await this._openPlain(parsed.npcId);
+        if (!opened) return { ok: false, reason: 'not-ready' };
+        const { story, sm } = opened;
+        let split; let chip;
+        try {
+            story.state.LoadJson(thread.position);
+            sm?.syncGlobalVariablesToStory?.(story);
+            const options = this._resumeToChoices(story);
+            if (!Number.isInteger(index) || index < 0 || index >= options.length) return { ok: false, reason: 'gone' };
+            chip = options[index];
+            story.ChooseChoiceIndex(index);
+            const raw = this._stepToChoices(story);
+            split = splitPlainRun(raw, chip);
+        } catch (e) {
+            console.warn('[MailRunner] could not plan the reply', e.message);
+            return { ok: false, reason: 'error' };
+        }
+        let body = split.body;
+        const attachments = split.attach.map((id) => this._attachmentOf(id));
+        let forwardOf = null;
+        if (isStr(split.forward)) {
+            const box = mailboxId || this._mailboxOf(parsed.accountId);
+            const original = this._findInMailbox(box, split.forward);
+            if (!original) return { ok: false, reason: 'forward-missing', chip };
+            forwardOf = original.id;
+            body = `${body}\n\n${this._forwardBlock(original)}`;
+            for (const a of arr(original.attachments)) if (a && !attachments.some((x) => x.kitId === a.kitId)) attachments.push(a);
+        }
+        return {
+            ok: true, chip, body, subject: split.subject, attachments, forwardOf,
+            boundary: split.boundary, replyAfter: split.replyAfter, gameTags: split.gameTags,
+            hasReply: split.hasReply, rule: split.rule
+        };
+    }
+
+    /**
+     * Send suggested reply `index`: write the player's message to Sent, apply the tags written
+     * in the player's part, move the thread to "waiting" and queue the NPC's reply after
+     * `# reply_after` seconds (else the contact's delay). Replays the story up to the boundary
+     * with the global observers on, so ink assignments in the player's part reach the globals
+     * exactly once; the reply part runs later from the saved boundary.
+     * @param {Object} o { threadKey, index, accountId, mailboxId?, inReplyTo? }
+     * @returns {Promise<Object>} { ok, sentId, jobId, record } or { ok:false, reason }
+     */
+    async sendPlainChoice({ threadKey, index, accountId = null, mailboxId = null, inReplyTo = null } = {}) {
+        const scheduler = this.scheduler;
+        const parsed = parsePlainThreadKey(threadKey);
+        if (!scheduler || !parsed) return { ok: false, reason: 'bad-thread' };
+        const acct = accountId || parsed.accountId;
+        const box = mailboxId || this._mailboxOf(acct);
+        const plan = await this.planPlainChoice({ threadKey, index, mailboxId: box });
+        if (!plan.ok) return plan;
+        const thread = scheduler.state.threads[threadKey];
+        const opened = await this._openPlain(parsed.npcId);
+        if (!opened) return { ok: false, reason: 'not-ready' };
+        const { engine, story, sm } = opened;
+
+        const jobId = newPlainJobId();
+        const sentId = `sent_${jobId}`;
+        let snapshot = null;
+        try {
+            story.state.LoadJson(thread.position);
+            sm?.syncGlobalVariablesToStory?.(story);
+            this._resumeToChoices(story);                   // regenerate the choices: no observers yet
+            sm?.observeGlobalVariableChanges?.(story, parsed.npcId);
+            story.ChooseChoiceIndex(index);
+            for (let i = 0; i < plan.boundary && story.canContinue; i++) story.Continue();
+            snapshot = story.state.ToJson();
+        } catch (e) {
+            console.warn('[MailRunner] could not replay the reply', e.message);
+            return { ok: false, reason: 'error' };
+        }
+
+        const sendKey = `send_${jobId}`;
+        if (plan.gameTags.length > 0 && !this._alreadyApplied(sendKey)) {
+            await this._applyGameTags(plan.gameTags, { npcId: parsed.npcId, msgId: sentId }, engine);
+        }
+        this._markApplied(sendKey);
+
+        const contact = contactForNpc(this._mailConfig, parsed.npcId);
+        const account = arr(this._mailConfig.accounts).find((a) => a && a.id === acct) || null;
+        const original = isStr(inReplyTo) ? this._findInMailbox(box, inReplyTo) : null;
+        const lastSubject = this._threadSubject(threadKey, box);
+        let subject = isStr(plan.subject) ? plan.subject : (original && original.subject) || lastSubject || '';
+        if (!isStr(plan.subject) && subject && !/^(re|fwd?):/i.test(subject)) subject = plan.forwardOf ? `Fwd: ${subject}` : `Re: ${subject}`;
+        const record = scheduler.addMessage(box, {
+            id: sentId,
+            kind: 'plain',
+            thread: threadKey,
+            folder: 'sent',
+            fromAccount: acct,
+            from: { name: account ? (account.displayName || account.address || '') : '', address: this._accountAddress(acct) },
+            to: contact ? contactAddress(contact) : '',
+            targetId: null,
+            subject,
+            templates: {}, slots: {},
+            body: plan.body,
+            attachment: null, link: null, landed: null, tells: [],
+            ...(plan.attachments.length ? { attachments: plan.attachments } : {}),
+            ...(plan.forwardOf ? { forwardOf: plan.forwardOf } : {}),
+            read: true
+        });
+        scheduler.setThread(threadKey, { position: snapshot, expects: { mode: 'waiting' } });
+        const delaySeconds = plan.replyAfter !== null && plan.replyAfter !== undefined ? plan.replyAfter : replyDelaySeconds(contact);
+        scheduler.addJob({
+            jobId, kind: 'ink', plain: true, afterSend: true, npcId: parsed.npcId, accountId: acct,
+            thread: threadKey, msgId: sentId, knot: ''
+        }, delaySeconds * 1000);
+        const sentEvent = { npcId: parsed.npcId, contactId: contact ? contact.id : null, accountId: acct, msgId: sentId };
+        this._emit('mail_sent', sentEvent);
+        this._emit(`mail_sent:${parsed.npcId}`, sentEvent);
+        return { ok: true, sentId, jobId, record, plan };
+    }
+
+    /** The newest subject on a thread in a mailbox, for a Re: fallback. */
+    _threadSubject(threadKey, mailboxId) {
+        const list = arr(this.scheduler?.state?.mailboxes?.[mailboxId]?.messages).filter((m) => m && m.thread === threadKey && isStr(m.subject));
+        if (!list.length) return '';
+        const last = list.reduce((a, b) => ((b.gameTime || 0) >= (a.gameTime || 0) ? b : a), list[0]);
+        return last.subject.replace(/^(re|fwd?):\s*/i, '');
+    }
+
+    /**
+     * The plain-thread run (NPC-started email, the NPC's reply after a send, or a chaser):
+     * deliver the lines as one email, apply the game tags, store the next expectation and
+     * queue any `# mail_later` chaser or `# send_email` follow-on.
+     */
+    async _runPlain(job) {
+        const scheduler = this.scheduler;
+        if (!scheduler) return { retry: true };
+        const replyId = `reply_${job.jobId}`;
+        const alreadyDelivered = typeof scheduler.findMessage === 'function' && !!scheduler.findMessage(replyId);
+        const alreadyApplied = this._alreadyApplied(job.jobId);
+        if (alreadyDelivered && alreadyApplied) return {};
+
+        const key = this._threadKey(job);
+        const opened = await this._openPlain(job.npcId);
+        if (!opened) return { retry: true };
+        const { engine, story, sm } = opened;
+
+        const thread = scheduler.state?.threads?.[key] || null;
+        if ((job.afterSend === true || job.loadPosition === true) && thread && isStr(thread.position)) {
+            try { story.state.LoadJson(thread.position); } catch (e) { console.warn('[MailRunner] could not load thread position', e.message); }
+        } else if (job.afterSend === true) {
+            console.warn(`[MailRunner] plain job ${job.jobId} has no thread position; nothing to continue`);
+            scheduler.setThread(key, null);
+            return {};
+        }
+        sm?.syncGlobalVariablesToStory?.(story);
+        sm?.observeGlobalVariableChanges?.(story, job.npcId);
+        if (job.afterSend !== true && isStr(job.knot)) {
+            try { engine.goToKnot(job.knot); } catch (e) { console.warn(`[MailRunner] ${job.npcId} has no knot "${job.knot}"`, e.message); return {}; }
+        }
+
+        let steps;
+        try { steps = this._stepToChoices(story); } catch (e) { console.error('[MailRunner] plain run failed', e); return { retry: true }; }
+        const options = this._plainOptions(story);
+        if (job.afterSend === true && steps.length) steps[0].tags = replyTagsOfFirstLine(steps[0].tags);
+        const prePosition = steps.length ? steps[steps.length - 1].pre : null;
+
+        const lines = steps.map((st) => st.text.trim()).filter(Boolean);
+        const split = splitMailTags(steps.flatMap((st) => st.tags));
+
+        let message = null;
+        if (lines.length > 0 && !alreadyDelivered) {
+            const box = this._mailboxOf(job.accountId);
+            const sent = job.msgId ? scheduler.findMessage(job.msgId) : null;
+            let subject = split.subject;
+            if (!isStr(subject)) {
+                const base = (sent && sent.subject) || this._threadSubject(key, box);
+                subject = base ? (/^re:/i.test(base) ? base : `Re: ${base}`) : '(no subject)';
+            }
+            const contact = contactForNpc(this._mailConfig, job.npcId);
+            const record = this._getNpc(job.npcId);
+            message = scheduler.addMessage(box, {
+                id: replyId,
+                thread: key,
+                folder: 'inbox',
+                from: { name: (contact && contact.name) || (record && (record.displayName || record.name)) || job.npcId, address: contactAddress(contact) },
+                to: this._accountAddress(job.accountId),
+                targetId: null,
+                subject,
+                body: lines.join('\n\n'),
+                attachment: null, link: null, landed: null, tells: [],
+                ...(split.attach.length ? { attachments: split.attach.map((id) => this._attachmentOf(id)) } : {}),
+                read: false
+            });
+            this._emit('mail_delivered', { mailbox: box, message, job });
+        }
+
+        if (split.gameTags.length > 0 && !alreadyApplied) await this._applyGameTags(split.gameTags, job, engine);
+
+        // The next expectation: pending choices (position = the state before the step that made
+        // them, so they regenerate), a judged hand-off, or nothing.
+        const thr = {};
+        if (isStr(split.composeReply)) thr.expects = { mode: 'compose', targetId: split.composeReply };
+        else if (options.length > 0) thr.expects = { mode: 'choices', options };
+        if (thr.expects && isStr(prePosition)) thr.position = prePosition;
+        scheduler.setThread(key, Object.keys(thr).length ? thr : null);
+
+        if (!alreadyApplied) {
+            if (split.mailLater) this._scheduleChaser(scheduler, job, key, split.mailLater);
+            for (const next of split.sendEmail) {
+                queuePlainEmail(scheduler, this._scenario, { npcId: next.npcId, knot: next.knot, delaySeconds: next.seconds });
+            }
+            this._markApplied(job.jobId);
+        }
+        sm?.recordInkVariables?.(job.npcId, story);
+        return { delivered: !!message };
+    }
+
     _accountAddress(accountId) {
         const scenario = (typeof window !== 'undefined') ? window.gameScenario : null;
         const accounts = scenario?.social?.mailClient?.accounts;
@@ -538,7 +910,8 @@ export class MailRunner {
             knot: mailLater.knot,
             vars: isObject(job.vars) ? job.vars : {},
             thread: key,
-            chaser: true
+            chaser: true,
+            ...(job.plain === true ? { plain: true } : {})
         }, Math.max(0, (mailLater.seconds || 0) * 1000));
     }
 }
@@ -623,6 +996,10 @@ export function scheduleInkReply(scheduler, { target, message, result, account =
  */
 export function scheduleChoiceReply(scheduler, { threadKey, choiceIndex, msgId = null, scenario = null } = {}) {
     if (!scheduler || !isStr(threadKey) || !Number.isInteger(choiceIndex) || choiceIndex < 0) return null;
+    if (parsePlainThreadKey(threadKey)) {
+        console.warn(`[MailRunner] ${threadKey} is an ink-email thread; send it with sendPlainChoice`);
+        return null;
+    }
     const colon = threadKey.lastIndexOf(':');
     if (colon <= 0) return null;
     const character = threadKey.slice(0, colon);

@@ -45,7 +45,8 @@ copy('systems/mail-scheduler.js', 'mail-scheduler.mjs', (s) => s.replace("'./glo
 copy('systems/social-influence.js', 'social-influence.mjs', (s) => s.replace("'./global-writer.js'", "'./global-writer.mjs'"));
 copy('systems/npc-conversation-state.js', 'npc-conversation-state.mjs');
 copy('systems/ink/ink-engine.js', 'ink-engine.mjs');
-copy('systems/mail-runner.js', 'mail-runner.mjs', (s) => s.replace("'./ink/ink-engine.js'", "'./ink-engine.mjs'"));
+copy('systems/mail-ink.js', 'mail-ink.mjs');
+copy('systems/mail-runner.js', 'mail-runner.mjs', (s) => s.replace("'./ink/ink-engine.js'", "'./ink-engine.mjs'").replace("'./mail-ink.js'", "'./mail-ink.mjs'"));
 
 globalThis.inkjs = inkjs;
 globalThis.window = {};

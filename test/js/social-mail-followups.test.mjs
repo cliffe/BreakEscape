@@ -31,7 +31,7 @@ const dir = mkdtempSync(join(tmpdir(), 'social-mail-followups-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'systems/phish-rules.js', 'systems/global-writer.js', 'systems/social-influence.js',
-    'systems/mail-scheduler.js', 'systems/mail-runner.js', 'systems/ink/ink-engine.js',
+    'systems/mail-scheduler.js', 'systems/mail-runner.js', 'systems/mail-ink.js', 'systems/ink/ink-engine.js',
     'ui/influence-bar.js', 'utils/display-dashes.js', 'ui/modal-stack.js',
     'minigames/mail-client/mail-reader.js', 'minigames/mail-client/mail-data.js',
     'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js',
