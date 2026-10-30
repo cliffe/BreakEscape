@@ -7,12 +7,15 @@
 //   concernText(key, config, tokens) one line of wording: config.strings[key], else the default
 //   kindLabel(kind, config)          the heading for a fact kind
 //   assessReport(config, picks)      { tone, facts, conclusions, kinds } for a selection
-//   concernRecord(config, picks)     the result record: counts and the tone, never a mark
+//   concernRecord(config, picks)     the result record: counts, the tone and the picked ids, never a mark
+//   shownTone(assess)                the tone the feedback shows: 'facts_missing' stands in for
+//                                    'facts' while a required fact is still unpicked
 //
 // Tones (the feedback the learner reads):
 //   empty          nothing picked yet
 //   thin           some facts, fewer than `minFacts`, no conclusion
 //   facts          `minFacts` or more facts and no conclusion: affirmed
+//   facts_missing  (shown only) as `facts`, but a `required` fact is not picked: not praised yet
 //   facts_verdict  enough facts plus a conclusion: the facts are affirmed, the verdict is left out
 //   verdict_only   a conclusion and no facts: "facts, not a verdict"
 //   thin_verdict   a conclusion and some facts, fewer than `minFacts`
@@ -58,6 +61,9 @@ export const DEFAULT_TEXT = Object.freeze({
     feedbackEmpty: 'Pick at least one fact to start the report.',
     feedbackThin: 'A start. Add {min} or more facts so whoever reads it can see what you saw.',
     feedbackFacts: 'Good. A report made of facts lets the right person look into it fairly.',
+    // batch-13 item 1: shown in place of feedbackFacts while a `required` fact is still unpicked, so
+    // the praise never sits above a held-back Done (E16 C4). The cf-must-add line names the fact.
+    feedbackFactsMissing: 'Nearly there. These are facts, but the one that matters most is still missing.',
     feedbackFactsVerdict: 'Your facts are what matter here. Leave the conclusion out, and let whoever looks into it reach their own.',
     feedbackVerdictOnly: 'Facts, not a verdict. A conclusion without the facts behind it cannot be checked, and it can hurt someone who has done nothing wrong. Add what you saw.',
     feedbackThinVerdict: 'Add more facts and leave the conclusion out. What you saw is yours to report. What it means is for someone else to find out.',
@@ -151,16 +157,34 @@ export function assessReport(config, picks) {
 
 const TONE_KEY = Object.freeze({
     empty: 'feedbackEmpty', thin: 'feedbackThin', facts: 'feedbackFacts', facts_verdict: 'feedbackFactsVerdict',
-    verdict_only: 'feedbackVerdictOnly', thin_verdict: 'feedbackThinVerdict'
+    verdict_only: 'feedbackVerdictOnly', thin_verdict: 'feedbackThinVerdict', facts_missing: 'feedbackFactsMissing'
 });
+
+/**
+ * batch-13 item 1: the tone the feedback shows for an assessment. A report of enough facts reads
+ * 'facts' (the praise line), but while a `required` fact is unpicked Done is held back, so the
+ * praise would contradict the gate: 'facts_missing' stands in. Every other tone is unchanged, and
+ * with no required chips this is always assess.tone.
+ */
+export function shownTone(assess) {
+    const missing = Array.isArray(assess?.missingRequired) ? assess.missingRequired.length : 0;
+    return assess?.tone === 'facts' && missing > 0 ? 'facts_missing' : assess?.tone;
+}
 
 /** The feedback line for a tone. */
 export function feedbackFor(config, tone) {
     return concernText(TONE_KEY[tone] || TONE_KEY.empty, config, { min: config.minFacts });
 }
 
-/** The result record: what was built, as counts and a tone. No points, no percent, no mark. */
+/**
+ * The result record: what was built, as counts and a tone. No points, no percent, no mark.
+ * batch-13 item 2: it also names the chips, by id, so the debrief can recap the report: the facts
+ * included (factIds, in the config's order), the conclusion left in (conclusionIds) and any
+ * `required` fact that was not picked (missingRequired).
+ */
 export function concernRecord(config, picks) {
     const a = assessReport(config, picks);
-    return { done: true, facts: a.facts.length, conclusions: a.conclusions.length, kinds: a.kinds, tone: a.tone };
+    return { done: true, facts: a.facts.length, conclusions: a.conclusions.length, kinds: a.kinds, tone: a.tone,
+        factIds: a.facts.map((c) => c.id), conclusionIds: a.conclusions.map((c) => c.id),
+        missingRequired: a.missingRequired.map((c) => c.id) };
 }

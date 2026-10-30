@@ -225,8 +225,8 @@ test('percent rounds halves up: two messages scoring 100 and 51 -> 76 (75.5)', (
 });
 
 test('bandFor boundaries: 85 sharp, 84 getting there, 60 getting there, 59 practising, 0 and 100', () => {
-    assert.match(bandFor(100).headline, /^Sharp/);
-    assert.match(bandFor(85).headline, /^Sharp/);
+    assert.match(bandFor(100).headline, /^Well done/);
+    assert.match(bandFor(85).headline, /^Well done/);
     assert.match(bandFor(84).headline, /^Getting there/);
     assert.match(bandFor(60).headline, /^Getting there/);
     assert.match(bandFor(59).headline, /^Worth practising/);
@@ -238,8 +238,8 @@ test('bandFor with authored bands in any order, with an empty list, and below ev
     assert.equal(bandFor(95, bands).headline, 'top');
     assert.equal(bandFor(50, bands).headline, 'mid');
     assert.equal(bandFor(10, bands).headline, 'low');
-    assert.match(bandFor(95, []).headline, /^Sharp/);
-    assert.match(bandFor(95, null).headline, /^Sharp/);
+    assert.match(bandFor(95, []).headline, /^Well done/);
+    assert.match(bandFor(95, null).headline, /^Well done/);
     // no band at 0: fall back to the lowest one
     assert.equal(bandFor(5, [{ min: 40, headline: 'only' }]).headline, 'only');
 });

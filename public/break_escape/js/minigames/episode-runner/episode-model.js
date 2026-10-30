@@ -301,7 +301,38 @@ function cleanConcern(raw) {
     const num = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? Math.round(v) : 0);
     const out = { done: true, facts: num(raw.facts), conclusions: num(raw.conclusions) };
     if (isStr(raw.tone)) out.tone = raw.tone;
+    // batch-13 item 2: the chips by id, for the debrief recap. Only when the form sent them, so a
+    // record saved before this change keeps its exact shape (and simply has no recap).
+    const ids = (v) => (Array.isArray(v) ? [...new Set(v.filter(isStr))].slice(0, 40) : null);
+    for (const key of ['factIds', 'conclusionIds', 'missingRequired']) {
+        const list = ids(raw[key]);
+        if (list) out[key] = list;
+    }
     return out;
+}
+
+/**
+ * batch-13 item 2: the concern form's recap for the debrief, from the kept record and the
+ * episode's own chips: { facts: [label], missing: [label], conclusion: label | '' }. Null when the
+ * episode has no form, the form was not done, or the record holds no chip ids (saved before the
+ * recap existed), so the debrief draws nothing.
+ */
+export function concernRecap(episode, record) {
+    const config = concernConfigOf(episode);
+    if (!config || !isObj(record) || record.done !== true || !Array.isArray(record.factIds)) return null;
+    const labelOf = (list) => {
+        const byId = new Map((Array.isArray(list) ? list : []).filter((c) => isObj(c) && isStr(c.id) && isStr(c.label))
+            .map((c) => [c.id, c.label]));
+        return (id) => byId.get(id) || '';
+    };
+    const fact = labelOf(config.factChips);
+    const conclusion = labelOf(config.conclusionChips);
+    const labels = (ids, of) => (Array.isArray(ids) ? ids.map(of).filter(Boolean) : []);
+    return {
+        facts: labels(record.factIds, fact),
+        missing: labels(record.missingRequired, fact),
+        conclusion: labels(record.conclusionIds, conclusion)[0] || ''
+    };
 }
 
 // ── the privacy panel (ENG-13) ───────────────────────────────────────────────────

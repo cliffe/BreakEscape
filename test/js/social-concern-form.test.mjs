@@ -103,12 +103,15 @@ test('assessReport: the tone follows facts against verdict', () => {
     assert.deepEqual(Model.assessReport(cfg, ['f_who', 'f_what', 'f_what2']).kinds, ['what', 'who'], 'kinds are the distinct fact kinds, in chip order');
 });
 
-test('the record is counts and a tone, never a mark', () => {
+test('the record is counts, a tone and the picked ids, never a mark', () => {
     const cfg = Model.normaliseConfig(config());
     const r = Model.concernRecord(cfg, ['f_what', 'f_when', 'c_sloppy']);
-    assert.deepEqual(r, { done: true, facts: 2, conclusions: 1, kinds: ['what', 'when'], tone: 'facts_verdict' });
+    // batch 13 item 2: the chip ids ride along for the debrief recap.
+    assert.deepEqual(r, { done: true, facts: 2, conclusions: 1, kinds: ['what', 'when'], tone: 'facts_verdict',
+        factIds: ['f_what', 'f_when'], conclusionIds: ['c_sloppy'], missingRequired: [] });
     assert.equal('points' in r || 'percent' in r || 'correct' in r || 'score' in r, false);
-    assert.deepEqual(EM.concernRecord(r), { done: true, facts: 2, conclusions: 1, tone: 'facts_verdict' }, 'the runner keeps counts and the tone only');
+    assert.deepEqual(EM.concernRecord(r), { done: true, facts: 2, conclusions: 1, tone: 'facts_verdict',
+        factIds: ['f_what', 'f_when'], conclusionIds: ['c_sloppy'], missingRequired: [] }, 'the runner keeps counts, the tone and the ids');
 });
 
 test('wording: every line has a default and a data override with tokens', () => {
@@ -235,7 +238,8 @@ test('Done is a normal exit with the record', () => {
     check(s);
     click($(s, '.cf-finish'));
     assert.equal(s.gameState.isActive, false);
-    assert.deepEqual(s.gameResult, { done: true, facts: 2, conclusions: 1, kinds: ['what', 'who'], tone: 'facts_verdict' });
+    assert.deepEqual(s.gameResult, { done: true, facts: 2, conclusions: 1, kinds: ['what', 'who'], tone: 'facts_verdict',
+        factIds: ['f_what', 'f_who'], conclusionIds: ['c_sloppy'], missingRequired: [] });
 });
 
 test('Done needs a check of the report on screen', () => {
@@ -346,7 +350,8 @@ test('runner: with a concernForm the defend panel opens the form first, then the
     rclick('.cf-check');
     rclick('.cf-finish');
     assert.equal(scene(), 'episode-runner', 'the runner reopens after the form');
-    assert.deepEqual(stored(ep.id).concern, { done: true, facts: 2, conclusions: 0, tone: 'facts' });
+    assert.deepEqual(stored(ep.id).concern, { done: true, facts: 2, conclusions: 0, tone: 'facts',
+        factIds: ['f_what', 'f_when'], conclusionIds: [], missingRequired: [] });
     assert.equal(cur().getTestState().episode.stage, 'defend', 'the form does not finish the stage');
     assert.doesNotMatch(cur().container.textContent, /Raise a concern/);
     rclick('.epr-launch');

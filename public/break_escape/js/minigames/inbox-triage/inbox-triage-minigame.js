@@ -848,13 +848,13 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         // it so the immediate review card can nudge the learner to tick next time. Choosing
         // "Nothing looks wrong" is a deliberate answer and is not nudged.
         const choseNone = !!s.inputs.get(NONE_ID)?.checked;
-        // E11 B2 finding 7 (opt-in): when the set asks for it, the first Confirm with nothing
-        // ticked and no "Nothing looks wrong" shows a gentle prompt on the sheet instead of
-        // locking; a second Confirm locks. Only when there is something worth ticking (a chip
-        // other than "Nothing looks wrong"). Default off → bridges and labs that Confirm once and
-        // expect an immediate lock are unchanged.
+        // E11 B2 finding 7: the first Confirm with nothing ticked and no "Nothing looks wrong"
+        // shows a gentle prompt on the sheet instead of locking; a second Confirm locks. Only when
+        // there is something worth ticking (a chip other than "Nothing looks wrong").
+        // batch-13 item 6 (owner decision): on by default for every set; `confirmPrompt: false`
+        // on a set turns it off (one Confirm locks, as before).
         const hasTickableChip = [...s.inputs.keys()].some((id) => id !== NONE_ID);
-        if (this.set?.confirmPrompt && hasTickableChip && !flags.length && !choseNone && !s.prompted) {
+        if (this._confirmPromptOn() && hasTickableChip && !flags.length && !choseNone && !s.prompted) {
             s.prompted = true;
             this._showSheetPrompt(s);
             return;
@@ -893,12 +893,16 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             : 'Next time, tick what made you decide, or choose ‘Nothing looks wrong’.';
     }
 
+    /** batch-13 item 6: the no-ticks prompt is on unless the set says `confirmPrompt: false`. */
+    _confirmPromptOn() {
+        return this.set?.confirmPrompt !== false;
+    }
+
     /**
      * The gentle one-off prompt shown on the flag sheet when Confirm is pressed with nothing
-     * ticked (E11 B2 finding 7). Opt-in: only when set.confirmPrompt is on, so bridges and labs
-     * that press Confirm once and expect an immediate lock are unchanged. set.confirmPrompt may be
-     * a string (the prompt wording) or true (the default wording); naming a flag is never required,
-     * so a second Confirm always locks.
+     * ticked (E11 B2 finding 7). On by default (batch 13); `confirmPrompt: false` turns it off.
+     * set.confirmPrompt may be a string (the prompt wording) or true / absent (the default
+     * wording); naming a flag is never required, so a second Confirm always locks.
      */
     _confirmPromptLine() {
         const own = this.set?.confirmPrompt;
@@ -1039,6 +1043,18 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     }
 
     /**
+     * The verdict line, plus the "The right call was ..." sentence when the verdict fell short.
+     * batch-13 item 3 (E17 C4 D2): an authored line (a per-item deleteLine, or the set's
+     * labels.verdictFeedback) that already names the right call is not followed by the built one,
+     * which read "... was the right call here. The right call was Trust or Verify."
+     */
+    _verdictWithRightCall(rec, verdict, tone) {
+        const line = this._verdictLine(rec, verdict) || '';
+        if (tone !== 'wrong' || /\bright call\b/i.test(line)) return line;
+        return line + this._rightCallLine(rec);
+    }
+
+    /**
      * The sentence that names the right call, added to a card whose verdict fell short: the actions
      * that earn full verdict marks on this item, in this set's own words, at most two.
      */
@@ -1099,7 +1115,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         verdict.append(icon(tone === 'wrong' ? 'mark-cross' : 'mark-tick'),
             el('span', null, `You chose ${this._actionLabel(rec, ans)}. ${isChoice
                 ? choiceText(this._isRight(rec, ans.verdict) ? 'right' : 'wrong', this.labels)
-                : this._verdictLine(rec, ans.verdict) + (tone === 'wrong' ? this._rightCallLine(rec) : '')}`));
+                : this._verdictWithRightCall(rec, ans.verdict, tone)}`));
         card.appendChild(verdict);
         if (isChoice) return this._choiceCard(card, rec, ans, per);
 

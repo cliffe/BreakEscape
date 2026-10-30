@@ -6,6 +6,10 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { JSDOM } from 'jsdom';
 
+// batch 13 item 6: the no-ticks confirm prompt is on by default now. These tests predate it and
+// press Confirm once expecting a lock, so their sets pin it off unless they name it themselves.
+const withOneConfirm = (set) => (set && typeof set === 'object' && !('confirmPrompt' in set) ? { ...set, confirmPrompt: false } : set);
+
 const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 
@@ -53,6 +57,7 @@ function open(set, params = {}) {
     document.body.innerHTML = '';
     const container = document.createElement('div');
     document.body.appendChild(container);
+    set = withOneConfirm(set);
     const scene = new InboxTriageMinigame(container, { set, social: { triageSets: [set] }, ...params });
     scene._sceneType = 'inbox-triage';
     window.MinigameFramework.currentMinigame = scene;
@@ -140,7 +145,7 @@ test('P4-3: Trust on a phish email is a critical miss: the penalty, the band cap
     assert.deepEqual(r.criticalMisses, ['phish_mail']);
     assert.deepEqual(r.criticalKinds, ['email']);
     assert.equal(r.percent, Math.round(600 / 7) - CRITICAL_PENALTY);
-    assert.doesNotMatch(r.headline, /^Sharp/);
+    assert.doesNotMatch(r.headline, /^Well done/);
     // E2 shape: 0 of 2 phish caught among real mail can no longer read "Getting there"
     const e2 = [phishMail, { ...phishMail, id: 'phish_2' }, ...reals(4)];
     const r2 = scoreTriage({ messages: e2, answers: trustAll(e2) });
@@ -161,7 +166,7 @@ test('P4-3: Trust on a phish email is a critical miss: the penalty, the band cap
     toResult(s);
     const line = $(s, '.tri-critical').textContent;
     assert.match(line, /^2 answers let an attacker straight in \(trusting a phish email, or approving a sign-in you didn't start\)\./);
-    assert.doesNotMatch($(s, '.tri-result-title').textContent, /^Sharp/);
+    assert.doesNotMatch($(s, '.tri-result-title').textContent, /^Well done/);
 });
 
 test('P7-2: awareness caps at "Getting there" with two skills never caught, even at one tell each; analyst keeps the old cap', () => {
@@ -177,7 +182,7 @@ test('P7-2: awareness caps at "Getting there" with two skills never caught, even
     const an = scoreTriage({ messages: msgs, answers: [{ id: 'ph', verdict: 'report', flags: [] }, ...answers.slice(1)], profile: 'analyst' });
     assert.equal(an.zeroSkills.length, 2);
     assert.ok(an.percent >= 85, `analyst percent ${an.percent}`);
-    assert.match(an.headline, /^Sharp/);
+    assert.match(an.headline, /^Well done/);
 });
 
 test('P4-9: three or more tells missed in never-caught skills keep a high round out of "Sharp" (awareness cap since P7-2 is two skills)', () => {

@@ -184,7 +184,7 @@ test('rounding: halves round up, per message and for the round', () => {
 });
 
 test('bands: authored bands replace the defaults; edges are inclusive', () => {
-    assert.match(bandFor(85).headline, /^Sharp/);
+    assert.match(bandFor(85).headline, /^Well done/);
     assert.match(bandFor(84).headline, /^Getting there/);
     assert.match(bandFor(60).headline, /^Getting there/);
     assert.match(bandFor(59).headline, /^Worth practising/);

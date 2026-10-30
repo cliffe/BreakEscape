@@ -78,7 +78,7 @@ test('P5-3: a trusted phish page (not a critical kind) still keeps the round out
     assert.match(r.headline, /^Getting there/);
     // the same round with the page reported is Sharp
     answers[3] = { id: 'page1', verdict: 'report', flags: ['lookalike_domain'] };
-    assert.match(scoreTriage({ messages, answers, profile: 'awareness' }).headline, /^Sharp/);
+    assert.match(scoreTriage({ messages, answers, profile: 'awareness' }).headline, /^Well done/);
 });
 
 // ── P5-5 / P5-15: when the no-blame line shows, and its critical wording ──────
@@ -127,7 +127,7 @@ test('P5-6: reporting a real item gets a neutral thank-you; a phish keeps "That 
     document.body.innerHTML = '';
     const container = document.createElement('div');
     document.body.appendChild(container);
-    const set = { id: 's', scoringProfile: 'awareness', feedbackMode: 'immediate', messages: [real('r1'), phish('p1')] };
+    const set = { id: 's', scoringProfile: 'awareness', feedbackMode: 'immediate', confirmPrompt: false, messages: [real('r1'), phish('p1')] };
     const scene = new InboxTriageMinigame(container, { set, social: { triageSets: [set] }, skin: 'awareness' });
     scene._sceneType = 'inbox-triage';
     window.MinigameFramework.currentMinigame = scene;

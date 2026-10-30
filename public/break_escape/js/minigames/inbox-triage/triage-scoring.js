@@ -28,7 +28,7 @@ export const NONE_CHIP = 'none';
 
 /** 05 "Round score and bands". Authored bands on the set replace these. */
 export const DEFAULT_BANDS = [
-    { min: 85, headline: 'Sharp: you caught the phish and knew why' },
+    { min: 85, headline: 'Well done: you caught the phish and knew why' },
     { min: 60, headline: 'Getting there: a few tells slipped past' },
     { min: 0, headline: "Worth practising: here's where to look first" },
 ];
