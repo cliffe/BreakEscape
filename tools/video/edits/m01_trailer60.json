@@ -1,9 +1,9 @@
 {
- "id": "m01_trailer60_v4",
+ "id": "m01_trailer60_v5",
  "title": "SAFETYNET: Licence to Hack, m01 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v4: title holds 6 s with HaX's line J-cutting in under it, Mission 1 / First Contact card, wavy FX reflections, key-press-timed solid hex curtain with the Hacktivity Games logo in front of it (no separate end card)",
+ "status": "v5: Derek re-recorded as t09_derek_v5 (lip-sync fix; cut re-derived), CTA reads Play now. v4: title holds 6 s with HaX's line J-cutting in under it, Mission 1 / First Contact card, wavy FX reflections, key-press-timed solid hex curtain with the Hacktivity Games logo in front of it (no separate end card)",
  "music": {
   "track": "Noir/Midnight Cipher Chase.mp3",
   "analysis": "midnight_cipher_chase.json",
@@ -918,12 +918,12 @@
     "type": "glitch"
    },
    "source": {
-    "file": "t09_derek.trimmed.mkv",
-    "in": 46.7,
-    "out": 51.5
+    "file": "t09_derek_v5.trimmed.mkv",
+    "in": 47.04,
+    "out": 51.84
    },
    "dialogue": true,
-   "note": "derek_6 wide portrait view with the game subtitle, to the silence before \"Security\" (take 51.19-51.79 s, cut at 51.5)",
+   "note": "derek_6 wide portrait view with the game subtitle, to the silence before \"Security\" (t09_derek_v5 silence 51.46-52.06 s, cut at 51.84)",
    "lines": [
     {
      "speaker": "Derek Lawson",
@@ -975,9 +975,9 @@
     "type": "cut"
    },
    "source": {
-    "file": "t09_derek.trimmed.mkv",
-    "in": 51.5,
-    "out": 55.72
+    "file": "t09_derek_v5.trimmed.mkv",
+    "in": 51.84,
+    "out": 56.04
    },
    "dialogue": true,
    "note": "hard cut to a 3x close-up of the face (no UI), 3-frame glitch on the cut",
@@ -1048,8 +1048,7 @@
     {
      "duration": 8.0,
      "text": [
-      "Play Mission 1",
-      "Free!"
+      "Play now"
      ]
     }
    ],
