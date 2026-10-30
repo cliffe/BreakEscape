@@ -14,7 +14,7 @@
       "reportReply": "Thanks. We'll look into it quietly and fairly. You did the right thing.",
       "id": "e16_leaver_week_inbox",
       "title": "A leaver's week",
-      "brief": "It's a colleague's last week and messages are waiting: an offer, a request to borrow a login, some sign-in prompts, a favour and a couple of calls. For each one, choose Trust, Report, Delete or Verify (ring the service desk, or confirm on a number you already hold), then tick what you noticed. Keep your login to yourself, report what gets offered to you, and deny any sign-in prompt you didn't start. Reporting or checking when you're unsure is always fine and never marked down, and you are not being asked to investigate anyone.",
+      "brief": "It's a colleague's last week and messages are waiting: an offer, a request to borrow a login, some sign-in prompts, a favour and a couple of calls. For each one, choose Trust, Report, Delete or Verify (ring the service desk, or confirm on a number you already hold), then tick what you noticed. Keep your login to yourself, report what gets offered to you, and deny any sign-in prompt you didn't start. Reporting or checking when you're unsure is always fine, though a real message does take a colleague's time to check, and you are not being asked to investigate anyone.",
       "scoringProfile": "awareness",
       "scoring": { "criticalPenalty": 5, "criticalPenaltyCap": 10 },
       "verifyVerdict": true,
@@ -251,12 +251,13 @@
       "teamLine": "By reporting or checking {n} of these rather than acting on them, you warned the team where it mattered and pointed colleagues to the safe route, without treating anyone as a suspect.",
       "conceptPanel": [
         { "heading": "Seen, said, true", "text": "The colleague the office was whispering about, Samira: what people saw was her in early, taking calls in the stairwell, visiting HR. What was said was that she was leaving with Ross, a manager also on his way out. What was true was that her father was in hospital all week. Unusual is not the same as wrong, and a kind word comes first. Rumours tend to land on the person already having the hardest week." },
-        { "heading": "Three things to keep", "text": "Your login is you: never share it, never borrow one. Offers get reported: don't reply, screenshot and send it on. Concerns go to the right person as facts, not a verdict on anyone. You don't have to be sure; you do have to be fair." }
+        { "heading": "Three things to keep", "text": "Your login is you: never share it, never borrow one. Offers get reported: don't reply, screenshot and send it on. Concerns go to the right person as facts, not a verdict on anyone. You don't have to be sure; you do have to be fair." },
+        { "heading": "The report you built", "text": "At the kiosk you built a concern as a short report. What belonged in it was what you saw yourself, as facts: the approach for access, when it came, where, and who it reached. A verdict on a person did not, because a report is for whoever looks into it to weigh. A worry about a colleague's wellbeing is not a security report either; that one goes to your manager or HR. Facts, not a verdict, let the right person look into it fairly." }
       ]
     },
     "_defendOnly": {
       "_use": "Strings for the defend-only shell (e16_insider_risk_defend), which has no mistake or flip stage. The generator copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared (flipHeading is popped, the flip strings are never shown). conceptPanel is carried over, so both concept cards show in the defend-only debrief (ENG-09b). This brief is identical to the gen EPISODES['e16'] defend brief (section 8b): keep them in step.",
-      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm, during a leaver's last week. First you learn to raise a concern as facts, not a verdict on anyone; then you sort a short set of messages: an offer, a request to borrow a login, some sign-in prompts, a favour. Reporting or checking when you're unsure is always fine and never marked down. You are not being asked to investigate anyone.",
+      "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm, during a leaver's last week. First you learn to raise a concern as facts, not a verdict on anyone; then you sort a short set of messages: an offer, a request to borrow a login, some sign-in prompts, a favour. Reporting or checking when you're unsure is always fine, though a real message does take a colleague's time to check. You are not being asked to investigate anyone.",
       "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional firm. In scope: a fair way to raise a concern, and a short set of messages."
     }
   }
