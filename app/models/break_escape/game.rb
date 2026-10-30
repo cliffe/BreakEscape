@@ -1329,8 +1329,9 @@ module BreakEscape
         return false
       end
 
-      # Check if player has encountered this NPC
-      unless player_state['encounteredNPCs']&.include?(npc_id)
+      # Check if player has encountered this NPC. A headless email record has no room to be
+      # met in: its emails are the encounter, as for give_item (games_controller headless_email_record?).
+      unless player_state['encounteredNPCs']&.include?(npc_id) || headless_email_npc?(npc_id)
         Rails.logger.warn "[BreakEscape] Player has not encountered NPC: #{npc_id}"
         return false
       end
@@ -1344,6 +1345,18 @@ module BreakEscape
 
       Rails.logger.info "[BreakEscape] NPC unlock validated: #{npc_id} can unlock #{target_id}"
       true
+    end
+
+    # True when the id is a headless email record (a character's or an ink contact's
+    # emailRecord) and no room NPC holds the same id.
+    def headless_email_npc?(npc_id)
+      return false unless npc_id.is_a?(String) && !npc_id.empty?
+
+      rooms = scenario_data['rooms']
+      in_a_room = rooms.is_a?(Hash) && rooms.each_value.any? do |room|
+        room.is_a?(Hash) && room['npcs'].is_a?(Array) && room['npcs'].any? { |n| n.is_a?(Hash) && n['id'] == npc_id }
+      end
+      !in_a_room && self.class.headless_npc_records(scenario_data).any? { |record| record['id'] == npc_id }
     end
 
     # Find an NPC record in the scenario: a room NPC, or a headless record

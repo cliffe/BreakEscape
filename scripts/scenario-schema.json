@@ -441,6 +441,19 @@
                 "additionalProperties": false
               }
             },
+            "labels": {
+              "type": "object",
+              "description": "Words the plain (ink) composer and suggested-reply chips show; each key optional, defaults in systems/mail-ink.js PLAIN_LABELS",
+              "properties": {
+                "suggestedReplies": {"type": "string"}, "loading": {"type": "string"}, "waiting": {"type": "string"},
+                "nothing": {"type": "string"}, "chooseAnother": {"type": "string"}, "writeYourOwn": {"type": "string"},
+                "backToSuggestions": {"type": "string"}, "from": {"type": "string"}, "subject": {"type": "string"},
+                "attachments": {"type": "string"}, "send": {"type": "string"}, "sending": {"type": "string"},
+                "sentNote": {"type": "string"}, "unavailable": {"type": "string"}, "forwardMissing": {"type": "string"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
             "checklistTiming": {
               "type": "string",
               "enum": ["onSend", "withReply"],
@@ -1002,8 +1015,40 @@
         "role": {"type": "string"},
         "revealedBy": {"type": "string"},
         "character": {"type": "string"},
-        "targetId": {"type": "string"},
-        "accountIds": {"type": "array", "items": {"type": "string"}}
+        "targetId": {"type": "string", "description": "A judged phishing target (social.phishTargets id). May be combined with `npc`: see judgedWhen"},
+        "accountIds": {"type": "array", "items": {"type": "string"}},
+        "npc": {"type": "string", "description": "Makes this an ink correspondent: the id of the NPC whose ink story is the email thread (README_scenario_design.md \"Ink-driven email\"). Defined by emailRecord on this contact, or an existing room or phone NPC"},
+        "emailRecord": {
+          "type": "object",
+          "description": "A headless NPC record registered under `npc` (same shape as social.characters.*.emailRecord): storyPath, displayName, avatar, itemsHeld, replyDelaySeconds",
+          "properties": {
+            "storyPath": {"type": "string"},
+            "displayName": {"type": "string"},
+            "itemsHeld": {"type": "array"},
+            "replyDelaySeconds": {"type": "number", "minimum": 0}
+          },
+          "additionalProperties": true
+        },
+        "replyDelaySeconds": {"type": "number", "minimum": 0, "description": "Seconds before this correspondent's reply arrives when the ink gives no `# reply_after` (default 20)"},
+        "composeKnot": {"type": "string", "description": "The knot Compose runs headless to offer the first suggested replies (default on_compose)"},
+        "judgedWhen": {"type": "string", "description": "For a contact with both `npc` and `targetId`: a global that opens the judged \"Write your own message\" door. Absent, the door is always open"},
+        "timedEmails": {
+          "type": "array",
+          "description": "Emails this correspondent starts on its own, once each (marked by the global mail_timed_<npc>_<index>)",
+          "items": {
+            "type": "object",
+            "required": ["knot"],
+            "properties": {
+              "knot": {"type": "string", "description": "The knot whose run is the email"},
+              "delaySeconds": {"type": "number", "minimum": 0},
+              "waitForEvent": {"type": "string", "description": "An event name such as room_entered:server_room; absent or game_loaded sends it from the start"},
+              "skipIfGlobal": {"type": "string"},
+              "account": {"type": "string", "description": "The account it is sent to (default: the contact's first accountIds entry, else the first account)"}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        }
       },
       "patternProperties": {"^_": {}},
       "additionalProperties": false
@@ -4344,6 +4389,17 @@
             "message": { "type": "string" },
             "targetKnot": { "type": "string" },
             "skipIfGlobal": { "type": "string" }
+          }
+        },
+        "sendEmail": {
+          "type": "object",
+          "description": "An ink contact starts an email thread when the mapping fires (systems/mail-ink.js queuePlainEmail). npc defaults to this NPC",
+          "required": ["knot"],
+          "properties": {
+            "npc": {"type": "string"},
+            "knot": {"type": "string"},
+            "delaySeconds": {"type": "number", "minimum": 0},
+            "account": {"type": "string"}
           }
         },
         "setGlobal": { "type": "object" },

@@ -146,6 +146,17 @@ module BreakEscape
       assert_equal game.scenario_npc_ids, narrow.scenario_npc_ids
     end
 
+    test 'an ink-email contact record may unlock a door it lists, with no encounter; a room NPC still needs one' do
+      scenario = ink_contact_scenario
+      scenario['social']['mailClient']['contacts'][0]['emailRecord']['unlockable'] = ['store_room']
+      scenario['rooms']['office']['objects'] = []
+      game = create_game(scenario)
+
+      assert game.validate_npc_unlock('hax_mail', 'store_room'), 'headless record: the email is the encounter'
+      refute game.validate_npc_unlock('hax_mail', 'vault'), 'but only for doors it lists'
+      refute game.validate_npc_unlock('clerk', 'store_room'), 'a room NPC that was never met cannot unlock'
+    end
+
     test 'hostility sent for a headless record is kept' do
       game = create_game(social_scenario)
       game.merge_npc_hostility!('pierce_mail' => { 'hostile' => false, 'ko' => false }, 'nobody' => { 'hostile' => true, 'ko' => false })

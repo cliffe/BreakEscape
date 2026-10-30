@@ -36,6 +36,7 @@ module ValidateSocial
       issues.concat(mail_terminals(ctx))
       issues.concat(email_record_clash(ctx))
       issues.concat(email_stories(ctx))
+      issues.concat(MailInk.check(ctx))
       issues
     end
 
@@ -1144,3 +1145,5 @@ module ValidateSocial
     end
   end
 end
+
+require_relative 'mail_ink'
