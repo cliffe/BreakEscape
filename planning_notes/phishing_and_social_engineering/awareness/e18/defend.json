@@ -29,6 +29,32 @@
         "fake_signin_alert": "A sign-in alert that makes you 'review' by signing in through its link",
         "fake_breach_alert": "A 'breach checker' that asks for your password"
       },
+      "labels": {
+        "teamBadge": "Fakes stopped for the team: {n}",
+        "teamBadgeTitle": "Messages you reported or checked this round rather than acting on them",
+        "phishCaughtLabel": "Fakes caught",
+        "scoreLine": "Right call is most of the score; naming what you noticed is the rest."
+      },
+      "bands": [
+        { "min": 85, "headline": "Well done: you caught the fakes and knew why" },
+        { "min": 60, "headline": "Getting there: a few signs slipped past" },
+        { "min": 0, "headline": "Worth practising: here's where to look first" }
+      ],
+      "resultCopy": {
+        "criticalLead": "let an attacker straight in",
+        "reportedPct": "Reported {pct}% of the fakes",
+        "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+        "noFlags": "Next time, tick what looks off. The review cards show what to look for in each one."
+      },
+      "genuineCopy": {
+        "binnedLeadOne": "One real alert was treated as a fake",
+        "binnedLeadMany": "{n} real alerts were treated as fakes",
+        "costBoth": "Reporting when you're unsure is never wrong, but a report on a real alert takes the service desk's time, and deleting one can leave a real problem unseen.",
+        "costReport": "Reporting when you're unsure is never wrong, but a report on a real alert takes the service desk's time to check.",
+        "costBin": "Deleting a real alert has a cost: a genuine warning goes unread.",
+        "whyBothHalves": "Both halves matter: stopping the fakes protects your account, and acting on the real alerts keeps you informed."
+      },
+      "criticalWhat": "trusting a look-alike message",
       "skillNames": {
         "fake_lockout_notice": "Spotting a fake lockout notice",
         "fake_signin_alert": "Spotting a fake sign-in alert",
