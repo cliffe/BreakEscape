@@ -215,20 +215,22 @@ test('ms is recorded for the message and never negative; unopened-by-click messa
 
 // ── sort order and progress ──────────────────────────────────────────────────
 
-test('answering out of order: "Next message" goes to the next unanswered after this one and wraps to earlier ones', () => {
+test('answering out of order: "Next message" goes to the first unsorted item in list order (E11 B2 finding 6)', () => {
+    // batch-11 item 6: Next lands on the first unsorted item, not the next one after the one just
+    // answered, so an earlier unsorted item (a call near the top) is never stranded.
     const s = open(makeSet());
     click($(s, '.tri-start'));
     verdict(s, 'm3_parcel', 'delete');
     assert.equal($(s, '.tri-next').textContent, 'Next message');
     click($(s, '.tri-next'));
-    assert.equal(state(s).selectedId, 'm4_jed');
-    verdict(s, 'm4_jed', 'trust');
-    click($(s, '.tri-next'));
-    assert.equal(state(s).selectedId, 'm1_it', 'wraps to the first unanswered');
+    assert.equal(state(s).selectedId, 'm1_it', 'the earliest unsorted item, not the one after m3');
     verdict(s, 'm1_it', 'trust');
     click($(s, '.tri-next'));
     assert.equal(state(s).selectedId, 'm2_payroll');
     verdict(s, 'm2_payroll', 'report');
+    click($(s, '.tri-next'));
+    assert.equal(state(s).selectedId, 'm4_jed');
+    verdict(s, 'm4_jed', 'trust');
     assert.equal($(s, '.tri-next').textContent, 'See result');
 });
 
