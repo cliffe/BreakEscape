@@ -18,6 +18,7 @@ import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
 import { reachX, aimX } from './interaction-reach.js';
+import { hasMinigameStarter, startRegisteredMinigame } from './minigame-registry.js';
 
 let gameRef = null;
 
@@ -1069,89 +1070,30 @@ export function handleObjectInteraction(sprite) {
         return;
     }
   
-    // Social-engineering overlays: the case file opens its overlay here. The
-    // mail terminal branch sits after the generic lock check (near the phone
-    // branch), so a locked terminal reaches handleUnlock first (00 S14, P1-F).
-    if (sprite.scenarioData.type === 'case-file') {
-        if (window.startIntelBoardMinigame) {
-            window.startIntelBoardMinigame(sprite);
-        } else {
-            window.gameAlert('Case file unavailable.', 'error', 'Error', 3000);
+    // Social-engineering overlays and exercise stations open through the starter registry
+    // (systems/minigame-registry.js), the same table ink's #trigger_minigame and the
+    // openMinigame event-mapping action use. The mail terminal branch sits after the generic
+    // lock check (near the phone branch), so a locked terminal reaches handleUnlock first
+    // (00 S14, P1-F). Types: case-file, osint-workstation, triage-workstation,
+    // authenticator-device, kiosk, page-builder, report-workstation, exercise-station.
+    const objectType = sprite.scenarioData.type;
+    if (objectType !== 'mail_terminal' && hasMinigameStarter(objectType)) {
+        // Engagement report workstation (P6-W): optional stage gate (R-b5). The lab keys this
+        // on the phishing stage (sends_done, set once all three targets have landed) so the
+        // report cannot be written, and its tasks cannot complete out of order, before the aim
+        // it belongs to has unlocked. Read from the object's own minigameData, so it is inert
+        // for any mission that does not set it.
+        if (objectType === 'report-workstation') {
+            const gate = sprite.scenarioData.minigameData && sprite.scenarioData.minigameData.requiresGlobal;
+            if (typeof gate === 'string' && gate &&
+                !(window.gameState && window.gameState.globalVariables && window.gameState.globalVariables[gate] === true)) {
+                const msg = (sprite.scenarioData.minigameData && sprite.scenarioData.minigameData.lockedMessage) ||
+                    'There is nothing to write up yet.';
+                window.gameAlert(msg, 'info', sprite.scenarioData.name || 'Report Workstation', 3500);
+                return;
+            }
         }
-        return;
-    }
-
-    // OSINT workstation (P2-W): opens the OSINT browser on the sites in minigameData.siteIds.
-    if (sprite.scenarioData.type === 'osint-workstation') {
-        if (window.startOsintBrowserMinigame) {
-            window.startOsintBrowserMinigame(sprite);
-        } else {
-            window.gameAlert('Workstation unavailable.', 'error', 'Error', 3000);
-        }
-        return;
-    }
-
-    // Inbox triage workstation (P3-W): opens the set named in minigameData.triageSetId.
-    if (sprite.scenarioData.type === 'triage-workstation') {
-        if (window.startInboxTriageMinigame) {
-            window.startInboxTriageMinigame(sprite);
-        } else {
-            window.gameAlert('Workstation unavailable.', 'error', 'Error', 3000);
-        }
-        return;
-    }
-
-    // Authenticator device: a phone in the room that plays the push stream in its minigameData.
-    if (sprite.scenarioData.type === 'authenticator-device') {
-        if (window.startAuthenticatorDevice) {
-            window.startAuthenticatorDevice(sprite);
-        } else {
-            window.gameAlert('Authenticator unavailable.', 'error', 'Error', 3000);
-        }
-        return;
-    }
-
-    // Awareness episode kiosk (P7-H): runs the episode named in minigameData.episodeId.
-    if (sprite.scenarioData.type === 'kiosk') {
-        if (window.startEpisodeRunner) {
-            window.startEpisodeRunner(sprite);
-        } else {
-            window.gameAlert('Kiosk unavailable.', 'error', 'Error', 3000);
-        }
-        return;
-    }
-
-    // Landing-page builder workstation (P5-G): opens the page named in
-    // minigameData.landingPageId (07 section 6). The id is hyphenated (D3).
-    if (sprite.scenarioData.type === 'page-builder') {
-        if (window.startLandingPageBuilder) {
-            window.startLandingPageBuilder(sprite);
-        } else {
-            window.gameAlert('Page builder unavailable.', 'error', 'Error', 3000);
-        }
-        return;
-    }
-
-    // Engagement report workstation (P6-W): the report reads the case records itself.
-    if (sprite.scenarioData.type === 'report-workstation') {
-        // Optional stage gate (R-b5): the lab keys this on the phishing stage
-        // (sends_done, set once all three targets have landed) so the report cannot be written — and its tasks cannot
-        // complete out of order — before the aim it belongs to has unlocked. The gate
-        // is read from the object's own minigameData, so it is inert for any mission
-        // that does not set it.
-        const gate = sprite.scenarioData.minigameData && sprite.scenarioData.minigameData.requiresGlobal;
-        if (typeof gate === 'string' && gate &&
-            !(window.gameState && window.gameState.globalVariables && window.gameState.globalVariables[gate] === true)) {
-            const msg = (sprite.scenarioData.minigameData && sprite.scenarioData.minigameData.lockedMessage) ||
-                'There is nothing to write up yet.';
-            window.gameAlert(msg, 'info', sprite.scenarioData.name || 'Report Workstation', 3500);
-            return;
-        }
-        if (window.startEngagementReport) {
-            window.startEngagementReport(sprite);
-        } else {
-            window.gameAlert('Report workstation unavailable.', 'error', 'Error', 3000);
-        }
+        startRegisteredMinigame(objectType, sprite);
         return;
     }
 
@@ -1515,11 +1457,7 @@ export function handleObjectInteraction(sprite) {
     // after the generic lock check (and beside the phone branch) so an object
     // lock on a terminal is honoured before the overlay opens (00 S14, 01 §5, P1-F).
     if (data.type === 'mail_terminal') {
-        if (window.startMailClientMinigame) {
-            window.startMailClientMinigame(sprite);
-        } else {
-            window.gameAlert('Mail terminal unavailable.', 'error', 'Error', 3000);
-        }
+        startRegisteredMinigame('mail_terminal', sprite);
         return;
     }
 
