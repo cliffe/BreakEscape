@@ -24,7 +24,7 @@ const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 
 const COPY = Object.freeze({
-    intro: 'A few ordinary choices from an ordinary day. Nothing here is scored, so choose what you would really do.',
+    intro: 'A few ordinary choices from an ordinary day. They are not scored, but the debrief comes back to any worth a second look, so choose what you would really do.',
     progress: 'Choice {n} of {total}',
     legend: 'What do you do?',
     empty: 'There is nothing to choose here.',

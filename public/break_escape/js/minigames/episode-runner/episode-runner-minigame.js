@@ -90,7 +90,7 @@ const STAGE_COPY = Object.freeze({
     write: { heading: 'Write', text: 'Write one message using what you found. The meter gives you hints before you send. Your first Send is final.', button: 'Open the mail client' },
     mfa: { heading: 'Sign-in prompts', text: 'You have the password, but the account still wants a tap on the target\u2019s phone. Choose when to fire the sign-in prompts and how many, then see what happens. Close it when you have seen enough.', button: 'Open the phone' },
     guess: { heading: 'Guess list', text: 'Step a made-up guesser through one colleague\u2019s guess list, built from what you found. Nothing real is typed and nothing here is a real password.', button: 'Open the guesser' },
-    mistake: { heading: 'Everyday choices', text: 'Work through a few ordinary choices from a normal day. Nothing here is scored, so choose what you would really do.', button: 'Make the choices' },
+    mistake: { heading: 'Everyday choices', text: 'Work through a few ordinary choices from a normal day. They are not scored, but the debrief comes back to any worth a second look, so choose what you would really do.', button: 'Make the choices' },
     defend: { heading: 'Defend', text: 'Now you are on the receiving end. Go through the inbox and decide what to do with each message.', button: 'Open the inbox' },
     check: { heading: 'Check', text: 'Go through these messages and decide what to do with each one. Your answers are recorded.', button: 'Start' }
 });
