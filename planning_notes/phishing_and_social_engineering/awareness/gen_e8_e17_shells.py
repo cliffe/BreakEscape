@@ -519,8 +519,8 @@ EPISODES = {
                    'keywords': ['Insider risk', 'Incident reporting', 'Access control', 'Security awareness']}],
         'defend': {
             'name': "Insider risk: a leaver's week",
-            'brief': "You're on an authorised exercise at Quayholt Insurance, a fictional firm, during a leaver's last week. Messages are waiting: an offer, a request to borrow a login, some sign-in prompts, a favour. Sort them, and learn to raise a concern as facts, not a verdict on anyone. Reporting or checking when you're unsure is always fine and never marked down. You are not being asked to investigate anyone.",
-            'endGoal': 'Sort the messages and raise a concern fairly at the training kiosk.',
+            'brief': "You're on an authorised exercise at Quayholt Insurance, a fictional firm, during a leaver's last week. First you learn to raise a concern as facts, not a verdict on anyone; then you sort a short set of messages: an offer, a request to borrow a login, some sign-in prompts, a favour. Reporting or checking when you're unsure is always fine and never marked down. You are not being asked to investigate anyone.",
+            'endGoal': 'Raise a concern fairly, then sort the messages at the training kiosk.',
             'aim': ('leaver_week_aim', 'Handle the leaver week', 'Go through the messages and the raise-a-concern step at the training kiosk.'),
             'task': ('handle_leaver_week', 'Handle the messages'),
             'kiosk': ("A touch-screen kiosk showing a short set of messages from a leaver's last week at Quayholt, and a fair way to raise a concern.",
@@ -528,8 +528,8 @@ EPISODES = {
             'display': 'Awareness E16: Insider risk (defend only)',
             'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Sort a short set of messages from a leaver's last week at Quayholt Insurance, a fictional insurer, and learn to raise a concern as facts, not a verdict. Each answer is explained, reporting when you're unsure is always fine and never marked down, and you are never asked to investigate anyone.",
             'minutes': 8,
-            'defendIntro': "Go through the messages and decide what to do with each one, then raise a concern as facts, not a verdict on anyone. Keep your login to yourself, report what gets offered to you, and deny any sign-in prompt you didn't start. There's no clock on you here, and you are not being asked to investigate anyone.",
-            'conclusion': ('Leaver week done', "You've worked through the messages and the concern step. That's this episode finished."),
+            'defendIntro': "Raise a concern as facts, not a verdict on anyone, then go through the messages and decide what to do with each one. Keep your login to yourself, report what gets offered to you, and deny any sign-in prompt you didn't start. There's no clock on you here, and you are not being asked to investigate anyone.",
+            'conclusion': ('Leaver week done', "You've worked through the concern step and the messages. That's this episode finished. The debrief goes through each one."),
         },
     },
     'e14': {

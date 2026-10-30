@@ -1,8 +1,8 @@
 {
   "scenario_id": "awareness_e16_insider_risk_defend",
   "scenario_name": "Insider risk: a leaver's week",
-  "scenario_brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm, during a leaver's last week. Messages are waiting: an offer, a request to borrow a login, some sign-in prompts, a favour. Sort them, and learn to raise a concern as facts, not a verdict on anyone. Reporting or checking when you're unsure is always fine and never marked down. You are not being asked to investigate anyone.",
-  "endGoal": "Sort the messages and raise a concern fairly at the training kiosk.",
+  "scenario_brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm, during a leaver's last week. First you learn to raise a concern as facts, not a verdict on anyone; then you sort a short set of messages: an offer, a request to borrow a login, some sign-in prompts, a favour. Reporting or checking when you're unsure is always fine and never marked down. You are not being asked to investigate anyone.",
+  "endGoal": "Raise a concern fairly, then sort the messages at the training kiosk.",
   "version": "1.0",
   "disableAttacks": true,
   "startRoom": "training_room",
@@ -36,7 +36,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "Leaver week done",
-        "body": "You've worked through the messages and the concern step. That's this episode finished."
+        "body": "You've worked through the concern step and the messages. That's this episode finished. The debrief goes through each one."
       },
       "tasks": [
         {
@@ -91,13 +91,15 @@
         "channelTells": [
           "insider_offer",
           "shared_login_request",
+          "data_to_personal_email",
           "secrecy_or_bypass",
           "unrequested_mfa_push",
           "lookalike_domain"
         ],
         "flagChips": {
           "insider_offer": "Offer of money or favours for access",
-          "shared_login_request": "A request to use someone else's login"
+          "shared_login_request": "A request to use someone else's login",
+          "data_to_personal_email": "Company data sent to a personal account"
         },
         "bands": [
           {
@@ -133,7 +135,8 @@
         },
         "skillNames": {
           "insider_offer": "Recognising an offer for access or data",
-          "shared_login_request": "Spotting a request to share a login"
+          "shared_login_request": "Spotting a request to share a login",
+          "data_to_personal_email": "Spotting company data sent to a personal account"
         },
         "outcome": {
           "setGlobalPrefix": "episode_e16_insider_risk_defend_defend_",
@@ -199,7 +202,7 @@
               "whyFine": {
                 "urgencyCalibrated": "The hurry is real and human: he has a report due at ten. What makes this one risky is the request to borrow your login, not the deadline."
               },
-              "ifTrusted": "His actions for those ten minutes are logged as yours, and he may reach data he has no business in.",
+              "ifTrusted": "His actions for those ten minutes are logged as yours, and he may reach data he has no business in. That is why going along with it counts as a miss here, even though Reuben means no harm: lending a login is never the safe answer. Decline, and point him to the service desk.",
               "reportReply": "Thanks, the service desk reset his own login in minutes. Reuben is a genuine colleague, so the move is to decline the login and point him to the safe route, not to leave him stuck.",
               "kindLine": "Reuben is a genuine colleague, but lending your login puts whatever he opens on your record.",
               "reportLine": "Right to flag it. The service desk can reset his login the proper way, and nobody is in trouble.",
@@ -246,13 +249,24 @@
               "envelopeFrom": "quayholt.example",
               "replyTo": "ross.garside@quayholt.example"
             },
+            "factorStrings": {
+              "data_to_personal_email": {
+                "redFlag": "Company data being sent to a personal email account"
+              }
+            },
             "truth": {
               "isPhish": true,
               "flags": [
-                "secrecy_or_bypass"
+                "data_to_personal_email"
+              ],
+              "flagAlternatives": [
+                [
+                  "data_to_personal_email",
+                  "secrecy_or_bypass"
+                ]
               ],
               "perFlagNote": {
-                "secrecy_or_bypass": "Sending the client list to a personal inbox takes the firm's data outside its protection. Handover notes go in the shared place; the client list belongs to the firm, not to whoever looked after it."
+                "data_to_personal_email": "Sending the client list to a personal inbox takes the firm's data outside its protection. Handover notes go in the shared place; the client list belongs to the firm, not to whoever looked after it."
               },
               "whyFine": {
                 "urgencyCalibrated": "Leaving on Friday is just context for the handover. What makes this one risky is sending the client list to a personal inbox, not the date."
@@ -327,6 +341,9 @@
             "truth": {
               "isPhish": false,
               "flags": [],
+              "verdictPoints": {
+                "trust": 60
+              },
               "whyFine": {
                 "secrecy_or_bypass": "Hana is asking for help, but she accepts the ring-back and the desk. Nothing is hidden and no step is skipped.",
                 "default": "Genuine and awkward, not a trick: she lets you ring back on the number on file, which is the difference from an impostor. The safe route still serves her: the service desk resets her login in minutes, or a manager can arrange temporary access. Refusing flat, with no safe route offered, helps nobody."
@@ -347,7 +364,7 @@
       },
       "variant": "defendOnly",
       "durationTargetMin": 8,
-      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional firm. In scope: a short set of messages, and a fair way to raise a concern.",
+      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional firm. In scope: a fair way to raise a concern, and a short set of messages.",
       "stages": [
         "brief",
         "defend",
@@ -362,7 +379,7 @@
       "strings": {
         "weakestTells": "The signs most often missed: {names} ({counts} each).",
         "weakestTell": "The sign most often missed: {names} ({counts}).",
-        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm, during a leaver's last week. Messages are waiting: an offer, a request to borrow a login, some sign-in prompts, a favour. Sort them, and learn to raise a concern as facts, not a verdict on anyone. Reporting or checking when you're unsure is always fine and never marked down. You are not being asked to investigate anyone.",
+        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm, during a leaver's last week. First you learn to raise a concern as facts, not a verdict on anyone; then you sort a short set of messages: an offer, a request to borrow a login, some sign-in prompts, a favour. Reporting or checking when you're unsure is always fine and never marked down. You are not being asked to investigate anyone.",
         "allRight": "You handled every one of these the right way. Nothing to pick over here.",
         "allPhishRight": "Every risk was raised, with every sign named.",
         "noBlameLine": "A well-made offer or a plausible rumour fools decent people. Raising an honest concern that turns out to be nothing is never a failure, and nobody is in trouble for being approached.",
@@ -380,7 +397,7 @@
             "text": "Your login is you: never share it, never borrow one. Offers get reported: don't reply, screenshot and send it on. Concerns go to the right person as facts, not a verdict on anyone. You don't have to be sure; you do have to be fair."
           }
         ],
-        "defendIntro": "Go through the messages and decide what to do with each one, then raise a concern as facts, not a verdict on anyone. Keep your login to yourself, report what gets offered to you, and deny any sign-in prompt you didn't start. There's no clock on you here, and you are not being asked to investigate anyone."
+        "defendIntro": "Raise a concern as facts, not a verdict on anyone, then go through the messages and decide what to do with each one. Keep your login to yourself, report what gets offered to you, and deny any sign-in prompt you didn't start. There's no clock on you here, and you are not being asked to investigate anyone."
       },
       "debrief": {
         "mondayCard": "slot:customer_report_route",
@@ -416,7 +433,7 @@
           {
             "id": "fc_care_who",
             "kind": "who",
-            "label": "I don't know why, and it may well be nothing"
+            "label": "A colleague on my team; I'd rather not say more than that"
           }
         ],
         "conclusionChips": [
@@ -437,7 +454,7 @@
         "strings": {
           "title": "Raise a concern",
           "launchHeading": "Raise a concern",
-          "launchText": "This week an unknown contact offered you money for access, and a colleague has seemed to be having a hard week. Build a short report of what you actually saw, as facts, not a verdict on anyone.",
+          "launchText": "This week an unknown contact offered you money for access. A colleague, Samira, has seemed to be having a hard week, and at lunch Craig floated a theory that she and Ross, a leaver, are walking off with the client list. Build a short report of what you actually saw, as facts, not a verdict on anyone.",
           "launchButton": "Open the form",
           "intro": "Write it as facts you saw yourself, not a verdict on anyone. Pick the facts to put in the report.",
           "feedbackFacts": "Good. Facts, not a verdict, are what a fair concern looks like. The note below says who to tell. You don't have to be sure, and you may not hear the outcome, because that's confidential too.",

@@ -2,7 +2,7 @@
   "_about": "Full-episode-only keys for scenarios/awareness_e16_insider_risk/scenario.json.erb (the E16 full shell). The wiring agent pastes each value into the full erb at the path its _notes line gives. None of these is carried into the generated defend-only shell by gen_e8_e17_shells.py EXCEPT concernForm: it is a DEFEND_HALF_KEY, so gen_e8_e17_shells.py defend_half_keys() copies it from this file into the defend-only shell too (E16 section 13); the sandbox and the montage stay full-only. Authored by opus48. ENG-04 (mistake stage + montage flip), ENG-12 (concernForm) and ENG-08 (schema) have landed. TONE (E16 section 18, a blocker): no blame, no surveillance framing; the flip ends on the kind, fair Samira outcome, and the concern form favours facts over a verdict.",
 
   "_notes": {
-    "mistake": "Paste at social.awarenessEpisode.mistake (ENG-04). The five everyday choices of the leaver's week, in authored order. Exactly one safe:true option per beat; the safe option's position is varied beat to beat (2nd, 1st, 2nd, 1st, 2nd) so it is never always first. flipBeat is outside_offer (the one consequential choice quoted first in the montage). beats are authored shared_login, rumour, outside_offer, leaver_favour, samira so that the montage (flipBeat first, then the rest in authored order) ENDS on the samira beat's kind resolution. Never scored. Full-only: dropped from the defend-only shell with the mistake stage.",
+    "mistake": "Paste at social.awarenessEpisode.mistake (ENG-04). The five everyday choices of the leaver's week, in authored order. Exactly one safe:true option per beat; the safe option's position is varied beat to beat (2nd, 1st, 2nd, 1st, 2nd) so it is never always first. F-E16-2 (E16_BLIND_B1 item 2): the safe option used to be the long, hedged one every time, so a skimmer could pick by length alone; the labels are now balanced in length (the longer option is the unsafe one in some beats, the safe one in others, and equal in others) and the 'if ... otherwise' hedges are gone, so neither length nor position gives the answer away. flipBeat is outside_offer (the one consequential choice quoted first in the montage). beats are authored shared_login, rumour, outside_offer, leaver_favour, samira so that the montage (flipBeat first, then the rest in authored order) ENDS on the samira beat's kind resolution. Never scored. Full-only: dropped from the defend-only shell with the mistake stage.",
     "flip": "Paste at social.awarenessEpisode.flip (ENG-04). mode montage. Full-only.",
     "flipMontageByChoice": "Paste at social.awarenessEpisode.strings.flipMontageByChoice (ENG-04). Keyed beat then option; a line for BOTH options of every beat (the 'your choice' version and the 'the version where it happened instead' version), so the engine's unsafe-option fallback never fires. Erb-only and on the parity allow-list (STRINGS_ERB_ONLY_OK), like flipDefenderLineByChoice: the defend-only shell has no flip, so the generator never carries it. flipHeading ('A week later') stays in the defend.json fragment strings (E16 section 10), NOT here.",
     "defendIntro": "Paste at social.awarenessEpisode.strings.defendIntro in the FULL erb only. The host's hand-off line from the flip into the defend half (E16 section 8). The defend-only shell takes its own defendIntro from gen EPISODES['e16']['defend']['defendIntro'] (section 8b), so this full-shell line is not in the fragment.",
@@ -17,16 +17,16 @@
         "id": "shared_login",
         "situation": "Reuben is locked out with a report due at ten. \"Can I just use yours? Two minutes.\"",
         "options": [
-          { "id": "log_in_for_him", "label": "Log in for him", "safe": false },
-          { "id": "service_desk", "label": "Ring the service desk with him; they reset it in minutes", "safe": true, "approvedRoute": true }
+          { "id": "log_in_for_him", "label": "Log him in on your own account, just this once", "safe": false },
+          { "id": "service_desk", "label": "Ring the service desk; they reset it in minutes", "safe": true, "approvedRoute": true }
         ]
       },
       {
         "id": "rumour",
         "situation": "At lunch, Craig floats that Samira is leaving with Ross and taking the client list.",
         "options": [
-          { "id": "route", "label": "If he's actually seen something, point him to the security team or his manager, not the kitchen; otherwise leave it", "safe": true, "approvedRoute": true },
-          { "id": "add", "label": "Add to the theory", "safe": false }
+          { "id": "route", "label": "Point him to security or his manager", "safe": true, "approvedRoute": true },
+          { "id": "add", "label": "Add your own theory about where she's going", "safe": false }
         ]
       },
       {
@@ -34,23 +34,23 @@
         "situation": "An unknown contact messages you: \"We pay people at firms like yours for remote access. 25% of what we make. Totally anonymous. Interested?\"",
         "options": [
           { "id": "engage", "label": "Reply to find out how it works", "safe": false },
-          { "id": "report", "label": "Screenshot it and report it to the security team, without replying", "safe": true, "approvedRoute": true }
+          { "id": "report", "label": "Screenshot it and report it, without replying", "safe": true, "approvedRoute": true }
         ]
       },
       {
         "id": "leaver_favour",
         "situation": "Ross asks you to export his accounts to his personal email \"for the handover\".",
         "options": [
-          { "id": "handover", "label": "Ask what the handover actually needs; put handover notes in the shared place; route anything else to his manager", "safe": true, "approvedRoute": true },
-          { "id": "personal_email", "label": "Send them to his personal email", "safe": false }
+          { "id": "handover", "label": "Ask what the handover needs; route it to his manager", "safe": true, "approvedRoute": true },
+          { "id": "personal_email", "label": "Export them to his personal email for safekeeping", "safe": false }
         ]
       },
       {
         "id": "samira",
         "situation": "Samira has been in early, taking calls in the stairwell, and visiting HR.",
         "options": [
-          { "id": "confront", "label": "Ask her outright if she's going with Ross, or report her as a suspect", "safe": false },
-          { "id": "kind", "label": "Offer a kind word; if you're worried about her, tell her manager or HR privately", "safe": true, "approvedRoute": true }
+          { "id": "confront", "label": "Ask her outright if she's leaving with Ross", "safe": false },
+          { "id": "kind", "label": "Offer a kind word; tell her manager if you're worried", "safe": true, "approvedRoute": true }
         ]
       }
     ],
@@ -82,7 +82,7 @@
     }
   },
 
-  "defendIntro": "That's where this week's choices led. Now a short set of messages, and a fair way to raise a concern, facts, not a verdict on anyone. Take them at your own pace.",
+  "defendIntro": "That's where this week's choices led. Now a fair way to raise a concern, facts, not a verdict on anyone, and then a short set of messages. Take them at your own pace.",
 
   "concernForm": {
     "factChips": [
@@ -91,7 +91,7 @@
       { "id": "fc_offer_where", "kind": "where", "label": "Through a messaging app, from the handle 'Opportunities'" },
       { "id": "fc_offer_who", "kind": "who", "label": "It came to me; I gather others were messaged too" },
       { "id": "fc_care_what", "kind": "what", "label": "A colleague has seemed to be having a hard week" },
-      { "id": "fc_care_who", "kind": "who", "label": "I don't know why, and it may well be nothing" }
+      { "id": "fc_care_who", "kind": "who", "label": "A colleague on my team; I'd rather not say more than that" }
     ],
     "conclusionChips": [
       { "id": "cc_ross", "label": "Ross is stealing the client list" },
@@ -101,9 +101,9 @@
     "guidance": "Who to tell: the security team for an outside offer, a sign-in prompt you didn't start, or data or access being misused; your manager or HR if you're worried about a colleague's wellbeing. If it involves personal data, tell the data protection officer. Posting it in the team chat is spreading it, not raising it.",
     "strings": {
       "title": "Raise a concern",
-      "_launch": "F-E16-4 (E15_E16_PLAYTEST_P1): the form runs before the inbox in BOTH variants (concern-form-minigame.js). In the full shell the learner has just played the week's choices; in the defend-only shell it is the first thing they see, so the engine default launch text ('build a short report from what you noticed') lands cold. launchText sets the week in two lines so the fact chips make sense in either run (episode-model.js CONCERN_LAUNCH override).",
+      "_launch": "F-E16-4 (E15_E16_PLAYTEST_P1, E16_BLIND_B1 item 4): the form runs before the inbox in BOTH variants (concern-form-minigame.js). In the full shell the learner has just played the week's choices; in the defend-only shell it is the first thing they see, so the engine default launch text ('build a short report from what you noticed') lands cold, and the blind run found the conclusion chips named Ross, Samira and Craig with no introduction. launchText now names all three and the offer in a couple of lines so both the fact chips and the conclusion chips make sense cold, in either run (episode-model.js CONCERN_LAUNCH override).",
       "launchHeading": "Raise a concern",
-      "launchText": "This week an unknown contact offered you money for access, and a colleague has seemed to be having a hard week. Build a short report of what you actually saw, as facts, not a verdict on anyone.",
+      "launchText": "This week an unknown contact offered you money for access. A colleague, Samira, has seemed to be having a hard week, and at lunch Craig floated a theory that she and Ross, a leaver, are walking off with the client list. Build a short report of what you actually saw, as facts, not a verdict on anyone.",
       "launchButton": "Open the form",
       "intro": "Write it as facts you saw yourself, not a verdict on anyone. Pick the facts to put in the report.",
       "feedbackFacts": "Good. Facts, not a verdict, are what a fair concern looks like. The note below says who to tell. You don't have to be sure, and you may not hear the outcome, because that's confidential too.",
