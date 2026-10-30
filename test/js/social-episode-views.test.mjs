@@ -237,12 +237,25 @@ test('debrief summary (N7): phish caught, and how, instead of a bare report perc
     assert.doesNotMatch(t, /Reported 67%/);
 });
 
+test('F-E10-2: the debrief summary keeps the score but does not repeat the band headline (the result card above shows it)', () => {
+    const h = host();
+    renderDebrief(h, { result: { percent: 72, headline: 'Getting there: a few tells slipped past',
+        phishTotal: 1, phishCaught: 1, reportCount: 1, answers: [{ id: 'm1', verdict: 'report', flags: [], score: 100, isPhish: true }] },
+        set: set(), strings: {}, onFinish() {} });
+    const t = h.querySelector('.aw-summary').textContent;
+    assert.match(t, /Round score: 72%/);
+    assert.doesNotMatch(t, /Getting there/, 'the band headline is the result card title, not repeated in the summary');
+});
+
 test('debrief (Cut A): a weakest-skill line appears when a tell was missed and perFactor is present', () => {
     const h = host();
+    // batch-12 item 3: the weakest line shows once the learner named at least one flag (here a
+    // correct pretextRelevant tick), so it never contradicts the "nothing to grade" lead.
     const r = {
         percent: 60, headline: 'Getting there',
         perFactor: { senderTrust: { caught: 0, missed: 2 }, pretextRelevant: { caught: 1, missed: 0 } },
-        answers: [{ id: 'm1', verdict: 'trust', flags: [], score: 0 }]
+        flagRecall: { caught: 1, total: 3 },
+        answers: [{ id: 'm1', verdict: 'trust', flags: ['pretextRelevant'], score: 0 }]
     };
     renderDebrief(h, { result: r, set: set(), strings: {}, variant: 'full', onFinish() {} });
     assert.equal(h.querySelectorAll('.aw-card').length, 1);
@@ -271,6 +284,42 @@ test('debrief: call and prompt cards use their own action words and lines (D3), 
     assert.match(call.querySelector('.aw-card-verdict').textContent, /^You chose Ring back\./, 'the call action label');
     const push = h.querySelector('[data-message-id="e3_push_early"]');
     assert.match(push.querySelector('.aw-card-verdict').textContent, /^You chose Approve\./, 'the prompt action label');
+});
+
+test('debrief summary counter follows labels.phishCaughtLabel for a non-phishing set (E17)', () => {
+    const h = host();
+    const set2 = { id: 'e17', labels: { phishCaughtLabel: 'Requests handled' },
+        messages: [{ id: 'm', kind: 'email', subject: 'S', truth: { isPhish: true, flags: ['x'] } }] };
+    const r = { percent: 80, headline: 'ok', phishTotal: 1, phishCaught: 1, reportCount: 1,
+        answers: [{ id: 'm', verdict: 'report', flags: ['x'], score: 100, isPhish: true }] };
+    renderDebrief(h, { result: r, set: set2, strings: {}, variant: 'full', onFinish() {} });
+    const summary = h.querySelector('.aw-summary').textContent;
+    assert.match(summary, /Requests handled: 1 of 1/);
+    assert.doesNotMatch(summary, /Phish caught/);
+});
+
+test('debrief: a relabelled email verdict uses the set label and an overridable feedback line (F-E10-2)', () => {
+    const h = host();
+    const relSet = {
+        id: 'e10',
+        labels: {
+            verdict: { delete: { label: 'Go the trusted way' } },
+            verdictFeedback: { delete: { phish: 'Skip it and use Quayholt Apps or the service desk number you hold.' } }
+        },
+        messages: [{ id: 'e10_lock', kind: 'email', subject: 'Your computer is locked', from: { name: 'Support' },
+            truth: { isPhish: true, flags: ['urgencyCalibrated'] } }]
+    };
+    const r = { percent: 70, headline: 'x', answers: [
+        { id: 'e10_lock', verdict: 'delete', action: 'delete', flags: [], score: 30, isPhish: true }
+    ] };
+    renderDebrief(h, { result: r, set: relSet, strings: {}, variant: 'full', onFinish() {} });
+    const card = h.querySelector('[data-message-id="e10_lock"]');
+    const verdict = card.querySelector('.aw-card-verdict').textContent;
+    // The relabelled word, not "Delete"; the override line, not "Deleting protects you".
+    assert.match(verdict, /^You chose Go the trusted way\./);
+    assert.ok(!/Delete/.test(verdict), 'the engine word does not leak');
+    assert.match(verdict, /Skip it and use Quayholt Apps/);
+    assert.ok(!/Deleting protects you/.test(verdict));
 });
 
 test('debrief defendOnly shows its string and no flip wording', () => {
@@ -342,6 +391,24 @@ test('flip with a built page draws the page card and its tells; with the email t
     assert.equal(h2.querySelectorAll('.aw-defender-line').length, 1);
 });
 
+test('the page section heading defaults to "The page it links to" and is overridable (E10 MA4)', () => {
+    const message = { ...sent(), truth: { isPhish: true, flags: ['senderTrust'] } };
+    const page = { url: 'https://fernside.example/verify', padlock: true, heading: 'Verify you are human',
+        fields: ['Tick to continue'], button: 'Continue', tells: ['wording'] };
+
+    // Default: unchanged for every built episode.
+    const h = host();
+    renderFlipView(h, { message, page, strings: {}, onContinue() {} });
+    const headings = [...h.querySelectorAll('.aw-flip-section')].map((n) => n.textContent);
+    assert.deepEqual(headings, ['The message', 'The page it links to']);
+
+    // Override: a no-link fake-check design names the page without claiming a link.
+    const h2 = host();
+    renderFlipView(h2, { message, page, strings: { flipPageHeading: 'The page you built' }, onContinue() {} });
+    const headings2 = [...h2.querySelectorAll('.aw-flip-section')].map((n) => n.textContent);
+    assert.deepEqual(headings2, ['The message', 'The page you built']);
+});
+
 test('flip with a built page and its choices draws it with the builder renderer: same button face and logo (P4-1)', () => {
     const h = host();
     const pageDef = { id: 'sso', brands: [{ id: 'quayholt', name: 'Quayholt', domains: [{ id: 'd1', domain: 'quayholt-sso.example' }] }],
@@ -407,6 +474,37 @@ test('debrief: the optional concept and voice panels render as plain text, betwe
     assert.equal(h2.querySelector('.aw-concept-panel'), null);
     assert.equal(d2.getState().conceptPanel, false);
     assert.ok(/\.aw-panel\s*\{/.test(css), 'the skin styles the panels');
+});
+
+test('debrief (ENG-09b): a conceptPanel array renders one panel per entry, in order; a one-panel form is unchanged', () => {
+    const evil = '<b>x</b>';
+    const h = host();
+    const d = renderDebrief(h, { result: result(), set: set(), variant: 'full', onFinish() {},
+        strings: { conceptPanel: [
+            { heading: 'What happened', text: `Para one. ${evil}\n\nPara two.` },
+            { text: 'No heading here.' },
+            { heading: 'Blank', text: '  ' },
+            { heading: 'What to do', text: 'Report it.' }
+        ], voicePanel: 'A voice is not proof.' } });
+    const panels = [...h.querySelectorAll('.aw-concept-panel')];
+    assert.deepEqual(panels.map((p) => p.querySelector('.aw-panel-heading').textContent), ['What happened', 'How it works', 'What to do']);
+    assert.deepEqual([...panels[0].querySelectorAll('.aw-panel-text')].map((p) => p.textContent), [`Para one. ${evil}`, 'Para two.']);
+    assert.equal(panels[0].querySelector('b'), null, 'never parsed as HTML');
+    assert.deepEqual(d.getState(), { items: 1, mondayCard: true, noBlame: true, conceptPanel: true, voicePanel: true, conceptPanels: 3, reportRoute: null, ruleOfThumb: false, teamProtected: null, genuine: { trusted: 1, checked: 0, flagged: 1 } });
+    // every concept panel sits before the voice panel and the Monday card
+    const order = [...h.querySelector('.aw-debrief').children].map((n) => n.className);
+    const lastConcept = order.map((c, i) => (c.includes('aw-concept-panel') ? i : -1)).reduce((a, b) => Math.max(a, b));
+    assert.ok(lastConcept < order.findIndex((c) => c.includes('aw-voice-panel')));
+    assert.ok(lastConcept < order.findIndex((c) => c.includes('aw-monday')));
+    // an array with no usable text draws none; a single object still draws one and reports no count
+    const h2 = host();
+    const d2 = renderDebrief(h2, { result: result(), set: set(), variant: 'full', onFinish() {}, strings: { conceptPanel: [{ text: ' ' }] } });
+    assert.equal(h2.querySelector('.aw-concept-panel'), null);
+    assert.equal(d2.getState().conceptPanel, false);
+    const h3 = host();
+    const d3 = renderDebrief(h3, { result: result(), set: set(), variant: 'full', onFinish() {}, strings: { conceptPanel: { heading: 'One', text: 'Only.' } } });
+    assert.equal(h3.querySelectorAll('.aw-concept-panel').length, 1);
+    assert.equal('conceptPanels' in d3.getState(), false);
 });
 
 test('P3 N-6 / flip split: nothing to replay gets the miss heading; a landing with no tells has its own line', () => {

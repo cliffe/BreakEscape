@@ -10,6 +10,10 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { JSDOM } from 'jsdom';
 
+// batch 13 item 6: the no-ticks confirm prompt is on by default now. These tests predate it and
+// press Confirm once expecting a lock, so their sets pin it off unless they name it themselves.
+const withOneConfirm = (set) => (set && typeof set === 'object' && !('confirmPrompt' in set) ? { ...set, confirmPrompt: false } : set);
+
 const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 
@@ -80,6 +84,7 @@ function open(set, params = {}) {
     document.body.innerHTML = '';
     const container = document.createElement('div');
     document.body.appendChild(container);
+    set = withOneConfirm(set);
     const scene = new InboxTriageMinigame(container, { set, social: { triageSets: [set] }, ...params });
     scene._sceneType = 'inbox-triage';
     window.MinigameFramework.currentMinigame = scene;
@@ -198,7 +203,10 @@ test('the chip list: seven factors then Nothing looks wrong; none is exclusive; 
     click($(s, '.tri-confirm'));
     assert.equal(state(s).messages[0].verdict, 'trust');
     assert.equal($(s, '.tri-verdict'), null);
-    assert.match($(s, '.tri-locked').textContent, /Your verdict: Trust\. Locked in\./);
+    // F-E19-3: immediate mode drops the separate "Your verdict: … Locked in." line; the review
+    // card's verdict line is the single confirmation.
+    assert.equal($(s, '.tri-locked'), null);
+    assert.match($(s, '.tri-card-verdict').textContent, /You chose Trust\./);
 });
 
 test('immediate feedback: the review card names caught, missed and false flags and what would have happened', () => {
@@ -212,7 +220,10 @@ test('immediate feedback: the review card names caught, missed and false flags a
     const text = $(s, '.tri-review-card').textContent;
     assert.match(text, /Right call: reported/);
     assert.match(text, /Caught:.*Sender address doesn't match the display name/);
-    assert.match(text, /Missed:.*Unexpected urgency/);
+    // F-E9-6: the verdict (Report on a phish) is right, so an un-ticked tell reads "Also worth
+    // noticing:", not a red "Missed:".
+    assert.match(text, /Also worth noticing:.*Unexpected urgency/);
+    assert.doesNotMatch(text, /Missed:/);
     assert.match(text, /Not a flag here:/);
     assert.match(text, /Header note: All three passed/);
     assert.match(text, /IT Security: Thanks\. Confirmed as a phish\./);

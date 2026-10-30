@@ -1,0 +1,23 @@
+{
+  "display_name": "Awareness E8: After the click (defend only)",
+  "description": "An awareness episode of about 8 minutes for all staff, on the defending side only. Sit in a colleague's seat at Quayholt Insurance, a fictional company, after they clicked a convincing email: some of what turns up in their account is a real sign that something is wrong, and some is ordinary. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
+  "difficulty_level": 1,
+  "scoring": "completion",
+  "secgen_scenario": null,
+  "collection": "training",
+  "ui_theme": "general",
+  "title_art": "title_art/awareness_e8_after_the_click.jpg",
+  "estimated_duration_minutes": 8,
+  "cybok": [
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": [
+        "Phishing",
+        "Incident reporting",
+        "Security awareness",
+        "Usable security"
+      ]
+    }
+  ]
+}

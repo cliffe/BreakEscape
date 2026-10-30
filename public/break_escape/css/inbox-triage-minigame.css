@@ -27,6 +27,20 @@
 .tri-step.current { color: var(--ui-text, #eef1f8); font-weight: 700; border-bottom-color: var(--ui-accent, #ffcc44); }
 
 .tri-live:empty { min-height: 0; height: 0; overflow: hidden; }
+/* batch-12 item 1: in immediate feedback the review card is the visible confirmation, so the
+   "Verdict locked: …" notice is for screen readers only — present and announced, but not shown. */
+.tri-live-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
 
 .tri-stage { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .tri-stage[inert] { opacity: 0.55; }
@@ -58,22 +72,43 @@
 /* Verdict buttons under the message */
 .tri-actions { margin: 12px 0 4px; }
 .tri-verdicts { display: flex; flex-wrap: wrap; gap: 8px; }
+/* One compact row of verdicts that stays in view while the message scrolls (E8 F3): the first row
+   of buttons was cut off by the pane at 1280x720. A four-button row shares the pane width. */
+.tri-actions.tri-actions-open {
+    position: sticky;
+    bottom: -8px;
+    z-index: 2;
+    margin: 8px -8px -8px;
+    padding: 8px;
+    background-color: #10152a;
+    background-image: linear-gradient(var(--ui-surface-raised, rgba(38, 48, 74, 1)), var(--ui-surface-raised, rgba(38, 48, 74, 1)));
+    border-top: 2px solid var(--ui-line, #4c5b80);
+    box-shadow: 0 -6px 8px -6px rgba(0, 0, 0, 0.5);
+}
+.tri-actions-open .tri-verdicts { flex-wrap: nowrap; gap: 6px; }
 .tri-verdict {
     display: inline-flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
-    min-width: 150px;
+    flex: 1 1 0;
+    min-width: 0;
     min-height: 44px;
+    padding-left: 8px;
+    padding-right: 8px;
     text-align: left;
 }
-.tri-verdict-word { font-weight: 700; font-size: 17px; }
-.tri-verdict-hint { font-family: var(--se-font-readable); font-size: 13px; color: var(--ui-text-dim, #a8b2c8); }
+.tri-verdict-word { font-weight: 700; font-size: 16px; }
+/* Light on the blue button face: the old dim grey was about 2:1 (E8 F14). */
+.tri-verdict-hint { font-family: var(--se-font-readable); font-size: 13px; line-height: 1.25; color: #ffffff; text-shadow: 0 1px 0 rgba(8, 12, 28, 0.8); }
 .triage-client img.tri-icon { width: 16px; height: 16px; margin-right: 4px; }
 .tri-locked { display: flex; align-items: center; gap: 4px; margin: 6px 0; font-size: 16px; }
 
-/* Row badge in the list */
+/* Row badge in the list. A badge carries a tone (F-E19-7): a right or acceptable call keeps the
+   success colour and tick; a wrong call turns danger-coloured and shows a cross, so the list never
+   reads as if a wrong verdict went well. */
 .mail-row-badge { display: inline-flex; align-items: center; gap: 2px; font-size: 13px; color: var(--ui-success, #6ee08f); }
+.mail-row-badge.mail-row-badge-wrong { color: var(--ui-danger, #f0896e); }
 .mail-row-badge img.mail-icon { width: 12px; height: 12px; }
 
 /* The link status line stays in view at the foot of the pane while the player reads. */
@@ -153,7 +188,11 @@
 .tri-flag-word { font-weight: 700; flex: none; }
 .tri-flag.caught .tri-flag-word { color: var(--ui-success, #6ee08f); }
 .tri-flag.missed .tri-flag-word { color: var(--ui-danger, #ff7a6b); }
+/* F-E9-6: an un-ticked tell on a correctly-handled item ("Also worth noticing:") is neutral, not a danger-red miss. */
+.tri-flag.missed.tri-flag-soft .tri-flag-word { color: var(--ui-text-dim, #a8b2c8); }
 .tri-false-flag .tri-flag-word { color: var(--ui-warn, #e6b04d); }
+/* E19 m-5: the ticked chip's label is its own run, so "Not a flag here:" and the explanation do not read as one run-on sentence. */
+.tri-false-flag .tri-flag-label { flex: none; font-weight: 600; }
 .tri-why-fine { list-style: disc; padding-left: 20px; display: block; }
 .tri-it-reply { padding: 6px 8px; border-left: 4px solid var(--ui-accent, #ffcc44); background: rgba(255, 204, 68, 0.08); }
 .tri-card-score { color: var(--ui-text-dim, #a8b2c8); font-size: 14px; }
@@ -185,17 +224,26 @@
 .tri-item-why summary { cursor: pointer; min-height: 32px; }
 .tri-save-note { min-height: 1.4em; color: var(--ui-accent, #ffcc44); }
 .tri-result-bar { display: flex; flex-wrap: wrap; }
-/* P5-1: the result panel scrolls, and Finish sat below the fold with no cue. Pin the action
-   bar to the bottom of the scroll area, opaque so the text scrolls under it. */
+/* E8 F5 (replaces the P5-1 sticky bar, which hid the skill lines under Finish): the result panel is a
+   column, the text scrolls in .tri-result-body and the action bar sits below it, never over it. */
+.tri-result { display: flex; flex-direction: column; overflow: hidden; padding: 0; }
+/* The shadows at the foot (and head) of the text appear only while there is more to scroll to. */
+.tri-result > .tri-result-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px 16px 8px;
+    background:
+        linear-gradient(var(--ui-surface-raised, rgba(38, 48, 74, 1)) 30%, rgba(38, 48, 74, 0)) top / 100% 24px no-repeat local,
+        linear-gradient(rgba(38, 48, 74, 0), var(--ui-surface-raised, rgba(38, 48, 74, 1)) 70%) bottom / 100% 24px no-repeat local,
+        linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0)) top / 100% 10px no-repeat scroll,
+        linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.45)) bottom / 100% 10px no-repeat scroll;
+}
 .tri-result > .tri-result-bar {
-    position: sticky;
-    bottom: -16px;
-    z-index: 1;
-    margin: 8px -16px -16px;
+    flex: none;
     padding: 0 16px 12px;
-    background-color: var(--ui-surface-raised, rgba(38, 48, 74, 1));
     border-top: 2px solid var(--ui-line, #4c5b80);
-    box-shadow: 0 -6px 8px -6px rgba(0, 0, 0, 0.5);
+    background-color: var(--ui-surface-raised, rgba(38, 48, 74, 1));
 }
 
 /* The chip sheet */
@@ -213,7 +261,7 @@
     flex-direction: column;
     gap: 8px;
     width: min(560px, 92%);
-    max-height: 86%;
+    max-height: 96%;
     /* The tick list scrolls on its own between the title and the Confirm/Back bar, so the
        bar never sits over a row (lab R16 N8). */
     overflow: hidden;
@@ -227,15 +275,15 @@
 }
 .tri-sheet-title { margin: 0; font-size: 20px; }
 .tri-sheet-chosen { margin: 0; font-size: 15px; color: var(--ui-text-dim, #c3ccdf); }
-.tri-chips { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 4px; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.tri-chips { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 3px; flex: 0 1 auto; min-height: 0; overflow-y: auto; }
 .tri-chips > * { flex: none; }
 .tri-chip {
     display: flex;
     align-items: center;
     gap: 10px;
-    min-height: 44px;
-    padding: 6px 8px;
-    font-size: 16px;
+    min-height: 40px;
+    padding: 4px 8px;
+    font-size: 15px;
     cursor: pointer;
     border: 1px solid var(--ui-line, #4c5b80);
 }
@@ -244,8 +292,19 @@
     border-color: var(--ui-accent, #ffcc44);
     background: color-mix(in srgb, var(--ui-accent, #ffcc44) 14%, transparent);
 }
-.tri-chip-none { margin-top: 6px; }
+.tri-chip-none { margin-top: 2px; flex: none; }
+/* A short window with a pointer: tighter rows so the whole list (and Nothing looks wrong) fits with no
+   inner scrolling. Touch screens keep the 44 px rows. */
+@media (max-height: 820px) and (hover: hover) {
+    .tri-sheet { gap: 6px; padding: 12px 16px; }
+    .tri-chips { gap: 2px; }
+    .tri-chip { min-height: 32px; padding: 1px 8px; font-size: 15px; }
+    .tri-chip input { width: 20px; height: 20px; }
+    .tri-sheet-bar .minigame-button { min-height: 40px; }
+}
 .tri-sheet-bar { display: flex; gap: 8px; justify-content: flex-end; flex: none; padding-top: 8px; }
+/* E8 F11: the one-line nudge on the review card when the learner confirmed without ticking anything. */
+.tri-card-nudge { margin: 6px 0; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
 
 .triage-client button:focus-visible,
 .triage-client select:focus-visible,
@@ -255,14 +314,15 @@
 
 /* Narrow: verdict buttons stack, the chip list is a bottom sheet with 44 px rows */
 @media (max-width: 767px) {
-    .tri-verdicts { flex-direction: column; }
+    .tri-verdicts, .tri-actions-open .tri-verdicts { flex-direction: column; flex-wrap: wrap; }
     .tri-verdict { width: 100%; }
     .tri-sheet-backdrop { align-items: flex-end; }
     .tri-sheet { width: 100%; max-height: 80%; }
     .triage-client .tri-toolbar { flex-wrap: wrap; }
     .tri-steps { flex: 1 1 100%; }
     .tri-panel { padding: 10px; }
-    .tri-result > .tri-result-bar { bottom: -10px; margin: 8px -10px -10px; padding: 0 10px 10px; }
+    .tri-result > .tri-result-body { padding: 10px 10px 6px; }
+    .tri-result > .tri-result-bar { padding: 0 10px 10px; }
     .tri-numbers, .tri-header-fields, .tri-brief-buttons { grid-template-columns: 1fr; }
 }
 
@@ -297,7 +357,8 @@
     box-shadow: inset 0 0 0 2px #10152a;
 }
 .tri-phone-top { padding-bottom: 6px; margin-bottom: 8px; border-bottom: 2px solid #3a4566; text-align: center; }
-.tri-phone-number { margin: 0; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+/* A phone handle/number is an address: the address font, so look-alike letters read (E14-m1). */
+.tri-phone-number { margin: 0; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); font-family: var(--se-font-address); }
 .tri-sms-thread { display: flex; flex-direction: column; gap: 8px; }
 .tri-sms-bubble {
     align-self: flex-start;
@@ -383,7 +444,11 @@
 .tri-browser { max-width: 520px; background: #e9edf5; border: 2px solid #8792ad; color: #1d2333; }
 .tri-browser-bar { display: flex; align-items: center; gap: 6px; padding: 6px; background: #c9d0e0; border-bottom: 2px solid #8792ad; }
 .tri-header-address { font-family: var(--se-font-address); }
-.tri-address { flex: 1; min-height: 36px; text-align: left; overflow-wrap: anywhere; font-family: var(--se-font-address); }
+/* The address bar is a .minigame-button, whose base rule sets the pixel font; the descendant
+   selector raises specificity so the address font wins (F-E20-2). break-word + the <wbr> break
+   opportunities after dots and slashes let a long URL wrap at a sensible point, not mid-label
+   (F-E20-3). */
+.tri-browser-bar .tri-address { flex: 1; min-height: 36px; text-align: left; overflow-wrap: break-word; word-break: normal; font-family: var(--se-font-address); }
 .tri-padlock, .tri-no-padlock { flex: none; min-height: 36px; font-size: 13px; }
 .tri-no-padlock { padding: 0 6px; font-weight: 700; color: #8f2a1f; }
 .tri-browser-view { padding: 12px 14px; }
@@ -392,7 +457,33 @@
 .tri-page-form { display: flex; flex-direction: column; gap: 6px; max-width: 300px; }
 .tri-page-field { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
 .tri-page-field-box { display: block; height: 28px; background: #ffffff; border: 2px solid #8792ad; }
+/* A drawn tick box for a genuine "I am not a robot" check (E10 MI2): a square, with a tick when
+   page.fields[].checked is set. Nothing can be ticked; it is static art, like the text box. */
+.tri-page-field-tick { flex-direction: row; align-items: center; gap: 8px; }
+.tri-page-tick { position: relative; flex: none; width: 22px; height: 22px; background: #ffffff; border: 2px solid #8792ad; }
+.tri-page-tick-on::after { content: ""; position: absolute; left: 5px; top: 1px; width: 7px; height: 13px; border: solid #233b8f; border-width: 0 3px 3px 0; transform: rotate(45deg); }
+.tri-page-tick-label { font-weight: 700; }
 .tri-page-button { align-self: flex-start; padding: 6px 14px; font-weight: 700; color: #ffffff; background: #3b5bcc; border: 2px solid #233b8f; }
+
+/* ENG-14: Wi-Fi network list state of the page card (no address bar) */
+.tri-wifi .tri-kind-label { color: #4a5578; }
+.tri-wifi-venue { margin: 0 0 10px; font-style: italic; }
+.tri-wifi-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tri-wifi-row { padding: 8px 10px; background: #ffffff; border: 2px solid #8792ad; }
+.tri-wifi-ssid { display: block; font-family: var(--se-font-address); font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+.tri-wifi-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin-top: 4px; font-size: 13px; }
+.tri-wifi-lock-wrap, .tri-wifi-signal { display: inline-flex; align-items: center; gap: 6px; }
+/* Neutral on purpose: a password on a public network is not what makes it safe (core_09), so
+   open and secured share one ink and differ only in the lock shape and the words. */
+.tri-wifi-secured, .tri-wifi-open { color: #2a3555; }
+.tri-wifi-lock { position: relative; display: inline-block; width: 12px; height: 8px; margin-top: 7px; background: currentColor; }
+.tri-wifi-lock::before { content: ''; position: absolute; left: 2px; bottom: 8px; width: 4px; height: 5px; border: 2px solid currentColor; border-bottom: 0; }
+.tri-wifi-open .tri-wifi-lock::before { left: 6px; height: 4px; border-right-color: transparent; }
+.tri-wifi-bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; }
+.tri-wifi-bar { display: block; width: 4px; background: #c9d0e0; border: 1px solid #8792ad; }
+.tri-wifi-bar.on { background: #233b8f; border-color: #233b8f; }
+.tri-wifi-bar-1 { height: 4px; } .tri-wifi-bar-2 { height: 7px; } .tri-wifi-bar-3 { height: 10px; } .tri-wifi-bar-4 { height: 14px; }
+.tri-wifi-note { margin: 4px 0 0; font-size: 13px; }
 
 /* 11 N14: phone body around an sms thread */
 .tri-phone-frame { border-radius: 0; border-width: 6px; border-color: #1c2440; padding-top: 6px; }
@@ -417,6 +508,91 @@
 .tri-autofill-none { color: #8f2a1f; }
 .tri-autofill-filled { color: #1f6b3a; }
 
+/* ── ENG-03a web-page states ────────────────────────────────────────────────────
+   Each draws inside the light browser card. Every string is authored data; nothing runs and
+   nothing is ever written to the real clipboard. The one "command" shown is the harmless one-line
+   clipboardReveal description, behind a reveal. Motion is gentle and honours prefers-reduced-motion. */
+
+/* The fake "verify you are human" check: a panel feel, with the reveal under the steps. */
+.tri-fakecheck { background: #f4f6fb; }
+.tri-page-reveal { margin: 10px 0 0; }
+.tri-page-reveal-btn { font-size: 14px; }
+.tri-page-reveal-text {
+    margin: 8px 0 0;
+    padding: 8px 10px;
+    font-size: 14px;
+    color: #1d2333;
+    background: #fff4d6;
+    border: 2px solid #d8b24a;
+    border-left: 6px solid #d8b24a;
+}
+
+/* Fake update banner: a drawn Download button face, no download happens. */
+.tri-fake-update .tri-page-button { background: #2f7d4f; border-color: #1f5a37; }
+
+/* Dangerous download bar: a filename row with a drawn Open face. The .exe tail reads plainly. */
+.tri-download-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0 0;
+    padding: 8px 10px;
+    background: #ffffff;
+    border: 2px solid #8792ad;
+}
+.tri-download-name { flex: 1; font-family: var(--se-font-address); overflow-wrap: anywhere; font-weight: 700; }
+.tri-download-face { flex: none; padding: 4px 12px; font-weight: 700; color: #ffffff; background: #3b5bcc; border: 2px solid #233b8f; }
+
+/* A genuine browser warning (the correct move is to go back): a red interstitial. */
+.tri-page-browserWarning { background: #a32318; border-color: #7a1710; }
+.tri-browser-warning { color: #ffffff; }
+.tri-browser-warning .tri-kind-title { color: #ffffff; }
+.tri-browser-warning .tri-page-text { color: #ffe9e6; }
+.tri-warning-back { align-self: flex-start; background: #ffffff; color: #a32318; border-color: #ffffff; }
+
+/* The browser's own relaunch menu bar (not a web page). */
+.tri-relaunch-bar { padding: 12px 14px; background: #e4e8f1; color: #1d2333; }
+.tri-relaunch-bar .tri-kind-label { color: #51607f; }
+.tri-relaunch-bar .tri-kind-title { color: #1d2333; }
+
+/* Extension-permission prompt: a store listing with the permission list. */
+.tri-ext-permission { padding: 14px 16px; background: #f4f6fb; color: #1d2333; }
+.tri-ext-permission .tri-kind-title { color: #1d2333; }
+.tri-ext-perms-label { margin: 10px 0 4px; font-weight: 700; }
+.tri-ext-perms { margin: 0; padding-left: 20px; }
+.tri-ext-perm { margin: 2px 0; font-size: 15px; }
+
+/* Full-screen alarm overlay: silent, calm, always a visible way out. No flashing. */
+.tri-page-fullScreenAlarm { background: #161b2e; border-color: #3a4566; }
+.tri-alarm { padding: 20px 18px; color: #f2f4fb; text-align: center; }
+.tri-alarm .tri-kind-title { color: #ffd2cc; }
+.tri-alarm-muted {
+    margin: 0 0 10px;
+    font-size: 14px;
+    color: #c3ccdf;
+    font-style: italic;
+}
+.tri-alarm .tri-page-text { color: #e7ebf6; }
+.tri-alarm-close {
+    display: inline-block;
+    margin: 12px 0 0;
+    padding: 8px 20px;
+    font-weight: 700;
+    color: #161b2e;
+    background: #ffffff;
+    border: 2px solid #ffffff;
+}
+.tri-alarm-hint { margin: 10px 0 0; font-size: 14px; color: #c3ccdf; }
+/* A gentle, slow breathing of the border only; no colour flash, no shake. */
+.tri-alarm-pulse { animation: tri-alarm-breathe 2.4s ease-in-out infinite; }
+@keyframes tri-alarm-breathe {
+    0%, 100% { box-shadow: inset 0 0 0 2px rgba(255, 120, 108, 0.25); }
+    50% { box-shadow: inset 0 0 0 2px rgba(255, 120, 108, 0.6); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .tri-alarm-pulse { animation: none; }
+}
+
 /* MFA prompt */
 .tri-kind-push .tri-kind-title { text-align: center; }
 .tri-kind-push .tri-kind-label { text-align: center; }
@@ -429,7 +605,7 @@
 .tri-compare.no-baseline { border-left-color: var(--ui-text-dim, #a8b2c8); }
 .tri-compare-title { margin: 0 0 4px; font-size: 17px; }
 .tri-compare-line { margin: 2px 0; }
-.tri-brief-kind { font-size: 15px; color: var(--ui-text-dim, #c3ccdf); }
+.tri-brief-kind { font-size: 14px; line-height: 1.45; color: #e6ebf6; }
 
 @media (max-width: 767px) {
     .tri-phone, .tri-notice, .tri-browser { max-width: none; }
@@ -451,3 +627,45 @@
 }
 .tri-close-ask-text { margin: 0 0 8px; }
 .tri-close-ask-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Authored-choice card (ENG-09a): the prompt, then one wide button per option. The options carry
+   no verdict colour, so the right one is not given away. */
+.tri-kind-choice { padding: 10px 12px; background: #10152a; border: 2px solid var(--ui-line, #4c5b80); border-left: 6px solid var(--ui-accent, #ffcc44); }
+.tri-choice-note { margin: 8px 0 0; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+.tri-choice-options { flex-direction: column; align-items: stretch; }
+.tri-choice-option {
+    display: block;
+    width: 100%;
+    max-width: 560px;
+    min-height: 44px;
+    padding: 8px 12px;
+    text-align: left;
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+    line-height: 1.35;
+}
+.tri-choice-why, .tri-choice-better { margin: 6px 0; font-size: 15px; }
+.tri-choice-better { font-weight: 700; }
+
+/* ENG-07: the video-call meeting-tool name and participant tag on a `call` card. */
+.tri-call-video { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 4px 0 8px; }
+.tri-call-video-label { font-weight: 600; }
+.tri-call-video-tag {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    padding: 2px 8px;
+}
+
+/* ENG-06: the "show hidden text" reveal on an email card carrying a hidden AI instruction. */
+.tri-hidden { margin: 10px 0 0; }
+.tri-hidden-text {
+    margin: 8px 0 0;
+    padding: 8px;
+    border: 1px dashed currentColor;
+    border-radius: 6px;
+    font-family: monospace;
+    white-space: pre-wrap;
+}

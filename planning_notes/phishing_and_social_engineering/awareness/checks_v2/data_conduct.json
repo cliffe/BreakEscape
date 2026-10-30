@@ -1,0 +1,437 @@
+{
+  "_about": "WP-11 (10_CHECK_FORMS.md) defend fragment for the new topic check pair `data_conduct` ('data and conduct'), set at Carrholme Services, a fictional company (room room_aw_carrholme and company carrholme_services are on main in training_room.py). Verify ON (the lesson is 'check before you act', and it carries a call item). Holds data_conduct_form_a and data_conduct_form_b (10 items each: 4 phish, 6 genuine) and a minimal awarenessEpisode block (role/company/brand/scope) for gen_checks_v2_shells.py to read. 'Phish' here means an unsafe request you should report, refuse, verify or deny; 'genuine' means fine, act normally. Every address ends .example; no real brands. The PERMUTE arrays (disjoint phish slots) and the CHECK_LINES host text for the two Carrholme hosts are in the sibling note checks_v2/data_conduct_generator_notes.json. Scored flags are all shared-library ids (the seven factors, plus the channel tells secrecy_or_bypass and vish_callback_pressure, both in CHANNEL_TELLS in phish-rules.js and triage.rb). Authored in teaching order (phish at ordinal slots 2, 4, 6, 8); the generator's PERMUTE then disjoints the phish slots across A and B.",
+  "_brandAdditions": {
+    "_use": "For BRAND_SET.md section 3 (Carrholme Services) and section 1 (look-alikes/outside inboxes). Carrholme Services and its genuine cast (Tomasz Wisniewski DPO, Shauna Campbell, Sam Whitaker, Martin Fletcher) are E11's additions; this form reuses them as genuine senders and adds the names below. All invented names were grepped clean across scenarios/planning_notes/docs on 2026-10-29. All invented names must be web-searched against real businesses before release (00_README.md section 12).",
+    "cast": [
+      "Elaine Prentice: a Carrholme line manager (white British, 40s), the genuine 'manager' sender in item 9 of both forms (dca_manager_report / dcb_access_review); genuine only, never an impostor",
+      "Yusuf Demir: Carrholme information security lead (British Turkish, 40s), the BA check host; receives reports alongside the DPO. Not a defend-set sender",
+      "Grant Faulkner: an outside 'auditor' an impostor uses in data_conduct_form_a item 2 (northgate-audit.example). Genuine in neither form",
+      "Trevor Oakes: an outside 'IT vendor' an impostor uses in data_conduct_form_b item 2 (itrollout-support.example). Genuine in neither form",
+      "Kenny Dolan: a former member of staff whose voice an impostor uses on a mobile in data_conduct_form_a item 4 (the call). Genuine in neither form",
+      "Deborah Vale: a colleague an impostor claims to be on a mobile in data_conduct_form_b item 4 (the call). Genuine in neither form",
+      "Carla Mendes: a 'recruiter' on freemail an impostor uses in data_conduct_form_a item 6 (inboxly.example). Genuine in neither form",
+      "Neil Garrity: a 'journalist' on freemail an impostor uses in data_conduct_form_b item 6 (quickpost-mail.example). Genuine in neither form",
+      "Gavin Shaw: an internal-sounding name an impostor uses on an outside inbox in data_conduct_form_a item 8 (fastmail-pro.example). Genuine in neither form",
+      "Rhona Baxter: an internal-sounding name an impostor uses on an outside inbox in data_conduct_form_b item 8 (webmail-plus.example). Genuine in neither form"
+    ],
+    "genuineSenders": "Carrholme genuine senders use carrholme.example: Shauna Campbell, Sam Whitaker, Martin Fletcher, Elaine Prentice, Tomasz Wisniewski, and the team addresses comms@, people@, dpo@ and records@carrholme.example.",
+    "lookalikes": "This pair introduces no carrholme look-alike domain on screen (E11 owns carrholme-payroll.example etc.). The four phish instead sit on outside firms/inboxes the impostor owns, so their automatic checks pass: northgate-audit.example (new), itrollout-support.example (roster), inboxly.example (roster), quickpost-mail.example (roster), fastmail-pro.example (roster) and webmail-plus.example (new). The item 8 reply-to points to a further outside inbox again.",
+    "nameCheck": "Elaine Prentice, Yusuf Demir, Grant Faulkner, Trevor Oakes, Kenny Dolan, Deborah Vale, Carla Mendes, Neil Garrity, Gavin Shaw, Rhona Baxter, northgate-audit.example and webmail-plus.example: 0 hits in scenarios, planning_notes and docs on 2026-10-29. Faulkner and Garrity surnames chosen after Mercer and Brandt turned out to be built character surnames."
+  },
+  "_formPairing": {
+    "_use": "Item n in form A matches item n in form B on kind, phish or genuine, the scored-flag multiset and difficulty; only the lure content differs. Per form: 10 items (4 phish, 6 genuine; 9 emails, 1 call). Scored-flag multiset per form: senderTrust 3, pretextRelevant 2, secrecy_or_bypass 2, vish_callback_pressure 1 (8 scored flags, identical in A and B). Item 8 does NOT score reply_to_differs (C2-M6 / WAVE1_DESIGN_C1 P1-M1: episode defend rounds run headerPanel off, so no episode teaches opening a header); like general_v2's item 8, it scores senderTrust (visible: an internal-looking display name over a plainly external address) and secrecy_or_bypass, and the reply-to point lives in its headerNote as a 'you could also see' line. reply_to_differs is therefore not in channelTells. Difficulty mix per form: 5 easy, 4 medium, 1 hard, identical in A and B. Phish at ordinal slots 2, 4, 6, 8 before the generator's PERMUTE. Item 8 is the pass-but-bad phish (SPF, DKIM, DMARC all pass, outside inbox the sender owns); item 9 is the fail-but-fine genuine item (DKIM fail). Verify is on in both forms because the call (item 4) needs the ring-back verdict, so the pre and post still compare like with like. No item repeats a built form or an episode defend set.",
+    "rows": [
+      "1 | email | genuine | all pass | easy | core_06 | A: Shauna shares a folder the approved way | B: Sam shares through the portal",
+      "2 | email | phish | senderTrust, pretextRelevant | medium | core_05 | A: outside 'auditor' Grant Faulkner wants the full customer list | B: outside 'IT vendor' Trevor Oakes wants the full staff records",
+      "3 | email | genuine, within need-to-know | all pass | medium | core_06 | A: Martin asks for the team's figures for the review | B: Shauna asks for the payroll file for the run",
+      "4 | call | phish | vish_callback_pressure, secrecy_or_bypass | easy | core_14 | A: 'leaver' Kenny on a mobile wants you to pull his old records under your login | B: 'colleague' Deborah on a mobile wants you to approve it under your account",
+      "5 | email | genuine | all pass | easy | core_12 | A: Comms, what's approved to share about the new office | B: Comms, the approved press line",
+      "6 | email | phish | senderTrust, pretextRelevant | medium | core_12 | A: 'recruiter' Carla on freemail wants the org chart and who's away | B: 'journalist' Neil on freemail wants who does what and when the boss is away",
+      "7 | email | genuine | all pass | easy | core_16 | A: new acceptable-use policy to read and acknowledge | B: annual data training due",
+      "8 | email | phish, pass-but-bad, scored senderTrust (internal name on an outside inbox) + secrecy_or_bypass | all pass | hard | core_16 (B also core_13) | A: Gavin, send it from your personal email, don't wait for IT | B: Rhona, send it out and don't flag it",
+      "9 | email | genuine, within need-to-know, fail-but-fine (DKIM fail) | SPF pass, DKIM fail, DMARC pass | medium | core_14/core_06 | A: manager Elaine asks for a report | B: manager Elaine asks for an access review",
+      "10 | email | genuine | all pass | easy | core_05 | A: DPO office, subject-access-request acknowledgement routed right | B: records team, retention notice routed right"
+    ]
+  },
+  "triageSets": [
+    {
+      "id": "data_conduct_form_a",
+      "_form": "data_conduct parallel form A. Authored as pre; the BA check pair launches it as post (the generator sets stage). Item n matches item n in data_conduct_form_b; the table is in _formPairing above.",
+      "title": "Data and conduct check",
+      "brief": "Ten items from a Carrholme Services inbox and phone: emails about data and conduct, and one call. For each one, choose Trust, Report, Delete or Verify (ring someone back on a number you already hold), then tick what you noticed. You'll see how you did at the end. Checking or reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+      "stage": "pre",
+      "pairedWith": "data_conduct_form_b",
+      "scoringProfile": "awareness",
+      "verifyVerdict": true,
+      "feedbackMode": "end",
+      "headerPanel": "collapsed",
+      "glossary": "closed",
+      "channelTells": ["secrecy_or_bypass", "vish_callback_pressure"],
+      "outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "dca_folder_share",
+          "from": { "name": "Shauna Campbell", "address": "shauna.campbell@carrholme.example" },
+          "to": "you@carrholme.example",
+          "subject": "Shared the complaints folder with you",
+          "time": "08:15",
+          "body": "Hi,\nI've shared the complaints-handling folder with you through the approved system, so you'll see it in your shared drives. Only the three of us on the desk have access, which is how it should be.\nShout if it doesn't show up.\nShauna",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "carrholme.example", "replyTo": "shauna.campbell@carrholme.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "Your team leader's real address, a folder shared through the approved system so access stays with the people who need it, and nothing to send back. This is how sharing is meant to work."
+            }
+          }
+        },
+        {
+          "id": "dca_customer_list",
+          "from": { "name": "Grant Faulkner", "address": "g.faulkner@northgate-audit.example" },
+          "to": "you@carrholme.example",
+          "subject": "For the audit: full customer list, please",
+          "time": "09:02",
+          "body": "Hello,\nI'm running the external audit this quarter. To cross-check the records, could you reply with the full customer list, names, addresses and the care notes, as a spreadsheet? Today if you can, so we stay on schedule.\nThanks,\nGrant Faulkner\nNorthgate Audit",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "northgate-audit.example", "replyTo": "g.faulkner@northgate-audit.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "pretextRelevant"],
+            "perFlagNote": {
+              "senderTrust": "The address is an outside firm, northgate-audit.example, not Carrholme. A real audit is arranged through a known contact and the data protection officer, not a cold email that lands on your desk.",
+              "pretextRelevant": "There is no good reason you would email a whole customer list, with care notes, to anyone. A genuine audit sees data in a controlled way, not pasted into a reply."
+            },
+            "ifTrusted": "Replying would send the personal data of every customer, including sensitive care notes, out of Carrholme to whoever owns that address. That is a data breach.",
+            "reportReply": "Thanks. No audit asked for that, and nobody sends a customer list by email. We've passed it to the DPO and blocked the address."
+          }
+        },
+        {
+          "id": "dca_team_report",
+          "from": { "name": "Martin Fletcher", "address": "martin.fletcher@carrholme.example" },
+          "to": "you@carrholme.example",
+          "subject": "Team figures for Thursday's review",
+          "time": "09:35",
+          "body": "Hi,\nCould you send me the team's performance figures for the quarter before Thursday's review? Just the summary we usually put together, no personal detail needed.\nThanks,\nMartin",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "carrholme.example", "replyTo": "martin.fletcher@carrholme.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "pretextRelevant": "Your director asking for the team summary he normally reviews is squarely within his job, and he asks for the summary, not anyone's personal detail. A request that fits the person and the need is a normal one.",
+              "default": "Martin's real Carrholme address, a routine ask for figures he's entitled to see, and no personal data involved. If you wanted to be sure it was him, a quick word in person settles it; there's nothing wrong with the request."
+            }
+          }
+        },
+        {
+          "id": "dca_login_favour",
+          "kind": "call",
+          "callerId": "Kenny Dolan, ex-staff (calling from a mobile)",
+          "from": { "name": "Kenny Dolan", "address": "Mobile, ending 418" },
+          "subject": "Call: pull my old records",
+          "time": "10:10",
+          "transcript": [
+            { "who": "Kenny", "text": "Hiya, it's Kenny, I used to be on the claims desk. I left a couple of months back but I need my old case records for something, and my account's obviously gone now." },
+            { "who": "Kenny", "text": "You could just pull them under your login and send them over, could you? No point me ringing round and waiting. Keep it simple, don't bother raising a ticket for it." }
+          ],
+          "truth": {
+            "isPhish": true,
+            "flags": ["vish_callback_pressure", "secrecy_or_bypass"],
+            "perFlagNote": {
+              "vish_callback_pressure": "He steers you away from checking: no ticket, no ringing round, just do it now on the call. A caller who talks you out of checking back is the tell.",
+              "secrecy_or_bypass": "'Pull them under your login' and 'don't raise a ticket' use your access to get round the fact that a leaver has none. Your login is you: whatever you pull is recorded as you doing it."
+            },
+            "ifTrusted": "A former member of staff would get case records they no longer have any right to see, and it would show as you taking them. A leaver's access is removed for a reason.",
+            "reportReply": "Thanks. Whether or not that's really Kenny, a leaver's records go through a proper request to the DPO, never pulled under your login. We've logged it."
+          }
+        },
+        {
+          "id": "dca_comms_ok",
+          "from": { "name": "Carrholme Comms", "address": "comms@carrholme.example" },
+          "to": "all-staff@carrholme.example",
+          "subject": "What you can share about the new office",
+          "time": "11:00",
+          "body": "Hello all,\nWe're moving to the new office next month. Here's a short note on what's fine to mention on social media and what to leave to us: the address and move date are public, but please don't post photos of desks, screens or visitor passes.\nAny press enquiries come to Comms.\nThe Communications Team",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "carrholme.example", "replyTo": "comms@carrholme.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "Comms' real Carrholme address, a routine note about what's approved to share, and nothing to click or send back. Knowing who speaks for the organisation, and what's fine to post, is exactly what this covers."
+            }
+          }
+        },
+        {
+          "id": "dca_recruiter_probe",
+          "from": { "name": "Carla Mendes", "address": "carla.mendes.hire@inboxly.example" },
+          "to": "you@carrholme.example",
+          "subject": "Quick one about the team structure",
+          "time": "11:40",
+          "body": "Hi,\nI'm a recruiter placing candidates in your sector and I'd love to understand Carrholme better. Could you tell me who heads each team, who reports to whom, and when your managers are usually out of the office? It really helps me pitch the right roles.\nThanks so much,\nCarla",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "carla.mendes.hire@inboxly.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "pretextRelevant"],
+            "perFlagNote": {
+              "senderTrust": "A stranger writing from a personal inbox at inboxly.example, not a contact Carrholme deals with. A friendly tone isn't a reason to trust a name you don't know.",
+              "pretextRelevant": "Who reports to whom and when managers are away is not something you'd tell an outsider. It's exactly what someone building an impersonation wants to know."
+            },
+            "ifTrusted": "An org chart and a diary of when managers are out is the map an attacker uses to impersonate the right person at the right moment. 'Recruiter' is just the cover story.",
+            "reportReply": "Thanks. We don't share the team structure or who's away with outside contacts. We've reported it and blocked the address."
+          }
+        },
+        {
+          "id": "dca_aup_reminder",
+          "from": { "name": "Carrholme People Team", "address": "people@carrholme.example" },
+          "to": "all-staff@carrholme.example",
+          "subject": "New acceptable-use policy: please read and acknowledge",
+          "time": "12:10",
+          "body": "Hello,\nWe've refreshed the acceptable-use policy (how we use work email, devices and systems). Please read it on the intranet and press Acknowledge when you have. Any time before the end of the month is fine.\nThere's nothing to send back.\nThe People Team",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "carrholme.example", "replyTo": "people@carrholme.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "The People Team's real Carrholme address, a routine ask to acknowledge a policy on the intranet, and a month to do it. Acknowledging a policy you've read is a normal part of the job, with nothing to sign in to."
+            }
+          }
+        },
+        {
+          "id": "dca_personal_email_push",
+          "from": { "name": "Gavin Shaw", "address": "gavin.shaw.work@fastmail-pro.example" },
+          "to": "you@carrholme.example",
+          "subject": "Easier if you send it from your personal email",
+          "time": "12:45",
+          "body": "Hi,\nI know the file's too big for the system and IT take forever. Easiest thing: copy it to your personal email and send it on from there, it'll go straight through. Don't wait on a ticket for this one, we need it out today.\nCheers,\nGavin",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "fastmail-pro.example", "replyTo": "g.shaw.files@webmail-plus.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "secrecy_or_bypass"],
+            "perFlagNote": {
+              "senderTrust": "The name reads like a colleague, but the address is an outside inbox at fastmail-pro.example, not carrholme.example. A workmate writes to you from the Carrholme domain.",
+              "secrecy_or_bypass": "'Send it from your personal email' and 'don't wait on a ticket' are there to get work data out through a route nobody can see or protect. The approved way is to ask IT, who will give you a safe one."
+            },
+            "headerNote": "The automatic checks pass because the message really was sent from fastmail-pro.example, a domain the sender owns. A pass tells you which mail system sent it, not that the sender is a Carrholme colleague. You could also see, if you open the header, that the reply-to is a different outside address again (webmail-plus.example), so a reply would go there, not to anyone at Carrholme.",
+            "ifTrusted": "Work data moved to a personal email leaves Carrholme's control for good, and it may be personal data you're now responsible for losing. The 'shortcut' is also how an attacker gets you to skip the route that would have stopped it.",
+            "reportReply": "Thanks. There's no Gavin Shaw on carrholme.example, and work files never go out through a personal email. We've reported it to the DPO and blocked the address."
+          }
+        },
+        {
+          "id": "dca_manager_report",
+          "from": { "name": "Elaine Prentice", "address": "elaine.prentice@carrholme.example" },
+          "to": "you@carrholme.example",
+          "subject": "Caseload report for our one-to-one",
+          "time": "13:20",
+          "body": "Hi,\nBefore our one-to-one on Friday, could you send me the caseload report for your team, the one we go through each month? Just the usual report, nothing extra.\nThanks,\nElaine",
+          "auth": { "spf": "pass", "dkim": "fail", "dmarc": "pass", "envelopeFrom": "carrholme.example", "replyTo": "elaine.prentice@carrholme.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "senderAuth": "One of the automatic checks came back as a fail. Treat that as a reason to look closer, not proof of a fake: real mail fails a check now and then when it's forwarded or passed through certain systems. Here the address is Carrholme's, it's your own manager, and she asks only for the report you already share with her.",
+              "pretextRelevant": "Your manager asking for the monthly caseload report you go through together is within her remit and within need-to-know. Unusual isn't wrong: a request that fits the person and the routine is a normal one.",
+              "default": "Elaine's real Carrholme address, your own line manager, and the routine report you share each month. There's nothing to skip or send outside, so this is a normal ask."
+            }
+          }
+        },
+        {
+          "id": "dca_sar_routed",
+          "from": { "name": "Carrholme DPO office", "address": "dpo@carrholme.example" },
+          "to": "you@carrholme.example",
+          "subject": "Subject access request logged: for your awareness",
+          "time": "14:05",
+          "body": "Hi,\nA customer has asked for a copy of the data we hold about them (a subject access request). I've logged it and I'm handling it from here, so there's nothing for you to do.\nI'm letting the desk know in case the customer mentions it when they call.\nTomasz\nData Protection Officer",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "carrholme.example", "replyTo": "dpo@carrholme.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "The DPO's real Carrholme address, telling you a request from a person about their own data has been logged and routed to him, which is exactly where it should go. There's nothing to send and nothing to do."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "data_conduct_form_b",
+      "_form": "data_conduct parallel form B. Authored as post; the BA check pair launches it as pre (the generator sets stage). Item n matches item n in data_conduct_form_a; the table is in _formPairing above.",
+      "title": "Data and conduct check",
+      "brief": "Ten items from a Carrholme Services inbox and phone: emails about data and conduct, and one call. For each one, choose Trust, Report, Delete or Verify (ring someone back on a number you already hold), then tick what you noticed. You'll see how you did at the end. Checking or reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+      "stage": "post",
+      "pairedWith": "data_conduct_form_a",
+      "scoringProfile": "awareness",
+      "verifyVerdict": true,
+      "feedbackMode": "end",
+      "headerPanel": "collapsed",
+      "glossary": "closed",
+      "channelTells": ["secrecy_or_bypass", "vish_callback_pressure"],
+      "outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "dcb_portal_share",
+          "from": { "name": "Sam Whitaker", "address": "sam.whitaker@carrholme.example" },
+          "to": "you@carrholme.example",
+          "subject": "Rota file is on the portal for you",
+          "time": "08:18",
+          "body": "Hi,\nI've put next month's rota on the staff portal and given your desk access, so it's there when you log in. I've kept it to the desk, which is all that need see it.\nLet me know if you can't open it.\nSam",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "carrholme.example", "replyTo": "sam.whitaker@carrholme.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "A colleague's real address, a file shared through the staff portal so only the desk can reach it, and nothing to send back. Sharing through the approved place, to the people who need it, is how it should be done."
+            }
+          }
+        },
+        {
+          "id": "dcb_hr_records",
+          "from": { "name": "Trevor Oakes", "address": "t.oakes@itrollout-support.example" },
+          "to": "you@carrholme.example",
+          "subject": "Data migration: send me the full staff records",
+          "time": "09:04",
+          "body": "Hello,\nWe're migrating Carrholme to a new system and I need to load your people in. Please reply with the full staff records, names, dates of birth, National Insurance numbers and bank details, as a spreadsheet. We're on a tight window, so today please.\nTrevor Oakes\nIT migration",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "itrollout-support.example", "replyTo": "t.oakes@itrollout-support.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "pretextRelevant"],
+            "perFlagNote": {
+              "senderTrust": "The address is an outside firm, itrollout-support.example, not Carrholme. A real system move is run with your own IT and the DPO, not a cold email asking you to send the data out.",
+              "pretextRelevant": "There is no good reason you'd email full staff records, with dates of birth, NI numbers and bank details, to anyone. A genuine migration moves data through a controlled transfer, not a reply."
+            },
+            "ifTrusted": "Replying would send the whole workforce's personal and financial data out of Carrholme to whoever owns that address, a serious data breach and a gift to a fraudster.",
+            "reportReply": "Thanks. No migration asked for that, and staff records never go out by email. We've passed it to the DPO and blocked the address."
+          }
+        },
+        {
+          "id": "dcb_payroll_file",
+          "from": { "name": "Shauna Campbell", "address": "shauna.campbell@carrholme.example" },
+          "to": "you@carrholme.example",
+          "subject": "Overtime file before the payroll run",
+          "time": "09:38",
+          "body": "Hi,\nCould you send me this month's overtime file for the desk before the payroll run on Friday? Same one we do every month, just the hours.\nThanks,\nShauna",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "carrholme.example", "replyTo": "shauna.campbell@carrholme.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "pretextRelevant": "Your team leader asking for the monthly overtime hours before the payroll run is within her job and within need-to-know. A request that fits the person and the routine is a normal one, not a data risk.",
+              "default": "Shauna's real Carrholme address, the routine overtime file you send every month for the run, and nothing going outside. If you wanted to be sure, a word in person settles it; the request itself is fine."
+            }
+          }
+        },
+        {
+          "id": "dcb_approve_under_you",
+          "kind": "call",
+          "callerId": "Deborah Vale, Claims (calling from a mobile)",
+          "from": { "name": "Deborah Vale", "address": "Mobile, ending 733" },
+          "subject": "Call: approve it under your account",
+          "time": "10:12",
+          "transcript": [
+            { "who": "Deborah", "text": "Hi, it's Deborah from Claims. My account's locked out and I've a release that has to go today, I can't get into the system at all." },
+            { "who": "Deborah", "text": "Could you just approve it under your account for me? It'd save such a faff. No need to log it or ring anyone, I'll sort my login out later." }
+          ],
+          "truth": {
+            "isPhish": true,
+            "flags": ["vish_callback_pressure", "secrecy_or_bypass"],
+            "perFlagNote": {
+              "vish_callback_pressure": "She waves you off checking: don't log it, don't ring anyone, just do it now on the call. A caller who talks you out of checking back is the tell, however normal the voice sounds.",
+              "secrecy_or_bypass": "'Approve it under your account' and 'no need to log it' put your name on an action that isn't yours and skip the record. Your login is you: an approval under it is treated as your decision."
+            },
+            "ifTrusted": "Whatever you approve is recorded as your decision, and you can't see what you're really signing off. Approving under your account for someone who's 'locked out' is how an attacker, or a rushed colleague, slips something past the checks.",
+            "reportReply": "Thanks. Whether or not that was really Deborah, nothing gets approved under your account for someone else. Ring her back on the number on file, or send her to the service desk to fix her login."
+          }
+        },
+        {
+          "id": "dcb_press_line",
+          "from": { "name": "Carrholme Comms", "address": "comms@carrholme.example" },
+          "to": "all-staff@carrholme.example",
+          "subject": "Approved line if anyone asks about the contract",
+          "time": "11:03",
+          "body": "Hello all,\nThere's been some local interest in our new care contract. If a reporter or anyone outside asks, please don't comment: send them to Comms and we'll handle it. The approved line is attached for your own awareness.\nThanks,\nThe Communications Team",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "carrholme.example", "replyTo": "comms@carrholme.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "Comms' real Carrholme address, telling you who speaks for the organisation and where to send enquiries, with nothing to click or send back. Passing a reporter to Comms is exactly the right move."
+            }
+          }
+        },
+        {
+          "id": "dcb_journalist_probe",
+          "from": { "name": "Neil Garrity", "address": "neil.garrity.news@quickpost-mail.example" },
+          "to": "you@carrholme.example",
+          "subject": "Background for a piece I'm writing",
+          "time": "11:44",
+          "body": "Hi there,\nI'm writing a piece on the care sector and I'd value some background, off the record. Who runs each of your teams, who they answer to, and when the senior managers tend to be away? Nothing sensitive, just to get the lay of the land.\nCheers,\nNeil",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "neil.garrity.news@quickpost-mail.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "pretextRelevant"],
+            "perFlagNote": {
+              "senderTrust": "A stranger on a personal inbox at quickpost-mail.example, not a contact Carrholme knows. 'Off the record' and a friendly tone are not reasons to trust a name you don't recognise.",
+              "pretextRelevant": "Who runs each team, who they answer to and when seniors are away is not background to hand an outsider. It's the same map an impersonator needs, and press enquiries go to Comms anyway."
+            },
+            "ifTrusted": "The team structure and a diary of when managers are away lets an attacker impersonate the right person at the right time. The 'journalist' framing is just a way to get you talking.",
+            "reportReply": "Thanks. Enquiries like that go to Comms, and we don't share who's away with outside contacts. We've reported it and blocked the address."
+          }
+        },
+        {
+          "id": "dcb_training_reminder",
+          "from": { "name": "Carrholme People Team", "address": "people@carrholme.example" },
+          "to": "all-staff@carrholme.example",
+          "subject": "Your annual data protection training is due",
+          "time": "12:12",
+          "body": "Hello,\nYour yearly data protection training is due this month. It's on the intranet and takes about half an hour. Press Complete at the end and it records automatically; there's nothing to send back.\nAny time before the month end is fine.\nThe People Team",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "carrholme.example", "replyTo": "people@carrholme.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "The People Team's real Carrholme address, a routine reminder about training on the intranet, and a month to do it. Completing your annual training is a normal part of the job, with nothing to sign in to elsewhere."
+            }
+          }
+        },
+        {
+          "id": "dcb_skip_dlp",
+          "from": { "name": "Rhona Baxter", "address": "rhona.baxter.docs@webmail-plus.example" },
+          "to": "you@carrholme.example",
+          "subject": "Just send it out, don't flag it",
+          "time": "12:48",
+          "body": "Hi,\nThe system keeps blocking the client file when I try to send it out, flags it as sensitive. It's fine, honestly. Could you send it from your side and don't flag it as sensitive this time? We just need it with them today.\nThanks,\nRhona",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "webmail-plus.example", "replyTo": "r.baxter.send@quickpost-mail.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "secrecy_or_bypass"],
+            "perFlagNote": {
+              "senderTrust": "The name reads like a colleague, but the address is an outside inbox at webmail-plus.example, not carrholme.example. A real workmate writes from the Carrholme domain.",
+              "secrecy_or_bypass": "'Don't flag it as sensitive' and 'just send it out' are there to get round the check that's doing its job. The block flagged the file for a reason; the safe move is to ask IT, not to override it."
+            },
+            "headerNote": "The automatic checks pass because the message really was sent from webmail-plus.example, a domain the sender owns. A pass shows which mail system sent it, not that the sender is a Carrholme colleague. You could also see, if you open the header, that the reply-to is a different outside address again (quickpost-mail.example), so a reply wouldn't reach anyone at Carrholme.",
+            "ifTrusted": "Overriding the sensitivity check sends client data out unprotected, which may be a breach, and it trains you to switch off the one control that was working. The 'just this once' is the whole trick.",
+            "reportReply": "Thanks. There's no Rhona Baxter on carrholme.example, and we don't override the sensitivity check to send a file out. We've reported it to the DPO and blocked the address."
+          }
+        },
+        {
+          "id": "dcb_access_review",
+          "from": { "name": "Elaine Prentice", "address": "elaine.prentice@carrholme.example" },
+          "to": "you@carrholme.example",
+          "subject": "Access list for the quarterly review",
+          "time": "13:22",
+          "body": "Hi,\nFor the quarterly review, could you send me the list of who on the desk has access to which systems? The usual access report we go through, nothing more than that.\nThanks,\nElaine",
+          "auth": { "spf": "pass", "dkim": "fail", "dmarc": "pass", "envelopeFrom": "carrholme.example", "replyTo": "elaine.prentice@carrholme.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "senderAuth": "One automatic check on this message failed. That's a reason to look a little closer, not proof it's fake: genuine mail fails a check now and then when it's forwarded or routed through certain systems. The address is Carrholme's, it's your own manager, and she asks for the routine access report.",
+              "pretextRelevant": "Your manager reviewing who has access to what is part of her job and within need-to-know. Checking access is good practice, not a data risk, so the ask fits the person and the routine.",
+              "default": "Elaine's real Carrholme address, your own line manager, and the access report you prepare for the quarterly review. Nothing goes outside and nothing is skipped, so this is a normal request."
+            }
+          }
+        },
+        {
+          "id": "dcb_retention_notice",
+          "from": { "name": "Carrholme Records team", "address": "records@carrholme.example" },
+          "to": "you@carrholme.example",
+          "subject": "Old case files due for deletion next month",
+          "time": "14:08",
+          "body": "Hi,\nAs part of our retention schedule, case files older than the agreed period are due to be deleted next month. The records team handles this centrally, so there's nothing for you to do; this is just to let the desk know.\nThe Records Team",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "carrholme.example", "replyTo": "records@carrholme.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "The records team's real Carrholme address, a routine note about the retention schedule handled centrally, and nothing to send or sign in to. Keeping data only as long as it's needed is part of looking after it."
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "awarenessEpisode": {
+    "_use": "Minimal block for gen_checks_v2_shells.py: check() reads role, company and brand from here. scopeNote is included for completeness; the generator writes the shell's own scopeNote from cfg['check']['scope'].",
+    "role": "general_staff",
+    "company": "carrholme_services",
+    "brand": { "name": "Carrholme Services", "logoText": "CARRHOLME", "accent": "#4a6b57" },
+    "scopeNote": "Authorised exercise at Carrholme Services, a fictional company. In scope: ten items from a Carrholme inbox and phone, emails and a call about data and conduct."
+  }
+}

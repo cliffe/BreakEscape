@@ -1,0 +1,478 @@
+{
+  "scenario_id": "awareness_pre_data_conduct_ba",
+  "scenario_name": "Data and conduct check: before (BA)",
+  "titleScreenName": "Starting check",
+  "scenario_brief": "The first of two short checks for all staff at Carrholme Services, a fictional company. Ten items from a Carrholme inbox and phone: emails and a call about data and conduct. Decide what to do with each one. Your result is saved so the second check can compare with it.",
+  "endGoal": "Go through the ten items at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "first_check_aim",
+      "title": "Do the first check",
+      "description": "Go through ten items at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "triage_pre_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "First check done",
+        "body": "Your result is saved, ready for the second check to compare with."
+      },
+      "tasks": [
+        {
+          "taskId": "finish_check",
+          "title": "Finish the first check",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_pre_data_conduct_ba_state": {},
+    "se_awareness_records": [],
+    "triage_pre_percent": 0,
+    "triage_pre_reportRate": 0,
+    "triage_pre_done": false,
+    "triage_pre_pass": false
+  },
+  "exportGlobals": [
+    "triage_pre_percent",
+    "triage_pre_reportRate",
+    "triage_pre_done"
+  ],
+  "social": {
+    "triageSets": [
+      {
+        "id": "data_conduct_form_b",
+        "title": "Data and conduct check",
+        "brief": "Ten items from a Carrholme Services inbox and phone: emails about data and conduct, and one call. For each one, choose Trust, Report, Delete or Verify (ring someone back on a number you already hold), then tick what you noticed. You'll see how you did at the end. Checking or reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "stage": "pre",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "end",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "channelTells": [
+          "secrecy_or_bypass",
+          "vish_callback_pressure"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "triage_{stage}_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "dcb_portal_share",
+            "from": {
+              "name": "Sam Whitaker",
+              "address": "sam.whitaker@carrholme.example"
+            },
+            "to": "you@carrholme.example",
+            "subject": "Rota file is on the portal for you",
+            "time": "08:18",
+            "body": "Hi,\nI've put next month's rota on the staff portal and given your desk access, so it's there when you log in. I've kept it to the desk, which is all that need see it.\nLet me know if you can't open it.\nSam",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "carrholme.example",
+              "replyTo": "sam.whitaker@carrholme.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "A colleague's real address, a file shared through the staff portal so only the desk can reach it, and nothing to send back. Sharing through the approved place, to the people who need it, is how it should be done."
+              }
+            }
+          },
+          {
+            "id": "dcb_hr_records",
+            "from": {
+              "name": "Trevor Oakes",
+              "address": "t.oakes@itrollout-support.example"
+            },
+            "to": "you@carrholme.example",
+            "subject": "Data migration: send me the full staff records",
+            "time": "09:04",
+            "body": "Hello,\nWe're migrating Carrholme to a new system and I need to load your people in. Please reply with the full staff records, names, dates of birth, National Insurance numbers and bank details, as a spreadsheet. We're on a tight window, so today please.\nTrevor Oakes\nIT migration",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "itrollout-support.example",
+              "replyTo": "t.oakes@itrollout-support.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "pretextRelevant"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The address is an outside firm, itrollout-support.example, not Carrholme. A real system move is run with your own IT and the DPO, not a cold email asking you to send the data out.",
+                "pretextRelevant": "There is no good reason you'd email full staff records, with dates of birth, NI numbers and bank details, to anyone. A genuine migration moves data through a controlled transfer, not a reply."
+              },
+              "ifTrusted": "Replying would send the whole workforce's personal and financial data out of Carrholme to whoever owns that address, a serious data breach and a gift to a fraudster.",
+              "reportReply": "Thanks. No migration asked for that, and staff records never go out by email. We've passed it to the DPO and blocked the address."
+            }
+          },
+          {
+            "id": "dcb_approve_under_you",
+            "kind": "call",
+            "callerId": "Deborah Vale, Claims (calling from a mobile)",
+            "from": {
+              "name": "Deborah Vale",
+              "address": "Mobile, ending 733"
+            },
+            "subject": "Call: approve it under your account",
+            "time": "10:12",
+            "transcript": [
+              {
+                "who": "Deborah",
+                "text": "Hi, it's Deborah from Claims. My account's locked out and I've a release that has to go today, I can't get into the system at all."
+              },
+              {
+                "who": "Deborah",
+                "text": "Could you just approve it under your account for me? It'd save such a faff. No need to log it or ring anyone, I'll sort my login out later."
+              }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "vish_callback_pressure",
+                "secrecy_or_bypass"
+              ],
+              "perFlagNote": {
+                "vish_callback_pressure": "She waves you off checking: don't log it, don't ring anyone, just do it now on the call. A caller who talks you out of checking back is the tell, however normal the voice sounds.",
+                "secrecy_or_bypass": "'Approve it under your account' and 'no need to log it' put your name on an action that isn't yours and skip the record. Your login is you: an approval under it is treated as your decision."
+              },
+              "ifTrusted": "Whatever you approve is recorded as your decision, and you can't see what you're really signing off. Approving under your account for someone who's 'locked out' is how an attacker, or a rushed colleague, slips something past the checks.",
+              "reportReply": "Thanks. Whether or not that was really Deborah, nothing gets approved under your account for someone else. Ring her back on the number on file, or send her to the service desk to fix her login."
+            }
+          },
+          {
+            "id": "dcb_payroll_file",
+            "from": {
+              "name": "Shauna Campbell",
+              "address": "shauna.campbell@carrholme.example"
+            },
+            "to": "you@carrholme.example",
+            "subject": "Overtime file before the payroll run",
+            "time": "09:38",
+            "body": "Hi,\nCould you send me this month's overtime file for the desk before the payroll run on Friday? Same one we do every month, just the hours.\nThanks,\nShauna",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "carrholme.example",
+              "replyTo": "shauna.campbell@carrholme.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "pretextRelevant": "Your team leader asking for the monthly overtime hours before the payroll run is within her job and within need-to-know. A request that fits the person and the routine is a normal one, not a data risk.",
+                "default": "Shauna's real Carrholme address, the routine overtime file you send every month for the run, and nothing going outside. If you wanted to be sure, a word in person settles it; the request itself is fine."
+              }
+            }
+          },
+          {
+            "id": "dcb_press_line",
+            "from": {
+              "name": "Carrholme Comms",
+              "address": "comms@carrholme.example"
+            },
+            "to": "all-staff@carrholme.example",
+            "subject": "Approved line if anyone asks about the contract",
+            "time": "11:03",
+            "body": "Hello all,\nThere's been some local interest in our new care contract. If a reporter or anyone outside asks, please don't comment: send them to Comms and we'll handle it. The approved line is attached for your own awareness.\nThanks,\nThe Communications Team",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "carrholme.example",
+              "replyTo": "comms@carrholme.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Comms' real Carrholme address, telling you who speaks for the organisation and where to send enquiries, with nothing to click or send back. Passing a reporter to Comms is exactly the right move."
+              }
+            }
+          },
+          {
+            "id": "dcb_training_reminder",
+            "from": {
+              "name": "Carrholme People Team",
+              "address": "people@carrholme.example"
+            },
+            "to": "all-staff@carrholme.example",
+            "subject": "Your annual data protection training is due",
+            "time": "12:12",
+            "body": "Hello,\nYour yearly data protection training is due this month. It's on the intranet and takes about half an hour. Press Complete at the end and it records automatically; there's nothing to send back.\nAny time before the month end is fine.\nThe People Team",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "carrholme.example",
+              "replyTo": "people@carrholme.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "The People Team's real Carrholme address, a routine reminder about training on the intranet, and a month to do it. Completing your annual training is a normal part of the job, with nothing to sign in to elsewhere."
+              }
+            }
+          },
+          {
+            "id": "dcb_journalist_probe",
+            "from": {
+              "name": "Neil Garrity",
+              "address": "neil.garrity.news@quickpost-mail.example"
+            },
+            "to": "you@carrholme.example",
+            "subject": "Background for a piece I'm writing",
+            "time": "11:44",
+            "body": "Hi there,\nI'm writing a piece on the care sector and I'd value some background, off the record. Who runs each of your teams, who they answer to, and when the senior managers tend to be away? Nothing sensitive, just to get the lay of the land.\nCheers,\nNeil",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quickpost-mail.example",
+              "replyTo": "neil.garrity.news@quickpost-mail.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "pretextRelevant"
+              ],
+              "perFlagNote": {
+                "senderTrust": "A stranger on a personal inbox at quickpost-mail.example, not a contact Carrholme knows. 'Off the record' and a friendly tone are not reasons to trust a name you don't recognise.",
+                "pretextRelevant": "Who runs each team, who they answer to and when seniors are away is not background to hand an outsider. It's the same map an impersonator needs, and press enquiries go to Comms anyway."
+              },
+              "ifTrusted": "The team structure and a diary of when managers are away lets an attacker impersonate the right person at the right time. The 'journalist' framing is just a way to get you talking.",
+              "reportReply": "Thanks. Enquiries like that go to Comms, and we don't share who's away with outside contacts. We've reported it and blocked the address."
+            }
+          },
+          {
+            "id": "dcb_access_review",
+            "from": {
+              "name": "Elaine Prentice",
+              "address": "elaine.prentice@carrholme.example"
+            },
+            "to": "you@carrholme.example",
+            "subject": "Access list for the quarterly review",
+            "time": "13:22",
+            "body": "Hi,\nFor the quarterly review, could you send me the list of who on the desk has access to which systems? The usual access report we go through, nothing more than that.\nThanks,\nElaine",
+            "auth": {
+              "spf": "pass",
+              "dkim": "fail",
+              "dmarc": "pass",
+              "envelopeFrom": "carrholme.example",
+              "replyTo": "elaine.prentice@carrholme.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderAuth": "One automatic check on this message failed. That's a reason to look a little closer, not proof it's fake: genuine mail fails a check now and then when it's forwarded or routed through certain systems. The address is Carrholme's, it's your own manager, and she asks for the routine access report.",
+                "pretextRelevant": "Your manager reviewing who has access to what is part of her job and within need-to-know. Checking access is good practice, not a data risk, so the ask fits the person and the routine.",
+                "default": "Elaine's real Carrholme address, your own line manager, and the access report you prepare for the quarterly review. Nothing goes outside and nothing is skipped, so this is a normal request."
+              }
+            }
+          },
+          {
+            "id": "dcb_retention_notice",
+            "from": {
+              "name": "Carrholme Records team",
+              "address": "records@carrholme.example"
+            },
+            "to": "you@carrholme.example",
+            "subject": "Old case files due for deletion next month",
+            "time": "14:08",
+            "body": "Hi,\nAs part of our retention schedule, case files older than the agreed period are due to be deleted next month. The records team handles this centrally, so there's nothing for you to do; this is just to let the desk know.\nThe Records Team",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "carrholme.example",
+              "replyTo": "records@carrholme.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "The records team's real Carrholme address, a routine note about the retention schedule handled centrally, and nothing to send or sign in to. Keeping data only as long as it's needed is part of looking after it."
+              }
+            }
+          },
+          {
+            "id": "dcb_skip_dlp",
+            "from": {
+              "name": "Rhona Baxter",
+              "address": "rhona.baxter.docs@webmail-plus.example"
+            },
+            "to": "you@carrholme.example",
+            "subject": "Just send it out, don't flag it",
+            "time": "12:48",
+            "body": "Hi,\nThe system keeps blocking the client file when I try to send it out, flags it as sensitive. It's fine, honestly. Could you send it from your side and don't flag it as sensitive this time? We just need it with them today.\nThanks,\nRhona",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "webmail-plus.example",
+              "replyTo": "r.baxter.send@quickpost-mail.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "secrecy_or_bypass"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The name reads like a colleague, but the address is an outside inbox at webmail-plus.example, not carrholme.example. A real workmate writes from the Carrholme domain.",
+                "secrecy_or_bypass": "'Don't flag it as sensitive' and 'just send it out' are there to get round the check that's doing its job. The block flagged the file for a reason; the safe move is to ask IT, not to override it."
+              },
+              "headerNote": "The automatic checks pass because the message really was sent from webmail-plus.example, a domain the sender owns. A pass shows which mail system sent it, not that the sender is a Carrholme colleague. You could also see, if you open the header, that the reply-to is a different outside address again (quickpost-mail.example), so a reply wouldn't reach anyone at Carrholme.",
+              "ifTrusted": "Overriding the sensitivity check sends client data out unprotected, which may be a breach, and it trains you to switch off the one control that was working. The 'just this once' is the whole trick.",
+              "reportReply": "Thanks. There's no Rhona Baxter on carrholme.example, and we don't override the sensitivity check to send a file out. We've reported it to the DPO and blocked the address."
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "pre_data_conduct_ba",
+      "role": "general_staff",
+      "company": "carrholme_services",
+      "brand": {
+        "name": "Carrholme Services",
+        "logoText": "CARRHOLME",
+        "accent": "#4a6b57"
+      },
+      "variant": "full",
+      "durationTargetMin": 9,
+      "scopeNote": "Authorised exercise at Carrholme Services, a fictional company. In scope: ten items from a Carrholme inbox and phone.",
+      "stages": [
+        "check"
+      ],
+      "conclusionTaskId": "finish_check",
+      "defend": {
+        "setId": "data_conduct_form_b",
+        "stage": "pre",
+        "reportAlwaysVisible": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_carrholme",
+      "door_sign": "Training Room",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "info_screen": {
+            "intensity": 0.25,
+            "radius": 24
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.3,
+            "color": "#e8f0ff",
+            "radius": 72,
+            "intensity": 0.3
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "yusuf_demir",
+          "displayName": "Yusuf Demir",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/awareness_pre_data_conduct_ba/ink/yusuf_pre.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:triage_pre_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "finish_check"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk set up as a Carrholme inbox and phone, with ten items ready for the first check.",
+          "minigameData": {
+            "episodeId": "pre_data_conduct_ba"
+          }
+        }
+      ]
+    }
+  }
+}

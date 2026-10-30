@@ -125,6 +125,18 @@ module BreakEscape
       scenario_data['startRoom'] == room_id
     end
 
+    # The room an awareness episode is played in (social.awarenessEpisode.world.room).
+    # The episode runner moves the learner there with window.loadRoom, so the room
+    # endpoint must serve it without a key. Only that one declared room qualifies;
+    # no other room or scenario is affected.
+    def awareness_world_room?(room_id)
+      return false if room_id.blank?
+      social = scenario_data.is_a?(Hash) ? scenario_data['social'] : nil
+      episode = social.is_a?(Hash) ? social['awarenessEpisode'] : nil
+      world = episode.is_a?(Hash) ? episode['world'] : nil
+      world.is_a?(Hash) && world['room'].is_a?(String) && world['room'] == room_id
+    end
+
     # Object management
     def unlock_object!(object_id)
       player_state['unlockedObjects'] ||= []
@@ -2109,7 +2121,7 @@ module BreakEscape
     MAIL_MESSAGE_KEYS = %w[
       id thread mailbox folder fromAccount from to targetId subject templates slots body
       attachment link landed tells time gameTime read kind seeded links attachments highlights
-      pendingMessage
+      pendingMessage hiddenText hiddenTextLabel
     ].freeze
     MAIL_JOB_KINDS = %w[ink text seed].freeze
     MAIL_JOB_STRING_KEYS = %w[character npcId accountId msgId knot targetId messageId mailbox global outcomeGlobal].freeze
@@ -2318,7 +2330,7 @@ module BreakEscape
 
         value = msg[key]
         case key
-        when 'body'
+        when 'body', 'hiddenText', 'hiddenTextLabel'
           clean[key] = value[0, MAX_MAIL_BODY_CHARS] if value.is_a?(String)
         when 'folder'
           clean[key] = value if %w[inbox sent].include?(value)

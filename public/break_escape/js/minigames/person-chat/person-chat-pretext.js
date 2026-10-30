@@ -456,7 +456,16 @@ export function renderDebrief(container, { session, spec, onDone } = {}) {
 
     const outcome = document.createElement('p');
     outcome.className = 'pretext-debrief-outcome';
-    const outcomeText = { got_it: 'You got what you came for.', reported: 'The call was reported.', walked_away: 'You rang off.' };
+    // E12 B2 finding 15: the outcome labels are overridable per pretext (spec.outcomeLabels), so
+    // an in-person desk reads "You ended the conversation." rather than "You rang off." The phone
+    // defaults are unchanged (an existing JS assertion and E3/lab voice depend on them), so a
+    // pretext that sets nothing is exactly as before.
+    const ownLabels = isObject(spec?.outcomeLabels) ? spec.outcomeLabels : {};
+    const outcomeText = {
+        got_it: typeof ownLabels.got_it === 'string' && ownLabels.got_it ? ownLabels.got_it : 'You got what you came for.',
+        reported: typeof ownLabels.reported === 'string' && ownLabels.reported ? ownLabels.reported : 'The call was reported.',
+        walked_away: typeof ownLabels.walked_away === 'string' && ownLabels.walked_away ? ownLabels.walked_away : 'You rang off.'
+    };
     const outcomeKey = outcomeFor(session);
     // `got_it` means at least one ask was granted, but the call may also have had an
     // ask refused (an earlier grant, a later refusal). Saying "You got what you came
@@ -499,12 +508,40 @@ export function renderDebrief(container, { session, spec, onDone } = {}) {
 
     const done = document.createElement('button');
     done.type = 'button';
-    done.className = 'pretext-debrief-done';
+    done.className = 'pretext-debrief-done minigame-button';
     done.textContent = 'Done';
-    done.addEventListener('click', () => { panel.remove(); if (typeof onDone === 'function') onDone(); });
+    // The debrief is a centred modal over a full backdrop (batch-5 F-E12-3): the backdrop covers
+    // the open chat so nothing of the debrief runs behind End Conversation and the stale live bar
+    // is not read beside the final outcome. The backdrop, not the panel, is removed on Done.
+    const backdrop = document.createElement('div');
+    backdrop.className = 'pretext-debrief-backdrop';
+    // m1: the element to restore focus to when the modal closes (the control that ended the call).
+    const opener = (typeof document !== 'undefined' && document.activeElement) || null;
+    const restoreFocus = () => { try { if (opener && typeof opener.focus === 'function' && opener.isConnected !== false) opener.focus(); } catch (e) { /* headless */ } };
+    done.addEventListener('click', () => { backdrop.remove(); restoreFocus(); if (typeof onDone === 'function') onDone(); });
     panel.appendChild(done);
 
-    container.appendChild(panel);
+    // m1: trap Tab within the panel while the modal is up, and stop keystrokes reaching the chat's
+    // global keydown handler behind it. role="dialog" + aria-modal names it a modal to AT.
+    panel.setAttribute('aria-modal', 'true');
+    const focusables = () => Array.from(panel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+        .filter((node) => !node.disabled && node.getAttribute('aria-hidden') !== 'true');
+    backdrop.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+            const items = focusables();
+            if (!items.length) { e.preventDefault(); return; }
+            const first = items[0];
+            const last = items[items.length - 1];
+            const active = (typeof document !== 'undefined' && document.activeElement) || null;
+            if (e.shiftKey && (active === first || !panel.contains(active))) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && (active === last || !panel.contains(active))) { e.preventDefault(); first.focus(); }
+        }
+        // Keep every keystroke (Esc included) from reaching the chat's global keydown behind the modal.
+        e.stopPropagation();
+    });
+
+    backdrop.appendChild(panel);
+    container.appendChild(backdrop);
     try { done.focus(); } catch (e) { /* headless */ }
     return panel;
 }

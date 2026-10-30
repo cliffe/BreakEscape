@@ -1103,6 +1103,8 @@ WALL_MOUNTED_EXTRAS = {
     "aw_poster_report_merrin_sallow",
     "aw_brightwell_range",
     "aw_quayholt_queue",
+    "aw_logo_carrholme",
+    "aw_poster_report_carrholme",
 }
 
 
@@ -4685,7 +4687,8 @@ def main():
     #   room_se_engagement, room_se_recon, room_se_ops, room_se_blueteam
     #   (lab_social_engineering; copies of room_zds_conference, room_zds_office,
     #   room_qdc_open and room_aes_security, edited with room_edit.py)
-    #   room_aw_brightwell, room_aw_tarrowby, room_aw_quayholt, room_aw_merrin_sallow
+    #   room_aw_brightwell, room_aw_tarrowby, room_aw_quayholt, room_aw_merrin_sallow,
+    #   room_aw_carrholme, room_aw_merrin_lobby (the lobby uses the room_aw_merrin_sallow sheet)
     #   (awareness training rooms; copies of room_uni_seminar, edited with room_edit.py;
     #   sheets from room_gen/make_aw_tileset.py, signs from room_gen/make_aw_props.py)
     builders = {

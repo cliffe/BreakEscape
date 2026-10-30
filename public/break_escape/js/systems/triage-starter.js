@@ -392,6 +392,10 @@ export function startInboxTriageMinigame(lockable, options = {}) {
         skin: options.skin === 'awareness' ? 'awareness' : null,
         // The episode runner: a debrief follows this round (inbox-triage-minigame.js _genuineSummary).
         debriefFollows: options.debriefFollows === true,
+        // item 8: optional per-verdict save/restore so a reload mid-round resumes. Present only
+        // when the launcher (the episode runner) supplies them; every other caller is unchanged.
+        onProgress: typeof options.onProgress === 'function' ? options.onProgress : null,
+        restoreAnswers: Array.isArray(options.restoreAnswers) ? options.restoreAnswers : null,
         onComplete: (success, result) => {
             if (!success || !result || result.aborted) {
                 callback?.(false, result);

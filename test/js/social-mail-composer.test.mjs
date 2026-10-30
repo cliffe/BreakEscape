@@ -38,7 +38,24 @@ console.log = () => {};
 console.error = () => {};
 
 const mod = await import(pathToFileURL(join(dir, 'minigames/mail-client/mail-composer.js')));
-const { MailComposer, optionsForSlot, heldFactIds, heldProvides, PRE_SEND_GATE_LINE } = mod;
+const { MailComposer, optionsForSlot, heldFactIds, heldProvides, PRE_SEND_GATE_LINE, appendWithAddresses, isAddressValue } = mod;
+
+test('appendWithAddresses wraps an address in the address-font span and leaves prose plain (F-E10-9)', () => {
+    const host = document.getElementById('host');
+    const p = document.createElement('p');
+    appendWithAddresses(p, "sender's address: operations@quayholt.example");
+    const span = p.querySelector('.mail-blank-address');
+    assert.ok(span, 'the address part is wrapped');
+    assert.equal(span.textContent, 'operations@quayholt.example');
+    assert.match(p.textContent, /^sender's address: /);
+    // Prose with no address gets a single text node, unchanged.
+    const q = document.createElement('p');
+    appendWithAddresses(q, 'Please action this invoice.');
+    assert.equal(q.querySelector('.mail-blank-address'), null);
+    assert.equal(q.textContent, 'Please action this invoice.');
+    assert.equal(isAddressValue('operations@quayholt.example'), true);
+    assert.equal(isAddressValue('Quayholt Operations'), false);
+});
 const data = await import(pathToFileURL(join(dir, 'minigames/mail-client/mail-data.js')));
 const { MailClientMinigame } = await import(pathToFileURL(join(dir, 'minigames/mail-client/mail-client-minigame.js')));
 
@@ -376,6 +393,29 @@ test('red-flag meter: off when neither the target nor the default turns it on, a
     assert.equal(b.host.querySelector('.mail-redflag-meter'), null);
 });
 
+// ── batch-12 item 9: a template's dropdown label can differ from its body ───────
+test('item 9: optionLabel sets the dropdown text while the body stays full prose', () => {
+    const fx = fixture();
+    const templates = { ...fx.templates, pretext_apply: { ...fx.templates.pretext_apply, optionLabel: 'Apply for the role' } };
+    const { host } = composerFor('hampshire', 'Chris Hampshire', grant('hampshire_careers'), { fx, templates });
+    const sel = host.querySelector('.mail-compose-template[data-part="pretext"]');
+    const opt = [...sel.options].find((o) => o.value === 'pretext_apply');
+    assert.equal(opt.textContent, 'Apply for the role', 'the dropdown shows the optionLabel, not the body');
+});
+
+// ── batch-12 item 11: the meter hint is dropped for a hidden-line choice ─────────
+test('item 11: a hidden-line pretext drops the default meter hint; a template meterHint wins', () => {
+    const { composer } = composerFor('hampshire', 'Chris Hampshire', grant('hampshire_careers'), { meterDefault: true });
+    composer.templates = { ...composer.templates,
+        pretext_hidden: { part: 'pretext', text: 'A plain-looking brief.', hiddenText: 'note for an assistant', slots: [] } };
+    composer.choice.pretext = 'pretext_hidden';
+    assert.equal(composer._meterHint(), '', 'the "fewer flags" line is dropped for a hidden-line choice');
+    composer.templates.pretext_hidden.meterHint = 'This one is for the assistant, not a reader.';
+    assert.equal(composer._meterHint(), 'This one is for the assistant, not a reader.', 'a per-template meterHint wins');
+    composer.choice.pretext = 'pretext_apply'; // a plain template keeps the default hint
+    assert.equal(composer._meterHint(), 'Fewer flags means harder to spot.');
+});
+
 // ── P1 F1/m5: the forged-From line in the meter, and the calm default (E6 F3) ─
 
 // pierce trusts baker and can be spoofed (from_named): the forged-From scenario.
@@ -459,4 +499,35 @@ test('a blank with only wrong options shows its stuckUntil pointer until the rig
     const held = fixture();
     held.templates.from_named.slots = held.templates.from_named.slots.map((sl) => (sl.id === 'sender_name' ? { ...sl, stuckUntil: { target: 'pierce', value: 'baker_full', text: 'x' } } : sl));
     assert.equal(build(grant('pierce_trusts_jed'), held.templates).querySelector('.mail-blank-stuck'), null, 'gone once the named option is offered');
+});
+
+// E10 F-E10-9: an address inside a composed value reads in the address font, not the pixel font.
+test('appendWithAddresses wraps an email/URL in a .mail-blank-address span and leaves prose alone', () => {
+    const a = document.createElement('div');
+    mod.appendWithAddresses(a, 'operations@quayholt.example');
+    const span = a.querySelector('.mail-blank-address');
+    assert.ok(span, 'the email is wrapped');
+    assert.equal(span.textContent, 'operations@quayholt.example');
+    assert.equal(a.textContent, 'operations@quayholt.example');
+
+    const b = document.createElement('div');
+    mod.appendWithAddresses(b, 'Reply to accounts@fernside.example now.');
+    assert.equal(b.querySelector('.mail-blank-address').textContent, 'accounts@fernside.example',
+        'trailing punctuation stays outside the address span');
+    assert.equal(b.textContent, 'Reply to accounts@fernside.example now.');
+
+    const c = document.createElement('div');
+    mod.appendWithAddresses(c, 'Quayholt Operations');
+    assert.equal(c.querySelector('.mail-blank-address'), null, 'a plain name is not wrapped');
+    assert.equal(c.childNodes.length, 1);
+    assert.equal(c.childNodes[0].nodeType, 3, 'plain text stays a single text node');
+});
+
+test('isAddressValue is true only for a value that is wholly an address', () => {
+    assert.equal(mod.isAddressValue('operations@quayholt.example'), true);
+    assert.equal(mod.isAddressValue(' https://orders.fernside.example '), true);
+    assert.equal(mod.isAddressValue('Quayholt Operations'), false);
+    assert.equal(mod.isAddressValue('From operations@quayholt.example'), false);
+    assert.equal(mod.isAddressValue(''), false);
+    assert.equal(mod.isAddressValue(null), false);
 });

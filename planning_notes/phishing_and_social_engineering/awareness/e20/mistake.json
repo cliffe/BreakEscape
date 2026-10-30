@@ -1,0 +1,85 @@
+{
+  "_about": "E20 full-episode-only fragment (the full_only.json equivalent, named mistake.json per E11, the direct ENG-04 sibling; open question 4 says follow E11 exactly). Consequence-flip episode (ENG-04): in place of an attack half, the learner makes five everyday choices on the road in a safe sandbox (the `mistake` stage), then a montage flip shows where each led. There is NO attacker, no target, no osint/people/intelFacts, so there is no attack.json. These keys are pasted into scenarios/awareness_e20_remote_and_mobile_working/scenario.json.erb (the FULL shell) ONLY; the generated defend-only shell (gen_e8_e17_shells.py) never carries them. Shapes follow test/js/fixtures/social_awareness/clean_mistake.json, scripts/validate_social/awareness.rb mistake_checks/montage_line_checks, and public/break_escape/js/minigames/episode-runner/consequence-sandbox.js. Tarrowby Logistics and everyone/everywhere in it are fictional; see defend.json and BRAND_ADDITIONS.md. NAMING NOTE for the wiring agent: E20 brief section 15 calls this file attack.json; it is authored as mistake.json to match E11 (its ENG-04 sibling) and open question 4's 'follow E11 exactly'. The generator reads only defend.json, so this filename is a human handoff only.",
+
+  "_notes": {
+    "mistake": "Paste at social.awarenessEpisode.mistake (ENG-04). Five everyday choices on the road, unscored. Exactly one safe:true option per beat (the approved route). The safe option's position is VARIED beat to beat (1st, 2nd, 1st, 2nd, 1st), so it is never always first and never always second (AGENT_RULES_CONTENT line 15; E20 task instruction 'vary where the safe option sits'). This REORDERS the options from the E20 brief section 9 draft, where the safe option was second in all five beats; the labels and ids are unchanged, and the montage keys on option id, not position, so the reorder is safe. flipBeat is cafe_wifi, the one beat with a real adversary (a look-alike network and an over-asking page), quoted back as the montage headline (aw2).",
+    "flip": "Paste at social.awarenessEpisode.flip (ENG-04). mode 'montage' makes the flip replay the sandbox choices instead of looking for a sent message; required when stages lists 'mistake' (awareness.rb). flipHeading ('Later that day') lives in defend.json strings, shared by both variants (though the defend-only shell has no flip, so it is never shown there).",
+    "flipMontageByChoice": "Paste at social.awarenessEpisode.strings.flipMontageByChoice (ENG-04), FULL shell only. Keyed beatId then optionId; a line is authored for BOTH options of every beat (E20 brief section 10), so ENG-04's unsafe-option fallback never fires. The montage shows the line for the option the learner ACTUALLY TOOK (episode-model.js montageProps): a safe pick shows its good-outcome line, tagged 'Your call: the safe route'; an unsafe pick shows where it went wrong, tagged 'Your call' (flip-view.js). (Corrected 2026-10-29, E20 design C2 MI4: an earlier note here wrongly said a safe pick shows the 'went wrong' version.) No bystander steals or misuses anything (no-blame). Erb-only: it must NOT appear in the defend-only shell (parity test); add flipMontageByChoice to STRINGS_ERB_ONLY_OK in test/js/social-awareness-fragment-erb-parity.test.mjs (ENG-04 owns this).",
+    "defendIntro": "Paste at social.awarenessEpisode.strings.defendIntro in the FULL erb only (E20 brief section 8b, 'After the attack half'). The host's hand-off line from the montage into the defend half; the runner shows it entering the defend stage (as E16 does, full_only.json). The defend-only shell takes its own defendIntro from gen EPISODES['e20']['defend']['defendIntro'] (section 8b), so this full-shell line is not in the fragment strings and not in the host ink."
+  },
+
+  "mistake": {
+    "scored": false,
+    "beats": [
+      {
+        "id": "train_screen",
+        "situation": "On the 07:42, you open the client list to check it before the meeting. Where do you work on it?",
+        "options": [
+          { "id": "back_to_wall", "label": "Take the seat with its back to the wall and put the privacy screen on", "safe": true, "approvedRoute": true },
+          { "id": "aisle_open",   "label": "Stay in the aisle seat and open it where you are, people behind you", "safe": false }
+        ]
+      },
+      {
+        "id": "cafe_call",
+        "situation": "In the café queue, a client rings and asks you to read out the building's alarm code and the room list. What do you say?",
+        "options": [
+          { "id": "read_it_out", "label": "Read the code and the room list out quietly down the phone", "safe": false },
+          { "id": "call_back",   "label": "Tell them you'll call back from somewhere private", "safe": true, "approvedRoute": true }
+        ]
+      },
+      {
+        "id": "mind_laptop",
+        "situation": "You go to the counter. The friendly person at the next table offers to watch your laptop. What do you do?",
+        "options": [
+          { "id": "take_it",  "label": "Thank them, and take the laptop and tablet with you", "safe": true, "approvedRoute": true },
+          { "id": "leave_it", "label": "Thank them and leave it with them, back in a minute", "safe": false }
+        ]
+      },
+      {
+        "id": "cafe_wifi",
+        "situation": "The café Wi-Fi list shows two networks that look like the venue's. The stronger one's page asks for your work email and password to get online. What do you do?",
+        "options": [
+          { "id": "sign_in_fake", "label": "Join the stronger network and sign in with your work account", "safe": false },
+          { "id": "venue_or_hotspot", "label": "Ask the staff which network is theirs, or use your phone's hotspot", "safe": true, "approvedRoute": true }
+        ]
+      },
+      {
+        "id": "lost_tablet",
+        "situation": "That evening the survey tablet isn't in your bag. It's locked. What do you do?",
+        "options": [
+          { "id": "ring_now",     "label": "Ring the service desk now and say where you last had it", "safe": true, "approvedRoute": true },
+          { "id": "wait_morning", "label": "Leave it till morning, it's locked and might still turn up", "safe": false }
+        ]
+      }
+    ],
+    "flipBeat": "cafe_wifi"
+  },
+
+  "flip": { "mode": "montage" },
+
+  "flipMontageByChoice": {
+    "_use": "The full text of the montage lines. Lives at social.awarenessEpisode.strings.flipMontageByChoice in the full erb.",
+    "cafe_wifi": {
+      "sign_in_fake":    "The stronger network wasn't the café's; it was named to look like it. Your work password went to whoever set it up, and by mid-afternoon someone had signed in as you from across town.",
+      "venue_or_hotspot": "You joined the network the staff named and waited for the VPN. The look-alike with the stronger signal was the one the attackers were hoping you'd pick, and it got nothing from you."
+    },
+    "train_screen": {
+      "aisle_open":   "The student in the row behind read three clients' names off your screen before you closed it. She wasn't being nosy; the screen was just there.",
+      "back_to_wall": "With your back to the wall and the privacy screen on, the names stayed yours. The student behind you saw a spreadsheet of nothing in particular."
+    },
+    "cafe_call": {
+      "read_it_out": "Everyone in the queue heard the alarm code and which rooms to go to. By the next day the client had changed the code, and every cleaner needed the new one.",
+      "call_back":   "\"I'll call you back\" was a complete answer. You rang from outside, and nobody in the queue heard a thing."
+    },
+    "mind_laptop": {
+      "leave_it":    "The stranger was lovely and touched nothing. The couple at the next table, though, could read your open inbox for the whole four minutes you were at the counter.",
+      "take_it":     "The laptop and tablet came with you to the counter, so there was nothing on the table for anyone to read, and nothing to walk off."
+    },
+    "lost_tablet": {
+      "wait_morning": "The tablet sat in the café overnight, still signed in to the survey app. By the time you reported it next morning, it had been out of your hands for twelve hours.",
+      "ring_now":     "You rang the service desk that evening. They locked the tablet within minutes, and when the café found it the next day it was switched back on. The hours that matter never happened."
+    }
+  },
+
+  "defendIntro": "Those were the everyday calls, and you've seen where each one can lead. None of it takes anything clever, just a moment's attention at the right time. Now it's your turn: tell the safe networks and pages from the look-alikes."
+}

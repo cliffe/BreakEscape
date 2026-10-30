@@ -1,0 +1,776 @@
+{
+  "scenario_id": "awareness_e9_passwords",
+  "scenario_name": "Passwords and password managers: both sides",
+  "titleScreenName": "Passwords and password managers",
+  "scenario_brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier, in the depot office. First you're on the red team: look at what a colleague has put online (click a line to note it), build a guess list from it, and watch how fast a reused password opens his work account. Then it's your own account under attack, and you lock it down. Only the lock-down part is scored.",
+  "endGoal": "Run the guesser, then lock your own account down at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "red_team_guess_aim",
+      "title": "Run the guesser",
+      "description": "Build a guess list from a colleague's public details and watch how fast a reused password opens his work account.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "run_the_guesser",
+          "title": "Run the guesser against the colleague",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "lock_down_aim",
+      "title": "Lock your account down",
+      "description": "Work through the sign-in prompts and password choices at the training kiosk.",
+      "status": "active",
+      "order": 1,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e9_passwords_defend_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Passwords: finished",
+        "body": "You've seen how a password gets guessed or reused, then worked on locking your own account down. That's this episode finished. The debrief goes through each one."
+      },
+      "tasks": [
+        {
+          "taskId": "lock_the_account",
+          "title": "Lock your account down",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e9_passwords_state": {},
+    "se_awareness_records": [],
+    "episode_e9_passwords_defend_percent": 0,
+    "episode_e9_passwords_defend_reportRate": 0,
+    "episode_e9_passwords_defend_done": false,
+    "episode_e9_passwords_defend_pass": false,
+    "se_osint_state": {},
+    "se_intel_tarrowby_mather_role": false,
+    "se_intel_tarrowby_mather_team": false,
+    "se_intel_tarrowby_mather_pet": false,
+    "se_intel_tarrowby_founded": false,
+    "se_intel_tarrowby_mather_forum": false,
+    "guess_e9_landed": false
+  },
+  "social": {
+    "triageSets": [
+      {
+        "labels": {
+          "teamBadgeTitle": "Risky sign-in prompts you reported or checked this round rather than going along with",
+          "teamBadge": "Risks reported or checked for the team: {n}",
+          "phishCaughtLabel": "Risks spotted"
+        },
+        "bands": [
+          {
+            "min": 85,
+            "headline": "Well done: you spotted the risks and knew why"
+          },
+          {
+            "min": 60,
+            "headline": "Getting there: a few risks slipped past"
+          },
+          {
+            "min": 0,
+            "headline": "Worth practising: here's where to look first"
+          }
+        ],
+        "criticalWhat": {
+          "push": "approving a sign-in you didn't start",
+          "email": "doing what a fake 'IT' message asked"
+        },
+        "reportReply": "Thanks. We'll look at the account and reset whatever needs it.",
+        "resultCopy": {
+          "noFlags": "Next time, tick what looks off. The review cards show what each risk was.",
+          "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+          "criticalLead": "let someone into the account",
+          "reportedPct": "Reported {pct}% of the risks"
+        },
+        "id": "e9_lock_it_down",
+        "title": "Your Tarrowby account under attack",
+        "brief": "It's your own Tarrowby account now, and someone has a password of yours. Eight things come up: sign-in prompts, a message dressed up as IT, and a few password choices. Approve a prompt only if you started it; otherwise deny and report. No clock, and no real password is typed. Reporting when you're unsure is always fine.",
+        "scoringProfile": "awareness",
+        "scoring": { "criticalPenalty": 5, "criticalPenaltyCap": 5 },
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "unrequested_mfa_push",
+          "mfa_number_relay",
+          "secrecy_or_bypass"
+        ],
+        "flagChips": {
+          "mfa_number_relay": "A message asking you to type or read back a sign-in number or code"
+        },
+        "genuineCopy": {
+          "binnedLeadOne": "One prompt you started was denied",
+          "binnedLeadMany": "{n} prompts you started were denied",
+          "costBoth": "Reporting when you're unsure is never wrong, but a report on your own prompt takes a colleague's time to check, and a denied one means you are locked out until you try again.",
+          "costReport": "Reporting when you're unsure is never wrong, but a report on your own prompt takes a colleague's time to check, and you wait.",
+          "costBin": "Denying a prompt you started has a cost: you are locked out until you try again.",
+          "whyBothHalves": "Both halves matter: denying a prompt you didn't start stops the attack, and approving the ones you did keeps you working."
+        },
+        "skillNames": {
+          "mfa_number_relay": "Sign-in number requests",
+          "unrequested_mfa_push": "Sign-in approval requests"
+        },
+        "outcome": {
+          "setGlobalPrefix": "episode_e9_passwords_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e9_push_own",
+            "kind": "push",
+            "time": "08:12",
+            "push": {
+              "app": "Tarrowby Sign-in",
+              "request": "Are you trying to sign in?",
+              "account": "you@tarrowby.example",
+              "location": "Leeds, UK",
+              "device": "your own phone"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "This prompt is on your own phone, from Leeds, at a normal hour. If you have just signed in yourself, a prompt like this is the normal second step, so Approve it. Denying it or reporting it is no error, it just means signing in again."
+              }
+            }
+          },
+          {
+            "id": "e9_push_unstarted",
+            "kind": "push",
+            "time": "02:40",
+            "push": {
+              "app": "Tarrowby Sign-in",
+              "request": "Are you trying to sign in?",
+              "account": "you@tarrowby.example",
+              "location": "Unknown location, outside the UK",
+              "device": "Windows PC"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unrequested_mfa_push"
+              ],
+              "perFlagNote": {
+                "unrequested_mfa_push": "A sign-in prompt at 02:40, from a Windows PC outside the UK that is not yours, while you were asleep, means someone has your password and is hoping you will tap Approve. Deny it and report it; the service desk changes the password."
+              },
+              "ifTrusted": "Approving would let the sender into your Tarrowby account, with your access, from a computer you've never used.",
+              "reportReply": "Thanks. We've reset your password and blocked that sign-in. Denying the prompt is what stopped them."
+            }
+          },
+          {
+            "id": "e9_fake_it_number",
+            "from": {
+              "name": "Tarrowby IT Service Desk",
+              "address": "tarrowby.itdesk@mailboxly.example"
+            },
+            "to": "you@tarrowby.example",
+            "subject": "We can stop those sign-in prompts for you",
+            "time": "02:46",
+            "body": "Hello,\nWe can see failed sign-ins on your account and we know the prompts are a nuisance. To stop them, read back the six-digit number on your screen in a reply, or just tap Approve on the next prompt and we'll close it off.\nTarrowby IT Service Desk",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "mailboxly.example",
+              "replyTo": "tarrowby.itdesk@mailboxly.example"
+            },
+            "factorStrings": {
+              "mfa_number_relay": {
+                "redFlag": "A message asking you to type or read back a sign-in number or code"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "mfa_number_relay",
+                "senderTrust"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The address is an outside mailbox (mailboxly.example), not a Tarrowby one, so it only borrows the service desk's name.",
+                "mfa_number_relay": "No genuine IT team asks you to type a number, read back a code or approve a prompt. The number is on the attacker's screen; reading it back, or approving, hands them the account."
+              },
+              "ifTrusted": "Reading back the number, or approving, lets the sender straight into your account.",
+              "reportReply": "Thanks. That wasn't IT: we never ask you to read back a number or approve a prompt. We've reset the password and the prompts have stopped."
+            }
+          },
+          {
+            "id": "e9_passphrase",
+            "kind": "choice",
+            "subject": "Which password is stronger?",
+            "choice": {
+              "prompt": "Which of these makes the stronger password?",
+              "options": [
+                {
+                  "id": "complex",
+                  "label": "Your company's name with a capital, a year and a symbol on the end (for example Tarrowby2026!)",
+                  "verdict": "trust"
+                },
+                {
+                  "id": "words",
+                  "label": "Three random words strung together (for example otter-ladder-crimson)",
+                  "verdict": "report"
+                }
+              ],
+              "note": "These are made up for the exercise; no real password is typed or stored. Never use a training example as your real password."
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [],
+              "correct": "report",
+              "reportReply": "Length and unpredictability beat complexity rules. The company name plus a year plus a symbol is near the top of every guess list, exactly the pattern a guesser tries first. Another random word adds far more than a capital or a symbol does.",
+              "ifTrusted": "A company-name-plus-year-plus-symbol password is one of the first things a guesser tries; the symbol on the end barely slows it down."
+            }
+          },
+          {
+            "id": "e9_signup_password",
+            "kind": "choice",
+            "subject": "A password for the new FuelWise portal",
+            "choice": {
+              "prompt": "The new FuelWise supplier portal asks you to set a password. What do you use?",
+              "options": [
+                {
+                  "id": "unique",
+                  "label": "A new password made up by your password manager when you sign up",
+                  "verdict": "report"
+                },
+                {
+                  "id": "reuse",
+                  "label": "Your usual password, the one you already use for other sign-ins",
+                  "verdict": "trust"
+                }
+              ],
+              "note": "No real password is typed; the password manager fills it in for you."
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [],
+              "correct": "report",
+              "reportReply": "A unique generated password means a breach of FuelWise can't open anything else. Let the manager make and remember it; you never have to type or recall it.",
+              "ifTrusted": "Reusing your usual password is the one habit that turns a breach of any site you used into a break-in everywhere you used the same one."
+            }
+          },
+          {
+            "id": "e9_security_answer",
+            "kind": "choice",
+            "subject": "A security question on the FuelWise sign-up",
+            "choice": {
+              "prompt": "FuelWise asks for your mother's maiden name as a security question. What do you give it?",
+              "options": [
+                {
+                  "id": "true",
+                  "label": "Your real mother's maiden name, so it is easy to remember",
+                  "verdict": "trust"
+                },
+                {
+                  "id": "madeup",
+                  "label": "A made-up answer saved in your password manager",
+                  "verdict": "report"
+                }
+              ],
+              "note": "The made-up answer is stored with the login, so you never have to remember it."
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [],
+              "correct": "report",
+              "reportReply": "A true security answer can be found online or guessed from what you've posted, so a made-up one kept in the manager is safer. Treat the answer like another password.",
+              "ifTrusted": "A real maiden name is the sort of thing a guesser can look up or work out from public posts, the same way they build a guess list in the first place."
+            }
+          },
+          {
+            "id": "e9_signin_ladder",
+            "kind": "choice",
+            "subject": "How to sign in to this service",
+            "choice": {
+              "prompt": "This service offers three ways to sign in. Pick the strongest it offers.",
+              "options": [
+                {
+                  "id": "app",
+                  "label": "The authenticator app, matching the number it shows",
+                  "verdict": "trust"
+                },
+                {
+                  "id": "passkey",
+                  "label": "A passkey (fingerprint, face or PIN, tied to the real site)",
+                  "verdict": "report"
+                },
+                {
+                  "id": "sms",
+                  "label": "A one-time code sent by text message",
+                  "verdict": "trust"
+                }
+              ],
+              "note": "Turn on the strongest the service offers; any of these beats a password on its own."
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [],
+              "correct": "report",
+              "reportReply": "A passkey only works on the real site, so it can't be phished or relayed the way the fake 'IT' message tried. The app with number matching is next best; a text code is a last resort, still better than a password alone.",
+              "ifTrusted": "The app and the text code are both worth having, but they can be phished or relayed. Where a passkey is offered, it is the one to choose."
+            }
+          },
+          {
+            "id": "e9_shared_pc",
+            "kind": "choice",
+            "subject": "A password on a sticky note",
+            "choice": {
+              "prompt": "A depot PC has its password on a sticky note on the monitor, readable from the loading bay. You need to use it. What do you do?",
+              "options": [
+                {
+                  "id": "use_note",
+                  "label": "Use the password on the note, just this once, because the job is urgent",
+                  "verdict": "trust"
+                },
+                {
+                  "id": "ask",
+                  "label": "Ask the service desk for your own account",
+                  "verdict": "report"
+                }
+              ],
+              "note": "Finding a password on a note is common; the fix is the service desk's job, but you can ask for it."
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [],
+              "correct": "report",
+              "reportReply": "A shared login means nobody knows who did what, the password spreads to anyone who walks past, and leavers keep access. Don't use a found password; ask the service desk for your own account.",
+              "ifTrusted": "Signing in on someone else's password, even to get a job done, leaves a record in their name and keeps a login going that anyone in the bay can read."
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e9_passwords",
+      "role": "general_staff",
+      "company": "tarrowby_logistics",
+      "brand": {
+        "name": "Tarrowby Logistics",
+        "logoText": "TARROWBY",
+        "accent": "#3b5b8c"
+      },
+      "variant": "full",
+      "durationTargetMin": 15,
+      "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: a guess list built from one colleague's public details, and your own sign-in choices. No real password is ever typed or stored; the guesses and codes are made up.",
+      "stages": [
+        "brief",
+        "osint",
+        "guess",
+        "flip",
+        "defend",
+        "debrief"
+      ],
+      "stepLabels": {
+        "guess": "Guess list",
+        "flip": "Your phone"
+      },
+      "conclusionTaskId": "lock_the_account",
+      "attack": {
+        "siteIds": [
+          "tarrowby_site",
+          "tarrowby_social"
+        ],
+        "scored": false
+      },
+      "guess": {
+        "target": "colin",
+        "commonList": [
+          "123456",
+          "password",
+          "qwerty",
+          "tarrowby"
+        ],
+        "patternSlots": [
+          {
+            "id": "team",
+            "factId": "tarrowby_mather_team",
+            "word": "Pennington",
+            "template": "{team}1994"
+          },
+          {
+            "id": "pet",
+            "factId": "tarrowby_mather_pet",
+            "word": "Bramble",
+            "template": "{pet}!"
+          },
+          {
+            "id": "year",
+            "factId": "tarrowby_founded",
+            "word": "1994",
+            "template": "Tarrowby{year}"
+          }
+        ],
+        "reuseStep": {
+          "site": "RiverReach Angling",
+          "domain": "riverreachangling.example",
+          "factId": "tarrowby_mather_forum",
+          "landsOn": "work",
+          "note": "One breach of a small site opened the work account."
+        },
+        "passphraseDemo": {
+          "words": [
+            "otter",
+            "ladder",
+            "crimson"
+          ],
+          "neverLands": true
+        },
+        "landedGlobal": "guess_e9_landed",
+        "note": "No real password is typed here; every guess is made up."
+      },
+      "defend": {
+        "setId": "e9_lock_it_down",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "flipAftermath": {
+        "victimName": "you",
+        "intro": "No clever cracking, just a password that worked. A few minutes later, this is what your phone starts showing.",
+        "items": [
+          {
+            "id": "fa_push_flood",
+            "kind": "push",
+            "push": {
+              "app": "Tarrowby Sign-in",
+              "account": "you@tarrowby.example",
+              "location": "Unknown location, outside the UK",
+              "device": "Windows PC"
+            },
+            "note": "A sign-in prompt you did not start, at 02:40, then another, then another."
+          },
+          {
+            "id": "fa_it_text",
+            "kind": "sms",
+            "from": "Tarrowby IT",
+            "subject": "A message that says it's IT",
+            "body": "We can see the failed sign-ins. Read back the number on your screen and we'll stop the prompts.",
+            "note": "A message dressed up as IT, offering to make the prompts stop if you read back the number."
+          }
+        ]
+      },
+      "strings": {
+        "defendIntro": "Go through the sign-in prompts and password choices one at a time. Deny any prompt you didn't start, and pick the stronger option each time.",
+        "teamLine": "By reporting or checking {n} of these rather than going along with them, you kept a risk away from the rest of your team.",
+        "weakestTells": "The risks most often missed: {names} ({counts} each).",
+        "weakestTell": "The risk most often missed: {names} ({counts}).",
+        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier, in the depot office. First you're on the red team: look at what a colleague has put online (click a line to note it), build a guess list from it, and watch how fast a reused password opens his work account. Then it's your own account under attack, and you lock it down. Only the lock-down part is scored.",
+        "flipHeading": "Now it's your phone.",
+        "flipGuessIntro": "You watched a reused password open a colleague's account. Here is the other end: your own phone.",
+        "flipIntro": "You watched a reused password open a colleague's account. Here is the other end: your own phone, buzzing with sign-in prompts you didn't start, and a message from 'IT' telling you how to make them stop.",
+        "flipDefenderLine": "Someone has a password of yours, from a breach of a site you forgot you used, and they're leaning on your phone because they can't get past it. The number any 'IT' message asks you to read back is on their screen, not IT's, so deny what you didn't start and report it.",
+        "flipNoSend": "Nothing of the colleague's is here to replay, but the lesson is the same: a reused password is what opens an account. Next, you lock your own account down.",
+        "flipMissed": "The guesser didn't land this time, but a reused password is still what opens an account. Next, you lock your own account down.",
+        "flipMissedHeading": "Nothing landed this time",
+        "flipLandedNoTells": "It opened on a reused password with nothing clever at all. Next, you lock your own account down.",
+        "allPhishRight": "Every risk was caught, with every reason named.",
+        "noBlameLine": "Reusing a password is ordinary and common; this is how most accounts are broken into, not a sign anyone was careless. A miss here just shows what to change tonight.",
+        "mondayCard": "On Monday, three things at home: turn on 2-step verification, or a passkey, for your personal email first; check your personal email address on a breach-checking site (the NCSC suggests Have I Been Pwned); and switch on a password manager, starting with your email. Report anything at work using the route in the box below.",
+        "defendOnly": "Everything here follows one reused password doing the rounds. Anything you were caught out by is shown below, with what to do instead.",
+        "conceptPanel": [
+          {
+            "heading": "How passwords get stolen",
+            "text": "Most passwords aren't cracked by genius. They're guessed from the obvious first (123456, a team, a pet, the company name and a year), reused from a breach of another site, phished through a fake sign-in page, or simply handed over. A different password for every account, kept in a manager, is the one habit that blunts all of those at once."
+          },
+          {
+            "heading": "The sign-in ladder",
+            "text": "Turn on a second step beyond the password wherever you can. A passkey is best: it only works on the real site, so it can't be phished or relayed. An authenticator app with number matching is next. A text code is a last resort, but still far better than a password alone."
+          },
+          {
+            "heading": "Browsers, notes and managers",
+            "text": "A password manager makes and remembers a different password for every account and fills it in only on the right site. Your browser's own manager is fine for personal accounts on your own devices; at work, use what the organisation provides. Never leave a password on a note on a shared desk, monitor or keyboard."
+          },
+          {
+            "heading": "What a passkey is",
+            "text": "A passkey replaces the password with a secret kept on your device or in your manager, unlocked the way you unlock your phone. Because it is tied to the real website, it can't be typed into a fake page, reused on another site, or leaked in someone else's breach."
+          }
+        ]
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "people": [
+      {
+        "id": "colin",
+        "kind": "cast",
+        "address": "colin.mather@tarrowby.example",
+        "forms": {
+          "first": "Colin",
+          "formal": "Mr Mather",
+          "full": "Colin Mather"
+        }
+      }
+    ],
+    "intelFacts": {
+      "tarrowby_mather_role": {
+        "text": "Colin Mather is Tarrowby's warehouse manager.",
+        "subject": "colin",
+        "source": "blk_warehouse_mgr",
+        "provides": [],
+        "reduceNote": "A named manager on the public team page gives an attacker a specific person to guess a password for."
+      },
+      "tarrowby_mather_team": {
+        "text": "Colin posts about supporting Pennington Rangers every Saturday.",
+        "subject": "colin",
+        "source": "post_mather_team",
+        "provides": [
+          {
+            "type": "guessToken",
+            "value": "Pennington",
+            "label": "Pennington",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "A favourite team is one of the first things a guesser tries, and he posts his every week."
+      },
+      "tarrowby_mather_pet": {
+        "text": "Colin's photos of his dog Bramble.",
+        "subject": "colin",
+        "source": "post_mather_pet",
+        "provides": [
+          {
+            "type": "guessToken",
+            "value": "Bramble",
+            "label": "Bramble",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "A pet's name is a classic password and an easy one to lift from a public photo caption."
+      },
+      "tarrowby_founded": {
+        "text": "Tarrowby Logistics has run from the same West Yorkshire depot since 1994.",
+        "subject": "company",
+        "source": "blk_about",
+        "provides": [
+          {
+            "type": "guessToken",
+            "value": "1994",
+            "label": "1994",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "The founding year on the about page is the digits a guesser adds to the company name or the team."
+      },
+      "tarrowby_mather_forum": {
+        "text": "Colin mentions he has been on the RiverReach Angling forum for years.",
+        "subject": "colin",
+        "source": "post_mather_forum",
+        "provides": [],
+        "reduceNote": "A small hobby site he's used for years is just the sort of place that gets breached and whose password gets reused at work."
+      }
+    },
+    "osint": {
+      "profile": "awareness",
+      "sites": [
+        {
+          "id": "tarrowby_site",
+          "name": "Tarrowby Logistics",
+          "url": "tarrowby.example",
+          "type": "company-site",
+          "pages": [
+            {
+              "id": "team",
+              "title": "Our people",
+              "blocks": [
+                {
+                  "id": "blk_warehouse_mgr",
+                  "kind": "staff",
+                  "person": "colin",
+                  "name": "Colin Mather",
+                  "role": "Warehouse manager",
+                  "address": "colin.mather@tarrowby.example",
+                  "fact": "tarrowby_mather_role"
+                }
+              ]
+            },
+            {
+              "id": "about",
+              "title": "About us",
+              "blocks": [
+                {
+                  "id": "blk_about",
+                  "kind": "p",
+                  "text": "Tarrowby Logistics has run from the same West Yorkshire depot since 1994, hauling and warehousing for the region.",
+                  "fact": "tarrowby_founded"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "tarrowby_social",
+          "name": "Friendface",
+          "url": "friendface.example",
+          "type": "social",
+          "profiles": [
+            {
+              "person": "colin",
+              "posts": [
+                {
+                  "id": "post_mather_team",
+                  "text": "Up at Pennington Rangers again this Saturday. Same result, same pie. Wouldn't miss it.",
+                  "fact": "tarrowby_mather_team"
+                },
+                {
+                  "id": "post_mather_pet",
+                  "text": "Bramble says morning. Best office dog on the yard.",
+                  "fact": "tarrowby_mather_pet"
+                },
+                {
+                  "id": "post_mather_forum",
+                  "text": "Been on the RiverReach Angling forum donkey's years now. Good crowd on there.",
+                  "fact": "tarrowby_mather_forum"
+                },
+                {
+                  "id": "post_mather_other",
+                  "text": "Trailers backed up to Leeds this morning. Long week already."
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "pinHints": true,
+      "pinLabel": "Click to note"
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on",
+    "ambient": "#bcc2cc"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_tarrowby",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_tarrowby_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "drinks_vending": {
+            "color": "#e0f0ff",
+            "radius": 40,
+            "intensity": 0.45
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 4.5,
+            "y": 5,
+            "color": "#dfe8f4",
+            "radius": 110,
+            "intensity": 0.25
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "nilesh_solanki",
+          "displayName": "Nilesh Solanki",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/awareness_e9_passwords/ink/nilesh_solanki.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:guess_e9_landed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "run_the_guesser"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e9_passwords_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "run_the_guesser"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e9_passwords_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "lock_the_account"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen training kiosk for the Tarrowby passwords exercise: first a guess list built from a colleague's public details, then your own account to lock down.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e9_passwords_defend_done",
+              "value": "A touch-screen training kiosk for the Tarrowby passwords exercise. Nothing left to do here."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e9_passwords"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -457,7 +457,12 @@ module BreakEscape
         is_start_room = @game.scenario_data['startRoom'] == room_id
         is_unlocked = @game.player_state['unlockedRooms']&.include?(room_id)
 
-        unless is_start_room || is_unlocked
+        # An awareness episode's world room (social.awarenessEpisode.world.room) is
+        # open from the start; works for games already in progress, as it is read
+        # from scenario_data on every request.
+        is_world_room = @game.awareness_world_room?(room_id)
+
+        unless is_start_room || is_unlocked || is_world_room
           return render_error("Room not accessible: #{room_id}", :forbidden)
         end
 

@@ -24,6 +24,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from title_art import with_title_art  # noqa: E402
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
 
@@ -276,12 +277,12 @@ EPISODES = {
             'aim': ('work_phone_aim', 'Check the work phone', 'Go through the six items on the work phone at the training kiosk.'),
             'task': ('check_work_phone', 'Check the work phone'),
             'kiosk': ('A touch-screen kiosk set up as a Tarrowby work phone, with texts, notices and an email waiting.',
-             'A touch-screen kiosk set up as a Tarrowby work phone. The texts, notices and email are all dealt with.'),
+             'A touch-screen kiosk set up as a Tarrowby work phone. Nothing left to do here.'),
             'display': 'Awareness E6: Texts and QR codes (phone only)',
             'desc': "An awareness episode of about 8 minutes for staff with a work phone, on the defending side only. Six items on a phone at Tarrowby Logistics, a fictional haulier: texts, printed notices with QR codes and an email. Some are real and some were built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'defendIntro': "Go through the work phone and decide what to do with each text, notice and email. On a notice, check where the code goes before you would scan it. There's no clock on you here; the whole job is one or two small habits.",
-            'conclusion': ('Work phone done', "You've been through all six items and finished this episode."),
+            'conclusion': ('Work phone done', "That's the work phone finished. The debrief goes through each item."),
         },
         'check': {
             'items_pre': 'Ten items from a Tarrowby work phone: texts, printed notices with QR codes, and emails.',
@@ -308,7 +309,7 @@ EPISODES = {
             'aim': ('finance_line_aim', 'Cover the finance line', 'Go through the three voicemails and two emails at the training kiosk.'),
             'task': ('check_finance_line', 'Cover the finance line'),
             'kiosk': ("A touch-screen kiosk showing the finance office's phone and inbox, with voicemails and emails waiting.",
-             "A touch-screen kiosk showing the finance office's phone and inbox. The voicemails and emails are all dealt with."),
+             "A touch-screen kiosk showing the finance office's phone and inbox. Nothing left to do here."),
             'display': 'Awareness E7: Voice and the CEO (phone and inbox only)',
             'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Cover the finance office's phone and inbox at Brightwell Foods, a fictional company: three voicemails, one of them in a copied voice, and two emails. Each answer is explained, and ringing back when you're unsure is always fine and never marked down.",
             'minutes': 8,
@@ -317,7 +318,7 @@ EPISODES = {
                 'heading': 'How a voice gets copied',
                 'text': "Recordings of someone speaking in public, such as a talk, an interview or a company video, can be used to make new sentences in a voice that sounds like theirs. If you can't reach the person to check, ask someone who would know, such as the finance manager.",
             },
-            'conclusion': ('Finance line done', "You've been through all five messages and finished this episode."),
+            'conclusion': ('Finance line done', "You've worked through all five messages. The debrief goes through each one."),
         },
     },
 }
@@ -477,17 +478,37 @@ def check(ekey, pair, stage):
     return mission, sc, meta, ink_name, ink
 
 
+# Top-level titleScreenName (engine batch 14), placed right after scenario_name. Values match the committed
+# shells (owner decision 2026-10-30): checks say Starting check / Final check, defend shells use the episode name.
+TITLE_NAMES = {'awareness_e6_texts_and_qr_defend': 'Texts and QR codes', 'awareness_e7_voice_ceo_defend': 'Cloned voices and the CEO'}
+
+
+def with_title_screen_name(sc, mission):
+    if '_pre_' in mission:
+        title = 'Starting check'
+    elif '_post_' in mission:
+        title = 'Final check'
+    else:
+        title = TITLE_NAMES.get(mission)
+    if title is None:
+        return sc
+    return {k2: v2 for k, v in sc.items() for k2, v2 in
+            (((k, v), ('titleScreenName', title)) if k == 'scenario_name' else ((k, v),))}
+
+
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else REPO + '/scenarios'
     built = [defend_only('e6')]
     built += [check('e6', p, st) for p in ('ab', 'ba') for st in ('pre', 'post')]
     built.append(defend_only('e7'))
     for mission, sc, meta, ink_name, ink in built:
+        sc = with_title_screen_name(sc, mission)
         d = os.path.join(out, mission)
         os.makedirs(os.path.join(d, 'ink'), exist_ok=True)
         with open(os.path.join(d, 'scenario.json.erb'), 'w') as f:
             json.dump(sc, f, indent=2, ensure_ascii=False)
             f.write('\n')
+        meta = with_title_art(meta, mission)
         with open(os.path.join(d, 'mission.json'), 'w') as f:
             json.dump(meta, f, indent=2, ensure_ascii=False)
             f.write('\n')

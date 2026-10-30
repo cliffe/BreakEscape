@@ -85,10 +85,18 @@ class StubMail extends StubOverlay {
     }
 }
 class StubTriage extends StubOverlay {}
+// ENG-06: a stub assistant overlay. It records the config it was opened with; a Close is a
+// normal exit, so the runner's onComplete advances the flip stage.
+let assistantOpens = [];
+let assistantParams = [];
+class StubAssistant extends StubOverlay {
+    init() { super.init(); assistantOpens.push(this.params.config || null); assistantParams.push(this.params); }
+}
 FW.registerScene('episode-runner', EpisodeRunnerMinigame);
 FW.registerScene('osint-browser', StubOverlay);
 FW.registerScene('mail-client', StubMail);
 FW.registerScene('inbox-triage', StubTriage);
+FW.registerScene('assistant-chat', StubAssistant);
 
 // ── fixture data ─────────────────────────────────────────────────────────────
 const fullEpisode = () => ({
@@ -150,6 +158,8 @@ function setup(episode, globals = {}) {
     alerts.length = 0;
     errors.length = 0;
     calls.strip = 0; calls.flip = []; calls.debrief = []; calls.measure = []; calls.triage = [];
+    assistantOpens = [];
+    assistantParams = [];
     triageMode = { readOnly: false };
     stub.mailAbort = false; stub.mailSend = true;
     window.gameState = { globalVariables: { [M.stateKey(episode.id)]: {}, se_awareness_records: {}, ...globals } };
@@ -227,7 +237,15 @@ test('a full episode runs every stage in order and holds then clears sent', () =
     assert.equal(calls.debrief.at(-1).variant, 'full');
 
     click('.stub-finish');
-    assert.equal(cur(), null);
+    // batch-10: Finish now shows the end-of-episode panel (not an immediate close); the bar's
+    // Close then closes the runner.
+    assert.ok(cur().container.querySelector('.epr-finished'), 'the episode-finished panel shows');
+    assert.equal(cur().container.querySelector('.epr-finished .epr-heading').textContent, 'Episode finished');
+    // the bar's Close is the only close and it closes the runner
+    const closeBtn = [...cur().container.querySelectorAll('button')].find((b) => /close/i.test(b.textContent));
+    assert.ok(closeBtn, 'a keyboard-reachable Close');
+    closeBtn.click();
+    assert.equal(cur(), null, 'Close closes the runner');
     assert.deepEqual(stored(ep.id).done, ['brief', 'osint', 'write', 'flip', 'defend', 'debrief']);
     assert.equal(stored(ep.id).stage, null);
     assert.equal(failed().length, 0);
@@ -288,6 +306,43 @@ test('the flip shows no message when nothing usable was sent', () => {
     assert.equal(epState().stage, 'flip');
     assert.equal(calls.flip[0].message, null);
     assert.equal(calls.flip[0].strings.flipNoSend, 'Nothing sent.');
+});
+
+// ── ENG-06: the flip opens the authored assistant when authored ───────────────
+test('no assistant block: flip Continue completes the flip directly, no assistant-chat opens', () => {
+    const ep = fullEpisode();
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write'] } });
+    open(ep);
+    assert.equal(epState().stage, 'flip');
+    click('.stub-continue');
+    assert.equal(assistantOpens.length, 0, 'no assistant scene opened');
+    assert.ok(stored(ep.id).done.includes('flip'), 'the flip is completed');
+    assert.equal(scene(), 'episode-runner', 'the runner stays on top (no child opened)');
+});
+
+test('assistant block: flip Continue opens assistant-chat with the config; its close advances to defend', () => {
+    const ep = { ...fullEpisode(), assistant: { title: 'Brightwell Assist', summarise: { button: 'Go', reply: 'Hi' } } };
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write'] } });
+    open(ep);
+    assert.equal(epState().stage, 'flip');
+    click('.stub-continue');
+    assert.equal(scene(), 'assistant-chat', 'the assistant overlay opened');
+    assert.equal(assistantOpens.length, 1);
+    assert.equal(assistantOpens[0].title, 'Brightwell Assist', 'the authored config was passed through');
+    closeChild(); // a normal close returns to the runner and advances the flip
+    assert.equal(scene(), 'episode-runner');
+    assert.ok(stored(ep.id).done.includes('flip'), 'the flip is done once the assistant closes');
+    assert.equal(epState().stage, 'defend');
+});
+
+test('assistant: the sent pretext is passed through so the summarise mode can surface it by choice (E13 MA3)', () => {
+    const ep = { ...fullEpisode(), assistant: { title: 'Brightwell Assist', summarise: { button: 'Go', reply: 'Hi' } } };
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write'],
+        sent: { recordId: 'sent_1', targetId: 'supplier_contact', templateId: 'inject_contacts', blankIds: [] } } });
+    open(ep);
+    click('.stub-continue');
+    assert.equal(assistantParams.length, 1);
+    assert.equal(assistantParams[0].sentTemplateId, 'inject_contacts', 'the chosen pretext reaches the assistant');
 });
 
 test('a defendOnly episode never launches OSINT or mail', () => {
@@ -490,7 +545,7 @@ test('with the real P7-B views the flip and debrief render and move on', () => {
     cur().complete(true);
     assert.ok(cur().container.querySelector('.aw-debrief'));
     click('.aw-finish');
-    assert.equal(cur(), null);
+    assert.ok(cur().container.querySelector('.epr-finished'), 'the episode-finished panel shows after Finish');
     assert.equal(failed().length, 0);
 });
 
@@ -618,7 +673,8 @@ test('a facilitated episode shows each stage prompt and pauses between stages', 
     assert.equal(shown.reportRate, 0.5);
     assert.equal(result.percent, 80, 'the triage result itself is not changed');
     click('.stub-finish');
-    assert.equal(cur(), null, 'no pause after the last stage');
+    assert.equal(epState().paused, false, 'no pause after the last stage');
+    assert.ok(cur().container.querySelector('.epr-finished'), 'the episode-finished panel shows');
     assert.deepEqual(stored(ep.id).done, ['brief', 'osint', 'write', 'flip', 'defend', 'debrief']);
     assert.equal(failed().length, 0);
 });
@@ -659,7 +715,8 @@ test('a facilitated debrief with the real view hides the score; an unfacilitated
         assert.equal(!!cur().container.querySelector('.aw-card-score'), !facilitated);
         assert.equal(text.includes('Compare your answers.'), facilitated);
         click('.aw-finish');
-        assert.equal(cur(), null);
+        assert.ok(cur().container.querySelector('.epr-finished'), 'the episode-finished panel shows');
+        while (FW.currentMinigame) FW.forceCloseMinigame();
     }
 });
 
@@ -1015,6 +1072,48 @@ test('flip split: a landed send with no tells to replay is landedNoTells, not mi
     assert.equal(f.landedNoTells, true);
 });
 
+test('aw-ux2: a landed send with no tells replays the message when flipDefenderLineByChoice has the chosen pretext', () => {
+    const run = (strings) => {
+        const ep = { ...fullEpisode(), strings: { ...fullEpisode().strings, ...strings } };
+        setup(ep, { [M.stateKey(ep.id)]: { v: 1, stage: 'flip', done: ['brief', 'osint', 'write'],
+            sent: { recordId: 'sent_1', targetId: 'supplier_contact', templateId: 'tpl_bank', blankIds: [] } } });
+        window.mailState.mailboxes.analyst.messages.push({
+            id: 'sent_1', folder: 'sent', fromAccount: 'analyst', targetId: 'supplier_contact', gameTime: 100,
+            from: { name: 'Analyst', address: 'analyst@harlowpackaging.example' }, to: 'tom.reilly@fixture.example',
+            subject: 'Updated bank details', body: 'Please use the new account. {{link:x}}', templates: { opening: 'tpl_bank' },
+            slots: {}, landed: true, tells: []
+        });
+        open(ep);
+        return calls.flip.at(-1);
+    };
+    const f = run({ flipDefenderLineByChoice: { tpl_bank: 'You chose the bank pretext.' } });
+    assert.equal(f.landedNoTells, false);
+    assert.equal(f.missed, false);
+    assert.equal(f.message.subject, 'Updated bank details');
+    assert.equal(f.message.body, 'Please use the new account.', 'link tokens are dropped');
+    assert.deepEqual(f.message.truth.flags, [], 'no tells to list');
+    assert.equal(f.templateId, 'tpl_bank');
+    // A line authored for another pretext, or none at all, leaves the old view.
+    const other = run({ flipDefenderLineByChoice: { tpl_other: 'Other.' } });
+    assert.equal(other.message, null);
+    assert.equal(other.landedNoTells, true);
+    const none = run({});
+    assert.equal(none.message, null);
+    assert.equal(none.landedNoTells, true);
+});
+
+test('aw-ux2: getTestState reports variant brief for a brief episode, defendOnly and full as before', () => {
+    assert.equal(M.variantOf({ variant: 'brief' }), 'brief');
+    assert.equal(M.variantOf({ variant: 'defendOnly' }), 'defendOnly');
+    assert.equal(M.variantOf({ variant: 'full' }), 'full');
+    assert.equal(M.variantOf({}), 'full');
+    assert.deepEqual(M.stagesFor({ variant: 'brief' }), ['brief']);
+    const ep = { ...fullEpisode(), variant: 'brief', stages: ['brief'] };
+    setup(ep);
+    open(ep);
+    assert.equal(epState().variant, 'brief');
+});
+
 test('aw1/aw4/aw6: the debrief gets the report route, rule of thumb and team size; the host page wins', () => {
     const ep = { ...fullEpisode(), id: 'e1_fixture_defend', variant: 'defendOnly', debrief: { mondayCard: 'slot:customer_report_route' } };
     setup(ep);
@@ -1103,4 +1202,39 @@ test('a null conclusionTaskId reaches the triage options as null (standalone bea
     const o = M.childLaunch(ep, 'defend');
     assert.equal(o.kind, 'triage');
     assert.equal(o.options.conclusionTaskId, null);
+});
+
+// ── ENG-01: the flip aftermath and episode-level stepLabels ──────────────────
+test('ENG-01: the flip is handed episode.flipAftermath only when the send landed', () => {
+    const block = { heading: 'Now you are Kieran', items: [{ id: 'fa_sent', kind: 'email', to: 'x@fixture.example', subject: 's' }] };
+    const flipState = () => ({ [M.stateKey('e1_fixture')]: { v: 1, stage: 'flip', done: ['brief', 'osint', 'write'],
+        sent: { recordId: 'sent_1', targetId: 'supplier_contact', templateId: 'tpl_bank', blankIds: [] } } });
+    const record = (landed) => window.mailState.mailboxes.analyst.messages.push({
+        id: 'sent_1', folder: 'sent', fromAccount: 'analyst', targetId: 'supplier_contact', gameTime: 100,
+        subject: 'Updated bank details', templates: { opening: 'tpl_bank' }, slots: {}, landed, tells: ['senderTrust']
+    });
+    const ep = { ...fullEpisode(), flipAftermath: block };
+    setup(ep, flipState()); record(true); open(ep);
+    assert.deepEqual(calls.flip[0].aftermath, block);
+    setup(ep, flipState()); record(false); open(ep);
+    assert.equal('aftermath' in calls.flip[0], false, 'a miss gets none');
+    // key absent: the props are exactly as before
+    const plain = fullEpisode();
+    setup(plain, flipState()); record(true); open(plain);
+    assert.equal('aftermath' in calls.flip[0], false);
+    // nothing sent: no replay, so no aftermath
+    setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write'], sent: null } }); open(ep);
+    assert.equal('aftermath' in calls.flip[0], false);
+});
+
+test('ENG-01: episode.stepLabels overrides flip and keeps the call default otherwise', () => {
+    const call = { ...fullEpisode(), attack: { callId: 'a_call' }, stepLabels: { osint: 'Recon' } };
+    setup(call); open(call);
+    assert.deepEqual(cur()._stripLabels(), { flip: 'The call', osint: 'Recon' });
+    const click1 = { ...fullEpisode(), stepLabels: { flip: 'The click' } };
+    setup(click1); open(click1);
+    assert.deepEqual(cur()._stripLabels(), { flip: 'The click' });
+    const both = { ...call, stepLabels: { flip: 'The vishing call' }, strings: { stepLabels: { flip: 'ignored', defend: 'Triage' } } };
+    setup(both); open(both);
+    assert.deepEqual(cur()._stripLabels(), { flip: 'The vishing call', defend: 'Triage' }, 'episode-level wins over strings');
 });

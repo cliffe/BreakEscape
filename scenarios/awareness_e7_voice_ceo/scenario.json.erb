@@ -1,6 +1,7 @@
 {
   "scenario_id": "awareness_e7_voice_ceo",
   "scenario_name": "Voice and the CEO: both sides",
+  "titleScreenName": "Cloned voices and the CEO",
   "scenario_brief": "Awareness episode E7, the cross-role finale. You're on an authorised exercise at Brightwell Foods, a fictional food manufacturer. First you're on the red team: research what's public about the chief executive, then write the email in his name that would go with a cloned-voice call, pushing accounts payable to release an urgent payment. Then you swap seats and cover the finance office's phone and inbox, where a call and an email like that land together. Only the inbox side is scored.",
   "endGoal": "Write the message in the CEO's name, then cover the finance line at the training kiosk.",
   "version": "1.0",
@@ -50,8 +51,8 @@
       },
       "conclusionScreen": {
         "type": "success",
-        "title": "Voice and the CEO episode done",
-        "body": "You've seen both sides of a cloned-voice payment request and covered the finance line, so this episode is finished. Whoever's voice it is, ringing back on a number you already hold is what settles it."
+        "title": "Voice and the CEO: finished",
+        "body": "You've seen both sides of a cloned-voice payment request and worked through the finance line. That's this episode finished. The debrief goes through each one. Whoever's voice it is, ringing back on a number you already hold is what settles it."
       },
       "tasks": [
         {
@@ -786,7 +787,7 @@
           "observationVariants": [
             {
               "condition": "globalVars.episode_e7_voice_ceo_defend_done",
-              "value": "A touch-screen training kiosk for the Brightwell Foods finale. The message is written and the voicemails and emails are all dealt with."
+              "value": "A touch-screen training kiosk for the Brightwell Foods finale. Episode finished."
             }
           ],
           "minigameData": {

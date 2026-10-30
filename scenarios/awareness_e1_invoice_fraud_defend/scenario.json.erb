@@ -1,6 +1,7 @@
 {
   "scenario_id": "awareness_e1_invoice_fraud_defend",
   "scenario_name": "Invoice fraud: the payments inbox",
+  "titleScreenName": "Invoice fraud",
   "scenario_brief": "Awareness episode E1, inbox only. You're covering the payments inbox at Brightwell Foods, a fictional food manufacturer, before the afternoon payment run. Six messages are waiting: sort them, and report or check anything that doesn't sit right.",
   "endGoal": "Sort the six messages in the payments inbox at the training kiosk.",
   "version": "1.0",
@@ -36,7 +37,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "Payments inbox done",
-        "body": "You've sorted all six messages and finished this episode."
+        "body": "That's this episode finished. The debrief goes through each one."
       },
       "tasks": [
         {
@@ -119,7 +120,7 @@
               "address": "accounts@brightwel1foods.example"
             },
             "to": "payments@brightwellfoods.example",
-            "subject": "Updated bank details — please action today",
+            "subject": "Updated bank details, please action today",
             "time": "10:12",
             "body": "Hi team,\nHarlow Packaging have moved to a new bank. Please change the payee account on invoice INV-2217 before today's payment run, so the payment doesn't bounce.\nNew account name: Harlow Packaging Ltd\nNew account number ending 7716\nThanks,\nAccounts",
             "auth": {
@@ -407,7 +408,7 @@
           "observationVariants": [
             {
               "condition": "globalVars.episode_e1_invoice_fraud_defend_defend_done",
-              "value": "A touch-screen kiosk showing Brightwell's payments inbox. All six messages are sorted."
+              "value": "A touch-screen kiosk showing Brightwell's payments inbox. That's this one finished."
             }
           ],
           "minigameData": {

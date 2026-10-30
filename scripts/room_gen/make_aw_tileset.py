@@ -12,6 +12,7 @@ its brand accent (BRAND_SET.md) as the skirting line, and one floor:
   room_aw_tarrowby       blue-grey paint, steel-blue skirting, blue-grey sheet vinyl (depot office)
   room_aw_quayholt       cool white,     purple skirting,     blue carpet tiles
   room_aw_merrin_sallow  warm stone,     bronze skirting,     sealed concrete (architects' studio)
+  room_aw_carrholme      pale sage,      muted-green skirting, plain grey vinyl (support-services office)
 
 The floor painters come from make_uni_tileset.py. Each sheet needs a
 this.load.image line in game.js (the tileset name is the texture key).
@@ -28,7 +29,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from room_geometry import FLOOR_TOP, raise_back_wall, sheet_floor_top  # noqa: E402
 from make_hospital_tileset import is_floor  # noqa: E402
 from make_uni_tileset import (  # noqa: E402
-    CARPET_BLUE, ROOT, SRC, OUT_DIR, carpet_pixel_fn, concrete_pixel, paint_floor, shade, vinyl_pixel,
+    CARPET_BLUE, ROOT, SRC, OUT_DIR, carpet_pixel_fn, concrete_pixel, grey_vinyl_pixel, paint_floor, shade,
+    vinyl_pixel,
 )
 
 # Brightwell's own floor (ROOMS_REVIEW_C1 M3): oatmeal carpet tiles, warm like the
@@ -49,6 +51,9 @@ SHEETS = {
     "room_aw_tarrowby": ((200, 208, 218), (182, 190, 202), hexrgb("#3b5b8c"), vinyl_pixel),
     "room_aw_quayholt": ((234, 238, 242), (212, 218, 226), hexrgb("#6b4c9a"), CARPET_BLUE),
     "room_aw_merrin_sallow": ((216, 206, 190), (196, 185, 168), hexrgb("#8a5a2b"), concrete_pixel),
+    # E11 (01_PIPELINE P5b): accent #4a6b57 from the E11 brief; grey vinyl is the one
+    # floor painter the other four do not use (Tarrowby's vinyl is blue-grey).
+    "room_aw_carrholme": ((224, 230, 222), (204, 212, 203), hexrgb("#4a6b57"), grey_vinyl_pixel),
 }
 
 

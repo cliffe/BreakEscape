@@ -304,30 +304,31 @@ The one consequential choice quoted in the flip (aw2) is `outside_offer` (`flipB
 
 ## 10. Flip (the montage)
 
-Montage mode (ENG-04), showing every beat, the taken option framed "Your choice" and an untaken one as
-"the version where it happened instead". `outside_offer` first; the montage **ends on the Samira beat's
+Montage mode (ENG-04), showing every beat. The engine tags the taken beat "Your call" (safe: "Your call: the safe route"), so
+the authored unsafe lines carry no "Your choice." prefix; an untaken option reads "The version where it
+happened instead". `outside_offer` first; the montage **ends on the Samira beat's
 resolution** so the fair, kind outcome is the last thing seen. `strings.flipMontageByChoice` (full
 text):
 
-- `outside_offer` / `engage`: "Your choice. A reply drew more pressure, then a flood of sign-in prompts
+- `outside_offer` / `engage`: "A reply drew more pressure, then a flood of sign-in prompts
   that night. The same message had gone to several people; the one who reported it warned everyone."
 - `outside_offer` / `report`: "The version where someone replied instead: the pressure grew and the
   sign-in prompts came that night. Reporting it, without a word back, stopped it and warned the team. You
   are not in trouble for being approached."
-- `shared_login` / `log_in_for_him`: "Your choice. Reuben clicked the wrong shortcut and opened the HR
+- `shared_login` / `log_in_for_him`: "Reuben clicked the wrong shortcut and opened the HR
   drive, under your name, on the record until it was explained. Harmless this time; a reset would have
   cost two minutes."
 - `shared_login` / `service_desk`: "The version where a login was shared: whatever was opened went on the
-  lender's record. The service desk reset it in minutes instead."
-- `rumour` / `add`: "Your choice. The theory reached Samira, who had been at the hospital every night.
+  record of whoever's login it was. The service desk reset it in minutes instead."
+- `rumour` / `add`: "The theory reached Samira, who had been at the hospital every night.
   It wasn't true, and it landed on someone already having the worst week."
 - `rumour` / `route`: "The version where the theory spread: it reached Samira, and it wasn't true. Facts
   to the right person help; a theory in the kitchen only hurts."
-- `leaver_favour` / `personal_email`: "Your choice. The client list sat in a personal inbox outside the
+- `leaver_favour` / `personal_email`: "The client list sat in a personal inbox outside the
   firm. Company data belongs to the company, and the people in it belong to themselves."
 - `leaver_favour` / `handover`: "The version where accounts went to a personal inbox: the firm's data
   left its protection. Handover notes in the shared place did the job and kept it in."
-- `samira` / `confront`: "Your choice. Samira, whose father was in hospital, was asked if she was
+- `samira` / `confront`: "Samira, whose father was in hospital, was asked if she was
   'in on it'. She wasn't. The question made a hard week harder."
 - `samira` / `kind`: "A kind word, and a quiet word to her manager because you were worried: Samira's
   father was in hospital. Nobody was accused, and she got support. That is what good looks like."

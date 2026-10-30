@@ -8,7 +8,7 @@
 
 export const STAGE_LABELS = Object.freeze({
     brief: 'Brief', osint: 'Research', write: 'Write', flip: 'Your message', defend: 'Defend',
-    debrief: 'Debrief', check: 'Check', mfa: 'Prompts', build: 'Build'
+    debrief: 'Debrief', check: 'Check', mfa: 'Prompts', build: 'Build', mistake: 'Choices', guess: 'Guess list'
 });
 
 const HEX = /^#[0-9a-f]{3,8}$/i;

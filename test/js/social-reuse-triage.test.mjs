@@ -11,6 +11,10 @@ import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { JSDOM } from 'jsdom';
 
+// batch 13 item 6: the no-ticks confirm prompt is on by default now. These tests predate it and
+// press Confirm once expecting a lock, so their sets pin it off unless they name it themselves.
+const withOneConfirm = (set) => (set && typeof set === 'object' && !('confirmPrompt' in set) ? { ...set, confirmPrompt: false } : set);
+
 const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 
@@ -85,6 +89,7 @@ function open(set, params = {}) {
     document.body.innerHTML = '';
     const container = document.createElement('div');
     document.body.appendChild(container);
+    set = withOneConfirm(set);
     const scene = new InboxTriageMinigame(container, { set, social: { triageSets: [set] }, ...params });
     scene._sceneType = 'inbox-triage';
     window.MinigameFramework.currentMinigame = scene;
@@ -241,7 +246,8 @@ const localSet = (extra = {}) => makeSet({
 test('flags: skillName and redFlagString fall back to the raw id, then to set.skillNames and set.tellStrings', () => {
     assert.equal(F.skillName('badge_tailgate'), 'badge_tailgate');
     assert.equal(F.skillName('badge_tailgate', { skillNames: { badge_tailgate: 'Tailgating' } }), 'Tailgating');
-    assert.equal(F.skillName('senderTrust', { skillNames: { senderTrust: 'Mine' } }), 'Sender address', 'built-in tells keep their names');
+    assert.equal(F.skillName('senderTrust', { skillNames: { senderTrust: 'Mine' } }), 'Mine', 'a set skillNames override now renames a built-in tell (F-E9 precedence)');
+    assert.equal(F.skillName('senderTrust'), 'Sender address', 'with no override the built-in name is unchanged');
     assert.equal(F.redFlagString('badge_tailgate', {}), 'badge_tailgate');
     assert.equal(F.redFlagString('badge_tailgate', {}, { tellStrings: { badge_tailgate: 'They had no badge.' } }), 'They had no badge.');
     assert.equal(F.redFlagString('badge_tailgate', { factorStrings: { badge_tailgate: { redFlag: 'Per message.' } } },
@@ -254,7 +260,8 @@ test('a local tell shows its skill name and red-flag sentence in the review and 
     click($(own, '.tri-start'));
     verdict(own, 'm1_it', 'trust');
     verdict(own, 'm2_payroll', 'report', ['senderTrust']);
-    assert.match($(own, '.tri-review-card').textContent, /Missed:.*They followed me through the door\./);
+    // F-E9-6: Report on a phish is the right verdict, so an un-ticked tell reads "Also worth noticing:".
+    assert.match($(own, '.tri-review-card').textContent, /Also worth noticing:.*They followed me through the door\./);
     verdict(own, 'm3_parcel', 'delete');
     verdict(own, 'm4_jed', 'trust');
     click($(own, '.tri-next'));
@@ -264,7 +271,7 @@ test('a local tell shows its skill name and red-flag sentence in the review and 
     click($(plain, '.tri-start'));
     verdict(plain, 'm1_it', 'trust');
     verdict(plain, 'm2_payroll', 'report', ['senderTrust']);
-    assert.match($(plain, '.tri-review-card').textContent, /Missed:.*badge_tailgate/);
+    assert.match($(plain, '.tri-review-card').textContent, /Also worth noticing:.*badge_tailgate/);
 });
 
 // ---- validator (items 3 to 6) -------------------------------------------------------------------

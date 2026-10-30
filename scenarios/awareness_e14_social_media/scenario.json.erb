@@ -1,0 +1,955 @@
+{
+  "scenario_id": "awareness_e14_social_media",
+  "scenario_name": "Social media and oversharing: both sides",
+  "titleScreenName": "Social media and oversharing",
+  "scenario_brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. First you play the attacker's side: look at what one colleague, Dani Fenwick, has posted in public, pin what an attacker would use, then write one short message built from it. Then you swap sides: you spot the same tricks in a feed and an inbox, and close the gaps, on Dani's profile. Only the inbox is scored.",
+  "endGoal": "Write the test message, then sort the feed and inbox at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "red_team_aim",
+      "title": "Pin the public posts and write one message",
+      "description": "Pin what a colleague's public posts give away, then write one short message built from it.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "write_pretext_message",
+          "title": "Send the test message",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "social_inbox_aim",
+      "title": "Sort the feed and inbox",
+      "description": "Work through the feed, the inbox and the privacy settings at the training kiosk.",
+      "status": "active",
+      "order": 1,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e14_social_media_defend_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Social media: finished",
+        "body": "You've seen what one colleague's public posts give away and written one message from them, then worked through the feed, inbox and settings yourself. That's this episode finished. The debrief goes through each one."
+      },
+      "tasks": [
+        {
+          "taskId": "sort_social_inbox",
+          "title": "Sort the feed and inbox",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e14_social_media_state": {},
+    "se_awareness_records": [],
+    "episode_e14_social_media_defend_percent": 0,
+    "episode_e14_social_media_defend_reportRate": 0,
+    "episode_e14_social_media_defend_done": false,
+    "episode_e14_social_media_defend_pass": false,
+    "se_osint_state": {},
+    "se_intel_df_profile": false,
+    "se_intel_df_system": false,
+    "se_intel_df_badge": false,
+    "se_intel_df_leave": false,
+    "se_intel_df_pet": false,
+    "phish_df_cover_attempts": 0,
+    "phish_df_cover_landed": false
+  },
+  "social": {
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    },
+    "triageSets": [
+      {
+        "labels": {
+          "verdict": { "report": { "hint": "This is a fake. Tell security." } },
+          "teamBadgeTitle": "Fake messages you reported this round rather than answering",
+          "teamBadge": "Fakes stopped for the team: {n}",
+          "phishCaughtLabel": "Fakes caught"
+        },
+        "bands": [
+          {
+            "min": 85,
+            "headline": "Well done: you caught the fakes and knew why"
+          },
+          {
+            "min": 60,
+            "headline": "Getting there: a few signs slipped past"
+          },
+          {
+            "min": 0,
+            "headline": "Worth practising: here's where to look first"
+          }
+        ],
+        "reportReply": "Thanks. We've noted the account and will warn the others.",
+        "resultCopy": {
+          "noFlags": "Next time, tick what looks off. The review cards show what gave each fake message away.",
+          "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+          "criticalLead": "gave a stranger something to work with",
+          "reportedPct": "Reported {pct}% of the fake messages"
+        },
+        "id": "e14_social_dms",
+        "title": "Messages and requests",
+        "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. Six messages and connection requests are waiting. For each one, choose Trust, Report or Delete, then tick what you noticed. The tell is always what they ask for, not how friendly they are. Reporting or checking when you're unsure is always fine and never marked down.",
+        "scoringProfile": "awareness",
+        "verifyVerdict": false,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "secrecy_or_bypass",
+          "fake_profile",
+          "recon_request"
+        ],
+        "flagChips": {
+          "fake_profile": "Fake or thin profile",
+          "recon_request": "Fishing for how we work"
+        },
+        "genuineCopy": {
+          "binnedLeadOne": "One real message was treated as a fake",
+          "binnedLeadMany": "{n} real messages were treated as fakes",
+          "costBoth": "Reporting when you're unsure is never wrong, but a report on a real message takes someone's time to check, and a deleted one leaves a genuine colleague or recruiter waiting.",
+          "costReport": "Reporting when you're unsure is never wrong, but a report on a real message takes someone's time to check, and the person waits for a reply.",
+          "costBin": "Deleting a real message has a cost: a genuine recruiter or colleague is left waiting for a reply.",
+          "whyBothHalves": "Both halves matter: spotting the fake messages protects you and your colleagues, and answering the real ones keeps work and friendships going."
+        },
+        "criticalWhat": "acting on a fake message",
+        "skillNames": {
+          "fake_profile": "Spotting a fake or thin profile",
+          "recon_request": "Spotting a stranger fishing for how your firm works"
+        },
+        "outcome": {
+          "setGlobalPrefix": "episode_e14_social_media_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e14_fake_recruiter",
+            "kind": "sms",
+            "from": {
+              "name": "Jordan Vale, Talent Partner",
+              "address": "@jordan.vale"
+            },
+            "time": "09:14",
+            "body": "[New account, created last week, no other posts.] Hi! Came across your profile, I've a great architecture role that would suit you. To tailor the application, could you send a quick overview of the systems your firm uses and who runs your IT?",
+            "factorStrings": {
+              "fake_profile": {
+                "redFlag": "A new account with a thin history, impersonating someone or inventing a persona"
+              },
+              "recon_request": {
+                "redFlag": "A stranger asking about your firm's systems, security tools, org chart or who runs IT"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "fake_profile",
+                "recon_request"
+              ],
+              "perFlagNote": {
+                "fake_profile": "A brand-new account, almost no history, and it moved to the systems question fast: a fake recruiter profile used to scout your firm",
+                "recon_request": "A genuine recruiter never needs a breakdown of your firm's systems or who runs IT. That is scouting, not recruitment"
+              },
+              "ifTrusted": "A map of the studio's systems and who runs IT would go to a stranger, ready-made for the next scam.",
+              "reportReply": "Thanks. There's no such recruiter; the account is a week old. Share nothing about our systems, and report it. This is the normal-looking fake you'll see most."
+            }
+          },
+          {
+            "id": "e14_fake_merrin",
+            "kind": "sms",
+            "from": {
+              "name": "Catherine Merrin",
+              "address": "@catherine.merrin.2"
+            },
+            "time": "10:02",
+            "body": "[New account, created this week, 3 connections.] Hi, let's connect. Always good to stay close to the team.",
+            "factorStrings": {
+              "fake_profile": {
+                "redFlag": "A new account with a thin history, impersonating someone or inventing a persona"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "fake_profile"
+              ],
+              "perFlagNote": {
+                "fake_profile": "A second account in the managing partner's name, new and thin, when her real profile is the established one: a fake used to connect to staff and lend weight to a later scam"
+              },
+              "ifTrusted": "Connecting hands a stranger a foothold in the managing partner's name to approach your colleagues.",
+              "reportReply": "Thanks. Catherine's real profile is the one you already follow; this one is days old. A senior name on a new account is a classic fake. Report it."
+            }
+          },
+          {
+            "id": "e14_real_recruiter",
+            "kind": "sms",
+            "from": {
+              "name": "Roseanne Wadsworth, Kettlewick Talent",
+              "address": "@roseanne.kettlewick"
+            },
+            "time": "11:20",
+            "body": "A practice I work with is hiring a Part 3 architect, and your profile looks a good fit. Shall I send you the brief?",
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "A real agency recruiter with a named role and no questions about your systems or who runs IT. Nothing to report; 'report everything' is not the win, and this is the recruiter the fake one is dressed up as."
+              }
+            }
+          },
+          {
+            "id": "e14_system_fisher",
+            "kind": "sms",
+            "from": {
+              "name": "Elif Demir",
+              "address": "@elif.makes"
+            },
+            "time": "13:05",
+            "body": "Loved your bridge model on the feed! Out of interest, what software does the studio run day to day?",
+            "factorStrings": {
+              "recon_request": {
+                "redFlag": "A stranger asking about your firm's systems, security tools, org chart or who runs IT"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "recon_request"
+              ],
+              "perFlagNote": {
+                "recon_request": "A friendly opener that steers to the tools the studio runs is still scouting. You don't owe a stranger your firm's systems"
+              },
+              "ifTrusted": "Naming the studio's software hands a stranger the first piece of a convincing cover story.",
+              "reportReply": "Thanks. The compliment was real enough; the question wasn't their business. Share nothing about our tools with a stranger, and report it."
+            }
+          },
+          {
+            "id": "e14_colleague_dm",
+            "kind": "sms",
+            "from": {
+              "name": "Thandiwe Moyo",
+              "address": "@thandiwe.moyo"
+            },
+            "time": "14:12",
+            "body": "Can you send me the studio floor plan for the client visit on Thursday? Ta.",
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "A colleague you know, asking for something ordinary through a normal channel. Nothing to report; handle it."
+              }
+            }
+          },
+          {
+            "id": "e14_old_colleague",
+            "kind": "sms",
+            "from": {
+              "name": "Harriet Beaumont",
+              "address": "@harriet.beaumont"
+            },
+            "time": "15:40",
+            "body": "Good to reconnect! We've a junior role opening here if you fancy it, happy to put your name forward. No pressure either way.",
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "It reads like a recruiter pitch, but it's a real former colleague offering you a lead and asking nothing about your work. The tell is what they ask for, not how friendly they are. Trusting it is right, and reporting it still scores full."
+              }
+            }
+          }
+        ],
+        "playerSentAuth": {
+          "accounts": {
+            "dani_exercise": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.merrinsallow.example",
+              "replyTo": "{account_address}"
+            }
+          }
+        }
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e14_social_media",
+      "role": "general_staff",
+      "company": "merrin_sallow",
+      "brand": {
+        "name": "Merrin & Sallow Architects",
+        "logoText": "MERRIN & SALLOW",
+        "accent": "#8a5a2b"
+      },
+      "variant": "full",
+      "durationTargetMin": 15,
+      "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional practice. In scope: Dani Fenwick's public posts and your own profile. Nothing you do here leaves this room.",
+      "stages": [
+        "brief",
+        "osint",
+        "write",
+        "flip",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "sort_social_inbox",
+      "attack": {
+        "target": "df_cover",
+        "siteIds": [
+          "friendface"
+        ],
+        "accountIds": [
+          "dani_exercise"
+        ],
+        "defaultAccount": "dani_exercise",
+        "showRedFlagMeter": true,
+        "maxMessages": 1,
+        "scored": false
+      },
+      "defend": {
+        "setId": "e14_social_dms",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "sortDrill": {
+        "bins": [
+          {
+            "id": "post",
+            "label": "Post"
+          },
+          {
+            "id": "tweak",
+            "label": "Tweak"
+          },
+          {
+            "id": "hold",
+            "label": "Hold"
+          }
+        ],
+        "scored": false,
+        "strings": {
+          "title": "Post or Not?",
+          "heading": "Post, Tweak or Hold?",
+          "intro": "Each card is a draft post. Decide whether to Post it, Tweak it first, or Hold it back. The reason shows straight after.",
+          "teach": "Suggested: {bin}.",
+          "teachFits": "That works.",
+          "finish": "See where they went",
+          "summaryHeading": "Where the drafts went"
+        },
+        "cards": [
+          {
+            "id": "e14_feed_lanyard",
+            "situation": "A selfie for your work anniversary, with your lanyard and pass clearly in shot.",
+            "answer": "tweak",
+            "reason": "Lovely photo. Crop or blur the pass first: a badge in a photo helps someone copy it or tailgate in."
+          },
+          {
+            "id": "e14_feed_system",
+            "situation": "'Buried in the new finance system this week but getting there!'",
+            "answer": "hold",
+            "reason": "Hold this: naming an internal system tells an attacker exactly which cover story to use. Keep the system out of it."
+          },
+          {
+            "id": "e14_feed_whiteboard",
+            "situation": "A team photo at your desks, with a whiteboard of client names and go-live dates behind you.",
+            "answer": "tweak",
+            "reason": "Post the people, not the whiteboard. Client names and dates in the background are a free briefing for anyone watching."
+          },
+          {
+            "id": "e14_feed_leave",
+            "situation": "'Two weeks off from Friday, can't wait. House-sitter sorted, cat's in charge.'",
+            "answer": "hold",
+            "reason": "'Away for two weeks' tells work who is short-staffed and tells strangers the house is empty. Hold it until you're back, then share the photos."
+          },
+          {
+            "id": "e14_feed_pet",
+            "situation": "A photo of your dog on a walk, posted to connections only, no work or location in it.",
+            "answer": "post",
+            "reason": "This one's fine: no work details, no badge, no location, and your audience is set to people you know. Post away."
+          },
+          {
+            "id": "e14_feed_screen",
+            "situation": "A 'my desk setup' photo: new chair, a plant, the monitor switched off and nothing else in shot.",
+            "answer": "post",
+            "reason": "Post away: the screen is off and nothing readable is in shot. That is the fixed version of a desk photo; an open inbox or client file on screen can leak names, subjects and even a meeting link."
+          },
+          {
+            "id": "e14_feed_school",
+            "situation": "Your child's first-day photo, tagging the school by name and location.",
+            "answer": "hold",
+            "reason": "Hold this one. A school name is a common security-question answer and tells strangers where your child is each morning. Share it with family privately instead."
+          }
+        ]
+      },
+      "privacyPanel": {
+        "settings": [
+          {
+            "id": "pp_profile",
+            "label": "Set your profile and work details (employer, team, manager) to connections only",
+            "closesFacts": [
+              "se_intel_df_profile"
+            ],
+            "default": "open"
+          },
+          {
+            "id": "pp_posts",
+            "label": "Set new and old posts to connections only, and hide your connections list",
+            "closesFacts": [
+              "se_intel_df_leave"
+            ],
+            "default": "open"
+          },
+          {
+            "id": "pp_systems",
+            "label": "Don't name internal systems; take down the reposted job advert",
+            "closesFacts": [
+              "se_intel_df_system"
+            ],
+            "default": "open"
+          },
+          {
+            "id": "pp_photos",
+            "label": "Check the background before posting; crop out badges and screens, and turn off location tags",
+            "closesFacts": [
+              "se_intel_df_badge"
+            ],
+            "default": "open"
+          },
+          {
+            "id": "pp_security_answer",
+            "label": "Use a made-up security-question answer kept in your password manager, not your real pet's name",
+            "closesFacts": [
+              "se_intel_df_pet"
+            ],
+            "default": "open"
+          }
+        ],
+        "strings": {
+          "leaveOff": "Why it matters: "
+        },
+        "note": "Each change closes a found fact on the board. The same settings are the ones to check on your own profile."
+      },
+      "strings": {
+        "teamLine": "By reporting {n} of these rather than answering, you kept a fake message away from the rest of your team.",
+        "weakestTells": "The signs most often missed: {names} ({counts} each).",
+        "weakestTell": "The sign most often missed: {names} ({counts}).",
+        "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. First you play the attacker's side: look at what one colleague, Dani Fenwick, has posted in public, pin what an attacker would use, then write one short message built from it. Then you swap sides: you spot the same tricks in a feed and an inbox, and close the gaps, on Dani's profile. Only the inbox is scored.",
+        "flipHeading": "Now you're Yasmin",
+        "flipIntro": "This is the message you just sent, as Yasmin read it while covering for Dani. The lines picked out below are what make it fit the week.",
+        "flipDefenderLine": "It named Dani's leave, the new system and his manager, and asked for one small thing, all built from public posts. When a message fits the week, a colleague acting on it is the ordinary thing to do.",
+        "flipNoSend": "Your message didn't go out this time, so there's nothing of yours to show. Next, you spot the same moves in a feed and an inbox, and close the gaps, on Dani's profile.",
+        "flipMissed": "The defence is the same either way: next, you spot the same moves in a feed and an inbox, and close the gaps, on Dani's profile.",
+        "flipMissedHeading": "Nothing to replay this time",
+        "flipLandedNoTells": "It read as an ordinary note from a colleague, with nothing in it to question. Next, you spot the same moves in a feed and an inbox, and close the gaps.",
+        "allPhishRight": "Every fake was caught, with every tell named.",
+        "noBlameLine": "A convincing profile of a person is built from scraps anyone could find. Nobody is foolish for having posted them; the fix is a setting and a pause, not shame.",
+        "defendIntro": "Now the inbox: mark each message Trust, Report or Delete, and tick what gave it away. A friendly opener that steers to your firm's systems or who runs IT is still scouting; report it. There's no clock on you here.",
+        "mondayCard": "On Monday: tighten one privacy setting today, and check what's behind you before your next post or video call. And if a stranger asks about your firm's systems or who runs IT, share nothing and report it using the route in the box below.",
+        "defendOnly": "A well-made message is built from scraps anyone could find online, and anyone can be pulled in by one. The ones you were caught out by are shown below, with what gave each one away.",
+        "flipDefenderLineByChoice": {
+          "df_pretext_access_now": "Yasmin read it between two things. It named Dani's leave, the new system and Thandiwe, so it fitted the week, and the rush left no room to check. When a message fits the week, a colleague acting on it is the ordinary thing to do.",
+          "df_pretext_access_calm": "It named a week she knew Dani was away and asked one easy favour, so Yasmin set the access up without a second thought. The ease is exactly what slipped it past her."
+        }
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "people": [
+      {
+        "id": "dani",
+        "kind": "cast",
+        "address": "dani.fenwick@merrinsallow.example",
+        "forms": {
+          "first": "Dani",
+          "full": "Dani Fenwick"
+        }
+      },
+      {
+        "id": "moyo",
+        "kind": "cast",
+        "address": "thandiwe.moyo@merrinsallow.example",
+        "forms": {
+          "first": "Thandiwe",
+          "full": "Thandiwe Moyo"
+        }
+      },
+      {
+        "id": "yasmin",
+        "kind": "cast",
+        "address": "yasmin.chaudhry@merrinsallow.example",
+        "forms": {
+          "first": "Yasmin",
+          "full": "Yasmin Chaudhry"
+        }
+      }
+    ],
+    "intelFacts": {
+      "df_profile": {
+        "text": "Dani Fenwick is a junior architect at Merrin & Sallow, on the studio team, and his manager is the studio manager, Thandiwe Moyo.",
+        "subject": "dani",
+        "source": "blk_profile",
+        "provides": [
+          {
+            "type": "name",
+            "about": "sender",
+            "value": "dani_full",
+            "label": "Dani Fenwick",
+            "kind": "distinctive"
+          },
+          {
+            "type": "name",
+            "about": "manager",
+            "value": "moyo_full",
+            "label": "Thandiwe Moyo",
+            "kind": "distinctive"
+          },
+          {
+            "type": "team",
+            "value": "studio",
+            "label": "the studio team",
+            "kind": "generic"
+          }
+        ],
+        "reduceNote": "Lock your profile down: an attacker reads your employer, team and manager straight off a public profile."
+      },
+      "df_system": {
+        "text": "A job advert Dani reposted names the practice's new finance system by name.",
+        "subject": "dani",
+        "source": "post_system",
+        "provides": [
+          {
+            "type": "reference",
+            "value": "ms_finance_system",
+            "label": "the new finance system",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "Don't name internal systems, security tools or suppliers; a hiring post can give one away."
+      },
+      "df_badge": {
+        "text": "Dani's 'new kit' photo shows a lanyard and a whiteboard in shot, confirming the system and his level of access.",
+        "subject": "dani",
+        "source": "post_badge",
+        "provides": [],
+        "reduceNote": "No badge, pass or screen in a photo; check what's behind you before you post."
+      },
+      "df_leave": {
+        "text": "Dani's leave countdown says he is away all next week.",
+        "subject": "dani",
+        "source": "post_leave",
+        "provides": [
+          {
+            "type": "date",
+            "value": "next_week",
+            "label": "next week",
+            "kind": "distinctive"
+          }
+        ],
+        "reduceNote": "Keep leave private: 'away all week' tells an attacker when to strike and who's covering."
+      },
+      "df_pet": {
+        "text": "Dani's dog photo, captioned as a 'name a pet' answer, gives his dog's name, a common security-question answer.",
+        "subject": "dani",
+        "source": "post_pet",
+        "provides": [],
+        "reduceNote": "Keep pet, school, birthday and first car out of public view; use a made-up security answer kept in your manager."
+      }
+    },
+    "templates": {
+      "df_from": {
+        "part": "from",
+        "text": "{account_name} <{account_address}>",
+        "slots": []
+      },
+      "df_greet": {
+        "part": "greeting",
+        "text": "Yasmin,",
+        "slots": []
+      },
+      "df_pretext_access_now": {
+        "part": "pretext",
+        "text": "I'm off all {when} and never got my access to {system} set up before I left. Thandiwe said it was fine. Can you sort it today so I'm not stuck when I'm back?",
+        "slots": [
+          {
+            "id": "when",
+            "type": "date"
+          },
+          {
+            "id": "system",
+            "type": "reference"
+          }
+        ],
+        "urgency": "high"
+      },
+      "df_pretext_access_calm": {
+        "part": "pretext",
+        "text": "I'm away {when}. When you get a chance, could you set up my access to {system} for when I'm back?",
+        "slots": [
+          {
+            "id": "when",
+            "type": "date"
+          },
+          {
+            "id": "system",
+            "type": "reference"
+          }
+        ],
+        "urgency": "low"
+      },
+      "df_pretext_catchup": {
+        "part": "pretext",
+        "text": "How's the studio while I'm away?",
+        "slots": [],
+        "urgency": "low"
+      },
+      "df_ask_confirm": {
+        "part": "ask",
+        "text": "Easiest if you just reply here to let me know.",
+        "slots": [],
+        "urgency": "low"
+      },
+      "df_ask_calm": {
+        "part": "ask",
+        "text": "No rush, just reply when you get a chance.",
+        "slots": [],
+        "urgency": "low"
+      }
+    },
+    "mailClient": {
+      "accounts": [
+        {
+          "id": "dani_exercise",
+          "address": "dani.fenwick@merrinsallow.example",
+          "displayName": "Dani Fenwick",
+          "kind": "given",
+          "person": "dani",
+          "mailbox": "dani_exercise",
+          "spoofsFrom": false
+        }
+      ],
+      "mailboxes": [
+        {
+          "id": "dani_exercise"
+        }
+      ],
+      "contacts": [
+        {
+          "id": "yasmin",
+          "person": "yasmin",
+          "name": "Yasmin Chaudhry",
+          "addresses": [
+            "yasmin.chaudhry@merrinsallow.example"
+          ],
+          "role": "Finance controller",
+          "targetId": "df_cover"
+        }
+      ],
+      "seededMessages": [
+        {
+          "id": "brief",
+          "mailbox": "dani_exercise",
+          "from": {
+            "name": "Exercise lead",
+            "address": "lead@redteam.example",
+            "avatar": "npc_neutral"
+          },
+          "to": "dani.fenwick@merrinsallow.example",
+          "subject": "Authorised exercise: Merrin & Sallow",
+          "body": "Hello,\n\nThis is the authorised Merrin & Sallow exercise. In scope: Dani Fenwick's public posts and this exercise account, set up in his name. Pin what an attacker would use, then write one message to Yasmin, who covers finance while Dani is away. Nothing leaves this account.\n\nExercise lead",
+          "time": "09:02",
+          "unread": true,
+          "folder": "inbox"
+        }
+      ],
+      "checklistTiming": "onSend",
+      "bodyMode": "templates",
+      "freeTextFlavour": false,
+      "showRedFlagMeter": true
+    },
+    "osint": {
+      "profile": "awareness",
+      "pinHints": true,
+      "sites": [
+        {
+          "id": "friendface",
+          "name": "Friendface",
+          "url": "friendface.example",
+          "type": "social",
+          "profiles": [
+            {
+              "person": "dani",
+              "handle": "@dani.builds",
+              "bio": "Junior architect. Dog person. Views my own.",
+              "blocks": [
+                {
+                  "id": "blk_profile",
+                  "kind": "staff",
+                  "person": "dani",
+                  "name": "Dani Fenwick",
+                  "role": "Junior Architect at Merrin & Sallow Architects, studio team, reports to Thandiwe Moyo (studio manager)",
+                  "fact": "df_profile"
+                }
+              ],
+              "posts": [
+                {
+                  "id": "post_system",
+                  "date": "3 weeks ago",
+                  "text": "We're hiring! The studio is moving everything onto our new finance system, so we need someone who knows it. Repost and tag anyone good.",
+                  "fact": "df_system"
+                },
+                {
+                  "id": "post_badge",
+                  "date": "9 days ago",
+                  "text": "New-starter kit sorted: lanyard, pass and a desk by the window. Still getting my head round the whiteboard behind me!",
+                  "fact": "df_badge"
+                },
+                {
+                  "id": "post_leave",
+                  "date": "2 days ago",
+                  "text": "Countdown is on: away all next week, back refreshed. Somebody water my desk plant.",
+                  "fact": "df_leave"
+                },
+                {
+                  "id": "post_pet",
+                  "date": "last month",
+                  "text": "Everyone's doing the 'name a pet' thing, so: meet Biscuit, the best beagle in London.",
+                  "fact": "df_pet"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "phishTargets": [
+      {
+        "id": "df_cover",
+        "address": "yasmin.chaudhry@merrinsallow.example",
+        "displayName": "Yasmin Chaudhry",
+        "role": "Finance controller",
+        "subjects": [
+          {
+            "id": "s_access",
+            "text": "Quick favour while I'm off",
+            "topic": "access",
+            "requires": [
+              "df_leave"
+            ]
+          },
+          {
+            "id": "s_other",
+            "text": "Hello",
+            "topic": "general"
+          }
+        ],
+        "interests": {
+          "topics": [
+            "access"
+          ]
+        },
+        "emailReplyDelay": 6,
+        "redFlagMeter": true,
+        "urgency": {
+          "advisoryMax": "low"
+        },
+        "templateSets": {
+          "from": [
+            "df_from"
+          ],
+          "greeting": [
+            "df_greet"
+          ],
+          "pretext": [
+            "df_pretext_access_now",
+            "df_pretext_access_calm",
+            "df_pretext_catchup"
+          ],
+          "ask": [
+            "df_ask_confirm",
+            "df_ask_calm"
+          ]
+        },
+        "primedFor": {
+          "distinctiveValues": [
+            "ms_finance_system",
+            "next_week"
+          ],
+          "minDistinct": 1,
+          "trusts": [
+            "dani"
+          ],
+          "story": "a colleague she knows is away and has asked her to set up his access before he is back"
+        },
+        "requiredFactors": [
+          "senderTrust",
+          "pretextRelevant"
+        ],
+        "advisoryFactors": [
+          "urgencyCalibrated"
+        ],
+        "factorStrings": {
+          "open": {
+            "pass": "✓ She would open it",
+            "fail": "Nothing about the sender or the subject made her open it.",
+            "redFlag": null
+          },
+          "senderTrust": {
+            "pass": "✓ It reads as Dani",
+            "fail": "She doesn't act on an access request from a stranger. It has to read as Dani, a colleague she knows.",
+            "redFlag": null
+          },
+          "pretextRelevant": {
+            "pass": "✓ Fits a week she knows Dani is away",
+            "fail": "Nothing ties this to Dani's leave or the finance system, so a request out of the blue reads as odd rather than something he would send.",
+            "redFlag": null
+          },
+          "urgencyCalibrated": {
+            "pass": "✓ The pressure reads as believable"
+          }
+        },
+        "replies": {
+          "landed": "No problem, Dani. I'll get your access set up this afternoon so it's ready for when you're back. Have a good week off.",
+          "missed": "Before I set up any access I'll check with you on your work number, or ask Thandiwe. Nothing goes on until then."
+        },
+        "hints": [
+          "Whose name, as a colleague Yasmin already knows, would make her act on an access request?",
+          "What did his posts give away that makes the request fit this week: his leave, and the system the studio runs?",
+          "Write as Dani, tie it to his leave next week and the new finance system, and keep the ask small."
+        ],
+        "outcome": {
+          "setGlobal": {
+            "phish_df_cover_landed": true
+          }
+        }
+      }
+    ]
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on",
+    "ambient": "#cac4bc"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_merrin_sallow",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_merrin_sallow_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "bankers_lamp": {
+            "color": "#ffd9a0",
+            "radius": 40,
+            "intensity": 0.5
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 7.55,
+            "y": 2.3,
+            "color": "#f0f4ff",
+            "radius": 96,
+            "intensity": 0.4
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "julian_sallow",
+          "displayName": "Julian Sallow",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/awareness_e14_social_media/ink/julian_sallow.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:phish_df_cover_attempts",
+              "condition": "value > 0",
+              "onceOnly": true,
+              "completeTask": "write_pretext_message"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e14_social_media_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "sort_social_inbox"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen training kiosk for the Merrin & Sallow social-media exercise: first the colleague's public posts to pin and the one message to write, then the feed, the inbox and the settings.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.phish_df_cover_landed && !globalVars.episode_e14_social_media_defend_done",
+              "value": "A touch-screen training kiosk for the Merrin & Sallow social-media exercise. Your message to Yasmin is sent and it worked; next, the feed, the inbox and the settings."
+            },
+            {
+              "condition": "globalVars.episode_e14_social_media_defend_done",
+              "value": "A touch-screen training kiosk for the Merrin & Sallow social-media exercise. The message is sent and the feed, inbox and settings are all done."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e14_social_media"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Build the four awareness training-room maps (room_aw_*.json and .tmj) from
+Build the awareness training-room maps (room_aw_*.json and .tmj) from
 room_uni_seminar, so every dressing change is a reviewable diff to this script
 rather than a hand edit (planning_notes/phishing_and_social_engineering/awareness/
 TRAINING_ROOM_PLAN.md §3, ROOMS_REVIEW_C1.md m6).
@@ -154,7 +154,62 @@ COMPANY_OPS = {
         ("delete", 24),
         ("move", 25, 86, 246),
     ],
+    # Support-services firm, Care Laundry line (E11, 01_PIPELINE P5b): the Quayholt list
+    # minus its company props (queue screen, spare desk, charcoal chairs stay shared).
+    "carrholme": [
+        ("move", 2, 36, 50), ("move", 17, 43, 59),
+        ("sprite", 3, "info_screen1"), ("move", 3, 90, 48),
+        ("sprite", 4, "whiteboard2"), ("move", 4, 218, 50),
+        ("delete", 18, 19, 14, 22),
+        # the Care Laundry line: a linen cart of name-taped bundles by the south wall
+        ("add", "items", "linen_cart1", 232, 296),
+        # no flip chart; a floor plant in the corner
+        ("delete", 13),
+        ("add", "items", "plant-large11", 38, 150),
+        ("sprite", 24, "binders1"), ("move", 24, 114, 242),
+        ("move", 25, 82, 246),
+        ("move", 23, 62, 236),
+        ("sprite", 5, "aw_chair_south_charcoal1"), ("sprite", 7, "aw_chair_south_charcoal1"),
+        ("sprite", 9, "aw_chair_south_charcoal1"),
+        ("sprite", 6, "aw_chair_north_charcoal1"), ("sprite", 8, "aw_chair_north_charcoal1"),
+        ("sprite", 10, "aw_chair_north_charcoal1"),
+        ("sprite", 12, "aw_chair_w_charcoal1"),
+    ],
+    # Merrin & Sallow reception (E12, 01_PIPELINE P5c). Not a kiosk room: no skeleton, no
+    # kiosk or host slot. Built on the Merrin & Sallow sheet (LOBBY_SHEET). The badge door
+    # to training_room is the engine's west door (rooms.js, x 16, y 80 on the west wall),
+    # so the west wall rows y 64-130 and the floor 30-70 px in stay clear; the front desk
+    # is north-centre for the NPC to stand behind it.
+    "merrin_lobby": [
+        # everything from the seminar except the fire alarm point (#20) and the wall clock (#19)
+        ("delete", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25),
+        ("move", 19, 252, 46), ("move", 20, 292, 132),
+        ("add", "items", "aw_logo_merrin_sallow1", 128, 40),
+        ("add", "items", "reception_counter1", 105, 172),
+        ("add", "items", "exit_sign1", 36, 36),
+        ("add", "items", "directory_sign1", 70, 52),
+        ("add", "items", "hce_art_canvas1", 200, 50),
+        ("add", "items", "hq_badge_reader1", 20, 118),
+        ("add", "items", "aw_poster_report_merrin_sallow1", 14, 170),
+        ("add", "items", "fire_extinguisher1", 292, 176),
+        # waiting area, south-east, and the front-door stanchions
+        ("add", "items", "leather_sofa1", 216, 300),
+        ("add", "items", "glass_coffee_table1", 222, 266),
+        ("add", "items", "magazine_rack1", 250, 232),
+        ("add", "items", "planter_fig1", 246, 112),
+        ("add", "items", "coat_stand1", 80, 300),
+        ("add", "items", "stanchions1", 130, 300),
+        ("add", "items", "planter_fig1", 40, 300),
+        # the optional logged-in hot desk (E12 section 9: passive, observations only)
+        ("add", "tables", "zds_desk1", 36, 234),
+        ("add", "table_items", "pc8", 52, 224),
+    ],
 }
+
+# Maps that reuse another company's tile sheet instead of having their own.
+LOBBY_SHEET = {"merrin_lobby": "room_aw_merrin_sallow"}
+# Maps with no shared training-room skeleton (no kiosk, host or report poster).
+NO_SKELETON = {"merrin_lobby"}
 
 COMPANIES = list(COMPANY_OPS)
 
@@ -184,8 +239,9 @@ def build(co, out_dir):
     room_edit.ROOMS = out_dir          # Room() reads and writes ROOMS/<stem>.*
     try:
         room = room_edit.Room(stem)
-        room.floor(stem)
-        for op in SKELETON_PRE + SKELETON_ADD + SKELETON_MOVE + COMPANY_OPS[co]:
+        room.floor(LOBBY_SHEET.get(co, stem))
+        skeleton = [] if co in NO_SKELETON else SKELETON_PRE + SKELETON_ADD + SKELETON_MOVE
+        for op in skeleton + COMPANY_OPS[co]:
             apply(room, op, co)
         room.save()
     finally:
@@ -195,7 +251,7 @@ def build(co, out_dir):
 
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("companies", nargs="*", help=f"any of {', '.join(COMPANIES)} (default: all four)")
+    ap.add_argument("companies", nargs="*", help=f"any of {', '.join(COMPANIES)} (default: all)")
     ap.add_argument("--out", type=Path, help="build into this directory instead of assets/rooms")
     ap.add_argument("--check", action="store_true", help="build to a temp dir and diff with assets/rooms")
     a = ap.parse_args(argv)

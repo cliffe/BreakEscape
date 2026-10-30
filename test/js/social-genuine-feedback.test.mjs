@@ -12,6 +12,10 @@ import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { JSDOM } from 'jsdom';
 
+// batch 13 item 6: the no-ticks confirm prompt is on by default now. These tests predate it and
+// press Confirm once expecting a lock, so their sets pin it off unless they name it themselves.
+const withOneConfirm = (set) => (set && typeof set === 'object' && !('confirmPrompt' in set) ? { ...set, confirmPrompt: false } : set);
+
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '../..');
 const js = join(root, 'public/break_escape/js');
@@ -84,6 +88,7 @@ function open(s, params = {}) {
     document.body.innerHTML = '';
     const container = document.createElement('div');
     document.body.appendChild(container);
+    s = withOneConfirm(s);
     const scene = new InboxTriageMinigame(container, { set: s, social: { triageSets: [s] }, ...params });
     scene._sceneType = 'inbox-triage';
     window.MinigameFramework.currentMinigame = scene;
@@ -140,7 +145,7 @@ test('genuineFeedback sorts the real items: trusted, treated as a phish, and nei
 test('P5-2: long title lists stop at three; trusted and checked are named apart; reported and deleted are worded apart', () => {
     const many = Array.from({ length: 6 }, (_, i) => ({ id: `t${i}`, title: `T${i}` }));
     const t = genuineFeedbackText({ realTotal: 8, trusted: many, checked: [], flagged: [] });
-    assert.equal(t.trusted, 'You trusted these real ones: ‘T0’, ‘T1’, ‘T2’ and 3 more.');
+    assert.equal(t.trusted, 'Right call. You trusted these real ones: ‘T0’, ‘T1’, ‘T2’ and 3 more.');
     assert.equal(listCap(['a', 'b', 'c']), '‘a’, ‘b’ and ‘c’');
     const mixed = genuineFeedbackText({ realTotal: 3, trusted: [], checked: [],
         flagged: [{ id: 'r', title: 'R', verdict: 'report', action: 'Report', why: '', cost: '' },
@@ -158,7 +163,7 @@ test('P5-2: long title lists stop at three; trusted and checked are named apart;
 test('genuineFeedbackText: the trusted line, the flagged lines, the cost and why both halves matter, with no numbers in the prose', () => {
     assert.equal(listJoin(['a', 'b', 'c']), 'a, b and c');
     const all = genuineFeedbackText({ realTotal: 2, trusted: [{ id: 'a', title: 'A' }, { id: 'b', title: 'B' }], flagged: [] });
-    assert.equal(all.trusted, 'You trusted the real ones: ‘A’ and ‘B’.');
+    assert.equal(all.trusted, 'Right call. You trusted the real ones: ‘A’ and ‘B’.');
     assert.equal(all.cost, '');
     assert.equal(all.why, GENUINE_WHY_LINE);
     noNumbers(all.why);
@@ -168,7 +173,7 @@ test('genuineFeedbackText: the trusted line, the flagged lines, the cost and why
     const fb = { realTotal: 2, trusted: [{ id: 'a', title: 'A' }],
         flagged: [{ id: 'b', title: 'B', verdict: 'report', action: 'Report', why: 'Known sender.', cost: '' }] };
     const short = genuineFeedbackText(fb, { detail: false });
-    assert.equal(short.trusted, 'You trusted this real one: ‘A’.');
+    assert.equal(short.trusted, 'Right call. You trusted this real one: ‘A’.');
     // P5-3: a report on a real one is handled right on the grid, so it is never "treated as a phish"
     assert.equal(short.flaggedLead, 'You reported one real one just in case, which is fine when unsure: ‘B’ (Report). Its card showed what made it safe.');
     assert.deepEqual(short.items, []);
@@ -199,7 +204,7 @@ test('immediate feedback, one false alarm: the result names it without repeating
     toResult(s);
     assert.equal($(s, '[data-number="realTrusted"]').textContent, '2 of 2'); // Report is "never wrong"
     const g = genuineState(s);
-    assert.equal(g.trusted, 'You trusted this real one: ‘Invoice INV-2217’.');
+    assert.equal(g.trusted, 'Right call. You trusted this real one: ‘Invoice INV-2217’.');
     assert.match(g.flagged, /^You reported one real one just in case, which is fine when unsure: ‘PO-4471 raised’ \(Report\)\. Its card showed/);
     assert.doesNotMatch(g.flagged, /treated as a phish/);
     assert.doesNotMatch($(s, '.tri-genuine').textContent, /rather than asking you to pay/); // summarised, not repeated
@@ -208,7 +213,7 @@ test('immediate feedback, one false alarm: the result names it without repeating
     assert.deepEqual(g.itemWhy, []);
     // one block, after the grid and before the skills
     assert.equal($$(s, '.tri-genuine').length, 1);
-    const order = [...$(s, '.tri-result').children].map((n) => n.className.split(' ')[0]);
+    const order = [...$(s, '.tri-result-body').children].map((n) => n.className.split(' ')[0]);
     assert.ok(order.indexOf('tri-numbers') < order.indexOf('tri-genuine'));
 });
 
@@ -220,7 +225,7 @@ test('immediate feedback, no false alarm: "You trusted the real ones", the why l
     act(s, 'p1', 'report', ['lookalike_domain']);
     toResult(s);
     const g = genuineState(s);
-    assert.equal(g.trusted, 'You trusted this real one: ‘Invoice INV-2217’. You checked this real one by another route first, which is just as right: ‘PO-4471 raised’.');
+    assert.equal(g.trusted, 'Right call. You trusted this real one: ‘Invoice INV-2217’. You checked this real one by another route first, which is just as right: ‘PO-4471 raised’.');
     assert.equal(g.flagged, '');
     assert.equal(g.cost, '');
     assert.equal(g.why, GENUINE_WHY_LINE);
@@ -322,7 +327,7 @@ test('debrief: a reported real one (no card) gets what made it safe; a deleted o
     ]);
     const box = c.querySelector('.aw-genuine');
     assert.ok(box);
-    assert.equal(c.querySelector('.aw-genuine-trusted').textContent, 'You trusted this real one: ‘Invoice INV-2217’.');
+    assert.equal(c.querySelector('.aw-genuine-trusted').textContent, 'Right call. You trusted this real one: ‘Invoice INV-2217’.');
     const items = [...c.querySelectorAll('.aw-genuine-item')].map((n) => n.textContent);
     assert.equal(items[0], '‘PO-4471 raised’ (you chose Report). What made it safe: It tells you about an order rather than asking you to pay.');
     assert.equal(items[1], '‘Weekend rota’ (you chose Delete). Its card above says what made it safe.');
@@ -344,7 +349,7 @@ test('debrief: nothing needs a card but a real one was reported, so the all-righ
         { id: 'p1', verdict: 'report', flags: ['lookalike_domain'], score: 100, isPhish: true }
     ]);
     assert.equal(c.querySelector('.aw-all-right').textContent, 'Every phish was caught, with every tell named.');
-    assert.match(c.querySelector('.aw-genuine-trusted').textContent, /^You trusted these real ones: ‘Invoice INV-2217’ and ‘Weekend rota’\.$/);
+    assert.match(c.querySelector('.aw-genuine-trusted').textContent, /^Right call\. You trusted these real ones: ‘Invoice INV-2217’ and ‘Weekend rota’\.$/);
 });
 
 test('debrief: every real one trusted keeps the all-right line and adds the trusted and why lines only', () => {
@@ -355,7 +360,7 @@ test('debrief: every real one trusted keeps the all-right line and adds the trus
         { id: 'p1', verdict: 'report', flags: ['lookalike_domain'], score: 100, isPhish: true }
     ]);
     assert.match(c.querySelector('.aw-all-right').textContent, /every one of these the right way/);
-    assert.match(c.querySelector('.aw-genuine-trusted').textContent, /^You trusted these real ones: ‘[^’]+’ and ‘[^’]+’\. You checked this real one by another route first, which is just as right: /);
+    assert.match(c.querySelector('.aw-genuine-trusted').textContent, /^Right call\. You trusted these real ones: ‘[^’]+’ and ‘[^’]+’\. You checked this real one by another route first, which is just as right: /);
     assert.equal(c.querySelector('.aw-genuine-cost'), null);
     assert.equal(c.querySelector('.aw-genuine-list'), null);
     assert.deepEqual(view.getState().genuine, { trusted: 2, checked: 1, flagged: 0 });

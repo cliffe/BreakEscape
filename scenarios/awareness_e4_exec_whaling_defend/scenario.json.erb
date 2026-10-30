@@ -1,6 +1,7 @@
 {
   "scenario_id": "awareness_e4_exec_whaling_defend",
   "scenario_name": "Executive whaling: the PA's inbox",
+  "titleScreenName": "Executive impersonation",
   "scenario_brief": "Awareness episode E4, inbox only. You're Tomás Carvalho, PA to the managing partner of Merrin & Sallow Architects, a fictional practice, and she's travelling today. Five emails and voicemails are waiting. Some are real and some were made to trick you, one of them in a voice that sounds like hers.",
   "endGoal": "Work through the five emails and voicemails at the training kiosk.",
   "version": "1.0",
@@ -36,7 +37,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "PA inbox done",
-        "body": "You've worked through all five messages and finished this episode."
+        "body": "You've worked through all five messages; the debrief goes through each one."
       },
       "tasks": [
         {
@@ -376,7 +377,7 @@
           "observationVariants": [
             {
               "condition": "globalVars.episode_e4_exec_whaling_defend_defend_done",
-              "value": "A touch-screen kiosk showing Tomás Carvalho's inbox. The emails and voicemails are all dealt with."
+              "value": "A touch-screen kiosk showing Tomás Carvalho's inbox. Nothing left to do here."
             }
           ],
           "minigameData": {

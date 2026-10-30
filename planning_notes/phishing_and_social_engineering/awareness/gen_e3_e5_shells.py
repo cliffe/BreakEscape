@@ -15,6 +15,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from title_art import with_title_art  # noqa: E402
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
 
@@ -134,11 +135,11 @@ EPISODES = {
             'aim': ('service_desk_aim', 'Cover the service desk', 'Work through the service desk queue at the training kiosk.'),
             'task': ('work_service_desk_queue', 'Work through the service desk queue'),
             'kiosk': ("A touch-screen kiosk showing the Quayholt service desk queue. Three calls are waiting, and a phone beside it shows a sign-in prompt.",
-             'A touch-screen kiosk showing the Quayholt service desk queue. The calls and the sign-in prompt are all dealt with.'),
+             'A touch-screen kiosk showing the Quayholt service desk queue. Episode finished.'),
             'display': 'Awareness E3: Helpdesk reset (service desk only)',
             'desc': "An awareness episode of about 8 minutes for IT service desk staff, on the defending side only. Sit in the service desk seat at Quayholt Insurance, a fictional company: three callers want password resets or changes to their sign-in, and a sign-in prompt turns up on your own phone. Each answer is explained, and ringing back when you're unsure is always fine and never marked down.",
             'minutes': 8,
-            'ending': ('Service desk queue done', "You've worked through all three calls and the sign-in prompt, and finished this episode."),
+            'ending': ('Service desk queue done', "That's the three calls and the sign-in prompt finished. The debrief goes through each one."),
         },
         'check': {
             'items_pre': 'Ten items from the IT service desk queue: calls, a voicemail, emails and a sign-in prompt.',
@@ -173,7 +174,7 @@ EPISODES = {
             'display': 'Awareness E5: Sign-in pages (pages only)',
             'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Five web pages from links in an inbox at Quayholt Insurance, a fictional company: some are the real sign-in, some were built to collect passwords. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
             'minutes': 8,
-            'ending': ('Sign-in pages checked', "You've checked all five pages and finished this episode."),
+            'ending': ('Sign-in pages checked', "That's all five pages finished. The debrief goes through each one."),
         },
         'check': {
             'items_pre': 'Ten items from a Quayholt inbox, emails and pages opened from links.',
@@ -516,6 +517,24 @@ def check(ekey, pair, stage):
     return mission, sc, meta, ink_name, ink
 
 
+# Top-level titleScreenName (engine batch 14), placed right after scenario_name. Values match the committed
+# shells (owner decision 2026-10-30): checks say Starting check / Final check, defend shells use the episode name.
+TITLE_NAMES = {'awareness_e3_helpdesk_reset_defend': 'Help desk password resets', 'awareness_e5_signin_pages_defend': 'Fake sign-in pages'}
+
+
+def with_title_screen_name(sc, mission):
+    if '_pre_' in mission:
+        title = 'Starting check'
+    elif '_post_' in mission:
+        title = 'Final check'
+    else:
+        title = TITLE_NAMES.get(mission)
+    if title is None:
+        return sc
+    return {k2: v2 for k, v in sc.items() for k2, v2 in
+            (((k, v), ('titleScreenName', title)) if k == 'scenario_name' else ((k, v),))}
+
+
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else REPO + '/scenarios'
     built = []
@@ -523,11 +542,13 @@ def main():
         built.append(defend_only(ekey))
         built += [check(ekey, p, st) for p in ('ab', 'ba') for st in ('pre', 'post')]
     for mission, sc, meta, ink_name, ink in built:
+        sc = with_title_screen_name(sc, mission)
         d = os.path.join(out, mission)
         os.makedirs(os.path.join(d, 'ink'), exist_ok=True)
         with open(os.path.join(d, 'scenario.json.erb'), 'w') as f:
             json.dump(sc, f, indent=2, ensure_ascii=False)
             f.write('\n')
+        meta = with_title_art(meta, mission)
         with open(os.path.join(d, 'mission.json'), 'w') as f:
             json.dump(meta, f, indent=2, ensure_ascii=False)
             f.write('\n')

@@ -1,6 +1,7 @@
 {
   "scenario_id": "awareness_e3_helpdesk_reset",
   "scenario_name": "Helpdesk reset: both sides",
+  "titleScreenName": "Help desk password resets",
   "scenario_brief": "Awareness episode E3. You're on an authorised exercise at Quayholt Insurance, a fictional insurer. First you're on the red team: research the company, then ring the IT service desk as a locked-out manager and try to talk the agent into a password reset, and watch an account get worn down by sign-in prompts. Then you swap seats and cover the service desk the same kind of call lands in. Only the service desk queue is scored.",
   "endGoal": "Place the vishing call, then work the service desk queue at the training kiosk.",
   "version": "1.0",
@@ -50,8 +51,8 @@
       },
       "conclusionScreen": {
         "type": "success",
-        "title": "Helpdesk reset episode done",
-        "body": "You've seen both sides of a helpdesk reset call and worked the service desk queue, so this episode is finished."
+        "title": "Helpdesk reset: finished",
+        "body": "You've seen both sides of a helpdesk reset call and worked through the service desk queue. That's this episode finished. The debrief goes through each one."
       },
       "tasks": [
         {
@@ -264,7 +265,8 @@
             ],
             "tells": [
               "vish_callback_pressure",
-              "borrowed_authority"
+              "borrowed_authority",
+              "secrecy_or_bypass"
             ],
             "transcript": [
               {
@@ -283,7 +285,8 @@
             "notes": {
               "perFlagNote": {
                 "vish_callback_pressure": "His name, team, manager and staff number were all right and all findable online; the tell was refusing the callback to the number on file and asking for the new password on the call",
-                "borrowed_authority": "Ngozi and 'the board at ten' are there to make checking feel like holding things up"
+                "borrowed_authority": "Ngozi and 'the board at ten' are there to make checking feel like holding things up",
+                "secrecy_or_bypass": "'No sense ringing the desk' asks you to skip the normal route, and a reset read out over the phone is the step that hands over the account"
               },
               "ifTrusted": "The caller would have Gordon's account: his email, the claims system, and a way to ring the desk again as Gordon.",
               "reportReply": "Thanks. We rang Gordon's mobile on file. He's at the conference and hadn't called."
@@ -339,53 +342,35 @@
             }
           },
           {
-            "id": "e3_call_on_behalf",
+            "id": "e3_call_remote_access",
             "genuine": false,
-            "callerId": "Josh Henley, from the Head of Claims' office (withheld)",
-            "claims": [
-              {
-                "fact": "team",
-                "value": "claims",
-                "label": "Claims"
-              },
-              {
-                "fact": "manager",
-                "value": "okonkwo_full",
-                "label": "Ngozi Okonkwo"
-              },
-              {
-                "fact": "staffId",
-                "value": "gordon_staffid",
-                "label": "QH-20719"
-              }
-            ],
+            "callerId": "Marcus Hale, Vanteq Systems support (mobile)",
+            "claims": [],
             "tells": [
-              "borrowed_authority",
-              "secrecy_or_bypass",
-              "vish_callback_pressure"
+              "vish_callback_pressure",
+              "borrowed_authority"
             ],
             "transcript": [
               {
-                "who": "Josh",
-                "text": "Hi, Josh Henley, I work for Ngozi Okonkwo in Claims. Gordon McLeish is stuck with a client and can't get into his account. His staff number's QH-20719."
+                "who": "Marcus",
+                "text": "Hello, Marcus Hale, support engineer at Vanteq Systems. There's a fault on one of your Quayholt claims servers and the maintenance window closes at ten, so I need to get on and fix it now."
               },
               {
-                "who": "Josh",
-                "text": "He's in with the client, he can't take calls. Ngozi's signed it off, so you don't need to go through the questions. Can you move his sign-in prompts to his new phone? Keep it low-key, he's embarrassed enough."
+                "who": "Marcus",
+                "text": "No time to go through your supplier contact, I'm on site at another client. If you can just install our support tool and approve the remote session, I'll be straight in and out."
               },
               {
-                "who": "Josh",
-                "text": "If you need to ring anyone, ring me on 07700 900215."
+                "who": "Marcus",
+                "text": "Your IT manager asked us to sort it directly, so you don't need to raise a ticket for this one."
               }
             ],
             "notes": {
               "perFlagNote": {
-                "borrowed_authority": "'Ngozi's signed it off' puts the Head of Claims between you and the check",
-                "secrecy_or_bypass": "'You don't need to go through the questions' and 'keep it low-key' ask you to skip the process and not tell anyone",
-                "vish_callback_pressure": "He offers his own number instead of the one on file. A callback only counts on a number you already hold"
+                "vish_callback_pressure": "He talks you off ringing the supplier back on the number you hold on file: he's 'on site' and the 'window closes at ten'. A callback on a number you already hold is the check.",
+                "borrowed_authority": "'Your IT manager asked us' is there to push you past that check."
               },
-              "ifTrusted": "Gordon's sign-in prompts would go to the caller's phone, so the caller could approve their own sign-ins as Gordon.",
-              "reportReply": "Thanks. There's no Josh Henley at Quayholt, and Ngozi hasn't signed anything off. Gordon's account is unchanged."
+              "ifTrusted": "Installing the tool or approving the session hands the caller remote control of a Quayholt system. Genuine support and suppliers never need a cold-call remote session or a one-time code to do their job.",
+              "reportReply": "Thanks. We rang the supplier back on the number on file and they had made no such call, and there's no fault on that server. Nothing was installed."
             }
           }
         ],
@@ -400,7 +385,7 @@
         "flipMissed": "Your call didn't get what it was after this time, so there's nothing of yours to replay. Next, the same kind of call comes in to the service desk, and you're the one answering.",
         "noBlameLine": "These callers rehearse sounding right, and a service desk that tries to help them is doing its job under pressure. A miss just shows which call to slow down next time.",
         "noBlameLineCritical": "This was built to catch you when you're under pressure. The points only show where to look next time.",
-        "mondayCard": "On Monday: a name, a team, a manager and a staff number can all be found online, so on a phone call they prove nothing. Before you reset a password or move someone's sign-in prompts, hang up and ring them back on the number already on file, not one they give you. If a sign-in prompt arrives that you didn't start, deny it and report it using the route in the box below.",
+        "mondayCard": "On Monday: a name, a team, a manager and a staff number can all be found online, so on a phone call they prove nothing. Before you reset a password, move someone's sign-in prompts or install remote-support software for a caller, hang up and ring them back on the number already on file, not one they give you. Genuine IT and suppliers never cold-call to install remote-control software or to have you read out a code. If a sign-in prompt arrives that you didn't start, deny it and report it using the route in the box below. At home, report fraud and cyber crime to Report Fraud (Police Scotland on 101 in Scotland).",
         "defendOnly": "These calls were made by people whose job is to sound right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
         "flipCallIntro": "This is your call to the service desk, as Leila heard it. The lines picked out below are what would have caught it.",
         "defendIntro": "Now you're in Leila's seat. You started at 07:00 and it's mid-morning: three calls are waiting and a sign-in prompt from overnight is still on your phone. Take them one at a time.",
@@ -944,7 +929,7 @@
           "observationVariants": [
             {
               "condition": "globalVars.episode_e3_helpdesk_reset_defend_done",
-              "value": "A touch-screen training kiosk for the Quayholt service desk exercise. The call is done and the service desk queue is all dealt with."
+              "value": "A touch-screen training kiosk for the Quayholt service desk exercise. That's this one finished."
             }
           ],
           "minigameData": {

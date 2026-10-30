@@ -1,0 +1,6 @@
+{
+  "scenario": "awareness_e9_passwords_defend",
+  "start_room": "training_room",
+  "nodes": [],
+  "edges": []
+}

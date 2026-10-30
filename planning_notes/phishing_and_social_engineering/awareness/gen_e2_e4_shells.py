@@ -20,6 +20,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from title_art import with_title_art  # noqa: E402
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
 
@@ -159,12 +160,12 @@ EPISODES = {
             'aim': ('recruitment_inbox_aim', 'Cover the recruitment inbox', 'Sort the recruitment inbox at the training kiosk.'),
             'task': ('sort_recruitment_inbox', 'Sort the recruitment inbox'),
             'kiosk': ('A touch-screen kiosk showing the Tarrowby recruitment inbox. Six messages are waiting.',
-             'A touch-screen kiosk showing the Tarrowby recruitment inbox. All six messages are sorted.'),
+             'A touch-screen kiosk showing the Tarrowby recruitment inbox. Nothing left to do here.'),
             'display': 'Awareness E2: CV lures (inbox only)',
             'desc': "An awareness episode of about 8 minutes for HR and recruitment staff, on the inbox side only. Cover the recruitment inbox at Tarrowby Logistics, a fictional company: six messages, applications and CVs among them, some real and some built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'ending': {'type': 'success', 'title': 'Recruitment inbox done',
-                       'body': "You've sorted all six messages and finished this episode."},
+                       'body': "You've worked through all six messages; the debrief goes through each one."},
         },
         'check': {
             'items_pre': 'Ten emails from the Tarrowby recruitment inbox: applications, CVs and messages from colleagues and agencies.',
@@ -197,12 +198,12 @@ EPISODES = {
             'aim': ('pa_inbox_aim', "Cover the PA's inbox", "Work through the PA's emails and voicemails at the training kiosk."),
             'task': ('sort_pa_inbox', "Sort the PA's inbox"),
             'kiosk': ("A touch-screen kiosk showing Tomás Carvalho's inbox. Five emails and voicemails are waiting.",
-             "A touch-screen kiosk showing Tomás Carvalho's inbox. The emails and voicemails are all dealt with."),
+             "A touch-screen kiosk showing Tomás Carvalho's inbox. Nothing left to do here."),
             'display': 'Awareness E4: Executive whaling (inbox only)',
             'desc': "An awareness episode of about 8 minutes for executive assistants and PAs, on the inbox side only. Sit in the PA's seat at Merrin & Sallow Architects, a fictional practice, while the managing partner travels: five emails and voicemails, some real and some made to trick you, one in a copied voice. Each answer is explained, and reporting or checking when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'ending': {'type': 'success', 'title': 'PA inbox done',
-                       'body': "You've worked through all five messages and finished this episode."},
+                       'body': "You've worked through all five messages; the debrief goes through each one."},
         },
         'check': {
             'items_pre': "Ten emails and voicemails from a managing partner's PA inbox.",
@@ -552,6 +553,24 @@ def check(ekey, pair, stage):
     return mission, sc, meta, ink_name, ink
 
 
+# Top-level titleScreenName (engine batch 14), placed right after scenario_name. Values match the committed
+# shells (owner decision 2026-10-30): checks say Starting check / Final check, defend shells use the episode name.
+TITLE_NAMES = {'awareness_e2_cv_lures_defend': 'CV lures', 'awareness_e4_exec_whaling_defend': 'Executive impersonation'}
+
+
+def with_title_screen_name(sc, mission):
+    if '_pre_' in mission:
+        title = 'Starting check'
+    elif '_post_' in mission:
+        title = 'Final check'
+    else:
+        title = TITLE_NAMES.get(mission)
+    if title is None:
+        return sc
+    return {k2: v2 for k, v in sc.items() for k2, v2 in
+            (((k, v), ('titleScreenName', title)) if k == 'scenario_name' else ((k, v),))}
+
+
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else REPO + '/scenarios'
     built = []
@@ -559,11 +578,13 @@ def main():
         built.append(defend_only(ekey))
         built += [check(ekey, p, st) for p in ('ab', 'ba') for st in ('pre', 'post')]
     for mission, sc, meta, ink_name, ink in built:
+        sc = with_title_screen_name(sc, mission)
         d = os.path.join(out, mission)
         os.makedirs(os.path.join(d, 'ink'), exist_ok=True)
         with open(os.path.join(d, 'scenario.json.erb'), 'w') as f:
             json.dump(sc, f, indent=2, ensure_ascii=False)
             f.write('\n')
+        meta = with_title_art(meta, mission)
         with open(os.path.join(d, 'mission.json'), 'w') as f:
             json.dump(meta, f, indent=2, ensure_ascii=False)
             f.write('\n')

@@ -181,70 +181,9 @@ None of these is built. Each is an option the organisation turns on, never a def
 - Feedback written for every verdict, saying why. Genuine items get feedback too.
 - Each module's question bank (`assessment.md`) is now a **pool of candidate items** for check forms and defend sets, not a quiz.
 
-## 7. What a completion record contains (re-pointed)
+## 7. to 9. Completion records, game to record, framework evidence (moved)
 
-### What the built product can evidence today (Built)
-
-- **That training content exists and covers named topics:** seven episodes (E1 to E7), seven defend-only variants and 24 check missions, mapped to modules and requirements in `../02_COMPLIANCE_MAPPING.md`.
-- **A practical exercise that simulates real events,** in every episode (NIST AT-2(1)).
-- **An assessment** before and after training, per role, on matched forms, with no pass mark by default.
-- **A per-round record** of every check and defend answer (section 2.5), with no free text and no identity in it.
-- **Mission completion and score,** which the platform already shows organisers per course.
-
-### What it cannot evidence yet
-
-A completion record per person per module version, policy acknowledgements, certificates, an audit pack, and figures by department. These need the platform features in section 9, all on the wish list (`hacktivity.md`).
-
-### A completion record (extension, HA-05)
-
-When the platform side exists, a completion record would be written once per learner, per path version, per cycle, from the items below. It is **built on the awareness-measure blocks**, not on a separate event log.
-
-| Field | What it holds | Source |
-|---|---|---|
-| Record id, type | A unique id; "path completion" | New |
-| Organisation | The customer organisation | Platform |
-| Learner | Opaque id, plus name and employee id at the time, held by the platform, never in the game record | Platform |
-| Path and versions | The role pair, the episodes taken, their versions and content fingerprints (HA-19) | Builds on mission ids |
-| Reporting route in force | The route the learner was shown (HA-11) | Builds on the reporting-route setting |
-| Assignment | The rule, the due date, the cycle | New (HA-03) |
-| Times | Started, completed, on time or late | Platform |
-| Pre and post | Percent and report rate for each, and the form pair | Built (section 2.1) |
-| Outcomes, critical behaviours | Only if the organisation turns on outcome tagging | Extension (sections 3, 4) |
-| Pass mark | Only if the organisation set one, with the mark in force | Option (section 6) |
-| Linked evidence | Policy acknowledgements (HA-07), certificate id (HA-06) | New |
-| Integrity | When it was written, and a fingerprint | New (HA-05) |
-
-**Never in the record:** the attack half (unscored, discarded), free text, time to answer per item, accessibility settings, IP addresses and device details.
-
-## 8. From the game to the record
-
-**Built today:** the episode runner plays the stages; the triage minigame scores the defend half or the check; the awareness-measure system writes one block per round into the learner's game (section 2.5); the post-check reads the pre-check's percent, report rate and done flag through the platform's carry-over; the debrief shows the learner their own result. Nothing leaves the learner's game except the mission's completion and score, which the platform already records.
-
-**Extension (wish list):** the blocks, mapped to xAPI statements (BE-14, already shaped for it), would feed a completion record (HA-05), aggregate views (HA-09), a learning record store (HA-22) and a customer's LMS (HA-10). Any result reported to someone other than the learner is worked out on a server path, never taken from the browser as final. Statements identify the learner by an opaque account, never by name or email, and an attempt below an organisation's pass mark is "not passed yet", never "failed".
-
-## 9. What each framework expects, and where it would come from
-
-The requirements and how each was checked are in `../02_COMPLIANCE_MAPPING.md` (sections 3 to 5). This is the evidence side. The course supports compliance; the customer's auditor decides.
-
-| Requirement | What is usually asked for | Built today | Extension |
-|---|---|---|---|
-| **ISO 27001 cl. 7.2** (competence, with documented evidence) | Training records per person; evidence that gaps were acted on | Pre and post checks per role; episode records | Completion records and transcripts (HA-05); drills for weak outcomes (HA-21) |
-| **ISO 27001 cl. 7.3, A.6.3** (awareness; training by job function) | The training plan; records; regular updates | Role check pairs; episodes by role (E1 finance, E2 hr, E3 helpdesk, E4 executive, E5 general, E6 mobile, E7 everyone) | Paths and rules (HA-03); release notes (HA-19); acknowledgements (HA-07) |
-| **PCI DSS 12.6.1 to 12.6.3.2** | Attendance records on hire and every 12 months; more than one method; acknowledgements; phishing and social engineering covered | E1 to E7 cover phishing and social engineering by email, phone, voicemail, text and QR code; defend-only variants as a second format | The audit pack's PCI DSS view (HA-05); acknowledgements (HA-07) |
-| **NIST AT-2, AT-2(1), AT-3, AT-4** | Literacy and role training; practical exercises; individual records | Every episode is a practical exercise; role check pairs | Individual records with retention (HA-05, HA-15) |
-| **CIS 14.1 to 14.9** | The programme, its schedule and its content | The built episodes and checks; the coverage in `02_COMPLIANCE_MAPPING.md` section 4 | Schedules (HA-03) |
-| **NCSC CAF B6.a, B6.b** | Complete records; evaluation beyond a count of people reached; people reporting without fear | Pre and post change per role; report rate; discrimination figure for organisers; no-blame line and reporting route in every debrief | Records (HA-05); aggregate views (HA-09); evaluation (HA-14) |
-| **DSPT 3.2.1, 2.1.1; DSPT B6.a, B6.b** | Share of staff trained in twelve months; an induction | Mission completion per course | The DSPT view (HA-05); worker types (HA-01) |
-| **ICO training toolkit** (induction timing; an assessment, perhaps with a pass mark; completion monitored) | Completion rates; assessment results; follow-up | Pre and post checks, with a pass mark available as an option | Due dates and reminders (HA-03, HA-04) |
-| **UK GDPR Art 5(2), Art 24, Art 32(4)** | Evidence of organisational measures | The episodes and checks as measures; a record that holds no free text or identity | The audit pack (HA-05) |
-| **NIS2 Art 20(2), Art 21(2)(g), IR 8.1, IR 8.2** | Board training; a programme repeated over time and tested for effectiveness | E4 and the executive checks for leaders (touch only); pre and post change as a test, without an effectiveness claim | role_01 episodes; evaluation (HA-14) |
-| **DORA Art 13(6), RTS Art 19** | Records for all staff; staff knowing the reporting channels | The reporting route in every debrief | Records by role (HA-05) |
-| **HIPAA 164.308(a)(5), 164.316(b)** | Documentation kept six years | | Retention (HA-15) |
-| **NYDFS 500.14(a)(3)** | At least annual training including social engineering | E1 to E7 | Annual cycle (HA-03) |
-| **Cyber Governance Code C3, C4** | Directors' training; suitable metrics | Pre and post change and discrimination figure as candidate metrics | Board report (HA-09) |
-| **SOC 2 CC1.4, CC2.2** | Evidence the programme runs as described | Mission completion | Records and release notes |
-
-A common audit test is the joiner and the anniversary: pick people who started in the period and show they were trained within the window; pick others and show training within the last 12 months. The built product shows completion per course; the joiner list and sample need HA-05.
+Sections 7 (what a completion record contains), 8 (from the game to the record) and 9 (what each framework expects) are platform detail and moved to the Hacktivity repo on 2026-10-30 (owner decision D10): `docs/awareness_course/assessment_evidence_records.md`. Hacktivity platform details (courses, seeding, scoring, reporting routes, admin) are stored there, not here.
 
 ## 10. Measuring effect beyond the course
 

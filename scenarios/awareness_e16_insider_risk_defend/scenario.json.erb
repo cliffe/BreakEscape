@@ -1,0 +1,584 @@
+{
+  "scenario_id": "awareness_e16_insider_risk_defend",
+  "scenario_name": "Insider risk: a leaver's week",
+  "titleScreenName": "Insider risk",
+  "scenario_brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm, during a leaver's last week. First you learn to raise a concern as facts, not a verdict on anyone; then you sort a short set of messages: an offer, a request to borrow a login, some sign-in prompts, a favour. Reporting or checking when you're unsure is always fine, though a real message does take a colleague's time to check. You are not being asked to investigate anyone.",
+  "endGoal": "Raise a concern fairly, then sort the messages at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "leaver_week_aim",
+      "title": "Handle the leaver week",
+      "description": "Go through the messages and the raise-a-concern step at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e16_insider_risk_defend_defend_done"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Leaver week done",
+        "body": "You've worked through the concern step and the messages. That's this episode finished. The debrief goes through each one."
+      },
+      "tasks": [
+        {
+          "taskId": "handle_leaver_week",
+          "title": "Handle the messages at the kiosk",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e16_insider_risk_defend_state": {},
+    "se_awareness_records": [],
+    "episode_e16_insider_risk_defend_defend_percent": 0,
+    "episode_e16_insider_risk_defend_defend_reportRate": 0,
+    "episode_e16_insider_risk_defend_defend_done": false,
+    "episode_e16_insider_risk_defend_defend_pass": false
+  },
+  "social": {
+    "triageSets": [
+      {
+        "reportReply": "Thanks. We'll look into it quietly and fairly. You did the right thing.",
+        "id": "e16_leaver_week_inbox",
+        "title": "A leaver's week",
+        "brief": "It's a colleague's last week and messages are waiting: an offer, a request to borrow a login, some sign-in prompts, a favour and a couple of calls. For each one, choose Trust, Report, Delete or Verify (ring the service desk, or confirm on a number you already hold), then tick what you noticed. Keep your login to yourself, report what gets offered to you, and deny any sign-in prompt you didn't start. Reporting or checking when you're unsure is always fine, though a real message does take a colleague's time to check, and you are not being asked to investigate anyone.",
+        "scoringProfile": "awareness",
+        "scoring": {
+          "criticalPenalty": 5,
+          "criticalPenaltyCap": 10
+        },
+        "verifyVerdict": true,
+        "confirmPrompt": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "labels": {
+          "verdict": {
+            "trust": {
+              "hint": "This one's genuine. I'd act on it."
+            },
+            "report": {
+              "hint": "This needs reporting. Tell the security team."
+            },
+            "delete": {
+              "hint": "This is junk. I'd just delete it."
+            },
+            "verify": {
+              "hint": "I'd check first: ring the service desk, or confirm on a number I already hold."
+            }
+          },
+          "teamBadge": "Risks reported or checked: {n}",
+          "teamBadgeTitle": "Offers, risky requests and fakes you reported or checked this round rather than acting on them",
+          "phishCaughtLabel": "Risks handled right",
+          "scoreLine": "Right call is most of the score; naming what you noticed is the rest."
+        },
+        "channelTells": [
+          "insider_offer",
+          "shared_login_request",
+          "data_to_personal_email",
+          "secrecy_or_bypass",
+          "unrequested_mfa_push",
+          "lookalike_domain"
+        ],
+        "flagChips": {
+          "insider_offer": "Offer of money or favours for access",
+          "shared_login_request": "A request to use someone else's login",
+          "data_to_personal_email": "Company data sent to a personal account"
+        },
+        "bands": [
+          {
+            "min": 85,
+            "headline": "Well done: you read the offers and requests and knew why"
+          },
+          {
+            "min": 60,
+            "headline": "Getting there: a few signs slipped past"
+          },
+          {
+            "min": 0,
+            "headline": "Worth practising: here's where to look first"
+          }
+        ],
+        "resultCopy": {
+          "criticalLead": "let a risk through",
+          "caughtBreakdown": true,
+          "handledRightLabel": "Genuine requests handled right",
+          "reportedPct": "Raised {pct}% of the risks",
+          "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+          "noFlags": "Next time, tick what you noticed; the ticks count towards your score. The review cards show what each one was really asking for."
+        },
+        "genuineCopy": {
+          "binnedLeadOne": "One real request was turned down",
+          "binnedLeadMany": "{n} real requests were turned down",
+          "costBoth": "Reporting when you're unsure is never wrong, but a report on a real request takes someone's time to check, and a request turned down leaves a colleague stuck.",
+          "costReport": "Reporting when you're unsure is never wrong, but a report on a real request takes someone's time to check, and the colleague waits.",
+          "costBin": "Turning down a real request has a cost: a colleague who is locked out is left stuck.",
+          "whyBothHalves": "Both halves matter: raising the risky requests protects the firm, and helping with the genuine ones keeps people working and willing to ask."
+        },
+        "criticalWhat": {
+          "email": "going along with a request you hadn't checked",
+          "call": "going along with a caller you hadn't checked"
+        },
+        "skillNames": {
+          "insider_offer": "Recognising an offer for access or data",
+          "shared_login_request": "Spotting a request to share a login",
+          "data_to_personal_email": "Spotting company data sent to a personal account"
+        },
+        "outcome": {
+          "setGlobalPrefix": "episode_e16_insider_risk_defend_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e16_offer",
+            "kind": "sms",
+            "from": {
+              "address": "Opportunities (unknown contact)"
+            },
+            "time": "19:42",
+            "body": "We pay people at firms like yours for remote access. 25%. Anonymous. Interested?",
+            "factorStrings": {
+              "insider_offer": {
+                "redFlag": "An offer of money or favours for access to systems or data"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "insider_offer"
+              ],
+              "perFlagNote": {
+                "insider_offer": "An offer of a cut for remote access. Don't reply, negotiate or play along to find out more; the same message often goes to several people, and one report warns everyone."
+              },
+              "ifTrusted": "Replying, even just to find out how it works, invites more pressure and marks you as someone who might say yes.",
+              "reportReply": "Thanks. Reporting it is exactly right. The same message had gone to others, and your report warned them. Nobody is in trouble for being approached.",
+              "reportReplyByVerdict": { "report": "Thanks. Reporting it is exactly right. The same message had gone to others, and your report warned them. Nobody is in trouble for being approached.", "verify": "Thanks for checking before you answered. This was an outside offer to buy access, and the same message had gone to others, so a report to us warns them too. Nobody is in trouble for being approached." },
+              "kindLine": "This was an outside offer to buy access, and it needed reporting."
+            }
+          },
+          {
+            "id": "e16_shared_login_req",
+            "from": {
+              "name": "Reuben Ofori",
+              "address": "reuben.ofori@quayholt.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "Can I use your login for ten minutes? I'm locked out.",
+            "time": "09:34",
+            "body": "Morning,\nI'm locked out and I've a report due at ten. Any chance I could just use your login for ten minutes? I'll be quick, promise.\nReuben",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "reuben.ofori@quayholt.example"
+            },
+            "factorStrings": {
+              "shared_login_request": {
+                "redFlag": "A request to use or share someone else's login"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "shared_login_request"
+              ],
+              "perFlagNote": {
+                "shared_login_request": "Lending your login hands someone your access under your name; whatever they open goes on your record, and it may show him more than he should see."
+              },
+              "whyFine": {
+                "urgencyCalibrated": "The hurry is real and human: he has a report due at ten. What makes this one risky is the request to borrow your login, not the deadline."
+              },
+              "ifTrusted": "His actions for those ten minutes are logged as yours, and he may reach data he has no business in. That is why going along with it counts as a miss here, even though Reuben means no harm: lending a login is never the safe answer. Decline, and point him to the service desk.",
+              "reportReply": "Thanks. The service desk reset Reuben's own login in minutes, so he wasn't left stuck and nobody had to share yours. He's a genuine colleague, and nobody is in trouble.",
+              "reportReplyByVerdict": { "report": "Thanks. The service desk reset Reuben's own login in minutes, so he wasn't left stuck and nobody had to share yours. He's a genuine colleague, and nobody is in trouble.", "verify": "Thanks for checking. Reuben is a genuine colleague, but lending a login puts whatever he opens on your record. The service desk can reset his own login in minutes, and nobody is in trouble." },
+              "kindLine": "Reuben is a genuine colleague, but lending your login puts whatever he opens on your record.",
+              "reportLine": "Right to flag it. The service desk can reset his login the proper way, and nobody is in trouble.",
+              "missLabel": "lending out your login"
+            }
+          },
+          {
+            "id": "e16_mfa_storm",
+            "kind": "push",
+            "time": "23:51",
+            "push": {
+              "app": "Quayholt Sign-in",
+              "request": "Are you trying to sign in?",
+              "account": "you@quayholt.example",
+              "location": "Unknown location, outside the UK",
+              "device": "Windows PC"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unrequested_mfa_push"
+              ],
+              "perFlagNote": {
+                "unrequested_mfa_push": "You didn't start these. A flood of prompts late at night is someone with your password trying to wear you into tapping Approve. Deny every one."
+              },
+              "ifTrusted": "Approving one would let whoever has your password into your Quayholt account, from a computer you've never used.",
+              "reportReply": "Thanks. We've blocked that sign-in and checked the account. A prompt you didn't start is always worth reporting, at any hour.",
+              "reportReplyByVerdict": { "report": "Thanks. We've blocked that sign-in and checked the account. A prompt you didn't start is always worth reporting, at any hour.", "verify": "Thanks for checking. You didn't start those prompts, so deny them and tell us. We'll then block the sign-in and check the account, at any hour." }
+            }
+          },
+          {
+            "id": "e16_leaver_favour",
+            "from": {
+              "name": "Ross Garside",
+              "address": "ross.garside@quayholt.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "Export my accounts to my personal email for the handover, would you?",
+            "time": "11:05",
+            "body": "Hi,\nBefore I'm gone Friday, could you export my accounts and send them to my personal email so I've got the handover to hand? They're my contacts really, so it's easier if I keep a copy.\nCheers,\nRoss",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "ross.garside@quayholt.example"
+            },
+            "factorStrings": {
+              "data_to_personal_email": {
+                "redFlag": "Company data being sent to a personal email account"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "data_to_personal_email"
+              ],
+              "flagAlternatives": [
+                [
+                  "data_to_personal_email",
+                  "secrecy_or_bypass"
+                ]
+              ],
+              "perFlagNote": {
+                "data_to_personal_email": "Sending the client list to a personal inbox takes the firm's data outside its protection. Handover notes go in the shared place; the client list belongs to the firm, not to whoever looked after it."
+              },
+              "whyFine": {
+                "urgencyCalibrated": "Leaving on Friday is just context for the handover. What makes this one risky is sending the client list to a personal inbox, not the date."
+              },
+              "ifTrusted": "The accounts would sit in a personal inbox outside the firm, and taking data to a new job can be a crime.",
+              "reportReply": "Thanks. We've asked Ross's manager what the handover actually needs, so he still gets a proper one and the data stays inside the firm.",
+              "reportReplyByVerdict": { "report": "Thanks. We've asked Ross's manager what the handover actually needs, so he still gets a proper one and the data stays inside the firm.", "verify": "Thanks for checking. Ross's manager can say what the handover needs, so he still gets a proper one and the client list stays inside the firm." },
+              "kindLine": "Ross is a genuine leaver, but the handover goes in the shared place; a personal inbox takes the firm's data outside its protection.",
+              "reportLine": "Right to flag it. His manager can set up the handover the proper way, and nobody is in trouble.",
+              "missLabel": "sending company data to a personal inbox"
+            }
+          },
+          {
+            "id": "e16_it_approve",
+            "from": {
+              "name": "IT Service Desk",
+              "address": "it@quayholt-support.example"
+            },
+            "to": "you@quayholt.example",
+            "subject": "We're migrating your account tonight",
+            "time": "16:20",
+            "body": "Hello,\nWe're migrating your account tonight. When the sign-in prompt arrives, please approve it so the move completes. No need to raise a ticket.\nIT Service Desk",
+            "auth": {
+              "spf": "fail",
+              "dkim": "fail",
+              "dmarc": "fail",
+              "envelopeFrom": "quayholt-support.example",
+              "replyTo": "it@quayholt-support.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "secrecy_or_bypass",
+                "lookalike_domain",
+                "senderTrust"
+              ],
+              "flagAlternatives": [
+                [
+                  "senderTrust",
+                  "lookalike_domain"
+                ]
+              ],
+              "perFlagNote": {
+                "senderTrust": "The name says IT Service Desk, but the address is on quayholt-support.example, not Quayholt's own quayholt.example.",
+                "secrecy_or_bypass": "This primes you to approve a prompt you didn't start and tells you not to raise a ticket; real IT never asks that.",
+                "lookalike_domain": "The address is on quayholt-support.example, not quayholt.example: a look-alike with an added word."
+              },
+              "ifTrusted": "If you approve the prompt that follows, you let whoever sent this into your account.",
+              "reportReply": "Thanks. Reporting it is right. IT never asks you to approve a prompt by email, and the address is a look-alike of Quayholt's own.",
+              "reportReplyByVerdict": { "report": "Thanks. Reporting it is right. IT never asks you to approve a prompt by email, and the address is a look-alike of Quayholt's own.", "verify": "Thanks for checking. IT never asks you to approve a prompt by email, and the address is a look-alike of Quayholt's own. It is worth telling us about one like this." }
+            }
+          },
+          {
+            "id": "e16_genuine_lockout",
+            "kind": "call",
+            "callerId": "Hana Novak, claims (calling from her mobile)",
+            "from": {
+              "name": "Hana Novak",
+              "address": "Hana (mobile), in your contacts"
+            },
+            "time": "14:10",
+            "transcript": [
+              {
+                "who": "Hana",
+                "text": "It's Hana from claims. I'm locked out and I've a client on at half two, I'm really stuck. Can you not just sort me out?"
+              },
+              {
+                "who": "Hana",
+                "text": "I know, I know, ring the desk. Go on then, ring me back on my mobile if you need to check it's me. Just be quick, honestly."
+              }
+            ],
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "reportReplyByVerdict": { "report": "Thanks. Hana was genuine and glad to be rung back on her own number, and the service desk reset her login in minutes. A quick check with her was all it needed.", "verify": "Thanks for checking before you helped. Hana was genuine, and the service desk reset her login in minutes." },
+              "whyFine": {
+                "secrecy_or_bypass": "Hana is asking for help, but she accepts the ring-back and the desk. Nothing is hidden and no step is skipped.",
+                "default": "Genuine and awkward, not a trick: she lets you ring back on the number on file, which is the difference from an impostor. The safe route still serves her: the service desk resets her login in minutes, or a manager can arrange temporary access. Refusing flat, with no safe route offered, helps nobody."
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e16_insider_risk_defend",
+      "role": "general_staff",
+      "company": "quayholt_insurance",
+      "brand": {
+        "name": "Quayholt Insurance",
+        "logoText": "QUAYHOLT",
+        "accent": "#6b4c9a"
+      },
+      "variant": "defendOnly",
+      "durationTargetMin": 8,
+      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional firm. In scope: a fair way to raise a concern, and a short set of messages.",
+      "stages": [
+        "brief",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "handle_leaver_week",
+      "defend": {
+        "setId": "e16_leaver_week_inbox",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "strings": {
+        "weakestTells": "The signs most often missed: {names} ({counts} each).",
+        "weakestTell": "The sign most often missed: {names} ({counts}).",
+        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional firm, during a leaver's last week. First you learn to raise a concern as facts, not a verdict on anyone; then you sort a short set of messages: an offer, a request to borrow a login, some sign-in prompts, a favour. Reporting or checking when you're unsure is always fine, though a real message does take a colleague's time to check. You are not being asked to investigate anyone.",
+        "allRight": "You handled every one of these the right way. Nothing to pick over here.",
+        "allPhishRight": "Every risk was raised, with every sign named.",
+        "noBlameLine": "A well-made offer or a plausible rumour fools decent people. Raising an honest concern that turns out to be nothing is never a failure, and nobody is in trouble for being approached.",
+        "noBlameLineCritical": "Offers and requests like these catch decent people, and a colleague asking for a login or a favour usually means well, so a miss here is no judgement on anyone. The points only show where to look next time.",
+        "mondayCard": "On Monday: think of the one person here you'd tell if you noticed something, and keep your login and your prompts to yourself.",
+        "defendOnly": "The offers and the rumours here are the kind that catch decent people. The ones you were caught out by are shown below, with what good looks like, and a fair way to raise a concern.",
+        "teamLine": "By reporting or checking {n} of these rather than acting on them, you warned the team where it mattered and pointed colleagues to the safe route, without treating anyone as a suspect.",
+        "conceptPanel": [
+          {
+            "heading": "Seen, said, true",
+            "text": "The colleague the office was whispering about, Samira: what people saw was her in early, taking calls in the stairwell, visiting HR. What was said was that she was leaving with Ross, a manager also on his way out. What was true was that her father was in hospital all week. Unusual is not the same as wrong, and a kind word comes first. Rumours tend to land on the person already having the hardest week."
+          },
+          {
+            "heading": "Three things to keep",
+            "text": "Your login is you: never share it, never borrow one. Offers get reported: don't reply, screenshot and send it on. Concerns go to the right person as facts, not a verdict on anyone. You don't have to be sure; you do have to be fair."
+          },
+          {
+            "heading": "The report you built",
+            "text": "At the kiosk you built a concern as a short report. What belonged in it was what you saw yourself, as facts: the approach for access, when it came, where, and who it reached. A verdict on a person did not, because a report is for whoever looks into it to weigh. A worry about a colleague's wellbeing is not a security report either; that one goes to your manager or HR. Facts, not a verdict, let the right person look into it fairly."
+          }
+        ],
+        "defendIntro": "Raise a concern as facts, not a verdict on anyone, then go through the messages and decide what to do with each one. Keep your login to yourself, report what gets offered to you, and deny any sign-in prompt you didn't start. There's no clock on you here, and you are not being asked to investigate anyone."
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      },
+      "concernForm": {
+        "requireNoConclusion": true,
+        "factChips": [
+          {
+            "id": "fc_offer_what",
+            "kind": "what",
+            "required": true,
+            "label": "An unknown contact offered payment for remote access"
+          },
+          {
+            "id": "fc_offer_when",
+            "kind": "when",
+            "label": "The message came on Tuesday evening"
+          },
+          {
+            "id": "fc_offer_where",
+            "kind": "where",
+            "label": "Through a messaging app, from the handle 'Opportunities'"
+          },
+          {
+            "id": "fc_offer_who",
+            "kind": "who",
+            "label": "It came to me; I gather others were messaged too"
+          },
+          {
+            "id": "fc_care_what",
+            "kind": "what",
+            "label": "A colleague has seemed to be having a hard week"
+          },
+          {
+            "id": "fc_care_who",
+            "kind": "who",
+            "label": "A colleague on my team; I'd rather not say more than that"
+          }
+        ],
+        "conclusionChips": [
+          {
+            "id": "cc_ross",
+            "label": "Ross is stealing the client list"
+          },
+          {
+            "id": "cc_samira",
+            "label": "Samira is in on it with Ross"
+          },
+          {
+            "id": "cc_craig",
+            "label": "Craig reckons Samira's involved"
+          }
+        ],
+        "guidance": "Put anything offered to you, like an approach for access, in the report; a worry about a colleague's wellbeing is not something for a security report, so raise that with your manager or HR. Who to tell: the security team for an outside offer, a sign-in prompt you didn't start, or data or access being misused. If it involves personal data, tell the data protection officer. Posting it in the team chat is spreading it, not raising it.",
+        "strings": {
+          "title": "Raise a concern",
+          "launchHeading": "Raise a concern",
+          "launchText": "This week an unknown contact offered you money for access. A colleague, Samira, has seemed to be having a hard week, and at lunch Craig floated a theory that she and Ross, a leaver, are walking off with the client list. Build a short report of what you actually saw, as facts, not a verdict on anyone.",
+          "launchButton": "Open the form",
+          "intro": "Write it as facts you saw yourself, not a verdict on anyone. Anything offered to you, like this approach for access, belongs in the report; a worry about a colleague's wellbeing is one for your manager or HR instead. Pick the facts to put in the report.",
+          "feedbackFacts": "Good. Facts, not a verdict, are what a fair concern looks like. Anything offered to you belongs in a report like this; a worry about a colleague's wellbeing goes to your manager or HR instead. The note below says who to tell. You don't have to be sure, and you may not hear the outcome, because that's confidential too.",
+          "feedbackFactsVerdict": "You have facts in there, which is the right idea. A conclusion about a person does not belong in the report: take those picks out, and let whoever looks into it reach their own. Keep anything offered to you in; a worry about a colleague's wellbeing is one for your manager or HR, not this report. That's fairer to everyone, and you don't have to be sure to raise a fair concern.",
+          "feedbackVerdictOnly": "That's a conclusion, not something you saw, and it does not belong in the report. Take it out and leave the verdict to the people whose job and lawful process it is; give them what you actually noticed instead. If you're wrong, a verdict is unfair to someone who has done nothing.",
+          "feedbackThinVerdict": "Those facts are a good start. A conclusion about a person does not belong in the report, so take those picks out. Then add a couple more of the things you saw yourself.",
+          "feedbackRequired": "The report needs the offer itself, so whoever reads it knows what happened. Add this before you finish: {missing}.",
+          "conclusionsNote": "These are theories about people, not things you saw, and none belongs in the report. Picking another replaces the one you chose.",
+          "mustRemoveConclusion": "Take the conclusion out before you finish. A report holds what you saw yourself, not what you think it means. Having a theory is normal; it belongs with the people whose job it is to look into it."
+        }
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_quayholt",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_quayholt_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "aw_quayholt_queue": {
+            "color": "#9fc0ff",
+            "radius": 32,
+            "intensity": 0.25,
+            "effect": "screen"
+          },
+          "info_screen": {
+            "intensity": 0.25,
+            "radius": 24
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.3,
+            "color": "#e8f0ff",
+            "radius": 72,
+            "intensity": 0.3
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "anjali_rao",
+          "displayName": "Anjali Rao",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/awareness_e16_insider_risk_defend/ink/anjali_rao.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_e16_insider_risk_defend_defend_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "handle_leaver_week"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk showing a short set of messages from a leaver's last week at Quayholt, and a fair way to raise a concern.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e16_insider_risk_defend_defend_done",
+              "value": "A touch-screen kiosk showing a short set of messages from a leaver's last week at Quayholt. Nothing left to do here."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e16_insider_risk_defend"
+          }
+        }
+      ]
+    }
+  }
+}

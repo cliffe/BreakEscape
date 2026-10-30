@@ -20,7 +20,7 @@ const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 
 export const EMAIL_KINDS = Object.freeze(['email', 'playerSent']);
-export const NON_EMAIL_KINDS = Object.freeze(['sms', 'voicemail', 'qr', 'page', 'call', 'push']);
+export const NON_EMAIL_KINDS = Object.freeze(['sms', 'voicemail', 'qr', 'page', 'call', 'push', 'choice']);
 
 export function kindOf(rec) {
     return isStr(rec?.kind) ? rec.kind : 'email';
@@ -34,23 +34,46 @@ export function isNonEmail(recOrKind) {
 /** Short word for the kind, used in the message list and the brief. */
 export const KIND_LABEL = Object.freeze({
     email: 'Email', sms: 'Text', voicemail: 'Voicemail', qr: 'QR notice',
-    page: 'Web page', call: 'Call', push: 'Sign-in prompt'
+    page: 'Web page', call: 'Call', push: 'Sign-in prompt', choice: 'Question',
+    // ENG-14 / E20: a Wi-Fi network list is a `page` kind with `page.state: "wifiList"`. In the
+    // list and results it reads as "Wi-Fi networks", not "Web page" (overridable as
+    // labels.kind.wifiList). Keyed off the state, not the kind, through kindLabelFor below.
+    wifiList: 'Wi-Fi networks'
 });
 
 /**
  * Set-level wording over the defaults in this file (`set.labels`), all optional:
- *   kind        { email, sms, voicemail, qr, page, call, push }: the short kind words (KIND_LABEL)
+ *   kind        { email, sms, voicemail, qr, page, call, push, choice }: the short kind words (KIND_LABEL)
  *   verdict     { trust|report|delete|verify: { label?, past?, hint? } }
  *   callActions { comply|escalate|refuse|verify_callback: { label?, past?, hint? } }
  *   pushActions { approve|deny|deny_report: { label?, past?, hint? } }
  *   smsHeading  the "Text message" heading on a text and the fallback title of an untitled one
- *   queue       { inbox|call|push|callPush|voicemail|page|sms|other: { label?, item?: [one, many],
+ *   queue       { inbox|call|push|callPush|voicemail|page|sms|choice|other: { label?, item?: [one, many],
  *                 real?, reportLabel? } }: the brief's queue wording (read by the minigame)
+ *   choice      { brief?, group?, answered?, right?, wrong?, better?, whyRight?, ifWrong? }: the authored-choice
+ *               card's wording (see CHOICE_TEXT below)
  * Anything not given keeps the default, so a set with no `labels` reads exactly as before.
  */
 export function kindLabel(kind, labels) {
     const own = labels?.kind?.[kind];
     return isStr(own) ? own : (KIND_LABEL[kind] || '');
+}
+
+/**
+ * The list/results short label for a record, honouring the page `state` where that changes the
+ * noun. A `page` card in the `wifiList` state is a Wi-Fi network list, not a web page, so it reads
+ * "Wi-Fi networks" (overridable as labels.kind.wifiList). Every other record uses kindLabel.
+ */
+export function kindLabelFor(rec, labels) {
+    // A single item may set its own tag (rec.kindTag), so a set that relabels a kind through
+    // labels.kind.<kind> does not also rename an item that is really something else (e.g. a genuine
+    // sign-in page among wifiList cards). This wins over both the state and the set default.
+    if (isStr(rec?.kindTag)) return rec.kindTag;
+    if (kindOf(rec) === 'page' && isObj(rec?.page) && rec.page.state === 'wifiList') {
+        const own = labels?.kind?.wifiList;
+        return isStr(own) ? own : KIND_LABEL.wifiList;
+    }
+    return kindLabel(kindOf(rec), labels);
 }
 
 export function smsHeading(labels) {
@@ -68,6 +91,21 @@ function relabel(action, over) {
 /** One of the four email verdict actions, with `labels.verdict` layered on. */
 export function verdictAction(verdict, labels) {
     return relabel(VERDICT_ACTIONS[verdict] || VERDICT_ACTIONS.trust, labels?.verdict?.[verdict]);
+}
+
+/**
+ * A set may override the feedback line a verdict shows the learner (batch-5 F-E10-2), so a
+ * relabelled verdict (verdictLabels / labels.verdict) does not leak the engine word — "Deleting
+ * protects you" on a page nobody deleted, named "Go the trusted way". `labels.verdictFeedback` is
+ * `{ <verdict>: { phish?: string, real?: string } }`; returns the matching line, or null to keep
+ * the default. A per-item truth.reportLine / truth.verifyLine still wins over this.
+ */
+export function verdictFeedbackOverride(labels, verdict, isPhish) {
+    const vf = labels && typeof labels === 'object' ? labels.verdictFeedback : null;
+    const entry = vf && typeof vf === 'object' ? vf[verdict] : null;
+    if (!entry || typeof entry !== 'object') return null;
+    const line = entry[isPhish ? 'phish' : 'real'];
+    return typeof line === 'string' && line ? line : null;
 }
 
 const VERDICT_ACTIONS = Object.freeze({
@@ -114,6 +152,24 @@ export function actionById(kind, actionId, verdict, labels = null) {
         || all.find((a) => a.verdict === verdict) || VERDICT_ACTIONS.trust;
     const over = pool === CALL_ACTIONS ? labels?.callActions : pool === PUSH_ACTIONS ? labels?.pushActions : labels?.verdict;
     return relabel(found, over?.[found.id]);
+}
+
+/**
+ * batch-12 item 16: a `(verdict, kind) => past | null` the caught-breakdown split uses to relabel
+ * its verbs for a set that renamed a verdict button (E10 Delete → "Go the trusted way", past "Went
+ * the trusted way"). Returns the set's own past-tense phrase, lower-cased, only when it differs
+ * from the built-in default; null otherwise, so caughtHow keeps its hand-written default word
+ * (e.g. "checked by another route", which is not the Verify button's past). null for no labels.
+ */
+export function verdictVerbOverride(labels) {
+    if (!isObj(labels)) return null;
+    return (verdict, kind) => {
+        const k = isStr(kind) ? kind : 'email';
+        const base = actionsFor(k, true).find((a) => a.verdict === verdict);
+        const over = actionsFor(k, true, labels).find((a) => a.verdict === verdict);
+        if (over && base && isStr(over.past) && over.past !== base.past) return over.past.toLowerCase();
+        return null;
+    };
 }
 
 /** Map an action id to the verdict it scores as. Throws on an action the kind does not have. */
@@ -174,6 +230,42 @@ export function shortTitle(msg) {
     return strip(subject || who);
 }
 
+// ── the authored-choice kind (`choice`, ENG-09a) ────────────────────────────────
+
+/** The four built verdicts an option may map to. */
+export const CHOICE_VERDICTS = Object.freeze(['trust', 'report', 'delete', 'verify']);
+
+/** Default wording of a `choice` card (`set.labels.choice` layers over each line). */
+const CHOICE_TEXT = Object.freeze({
+    brief: 'On a question: pick the option you think is best. There is nothing to type.', // the brief's line
+    group: 'Pick one',            // the option group's accessible name
+    answered: 'Answered',         // the message row's badge once picked
+    right: 'Right choice.',       // review card line after the full-marks option
+    wrong: 'Not the best choice here.',
+    better: 'The better choice',  // names the full-marks option after a wrong pick
+    whyRight: 'Why',              // leads the truth.reportReply line after the right pick
+    ifWrong: 'What could go wrong' // leads the truth.ifTrusted line after a wrong pick
+});
+
+/** One line of a choice card's wording: the set's `labels.choice[key]`, else the default. */
+export function choiceText(key, labels = null) {
+    const own = labels?.choice?.[key];
+    return isStr(own) ? own : (CHOICE_TEXT[key] || '');
+}
+
+/** The card's options as `{ id, label, verdict }`, bad entries dropped. */
+export function choiceOptions(rec) {
+    const list = isObj(rec?.choice) && Array.isArray(rec.choice.options) ? rec.choice.options : [];
+    return list.filter((o) => isObj(o) && isStr(o.id) && isStr(o.label) && CHOICE_VERDICTS.includes(o.verdict))
+        .map((o) => ({ id: o.id, label: o.label, verdict: o.verdict }));
+}
+
+/** The option a learner picked, by id, else the first option with that verdict. */
+export function choiceOptionFor(rec, actionId, verdict) {
+    const all = choiceOptions(rec);
+    return all.find((o) => o.id === actionId) || all.find((o) => o.verdict === verdict) || null;
+}
+
 /**
  * The noun for the genuine items of a queue that holds email (P6-5). A set can name it
  * (`realLabel`). A queue that mixes email with texts, notices or other channels names what it
@@ -206,9 +298,12 @@ export function defaultSubject(msg, labels = null) {
     case 'sms': return first(msg.body) || smsHeading(labels);
     case 'voicemail': return isStr(msg.duration) ? `Voicemail (${msg.duration})` : 'Voicemail';
     case 'qr': return 'Printed notice';
-    case 'page': return isObj(msg.page) && isStr(msg.page.heading) ? msg.page.heading : 'Web page';
+    case 'page': return isObj(msg.page) && isStr(msg.page.heading)
+        ? msg.page.heading
+        : (isObj(msg.page) && msg.page.state === 'wifiList' ? kindLabelFor(msg, labels) : 'Web page');
     case 'call': return 'Incoming call';
     case 'push': return isObj(msg.push) && isStr(msg.push.app) ? `${msg.push.app}: sign-in request` : 'Sign-in request';
+    case 'choice': return isObj(msg.choice) && isStr(msg.choice.prompt) ? first(msg.choice.prompt) : kindLabel('choice', labels);
     default: return '';
     }
 }
@@ -217,6 +312,29 @@ export function defaultSubject(msg, labels = null) {
 export function hostOf(url) {
     const s = String(url || '').trim().replace(/^[a-z][a-z0-9+.-]*:\/\//i, '');
     return s.split(/[/?#]/)[0].replace(/:\d+$/, '').toLowerCase();
+}
+
+/**
+ * Append a URL to `node` as text with soft break opportunities (`<wbr>`) after each `.`, `/`, `?`
+ * and `#`, so a long address wraps at a sensible point (a dot or a path segment) rather than through
+ * the middle of a label (F-E20-3). The whole address stays selectable and is unchanged in the
+ * aria-label and the "Full address" note. With no such character it is one run, which the CSS then
+ * breaks only if it overflows.
+ */
+export function appendUrlText(node, url) {
+    const s = String(url || '');
+    if (!s) return node;
+    let run = '';
+    for (const ch of s) {
+        run += ch;
+        if (ch === '.' || ch === '/' || ch === '?' || ch === '#') {
+            node.appendChild(document.createTextNode(run));
+            node.appendChild(document.createElement('wbr'));
+            run = '';
+        }
+    }
+    if (run) node.appendChild(document.createTextNode(run));
+    return node;
 }
 
 // ── decorative patterns (pure) ──────────────────────────────────────────────────
@@ -302,7 +420,9 @@ function transcriptList(lines, className) {
 }
 
 function senderName(rec) {
-    return rec?.from?.name || rec?.from?.address || '';
+    // An authored `from` may be a plain string (a flip aftermath item), and `sender` is the label.
+    if (isStr(rec?.from)) return rec.from;
+    return rec?.from?.name || rec?.from?.address || (isStr(rec?.sender) ? rec.sender : '');
 }
 
 function sms(rec, h, labels) {
@@ -398,10 +518,9 @@ function qr(rec, h) {
     return box;
 }
 
-function page(rec, h) {
-    const p = isObj(rec.page) ? rec.page : {};
-    const box = el('section', 'tri-kind tri-kind-page tri-browser');
-    box.setAttribute('aria-label', 'Web page');
+// The browser chrome (padlock / "Not secure", address button, optional certificate panel),
+// shared by the ordinary page and the ENG-03a web-page states. Returns { bar, certPanel }.
+function browserBar(p, h) {
     const bar = el('div', 'tri-browser-bar');
     if (p.padlock === true) {
         const lock = el('button', 'tri-padlock minigame-button', 'Padlock');
@@ -413,7 +532,8 @@ function page(rec, h) {
     } else {
         bar.appendChild(el('span', 'tri-no-padlock', 'Not secure'));
     }
-    const addr = el('button', 'tri-address minigame-button', p.url || '');
+    const addr = el('button', 'tri-address minigame-button');
+    appendUrlText(addr, p.url || '');
     addr.type = 'button';
     addr.setAttribute('aria-label', `Address bar: ${p.url || ''}`);
     addr.addEventListener('click', () => h.showNote(`Full address: ${p.url || ''}. The site is ${hostOf(p.url)}.`));
@@ -442,18 +562,55 @@ function page(rec, h) {
             btn.setAttribute('aria-expanded', certPanel.hidden ? 'false' : 'true');
         });
     }
+    return { bar, certPanel };
+}
+
+/** Append the browser chrome to a state surface's box. */
+function appendBar(box, p, h) {
+    const { bar, certPanel } = browserBar(p, h);
+    box.appendChild(bar);
+    if (certPanel) box.appendChild(certPanel);
+}
+
+function page(rec, h) {
+    const p = isObj(rec.page) ? rec.page : {};
+    const state = isStr(p.state) ? p.state : null;
+    const box = el('section', 'tri-kind tri-kind-page tri-browser');
+    box.setAttribute('aria-label', 'Web page');
+    // ENG-03a: an authored browser-screen state draws its own block; absent renders the ordinary
+    // E5 page below, byte-for-byte as before.
+    if (state && PAGE_STATES[state]) {
+        box.classList.add('tri-page-state', `tri-page-${state}`);
+        PAGE_STATES[state](box, rec, p, h);
+        return box;
+    }
+    const { bar, certPanel } = browserBar(p, h);
     box.appendChild(bar);
     if (certPanel) box.appendChild(certPanel);
     const view = el('div', 'tri-browser-view');
     view.appendChild(heading(p.heading || rec.subject || 'Web page'));
     if (rec.body) view.appendChild(el('p', 'tri-page-text', rec.body));
-    const fields = Array.isArray(p.fields) ? p.fields.filter(isStr) : [];
+    // A field is either a plain label string (drawn as a labelled text box, as before) or, opt-in
+    // (ENG-03a tick, E10 MI2), an object { label, type: "tick", checked? } drawn as a tick box so a
+    // genuine "I am not a robot" check does not read as "type this". Nothing here can be ticked or
+    // typed; `checked` only shows the drawn state. Any other object is ignored.
+    const fields = (Array.isArray(p.fields) ? p.fields : [])
+        .map((f) => (isStr(f) ? { label: f, type: 'text' }
+            : (isObj(f) && isStr(f.label) ? { label: f.label, type: f.type === 'tick' ? 'tick' : 'text', checked: f.checked === true } : null)))
+        .filter((f) => f);
     if (fields.length) {
         const form = el('div', 'tri-page-form');
         form.setAttribute('aria-label', 'Sign-in form (nothing can be typed)');
         for (const f of fields) {
-            const row = el('div', 'tri-page-field');
-            row.append(el('span', 'tri-page-field-label', f), el('span', 'tri-page-field-box'));
+            const row = el('div', `tri-page-field${f.type === 'tick' ? ' tri-page-field-tick' : ''}`);
+            if (f.type === 'tick') {
+                const box2 = el('span', `tri-page-tick${f.checked ? ' tri-page-tick-on' : ''}`);
+                box2.setAttribute('role', 'img');
+                box2.setAttribute('aria-label', f.checked ? 'Tick box, ticked' : 'Tick box, empty');
+                row.append(box2, el('span', 'tri-page-field-label tri-page-tick-label', f.label));
+            } else {
+                row.append(el('span', 'tri-page-field-label', f.label), el('span', 'tri-page-field-box'));
+            }
             form.appendChild(row);
         }
         if (isStr(p.button)) form.appendChild(el('span', 'tri-page-button', p.button));
@@ -463,11 +620,17 @@ function page(rec, h) {
         // form that asks for one (E5-10, accuracy). It is not printed on the page: a line on every
         // page read as the answer to every item (P3 E5-10). The learner checks for it, the way
         // they would at a real sign-in box, with "Try your password manager", which reveals it.
-        const hasPassword = fields.some((f) => /pass(word|code)/i.test(f));
+        const hasPassword = fields.some((f) => f.type === 'text' && /pass(word|code)/i.test(f.label));
         if (hasPassword && (p.autofill === 'none' || p.autofill === 'filled')) {
             const filled = p.autofill === 'filled';
-            const cue = el('p', `tri-autofill ${filled ? 'tri-autofill-filled' : 'tri-autofill-none'}`,
-                filled ? 'Your password manager filled this in.' : 'Your password manager did not fill this in.');
+            // page.autofillNote ({ none?, filled? }) overrides the cue, so an episode can say WHY it
+            // matters (e.g. "...a real page it already knows would have filled this in"). Default
+            // unchanged (F-E20-8).
+            const over = isObj(p.autofillNote) ? p.autofillNote : {};
+            const text = filled
+                ? (isStr(over.filled) ? over.filled : 'Your password manager filled this in.')
+                : (isStr(over.none) ? over.none : 'Your password manager did not fill this in.');
+            const cue = el('p', `tri-autofill ${filled ? 'tri-autofill-filled' : 'tri-autofill-none'}`, text);
             cue.hidden = true;
             const btn = el('button', 'tri-autofill-btn minigame-button', 'Try your password manager');
             btn.type = 'button';
@@ -483,6 +646,192 @@ function page(rec, h) {
     return box;
 }
 
+// ── ENG-03a web-page states ─────────────────────────────────────────────────────
+// Each draws an authored, static block. Every string goes in with textContent. Nothing runs on
+// the computer and nothing is ever written to the real clipboard; the paste-and-run steps are the
+// authored `rec.body` text, drawn inert, and the only "command" shown is the harmless one-line
+// `page.clipboardReveal` description.
+
+/** A reveal button that toggles one hidden authored line (the fakeCheck clipboard reveal). */
+function revealLine(label, text) {
+    const wrap = el('div', 'tri-page-reveal');
+    const line = el('p', 'tri-page-reveal-text', isStr(text) ? text : '');
+    line.hidden = true;
+    const btn = el('button', 'tri-page-reveal-btn minigame-button', label);
+    btn.type = 'button';
+    btn.setAttribute('aria-expanded', 'false');
+    btn.addEventListener('click', () => { line.hidden = false; btn.setAttribute('aria-expanded', 'true'); });
+    wrap.append(btn, line);
+    return wrap;
+}
+
+function stateFakeCheck(box, rec, p, h) {
+    appendBar(box, p, h);
+    const view = el('div', 'tri-browser-view tri-fakecheck');
+    view.appendChild(heading(p.heading || 'Verify you are human'));
+    if (rec.body) view.appendChild(el('p', 'tri-page-text', rec.body));
+    // The one-line description of what the page copied, behind a reveal; the command is never shown.
+    view.appendChild(revealLine('What did this page copy?', p.clipboardReveal));
+    box.appendChild(view);
+}
+
+function stateFakeUpdate(box, rec, p, h) {
+    appendBar(box, p, h);
+    const view = el('div', 'tri-browser-view tri-fake-update');
+    view.appendChild(heading(p.heading || 'Update required'));
+    if (rec.body) view.appendChild(el('p', 'tri-page-text', rec.body));
+    // A drawn button face only: nothing to click into, no download happens.
+    view.appendChild(el('span', 'tri-page-button', isStr(p.button) ? p.button : 'Download update'));
+    box.appendChild(view);
+}
+
+function stateDownloadBar(box, rec, p, h) {
+    appendBar(box, p, h);
+    const view = el('div', 'tri-browser-view tri-download');
+    view.appendChild(heading(p.heading || 'Download complete'));
+    if (rec.body) view.appendChild(el('p', 'tri-page-text', rec.body));
+    const bar = el('div', 'tri-download-bar');
+    const name = isObj(p.download) && isStr(p.download.filename) ? p.download.filename : '';
+    bar.append(el('span', 'tri-download-name', name), el('span', 'tri-download-face', 'Open file'));
+    view.appendChild(bar);
+    box.appendChild(view);
+}
+
+function stateBrowserWarning(box, rec, p, h) {
+    appendBar(box, p, h);
+    const view = el('div', 'tri-browser-view tri-browser-warning');
+    view.appendChild(heading(p.heading || 'Deceptive site ahead'));
+    if (rec.body) view.appendChild(el('p', 'tri-page-text', rec.body));
+    // A genuine browser warning: the safe move is to go back.
+    view.appendChild(el('span', 'tri-page-button tri-warning-back', 'Go back'));
+    box.appendChild(view);
+}
+
+function stateRelaunchBar(box, rec, p) {
+    // The browser's own menu bar, not a web page: no address bar.
+    const bar = el('div', 'tri-relaunch-bar');
+    bar.appendChild(el('p', 'tri-kind-label', 'Your browser'));
+    bar.appendChild(heading(p.heading || 'An update is ready'));
+    if (rec.body) bar.appendChild(el('p', 'tri-page-text', rec.body));
+    bar.appendChild(el('span', 'tri-page-button', isStr(p.button) ? p.button : 'Relaunch'));
+    box.appendChild(bar);
+}
+
+function stateExtensionPermission(box, rec, p) {
+    // A store listing / permission overlay: no address bar.
+    const view = el('div', 'tri-ext-permission');
+    view.appendChild(heading(p.heading || 'Add this extension?'));
+    if (rec.body) view.appendChild(el('p', 'tri-page-text', rec.body));
+    const perms = Array.isArray(p.permissions) ? p.permissions.filter(isStr) : [];
+    if (perms.length) {
+        view.appendChild(el('p', 'tri-ext-perms-label', 'It can:'));
+        const ul = el('ul', 'tri-ext-perms');
+        for (const perm of perms) ul.appendChild(el('li', 'tri-ext-perm', perm));
+        view.appendChild(ul);
+    }
+    box.appendChild(view);
+}
+
+function stateFullScreenAlarm(box, rec, p) {
+    // A full-screen overlay: no address bar, silent, always a visible way out.
+    const alarm = el('div', 'tri-alarm');
+    // Honour prefers-reduced-motion: no shake or flash when it is set (and stay calm regardless).
+    let reduced = false;
+    try {
+        reduced = !!(typeof window !== 'undefined' && window.matchMedia
+            && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    } catch (e) { reduced = false; }
+    if (!reduced) alarm.classList.add('tri-alarm-pulse');
+    alarm.appendChild(el('p', 'tri-alarm-muted', 'This page is trying to play a loud alarm. The sound is muted.'));
+    alarm.appendChild(heading(p.heading || 'Your computer has been locked'));
+    if (rec.body) alarm.appendChild(el('p', 'tri-page-text', rec.body));
+    // A visible way out, always present.
+    alarm.appendChild(el('span', 'tri-alarm-close', 'Close'));
+    const hint = el('p', 'tri-alarm-hint', 'Can’t close it? Press Esc, or close the tab or the browser.');
+    hint.hidden = true;
+    const ms = isObj(p.alarm) && Number.isFinite(p.alarm.hintAfterMs) ? p.alarm.hintAfterMs : 30000;
+    const t = setTimeout(() => { hint.hidden = false; }, ms);
+    if (t && typeof t.unref === 'function') t.unref();
+    alarm.appendChild(hint);
+    box.appendChild(alarm);
+}
+
+// ENG-14: a Wi-Fi network list. Not a web page, so no address bar and no url. Each row is static
+// (nothing to click or type, no network is joined): the network name in the address font (a name
+// is an identifier whose exact letters matter, so every row uses it and none stands out), a lock in
+// words as well as a drawn icon, and signal as bars plus a word. The learner's answer is the
+// ordinary page verdict.
+const WIFI_SIGNAL_WORDS = Object.freeze({ strong: 4, good: 3, fair: 2, weak: 1 });
+const WIFI_BAR_WORDS = ['No signal', 'Weak', 'Fair', 'Good', 'Strong'];
+
+/** Signal bars 0-4 for a number (0-4 as bars, above 4 as a percentage) or a word (strong/good/fair/weak). */
+function wifiBars(signal) {
+    if (typeof signal === 'number' && Number.isFinite(signal)) {
+        const n = signal > 4 ? Math.ceil(signal / 25) : Math.round(signal);
+        return Math.max(0, Math.min(4, n));
+    }
+    if (isStr(signal)) {
+        const known = WIFI_SIGNAL_WORDS[signal.trim().toLowerCase()];
+        if (known !== undefined) return known;
+    }
+    return null;
+}
+
+function wifiRow(n, labels) {
+    const row = el('li', 'tri-wifi-row');
+    row.appendChild(el('span', 'tri-wifi-ssid', n.ssid));
+    const meta = el('div', 'tri-wifi-meta');
+    if (typeof n.secured === 'boolean') {
+        const lock = el('span', `tri-wifi-lock-wrap ${n.secured ? 'tri-wifi-secured' : 'tri-wifi-open'}`);
+        const icon = el('span', 'tri-wifi-lock');
+        icon.setAttribute('aria-hidden', 'true');
+        lock.append(icon, el('span', 'tri-wifi-lock-word', n.secured ? labels.secured : labels.open));
+        meta.appendChild(lock);
+    }
+    const bars = wifiBars(n.signal);
+    const sig = el('span', 'tri-wifi-signal');
+    const meter = el('span', 'tri-wifi-bars');
+    meter.setAttribute('aria-hidden', 'true');
+    for (let i = 1; i <= 4; i++) meter.appendChild(el('span', `tri-wifi-bar tri-wifi-bar-${i}${bars !== null && i <= bars ? ' on' : ''}`));
+    const word = bars !== null ? WIFI_BAR_WORDS[bars] : (isStr(n.signal) ? n.signal : '');
+    sig.append(meter, el('span', 'tri-wifi-signal-word', word ? `${word} signal` : ''));
+    meta.appendChild(sig);
+    row.appendChild(meta);
+    if (isStr(n.note)) row.appendChild(el('p', 'tri-wifi-note', n.note));
+    return row;
+}
+
+function stateWifiList(box, rec, p) {
+    const labels = {
+        secured: isObj(p.labels) && isStr(p.labels.secured) ? p.labels.secured : 'Secured (password needed)',
+        open: isObj(p.labels) && isStr(p.labels.open) ? p.labels.open : 'Open (no password)'
+    };
+    box.setAttribute('aria-label', 'Wi-Fi networks');
+    const view = el('div', 'tri-browser-view tri-wifi');
+    view.appendChild(el('p', 'tri-kind-label', 'Wi-Fi'));
+    view.appendChild(heading(p.heading || 'Wi-Fi networks nearby'));
+    if (isStr(p.venueNote)) view.appendChild(el('p', 'tri-wifi-venue', p.venueNote));
+    if (rec.body) view.appendChild(el('p', 'tri-page-text', rec.body));
+    const list = el('ul', 'tri-wifi-list');
+    list.setAttribute('aria-label', 'Networks in range (nothing here can be joined)');
+    for (const n of Array.isArray(p.networks) ? p.networks : []) {
+        if (isObj(n) && isStr(n.ssid)) list.appendChild(wifiRow(n, labels));
+    }
+    view.appendChild(list);
+    box.appendChild(view);
+}
+
+const PAGE_STATES = {
+    fakeCheck: stateFakeCheck,
+    fakeUpdate: stateFakeUpdate,
+    downloadBar: stateDownloadBar,
+    browserWarning: stateBrowserWarning,
+    relaunchBar: stateRelaunchBar,
+    extensionPermission: stateExtensionPermission,
+    fullScreenAlarm: stateFullScreenAlarm,
+    wifiList: stateWifiList
+};
+
 function call(rec) {
     const box = el('section', 'tri-kind tri-kind-call');
     box.setAttribute('aria-label', 'Phone call');
@@ -492,6 +841,14 @@ function call(rec) {
     if (rec.from?.address) meta.push(rec.from.address);
     if (rec.time) meta.push(rec.time);
     if (meta.length) box.appendChild(el('p', 'tri-call-meta', meta.join(' · ')));
+    // ENG-07: a video call carries the meeting-tool name and a participant tag (e.g.
+    // "Brightwell Meet / External"). Absent, the call card reads exactly as before.
+    if (isStr(rec.videoLabel) || isStr(rec.participantTag)) {
+        const vrow = el('div', 'tri-call-video');
+        if (isStr(rec.videoLabel)) vrow.appendChild(el('span', 'tri-call-video-label', rec.videoLabel));
+        if (isStr(rec.participantTag)) vrow.appendChild(el('span', 'tri-call-video-tag', rec.participantTag));
+        box.appendChild(vrow);
+    }
     // 11 N15, the role swap: what the caller claims, fact by fact. These are the facts the
     // learner used in the attack call, so the card shows what there is to check.
     const claims = (Array.isArray(rec.claims) ? rec.claims : []).filter((c) => isObj(c) && isStr(c.fact));
@@ -507,6 +864,11 @@ function call(rec) {
         }
         wrap.appendChild(dl);
         box.appendChild(wrap);
+    }
+    if (!(Array.isArray(rec.transcript) && rec.transcript.length) && isStr(rec.body)) {
+        // A call authored with a plain body (a flip aftermath item) and no transcript.
+        box.appendChild(el('p', 'tri-page-text tri-call-body', rec.body));
+        return box;
     }
     box.appendChild(transcriptList(rec.transcript, 'tri-transcript tri-call-transcript'));
     return box;
@@ -538,10 +900,44 @@ function push(rec) {
     add('Location', p.location);
     add('Device', p.device);
     box.appendChild(dl);
+    if (isStr(rec.body)) box.appendChild(el('p', 'tri-push-body', rec.body));
     return box;
 }
 
-const SURFACES = { sms, voicemail, qr, page, call, push };
+function choice(rec, h, labels) {
+    const c = isObj(rec.choice) ? rec.choice : {};
+    const box = el('section', 'tri-kind tri-kind-choice');
+    box.setAttribute('aria-label', kindLabel('choice', labels));
+    box.appendChild(el('p', 'tri-kind-label', kindLabel('choice', labels)));
+    box.appendChild(heading(isStr(c.prompt) ? c.prompt : (rec.subject || kindLabel('choice', labels))));
+    if (isStr(c.note)) box.appendChild(el('p', 'tri-choice-note', c.note));
+    return box;
+}
+
+const SURFACES = { sms, voicemail, qr, page, call, push, choice };
+
+/**
+ * ENG-06: the "show hidden text" reveal for an email that carries a white-text line meant for
+ * an AI assistant (E13's `e13_supplier_injection`). Returns a node with a reveal button that
+ * shows `rec.hiddenText`, or null when the email authors no `hiddenText` (so every other email
+ * card, in every mission and the lab, is unchanged). `rec.hiddenTextLabel` overrides the button
+ * label. Every string goes in with textContent.
+ */
+export function emailHiddenReveal(rec) {
+    if (!isObj(rec) || !isStr(rec.hiddenText)) return null;
+    const box = el('div', 'tri-hidden');
+    const btn = el('button', 'tri-hidden-btn minigame-button', isStr(rec.hiddenTextLabel) ? rec.hiddenTextLabel : 'Show hidden text');
+    btn.type = 'button';
+    btn.setAttribute('aria-expanded', 'false');
+    const text = el('p', 'tri-hidden-text', rec.hiddenText);
+    text.hidden = true;
+    btn.addEventListener('click', () => {
+        text.hidden = false;
+        btn.setAttribute('aria-expanded', 'true');
+    });
+    box.append(btn, text);
+    return box;
+}
 
 /**
  * The reading-pane surface for a non-email message, or null for email.

@@ -62,7 +62,9 @@ export class PersonChatMinigame extends MinigameScene {
         this.background = personChatBackgroundFor(params);
         this.startKnot = params.startKnot; // Optional knot to jump to (used for event-triggered conversations)
         this.videoCall = params.videoCall || false; // Render as a framed video call with a player self-view PiP
-        
+        this.videoLabel = params.videoLabel || null;       // ENG-07: meeting-tool label on the video-call bar
+        this.participantTag = params.participantTag || null; // ENG-07: participant tag (e.g. "External")
+
         // Verify NPC exists
         const npc = this.npcManager.getNPC(this.npcId);
         if (!npc) {
@@ -204,7 +206,9 @@ export class PersonChatMinigame extends MinigameScene {
             playerData: this.playerData,
             characters: this.characters,  // Pass multi-character support
             background: this.background,  // Optional background image path
-            videoCall: this.videoCall     // Render as a framed video call with a self-view PiP
+            videoCall: this.videoCall,    // Render as a framed video call with a self-view PiP
+            videoLabel: this.videoLabel,       // ENG-07: meeting-tool label (default SECURE VIDEO LINK)
+            participantTag: this.participantTag // ENG-07: participant tag (e.g. External)
         }, this.npcManager);
 
         this.ui.render();

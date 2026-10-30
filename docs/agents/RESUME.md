@@ -1,3 +1,7 @@
+# Resume note: awareness E8 to E20 build (started 2026-10-29)
+
+Plan `planning_notes/security_awareness_course/implementation/00_README.md`; log `implementation/BUILD_LOG.md` (waves, agents, decisions, review rounds). Wave 1: engine ENG-01/09b/09d, ENG-03a/03b, ENG-04, ENG-09a/11 (Sonnet, worktrees, merged by the orchestrator, bridges run on main after merge); content E8 fragments and ink, general_v2 items, WP-15 and core_17 annual (opus48, shared tree). Next: E8 wiring (Sonnet), then the review phases (design, dialogue, playtests) on E8 before E9/E10.
+
 # Resume note: awareness course plan and implementation briefs (planning branch ccr-8675a21c-vu1k0k)
 
 Plan folder `planning_notes/security_awareness_course/`; **build briefs in its `implementation/` (start at `implementation/00_README.md`, §12 readiness)**, written for fresh Sonnet agents and checked over five adversarial review rounds (`implementation/reviews/`). Kids game pitch `planning_notes/kids_cyber_game/`. Public repo: keep Hacktivity at feature level.

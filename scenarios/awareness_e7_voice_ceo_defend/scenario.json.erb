@@ -1,6 +1,7 @@
 {
   "scenario_id": "awareness_e7_voice_ceo_defend",
   "scenario_name": "Voice and the CEO: the finance line",
+  "titleScreenName": "Cloned voices and the CEO",
   "scenario_brief": "Awareness episode E7, phone and inbox only. You're covering the finance office's phone and inbox at Brightwell Foods, a fictional food manufacturer, on a Friday afternoon. Three voicemails and two emails are waiting, and you can't always tell by the voice who left them: decide what to do with each, and ring back or report anything that doesn't sit right.",
   "endGoal": "Go through the voicemails and emails at the training kiosk.",
   "version": "1.0",
@@ -36,7 +37,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "Finance line done",
-        "body": "You've been through all five messages and finished this episode."
+        "body": "You've worked through all five messages. The debrief goes through each one."
       },
       "tasks": [
         {
@@ -374,7 +375,7 @@
           "observationVariants": [
             {
               "condition": "globalVars.episode_e7_voice_ceo_defend_defend_done",
-              "value": "A touch-screen kiosk showing the finance office's phone and inbox. The voicemails and emails are all dealt with."
+              "value": "A touch-screen kiosk showing the finance office's phone and inbox. Nothing left to do here."
             }
           ],
           "minigameData": {

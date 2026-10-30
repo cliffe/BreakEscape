@@ -40,6 +40,10 @@ export function normaliseTriageMessage(msg, labels = null) {
     const nonEmail = isNonEmail(msg.kind || 'email');
     // A non-email kind may have no sender or subject of its own (a printed notice, a web
     // page): the list row then shows a sensible stand-in instead of a blank line.
+    // The page host stands in as the sender: it is an address, so the list row sets it in the
+    // address font (a 1/l swap in a look-alike domain must show).
+    const whoIsAddress = nonEmail && !from.name && !from.address && msg.kind === 'page'
+        && isObj(msg.page) && isStr(msg.page.url);
     if (nonEmail && !from.name && !from.address) from.name = defaultWho(msg, labels);
     const links = (Array.isArray(msg.links) ? msg.links : []).filter(isObj).map((l) => ({
         ...l, linkText: l.linkText ?? l.text ?? l.destination ?? ''
@@ -48,6 +52,7 @@ export function normaliseTriageMessage(msg, labels = null) {
         ...msg,
         kind: msg.kind || 'email',
         from,
+        ...(whoIsAddress ? { whoIsAddress: true } : {}),
         to: msg.to ?? '',
         subject: msg.subject || (nonEmail ? defaultSubject(msg, labels) : (msg.subject ?? '')),
         time: msg.time ?? '',
@@ -229,10 +234,37 @@ export function resolvePlayerSent(entry, set, mailState, social, opts = {}) {
         links,
         attachments,
         auth: row,
+        ...(isStr(rec.hiddenText) && rec.hiddenText ? { hiddenText: rec.hiddenText, ...(isStr(rec.hiddenTextLabel) ? { hiddenTextLabel: rec.hiddenTextLabel } : {}) } : {}),
         ...(factorStrings ? { factorStrings } : {}),
         truth: { ...notes, isPhish: true, flags }
     });
     return { message };
+}
+
+/**
+ * A landed sent record that carries no scored tell, as the recipient would read it (ENG-UX2). Used
+ * by the episode flip when the episode authors a per-choice defender line, so the learner sees the
+ * message they sent even though there is no tell to list. No authentication row and no link: the
+ * message is replayed as written, flags empty. Returns null for anything that is not a sent record.
+ */
+export function plainSentMessage(rec, entry = null) {
+    if (!isObj(rec) || rec.folder !== 'sent') return null;
+    const body = (typeof rec.body === 'string' ? rec.body : '').replace(/\{\{link:[A-Za-z0-9_-]+\}\}/g, '').trim();
+    return normaliseTriageMessage({
+        id: isStr(entry?.id) ? entry.id : 'episode_flip',
+        kind: 'email',
+        playerSent: true,
+        sourceRecordId: rec.id,
+        from: rec.from,
+        to: rec.to,
+        subject: rec.subject,
+        time: rec.time,
+        body,
+        links: [],
+        attachments: [],
+        ...(isStr(rec.hiddenText) && rec.hiddenText ? { hiddenText: rec.hiddenText, ...(isStr(rec.hiddenTextLabel) ? { hiddenTextLabel: rec.hiddenTextLabel } : {}) } : {}),
+        truth: { isPhish: true, flags: [] }
+    });
 }
 
 /**

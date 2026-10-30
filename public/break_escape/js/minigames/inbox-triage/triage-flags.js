@@ -69,7 +69,7 @@ export const SKILL_NAMES = Object.freeze({
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
-const NON_EMAIL = ['sms', 'voicemail', 'qr', 'page', 'call', 'push'];
+const NON_EMAIL = ['sms', 'voicemail', 'qr', 'page', 'call', 'push', 'choice'];
 
 // Tells that cannot apply to a kind of message, so offering them as ticks let a learner tick
 // something that could never be right (N6; P3 N-4 extended it past calls, voicemails and prompts):
@@ -146,12 +146,16 @@ export const HEADER_TELLS = Object.freeze(['senderAuth', 'reply_to_differs']);
  * `truth.flags`), which keeps every authored flag tickable. Without a message nothing is
  * dropped from an email's list (the set-level view).
  *
+ * `opts.relevantFirst` puts the set's own tells (flagChips labels) first, then the built-in channel
+ * tells, then the generic email factors; the awareness round passes it (see _chipIds).
+ *
  * `opts.hideHeaderTells` drops the header-panel tells (HEADER_TELLS) whether or not they are
  * authored: the awareness round passes it while the header details for this message are still
  * closed, so the learner is never asked to judge a header they have not opened. It is applied
  * to every message alike, so the presence of a chip never hints at the answer.
  */
 export function chipIdsFor(set, kind = 'email', message = null, opts = {}) {
+    if (kind === 'choice') return []; // a choice card (ENG-09a) has no flags to tick
     const local = (id) => isObj(set?.flagChips) && isStr(set.flagChips[id]) && !FACTOR_ORDER.includes(id);
     const tells = (Array.isArray(set?.channelTells) ? set.channelTells : []).filter((id) => CHANNEL_TELLS[id] || local(id));
     const email = !NON_EMAIL.includes(kind);
@@ -176,7 +180,26 @@ export function chipIdsFor(set, kind = 'email', message = null, opts = {}) {
         const extra = FACTOR_ORDER.filter((id) => keep.has(id) && !ids.includes(id));
         if (extra.length) ids = [...extra, ...ids];
     }
+    // E11 F8 (opt-in): an item may narrow its own chip list. truth.chips keeps only the listed ids
+    // (plus anything the item is scored on, which is never hidden); truth.chipsOmit drops the listed
+    // ids. Both leave the set-wide list unchanged for every other item. Absent, nothing changes.
+    const truth = isObj(message?.truth) ? message.truth : null;
+    if (truth && Array.isArray(truth.chips)) {
+        const only = new Set(truth.chips.filter(isStr));
+        ids = ids.filter((id) => only.has(id) || keep.has(id));
+    }
+    if (truth && Array.isArray(truth.chipsOmit)) {
+        const drop = new Set(truth.chipsOmit.filter(isStr));
+        ids = ids.filter((id) => !drop.has(id) || keep.has(id));
+    }
     if (opts.hideHeaderTells) ids = ids.filter((id) => !HEADER_TELLS.includes(id));
+    // Opt-in order (F4): the set's own tells first, then the channel tells for this kind, then the
+    // generic email factors. The same order for every message of a kind, so it never hints at the
+    // answer. Array.sort is stable, so the order inside each group is unchanged.
+    if (opts.relevantFirst === true) {
+        const rank = (id) => (local(id) ? 0 : (CHANNEL_TELLS[id] && !FACTOR_ORDER.includes(id) ? 1 : 2));
+        ids = [...ids].sort((a, b) => rank(a) - rank(b));
+    }
     return ids;
 }
 
@@ -209,10 +232,14 @@ export function redFlagString(id, message, set = null) {
     return isObj(set?.tellStrings) && isStr(set.tellStrings[id]) ? set.tellStrings[id] : id;
 }
 
-/** The skill name for a tell id: the built-in table, else set.skillNames for a local tell, else the id. */
+/**
+ * The skill name for a tell id: the set's `skillNames` override wins (so an episode can rename a
+ * shared tell, e.g. E9 "MFA prompts" -> "Sign-in approval requests"), then the built-in table,
+ * then the id. With no override the result is unchanged (F-E9, skillName precedence).
+ */
 export function skillName(id, set = null) {
-    if (SKILL_NAMES[id]) return SKILL_NAMES[id];
-    return isObj(set?.skillNames) && isStr(set.skillNames[id]) ? set.skillNames[id] : id;
+    if (isObj(set?.skillNames) && isStr(set.skillNames[id])) return set.skillNames[id];
+    return SKILL_NAMES[id] || id;
 }
 
 // ── Header panel wording (05 "The header panel"; concept level, fictional) ───────────

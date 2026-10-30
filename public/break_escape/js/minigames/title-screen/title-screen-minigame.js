@@ -1,5 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
-import { attachContinueHandlers, startDesktopHold, DESKTOP_HOLD_MS } from './title-screen-input.js';
+import { attachContinueHandlers, startDesktopHold, DESKTOP_HOLD_MS, titleScreenName, titleScreenArt } from './title-screen-input.js';
 import { isDesktopApp } from '../../utils/desktop-app.js';
 
 // Load title screen CSS
@@ -14,7 +14,7 @@ if (!document.getElementById('title-screen-css')) {
 /**
  * Title Screen Minigame
  * Phase 1: Hacktivity logo fades in, zooms to 200%, fades out.
- * Phase 2: Mission display_name typed out terminal-style with blinking cursor.
+ * Phase 2: Mission display_name (or the scenario's titleScreenName, see titleScreenName) typed out terminal-style with blinking cursor.
  * Phase 3: "Continue?" prompt — player gesture required before closing.
  *          This also satisfies the browser's autoplay policy for audio.
  *          In the Hacktivity desktop app (isDesktopApp) there is no prompt: the player has just
@@ -29,8 +29,11 @@ export class TitleScreenMinigame extends MinigameScene {
     }
 
     init() {
+        // Opt-in painted backdrop (mission.json "title_art"); missions without it are unchanged.
+        const artUrl = titleScreenArt(window.breakEscapeConfig);
         this.container.innerHTML = `
-            <div class="title-screen-container">
+            <div class="title-screen-container${artUrl ? ' has-art' : ''}">
+                ${artUrl ? `<div class="title-screen-art" style="background-image: url('${artUrl}');"></div>` : ''}
                 <img src="/break_escape/assets/logos/hacktivity-logo.svg" alt="Hacktivity Logo" class="title-screen-logo">
                 <div class="title-screen-title" style="visibility: hidden;">
                     <span class="title-screen-typed-text"></span><span class="title-screen-cursor">█</span>
@@ -75,6 +78,10 @@ export class TitleScreenMinigame extends MinigameScene {
         const titleEl   = this.container.querySelector('.title-screen-title');
         const typedText = this.container.querySelector('.title-screen-typed-text');
         const promptEl  = this.container.querySelector('.title-screen-prompt');
+
+        // Fade the backdrop in (CSS drops the transition under prefers-reduced-motion).
+        const art = this.container.querySelector('.title-screen-art');
+        if (art) requestAnimationFrame(() => art.classList.add('is-in'));
 
         // Phase 1 → 2: fixed timer matching the CSS animation duration.
         // animationend is unreliable when CSS loads async after the element is in the DOM.
@@ -126,7 +133,7 @@ export class TitleScreenMinigame extends MinigameScene {
         if (this._ended || this._typingStarted) return;
         this._typingStarted = true;
 
-        const name = window.breakEscapeConfig?.missionDisplayName ?? '';
+        const name = titleScreenName(window.breakEscapeConfig);
         const CHAR_DELAY = 85;
         let i = 0;
 

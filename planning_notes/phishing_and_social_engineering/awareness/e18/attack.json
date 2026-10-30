@@ -1,0 +1,91 @@
+{
+  "_note": "E18 credential-attacks-at-scale attack fragment (awareness). A fragment of the `social` block; the wiring agent copies people, intelFacts and osint into scenarios/awareness_e18_credential_attacks_at_scale/scenario.json.erb (01 P2), with the `_` notes stripped. The attack half is the OSINT stage (collect the practice's five public details as facts) followed by the `guess` stage in mode \"spray\" (ENG-02 + ENG-02b), whose config block lives in full_only.json at social.awarenessEpisode.guess (episode-level, full-only; same placement as E9's guess block). There is no mail send, no landing page, no template set and no phishTarget: the organisation-scale campaign console is the attack artefact. Nothing typed is a real password; every account, word, address and breach-list row is made up. The roster names are the built Merrin & Sallow cast (E4) plus Dani Fenwick (E14), used by name only as the harvested staff list; the opened accounts are shown as a count, never pinned on a named colleague (no-blame). Merrin & Sallow Architects and everyone named are fictional (BRAND_SET.md, merrin_sallow); every domain ends .example. E18 is the organisation-scale twin of E9 and must not repeat E9's single-person guesser.",
+
+  "_sources_note": "Fact source ids differ from the E18 brief's suggested labels where the brief's label would not survive the awareness profile. ms_email_pattern is sourced to a block on the company Contact page (blk_contact), not a 'published PDF': the awareness profile hides document sites (osint.rb site_types), so a PDF/document source could never be opened. All five facts therefore sit on the company site's pages. merrin_social carries one flavour profile for texture (the 'harvest from public pages' theme), with no fact of its own.",
+
+  "people": [
+    { "id": "catherine", "kind": "cast", "address": "catherine.merrin@merrinsallow.example",
+      "forms": { "first": "Catherine", "formal": "Ms Merrin", "full": "Catherine Merrin" } },
+    { "id": "julian", "kind": "cast", "address": "julian.sallow@merrinsallow.example",
+      "forms": { "first": "Julian", "formal": "Mr Sallow", "full": "Julian Sallow" } },
+    { "id": "yasmin", "kind": "cast", "address": "yasmin.chaudhry@merrinsallow.example",
+      "forms": { "first": "Yasmin", "formal": "Ms Chaudhry", "full": "Yasmin Chaudhry" } },
+    { "id": "thandiwe", "kind": "cast", "address": "thandiwe.moyo@merrinsallow.example",
+      "forms": { "first": "Thandiwe", "formal": "Ms Moyo", "full": "Thandiwe Moyo" } },
+    { "id": "dani", "kind": "cast", "address": "dani.fenwick@merrinsallow.example",
+      "forms": { "first": "Dani", "formal": "Mr Fenwick", "full": "Dani Fenwick" } }
+  ],
+
+  "intelFacts": {
+    "ms_team_roster": {
+      "text": "The 'People' page lists the practice's staff by full name: Catherine Merrin, Julian Sallow, Yasmin Chaudhry, Thandiwe Moyo, Dani Fenwick and others.",
+      "subject": "company", "source": "blk_people",
+      "provides": [],
+      "reduceNote": "A public team page hands an attacker the whole staff list in one go, without needing a single password."
+    },
+    "ms_email_pattern": {
+      "text": "Staff email addresses are built as firstname.lastname@merrinsallow.example.",
+      "subject": "company", "source": "blk_contact",
+      "provides": [],
+      "reduceNote": "Once the address pattern is known, every name on the team page turns into a working address to try."
+    },
+    "ms_projects": {
+      "text": "The 'Projects' page names current schemes, among them Calderbank Mills and Elmgate Pavilion.",
+      "subject": "company", "source": "blk_projects",
+      "provides": [],
+      "reduceNote": "Project names on the website are exactly the kind of word people put in a password, so they go straight into the word list."
+    },
+    "ms_motto": {
+      "text": "The practice's strapline is 'Design that lasts'.",
+      "subject": "company", "source": "blk_home",
+      "provides": [],
+      "reduceNote": "A strapline printed on the home page is a handful of memorable words, and memorable words become passwords."
+    },
+    "ms_place": {
+      "text": "The studio is on Verrow Street.",
+      "subject": "company", "source": "blk_visit",
+      "provides": [],
+      "reduceNote": "A street name from the 'Visit us' page is one more word off the website to add to the list."
+    }
+  },
+
+  "osint": {
+    "profile": "awareness",
+    "pinHints": true,
+    "sites": [
+      { "id": "merrin_site", "name": "Merrin & Sallow Architects", "url": "merrinsallow.example", "type": "company-site",
+        "pages": [
+          { "id": "people", "title": "Our people", "blocks": [
+            { "id": "blk_people", "kind": "p",
+              "text": "Our people: Catherine Merrin (Managing Partner), Julian Sallow (Partner), Yasmin Chaudhry (Finance Controller), Thandiwe Moyo (Studio Manager), Dani Fenwick (Junior Architect) and the wider studio team.",
+              "fact": "ms_team_roster" },
+            { "id": "blk_staff_catherine", "kind": "staff", "person": "catherine", "name": "Catherine Merrin",
+              "role": "Managing Partner", "address": "catherine.merrin@merrinsallow.example" },
+            { "id": "blk_staff_julian", "kind": "staff", "person": "julian", "name": "Julian Sallow",
+              "role": "Partner", "address": "julian.sallow@merrinsallow.example" },
+            { "id": "blk_staff_dani", "kind": "staff", "person": "dani", "name": "Dani Fenwick",
+              "role": "Junior Architect", "address": "dani.fenwick@merrinsallow.example" } ] },
+          { "id": "contact", "title": "Contact us", "blocks": [
+            { "id": "blk_contact", "kind": "field",
+              "text": "General enquiries reach us at hello@merrinsallow.example. Individual staff can be reached at firstname.lastname@merrinsallow.example.",
+              "fact": "ms_email_pattern" } ] },
+          { "id": "projects", "title": "Projects", "blocks": [
+            { "id": "blk_projects", "kind": "p",
+              "text": "Current schemes include Calderbank Mills, a canalside housing scheme, and Elmgate Pavilion, a community sports building.",
+              "fact": "ms_projects" } ] },
+          { "id": "home", "title": "Home", "blocks": [
+            { "id": "blk_home", "kind": "p",
+              "text": "Merrin & Sallow Architects. Design that lasts.",
+              "fact": "ms_motto" } ] },
+          { "id": "visit", "title": "Visit us", "blocks": [
+            { "id": "blk_visit", "kind": "field",
+              "text": "The studio is on Verrow Street, a short walk from the station.",
+              "fact": "ms_place" } ] } ] },
+
+      { "id": "merrin_social", "name": "Friendface", "url": "friendface.example", "type": "social",
+        "profiles": [
+          { "person": "thandiwe", "posts": [
+            { "id": "post_thandiwe_other", "text": "Models back from the workshop for the Calderbank Mills review. Long day, good one." } ] } ] }
+    ]
+  }
+}

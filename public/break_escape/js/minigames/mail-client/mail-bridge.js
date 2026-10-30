@@ -201,6 +201,27 @@ export function renderBodyText(message, templates, account, labels = {}) {
     return lines.filter((l) => l.trim().length).join('\n\n');
 }
 
+/**
+ * The hidden line carried on the stored record (E13 AI-assistant injection): a chosen template's
+ * `hiddenText` (slots filled), concealed behind the mail reader's "Show hidden text" reveal rather
+ * than shown in the visible body. Empty when no chosen template authors a hiddenText, so ordinary
+ * mail — and every mission — is unchanged. The label of the first that authors one is returned too.
+ */
+export function renderHiddenText(message, templates, account, labels = {}) {
+    const tpls = isObject(templates) ? templates : {};
+    const chosen = (message && message.templates) || {};
+    const slotMap = (message && message.slots) || {};
+    const lines = [];
+    let label = '';
+    for (const part of BODY_PARTS) {
+        const tpl = tpls[chosen[part]];
+        if (!tpl || !isStr(tpl.hiddenText)) continue;
+        lines.push(fillTemplate(tpl.hiddenText, arr(tpl.slots), slotMap, labels, account));
+        if (!label && isStr(tpl.hiddenTextLabel)) label = tpl.hiddenTextLabel;
+    }
+    return { text: lines.filter((l) => l.trim().length).join('\n\n'), label };
+}
+
 /** The claimed From as displayed (00 §10a): the account itself, or the resolved blanks. */
 export function resolveHeaderDisplay(message, account, labels = {}) {
     const hf = (message && message.headerFrom) || {};
@@ -416,9 +437,8 @@ export function performSend(scene, message) {
             replyScheduled = opened;
         }
     } else if (opened) {
-        const outcomeGlobal = target.outcome && target.outcome.setGlobal;
-        const firstGlobal = isObject(outcomeGlobal) ? Object.keys(outcomeGlobal)[0] : (isStr(outcomeGlobal) ? outcomeGlobal : null);
-        const replyText = dataOnlyText(target, result, social);
+        const firstGlobal = outcomeGlobalFor(target, sentTemplateIdOf(message));
+        const replyText = dataOnlyText(target, result, social, sentTemplateIdOf(message));
         // The job runs even with no text, so withReply timing still reveals the checklist; an
         // empty text delivers no message (mail-scheduler _deliverText).
         scheduler?.scheduleTextJob({
@@ -478,14 +498,58 @@ function resolveClaimedFrom(social, account, claimed) {
 }
 
 /**
+ * The sent template id a by-choice reply keys on (E13): the chosen pretext part, else the first
+ * chosen template. Mirrors episode-model sentFromRecord so the write-stage reply branches on the
+ * same pick the flip and the assistant overlay do. Returns null when nothing was chosen.
+ */
+export function sentTemplateIdOf(message) {
+    const parts = isObject(message && message.templates) ? message.templates : {};
+    if (isStr(parts.pretext)) return parts.pretext;
+    return Object.values(parts).find(isStr) ?? null;
+}
+
+/**
+ * The outcome global a landed send sets (00 §10a). Default: `target.outcome.setGlobal` (a string,
+ * or the first key of a map). `target.outcome.byChoice` (E13 F-2) makes it conditional on the sent
+ * template so, e.g., only the pretext that planted a hidden line sets `phish_*_landed`: an entry
+ * keyed by the sent template id is a global-name string, or `false`/`null`/`''` to set none. A
+ * template with no byChoice entry falls back to the default, so behaviour is unchanged unless the
+ * target authors `byChoice`. Returns the global name, or null for none.
+ */
+export function outcomeGlobalFor(target, sentTemplateId) {
+    const outcome = target && target.outcome;
+    if (!isObject(outcome)) return null;
+    const byChoice = isObject(outcome.byChoice) ? outcome.byChoice : null;
+    if (byChoice && isStr(sentTemplateId) && Object.prototype.hasOwnProperty.call(byChoice, sentTemplateId)) {
+        const v = byChoice[sentTemplateId];
+        return isStr(v) ? v : null; // an explicit false/null/'' entry means "set no global for this choice"
+    }
+    const setGlobal = outcome.setGlobal;
+    return isObject(setGlobal) ? (Object.keys(setGlobal)[0] || null) : (isStr(setGlobal) ? setGlobal : null);
+}
+
+/**
  * The data-only reply text: replies.landed, else replies.missed, else the first failed factor's
  * line (00 §10, N7). An awareness episode's factor lines are written as the red-flag meter's
  * narration ("No open invoice she can match this to..."), not in the target's voice, so there a
  * miss gets a reply only when the target authors `replies.missed`; otherwise nothing comes back
  * (P3 N4/N-5). Returns '' for no reply.
+ *
+ * E13 D1: an open target (primedFor.trusts ["*"]) lands for every pretext, so replies.landed is
+ * the only branch the immediate reply can reach. replies.byChoice[<sentTemplateId>] lets such a
+ * target answer per the pretext the learner actually sent, matching the flip/assistant surfacing.
+ * The entry is a plain string (used as-is) or { landed, missed } (picked by result.landed); it
+ * wins over replies.landed/missed when the sent template has an entry. Absent, behaviour is
+ * exactly as before.
  */
-export function dataOnlyText(target, result, social = null) {
+export function dataOnlyText(target, result, social = null, sentTemplateId = null) {
     const replies = isObject(target && target.replies) ? target.replies : {};
+    const byChoice = isObject(replies.byChoice) && isStr(sentTemplateId) ? replies.byChoice[sentTemplateId] : null;
+    if (isStr(byChoice)) return byChoice;
+    if (isObject(byChoice)) {
+        const picked = result.landed ? byChoice.landed : byChoice.missed;
+        if (isStr(picked)) return picked;
+    }
     if (result.landed) return isStr(replies.landed) ? replies.landed : 'Thanks, received.';
     const byCause = causeMissReply(target, result); // P7-1: name the cause of a link miss
     if (byCause) return byCause;
@@ -493,6 +557,37 @@ export function dataOnlyText(target, result, social = null) {
     if (isObject(social && social.awarenessEpisode)) return '';
     const first = arr(result.factors).find((f) => f.mode === 'required' && !f.pass);
     return first ? (first.reply || first.line || '') : (result.openLine || '');
+}
+
+/**
+ * The send-result banner text (N17): the line at the top of the teaching checklist. Default is
+ * "It landed. They acted on it." on a landing and "It did not land." otherwise, unchanged.
+ *
+ * E13 F-2: an open target (primedFor.trusts ["*"]) lands for every pretext, so a plain brief that
+ * planted nothing still read "They acted on it". A target may override the banner per sent choice,
+ * in the replies.byChoice style the immediate reply uses:
+ *   - target.replies.byChoice[<sentTemplateId>].sentLine  (preferred — sits beside the reply)
+ *   - target.sentLines[<sentTemplateId>]                   (when the byChoice entry is a plain
+ *                                                           string reply, with no room for it)
+ * Each override is a plain string (the landing banner only; the miss banner stays the default) or
+ * { landed, missed } (picked by result.landed). Absent, the default text is returned unchanged.
+ */
+export function sentResultLine(target, result, sentTemplateId = null) {
+    const landed = !!(result && result.landed);
+    const def = landed ? 'It landed. They acted on it.' : 'It did not land.';
+    const pick = (v) => {
+        if (isStr(v)) return landed ? v : null;                 // a bare string overrides the landing banner only
+        if (isObject(v)) { const s = landed ? v.landed : v.missed; return isStr(s) ? s : null; }
+        return null;
+    };
+    const replies = isObject(target && target.replies) ? target.replies : {};
+    const entry = isObject(replies.byChoice) && isStr(sentTemplateId) ? replies.byChoice[sentTemplateId] : null;
+    const fromByChoice = isObject(entry) ? pick(entry.sentLine) : null;
+    if (isStr(fromByChoice)) return fromByChoice;
+    const sentLines = isObject(target && target.sentLines) ? target.sentLines : {};
+    const fromMap = isStr(sentTemplateId) ? pick(sentLines[sentTemplateId]) : null;
+    if (isStr(fromMap)) return fromMap;
+    return def;
 }
 
 /**
@@ -544,6 +639,10 @@ function buildRecord({ message, result, account, social, labels, subjectText, ta
         tells: result ? arr(result.tells).slice() : [],
         read: true
     };
+    // A chosen template's hidden line (E13): stored apart from the body so the reader conceals it
+    // behind a "Show hidden text" reveal instead of showing it in plain view. Absent otherwise.
+    const hidden = renderHiddenText(message, social.templates, account, labels);
+    if (isStr(hidden.text)) { record.hiddenText = hidden.text; if (isStr(hidden.label)) record.hiddenTextLabel = hidden.label; }
     return record;
 }
 
@@ -601,13 +700,13 @@ function checkRow(pass, line) {
  * client) the reply-to note. A failed send offers "Edit & resend"; a landed send
  * offers "Done" instead (01 §3; `onEdit` dismisses the panel in both cases).
  */
-export function renderChecklist(result, target, { claimedFrom = null, account = null, showReplyToNote = false, showReplyPending = false, onEdit = null } = {}) {
+export function renderChecklist(result, target, { claimedFrom = null, account = null, showReplyToNote = false, showReplyPending = false, onEdit = null, sentTemplateId = null } = {}) {
     const panel = cl('div', 'mail-checklist');
     panel.setAttribute('role', 'status');
     panel.setAttribute('aria-live', 'polite');
 
     const banner = cl('p', `mail-checklist-banner ${result.landed ? 'landed' : 'not-landed'}`);
-    banner.textContent = result.landed ? 'It landed. They acted on it.' : 'It did not land.';
+    banner.textContent = sentResultLine(target, result, sentTemplateId);
     panel.appendChild(banner);
 
     const list = cl('ul', 'mail-checklist-rows');
@@ -653,8 +752,10 @@ export function renderChecklist(result, target, { claimedFrom = null, account = 
     }
 
     if (showReplyToNote && claimedFrom && account) {
+        // Plain-English, no "reply-to" jargon for non-technical staff (E8 weak-line #3): the point
+        // is that a forged From sends the reply to the real person, not back to the sender.
         panel.appendChild(cl('p', 'mail-checklist-replyto',
-            `In real life this reply would go to ${claimedFrom}'s inbox unless you set a reply-to; here it comes to ${account.address || account.id}.`));
+            `In real life a reply to this would land in ${claimedFrom}'s own inbox, not yours; here it comes to ${account.address || account.id}.`));
     }
 
     // After a landing there is nothing to resend, so offer "Done" rather than

@@ -47,11 +47,15 @@ module ValidateSocial
     GLOSSARIES = %w[closed open off].freeze
     CHIP_STYLES = %w[plain technical character].freeze
     AUTH_VALUES = %w[pass fail none].freeze
-    NON_EMAIL_KINDS = %w[sms voicemail qr page call push].freeze
+    NON_EMAIL_KINDS = %w[sms voicemail qr page call push choice].freeze
+    # ENG-03a browser-screen states. url is required for the web-page states (none included) and
+    # optional for the chrome/overlay states, which draw no address bar.
+    PAGE_STATES = %w[fakeCheck fakeUpdate fullScreenAlarm extensionPermission downloadBar browserWarning relaunchBar wifiList].freeze
+    PAGE_URL_STATES = [nil, 'fakeCheck', 'fakeUpdate', 'downloadBar', 'browserWarning'].freeze
     # The fields each non-email kind reads (triage-kinds.js). Any of them on another kind is ignored.
     KIND_FIELDS = {
       'sms' => %w[earlier], 'voicemail' => %w[duration transcript audio], 'qr' => %w[qr],
-      'page' => %w[page], 'call' => %w[callerId transcript], 'push' => %w[push]
+      'page' => %w[page], 'call' => %w[callerId transcript], 'push' => %w[push], 'choice' => %w[choice]
     }.freeze
     KINDS = (%w[email playerSent] + NON_EMAIL_KINDS).freeze
     # The four globals a set writes, with the declared type each takes.
@@ -113,6 +117,7 @@ module ValidateSocial
       issues.concat(chip_checks(set, universe, where))
       issues.concat(wording_checks(set, universe, where))
       issues.concat(band_checks(set, where))
+      issues.concat(scoring_checks(set, where))
       issues.concat(profile_checks(set, where))
       issues.concat(message_checks(ctx, set, universe, where))
       issues.concat(player_sent_auth_checks(ctx, set, where))
@@ -128,11 +133,53 @@ module ValidateSocial
       issues
     end
 
+    # set.scoring (batch-5): optional per-kind verdict-points overrides. A message's own
+    # truth.verdictPoints wins over these. Absent, scoring is unchanged.
+    def self.scoring_checks(set, where)
+      return [] unless set.key?('scoring')
+      sc = set['scoring']
+      return [err("#{where}.scoring must be an object")] unless sc.is_a?(Hash)
+      issues = []
+      if sc.key?('kindPoints')
+        kp = sc['kindPoints']
+        if !kp.is_a?(Hash)
+          issues << err("#{where}.scoring.kindPoints must be an object of kind -> { verdict: points }")
+        else
+          # The kinds that carry at least one phish item (for the M1 trust-full-marks warning).
+          phish_kinds = Mail.hash_list(set['messages']).select { |m| m.is_a?(Hash) && m.dig('truth', 'isPhish') == true }
+            .map { |m| kind(m) }.uniq
+          kp.each do |k, points|
+            next if k.to_s.start_with?('_')
+            issues.concat(verdict_points_checks(points, "#{where}.scoring.kindPoints.#{k}", allow_split: true))
+            next unless points.is_a?(Hash)
+            # M1: a flat map that gives Trust full marks also rewards trusting a phish of this kind;
+            # the phish side of a split map that does so says it outright. Either is a footgun.
+            if points.key?('phish') || points.key?('real')
+              issues << warn_("#{where}.scoring.kindPoints.#{k}.phish.trust is full marks (#{VERDICT_POINTS_MAX}); it rewards trusting a phish #{k}, which the review card then paints as a right verdict on an uncaught phish") if trust_full_marks?(points['phish'])
+            elsif trust_full_marks?(points) && phish_kinds.include?(k)
+              issues << warn_("#{where}.scoring.kindPoints.#{k}.trust is full marks (#{VERDICT_POINTS_MAX}) and a phish #{k} is in the set, so trusting that phish also scores full marks; reward Trust only on genuine items with { phish, real } or a per-item truth.verdictPoints")
+            end
+          end
+        end
+      end
+      # batch-10 (E8/E15/E16): the critical-miss penalty per miss and its optional total cap, each
+      # a number in 0..100. Defaults (15 per miss, no cap) hold when absent.
+      %w[criticalPenalty criticalPenaltyCap].each do |key|
+        next unless sc.key?(key)
+        v = sc[key]
+        unless v.is_a?(Numeric) && v >= 0 && v <= 100
+          issues << err("#{where}.scoring.#{key} must be a number between 0 and 100")
+        end
+      end
+      issues
+    end
+
     def self.enum_checks(set, where)
       issues = []
       {
         'stage' => STAGES, 'scoringProfile' => PROFILES, 'feedbackMode' => FEEDBACK_MODES,
-        'headerPanel' => HEADER_PANELS, 'glossary' => GLOSSARIES, 'chipStyle' => CHIP_STYLES
+        'headerPanel' => HEADER_PANELS, 'glossary' => GLOSSARIES, 'chipStyle' => CHIP_STYLES,
+        'chipOrder' => %w[default relevantFirst]
       }.each do |key, allowed|
         next unless set.key?(key)
 
@@ -239,8 +286,9 @@ module ValidateSocial
       issues
     end
 
-    LABEL_QUEUES = %w[inbox call push callPush voicemail page sms other].freeze
-    LABEL_KINDS = %w[email sms voicemail qr page call push].freeze
+    LABEL_QUEUES = %w[inbox call push callPush voicemail page sms choice other].freeze
+    CHOICE_TEXT_KEYS = %w[brief group answered right wrong better whyRight ifWrong].freeze
+    LABEL_KINDS = %w[email sms voicemail qr page call push choice].freeze
 
     # The wording options (resultCopy, reportReplyFrom, skillNames, tellStrings, labels), and the
     # scenario-local tells they exist for: a local tell (a channelTells id outside 00 section 2 that
@@ -251,12 +299,17 @@ module ValidateSocial
       if set.key?('resultCopy')
         rc = set['resultCopy']
         if rc.is_a?(Hash)
-          rc.each { |k, v| issues << err("#{where}.resultCopy.#{k} is empty") if %w[weakest noFlags].include?(k) && blank?(v) }
+          rc.each { |k, v| issues << err("#{where}.resultCopy.#{k} is empty") if %w[weakest noFlags noFlagsLead reportedPct criticalLead].include?(k) && blank?(v) }
+          # batch-8: reportedPct carries the percentage through {pct}; without it the figure is lost.
+          if rc['reportedPct'].is_a?(String) && !rc['reportedPct'].strip.empty? && !rc['reportedPct'].include?('{pct}')
+            issues << warn_("#{where}.resultCopy.reportedPct has no {pct}; the line would not show the percentage")
+          end
         else
-          issues << err("#{where}.resultCopy must be an object { weakest?, noFlags? }")
+          issues << err("#{where}.resultCopy must be an object { weakest?, noFlags?, noFlagsLead?, reportedPct?, criticalLead? }")
         end
       end
       issues << err("#{where}.reportReplyFrom must be a non-empty string") if set.key?('reportReplyFrom') && blank?(set['reportReplyFrom'])
+      issues << err("#{where}.reportReply must be a non-empty string") if set.key?('reportReply') && blank?(set['reportReply'])
       %w[skillNames tellStrings].each do |key|
         next unless set.key?(key)
 
@@ -298,9 +351,24 @@ module ValidateSocial
       return [err("#{where}.labels must be an object")] unless labels.is_a?(Hash)
 
       issues = []
-      known = %w[kind verdict callActions pushActions smsHeading queue]
+      known = %w[kind verdict verdictFeedback callActions pushActions smsHeading itemNoun next queue choice teamBadge teamBadgeTitle teamBadgeCountsChecked phishCaughtLabel scoreLine]
       labels.each_key { |k| issues << err("#{where}.labels has the key '#{k}', which is not one of #{known.join(', ')}") unless known.include?(k) }
       issues << err("#{where}.labels.smsHeading is empty") if labels.key?('smsHeading') && blank?(labels['smsHeading'])
+      # batch-12 item 2: a boolean; false keeps a Verify out of the team badge count.
+      if labels.key?('teamBadgeCountsChecked') && ![true, false].include?(labels['teamBadgeCountsChecked'])
+        issues << err("#{where}.labels.teamBadgeCountsChecked must be true or false")
+      end
+      %w[teamBadge teamBadgeTitle phishCaughtLabel scoreLine next].each do |key|
+        issues << err("#{where}.labels.#{key} must be a non-empty string") if labels.key?(key) && blank?(labels[key])
+      end
+      if labels.key?('itemNoun')
+        n = labels['itemNoun']
+        ok = (n.is_a?(String) && !blank?(n)) || (n.is_a?(Array) && n.length == 2 && n.none? { |w| blank?(w) })
+        issues << err("#{where}.labels.itemNoun must be a non-empty string or a [singular, plural] pair") unless ok
+      end
+      if labels['teamBadge'].is_a?(String) && !labels['teamBadge'].include?('{n}')
+        issues << warn_("#{where}.labels.teamBadge has no {n}; the badge would not show the count")
+      end
       group = lambda do |key, ids|
         next unless labels.key?(key)
 
@@ -320,10 +388,41 @@ module ValidateSocial
           issues << warn_("#{where}.labels.#{key} has the key '#{id}', which is not one of #{ids.join(', ')}; it is never read") unless ids.include?(id)
         end
       end
+      if labels.key?('choice')
+        ch = labels['choice']
+        if ch.is_a?(Hash)
+          ch.each do |id, v|
+            issues << warn_("#{where}.labels.choice has the key '#{id}', which is not one of #{CHOICE_TEXT_KEYS.join(', ')}; it is never read") unless CHOICE_TEXT_KEYS.include?(id)
+            issues << err("#{where}.labels.choice.#{id} is empty") if blank?(v)
+          end
+        else
+          issues << err("#{where}.labels.choice must be an object of wording lines")
+        end
+      end
       group.call('kind', LABEL_KINDS)
       group.call('verdict', %w[trust report delete verify])
       group.call('callActions', %w[comply escalate refuse verify_callback])
       group.call('pushActions', %w[approve deny deny_report])
+      if labels.key?('verdictFeedback')
+        vf = labels['verdictFeedback']
+        if !vf.is_a?(Hash)
+          issues << err("#{where}.labels.verdictFeedback must be an object of verdict -> { phish?, real? }")
+        else
+          vf.each do |id, v|
+            next if id.to_s.start_with?('_')
+            issues << warn_("#{where}.labels.verdictFeedback has the key '#{id}', which is not one of trust, report, delete, verify; it is never read") unless BUILT_VERDICTS.include?(id)
+            if !v.is_a?(Hash)
+              issues << err("#{where}.labels.verdictFeedback.#{id} must be an object { phish?, real? } of feedback lines")
+            else
+              v.each do |truth, line|
+                next if truth.to_s.start_with?('_')
+                issues << err("#{where}.labels.verdictFeedback.#{id} has the key '#{truth}', which is not phish or real") unless %w[phish real].include?(truth)
+                issues << err("#{where}.labels.verdictFeedback.#{id}.#{truth} is empty") if %w[phish real].include?(truth) && blank?(line)
+              end
+            end
+          end
+        end
+      end
       if labels.key?('queue')
         q = labels['queue']
         if q.is_a?(Hash)
@@ -379,7 +478,7 @@ module ValidateSocial
 
       issues = []
       seen = {}
-      if msgs.any? { |m| m.is_a?(Hash) && NON_EMAIL_KINDS.include?(kind(m)) } && (universe - FACTORS).empty?
+      if msgs.any? { |m| m.is_a?(Hash) && NON_EMAIL_KINDS.include?(kind(m)) && kind(m) != 'choice' } && (universe - FACTORS).empty?
         issues << warn_("#{where} holds non-email messages but enables no channelTells; their chip list would offer only 'Nothing looks wrong'")
       end
       msgs.each_with_index do |m, i|
@@ -417,6 +516,8 @@ module ValidateSocial
         issues << err("#{mw}: a call message belongs in an awareness set with verifyVerdict: true (analyst sets never enable Verify)") unless aware && set['verifyVerdict'] == true
       elsif k == 'push'
         issues << err("#{mw}: a push message belongs in an awareness set") unless aware
+      elsif k == 'choice'
+        issues << err("#{mw}: a choice message belongs in an awareness set (its options are scored through the awareness verdict rows)") unless aware
       end
       issues
     end
@@ -439,7 +540,8 @@ module ValidateSocial
         issues << warn_("#{mw} is a #{k} message with 'auth'; only email has a header panel, so it is ignored")
       end
       issues.concat(kind_field_checks(m, k, mw))
-      issues.concat(truth_checks(m, universe, mw))
+      issues.concat(k == 'choice' ? choice_checks(m, mw) : truth_checks(m, universe, mw))
+      issues.concat(truth_correct_checks(m, mw)) unless k == 'choice'
       issues
     end
 
@@ -495,22 +597,215 @@ module ValidateSocial
         issues << warn_("#{mw}.subject is empty; the notice would be headed 'Notice'") if blank?(m['subject'])
       when 'page'
         pg = m['page']
-        if !pg.is_a?(Hash) || blank?(pg['url'])
-          issues << err("#{mw}.page.url is missing; the address bar would be blank")
+        if !pg.is_a?(Hash)
+          issues << err("#{mw}.page is missing; the browser card has no page to show")
         else
+          state = pg['state']
+          if !state.nil? && !PAGE_STATES.include?(state)
+            issues << err("#{mw}.page.state '#{state}' is not one of #{PAGE_STATES.join(', ')} (ENG-03a)")
+          end
+          # url is required for the web-page states (none, fakeCheck, fakeUpdate, downloadBar,
+          # browserWarning) and optional for the chrome/overlay states (relaunchBar, fullScreenAlarm,
+          # extensionPermission), which draw no address bar (ENG-03a).
+          if PAGE_URL_STATES.include?(state) && blank?(pg['url'])
+            issues << err("#{mw}.page.url is missing; the address bar would be blank")
+          end
           issues << err("#{mw}.page.padlock must be true or false") if pg.key?('padlock') && ![true, false].include?(pg['padlock'])
-          issues << err("#{mw}.page.fields must be an array of non-empty labels") if pg.key?('fields') && !(pg['fields'].is_a?(Array) && pg['fields'].all? { |f| !blank?(f) })
+          # A field is a non-empty label string, or an object { label, type: "text"|"tick", checked? }
+          # (E10 MI2 tick box). Any other shape is refused.
+          if pg.key?('fields')
+            ok = pg['fields'].is_a?(Array) && pg['fields'].all? do |f|
+              if f.is_a?(Hash)
+                !blank?(f['label']) && (f['type'].nil? || %w[text tick].include?(f['type'])) &&
+                  (!f.key?('checked') || [true, false].include?(f['checked'])) &&
+                  (f.keys - %w[label type checked]).all? { |k| k.to_s.start_with?('_') }
+              else
+                !blank?(f)
+              end
+            end
+            issues << err("#{mw}.page.fields must be an array of non-empty labels or { label, type: text|tick, checked? } objects") unless ok
+          end
+          issues << err("#{mw}.page.permissions must be an array of non-empty strings") if pg.key?('permissions') && !(pg['permissions'].is_a?(Array) && pg['permissions'].all? { |f| !blank?(f) })
           issues.concat(certificate_checks(pg['certificate'], "#{mw}.page.certificate")) if pg.key?('certificate')
+          issues.concat(wifi_list_checks(pg, "#{mw}.page")) if state == 'wifiList'
         end
       when 'call'
         issues.concat(transcript_checks(m['transcript'], "#{mw}.transcript", required: true))
         issues << warn_("#{mw} has no callerId or from; the card would say 'Unknown caller'") if blank?(m['callerId']) && !who
+      when 'choice'
+        issues.concat(choice_shape_checks(m['choice'], "#{mw}.choice"))
       when 'push'
         pu = m['push']
         issues << err("#{mw}.push.app is missing; the prompt would not say which app is asking") if !pu.is_a?(Hash) || blank?(pu['app'])
         issues << warn_("#{mw}.time is empty; the prompt's time is often the tell (an odd hour)") if blank?(m['time'])
       end
       issues
+    end
+
+    # ---- page.state wifiList (ENG-14) ---------------------------------------------
+    # A network list is authored display data: names, a lock flag and a signal. Nothing is typed and
+    # nothing is joined, so a credential-like field on an entry is refused outright.
+    WIFI_SIGNAL_WORDS = %w[strong good fair weak].freeze
+    WIFI_CREDENTIAL_KEY_RE = /pass|pwd|psk|secret|credential|\bkey\b|token/i.freeze
+
+    def self.wifi_list_checks(pg, where)
+      nets = pg['networks']
+      unless nets.is_a?(Array) && !nets.empty?
+        return [err("#{where}.networks is missing or empty; a wifiList card with no networks would show a blank list")]
+      end
+
+      issues = []
+      nets.each_with_index do |n, i|
+        w = "#{where}.networks[#{i}]"
+        unless n.is_a?(Hash)
+          issues << err("#{w} must be an object { ssid, signal, secured, note }")
+          next
+        end
+        n.each_key do |k|
+          issues << err("#{w}.#{k} looks like a credential field; a network entry shows names and signal only, never a password or key") if k.to_s.match?(WIFI_CREDENTIAL_KEY_RE)
+        end
+        issues << err("#{w}.ssid is empty; the row would show no network name") if blank?(n['ssid'])
+        sig = n['signal']
+        ok = (sig.is_a?(Numeric) && sig >= 0 && sig <= 100) || (sig.is_a?(String) && WIFI_SIGNAL_WORDS.include?(sig.strip.downcase))
+        issues << err("#{w}.signal must be a number 0-100 (0-4 reads as bars) or one of #{WIFI_SIGNAL_WORDS.join(', ')}") unless ok
+        issues << err("#{w}.secured must be true or false") if n.key?('secured') && ![true, false].include?(n['secured'])
+        issues << warn_("#{w}.secured is not set; the row would show no lock, so the lock cue is missing") unless n.key?('secured')
+      end
+      issues
+    end
+
+    # ---- choice (ENG-09a) --------------------------------------------------------
+    # The verdicts that earn full marks under the awareness profile, by truth (triage-scoring.js
+    # VERDICT_POINTS): the right option must be one of them.
+    FULL_MARKS_VERDICTS = { true => %w[report verify], false => %w[trust report verify] }.freeze
+    BUILT_VERDICTS = %w[trust report delete verify].freeze
+    # A verdict-points override is worth 0..60 (the verdict is 60 of the 100-point item;
+    # triage-scoring.js VERDICT_POINTS_MIN/MAX). Shared by truth.verdictPoints and
+    # set.scoring.kindPoints[kind] (batch-5 F-E12-1, E13 F-10).
+    VERDICT_POINTS_MIN = 0
+    VERDICT_POINTS_MAX = 60
+
+    # Validate a verdict-points override map { trust?, report?, delete?, verify? }: a Hash with only
+    # built-verdict keys and numeric values in range. Returns issue list. When allow_split is true
+    # (scoring.kindPoints only, batch-6 M1) the map may instead be { phish: {...}, real: {...} }:
+    # each sub-map is validated and nothing else is accepted alongside them.
+    def self.verdict_points_checks(points, where, allow_split: false)
+      return [err("#{where} must be an object of verdict -> points, e.g. { \"trust\": 60 }")] unless points.is_a?(Hash)
+      if points.key?('phish') || points.key?('real')
+        unless allow_split
+          return [err("#{where}: the { phish, real } split is only for set.scoring.kindPoints; a per-item verdictPoints names verdicts directly")]
+        end
+        issues = []
+        points.each do |k, v|
+          next if k.to_s.start_with?('_')
+          unless %w[phish real].include?(k)
+            issues << err("#{where}: '#{k}' is not 'phish' or 'real' (the split map names only those)")
+            next
+          end
+          issues.concat(verdict_points_checks(v, "#{where}.#{k}"))
+        end
+        return issues
+      end
+      issues = []
+      points.each do |v, n|
+        next if v.to_s.start_with?('_')
+        unless BUILT_VERDICTS.include?(v)
+          issues << err("#{where}: '#{v}' is not a verdict (one of #{BUILT_VERDICTS.join(', ')})")
+          next
+        end
+        if !n.is_a?(Numeric) || n < VERDICT_POINTS_MIN || n > VERDICT_POINTS_MAX
+          issues << err("#{where}.#{v} must be a number from #{VERDICT_POINTS_MIN} to #{VERDICT_POINTS_MAX} (the verdict is worth #{VERDICT_POINTS_MAX} of the item's 100 points)")
+        end
+      end
+      issues
+    end
+
+    # batch-6 M1: full marks for a trust-family verdict ('trust': Comply/Approve) rewards falling
+    # for the attack. On a phish item, or for a kind whose flat kindPoints map applies to phish
+    # items of that kind, that paints the review card green on an uncaught critical phish. Warn so
+    # an author reaches for truth.verdictPoints on genuine items, or the { phish, real } split.
+    def self.trust_full_marks?(points)
+      points.is_a?(Hash) && points['trust'].is_a?(Numeric) && points['trust'] >= VERDICT_POINTS_MAX
+    end
+    # A bare token of 8+ characters that mixes three kinds of character reads like a pasted password.
+    CREDENTIAL_RE = /\A(?=\S{8,}\z)(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])\S+\z/.freeze
+
+    def self.choice_shape_checks(c, where)
+      return [err("#{where} is missing; a choice message needs { prompt, options }")] unless c.is_a?(Hash)
+
+      issues = []
+      issues << err("#{where}.prompt is empty or missing; the card would ask nothing") if blank?(c['prompt'])
+      issues << err("#{where}.note is empty") if c.key?('note') && blank?(c['note'])
+      opts = c['options']
+      unless opts.is_a?(Array) && opts.length.between?(2, 4)
+        issues << err("#{where}.options must hold two to four options (a choice card is one decision)")
+        return issues
+      end
+      ids = []
+      opts.each_with_index do |o, i|
+        ow = "#{where}.options[#{i}]"
+        unless o.is_a?(Hash)
+          issues << err("#{ow} must be an object { id, label, verdict }")
+          next
+        end
+        issues << err("#{ow}.id is empty or missing") if blank?(o['id'])
+        issues << err("#{ow}.label is empty or missing; the button would be blank") if blank?(o['label'])
+        issues << err("#{ow}.verdict '#{o['verdict']}' must be one of #{BUILT_VERDICTS.join(', ')}") unless BUILT_VERDICTS.include?(o['verdict'])
+        ids << o['id'] unless blank?(o['id'])
+        if o['label'].is_a?(String) && o['label'].match?(CREDENTIAL_RE)
+          issues << warn_("#{ow}.label is a bare string that looks like a real credential; use a made-up example inside a sentence, never a password anyone uses")
+        end
+      end
+      issues << err("#{where}.options: an id is used more than once") if ids.uniq.length != ids.length
+      issues
+    end
+
+    # A choice card has no flags to tick; its truth names the verdict of the right option.
+    def self.choice_checks(m, mw)
+      t = m['truth']
+      return [err("#{mw}.truth is missing; the round could not score this choice")] unless t.is_a?(Hash)
+
+      issues = []
+      unless [true, false].include?(t['isPhish'])
+        issues << err("#{mw}.truth.isPhish must be true or false (it picks the scoring column; the safe option maps to a full-marks verdict)")
+        return issues
+      end
+      issues << err("#{mw}.truth.flags: a choice card authors no flags (there is nothing to tick); leave it empty") unless Mail.list(t['flags']).empty?
+      %w[links attachments].each do |f|
+        issues << err("#{mw}.#{f}: a choice card holds one decision and has no #{f}") unless Mail.list(m[f]).empty?
+      end
+      %w[perFlagNote flagAlternatives].each do |f|
+        issues << warn_("#{mw}.truth.#{f} is on a choice card, which authors no flags; it is never read") if t.key?(f)
+      end
+      %w[ifTrusted reportReply].each do |f|
+        issues << err("#{mw}.truth.#{f} is empty; the review card would show a blank line") if t.key?(f) && blank?(t[f])
+      end
+      full = FULL_MARKS_VERDICTS[t['isPhish']]
+      correct = t['correct']
+      unless BUILT_VERDICTS.include?(correct)
+        issues << err("#{mw}.truth.correct must be one of #{BUILT_VERDICTS.join(', ')} (the verdict of the right option)")
+        return issues
+      end
+      unless full.include?(correct)
+        issues << err("#{mw}.truth.correct '#{correct}' does not score full marks for isPhish #{t['isPhish']}; the right option must map to #{full.join(' or ')}")
+      end
+      opts = m.dig('choice', 'options')
+      if opts.is_a?(Array)
+        hits = opts.count { |o| o.is_a?(Hash) && o['verdict'] == correct }
+        issues << err("#{mw}.choice.options: #{hits} options have the verdict '#{correct}' (truth.correct); exactly one must") unless hits == 1
+        # Every other option must score below full marks, or two answers would both be "right".
+        opts.select { |o| o.is_a?(Hash) && o['verdict'] != correct && full.include?(o['verdict']) }.each do |o|
+          issues << err("#{mw}.choice.options['#{o['id']}'] maps to '#{o['verdict']}', which also scores full marks; only the right option may")
+        end
+      end
+      issues
+    end
+
+    # truth.correct belongs to choice cards only.
+    def self.truth_correct_checks(m, mw)
+      return [] unless m['truth'].is_a?(Hash) && m['truth'].key?('correct')
+
+      [warn_("#{mw}.truth.correct is on a #{kind(m)} message; only a choice card reads it")]
     end
 
     # "issued to" is a host name: dotted labels of letters, digits and hyphens, with an optional
@@ -701,6 +996,35 @@ module ValidateSocial
 
       %w[headerNote ifTrusted reportReply falseAlarmCost].each do |f|
         issues << err("#{mw}.truth.#{f} is empty; the review card would show a blank line") if t.key?(f) && blank?(t[f])
+      end
+      # E13 F-10: a per-item genuine-Trust line, for a real item only (it replaces the genuine
+      # praise line; a phish item never shows it).
+      if t.key?('trustLine')
+        issues << err("#{mw}.truth.trustLine is empty; leave it out to keep the default genuine-Trust line") if blank?(t['trustLine'])
+        issues << warn_("#{mw}.truth.trustLine is on a phish item (isPhish true); it is the genuine-Trust line and is never seen on a phish") if t['isPhish']
+      end
+      # E11 F8: a per-item chip-list override. Each id should be a tick the set offers (a factor or
+      # an enabled channel tell); an authored flag is always kept whether or not it is listed.
+      %w[chips chipsOmit].each do |f|
+        next unless t.key?(f)
+        if !t[f].is_a?(Array) || t[f].any? { |id| !id.is_a?(String) || id.strip.empty? }
+          issues << err("#{mw}.truth.#{f} must be an array of tick ids")
+          next
+        end
+        t[f].each do |id|
+          next if flag_list.include?(id) || universe.include?(id)
+          issues << warn_("#{mw}.truth.#{f}: '#{id}' is not a tick this set offers (a factor or an enabled channel tell), so it changes nothing")
+        end
+      end
+      %w[kindLine missLabel].each do |f|
+        issues << err("#{mw}.truth.#{f} is empty; leave it out to keep the phish wording") if t.key?(f) && blank?(t[f])
+        issues << warn_("#{mw}.truth.#{f} is on a real item (isPhish false); it only replaces phish wording, so it is never seen") if t.key?(f) && !t['isPhish']
+      end
+      if t.key?('verdictPoints')
+        issues.concat(verdict_points_checks(t['verdictPoints'], "#{mw}.truth.verdictPoints"))
+        # M1: Trust at full marks on a phish item rewards falling for it and paints the review card
+        # green on an uncaught critical phish.
+        issues << warn_("#{mw}.truth.verdictPoints.trust is full marks (#{VERDICT_POINTS_MAX}) on a phish item; trusting this phish then scores full marks and the review card reads as a right verdict") if t['isPhish'] && trust_full_marks?(t['verdictPoints'])
       end
       if t['isPhish'] && t.key?('falseAlarmCost')
         issues << warn_("#{mw}.truth.falseAlarmCost is on a phish; it is shown only for a real item reported or deleted, so it is never seen")

@@ -37,6 +37,15 @@ const ICON = '/break_escape/assets/icons/';
 // Block `src` and concept-card `image` are relative to assets/ (e.g. "social/osint/foo.png"); site `logo` to assets/logos/.
 const ASSETS = '/break_escape/assets/';
 const LOGOS = '/break_escape/assets/logos/';
+
+// Brands with a shared logo: any site named or hosted as FriendFace gets it unless the scenario sets its own.
+export function brandLogo(site) {
+    if (site?.logo) return { logo: site.logo, logoAlt: site.logoAlt };
+    if (/friend\s*face/i.test(`${site?.name || ''} ${site?.title || ''} ${site?.url || ''} ${site?.id || ''}`)) {
+        return { logo: 'friendface.png', logoAlt: site?.logoAlt || 'Friendface' };
+    }
+    return { logo: null, logoAlt: null };
+}
 const CHARACTERS = '/break_escape/assets/characters/';
 const NOTHING = 'Nothing here you can use.';
 const HINT_ID = 'ob-hint-add';
@@ -54,6 +63,13 @@ function h(tag, props = {}, ...kids) {
         node.appendChild(typeof kid === 'string' ? document.createTextNode(kid) : kid);
     }
     return node;
+}
+
+// An email address or web address inside a sentence is set in the address font, like every other
+// address in the game; the words around it keep the readable face (E8 F15).
+const ADDRESS_RE = /([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}|https?:\/\/[^\s,;)]+)/g;
+export function addressify(text) {
+    return String(text ?? '').split(ADDRESS_RE).map((part, i) => (i % 2 ? h('span', { class: 'ob-addr', text: part }) : part)).filter((x) => x !== '');
 }
 
 const icon = (name) => h('img', { class: 'ob-icon', src: `${ICON}${name}.png`, alt: '', 'aria-hidden': 'true',
@@ -308,12 +324,13 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
 
     _siteHeader(site) {
         const head = h('div', { class: 'ob-site-head' });
-        if (site.logo) {
-            head.appendChild(h('img', { class: 'ob-logo', src: LOGOS + String(site.logo).replace(/^\/+/, ''),
-                alt: site.logoAlt || '', 'aria-hidden': site.logoAlt ? false : 'true' }));
+        const brand = brandLogo(site);
+        if (brand.logo) {
+            head.appendChild(h('img', { class: 'ob-logo', src: LOGOS + String(brand.logo).replace(/^\/+/, ''),
+                alt: brand.logoAlt || '', 'aria-hidden': brand.logoAlt ? false : 'true' }));
         }
         // A logo with alt text is the site's wordmark, so it stands in for the title.
-        if (!(site.logo && site.logoAlt)) {
+        if (!(brand.logo && brand.logoAlt)) {
             head.appendChild(h('p', { class: 'ob-site-title', text: site.name || site.title || site.id }));
         }
         return head;
@@ -608,10 +625,18 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         const held = fact ? isHeld(this.globals, fact) : false;
         const fb = this._feedback.get(id);
         const item = h('div', { class: `ob-item ob-${block.kind || 'p'}${this._flash === id ? ' just-noted' : ''}`, 'data-id': id });
+        // A visible "pin" affordance (opt-in: osint.pinHints) so it is clear a block can be
+        // selected to add it to notes; the 1px screen-reader hint alone left keyboard and sighted
+        // users with no cue (E14-M1). The block button is already the control, so the label on it
+        // is reachable. Default off keeps every other deployment unchanged.
+        const pin = this.osint.pinHints === true && !held
+            ? h('span', { class: 'ob-pin' }, icon('pin'),
+                h('span', { class: 'ob-pin-word', text: this.osint.pinLabel || 'Pin' }))
+            : null;
         const btn = h('button', { type: 'button', class: `ob-block${held ? ' is-noted' : ''}`, 'data-id': id,
             'data-kind': block.kind || 'p', 'data-fact': fact, 'data-focus': `block:${id}`, 'aria-describedby': HINT_ID },
             ...this._lines(block),
-            held ? h('span', { class: 'ob-badge' }, icon('mark-tick'), h('span', { class: 'ob-badge-word', text: 'Noted' })) : null);
+            held ? h('span', { class: 'ob-badge' }, icon('mark-tick'), h('span', { class: 'ob-badge-word', text: 'Noted' })) : pin);
         this.addEventListener(btn, 'click', (e) => {
             e.preventDefault?.();
             this.selectBlock(block);
@@ -620,7 +645,7 @@ export class OsintBrowserMinigame extends SocialOverlayScene {
         if (fb) {
             const mark = fb.outcome === 'nothing' ? 'mark-question' : 'mark-tick';
             item.appendChild(h('div', { class: `ob-feedback is-${fb.outcome}`, 'data-for': id },
-                icon(mark), h('span', { class: 'ob-feedback-text', text: fb.text })));
+                icon(mark), h('span', { class: 'ob-feedback-text' }, addressify(fb.text))));
         }
         return item;
     }

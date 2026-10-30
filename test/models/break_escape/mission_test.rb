@@ -31,6 +31,28 @@ module BreakEscape
       assert_equal Mission::DEFAULT_UI_THEME, Mission.new(name: 'no_such_mission', display_name: 'X').ui_theme
     end
 
+    test "title_art_path returns a plain title_art image path or nil" do
+      mission = Mission.new(name: 'no_such_mission', display_name: 'X')
+      assert_nil mission.title_art_path # no mission.json
+
+      { {} => nil, { 'title_art' => '' } => nil, { 'title_art' => 5 } => nil,
+        { 'title_art' => '../secrets.jpg' } => nil, { 'title_art' => 'title_art/../x.jpg' } => nil,
+        { 'title_art' => 'https://example.com/a.jpg' } => nil, { 'title_art' => '/title_art/a.jpg' } => nil,
+        { 'title_art' => 'title_art/a.svg' } => nil,
+        { 'title_art' => 'title_art/awareness_e12_visitor_tailgater.jpg' } => 'title_art/awareness_e12_visitor_tailgater.jpg',
+        { 'title_art' => 'title_art/a-b_1.png' } => 'title_art/a-b_1.png' }.each do |meta, expected|
+        mission.define_singleton_method(:load_mission_metadata) { meta }
+        assert_equal expected, mission.title_art_path, "title_art #{meta.inspect}"
+      end
+    end
+
+    test "title_art_path reads the real mission.json files and the art exists" do
+      art = Mission.new(name: 'awareness_e12_visitor_tailgater_defend', display_name: 'A').title_art_path
+      assert_equal 'title_art/awareness_e12_visitor_tailgater.jpg', art
+      assert File.exist?(BreakEscape::Engine.root.join('public/break_escape/assets', art))
+      assert_nil Mission.new(name: 'm01_first_contact', display_name: 'M1').title_art_path
+    end
+
     test "scoring_mode returns each valid value and falls back to tasks" do
       mission = Mission.new(name: 'no_such_mission', display_name: 'X')
       assert_equal 'tasks', mission.scoring_mode # no mission.json

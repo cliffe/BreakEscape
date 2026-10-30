@@ -1,6 +1,13 @@
 // Awareness episodes: the debrief (11 stage 6, packet P7-B).
 //
-// renderDebrief(container, { result, set, strings, variant, onFinish }) -> { destroy, getState }
+// renderDebrief(container, { result, set, strings, variant, onFinish, drillRecap, sandboxRecap, assistantRecap, concernRecap }) -> { destroy, getState }
+// `concernRecap` (optional, batch 13): the concern form's report, { facts: [label], missing: [label],
+// conclusion: label | '' } (episode-model.js concernRecap). When it holds a fact, a "Your report"
+// section lists the facts filed, any required fact left out and whether a conclusion was left in.
+// Null draws nothing.
+// `drillRecap` (optional): the scored sort-drill cards the learner put in a wrong bin, each
+// { situation, chosen, right, reason }. When non-empty, a "Cards to look at again" section lists
+// them with the right bin and reason. Absent or empty draws nothing (E17 B2 finding).
 //
 // `result` is the triage gameResult (answers, percent, reportRate, verifyCount); `set` is the
 // triage set, read for each message's subject and `truth`. One card per answer, then the
@@ -26,8 +33,8 @@
 // Every string goes in with textContent. The wording never blames the learner.
 
 import { redFlagString, skillName } from '../inbox-triage/triage-flags.js';
-import { weakestFactor, flagUnits, unitAccepts, genuineFeedback, genuineFeedbackText, verdictPoints, FULL_VERDICT_POINTS, dedupeSentences } from '../inbox-triage/triage-scoring.js';
-import { kindOf, isNonEmail, actionById, kindVerdictLine, defaultSubject } from '../inbox-triage/triage-kinds.js';
+import { weakestFactor, flagUnits, unitAccepts, genuineFeedback, genuineFeedbackText, verdictPoints, verdictPointsOverride, FULL_VERDICT_POINTS, dedupeSentences, caughtHow } from '../inbox-triage/triage-scoring.js';
+import { kindOf, isNonEmail, actionById, kindVerdictLine, defaultSubject, choiceOptionFor, choiceText, verdictFeedbackOverride, verdictVerbOverride } from '../inbox-triage/triage-kinds.js';
 
 const DEFAULTS = Object.freeze({
     heading: 'What happened',
@@ -50,8 +57,6 @@ const PANEL_HEADINGS = Object.freeze({
     voicePanel: 'A voice is not proof'
 });
 
-const VERDICT_WORD = Object.freeze({ trust: 'Trust', report: 'Report', delete: 'Delete', verify: 'Verify' });
-
 const LINES = Object.freeze({
     phish: {
         report: 'Reported. That warns everyone else.',
@@ -63,7 +68,9 @@ const LINES = Object.freeze({
         trust: 'Right call. This one was real.',
         report: "Good instinct; here is why this one was safe. Reporting when you are unsure is never wrong.",
         verify: 'Checking first is fine. This one was real.',
-        delete: 'This one was real. If you are unsure, reporting is safer than deleting.'
+        // F-E13-3: the right call named for a deleted real item is Trust or Verify, so the line no
+        // longer recommends reporting (which contradicted it); it names the cost of binning real mail.
+        delete: 'This one was real. Deleting real mail can lose it, and the work it needed waits.'
     }
 });
 
@@ -102,14 +109,38 @@ function titleOf(msg, id) {
  * a call or sign-in prompt uses its action labels (Ring back, Escalate, Deny and report) and
  * its own review lines, not the email verdicts (D3).
  */
-function verdictWordAndLine(answer, msg, phish, labels = null) {
+function verdictWordAndLine(answer, msg, phish, labels = null, scoring = null) {
     const kind = kindOf(msg);
+    // batch-13 item 3 (E17 C4 D2): a genuine item's own truth.trustLine / truth.deleteLine is its
+    // review line on the inbox card (inbox-triage-minigame.js _verdictLine), so the debrief card
+    // uses it too, for every kind, rather than a set-wide or built line that may say otherwise.
+    const ownReal = !phish && isObj(msg?.truth)
+        ? (answer.verdict === 'trust' ? msg.truth.trustLine : (answer.verdict === 'delete' ? msg.truth.deleteLine : null)) : null;
+    if (kind === 'choice') {
+        // An authored-choice card (ENG-09a): the option's own label, then right or wrong, not the email verdicts.
+        const right = wrongVerdict(answer, msg, 'awareness', scoring) === false;
+        return { word: choiceOptionFor(msg, answer.action, answer.verdict)?.label || String(answer.verdict ?? ''),
+            line: choiceText(right ? 'right' : 'wrong', labels) };
+    }
     if (kind === 'call' || kind === 'push') {
         const action = actionById(kind, answer.action, answer.verdict, labels);
-        return { word: action.label, line: kindVerdictLine(kind, phish, answer.verdict) || '' };
+        // batch-6 (item over set): an item's own kindLine wins over the set's labels.verdictFeedback
+        // here too, as it does on the email path below, so a genuine-but-report caller is not
+        // described as a phish by a set-wide feedback line.
+        const callKindLine = phish && answer.verdict === 'trust' && isObj(msg?.truth) && isStr(msg.truth.kindLine) ? msg.truth.kindLine : null;
+        return { word: action.label,
+            line: isStr(ownReal) ? ownReal : callKindLine ? `${callKindLine} Here is what to look for next time.`
+                : (verdictFeedbackOverride(labels, answer.verdict, phish) || kindVerdictLine(kind, phish, answer.verdict) || '') };
     }
-    return { word: VERDICT_WORD[answer.verdict] || String(answer.verdict ?? ''),
-        line: LINES[phish ? 'phish' : 'real'][answer.verdict] || '' };
+    // truth.kindLine (optional): what a genuine-but-report item really was, in place of "built to look right".
+    const kindLine = phish && answer.verdict === 'trust' && isObj(msg?.truth) && isStr(msg.truth.kindLine) ? msg.truth.kindLine : null;
+    // F-E10-2: name the verdict with the set's relabelled label (not the engine word "Delete"),
+    // and let the set override the feedback line per verdict so it does not leak "Deleting".
+    const word = actionById('email', answer.action, answer.verdict, labels).label || String(answer.verdict ?? '');
+    const fb = verdictFeedbackOverride(labels, answer.verdict, phish);
+    return { word,
+        line: isStr(ownReal) ? ownReal : kindLine ? `${kindLine} Here is what to look for next time.`
+            : (fb || LINES[phish ? 'phish' : 'real'][answer.verdict] || '') };
 }
 
 /**
@@ -136,11 +167,12 @@ function reviewNeeded(answer, msg) {
  * deleted, a real one deleted, a genuine caller complied with unchecked. A missed tick alone
  * is not a wrong verdict.
  */
-function wrongVerdict(answer, msg, profile) {
+function wrongVerdict(answer, msg, profile, scoring = null) {
     if (!isStr(answer?.verdict)) return false;
     const phish = answer.isPhish === true || (isObj(msg?.truth) && msg.truth.isPhish === true);
+    const kind = kindOf(msg);
     try {
-        return verdictPoints(profile, phish, answer.verdict, kindOf(msg)) < FULL_VERDICT_POINTS;
+        return verdictPoints(profile, phish, answer.verdict, kind, verdictPointsOverride(msg?.truth, kind, scoring, phish)) < FULL_VERDICT_POINTS;
     } catch (e) {
         return false;
     }
@@ -155,7 +187,7 @@ function buildCard(answer, msg, set = null) {
     const title = el('h3', 'aw-card-title', titleOf(msg, answer.id));
     title.tabIndex = -1;
     card.appendChild(title);
-    const { word, line } = verdictWordAndLine(answer, msg, phish, set?.labels);
+    const { word, line } = verdictWordAndLine(answer, msg, phish, set?.labels, set?.scoring);
     card.appendChild(el('p', 'aw-card-verdict', `You chose ${word}. ${line}`.trim()));
 
     const picked = new Set(Array.isArray(answer.flags) ? answer.flags : []);
@@ -189,18 +221,44 @@ function buildCard(answer, msg, set = null) {
             card.appendChild(ul);
         }
     }
-    if (phish && (verdict === 'trust' || verdict === 'delete') && typeof truth.ifTrusted === 'string' && truth.ifTrusted) {
-        const lead = verdict === 'trust' ? 'What could have happened'
-            : (kindOf(msg) === 'call' ? 'What this caller was after' : 'What this one was after');
-        card.appendChild(el('p', 'aw-if-trusted', `${lead}: ${truth.ifTrusted}`));
+    if (kindOf(msg) === 'choice') {
+        // The right pick shows why (reportReply); a wrong one shows the better option and what could go wrong.
+        const right = wrongVerdict(answer, msg, 'awareness', set?.scoring) === false;
+        const labels = set?.labels;
+        if (right && typeof truth.reportReply === 'string' && truth.reportReply) {
+            card.appendChild(el('p', 'aw-if-trusted', `${choiceText('whyRight', labels)}: ${truth.reportReply}`));
+        } else if (!right) {
+            const best = (Array.isArray(msg?.choice?.options) ? msg.choice.options : [])
+                .find((o) => isObj(o) && o.verdict === truth.correct);
+            if (best && isStr(best.label)) card.appendChild(el('p', 'aw-choice-better', `${choiceText('better', labels)}: ${best.label}`));
+            if (typeof truth.ifTrusted === 'string' && truth.ifTrusted) {
+                card.appendChild(el('p', 'aw-if-trusted', `${choiceText('ifWrong', labels)}: ${truth.ifTrusted}`));
+            }
+        }
+    } else if (phish && (verdict === 'trust' || verdict === 'delete') && typeof truth.ifTrusted === 'string' && truth.ifTrusted) {
+        // E12 B2 finding 14: show "what they were after" only when the verdict actually let the
+        // attacker in. Trust on a phish always does; a Delete / Turn away does only when it did
+        // not earn full verdict points (E12 scores a desk visitor turned away at the full 60, so
+        // the attacker was stopped and the line would read oddly).
+        const kind = kindOf(msg) || 'email';
+        const profile = set?.scoringProfile === 'analyst' ? 'analyst' : 'awareness';
+        const deletePts = verdictPoints(profile, true, 'delete', kind, verdictPointsOverride(truth, kind, set?.scoring, true));
+        const attackerIn = verdict === 'trust' || deletePts < FULL_VERDICT_POINTS;
+        if (attackerIn) {
+            const lead = verdict === 'trust' ? 'What could have happened'
+                : (kind === 'call' ? 'What this caller was after' : 'What this one was after');
+            card.appendChild(el('p', 'aw-if-trusted', `${lead}: ${truth.ifTrusted}`));
+        }
     }
     if (Number.isFinite(answer.score)) card.appendChild(el('p', 'aw-card-score', `Score for this message: ${answer.score} of 100`));
     return card;
 }
 
-/** An optional plain-text panel (strings.conceptPanel, strings.voicePanel), or null. */
-function buildPanel(strings, key) {
-    const raw = isObj(strings) ? strings[key] : null;
+/**
+ * An optional plain-text panel (strings.conceptPanel, strings.voicePanel), or null. `raw` is the
+ * panel's value when given (ENG-09b: one entry of a conceptPanel array), else strings[key].
+ */
+function buildPanel(strings, key, raw = isObj(strings) ? strings[key] : null) {
     const text = typeof raw === 'string' ? raw : (isObj(raw) && typeof raw.text === 'string' ? raw.text : '');
     if (!text.trim()) return null;
     const heading = isObj(raw) && typeof raw.heading === 'string' && raw.heading.trim() ? raw.heading : PANEL_HEADINGS[key];
@@ -226,11 +284,19 @@ function teamProtectedOf(result) {
     return n(result.reportCount) + (n(result.phishVerified) ?? 0);
 }
 
-/** The team line (aw6), or '' when there is nothing to thank the learner for. */
-export function teamLine(count, teamSize) {
+/**
+ * The team line (aw6), or '' when there is nothing to thank the learner for. `template` is the
+ * optional strings.teamLine override (aw-ux2): `{n}` becomes the count and `{team}` the team size.
+ * A template that uses {team} when no team size is set falls back to the default wording.
+ */
+export function teamLine(count, teamSize, template = null) {
     if (!Number.isFinite(count) || count < 1) return '';
+    const sized = Number.isInteger(teamSize) && teamSize >= 2;
+    if (typeof template === 'string' && template.trim() && (sized || !template.includes('{team}'))) {
+        return template.replace(/\{n\}/g, String(count)).replace(/\{team\}/g, String(teamSize));
+    }
     const what = count === 1 ? 'one phish' : `${count} phish`;
-    return Number.isInteger(teamSize) && teamSize >= 2
+    return sized
         ? `Your reports and checks this round kept ${what} away from the ${teamSize} people on your team.`
         : `Your reports and checks this round kept ${what} away from the rest of your team.`;
 }
@@ -244,11 +310,12 @@ export function teamLine(count, teamSize) {
 function buildGenuine(set, answers, reviewedIds, profile) {
     const messages = Array.isArray(set?.messages) ? set.messages.filter(isObj) : [];
     const fb = genuineFeedback({
-        messages, answers, profile,
+        messages, answers, profile, scoring: set?.scoring,
         titleOf: (m) => titleOf(m, m.id),
-        actionLabel: (m, a) => verdictWordAndLine(a, m, false).word
+        actionLabel: (m, a) => verdictWordAndLine(a, m, false, set?.labels, set?.scoring).word,
+        actionPast: (m, a) => actionById(kindOf(m) === 'call' || kindOf(m) === 'push' ? kindOf(m) : 'email', a.action, a.verdict, set?.labels).past
     });
-    const text = fb ? genuineFeedbackText(fb, { detail: true }) : null;
+    const text = fb ? genuineFeedbackText(fb, { detail: true, strings: set?.genuineCopy }) : null;
     if (!text) return null;
     const box = el('section', 'aw-genuine');
     box.setAttribute('aria-label', 'The real ones');
@@ -276,6 +343,49 @@ function buildGenuine(set, answers, reviewedIds, profile) {
     return { node: box, trusted: fb.trusted.length, checked: (fb.checked || []).length, flagged: fb.flagged.length };
 }
 
+// batch-13 item 2: the concern form recap's default wording; strings.<key> replaces each line.
+const CONCERN_RECAP = Object.freeze({
+    concernRecapHeading: 'Your report',
+    concernRecapFacts: 'The facts you included:',
+    concernRecapMissing: 'Left out, and it mattered most: {missing}.',
+    concernRecapConclusion: 'You also left in a conclusion: ‘{conclusion}’. Facts on their own let whoever looks into it reach their own view.',
+    concernRecapNoConclusion: 'You kept your conclusion out of it, so the report sticks to what you saw.'
+});
+
+/**
+ * batch-13 item 2: "Your report", the concern form looked back at: the facts filed, any required
+ * fact left out, and the conclusion if one was left in. Null (nothing drawn) without a recap that
+ * holds a fact. An empty string in strings.concernRecapNoConclusion drops that line.
+ */
+function buildConcernRecap(recap, strings) {
+    if (!isObj(recap)) return null;
+    const facts = Array.isArray(recap.facts) ? recap.facts.filter(isStr) : [];
+    if (!facts.length) return null;
+    const missing = Array.isArray(recap.missing) ? recap.missing.filter(isStr) : [];
+    const conclusion = isStr(recap.conclusion) ? recap.conclusion : '';
+    const line = (key) => (isObj(strings) && typeof strings[key] === 'string' ? strings[key] : CONCERN_RECAP[key]);
+    const box = el('section', 'aw-concern-recap');
+    const heading = line('concernRecapHeading') || CONCERN_RECAP.concernRecapHeading;
+    box.setAttribute('aria-label', heading);
+    box.appendChild(el('h3', 'aw-concern-recap-title', heading));
+    box.appendChild(el('p', 'aw-concern-recap-lead', line('concernRecapFacts') || CONCERN_RECAP.concernRecapFacts));
+    const ul = el('ul', 'aw-concern-recap-list');
+    for (const f of facts) ul.appendChild(el('li', 'aw-concern-recap-fact', f));
+    box.appendChild(ul);
+    if (missing.length) {
+        const tmpl = line('concernRecapMissing') || CONCERN_RECAP.concernRecapMissing;
+        box.appendChild(el('p', 'aw-concern-recap-missing', tmpl.split('{missing}').join(missing.join(', '))));
+    }
+    if (conclusion) {
+        const tmpl = line('concernRecapConclusion') || CONCERN_RECAP.concernRecapConclusion;
+        box.appendChild(el('p', 'aw-concern-recap-conclusion', tmpl.split('{conclusion}').join(conclusion)));
+    } else {
+        const none = line('concernRecapNoConclusion');
+        if (none) box.appendChild(el('p', 'aw-concern-recap-no-conclusion', none));
+    }
+    return { node: box, state: { facts: facts.length, missing: missing.length, conclusion: !!conclusion } };
+}
+
 function textBox(tag, className, label, block) {
     const box = el(tag, className);
     box.setAttribute('aria-label', label);
@@ -287,76 +397,175 @@ function textBox(tag, className, label, block) {
 }
 
 export function renderDebrief(container, { result, set, strings = {}, variant = 'full', onFinish,
-    reportRoute = null, ruleOfThumb = null, teamSize = null } = {}) {
+    reportRoute = null, ruleOfThumb = null, teamSize = null, drillRecap = [], sandboxRecap = [], assistantRecap = [],
+    concernRecap = null } = {}) {
     const root = el('section', 'aw-debrief');
     const heading = el('h2', 'aw-heading', DEFAULTS.heading);
     heading.tabIndex = -1;
     root.appendChild(heading);
 
-    if (variant === 'defendOnly') root.appendChild(el('p', 'aw-lead aw-defend-only', str(strings, 'defendOnly')));
+    // Cut A: the learner read the full reasoning for every item in immediate feedback, so the
+    // debrief dwells only on what they got wrong. These drive the cards below and the "nothing
+    // missed" line; computed up front so the defendOnly lead is not shown on a clean round.
+    const answers = Array.isArray(result?.answers) ? result.answers.filter(isObj) : [];
+    const reviewed = answers.filter((a) => reviewNeeded(a, messageFor(set, a.id)));
+
+    // The defendOnly lead stands in for the write-stage recap, but its wording points at "the ones
+    // you were caught out by ... shown below" (E19 m-2); on a clean round (answers, nothing to
+    // review) nothing is below and the "nothing to pick over here" line carries it instead, so the
+    // lead is suppressed there. With no answers at all (nothing carries it) it still shows.
+    const cleanRound = reviewed.length === 0 && answers.length > 0;
+    if (variant === 'defendOnly' && !cleanRound) root.appendChild(el('p', 'aw-lead aw-defend-only', str(strings, 'defendOnly')));
 
     const summary = el('p', 'aw-summary');
     const bits = [];
     if (Number.isFinite(result?.percent)) bits.push(`Round score: ${result.percent}%`);
-    if (typeof result?.headline === 'string' && result.headline) bits.push(result.headline);
+    // F-E10-2: the triage result card above the debrief already shows the band headline as its
+    // title, so the debrief summary does not repeat it ("Round score: N% — headline" alongside the
+    // same headline read as a duplication). The summary keeps the score and the caught counts.
     // N7: "Reported 67% of the phish" beside a 97% round read as a miss. With the counts to hand,
     // say how many phish were caught and how: reported, checked by another route (Verify, Ring
     // back) or deleted. All three are catches.
     const total = Number(result?.phishTotal);
     if (Number.isFinite(total) && total > 0 && Number.isFinite(result?.phishCaught)) {
-        const reported = Number.isFinite(result.reportCount) ? result.reportCount : Math.round((result.reportRate || 0) * total);
-        const checked = Number.isFinite(result.phishVerified) ? result.phishVerified : 0;
-        const deleted = Math.max(0, result.phishCaught - reported - checked);
-        const how = [];
-        if (reported) how.push(`${reported} reported`);
-        if (checked) how.push(`${checked} checked by another route`);
-        if (deleted) how.push(`${deleted} deleted`);
-        bits.push(`Phish caught: ${result.phishCaught} of ${total}${how.length ? ` (${how.join(', ')})` : ''}`);
-    } else {
-        if (Number.isFinite(result?.reportRate)) bits.push(`Reported ${Math.round(result.reportRate * 100)}% of the phish`);
+        // E8 F6 / E13 F-10: a caught phish handled with a safe refuse is not a "delete" — a push
+        // Deny and a call Refuse (both verdict 'delete') read as denied / turned away, never
+        // "deleted". batch-12 item 16: the split is now the shared caughtHow(), relabelling its
+        // verbs from the set's own verdict names (E10 Delete → "went the trusted way").
+        const how = caughtHow(result, (id) => kindOf(messageFor(set, id)), verdictVerbOverride(set?.labels));
+        // batch-5 (E17): the counter label follows the set's labels.phishCaughtLabel, as the result
+        // grid does, so a non-phishing set ("Requests handled") reads the same in the debrief.
+        const caughtLabel = isObj(set?.labels) && isStr(set.labels.phishCaughtLabel) ? set.labels.phishCaughtLabel : 'Phish caught';
+        bits.push(`${caughtLabel}: ${result.phishCaught} of ${total}${how.length ? ` (${how.join(', ')})` : ''}`);
+    } else if (!(Number.isFinite(total) && total === 0)) {
+        // batch-6 C3: "Reported N% of the phish" is overridable (strings.reportedPct, {pct}) and
+        // hidden entirely when the set has no phish at all (total 0), where the line is meaningless.
+        if (Number.isFinite(result?.reportRate)) {
+            const pct = Math.round(result.reportRate * 100);
+            // batch-8: the set's resultCopy.reportedPct is the single source shared with the reopened
+            // result card (inbox-triage-minigame.js); the debrief's own strings.reportedPct still wins
+            // where it is set, then the default. {pct} is the percentage.
+            const fromSet = isObj(set?.resultCopy) && isStr(set.resultCopy.reportedPct) ? set.resultCopy.reportedPct : null;
+            const tmpl = fromSet || (isObj(strings) && isStr(strings.reportedPct) ? strings.reportedPct : 'Reported {pct}% of the phish');
+            bits.push(tmpl.replace(/\{pct\}/g, String(pct)));
+        }
         if (Number.isFinite(result?.verifyCount) && result.verifyCount > 0) bits.push(`Checked by another route: ${result.verifyCount}`);
     }
     summary.textContent = bits.join('. ');
     if (bits.length) root.appendChild(summary);
 
-    // Cut A: the learner read the full reasoning for every item in immediate feedback, so the
-    // debrief dwells only on what they got wrong. A card per missed item, then one weakest-skill
-    // line; if nothing was missed, one short line says so. The score summary, panels, Monday card
-    // and no-blame line stay.
-    const answers = Array.isArray(result?.answers) ? result.answers.filter(isObj) : [];
-    const reviewed = answers.filter((a) => reviewNeeded(a, messageFor(set, a.id)));
+    // A card per missed item, then one weakest-skill line; if nothing was missed, one short line
+    // says so. The score summary, panels, Monday card and no-blame line stay. (`answers` and
+    // `reviewed` were computed above, before the defendOnly lead.)
     const cards = el('div', 'aw-cards');
     for (const a of reviewed) cards.appendChild(buildCard(a, messageFor(set, a.id), set));
     root.appendChild(cards);
 
-    if (reviewed.length) {
+    // batch-12 item 3: the "signs most often missed" line only makes sense once the learner named at
+    // least one flag (a catch, a false claim, or a deliberate "Nothing looks wrong"). With nothing
+    // named, every skill reads "caught 0 of 1", which contradicts the result's "nothing to grade
+    // skill by skill" lead (E16 B3 persona 2). Same test the result screen uses, so the two agree.
+    const namedAnyFlags = (result?.flagRecall?.caught || 0) > 0
+        || Object.keys(result?.falseByFactor || {}).length > 0
+        || answers.some((a) => a && a.none === true);
+    if (reviewed.length && namedAnyFlags) {
         const weak = weakestFactor(isObj(result?.perFactor) ? result.perFactor : {});
         if (weak && weak.missed > 0) {
             const ids = Array.isArray(weak.ties) && weak.ties.length ? weak.ties : [weak.id];
             const counts = `caught ${weak.caught} of ${weak.caught + weak.missed}`;
             const names = ids.map((id) => skillName(id, set));
-            root.appendChild(el('p', 'aw-weakest', names.length === 1
-                ? `The tell most often missed: ${names[0]} (${counts}).`
-                : `The tells most often missed: ${names.slice(0, -1).join(', ')} and ${names[names.length - 1]} (${counts} each).`));
+            // batch-8: the "tell(s) most often missed" frame is overridable (strings.weakestTell /
+            // weakestTells, with {names} and {counts}) for a non-phishing set where "tell" reads as
+            // phishing jargon; the skill names themselves already follow set.skillNames. Default unchanged.
+            const one = names.length === 1;
+            const joined = one ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+            const tmpl = one
+                ? (isObj(strings) && isStr(strings.weakestTell) ? strings.weakestTell : 'The tell most often missed: {names} ({counts}).')
+                : (isObj(strings) && isStr(strings.weakestTells) ? strings.weakestTells : 'The tells most often missed: {names} ({counts} each).');
+            root.appendChild(el('p', 'aw-weakest', tmpl.replace(/\{names\}/g, joined).replace(/\{counts\}/g, counts)));
         }
     }
     // disc_visible: the real items, after the cards it may point at.
     const genuine = set?.genuineFeedback === false ? null
         : buildGenuine(set, answers, new Set(reviewed.map((a) => a.id)), set?.scoringProfile === 'analyst' ? 'analyst' : 'awareness');
     if (!reviewed.length && answers.length) {
-        root.appendChild(el('p', 'aw-all-right', genuine?.flagged ? DEFAULTS.allPhishRight : str(strings, 'allRight')));
+        root.appendChild(el('p', 'aw-all-right', genuine?.flagged ? str(strings, 'allPhishRight') : str(strings, 'allRight')));
     }
     if (genuine) root.appendChild(genuine.node);
 
-    const concept = buildPanel(strings, 'conceptPanel');
-    if (concept) root.appendChild(concept);
+    // E17 B2 finding: recap the scored sort-drill cards the learner put in the wrong bin, with the
+    // right bin and the reason. Present only when the episode ran a scored drill with misses.
+    const recapList = Array.isArray(drillRecap) ? drillRecap.filter((r) => isObj(r) && isStr(r.situation)) : [];
+    if (recapList.length) {
+        const box = el('section', 'aw-drill-recap');
+        box.setAttribute('aria-label', 'Cards to look at again');
+        box.appendChild(el('h3', 'aw-drill-recap-title',
+            isObj(strings) && isStr(strings.drillRecapHeading) ? strings.drillRecapHeading : 'Cards to look at again'));
+        const ul = el('ul', 'aw-drill-recap-list');
+        for (const r of recapList) {
+            const li = el('li', 'aw-drill-recap-item');
+            li.appendChild(el('p', 'aw-drill-recap-situation', r.situation));
+            if (isStr(r.chosen) && isStr(r.right) && r.chosen && r.right) {
+                li.appendChild(el('p', 'aw-drill-recap-move', `You put this in ${r.chosen}. It goes in ${r.right}.`));
+            }
+            if (isStr(r.reason) && r.reason) li.appendChild(el('p', 'aw-drill-recap-reason', r.reason));
+            ul.appendChild(li);
+        }
+        box.appendChild(ul);
+        root.appendChild(box);
+    }
+
+    // E13 B2 finding 11 / E11 B2 finding 5: recap the other scored-or-chosen stages the learner
+    // got wrong, the same shape as the drill recap, so the debrief is not only about the inbox.
+    // Each list is { situation, chosen?, right?, reason? }; the move line and heading are
+    // overridable, and an absent or empty list renders nothing (so defend-only, which runs
+    // neither stage, is unaffected). `move` is a template with {chosen}/{right}.
+    const recapSection = (list, { cls, headingKey, headingDefault, moveKey, moveDefault }) => {
+        const items = Array.isArray(list) ? list.filter((r) => isObj(r) && isStr(r.situation)) : [];
+        if (!items.length) return 0;
+        const box = el('section', cls);
+        const heading = isObj(strings) && isStr(strings[headingKey]) ? strings[headingKey] : headingDefault;
+        box.setAttribute('aria-label', heading);
+        box.appendChild(el('h3', `${cls}-title`, heading));
+        const moveTmpl = isObj(strings) && isStr(strings[moveKey]) ? strings[moveKey] : moveDefault;
+        const ul = el('ul', `${cls}-list`);
+        for (const r of items) {
+            const li = el('li', `${cls}-item`);
+            li.appendChild(el('p', `${cls}-situation`, r.situation));
+            if (isStr(r.chosen) && r.chosen && isStr(r.right) && r.right) {
+                li.appendChild(el('p', `${cls}-move`, moveTmpl.split('{chosen}').join(r.chosen).split('{right}').join(r.right)));
+            }
+            if (isStr(r.reason) && r.reason) li.appendChild(el('p', `${cls}-reason`, r.reason));
+            ul.appendChild(li);
+        }
+        box.appendChild(ul);
+        root.appendChild(box);
+        return items.length;
+    };
+    const sandboxShown = recapSection(sandboxRecap, {
+        cls: 'aw-sandbox-recap', headingKey: 'sandboxRecapHeading', headingDefault: 'Choices worth a second look',
+        moveKey: 'sandboxRecapMove', moveDefault: 'You chose ‘{chosen}’. The safer move was ‘{right}’.' });
+    const assistantShown = recapSection(assistantRecap, {
+        cls: 'aw-assistant-recap', headingKey: 'assistantRecapHeading', headingDefault: 'In the assistant window',
+        moveKey: 'assistantRecapMove', moveDefault: 'You chose ‘{chosen}’. The safer move was ‘{right}’.' });
+    const concernShown = buildConcernRecap(concernRecap, strings);
+    if (concernShown) root.appendChild(concernShown.node);
+
+    // ENG-09b: conceptPanel may be an array of { heading?, text }, drawn in order; an entry with
+    // no text is skipped. A string or one object draws one panel, exactly as before.
+    const conceptRaw = isObj(strings) ? strings.conceptPanel : null;
+    const conceptList = Array.isArray(conceptRaw)
+        ? conceptRaw.map((r) => buildPanel(strings, 'conceptPanel', r)).filter(Boolean)
+        : [buildPanel(strings, 'conceptPanel')].filter(Boolean);
+    const concept = conceptList.length > 0;
+    for (const panel of conceptList) root.appendChild(panel);
     const voice = buildPanel(strings, 'voicePanel');
     if (voice) root.appendChild(voice);
 
     // aw6: a thank-you for the phish the learner kept from the team. Positive only: no
     // denominator and nothing about what was missed.
     const team = teamProtectedOf(result);
-    const teamText = teamLine(team, teamSize);
+    const teamText = teamLine(team, teamSize, isObj(strings) ? strings.teamLine : null);
     if (teamText) root.appendChild(el('p', 'aw-team', teamText));
 
     // aw4: one rule of thumb, the same in every debrief of a deployment.
@@ -378,7 +587,7 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     // read oddly at 98% (P5-15), so it shows only after a wrong verdict. After a critical miss
     // the result has just said what it cost, so a line that owns the points stands in (P5-5).
     const profile = set?.scoringProfile === 'analyst' ? 'analyst' : 'awareness';
-    const noBlame = !answers.length || answers.some((a) => wrongVerdict(a, messageFor(set, a.id), profile));
+    const noBlame = !answers.length || answers.some((a) => wrongVerdict(a, messageFor(set, a.id), profile, set?.scoring));
     const critical = Array.isArray(result?.criticalMisses) && result.criticalMisses.length > 0;
     if (noBlame) {
         root.appendChild(el('p', `aw-no-blame${critical ? ' aw-no-blame-critical' : ''}`,
@@ -394,7 +603,12 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     return {
         destroy() { root.remove(); },
         getState() {
-            return { items: reviewed.length, mondayCard: true, noBlame, conceptPanel: !!concept, voicePanel: !!voice,
+            return { items: reviewed.length, mondayCard: true, noBlame, conceptPanel: concept, voicePanel: !!voice,
+                ...(recapList.length ? { drillRecap: recapList.length } : {}),
+                ...(sandboxShown ? { sandboxRecap: sandboxShown } : {}),
+                ...(assistantShown ? { assistantRecap: assistantShown } : {}),
+                ...(concernShown ? { concernRecap: concernShown.state } : {}),
+                ...(Array.isArray(conceptRaw) ? { conceptPanels: conceptList.length } : {}),
                 reportRoute: route ? (route.configured === true ? 'configured' : 'generic') : null,
                 ruleOfThumb: !!rule, teamProtected: teamText ? team : null,
                 genuine: genuine ? { trusted: genuine.trusted, checked: genuine.checked, flagged: genuine.flagged } : null };

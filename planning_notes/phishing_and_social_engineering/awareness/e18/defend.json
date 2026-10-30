@@ -1,0 +1,244 @@
+{
+  "_about": "E18 credential-attacks-at-scale defend fragment (awareness, Merrin & Sallow Architects). Merrin & Sallow and everyone in it are fictional; every address ends .example. triageSets holds only the episode set e18_atscale_inbox (E18 adds no new check item; its measurable content is the same core_03 content E9 feeds into general_v2, built by 10_CHECK_FORMS.md's own generator, not this fragment; see E18 section 14). Copy triageSets and the awarenessEpisode keys into the E18 shells: the wiring agent builds the full erb, the generator (gen_e8_e17_shells.py) builds the defend-only shell. Brand roster and cast: ../BRAND_SET.md (Merrin & Sallow Architects). Rows 1 to 6 are ordinary built email/page triage cards (no choice card, no ENG-03a state), so the set validates with no ENG-02b dependency; the debrief needs ENG-09b (the conceptPanel array). The full variant also needs ENG-02 + ENG-02b (the guess attack half, in full_only.json) and ENG-01 (flipAftermath, in full_only.json).",
+
+  "_brandAdditions": {
+    "_use": "For BRAND_SET.md (Merrin & Sallow Architects additions from E18). Fuller P11 entry is in e18/BRAND_ADDITIONS.md. The roster (Catherine Merrin, Julian Sallow, Yasmin Chaudhry, Thandiwe Moyo, Dani Fenwick) are built E4/E14 cast and carry existing BRAND_SET entries; E18 uses them by name only, as the harvested staff list. New fictional names E18 introduces, all .example, no homographs:",
+    "host": "Ama Owusu, security lead on Merrin & Sallow's outsourced IT and security provider Fenlow Managed IT (fenlow.example). From the 03_WORLD_AND_CAST.md no-clash pool (retired Larkspur mentor, now a reusable name); 40s, Black British of Ghanaian heritage; warm, practical. New named character at Merrin & Sallow (one new art set, placeholder sprite female_scientist until the PixelLab reset). Genuine sender in defend rows 1 and 6 (as the provider).",
+    "provider": "Fenlow Managed IT (fenlow.example): the practice's managed IT and security provider. Genuine sender of the precautionary lockout notice (row 1) and the breach-monitoring notice (row 6).",
+    "lookalikes": "merrin-sallow.example and merrinsallow-studio.example are built Merrin & Sallow look-alikes (BRAND_SET section 2, E4). Row 2's fake lockout uses merrin-sallow.example; row 4's fake sign-in alert uses merrinsallow-studio.example. No new look-alike is added.",
+    "scamHost": "breach-check-now.example: a one-off fictional 'free breach checker' scam site, shown only as the page.url of the fake breach-checker page (row 5). No cast, no inbound mail, learnable added-word/hyphen shape. Pre-ship web search owed.",
+    "websiteWords": "Calderbank Mills, Elmgate Pavilion, the strapline 'Design that lasts' and Verrow Street are the fictional website words the attack half's word list is built from (attack.json intelFacts and full_only.json guess.wordList). All fictional; pre-ship web search owed (the projects and strapline especially, as they read as names).",
+    "nameClash": "grep -rIl across scenarios planning_notes docs on 2026-10-29: Ama Owusu / Owusu, Fenlow, Calderbank, Elmgate Pavilion, Verrow, 'Design that lasts' and breach-check-now hit only the awareness planning docs (03_WORLD_AND_CAST.md pool, 04_BUILT_SO_FAR.md, implementation/00_README.md, and core_15's note retiring the Larkspur cast); no built scenario, ink or engine file. Clean for a new episode. Dani Fenwick / Fenwick: built E14 cast; expected hits only."
+  },
+
+  "triageSets": [
+    {
+      "id": "e18_atscale_inbox",
+      "_prefix": "Prefix for the full episode (id e18_credential_attacks_at_scale). The defend-only shell (id e18_credential_attacks_at_scale_defend) sets episode_e18_credential_attacks_at_scale_defend_defend_ instead. No stage on purpose, as in E8/E9: the effective stage is 'mission', and an explicit stage with passPercent 0 draws a validator warning.",
+      "_localTells": "fake_lockout_notice, fake_signin_alert and fake_breach_alert are credential-attack signs with no built equivalent, so they are scenario-local to this set (00 section 2's CHANNEL_TELLS is untouched, and no SKILL_NAMES entry is added to phish-rules.js/triage.rb). Each is declared in channelTells with a flagChips label and a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's skill name), and every flagging message carries a factorStrings.<id>.redFlag sentence (a message-level object, sibling of truth). No general_v2 check item scores these three, so by the ENG-08 rule they stay local. lookalike_domain is a shared-library tell and needs no label. (P1 F-E18-4: secrecy_or_bypass was dropped from this set; the fake lockout's text is a deadline threat and the fake breach checker's is a password request, neither a secrecy ask, so each keeps only its own local tell, mirroring E19's fix.)",
+      "title": "After the attack: your alerts",
+      "brief": "A password-guessing campaign has just hit Merrin & Sallow, and the alerts are arriving in your inbox: six in all, some genuine and some fakes built to finish the job. For each one, choose Trust, Report, Delete or Verify (check it through a route you already trust, not the link in the message), then tick what you noticed. Never type a password to 'unlock' or 'check' anything. Reporting when you're unsure is always fine and never marked down.",
+      "scoringProfile": "awareness",
+      "verifyVerdict": true,
+      "feedbackMode": "immediate",
+      "headerPanel": "off",
+      "glossary": "closed",
+      "channelTells": ["lookalike_domain", "fake_lockout_notice", "fake_signin_alert", "fake_breach_alert"],
+      "flagChips": {
+        "fake_lockout_notice": "A lockout message that makes you unlock through a link",
+        "fake_signin_alert": "A sign-in alert that makes you 'review' by signing in through its link",
+        "fake_breach_alert": "A 'breach checker' that asks for your password"
+      },
+      "labels": {
+        "verdict": {
+          "report": { "hint": "This is a fake. Tell security." }
+        },
+        "verdictFeedback": {
+          "verify": { "phish": "Checking first is a sound habit. That one was a fake." },
+          "trust": { "phish": "Not this time. That one was a fake." }
+        },
+        "teamBadge": "Fakes stopped for the team: {n}",
+        "teamBadgeTitle": "Messages you reported or checked this round rather than acting on them",
+        "phishCaughtLabel": "Fakes caught",
+        "scoreLine": "Right call is most of the score; naming what you noticed is the rest."
+      },
+      "bands": [
+        { "min": 85, "headline": "Well done: you caught the fakes and knew why" },
+        { "min": 60, "headline": "Getting there: a few signs slipped past" },
+        { "min": 0, "headline": "Worth practising: here's where to look first" }
+      ],
+      "resultCopy": {
+        "criticalLead": "let an attacker straight in",
+        "reportedPct": "Reported {pct}% of the fakes",
+        "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+        "noFlags": "Next time, tick what looks off. The review cards show what to look for in each one."
+      },
+      "genuineCopy": {
+        "binnedLeadOne": "One real alert was treated as a fake",
+        "binnedLeadMany": "{n} real alerts were treated as fakes",
+        "costBoth": "Reporting when you're unsure is never wrong, but a report on a real alert takes the service desk's time, and deleting one can leave a real problem unseen.",
+        "costReport": "Reporting when you're unsure is never wrong, but a report on a real alert takes the service desk's time to check.",
+        "costBin": "Deleting a real alert has a cost: a genuine warning goes unread.",
+        "whyBothHalves": "Both halves matter: stopping the fakes protects your account, and acting on the real alerts keeps you informed."
+      },
+      "criticalWhat": "trusting a look-alike message",
+      "skillNames": {
+        "fake_lockout_notice": "Spotting a fake lockout notice",
+        "fake_signin_alert": "Spotting a fake sign-in alert",
+        "fake_breach_alert": "Spotting a fake breach checker"
+      },
+      "outcome": { "setGlobalPrefix": "episode_e18_credential_attacks_at_scale_defend_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "e18_lockout_genuine",
+          "_note": "Row 1. Genuine: a precautionary lockout notice from the real IT provider (Fenlow Managed IT, fenlow.example), asking for nothing and naming the usual service-desk route. The genuine half of the explicit mirror pair with row 2 (same surface, a lockout email). Under the awareness profile, trusting it scores full; verifying or reporting it still scores full.",
+          "from": { "name": "Fenlow Managed IT", "address": "security@fenlow.example" },
+          "to": "you@merrinsallow.example",
+          "subject": "Some accounts were briefly locked this morning",
+          "time": "08:54",
+          "body": "Hello,\nAfter a run of unusual sign-in attempts across the practice this morning, some staff accounts were briefly locked as a precaution. You don't need to do anything unless you can't sign in, in which case use the usual service-desk route. We will never ask you for your password.\nFenlow Managed IT",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "fenlow.example", "replyTo": "security@fenlow.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "This is the provider's real address, telling you what happened and asking you for nothing, with the usual route if you're locked out. Trusting it is right, and checking with the service desk or reporting it still scores full."
+            },
+            "falseAlarmCost": "Reporting a genuine precautionary notice costs nothing but a moment of the service desk's time, and it is never the wrong call when you're unsure."
+          }
+        },
+        {
+          "id": "e18_lockout_fake",
+          "_note": "Row 2. Phish: the fake lockout on a look-alike domain (merrin-sallow.example, a built look-alike), threatening deletion and pushing an 'Unlock account' link to a look-alike page. Mirror of row 1 (same surface), so 'a lockout alert arrived' is not itself the tell. Tells: lookalike_domain (shared), fake_lockout_notice (local); the deadline threat is folded into the fake_lockout_notice note (P1 F-E18-4 dropped secrecy_or_bypass). email kind, so trusting it is a critical miss.",
+          "from": { "name": "Merrin & Sallow Security", "address": "security@merrin-sallow.example" },
+          "to": "you@merrinsallow.example",
+          "subject": "Your account is locked - act now",
+          "time": "09:06",
+          "body": "Your account has been locked after suspicious activity. Unlock it now or it will be permanently deleted within 24 hours. Use the Unlock account link below to restore access immediately.\n[ Unlock account ]",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "merrin-sallow.example", "replyTo": "security@merrin-sallow.example" },
+          "factorStrings": {
+            "fake_lockout_notice": { "redFlag": "A lockout message that makes you unlock through a link" }
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["lookalike_domain", "fake_lockout_notice"],
+            "perFlagNote": {
+              "lookalike_domain": "The address is merrin-sallow.example, a hyphen added to the real merrinsallow.example. A real notice from the practice's provider does not come from a changed address.",
+              "fake_lockout_notice": "A genuine lockout never asks you to unlock through a link. The provider's own notice tells you to use the usual service-desk route."
+            },
+            "whyFine": {
+              "urgencyCalibrated": "The 24-hour deletion deadline is there to rush you, and distrusting it is fair. What marks this one as fake, though, is the look-alike address and the unlock-through-a-link, not the hurry by itself.",
+              "senderTrust": "This one's catch is counted as the look-alike domain above: the address is a near-copy of the real one, rather than an obvious stranger's address behind a trusted-looking name."
+            },
+            "ifTrusted": "Clicking through and signing in would hand your password straight to whoever is running the attack.",
+            "reportReply": "Thanks. That wasn't us: the address is a look-alike, and we never ask you to unlock through a link. Reporting it is exactly right."
+          }
+        },
+        {
+          "id": "e18_signin_genuine",
+          "_note": "Row 3. Genuine: a real new-sign-in alert from the practice's own sign-in system. It tells you what happened and sends you to the real site, never asking you to confirm through its link. Supporting contrast with row 4 (fake sign-in alert). Trusting scores full; verifying or reporting still scores full.",
+          "from": { "name": "Merrin & Sallow Sign-in", "address": "no-reply@merrinsallow.example" },
+          "to": "you@merrinsallow.example",
+          "subject": "New sign-in to your account",
+          "time": "09:14",
+          "body": "Hello,\nThere was a new sign-in to your account from a Windows PC in London. If this was you, no action is needed. If it wasn't, go to the sign-in page yourself, the way you normally reach it, and change your password.\nMerrin & Sallow Sign-in",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "merrinsallow.example", "replyTo": "no-reply@merrinsallow.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "A real alert on the practice's own address: it tells you what happened and sends you to the real site, it never asks you to confirm by signing in through a link. Trust it, or go to the site yourself to check; reporting it is no error either."
+            },
+            "falseAlarmCost": "If you report a genuine sign-in alert, nothing is lost: the worst case is a quick 'that one was fine' from the service desk."
+          }
+        },
+        {
+          "id": "e18_signin_fake",
+          "_note": "Row 4. Phish: a fake sign-in alert on a look-alike host (merrinsallow-studio.example, a built look-alike), pushing a 'Review sign-in' link to a credential-capture page. Supporting contrast with row 3 (same surface, a sign-in alert). Tells: fake_signin_alert (local), lookalike_domain (shared). email kind, so trusting it is a critical miss.",
+          "from": { "name": "Account Security", "address": "alerts@merrinsallow-studio.example" },
+          "to": "you@merrinsallow.example",
+          "subject": "We blocked a suspicious sign-in - review it now",
+          "time": "09:21",
+          "body": "We blocked a suspicious sign-in to your account. To keep your access, review this sign-in now and confirm it was you. Use the Review sign-in link below to confirm.\n[ Review sign-in ]",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "merrinsallow-studio.example", "replyTo": "alerts@merrinsallow-studio.example" },
+          "factorStrings": {
+            "fake_signin_alert": { "redFlag": "A sign-in alert that makes you 'review' by signing in through its link" }
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["fake_signin_alert", "lookalike_domain"],
+            "perFlagNote": {
+              "fake_signin_alert": "A genuine alert never makes you 'review' a sign-in by signing in through its link. This one sends you to a page built to capture your password.",
+              "lookalike_domain": "The address is merrinsallow-studio.example, an extra word added to the real merrinsallow.example. The genuine sign-in alert comes from the practice's own address."
+            },
+            "whyFine": {
+              "urgencyCalibrated": "'Review it now to keep your access' leans on urgency, and distrusting it is fair. What marks this one as fake, though, is the look-alike address and the review-through-its-link, not the hurry by itself.",
+              "senderTrust": "This one's catch is counted as the look-alike domain above: the address is a near-copy of the real one with an extra word, rather than an obvious stranger's address behind a trusted-looking name."
+            },
+            "ifTrusted": "Signing in through the link would hand your password to the page behind it.",
+            "reportReply": "Thanks. The real alert sends you to the site yourself; this one wanted you to sign in through its link. Reporting it is the right move."
+          }
+        },
+        {
+          "id": "e18_breach_fake",
+          "_note": "Row 5. Phish: a page opened from a link, a 'free breach checker' that asks you to type your password to see if it has leaked, on a scam host. Built page card (no ENG-03a state), padlock false. Tells: fake_breach_alert (local); the password request is the tell, so fake_breach_alert alone carries it (P1 F-E18-4 dropped secrecy_or_bypass). The one move that is always wrong here is typing a password to 'check' anything. page kind, so trusting it is a critical miss.",
+          "kind": "page",
+          "subject": "Free breach checker",
+          "time": "09:33",
+          "body": "A page that offers to tell you whether your password has leaked, if you type it into the box.",
+          "page": {
+            "url": "breach-check-now.example",
+            "padlock": false,
+            "heading": "Free breach checker: type your password to see if it has leaked"
+          },
+          "factorStrings": {
+            "fake_breach_alert": { "redFlag": "A 'breach checker' that asks you to type your password" }
+          },
+          "truth": {
+            "isPhish": true,
+            "flags": ["fake_breach_alert"],
+            "perFlagNote": {
+              "fake_breach_alert": "Nothing genuine asks for your password to tell you whether it has leaked. A real breach check uses only your email address, never your password."
+            },
+            "ifTrusted": "Typing your password into the box hands it straight to whoever set the page up.",
+            "reportReply": "Thanks. A real breach check only ever needs your email address. Never type a password to 'check' it; reporting this is exactly right."
+          }
+        },
+        {
+          "id": "e18_breach_genuine",
+          "_note": "Row 6. Genuine: the provider's real breach-monitoring notice. It names the problem, tells you to change the password on the real site and anywhere you reused it, and asks for nothing. The safe action is to change a reused password, not to reply or click. Supporting contrast with row 5. Trusting / acting on it the safe way scores full; reporting it still scores full.",
+          "from": { "name": "Fenlow Managed IT", "address": "breach-monitoring@fenlow.example" },
+          "to": "you@merrinsallow.example",
+          "subject": "Your work address was found in a breach of another site",
+          "time": "09:40",
+          "body": "Hello,\nOur monitoring found your work address in a breach of another website. Change that password on the real site, and anywhere you have reused it. Don't reply with any password; this is for your information only, and we never ask for it.\nFenlow Managed IT",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "fenlow.example", "replyTo": "breach-monitoring@fenlow.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "A genuine breach notice from the provider: it names the problem, tells you to change the password on the real site and anywhere you reused it, and asks for nothing. The safe action is to change a reused password, not to reply or click. Reporting it is no error."
+            },
+            "falseAlarmCost": "If you report this genuine notice, nothing is lost; checking with the service desk before you change anything is always a fair call."
+          }
+        }
+      ]
+    }
+  ],
+
+  "awarenessEpisode": {
+    "role": "general_staff",
+    "company": "merrin_sallow",
+    "brand": { "name": "Merrin & Sallow Architects", "logoText": "MERRIN & SALLOW", "accent": "#8a5a2b" },
+    "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional company. No real password is ever typed or stored; every account, word and pair is made up.",
+    "defend": { "setId": "e18_atscale_inbox", "reportAlwaysVisible": true },
+    "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
+    "strings": {
+      "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team: you don't go after one person, you go after the whole practice at once. Gather the staff and how their email addresses are built, build a word list from the practice's own website, then try one likely password against every account, and a stolen breach list across many services. Then it's your own seat: the alerts arrive, and you tell the real from the fake. Only that part is scored.",
+      "stages": { "osint": { "text": "Open the browser and read the practice's public pages. Click a line to add it to your notes; the useful lines are the patterns and projects, not individual staff. Five useful facts are there to find, and the more you note, the more the campaign has to work with." } },
+      "flipHeading": "Now it's your inbox.",
+      "flipGuessIntro": "You watched one password open the predictable accounts across the whole practice, and a stolen one open the accounts where it had been reused. Here is the other end: your own seat, with the alerts starting to arrive.",
+      "flipDefenderLine": "One password off the website, tried once across everyone, opened the predictable accounts. No clever cracking, just reuse and words anyone could read. A different password for every account, and not a word off the website, is what would have stopped it. Now the alerts are arriving, and some are fakes.",
+      "flipNoSend": "Nothing of the practice's was opened to replay, but the lesson holds: a reused password, or a word off the website, is what opens an account. Next, you tell the real alerts from the fakes.",
+      "flipMissed": "The attack opened nothing this time, but a reused password or a company word is still what opens accounts at scale. Next, you tell the real alerts from the fakes.",
+      "flipMissedHeading": "Nothing landed this time",
+      "flipLandedNoTells": "It opened the predictable accounts with nothing clever at all, just reuse and words off the website. Next, you tell the real alerts from the fakes.",
+      "noBlameLine": "Reusing a password, or using a word off the website, is ordinary and common; this is how accounts are opened at scale, not a sign anyone was careless. A miss here just shows what to change tonight.",
+      "allPhishRight": "Every fake was caught, with every sign named.",
+      "teamLine": "By reporting or checking {n} of these rather than acting on them, you kept a fake away from the rest of your team.",
+      "mondayCard": "On Monday, three things at home: switch on a password manager and let it make a different password for every account, starting with your email; check your personal email address on a breach-checking site (the NCSC suggests Have I Been Pwned); and turn on 2-step verification, or a passkey, for your email first. Report anything at work using the route in the box below.",
+      "defendOnly": "These alerts follow an attack on the whole practice, and anyone can be caught out by a convincing fake. Any you were caught out by are shown below, with what gave each one away.",
+      "conceptPanel": [
+        { "heading": "Password spraying", "text": "One likely password, tried just once against every account, so no single account locks. The accounts that open are the predictable ones: a company word, a project name, a season and a year." },
+        { "heading": "Credential stuffing", "text": "A list of address and password pairs stolen from one website, tried automatically across many others. Where someone reused that password at work, the attacker is straight in." },
+        { "heading": "The one habit", "text": "A different password for every account, not a word off the website, kept in a manager, breaks both: the spray has nothing predictable to try, and a stolen pair opens nothing else." },
+        { "heading": "What the practice does", "text": "On the practice's side: accounts lock after a run of bad sign-ins, MFA is on everything, the obvious words are blocked from passwords, and a monitoring partner watches the breach lists for the practice's addresses. These are set up for you; you don't have to switch them on." }
+      ]
+    },
+    "_defendOnly": {
+      "_use": "Strings for the defend-only shell (e18_credential_attacks_at_scale_defend), which has no osint, guess or flip stage. The generator copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared (the flip strings are never shown). The conceptPanel array is carried over, so all four concept cards show in the defend-only debrief (ENG-09b). The brief here is identical to the 8b generator brief (keep them identical).",
+      "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional company. Someone has run a password-guessing campaign across the whole practice, and now a wave of alerts is arriving: a lockout, a new sign-in, a breach warning. Some are genuine; some are fakes built to catch you.",
+      "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional company. In scope: the security alerts you handle after a password-guessing campaign. No real password is ever typed."
+    }
+  }
+}
