@@ -236,6 +236,33 @@ test('the sandbox renders each beat in turn and stores the chosen option; nothin
     assert.deepEqual(results[0].result.mistakeChoices, { overtime_sheet: 'send_wrong_sam', rota_app: 'ask_it', stick: 'plug_in' });
 });
 
+test('batch-10 (E15 B1): the confirm button is disabled with a visible prompt until a choice is picked', () => {
+    FW.startMinigame('consequence-sandbox', null, {
+        requiresKeyboardInput: true, disableClose: true, config: mistake(), onComplete: () => {}
+    });
+    const root = cur().container;
+    const btn = root.querySelector('.epr-sbx-confirm');
+    const hint = root.querySelector('.epr-sbx-hint');
+    assert.equal(btn.disabled, true, 'disabled before a pick');
+    assert.ok(hint && !hint.hidden, 'the prompt is shown');
+    assert.equal(hint.textContent, 'Choose an option to continue.');
+    const radio = root.querySelector('.epr-sbx-radio');
+    radio.checked = true;
+    radio.dispatchEvent(new window.Event('change', { bubbles: true }));
+    assert.equal(btn.disabled, false, 'enabled once a choice is made');
+    assert.equal(root.querySelector('.epr-sbx-hint').hidden, true, 'the prompt is hidden after a pick');
+    while (FW.currentMinigame) FW.forceCloseMinigame();
+});
+
+test('batch-10: strings.sandbox.pickPrompt overrides the pick prompt', () => {
+    FW.startMinigame('consequence-sandbox', null, {
+        requiresKeyboardInput: true, disableClose: true, config: mistake(),
+        strings: { pickPrompt: 'Pick something first.' }, onComplete: () => {}
+    });
+    assert.equal(cur().container.querySelector('.epr-sbx-hint').textContent, 'Pick something first.');
+    while (FW.currentMinigame) FW.forceCloseMinigame();
+});
+
 test('the sandbox\'s lines come from strings, and Close part-way reports not finished', () => {
     const results = [];
     FW.startMinigame('consequence-sandbox', null, {
@@ -321,7 +348,7 @@ test('a full consequence episode runs brief -> mistake -> flip -> defend -> debr
     cur().complete(true);
     assert.equal(epState().stage, 'debrief');
     click('.aw-finish');
-    assert.equal(cur(), null);
+    assert.ok(cur().container.querySelector('.epr-finished'), 'the episode-finished panel shows after Finish');
     assert.deepEqual(stored(ep.id).done, ['brief', 'mistake', 'flip', 'defend', 'debrief']);
     assert.equal(failed().length, 0);
     assert.deepEqual(errors, []);

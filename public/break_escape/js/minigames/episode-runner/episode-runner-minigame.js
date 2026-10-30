@@ -682,9 +682,14 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             reportRoute: reportRouteFor(this.episode, this.social, config),
             ruleOfThumb: settings.ruleOfThumb,
             teamSize: settings.teamSize,
+            // E17 B2 finding: recap the scored sort-drill cards the learner put in the wrong bin.
+            drillRecap: Array.isArray(this.state.drill?.recap) ? this.state.drill.recap : [],
             onFinish: () => {
+                // E15/E17 B2 finding: Finish must not drop the learner straight back to the world
+                // (two toasts and a narration line were the only end signal). Completing the last
+                // stage renders the clear "Episode finished" panel; the bar's Close then closes it.
                 this._complete('debrief');
-                this.close();
+                if (!this.gameState.isActive) this.close();
             }
         });
         this._prependPrompt('debrief');
@@ -693,8 +698,11 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
     /** The bar's Close is the only Close: the panel says it is finished and nothing more. */
     _renderFinished() {
         const seen = this.alreadySeen;
-        const panel = this._panel('Finished', seen && isStr(this.strings.alreadySeen) ? this.strings.alreadySeen
-            : (seen ? ALREADY_SEEN_TEXT : FINISHED_TEXT));
+        // E15/E17 B2 finding: the end of the episode must be unmistakable. A fresh finish reads
+        // "Episode finished"; a reopen after it was seen keeps the quieter "Finished".
+        const heading = seen ? 'Finished' : (isStr(this.strings.finishedHeading) ? this.strings.finishedHeading : 'Episode finished');
+        const panel = this._panel(heading, seen && isStr(this.strings.alreadySeen) ? this.strings.alreadySeen
+            : (seen ? ALREADY_SEEN_TEXT : (isStr(this.strings.finished) ? this.strings.finished : FINISHED_TEXT)));
         panel.classList.add('epr-finished');
     }
 

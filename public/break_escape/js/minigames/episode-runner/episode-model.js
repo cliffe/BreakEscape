@@ -156,12 +156,16 @@ export function drillLaunchParams(episode, overrides = null, extra = {}) {
     return { config: episode.sortDrill, ...(isObj(overrides) ? { overrides } : {}), skin: 'awareness', ...extra };
 }
 
-/** The record to keep from the drill's result: counts only. */
+/** The record to keep from the drill's result: counts, and a recap of any wrong placements. */
 export function drillRecord(result) {
     return isObj(result) ? cleanDrill({ ...result, done: true }) : null;
 }
 
-/** ENG-11: the sort drill's small record (counts only), kept in the state so a reopen skips the drill. */
+/**
+ * ENG-11: the sort drill's small record, kept in the state so a reopen skips the drill. Counts
+ * only, plus (scored drills) `recap`: the cards that went in a wrong bin, each with the bin it
+ * went in, the right bin and the reason, so the debrief can replay them (E17 B2 finding).
+ */
 function cleanDrill(raw) {
     if (!isObj(raw) || raw.done !== true) return null;
     const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
@@ -170,6 +174,17 @@ function cleanDrill(raw) {
         out.correct = num(raw.correct);
         out.percent = num(raw.percent);
         if (isStr(raw.answerKeyProfile)) out.answerKeyProfile = raw.answerKeyProfile;
+        if (Array.isArray(raw.recap)) {
+            const recap = raw.recap
+                .filter((r) => isObj(r) && isStr(r.situation))
+                .map((r) => ({
+                    situation: r.situation,
+                    chosen: isStr(r.chosen) ? r.chosen : '',
+                    right: isStr(r.right) ? r.right : '',
+                    reason: isStr(r.reason) ? r.reason : ''
+                }));
+            if (recap.length) out.recap = recap;
+        }
     }
     return out;
 }

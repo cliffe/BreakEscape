@@ -2233,6 +2233,9 @@
             },
             "briefDone": {"type": "string", "description": "ENG-10: the last brief card's button label; default 'Got it'"},
             "alreadySeen": {"type": "string", "description": "ENG-10: the finished panel's line when oncePerLearner finds doneGlobal already true; default 'You have seen this already.'"},
+            "finishedHeading": {"type": "string", "description": "batch-10 (E15/E17 B2): the heading on the end-of-episode panel after Finish; default 'Episode finished'"},
+            "finished": {"type": "string", "description": "batch-10: the body line on the end-of-episode panel after Finish; default 'You have finished this exercise. You can close this window.'"},
+            "drillRecapHeading": {"type": "string", "description": "batch-10 (E17 B2): the heading over the debrief's sort-drill recap of cards placed in a wrong bin; default 'Cards to look at again'"},
             "flipHeading": {"type": "string"},
             "flipIntro": {"type": "string"},
             "flipDefenderLine": {"type": "string"},
@@ -2259,7 +2262,8 @@
               "description": "ENG-04: the consequence sandbox's own lines over its defaults (consequence-sandbox.js). progress may hold {n} and {total}",
               "properties": {
                 "intro": {"type": "string"}, "progress": {"type": "string"}, "legend": {"type": "string"},
-                "empty": {"type": "string"}, "next": {"type": "string"}, "finish": {"type": "string"}
+                "empty": {"type": "string"}, "next": {"type": "string"}, "finish": {"type": "string"},
+                "pickPrompt": {"type": "string", "description": "batch-10 (E15 B1): the line shown while the next/finish button is disabled, so pressing it with nothing picked is not silent; default 'Choose an option to continue.'"}
               },
               "patternProperties": {"^_": {}},
               "additionalProperties": false
@@ -2870,7 +2874,9 @@
                   }
                 ]
               },
-              "description": "Optional per-kind override of the verdict points (out of 60), keyed by kind (email, call, push, page, sms, qr, voicemail, choice), opt-in (batch-5 F-E12-1, E13 F-10): e.g. a visitor queue where Comply on a genuine caller is full marks ({\"call\": {\"trust\": 60}}). The value is a flat verdict->points map, OR { phish: {...}, real: {...} } (batch-6 M1) to reward a verdict only on genuine items of that kind (so complying with a vishing impostor of the same kind is NOT rewarded). A message's own truth.verdictPoints wins over this. An omitted verdict keeps the profile/kind default. Default: scoring unchanged."}
+              "description": "Optional per-kind override of the verdict points (out of 60), keyed by kind (email, call, push, page, sms, qr, voicemail, choice), opt-in (batch-5 F-E12-1, E13 F-10): e.g. a visitor queue where Comply on a genuine caller is full marks ({\"call\": {\"trust\": 60}}). The value is a flat verdict->points map, OR { phish: {...}, real: {...} } (batch-6 M1) to reward a verdict only on genuine items of that kind (so complying with a vishing impostor of the same kind is NOT rewarded). A message's own truth.verdictPoints wins over this. An omitted verdict keeps the profile/kind default. Default: scoring unchanged."},
+            "criticalPenalty": {"type": "number", "minimum": 0, "maximum": 100, "description": "batch-10 (E8/E15/E16): points taken off the round mean per critical miss (a trusted phish of a critical kind, an approved sign-in, an impostor call complied with). Default 15. Lower it so a rushed learner who got the genuine items right need not land on 0%."},
+            "criticalPenaltyCap": {"type": "number", "minimum": 0, "maximum": 100, "description": "batch-10: a total cap on the points taken off for critical misses across the round, however many there were. Default: no cap (each miss costs criticalPenalty)."}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false,

@@ -237,7 +237,15 @@ test('a full episode runs every stage in order and holds then clears sent', () =
     assert.equal(calls.debrief.at(-1).variant, 'full');
 
     click('.stub-finish');
-    assert.equal(cur(), null);
+    // batch-10: Finish now shows the end-of-episode panel (not an immediate close); the bar's
+    // Close then closes the runner.
+    assert.ok(cur().container.querySelector('.epr-finished'), 'the episode-finished panel shows');
+    assert.equal(cur().container.querySelector('.epr-finished .epr-heading').textContent, 'Episode finished');
+    // the bar's Close is the only close and it closes the runner
+    const closeBtn = [...cur().container.querySelectorAll('button')].find((b) => /close/i.test(b.textContent));
+    assert.ok(closeBtn, 'a keyboard-reachable Close');
+    closeBtn.click();
+    assert.equal(cur(), null, 'Close closes the runner');
     assert.deepEqual(stored(ep.id).done, ['brief', 'osint', 'write', 'flip', 'defend', 'debrief']);
     assert.equal(stored(ep.id).stage, null);
     assert.equal(failed().length, 0);
@@ -537,7 +545,7 @@ test('with the real P7-B views the flip and debrief render and move on', () => {
     cur().complete(true);
     assert.ok(cur().container.querySelector('.aw-debrief'));
     click('.aw-finish');
-    assert.equal(cur(), null);
+    assert.ok(cur().container.querySelector('.epr-finished'), 'the episode-finished panel shows after Finish');
     assert.equal(failed().length, 0);
 });
 
@@ -665,7 +673,8 @@ test('a facilitated episode shows each stage prompt and pauses between stages', 
     assert.equal(shown.reportRate, 0.5);
     assert.equal(result.percent, 80, 'the triage result itself is not changed');
     click('.stub-finish');
-    assert.equal(cur(), null, 'no pause after the last stage');
+    assert.equal(epState().paused, false, 'no pause after the last stage');
+    assert.ok(cur().container.querySelector('.epr-finished'), 'the episode-finished panel shows');
     assert.deepEqual(stored(ep.id).done, ['brief', 'osint', 'write', 'flip', 'defend', 'debrief']);
     assert.equal(failed().length, 0);
 });
@@ -706,7 +715,8 @@ test('a facilitated debrief with the real view hides the score; an unfacilitated
         assert.equal(!!cur().container.querySelector('.aw-card-score'), !facilitated);
         assert.equal(text.includes('Compare your answers.'), facilitated);
         click('.aw-finish');
-        assert.equal(cur(), null);
+        assert.ok(cur().container.querySelector('.epr-finished'), 'the episode-finished panel shows');
+        while (FW.currentMinigame) FW.forceCloseMinigame();
     }
 });
 

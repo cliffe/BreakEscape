@@ -51,6 +51,9 @@ const KIND_VERDICT_POINTS = {
  * (P3 N17: one approved overnight prompt still read "Sharp" territory at 84%).
  */
 export const CRITICAL_KINDS = Object.freeze(['push', 'call', 'email']);
+// The default points off the round mean per critical miss. A set may author its own with
+// `scoring.criticalPenalty` (points per miss) and `scoring.criticalPenaltyCap` (a total cap),
+// so a round of mostly-right genuine answers need not floor at 0% (P4-batch10, E8/E15/E16).
 export const CRITICAL_PENALTY = 15;
 // P4-3: trusting a phish email (paying the invoice, sending the passport scans, signing in through
 // its link) hands over as much as an approved prompt, so Trust on a phish email is a critical
@@ -387,7 +390,16 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
     const mean = perMessage.length
         ? roundHalfUp(perMessage.reduce((s, m) => s + m.score, 0) / perMessage.length)
         : 0;
-    const percent = Math.max(0, mean - CRITICAL_PENALTY * criticalMisses.length);
+    // P4-batch10 (E8/E15/E16): the points off the round mean per critical miss, and an optional
+    // total cap, are authorable per set so a rushed learner who got the genuine items right need
+    // not land on 0%. Defaults are unchanged: CRITICAL_PENALTY (15) per miss and no cap.
+    const criticalPenaltyPer = (isObj(scoring) && Number.isFinite(scoring.criticalPenalty) && scoring.criticalPenalty >= 0)
+        ? scoring.criticalPenalty : CRITICAL_PENALTY;
+    const criticalPenaltyCap = (isObj(scoring) && Number.isFinite(scoring.criticalPenaltyCap) && scoring.criticalPenaltyCap >= 0)
+        ? scoring.criticalPenaltyCap : null;
+    let criticalPenalty = criticalPenaltyPer * criticalMisses.length;
+    if (criticalPenaltyCap !== null) criticalPenalty = Math.min(criticalPenalty, criticalPenaltyCap);
+    const percent = Math.max(0, mean - criticalPenalty);
     let band = bandFor(percent, bands);
     const zeros = zeroSkills(perFactor);
     const zeroMisses = zeros.reduce((n, id) => n + perFactor[id].missed, 0);
@@ -429,7 +441,12 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         criticalMisses,
         criticalKinds,
         criticalLabels,
-        criticalPenalty: CRITICAL_PENALTY * criticalMisses.length,
+        // The points actually taken off this round (capped), and the per-miss rate, so the result
+        // screen's line can name the real total (e.g. "took 30 points off") when a cap or a
+        // custom penalty applies. With defaults these are CRITICAL_PENALTY * misses and 15.
+        criticalPenalty,
+        criticalPenaltyPer,
+        criticalPenaltyCapped: criticalPenaltyCap !== null && criticalPenaltyPer * criticalMisses.length > criticalPenalty,
         // Phish answered Verify / Ring back: caught, but not reported (N7: the report line
         // read like a miss beside a near-perfect round).
         phishVerified,
