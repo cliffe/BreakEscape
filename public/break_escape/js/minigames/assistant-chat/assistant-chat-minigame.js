@@ -367,8 +367,35 @@ export class AssistantChatMinigame extends SocialOverlayScene {
         this.body.appendChild(sec);
     }
 
+    /** The section's own heading, else its aria-label, else a fallback, as the recap situation. */
+    _sectionSituation(sec, fallback) {
+        if (!sec) return fallback;
+        const head = sec.querySelector('.ac-paste-heading, .ac-draft-answer-heading');
+        if (head && isStr(head.textContent)) return head.textContent;
+        const label = sec.getAttribute('aria-label');
+        return isStr(label) ? label : fallback;
+    }
+
+    /**
+     * batch 11 (E13 B2 finding 11): hand the runner a recap of the wrong outcomes in this window,
+     * built from its final state, so the debrief can look back at the assistant stage. A wrong
+     * outcome is a personal detail or a password left in when summarising, or the invented figures
+     * sent without checking the source. The reason reuses the beat's own feedback text; `recap` is
+     * omitted entirely when nothing went wrong (so a clean run adds no debrief section).
+     */
     closeResult() {
-        return { episodeId: this.params.episodeId ?? null };
+        const recap = [];
+        const pasteFb = this.body?.querySelector?.('.ac-paste-feedback[data-verdict="leftPassword"], .ac-paste-feedback[data-verdict="leftPersonal"]');
+        if (pasteFb) {
+            recap.push({ situation: this._sectionSituation(pasteFb.closest('.ac-paste'), 'Pasting into the assistant'),
+                reason: pasteFb.textContent || '' });
+        }
+        const draftFb = this.body?.querySelector?.('.ac-draft-verdict[data-verdict="missed"]');
+        if (draftFb) {
+            recap.push({ situation: this._sectionSituation(draftFb.closest('.ac-draft'), 'Checking the assistant’s figures'),
+                reason: draftFb.textContent || '' });
+        }
+        return { episodeId: this.params.episodeId ?? null, ...(recap.length ? { recap } : {}) };
     }
 
     getTestState() {

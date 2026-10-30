@@ -62,7 +62,7 @@ import {
     stagesFor, stateKey, readState, completeStage, childLaunch, variantOf,
     sentFromRecord, findSentRecord, flipEntry, measurementCtx, defendSummary,
     writeKind, worldFor, sentFromCall, callOutcomeKey, flipPage, flipCall, CALL_LANDED,
-    awarenessSettings, reportRouteFor, flipAftermathFor, isMontage, montageProps, guessLanded,
+    awarenessSettings, reportRouteFor, flipAftermathFor, isMontage, montageProps, guessLanded, sandboxRecap,
     drillPending, drillLaunchCopy, drillLaunchParams, drillRecord,
     concernPending, concernLaunchCopy, concernLaunchParams, concernRecord,
     privacyPending, privacyLaunchCopy, privacyLaunchParams, privacyRecord
@@ -654,7 +654,10 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             episodeId: this.episode.id ?? null,
             // E13 MA3: the sent pretext, so the summarise mode surfaces the branch the learner wrote.
             sentTemplateId: this.state.sent?.templateId ?? null,
-            onComplete: (success, result) => { if (isNormal(success, result)) this._completeWhileAway('flip'); }
+            // batch 11 (E13 B2 finding 11): the assistant window hands back a recap of the wrong
+            // outcomes (password left in, figures sent unchecked). It is kept in the state so the
+            // debrief looks back at the assistant stage, not only the inbox. Absent/empty → no key.
+            onComplete: (success, result) => { if (isNormal(success, result)) this._completeWhileAway('flip', { assistant: result?.recap ?? [] }); }
         }));
         this._launching = null;
         if (!child) this._complete('flip'); // the scene did not open: do not strand the learner
@@ -684,6 +687,11 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             teamSize: settings.teamSize,
             // E17 B2 finding: recap the scored sort-drill cards the learner put in the wrong bin.
             drillRecap: Array.isArray(this.state.drill?.recap) ? this.state.drill.recap : [],
+            // batch 11: recap the sandbox choices and the assistant window outcomes the learner got
+            // wrong, so the debrief is not only about the inbox. Empty (and so not rendered) for a
+            // defend-only variant, which runs neither stage.
+            sandboxRecap: Array.isArray(this.state.sandbox) ? this.state.sandbox : [],
+            assistantRecap: Array.isArray(this.state.assistant) ? this.state.assistant : [],
             onFinish: () => {
                 // E15/E17 B2 finding: Finish must not drop the learner straight back to the world
                 // (two toasts and a narration line were the only end signal). Completing the last
@@ -777,7 +785,10 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                 onComplete: (success, result) => {
                     // Advance only once every beat is answered; closing part-way stays on the stage.
                     if (isNormal(success, result) && result?.finished === true) {
-                        this._completeWhileAway('mistake', { mistakeChoices: result.mistakeChoices ?? {} });
+                        const choices = result.mistakeChoices ?? {};
+                        // batch 11 (E11 B2 finding 5): keep a recap of the wrong choices so the
+                        // debrief can look back at them (mistakeChoices itself is cleared at the flip).
+                        this._completeWhileAway('mistake', { mistakeChoices: choices, sandbox: sandboxRecap(this.episode, choices) });
                     }
                 }
             }));

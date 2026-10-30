@@ -1,6 +1,6 @@
 // Awareness episodes: the debrief (11 stage 6, packet P7-B).
 //
-// renderDebrief(container, { result, set, strings, variant, onFinish, drillRecap }) -> { destroy, getState }
+// renderDebrief(container, { result, set, strings, variant, onFinish, drillRecap, sandboxRecap, assistantRecap }) -> { destroy, getState }
 // `drillRecap` (optional): the scored sort-drill cards the learner put in a wrong bin, each
 // { situation, chosen, right, reason }. When non-empty, a "Cards to look at again" section lists
 // them with the right bin and reason. Absent or empty draws nothing (E17 B2 finding).
@@ -334,7 +334,7 @@ function textBox(tag, className, label, block) {
 }
 
 export function renderDebrief(container, { result, set, strings = {}, variant = 'full', onFinish,
-    reportRoute = null, ruleOfThumb = null, teamSize = null, drillRecap = [] } = {}) {
+    reportRoute = null, ruleOfThumb = null, teamSize = null, drillRecap = [], sandboxRecap = [], assistantRecap = [] } = {}) {
     const root = el('section', 'aw-debrief');
     const heading = el('h2', 'aw-heading', DEFAULTS.heading);
     heading.tabIndex = -1;
@@ -468,6 +468,40 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
         root.appendChild(box);
     }
 
+    // E13 B2 finding 11 / E11 B2 finding 5: recap the other scored-or-chosen stages the learner
+    // got wrong, the same shape as the drill recap, so the debrief is not only about the inbox.
+    // Each list is { situation, chosen?, right?, reason? }; the move line and heading are
+    // overridable, and an absent or empty list renders nothing (so defend-only, which runs
+    // neither stage, is unaffected). `move` is a template with {chosen}/{right}.
+    const recapSection = (list, { cls, headingKey, headingDefault, moveKey, moveDefault }) => {
+        const items = Array.isArray(list) ? list.filter((r) => isObj(r) && isStr(r.situation)) : [];
+        if (!items.length) return 0;
+        const box = el('section', cls);
+        const heading = isObj(strings) && isStr(strings[headingKey]) ? strings[headingKey] : headingDefault;
+        box.setAttribute('aria-label', heading);
+        box.appendChild(el('h3', `${cls}-title`, heading));
+        const moveTmpl = isObj(strings) && isStr(strings[moveKey]) ? strings[moveKey] : moveDefault;
+        const ul = el('ul', `${cls}-list`);
+        for (const r of items) {
+            const li = el('li', `${cls}-item`);
+            li.appendChild(el('p', `${cls}-situation`, r.situation));
+            if (isStr(r.chosen) && r.chosen && isStr(r.right) && r.right) {
+                li.appendChild(el('p', `${cls}-move`, moveTmpl.split('{chosen}').join(r.chosen).split('{right}').join(r.right)));
+            }
+            if (isStr(r.reason) && r.reason) li.appendChild(el('p', `${cls}-reason`, r.reason));
+            ul.appendChild(li);
+        }
+        box.appendChild(ul);
+        root.appendChild(box);
+        return items.length;
+    };
+    const sandboxShown = recapSection(sandboxRecap, {
+        cls: 'aw-sandbox-recap', headingKey: 'sandboxRecapHeading', headingDefault: 'Choices worth a second look',
+        moveKey: 'sandboxRecapMove', moveDefault: 'You chose ‘{chosen}’. The safer move was ‘{right}’.' });
+    const assistantShown = recapSection(assistantRecap, {
+        cls: 'aw-assistant-recap', headingKey: 'assistantRecapHeading', headingDefault: 'In the assistant window',
+        moveKey: 'assistantRecapMove', moveDefault: 'You chose ‘{chosen}’. The safer move was ‘{right}’.' });
+
     // ENG-09b: conceptPanel may be an array of { heading?, text }, drawn in order; an entry with
     // no text is skipped. A string or one object draws one panel, exactly as before.
     const conceptRaw = isObj(strings) ? strings.conceptPanel : null;
@@ -522,6 +556,8 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
         getState() {
             return { items: reviewed.length, mondayCard: true, noBlame, conceptPanel: concept, voicePanel: !!voice,
                 ...(recapList.length ? { drillRecap: recapList.length } : {}),
+                ...(sandboxShown ? { sandboxRecap: sandboxShown } : {}),
+                ...(assistantShown ? { assistantRecap: assistantShown } : {}),
                 ...(Array.isArray(conceptRaw) ? { conceptPanels: conceptList.length } : {}),
                 reportRoute: route ? (route.configured === true ? 'configured' : 'generic') : null,
                 ruleOfThumb: !!rule, teamProtected: teamText ? team : null,

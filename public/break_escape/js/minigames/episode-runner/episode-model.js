@@ -189,6 +189,47 @@ function cleanDrill(raw) {
     return out;
 }
 
+/**
+ * A recap list kept in the state for the debrief (ENG batch 11): each entry
+ * { situation, chosen?, right?, reason? }, cleaned. Returns null when empty, so an episode that
+ * ran neither the sandbox nor the assistant carries no such key.
+ */
+export function cleanRecapList(raw) {
+    if (!Array.isArray(raw)) return null;
+    const list = raw.filter((r) => isObj(r) && isStr(r.situation)).map((r) => ({
+        situation: r.situation,
+        chosen: isStr(r.chosen) ? r.chosen : '',
+        right: isStr(r.right) ? r.right : '',
+        reason: isStr(r.reason) ? r.reason : ''
+    }));
+    return list.length ? list : null;
+}
+
+/**
+ * E11 B2 finding 5: the consequence-sandbox beats the learner got wrong (chose a non-safe
+ * option), for the debrief recap. Each item reuses the option labels and the montage "where it
+ * led" line (strings.flipMontageByChoice[beatId][optionId]) as the reason — existing content
+ * only, no new per-option key. Empty when every choice was safe (or none was a sandbox beat).
+ */
+export function sandboxRecap(episode, choices) {
+    const picked = isObj(choices) ? choices : {};
+    const byChoice = isObj(episode?.strings?.flipMontageByChoice) ? episode.strings.flipMontageByChoice : {};
+    const out = [];
+    for (const beat of mistakeBeats(episode)) {
+        const chosen = beat.options.find((o) => o.id === picked[beat.id]);
+        if (!chosen || chosen.safe) continue;
+        const safe = beat.options.find((o) => o.safe) || null;
+        const lines = isObj(byChoice[beat.id]) ? byChoice[beat.id] : {};
+        out.push({
+            situation: beat.situation,
+            chosen: chosen.label,
+            right: safe ? safe.label : '',
+            reason: isStr(lines[chosen.id]) ? lines[chosen.id] : ''
+        });
+    }
+    return out;
+}
+
 // ── the concern form (ENG-12) ────────────────────────────────────────────────────
 // `episode.concernForm` runs inside the defend stage after any sort drill and before the triage
 // set (the 'concern-form' scene). Like the drill, the runner keeps only a small record of it
@@ -346,6 +387,12 @@ export function readState(episode, raw) {
     // Likewise the privacy panel (ENG-13).
     const privacy = cleanPrivacy(src.privacy);
     if (privacy) state.privacy = privacy;
+    // batch 11: recap lists for the debrief (the sandbox choices and the assistant window). Kept
+    // past the flip (unlike mistakeChoices), so the debrief can look back at both stages.
+    const sandbox = cleanRecapList(src.sandbox);
+    if (sandbox) state.sandbox = sandbox;
+    const assistant = cleanRecapList(src.assistant);
+    if (assistant) state.assistant = assistant;
     state.stage = nextStage(episode, state);
     return state;
 }
@@ -365,6 +412,10 @@ export function completeStage(episode, state, stageId, patch = {}) {
     if ('drill' in patch) { const drill = cleanDrill(patch.drill); if (drill) next.drill = drill; }
     if ('concern' in patch) { const concern = cleanConcern(patch.concern); if (concern) next.concern = concern; }
     if ('privacy' in patch) { const privacy = cleanPrivacy(patch.privacy); if (privacy) next.privacy = privacy; }
+    // batch 11: the sandbox and assistant recap lists are set when their stage ends and are NOT
+    // cleared by the flip (below), so the debrief can still show them.
+    if ('sandbox' in patch) { const s = cleanRecapList(patch.sandbox); if (s) next.sandbox = s; else delete next.sandbox; }
+    if ('assistant' in patch) { const a = cleanRecapList(patch.assistant); if (a) next.assistant = a; else delete next.assistant; }
     if ('mistakeChoices' in patch) {
         const choices = cleanMistake(patch.mistakeChoices);
         if (choices) next.mistakeChoices = choices;
