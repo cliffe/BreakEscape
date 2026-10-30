@@ -1589,6 +1589,13 @@ Declare all variables in `globalVariables` at the scenario root. Referenced in I
 
 Values can be `false`, `true`, `0`, or `""`. The validator will error if any `setVariable`, `globalVarOnKO`, or event mapping references a variable not defined here.
 
+#### Title screen: `title_art` and `titleScreenName`
+
+Two optional keys dress the title screen a mission opens on. Missions that set neither look exactly as before.
+
+- **`title_art`** (in `mission.json`) is a painted backdrop: a path under `public/break_escape/assets/`, written `title_art/<name>.jpg` (also `.jpeg`, `.png` or `.webp`; letters, digits, `_` and `-` only, otherwise it is ignored). The awareness episodes use 1200 x 630 cards. **Composition rule: keep the right 40% of the picture calm.** The mission's name and the "press to continue" prompt are drawn there over a dark gradient on the right and bottom, so put the subject in the left 60% and leave the right side quiet (sky, wall, blur). A Hacktivity host can show the same file on course tiles at `/break_escape/assets/<path>`.
+- **`titleScreenName`** (a top-level string in `scenario.json.erb`, at most 80 characters, control characters are replaced by spaces) is the name the title screen shows in place of the mission's `display_name`. Blank or absent falls back to `display_name`. The awareness shells use it to show the episode's own name.
+
 ### Carrying choices between missions (`exportGlobals`, `importGlobals`)
 
 A mission can read what the player chose in an earlier mission (full design: `docs/agents/CARRY_OVER_PLAN.md`).
@@ -1999,13 +2006,22 @@ Each overlay opens from an object that carries only a pointer in `minigameData` 
 |---|---|---|
 | `case-file` | `{ mode }`: `recon` (default), `defender`, `scope` or `plan` | the intel board in that mode |
 | `osint-workstation` | `{ siteIds?, start? }` | the OSINT browser, limited to `siteIds` (every site when absent) |
-| `triage-workstation` | `{ triageSetId, stage?, conclusionTaskId? }` | inbox triage |
+| `triage-workstation` | `{ triageSetId, stage?, conclusionTaskId?, skin? }` | inbox triage. `skin: "awareness"` turns on the awareness behaviours (see [Inbox triage](#inbox-triage-socialtriagesets)); leave it out for the plain triage |
 | `report-workstation` | `{ requiresGlobal?, lockedMessage? }` | the engagement report; with `requiresGlobal` set and not yet true, a toast shows `lockedMessage` (default "There is nothing to write up yet.") instead |
-| `mail_terminal` | `{ accountIds, defaultAccount? }` | the mail client (attack section) |
+| `mail_terminal` | `{ accountIds, defaultAccount?, maxSends?, layout?, readOnly? }` | the mail client (attack section). `maxSends` caps the sends in one visit (after that Compose is disabled and a line says the message has gone; Close carries on). `layout: "phone"` draws the narrow layout in a phone frame on any screen. `readOnly: true` hides Compose and Contacts, so the terminal is a mailbox to read, not send from; closing it is a normal exit, never a failed run (an evidence inbox in a mission) |
 | `page-builder` | `{ landingPageId, targetId? }` | the landing-page builder (attack section) |
+| `authenticator-device` | `{ pushes, approvesAt }` or `{ choice, pushTemplate, defenderNote }`, plus `mode?`, `strings?`, `setGlobalPrefix?`, `lockUntilOutcome?` | a phone in the room that plays a stream of sign-in prompts (see [The authenticator](#the-authenticator-the-mfa-stage)) |
 | `kiosk` | `{ episodeId }` | the awareness episode runner; `episodeId` must equal `social.awarenessEpisode.id` ([Awareness episodes](#the-kiosk)) |
 
 Lab examples: `{"type": "case-file", "minigameData": {"mode": "scope"}}` is the Rules of Engagement sheet; the report workstation carries `{"requiresGlobal": "phish_lord_landed", "lockedMessage": "Nothing to write up yet. Finish the sending first, then come back to the report."}`. Each object type also needs its sprite, `assets/objects/<type>.png` (a missing one is a social lint error), and the lab places them on real furniture with `"position": "as-type:pc"` and similar.
+
+**One of each, per scenario (documented limits).** The social suite keeps one copy of three things, so a second one in the same scenario would share or collide with the first:
+
+- one `awarenessEpisode` (the kiosk's `episodeId` must equal its `id`; the starter reads this single block);
+- one intel board, whose picks live in the single global `se_board_state`: two `case-file` objects in one scenario open boards that share their state;
+- one engagement report, whose progress lives in `se_report_state`: a second `report-workstation` opens the same report.
+
+The OSINT browser has the same shape for what it remembers (`se_osint_state` holds the visited pages for every workstation), which is harmless but means two workstations with different `siteIds` share their visited list. Landing pages, pretext calls, triage sets and authenticator phones are all keyed by their own id, so several of those are fine.
 
 **Tasks complete on globals, never on an overlay closing.** The board, OSINT browser and report treat Close and Esc as a normal exit, so their completion event fires whether or not the player did anything (triage closed before its result is an abort). Each mechanic writes a global instead (`se_intel_<id>`, `target_ready_<id>`, `roe_signed`, `triage_pass`, `report_filed` and so on), and a start-room NPC's `eventMappings` completes the task on `global_variable_changed:<name>` with `"condition": "value === true"` and `"onceOnly": true`. In the lab that NPC is Ruth, in the start room, because an NPC in a room the player hasn't visited hears nothing (see [Common bugs](#common-bugs-and-how-to-avoid-them)).
 
@@ -2259,12 +2275,13 @@ An in-world browser for researching the target company (design `02`). The player
 | `name` | The site's tab label (falls back to `title`, then the id) |
 | `type` | `company-site` (has `pages[]`), `social` (has `profiles[]`, one page per person) or `document` (has `fields[]`, its properties panel) |
 | `card` | A concept card id shown with the site |
-| `logo`, `logoAlt` | An image under `assets/osint/` |
+| `logo`, `logoAlt` | `logo` is an image under `assets/logos/`; `logoAlt` is its alt text, and a logo with alt text stands in for the site's title. Any site whose name, title, url or id matches "friend face" gets the shared FriendFace wordmark by default; set `"logo": false` to switch that off and show no logo (the title is shown instead) |
 | `pages[]` | `{ id, title, path?, url?, showIf?, blocks[] }`. `path` is appended to the site's url in the address bar (e.g. `path: "/careers"` shows `ledgerwell.example/careers`), so it is a plain URL path and may start with `/`; `url` replaces the whole address instead |
+| page id `archive` | Special: a page with the id `archive` is left out of the page navigation and shown as a small "Archive" link in the footer of the other pages of that site. Use the id on purpose (an old-pages footer), and don't use it for an ordinary page or it will vanish from the nav |
 | `profiles[]` | `{ person, name?, avatar?, handle?, bio?, showIf?, posts[], blocks[] }`; `person` is a `people` id |
 | `fields[]` | `{ id, label, value, fact? }`, the document's metadata |
 
-A **block** is `{ id, kind?, text, fact?, note?, showIf? }` plus fields for its kind: `heading` (or `h`), `link` (`to`: a page id on the same site, `site.page` or a site id), `image` (`src` under `assets/osint/`, `alt`), `list` (`items[]`), `staff` (`person`, `name`, `role`, `address`), `post`, `field` (`label`, `value`); anything else is a paragraph. `fact` is the fact a selection grants, and the validator requires the fact's `source` to equal this block's `id`. `note` is an extra line shown on selection, alone when the block grants nothing. `showIf` names one global (a string; the validator rejects an array); the block, page or profile appears only while that global is truthy.
+A **block** is `{ id, kind?, text, fact?, note?, showIf? }` plus fields for its kind: `heading` (or `h`), `link` (`to`: a page id on the same site, `site.page` or a site id), `image` (`src` relative to `assets/`, `alt`), `list` (`items[]`), `staff` (`person`, `name`, `role`, `address`), `post`, `field` (`label`, `value`); anything else is a paragraph. `fact` is the fact a selection grants, and the validator requires the fact's `source` to equal this block's `id`. `note` is an extra line shown on selection, alone when the block grants nothing. `showIf` names one global (a string; the validator rejects an array); the block, page or profile appears only while that global is truthy.
 
 A **tool** is a lookup, `{ id, label, card?, unlockedBy?, results[], emptyText? }`. It is listed once `unlockedBy` holds: `{ "visited": "<siteId>" }` or `{ "visited": "<siteId>.<pageId>" }` (the player has opened that place), or `{ "fact": "<factId>" }`. `results[]` are blocks; with none, it shows `emptyText` (default "No public results.").
 
@@ -2302,6 +2319,10 @@ Gotchas:
 The defender's seat (design `05`). The player works through a fixed inbox in four steps (Brief, Sort, Review, Result): each message gets a verdict (Trust, Report or Delete, plus Verify in awareness sets that allow it) and the red flags that justified it, chosen from chips. Feedback explains each one, and the round ends with a score and a band headline. The reading pane is the mail client's own reader, read-only, with a header panel that explains SPF, DKIM and DMARC. A `playerSent` entry replays the player's own phishing email as its target received it, which is the lab's turning point from attacker to defender.
 
 A `triage-workstation` object opens a set by `minigameData.triageSetId`. `conclusionTaskId` names the task that completes on the set's result, so a reopen can repair a save that never reached the server; `stage` overrides the set's stage.
+
+**`minigameData.skin`.** The awareness course's triage differs from the plain one in more than colour. With `"skin": "awareness"` the overlay adds the `aw-skin` class and these behaviours: Report plays a positive animation, a sound and a thank-you line; a "team kept safe" tally counts phish reported or checked another way (immediate feedback only, no denominator); the chips offered for each message put the relevant ones first; the header tells stay hidden until that message's header details are opened (the `awareness` profile does this too); and the result screen points at the learner's own inbox and security team instead of the mail client and the lab sheet. The default (no `skin`) is the plain triage, unchanged, so a mission workstation opts in explicitly. The only value is `awareness`; the validator errors on any other. An episode launches its defend round with this skin itself, so the key matters only for a room object.
+
+**The default scoring profile is `awareness`, and some features are awareness-only.** A set with no `scoringProfile` scores as `awareness` (Report and Verify never wrong, hidden header tells, a capped band when no skills were named). Set `"scoringProfile": "analyst"` for a SAFETYNET or lab-style round. The `call` and `push` message kinds and the Verify verdict (`verifyVerdict`) belong to `awareness` sets only: the validator refuses them in an `analyst` set, so a mission set cannot use a vishing call or a sign-in prompt unless it runs as `awareness`. See also [Inbox triage in a mission](docs/INBOX_TRIAGE_USAGE.md).
 
 | Set field | What it does |
 |---|---|
@@ -3179,6 +3200,19 @@ E3's second attack beat shows MFA fatigue: the learner already has the password,
 - The overlay plays the pushes in time order on a phone, then the approval. A "Send another push" button lets the learner add their own; it counts towards the overlay's `sent` and nothing else. Esc and Close are normal exits.
 
 The defend half is a `push` message in the defend set ([Messages that aren't email](#messages-that-arent-email)), with the tell `unrequested_mfa_push`.
+
+#### The `authenticator-device` room object
+
+The same phone can sit in a room, outside any episode: an object of `type: "authenticator-device"` whose `minigameData` holds the stream itself, either the scripted `{ pushes, approvesAt }` or the learner-decision `{ choice, pushTemplate, defenderNote }` (the decision shape is checked by the same lint as `awarenessEpisode.mfa`).
+
+| `minigameData` key | What it does |
+|---|---|
+| `pushes`, `approvesAt` | The scripted stream (see above) |
+| `choice`, `pushTemplate`, `defenderNote` | The decision shape: the learner picks when and how many prompts, then watches them play |
+| `mode` | `attacker`, the only value |
+| `strings` | Wording overrides: `intro`, `approved`, `send`, `confirm`, `wordmark` and `request`; a key you leave out keeps its default |
+| `setGlobalPrefix` | On a normal close, writes `<prefix>approved` (never cleared once true) and `<prefix>sent` (the best count so far). Declare both in `globalVariables` |
+| `lockUntilOutcome` | Decision shape only. Default `true`: before the outcome shows, Close and Esc take the player back to the choices, so the beat cannot be skipped by habit (the episode wants this). `false` lets Close and Esc leave at any time, which a phone in a mission room should use so it is never a trap |
 
 ### The measurement global
 

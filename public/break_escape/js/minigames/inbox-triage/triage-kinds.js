@@ -732,6 +732,16 @@ function stateExtensionPermission(box, rec, p) {
     box.appendChild(view);
 }
 
+// Pending "Can't close it?" hint timers. Only one pane shows at a time, so a new surface or closing
+// the minigame clears them (clearKindTimers), and no timer fires on a pane that is already gone.
+const alarmHintTimers = new Set();
+
+/** Cancel every pending timer the kind surfaces started. */
+export function clearKindTimers() {
+    for (const t of alarmHintTimers) clearTimeout(t);
+    alarmHintTimers.clear();
+}
+
 function stateFullScreenAlarm(box, rec, p) {
     // A full-screen overlay: no address bar, silent, always a visible way out.
     const alarm = el('div', 'tri-alarm');
@@ -750,8 +760,9 @@ function stateFullScreenAlarm(box, rec, p) {
     const hint = el('p', 'tri-alarm-hint', 'Can’t close it? Press Esc, or close the tab or the browser.');
     hint.hidden = true;
     const ms = isObj(p.alarm) && Number.isFinite(p.alarm.hintAfterMs) ? p.alarm.hintAfterMs : 30000;
-    const t = setTimeout(() => { hint.hidden = false; }, ms);
+    const t = setTimeout(() => { alarmHintTimers.delete(t); hint.hidden = false; }, ms);
     if (t && typeof t.unref === 'function') t.unref();
+    alarmHintTimers.add(t);
     alarm.appendChild(hint);
     box.appendChild(alarm);
 }
@@ -947,6 +958,7 @@ export function emailHiddenReveal(rec) {
 export function renderKindSurface(rec, h, labels = null) {
     const fn = SURFACES[kindOf(rec)];
     if (!fn) return null;
+    clearKindTimers();
     const node = fn(rec, h, labels);
     node.dataset.kindSurface = kindOf(rec);
     return node;

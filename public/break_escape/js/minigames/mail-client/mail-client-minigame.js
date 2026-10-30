@@ -1126,6 +1126,8 @@ export class MailClientMinigame extends SocialOverlayScene {
      * was sent and stays on write rather than advancing to the flip.
      */
     get closeMode() {
+        // A read-only mailbox can never send, so leaving it is a normal exit, not a failed run.
+        if (this.params.readOnly === true) return 'close';
         if (this.sentThisSession > 0) return 'close';
         if (this._episodeMode() && this.params.returnTo) return 'close';
         return 'abort';

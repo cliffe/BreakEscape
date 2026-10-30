@@ -331,7 +331,8 @@ function savingNotifier(params) {
  *                           skin, debriefFollows, onComplete(success, result) }
  *                           set: a ready-made set object used in place of the lookup;
  *                           skin: 'awareness' gives the overlay the awareness skin
- *                           (the Report button's positive animation)
+ *                           (the Report button's positive animation); a workstation can ask
+ *                           for it with minigameData.skin, and options.skin wins
  */
 export function startInboxTriageMinigame(lockable, options = {}) {
     const w = win();
@@ -389,7 +390,9 @@ export function startInboxTriageMinigame(lockable, options = {}) {
         readOnly,
         storedResult: readOnly ? stored : null,
         savingNotice: SAVING_NOTICE,
-        skin: options.skin === 'awareness' ? 'awareness' : null,
+        // The launcher's skin wins; otherwise the workstation's minigameData.skin ('awareness' is the
+        // only skin). Neither set: no skin, as before.
+        skin: (options.skin !== undefined ? options.skin : data.skin) === 'awareness' ? 'awareness' : null,
         // The episode runner: a debrief follows this round (inbox-triage-minigame.js _genuineSummary).
         debriefFollows: options.debriefFollows === true,
         // item 8: optional per-verdict save/restore so a reload mid-round resumes. Present only

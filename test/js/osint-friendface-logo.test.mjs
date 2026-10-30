@@ -23,3 +23,10 @@ test('an explicit logo wins and other sites get none', () => {
     assert.equal(brandLogo({ name: 'Friendface', logo: 'other.png', logoAlt: 'O' }).logo, 'other.png');
     assert.equal(brandLogo({ name: 'Tarrowby careers', url: 'careers.example' }).logo, null);
 });
+test('logo: false means no logo, even for a FriendFace-named site', () => {
+    for (const site of [{ name: 'Friendface', logo: false }, { id: 'x_friendface', url: 'friendface.example', logo: false, logoAlt: 'Friendface' }]) {
+        assert.deepEqual(brandLogo(site), { logo: null, logoAlt: null });
+    }
+    // an empty string is still "not set", so the brand default applies as before
+    assert.equal(brandLogo({ name: 'Friendface', logo: '' }).logo, 'friendface.png');
+});

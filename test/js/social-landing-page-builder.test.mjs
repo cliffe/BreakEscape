@@ -281,6 +281,16 @@ test('the pretext card lists a held fact, else offers the Case file nested launc
     assert.equal(chip(s, 'case-file'), null);
 });
 
+test('the Case file button uses intelBoard.labels.caseButton, defaulting to Case file', () => {
+    setGlobals();
+    let s = open();
+    assert.equal(chip(s, 'case-file').textContent, 'Case file');
+    setGlobals();
+    social.intelBoard.labels = { caseButton: 'Dossier' };
+    s = open();
+    assert.equal(chip(s, 'case-file').textContent, 'Dossier');
+});
+
 test('concept cards show behind a "What is this?" button and toggle (N7 display)', () => {
     setGlobals();
     const s = open();

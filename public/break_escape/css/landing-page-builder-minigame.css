@@ -75,7 +75,7 @@
 .lpb-score-btn,
 .lpb-attach-btn,
 .lpb-inspect-btn,
-.cc-button {
+.lpb-root .cc-button {
     min-height: 44px;
     padding: 8px 14px;
     cursor: pointer;
@@ -492,10 +492,12 @@
 
 .lpb-attach-btn { border-color: var(--ui-accent, #ffcc44); }
 
-/* ── concept cards (shared renderer) ── */
-.cc-card { margin-top: 8px; }
+/* ── concept cards (shared renderer) ──
+   Scoped under .lpb-root: the OSINT browser uses the same .cc-* classes and
+   loads its own rules, so unscoped rules here restyled its cards too. */
+.lpb-root .cc-card { margin-top: 8px; }
 
-.cc-panel {
+.lpb-root .cc-panel {
     margin-top: 6px;
     padding: 8px 10px;
     background: var(--ui-surface, rgba(24, 30, 48, 0.94));
@@ -503,9 +505,9 @@
     border-radius: 2px;
 }
 
-.cc-title { margin: 0 0 6px; font-size: 13px; }
-.cc-text { margin: 0 0 6px; font-size: 14px; }
-.cc-image { max-width: 100%; image-rendering: pixelated; }
+.lpb-root .cc-title { margin: 0 0 6px; font-size: 13px; }
+.lpb-root .cc-text { margin: 0 0 6px; font-size: 14px; }
+.lpb-root .cc-image { max-width: 100%; image-rendering: pixelated; }
 
 /* ── invalid ── */
 .lpb-invalid { padding: 24px; display: flex; flex-direction: column; gap: 16px; align-items: flex-start; }

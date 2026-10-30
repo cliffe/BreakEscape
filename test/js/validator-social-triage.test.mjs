@@ -301,6 +301,14 @@ test('05 N5: the stage launch parameter, workstation pointers and the four resul
   assert.deepEqual(lintJson(j), []);
 });
 
+test('workstation minigameData.skin: awareness is accepted, anything else is an error', { skip }, () => {
+  const j = mini();
+  j.rooms.r.objects[0].minigameData.skin = 'awareness';
+  assert.deepEqual(lintJson(j), []);
+  j.rooms.r.objects[0].minigameData.skin = 'neon';
+  expectIn(lintJson(j), /minigameData\.skin 'neon' is not a known skin/);
+});
+
 test('05 N5: a name the mission imports is skipped, an own declaration is not', { skip }, () => {
   const j = mini();
   delete j.globalVariables.triage_percent;

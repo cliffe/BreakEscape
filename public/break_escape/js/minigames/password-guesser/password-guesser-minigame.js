@@ -144,7 +144,7 @@ export class PasswordGuesserMinigame extends SocialOverlayScene {
     }
 
     _button(parent, label, className, onClick) {
-        const b = el('button', `${className} epr-button aw-button`, label);
+        const b = el('button', className, label);
         b.type = 'button';
         this.addEventListener(b, 'click', (e) => {
             e.preventDefault?.();

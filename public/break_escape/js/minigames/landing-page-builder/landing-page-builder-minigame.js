@@ -572,8 +572,9 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
             card.appendChild(h('p', { class: 'lpb-pretext-empty',
                 text: 'You haven’t found out what ' + this._firstName() + ' would expect to see yet.' }));
             if (this.social.intelBoard) {
+                const caseLabel = this.social.intelBoard.labels?.caseButton || 'Case file';
                 const caseBtn = h('button', { type: 'button', class: 'lpb-case minigame-button',
-                    'data-focus': 'case-file', text: 'Case file' });
+                    'data-focus': 'case-file', text: caseLabel });
                 this.addEventListener(caseBtn, 'click', (e) => { e.preventDefault?.(); this._openCaseFile(); });
                 card.appendChild(caseBtn);
             }

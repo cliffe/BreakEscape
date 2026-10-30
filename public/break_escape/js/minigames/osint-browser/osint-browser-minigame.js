@@ -39,7 +39,9 @@ const ASSETS = '/break_escape/assets/';
 const LOGOS = '/break_escape/assets/logos/';
 
 // Brands with a shared logo: any site named or hosted as FriendFace gets it unless the scenario sets its own.
+// `logo: false` turns that off: the site shows no logo and its own title.
 export function brandLogo(site) {
+    if (site?.logo === false) return { logo: null, logoAlt: null };
     if (site?.logo) return { logo: site.logo, logoAlt: site.logoAlt };
     if (/friend\s*face/i.test(`${site?.name || ''} ${site?.title || ''} ${site?.url || ''} ${site?.id || ''}`)) {
         return { logo: 'friendface.png', logoAlt: site?.logoAlt || 'Friendface' };

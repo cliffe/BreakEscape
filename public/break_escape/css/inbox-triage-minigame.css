@@ -107,9 +107,9 @@
 /* Row badge in the list. A badge carries a tone (F-E19-7): a right or acceptable call keeps the
    success colour and tick; a wrong call turns danger-coloured and shows a cross, so the list never
    reads as if a wrong verdict went well. */
-.mail-row-badge { display: inline-flex; align-items: center; gap: 2px; font-size: 13px; color: var(--ui-success, #6ee08f); }
-.mail-row-badge.mail-row-badge-wrong { color: var(--ui-danger, #f0896e); }
-.mail-row-badge img.mail-icon { width: 12px; height: 12px; }
+.triage-client .mail-row-badge { display: inline-flex; align-items: center; gap: 2px; font-size: 13px; color: var(--ui-success, #6ee08f); }
+.triage-client .mail-row-badge.mail-row-badge-wrong { color: var(--ui-danger, #f0896e); }
+.triage-client .mail-row-badge img.mail-icon { width: 12px; height: 12px; }
 
 /* The link status line stays in view at the foot of the pane while the player reads. */
 .triage-client .mail-link-status {
@@ -335,7 +335,7 @@
 /* ── Non-email kinds (05 N1, N10; 11 N12 to N14) ──────────────────────────────
    Each kind is drawn in its own style in place of the email head and body. Words stay in
    var(--se-font-readable); the frames are flat pixel shapes, square corners, 2 px lines. */
-.mail-row-tag {
+.triage-client .mail-row-tag {
     display: inline-block;
     padding: 0 4px;
     margin-right: 2px;
