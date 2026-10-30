@@ -91,6 +91,13 @@
       "tuning": { "matchCreditCapPerLine": 10, "maxRefusals": 2, "feedbackMode": "live", "tellDetail": "full", "showTechniqueNames": "live" },
       "susceptibility": { "authority_borrowed": -5, "urgency": -10, "deflect": -10 },
       "unverifiableCost": -10,
+      "requireFact": true,
+      "requireFactLine": "Go back to the research first. You need a name at the studio to ask for.",
+      "outcomeLabels": {
+        "got_it": "You got buzzed through the door.",
+        "reported": "The desk reported you.",
+        "walked_away": "You walked away from the desk."
+      },
       "knows": {
         "recipient": { "value": "merrin_partner", "grade": "identity" }
       },

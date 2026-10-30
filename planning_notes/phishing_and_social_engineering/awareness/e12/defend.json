@@ -43,9 +43,12 @@
         { "min": 0, "headline": "Worth practising: here's where to look first" }
       ],
       "_resultCopy": "B1 major F-E12-1: the default no-flags lines name 'messages' and 'each fake', wrong for a visitor desk. Reworded for visitors.",
+      "confirmPrompt": true,
       "resultCopy": {
         "noFlagsLead": "You didn't tick anything on these visitors, so there's nothing to grade skill by skill.",
-        "noFlags": "Next time, tick what you noticed. The review cards show what gave each one away."
+        "noFlags": "Next time, tick what you noticed. The review cards show what gave each one away.",
+        "caughtBreakdown": true,
+        "handledRightLabel": "Genuine visitors let in or checked"
       },
       "skillNames": {
         "tailgating": "Spotting someone following through a secure door without badging in",
