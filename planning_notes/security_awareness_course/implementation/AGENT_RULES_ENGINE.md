@@ -21,5 +21,6 @@ Process:
 - Commit on your worktree branch with explicit paths (check `git diff --cached --stat`), no attribution lines; commit before long suites, fixes as follow-ups.
 - Content rule: attack content stays at template and psychology level; no working payloads, commands or pages.
 - UK English, match surrounding code style and comment density.
+- **Never run `db:create`, `db:schema:load`, `db:migrate`, `db:reset`, `db:drop` or `db:setup`, in the main tree or a worktree.** Every checkout shares one Postgres database (`break_escape_development`); on 2026-10-30 a worktree `schema:load` wiped every game and user, with no backup. Only `db:seed` is allowed. If a server or `new-game.rb` fails for a schema reason, stop and report.
 
 Return: branch and commits; change list (files, keys, tests); test results with counts; where the packet was wrong or thin and what you chose; anything open.

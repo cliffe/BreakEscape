@@ -204,6 +204,7 @@ Take the counts from the review and playtest files and the logs, not from memory
 
 ## Housekeeping
 
+- **The dev database is shared and has no backup.** The main tree, every worktree and the :3000/:3001/:3002 servers all use Postgres `break_escape_development`. Never run `db:create`, `db:schema:load`, `db:migrate`, `db:reset`, `db:drop` or `db:setup` without the user's say-so; `db:seed` is fine. A worktree agent's `schema:load` wiped every game on 2026-10-30.
 - Agents that stop mid-run leave headless browsers and stuck harness commands behind. List them with `ps`, check what they are, and kill them **by PID**. Never use `pkill -f` with a pattern that also appears in your own command line, because it kills your own shell.
 - When taking over from an agent that spawned children, list the live agents first and stop its children, or you get duplicate builders overwriting each other.
 - Agents share one working tree. Never `git stash`, `git checkout -- <file>` or `git reset` to get a clean baseline, because that pulls other agents' unsaved work out from under them. Compare against `git show HEAD:<path>` or use a worktree instead.
