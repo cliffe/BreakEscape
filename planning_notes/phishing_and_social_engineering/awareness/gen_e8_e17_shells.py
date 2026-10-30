@@ -328,7 +328,7 @@ EPISODES = {
             'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Cover the reception desk at Merrin & Sallow Architects, a fictional architecture practice: some visitors are expected, some are not, and one or two are trying to talk their way in. Each answer is explained, and checking or reporting when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'defendIntro': "Work through the visitors at the reception desk and decide what to do with each one. A genuine visitor never minds being signed in and escorted; the one who pushes to skip a check is the one to report. There's no clock on you here.",
-            'conclusion': ('Reception desk done', "That's the reception desk finished. The debrief goes through each one."),
+            'conclusion': ('Reception desk done', "That's the reception desk finished."),
         },
     },
     'e13': {

@@ -92,7 +92,7 @@
       "susceptibility": { "authority_borrowed": -5, "urgency": -10, "deflect": -10 },
       "unverifiableCost": -10,
       "requireFact": true,
-      "requireFactLine": "Go back to the research first. You need a name at the studio to ask for.",
+      "requireFactLine": "Close this, then choose Back to research and open the browser. Click a line that names someone at the studio to add it to your notes: you need a name to ask for.",
       "outcomeLabels": {
         "got_it": "You got buzzed through the door.",
         "reported": "The desk reported you.",

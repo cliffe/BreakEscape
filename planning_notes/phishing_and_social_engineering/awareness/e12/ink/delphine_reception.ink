@@ -23,6 +23,8 @@ EXTERNAL pretext_ask(ask_id)
 VAR delphine_influence = 0
 VAR pretext_recipient_name = ""
 VAR pretext_recipient_value = ""
+// True once the caller has said who the parcel is for, so the wary lines stop asking.
+VAR named_recipient = false
 // Intel-fact globals (se_intel_<id>), set true when the fact is found in OSINT and bridged in
 // from scenario globals. The fact-bearing say lines are gated on them so a line that names a
 // found detail is never offered before the detail is found (matches social.pretextNpcs
@@ -60,7 +62,7 @@ Delphine Arvanitis: Morning. Can I help you?
 + [Any chance you can buzz me through to the studio?]
     -> ask_reaction("buzz_door", pretext_ask("buzz_door"))
 + [Not to worry, I'll leave it at the desk. Cheers.]
-    Delphine Arvanitis: That's grand, I'll take it here and let them know.
+    Delphine Arvanitis: Right you are, leave it with me and I'll let them know.
     -> END
 
 === reaction(band, said) ===
@@ -74,13 +76,18 @@ Delphine Arvanitis: Morning. Can I help you?
     -> desk
 }
 { band == 1:
-    Delphine Arvanitis: Let's slow down a moment. I still need to know who it's for.
+    { named_recipient:
+        Delphine Arvanitis: Let's slow down a moment. I'd like to check that against today's list first.
+    - else:
+        Delphine Arvanitis: Let's slow down a moment. I still need to know who it's for.
+    }
     -> desk
 }
 {
 - said == "open_parcel":
     Delphine Arvanitis: Right, a parcel for upstairs. Let me see who's expecting it.
 - said == "name_drop_partner":
+    ~ named_recipient = true
     Delphine Arvanitis: For Catherine? She's away this week, though her boxes do come here.
 - said == "hands_full":
     Delphine Arvanitis: I can see your hands are full. Even so, I'd rather sign you in.
@@ -99,8 +106,16 @@ Delphine Arvanitis: Morning. Can I help you?
     # unlock_door:training_room
     Delphine Arvanitis: Go on then, I'll buzz you through. Studio's up the stairs on your left.
 - 2:
-    Delphine Arvanitis: Before I open that door, who exactly is the parcel for?
+    { named_recipient:
+        Delphine Arvanitis: Before I open that door, I'll check that against today's list.
+    - else:
+        Delphine Arvanitis: Before I open that door, who exactly is the parcel for?
+    }
 - else:
-    Delphine Arvanitis: I'm not buzzing the door without knowing who it's for, sorry.
+    { named_recipient:
+        Delphine Arvanitis: I can't buzz the door on that alone, sorry. It needs to be on today's list.
+    - else:
+        Delphine Arvanitis: I'm not buzzing the door without knowing who it's for, sorry.
+    }
 }
 -> desk

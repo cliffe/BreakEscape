@@ -66,19 +66,19 @@
         "phishCaughtLabel": "Risky visitors caught",
         "verdictFeedback": {
           "trust": {
-            "phish": "Not this time. That visitor was not who they said, or not allowed where they were going.",
+            "phish": "Not this time. Nothing showed this visitor was expected or allowed where they were going, so a check or a report was needed.",
             "real": "That visitor was genuine. Letting someone in is fine once you have seen them on the list or checked with their host."
           },
           "report": {
-            "phish": "Right call: reported. Facilities or security can watch for this visitor and warn the rest of the building.",
+            "phish": "Right call: reported. Facilities or security can watch for this visitor and warn the rest of the building. The points for this visitor also depend on the tells you named.",
             "real": "That visitor was genuine, but reporting when you are unsure is never wrong."
           },
           "delete": {
             "phish": "Safe: they did not get in. Reporting as well lets facilities or security look out for this visitor.",
-            "real": "That visitor was genuine. Turning them away without a way to check left them stuck."
+            "real": "That one was genuine, so turning them away was not needed. Letting them through or checking first would both have been fine."
           },
           "verify": {
-            "phish": "Right call: the day's list or a word with their host is how you check.",
+            "phish": "Right call: the day's list or a word with their host is how you check. The points for this visitor also depend on the tells you named.",
             "real": "Checking first is fine. This visitor was genuine, and the list or their host confirmed it."
           }
         },
@@ -157,6 +157,7 @@
             { "who": "Today's list", "text": "No parcels booked for any partner today, and no courier expected." }
           ],
           "truth": { "verdictPoints": { "delete": 60 }, "isPhish": true, "flags": ["tailgating", "borrowed_authority", "secrecy_or_bypass", "uniform_pretext", "not_expected", "no_escort"],
+            "flagAlternatives": [["secrecy_or_bypass", "tailgating", "no_escort"]],
             "perFlagNote": {
               "borrowed_authority": "'A partner said to send me straight up' leans on a name you can't check to wave away the sign-in; a name is not a booking.",
               "secrecy_or_bypass": "'Don't bother signing me in' is the ask to skip the one check.",
@@ -177,7 +178,8 @@
           "from": { "name": "Colleague back from leave", "address": "At the desk" }, "time": "15:40",
           "transcript": [
             { "who": "Colleague", "text": "First day back, I've left my pass at home, can you let me in?" },
-            { "who": "Colleague", "text": "You can check me on the staff list, I don't mind waiting." }
+            { "who": "Colleague", "text": "You can check me on the staff list, I don't mind waiting." },
+            { "who": "Staff list", "text": "Back from leave today. On the staff list." }
           ],
           "truth": { "verdictPoints": { "trust": 60 }, "isPhish": false, "flags": [],
             "whyFine": {
@@ -244,7 +246,7 @@
       "_noBlameLineCritical": "B1 major F-E12-1: the engine default no-blame-after-critical line names 'messages'; reworded for visitors so no phishing wording shows in a visitor episode.",
       "noBlameLineCritical": "These visitors are played by people whose job is to look like they belong, so a miss here says more about the attack than about you. The points only show where to look next time.",
       "mondayCard": "On Monday: if you don't recognise someone, help them, 'Can I help you find someone? I'll walk you to reception.' Don't hold a secure door for a stranger, everyone badges in for themselves, lock your screen whenever you step away (Windows key and L), and report anyone who pushes past a check, using the route in the box below.",
-      "defendOnly": "These visitors were played by people whose job is to look like they belong, and a busy desk can be caught by any of them. Any you were caught out by are shown below, with what gave each one away.",
+      "defendOnly": "These visitors were played by people whose job is to look like they belong, and a busy desk can be caught by any of them. The ones worth a second look are shown below, with what gave each one away.",
       "_conceptPanel": "B1 F-E12-7: heading and text reworded from 'What the courier relied on' / 'the courier was expected' so the debrief panel stands on its own in the defend-only shell (the generator copies this string into it, and there the player never played the courier). The courier callback lives in the flip (full only).",
       "conceptPanel": {
         "heading": "What these visitors relied on",

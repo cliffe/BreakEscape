@@ -51,7 +51,7 @@
       "conclusionScreen": {
         "type": "success",
         "title": "Visitor and tailgater: finished",
-        "body": "You've tried the front desk in a courier's hi-vis, then sat on reception and worked through the visitors yourself. That's this episode finished. The debrief goes through each one."
+        "body": "You've tried the front desk in a courier's hi-vis, then sat on reception and worked through the visitors yourself. That's this episode finished."
       },
       "tasks": [
         {
@@ -154,19 +154,19 @@
           "phishCaughtLabel": "Risky visitors caught",
           "verdictFeedback": {
             "trust": {
-              "phish": "Not this time. That visitor was not who they said, or not allowed where they were going.",
+              "phish": "Not this time. Nothing showed this visitor was expected or allowed where they were going, so a check or a report was needed.",
               "real": "That visitor was genuine. Letting someone in is fine once you have seen them on the list or checked with their host."
             },
             "report": {
-              "phish": "Right call: reported. Facilities or security can watch for this visitor and warn the rest of the building.",
+              "phish": "Right call: reported. Facilities or security can watch for this visitor and warn the rest of the building. The points for this visitor also depend on the tells you named.",
               "real": "That visitor was genuine, but reporting when you are unsure is never wrong."
             },
             "delete": {
               "phish": "Safe: they did not get in. Reporting as well lets facilities or security look out for this visitor.",
-              "real": "That visitor was genuine. Turning them away without a way to check left them stuck."
+              "real": "That one was genuine, so turning them away was not needed. Letting them through or checking first would both have been fine."
             },
             "verify": {
-              "phish": "Right call: the day's list or a word with their host is how you check.",
+              "phish": "Right call: the day's list or a word with their host is how you check. The points for this visitor also depend on the tells you named.",
               "real": "Checking first is fine. This visitor was genuine, and the list or their host confirmed it."
             }
           },
@@ -348,6 +348,13 @@
                 "not_expected",
                 "no_escort"
               ],
+              "flagAlternatives": [
+                [
+                  "secrecy_or_bypass",
+                  "tailgating",
+                  "no_escort"
+                ]
+              ],
               "perFlagNote": {
                 "borrowed_authority": "'A partner said to send me straight up' leans on a name you can't check to wave away the sign-in; a name is not a booking.",
                 "secrecy_or_bypass": "'Don't bother signing me in' is the ask to skip the one check.",
@@ -391,6 +398,10 @@
               {
                 "who": "Colleague",
                 "text": "You can check me on the staff list, I don't mind waiting."
+              },
+              {
+                "who": "Staff list",
+                "text": "Back from leave today. On the staff list."
               }
             ],
             "truth": {
@@ -542,7 +553,7 @@
         "noBlameLine": "A busy desk that tries to help a visitor with their hands full is doing its job; a miss just shows which visitor to slow down for next time.",
         "noBlameLineCritical": "These visitors are played by people whose job is to look like they belong, so a miss here says more about the attack than about you. The points only show where to look next time.",
         "mondayCard": "On Monday: if you don't recognise someone, help them, 'Can I help you find someone? I'll walk you to reception.' Don't hold a secure door for a stranger, everyone badges in for themselves, lock your screen whenever you step away (Windows key and L), and report anyone who pushes past a check, using the route in the box below.",
-        "defendOnly": "These visitors were played by people whose job is to look like they belong, and a busy desk can be caught by any of them. Any you were caught out by are shown below, with what gave each one away.",
+        "defendOnly": "These visitors were played by people whose job is to look like they belong, and a busy desk can be caught by any of them. The ones worth a second look are shown below, with what gave each one away.",
         "conceptPanel": {
           "heading": "What these visitors relied on",
           "text": "A parcel, a familiar name and a bit of hurry are all easy to supply, and none of them proves a visitor is expected. What stops it costs nothing: a glance at the day's list and walking the visitor to the desk instead of buzzing the door blind. A genuine visitor never minds being signed in and escorted; the one who pushes to skip it is the one to report. The same visitor, once inside, reads whatever is left open, so a locked screen when you step away is part of the same habit."
@@ -768,7 +779,7 @@
           "heldEmpty": "You haven't found anything to use yet."
         },
         "requireFact": true,
-        "requireFactLine": "Go back to the research first. You need a name at the studio to ask for.",
+        "requireFactLine": "Close this, then choose Back to research and open the browser. Click a line that names someone at the studio to add it to your notes: you need a name to ask for.",
         "outcomeLabels": {
           "got_it": "You got buzzed through the door.",
           "reported": "The desk reported you.",
