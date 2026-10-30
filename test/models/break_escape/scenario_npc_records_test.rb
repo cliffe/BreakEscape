@@ -111,6 +111,41 @@ module BreakEscape
       assert_equal Set.new(%w[guard handler clerk]), narrow.scenario_npc_ids
     end
 
+    def ink_contact_scenario
+      room_only_scenario.merge(
+        'social' => { 'mailClient' => { 'contacts' => [
+          { 'id' => 'hax', 'name' => 'Agent HaX', 'addresses' => ['hax@safetynet.example'], 'npc' => 'hax_mail',
+            'emailRecord' => { 'storyPath' => 'scenarios/x/ink/hax_mail.json', 'avatar' => 'hax' } },
+          # npc without an emailRecord names an NPC defined elsewhere: no headless record
+          { 'id' => 'guard_c', 'addresses' => ['g@x.example'], 'npc' => 'guard' },
+          # a room NPC's id still wins
+          { 'id' => 'clerk_c', 'addresses' => ['c@x.example'], 'npc' => 'clerk', 'emailRecord' => { 'storyPath' => 'x.json' } },
+          # not an ink contact
+          { 'id' => 'plain', 'addresses' => ['p@x.example'], 'emailRecord' => { 'storyPath' => 'y.json' } }
+        ] } }
+      )
+    end
+
+    test 'an ink-email contact with an emailRecord is a headless record with no social.characters' do
+      game = create_game(ink_contact_scenario)
+
+      hax = game.find_npc_in_scenario('hax_mail')
+      assert_equal 'Agent HaX', hax['displayName'], 'falls back to the contact name'
+      assert_equal 'mail_only', hax['phoneId']
+      assert_equal 'scenarios/x/ink/hax_mail.json', hax['storyPath']
+      assert_equal %w[guard handler clerk hax_mail], game.scenario_npc_records.map { |n| n['id'] }.uniq.first(4)
+      assert_equal 1, game.scenario_npc_records.count { |n| n['id'] == 'clerk' }
+    end
+
+    test 'the narrow scenario_npc_ids includes ink-email contact records' do
+      game = create_game(ink_contact_scenario)
+      narrow = Game.select(:id, :player_state).find(game.id)
+
+      refute narrow.has_attribute?(:scenario_data)
+      assert_includes narrow.scenario_npc_ids, 'hax_mail'
+      assert_equal game.scenario_npc_ids, narrow.scenario_npc_ids
+    end
+
     test 'hostility sent for a headless record is kept' do
       game = create_game(social_scenario)
       game.merge_npc_hostility!('pierce_mail' => { 'hostile' => false, 'ko' => false }, 'nobody' => { 'hostile' => true, 'ko' => false })
