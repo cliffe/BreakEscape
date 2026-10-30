@@ -4,7 +4,7 @@
 //   PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb m01_first_contact --start-room server_room --set briefing_played=true
 // Record: run-take.sh t08_flag_station "--start-room server_room --set briefing_played=true" "--hide-hud --zoom-step 1"
 // Marks: establishing (server room, rack glow), approach-terminal, terminal-open (the payoff), typing-start/typing-end ("flag{"), cleared, closed.
-import { sleep, clearScreen } from './lib.mjs';
+import { sleep, clearScreen } from '../lib/lib.mjs';
 
 export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await sleep(500); }
 

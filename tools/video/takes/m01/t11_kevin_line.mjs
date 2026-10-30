@@ -5,8 +5,8 @@
 // Record: run-take.sh t11_kevin_line "--start-room it_room --set briefing_played=true" ""
 // Path: interact kevin_park; opening lines skipped; first_meeting 'Happy to help. What's the security situation?'; security_situation plays both targets with
 // the middle line skipped between them (the editor cuts to the marks).
-import { sleep, clearScreen, watchVoice } from './lib.mjs';
-import { runDialogue } from './dlg.mjs';
+import { sleep, clearScreen, watchVoice } from '../lib/lib.mjs';
+import { runDialogue } from '../lib/dlg.mjs';
 export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await sleep(500); }
 export default async (page, bridge, mark) => {
   const vw = await watchVoice(page, mark);

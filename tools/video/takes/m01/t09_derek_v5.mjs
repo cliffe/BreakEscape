@@ -9,7 +9,7 @@
 // Lines that are not targets are skipped with Space after a short dwell (otherwise the monologue is over two minutes), so only the marked lines
 // are clean audio: the editor must cut to the line-start/line-end marks of the two targets. Other lines are on screen briefly (they include the casualty
 // figures and "The Architect": spoiler checklist applies to anything outside the two target windows).
-import { sleep, clearScreen, watchVoice, awaitChoice } from './lib.mjs';
+import { sleep, clearScreen, watchVoice, awaitChoice } from '../lib/lib.mjs';
 
 const TARGETS = [
   { name: 'derek_5', re: /Murder\? No\. Think of it as\.\.\. forced education/i },

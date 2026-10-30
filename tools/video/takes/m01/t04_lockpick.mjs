@@ -5,7 +5,7 @@
 // setup() (before recording): close Mission Brief, talk to Kevin (take all tools), walk it_room -> main_office_area -> hallway_west -> manager_office.
 // The take: interact with the briefcase, then PICK THE LOCK FOR REAL with synthetic keys (space = tension, hold a pin digit until that pin sets, in the lock's binding order):
 // the pin states are only read to know when to release; nothing is completed through the bridge shortcut. Marks: minigame-open, tension, pin-set:N, lock-open.
-import { sleep, clearScreen, pickChoice, awaitChoice } from './lib.mjs';
+import { sleep, clearScreen, pickChoice, awaitChoice } from '../lib/lib.mjs';
 
 export async function setup(page, bridge) {
   await clearScreen(page, bridge, () => {});

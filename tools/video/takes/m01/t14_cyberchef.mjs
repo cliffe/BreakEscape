@@ -6,7 +6,7 @@
 // setup() (before recording): t04's setup (Kevin's kit, walk to the briefcase), pick the briefcase lock with synthetic keys, take the CyberChef Workstation
 // from the opened briefcase, close the container. The take: open the workstation from the inventory, paste the Base64 text with the recipe From Base64, linger on the decoded output.
 // Marks: workstation-open, cyberchef-ready, input-set (paste route), output-shown, linger-end.
-import { sleep, clearScreen } from './lib.mjs';
+import { sleep, clearScreen } from '../lib/lib.mjs';
 import { setup as t04Setup } from './t04_lockpick.mjs';
 
 async function pickLock(page, bridge) {

@@ -4,7 +4,7 @@
 //   PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb m01_first_contact --start-room main_office_area --set briefing_played=true
 // Record: run-take.sh t06_keypad "--start-room main_office_area --set briefing_played=true" "--hide-hud --zoom-step 1"
 // Marks: door-click, minigame-open, digit:1, digit:2 (the payoff: "19__" on the keypad), back-off, minigame-closed.
-import { sleep, clearScreen } from './lib.mjs';
+import { sleep, clearScreen } from '../lib/lib.mjs';
 
 export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await sleep(500); }
 

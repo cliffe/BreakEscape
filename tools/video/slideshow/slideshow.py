@@ -21,6 +21,7 @@ def card(path, lines, font):
     y = 540 - sum(s + 40 for _, s, _ in lines) // 2
     for text, size, col in lines:
         f = ImageFont.truetype(font, size); w = d.textlength(text, font=f)
+        while w > 1800 and size > 16: size -= 4; f = ImageFont.truetype(font, size); w = d.textlength(text, font=f)   # long titles shrink to fit
         d.text(((1920 - w) // 2 + 4, y + 4), text, font=f, fill=(0, 0, 0)); d.text(((1920 - w) // 2, y), text, font=f, fill=col)
         y += size + 40
     im.save(path)
@@ -34,8 +35,8 @@ def captioned(src, dst, text, font):
 def main():
     a = argparse.ArgumentParser()
     a.add_argument('stills'); a.add_argument('--captions'); a.add_argument('--out', required=True)
-    a.add_argument('--title', default='Break Escape'); a.add_argument('--subtitle', default='Mission 1: First Contact')
-    a.add_argument('--end1', default='Play Mission 1 free'); a.add_argument('--end2', default='hacktivity.co.uk')
+    a.add_argument('--title', default='SAFETYNET: Licence to Hack'); a.add_argument('--subtitle', default='Mission 1: First Contact')
+    a.add_argument('--end1', default='Play now'); a.add_argument('--end2', default='hacktivity.co.uk')
     a.add_argument('--music', required=True); a.add_argument('--font', required=True)
     a.add_argument('--hold', type=float, default=3.0); a.add_argument('--xfade', type=float, default=0.5)
     a.add_argument('--card-secs', type=float, default=4.0); a.add_argument('--burn-captions', action='store_true')

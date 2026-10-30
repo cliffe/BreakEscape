@@ -4,8 +4,8 @@
 //   PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb m01_first_contact --set briefing_played=true
 // Record: run-take.sh t13_sarah_line "--set briefing_played=true" ""
 // Path: first_checkin 'Thanks. I'm here to audit...' > (badge/key lines skipped) hub 'I noticed the manager's office is vacant?' > 'That sounds suspicious'.
-import { sleep, clearScreen, watchVoice } from './lib.mjs';
-import { runDialogue } from './dlg.mjs';
+import { sleep, clearScreen, watchVoice } from '../lib/lib.mjs';
+import { runDialogue } from '../lib/dlg.mjs';
 export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await sleep(500); }
 export default async (page, bridge, mark) => {
   const vw = await watchVoice(page, mark);

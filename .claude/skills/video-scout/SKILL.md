@@ -74,15 +74,15 @@ On an empty database `new-game.rb` fails creating its DemoUser (`username:` wher
 
 ## Step 2: voiced lines (Part A)
 
-**Pool.** The same list the batch audio generator uses:
+**Pool.** The same list the batch audio generator uses (`BreakEscape::TtsLineExtractor`), dumped by a script:
 
-```ruby
-# scout_lines.rb, run with: bin/rails runner <path>/scout_lines.rb
-entries = BreakEscape::TtsLineExtractor.for_scenario("<mission>").entries
-File.write("<scratch>/entries.json", JSON.pretty_generate(entries))
+```bash
+export LANG=C.UTF-8 LC_ALL=C.UTF-8 BUNDLE_FORCE_RUBY_PLATFORM=true BE_DB_USER=root
+bin/rails runner tools/video/scout/dump-lines.rb <mission> <scratch>/lines.json [--max-words 12]
+# writes lines.json (npc_id, text, words, voice, ink file and path, knot) and lines.tsv, and prints a count per NPC
 ```
 
-Every entry is a whole ink line (the endpoint only accepts text the ink says for that NPC, so lines cannot be trimmed).
+`<mission>` is the scenario folder name (`m02_ransomed_trust`). Every entry is a whole ink line (the endpoint only accepts text the ink says for that NPC, so lines cannot be trimmed). The `path` column gives the ink file and the knot for the report's table; the conversation path from the NPC's start is still read from the ink.
 
 **Filters.** Keep a line only if it is:
 
@@ -92,23 +92,23 @@ Every entry is a whole ink line (the endpoint only accepts text the ink says for
 
 Note, but do not test, lines that are excluded on purpose (Agent HaX phone lines have no cached audio in m01: the briefing lines do; the finale lines are outside the spoiler rule unless the recipe names them).
 
-**Live test, through the real endpoint.** A line "has audio" only if the real `/tts` endpoint returns it. Reading the cache folder or predicting from the text is not a test (it matched in m01, but only the live run is evidence).
+**Live test, through the real endpoint.** A line "has audio" only if the real `/tts` endpoint returns it. Reading the cache folder or predicting from the text is not a test (it matched in m01, but only the live run is evidence). The tester posts as the client does (game page for the session cookie and CSRF token, then `POST <game>/tts` with `npc_id` and `text`), prints status and duration for each line, and always adds a control line:
 
 ```bash
-GAME=<game id>; B=http://127.0.0.1:3001/break_escape/games/$GAME
-curl -s -c cj.txt "$B" -o game.html
-CSRF=$(sed -n "s/.*csrfToken: '\([^']*\)'.*/\1/p" game.html | head -1)
-curl -s -b cj.txt -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' \
-  -d '{"npc_id":"<npc id>","text":"<exact ink text, stage directions kept>"}' \
-  -o clip.mp3 -w '%{http_code} %{content_type}\n' "$B/tts"
-ffprobe -v error -show_entries format=duration -of csv=p=0 clip.mp3
+node tools/video/scout/tts-test.mjs --server http://127.0.0.1:3001 --game <game id> --npc <npc id> \
+  --text "<exact ink text, stage directions kept>" --text "<another line>"
+node tools/video/scout/tts-test.mjs --server http://127.0.0.1:3001 --game <game id> --lines <scratch>/picked.json   # [{"npc_id","text"}], a subset of lines.json
+# PLAY<TAB>200<TAB>4.18 s<TAB>sarah_martinez<TAB>Next thing you know ...   (clips are saved under --out, default $BE_VIDEO_SCRATCH)
+# CONTROL<TAB>403 ... "control line refused: the check is live"   (exit 1 if the control is accepted)
 ```
+
+The game id comes from `new-game.rb` above (`GAME_ID=`). Use only a keyless server: it never generates, so a test costs nothing.
 
 | Result | Meaning |
 |---|---|
 | 200 `audio/mpeg` | cached and playable. Record the ffprobe duration |
 | 503 | no cached clip (keyless server tried to generate). Not usable. Expected for lines that were never voiced |
-| 403 | the text is not in that NPC's ink: a typo, or a control line. Always include one control line (text that appears in no ink) and confirm it is refused, so you know the check is live |
+| 403 | the text is not in that NPC's ink: a typo, or a control line. `tts-test.mjs` adds a control line (text that appears in no ink) itself and reports whether it was refused, so you know the check is live |
 | 404/400 | wrong npc id or no voice configured |
 
 The cache is keyed on text, voice, style wording, language and model. **A rewritten line has no cached audio.** If the mission's dialogue was edited after audio was generated, expect 503s and say so. Generating new audio is never part of a scout: see "Money" below.
@@ -123,7 +123,7 @@ Ground the table in the scenario and the map, not memory:
 - `ruby scripts/lighting_lookup.rb scenarios/<mission>/scenario.json.erb` shows which rooms strike their lights on entry.
 - `docs/video/recipes/<kind>.md` lists the slots (title, hook line, drop shot, minigame close-ups, NPC lines, antagonist line, walking shots). Fill each with candidates.
 
-For each candidate give: the entry state as the exact `new-game.rb` flags (`--start-room`, `--unlock`, `--set`, `--give`; `--help` lists them; `--give` cannot supply an item an NPC hands over in conversation, so a lockpick kit means playing the conversation in the take's `setup()`), whether an answer shows on screen, and a visual judgement (what it looks like in 2 s).
+For each candidate give: the entry state as the exact `new-game.rb` flags (`--start-room`, `--unlock`, `--set`, `--give`; `--help` lists them; `--give` cannot supply an item an NPC hands over in conversation, so a lockpick kit means playing the conversation in the take's `setup()`), whether an answer shows on screen, and a visual judgement (what it looks like in 2 s). To judge a take or an earlier render by eye, `tools/video/scout/extract-frames.sh <video> <out-dir> <t1> [t2 ...]` writes PNGs at those times plus a contact sheet (`--window <start> <length> [fps]` takes a run of frames).
 
 Things that bit m01:
 
@@ -140,7 +140,7 @@ Do not play the mission through. Entry states come from the scenario and ink and
 
 | Gate | Pass when |
 |---|---|
-| Lines | every listed line has a live result; one control line was refused 403; no line is listed without its path and entry state |
+| Lines | every listed line has a live result from `tts-test.mjs`; its control line was refused 403; no line is listed without its path and entry state |
 | Spoilers | no value copied into the report; every "answer on screen" cell filled |
 | Coverage | each slot in the recipe has at least two candidates, or the report says why not |
 | Environment | the report lists what the scout started and either stopped it or says it is still running (the m01 scout stopped the server and Postgres; the takes agent restarted them: say which) |

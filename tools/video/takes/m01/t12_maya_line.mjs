@@ -5,8 +5,8 @@
 // Record: run-take.sh t12_maya_line "--start-room maya_office --set briefing_played=true" ""
 // Path: first_meeting 'That's right...' > 'SAFETYNET sent me' > 'Tell me everything' > 'When does it launch?' (maya_v2_4) > hub 'What happened to Patricia?'
 // > 'That's suspicious timing' (maya_v2_1). Non-target lines are skipped.
-import { sleep, clearScreen, watchVoice } from './lib.mjs';
-import { runDialogue } from './dlg.mjs';
+import { sleep, clearScreen, watchVoice } from '../lib/lib.mjs';
+import { runDialogue } from '../lib/dlg.mjs';
 export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await sleep(500); }
 export default async (page, bridge, mark) => {
   const vw = await watchVoice(page, mark);

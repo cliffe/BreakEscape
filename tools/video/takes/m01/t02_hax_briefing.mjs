@@ -4,7 +4,7 @@
 // The briefing starts itself on game_loaded (just before the recording's start slate, so the first two lines may be missed; the take
 // starts at the first menu). Path: "How urgent is this?" -> "Whatever they're planning, it's active. And it's dangerous." (scout hax_1, 3.5 s).
 // Marks: line-start:/line-end:<text> for every voiced line; 'hax_1-done' after hax_1 has finished; then a linger.
-import { sleep, watchVoice } from './lib.mjs';
+import { sleep, watchVoice } from '../lib/lib.mjs';
 export default async (page, bridge, mark) => {
   const vw = await watchVoice(page, mark);
   // wait for the first menu (the opening two lines auto-advance, voiced)

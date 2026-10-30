@@ -4,16 +4,19 @@
 // Shot types: card, gameplay, title (first shot only). Joins: cut | glitch | blur | dissolve (glitch/blur/dissolve only next to a card or the title; 'card' follows effects.cardJoin).
 import fs from 'node:fs'; import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { takesDirFor } from './mission.mjs';
 import { buildTimeline, framingAt, visibleRect, ASPECTS, JOIN_FRAMES, isCardLike, sourceRef } from '../src/timeline.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '../../../..');
 const args = process.argv.slice(2); const final = args.includes('--final');
 const tdi = args.indexOf('--takes-dir');
 const file = args.find((a, i) => !a.startsWith('--') && !(tdi >= 0 && i === tdi + 1));
-const takesDir = args.includes('--takes-dir') ? args[args.indexOf('--takes-dir') + 1] : path.join(repo, 'video_out/m01/takes');
-if (!file) { console.error('usage: lint-edit.mjs <edit.json> [--final]'); process.exit(2); }
+if (!file) { console.error('usage: lint-edit.mjs <edit.json> [--final] [--takes-dir DIR]'); process.exit(2); }
 const edit = JSON.parse(fs.readFileSync(file, 'utf8'));
+let takesDir = tdi >= 0 ? args[tdi + 1] : null;   // default video_out/<edit.mission>/takes
+if (!takesDir && edit.mission) takesDir = takesDirFor(repo, edit, file);
 const errors = [], warns = [];
+if (!edit.mission) errors.push('edit: "mission" field missing (for example "mission": "m01"); takes and renders live under video_out/<mission>/');
 const E = (id, m) => errors.push(`${id}: ${m}`), W = (id, m) => warns.push(`${id}: ${m}`);
 const fps = edit.fps;
 if (!Number.isInteger(fps) || fps < 24) E('edit', 'fps must be an integer >= 24');
@@ -34,7 +37,7 @@ if (music.start != null && music.start + music.length > 0) {
 }
 if (edit.duck?.db == null || edit.duck.db > -8 || edit.duck.db < -10.5) W('duck', 'plan asks for -8 to -10 dB under dialogue');
 if (!edit.audio?.fade_ms || edit.audio.fade_ms < 5 || edit.audio.fade_ms > 10) E('audio', 'fade_ms must be 5-10');
-const takeFiles = fs.existsSync(takesDir) ? new Set(fs.readdirSync(takesDir)) : new Set();
+const takeFiles = takesDir && fs.existsSync(takesDir) ? new Set(fs.readdirSync(takesDir)) : new Set();
 const clipDirs = [path.join(repo, 'tools/video/assets/placeholders'), path.join(repo, 'tools/video/assets/clips'), ...(process.env.BE_CLIPS_DIR ? [process.env.BE_CLIPS_DIR] : [])];
 const clipFiles = new Set(clipDirs.flatMap((d) => (fs.existsSync(d) ? fs.readdirSync(d) : [])));
 const brandDir = path.join(repo, 'tools/video/assets/brand');

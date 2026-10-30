@@ -4,8 +4,8 @@
 // Record: run-take.sh t17_walk_kevin "--start-room it_room --set briefing_played=true" "--hide-hud --zoom-step 1"
 // setup() (before recording): move the player to the far start point (250, 235; the player stops where the path ends). The take: 1.2 s establishing hold, walk the legs, 3.2 s hold.
 // Marks: walk-start, leg:<dir>, walk-end.
-import { sleep, clearScreen } from './lib.mjs';
-import { keyLegs } from './walklib.mjs';
+import { sleep, clearScreen } from '../lib/lib.mjs';
+import { keyLegs } from '../lib/walklib.mjs';
 const SPEED = 105;   // px/s, measured from the leg timings of earlier runs (a 400 ms probe walk is unreliable)
 export async function setup(page, bridge) {
   await clearScreen(page, bridge, () => {});

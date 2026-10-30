@@ -3,7 +3,7 @@
 //   PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb m01_first_contact --set briefing_played=true --unlock main_office_area
 // Record: run-take.sh t03_lights_on "--set briefing_played=true --unlock main_office_area" "--hide-hud --zoom-step 1"
 // Marks: door-open, lights-on:main_office_area (the payoff), linger-end.
-import { sleep, clearScreen, walk, watchLights } from './lib.mjs';
+import { sleep, clearScreen, walk, watchLights } from '../lib/lib.mjs';
 export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); }   // off camera: Mission Brief notes + tutorial prompt
 export default async (page, bridge, mark) => {
   const lights = await watchLights(page, mark, 'main_office_area');

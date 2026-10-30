@@ -7,7 +7,7 @@ description: Selects shots and builds, lints and renders a SAFETYNET video from 
 
 From recorded takes to a finished render. Three jobs in order: the **selects** (orchestrator), the **edit list** (Sonnet fills it from the selects), the **render** (Sonnet runs it, the orchestrator checks it). The recipe for the kind of video (`docs/video/recipes/`) gives the beat sheet; `docs/video/recipes/mission-trailer.md` is the m01 60 s structure as a template. House style is `docs/video/GUIDELINES.md`: read it, it is the source for fonts, cards, joins, pixels and sound.
 
-Worked example to copy: `tools/video/edits/m01_trailer60.json` (v4, 25 shots, 60.00 s). Remotion project: `tools/video/remotion/` (Remotion 4.0.530; the free licence applies, user-confirmed 2026-10-29).
+Worked example to copy: `tools/video/edits/m01_trailer60.json` (v5, 24 shots, 60.00 s). Remotion project: `tools/video/remotion/` (Remotion 4.0.530; the free licence applies, user-confirmed 2026-10-29).
 
 ## Who does this
 
@@ -44,10 +44,11 @@ Check the first and last frame of every window, and every frame where something 
 
 Only the game's own tracks (`public/break_escape/assets/music/`, original and cleared). **A different track for each mission.** The record is the mission-to-music table in `docs/video/recipes/README.md`: read it first, choose a track that no mission has used, and add the row when the edit is final.
 
-Analyse the beat grid first (needs librosa; the container does not have it installed system-wide, so use a venv: `python3 -m venv <scratch>/venv && <scratch>/venv/bin/pip install librosa`, run under `nice -n 19`):
+Analyse the beat grid first (needs librosa, which is not installed system-wide. One-time setup in a scratch folder that `render.sh` does not delete, pinned by `tools/video/edits/music/requirements.txt`; about a minute:
+`BE_MUSIC_VENV=<scratch>/music-venv tools/video/edits/music/setup-venv.sh`. Run the analysis under `nice -n 19`):
 
 ```bash
-nice -n 19 <scratch>/venv/bin/python tools/video/edits/music/analyse_music.py --length 60 tools/video/edits/music "public/break_escape/assets/music/<Set>/<Track>.mp3"
+nice -n 19 "$BE_MUSIC_VENV/bin/python" tools/video/edits/music/analyse_music.py --length 60 tools/video/edits/music "public/break_escape/assets/music/<Set>/<Track>.mp3"
 # writes tools/video/edits/music/<slug>_60.json: bpm, beat offset, bars, strongest hits, per-bar energy, best windows
 ```
 
@@ -55,7 +56,7 @@ Look for a window with a quiet opening (title and the hook line), a drop at abou
 
 ## Step 3: fill the edit list
 
-Top level: `id`, `title`, `fps` (30, integer, at least 24), `length`, `music` (`track`, `analysis`, `start`, `length`, `gain_db`, `fade_in`, `fade_out`), `beat` (`bpm`, `period`, `offset`), `duck` (`db: -10`, `attack`, `release`), `audio` (`fade_ms: 8`, `target_lufs: -14`, `true_peak: -1.5`), `aspects`, `shots`, `effects` (`cardJoin`: `glitch` or `dissolve`).
+Top level: `mission` (`m01`, `m02`, `sis01`; a scenario id such as `m02_ransomed_trust` is shortened to its key; required: lint errors without it), `id`, `title`, `fps` (30, integer, at least 24), `length`, `music` (`track`, `analysis`, `start`, `length`, `gain_db`, `fade_in`, `fade_out`), `beat` (`bpm`, `period`, `offset`), `duck` (`db: -10`, `attack`, `release`), `audio` (`fade_ms: 8`, `target_lufs: -14`, `true_peak: -1.5`), `aspects`, `shots`, `effects` (`cardJoin`: `glitch` or `dissolve`).
 
 Shot types: `title` (first shot only, optional Veo `clip`), `card` (`text[]`; `kind: logo`/`logo_end` for the closing logos), `gameplay` (`source {file, in, out}` for a take, or `{type: "clip", file, in, out}` for a clip), `cta` (a Veo `clip`, `phases[]`, `curtain` timing). Per shot: `duration`, `snap`, `join {type: cut|glitch|blur|dissolve|card, pin, frames}`, `framing {aspect: {cx, cy, zoom}}`, `audio {gain_db, dialogue, duck_music, pre}`, `lines[]` (for the .srt and captions), `hit`, `caption`, `placeholder`, `spoiler {reviewed, shows_code, shows_identity, shows_ending, keypad_partial, note}`.
 
@@ -69,23 +70,23 @@ Rules the lint enforces (read `tools/video/remotion/scripts/lint-edit.mjs` for t
 Brand and card rules (user, 2026-10-30; also in the recipes):
 
 - The game title (`SAFETYNET: Licence to Hack`, pixel SVG over the keyhole art, integer scale 12x/16x/15x) opens the video. **Hacktivity Games signs off at the end, on the red hex curtain** (the `cta` shot's logo morphs Labs to Games). **"Break Escape" never appears on screen**, not in cards, captions, filenames shown on screen or end cards.
-- **The call to action says "Play now".** The v4 edit said "Play Mission 1 / Free!"; the working copy of `m01_trailer60.json` (v5, uncommitted when this was drafted) already reads "Play now". Check the `cta` phase text of any edit you copy from, and never copy the old wording into a new one (gap 3 in `docs/video/recipes/README.md`).
+- **The call to action says "Play now".** The v4 edit said "Play Mission 1 / Free!"; `m01_trailer60.json` (v5) reads "Play now". Check the `cta` phase text of any edit you copy from (`m01_teaser.json` is the old v1 style and still says "Play Mission 1": do not copy it), and never copy the old wording into a new one.
 - Cards are white Press Start 2P on the navy-to-purple gradient with the glitched mirrored reflection. Mission trailers name the mission on the card ("Mission 2 / ...").
 
 ## Step 4: lint, then render
 
 ```bash
 cd /home/user/BreakEscape
-node tools/video/remotion/scripts/lint-edit.mjs tools/video/edits/<mission>_<kind>.json          # drafts
+node tools/video/remotion/scripts/lint-edit.mjs tools/video/edits/<mission>_<kind>.json          # drafts; reads takes from video_out/<edit.mission>/takes
 node tools/video/remotion/scripts/lint-edit.mjs tools/video/edits/<mission>_<kind>.json --final   # before a real render: placeholders, missing files and unreviewed spoilers become errors
 export BE_VIDEO_SCRATCH=<scratchpad>/render-<edit id>-16x9     # see the trap below
 nice -n 19 tools/video/remotion/render.sh tools/video/edits/<mission>_<kind>.json 16:9 --final
 # repeat, one at a time, for 9:16 and 1:1
 ```
 
-`render.sh` syncs assets, lints, renders silent video through Remotion at concurrency 1, builds the audio mix (music window with a smooth duck, take audio with 8 ms fades, J-cuts), runs a two-pass `loudnorm` to **-14 LUFS with true peak under -1 dBTP**, muxes, writes the `.srt` and a contact sheet. Timing: about 15 minutes per 30 s of video at one thread (SVG filters on cards are the cost), about 30 minutes for 60 s. Run in the background and poll; render jobs of this length can be cut by a session limit, so write the resume note.
+`render.sh` takes the mission from the edit list's `mission` field, reads takes from `video_out/<mission>/takes` and writes `video_out/<mission>/renders/<id>_<aspect>.{mp4,srt,contact.png}`. It syncs assets, lints, renders silent video through Remotion at concurrency 1, builds the audio mix (music window with a smooth duck, take audio with 8 ms fades, J-cuts), runs a two-pass `loudnorm` to **-14 LUFS with true peak under -1 dBTP**, muxes, writes the `.srt` and a contact sheet. Timing: about 15 minutes per 30 s of video at one thread (SVG filters on cards are the cost), about 30 minutes for 60 s. Run in the background and poll; render jobs of this length can be cut by a session limit, so write the resume note.
 
-**Takes folder gap:** `lint-edit`, `mix-audio` and `make-srt` default to `video_out/m01/takes` and `render.sh` does not pass `--takes-dir`. Until that is fixed, copy or symlink the new mission's `*.trimmed.mkv` and `.markers.json` into `video_out/m01/takes/` with mission-prefixed names, or run the stages by hand with `--takes-dir`. `BE_TAKES_DIR` (asset sync) and `BE_RENDER_DIR` (output folder, set it to `video_out/<mission>/renders`) are honoured.
+`render.sh` passes the takes folder to the asset sync, lint, mix and `.srt` steps. Overrides for odd layouts: `BE_TAKES_DIR` (takes folder) and `BE_RENDER_DIR` (output folder); the stage scripts also take `--takes-dir`. A missing `mission` field stops the render at lint.
 
 ### Traps
 

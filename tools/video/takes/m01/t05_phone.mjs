@@ -4,7 +4,7 @@
 // Record: run-take.sh t05_phone "--set briefing_played=true" ""   (no --hide-hud: the phone is opened from the inventory tray)
 // Path: open the phone from the inventory, pick Agent HaX, "Got any general advice?", then "What about Maya?" (no culprit named; the Maya line says she is the informant: editor's call).
 // Marks: phone-open, contact-picked, choice:<text>, reply-settled:<n>, linger-end.
-import { sleep, clearScreen, awaitChoice } from './lib.mjs';
+import { sleep, clearScreen, awaitChoice } from '../lib/lib.mjs';
 
 export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await sleep(500); }
 

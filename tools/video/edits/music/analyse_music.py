@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""Music analysis for the trailer edits. Usage (venv with librosa):
-  analyse_music.py [--length SECONDS] <out_dir> <track.mp3> [<track.mp3> ...]
+"""Music analysis for the trailer edits. Needs librosa, which is not installed system-wide. One-time setup (a scratch path, not BE_VIDEO_SCRATCH):
+  BE_MUSIC_VENV=<scratch>/music-venv tools/video/edits/music/setup-venv.sh      (installs requirements.txt next to this file)
+Usage:
+  nice -n 19 "$BE_MUSIC_VENV/bin/python" tools/video/edits/music/analyse_music.py [--length SECONDS] <out_dir> <track.mp3> [<track.mp3> ...]
   (--length picks the window length to score, default 30; the output file is then <slug>_<length>.json)
 Writes <out_dir>/<slug>.json per track: duration, bpm, beat offset, bar grid,
 strongest hits, per-bar energy, and a best 30 s window (bar aligned) with a

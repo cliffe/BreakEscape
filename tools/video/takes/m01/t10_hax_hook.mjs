@@ -5,8 +5,8 @@
 // Record: run-take.sh t10_hax_hook "" ""
 // Path: 'What are they doing?' > (briefing_threat lines skipped) 'What kind of data?' > data_concerns: "Large-scale data aggregation..." (skipped)
 // > the target line plays in full. Marks: line-start:/line-end: for every voiced line, hax_v2_1-done, targets-done.
-import { sleep, watchVoice } from './lib.mjs';
-import { runDialogue } from './dlg.mjs';
+import { sleep, watchVoice } from '../lib/lib.mjs';
+import { runDialogue } from '../lib/dlg.mjs';
 export default async (page, bridge, mark) => {
   const vw = await watchVoice(page, mark);
   let d = null;

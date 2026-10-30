@@ -44,24 +44,31 @@ From the takes table, list moments that read as a good screenshot on their own i
 
 Aim for variety: no two stills of the same room unless the content differs, a spread across cast and minigames, at most two dialogue portraits of one character. Drop dark frames (a flag terminal in the dark was the weakest m01 still).
 
-## Step 2: extract frames
+## Step 2: extract frames, then make the pack
 
-Haiku, per window, with nearest-neighbour scaling (the game is pixel art; never smooth it):
-
-```bash
-mkdir -p <scratch>/stills-<mission>/cand
-ffmpeg -v error -ss <in> -t <len> -i video_out/<mission>/takes/<id>.trimmed.mkv \
-  -vf "fps=2,scale=1920:1080:flags=neighbor" <scratch>/stills-<mission>/cand/<id>_%03d.png
-# contact sheet of a folder, numbered:
-ffmpeg -v error -pattern_type glob -i '<scratch>/stills-<mission>/cand/<id>_*.png' \
-  -vf "scale=384:-2:flags=neighbor,tile=6x5:padding=4:color=black" -frames:v 1 <scratch>/stills-<mission>/cand/<id>.sheet.png
-```
-
-Frames of a take are exactly the page at 1920x1080 and 2x pixel scale: no resize is needed for a full frame. For a crop that fills the frame, crop on whole source pixels and scale by an **integer factor, 2x or 3x, nearest-neighbour** (m01: crops at 2x and 3x), so pixels stay square:
+Haiku, per window: `tools/video/scout/extract-frames.sh` writes frames at chosen times, or every 0.5 s of a window, plus a numbered-by-order contact sheet. Native size is the page at 1920x1080; the game is pixel art, so anything scaled is nearest-neighbour (`SCALE=960x540` for review thumbnails).
 
 ```bash
-ffmpeg -v error -i in.png -vf "crop=960:540:480:270,scale=1920:1080:flags=neighbor" out.png
+tools/video/scout/extract-frames.sh video_out/<mission>/takes/<id>.trimmed.mkv <scratch>/stills-<mission>/cand 3.5 6 8.5
+tools/video/scout/extract-frames.sh video_out/<mission>/takes/<id>.trimmed.mkv <scratch>/stills-<mission>/cand-<id> --window <start> <length> 2
 ```
+
+The orchestrator looks at each candidate at full size and picks. Sonnet then writes a picks file and runs the script, which makes the final PNGs, `captions.json` and `contact.png` in one go:
+
+```json
+{ "mission": "m02", "stills": [
+  { "take": "t13_npc_line", "time": 3.5, "caption": "Reception: your way in.", "slug": "reception" },
+  { "take": "t06_keypad", "time": 4.0, "crop": [480, 270, 960, 540], "caption": "A keypad, three digits in.", "slug": "keypad" } ] }
+```
+
+```bash
+nice -n 19 node tools/video/stills/make-stills.mjs <picks.json> [--out <dir>]    # default video_out/<mission>/stills/
+```
+
+- `take` is a take id (`video_out/<mission>/takes/<take>.trimmed.mkv`); `time` is seconds in the trimmed take (the clock of its `.trimmed.markers.json`).
+- `crop` is `[x, y, w, h]` in take pixels. It must scale to 1920x1080 by a whole number: `w` divides 1920 and `h` = `w` x 9 / 16 (960x540 is 2x, 640x360 is 3x). The script refuses any other crop, so pixels stay square. Crops are nearest-neighbour; nothing is smoothed.
+- Files are numbered in list order (`01_<slug>.png`). `captions.json` records the take, time and crop as each still's `source`; captions with an em dash are refused. `contact.png` is numbered to match.
+- Spoiler checks are not automated: step 3 is still the orchestrator's, at full size. Rerun the script after dropping or reordering picks (it overwrites the numbered files; delete leftovers from a longer earlier run).
 
 ## Step 3: spoiler and quality gate (orchestrator)
 
@@ -79,9 +86,7 @@ Record the outcome per still (kept, dropped and why). Fewer clean stills beat mo
 
 ## Step 4: write captions and assemble
 
-`captions.json` entries are short, plain UK English, no em dashes, one sentence naming what the player does or sees: "Reception: your way in, and a receptionist who sees everything." Avoid spoilers and avoid claims the game does not support. Number files in the order they should be shown (a story order: briefing, arrival, tools, minigames, characters, the threat).
-
-Also write a contact sheet of the final set (`contact.png`) and, if the recipe asks for platform crops, 9:16 and 1:1 versions framed on the subject, with a 9:16 framing check on each.
+`captions.json` entries are short, plain UK English, no em dashes, one sentence naming what the player does or sees: "Reception: your way in, and a receptionist who sees everything." Avoid spoilers and avoid claims the game does not support. Put the picks in the order they should be shown (a story order: briefing, arrival, tools, minigames, characters, the threat): the script numbers the files from that order and writes `captions.json` and `contact.png` from the picks file. If the recipe asks for platform crops, make the 9:16 and 1:1 versions framed on the subject, with a 9:16 framing check on each.
 
 ## Step 5: platform notes
 
@@ -101,13 +106,14 @@ Google Drive export is the last stage of `video-review` ("Export"), not here.
 | Spoilers | every still checked by the orchestrator at full size, logged |
 | Pixels | integer scales only, nearest-neighbour, crisp at 100% |
 | Captions | one per still, in `captions.json`, UK English, no em dashes |
-| No slideshow video | none made. The old `tools/video/slideshow/` tool exists, but its defaults print "Break Escape" and "Play Mission 1 free", which break the brand rules: if a reel is ever wanted, pass `TITLE`, `SUBTITLE`, `END1` and `END2` explicitly and tell the user |
+| No slideshow video | none made. The old `tools/video/slideshow/` tool exists (defaults now "SAFETYNET: Licence to Hack" and "Play now", but the subtitle still says "Mission 1: First Contact": pass `SUBTITLE` for any other mission). Do not use it unless the user asks for a reel |
 
 ## Traps
 
 - Frame extraction contention: extraction is light, but do not extract during a capture if the machine is loaded (`uptime`).
 - A still of a take's first seconds can show the sync slate (white frame): the trimmed take starts after it, but check frame 0.
-- m01's stills were cut by hand from take frames in the session scratchpad; there is no checked-in script for it (gap 4 in `docs/video/recipes/README.md`). Do the commands above and save any helper under `tools/video/stills/` only if the user asks.
+- A crop that the script refuses is a framing problem, not a bug: pick another whole-number crop rather than scaling by a fraction.
+- The Step 5 platform crops (9:16, 1:1) are not scripted: crop the 1920x1080 PNGs by hand with `ffmpeg -vf crop=...` on whole source pixels, and check each framing by eye.
 
 ## Related
 

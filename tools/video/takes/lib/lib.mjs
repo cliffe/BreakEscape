@@ -1,4 +1,4 @@
-// Shared helpers for the m01 take scripts: voice-line watcher, dialogue pacing, HUD/minigame cleanup.
+// Shared helpers for take scripts (any mission): voice-line watcher, dialogue pacing, HUD/minigame cleanup. Mission-specific gates and room names live in takes/<mission>/.
 export const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 /**

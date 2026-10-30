@@ -5,8 +5,8 @@
 // Record: run-take.sh t18_walk_maya "--start-room hallway_east --set briefing_played=true" "--hide-hud --zoom-step 1"
 // The take: 1.2 s hold in the hallway, enterRoom('maya_office') (the game's room transition), walk the legs, 3 s hold.
 // Marks: enter-room, room-entered, walk-start, leg:<dir>, walk-end.
-import { sleep, clearScreen } from './lib.mjs';
-import { keyLegs } from './walklib.mjs';
+import { sleep, clearScreen } from '../lib/lib.mjs';
+import { keyLegs } from '../lib/walklib.mjs';
 const SPEED = 105;   // px/s, from the leg timings of earlier runs
 export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await sleep(800); }
 export default async (page, bridge, mark) => {

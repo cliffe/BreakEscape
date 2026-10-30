@@ -4,7 +4,7 @@
 // Entry state: head-start in it_room:
 //   PLAYTEST_PORT=3001 BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb m01_first_contact --start-room it_room --set briefing_played=true
 // Record: run-take.sh t07_terminal "--start-room it_room --set briefing_played=true" "--hide-hud --zoom-step 1"
-import { sleep, clearScreen } from './lib.mjs';
+import { sleep, clearScreen } from '../lib/lib.mjs';
 
 export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await sleep(500); }
 

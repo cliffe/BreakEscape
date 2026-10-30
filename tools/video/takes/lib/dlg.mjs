@@ -1,4 +1,4 @@
-// Shared dialogue driver for the v2 trailer takes (t10-t13): follows a scripted choice path, lets TARGET lines play in full with voice
+// Shared dialogue driver for dialogue takes: follows a scripted choice path, lets TARGET lines play in full with voice
 // marks, skips every other line after a short dwell. Spec: { steps: [regex,...], targets: [{name, re}], lingerMs }.
 import { sleep } from './lib.mjs';
 

@@ -52,21 +52,29 @@ One track per mission. Before choosing, read this table; after the edit is final
 
 Not tied to a mission: the m01 slideshow used Noir "Shadow In E Minor" (the slideshow video was dropped; the track is free to use).
 
-## Known gaps a skill had to work around
+## Tooling gaps
 
-Found while drafting the skills. None was fixed (no tooling was changed). The orchestrator decides which to fix; each skill states its workaround.
+Draft (2026-10-30). The mission-generalisation pass (same day) closed gaps 1, 4, 5, 7, 8, 13 and 14 and part of 3. Numbers stay as they were because recipes cite them (gap 6, gap 11). The orchestrator decides which open gap to fix next.
 
-1. **Mission names are hard-coded to m01 in the tooling.** `tools/video/takes/m01/run-take.sh` writes `m01_first_contact` and `video_out/m01/takes`. `render.sh` defaults its output to `video_out/m01/renders` (`BE_RENDER_DIR` overrides). `lint-edit.mjs`, `mix-audio.mjs` and `make-srt.mjs` default to `video_out/m01/takes`, and `render.sh` does not pass `--takes-dir` (only `sync-assets.mjs` honours `BE_TAKES_DIR`). Workaround: copy `run-take.sh` per mission, prefix take ids with the mission and keep trimmed takes in `video_out/m01/takes/`. Fix: take a `--mission` or `BE_MISSION` and pass `--takes-dir` through.
-2. **Container setup scripts.** `tools/playtest/new-game.rb` creates its DemoUser with `username:` where the column is `handle`, so it fails on an empty database; `tools/playtest/start-keyless-server.sh` uses `bundle exec rails`, not found here (`bin/rails server` works). The dev database needs the root role and `app:db:prepare` first.
-3. **The m01 v4 trailer edit said "Play Mission 1 / Free!"** (the cta phase text). The user's rule is "Play now"; the working copy of `m01_trailer60.json` (v5) already reads "Play now", but check any edit you copy from. The old `m01_teaser.json` is the v1 style (a Break Escape wordmark) and is obsolete as a template.
-4. **No stills script.** The m01 stills were cut by hand in a session scratchpad. `video-stills` gives the ffmpeg commands.
-5. **`tools/video/slideshow/` defaults break the brand rules** (`TITLE="Break Escape"`, "Play Mission 1 free") and the user dropped the slideshow video. Not used by any recipe.
+### Closed
+
+- **1. Mission names hard-coded to m01.** `tools/video/takes/run-take.sh <mission> <take id> ...` (the m01 form `run-take.sh <take id>` still works), take scripts in `tools/video/takes/<mission>/`, outputs in `video_out/<mission>/takes/`. Edit lists carry `"mission"`; `render.sh` reads takes from `video_out/<mission>/takes`, writes `video_out/<mission>/renders/`, and passes the takes folder to sync, lint, mix and `.srt` (`--takes-dir`, `BE_TAKES_DIR` and `BE_RENDER_DIR` override).
+- **3 (in part). The "Play Mission 1" wording.** `m01_trailer60.json` (v5) says "Play now". Still open: `m01_teaser.json` is the old v1 style (Break Escape wordmark, "Play Mission 1") and is obsolete as a template.
+- **4. No stills script.** `tools/video/stills/make-stills.mjs` (picks file to 1920x1080 nearest-neighbour PNGs, `captions.json`, `contact.png`).
+- **5. Slideshow defaults.** Now "SAFETYNET: Licence to Hack" and "Play now" (the subtitle default is still "Mission 1: First Contact"). Not used by any recipe.
+- **7. librosa and no venv path.** `tools/video/edits/music/requirements.txt` and `setup-venv.sh` (`BE_MUSIC_VENV=<scratch path>`), referenced from `analyse_music.py`.
+- **8. Scout helpers lost.** `tools/video/scout/dump-lines.rb` (voiced-line pool), `tts-test.mjs` (live `/tts` test with a control line) and `extract-frames.sh` (times or a window to PNGs and a contact sheet).
+- **13 (in part). m01-only global.** The take helpers no longer hold any mission gate; `briefing_played` appears only in m01's take scripts and headers. Each new mission still has to find its own opening-cutscene gate (the takes skill says so).
+- **14. Take helpers in `takes/m01/`.** Now `tools/video/takes/lib/` (`lib.mjs`, `dlg.mjs`, `walklib.mjs`), imported as `../lib/lib.mjs`.
+
+### Still open
+
+2. **Container setup scripts.** `tools/playtest/new-game.rb` creates its DemoUser with `username:` where the column is `handle`, so it fails on an empty database; `tools/playtest/start-keyless-server.sh` uses `bundle exec rails`, not found here (`bin/rails server` works). The dev database needs the root role and `app:db:prepare` first. (Not changed: `tools/playtest/` was out of scope.)
+3. **`m01_teaser.json` is obsolete** (see above). Do not copy it; use `m01_trailer60.json`.
 6. **Burned captions are per dialogue shot and per aspect only** (`caption[aspect]`, from `lines[]`). There is no caption overlay for narration over cards, and no "burn everything" switch for social cuts.
-7. **`analyse_music.py` needs librosa**, which is not installed system-wide, and no venv path is recorded. `video-edit` shows a venv recipe.
-8. **Scout helpers were scratch scripts.** The line dump, the live `/tts` test and the frame extraction were run from the session scratchpad and lost. `video-scout` and `video-stills` give the commands to re-create them.
 9. **The Veo prompts the user used for the m01 pair were not saved** (only the outputs and source URLs in `tools/video/assets/clips/README.md`). `title-launch-clips.md` drafts new ones and asks that the final prompts go into that README.
 10. **No real VM footage.** The "Real Hacking" slot uses `real_hacking_kali.mp4` (the old trailer's Kali footage, m01-specific: its Hydra shot names user `derek`). Fix: in-game VM capture (coming).
 11. **HaX narration needs fixed ink text.** The TTS endpoint voices only lines the NPC's ink says. Briefings and explainers voiced by HaX therefore need new fixed lines added to ink (or to a narration source) and a paid generation. `hax-briefing.md` and `concept-explainer.md` mark this.
 12. **Export to Google Drive has no mechanism yet.** `video-review` Step 6 is a marked stage.
-13. **The m01 take scripts use an m01-only global** (`briefing_played`) to stop the opening cutscene. Each mission needs its own gate found in its opening; the takes skill says so.
-14. **The take helpers (`lib.mjs`, `dlg.mjs`, `walklib.mjs`) live in `takes/m01/`.** New mission takes import them from there (`../m01/lib.mjs`); a shared folder would be cleaner.
+15. **Not yet run on a second mission.** The generalised tooling was checked on m01 only (lint, one Remotion frame, three stills, the TTS tester, frame extraction); no capture or render ran. A dry run on m02 is the real test: expect to find that mission's opening-cutscene gate and VM shots.
+16. **The platform crops of the stills pack (9:16, 1:1) are by hand**, and the stills script does not check spoilers.

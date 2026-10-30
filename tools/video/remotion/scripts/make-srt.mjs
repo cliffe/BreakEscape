@@ -4,11 +4,14 @@
 // from shot.lines[] in the edit list, or, when none, from <take>.trimmed.markers.json / .markers.json events
 // labelled like "line-start"/"line-end" (data: {speaker, text}). Lines are clipped to the shot's in/out span and mapped to the timeline.
 import fs from 'node:fs'; import path from 'node:path'; import { fileURLToPath } from 'node:url';
+import { takesDirFor } from './mission.mjs';
 import { buildTimeline } from '../src/timeline.js';
 const here = path.dirname(fileURLToPath(import.meta.url)); const repo = path.resolve(here, '../../../..');
 const a = process.argv.slice(2); const [editFile, out] = a;
-const ti = a.indexOf('--takes-dir'); const takesDir = ti >= 0 ? a[ti + 1] : path.join(repo, 'video_out/m01/takes');
-const edit = JSON.parse(fs.readFileSync(editFile, 'utf8')); const tl = buildTimeline(edit);
+const ti = a.indexOf('--takes-dir');
+const edit = JSON.parse(fs.readFileSync(editFile, 'utf8'));
+const takesDir = ti >= 0 ? a[ti + 1] : takesDirFor(repo, edit, editFile); // default video_out/<edit.mission>/takes
+const tl = buildTimeline(edit);
 const ts = (t) => { const ms = Math.round(t * 1000); const h = Math.floor(ms / 3600000), m = Math.floor(ms / 60000) % 60, s = Math.floor(ms / 1000) % 60; return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(ms % 1000).padStart(3, '0')}`; };
 function linesFromMarkers(s) {
   const base = s.source.file.replace(/\.trimmed\.mkv$/, '');

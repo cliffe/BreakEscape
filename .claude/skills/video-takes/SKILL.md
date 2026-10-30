@@ -24,12 +24,19 @@ Brief the agent with: this skill, the picks file, the take ids and entry states 
 | `.../<id>.trimmed.markers.json`, `<id>.check.json`, `<id>.contact.jpg` | marks in the trimmed file's clock, check result, contact sheet (1 frame per second) |
 | `docs/video/takes_<mission>.md` | the table: id, entry state flags, length, drop %, A/V offset, key marks checked against frames, problems |
 
-## Step 0: work around the m01-only tooling
+## Step 0: where things live
 
-`run-take.sh`, `lib.mjs`, `dlg.mjs` and `walklib.mjs` live in `tools/video/takes/m01/`, and `run-take.sh` has `m01_first_contact` and `video_out/m01` written into it. The remotion lint, mix and `.srt` scripts also default to `video_out/m01/takes`, and `render.sh` does not pass `--takes-dir`. Until the user approves parametrising them, a new mission does this (no existing file changes):
+The tooling is mission-aware. A mission is named by its short key (`m02`, `sis01`) or its scenario id (`m02_ransomed_trust`); both work as the first argument of `run-take.sh`, and the scenario id is looked up in `scenarios/<key>_*`.
 
-1. Create `tools/video/takes/<mission>/`. Copy `run-take.sh` there and replace `m01_first_contact` and `video_out/m01/takes` with the new mission and `video_out/<mission>/takes`. Import the helpers from `../m01/lib.mjs`, `../m01/dlg.mjs`, `../m01/walklib.mjs` in take scripts (do not copy them, so a fix lands once).
-2. **Name each take with the mission as a prefix** (`m02_t01_hax_hook`) and copy the trimmed files into `video_out/m01/takes/` (or symlink them) before the edit stage, because lint, mix-audio and make-srt read that folder. Record the choice in the takes table. This is gap 1 in `docs/video/recipes/README.md`.
+| What | Where |
+|---|---|
+| The recorder script | `tools/video/takes/run-take.sh <mission> <take id> ...` (`takes/m01/run-take.sh <take id>` still works and means m01) |
+| Take scripts | `tools/video/takes/<mission>/<take id>.mjs`; make the folder for a new mission |
+| Shared helpers | `tools/video/takes/lib/`: `lib.mjs`, `dlg.mjs`, `walklib.mjs`. Import them as `../lib/lib.mjs` and so on. Do not copy them: a fix lands once |
+| Mission-specific bits | in the mission's own folder: the opening-cutscene gate (m01's `briefing_played`), room names, coordinates, a shared `setup()` such as `t04_lockpick.mjs` exports |
+| Outputs | `video_out/<mission>/takes/` |
+
+Take ids need no mission prefix: the folder separates missions (`m02` and `m01` can both have a `t01_title`). The edit list's `"mission"` field points lint, mix, `.srt` and render at the same folder.
 
 ## Step 1: bring the capture environment up
 
@@ -49,8 +56,8 @@ The X screen is 1928x1088 so a 1920x1080 window is not shrunk by 1 px (Chromium 
 Header comment first (every m01 take has one): what it records, the entry state as the exact `new-game.rb` flags, the `run-take.sh` line, the path of choices, and the marks it writes. Skeleton:
 
 ```js
-import { sleep, clearScreen, watchVoice } from '../m01/lib.mjs';
-import { runDialogue } from '../m01/dlg.mjs';
+import { sleep, clearScreen, watchVoice } from '../lib/lib.mjs';
+import { runDialogue } from '../lib/dlg.mjs';
 export async function setup(page, bridge) { await clearScreen(page, bridge, () => {}); await sleep(500); }   // before recording starts
 export default async (page, bridge, mark) => {      // mark('label', {data}) logs a take-relative time
   const vw = await watchVoice(page, mark);          // writes line-start:/line-end: marks from real TTS playback
@@ -58,11 +65,11 @@ export default async (page, bridge, mark) => {      // mark('label', {data}) log
 };
 ```
 
-Helpers: `lib.mjs` (`watchVoice`, `clearScreen`, `pickChoice`, `awaitChoice`), `dlg.mjs` (`runDialogue` follows a scripted choice path, plays target lines in full and skips others after a short dwell), `walklib.mjs` (`keyLegs`: key-driven walking with no click marker). Take scripts to copy from: `t13_sarah_line.mjs` (dialogue), `t06_keypad_v3.mjs` (PIN close-up), `t04_lockpick.mjs` (setup off camera, real picking), `t14_cyberchef.mjs` (overlay tool), `t16_walk_sarah.mjs` (walking), `t01_title.mjs` (title screen), `t09_derek.mjs` (finale line).
+Helpers in `tools/video/takes/lib/`: `lib.mjs` (`watchVoice`, `clearScreen`, `pickChoice`, `awaitChoice`), `dlg.mjs` (`runDialogue` follows a scripted choice path, plays target lines in full and skips others after a short dwell), `walklib.mjs` (`keyLegs`: key-driven walking with no click marker). Take scripts to copy from (all in `tools/video/takes/m01/`): `t13_sarah_line.mjs` (dialogue), `t06_keypad_v3.mjs` (PIN close-up), `t04_lockpick.mjs` (setup off camera, real picking), `t14_cyberchef.mjs` (overlay tool), `t16_walk_sarah.mjs` (walking), `t01_title.mjs` (title screen), `t09_derek.mjs` (finale line).
 
 ### Entry state
 
-Use the cheapest head-start from the scout, as `new-game.rb --help` lists: `--start-room`, `--unlock`, `--set name=value`, `--give`, `--complete-task`, `--submit-flag`. m01 needs `--set briefing_played=true` to stop the opening briefing opening itself; find the equivalent gate in the new mission's opening cutscene and say what you chose. Head-start games open a Mission Brief notes minigame: `clearScreen` closes it in `setup()`.
+Use the cheapest head-start from the scout, as `new-game.rb --help` lists: `--start-room`, `--unlock`, `--set name=value`, `--give`, `--complete-task`, `--submit-flag`. m01 needs `--set briefing_played=true` to stop the opening briefing opening itself (that global is m01's; it is not built into the tooling); find the equivalent gate in the new mission's opening cutscene and say what you chose. Head-start games open a Mission Brief notes minigame: `clearScreen` closes it in `setup()`.
 
 `--give` cannot supply an item an NPC hands over in conversation (Kevin's lockpick kit). Play that conversation in `setup()`, off camera (about 2.5 min in m01) and check the item arrived.
 
@@ -89,12 +96,12 @@ Use the cheapest head-start from the scout, as `new-game.rb --help` lists: `--st
 ## Step 3: record and check
 
 ```bash
-tools/video/takes/<mission>/run-take.sh <take_id> "<new-game flags>" "<record-take flags>"
+tools/video/takes/run-take.sh <mission> <take_id> "<new-game flags>" "<record-take flags>"
 # for example:
-tools/video/takes/<mission>/run-take.sh m02_t06_keypad_v3 "--start-room main_office_area --set briefing_played=true" "--hide-hud --zoom-step 1"
+tools/video/takes/run-take.sh m02 t06_keypad_v3 "--start-room main_office_area --set <gate>=true" "--hide-hud --zoom-step 1"
 ```
 
-`run-take.sh` makes a fresh game, runs `record-take.mjs --display 97 ... --fps 30 --preset ultrafast --crf 14 --music 0`, runs `check-take.mjs`, prints one JSON line (pass, dropPct, offsets, problems, trimmed length) and deletes the raw `.mkv` on pass. `record-take.mjs` also takes `--sfx --voice --master` volumes, `--size`, `--no-bridge`, `--audio-delay-ms` (do not use: a fixed delay is not stable).
+`run-take.sh` makes a fresh game of the mission (`new-game.rb`, port 3001), runs `record-take.mjs --display 97 ... --fps 30 --preset ultrafast --crf 14 --music 0`, runs `check-take.mjs`, prints one JSON line (pass, dropPct, offsets, problems, trimmed length) and deletes the raw `.mkv` on pass. `record-take.mjs` also takes `--sfx --voice --master` volumes, `--size`, `--no-bridge`, `--audio-delay-ms` (do not use: a fixed delay is not stable).
 
 **30 fps only.** 60 fps fails on 4 cores at either preset; 30 fps `veryfast` is marginal; 30 fps `ultrafast` passed in m01 (0.06 to 1.2% dropped, CPU about 85%).
 
@@ -114,7 +121,7 @@ Expect to re-record about one take in three. Do not tune a failing take; re-run 
 The orchestrator's selects depend on this, so the takes agent does it first and records it in the table. **Marks are not the picture.** Dialogue marks come from real TTS playback edges and are safe to cut on (the game's subtitle appears 0.1 to 0.2 s before the line-start mark and stays until the next line). **Minigame marks can drift from the picture by seconds** (m01 t04: lock-open marked 14.36 s, visible at about 10.8 s; t14: output marks lag by 0.5 s). Extract frames at each mark and a little either side:
 
 ```bash
-ffmpeg -v error -ss 5.6 -i video_out/<mission>/takes/<id>.trimmed.mkv -frames:v 1 -vf scale=960:-2:flags=neighbor /tmp/x.png   # use the scratch folder
+tools/video/scout/extract-frames.sh video_out/<mission>/takes/<id>.trimmed.mkv <scratch>/marks-<id> 5.2 5.6 6.0   # PNGs plus sheet.png; SCALE=960x540 shrinks them
 ```
 
 For each key mark, say in the table "frame at T shows X". Check digits on keypad frames against the code. Look for toasts ("Influence: Kevin Park"), objectives panels and text boxes in frame.
@@ -127,6 +134,7 @@ For each key mark, say in the table "frame at T shows X". Check digits on keypad
 
 - **Do not capture during a render, and do not render during a capture.** One at a time.
 - **Lip sync:** a late-word mouth bug (the closing pause swallowing a soft last word) was fixed in commit `1f56ea4e`. Takes recorded before it keep the old mouth; re-record dialogue takes of finale lines if they were made earlier (m01's `t09_derek` was redone as `t09_derek_v5.mjs`).
+- A take whose script is missing fails at once (`no take script ...`); a mission with no unique `scenarios/<key>_*` folder fails with the folder list.
 - Leave nothing changed in the repo: `git status` before and after. A take that edits a sprite or scenario for a check must restore it (`tools/playtest/restore-sprite.rb` exists for the sprite swap the m01 lip-sync check used).
 - The keyless server and Postgres may have been stopped by the scout; restart them (Step 1 of `video-scout`).
 - Leave display 97 and the sink up between batches; stop them at the end of the stage with `env-down.sh 97` unless the next stage is another batch.

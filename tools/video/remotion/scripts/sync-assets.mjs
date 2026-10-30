@@ -3,17 +3,22 @@
 //   fonts/PressStart2P-Regular.woff2   copied from public/break_escape/assets/fonts
 //   brand/<file>                       copies of tools/video/assets/brand/* (logos, title SVG, keyhole art)
 //   brand-derived/logo-*.svg           the Hacktivity logos split into the shared word and the sub-lines (same viewBox, so they register)
-//   takes/<name>                       copies of video_out/m01/takes/*.trimmed.mkv
+//   takes/<name>                       copies of <takes dir>/*.trimmed.mkv (video_out/<mission>/takes)
 //   clips/<name>                       any other video file: tools/video/assets/placeholders/*.mp4 (+ BE_CLIPS_DIR); edit source {type:'clip', file}
 //   manifest.json                      which takes and clips exist (the composition falls back to a placeholder pattern)
 import fs from 'node:fs'; import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { takesDirFor } from './mission.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
 const repo = path.resolve(root, '../../..');
 const pub = path.join(root, 'public');
 const assets = path.join(repo, 'public/break_escape/assets');
-const takesDir = process.env.BE_TAKES_DIR || path.join(repo, 'video_out/m01/takes');
+// takes dir: --takes-dir DIR, else BE_TAKES_DIR, else video_out/<mission>/takes from the edit list given as the first argument
+const argv = process.argv.slice(2); const ti = argv.indexOf('--takes-dir');
+const editArg = argv.find((a, i) => !a.startsWith('--') && (ti < 0 || i !== ti + 1));
+const takesDir = ti >= 0 ? argv[ti + 1] : process.env.BE_TAKES_DIR || (editArg ? takesDirFor(repo, JSON.parse(fs.readFileSync(editArg, 'utf8')), editArg) : null);
+if (!takesDir) { console.error('usage: sync-assets.mjs <edit.json> | --takes-dir DIR (or BE_TAKES_DIR)'); process.exit(2); }
 fs.mkdirSync(path.join(pub, 'fonts'), { recursive: true });
 fs.mkdirSync(path.join(pub, 'takes'), { recursive: true });
 fs.copyFileSync(path.join(assets, 'fonts/PressStart2P-Regular.woff2'), path.join(pub, 'fonts/PressStart2P-Regular.woff2'));

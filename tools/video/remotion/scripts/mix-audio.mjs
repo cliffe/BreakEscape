@@ -6,11 +6,14 @@
 // Shots whose take file does not exist yet (placeholders) contribute no take audio.
 // Not part of the Remotion render: the render is silent; render.sh muxes this mix and runs loudnorm.
 import fs from 'node:fs'; import path from 'node:path'; import { spawnSync } from 'node:child_process'; import { fileURLToPath } from 'node:url';
+import { takesDirFor } from './mission.mjs';
 import { buildTimeline } from '../src/timeline.js';
 const here = path.dirname(fileURLToPath(import.meta.url)); const repo = path.resolve(here, '../../../..');
 const a = process.argv.slice(2); const [editFile, out] = a;
-const ti = a.indexOf('--takes-dir'); const takesDir = ti >= 0 ? a[ti + 1] : path.join(repo, 'video_out/m01/takes');
-const edit = JSON.parse(fs.readFileSync(editFile, 'utf8')); const tl = buildTimeline(edit);
+const ti = a.indexOf('--takes-dir');
+const edit = JSON.parse(fs.readFileSync(editFile, 'utf8'));
+const takesDir = ti >= 0 ? a[ti + 1] : takesDirFor(repo, edit, editFile); // default video_out/<edit.mission>/takes
+const tl = buildTimeline(edit);
 const total = tl.totalFrames / tl.fps;
 const m = edit.music; const musicFile = path.join(repo, 'public/break_escape/assets/music', m.track);
 const fade = (edit.audio?.fade_ms ?? 8) / 1000;
