@@ -226,9 +226,19 @@ function buildCard(answer, msg, set = null) {
             }
         }
     } else if (phish && (verdict === 'trust' || verdict === 'delete') && typeof truth.ifTrusted === 'string' && truth.ifTrusted) {
-        const lead = verdict === 'trust' ? 'What could have happened'
-            : (kindOf(msg) === 'call' ? 'What this caller was after' : 'What this one was after');
-        card.appendChild(el('p', 'aw-if-trusted', `${lead}: ${truth.ifTrusted}`));
+        // E12 B2 finding 14: show "what they were after" only when the verdict actually let the
+        // attacker in. Trust on a phish always does; a Delete / Turn away does only when it did
+        // not earn full verdict points (E12 scores a desk visitor turned away at the full 60, so
+        // the attacker was stopped and the line would read oddly).
+        const kind = kindOf(msg) || 'email';
+        const profile = set?.scoringProfile === 'analyst' ? 'analyst' : 'awareness';
+        const deletePts = verdictPoints(profile, true, 'delete', kind, verdictPointsOverride(truth, kind, set?.scoring, true));
+        const attackerIn = verdict === 'trust' || deletePts < FULL_VERDICT_POINTS;
+        if (attackerIn) {
+            const lead = verdict === 'trust' ? 'What could have happened'
+                : (kind === 'call' ? 'What this caller was after' : 'What this one was after');
+            card.appendChild(el('p', 'aw-if-trusted', `${lead}: ${truth.ifTrusted}`));
+        }
     }
     if (Number.isFinite(answer.score)) card.appendChild(el('p', 'aw-card-score', `Score for this message: ${answer.score} of 100`));
     return card;

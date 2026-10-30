@@ -1080,7 +1080,12 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             }
             card.appendChild(ul);
         }
-        if (truth.isPhish && (ans.verdict === 'trust' || ans.verdict === 'delete') && truth.ifTrusted) {
+        // E12 B2 finding 14: show "what they were after" only when the verdict let the attacker
+        // in. Trust on a phish always does; a Delete / Refuse does only when it did not earn full
+        // verdict points (a desk visitor turned away at the full 60 stopped the attacker, so the
+        // line would read oddly).
+        const attackerIn = ans.verdict === 'trust' || (ans.verdict === 'delete' && per.verdictPoints < FULL_VERDICT_POINTS);
+        if (truth.isPhish && attackerIn && truth.ifTrusted) {
             // After Trust it is what the learner let happen; after a safe Delete/Refuse nothing
             // happened, so name it as what the attacker was after (E1-E4 P4-6).
             const lead = ans.verdict === 'trust' ? 'What would have happened'
