@@ -11,7 +11,6 @@
 import { getRoomDisplayName } from '../../utils/room-display-name.js';
 import { parsePortraitTag } from '../../utils/portrait-variants.js';
 import { hostileTurnMessage } from '../../systems/combat-input.js';
-import { requestInkMinigame } from '../../systems/ink-minigame-launch.js';
 
 /**
  * Process game action tags from Ink story
@@ -193,7 +192,9 @@ export async function processGameActionTags(tags, ui, options = {}) {
                         // # trigger_minigame:<type>[|key=value...]: opens the starter registered
                         // for that object type (systems/ink-minigame-launch.js). In a person-chat
                         // it opens after the line is read and the chat comes back on a normal close.
-                        const launch = requestInkMinigame(param);
+                        const launch = window.inkMinigameLaunch
+                            ? window.inkMinigameLaunch.request(param)
+                            : { success: false, message: '⚠️ Minigame launcher not loaded' };
                         result.success = launch.success;
                         result.message = launch.message;
                     }

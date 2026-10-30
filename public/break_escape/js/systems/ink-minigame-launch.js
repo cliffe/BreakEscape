@@ -154,3 +154,14 @@ function launchPending() {
     }
     return true;
 }
+
+// The chat minigames and the tag processor reach this through window, so they load without it.
+if (typeof window !== 'undefined') {
+    window.inkMinigameLaunch = {
+        request: requestInkMinigame,
+        flush: flushInkMinigame,
+        dropPending: dropPendingInkMinigame,
+        isTriggerTag: isTriggerMinigameTag,
+        hasPending: hasPendingInkMinigame
+    };
+}

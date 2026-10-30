@@ -19,7 +19,6 @@ import InkEngine from '../../systems/ink/ink-engine.js';
 import { attachPretext } from './person-chat-pretext.js';
 import { processGameActionTags, determineSpeaker as determineSpeakerFromTags } from '../helpers/chat-helpers.js';
 import { splitReplyTags, partitionSlowTags } from './person-chat-pending-reply.js';
-import { isTriggerMinigameTag, flushInkMinigame, dropPendingInkMinigame } from '../../systems/ink-minigame-launch.js';
 import npcConversationStateManager from '../../systems/npc-conversation-state.js';
 import TTSManager from '../../systems/tts-manager.js';
 import { rememberNpcLine, getRememberedNpcLine, reopenContextLine, refreshHubAfterMidKnotReopen } from './person-chat-reopen.js';
@@ -1268,11 +1267,11 @@ export class PersonChatMinigame extends MinigameScene {
 
                 // #trigger_minigame with no text of its own: open it now (with text, it opens
                 // once the blocks have been shown: displayDialogueBlocksSequentially)
-                if (!shouldExit && result.tags.some(isTriggerMinigameTag) && (!result.text || !result.text.trim())) {
+                if (!shouldExit && result.tags.some(t => window.inkMinigameLaunch?.isTriggerTag(t)) && (!result.text || !result.text.trim())) {
                     if (this.inkEngine && this.inkEngine.story) {
                         npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
                     }
-                    this.scheduleDialogueAdvance(() => { flushInkMinigame(); }, 300);
+                    this.scheduleDialogueAdvance(() => { window.inkMinigameLaunch?.flush(); }, 300);
                     return;
                 }
             }
@@ -1475,12 +1474,12 @@ export class PersonChatMinigame extends MinigameScene {
 
             // #trigger_minigame: the line has been read, so open the minigame now. The chat is
             // paused, not ended; a normal close of the minigame reopens it (ink-minigame-launch.js).
-            if (originalResult.tags && originalResult.tags.some(isTriggerMinigameTag)) {
+            if (originalResult.tags && originalResult.tags.some(t => window.inkMinigameLaunch?.isTriggerTag(t))) {
                 console.log('🎮 trigger_minigame: all blocks shown, opening the minigame');
                 if (this.inkEngine && this.inkEngine.story) {
                     npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
                 }
-                this.scheduleDialogueAdvance(() => { flushInkMinigame(); }, 1000);
+                this.scheduleDialogueAdvance(() => { window.inkMinigameLaunch?.flush(); }, 1000);
                 return;
             }
 
@@ -1899,7 +1898,7 @@ export class PersonChatMinigame extends MinigameScene {
         this._releaseOverlayHold?.();
         this._releaseOverlayHold = null;
         this._cleanedUp = true;
-        dropPendingInkMinigame(); // a #trigger_minigame still waiting on this chat's line
+        window.inkMinigameLaunch?.dropPending(); // a #trigger_minigame still waiting on this chat's line
 
         // A reply still waiting to be shown: apply its state tags now (the story is
         // already saved past it), then stop its timer so nothing fires after the close.

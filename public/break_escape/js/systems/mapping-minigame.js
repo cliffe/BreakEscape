@@ -73,3 +73,6 @@ export function openMinigameFromMapping(raw, opts = {}) {
     schedule(attempt, OPEN_DELAY_MS);
     return true;
 }
+
+// npc-manager.js reaches this through window, so it loads without the registry.
+if (typeof window !== 'undefined') window.openMinigameFromMapping = openMinigameFromMapping;

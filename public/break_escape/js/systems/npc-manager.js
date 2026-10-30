@@ -3,7 +3,6 @@
 // default export NPCManager
 import { isInLineOfSight, drawLOSCone, clearLOSCone, getNPCFacingDirection, losVisualSuppressed, losVisualOutOfRoom, losCatchSpent } from './npc-los.js';
 import { classifyPhoneLine, phoneStepLines } from '../minigames/phone-chat/phone-chat-speaker.js';
-import { openMinigameFromMapping } from './mapping-minigame.js';
 
 /**
  * Safe condition evaluator — replaces eval() for CSP compliance (unsafe-eval blocked).
@@ -1020,7 +1019,12 @@ export default class NPCManager {
       const persisted = (config.once || config.maxTriggers)
         ? () => { triggered.persist = true; }
         : undefined;
-      openMinigameFromMapping(config.openMinigame, { onNormalClose: persisted });
+      // window.openMinigameFromMapping is set by systems/mapping-minigame.js (loaded with the starters)
+      if (typeof window.openMinigameFromMapping === 'function') {
+        window.openMinigameFromMapping(config.openMinigame, { onNormalClose: persisted });
+      } else {
+        console.warn('[event mapping] openMinigame: the minigame registry is not loaded');
+      }
     }
 
     // [Phase 2] Handle NPC movement override (emergency responses: nurses abandon patrol)
