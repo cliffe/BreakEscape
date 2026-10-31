@@ -1175,6 +1175,7 @@ export function handleObjectInteraction(sprite) {
                 abortConfirmText:  sprite.scenarioData.abortConfirmText  || null,
                 launchConfirmText: sprite.scenarioData.launchConfirmText || null,
                 flagsAllSubmitted: sprite.scenarioData.flagsAllSubmitted === true,
+                flagRewards:       Array.isArray(sprite.scenarioData.flagRewards) ? sprite.scenarioData.flagRewards : [],
                 // This station's own submitted flags, from the server (never the game-wide list)
                 submittedFlags:    Array.isArray(sprite.scenarioData.submittedFlags) ? sprite.scenarioData.submittedFlags : undefined,
                 gameId:            window.breakEscapeConfig?.gameId || window.gameConfig?.gameId
