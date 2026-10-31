@@ -193,7 +193,7 @@
   action_confront_victoria>"Confront her once all four flags are in"]
   lock_wall_safe_server["Wall Safe<br/>PIN lock"]
   server_room_whiteboard{"Server Room Whiteboard"}
-  vm_access_terminal["VM Access Terminal"]
+  training_lab_terminal["Training Lab Terminal"]
   cyberchef_workstation{"CyberChef Workstation"}
   unsent_email_to_the_night_team_raw_source{"Unsent email to the night team (raw source)"}
   andgate1((" + "))
@@ -231,7 +231,7 @@
   server_room --> lock_server_filing_cabinet
   server_room --> lock_wall_safe_server
   server_room -.-> server_room_whiteboard
-  server_room --> vm_access_terminal
+  server_room --> training_lab_terminal
   server_room --> cyberchef_workstation
   executive_office --> lock_exec_filing_cabinet
   executive_office --> lock_victoria_computer
@@ -253,7 +253,7 @@
   vmfl_submit_ftp_flag -.-> vmch_submit_http_flag
   vmch_submit_distcc_flag --> vmfl_submit_distcc_flag
   vmfl_submit_http_flag -.-> vmch_submit_distcc_flag
-  vm_access_terminal --> vmch_submit_network_scan_flag
+  training_lab_terminal --> vmch_submit_network_scan_flag
   reception_lobby --> main_hallway
   main_hallway --> executive_wing_hallway
   executive_wing_hallway --> danny_office
@@ -263,7 +263,7 @@
   class rfid_cloner,lock_pick_kit,company_founding_plaque,server_room_whiteboard,cyberchef_workstation,unsent_email_to_the_night_team_raw_source item
   class npc_ffion_rees,staff_access_badge,npc_victoria_sterling,executive_keycard key
   class action_clone_reception_badge_talk,action_clone_victoria_card,action_confront_victoria action
-  class vm_access_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_flag,vmch_submit_http_flag,vmch_submit_distcc_flag vm
+  class training_lab_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_flag,vmch_submit_http_flag,vmch_submit_distcc_flag vm
   class andgate1,andgate2,andgate3 gate
   class vmfl_submit_network_scan_flag,vmfl_submit_ftp_flag,vmfl_submit_http_flag,vmfl_submit_distcc_flag flag
 
@@ -344,7 +344,7 @@
   action_confront_victoria>"Confront her once all four flags are in"]
   lock_wall_safe_server["Wall Safe<br/>PIN lock"]
   server_room_whiteboard{"Server Room Whiteboard"}
-  vm_access_terminal["VM Access Terminal"]
+  training_lab_terminal["Training Lab Terminal"]
   cyberchef_workstation{"CyberChef Workstation"}
   unsent_email_to_the_night_team_raw_source{"Unsent email to the night team (raw source)"}
   andgate1((" + "))
@@ -388,7 +388,7 @@
   server_room --> lock_server_filing_cabinet
   server_room --> lock_wall_safe_server
   server_room -.-> server_room_whiteboard
-  server_room --> vm_access_terminal
+  server_room --> training_lab_terminal
   server_room --> cyberchef_workstation
   executive_office --> lock_exec_filing_cabinet
   executive_office --> lock_victoria_computer
@@ -410,7 +410,7 @@
   vmfl_submit_ftp_flag -.-> vmch_submit_http_flag
   vmch_submit_distcc_flag --> vmfl_submit_distcc_flag
   vmfl_submit_http_flag -.-> vmch_submit_distcc_flag
-  vm_access_terminal --> vmch_submit_network_scan_flag
+  training_lab_terminal --> vmch_submit_network_scan_flag
   reception_lobby --> main_hallway
   main_hallway --> executive_wing_hallway
   executive_wing_hallway --> danny_office
@@ -435,7 +435,7 @@
   class rfid_cloner,lock_pick_kit,company_founding_plaque,server_room_whiteboard,cyberchef_workstation,unsent_email_to_the_night_team_raw_source item
   class npc_ffion_rees,staff_access_badge,npc_victoria_sterling,executive_keycard key
   class action_clone_reception_badge_talk,action_clone_victoria_card,action_confront_victoria action
-  class vm_access_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_flag,vmch_submit_http_flag,vmch_submit_distcc_flag vm
+  class training_lab_terminal,vmch_submit_network_scan_flag,vmch_submit_ftp_flag,vmch_submit_http_flag,vmch_submit_distcc_flag vm
   class andgate1,andgate2,andgate3 gate
   class vmfl_submit_network_scan_flag,vmfl_submit_ftp_flag,vmfl_submit_http_flag,vmfl_submit_distcc_flag flag
   class aim_act1_gain_access,aim_act2_breach_server_room,aim_moral_choices critical
@@ -536,7 +536,7 @@
   rc_wall_safe_server_25[["Wall Safe"]]
   rc_obj26_26{"Exploit Catalogue"}
   rc_obj27_27{"Server Room Whiteboard"}
-  rc_vm_launcher_zero_day_28{"VM Access Terminal"}
+  rc_vm_launcher_zero_day_28{"Training Lab Terminal"}
   rc_cyberchef_workstation_29{"CyberChef Workstation"}
   rc_flag_station_dropsite_30{"Drop-Site Terminal"}
   rc_npc_terry_mott_31("Terry Mott")

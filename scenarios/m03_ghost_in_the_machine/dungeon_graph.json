@@ -135,8 +135,8 @@
       "optional": true
     },
     {
-      "id": "vm_access_terminal",
-      "label": "VM Access Terminal",
+      "id": "training_lab_terminal",
+      "label": "Training Lab Terminal",
       "kind": "vm",
       "optional": false
     },
@@ -340,7 +340,7 @@
     },
     {
       "from": "server_room",
-      "to": "vm_access_terminal",
+      "to": "training_lab_terminal",
       "soft": false
     },
     {
@@ -449,7 +449,7 @@
       "soft": true
     },
     {
-      "from": "vm_access_terminal",
+      "from": "training_lab_terminal",
       "to": "vmch_submit_network_scan_flag",
       "soft": false
     },
