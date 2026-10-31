@@ -193,7 +193,7 @@ fraudulent ask outright (the voucher trope); A is vaguer and arguably subtler. M
 directness.
 
 ### m7 — A named sender is the fraudster in one form and genuine in the other
-Finance: "Ravinder Sandhu" is the impersonated CEO in form A pos 4 (`ravinder.sandhu.ceo@inboxly…`)
+Finance: "Ravinder Sandhu" is the impersonated CEO in form A pos 4 (`ravinder.sandhu.ceo@lintbox…`)
 but a genuine CEO in form B pos 7 (`…_finance_ba:274`, `ravinder.sandhu@brightwellfoods.example`).
 General: "Darren Price" is genuine in form A pos 1 and both impersonated (pos 4) and genuine (pos 10)
 in form B. A learner who takes A then B (or B then A) may carry over "that name is the fraudster" and

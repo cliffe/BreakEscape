@@ -36,7 +36,7 @@ Quotes are on-screen text from this round.
 | --- | --- | --- |
 | B1 (E1/E2/E4 research dead end) | fixed (re-checked) | E1 b/E2 b/E4 b: Write stage offers "Open the mail client" and "Back to research"; with nothing noted the composer says "No contacts yet — find someone first." and the sender blanks read "no evidence yet / A blank needs evidence you haven't found yet". Back to research recovers. |
 | M1 (E2 Colin Mather) | fixed (re-checked) | E2 a: noting Colin from the Careers page ("Noted: Colin Mather is Tarrowby's Warehouse Manager and the hiring manager for the open warehouse roles.") puts "the hiring manager: Colin Mather" in the blank. |
-| M2 (E4 travel address) | fixed (re-checked) | Events page gives catherine.merrin@inboxly.example; meter and flip both say "the free webmail travel address from her bio". The triage phish uses the different catherine.merrin.travel@ address. |
+| M2 (E4 travel address) | fixed (re-checked) | Events page gives catherine.merrin@lintbox.example; meter and flip both say "the free webmail travel address from her bio". The triage phish uses the different catherine.merrin.travel@ address. |
 | m1 (E1 urgency tick) | **fixed** | E1 a: "Caught: Unexpected urgency or pressure to act fast ('Before today's payment run' ...)" for the "It's pushing me to hurry" tick. |
 | m2 (E2 link vs look-alike) | **fixed** | E2 a: ticking only "The link goes somewhere else" gave "Caught: Link destination doesn't match the real site (look-alike domain)". Extra ticks no longer clash. See new N6 for the debrief side. |
 | m3 (E2 flip has nothing to show for a careful email) | **not fixed** | E2 a flip, unchanged: "There's nothing extra to replay from this careful application, so there's nothing of yours to show from the other side." It is now also shown after a send that did not land (see N1). |
@@ -62,7 +62,7 @@ Quotes are on-screen text from this round.
 | D3 (debrief says "You chose Verify/Report" for calls) | fixed (re-checked) | "You chose Ring back. Right call: ringing back on a number you already hold is how you check." |
 | D1 (learner shown as a hooded figure) | **not fixed** | `P3_screenshots/e3_quayholt.png`: hooded sprite beside the kiosk, hearts HUD along the bottom. |
 | N1 (P2: skipped MFA stage silent) | fixed | Stepper says "(skipped)". |
-| N2 (P2: E4 only webmail address offered) | not fixed (trivial) | E4 a and b: the only address offered is catherine.merrin@inboxly.example, with or without her bio noted. |
+| N2 (P2: E4 only webmail address offered) | not fixed (trivial) | E4 a and b: the only address offered is catherine.merrin@lintbox.example, with or without her bio noted. |
 | N3 (P2: closing the mail client discards the draft) | **fixed** | E2 c: chose a pretext, Close, reopened Compose, the pretext was still selected. |
 | N4 (P2: unusable `____` lines on the card) | fixed | See E3-2. |
 | Debrief only lists imperfect messages | fixed (re-checked) | E1 a, E2 a: "Nothing to pick over here" or only the missed items. |

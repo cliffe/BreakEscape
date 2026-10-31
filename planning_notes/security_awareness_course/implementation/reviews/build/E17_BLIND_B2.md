@@ -17,9 +17,9 @@ Persona 1 doubled as the defend-only check (nothing else exists for E17).
 2. Talked to Nilesh: "Allowed, Not allowed, Ask first... Sort the cards, then a short inbox." Goal now clear: cards, then inbox.
 3. Kiosk: Brief page (a fictional haulier, three answers), Start. Then "The 'can I?' sort", Open the cards, Start sorting.
 4. Nine cards. Score 8 of 9, the one miss being the football-streaming card, answered Ask first and marked "Safe choice, never marked wrong". Felt fair.
-5. Done, "Open the inbox", Start. Six messages. Did message 1 (Meetly install, Verify, ticked Unapproved tool, 100). Reloaded here.
+5. Done, "Open the inbox", Start. Six messages. Did message 1 (Roomcall install, Verify, ticked Unapproved tool, 100). Reloaded here.
 6. After reload (Resume clicked): Defend stage and the finished card sort were kept; the inbox restarted from 0 of 6, as the brief page warns. Lost about 1 message of progress, nothing else. Redid it.
-7. Inbox: Meetly Verify, Shauna personal lookup Report, Colin login Report, intranet monitoring notice Trust, HR reminder Trust, QuickConvert Report. 100%.
+7. Inbox: Roomcall Verify, Shauna personal lookup Report, Colin login Report, intranet monitoring notice Trust, HR reminder Trust, Formatmoor Report. 100%.
 8. Debrief, Finish, objective complete toasts. No further instruction after that.
 
 Persona 2: skipped Nilesh, Allowed on all nine cards (3 of 9 right), Trust on everything except Delete on the monitoring notice, no real ticks. Score 0%.
@@ -41,8 +41,8 @@ No stuck moment lasted more than a few seconds.
 | Card sort, football and bank on the work laptop | arguable; feedback is fair ("Safe choice, never marked wrong") | not given away |
 | Card sort, PDF editor, USB stick, laptop abroad | mostly arguable between Not allowed and Ask first | hint "when not sure, Ask first" decides it for you |
 | Card "Read out the code to IT on a call", "Wait and say nothing about a misdirected file" | obvious | wording ("wait and say nothing in case it was fine") |
-| Inbox Meetly (client asks you to install) | arguable, good | not given away |
-| Inbox Shauna, Colin, QuickConvert | obvious once read; Colin ("You've got my password from last time") is a giveaway | wording |
+| Inbox Roomcall (client asks you to install) | arguable, good | not given away |
+| Inbox Shauna, Colin, Formatmoor | obvious once read; Colin ("You've got my password from last time") is a giveaway | wording |
 | Inbox intranet and HR notices | obvious for a careful reader | tone is calm; the real ones are the dull ones |
 | Report vs Verify vs Delete | blurred: Report is defined as "breaks a rule or needs a look" and the brief says "ask first, it's never the wrong answer, reporting is never marked down" | the brief page tells you to Report whenever unsure. Persona 1 scored 100 largely by Report/Verify everywhere |
 
@@ -57,7 +57,7 @@ Ask first when unsure. Never share a login or read back a code. Don't install or
 1. "Playing safe is never wrong. The clear-cut answer is Allowed." (football card)
 2. "It reads like a warning, but it's the firm telling you plainly what it checks and why." (intranet notice)
 3. "Rules are hard to carry in your head, so a miss here is no fault of yours." (debrief, struggling run)
-4. "Installing it wasn't your call to make." (Meetly)
+4. "Installing it wasn't your call to make." (Roomcall)
 5. "an honest mistake reported quickly is fixed, not punished." (debrief)
 
 ## Five worst lines

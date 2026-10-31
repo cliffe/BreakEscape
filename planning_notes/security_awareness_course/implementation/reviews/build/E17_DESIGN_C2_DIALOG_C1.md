@@ -148,7 +148,7 @@ answers the same day" in Nilesh's completion line. Everything else Nilesh says i
   of the drill + debrief on the keyless `:3001` bridge (`ONLY="e17-defend"`) would replace that; C1's build
   log recorded a 14/14 bridge pass after the MI2 fix.
 - **Pre-ship web search still owed** (spec §20, carried from C1): the invented lure domains
-  `harlow-freight.example`, `meetly-app.example`, `quickconvert-online.example` should be checked against
+  `harlow-freight.example`, `roomcall-app.example`, `formatmoor-online.example` should be checked against
   real businesses before ship (BRAND_SET rule). Not done here; needs-user.
 
 ## Verdict per stage

@@ -3,6 +3,8 @@
   "description": "An awareness episode of about 8 minutes for IT service desk staff, on the defending side only. Sit in the service desk seat at Quayholt Insurance, a fictional company: three callers want password resets or changes to their sign-in, and a sign-in prompt turns up on your own phone. Each answer is explained, and ringing back when you're unsure is always fine and never marked down.",
   "difficulty_level": 1,
   "scoring": "completion",
+  "resultGlobal": "episode_e3_helpdesk_reset_defend_defend_percent",
+  "stage": "episode",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",

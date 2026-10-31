@@ -144,7 +144,7 @@ for wording. "Haulier" in the inbox brief is ordinary UK English and reads fine 
 phishing-text major are closed on main. The three minors are the carried drill-recap gap (D1, engine), the
 set-wide over-report question (D2), and an engine feedback-composition nit (D3); none blocks ship. Pre-ship
 still owed (C2, not a review finding): web-search the invented lure domains `harlow-freight.example`,
-`meetly-app.example`, `quickconvert-online.example`.
+`roomcall-app.example`, `formatmoor-online.example`.
 
 ---
 

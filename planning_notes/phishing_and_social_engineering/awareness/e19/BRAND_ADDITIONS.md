@@ -10,9 +10,9 @@ names plus one reused supplier look-alike.
 
 ## New names (each needs the P11 pre-ship web search before ship)
 
-- **TidyDocs** (`tidydocs.example`) — a fictional document app that an email invites the
+- **Piledocs** (`piledocs.example`) — a fictional document app that an email invites the
   learner to connect (defend row 1, `e19_consent_unknown`, the normal-looking "allow this
-  app" phish of the consent mirror pair). Invite sent from `invites@tidydocs.example`. No
+  app" phish of the consent mirror pair). Invite sent from `invites@piledocs.example`. No
   cast member, no inbound reply, no art.
 - **Leo Brennan** (`leo.brennan@quayholt.example`) — operations colleague, mid 20s, white
   Irish-English; slips, reports fast, is thanked. From the `03_WORLD_AND_CAST.md` no-clash
@@ -50,10 +50,10 @@ names plus one reused supplier look-alike.
 
 ## Name-clash grep (across `scenarios planning_notes docs`, run 2026-10-29)
 
-Searched: `TidyDocs`, `tidydocs`, `Leo Brennan`, `leo.brennan`, `Fernside`, `fernside`,
+Searched: `Piledocs`, `piledocs`, `Leo Brennan`, `leo.brennan`, `Fernside`, `fernside`,
 `quayholt-it-support`, `Quayholt Protect`, `Quayholt Files`.
 
-- **TidyDocs / tidydocs** — hits only in `implementation/00_README.md` and the E19 brief
+- **Piledocs / piledocs** — hits only in `implementation/00_README.md` and the E19 brief
   (`episodes/E19_malware_and_updates.md`). No other entity uses the name; no clash.
 - **Leo Brennan / leo.brennan** — hits in `03_WORLD_AND_CAST.md` (the no-clash pool that
   assigns the name), `00_README.md`, the E10 and E19 briefs, and several `modules/*/
@@ -68,6 +68,6 @@ Searched: `TidyDocs`, `tidydocs`, `Leo Brennan`, `leo.brennan`, `Fernside`, `fer
 
 ## Pre-ship (P11)
 
-Before ship, web-search **TidyDocs**, **Leo Brennan** and **Quayholt IT Support /
+Before ship, web-search **Piledocs**, **Leo Brennan** and **Quayholt IT Support /
 quayholt-it-support** against real businesses and people with the usual check, as for E8's
 Marsden Holloway. The repo grep above covers the internal name-clash step only.

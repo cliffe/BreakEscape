@@ -40,7 +40,7 @@ Episode shape: full = 7 stages (`brief, osint, build, write, flip, defend, debri
 - Close and report — "This is a phish. Send it to security."
 - **Go the trusted way — "This is junk. Bin it."**
 
-"Go the trusted way" paired with "This is junk. Bin it." is a plain contradiction: the trusted route (use DocShift from Quayholt Apps, reach the portal from a bookmark) is not binning junk, and on the extension row it is the safe-but-partial move, not a bin. "This is a phish" is also an odd label for a download bar or a full-screen alarm. The same gap shows in the message list, where a "Carry on" verdict is tagged "✓ Trusted" and a "Close and report" is tagged "✓ Reported" (renders 04, 06, 08 — `inbox-triage-minigame.js:251` reads `actionById(...).past`).
+"Go the trusted way" paired with "This is junk. Bin it." is a plain contradiction: the trusted route (use Pagewrangle from Quayholt Apps, reach the portal from a bookmark) is not binning junk, and on the extension row it is the safe-but-partial move, not a bin. "This is a phish" is also an odd label for a download bar or a full-screen alarm. The same gap shows in the message list, where a "Carry on" verdict is tagged "✓ Trusted" and a "Close and report" is tagged "✓ Reported" (renders 04, 06, 08 — `inbox-triage-minigame.js:251` reads `actionById(...).past`).
 
 This is fixable **episode-locally with no engine work**, because `relabel()` applies `label`, `past` **and** `hint` from `labels.verdict.<v>` (`triage-kinds.js:62–67`); the `verdictLabels` shorthand just happens to only set `label`. Author a full `labels.verdict` block on the set (in `e10/defend.json`, then re-wire the full erb and regenerate the defend-only shell) alongside `verdictLabels`, e.g.:
 ```jsonc

@@ -26,8 +26,8 @@ Ages are bands, for the concept prompts. All fictional; every address ends `.exa
 | Martin Fletcher | Sales Director | 50s, white, Manchester | `martin.fletcher@carrholme.example` | The marketing-export sandbox beat (`marketing_export`). Named on screen, not a defend-set sender. |
 | Sam Whitaker | Payroll Officer | 30s, British Caribbean | `sam.whitaker@carrholme.example` | The correct recipient of the overtime sheet (sandbox `overtime_sheet`). Named on screen, not a sender. |
 | Sam Whitlow | Manager, Hollinsbrook House (client care home, `hollinsbrookhouse.example`) | 50s, white, Yorkshire | `sam.whitlow@hollinsbrookhouse.example` | The wrong "Sam" the breach goes to; **genuine sender** in defend items 1 (`e11_wrong_sam_breach`) and 6 (`e11_cardigan_update`). |
-| Gareth Hale | Son of a resident (Hollinsbrook House) | 40s, white | `gareth.hale@inboxly.example` (freemail) | **Genuine sender** of the subject access request inside a complaint, defend item 4 (`e11_sar_everything`). |
-| Kestrel Court | Client care home (`kestrelcourt.example`) | n/a | `laundry@kestrelcourt.example` | **Genuine sender** of the misdirected care summary (inbound breach), defend item 5 (`e11_kestrel_inbound`). |
+| Gareth Hale | Son of a resident (Hollinsbrook House) | 40s, white | `gareth.hale@lintbox.example` (freemail) | **Genuine sender** of the subject access request inside a complaint, defend item 4 (`e11_sar_everything`). |
+| Wychbourne Court | Client care home (`wychbournecourt.example`) | n/a | `laundry@wychbournecourt.example` | **Genuine sender** of the misdirected care summary (inbound breach), defend item 5 (`e11_wychbourne_inbound`). |
 
 **People named on screen only (no art, no sender address):** Edna Hale (87, Hollinsbrook House, Room 12),
 Albert Finch (Room 14, with a continence-care note), Pauline Grant (Room 9), Bernadette Lyons (Carrholme
@@ -44,10 +44,10 @@ concept prompts can follow it.
 
 ## Shared invented services referenced
 
-- `hollinsbrookhouse.example` (Hollinsbrook House, a client care home) and `kestrelcourt.example` (Kestrel
+- `hollinsbrookhouse.example` (Hollinsbrook House, a client care home) and `wychbournecourt.example` (Wychbourne
   Court, a client care home): both fictional clients of Carrholme's Care Laundry line, controllers for their
   own residents' data.
-- `inboxly.example`: existing shared invented freemail from `BRAND_SET.md` (Gareth Hale's address). No new
+- `lintbox.example`: existing shared invented freemail from `BRAND_SET.md` (Gareth Hale's address). No new
   freemail added.
 
 ## Name-clash search (grep across `scenarios/`, `planning_notes/`, `docs/`, `public/break_escape/js/`, 2026-10-29)
@@ -58,7 +58,7 @@ concept prompts can follow it.
 - **Wiśniewski / Wisniewski:** hits only in the course modules and review logs. No built scenario, ink or
   engine file; no Licence to Hack or SIS character shares the surname. Clean. (The ASCII id `tomasz_wisniewski`
   is used in globals and ids; the non-ASCII "ś" is display-only.)
-- **Whitlow, Whitaker, Hollinsbrook, Kestrel Court, Corrigan, Finch, Lyons, Campbell (as Shauna), Fletcher
+- **Whitlow, Whitaker, Hollinsbrook, Wychbourne Court, Corrigan, Finch, Lyons, Campbell (as Shauna), Fletcher
   (as Martin):** hits only in the course modules and review logs. Clean to use.
   - *Whitlow* is used, not the `game_design.md` default "Sam Whitfield": `Whitfield` is the built finance
     check-mission host **Graham Whitfield** (`BRAND_SET.md` P7-J). Resolved by the brief; confirmed still true.
@@ -92,10 +92,10 @@ pre-ship check the README asks for Ledgerwell and CloudBoxy). **Still owed, not 
 
 - **Carrholme Services** (company)
 - **Hollinsbrook House** (client care home)
-- **Kestrel Court** (client care home)
+- **Wychbourne Court** (client care home)
 - **Tomasz Wiśniewski**, **Shauna Campbell**, **Martin Fletcher**, **Sam Whitaker**, **Sam Whitlow**,
   **Gareth Hale** (people)
 - **North Pennine Police** (fictional force; check no real force uses the name)
 
 `carrholme-payroll.example`, `carrholme-hr.example`, `carholme.example`, `hollinsbrookhouse.example`,
-`kestrelcourt.example` and `carrholme.example` are all `.example`, so no real domain is implied.
+`wychbournecourt.example` and `carrholme.example` are all `.example`, so no real domain is implied.

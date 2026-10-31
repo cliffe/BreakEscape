@@ -56,7 +56,7 @@ No stuck moment lasted more than a minute of reading time. Harness hangs are lis
 | Choices 1-4 (stage 2) | Largely yes. The safe option always names IT, "with an end date" or "ask". It is not neutral wording. It is also stated as unscored. |
 | Defend intro text | Yes: "A found or posted stick goes to IT unplugged; if the official way is slow, ask IT" is stated before the inbox, then repeated in the Swap Shop. A player who read the intro has the inbox answer. |
 | Stick via Reception (inbox) | Less so: the sender is genuinely Tarrowby, only the content is a stick. Good one. |
-| SwiftDrop, PDFMerge | Domain names ending .example and the word "free" carry it. Easy. |
+| Chuckbox, PDFmangle | Domain names ending .example and the word "free" carry it. Easy. |
 | Genuine share link and IT note | Fair: a careful player looks twice. Best decision in the episode; feedback explains that looking twice is fine. |
 | Delete versus Report | Arguable, and the feedback tells the difference ("Safe, but not reported"). Good. |
 

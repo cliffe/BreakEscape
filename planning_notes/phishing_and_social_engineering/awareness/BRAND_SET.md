@@ -16,8 +16,8 @@ SAFETYNET.
 - Look-alikes use the shapes a learner can learn to check: a swapped character (`brightwel1foods`), an added
   hyphen (`pennine-oatmills`), an added word (`castellfruit-co`, `fernhill-secure-login`). No homographs in
   the awareness product: non-technical staff are taught to read the address, not to inspect code points.
-- Freemail and file-share services are invented too (`inboxly.example`, `quickpost-mail.example`,
-  `docshare-login.example`).
+- Freemail and file-share services are invented too (`lintbox.example`, `hastypost.example`,
+  `fileharbour-login.example`).
 - Names were checked against the repo's scenarios, planning notes and docs on 2026-10-22 so that no awareness
   character shares a surname with a Licence to Hack or SIS character. The E1 pins (Adaeze Okafor, Tom Reilly)
   are fixed by `PHASE7_PACKETS.md` §2.6 and kept even where a surname appears elsewhere.
@@ -104,8 +104,8 @@ Ages are bands, for the concept prompts. All fictional; every address ends `.exa
 | Martin Fletcher | Sales Director | 50s, white, Manchester | `martin.fletcher@carrholme.example` | The marketing-export sandbox beat. Named on screen, not a sender. |
 | Sam Whitaker | Payroll Officer | 30s, British Caribbean | `sam.whitaker@carrholme.example` | The correct recipient of the overtime sheet. Named on screen, not a sender. |
 | Sam Whitlow | Manager, Hollinsbrook House (client care home, `hollinsbrookhouse.example`) | 50s, white, Yorkshire | `sam.whitlow@hollinsbrookhouse.example` | The wrong "Sam" the breach goes to; genuine sender in defend items 1 and 6. |
-| Gareth Hale | Son of a resident (Hollinsbrook House) | 40s, white | `gareth.hale@inboxly.example` (freemail) | Genuine sender of the subject access request inside a complaint, defend item 4. |
-| Kestrel Court | Client care home (`kestrelcourt.example`) | n/a | `laundry@kestrelcourt.example` | Genuine sender of the misdirected care summary, defend item 5. |
+| Gareth Hale | Son of a resident (Hollinsbrook House) | 40s, white | `gareth.hale@lintbox.example` (freemail) | Genuine sender of the subject access request inside a complaint, defend item 4. |
+| Wychbourne Court | Client care home (`wychbournecourt.example`) | n/a | `laundry@wychbournecourt.example` | Genuine sender of the misdirected care summary, defend item 5. |
 
 On screen only (no art, no sender): Edna Hale (87, Hollinsbrook House, Room 12), Albert Finch (Room 14), Pauline Grant (Room 9), Bernadette Lyons (Carrholme cleaner), Lee Corrigan (Care Laundry driver), the nine contact-centre staff on the overtime sheet, "Carol" (the caller in `caller_bernadette`). Impostors, not cast: "Carrholme Payroll" on `carrholme-payroll.example` (defend item 3) and **DC Rowley, North Pennine Police** (voice-only caller, defend item 2; renamed from the brief's "DC Hendry", see below).
 
@@ -115,9 +115,9 @@ Cast-diversity note (standing rule): the cast spans 30s to 50s and mixes Polish,
 
 | Name | Domain | Used for |
 |------|--------|----------|
-| inboxly | `inboxly.example` | Freemail for impersonated executives and spoofed reply-to addresses |
-| QuickPost Mail | `quickpost-mail.example` | A second freemail, so the two forms don't share a sender domain |
-| (file-share sign-in) | `docshare-login.example` | The credential page behind form A's shared-invoice link |
+| lintbox | `lintbox.example` | Freemail for impersonated executives and spoofed reply-to addresses |
+| Hastypost | `hastypost.example` | A second freemail, so the two forms don't share a sender domain |
+| (file-share sign-in) | `fileharbour-login.example` | The credential page behind form A's shared-invoice link |
 
 ## 4. E1 pins (from `PHASE7_PACKETS.md` §2.6, unchanged)
 
@@ -140,7 +140,7 @@ episode). Chips: the seven factors plus `lookalike_domain`, `changed_bank_detail
 | 1 | `e1_harlow_invoice` | Harlow Packaging Ltd, real domain | no | | The genuine invoice. Harlow is the supplier the learner just impersonated, and its real mail looks ordinary |
 | 2 | `e1_lookalike_bank` | "Brightwell Foods Accounts" at `brightwel1foods.example` | yes | `lookalike_domain`, `changed_bank_details` | The `11` §4.2 worked item: payee change on INV-2217, the invoice in row 1 |
 | 3 | `e1_po_pennine` | Mei Lin Chau, procurement | no | | The routine purchase order |
-| 4 | `e1_ceo_wire` | "Ravinder Sandhu" at `inboxly.example` | yes | `senderTrust`, `secrecy_or_bypass`, `urgencyCalibrated` | "CEO needs this wired today" |
+| 4 | `e1_ceo_wire` | "Ravinder Sandhu" at `lintbox.example` | yes | `senderTrust`, `secrecy_or_bypass`, `urgencyCalibrated` | "CEO needs this wired today" |
 | 5 | `e1_bank_confirmed` | Adaeze Okafor | no | | The genuine change of bank, with the "Confirmed by phone" line. It follows the two phish so the learner sees the safe version of the same request |
 
 The crossing tells all appear: `changed_bank_details` (row 2), `senderTrust`, `secrecy_or_bypass` and
@@ -200,7 +200,7 @@ no equivalence between the forms.
 The full list is under `_brandAdditions` in `awareness/e5/defend.json`. It adds:
 - the real Quayholt hosts;
 - the look-alikes `quayholt-benefits` and `quayholt-learning`;
-- two invented third parties, Ashcombe Solicitors and MailGuard;
+- two invented third parties, Ashcombe Solicitors and Spamwarden;
 - five more cast members (Somali-British, Welsh, Northern Irish, Italian-British and Jamaican-British, aged from their 20s to their 60s).
 
 Gallagher is not used, because it clashes with an existing scenario. Farah was dropped for the same reason (m10) and the Brightwell host is now Joanne Pell.
@@ -209,8 +209,8 @@ Gallagher is not used, because it clashes with an existing scenario. Farah was d
 - **Quayholt cast:**
   - Hana Novak, claims handler, `hana.novak@quayholt.example`, 30s, Czech-British: the E5 target.
   - The Quayholt IT Service Desk, `it-servicedesk@quayholt.example`: the sender the attacker spoofs.
-- **Decoy brand:** DocShare, `docshare.example`. Look-alikes `docshare-login.example`, `docshore.example` and `d0cshare.example`.
-- **Pre-ship check:** "Quayholt", "DocShare" and "Novak" still need the real-business web-search check.
+- **Decoy brand:** Fileharbour, `fileharbour.example`. Look-alikes `fileharbour-login.example`, `fileharbour.example` and `fileharb0ur.example`.
+- **Pre-ship check:** "Quayholt", "Fileharbour" and "Novak" still need the real-business web-search check.
 
 ## Additions from E1 shells and E3 defend (P7-J and P7-S, 2026-10-22)
 - **Check-mission hosts (P7-J):**
@@ -228,8 +228,8 @@ The full list is under `_brandAdditions` in `awareness/e6/defend.json`.
 - **Tarrowby cast:** Bogdan Ionescu, Shauna Lofthouse, Eilidh Strachan, Nilesh Solanki (renamed from Dev Mistry, see below), Lerato Dlamini, Chidi Okeke, Callum Whiteley and Marjorie Ackroyd.
 - **Hosts:** the real Tarrowby hosts `staff.`, `hr.`, `facilities.`, `forms.` and `guest.`.
 - **Look-alikes:** `tarrowby-parking`, `-charging` and `-wifi`.
-- **Third parties:** Parceline, FuelWise, Telvoro, PCN Services, `shrtn.example`, ShiftPlanner and PaySuite.
-- **Pre-ship check:** Tarrowby, Parceline, FuelWise, Telvoro, ShiftPlanner and PaySuite still need the real-business web search.
+- **Third parties:** ASAParcels, Fuelr, Telvoro, PCN Services, `shrtn.example`, Shiftle and Payrollery.
+- **Pre-ship check:** Tarrowby, ASAParcels, Fuelr, Telvoro, Shiftle and Payrollery still need the real-business web search.
 
 ## Additions from E6 attack (2026-10-22)
 - **Tarrowby cast:** Kaylee Dunford, warehouse operative, early 20s, white British, Bradford: the E6 target.
@@ -239,9 +239,9 @@ The full list is under `_brandAdditions` in `awareness/e6/defend.json`.
 
 ## Additions from E2 and E4 defend (2026-10-22)
 - **E2 (Tarrowby):** the full list is under `_brandAdditions` in `awareness/e2/defend.json`. Roseanne Clarke is renamed Roseanne Wadsworth, because sis01 already uses Clarke. New cast: Tendai Moyo, Darius Petrauskas, Zsofia Szabo, Kevin Brannigan, Deborah Haldane, Thanh Nguyen, Ibrahim Diallo, Minjun Ahn and Bethany Hirst.
-- **E4 (Merrin & Sallow):** the full list is under `_brandAdditions` in `awareness/e4/defend.json`. New cast: Julian Sallow, Thandiwe Moyo, Oskar Berglund and Leah Abramson. New companies: Wrenfield Travel, Larkspur Travel, The Ropewalk, Brackenmoor Homes and Abramson Planning.
+- **E4 (Merrin & Sallow):** the full list is under `_brandAdditions` in `awareness/e4/defend.json`. New cast: Julian Sallow, Thandiwe Moyo, Oskar Berglund and Leah Abramson. New companies: Wrenfield Travel, Larkspur Travel, The Harbour Loft, Brackenmoor Homes and Abramson Planning.
 - **Name clash:** E2 has Tendai Moyo and E4 has Thandiwe Moyo, so Moyo appears in both. They're different companies, but rename one if both episodes ship together.
-- **E2 (Tarrowby), attack persona:** Alex Rendell, the job applicant on the exercise account (`a.rendell.jobs@inboxly.example`).
+- **E2 (Tarrowby), attack persona:** Alex Rendell, the job applicant on the exercise account (`a.rendell.jobs@lintbox.example`).
 
 ## Additions from the E6 and E7 shells (2026-10-22)
 - **Rename (E6 defend):** Dev Mistry, the Tarrowby IT service desk analyst, is now **Nilesh Solanki** (`nilesh.solanki@tarrowby.example`): same role, 30s, Gujarati-British, grew up in Leicester. It clears the clash with Dev Acharya on the E6 attack side. Every mention in `e6/defend.json` changed: the cast note, the `e6_mfa_scan` report reply, the guest wi-fi notice caption (`mb_guest_wifi_sign`), and the form B row 10 email `mb_staff_app_update` (sender, reply-to and sign-off). "Nilesh" and "Solanki" had no hits in scenarios, planning_notes, docs or public/break_escape/js.
@@ -272,37 +272,37 @@ E8 is the pilot new episode at **Quayholt Insurance** (`quayholt_insurance`), ho
 - **Name-clash search (grep across `scenarios`, `planning_notes`, `docs`, 2026-10-29):**
   - "Lynch": hits only in `awareness/e6/defend.json` and `implementation/BUILD_LOG.md`. "Dermot" alone also appears in the two E6 shells (first name only, the same person). No clash.
   - "Vanteq": hits only in the E3 shells (full and defend), `awareness/e3/defend.json` and `BUILD_LOG.md`. No clash.
-  - "Marcus": many unrelated Marcus names across older missions (Marcus Webb is the large one: `sis02_energy`, m01 and m02 planning; also Chen, Ashford, Blake, Gray, Bell, Lee and others). **Marcus Hale** appears only in E3 (both shells, the fragment, `BUILD_LOG.md` and `implementation/12_WP15_CORE02_ITEMS.md`). No one else is named Hale. Design review C1 (P1-m3) renamed `general_v2` form A row 8's impostor from Marcus Webb to **Wesley Tan** (British-Chinese, 30s, internal-sounding name on an outside inbox, `wesley.tan@fastmail-pro.example`), so no Marcus is a fraudster in both `general_v2` and E3; "Wesley Tan" is grep-clean across `scenarios`, `planning_notes`, `docs`. With that change the only remaining shared first name is Marcus Hale (E3) against the unrelated Marcus Webb elsewhere, a near-miss not an exact clash; recorded, not renamed (different people in different games, and a learner meets Marcus Hale only in E3).
+  - "Marcus": many unrelated Marcus names across older missions (Marcus Webb is the large one: `sis02_energy`, m01 and m02 planning; also Chen, Ashford, Blake, Gray, Bell, Lee and others). **Marcus Hale** appears only in E3 (both shells, the fragment, `BUILD_LOG.md` and `implementation/12_WP15_CORE02_ITEMS.md`). No one else is named Hale. Design review C1 (P1-m3) renamed `general_v2` form A row 8's impostor from Marcus Webb to **Wesley Tan** (British-Chinese, 30s, internal-sounding name on an outside inbox, `wesley.tan@larchmail.example`), so no Marcus is a fraudster in both `general_v2` and E3; "Wesley Tan" is grep-clean across `scenarios`, `planning_notes`, `docs`. With that change the only remaining shared first name is Marcus Hale (E3) against the unrelated Marcus Webb elsewhere, a near-miss not an exact clash; recorded, not renamed (different people in different games, and a learner meets Marcus Hale only in E3).
 - **Pre-ship:** web-search "Vanteq Systems" and "Dermot Lynch" against real businesses and people with the usual check before release.
 
 ## Additions from E17 and E19 (2026-10-29)
 - **E17 (acceptable use, Tarrowby, defend-only, one shell):** no new names. The host is **Nilesh Solanki** (above); the "can I?" cards and the inbox use Tarrowby's own addresses.
 - **E19 (malware and updates, Quayholt, host Anjali Rao).** Full list in `awareness/e19/BRAND_ADDITIONS.md`.
-  - **TidyDocs** (`tidydocs.example`, invites from `invites@tidydocs.example`): a fictional document app that asks to connect (`e19_consent_unknown`). No cast, no art.
+  - **Piledocs** (`piledocs.example`, invites from `invites@piledocs.example`): a fictional document app that asks to connect (`e19_consent_unknown`). No cast, no art.
   - **Leo Brennan** (`leo.brennan@quayholt.example`): operations colleague, mid 20s, white Irish-English. Text-only, the panicking colleague in `e19_ransom_note`. From the no-clash pool, new to the built cast.
   - **Fake "Quayholt IT Support"** on the look-alike `quayholt-it-support.example` (`support@quayholt-it-support.example`), `e19_disable_protection`. The learnable shape is an added word and hyphen.
   - **Fernside Catering** (`fernside.example`), sent from the look-alike `fernside-invoices.example` (`e19_enable_content`). Reused from the E10 plan; E10 is now built (see the E10 section below) and lands the genuine portal `orders.fernside.example` with the builder look-alike option `orders-fernside.example`. E19's `fernside-invoices.example` and E10's `orders-fernside.example` are sibling look-alikes of the same genuine `fernside.example`; both are kept, each the natural look-alike for its own context (an invoices mail vs the order portal), so the two episodes are consistent on the genuine base and the look-alike family.
   - Reused Quayholt slots, no new names: Quayholt Protect, Quayholt Files (genuine invites from `apps@quayholt.example`), extension 4444 and the "Report an incident" form.
-- **Name-clash search (grep across `scenarios`, `planning_notes`, `docs`, 2026-10-29):** "TidyDocs" and "quayholt-it-support" hit only the E19 brief and README; "Leo Brennan" only the no-clash pool in `03_WORLD_AND_CAST.md` and planning files; "Fernside" only the E10 and core_08 plans. No clash.
-- **Pre-ship:** web-search TidyDocs, Leo Brennan, Quayholt IT Support and Fernside Catering against real businesses and people before release.
+- **Name-clash search (grep across `scenarios`, `planning_notes`, `docs`, 2026-10-29):** "Piledocs" and "quayholt-it-support" hit only the E19 brief and README; "Leo Brennan" only the no-clash pool in `03_WORLD_AND_CAST.md` and planning files; "Fernside" only the E10 and core_08 plans. No clash.
+- **Pre-ship:** web-search Piledocs, Leo Brennan, Quayholt IT Support and Fernside Catering against real businesses and people before release.
 
 ## Additions from E11 (misdirected data, 2026-10-29)
 - **New company: Carrholme Services** (`carrholme_services`, room `room_aw_carrholme`, host Tomasz Wiśniewski). Row in section 2, cast above. Full record in `awareness/e11/BRAND_ADDITIONS.md`.
-- Shared invented services: `hollinsbrookhouse.example` (Hollinsbrook House) and `kestrelcourt.example` (Kestrel Court), both fictional clients of the Care Laundry line. `inboxly.example` is the existing shared freemail.
+- Shared invented services: `hollinsbrookhouse.example` (Hollinsbrook House) and `wychbournecourt.example` (Wychbourne Court), both fictional clients of the Care Laundry line. `lintbox.example` is the existing shared freemail.
 - **Name-clash search (grep across `scenarios`, `planning_notes`, `docs`, 2026-10-29, re-run at wiring):**
-  - Carrholme, Wiśniewski, Whitlow, Whitaker, Hollinsbrook, Kestrel Court, Corrigan, Rowley: hits only in the course modules, the `data_conduct` check material (which names Carrholme and Tomasz) and E11's own files. No built scenario, ink or engine file. Clean.
+  - Carrholme, Wiśniewski, Whitlow, Whitaker, Hollinsbrook, Wychbourne Court, Corrigan, Rowley: hits only in the course modules, the `data_conduct` check material (which names Carrholme and Tomasz) and E11's own files. No built scenario, ink or engine file. Clean.
   - **Resolved clash:** the brief's "DC Hendry" became **DC Rowley**, because Pauline Hendry (Payroll) is a built genuine colleague in the check forms. "Sam Whitlow" is used instead of "Sam Whitfield" for the same reason (Graham Whitfield, finance check host).
   - **Recorded near-miss:** Gareth and Edna **Hale** at Carrholme versus Marcus Hale, the E3 remote-access fraudster at Quayholt. Different people, firms and episodes; not renamed.
   - Marcus Webb is not printed on screen in E11 (the most reused name in the product); the driver is Lee Corrigan.
-- **Pre-ship:** web-search Carrholme Services, Hollinsbrook House, Kestrel Court, North Pennine Police, Tomasz Wiśniewski, Shauna Campbell, Martin Fletcher, Sam Whitaker, Sam Whitlow and Gareth Hale against real businesses and people before release.
+- **Pre-ship:** web-search Carrholme Services, Hollinsbrook House, Wychbourne Court, North Pennine Police, Tomasz Wiśniewski, Shauna Campbell, Martin Fletcher, Sam Whitaker, Sam Whitlow and Gareth Hale against real businesses and people before release.
 
 ## Additions from E15 (shadow IT, 2026-10-29)
 - **Tarrowby Logistics, no new cast.** Host Nilesh Solanki; Colin Mather (warehouse manager, offers the shortcuts) and Shauna Lofthouse (rota) are built Tarrowby cast. Do not reintroduce "Dev Mistry". Full record in `awareness/e15/BRAND_ADDITIONS.md`.
-- **New third parties (unapproved outside services, each a different shape from Tarrowby's own domain):** SwiftDrop (`swiftdrop-free.example`, a free file-transfer site, defend row 2); Benmoor Packaging (`benmoor-packaging.example`, a trade-fair supplier that posts a branded giveaway USB, row 3); PDFMerge Free (`pdfmerge-free.example`, a free PDF editor, row 4).
+- **New third parties (unapproved outside services, each a different shape from Tarrowby's own domain):** Chuckbox (`chuckbox-free.example`, a free file-transfer site, defend row 2); Benmoor Packaging (`benmoor-packaging.example`, a trade-fair supplier that posts a branded giveaway USB, row 3); PDFmangle Free (`pdfmangle-free.example`, a free PDF editor, row 4).
 - **New Tarrowby service host:** `fileshare.tarrowby.example`, the approved file-sharing service (named people, end date), row 5 and the approved swap in the Swap Shop. Follows the E6 sub-service host pattern.
 - **Phone number:** the only number on screen is the note's `07700 900142`, in Ofcom's drama range.
-- **Name-clash search (2026-10-29):** SwiftDrop, Benmoor and PDFMerge have no hits in `scenarios`, `planning_notes` or `docs` outside E15's own files. Clean.
-- **Pre-ship:** web-search SwiftDrop, Benmoor Packaging and PDFMerge Free against real businesses before release.
+- **Name-clash search (2026-10-29):** Chuckbox, Benmoor and PDFmangle have no hits in `scenarios`, `planning_notes` or `docs` outside E15's own files. Clean.
+- **Pre-ship:** web-search Chuckbox, Benmoor Packaging and PDFmangle Free against real businesses before release.
 
 ## Additions from E9 passwords (2026-10-29)
 
@@ -328,12 +328,12 @@ All fictional; every domain ends `.example`; no homographs.
 
 ### Reused third-party brand
 
-- **FuelWise** (`fuelwise.example`): the new supplier portal in defend rows 5 and 6. Reused from E6's third-party list. **Note for the orchestrator:** E6 only ever used the scam look-alike `fuelwise-rewards.example` (now an unused leftover brand); `fuelwise.example` is FuelWise's legitimate domain and is introduced here for the genuine portal sign-up. FuelWise is already on the Tarrowby pre-ship web-search list.
+- **Fuelr** (`fuelr.example`): the new supplier portal in defend rows 5 and 6. Reused from E6's third-party list. **Note for the orchestrator:** E6 only ever used the scam look-alike `fuelr-rewards.example` (now an unused leftover brand); `fuelr.example` is Fuelr's legitimate domain and is introduced here for the genuine portal sign-up. Fuelr is already on the Tarrowby pre-ship web-search list.
 
 ### Name-clash search (`grep -rn "<name>" scenarios planning_notes docs`, 2026-10-29)
 
 - `RiverReach`, `riverreachangling`, `Pennington`, `Bramble`: zero hits anywhere except the E9 implementation briefs (`planning_notes/security_awareness_course/implementation/`, which are these specs). Clean for a new episode.
-- `FuelWise` / `fuelwise`: existing hits are the E6 fragment and BRAND_SET only (the reuse is intended).
+- `Fuelr` / `fuelr`: existing hits are the E6 fragment and BRAND_SET only (the reuse is intended).
 - `Nilesh` / `Solanki`, `Colin Mather`: existing Tarrowby cast (E6); intended reuse.
 - `otter`, `crimson`: appear as ordinary words in unrelated mission scenarios (e.g. `m04`, `m05`, `m10`, `sis02`); they are game words here, not names, so no clash.
 
@@ -343,7 +343,7 @@ Web-search against real businesses, clubs and products, as the usual check:
 
 - **RiverReach Angling** and **riverreachangling.example**
 - **Pennington Rangers** (an amateur football club name)
-- **FuelWise** (already on the Tarrowby pre-ship list)
+- **Fuelr** (already on the Tarrowby pre-ship list)
 
 Everyone and every company is fictional; every address and domain ends `.example`.
 
@@ -561,7 +561,7 @@ throwaway hosts, all `.example`. Everyone and every company is fictional; no hom
 - **`secure-alert.example`, `addons.example`, `downloads.example`**: throwaway scam/store hosts for defend
   rows 5 (full-screen alarm), 6 (extension store) and 7 (dangerous download). Generic, not real brands.
 - **Software (teaching only, from the core_08/core_07 Quayholt slots):** **Quayholt Apps** (staff software
-  portal), **Quayholt Protect** (security software), **DocShift** (approved PDF converter in Quayholt
+  portal), **Quayholt Protect** (security software), **Pagewrangle** (approved PDF converter in Quayholt
   Apps). Report route: the browser Report button, the "Report an incident" form, or the security team on
   extension 4444.
 - **Pagewright** (`pagewright.example`; advert look-alike `pagewright-download.example`) and **Ashby
@@ -577,7 +577,7 @@ throwaway hosts, all `.example`. Everyone and every company is fictional; no hom
 - **`hauliernews`, `secure-alert.example`:** zero hits anywhere before E10. Clean.
 - **`pagewright-download`, `ashby-trade-login`, `ashbysupplies`:** hits only in the core_08 module docs
   (real-TLD), swapped to `.example` here.
-- **Niamh Doherty, Leila Nassar, Quayholt Apps, Quayholt Protect, DocShift:** existing Quayholt cast and
+- **Niamh Doherty, Leila Nassar, Quayholt Apps, Quayholt Protect, Pagewrangle:** existing Quayholt cast and
   software slots (E3/E5 and the module docs). Intended reuse.
 
 ### Pre-ship web searches owed (companies/people as real businesses)
@@ -641,7 +641,7 @@ E13 adds no cast. The host and everyone impersonated are built Brightwell Foods 
 | Mossgate Cleaning Supplies | Fictional supplier | `mossgate-supplies.example` | The supplier whose brief carries the hidden instruction (attack); the genuine monthly invoice (defend item 2) and the planted one (defend item 1) |
 | (look-alike meeting domain) | Look-alike of `brightwellfoods.example` | `brightwell-board.example` | The fake Project Heron meeting link (defend item 5); tagged External. Distinct from the E1 pin look-alike `brightwel1foods.example` |
 | Project Heron | Fictional confidential project | n/a | The pretext on the deepfake video call (defend item 5) |
-| contacts.export@inboxly.example | Exfil drop address | `inboxly.example` (already in the set) | The address the hidden instruction tells the assistant to send the contact list to (attack `inject_contacts`; defend item 1 `hiddenText`). Only the local part `contacts.export` is new |
+| contacts.export@lintbox.example | Exfil drop address | `lintbox.example` (already in the set) | The address the hidden instruction tells the assistant to send the contact list to (attack `inject_contacts`; defend item 1 `hiddenText`). Only the local part `contacts.export` is new |
 
 ### Phone number (Ofcom drama range)
 
@@ -653,7 +653,7 @@ E13 adds no cast. The host and everyone impersonated are built Brightwell Foods 
 
 ### Name-clash search (`grep -rn "<name>" scenarios planning_notes docs | grep -v BRAND_SET`, 2026-10-29)
 
-- **Mossgate / mossgate-supplies, brightwell-board, Project Heron, contacts.export:** hits only in the `core_15` module design docs and E13's own files (`e13/*`, this episode's shells). No built-scenario, ink or engine clash. `inboxly.example` is a pre-existing shared invented freemail.
+- **Mossgate / mossgate-supplies, brightwell-board, Project Heron, contacts.export:** hits only in the `core_15` module design docs and E13's own files (`e13/*`, this episode's shells). No built-scenario, ink or engine clash. `lintbox.example` is a pre-existing shared invented freemail.
 
 ### Pre-ship web search (required before release, orchestrator to run)
 

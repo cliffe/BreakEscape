@@ -170,8 +170,8 @@ test('P6-2 / P5-8: the data-only reply names the cause of a link miss, falling b
     assert.equal(run({}).r.linkCause, 'noPage');
     assert.equal(run({}).reply.text, 'no page');
     const attached = (brand, meets) => ({ link: 'kit', linkInfo: { state: 'ok', brand, domain: 'x.example', meetsThreshold: meets } });
-    assert.equal(run(attached('docshare', false)).r.linkCause, 'wrongService');
-    assert.equal(run(attached('docshare', false)).reply.text, 'wrong service');
+    assert.equal(run(attached('fileharbour', false)).r.linkCause, 'wrongService');
+    assert.equal(run(attached('fileharbour', false)).reply.text, 'wrong service');
     assert.equal(run(attached('quayholt', false)).reply.text, 'wrong address');
     // No per-cause key: the single generic reply, as before.
     const old = { ...target, replies: { landed: 'ok', missed: 'generic' } };
@@ -185,8 +185,8 @@ test('P6-6: CRITICAL_WHAT names a trusted voicemail', () => {
 
 test('P6-2: linkInfoFor records the brand the page imitates', async () => {
     const lp = await import(pathToFileURL(join(dir, 'minigames/landing-page-builder/landing-page-model.js')));
-    const info = lp.linkInfoFor({ built: true, choices: { brand: 'docshare', domainId: 'd1' }, credibility: 10 }, { brands: [] }, 'k');
-    assert.equal(info.brand, 'docshare');
+    const info = lp.linkInfoFor({ built: true, choices: { brand: 'fileharbour', domainId: 'd1' }, credibility: 10 }, { brands: [] }, 'k');
+    assert.equal(info.brand, 'fileharbour');
 });
 
 // ── Engine round 4 (P7) ───────────────────────────────────────────────────────
@@ -210,7 +210,7 @@ test('P7-1: the live reply (mail-bridge dataOnlyText) names the cause of the lin
     const none = await evalLink({});
     assert.equal(bridge.dataOnlyText(t, none, aw), 'no page');
     const page = (brand) => ({ link: 'kit', linkInfo: { state: 'ok', brand, domain: 'x.example', meetsThreshold: false } });
-    assert.equal(bridge.dataOnlyText(t, await evalLink(page('docshare')), aw), 'wrong service');
+    assert.equal(bridge.dataOnlyText(t, await evalLink(page('fileharbour')), aw), 'wrong service');
     assert.equal(bridge.dataOnlyText(t, await evalLink(page('quayholt')), aw), 'wrong address');
     // No per-cause strings: the one generic reply, as before.
     assert.equal(bridge.dataOnlyText({ ...t, replies: { landed: 'ok', missed: 'generic' } }, none, aw), 'generic');

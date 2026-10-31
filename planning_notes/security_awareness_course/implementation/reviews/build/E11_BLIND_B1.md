@@ -37,7 +37,7 @@ Real decisions and whether the answer was given away:
 | Police caller | Fairly obvious from the "withheld number", "no time" and the line that blocks a call-back. Escalate versus Ring back is a real second-order choice; both were accepted. |
 | Payroll look-alike | Findable by anyone who reads the address. |
 | Gareth Hale "I want EVERYTHING" | Arguable, and honestly the best item. It reads as a complaint, not a request. |
-| Kestrel Court laundry list | Arguable, only the file name gives it away. Good. |
+| Wychbourne Court laundry list | Arguable, only the file name gives it away. Good. |
 | Sam's contact update | Arguable. The Trust-is-correct decoy works. |
 
 The stage 2 choices are all scored zero, unlabelled as such except "Nothing here is scored". The cautious option is the long one with a safeguard in it every time, so a skimming player picks the right one by shape. Their consequences did show later (stage 3 echoes each choice), but nothing in the inbox or debrief refers back to them.
@@ -91,7 +91,7 @@ Scores (1 to 5): fun 3, pacing 4, clarity of goals 5, openness of decisions 3, t
 
 | # | Sev | Type | Finding |
 |---|---|---|---|
-| F1 | major | content | Contradictory tell on the Kestrel Court message. The attachment is a residents' care summary on a laundry-list email, and the debrief itself explains it as "the file attached is their residents' care summary, not a laundry list". But the tick-list item "The attachment doesn't fit" is scored "Not a flag here ... wasn't one of this message's tells". A careful player who notices exactly the right thing is told it is wrong. |
+| F1 | major | content | Contradictory tell on the Wychbourne Court message. The attachment is a residents' care summary on a laundry-list email, and the debrief itself explains it as "the file attached is their residents' care summary, not a laundry list". But the tick-list item "The attachment doesn't fit" is scored "Not a flag here ... wasn't one of this message's tells". A careful player who notices exactly the right thing is told it is wrong. |
 | F2 | major | content | Payroll email says "Anyone who does not confirm today may see their payment held", but "It's pushing me to hurry" is scored "Not a flag here". Same unfairness, and it teaches the player not to trust their own reading. |
 | F3 | minor | content | Same fact, two different tells. Run 1 credited "Link or sender domain is a look-alike"; run 2's missed-tell says "Sender address doesn't match the display name or a known contact". The 12-option tick-list has both "The sender's address doesn't match who it says it is" and the look-alike option, but only one counts. Ticking the other one is marked "not a flag". |
 | F4 | minor | content | The 12-option tick-list is the same wall for every message, with items that cannot apply (a phone call with "The link goes somewhere else"). On the call it was shortened, which is better; the emails need the same trimming. |

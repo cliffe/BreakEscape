@@ -124,8 +124,8 @@ Cast (all fictional; ages are bands for the concept prompts; all need the pre-sh
 | Martin Fletcher | Sales Director | 50s, white, Manchester | `martin.fletcher@carrholme.example` | The marketing-export sandbox beat |
 | Sam Whitaker | Payroll Officer | 30s, British Caribbean | `sam.whitaker@carrholme.example` | The correct recipient of the overtime sheet |
 | Sam Whitlow | Manager, Hollinsbrook House (client care home, `hollinsbrookhouse.example`) | 50s, white, Yorkshire | `sam.whitlow@hollinsbrookhouse.example` | The wrong "Sam" the breach goes to; replies in the defend set |
-| Gareth Hale | Son of a resident (Hollinsbrook House) | 40s, white | `gareth.hale@inboxly.example` (freemail) | The subject access request in the defend set |
-| Kestrel Court | Client care home (`kestrelcourt.example`) | n/a | `laundry@kestrelcourt.example` | Sends the misdirected care summary (inbound breach) |
+| Gareth Hale | Son of a resident (Hollinsbrook House) | 40s, white | `gareth.hale@lintbox.example` (freemail) | The subject access request in the defend set |
+| Wychbourne Court | Client care home (`wychbournecourt.example`) | n/a | `laundry@wychbournecourt.example` | Sends the misdirected care summary (inbound breach) |
 
 People named on screen only (no art, no sender): Edna Hale (87, Hollinsbrook House, Room 12), Albert
 Finch (Room 14), Pauline Grant (Room 9), Bernadette Lyons (Carrholme cleaner), Lee Corrigan and Marcus
@@ -140,7 +140,7 @@ prompts can follow it.
 **Name-clash resolutions in this cast:** the care-home manager is **Sam Whitlow**, not "Sam Whitfield"
 (the `game_design.md` default), because `Whitfield` is already the finance check-mission host Graham
 Whitfield (`BRAND_SET.md` P7-J). "Whitlow", "Whitaker", "Hollinsbrook", "Edna Hale", "Bernadette Lyons",
-"Kestrel Court" had no repo hits on 2026-10-27.
+"Wychbourne Court" had no repo hits on 2026-10-27.
 
 ## 6. Timing budget per stage (about 15 minutes)
 
@@ -435,8 +435,8 @@ chosen so the high-scoring verdict is unambiguous.
 | 1 | `e11_wrong_sam_breach` | email, Sam Whitlow (`sam.whitlow@hollinsbrookhouse.example`), genuine | "I think this wasn't meant for me?" | none (a genuine heads-up; isPhish false) | **Report** (report the breach to the DPO) | on | "Sam has flagged that your staff's overtime, with health notes, reached her by mistake. That is a personal data breach: report it the same way you would report anything, and say it involves personal data, so it reaches the DPO. Asking her to delete it is a good next step, not instead of reporting." |
 | 2 | `e11_police_disclosure` | call, "DC Rowley, North Pennine Police" (number withheld), isPhish true | "I need Lee Corrigan's mobile and his route this afternoon. Road traffic matter. Urgent." | `vish_callback_pressure`, `borrowed_authority`, `secrecy_or_bypass` | **Verify** (take his name, force and switchboard number; the DPO handles police requests) or **Report** | on | "A caller cannot prove who they are by phone, and people pretend to be police to get an address. Give nothing out. Take his details, tell him the DPO handles police requests and is quick, and pass it on. Real police expect that and usually put it in writing." |
 | 3 | `e11_payroll_lookalike` | email, "Carrholme Payroll" (`payroll@carrholme-payroll.example`), isPhish true | "Confirm your bank and National Insurance details to be paid this month" | `lookalike_domain`, `senderTrust` | **Report** | on | "The name says Carrholme Payroll, but the address is on carrholme-payroll.example, with an added word; Carrholme is carrholme.example. Payroll does not collect bank or NI details by email like this. Report it." (The normal-looking phish half of the mirror pair.) |
-| 4 | `e11_sar_everything` | email, Gareth Hale (`gareth.hale@inboxly.example`), genuine | "Mum's cardigan is missing again. I want EVERYTHING you hold on Mum and me. Every note, every call." | none (a genuine request inside a complaint; isPhish false) | **Report** (pass to the DPO the same day) or **Verify** | on | "It is angry and broad, but it is a valid request to see personal data, and it does not have to use the words 'subject access'. Pass it to the DPO the same day and send the holding reply; do not gather or send anything yourself. Carry on with the cardigan complaint as normal work. Handling it yourself and quietly, or deleting it, is the wrong move." (The suspicious-looking genuine half of the mirror pair.) |
-| 5 | `e11_kestrel_inbound` | email, Kestrel Court (`laundry@kestrelcourt.example`), genuine sender, misdirected | "This week's laundry list" with a wrong attachment: the home's full residents' care summary | none (isPhish false; a received-in-error breach) | **Report** | on | "The sender is real, but the attachment is theirs to hold, not ours: names, conditions and medicines. Do not open it further, do not forward it. Tell the sender, report it, and delete it when the DPO says so. We now hold data we should not." |
+| 4 | `e11_sar_everything` | email, Gareth Hale (`gareth.hale@lintbox.example`), genuine | "Mum's cardigan is missing again. I want EVERYTHING you hold on Mum and me. Every note, every call." | none (a genuine request inside a complaint; isPhish false) | **Report** (pass to the DPO the same day) or **Verify** | on | "It is angry and broad, but it is a valid request to see personal data, and it does not have to use the words 'subject access'. Pass it to the DPO the same day and send the holding reply; do not gather or send anything yourself. Carry on with the cardigan complaint as normal work. Handling it yourself and quietly, or deleting it, is the wrong move." (The suspicious-looking genuine half of the mirror pair.) |
+| 5 | `e11_wychbourne_inbound` | email, Wychbourne Court (`laundry@wychbournecourt.example`), genuine sender, misdirected | "This week's laundry list" with a wrong attachment: the home's full residents' care summary | none (isPhish false; a received-in-error breach) | **Report** | on | "The sender is real, but the attachment is theirs to hold, not ours: names, conditions and medicines. Do not open it further, do not forward it. Tell the sender, report it, and delete it when the DPO says so. We now hold data we should not." |
 | 6 | `e11_cardigan_update` | email, Hollinsbrook House (`sam.whitlow@hollinsbrookhouse.example`), genuine | "Mrs Hale's son has a new mobile; please update it on the claim, and the cardigan has turned up" | none (isPhish false) | **Trust** (handle it: update the contact detail as normal work) | on | "Correcting a contact detail on a claim is ordinary work and a person's right. Data protection is not a reason to stop helping. Handle it." |
 
 **Mirror pair (aw5):** item 3 (a normal-looking, on-screen-catchable phish, correct verdict Report) and
@@ -663,5 +663,5 @@ mission concluded. A second bridge for the defend-only shell: brief, defend, deb
 - **DPO-routing vs the awareness scorer:** the built scorer does not penalise `Trust` on a genuine
   request that should go to the DPO, so that nuance lives in the per-item card, not the score (section
   11). If the product wants it scored, that is a request to `05` and changes the defend set.
-- The pre-ship web search for "Carrholme Services", "Hollinsbrook House" and "Kestrel Court" is still
+- The pre-ship web search for "Carrholme Services", "Hollinsbrook House" and "Wychbourne Court" is still
   owed (BRAND_SET rule).

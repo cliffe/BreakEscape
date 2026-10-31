@@ -159,7 +159,7 @@ Five weakest lines, E20:
 
 ## Defend-only notes
 
-- E19 defend-only (game 4781): brief, Defend card, inbox brief, Start, six messages, result, debrief. Same six messages as the full run. Sam got TidyDocs wrong on purpose (Trust) and Deleted the credit note, so the result showed 53%. The "Delete" feedback ("Safe, but not reported") was fair.
+- E19 defend-only (game 4781): brief, Defend card, inbox brief, Start, six messages, result, debrief. Same six messages as the full run. Sam got Piledocs wrong on purpose (Trust) and Deleted the credit note, so the result showed 53%. The "Delete" feedback ("Safe, but not reported") was fair.
 - E20 defend-only (game 4783): same shape. Sam trusted the lost-device lure on purpose (62%), Verified the look-alike Wi-Fi (partial credit 60, "Checked by another route 1"), and Reported the real café page (fine, "never wrong").
 - Both defend-only briefs state the answer ("never type your work password into a Wi-Fi page", "if you didn't start it, don't open it") twice or three times before the first item.
 - Global name for defend-only on the "_defend" scenario is "..._defend_defend_done" (doubled). Same pattern as E8; harmless but worth knowing for any check that reads the global.

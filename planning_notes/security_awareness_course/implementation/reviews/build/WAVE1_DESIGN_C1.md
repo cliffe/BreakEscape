@@ -84,7 +84,7 @@ change on item 8's second flag cannot be credited to any episode, which is the a
 C2-M6 was raised to close, and which `BUILD_LOG.md:38` queued for this review.
 
 What limits the damage: the verdict (Report) and the first flag (`senderTrust`) are both reachable
-from the visible From address (an outside inbox at `fastmail-pro.example` / `itrollout-support.example`,
+from the visible From address (an outside inbox at `larchmail.example` / `itrollout-support.example`,
 not `quayholt.example`), so the item still discriminates on the verdict, and both forms carry the tell
 identically, so A-versus-B parity and the untouched baseline are not harmed. The cost is the 20 of 40
 reason points on item 8 that rest on an untaught skill, in both the pre and the post form.
@@ -233,7 +233,7 @@ full playtest (`ONLY=e6-full run-suite.sh` on keyless :3001): bridge-e6-full 15/
 | P1-M1 (item 8 scores header-only `reply_to_differs`) | **Fixed** | Dropped `reply_to_differs` from item 8 in both forms (`gva_free_converter`, `gvb_usb_courier`), following the built forms' C2-M6 decision. Item 8 now scores `senderTrust` only, keeping the pass-but-bad shape. The reply-to lesson moved into each item's `headerNote` as a "you could also see" line. `reply_to_differs` removed from both forms' `channelTells` (nothing else scored it). A/B flag multisets stay equal (6 scored flags each); balance lint clean. Divergence from `10_CHECK_FORMS.md:391` recorded there with a dated note. |
 | P1-m1 ("(part two)" dangles) | **Fixed** | Retitled to "Everyday threats check" in the fragment (both forms) and in `gen_checks_v2_shells.py` (the mission display name), so no check shell refers to an unnamed part one. |
 | P1-m2 (look-alike `1`/`l` in page-card list row) | **Deferred** | Engine/render finding (page-card list rows in the pixel font); out of content scope. |
-| P1-m3 / P2-m2 (two unrelated "Marcus" impostors) | **Fixed** | Renamed `general_v2` form A row 8 impostor Marcus Webb to **Wesley Tan** (British-Chinese, 30s), grep-clean across `scenarios planning_notes docs`; address `wesley.tan@fastmail-pro.example`, reply-to `w.tan.docs@quickpost-mail.example`. E3's Marcus Hale kept. `_brandAdditions` note and `BRAND_SET.md` Marcus entry updated. |
+| P1-m3 / P2-m2 (two unrelated "Marcus" impostors) | **Fixed** | Renamed `general_v2` form A row 8 impostor Marcus Webb to **Wesley Tan** (British-Chinese, 30s), grep-clean across `scenarios planning_notes docs`; address `wesley.tan@larchmail.example`, reply-to `w.tan.docs@hastypost.example`. E3's Marcus Hale kept. `_brandAdditions` note and `BRAND_SET.md` Marcus entry updated. |
 | P2-m1 / WP-15 (unused `reply_stop_trick` chip in E6) | **Fixed** | Removed `reply_stop_trick` from `e6_phone_messages.channelTells` only, in the fragment (`e6/defend.json`) and the full erb. No remaining item in that set scores it (checked fragment + erb). The mobile forms (`mobile_form_a`/`_b`), which do score it, are untouched. |
 | P3-m1 (impostor speech relabelled "Caller"→"Gordon") | **Fixed** | Restored `"who": "Caller"` on the annual item 4 impostor-call transcript lines, so the reuse is verbatim against the E3 source (`e3_call_gordon_impostor`); the genuine item 5 keeps `"Gordon"`. |
 | P3-m2 (E5 `e5_sso_lookalike` no visible real-address anchor) | **Withdrawn (out of scope)** | Inherited E5 C1-M6 on a built item; per the ruling, left to E5. |

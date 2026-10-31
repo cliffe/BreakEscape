@@ -111,7 +111,7 @@ wording.
 false on main, and the C3 N1 objective-title nit is fixed. The two minors are the set-wide over-report
 question (D1) and an engine feedback-composition item (D2); the one nit is the missing end send-off. None
 blocks ship. Pre-ship still owed (C2, not a review finding): web-search the invented lure domains
-`harlow-freight.example`, `meetly-app.example`, `quickconvert-online.example`.
+`harlow-freight.example`, `roomcall-app.example`, `formatmoor-online.example`.
 
 ---
 

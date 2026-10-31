@@ -65,7 +65,7 @@ There are seven `awareness_e*_defend` shells, one per episode (decision V, 2026-
 - Quayholt Insurance, a commercial insurer in Bristol, `#6b4c9a`;
 - Merrin & Sallow Architects, a London practice, `#8a5a2b`.
 
-Each company has a named, deliberately varied cast. Invented shared services: inboxly, QuickPost Mail, docshare-login. The look-alikes use learnable shapes only (a swapped character, an added hyphen, an added word), and there are no homographs. The lab's brands (Ledgerwell, Tarnside, CloudBoxy) are kept out of the awareness product. Every company name gets a web search before release.
+Each company has a named, deliberately varied cast. Invented shared services: lintbox, Hastypost, fileharbour-login. The look-alikes use learnable shapes only (a swapped character, an added hyphen, an added word), and there are no homographs. The lab's brands (Ledgerwell, Tarnside, CloudBoxy) are kept out of the awareness product. Every company name gets a web search before release.
 
 ### 1.6 Shared rule of thumb (no motto)
 

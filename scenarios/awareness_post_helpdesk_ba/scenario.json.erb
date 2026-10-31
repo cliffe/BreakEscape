@@ -244,7 +244,7 @@
             "id": "ha_ceo_mfa_bypass",
             "from": {
               "name": "Helen Achterberg",
-              "address": "helen.achterberg.ceo@inboxly.example"
+              "address": "helen.achterberg.ceo@lintbox.example"
             },
             "to": "servicedesk@quayholt.example",
             "subject": "Urgent: remove my sign-in prompts today",
@@ -254,8 +254,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "helen.achterberg.ceo@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "helen.achterberg.ceo@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -265,11 +265,11 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "The chief executive's name on a personal inbox at inboxly.example, not quayholt.example",
+                "senderTrust": "The chief executive's name on a personal inbox at lintbox.example, not quayholt.example",
                 "secrecy_or_bypass": "'No need to raise a ticket or tell Darren' skips the record and the person who would check",
                 "urgencyCalibrated": "'Before 10' while she's 'flying' leaves no time to ring her"
               },
-              "headerNote": "The automatic checks pass because the message really was sent from inboxly.example. A pass tells you which mail system sent it, not that it's Helen.",
+              "headerNote": "The automatic checks pass because the message really was sent from lintbox.example. A pass tells you which mail system sent it, not that it's Helen.",
               "ifTrusted": "Her account would lose its second sign-in step, so anyone with her password could get straight in.",
               "reportReply": "Thanks. Helen didn't send it, and her account is unchanged. Her real address is on quayholt.example."
             }

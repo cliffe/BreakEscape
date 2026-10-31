@@ -59,7 +59,7 @@ All four are invented, every domain ends `.example`, and each still needs the pr
 | Quayholt Insurance | `quayholt.example` | Bristol commercial insurer with an in-house IT service desk and single sign-on | E3 help-desk reset and MFA fatigue, E5 fake sign-in pages | Helpdesk and general (AB and BA) |
 | Merrin & Sallow Architects | `merrinsallow.example` | London architecture practice whose partners' diaries are partly public | E4 executive whaling | Executive (AB and BA) |
 
-Each company's look-alikes use only the shapes a learner can learn to check: a swapped character, an added hyphen or an added word. There are no homographs in the awareness product. Suppliers, banks, agencies and shared services (Harlow Packaging, Kettlewick Talent, inboxly, DocShare and the rest) are in BRAND_SET §3 and the `_brandAdditions` blocks of each `awareness/e*/defend.json`.
+Each company's look-alikes use only the shapes a learner can learn to check: a swapped character, an added hyphen or an added word. There are no homographs in the awareness product. Suppliers, banks, agencies and shared services (Harlow Packaging, Kettlewick Talent, lintbox, Fileharbour and the rest) are in BRAND_SET §3 and the `_brandAdditions` blocks of each `awareness/e*/defend.json`.
 
 ## Larkspur Group: retired
 
@@ -68,7 +68,7 @@ Each company's look-alikes use only the shapes a learner can learn to check: a s
 1. The build uses a training room at one of four client companies, so a single recurring workplace has no place in the frame (R2).
 2. **"Larkspur Travel" is already a built supplier.** It appears in the executive check forms as a genuine supplier and as a look-alike (items `ea_larkspur_bank` and `ea_larkspur_invoice`, on `larkspurtravel.example` and `larkspur-travel.example`, in `awareness_pre_executive_ab` and `awareness_post_executive_ba`). A second "Larkspur" company in the same product would confuse learners and blur a check item.
 
-Module plans that still say "Larkspur" should read as "the brand-set company the episode is set at". Fictional suppliers and products the modules name (Northbeck Supplies, Westmoor Council, DocShift and others) may be reused at a brand-set company, but each must be checked against BRAND_SET and given a `.example` domain before use.
+Module plans that still say "Larkspur" should read as "the brand-set company the episode is set at". Fictional suppliers and products the modules name (Northbeck Supplies, Westmoor Council, Pagewrangle and others) may be reused at a brand-set company, but each must be checked against BRAND_SET and given a `.example` domain before use.
 
 ## Companies for E8 to E13 (decided 2026-10-27)
 

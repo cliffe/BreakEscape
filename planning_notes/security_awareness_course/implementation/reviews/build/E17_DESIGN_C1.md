@@ -142,7 +142,7 @@ the shipped wording as drift. No shipped file affected.
   erb, so it is correctly outside the full-episode parity set; I diffed its fragment/`full_only` against
   the shell by hand instead and they match field for field.
 - **Pre-ship web search still owed** (spec §20): the invented lure sender domains
-  (`harlow-freight.example`, `meetly-app.example`, `quickconvert-online.example`) should be checked
+  (`harlow-freight.example`, `roomcall-app.example`, `formatmoor-online.example`) should be checked
   against real businesses before ship (BRAND_SET rule). Not done here; needs-user.
 - **Not judged from a screen.** Concept panels, the drill launch panel and the address-font treatment are
   read from the engine (`debrief-view.js:373-378`, `episode-model.js:144-154`) and the shared inbox-triage

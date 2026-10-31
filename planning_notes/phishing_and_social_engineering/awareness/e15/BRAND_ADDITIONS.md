@@ -26,9 +26,9 @@ These are plainly outside services, each a different shape from Tarrowby's own d
 
 | Name | Domain | What it is | Used in |
 |------|--------|-----------|---------|
-| SwiftDrop | `swiftdrop-free.example` | A free file-transfer site, no account needed | Defend row 2 (`e15_free_transfer`, `unapproved_tool`) |
+| Chuckbox | `chuckbox-free.example` | A free file-transfer site, no account needed | Defend row 2 (`e15_free_transfer`, `unapproved_tool`) |
 | Benmoor Packaging | `benmoor-packaging.example` | A trade-fair supplier that posts a branded giveaway USB | Defend row 3 (`e15_giveaway_stick`, `found_media`) |
-| PDFMerge Free | `pdfmerge-free.example` | A free PDF editor, install or online, "everyone uses it" | Defend row 4 (`e15_free_pdf_tool`, `unapproved_tool`) |
+| PDFmangle Free | `pdfmangle-free.example` | A free PDF editor, install or online, "everyone uses it" | Defend row 4 (`e15_free_pdf_tool`, `unapproved_tool`) |
 
 ## New Tarrowby service host (on the real domain)
 
@@ -47,6 +47,6 @@ drama range. No real number is used.
 
 ## Pre-ship web-search check (owed, BRAND_SET rule)
 
-Web-search these new names for a real business of the same name before release: **SwiftDrop**,
-**Benmoor Packaging**, **PDFMerge Free**. ("Tarrowby", "Nilesh Solanki", "Colin Mather" and "Shauna
+Web-search these new names for a real business of the same name before release: **Chuckbox**,
+**Benmoor Packaging**, **PDFmangle Free**. ("Tarrowby", "Nilesh Solanki", "Colin Mather" and "Shauna
 Lofthouse" were already cleared for the E2/E6 build.)

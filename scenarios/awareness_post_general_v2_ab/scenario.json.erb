@@ -268,7 +268,7 @@
             "id": "gvb_ai_assistant",
             "from": {
               "name": "Priya Nadar",
-              "address": "priya.nadar@inboxly.example"
+              "address": "priya.nadar@lintbox.example"
             },
             "to": "you@quayholt.example",
             "subject": "Your new AI assistant is ready: sign in to activate",
@@ -285,8 +285,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "priya.nadar@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "priya.nadar@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -295,7 +295,7 @@
                 "linkCredible"
               ],
               "perFlagNote": {
-                "senderTrust": "The name is dressed up as IT, but it sits on a personal inbox at inboxly.example, not quayholt.example. A smartly written email is easy to produce; it doesn't prove who sent it.",
+                "senderTrust": "The name is dressed up as IT, but it sits on a personal inbox at lintbox.example, not quayholt.example. A smartly written email is easy to produce; it doesn't prove who sent it.",
                 "linkCredible": "The link text says ai.quayholt.example, but it goes to quayholt-ai.example, a different site built to collect your Quayholt password."
               },
               "ifTrusted": "'Sign in to activate' is the trick: the page takes your Quayholt password. A real new tool is switched on by IT, not by you signing in through a link in an email.",
@@ -375,7 +375,7 @@
               "dkim": "pass",
               "dmarc": "pass",
               "envelopeFrom": "itrollout-support.example",
-              "replyTo": "d.ferris@quickpost-mail.example"
+              "replyTo": "d.ferris@hastypost.example"
             },
             "truth": {
               "isPhish": true,
@@ -385,7 +385,7 @@
               "perFlagNote": {
                 "senderTrust": "The name reads like IT, but the address is an outside inbox at itrollout-support.example, not quayholt.example. Quayholt IT writes from the Quayholt domain."
               },
-              "headerNote": "The automatic checks pass because the message really was sent from itrollout-support.example, a domain the sender owns. A pass shows which mail system sent it, not that the sender is Quayholt IT. You could also see, if you open the header, that the reply-to is a different outside address again (quickpost-mail.example), so a reply wouldn't reach anyone at Quayholt.",
+              "headerNote": "The automatic checks pass because the message really was sent from itrollout-support.example, a domain the sender owns. A pass shows which mail system sent it, not that the sender is Quayholt IT. You could also see, if you open the header, that the reply-to is a different outside address again (hastypost.example), so a reply wouldn't reach anyone at Quayholt.",
               "ifTrusted": "Plugging in an unexpected USB and running a file on it can install malware before you've done anything else. Real IT doesn't post you a USB to run yourself; a parcel or a message you weren't expecting is one to check, not to act on.",
               "reportReply": "Thanks. There's no Dale Ferris on quayholt.example, and we don't post USBs for you to run. If a stick turns up, don't plug it in; hand it to the service desk."
             }

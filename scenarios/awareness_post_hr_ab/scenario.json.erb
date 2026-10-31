@@ -142,7 +142,7 @@
             "id": "hb_bank_details",
             "from": {
               "name": "Deborah Haldane",
-              "address": "deborah.haldane.hr@quickpost-mail.example"
+              "address": "deborah.haldane.hr@hastypost.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "New starters: bank details needed today",
@@ -152,8 +152,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "quickpost-mail.example",
-              "replyTo": "deborah.haldane.hr@quickpost-mail.example"
+              "envelopeFrom": "hastypost.example",
+              "replyTo": "deborah.haldane.hr@hastypost.example"
             },
             "truth": {
               "isPhish": true,
@@ -162,7 +162,7 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "Deborah's name on a personal inbox at quickpost-mail.example, not tarrowby.example",
+                "senderTrust": "Deborah's name on a personal inbox at hastypost.example, not tarrowby.example",
                 "urgencyCalibrated": "'Needed today', 'before 5' and 'don't copy payroll in' push you to act fast and skip the people who would normally check"
               },
               "ifTrusted": "New starters' bank details would go to a stranger, who could use them to divert their first pay.",
@@ -173,7 +173,7 @@
             "id": "hb_protected_reference",
             "from": {
               "name": "Ray Turner",
-              "address": "ray.turner.ref@quickpost-mail.example"
+              "address": "ray.turner.ref@hastypost.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "Reference",
@@ -190,8 +190,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "quickpost-mail.example",
-              "replyTo": "ray.turner.ref@quickpost-mail.example"
+              "envelopeFrom": "hastypost.example",
+              "replyTo": "ray.turner.ref@hastypost.example"
             },
             "factorStrings": {
               "enable_content_prompt": {
@@ -362,7 +362,7 @@
             "id": "hb_thank_you",
             "from": {
               "name": "Bethany Hirst",
-              "address": "bethany.hirst@quickpost-mail.example"
+              "address": "bethany.hirst@hastypost.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "Thank you for today",
@@ -372,14 +372,14 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "quickpost-mail.example",
-              "replyTo": "bethany.hirst@quickpost-mail.example"
+              "envelopeFrom": "hastypost.example",
+              "replyTo": "bethany.hirst@hastypost.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderTrust": "Candidates write from personal email, so a quickpost-mail.example address is normal here.",
+                "senderTrust": "Candidates write from personal email, so a hastypost.example address is normal here.",
                 "default": "A candidate, by name, about an interview you held, asking for nothing."
               }
             }
@@ -388,7 +388,7 @@
             "id": "hb_shortlist_missing",
             "from": {
               "name": "Gareth Ingram",
-              "address": "gareth.ingram@quickpost-mail.example"
+              "address": "gareth.ingram@hastypost.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "CV attached: warehouse operative",
@@ -405,8 +405,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "quickpost-mail.example",
-              "replyTo": "gareth.ingram@quickpost-mail.example"
+              "envelopeFrom": "hastypost.example",
+              "replyTo": "gareth.ingram@hastypost.example"
             },
             "truth": {
               "isPhish": true,

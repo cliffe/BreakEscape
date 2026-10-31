@@ -311,7 +311,7 @@
             "id": "ma_colin_personal_number",
             "from": {
               "name": "Colin Mather",
-              "address": "colin.mather.tby@inboxly.example"
+              "address": "colin.mather.tby@lintbox.example"
             },
             "to": "you@tarrowby.example",
             "subject": "Quick favour, text me",
@@ -321,8 +321,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "colin.mather.tby@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "colin.mather.tby@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -330,7 +330,7 @@
                 "senderTrust"
               ],
               "perFlagNote": {
-                "senderTrust": "The warehouse manager's name on a personal inbox at inboxly.example, not tarrowby.example"
+                "senderTrust": "The warehouse manager's name on a personal inbox at lintbox.example, not tarrowby.example"
               },
               "ifTrusted": "Once you text that number, the 'favour' follows: usually gift cards or a payment, from someone who isn't Colin.",
               "reportReply": "Thanks. Colin didn't send it. His only address is on tarrowby.example."

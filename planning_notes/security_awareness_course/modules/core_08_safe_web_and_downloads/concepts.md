@@ -118,7 +118,7 @@ Use these as background and inspiration only. Game content uses fictional names 
 | How to request software or an extension | The "Request something else" form in Quayholt Apps; answered within one working day |
 | Approved browser and extensions | Quayholt's managed browser; extensions only from the approved list in Quayholt Apps |
 | How to report a website | The Report button on the browser toolbar, the "Report an incident" form on the staff intranet, or the security team on extension 4444 |
-| Approved document converter | "DocShift", in Quayholt Apps |
+| Approved document converter | "Pagewrangle", in Quayholt Apps |
 | Bookmarks for key sites | the staff intranet's "Bookmarks" page: Ledger, supplier portals, the HR system |
 | After pasting, downloading or calling | Call the security team on extension 4444, or the 24/7 service desk out of hours; follow the device instruction (core_04) |
 

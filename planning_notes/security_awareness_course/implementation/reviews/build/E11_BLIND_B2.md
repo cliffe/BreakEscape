@@ -13,7 +13,7 @@ Timeline and what I thought the goal was:
 3. Four everyday choices (Carol's birthday call, the overtime sheet and two Sams, Martin's marketing export, the incident report for Mr Hale). Picked the cautious option each time. Goal: choose what I would really do.
 4. "Six months later": each choice's outcome, labelled "Your call: the safe route". Goal: read, continue.
 5. Defend: inbox of six items. Goal: for each, Trust, Report, Delete or Verify, then tick what I noticed.
-6. Verdicts: Sam 08:52 (misdirected spreadsheet) Report, breach ticked; Payroll 09:35 Report, look-alike domain and hurry ticked; Gareth Hale 10:04 Report, data-request ticked; DC Rowley call Ring back, "senior invoked" ticked (the "caller discourages calling back" box was offered and I did tick it in the second pass, see below); Kestrel Court 10:48 Report, attachment and data ticked; Sam 11:15 (new mobile, cardigan found) Verify, data-request ticked.
+6. Verdicts: Sam 08:52 (misdirected spreadsheet) Report, breach ticked; Payroll 09:35 Report, look-alike domain and hurry ticked; Gareth Hale 10:04 Report, data-request ticked; DC Rowley call Ring back, "senior invoked" ticked (the "caller discourages calling back" box was offered and I did tick it in the second pass, see below); Wychbourne Court 10:48 Report, attachment and data ticked; Sam 11:15 (new mobile, cardigan found) Verify, data-request ticked.
 7. Reload at 5 of 6 sorted (the risky moment). Came back to the training room at the start position, kiosk still available, stage progress kept (Brief, Choices, Where it led and Defend intro all marked done) but the inbox restarted at 0 of 6, as the inbox intro warns ("Closing or reloading before the end restarts this round"). I redid the six items. Lost progress: yes, the five verdicts (about 3 minutes of real reading); the earlier stages were not lost.
 8. Result: 100 percent, "Sharp". Per-skill list. Finish, then Debrief, then Finish, then "Episode finished" panel, then Close, then a "Misdirected data: finished" screen with Return to missions / Close. All as intended.
 
@@ -28,7 +28,7 @@ Decisions and whether they were given away:
 
 - Carol's call, overtime sheet, marketing export, incident report: each pair is "do the careful thing" against "do the quick, wrong thing" and the wrong one is written to sound plainly worse ("Tell her... as it is a surprise", "to save time", "since he is the Sales Director", "as it is"). The options also name the reason for the wrong one, which makes the answer obvious to anyone who reads. Obvious, not arguable. Nothing is scored there, so it works as a warm-up, but nobody would pick the wrong one unless rushing.
 - Colour: the two options look the same, no colour tell.
-- Inbox: Sam 08:52 is arguable (he asks "do you want me to delete it?" and the first instinct is yes, delete). Payroll is a clear phish (domain differs, threat to pay). Gareth Hale's angry email is a good one: nothing says "subject access", and "EVERYTHING you hold on Mum and on me" is the cue. Rowley: withheld number and "no time" are the cues, the Ring back button is next to Comply with a plain description. Kestrel Court: a real sender, wrong attachment, one tick away from "Nothing looks wrong". Sam 11:15 is the subtle one: Trust is scored right and Verify is accepted as "just as right".
+- Inbox: Sam 08:52 is arguable (he asks "do you want me to delete it?" and the first instinct is yes, delete). Payroll is a clear phish (domain differs, threat to pay). Gareth Hale's angry email is a good one: nothing says "subject access", and "EVERYTHING you hold on Mum and on me" is the cue. Rowley: withheld number and "no time" are the cues, the Ring back button is next to Comply with a plain description. Wychbourne Court: a real sender, wrong attachment, one tick away from "Nothing looks wrong". Sam 11:15 is the subtle one: Trust is scored right and Verify is accepted as "just as right".
 - Consequences showed later: yes. "Where it led" links the four choices to results; the inbox debrief names each item's real issue.
 
 What I learned (own words):
@@ -63,7 +63,7 @@ Time, at a real reading pace: about 14 minutes without the reload, about 18 with
 
 ## Run 2: full episode, "Struggling player"
 
-Took the first-looking quick option everywhere: all four wrong everyday choices; then Trust on Sam 08:52, Comply on Rowley, Trust on Payroll, Gareth, Kestrel and Sam 11:15, ticked nothing.
+Took the first-looking quick option everywhere: all four wrong everyday choices; then Trust on Sam 08:52, Comply on Rowley, Trust on Payroll, Gareth, Wychbourne and Sam 11:15, ticked nothing.
 
 - "Where it led" showed each bad outcome plainly and vividly: "a stranger was waiting for Bernadette outside her school", the overtime sheet "sat in a care home manager's inbox for three days", three families complained and one wrote to the regulator, Mr Hale "read another resident's continence-care note and a driver's mobile number". It is direct, but there is no blame wording ("Your call" only), and it says what the choice was ("Your call", without "safe route").
 - Confirm with no ticks was accepted. No nudge to tick anything before confirming.

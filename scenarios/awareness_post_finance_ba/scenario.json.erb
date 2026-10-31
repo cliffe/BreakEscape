@@ -107,7 +107,7 @@
             "id": "fa_ceo_transfer",
             "from": {
               "name": "Ravinder Sandhu",
-              "address": "ravinder.sandhu.ceo@inboxly.example"
+              "address": "ravinder.sandhu.ceo@lintbox.example"
             },
             "to": "payments@brightwellfoods.example",
             "subject": "Confidential: payment needed this morning",
@@ -117,8 +117,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "ravinder.sandhu.ceo@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "ravinder.sandhu.ceo@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -128,7 +128,7 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "The chief executive's name on a personal inbox at inboxly.example",
+                "senderTrust": "The chief executive's name on a personal inbox at lintbox.example",
                 "secrecy_or_bypass": "'Keep it between us' and 'don't raise it with Adaeze' cut out the person who approves payments",
                 "urgencyCalibrated": "'Before 11' and 'email only' leave no time to ring and check"
               },
@@ -377,7 +377,7 @@
               {
                 "id": "view",
                 "text": "View invoice ML-7731 on merrowlogistics.example",
-                "destination": "https://docshare-login.example/merrow/ml-7731"
+                "destination": "https://fileharbour-login.example/merrow/ml-7731"
               }
             ],
             "auth": {
@@ -394,7 +394,7 @@
                 "pretextRelevant"
               ],
               "perFlagNote": {
-                "linkCredible": "The link reads 'merrowlogistics.example' but it opens docshare-login.example, a sign-in page rather than an invoice",
+                "linkCredible": "The link reads 'merrowlogistics.example' but it opens fileharbour-login.example, a sign-in page rather than an invoice",
                 "pretextRelevant": "Brightwell has never dealt with Merrow Logistics, so a cold invoice-share from them has no reason to reach payments"
               },
               "ifTrusted": "The link opens a sign-in page that collects your email password.",

@@ -250,7 +250,7 @@
             "id": "e1_ceo_wire",
             "from": {
               "name": "Ravinder Sandhu",
-              "address": "ravinder.sandhu.private@inboxly.example"
+              "address": "ravinder.sandhu.private@lintbox.example"
             },
             "to": "payments@brightwellfoods.example",
             "subject": "Need this paid today",
@@ -260,8 +260,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "ravinder.sandhu.private@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "ravinder.sandhu.private@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -271,7 +271,7 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "The name is the chief executive's, but the address is a personal inbox at inboxly.example, not brightwellfoods.example",
+                "senderTrust": "The name is the chief executive's, but the address is a personal inbox at lintbox.example, not brightwellfoods.example",
                 "secrecy_or_bypass": "'Keep it to yourself' and 'don't put it through the usual approval' ask you to skip the check that would catch this",
                 "urgencyCalibrated": "'Today' and 'in meetings all afternoon' leave no time to check, and steer you away from ringing him"
               },

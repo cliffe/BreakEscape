@@ -88,7 +88,7 @@
     "triageSets": [
       {
         "id": "e2_recruitment_inbox",
-        "playerSentAuth": { "accounts": { "analyst": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "{account_address}" } } },
+        "playerSentAuth": { "accounts": { "analyst": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "{account_address}" } } },
         "title": "Tarrowby recruitment inbox",
         "brief": "You're covering Tarrowby's recruitment inbox while Fatima is in interviews. Six messages are waiting, and attachments show as labels. For each one, choose Trust, Report or Delete, then tick what you noticed. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
         "scoringProfile": "awareness",
@@ -156,7 +156,7 @@
             "id": "e2_portfolio_lookalike",
             "from": {
               "name": "Liam Baxter",
-              "address": "liam.baxter@inboxly.example"
+              "address": "liam.baxter@lintbox.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "CV attached: warehouse supervisor",
@@ -173,8 +173,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "liam.baxter@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "liam.baxter@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -205,7 +205,7 @@
             "id": "e2_cv_pdf",
             "from": {
               "name": "Tendai Moyo",
-              "address": "tendai.moyo@inboxly.example"
+              "address": "tendai.moyo@lintbox.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "Application: warehouse supervisor (nights)",
@@ -222,14 +222,14 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "tendai.moyo@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "tendai.moyo@lintbox.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderTrust": "Candidates apply from their personal email, so an inboxly.example address is normal here. The name and the address match.",
+                "senderTrust": "Candidates apply from their personal email, so an lintbox.example address is normal here. The name and the address match.",
                 "attachmentPlausible": "It says the CV is attached, and it is: one PDF, which opens in the viewer.",
                 "addressedTo": "It's addressed to Fatima by name and names the job.",
                 "default": "A personal address is normal for a candidate. The CV is attached, the email names the job and the person, and it asks for nothing but an interview."
@@ -240,7 +240,7 @@
             "id": "e2_enable_content",
             "from": {
               "name": "Jordan Kerr",
-              "address": "jordan.kerr.cv@quickpost-mail.example"
+              "address": "jordan.kerr.cv@hastypost.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "Job application",
@@ -257,8 +257,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "quickpost-mail.example",
-              "replyTo": "jordan.kerr.cv@quickpost-mail.example"
+              "envelopeFrom": "hastypost.example",
+              "replyTo": "jordan.kerr.cv@hastypost.example"
             },
             "factorStrings": {
               "enable_content_prompt": {
@@ -286,7 +286,7 @@
             "id": "e2_cv_docx",
             "from": {
               "name": "Darius Petrauskas",
-              "address": "darius.petrauskas@inboxly.example"
+              "address": "darius.petrauskas@lintbox.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "HGV driver (Class 1): application",
@@ -303,8 +303,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "darius.petrauskas@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "darius.petrauskas@lintbox.example"
             },
             "truth": {
               "isPhish": false,
@@ -312,7 +312,7 @@
               "whyFine": {
                 "enable_content_prompt": "It's a Word file, which is normal for a CV. In the viewer it shows the whole CV read-only and asks you to switch nothing on.",
                 "attachmentPlausible": "A CV attached to an application is what you'd expect, and a Word document is a common way to send one.",
-                "senderTrust": "Candidates apply from their personal email, so an inboxly.example address is normal here.",
+                "senderTrust": "Candidates apply from their personal email, so an lintbox.example address is normal here.",
                 "default": "A named job, a named person, a CV that's really attached, and nothing to switch on or sign in to."
               }
             }
@@ -538,7 +538,7 @@
       "accounts": [
         {
           "id": "analyst",
-          "address": "a.rendell.jobs@inboxly.example",
+          "address": "a.rendell.jobs@lintbox.example",
           "displayName": "Alex Rendell",
           "kind": "given",
           "person": null,
@@ -585,7 +585,7 @@
             "address": "lead@redteam.example",
             "avatar": "npc_neutral"
           },
-          "to": "a.rendell.jobs@inboxly.example",
+          "to": "a.rendell.jobs@lintbox.example",
           "subject": "Authorised exercise: Tarrowby Logistics",
           "body": "Hello,\n\nThis is the authorised Tarrowby Logistics exercise. In scope: this inbox and the recruitment team on it. Research the open vacancy and the recruiter, then send one candidate email with a CV attached. Nothing leaves this account.\n\nRed team lead",
           "time": "09:04",

@@ -4,7 +4,7 @@
   "_brandAdditions": {
     "_use": "For BRAND_SET.md (Tarrowby Logistics additions from E9). Fuller P11 entry is in e9/BRAND_ADDITIONS.md. E9 adds no cast: Colin Mather (attack target, warehouse manager) and Nilesh Solanki (host, IT service desk analyst) are both built Tarrowby cast. It adds two new fictional .example names and confirms one reused brand.",
     "newNames": "RiverReach Angling (riverreachangling.example): a fictional hobby angling forum Colin once used, breached, whose password he reused at work; used only in the attack half (attack.json fact tarrowby_mather_forum and the guess reuseStep). Pennington Rangers: a fictional amateur football club Colin supports (attack.json fact tarrowby_mather_team). Bramble: Colin's dog (attack.json fact tarrowby_mather_pet). 'RiverReach', 'riverreachangling', 'Pennington' and 'Bramble' each returned zero repo hits outside the E9 implementation briefs on 2026-10-29. Pre-ship: web-search 'RiverReach Angling' and 'Pennington Rangers' against real businesses and clubs with the usual check.",
-    "fuelwise": "FuelWise (fuelwise.example) is reused from E6 as the new supplier portal in defend rows 5 and 6. Note: E6 only ever used the scam look-alike fuelwise-rewards.example (an unused leftover brand); fuelwise.example is FuelWise's legitimate domain, introduced here for the genuine portal sign-up. Keep FuelWise on the pre-ship web-search list (BRAND_SET already lists it)."
+    "fuelr": "Fuelr (fuelr.example) is reused from E6 as the new supplier portal in defend rows 5 and 6. Note: E6 only ever used the scam look-alike fuelr-rewards.example (an unused leftover brand); fuelr.example is Fuelr's legitimate domain, introduced here for the genuine portal sign-up. Keep Fuelr on the pre-ship web-search list (BRAND_SET already lists it)."
   },
 
   "triageSets": [
@@ -156,11 +156,11 @@
         },
         {
           "id": "e9_signup_password",
-          "_note": "Row 5. ENG-09a choice card. The new FuelWise supplier portal (fuelwise.example, reused from E6) asks you to set a password. Safe option (unique, from the manager) maps to report; unsafe (reuse your usual one) maps to trust. The attack-half reuse rig is the mirror: reusing your usual password is exactly what opened Colin's account. LO1.",
+          "_note": "Row 5. ENG-09a choice card. The new Fuelr supplier portal (fuelr.example, reused from E6) asks you to set a password. Safe option (unique, from the manager) maps to report; unsafe (reuse your usual one) maps to trust. The attack-half reuse rig is the mirror: reusing your usual password is exactly what opened Colin's account. LO1.",
           "kind": "choice",
-          "subject": "A password for the new FuelWise portal",
+          "subject": "A password for the new Fuelr portal",
           "choice": {
-            "prompt": "The new FuelWise supplier portal asks you to set a password. What do you use?",
+            "prompt": "The new Fuelr supplier portal asks you to set a password. What do you use?",
             "options": [
               { "id": "unique", "label": "A new password made up by your password manager when you sign up", "verdict": "report" },
               { "id": "reuse", "label": "Your usual password, the one you already use for other sign-ins", "verdict": "trust" }
@@ -171,17 +171,17 @@
             "isPhish": true,
             "flags": [],
             "correct": "report",
-            "reportReply": "A unique generated password means a breach of FuelWise can't open anything else. Let the manager make and remember it; you never have to type or recall it.",
+            "reportReply": "A unique generated password means a breach of Fuelr can't open anything else. Let the manager make and remember it; you never have to type or recall it.",
             "ifTrusted": "Reusing your usual password is the one habit that turns a breach of any site you used into a break-in everywhere you used the same one."
           }
         },
         {
           "id": "e9_security_answer",
-          "_note": "Row 6. ENG-09a choice card. The same FuelWise sign-up asks a security question ('mother's maiden name'). Safe option (made-up, kept in the manager) maps to report; unsafe (your true answer) maps to trust. Split from row 5 so each choice card holds one decision. LO3.",
+          "_note": "Row 6. ENG-09a choice card. The same Fuelr sign-up asks a security question ('mother's maiden name'). Safe option (made-up, kept in the manager) maps to report; unsafe (your true answer) maps to trust. Split from row 5 so each choice card holds one decision. LO3.",
           "kind": "choice",
-          "subject": "A security question on the FuelWise sign-up",
+          "subject": "A security question on the Fuelr sign-up",
           "choice": {
-            "prompt": "FuelWise asks for your mother's maiden name as a security question. What do you give it?",
+            "prompt": "Fuelr asks for your mother's maiden name as a security question. What do you give it?",
             "options": [
               { "id": "true", "label": "Your real mother's maiden name, so it is easy to remember", "verdict": "trust" },
               { "id": "madeup", "label": "A made-up answer saved in your password manager", "verdict": "report" }

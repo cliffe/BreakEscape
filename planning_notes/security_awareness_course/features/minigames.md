@@ -211,7 +211,7 @@ Wave is the build wave in section 5 (0 foundations, 1 the MVP course, 2 the core
     },
     "addressBook": [
       { "name": "Field Teams", "address": "fieldteams@brightwellfoods.example", "group": true },
-      { "name": "Martin Fletcher (personal)", "address": "martin.fletcher@inboxly.example", "personal": true }
+      { "name": "Martin Fletcher (personal)", "address": "martin.fletcher@lintbox.example", "personal": true }
     ],
     "compose": [{ "id": "send_schedule", "to": ["fieldteams@brightwellfoods.example"], "mustAttach": "schedule", "completesTask": "send_schedule" }],
     "sendChecks": [{ "id": "personal_address", "when": { "recipientTag": "personal" }, "note": "This address is outside {org.name}." }]
@@ -1314,13 +1314,13 @@ Other keys: `presentation` (`spot_check`, `mentor`, `game_show`, `drill`); `item
 ```json
 {
   "document": { "kind": "work_order", "look": "contractor_letterhead", "fields": [
-    { "id": "company", "label": "Company", "value": "Kestrel Lane Fire Safety" },
+    { "id": "company", "label": "Company", "value": "Wychbourne Lane Fire Safety" },
     { "id": "visit_date", "label": "Visit date", "value": "Sunday 18 October" },
     { "id": "contact", "label": "Office number", "value": "0161 496 0777" },
     { "id": "areas", "label": "Areas", "value": "All areas, including the comms room" }
   ] },
   "reference": { "source": "Visitor bookings", "fields": [
-    { "id": "company", "value": "Kestrel Lane Fire Safety" },
+    { "id": "company", "value": "Wychbourne Lane Fire Safety" },
     { "id": "visit_date", "value": "No visit booked" },
     { "id": "contact", "value": "0161 496 0300" }
   ] },

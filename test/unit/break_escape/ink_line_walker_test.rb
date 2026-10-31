@@ -7,7 +7,7 @@ module BreakEscape
     FIXTURE = Engine.root.join('test/fixtures/files/ink_line_walker/walker_fixture.json').to_s
 
     setup do
-      @walker = InkLineWalker.from_file(FIXTURE, variables: { 'codename' => 'Kestrel' })
+      @walker = InkLineWalker.from_file(FIXTURE, variables: { 'codename' => 'Wychbourne' })
       @pairs = @walker.lines.map(&:to_a)
       @raws = @walker.lines.map(&:raw)
     end
@@ -26,7 +26,7 @@ module BreakEscape
     end
 
     test "fills a variable from scenario globals before the ink default" do
-      assert_includes @pairs, ['Kevin Park', 'Your codename is Kestrel.']
+      assert_includes @pairs, ['Kevin Park', 'Your codename is Wychbourne.']
       refute(@raws.any? { |r| r.include?('Nightjar') })
     end
 
@@ -132,7 +132,7 @@ module BreakEscape
       {
         'player' => { 'displayName' => 'Agent Zero' },
         'narrator' => { 'id' => 'narrator', 'voice' => NARRATOR_VOICE },
-        'globalVariables' => { 'codename' => 'Kestrel' },
+        'globalVariables' => { 'codename' => 'Wychbourne' },
         'rooms' => {
           'office' => {
             'npcs' => [

@@ -16,8 +16,8 @@
     "nameCheck": "Ionescu, Lofthouse, Strachan, Solanki, Dlamini, Okeke, Whiteley and Ackroyd had no hits in scenarios, planning_notes, docs or public/break_escape/js on 2026-10-22. Dermot Lynch (and both 'Dermot' and 'Lynch' on their own) had no hits in scenarios, planning_notes, docs or public/break_escape/js on 2026-10-29. Asante, Nwosu, Iqbal and Oyelaran were rejected because they are already in use.",
     "realHosts": "staff.tarrowby.example (the staff app), hr.tarrowby.example, facilities.tarrowby.example, forms.tarrowby.example, guest.tarrowby.example. Depot: Shipley; sites named: Bradford Road, Halifax, Leeds.",
     "lookalikes": "Episode: tarrowbey.example (in the roster), tarrowby-parking.example (added word). Forms: tarrowby-charging.example, tarrowby-wifi.example (QR notices, added word), tarrowby-depot.example, tarrowby-team.example (row-6 look-alike sender domains, added word).",
-    "thirdParties": "Parceline (parceline-redelivery.example), a courier name on a fake fee text; FuelWise (fuelwise-rewards.example), a fuel-card offer nobody asked for (WP-15: no longer used in any shipped item after e6_fuel_card_offer was swapped out; left as an unused brand); Telvoro (telvoro-billing.example), a mobile network Tarrowby does not use; PCN Services (pcn-settle.example), a fake parking-charge sender; shrtn.example, an invented link shortener; ShiftPlanner (shiftplanner-mail.example) and PaySuite (paysuite-mail.example), the genuine rota and payroll providers that send Tarrowby mail for it.",
-    "preShipCheck": "Web-search Tarrowby, Parceline, FuelWise, Telvoro, ShiftPlanner and PaySuite for real businesses of the same name before release."
+    "thirdParties": "ASAParcels (asaparcels-redelivery.example), a courier name on a fake fee text; Fuelr (fuelr-rewards.example), a fuel-card offer nobody asked for (WP-15: no longer used in any shipped item after e6_fuel_card_offer was swapped out; left as an unused brand); Telvoro (telvoro-billing.example), a mobile network Tarrowby does not use; PCN Services (pcn-settle.example), a fake parking-charge sender; shrtn.example, an invented link shortener; Shiftle (shiftle-mail.example) and Payrollery (payrollery-mail.example), the genuine rota and payroll providers that send Tarrowby mail for it.",
+    "preShipCheck": "Web-search Tarrowby, ASAParcels, Fuelr, Telvoro, Shiftle and Payrollery for real businesses of the same name before release."
   },
   "_formPairing": {
     "_use": "Item n in form A matches item n in form B on kind, phish or genuine, flags and difficulty. Per form: 10 items (4 phish, 6 genuine; 4 texts, 2 QR notices, 4 emails); flags unexpected_qr 1, lookalike_domain 2 (row 2 QR, row 6 email), senderTrust 2 (row 4, row 6), secrecy_or_bypass 1, urgencyCalibrated 1, smish_shortlink_urgency 1, reply_stop_trick 1 (9 in all); difficulty 6 easy, 4 medium. C2-M6: no row is scored on the header panel any more, so every tell is visible on the message face (row 6 is a look-alike sender domain, row 8 a plainly genuine internal mail). Texts follow the episode contact convention (C2-m13): genuine ones show a saved contact, fakes show a bare number not in your contacts. Each form's look-alike QR notice (row 2) is followed by a real Tarrowby notice on the same subject (row 3); the brief says Tarrowby's sites end in tarrowby.example (C2-m12).",
@@ -55,8 +55,8 @@
           "kind": "sms",
           "from": { "address": "07700 900583 (not in your contacts)" },
           "time": "10:02",
-          "body": "Parceline: we couldn't deliver your parcel. A £1.45 redelivery fee is due by 6pm today or it goes back to the sender: {{link:fee}}",
-          "links": [ { "id": "fee", "text": "shrtn.example/Pk3x9", "destination": "https://parceline-redelivery.example/fee" } ],
+          "body": "ASAParcels: we couldn't deliver your parcel. A £1.45 redelivery fee is due by 6pm today or it goes back to the sender: {{link:fee}}",
+          "links": [ { "id": "fee", "text": "shrtn.example/Pk3x9", "destination": "https://asaparcels-redelivery.example/fee" } ],
           "truth": {
             "isPhish": true,
             "flags": ["smish_shortlink_urgency"],
@@ -243,17 +243,17 @@
         },
         {
           "id": "ma_colin_personal_number",
-          "from": { "name": "Colin Mather", "address": "colin.mather.tby@inboxly.example" },
+          "from": { "name": "Colin Mather", "address": "colin.mather.tby@lintbox.example" },
           "to": "you@tarrowby.example",
           "subject": "Quick favour, text me",
           "time": "08:12",
           "body": "Are you on shift? I'm stuck with a customer and need a favour sorted before 12. Text me on my personal number, 07700 900871, not my work one, and keep it between us for now.\nColin",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "colin.mather.tby@inboxly.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "colin.mather.tby@lintbox.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust"],
             "perFlagNote": {
-              "senderTrust": "The warehouse manager's name on a personal inbox at inboxly.example, not tarrowby.example"
+              "senderTrust": "The warehouse manager's name on a personal inbox at lintbox.example, not tarrowby.example"
             },
             "ifTrusted": "Once you text that number, the 'favour' follows: usually gift cards or a payment, from someone who isn't Colin.",
             "reportReply": "Thanks. Colin didn't send it. His only address is on tarrowby.example."
@@ -433,17 +433,17 @@
         },
         {
           "id": "mb_fatima_vouchers",
-          "from": { "name": "Fatima Begum", "address": "fatima.begum.hr@quickpost-mail.example" },
+          "from": { "name": "Fatima Begum", "address": "fatima.begum.hr@hastypost.example" },
           "to": "you@tarrowby.example",
           "subject": "Welcome vouchers for Monday's new drivers",
           "time": "08:12",
           "body": "Are you free? I need six £50 shopping vouchers for the new drivers starting Monday. Could you buy them on your card today and text the codes to me on 07700 900790? I'll sort your expenses. Keep it quiet so it's a surprise.\nFatima",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "fatima.begum.hr@quickpost-mail.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "fatima.begum.hr@hastypost.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust"],
             "perFlagNote": {
-              "senderTrust": "The recruitment lead's name on a personal inbox at quickpost-mail.example, not tarrowby.example"
+              "senderTrust": "The recruitment lead's name on a personal inbox at hastypost.example, not tarrowby.example"
             },
             "ifTrusted": "£300 of voucher codes would go to the sender, and vouchers can't be traced or clawed back.",
             "reportReply": "Thanks. Fatima didn't send it. Her address is on tarrowby.example, and HR never asks staff to buy vouchers."

@@ -61,7 +61,7 @@ A learner who ticks the chip that fits best loses 20 of the 40 reason points, an
 Row 8 in three roles flags `pretextRelevant` on reasons that are nowhere on screen:
 - finance A `fa_invoice_share` ("Brightwell has no purchase order with Merrow Logistics", `e1/defend.json:260`, `pre_finance_ab:298`) and B `fb_bank_portal` ("Brightwell doesn't bank with Fernhill", `e1/defend.json:463`);
 - executive A `ea_speaker_portal` ("Nobody at Merrin & Sallow is speaking at Fennick Summit", `e4/defend.json:324`) and B `eb_courier_fee` (`e4/defend.json:537`);
-- general A `ga_solicitor_share` ("You have no case with Ashcombe", `e5/defend.json:340`) and B `gb_quarantine_notice` ("Quayholt doesn't use MailGuard", `e5/defend.json:560`).
+- general A `ga_solicitor_share` ("You have no case with Ashcombe", `e5/defend.json:340`) and B `gb_quarantine_notice` ("Quayholt doesn't use Spamwarden", `e5/defend.json:560`).
 
 These are measurement items with feedback held to the end, so the learner can't learn the fact in time either. Fix: put the fact on screen (the form brief, a line in the body, or an earlier genuine item from the bank or supplier the firm does use), or drop `pretextRelevant` from those rows in both forms of the pair.
 

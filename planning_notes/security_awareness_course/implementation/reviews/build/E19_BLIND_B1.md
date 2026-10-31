@@ -46,7 +46,7 @@ Inbox (scored):
 
 | Message | Real answer | Given away? |
 | --- | --- | --- |
-| TidyDocs asks to read mail and files | Report | Moderately arguable: the second message (Quayholt Files) asks the same thing and is real. The difference is whether you started it, and message 2 says outright "you started setting up ... a moment ago". Good pair. |
+| Piledocs asks to read mail and files | Report | Moderately arguable: the second message (Quayholt Files) asks the same thing and is real. The difference is whether you started it, and message 2 says outright "you started setting up ... a moment ago". Good pair. |
 | Quayholt Files finish setup | Trust (or Verify) | Arguable; the text carries the clue. |
 | Leo: screen locked, ransom note | Report | Not a phish at all, a real colleague. Obvious from wording. In run 3 Anjali's intro says "one colleague's screen has locked", which gives it away before the inbox. |
 | Fernside credit note, "click Enable content" | Report | Obvious to anyone who did the Choices stage 10 minutes earlier. |
