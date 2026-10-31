@@ -1607,12 +1607,18 @@ The engine adds a second warning on top of the story's own. Before an ending fir
 | Trigger | Where it asks | "Keep going" does |
 |---|---|---|
 | ink tag `#ending_check` | When the tag is read | Skips the rest of that line's tags, so a `#set_global` after it never starts the debrief. The story carries on. |
+| eventMapping option `"endingCheck": true` | Before that mapping runs (so before it opens the debrief) | Cancels this run and re-arms the mapping: nothing it would have done happens, and the mapping is left un-triggered, so the same trigger (re-entering the room, closing the conversation again, re-offering the hub choice) fires it again later. |
 | the credits music event (`credits` or `closingCard`) | Before the ending track and the conclude request | Holds the ending; the objectives panel shows an **End the mission** button, and the ending runs by itself once nothing optional is open. |
 | the last required task of a `missionConclusion` aim | Before the task is posted to the server | The task stays undone; the same held ending. |
 
-Put `#ending_check` as the **first tag** in the choice that starts the debrief (before its `#set_global` or `#complete_task`), because a debrief that plays once cannot be taken back. The other two triggers are the safety net. The dialog never appears when no optional objective is open, after "End the mission now" for the same objectives, or on a game that had already concluded when the page loaded.
+Warn at the point of no return, before the debrief starts, because a debrief that plays once cannot be taken back. Use whichever route fits how the debrief opens:
 
-`mission.json` `"endingCheck": false` turns the warning off, for a mission under time pressure that is not meant for a perfect score (sis01 and sis02). It also marks the game as `timed` in `Game#score_breakdown`. The validator warns when a mission with optional tasks that concludes through a `missionConclusion` aim has no `#ending_check` in its ink and has not opted out.
+- **A player choice starts it** (the "bring me in" option in a hub): put `#ending_check` as the **first tag** on that choice, before its `#set_global` or `#complete_task`. "Keep going" skips the rest of the line, so the debrief never starts and the player is back in the hub. Watch for a soft-lock: if the same choice also sets the opening global with an ink `~` assignment, or the hub is gated on `not <global>`, move that `~` after the confirm (or gate the hub on a separate global), or "Keep going" cannot re-offer the choice.
+- **An eventMapping opens it** (on `conversation_closed`, `room_entered`, or a flag), with no player choice to tag: put `"endingCheck": true` on that mapping. The engine asks before the mapping runs; "Keep going" re-arms it for the next time the same trigger fires. Anchor it on a re-takeable trigger (the player can make it fire again by re-entering the room or re-closing the conversation); a one-shot `global_variable_changed:<flag>` trigger does not re-fire, so put the option on a room-entry or conversation-close mapping instead, or keep a `game_loaded`/room-entry backstop that can re-open it.
+
+The credits music event and the `missionConclusion` aim task are the safety net behind both. A player who chose **End the mission now** at a mapped point is never asked a second time at the credits (the agreed objectives are remembered). Missions with no mapped point fall back to the credits warning and its held-ending panel button. The dialog never appears when no optional objective is open, after "End the mission now" for the same objectives, or on a game that had already concluded when the page loaded.
+
+`mission.json` `"endingCheck": false` turns the warning off, for a mission under time pressure that is not meant for a perfect score (sis01 and sis02). It also marks the game as `timed` in `Game#score_breakdown`. The validator warns when a mission with optional tasks that concludes through a `missionConclusion` aim has neither `#ending_check` in its ink nor an `"endingCheck": true` eventMapping, and has not opted out.
 
 #### Score and `missionConclusion`
 

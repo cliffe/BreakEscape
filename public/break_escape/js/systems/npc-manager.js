@@ -793,6 +793,7 @@ export default class NPCManager {
         openMinigame:  mapping.openMinigame  || null,   // a minigame registry type, or { type, minigameData }
         emitEvent:     mapping.emitEvent     || null,   // event name to emit when mapping fires
         emitEventData: mapping.emitEventData || {},     // optional payload for that event
+        endingCheck:   mapping.endingCheck === true,    // this mapping opens the ending/debrief: warn first (systems/ending-check.js)
         disableClose:  mapping.disableClose  || false,  // hide × and block Esc for this conversation
         resume:        mapping.resume === true,         // phone-chat: reopen the saved thread, no knot jump
         voiced:        mapping.voiced === true,         // phone-chat: speak the NPC's lines through TTS (F17)
@@ -902,7 +903,24 @@ export default class NPCManager {
       return;
     }
     const { eventKey, triggered, now } = check;
-    
+
+    // The ending warning at the point of no return (systems/ending-check.js). A mapping with
+    // `endingCheck: true` opens the debrief or a closing scene that cannot be taken back, so when
+    // optional objectives are still open the player is asked first. "Keep going" cancels this run
+    // and leaves the mapping un-triggered (count/lastTime are set below, after this gate), so the
+    // same trigger — re-entering the room, closing the conversation again — fires it again later.
+    // "End the mission now" re-runs the handler with the check already satisfied, and the agreed
+    // objectives are remembered so the credits never ask a second time. Only asked when something
+    // is open: endingNeedsAnswer keeps the ordinary synchronous path when the answer is plainly yes.
+    if (config.endingCheck && !eventData?._endingConfirmed && window.endingCheck?.needsAnswer?.()) {
+      const proceed = () => this._handleEventMapping(npcId, eventPattern, config, { ...(eventData || {}), _endingConfirmed: true });
+      window.endingCheck.confirm({ reason: 'mapping' }).then((endNow) => {
+        if (endNow) proceed();
+        else console.log(`[ending-check] mapping ${eventPattern} for ${npcId}: keeping going (re-armed)`);
+      }, (e) => { console.warn('[ending-check] mapping confirm failed, proceeding', e); proceed(); });
+      return;
+    }
+
     console.log(`✅ Event ${eventPattern} conditions passed, triggering NPC reaction`);
     
     // Update triggered tracking

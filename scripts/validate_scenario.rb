@@ -317,12 +317,30 @@ def check_mission_result(mission, json_data = nil)
   issues
 end
 
+# True when any eventMapping in the scenario carries "endingCheck": true — the engine-level
+# point-of-no-return warning (npc-manager.js _handleEventMapping, systems/ending-check.js).
+# That mapping asks before it opens the debrief and re-arms on "Keep going", so a debrief
+# with no player choice to tag can still warn in time. Walks the whole tree because mappings
+# live under rooms[].npcs[].eventMappings[] (array or object form).
+def scenario_has_ending_check_mapping?(node)
+  case node
+  when Hash
+    return true if node['endingCheck'] == true && (node.key?('eventPattern') || node.key?('eventMappings') || node.key?('eventMapping'))
+    node.values.any? { |v| scenario_has_ending_check_mapping?(v) }
+  when Array
+    node.any? { |v| scenario_has_ending_check_mapping?(v) }
+  else
+    false
+  end
+end
+
 # The ending warning (public/break_escape/js/systems/ending-check.js). The engine asks
 # the player before the credits and before the last task of a missionConclusion aim is
 # posted, but it cannot warn in time for a one-shot debrief unless the choice that starts
-# it carries `#ending_check`. Warn when a mission has optional tasks, has not opted out with
-# "endingCheck": false, concludes through a missionConclusion aim, and none of its ink uses
-# the tag. `scenario_dir` is the scenario's directory (its ink/ folder is searched).
+# it carries `#ending_check`, or an eventMapping that opens the debrief carries
+# "endingCheck": true. Warn when a mission has optional tasks, has not opted out with
+# "endingCheck": false, concludes through a missionConclusion aim, and neither route is used.
+# `scenario_dir` is the scenario's directory (its ink/ folder is searched).
 def check_mission_ending_check(mission, json_data, scenario_dir)
   return [] unless mission.is_a?(Hash) && json_data.is_a?(Hash)
   return [] if mission['endingCheck'] == false
@@ -331,13 +349,16 @@ def check_mission_ending_check(mission, json_data, scenario_dir)
   return [] unless aims.any? { |aim| aim['missionConclusion'] }
   return [] unless aims.any? { |aim| (aim['tasks'] || []).any? { |t| t.is_a?(Hash) && t['optional'] == true } }
 
+  return [] if scenario_has_ending_check_mapping?(json_data)
+
   ink_files = Dir.glob(File.join(scenario_dir.to_s, '{ink,}', '*.ink'))
   return [] if ink_files.any? { |f| File.read(f).match?(/#\s*ending_check\b/) }
 
-  ["⚠️ WARNING: the mission has optional tasks and concludes through a missionConclusion aim, but no ink file uses " \
-   "#ending_check. The engine still asks before the credits, but it can only warn before the debrief starts if the choice " \
-   "that starts it begins with #ending_check (before its #set_global or #complete_task). Add the tag, or set " \
-   "\"endingCheck\": false in mission.json if the mission is under time pressure."]
+  ["⚠️ WARNING: the mission has optional tasks and concludes through a missionConclusion aim, but it neither uses " \
+   "#ending_check in its ink nor carries \"endingCheck\": true on the eventMapping that opens the debrief. The engine still " \
+   "asks before the credits, but it can only warn before the debrief starts if the choice that starts it begins with " \
+   "#ending_check (before its #set_global or #complete_task), or the mapping that opens it sets \"endingCheck\": true. Add " \
+   "one of those, or set \"endingCheck\": false in mission.json if the mission is under time pressure."]
 end
 
 # Check for unknown fields in JSON that aren't in the schema

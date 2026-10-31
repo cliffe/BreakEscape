@@ -504,6 +504,26 @@ function substituteFlags(node, at) {
     state: () => page.evaluate(() => window.__test.getState()),
     brief: () => brief(),
 
+    /**
+     * Inspect or answer the "Before the mission ends" overlay (systems/ending-check.js):
+     * {"cmd":"endingOverlay"} reports whether it is up and the open objectives it lists;
+     * {"cmd":"endingOverlay","action":"end"} clicks "End the mission now";
+     * {"cmd":"endingOverlay","action":"keep"} clicks "Keep going".
+     * The overlay now also appears outside a conversation (a mapping that opens the debrief
+     * carries "endingCheck": true), so this command works whether or not a chat is open.
+     */
+    endingOverlay: async (c) => {
+      const action = c.action || 'status';
+      return page.evaluate((act) => {
+        const el = document.getElementById('ending-check-overlay');
+        if (!el) return { open: false };
+        const items = [...el.querySelectorAll('li')].map((li) => li.textContent);
+        if (act === 'end') { el.querySelector('#ending-check-end')?.click(); return { open: true, items, clicked: 'end' }; }
+        if (act === 'keep') { el.querySelector('#ending-check-keep')?.click(); return { open: true, items, clicked: 'keep' }; }
+        return { open: true, items };
+      }, action);
+    },
+
     moveTo: async (c) => {
       const r = await page.evaluate(([x, y]) => window.__test.moveTo(x, y), [c.x, c.y]);
       await pause(speed.step);
