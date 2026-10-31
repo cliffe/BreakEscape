@@ -455,10 +455,14 @@ export const DEBRIEF_LABELS = {
     }
 };
 
+// A terminal phone is a call: same copy as the default, but its own `labels.terminal` can override
+DEBRIEF_LABELS.terminal = { ...DEBRIEF_LABELS.default };
+
 /** The merged label set for a theme and a pretext spec. Always returns every key. */
 export function debriefLabels(spec, theme) {
-    const base = DEBRIEF_LABELS[theme] || DEBRIEF_LABELS.default;
-    const own = isObject(spec?.labels) && isObject(spec.labels[theme]) ? spec.labels[theme] : {};
+    const key = DEBRIEF_LABELS[theme] ? theme : 'default';
+    const base = DEBRIEF_LABELS[key];
+    const own = isObject(spec?.labels) && isObject(spec.labels[key]) ? spec.labels[key] : {};
     const out = { ...DEBRIEF_LABELS.default, ...base };
     for (const key of Object.keys(out)) {
         if (typeof own[key] === 'string' && own[key]) out[key] = own[key];

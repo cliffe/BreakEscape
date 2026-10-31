@@ -66,6 +66,7 @@ module ValidateSocial
     issues.concat(object_name_collisions(ctx))
     issues.concat(Options.locked_hints(json)) # engine-wide option; nothing shipped authors it
     issues.concat(Exercises.check(ctx)) # exercise stations and openMinigame mappings; needs no social block
+    issues.concat(DmApp.check(ctx)) # phone `app` blocks, NPC handle and profile; silent unless a scenario sets them
     return issues unless json['social'].is_a?(Hash)
 
     issues.concat(declared_globals(ctx))
@@ -604,3 +605,6 @@ require_relative 'validate_social/authenticator_device'
 
 # Exercise stations, social.exercises and openMinigame mappings (run for every scenario, not an AREA)
 require_relative 'validate_social/exercises'
+
+# Direct messages on phone-chat: the device `app` block, NPC handle and profile (run for every scenario, not an AREA)
+require_relative 'validate_social/dm_app'

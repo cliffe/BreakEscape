@@ -304,7 +304,7 @@ def check_unknown_fields(json_data)
   known_npc_fields = %w[
     id displayName npcType position spriteSheet spriteTalk spriteVisemes spriteConfig
     voice behavior globalVarOnKO restartOnRetalk reopenRefreshesHub livePreview taskOnKO koImmune storyPath callId currentKnot avatar
-    phoneId phoneTheme voiced unlockable externalVariables persistentVariables
+    phoneId phoneTheme handle profile voiced unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
@@ -383,7 +383,7 @@ def check_unknown_fields(json_data)
     postitNote showPostit
     hasFingerprint fingerprintOwner fingerprintDifficulty fingerprintQuality
     fingerprintOwnerName fingerprintPattern fingerprintSurface fingerprintCandidates biometricMatchThreshold
-    mac canScanBluetooth phoneId npcIds
+    mac canScanBluetooth phoneId npcIds app
     hacktivityMode vm acceptsVms flags flagRewards
     mode onAbort onLaunch abortConfirmText launchConfirmText
     itemsHeld contents triggerOnInteract
