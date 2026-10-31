@@ -660,7 +660,7 @@ function everyAskHeld(call, globals) {
     return list.every(ask => grantsHeld(ask?.grants, globals));
 }
 
-function startPretextCall(callId, { npcId = null, channel } = {}) {
+function startPretextCall(callId, { npcId = null, channel, app = null } = {}) {
     const svc = window.socialInfluence;
     const calls = window.gameScenario?.social?.pretextNpcs;
     const call = Array.isArray(calls) ? calls.find(c => c && c.callId === callId) : null;
@@ -699,7 +699,9 @@ function startPretextCall(callId, { npcId = null, channel } = {}) {
         console.warn('[interactions] pretext-prep starter unavailable for call:', callId);
         return;
     }
-    window.startPretextPrepMinigame({ callId, character: characterId, npcId: recordNpcId });
+    // The opening device's app frame (a DM list or a desk phone with an `app` block)
+    // is carried into the judged phone chat; phone-chat cannot recover it at runtime.
+    window.startPretextPrepMinigame({ callId, character: characterId, npcId: recordNpcId, app });
 }
 
 // A judged contact inside a phone-chat list (a DM gatekeeper) reaches the pretext card from there
@@ -1481,7 +1483,7 @@ export function handleObjectInteraction(sprite) {
     // still accepted. This is the branch P4-D placed.
     const phoneCallId = data.minigameData?.callId || data.callId;
     if (data.type === 'phone' && phoneCallId) {
-        startPretextCall(phoneCallId, { channel: 'phone' });
+        startPretextCall(phoneCallId, { channel: 'phone', app: data.app || null });
         return;
     }
 
