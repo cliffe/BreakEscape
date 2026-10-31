@@ -950,6 +950,7 @@ Whatever you choose to do with Derek — choose carefully. The way this ends set
 }
 
 + [On my way]
+    #ending_check
     #set_global:start_debrief_cutscene:true
     #exit_conversation
     -> END
