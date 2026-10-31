@@ -1,0 +1,24 @@
+{
+  "display_name": "Dr. Knowitall's Time Machine - AES Encryption",
+  "description": "You've discovered the workshop of the brilliant scientist, Dr. Knowitall, who has built a time machine. Planning to sneak in and grab the blueprints while he's out, you trigger the workshop's self-destruct countdown upon entry. The blueprints are hidden behind AES encryption puzzles. Solve them quickly, or Dr. Knowitall's life's work will be lost forever!",
+  "difficulty_level": 2,
+  "secgen_scenario": null,
+  "collection": "escape_room",
+  "cybok": [
+    {
+      "ka": "AC",
+      "topic": "Algorithms, Schemes and Protocols",
+      "keywords": ["ADVANCED ENCRYPTION STANDARD (AES)", "ECB (ELECTRONIC CODE BOOK) BLOCK CIPHER MODE"]
+    },
+    {
+      "ka": "AC",
+      "topic": "Symmetric Cryptography",
+      "keywords": ["symmetric primitives", "symmetric encryption and authentication"]
+    },
+    {
+      "ka": "AC",
+      "topic": "Cryptographic Implementation",
+      "keywords": ["Cryptographic Libraries", "ENCRYPTION - TOOLS", "Hexadecimal Encoding"]
+    }
+  ]
+}

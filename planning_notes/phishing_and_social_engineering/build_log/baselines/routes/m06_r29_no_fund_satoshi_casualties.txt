@@ -1,0 +1,104 @@
+
+## R29 (dialogue C2, D6-65): Satoshi reached without the fund (Irina knocked down early, the minder passed). The no-fund casualties line (D6-17, D6-57) must not double his argument; D6-58's reworded guess line; then a deferral.
+   {set {"briefing_played":true,"guard_resolved":true,"exchange_infiltrated":true,"irina_ko":true,"irina_fate_decided":true,"cover_strained":true,"minder_passed":true,"minder_challenged":true,"door_open_satoshi_office":true}}
+
+## D6-53: first meetings with Dani and Priya after Irina is already down, and no second reaction on the reopen.
+   {room trading_floor}
+      [HaX text: You're on the floor. Two doors here are on RFID, and your cloner reads a badge from across a desk. Ask if you want the guide.]
+
+--- trader ---
+  Narrator: A young trader watches six price charts at once, placing the occasional order without appearing to look at it.
+  Dani Okonkwo: You're the regulator? Is this about Irina? *glances at her desk* I don't know anything. Honestly.
+     (2 options)
+ > It's a standard audit. Nothing to worry about, if everything's compliant.
+  Dani Okonkwo: Course. Yeah. Shout if you need me.
+     (3 options)
+ > That's all, thanks.
+  Dani Okonkwo: Safe. Er, I mean, no problem.
+  [chat closes]
+   [PASS] said: "You're the regulator? Is this about Irina?"
+   [PASS] not said: "we're legit. Mostly."
+   [PASS] not said: "Mostly? That's an interesting qualifier."
+
+--- trader ---
+  Dani Okonkwo: Anything else?
+     (3 options)
+ > That's all, thanks.
+  Dani Okonkwo: Safe. Er, I mean, no problem.
+  [chat closes]
+   [PASS] not said: "Irina's on the floor and nobody's"
+
+--- analyst ---
+  Narrator: An analyst is bent over a wall-sized monitor, dragging nodes around a transaction graph and muttering at it.
+  Priya Raghavan: If you're here about Irina, I just draw the pictures.
+     (3 options)
+ > I'll leave you to it.
+  Priya Raghavan: Cheers.
+  [chat closes]
+   [PASS] said: "If you're here about Irina, I just draw the pictures."
+   [PASS] not said: "talk to Irina"
+   [PASS] not said: "I'll find Dr Volkova"
+
+--- analyst ---
+  Priya Raghavan: What else?
+     (5 options)
+ > Thanks for your time.
+  Priya Raghavan: Mm. Ta.
+  [chat closes]
+   [PASS] not said: "out cold on the trading floor"
+   {room satoshi_office}
+
+--- satoshi ---
+      [task: confront_satoshi]
+      [set_variable satoshi_confronted=true]
+      [set_variable satoshi_spoken=true]
+  Narrator: A man in his early forties leans on the front of an executive desk. The Bitcoin whitepaper hangs framed behind him, level with his own head.
+  Satoshi Nakamoto II: Somebody here rang the FCA tonight. You're not on their books.
+  Satoshi Nakamoto II: Kemal let you in, so you must have been convincing.
+  Satoshi Nakamoto II: SAFETYNET, right? So you've worked out what this place is for.
+     (2 options)
+ > You're funding ENTROPY. Every cell we've hit runs its money through this exchange.
+  Satoshi Nakamoto II: You've seen enough of my exchange to guess.
+  Satoshi Nakamoto II: Sure. HashChain is ENTROPY's bank. Every cell.
+  Satoshi Nakamoto II: You'd call it laundering. I call it financial freedom for people who need it most.
+     (2 options)
+ > You're paying for people to die.
+  Satoshi Nakamoto II: You haven't seen the numbers. I have. They're smaller than you'd think.
+  Satoshi Nakamoto II: Here's my question. How many die keeping the current system running?
+     (2 options)
+ > Nothing justifies this.
+  Satoshi Nakamoto II: Everything justifies something. You just don't like my arithmetic.
+  Satoshi Nakamoto II: Your side freezes a country's reserves and the hospitals run out of insulin. Nobody writes that up as a casualty projection.
+  Satoshi Nakamoto II: Whoever controls the money controls the people. We'd like nobody to.
+     (3 options)
+ > Privacy has honest uses. You threw them away.
+  Satoshi Nakamoto II: *amused* Maybe. You wouldn't be the first to tell me.
+  Satoshi Nakamoto II: Irina thought so too. Look where it got her.
+  Satoshi Nakamoto II: Let's talk about my money.
+  Satoshi Nakamoto II: Though you don't know which wallet is mine. Do you?
+  Satoshi Nakamoto II: You could freeze it. Very decisive. Tonight's money stops, and everyone hears about it.
+  Satoshi Nakamoto II: Or you let it run and watch who comes to collect. Patient of you, and the money keeps moving.
+     (2 options)
+ > Not yet. I'll find your wallet first.
+      [set_variable asset_decision_deferred=true]
+  Satoshi Nakamoto II: Take your time. The money doesn't wait, but I can.
+  [chat closes]
+   [PASS] said: "You've seen enough of my exchange to guess."
+   [PASS] said: "You haven't seen the numbers. I have. They're smaller than you'd think."
+   [PASS] said: "How many die keeping the current system running?"
+   [PASS] said: "the hospitals run out of insulin"
+   [PASS] said: "Irina thought so too. Look where it got her."
+   [PASS] said: "Though you don't know which wallet is mine."
+   [PASS] said: "The money doesn't wait, but I can."
+   [PASS] not said: "never count yours"
+   [PASS] not said: "You haven't found my wallet"
+   [PASS] not said: "Thorough"
+   [PASS] not said: "you've guessed"
+   [PASS] not said: "Casualties are inevitable"
+   [PASS] not said: "moral difficulties"
+   [PASS] not said: "doesn't like what the idea costs"
+   [PASS] asset_decision_deferred = true (expected true)
+   [PASS] longest run 6 (satoshi) <= 9
+
+[stats] spoken/narrated lines 30, choices 10, longest run without a choice 6 (satoshi); runs>=6: satoshi:6
+[result] all expectations met

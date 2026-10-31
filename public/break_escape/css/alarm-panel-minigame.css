@@ -1,0 +1,126 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   alarm-panel-minigame.css
+   Facility Alarm Panel — ambient state-reactive display (MG-05)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Containers ─────────────────────────────────────────────────────────── */
+
+.ap-minigame-container {
+    background: #050a14;
+}
+
+.ap-game-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+/* ── Panel wrapper ──────────────────────────────────────────────────────── */
+
+.ap-panel-wrap {
+    background: #080e1b;
+    border: 2px solid #2a3a5a;
+    width: 460px;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Press Start 2P', monospace;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.ap-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 2px solid #2a3a5a;
+    background: #0a1020;
+}
+
+.ap-panel-title {
+    font-size: 8px;
+    color: #f59e0b;
+    letter-spacing: 1px;
+    line-height: 1.8;
+}
+
+/* LIVE indicator — pulsing green dot */
+.ap-live-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #00c853;
+    flex-shrink: 0;
+    animation: ap-live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ap-live-pulse {
+    0%, 100% { opacity: 1;   }
+    50%       { opacity: 0.3; }
+}
+
+/* ── SVG panel ──────────────────────────────────────────────────────────── */
+
+.ap-svg {
+    width: 100%;
+    padding: 0 8px;
+    box-sizing: border-box;
+}
+
+/* Smooth colour transitions on lamp circles */
+.ap-svg circle {
+    transition: fill 0.4s ease;
+}
+
+/* ── Lamp colour states ──────────────────────────────────────────────────── */
+
+.ap-green { fill: #00c853; }
+.ap-amber { fill: #f59e0b; }
+.ap-red   { fill: #ef4444; }
+.ap-off   { fill: #1e2635; }
+
+/* Flash — 1 Hz, step-start for hard blink */
+.ap-flash {
+    animation: ap-flash 1s step-start infinite;
+}
+
+@keyframes ap-flash {
+    0%,  49% { opacity: 1;    }
+    50%, 100% { opacity: 0.15; }
+}
+
+/* ── SVG text ────────────────────────────────────────────────────────────── */
+
+.ap-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    fill: #c8d8ff;
+}
+
+.ap-status {
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    transition: fill 0.4s ease;
+}
+
+/* Row separator lines */
+.ap-row-sep {
+    stroke: #1a2438;
+    stroke-width: 1;
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+
+.ap-footer {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #1e2d4a;
+    letter-spacing: 1px;
+    text-align: center;
+    padding: 8px 18px;
+    border-top: 2px solid #1a2438;
+}

@@ -1,0 +1,67 @@
+{
+ "globals": {
+  "briefing_played": true,
+  "team_assigned": true,
+  "team_assignment": "meltdown",
+  "hurt_line_said": true,
+  "projection_revised": true,
+  "revision_found_open": true
+ },
+ "steps": [
+  {
+   "note": "R35 (blind A M2, m7): the redirect text says when the window shuts (operator login or the timer), the decline reply says it can still change, and a decline followed by a move leaves only the move on record (redirect_declined clears), so the debrief and credits don't say 'weighed, and held'."
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Understood. Let's go."
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Those numbers were understated",
+    "No. Leave them"
+   ],
+   "knot": "hub"
+  },
+  {
+   "said": [
+    "until you log in as their operator, or the timer on screen runs out",
+    "If that changes before you log in as their operator, tell me"
+   ],
+   "notSaid": [
+    "now or never"
+   ]
+  },
+  {
+   "expect": {
+    "redirect_declined": true
+   }
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Those numbers were understated",
+    "Move them"
+   ],
+   "knot": "hub"
+  },
+  {
+   "expect": {
+    "redirect_declined": false,
+    "team_redirected": true
+   }
+  },
+  {
+   "creditsNotSaid": [
+    "weighed, and held"
+   ]
+  },
+  {
+   "creditsSaid": [
+    "redirected mid-flight"
+   ]
+  }
+ ]
+}

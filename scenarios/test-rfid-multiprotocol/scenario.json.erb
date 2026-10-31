@@ -1,0 +1,247 @@
+{
+  "name": "RFID Multi-Protocol Test",
+  "description": "Comprehensive test for all 4 RFID protocols with attacks",
+  "scenario_brief": "Test all RFID protocols in sequence: EM4100 (instant), MIFARE weak (instant), MIFARE custom (attack), and DESFire (UID-only)",
+  "startRoom": "lobby",
+  "endGoal": "Successfully access all four security levels to test each RFID protocol",
+  "globalVariables": {},
+  "player": {
+    "id": "player",
+    "displayName": "Agent 0x00",
+    "spriteSheet": "hacker",
+    "startX": 200,
+    "startY": 200
+  },
+  "startItemsInInventory": [
+    {
+      "type": "rfid_cloner",
+      "name": "RFID Flipper",
+      "saved_cards": []
+    }
+  ],
+  "rooms": {
+    "lobby": {
+      "name": "Test Lobby",
+      "type": "room_reception",
+      "connections": {
+        "north": ["em4100_room", "mifare_weak_room"]
+      },
+      "npcs": [
+        {
+          "id": "guard_low",
+          "displayName": "Guard (EM4100)",
+          "npcType": "person",
+          "position": { "x": 3, "y": 3 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/rfid-guard-low.json",
+          "currentKnot": "start",
+          "rfidCard": {
+            "card_id": "employee_badge",
+            "rfid_protocol": "EM4100",
+            "name": "Employee Badge"
+          }
+        },
+        {
+          "id": "guard_weak",
+          "displayName": "Guard (MIFARE Weak)",
+          "npcType": "person",
+          "position": { "x": 9, "y": 3 },
+          "spriteSheet": "hacker-red",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/rfid-guard-low.json",
+          "currentKnot": "start",
+          "rfidCard": {
+            "card_id": "hotel_keycard",
+            "rfid_protocol": "MIFARE_Classic_Weak_Defaults",
+            "name": "Hotel Keycard"
+          }
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Protocol Guide",
+          "position": { "x": 250, "y": 250 },
+          "takeable": true,
+          "readable": true,
+          "note_title": "RFID Protocol Security Levels",
+          "note_content": "🟥 LEVEL 1 (Instant Clone):\n  • EM4100 (125kHz) - Old tech, no encryption\n  • Guard at left has this card on their belt\n  • Quick and easy to exploit with RFID Flipper\n\n🟦 LEVEL 2 (Weak Defaults):\n  • MIFARE Classic (Default Keys) - Uses factory defaults\n  • Guard in middle has this card\n  • Still instant to crack despite encryption\n\n🟨 LEVEL 3 (Custom Encryption):\n  • MIFARE Classic (Custom Keys) - Requires 30 sec attack\n  • Located in Medium Security Room (north from Level 2)\n  • Requires Darkside attack\n\n🟩 LEVEL 4 (Strong Encryption):\n  • MIFARE DESFire - Can't crack, UID only\n  • Located in High Security Room (north from Level 3)\n  • Best protection available",
+          "observations": "Guide to the 4 RFID protocol security levels"
+        },
+        {
+          "type": "rfid_cloner",
+          "name": "RFID Flipper",
+          "saved_cards": [],
+          "position": { "x": 300, "y": 200 },
+          "takeable": true,
+          "observations": "A portable multi-tool for RFID scanning and emulation. Essential for this test."
+        }
+      ]
+    },
+    "em4100_room": {
+      "name": "Level 1: EM4100 (Instant)",
+      "type": "room_office",
+      "connections": {
+        "south": "lobby",
+        "north": "mifare_custom_room"
+      },
+      "locked": true,
+      "lockType": "rfid",
+      "requires": ["employee_badge"],
+      "npcs": [],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Success - EM4100",
+          "position": { "x": 300, "y": 300 },
+          "takeable": true,
+          "readable": true,
+          "note_title": "✓ Level 1 Passed: EM4100",
+          "note_content": "You successfully cloned an EM4100 card!\n\nThis protocol:\n• 125kHz frequency\n• No encryption whatsoever\n• Instant clone - no attack needed\n• Used in: Old hotels, parking garages\n\nProceed north to test MIFARE Classic weak defaults.",
+          "observations": "EM4100 test passed"
+        }
+      ]
+    },
+    "mifare_weak_room": {
+      "name": "Level 2: MIFARE Weak (Instant)",
+      "type": "room_office",
+      "connections": {
+        "south": "lobby",
+        "north": "mifare_custom_room"
+      },
+      "locked": true,
+      "lockType": "rfid",
+      "requires": ["hotel_keycard"],
+      "npcs": [],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Success - MIFARE Weak",
+          "position": { "x": 300, "y": 300 },
+          "takeable": true,
+          "readable": true,
+          "note_title": "✓ Level 2 Passed: MIFARE Weak Defaults",
+          "note_content": "You cloned a MIFARE Classic with default keys!\n\nThis protocol:\n• 13.56MHz NFC frequency\n• Uses encryption but keeps factory defaults (FFFFFFFFFFFF)\n• Dictionary attack succeeds instantly (~95% success)\n• Used in: Cheap hotels, old transit cards\n\nProceed north to test MIFARE Custom Keys (requires attack).",
+          "observations": "MIFARE weak defaults test passed"
+        }
+      ]
+    },
+    "mifare_custom_room": {
+      "name": "Level 3: MIFARE Custom (Attack)",
+      "type": "room_office",
+      "connections": {
+        "south": ["em4100_room", "mifare_weak_room"],
+        "north": "desfire_room"
+      },
+      "npcs": [
+        {
+          "id": "guard_custom",
+          "displayName": "Guard (Custom Keys)",
+          "npcType": "person",
+          "position": { "x": 6, "y": 4 },
+          "spriteSheet": "hacker-green",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/rfid-guard-custom.json",
+          "currentKnot": "start",
+          "rfidCard": {
+            "card_id": "corporate_badge",
+            "rfid_protocol": "MIFARE_Classic_Custom_Keys",
+            "name": "Corporate Badge"
+          }
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Success - MIFARE Custom",
+          "position": { "x": 300, "y": 300 },
+          "takeable": true,
+          "readable": true,
+          "note_title": "✓ Level 3 Passed: MIFARE Custom Keys",
+          "note_content": "You cracked MIFARE Classic with custom keys!\n\nThis protocol:\n• 13.56MHz NFC frequency\n• Uses custom encryption (not factory defaults)\n• Requires Darkside attack (~30 seconds)\n• Used in: Corporate badges, banks\n\nProceed north to test MIFARE DESFire (strongest protection).",
+          "observations": "MIFARE custom keys attack passed"
+        },
+        {
+          "type": "keycard",
+          "name": "Test Corporate Badge",
+          "card_id": "corporate_badge_physical",
+          "rfid_protocol": "MIFARE_Classic_Custom_Keys",
+          "position": { "x": 350, "y": 250 },
+          "takeable": false,
+          "observations": "A guard's corporate badge - can be scanned with RFID cloner"
+        }
+      ]
+    },
+    "desfire_room": {
+      "name": "Level 4: MIFARE DESFire (UID-Only)",
+      "type": "room_servers",
+      "connections": {
+        "south": "mifare_custom_room"
+      },
+      "locked": true,
+      "lockType": "rfid",
+      "requires": ["corporate_badge"],
+      "npcs": [
+        {
+          "id": "guard_high",
+          "displayName": "Guard (DESFire)",
+          "npcType": "person",
+          "position": { "x": 6, "y": 4 },
+          "spriteSheet": "hacker-yellow",
+          "spriteConfig": {
+            "idleFrameStart": 20,
+            "idleFrameEnd": 23
+          },
+          "storyPath": "scenarios/ink/rfid-security-guard-fixed.json",
+          "currentKnot": "start",
+          "rfidCard": {
+            "card_id": "executive_card",
+            "rfid_protocol": "MIFARE_DESFire",
+            "name": "Executive Card"
+          }
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Success - All Levels Passed",
+          "position": { "x": 300, "y": 300 },
+          "takeable": true,
+          "readable": true,
+          "note_title": "✓ Level 4 & All Tests Complete!",
+          "note_content": "You've successfully tested all RFID protocols!\n\nMIFARE DESFire (Strongest):\n• 13.56MHz NFC frequency\n• Military-grade AES encryption\n• Can't be cracked - only UID emulation works\n• Requires weakly-configured reader (poor UID validation)\n• Used in: Government, military, high-security\n\nSUMMARY:\n✓ Level 1: EM4100 - Instant clone\n✓ Level 2: MIFARE Weak - Dictionary attack\n✓ Level 3: MIFARE Custom - Darkside attack (30sec)\n✓ Level 4: DESFire - UID emulation only\n\nAll RFID protocols tested successfully!",
+          "observations": "All protocol tests passed!",
+          "isEndGoal": true
+        },
+        {
+          "type": "keycard",
+          "name": "Executive Card (DESFire)",
+          "card_id": "executive_card_physical",
+          "rfid_protocol": "MIFARE_DESFire",
+          "position": { "x": 350, "y": 250 },
+          "takeable": false,
+          "observations": "An executive's DESFire card - strongest encryption, UID-only emulation possible"
+        },
+        {
+          "type": "keycard",
+          "card_id": "master_override",
+          "rfid_protocol": "EM4100",
+          "name": "Master Override Card",
+          "position": { "x": 350, "y": 350 },
+          "takeable": true,
+          "observations": "A master override card - universal access"
+        }
+      ]
+    }
+  }
+}

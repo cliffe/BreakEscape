@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>BreakEscape - Select Mission</title>
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/mission_index/application.css') %>">
+  <!-- Tippy.js for tooltips -->
+  <script src="https://unpkg.com/@popperjs/core@2" nonce="<%= content_security_policy_nonce %>"></script>
+  <script src="https://unpkg.com/tippy.js@6" nonce="<%= content_security_policy_nonce %>"></script>
+  <style nonce="<%= content_security_policy_nonce %>">
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    h1 {
+      text-align: center;
+      color: #00ff00;
+    }
+    .collection-filter {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .collection-filter a {
+      display: inline-block;
+      padding: 8px 16px;
+      margin: 4px;
+      background: #2a2a2a;
+      color: #00ff00;
+      text-decoration: none;
+      border: 1px solid #00ff00;
+      border-radius: 4px;
+    }
+    .collection-filter a:hover,
+    .collection-filter a.active {
+      background: #00ff00;
+      color: #000;
+    }
+    h2.collection-heading {
+      color: #00ff00;
+      font-size: 28px;
+      margin: 40px 0 20px 0;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #00ff00;
+      text-transform: capitalize;
+    }
+    h2.collection-heading:first-of-type {
+      margin-top: 20px;
+    }
+    .missions {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    .mission-card {
+      background: #2a2a2a;
+      border: 2px solid #00ff00;
+      border-radius: 8px;
+      padding: 20px;
+      text-decoration: none;
+      color: #fff;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: block;
+    }
+    .mission-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 20px rgba(0, 255, 0, 0.3);
+    }
+    .mission-title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #00ff00;
+    }
+    .mission-description {
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 15px;
+    }
+    .mission-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .mission-difficulty {
+      display: inline-block;
+      background: #00ff00;
+      color: #000;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .mission-collection {
+      display: inline-block;
+      background: #3b82f6;
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔓 BreakEscape - Select Your Mission</h1>
+
+  <% if BreakEscape::Mission.collections.length > 1 %>
+    <div class="collection-filter">
+      <%= link_to "All", missions_path, class: params[:collection].blank? ? 'active' : '' %>
+      <% BreakEscape::Mission.collections.each do |collection| %>
+        <%= link_to collection.titleize, missions_path(collection: collection), 
+            class: params[:collection] == collection ? 'active' : '' %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% @missions_by_collection.each do |collection, missions| %>
+    <h2 class="collection-heading"><%= collection == 'default' ? 'Miscellaneous' : collection.titleize %></h2>
+    <div class="missions">
+      <% missions.each do |mission| %>
+        <%= link_to mission_path(mission), class: 'mission-card' do %>
+          <div class="mission-title"><%= mission.display_name %></div>
+          <div class="mission-description">
+            <%= mission.description || "An exciting escape room challenge awaits..." %>
+          </div>
+          <div class="mission-meta">
+            <span class="mission-difficulty">
+              Difficulty: <%= "⭐" * mission.difficulty_level %>
+            </span>
+            <% if mission.collection.present? && mission.collection != 'default' %>
+              <span class="mission-collection">
+                <%= mission.collection.titleize %>
+              </span>
+            <% end %>
+            <%= render partial: 'break_escape/shared/cybok_label', 
+                       locals: { cyboks: mission.break_escape_cyboks } %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <script nonce="<%= content_security_policy_nonce %>">
+    // Initialize Tippy.js tooltips
+    document.addEventListener('DOMContentLoaded', function() {
+      tippy('[data-tippy-content]', {
+        theme: 'break-escape',
+        allowHTML: true,
+        placement: 'top',
+        arrow: true
+      });
+    });
+  </script>
+</body>
+</html>
+

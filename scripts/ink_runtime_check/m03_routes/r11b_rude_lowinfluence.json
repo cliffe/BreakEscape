@@ -1,0 +1,8 @@
+{"steps":[
+{"note":"R11b (cycle 4 review): rude but walks it back before the board, so the read never drops; low influence, suspicion under 20. Which read-back does she give at night, and does the test answer survive?"},
+{"set":{"briefing_played":true,"reception_badge_cloned":true}},
+{"talk":"victoria","picks":["Why am I here","advocating selling","ethics","hurt people","Report it","Sorry about earlier","whiteboard","What kind of services","Who typically buys","certifications","think it over"]},
+{"talk":"night"},
+{"set":{"mission_phase":"act2_infiltration","clone_call_done":true,"night_confrontation_ready":true,"usb_seen":true,"transaction_log_read":true,"danny_fate":"left"}},
+{"talk":"victoria","picks":["need to talk","approvals","walked away","Go."]}
+]}

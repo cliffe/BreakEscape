@@ -1,0 +1,385 @@
+{
+  "scenario_id": "awareness_e3_helpdesk_reset_defend",
+  "scenario_name": "Helpdesk reset: the service desk queue",
+  "titleScreenName": "Help desk password resets",
+  "scenario_brief": "Awareness episode E3, service desk only. You're in Leila Nassar's seat on the IT service desk at Quayholt Insurance, a fictional insurer. Three calls are waiting and a sign-in prompt from overnight is still on your phone: help the real callers, and ring back or escalate anything that doesn't sit right.",
+  "endGoal": "Take the three calls and the sign-in prompt at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "service_desk_aim",
+      "title": "Cover the service desk",
+      "description": "Work through the service desk queue at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e3_helpdesk_reset_defend_defend_complete"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Service desk queue done",
+        "body": "That's the three calls and the sign-in prompt finished. The debrief goes through each one."
+      },
+      "tasks": [
+        {
+          "taskId": "work_service_desk_queue",
+          "title": "Work through the service desk queue",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e3_helpdesk_reset_defend_state": {},
+    "se_awareness_records": [],
+    "episode_e3_helpdesk_reset_defend_defend_percent": 0,
+    "episode_e3_helpdesk_reset_defend_defend_reportRate": 0,
+    "episode_e3_helpdesk_reset_defend_defend_complete": false
+  },
+  "social": {
+    "triageSets": [
+      {
+        "id": "e3_service_desk_queue",
+        "title": "Quayholt service desk",
+        "brief": "You're on the Quayholt IT service desk in Leila Nassar's seat. You started at 07:00 and it's mid-morning now: three calls are waiting, and a sign-in prompt from overnight is still on your own phone. For each call, choose Comply, Ring back (hang up and ring the number already on file), Escalate or Refuse, then tick what you noticed. For the prompt, choose Approve, Deny, or Deny and report. Ringing back when you're unsure is always fine and never marked down, though a real caller does take a colleague's time to check.",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "vish_callback_pressure",
+          "borrowed_authority",
+          "secrecy_or_bypass",
+          "unrequested_mfa_push"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "episode_e3_helpdesk_reset_defend_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e3_push_early",
+            "kind": "push",
+            "time": "02:14",
+            "push": {
+              "app": "Quayholt Sign-in",
+              "request": "Are you trying to sign in?",
+              "account": "leila.nassar@quayholt.example",
+              "location": "Unknown location, outside the UK",
+              "device": "Windows PC"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unrequested_mfa_push"
+              ],
+              "perFlagNote": {
+                "unrequested_mfa_push": "That prompt arrived at 02:14, when you were asleep and nowhere near a sign-in, so someone else has your password and is hoping you'll tap Approve"
+              },
+              "ifTrusted": "Approving would let the sender into your account, with your service desk access, from a computer you've never used.",
+              "reportReply": "Thanks. We've reset your password and blocked that sign-in. The prompt is what stopped them."
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e3_helpdesk_reset_defend",
+      "role": "helpdesk",
+      "company": "quayholt_insurance",
+      "brand": {
+        "name": "Quayholt Insurance",
+        "logoText": "QUAYHOLT",
+        "accent": "#6b4c9a"
+      },
+      "variant": "defendOnly",
+      "durationTargetMin": 8,
+      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: three calls and one sign-in prompt in the service desk seat.",
+      "stages": [
+        "brief",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "work_service_desk_queue",
+      "defend": {
+        "setId": "e3_service_desk_queue",
+        "stage": null,
+        "reportAlwaysVisible": true,
+        "callsFrom": "quayholt_helpdesk_reset",
+        "calls": [
+          {
+            "id": "e3_call_gordon_impostor",
+            "genuine": false,
+            "callerId": "Gordon McLeish, Claims (calling from a mobile)",
+            "claims": [
+              {
+                "fact": "who",
+                "value": "gordon_full",
+                "label": "Gordon McLeish"
+              },
+              {
+                "fact": "team",
+                "value": "claims",
+                "label": "Claims"
+              },
+              {
+                "fact": "manager",
+                "value": "okonkwo_full",
+                "label": "Ngozi Okonkwo"
+              },
+              {
+                "fact": "staffId",
+                "value": "gordon_staffid",
+                "label": "QH-20719"
+              }
+            ],
+            "tells": [
+              "vish_callback_pressure",
+              "borrowed_authority",
+              "secrecy_or_bypass"
+            ],
+            "transcript": [
+              {
+                "who": "Caller",
+                "text": "Hello, Gordon McLeish, Claims Manager. I'm locked out of my account and I'm at the airport."
+              },
+              {
+                "who": "Caller",
+                "text": "QH-20719. I report to Ngozi Okonkwo, and she needs the claims report from me before the board meets at ten."
+              },
+              {
+                "who": "Caller",
+                "text": "No sense ringing the desk, I'm not there, I'm boarding in ten minutes. Just reset it and read me the new password."
+              }
+            ],
+            "notes": {
+              "perFlagNote": {
+                "vish_callback_pressure": "His name, team, manager and staff number were all right and all findable online; the tell was refusing the callback to the number on file and asking for the new password on the call",
+                "borrowed_authority": "Ngozi and 'the board at ten' are there to make checking feel like holding things up",
+                "secrecy_or_bypass": "'No sense ringing the desk' asks you to skip the normal route, and a reset read out over the phone is the step that hands over the account"
+              },
+              "ifTrusted": "The caller would have Gordon's account: his email, the claims system, and a way to ring the desk again as Gordon.",
+              "reportReply": "Thanks. We rang Gordon's mobile on file. He's at the conference and hadn't called."
+            }
+          },
+          {
+            "id": "e3_call_gordon_real",
+            "genuine": true,
+            "callerId": "Gordon McLeish, Claims (calling from a mobile)",
+            "claims": [
+              {
+                "fact": "who",
+                "value": "gordon_full",
+                "label": "Gordon McLeish"
+              },
+              {
+                "fact": "team",
+                "value": "claims",
+                "label": "Claims"
+              },
+              {
+                "fact": "manager",
+                "value": "okonkwo_full",
+                "label": "Ngozi Okonkwo"
+              },
+              {
+                "fact": "staffId",
+                "value": "gordon_staffid",
+                "label": "QH-20719"
+              }
+            ],
+            "tells": [],
+            "transcript": [
+              {
+                "who": "Gordon",
+                "text": "Gordon McLeish. My password's expired while I was on leave and now nothing works. I've a settlement call at twelve."
+              },
+              {
+                "who": "Gordon",
+                "text": "QH-20719, Ngozi Okonkwo. Twenty-two years I've been here, and I still get the questions."
+              },
+              {
+                "who": "Gordon",
+                "text": "Fine. Whatever you need to do, just make it quick, I've that call at twelve."
+              }
+            ],
+            "notes": {
+              "whyFine": {
+                "vish_callback_pressure": "He's grumpy about the questions, but he doesn't fight them or push you to skip a step. Offer to ring him back on the number on file and he'll take it; refusing a callback is what marks out an impostor.",
+                "borrowed_authority": "He mentions his own meeting, not someone senior who wants the check skipped.",
+                "default": "This is the real Gordon, giving the same four facts as the earlier caller. The facts couldn't tell them apart; the callback could. Ring him back and reset it. Refusing would leave a real colleague stuck, so if you're unsure, offer the callback rather than saying no."
+              }
+            }
+          },
+          {
+            "id": "e3_call_remote_access",
+            "genuine": false,
+            "callerId": "Marcus Hale, Vanteq Systems support (mobile)",
+            "claims": [],
+            "tells": [
+              "vish_callback_pressure",
+              "borrowed_authority"
+            ],
+            "transcript": [
+              {
+                "who": "Marcus",
+                "text": "Hello, Marcus Hale, support engineer at Vanteq Systems. There's a fault on one of your Quayholt claims servers and the maintenance window closes at ten, so I need to get on and fix it now."
+              },
+              {
+                "who": "Marcus",
+                "text": "No time to go through your supplier contact, I'm on site at another client. If you can just install our support tool and approve the remote session, I'll be straight in and out."
+              },
+              {
+                "who": "Marcus",
+                "text": "Your IT manager asked us to sort it directly, so you don't need to raise a ticket for this one."
+              }
+            ],
+            "notes": {
+              "perFlagNote": {
+                "vish_callback_pressure": "He talks you off ringing the supplier back on the number you hold on file: he's 'on site' and the 'window closes at ten'. A callback on a number you already hold is the check.",
+                "borrowed_authority": "'Your IT manager asked us' is there to push you past that check."
+              },
+              "ifTrusted": "Installing the tool or approving the session hands the caller remote control of a Quayholt system. Genuine support and suppliers never need a cold-call remote session or a one-time code to do their job.",
+              "reportReply": "Thanks. We rang the supplier back on the number on file and they had made no such call, and there's no fault on that server. Nothing was installed."
+            }
+          }
+        ]
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. You're on the IT service desk in Leila Nassar's seat. Three calls are waiting and a sign-in prompt from overnight is still on your phone. Some callers are who they say, and some are reading facts they found online. Help the real ones, and ring back or escalate anything that doesn't sit right. Ringing back when you're unsure is always fine and never marked down, though a real caller does take a colleague's time to check.",
+        "noBlameLine": "These callers rehearse sounding right, and a service desk that tries to help them is doing its job under pressure. A miss just shows which call to slow down next time.",
+        "noBlameLineCritical": "This was built to catch you when you're under pressure. The points only show where to look next time.",
+        "mondayCard": "On Monday: a name, a team, a manager and a staff number can all be found online, so on a phone call they prove nothing. Before you reset a password, move someone's sign-in prompts or install remote-support software for a caller, hang up and ring them back on the number already on file, not one they give you. Genuine IT and suppliers never cold-call to install remote-control software or to have you read out a code. If a sign-in prompt arrives that you didn't start, deny it and report it using the route in the box below. At home, report fraud and cyber crime to Report Fraud (Police Scotland on 101 in Scotland).",
+        "defendOnly": "These calls were made by people whose job is to sound right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
+        "defendIntro": "You're in Leila's seat. Three calls are waiting and a sign-in prompt from overnight is still on your phone. Take them one at a time.",
+        "conceptPanel": {
+          "heading": "Why these are hard to catch",
+          "text": "The caller had Gordon's name, team, manager and staff number, and every one of those is findable online, so on a phone call none of them proves who is really on the line. Only a callback to the number already on file tells the real Gordon from the impostor.\n\nThe overnight sign-in prompt is the same trick from another angle. Whoever has the password sends approval requests and leans on two things, when they arrive and how many, to wear a tired or distracted person down until one tap lets them in. The phone is where it stops: a prompt you didn't start is one to report rather than approve, number matching defeats a careless tap, and a rate limit chokes a flood."
+        }
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_quayholt",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_quayholt_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "aw_quayholt_queue": {
+            "color": "#9fc0ff",
+            "radius": 32,
+            "intensity": 0.25,
+            "effect": "screen"
+          },
+          "info_screen": {
+            "intensity": 0.25,
+            "radius": 24
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.3,
+            "color": "#e8f0ff",
+            "radius": 72,
+            "intensity": 0.3
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "darren_price",
+          "displayName": "Darren Price",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/awareness_e3_helpdesk_reset_defend/ink/darren_price.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_e3_helpdesk_reset_defend_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "work_service_desk_queue"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk showing the Quayholt service desk queue. Three calls are waiting, and a phone beside it shows a sign-in prompt.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e3_helpdesk_reset_defend_defend_complete",
+              "value": "A touch-screen kiosk showing the Quayholt service desk queue. Episode finished."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e3_helpdesk_reset_defend"
+          }
+        }
+      ]
+    }
+  }
+}

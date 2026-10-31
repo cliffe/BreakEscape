@@ -1,0 +1,13 @@
+{
+  "key": "b3bbf89ffa9846cb62c4f1092661d310",
+  "npc": "ward_nurse",
+  "text": "There's a PIN safe on it. Old institutional code. It's written up in half a dozen places in this building, if you stop and look.",
+  "voice": "Kore",
+  "style": "Ward sister, twenty years on the wards. Consistent Belfast / Northern Irish accent throughout. Exhausted, dry, absolutely unsentimental about everything except her patients. Quiet controlled urgency, never raises her voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

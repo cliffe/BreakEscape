@@ -1,0 +1,13 @@
+{
+  "key": "17a031332ebcd0ecd720162cbeb360c0",
+  "npc": "helen_carver",
+  "text": "The NAS, from Sunday's snapshot. Five hours, not eighteen. The wards key Monday back in from paper, and I'll tell the Board what Ravi's scan can't promise.",
+  "voice": "Pulcherrima",
+  "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

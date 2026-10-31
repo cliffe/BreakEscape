@@ -1,0 +1,394 @@
+
+## R2 (pass 5 alignment): the guard sees the picks (cover strained, A3), the player comes back and talks through. Irina is detained once the fund is found; on the next room entry the police collect her (A4) and HaX relays her executive badge. The minder won't take the FCA line now; the player squares up, he turns hostile and is knocked out. Satoshi knows the FCA was rung. Watch the fund.
+
+--- briefing ---
+      [task: receive_briefing]
+  Narrator: A SAFETYNET briefing room. Netherton drops a financial dossier on the table. Nightshade already has the transaction graph open.
+  Director Magnus Netherton: Agent 0x00. Every cell we have hit is being paid by someone. Tonight we chase the money. HaX.
+  Agent 0x47 'Nightshade': Money's just another protocol, and this one leaks. Follow enough hops and the mixers stop hiding people and start revealing them.
+  Agent HaX: Two payments we've traced so far. One came in, one went out, and both went through the same exchange.
+     (2 options)
+ > Which payments?
+  Agent HaX: In: Ransomware Incorporated's wallet. $2.4 million in one payment this summer, hospital ransoms pooled.
+  Agent HaX: Out: $847,000 to the Insider Threat Initiative for the Quantum Dynamics job, through TalentStack's wallet.
+  Agent HaX: Somebody is keeping the books for all of them.
+  Agent HaX: HashChain Exchange. A trading platform on paper. In practice, the bank for every ENTROPY cell we know. The Crypto Anarchists run it.
+  Agent HaX: Their mixer takes Bitcoin in, runs it through Monero, and pays it into one of their own cold wallets.
+  Agent HaX: From outside, the trail stops there. Their own records pick it up again.
+  Agent HaX: Two people matter. The CEO calls himself "Satoshi Nakamoto the Second". True believer. Nobody turns him.
+  Agent HaX: The CTO, Dr Irina Volkova, built the mixer. She might turn.
+     (2 options)
+ > How do I get in?
+  Agent HaX: You go in as the FCA, the Financial Conduct Authority, on a routine supervisory visit.
+  Agent HaX: Regulators ask to see everything, so nobody minds when you do.
+  Agent HaX: The paperwork gets you past reception. It won't survive a phone call to the FCA, so don't give anyone a reason to make one.
+  Agent HaX: Your usual kit: picks, the RFID cloner and the print kit. No PIN cracker this time; R&D still have it on the bench.
+     (2 options)
+ > What am I looking for?
+  Agent HaX: Their backend first. Crack the accounts from the terminal in their server room and bring the flags to our drop-site.
+  Agent HaX: Then their records. Somewhere in there is a wallet every cell draws on.
+  Agent HaX: And there's a clock. The wallets we watch have gone quiet, the way they do before a big payout.
+  Agent HaX: Find the fund. Then you'll have two calls to make: what happens to the money, and what happens to Volkova.
+  Agent HaX: Volkova's on the trading floor, through the checkpoint. Start with her.
+  [end]
+   {set {"briefing_played":true}}
+   {room security_checkpoint}
+
+--- guard @on_lockpick_seen ---
+      [set_variable guard_grace=true]
+      [set_variable guard_caught=true]
+  Narrator: Across the room, the guard's head comes up. He has seen the picks.
+  Checkpoint Guard: Oi. Away from that door.
+  Checkpoint Guard: I don't know who you are, and now I'm not going to take your word for it. Go back out to the lobby and come in properly.
+  Checkpoint Guard: And I'll be ringing whoever you say sent you.
+      [engine: caught at the checkpoint lock -> cover_strained=true]
+      [HaX text: The guard saw your picks. He'll ring the FCA to check on you...]
+  [chat closes]
+   [PASS] guard_caught = true (expected true)
+   [PASS] cover_strained = true (expected true)
+   [PASS] said: "Go back out to the lobby and come in properly"
+   [PASS] said: "ringing whoever you say sent you"
+   [PASS] said: "The guard saw your picks"
+   [PASS] not said: "Guard: Go back to reception"
+   [PASS] not said: "out to reception"
+   {room reception_lobby}
+      [engine: room_entered:reception_lobby mapping -> guard_grace=false]
+   {set {"guard_grace":false}}
+   {room security_checkpoint}
+
+--- guard ---
+  Narrator: A contract guard with a clipboard walks a slow line across the checkpoint, between you and the trading-floor door.
+  Checkpoint Guard: Evening. Floor's restricted. Who are you?
+     (4 options)
+ > Financial Conduct Authority. Routine supervisory visit.
+  Checkpoint Guard: Regulator. Yeah, they said there'd be one. Who are you here to see?
+     (3 options)
+ > Dr Volkova. The CTO.
+      [set_variable guard_waved_through=true]
+  Checkpoint Guard: Dr Volkova. You're on the list. She's on the floor.
+      [unlock_door trading_floor]
+  Checkpoint Guard: Door's open. Don't touch the screens; the traders bite.
+  [chat closes]
+   [PASS] guard_waved_through = true (expected true)
+   {room trading_floor}
+      [HaX text: You're on the floor. Two doors here are on RFID, and your cloner reads a badge from across a desk. Ask if you want the guide.]
+
+--- phone ---
+     (6 options)
+ > Remind me where we are.
+  Someone here has a reason to ring the FCA about you now. Don't hang about.
+  Volkova's office is west off the trading floor, on RFID. Your cloner reads her badge from across a desk.
+  There's an IT checklist on the checkpoint noticeboard. It has their house rule for door passphrases.
+  Volkova keeps a wordlist of what people here actually pick. Get it from her.
+  Priya Raghavan's write-up, in the lab east off the trading floor. It follows the money into the mixer. Take it.
+     (6 options)
+ > I'm good for now.
+  Copy that. Call anytime.
+  [chat closes]
+   [PASS] said: "has a reason to ring the FCA about you"
+
+--- irina ---
+      [task: meet_irina]
+  Narrator: A sharp-eyed woman in her mid-thirties looks up from three monitors of transaction graphs.
+  Dr. Irina Volkova: You must be the FCA. Dr Irina Volkova, Chief Technology Officer.
+  Dr. Irina Volkova: A supervisory visit. Always a pleasure, I'm sure.
+     (3 options)
+ > Thanks for making the time, Dr Volkova. I know these visits are a nuisance.
+  Dr. Irina Volkova: Courtesy. Your colleagues usually treat us as criminals from the first handshake.
+  Dr. Irina Volkova: We run a privacy exchange. The law permits those, last time I read it.
+  Dr. Irina Volkova: So what does the FCA want to see? Our customer checks are compliant. Our monitoring meets the thresholds.
+  Dr. Irina Volkova: Go on.
+     (5 options)
+ > What's the post-quantum work on your second screen?
+  Dr. Irina Volkova: Post-quantum key exchange. Lattice-based. The day a quantum computer breaks elliptic curves, every wallet on earth is readable, and I would rather we were ready than surprised.
+  Dr. Irina Volkova: It's the part of this job I'm still proud of.
+  Dr. Irina Volkova: What else?
+     (4 options)
+ > I'll need to test your password strength. What do people here actually use?
+      [give text_file:m06_password_dictionary]
+  Dr. Irina Volkova: Reasonable request for a supervisor. Here.
+  Dr. Irina Volkova: My own audit wordlist. Every crypto firm on earth picks from the same twenty words and bolts a year on the end.
+  Dr. Irina Volkova: Sixty-one per cent of our staff accounts fell to that list last time I ran it. Management's response was to stop me running it.
+  Dr. Irina Volkova: Yes?
+     (3 options)
+ > Tell me about your door access.
+  Dr. Irina Volkova: Badges. Trading floor for staff, this one for my office, executive badges for the top floor.
+  Dr. Irina Volkova: *taps the lanyard at her collar* Four years round my neck. The badges are the one part of our security I'd defend.
+  Dr. Irina Volkova: Satoshi is paranoid about doors and careless about passwords. Exactly backwards.
+  Dr. Irina Volkova: Go on.
+     (3 options)
+ > I need to check your office reader. Can I borrow your badge?
+  Dr. Irina Volkova: There's been talk about you tonight. Until it stops, my badge stays on my neck.
+  Narrator: Her lanyard hangs open at her collar, well within a cloner's range.
+  Dr. Irina Volkova: What else?
+     (3 options)
+ > That's all for now.
+  Dr. Irina Volkova: Find me if you need anything else.
+  [chat closes]
+      [engine: Irina's first close -> exchange_infiltrated=true]
+      [HaX text: Their analysts sit east of the floor. If anyone has drawn the money, it's them.]
+   [PASS] said: "There's been talk about you tonight"
+   [PASS] irina_badge_obtained = false (expected false)
+   [PASS] found_password_lists = true (expected true)
+   {set {"found_blockchain_evidence":true,"financial_network_mapped":true,"flag1_submitted":true,"flag2_submitted":true,"flag3_submitted":true,"flag4_submitted":true,"found_wallet_keys":true}}
+   {set {"entered_data_center":true,"read_settlement_log":true,"found_architects_fund":true,"fund_debrief_available":true}}
+
+--- irina ---
+  Dr. Irina Volkova: Yes?
+     (6 options)
+ > I'm not from the FCA. I'm SAFETYNET, and your exchange banks ENTROPY.
+  Narrator: You put your SAFETYNET credentials on the desk.
+  Narrator: Then the fund allocation, open at the casualty line.
+  Dr. Irina Volkova: *reads it twice* I wrote the mixer so nobody could see where money went. Not so nobody could see this.
+     (3 options)
+ > Dr Volkova, I'm detaining you. The police will take it from here.
+      [set_variable irina_arrested=true]
+      [set_variable irina_fate_decided=true]
+  Dr. Irina Volkova: *offers her wrists* I really did think I was building something good.
+  Dr. Irina Volkova: All those papers. For this.
+  [chat closes]
+   [PASS] irina_arrested = true (expected true)
+   [PASS] irina_fate_decided = true (expected true)
+   [PASS] irina_exec_badge_given = false (expected false)
+   [PASS] said: "All those papers"
+   [PASS] said: "*offers her wrists* I really did think I was building something good."
+   [PASS] not said: "state overreach"
+
+--- irina ---
+  Narrator: She sits very still at her desk and doesn't look up. The police are on their way up for her, and she knows it.
+     (2 options)
+ > Nothing. Carry on.
+  Narrator: She doesn't answer.
+  [chat closes]
+   [PASS] said: "The police are on their way up for her"
+   [PASS] not said: "waiting for the police"
+   {room server_room}
+      [engine: police collect a detained Irina -> irina_taken=true]
+   [PASS] irina_taken = true (expected true)
+   [no room_entered backstop would fire]
+   [PASS] backstops firing: [] (expected [])
+
+--- phone ---
+     (7 options)
+ > I need the executive badge she signed out.
+      [give keycard:relayed_executive_badge]
+  Rebuilt from the reader logs. Sent. The wing's east of the data centre.
+     (6 options)
+ > I'm good for now.
+  Copy that. Call anytime.
+  [chat closes]
+   [PASS] irina_exec_badge_given = true (expected true)
+   {room executive_wing}
+
+--- minder @on_sighted ---
+  Narrator: The man by the corner office turns, sees you, and steps squarely into your path.
+  Kemal Aydin: The FCA does not come up here.
+     (2 options)
+ > The FCA. Routine supervisory visit.
+  Kemal Aydin: Mr Nakamoto's phone has been ringing about you. The FCA has no file on you.
+  Kemal Aydin: I guarded banks that stole politely. He at least says what he is.
+  Kemal Aydin: So. Who are you really?
+     (3 options)
+ > Then step aside, or I'll move you.
+  Kemal Aydin: *takes off his watch and pockets it* Then come and move me.
+      [engine: satoshi_minder hostile]
+      [engine: npc_hostile_state_changed mapping -> minder_fighting=true]
+      [HaX text: He's coming for you, and he won't wait while you read this. Q for fists, then E or click. Q till the open hand shows to walk away.]
+  [chat closes]
+   [PASS] said: "phone has been ringing about you"
+   [PASS] said: "banks that stole politely"
+   [PASS] not said: "compliance file has my name"
+   [PASS] not said: "Dr Volkova sent me up"
+   [PASS] minder_hostile = true (expected true)
+   [PASS] minder_passed = false (expected false)
+   {ko satoshi_minder}
+      [engine: Kemal drops the CEO's office key (itemsHeld)]
+
+## R2-M3: the KO drops Kemal's key; the player opens Satoshi's door with it.
+   {set {"door_open_satoshi_office":true}}
+   {room satoshi_office}
+
+--- satoshi ---
+      [task: confront_satoshi]
+      [set_variable satoshi_confronted=true]
+      [set_variable satoshi_spoken=true]
+  Narrator: A man in his early forties leans on the front of an executive desk. The Bitcoin whitepaper hangs framed behind him, level with his own head.
+  Satoshi Nakamoto II: Somebody here rang the FCA tonight. You're not on their books.
+  Satoshi Nakamoto II: And I heard Kemal hit the floor. He's guarded money for thirty years. He'll be embarrassed.
+  Satoshi Nakamoto II: SAFETYNET, right? So you've worked out what this place is for.
+     (4 options)
+ > You're funding ENTROPY. Every cell we've hit runs its money through this exchange.
+  Satoshi Nakamoto II: You mapped the network. Impressive.
+  Satoshi Nakamoto II: Sure. HashChain is ENTROPY's bank. Every cell.
+  Satoshi Nakamoto II: You'd call it laundering. I call it financial freedom for people who need it most.
+     (2 options)
+ > You're paying for people to die.
+  Satoshi Nakamoto II: You found the allocation.
+  Satoshi Nakamoto II: Three hundred and fifty to six hundred, across every operation. The cells' own estimates. Yes.
+  Satoshi Nakamoto II: Here's my question. How many die keeping the current system running?
+     (2 options)
+ > You worked out how many would die, and went ahead.
+  Satoshi Nakamoto II: We costed it so it stays small. That's what a number is for.
+  Satoshi Nakamoto II: The Architect calls them lessons. I just pay the invoices.
+  Satoshi Nakamoto II: Whoever controls the money controls the people. We'd like nobody to.
+     (3 options)
+ > You're a criminal with a manifesto.
+  Satoshi Nakamoto II: By whose law? The one your agency reads my mail under?
+  Satoshi Nakamoto II: I don't accept it. You knew that walking in.
+  Satoshi Nakamoto II: You won't agree. You work for the people who'd lose the most if I'm right.
+  Satoshi Nakamoto II: So. You've found the network. What are you going to do with it?
+  Satoshi Nakamoto II: Let's talk about my money.
+  Satoshi Nakamoto II: Twelve point eight million, signed and waiting.
+  Satoshi Nakamoto II: You could freeze it. Very decisive. Tonight's money stops, and everyone hears about it.
+  Satoshi Nakamoto II: Or you let it run and watch who comes to collect. Patient of you, and the money keeps moving.
+     (3 options)
+ > I'm leaving it running. Every cell that touches it goes on a list.
+      [set_variable monitoring_enabled=true]
+      [set_variable assets_decided=true]
+      [task: decide_asset_strategy]
+  Satoshi Nakamoto II: You'll let it run. I didn't expect that from SAFETYNET.
+      [engine: both calls made, all four flags in -> ready_to_extract=true]
+      [HaX text: both calls made ... His safe's still shut, if that matters to you.]
+     (2 options)
+ > The map's worth more than one payout.
+  Satoshi Nakamoto II: You've costed it. So have I.
+  Satoshi Nakamoto II: We just disagree about which system gets saved.
+  Narrator: You tell him he's coming with you. The police are on their way up.
+  Narrator: He stands and holds out his wrists.
+  Satoshi Nakamoto II: They'll convict me. They'll want an example.
+  Satoshi Nakamoto II: And the wallet you left running? Enjoy the map while it's fresh.
+  Satoshi Nakamoto II: And Irina in handcuffs as well. Whatever she said to you at the end, she built all of this with me.
+  Satoshi Nakamoto II: One question before they come. Do you ever wonder if we're right?
+     (3 options)
+ > No. Your ideology doesn't cover murder.
+      [set_variable satoshi_stance=rejected]
+  Satoshi Nakamoto II: Murder's what they call it when you lose. The winners get statues.
+  Satoshi Nakamoto II: Call your police, then. I'll wait.
+  Satoshi Nakamoto II: You closed one exchange. The Architect keeps spares.
+  [chat closes]
+   [PASS] said: "Somebody here rang the FCA tonight"
+   [PASS] said: "heard Kemal hit the floor"
+   [PASS] said: "Irina in handcuffs"
+   [PASS] not said: "Your paperwork was good"
+   [PASS] monitoring_enabled = true (expected true)
+   [PASS] ready_to_extract = true (expected true)
+
+--- phone ---
+     (7 options)
+ > I'm done here. Bring me in.
+  Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+  His safe's still shut, for one.
+     (2 options)
+ > Bring me in.
+  Car's round the back of the building. Two minutes.
+ > On my way.
+      [task: call_in_after_sweep]
+      [set_variable start_debrief_cutscene=true]
+  See you at HQ.
+      [engine: start_debrief_cutscene -> the debrief opens]
+     [0] The whole estate is mapped. Where does that leave us?
+     [1] I've found The Architect's Fund.
+     [2] I need her office badge.
+     [3] Send me a field guide.
+     [4] Remind me where we are.
+     [5] I'm good for now.
+  [stopped: no pick]
+   [PASS] said: "His safe's still shut"
+
+--- debrief ---
+      [set_variable debrief_played=true]
+  Narrator: SAFETYNET headquarters. The handler's office at four in the morning, the city still lit beyond the glass.
+  Agent HaX: Every ENTROPY cell banks at HashChain, and tonight we got the books.
+  Agent HaX: We've been chasing cells one at a time. Now we can see who pays them all.
+     (2 options)
+ > What does it give us?
+  Agent HaX: A lot. Every cell's money runs through one mixer, into one fund.
+  Agent HaX: Advances first, then the balances, all on one clock. Seventy-two hours from when you found it.
+     (2 options)
+ > What's left of that clock?
+  Agent HaX: Depends what you did with the wallet.
+  Agent HaX: You let it run. When the payout goes, every wallet it reaches gets tagged.
+  Agent HaX: You traced the fund yourself. In through the mixer, out by amount and time.
+  Agent HaX: $12.8 million, split across six cells. Every name's on that page.
+  Agent HaX: Three hundred and fifty to six hundred projected dead across the operations it pays for. The cells' own estimates.
+  Agent HaX: They wrote that number down and called it "The Architect's Masterpiece."
+     (2 options)
+ > What happens to the cells now?
+  Agent HaX: They don't know we're watching. Whatever the money buys goes ahead unless we get there first.
+  Agent HaX: Volkova.
+  Agent HaX: You detained her and handed her over with the evidence. By the book.
+  Agent HaX: The police collected her from her desk while you were still working the building.
+  Agent HaX: The charges are for the police. Laundering, conspiracy, terrorist financing. Long file.
+     (2 options)
+ > Could I have turned her?
+  Agent HaX: Maybe. The profile said she was wavering.
+  Agent HaX: A pitch that fails blows the operation. You took the safe route. I won't argue with it.
+  Agent HaX: The Crypto Anarchists have lost their best cryptographer. Replacing her will take them months.
+  Agent HaX: We detained "Satoshi Nakamoto the Second" in his own office. The police have him, and nobody outside that van knows it yet.
+  Agent HaX: He talked about financial freedom all the way through his rights.
+     (2 options)
+ > Did he give anything up?
+  Agent HaX: Not a word about The Architect. That's what his safe was for.
+  Agent HaX: The exchange stays open under watch. His payout was pre-signed, so it still goes, and then the police get the rest.
+  Agent HaX: His minder's in custody too. He finishes a long career on a corridor floor.
+  Agent HaX: Your cover didn't last the night. HashChain rang the FCA, and that might cost us the next job.
+  Agent HaX: All four flags in.
+     (2 options)
+ > Walk me through it.
+  Agent HaX: A build service nobody had switched off got you onto their backend. One cracked password, and the same password opened a second account.
+  Agent HaX: The financial database gave us their doors, and the vault account gave us the keys to every cold wallet they hold.
+  Agent HaX: That's the whole chain, from outside to the keys, and they'd left every link open.
+  Agent HaX: One more thing. The FCA wants to know who was using its name tonight, and it wants a letter. Three findings.
+     (10 options)
+ > Their door passphrases follow a house rule, and the rule is pinned to a noticeboard.
+     (9 options)
+ > They trade a lot of Monero.
+  Agent HaX: That's legal. Laundering through it isn't, and that's a different letter.
+     (8 options)
+ > The CEO switched off compliance reporting on the mixer.
+  Agent HaX: Two good ones. Close enough to sign.
+  Agent HaX: Priya's write-up and the fund allocation, both. Wallets, transactions and what they pay for.
+  Agent HaX: That's evidence the police can use. People in several cells will face charges over the money.
+  Agent HaX: You left Satoshi's safe shut. Whatever he kept in it, the police will open on their schedule, not ours.
+  Agent HaX: A man like that keeps insurance. I'd have liked to read it first.
+  Agent HaX: Here's what worries me.
+  Agent HaX: Six cells, one fund, one seventy-two-hour clock. Somebody wrote one schedule for all of them.
+     (2 options)
+ > So they all move at once.
+  Agent HaX: If they do, we won't get much warning.
+  Agent HaX: Get some rest. Keep your phone on.
+      [task: hear_debrief]
+  [end]
+   [PASS] said: "while you were still working the building"
+   [PASS] said: "His minder's in custody too"
+   [PASS] said: "Your cover didn't last the night"
+   [PASS] said: "You left Satoshi's safe shut"
+   [PASS] not said: "And the cover held"
+   [PASS] not said: "His minder let you walk in"
+
+--- credits ---
+   MISSION COMPLETE
+   FOLLOW THE MONEY
+   THE ARCHITECT'S FUND: $12.8M — TRACED THROUGH THE MIXER
+   ENTROPY FINANCIAL NETWORK: MAPPED
+   ── ASSETS ──
+   WATCHED — Fund left running. Every recipient wallet now tagged.
+   ── PERSONNEL ──
+   CHECKPOINT GUARD: Waved you through on the FCA cover
+   DR. IRINA VOLKOVA: Detained — collected by the police with the laundering evidence
+   'SATOSHI NAKAMOTO II': Detained — handed to the police
+   KEMAL AYDIN (MINDER): Knocked out outside his boss's door
+   FCA COVER: strained — somebody at HashChain rang the FCA
+   ── THE ARCHITECT ──
+   IDENTITY: Unknown — safe contents never recovered
+   72 hours. Six cells. Some of them were already paid.
+   [PASS] said: "FCA COVER: strained"
+   [PASS] said: "KEMAL AYDIN (MINDER): Knocked out"
+   [PASS] said: "DR. IRINA VOLKOVA: Detained"
+   [PASS] said: "WATCHED"
+   [PASS] said: "CHECKPOINT GUARD: Waved you through"
+   [PASS] not said: "FCA COVER: held"
+   [PASS] longest run 8 (briefing) <= 9
+
+[stats] spoken/narrated lines 151, choices 40, longest run without a choice 8 (briefing); runs>=6: briefing:8, satoshi:8, satoshi:8, debrief:6, debrief:7
+[result] all expectations met

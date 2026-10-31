@@ -1,0 +1,13 @@
+{
+  "key": "7600b21d72a17aeb80158bb096b28437",
+  "npc": "receptionist",
+  "text": "If it's the vending machine, that's been broken since March. And if you're press, there's a car park you can stand in.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "4465ba23458e05a127d4d6f462977d2e",
+  "npc": "dr_sharma",
+  "text": "Put it as risk. Paying might raise the odds of getting a key. It does nothing to the harm on Ward 7 this morning, because decrypting takes days either way.",
+  "voice": "Leda",
+  "style": "NCSC incident manager in her early forties, calm, forensic, unhurried. Speak with a consistent neutral southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

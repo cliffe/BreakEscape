@@ -1,0 +1,11 @@
+Make portrait for Ffion Rees
+A Welsh woman receptionist in her mid-twenties from Cardiff, light skin tone with a few freckles, bright, warm and chatty, the friendly face on the front desk of a polished security consultancy. copper-red (ginger) brown hair pulled back in a neat high ponytail with a few loose strands at the front, small silver stud earrings. Wearing a fitted charcoal grey blazer over an emerald green blouse, a staff ID badge on a dark lanyard clearly visible at her chest, black tailored trousers with a slim black belt.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention). Background textured dark grey-brown: check the charcoal blazer and ponytail outline at the bust stage.
+# No reference image (old portrait female_office_worker_talk.png is pixel art and a generic blonde). Canon: voice style "front-desk receptionist at a smart tech firm, mid-twenties ... South Wales (Cardiff) ... genuinely friendly, a little in awe of her boss"; m03_npc_ffion_rees.ink "She taps the badge on her lanyard" (the badge the player clones).

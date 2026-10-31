@@ -1,0 +1,142 @@
+{
+"steps": [
+{
+"note": "R36 (phase 4 dialogue C1, D5-2 / P10): HaX's hub after the naming, with every topic open, shows nine choices. One flag choice answers the newest flag and retires the older ones; the pamphlet retires once he is named; the debt and the moral board sit behind 'I need to talk about Torres.'"
+},
+{
+"set": {
+"torres_identified": true,
+"torres_suspected": true,
+"found_medical_bills": true,
+"found_torres_journal": true,
+"found_pamphlet": true,
+"architect_approval_confirmed": true,
+"flag1_submitted": true,
+"flag2_submitted": true,
+"flag3_submitted": true,
+"recruiter_contacted_player": true,
+"rfid_guide_offered": true,
+"server_door_seen": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"About that flag"
+]
+},
+{
+"said": [
+"(9 options)",
+"Badge 4471 staged that manifest. No name.",
+"[choice] I need to talk about Torres.",
+"[choice] I'm going in. Soft or hard?"
+],
+"notSaid": [
+"[choice] Someone here has been talking to a recruiter",
+"[choice] First flag's in",
+"Third flag's in",
+"Torres is buried in debt"
+]
+},
+{
+"talk": "phone",
+"picks": [
+"I need to talk about Torres",
+"Is the debt the hook",
+"That's monstrous"
+]
+},
+{
+"said": [
+"A trial abroad, a wife with Stage 3 cancer, and nobody left to ask."
+],
+"notSaid": [
+"[choice] About that flag.",
+"Three hundred and eighty thousand dollars"
+]
+},
+{
+"talk": "phone",
+"picks": [
+"I need to talk about Torres",
+"What ENTROPY did to him",
+"Does knowing why"
+]
+},
+{
+"said": [
+"You know his reasons now. I won't tell you what he deserves.",
+"Maybe it changes what's fair. It doesn't change the upload."
+],
+"notSaid": [
+"weaponises",
+"rope with a hook",
+"Nobody's philosophy",
+"[choice] Is the debt the hook?"
+]
+},
+{
+"set": {
+"flag4_submitted": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"About that flag"
+]
+},
+{
+"said": [
+"Read the number on that sign-off before you face Torres."
+]
+},
+{
+"set": {
+"final_choice": "arrest",
+"torres_arrested": true
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Nothing right now"
+]
+},
+{
+"notSaid": [
+"[choice] I need to talk about Torres.",
+"[choice] About that flag."
+]
+},
+{
+"note": "Before the naming, with Patricia down: nine choices at most."
+},
+{
+"set": {
+"final_choice": "",
+"torres_identified": false,
+"patricia_ko": true,
+"found_door_log": true,
+"flag4_submitted": false,
+"flag4_discussed": false
+}
+},
+{
+"talk": "phone",
+"picks": [
+"Nothing right now"
+]
+},
+{
+"said": [
+"(9 options)",
+"[choice] Patricia's down. I'll give you the name instead."
+]
+},
+{
+"maxRun": 9
+}
+]
+}

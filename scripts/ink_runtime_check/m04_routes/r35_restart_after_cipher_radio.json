@@ -1,0 +1,13 @@
+{
+"steps": [
+{"note": "R35 (fix pass 2026-10-17, engine regression F2 and the Restart ruling): Cipher gets his radio call out (cell_alerted) and the fight starts; the player goes down and Restarts. The reset event clears cipher_engaged (agent_0x99 mapping), so HaX's call-in no longer says he's on you, and talking Cipher out afterwards doesn't call his handset 'unradioed'."},
+{"set": {"briefing_played": true, "guard_admitted": true, "vance_met": true, "vance_provided_keycard": true, "vance_card_cloned": true, "anomaly_detected": true, "vance_spoken": true}},
+{"talk": "cipher", "picks": ["thermal survey"]},
+{"expect": {"cell_alerted": true}},
+{"note": "Restart: npc_hostile_state_changed {reset: true} -> cipher_engaged false"},
+{"set": {"cipher_engaged": false}},
+{"talk": "cipher", "reload": "page", "picks": ["Whatever Voltage told you", "There's a night crew"]},
+{"said": ["He clips the handset back on his belt and walks"], "notSaid": ["unradioed"]},
+{"expect": {"cipher_walked": true, "cell_alerted": true}}
+]
+}

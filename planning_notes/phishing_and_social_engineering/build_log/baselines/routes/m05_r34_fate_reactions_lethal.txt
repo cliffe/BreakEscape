@@ -1,0 +1,205 @@
+
+## R34 (phase 4 dialogue C1, D5-8): after Torres is left to die, the building notices on the next visit, once, and the pre-fate options are gone.
+
+--- patricia ---
+      [task: meet_handler]
+  Narrator: A woman in her early fifties looks up from a wall of access logs. Military bearing, and a mug of tea gone cold by the keyboard.
+  Patricia Morgan: You'll be the consultant. Patricia Morgan, Chief Security Officer. Thanks for coming at short notice.
+     (3 options)
+ > Fill me in. What have you found so far?
+  Patricia Morgan: Data leaving the building. Four point two terabytes over six weeks.
+  Patricia Morgan: Project Heisenberg. Quantum-safe key material for the national emergency dispatch rollout.
+  Patricia Morgan: If ENTROPY gets the rest of it, people die waiting for ambulances that come too late.
+     (2 options)
+ > Who has access to the data?
+  Patricia Morgan: Eight people with developed vetting in the cryptography division.
+  Patricia Morgan: Dr Ruth Halloran leads the team. Five senior researchers, two junior engineers.
+  Patricia Morgan: All vetted. All trusted. One of them shouldn't be.
+     (2 options)
+ > Can you get me in front of them without tipping anyone off?
+  Patricia Morgan: Already done. As far as the building knows, you're a routine security audit.
+      [kit: Visitor Badge]
+  Patricia Morgan: Here. Visitor badge. It gets you through the front of the building and nowhere that matters.
+  Patricia Morgan: Owen Gallagher in IT holds the spare cards. Dr Halloran's badge opens the server side. I can lean on either of them if you need me to.
+  Patricia Morgan: My log of what's been flagged is on the desk, by your hand. Read it before you go. The who starts in there.
+     (2 options)
+ > Where should I start?
+  Patricia Morgan: People. Someone in this building has noticed something and not said it. Then the servers.
+  Patricia Morgan: When you think you have a name, bring me the why and the proof. Both.
+  [chat closes]
+      [mapping patricia_phone: set patricia_phone_available=true]
+   [text patricia_phone +2500ms] Patricia. This is my mobile. Ring me if anything changes; don't walk it back through reception.
+
+--- owen ---
+      [task: talk_to_owen]
+  Narrator: A bearded man in his late twenties at a workstation, three terminals of logs scrolling past, a staff badge on a lanyard round his neck. He swivels to face you.
+  Owen Gallagher: Alright. You're the security consultant? Owen Gallagher, sysadmin.
+  Owen Gallagher: Finally. Someone to fix our mess who isn't me.
+     (3 options)
+ > Point me at the logs. I'll take it from here.
+  Owen Gallagher: Right. Terminal's over there. Shout if you need anything.
+     (7 options)
+ > That's everything for now. Catch you later.
+  Owen Gallagher: Cool. I'll be here. I'm always here.
+  [chat closes]
+
+--- halloran ---
+      [task: talk_to_dr_halloran]
+  Narrator: A woman in her mid-forties looks up from a whiteboard dense with lattice notation.
+  Dr Ruth Halloran: You're the consultant. Ruth Halloran. I run Heisenberg.
+  Dr Ruth Halloran: Find whoever did this, and quickly. And I hope to God you're wrong about my team.
+     (3 options)
+ > I need to talk to everyone with access to Heisenberg.
+  Dr Ruth Halloran: My team didn't do this.
+  Dr Ruth Halloran: My team are brilliant, and vetted to the hilt.
+  Dr Ruth Halloran: If one of them did this, somebody gave them a reason. Pressure. Coercion.
+     (2 options)
+ > I'm not here to judge. Whoever did this might be a victim too.
+  Dr Ruth Halloran: Thank you. Not many in your line would say that.
+  Dr Ruth Halloran: What else?
+     (3 options)
+ > That's all for now.
+  Dr Ruth Halloran: Good luck. I mean that.
+  [chat closes]
+
+--- lisa ---
+      [task: talk_to_lisa]
+  Narrator: A woman in her early thirties by the break room counter. Coffee going cold, a collection tin at her elbow.
+  Lisa Park: Hi. You're the security person, right? Everyone's been whispering.
+  Lisa Park: Lisa Park, marketing. I don't go near the crypto stuff, but I sit by the kettle. I notice things.
+     (3 options)
+ > Who's the collection tin for?
+      [ink: heard_tin_story=true]
+  Lisa Park: Someone on the crypto team. I promised I wouldn't say who, so don't ask.
+  Lisa Park: His wife's got cancer. Stage 3. The treatment that might work is a trial in the States, and the insurer won't touch it. Hence the tin.
+  Lisa Park: He's been borrowing to cover it, I think. He's lost weight. Looks like he hasn't slept in months.
+     (3 options)
+ > That's rough. Thanks for telling me.
+  Lisa Park: He'd hate that I told you even that much. He can't stand a fuss.
+     (2 options)
+ > That's all, thanks.
+  Lisa Park: Any time. I'll be here. Apparently forever.
+  [chat closes]
+   {set {"torres_identified":true,"final_choice":"combat_lethal"}}
+      [aim unlocked: confront_insider]
+      [mapping agent_0x99_handler: set named_before_portal=true]
+      [david_torres shown]
+      [task unlocked: call_in_after_sweep]
+
+--- patricia ---
+  Patricia Morgan: Torres hasn't come up from the data centre. I'll go down myself once the CEO's off my phone.
+     [0] How far did your own investigation get?
+     [1] Who's on the suspect list?
+     [2] Why did management shut you down?
+     [3] I need your help with something.
+     [4] That's everything for now. I'll keep you posted.
+  [stopped: no pick]
+      [mapping recruiter: set recruiter_texted=true]
+   [text agent_0x99_handler +12000ms] That TalentStack number is the Recruiter. Hear her out if you want. Just don't give her anything.
+   [text recruiter +7500ms] TalentStack Executive Recruiting. We should talk before you do anything you can't take back. - R.
+
+--- owen ---
+  Owen Gallagher: David's badge went into the vault an hour ago. It's not come out.
+     [0] Walk me through the network.
+     [1] Anyone on the crypto team keeping odd hours?
+     [2] I'll need your help with access. Logs, badges, that kind of thing.
+     [3] Where are the security gaps?
+     [4] (Lean over his log screen, close enough for the cloner to reach his lanyard.)
+     [5] Do you keep spare cards for the offices?
+     [6] It's David. He's the one.
+     [7] That's everything for now. Catch you later.
+  [stopped: no pick]
+
+--- halloran ---
+  Dr Ruth Halloran: I've rung David twice. He's not answering.
+     [0] What exactly is Heisenberg?
+     [1] Tell me about your team.
+     [2] It was David. I'm sorry.
+     [3] That's all for now.
+  [stopped: no pick]
+
+--- lisa ---
+  Lisa Park: Has anyone seen David? His coat's still on his chair.
+     [0] How's the office mood these days?
+     [1] Is the tin for David Torres?
+     [2] It's David. I'm sorry.
+     [3] That's all, thanks.
+  [stopped: no pick]
+   [PASS] said: "Torres hasn't come up from the data centre. I'll go down myself once the CEO's off my phone"
+   [PASS] said: "David's badge went into the vault an hour ago"
+   [PASS] said: "I've rung David twice"
+   [PASS] said: "His coat's still on his chair"
+   [PASS] not said: "[choice] Anything else I should know before I go in?"
+   [PASS] not said: "Should I be"
+
+--- halloran ---
+  Dr Ruth Halloran: Go on, so.
+     (4 options)
+ > It was David. I'm sorry.
+  Dr Ruth Halloran: I should have seen it. He was pulling away. Working late, alone. Avoiding my eye.
+  Dr Ruth Halloran: I signed his overtime every week and never once asked what it was for.
+     (2 options)
+ > ENTROPY picked him because he was drowning. That isn't on you.
+  Dr Ruth Halloran: It doesn't help. Thank you anyway.
+  Dr Ruth Halloran: What happens to him now?
+ > It's out of my hands now.
+  Dr Ruth Halloran: It was never in yours. Mine, maybe.
+     [0] What exactly is Heisenberg?
+     [1] Tell me about your team.
+     [2] That's all for now.
+  [stopped: no pick]
+   [PASS] said: "I signed his overtime every week"
+   [PASS] said: "It was never in yours. Mine, maybe."
+   [PASS] not said: "[choice] That depends on whether he helps us"
+   [PASS] not said: "[choice] He'll face justice"
+   [PASS] not said: "I've rung David twice"
+   [PASS] not said: "I failed him"
+
+--- lisa ---
+  Lisa Park: Anything else? I've got nowhere to be.
+     (4 options)
+ > It's David. I'm sorry.
+  Lisa Park: No. David wouldn't...
+  Lisa Park: But Elena. The money. Oh, God.
+  Lisa Park: What happens to Sofia and Miguel? If he goes to prison and Elena's...
+     (2 options)
+ > It's done. I'm sorry.
+  Lisa Park: Don't be. Just... don't tell me which way.
+     [0] How's the office mood these days?
+     [1] Tell me more about David.
+     [2] Is David all right? At home, I mean?
+     [3] That's all, thanks.
+  [stopped: no pick]
+   [PASS] said: "Don't be. Just... don't tell me which way."
+   [PASS] not said: "[choice] I don't know yet"
+   [PASS] not said: "His coat's still on his chair"
+
+--- owen ---
+  Owen Gallagher: What else?
+     (8 options)
+ > It's David. He's the one.
+  Owen Gallagher: David? No way. He wouldn't...
+  Owen Gallagher: He stood in that hallway looking wrecked and I just... walked past him.
+ > You couldn't have known. That's how they work.
+  Owen Gallagher: Yeah. Doesn't help much, but cheers.
+     [0] Walk me through the network.
+     [1] Anyone on the crypto team keeping odd hours?
+     [2] I'll need your help with access. Logs, badges, that kind of thing.
+     [3] Where are the security gaps?
+     [4] (Lean over his log screen, close enough for the cloner to reach his lanyard.)
+     [5] Do you keep spare cards for the offices?
+     [6] That's everything for now. Catch you later.
+  [stopped: no pick]
+   [PASS] not said: "[choice] Keep it to yourself"
+
+--- patricia ---
+  Patricia Morgan: What now?
+     (5 options)
+ > That's everything for now. I'll keep you posted.
+  Patricia Morgan: Do. I don't like surprises.
+  [chat closes]
+   [PASS] not said: "Torres hasn't come up from the data centre"
+   [PASS] longest run 4 (patricia) <= 9
+
+[stats] spoken/narrated lines 57, choices 20, longest run without a choice 4 (patricia); runs>=6: 
+[result] all expectations met

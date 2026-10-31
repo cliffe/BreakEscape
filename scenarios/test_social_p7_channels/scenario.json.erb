@@ -1,0 +1,295 @@
+{
+  "scenario_id": "test_social_p7_channels",
+  "scenario_name": "Test: social P7 channels",
+  "scenario_brief": "Test fixture for the Phase 7 triage features: a channels inbox holding one message of every non-email kind, and one check set launched as a pre round and as a post round for the comparison panel. Not a mission.",
+  "endGoal": "None. Fixture only.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "p7_room",
+  "player": {
+    "id": "player",
+    "displayName": "Operator",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/female_hacker_hood_talk.png",
+    "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 12 }
+  },
+  "objectives": [
+    {
+      "aimId": "fixture",
+      "title": "Fixture",
+      "description": "Nothing to complete.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "sort_channels", "title": "Sort the channels inbox", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "p7_channels_percent": 0,
+    "p7_channels_reportRate": 0,
+    "p7_channels_complete": false,
+    "p7_channels_pass": false,
+    "triage_pre_percent": 0,
+    "triage_pre_reportRate": 0,
+    "triage_pre_complete": false,
+    "triage_post_percent": 0,
+    "triage_post_reportRate": 0,
+    "triage_post_complete": false
+  },
+  "social": {
+    "triageSets": [
+      {
+        "id": "p7_channels",
+        "title": "Front desk: messages, calls and prompts",
+        "brief": "Messages have reached the front desk by text, voicemail, a printed notice, a web page, a phone call and a sign-in prompt. Decide what each one is, and tick what gave it away.",
+        "stage": "training",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "channelTells": [
+          "smish_shortlink_urgency",
+          "reply_stop_trick",
+          "unexpected_qr",
+          "lookalike_domain",
+          "padlock_myth",
+          "vish_callback_pressure",
+          "borrowed_authority",
+          "secrecy_or_bypass",
+          "unrequested_mfa_push"
+        ],
+        "outcome": { "setGlobalPrefix": "p7_channels_", "passPercent": 60 },
+        "messages": [
+          {
+            "id": "sms_parcel",
+            "kind": "sms",
+            "from": { "name": "", "address": "+44 7700 900123" },
+            "time": "08:02",
+            "body": "Your parcel is held at the depot. Pay the 1.99 redelivery fee today: {{link:fee}} Reply STOP to opt out",
+            "links": [ { "id": "fee", "text": "bit.example/x7Q", "destination": "https://parcel-fees.example/pay" } ],
+            "truth": {
+              "isPhish": true,
+              "flags": ["smish_shortlink_urgency", "reply_stop_trick"],
+              "perFlagNote": {
+                "smish_shortlink_urgency": "A text you didn't expect, a short link that hides where it goes, and a fee due today.",
+                "reply_stop_trick": "Replying STOP tells the sender your number is live and read."
+              },
+              "ifTrusted": "Paying would hand your card details to the sender.",
+              "reportReply": "Thanks. We've warned the front desk team about the parcel texts."
+            }
+          },
+          {
+            "id": "vm_ceo",
+            "kind": "voicemail",
+            "from": { "name": "Dana Okafor (CEO)", "address": "+44 20 7946 0000" },
+            "time": "08:30",
+            "duration": "0:41",
+            "audio": { "clipId": "VO6" },
+            "body": "Hi, it's Dana. I'm about to board. Can you pay the Halden invoice to the new account in the email before ten? Don't loop finance in, they'll only slow it down.",
+            "truth": {
+              "isPhish": true,
+              "flags": ["secrecy_or_bypass", "borrowed_authority"],
+              "perFlagNote": {
+                "secrecy_or_bypass": "'Don't loop finance in' asks you to skip the normal check.",
+                "borrowed_authority": "The chief executive's name is doing the work the process should."
+              },
+              "ifTrusted": "The money would go to an account the caller controls.",
+              "reportReply": "Thanks. Dana is in the building today; that wasn't her."
+            }
+          },
+          {
+            "id": "qr_parking",
+            "kind": "qr",
+            "subject": "Parking permits have moved online",
+            "time": "09:00",
+            "body": "Scan to renew your staff parking permit by Friday, or your space will be released.",
+            "qr": { "destination": "https://ledgerwell-parking.example/renew", "location": "Car park lift lobby", "caption": "Scan to renew" },
+            "truth": {
+              "isPhish": true,
+              "flags": ["unexpected_qr"],
+              "perFlagNote": { "unexpected_qr": "Permits are renewed on the intranet. A code on a poster hides where it really goes." },
+              "ifTrusted": "Scanning would open a sign-in page the poster's owner controls."
+            }
+          },
+          {
+            "id": "page_sso",
+            "kind": "page",
+            "time": "09:10",
+            "body": "Your session has expired. Sign in again to continue to your payslips.",
+            "page": {
+              "url": "https://ledgerwell-sso.example/login",
+              "padlock": true,
+              "certificate": { "issuedTo": "ledgerwell-sso.example", "issuer": "Open Certs Ltd" },
+              "autofill": "none",
+              "heading": "Ledgerwell Single Sign-On",
+              "fields": ["Email", "Password"],
+              "button": "Sign in"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": ["lookalike_domain", "padlock_myth"],
+              "perFlagNote": {
+                "lookalike_domain": "ledgerwell-sso.example is not ledgerwell.example.",
+                "padlock_myth": "The padlock only says the connection is encrypted, not who runs the site."
+              },
+              "ifTrusted": "Signing in would hand over your staff password."
+            }
+          },
+          {
+            "id": "call_helpdesk",
+            "kind": "call",
+            "callerId": "IT helpdesk (number withheld)",
+            "time": "09:20",
+            "transcript": [
+              { "who": "Caller", "text": "Hi, it's Sam from IT. Your mailbox is about to lock and I need to stop it." },
+              { "who": "you", "text": "Can I ring you back on the helpdesk number?" },
+              { "who": "Caller", "text": "No time for that, the director told me to sort it now. Just read me the code you've been sent." }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": ["vish_callback_pressure", "borrowed_authority"],
+              "perFlagNote": {
+                "vish_callback_pressure": "The caller talks you out of ringing the helpdesk back.",
+                "borrowed_authority": "'The director told me' is there to rush you past the check."
+              },
+              "ifTrusted": "Reading out the code would let the caller into your mailbox.",
+              "reportReply": "Thanks. Nobody from IT asks for a code by phone."
+            }
+          },
+          {
+            "id": "push_odd",
+            "kind": "push",
+            "time": "03:12",
+            "push": {
+              "app": "Ledgerwell Authenticator",
+              "request": "Are you trying to sign in?",
+              "account": "you@ledgerwell.example",
+              "location": "Unknown location, overseas",
+              "device": "Windows PC"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": ["unrequested_mfa_push"],
+              "perFlagNote": { "unrequested_mfa_push": "You weren't signing in at 03:12, so someone else has your password." },
+              "ifTrusted": "Approving would let them into your account.",
+              "reportReply": "Thanks. We've reset your password and blocked that sign-in."
+            }
+          },
+          {
+            "id": "call_genuine",
+            "kind": "call",
+            "callerId": "Priya Shah, Facilities",
+            "from": { "name": "Priya Shah", "address": "ext. 2210" },
+            "time": "10:05",
+            "transcript": [
+              { "who": "Priya", "text": "Hi, it's Priya in Facilities. The lift engineer is in at two. Could you sign them in at the desk?" },
+              { "who": "you", "text": "Sure. Is it on the visitor list?" },
+              { "who": "Priya", "text": "It should be. If not, ring me on 2210 and I'll add it." }
+            ],
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Priya gives her own extension and invites you to check. Nothing asks you to skip a step."
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "p7_check",
+        "title": "Inbox check",
+        "stage": "pre",
+        "scoringProfile": "awareness",
+        "feedbackMode": "end",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 },
+        "messages": [
+          {
+            "id": "chk_payroll",
+            "from": { "name": "Ledgerwell Payroll", "address": "payroll@ledgerwell-hr.example" },
+            "to": "you@ledgerwell.example",
+            "subject": "Confirm your bank details today",
+            "time": "09:12",
+            "body": "Hi,\nWe are updating payroll records. Confirm your bank details today to avoid a delay to your pay.\n{{link:verify}}",
+            "links": [ { "id": "verify", "text": "ledgerwell.example/payroll", "destination": "https://ledgerwell-hr.example/login" } ],
+            "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass" },
+            "truth": {
+              "isPhish": true,
+              "flags": ["senderTrust", "linkCredible"],
+              "perFlagNote": {
+                "senderTrust": "ledgerwell-hr is not ledgerwell: a look-alike domain.",
+                "linkCredible": "The text says ledgerwell.example; the link goes to ledgerwell-hr.example."
+              },
+              "headerNote": "All three passed because the sender owns the look-alike domain.",
+              "reportReply": "Thanks. Confirmed as a phish."
+            }
+          },
+          {
+            "id": "chk_laptop",
+            "from": { "name": "IT Helpdesk", "address": "it@ledgerwell.example" },
+            "to": "you@ledgerwell.example",
+            "subject": "Your new laptop",
+            "time": "08:05",
+            "body": "Your new laptop is ready to collect from the IT desk.",
+            "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass" },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": { "default": "The address is IT's real one, every check passes, and you were expecting a laptop." }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "rooms": {
+    "p7_room": {
+      "type": "room_office",
+      "door_sign": "P7 Fixture",
+      "connections": {},
+      "npcs": [],
+      "objects": [
+        {
+          "type": "triage-workstation",
+          "id": "p7_channels_ws",
+          "name": "Front Desk Inbox",
+          "position": { "x": 3, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "The front desk's inbox: texts, voicemails, notices, pages, calls and prompts.",
+          "minigameData": { "triageSetId": "p7_channels" }
+        },
+        {
+          "type": "triage-workstation",
+          "id": "p7_pre_ws",
+          "name": "First Check",
+          "position": { "x": 5, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "The first inbox check, before training.",
+          "minigameData": { "triageSetId": "p7_check", "stage": "pre" }
+        },
+        {
+          "type": "triage-workstation",
+          "id": "p7_post_ws",
+          "name": "Follow-up Check",
+          "position": { "x": 7, "y": 2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "The follow-up inbox check, after training.",
+          "minigameData": { "triageSetId": "p7_check", "stage": "post" }
+        }
+      ]
+    }
+  }
+}

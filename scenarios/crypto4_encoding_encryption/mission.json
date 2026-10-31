@@ -1,0 +1,24 @@
+{
+  "display_name": "The Great Cookie Heist - Encoding Challenge",
+  "description": "Your legendary cookie recipe has been stolen by mischievous squirrels led by Sir Acorn! Tracking them to their secret treehouse, the door slams shut behind you. A sign reads: 'Solve our riddles or forever be known as the Cookie Monster!' Crack cryptographic challenges involving Base64, Caesar cipher, and other encoding techniques to reclaim your recipe before time runs out!",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "escape_room",
+  "cybok": [
+    {
+      "ka": "AC",
+      "topic": "Algorithms, Schemes and Protocols",
+      "keywords": ["Encoding vs Cryptography", "Caesar cipher", "Vigenere cipher", "SYMMETRIC CRYPTOGRAPHY - AES (ADVANCED ENCRYPTION STANDARD)"]
+    },
+    {
+      "ka": "F",
+      "topic": "Artifact Analysis",
+      "keywords": ["Encoding and alternative data formats"]
+    },
+    {
+      "ka": "WAM",
+      "topic": "Fundamental Concepts and Approaches",
+      "keywords": ["ENCODING", "BASE64"]
+    }
+  ]
+}

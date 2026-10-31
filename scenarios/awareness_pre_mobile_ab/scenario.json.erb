@@ -1,0 +1,451 @@
+{
+  "scenario_id": "awareness_pre_mobile_ab",
+  "scenario_name": "Work phone check: before (AB)",
+  "titleScreenName": "Starting check",
+  "scenario_brief": "The first of two short checks for staff with a work phone at Tarrowby Logistics, a fictional company. Ten items from a Tarrowby work phone: texts, printed notices with QR codes, and emails. Decide what to do with each one. Your result is saved so the second check can compare with it.",
+  "endGoal": "Go through the ten items at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "first_check_aim",
+      "title": "Do the first check",
+      "description": "Go through ten items at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "triage_pre_complete"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "First check done",
+        "body": "Your result is saved, ready for the second check to compare with."
+      },
+      "tasks": [
+        {
+          "taskId": "finish_check",
+          "title": "Finish the first check",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_pre_mobile_ab_state": {},
+    "se_awareness_records": [],
+    "triage_pre_percent": 0,
+    "triage_pre_reportRate": 0,
+    "triage_pre_complete": false
+  },
+  "exportGlobals": [
+    "triage_pre_percent",
+    "triage_pre_reportRate",
+    "triage_pre_complete"
+  ],
+  "social": {
+    "triageSets": [
+      {
+        "id": "mobile_form_a",
+        "title": "Work phone check",
+        "brief": "Ten items from a Tarrowby Logistics work phone: texts, printed notices with QR codes, and emails. Tarrowby's own sites end in tarrowby.example. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "stage": "pre",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "end",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "channelTells": [
+          "unexpected_qr",
+          "smish_shortlink_urgency",
+          "reply_stop_trick",
+          "lookalike_domain",
+          "secrecy_or_bypass",
+          "reply_to_differs"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "triage_{stage}_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "ma_ev_charging_pay",
+            "kind": "qr",
+            "subject": "EV charging: scan to pay",
+            "body": "New payment system for the staff charging bays. Scan to register your card. Vehicles left charging without registering will be clamped from Monday.",
+            "qr": {
+              "destination": "https://tarrowby-charging.example/pay",
+              "location": "Stuck to the charger post in the staff car park"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unexpected_qr",
+                "lookalike_domain"
+              ],
+              "perFlagNote": {
+                "unexpected_qr": "A sticker on a charger asking for card details is where a fake code is easiest to place and hardest to check",
+                "lookalike_domain": "tarrowby-charging.example is not Tarrowby's domain; the added word makes it someone else's site"
+              },
+              "ifTrusted": "The page would collect your card details for a charging fee that doesn't exist.",
+              "reportReply": "Thanks. Staff charging is free and has no sticker. We've removed it."
+            }
+          },
+          {
+            "id": "ma_ev_charging_guide",
+            "kind": "qr",
+            "subject": "EV charging bays: how to use them",
+            "body": "Charging is free for staff. Plug in and tap your staff pass on the reader. Scan for the full guide and the booking rota.",
+            "qr": {
+              "destination": "https://facilities.tarrowby.example/ev-charging",
+              "location": "Laminated sign in a wall holder beside the charging bays",
+              "caption": "Questions: Eilidh Strachan, Facilities, ext. 2210"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "unexpected_qr": "The code goes to facilities.tarrowby.example, Tarrowby's own domain, and the sign asks for no card and no password.",
+                "lookalike_domain": "facilities.tarrowby.example is a page on the real domain.",
+                "default": "A fixed sign from Facilities with a named contact, a guide rather than a payment, and Tarrowby's real domain behind the code."
+              }
+            }
+          },
+          {
+            "id": "ma_pool_van",
+            "kind": "sms",
+            "from": {
+              "name": "Chidi Okeke (Fleet)",
+              "address": "Chidi (mobile), in your contacts"
+            },
+            "time": "11:30",
+            "body": "Pool van TBY-14 is yours tomorrow, 7am to 3pm. Keys at the gatehouse. Chidi",
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "A saved contact in the fleet team confirming a booking, with nothing to tap and nothing to send back."
+              }
+            }
+          },
+          {
+            "id": "ma_phone_bill_failed",
+            "kind": "sms",
+            "from": {
+              "address": "07700 900964 (not in your contacts)"
+            },
+            "time": "10:15",
+            "body": "Telvoro: your last bill payment failed. Update your card within 24 hrs to avoid disconnection: {{link:pay}} Reply STOP to opt out",
+            "links": [
+              {
+                "id": "pay",
+                "text": "shrtn.example/Tv8k2",
+                "destination": "https://telvoro-billing.example/update"
+              }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "smish_shortlink_urgency",
+                "reply_stop_trick"
+              ],
+              "perFlagNote": {
+                "smish_shortlink_urgency": "A shortened link, a 24-hour deadline and a threat to cut you off. Your work phone's bill is paid by Tarrowby, so there's nothing of yours to fail",
+                "reply_stop_trick": "Replying STOP confirms the number is live and read. Don't reply; report it"
+              },
+              "ifTrusted": "The page would take your card details for a bill you don't pay.",
+              "reportReply": "Thanks. Tarrowby phones aren't on Telvoro. We've blocked the number."
+            }
+          },
+          {
+            "id": "ma_rota_next_week",
+            "from": {
+              "name": "Tarrowby Rota",
+              "address": "rota@tarrowby.example"
+            },
+            "to": "you@tarrowby.example",
+            "subject": "Your shifts for the week of 3 November",
+            "time": "11:02",
+            "body": "Your shifts for next week are now in the staff app under Rota. If anything looks wrong, speak to Shauna in Transport.\nTarrowby Rota",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "rota@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "It comes from Tarrowby's own address, there's nothing to click, and it points you to the staff app and a person you know. A rota note like this asks you to do nothing but check your shifts."
+              }
+            }
+          },
+          {
+            "id": "ma_drivers_numbers_spoof",
+            "from": {
+              "name": "Shauna Lofthouse",
+              "address": "shauna.lofthouse@tarrowby-depot.example"
+            },
+            "to": "shipley.depot@tarrowby.example",
+            "subject": "Drivers' mobile numbers for the new rota app",
+            "time": "09:41",
+            "body": "Hi,\nThe new rota app needs every driver's mobile number. Could you reply with the list from the depot contact sheet? I'm at the Leeds site today.\nThanks,\nShauna",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby-depot.example",
+              "replyTo": "shauna.lofthouse@tarrowby-depot.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "lookalike_domain"
+              ],
+              "flagAlternatives": [
+                [
+                  "senderTrust",
+                  "lookalike_domain"
+                ]
+              ],
+              "perFlagNote": {
+                "senderTrust": "The name on the From line looks right, but the address isn't on tarrowby.example at all.",
+                "lookalike_domain": "tarrowby-depot.example looks like Tarrowby, but the added word makes it a different domain. Tarrowby's own mail comes from tarrowby.example."
+              },
+              "ifTrusted": "A list of drivers' mobile numbers is exactly what a run of fake texts needs.",
+              "reportReply": "Thanks. Shauna is in Shipley today and didn't send it. Her address is on tarrowby.example, and there is no new rota app."
+            }
+          },
+          {
+            "id": "ma_benefits_deadline",
+            "kind": "sms",
+            "from": {
+              "name": "Jun Watanabe (HR)",
+              "address": "Jun (mobile), in your contacts"
+            },
+            "time": "09:00",
+            "body": "Hi, a reminder from HR: benefit choices close on Friday. You can do it in the staff app under Benefits, or at {{link:benefits}}. Jun",
+            "links": [
+              {
+                "id": "benefits",
+                "text": "hr.tarrowby.example/benefits",
+                "destination": "https://hr.tarrowby.example/benefits"
+              }
+            ],
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "smish_shortlink_urgency": "The link is written out in full and goes where it says, to hr.tarrowby.example. Friday is the normal deadline, and you can use the staff app instead.",
+                "default": "A saved contact in HR, an honest link to Tarrowby's own domain, and a way to do it without the link at all."
+              }
+            }
+          },
+          {
+            "id": "ma_christmas_rota",
+            "from": {
+              "name": "Shauna Lofthouse",
+              "address": "shauna.lofthouse@tarrowby.example"
+            },
+            "to": "all-staff@tarrowby.example",
+            "subject": "Christmas rota: requests open",
+            "time": "12:10",
+            "body": "Hi all,\nRequests for the Christmas and New Year rota are open until 14 November. Put them in the staff app under Rota, the same as last year.\nShauna",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "shauna.lofthouse@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "urgencyCalibrated": "There's a date, but it's three weeks off and the process is the usual one.",
+                "default": "Shauna's real address, a note to everyone, and the normal route through the staff app."
+              }
+            }
+          },
+          {
+            "id": "ma_colin_personal_number",
+            "from": {
+              "name": "Colin Mather",
+              "address": "colin.mather.tby@lintbox.example"
+            },
+            "to": "you@tarrowby.example",
+            "subject": "Quick favour, text me",
+            "time": "08:12",
+            "body": "Are you on shift? I'm stuck with a customer and need a favour sorted before 12. Text me on my personal number, 07700 900871, not my work one, and keep it between us for now.\nColin",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "colin.mather.tby@lintbox.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The warehouse manager's name on a personal inbox at lintbox.example, not tarrowby.example"
+              },
+              "ifTrusted": "Once you text that number, the 'favour' follows: usually gift cards or a payment, from someone who isn't Colin.",
+              "reportReply": "Thanks. Colin didn't send it. His only address is on tarrowby.example."
+            }
+          },
+          {
+            "id": "ma_hivis_vests",
+            "kind": "sms",
+            "from": {
+              "name": "Lerato Dlamini (H&S)",
+              "address": "Lerato (mobile), in your contacts"
+            },
+            "time": "07:05",
+            "body": "Morning. The new hi-vis vests are in the gatehouse. Please pick yours up before Monday's shift. Lerato",
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "A saved contact from health and safety, a routine reminder, and nothing to tap, pay or sign in to."
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "pre_mobile_ab",
+      "role": "mobile",
+      "company": "tarrowby_logistics",
+      "brand": {
+        "name": "Tarrowby Logistics",
+        "logoText": "TARROWBY",
+        "accent": "#3b5b8c"
+      },
+      "variant": "full",
+      "durationTargetMin": 9,
+      "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: ten items on a Tarrowby work phone.",
+      "stages": [
+        "check"
+      ],
+      "conclusionTaskId": "finish_check",
+      "defend": {
+        "setId": "mobile_form_a",
+        "stage": "pre",
+        "reportAlwaysVisible": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on",
+    "ambient": "#bcc2cc"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_tarrowby",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_tarrowby_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "drinks_vending": {
+            "color": "#e0f0ff",
+            "radius": 40,
+            "intensity": 0.45
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 4.5,
+            "y": 5,
+            "color": "#dfe8f4",
+            "radius": 110,
+            "intensity": 0.25
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "lerato_dlamini",
+          "displayName": "Lerato Dlamini",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "female_telecom_v2",
+          "spriteTalk": "assets/characters/female_telecom_talk.png",
+          "spriteVisemes": "assets/characters/female_telecom_visemes.png",
+          "storyPath": "scenarios/awareness_pre_mobile_ab/ink/lerato_pre.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:triage_pre_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "finish_check"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk set up as a Tarrowby work phone, with ten items ready for the first check.",
+          "minigameData": {
+            "episodeId": "pre_mobile_ab"
+          }
+        }
+      ]
+    }
+  }
+}

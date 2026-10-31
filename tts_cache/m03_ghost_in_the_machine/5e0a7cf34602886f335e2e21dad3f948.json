@@ -1,0 +1,13 @@
+{
+  "key": "5e0a7cf34602886f335e2e21dad3f948",
+  "npc": "narrator",
+  "text": "Her smile stays exactly where it was. Her eyes don't. A recruit wouldn't have said that.",
+  "voice": "Algenib",
+  "style": "Cinematic noir detective voice over narrator.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:15:36Z"
+}

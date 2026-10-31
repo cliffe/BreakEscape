@@ -1,0 +1,64 @@
+{
+  "_about": "WP-12 Part A (11_WP12_FIRST_PLAY_AND_ANNUAL.md) fragment for core_00, the first-play brief. Despite the folder name it holds NO defend set: a brief-only episode (ENG-10, variant 'brief', stages ['brief']) runs the brief stage and finishes, so there is no triage set, no attack block and no scored decision. This file holds the awarenessEpisode block the wiring agent pastes into scenarios/awareness_core_00_first_play/scenario.json.erb, including the seven brief cards. The shell skeleton, mission.json fields, globalVariables, the host NPC's eventMappings and the generator guidance are in this folder's WIRING_NOTES.md. Host ink is in ink/anjali_rao.ink. The shipped default company is Quayholt Insurance (host Anjali Rao, room room_aw_quayholt); the module intends the brief to adopt the first episode's host once the once-per-learner host-adoption engine piece lands (flagged in the spec, not this brief's work). Ids pinned here: episode core_00_first_play, done global episode_core_00_first_play_done, conclusion task complete_brief.",
+  "_brandAdditions": {
+    "_use": "No new cast or domains. Anjali Rao (Quayholt information security analyst, the person who receives reports) and Quayholt Insurance (carrholme/quayholt roster) are already in BRAND_SET.md via E3/E5. The brief names no senders, so no .example domains appear on screen.",
+    "cast": "Anjali Rao, Quayholt Insurance: reused as the welcome host only. No defend-set senders (there is no defend set).",
+    "nameCheck": "No new names introduced."
+  },
+  "_cards": {
+    "_use": "The seven beats from the module (core_00_first_day/concepts.md and game_design.md), in order, as strings.briefCards. Each is one { heading, text } card; a blank line in text (\\n\\n) is a new paragraph. About five minutes to read in all. Card 6 quotes the shared rule of thumb word for word (it must match awareness_deploy.AWARENESS_RULE_OF_THUMB_TEXT and test/js/social-awareness-rule-of-thumb.test.mjs). 'Pause. Check. Report.' is not used. The dialogue reviewer polishes the wording; the beats and order are fixed by the module."
+  },
+  "awarenessEpisode": {
+    "id": "core_00_first_play",
+    "role": "general_staff",
+    "company": "quayholt_insurance",
+    "brand": {
+      "name": "Quayholt Insurance",
+      "logoText": "QUAYHOLT",
+      "accent": "#6b4c9a"
+    },
+    "variant": "brief",
+    "durationTargetMin": 5,
+    "scopeNote": "An authorised exercise at Quayholt Insurance, a fictional company. Everything here is practice; nothing you do leaves the game.",
+    "stages": [
+      "brief"
+    ],
+    "conclusionTaskId": "complete_brief",
+    "doneGlobal": "episode_core_00_first_play_done",
+    "oncePerLearner": true,
+    "strings": {
+      "briefCards": [
+        {
+          "heading": "Welcome",
+          "text": "This is practice at Quayholt Insurance, a company we made up for the course. Nothing here is real, and nobody is trying to catch you out.\n\nYou will meet the kinds of messages, calls and pages that turn up in a normal working day, and take a few minutes to decide what you would do."
+        },
+        {
+          "heading": "How it works",
+          "text": "The kiosk steps through a short brief, then an attack half where you build one message from a company's public details, a flip where you meet it in an inbox, a scored defend half where you sort the post, and a debrief.\n\nIn the defend half you choose Trust, Report, Delete, and sometimes Verify, then tick what gave each item away. Only the defend half is scored. The attack half never is."
+        },
+        {
+          "heading": "Nothing real is asked for",
+          "text": "The course never asks for your real password, bank details or personal information. Any sign-in page or form you see is a model, filled with made-up details, and it captures nothing."
+        },
+        {
+          "heading": "What we record, and who sees it",
+          "text": "We record the items, your verdicts, the flags you tick and the times. There is no free text, and nothing that identifies you.\n\nResults go to you, and to an organiser as a group figure only. Your choices here are practice and are never used for discipline."
+        },
+        {
+          "heading": "Why anyone targets you",
+          "text": "Most attackers are criminals after money, and they want what your access opens: your email, your logins, the data you can see. It is rarely about you in particular.\n\nMost attacks begin with a message, a call or a stolen password, in the middle of normal work."
+        },
+        {
+          "heading": "The habit to keep",
+          "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+        },
+        {
+          "heading": "Report, and no blame",
+          "text": "For emails, use the Report button. For anything else, a call, a text, a visitor, a mistake, tell the security team or the service desk.\n\nReporting is never wrong, and reporting a mistake quickly is thanked, not blamed. The way to report here shows in every debrief."
+        }
+      ],
+      "briefDone": "Got it",
+      "alreadySeen": "You have seen this already. Start your first episode whenever you are ready."
+    }
+  }
+}

@@ -1,0 +1,420 @@
+{
+  "scenario_id": "awareness_e1_invoice_fraud_defend",
+  "scenario_name": "Invoice fraud: the payments inbox",
+  "titleScreenName": "Invoice fraud",
+  "scenario_brief": "Awareness episode E1, inbox only. You're covering the payments inbox at Brightwell Foods, a fictional food manufacturer, before the afternoon payment run. Six messages are waiting: sort them, and report or check anything that doesn't sit right.",
+  "endGoal": "Sort the six messages in the payments inbox at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "payments_inbox_aim",
+      "title": "Cover the payments inbox",
+      "description": "Sort the payments inbox at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e1_invoice_fraud_defend_defend_complete"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Payments inbox done",
+        "body": "That's this episode finished. The debrief goes through each one."
+      },
+      "tasks": [
+        {
+          "taskId": "sort_payments_inbox",
+          "title": "Sort the payments inbox",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e1_invoice_fraud_defend_state": {},
+    "se_awareness_records": [],
+    "episode_e1_invoice_fraud_defend_defend_percent": 0,
+    "episode_e1_invoice_fraud_defend_defend_reportRate": 0,
+    "episode_e1_invoice_fraud_defend_defend_complete": false
+  },
+  "social": {
+    "triageSets": [
+      {
+        "id": "e1_payments_inbox",
+        "title": "Brightwell payments inbox",
+        "brief": "You're covering Brightwell's payments inbox before the three o'clock payment run. Six messages are waiting. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "changed_bank_details",
+          "secrecy_or_bypass",
+          "reply_to_differs"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "episode_e1_invoice_fraud_defend_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e1_harlow_invoice",
+            "from": {
+              "name": "Harlow Packaging Ltd",
+              "address": "accounts@harlowpackaging.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Invoice INV-2217: September cartons",
+            "time": "09:05",
+            "body": "Hello,\nPlease find attached invoice INV-2217 for September's delivery of printed cartons (your PO-4290), for £6,412.80. It was issued on 24 September on our usual 30-day terms, so it falls due this week.\nOur bank details are unchanged.\nKind regards,\nCredit Control\nHarlow Packaging Ltd",
+            "attachments": [
+              {
+                "label": "INV-2217.pdf",
+                "kind": "pdf"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.harlowpackaging.example",
+              "replyTo": "accounts@harlowpackaging.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "attachmentPlausible": "An invoice PDF from a supplier you buy from, quoting a purchase order you raised, is exactly what you'd expect.",
+                "default": "It's from Harlow's real domain, it matches a purchase order Brightwell raised, and it asks for nothing new: the same terms and the same bank details."
+              },
+              "falseAlarmCost": "Left unpaid, September's cartons would hold up the next delivery."
+            }
+          },
+          {
+            "id": "e1_lookalike_bank",
+            "_worked": "The 11 section 4.2 worked example. Now F = 3 (senderTrust, lookalike_domain, changed_bank_details): the sender-trust chip applies because the address isn't Brightwell's.",
+            "from": {
+              "name": "Brightwell Foods Accounts",
+              "address": "accounts@brightwel1foods.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Updated bank details, please action today",
+            "time": "10:12",
+            "body": "Hi team,\nHarlow Packaging have moved to a new bank. Please change the payee account on invoice INV-2217 before today's payment run, so the payment doesn't bounce.\nNew account name: Harlow Packaging Ltd\nNew account number ending 7716\nThanks,\nAccounts",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.brightwel1foods.example",
+              "replyTo": "accounts@brightwel1foods.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "lookalike_domain",
+                "changed_bank_details",
+                "urgencyCalibrated"
+              ],
+              "flagAlternatives": [
+                [
+                  "senderTrust",
+                  "lookalike_domain"
+                ]
+              ],
+              "perFlagNote": {
+                "senderTrust": "It signs off as Brightwell Accounts, but the address only looks like Brightwell's: it's brightwel1foods.example, a 1 in place of the l, not the real brightwellfoods.example",
+                "lookalike_domain": "The display name is right, but the address is brightwel1foods, with a digit 1 where the l should be",
+                "changed_bank_details": "A bank-detail change on an open invoice is the commonest invoice-fraud move. The safe step is to ring the supplier on the number you already hold",
+                "urgencyCalibrated": "'Before today's payment run' pushes you to change the account before you'd stop to ring Harlow and check"
+              },
+              "ifTrusted": "Harlow's payment would go to an account the sender controls, and Harlow would still be waiting to be paid.",
+              "reportReply": "Thanks. That address isn't ours: brightwel1foods has a digit 1 in it. We've blocked the domain and warned the rest of finance."
+            }
+          },
+          {
+            "id": "e1_po_pennine",
+            "from": {
+              "name": "Mei Lin Chau",
+              "address": "meilin.chau@brightwellfoods.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "PO-4471 raised: Pennine Oat Mills",
+            "time": "10:40",
+            "body": "Hi payments team,\nI've raised PO-4471 for 12 pallets of oat flour from Pennine Oat Mills, arriving Thursday. Goods-in will send the delivery note. Could you match it when their invoice comes in?\nThanks,\nMei Lin\nProcurement",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "brightwellfoods.example",
+              "replyTo": "meilin.chau@brightwellfoods.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "pretextRelevant": "Purchase orders are part of the payments team's day; matching them to invoices is the job.",
+                "default": "It's from Mei Lin's real Brightwell address, it tells you about an order rather than asking you to pay anything, and it follows the normal purchase order route."
+              }
+            }
+          },
+          {
+            "id": "e1_pennine_bank_calm",
+            "_note": "aw5 (FUN_REVIEW 5): the genuine-shaped phish. A calm, polite bank change with no urgency, mirroring the genuine e1_bank_confirmed, so the learner cannot win on 'pushy = phish'. The only on-screen tell is the look-alike domain (a hyphen) in the From; it ties to the genuine Pennine PO-4471 above.",
+            "from": {
+              "name": "Pennine Oat Mills",
+              "address": "accounts@pennine-oatmills.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Our bank details have changed (no rush)",
+            "time": "11:30",
+            "body": "Hello,\nJust a note for your records. We've moved our business banking, so when you next pay us please use the account below rather than the one on file. There's nothing outstanding today, so there's no rush at all: it can wait for your next run against PO-4471.\nNew account name: Pennine Oat Mills Ltd\nNew account number ending 2290\nMany thanks,\nBryony Thwaite\nCredit Control, Pennine Oat Mills",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.pennine-oatmills.example",
+              "replyTo": "accounts@pennine-oatmills.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "lookalike_domain",
+                "changed_bank_details"
+              ],
+              "flagAlternatives": [
+                [
+                  "senderTrust",
+                  "lookalike_domain"
+                ]
+              ],
+              "perFlagNote": {
+                "senderTrust": "This isn't the address Pennine's accounts team use. It reads as Pennine, but it came from pennine-oatmills.example.",
+                "lookalike_domain": "Pennine's real domain is pennineoatmills.example; this one puts a hyphen between pennine and oatmills.",
+                "changed_bank_details": "A new bank account is the change invoice fraud depends on, and the calm 'no rush' tone does the work the urgency did in the other one: it keeps you from stopping to ring and check. Ring Pennine on the number in your supplier file before you pay the new account."
+              },
+              "ifTrusted": "When Pennine's invoice for PO-4471 comes in, you'd pay it to the sender's account, and Pennine would still be waiting to be paid.",
+              "reportReply": "Thanks. That isn't Pennine's domain: pennine-oatmills adds a hyphen. We've rung them on the number on file, and their bank hasn't changed."
+            }
+          },
+          {
+            "id": "e1_ceo_wire",
+            "from": {
+              "name": "Ravinder Sandhu",
+              "address": "ravinder.sandhu.private@lintbox.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Need this paid today",
+            "time": "11:58",
+            "body": "Are you at your desk? I need a payment of £18,400 made today to secure a new site in Leeds. It's confidential until the board announces it, so please keep it to yourself and don't put it through the usual approval. I'll sign it off when I'm back.\nI'm in meetings all afternoon, so reply here rather than calling.\nRavinder\nSent from my phone",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "ravinder.sandhu.private@lintbox.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "secrecy_or_bypass",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The name is the chief executive's, but the address is a personal inbox at lintbox.example, not brightwellfoods.example",
+                "secrecy_or_bypass": "'Keep it to yourself' and 'don't put it through the usual approval' ask you to skip the check that would catch this",
+                "urgencyCalibrated": "'Today' and 'in meetings all afternoon' leave no time to check, and steer you away from ringing him"
+              },
+              "ifTrusted": "£18,400 would go to an account the sender controls. The real Ravinder never asked for it.",
+              "reportReply": "Thanks. Ravinder knows nothing about it, and his real address is on brightwellfoods.example. We've warned the finance team.",
+              "whyFine": {
+                "pretextRelevant": "A payments clerk does field payment requests, so getting one is nothing odd in itself. That is the cover; the tells are the sender's real address, the push to skip approval, and the hurry."
+              }
+            }
+          },
+          {
+            "id": "e1_bank_confirmed",
+            "_note": "The genuine change of bank that carries the 'confirmed by phone' note (11 section 3.2, E1).",
+            "from": {
+              "name": "Adaeze Okafor",
+              "address": "adaeze.okafor@brightwellfoods.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Marsh End Eggs: new bank details (confirmed by phone)",
+            "time": "13:20",
+            "body": "Hi team,\nMarsh End Eggs wrote last week to say they've changed bank. Before acting on it, I rang them on the number in our supplier file (not the one on their letter) and spoke to Joyce in their accounts office. She confirmed the new account.\nI've updated the supplier record and signed off the change, so their next invoice can go to the new account in Friday's run.\nConfirmed by phone: Adaeze Okafor, 21 October\nAdaeze",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "brightwellfoods.example",
+              "replyTo": "adaeze.okafor@brightwellfoods.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "changed_bank_details": "It is a bank change, but it was checked the safe way: Adaeze rang Marsh End on the number already in the supplier file, not one from their letter, and logged it.",
+                "senderTrust": "The address is Adaeze's real Brightwell one, and the name matches it.",
+                "default": "It comes from your own finance manager, it doesn't hurry you, and it tells you how the change was confirmed. If you still wanted to check, ringing Adaeze on her extension would be a fine Verify."
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e1_invoice_fraud_defend",
+      "role": "finance",
+      "company": "brightwell_foods",
+      "brand": {
+        "name": "Brightwell Foods",
+        "logoText": "BRIGHTWELL",
+        "accent": "#2f6f5e"
+      },
+      "variant": "defendOnly",
+      "durationTargetMin": 8,
+      "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: the Brightwell payments inbox.",
+      "stages": [
+        "brief",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "sort_payments_inbox",
+      "defend": {
+        "setId": "e1_payments_inbox",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Brightwell Foods, a fictional company. You're covering the payments inbox this afternoon, and six messages are waiting. Some are real and some were built to trick you. Sort them, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "flipMissedHeading": "Nothing to replay this time",
+        "flipLandedNoTells": "It landed clean, with nothing in it to catch this time. Next, the same kind of message turns up in a payments inbox, and you're the one reading it.",
+        "noBlameLine": "Every one of these was written by someone whose job is making it look right, and anyone working at pace can act on one. A miss here just shows where to look next time.",
+        "mondayCard": "On Monday: if an email asks you to change bank details or to pay in a hurry, don't reply and don't use any number in the email. Ring the person on a number you already hold, then report the email using the route in the box below.",
+        "defendOnly": "These messages were written by people whose job is to make them look right, and anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away."
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_brightwell",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_brightwell_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "window_blinds": {
+            "color": "#ffd9a0",
+            "radius": 48,
+            "intensity": 0.1,
+            "floorTint": 0.5
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.6,
+            "color": "#ffe2b0",
+            "radius": 110,
+            "intensity": 0.5
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "adaeze_okafor",
+          "displayName": "Adaeze Okafor",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/awareness_e1_invoice_fraud_defend/ink/adaeze_okafor.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_e1_invoice_fraud_defend_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "sort_payments_inbox"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk showing Brightwell's payments inbox. Six messages are waiting.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e1_invoice_fraud_defend_defend_complete",
+              "value": "A touch-screen kiosk showing Brightwell's payments inbox. That's this one finished."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e1_invoice_fraud_defend"
+          }
+        }
+      ]
+    }
+  }
+}

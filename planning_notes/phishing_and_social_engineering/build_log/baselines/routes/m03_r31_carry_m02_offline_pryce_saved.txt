@@ -1,0 +1,51 @@
+   [imports: {"m02_completed":true,"m02_bed4_manually_stabilised":true}]
+
+## R31: m02 finished on the offline keys with Mr Pryce bagged by hand.
+
+--- briefing ---
+  Narrator: A SAFETYNET briefing room. Netherton by the screen, HaX with the file open, and a man in a lab coat half-buried in a laptop he built himself.
+  Director Magnus Netherton: Agent 0x00. This is Operation Cyber Arsenal.
+  Director Magnus Netherton: Zero Day Syndicate used to sell exploits to whoever paid. Now they choose the targets first.
+  Director Magnus Netherton: That is a line I do not let anyone cross. You are going in.
+  Director Magnus Netherton: HaX runs you, Nightshade the technical side. Listen to both.
+  Agent 0x47 'Nightshade': Morning. Whatever they've built, I'll take it apart from here. You just get me close to it.
+  Director Magnus Netherton: HaX. The floor's yours.
+  Agent HaX: Right. Zero Day Syndicate. You heard of them?
+     (3 options)
+ > Remind me what their deal is.
+  Agent HaX: Zero Day runs behind a real pentest firm -- WhiteHat Security Services. Legitimate audits by day. An exploit marketplace in the back rooms.
+  Agent HaX: They don't run the attacks. They arm the cells that do.
+     (3 options)
+ > Which cells buy from them?
+  Agent HaX: Ransomware Incorporated. Critical Mass. Others we haven't confirmed. Zero Day is their common supplier.
+  Agent HaX: You worked St. Catherine's last month. The hospital that went dark.
+  Agent HaX: You restored from the offline keys and bagged Mr Pryce by hand. Five died in those eleven hours. He wasn't one of them.
+  Agent HaX: The ransomware ran on a ProFTPD backdoor. That exploit didn't come from the crew who deployed it.
+     (3 options)
+ > Walk me through St. Catherine's again.
+  Agent HaX: A ward of patients on life support, encrypted in the night. The recovery call was yours, and you know what it cost.
+  Agent HaX: That's the buyer, Ghost. Zero Day sold the exploit and invoiced for it.
+  Agent HaX: They sold it as a product. Twenty-five thousand on the invoice, healthcare premium already built into the price.
+     (3 options)
+ > Then we take the supplier off the board.
+  Agent HaX: That's the mission.
+  Agent HaX: Three things, then. One: get inside and clone Victoria Sterling's executive keycard. She's the front's CEO, and she runs this end of the cell for 0day.
+  Agent HaX: Two: after hours, get onto their training network and pull the flags. Recon, the services, and the legacy distcc box where their records sit.
+  Agent HaX: Three: the physical paper trail. Client roster, the catalogue, anything naming St. Catherine's or Phase 2.
+  Agent HaX: Ask me whatever you need before you go in.
+     [0] Who is Victoria Sterling?
+     [1] How do I clone her keycard?
+     [2] What's the training network?
+     [3] What's my cover?
+     [4] That's everything. Let's talk approach.
+  [stopped: no pick]
+   [PASS] said: "You worked St. Catherine's last month"
+   [PASS] said: "The recovery call was yours, and you know what it cost"
+   [PASS] said: "bagged Mr Pryce by hand"
+   [PASS] not said: "You paid the ransom and had the wards back"
+   [PASS] not said: "You took Ghost's keys"
+   [PASS] not said: "You ran the combined restore"
+   [PASS] not said: "Eleven and a half hours, and six people died"
+   [PASS] longest run 8 (briefing) <= 8
+
+[stats] spoken/narrated lines 22, choices 4, longest run without a choice 8 (briefing); runs>=6: briefing:8

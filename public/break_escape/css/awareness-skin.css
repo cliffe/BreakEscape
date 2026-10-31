@@ -1,0 +1,209 @@
+/* Awareness episodes: the neutral corporate skin (11 N8, packet P7-B).
+   Tokens are --aw-*. The brand's accent overrides --aw-accent from JS. Plain, readable type:
+   no pixel font. Every learner string is set in --se-font-readable. */
+
+.aw-skin {
+    --aw-accent: #2f6f5e;
+    --aw-ink: #1f2933;
+    --aw-surface: #f6f8f7;
+    --aw-line: #cfd8d4;
+    --aw-warn: #8a5a00;
+}
+.aw-strip, .aw-flip, .aw-debrief {
+    --aw-accent: #2f6f5e;
+    --aw-ink: #1f2933;
+    --aw-surface: #f6f8f7;
+    --aw-line: #cfd8d4;
+    --aw-warn: #8a5a00;
+    font-family: var(--se-font-readable, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
+    color: var(--aw-ink);
+    box-sizing: border-box;
+}
+.aw-flip, .aw-debrief { background: var(--aw-surface); padding: 16px; line-height: 1.45; }
+/* The flip embeds the mail reader and the triage page/call cards, which default to the dark
+   mail/triage theme. On the flip's light surface their text inherited the skin's dark ink and
+   landed dark-on-dark navy (E5-4). Re-point the --ui-* tokens inside the flip/debrief to a light
+   palette so those embedded surfaces render as dark ink on a light card. */
+.aw-flip, .aw-debrief {
+    --ui-text: var(--aw-ink);
+    --ui-text-dim: #52606d;
+    --ui-surface: #fff;
+    --ui-surface-raised: #fff;
+    --ui-surface-hover: #eef2f1;
+    --ui-slot-bg: #eef2f1;
+    --ui-line: var(--aw-line);
+    --ui-border: var(--aw-line);
+    --ui-accent: var(--aw-accent);
+}
+
+/* wordmark: drawn in CSS from the brand's logoText, no image */
+.aw-wordmark {
+    display: inline-block; padding: 2px 10px; margin-right: 12px;
+    background: var(--aw-accent); color: #fff; border-radius: 3px;
+    font-weight: 800; letter-spacing: 0.14em; font-size: 14px; text-transform: uppercase;
+}
+
+/* step strip */
+.aw-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 12px; background: #fff; border-bottom: 2px solid var(--aw-line); }
+.aw-steps { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.aw-step { display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; border: 1px solid var(--aw-line); border-radius: 999px; font-size: 14px; color: #52606d; background: #fff; }
+.aw-step-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: var(--aw-line); color: var(--aw-ink); font-size: 13px; font-weight: 700; }
+.aw-step-current { border-color: var(--aw-accent); color: var(--aw-ink); font-weight: 700; }
+.aw-step-current .aw-step-num { background: var(--aw-accent); color: #fff; }
+.aw-step-done .aw-step-num { background: var(--aw-accent); color: #fff; opacity: 0.7; }
+/* A stage passed over without running (e.g. the MFA demo after a refused call): greyed, not
+   ticked, so it never reads as completed (E3-6). */
+.aw-step-skipped { color: #8c99a4; }
+.aw-step-skipped .aw-step-label { text-decoration: line-through; }
+.aw-step-skipped .aw-step-num { background: var(--aw-line); color: #6b7680; opacity: 0.6; }
+.aw-step-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* shared text */
+/* F13: the accent at heading size sits near the AA floor on the light surface; darken it a
+   step so headings clear AA comfortably. color-mix keeps a brand's overridden accent in play
+   (older engines fall back to the raw accent, which still meets AA on the default skin). */
+.aw-heading { margin: 0 0 8px; font-size: 22px; color: var(--aw-accent); color: color-mix(in srgb, var(--aw-accent) 80%, #000); }
+.aw-lead, .aw-summary { margin: 0 0 12px; font-size: 16px; }
+.aw-button { margin-top: 14px; padding: 8px 18px; font: inherit; font-weight: 700; color: #fff; background: var(--aw-accent); border: 0; border-radius: 4px; cursor: pointer; }
+.aw-button:focus-visible { outline: 3px solid var(--aw-ink); outline-offset: 2px; }
+
+/* flip: a built page (E5) and a pretext call (E3) as well as a sent email */
+.aw-flip-page, .aw-flip-call { margin: 8px 0; max-width: 520px; }
+.aw-flip-section { margin: 14px 0 4px; font-size: 17px; }
+.aw-missed { padding: 10px 12px; background: #fff; border-left: 4px solid var(--aw-line); }
+
+/* flip */
+/* The flip shows one message, so it drops the list column and lets the reading pane grow to its
+   full height. A fixed-height box cut the link chip (the evidence a tell points at) off at the
+   bottom edge (P3 N-8). */
+.aw-flip-reader { margin: 8px 0; border: 1px solid var(--aw-line); background: #fff; }
+.aw-flip-reader .mail-reader { display: block; }
+.aw-flip-reader .mail-list-pane { display: none; }
+.aw-flip-reader .mail-read-pane { display: block; overflow: visible; max-height: none; border: 0; }
+/* N1: the link/attachment chip fills its own background from a dark pixel-art border-image, which
+   the flip's light re-pointing of --ui-* cannot reach, so the chip stayed dark navy with dark
+   link text. On the flip/debrief light surface, drop the dark fill and give the chip a light
+   background with a readable link colour. */
+.aw-flip .mail-chip, .aw-debrief .mail-chip {
+    border-image: none;
+    border: 1px solid var(--aw-line);
+    background-color: #eef2f1;
+    border-radius: 4px;
+    padding: 4px 10px;
+}
+.aw-flip .mail-chip-link, .aw-debrief .mail-chip-link { color: #1a4b8f; }
+.aw-tells { margin: 12px 0; padding-left: 20px; }
+.aw-tell { margin: 4px 0; }
+/* flip aftermath (ENG-01): the victim's seat, a short list of what turns up in their account */
+.aw-flip-aftermath { margin: 14px 0 0; padding-top: 6px; border-top: 1px solid var(--aw-line); }
+.aw-aftermath-item { margin: 8px 0; padding: 8px 12px; background: #fff; border: 1px solid var(--aw-line); border-radius: 4px; }
+.aw-aftermath-fields { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; margin: 0; font-size: 15px; }
+.aw-aftermath-fields dt { font-weight: 600; }
+.aw-aftermath-fields dd { margin: 0; overflow-wrap: anywhere; }
+.aw-aftermath-note { margin: 6px 0 0; font-size: 15px; font-style: italic; }
+.aw-aftermath-line { margin: 8px 0 0; font-weight: 600; }
+.aw-aftermath-fields dd.aw-aftermath-address { font-family: var(--se-font-address); }
+/* The triage cards for push, sms, voicemail and call are dark panels with light text; inside the
+   light flip the text inherits dark ink and vanished on them (E8 MA3). Re-skin them light here:
+   dark ink on a pale panel, the accent stripes kept. Page and qr cards are already light. */
+.aw-flip-aftermath .tri-kind { color: var(--aw-ink); }
+.aw-flip-aftermath .tri-phone,
+.aw-flip-aftermath .tri-kind-voicemail,
+.aw-flip-aftermath .tri-kind-call { background: #eef2f1; color: var(--aw-ink); border-color: #52606d; }
+.aw-flip-aftermath .tri-kind-voicemail { border-left-color: #5b4bc4; }
+.aw-flip-aftermath .tri-kind-call { border-left-color: var(--aw-accent); }
+.aw-flip-aftermath .tri-phone-top { border-bottom-color: #52606d; }
+.aw-flip-aftermath .tri-phone-speaker { background: #cfd8d4; border-color: #52606d; }
+.aw-flip-aftermath .tri-phone-battery { border-color: #52606d; background: linear-gradient(90deg, #52606d 70%, transparent 70%); }
+.aw-flip-aftermath .tri-kind-label,
+.aw-flip-aftermath .tri-phone-number,
+.aw-flip-aftermath .tri-phone-status,
+.aw-flip-aftermath .tri-vm-meta,
+.aw-flip-aftermath .tri-call-meta,
+.aw-flip-aftermath .tri-push-details dt,
+.aw-flip-aftermath .tri-line-who,
+.aw-flip-aftermath .tri-call-claims-label { color: #3e4c59; }
+.aw-flip-aftermath .tri-line-you .tri-line-who { color: var(--aw-ink); text-decoration: underline; }
+.aw-flip-aftermath .tri-vm-bar { background: #5b4bc4; }
+.aw-flip-aftermath .tri-call-claims { border-color: #52606d; }
+.aw-flip-aftermath .tri-sms-bubble { background: #fff; border-color: #52606d; color: var(--aw-ink); }
+.aw-flip-aftermath .tri-sms-time { color: #3e4c59; }
+.aw-flip-aftermath .tri-notice, .aw-flip-aftermath .tri-browser { color: #1d2333; }
+.aw-defender-line { margin: 12px 0 0; padding: 10px 12px; border-left: 4px solid var(--aw-accent); background: #fff; font-weight: 600; }
+
+/* debrief */
+.aw-cards { display: grid; gap: 10px; margin: 8px 0 14px; }
+.aw-card { padding: 10px 12px; background: #fff; border: 1px solid var(--aw-line); border-radius: 4px; }
+.aw-card-title { margin: 0 0 4px; font-size: 16px; }
+.aw-card-verdict, .aw-card-score { margin: 4px 0; font-size: 15px; }
+.aw-card-score { color: #52606d; font-size: 14px; }
+.aw-flags, .aw-why-fine { margin: 6px 0; padding-left: 20px; font-size: 15px; }
+.aw-flag-word { font-weight: 700; }
+.aw-flag-caught .aw-flag-word { color: var(--aw-accent); }
+.aw-flag-missed .aw-flag-word { color: var(--aw-warn); }
+.aw-if-trusted { margin: 6px 0; font-size: 15px; }
+/* the real items (disc_visible): trusted, treated as a phish and why both halves matter */
+.aw-genuine { margin: 0 0 12px; padding: 10px 14px; background: #fff; border: 1px solid var(--aw-line); border-radius: 4px; font-size: 15px; }
+.aw-genuine p { margin: 4px 0; }
+.aw-genuine-list { margin: 4px 0; padding-left: 20px; }
+.aw-genuine-fold summary { cursor: pointer; min-height: 32px; }
+.aw-genuine-cost, .aw-genuine-why { color: #3e4c59; }
+/* batch 13: the concern form's report, looked back at in the debrief */
+.aw-concern-recap { margin: 0 0 12px; padding: 10px 14px; background: #fff; border: 1px solid var(--aw-line); border-radius: 4px; font-size: 15px; }
+.aw-concern-recap-title { margin: 0 0 4px; font-size: 16px; }
+.aw-concern-recap p { margin: 4px 0; }
+.aw-concern-recap-list { margin: 4px 0; padding-left: 20px; }
+.aw-concern-recap-missing { color: var(--aw-warn); font-weight: 600; }
+/* optional concept and voice panels (strings.conceptPanel, strings.voicePanel) */
+.aw-panel { margin: 0 0 12px; padding: 10px 14px; background: #fff; border: 1px solid var(--aw-line); border-left: 4px solid var(--aw-accent); border-radius: 4px; }
+.aw-panel-heading { margin: 0 0 4px; font-size: 16px; }
+.aw-panel-text { margin: 4px 0; font-size: 15px; }
+.aw-monday { margin: 0 0 10px; padding: 12px 14px; background: #fff; border: 2px solid var(--aw-accent); border-radius: 4px; font-weight: 600; }
+.aw-no-blame { margin: 0; font-size: 15px; }
+
+/* the Report button: always visible, never greyed out, a positive pop when used.
+   Add .aw-report-win to the button (and show .aw-report-thanks) when a report is made. */
+.aw-report-btn { background: var(--aw-accent); color: #fff; opacity: 1; }
+.aw-report-btn:disabled { opacity: 1; cursor: default; }
+.aw-report-thanks { margin: 6px 0 0; font-weight: 700; color: var(--aw-accent); }
+/* in the triage overlay's dark panel the accent green is too dark to read: lighten it there */
+.triage-client.aw-skin .aw-report-thanks { color: #8fe0c4; }
+.triage-client.aw-skin .tri-locked.aw-report-win { display: inline-flex; border-radius: 4px; }
+@keyframes aw-report-pop {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 var(--aw-accent); }
+    40% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(47, 111, 94, 0.25); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(47, 111, 94, 0); }
+}
+@keyframes aw-thanks-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.aw-report-win { animation: aw-report-pop 0.6s ease-out 1; }
+.aw-report-thanks.aw-report-win { animation: aw-thanks-in 0.4s ease-out 1; }
+
+@media (prefers-reduced-motion: reduce) {
+    .aw-report-win, .aw-report-thanks.aw-report-win { animation: none; }
+}
+
+/* aw6: the "team kept safe" tally in the triage sort view, and the debrief's team line */
+.triage-client.aw-skin .aw-team-tally { display: inline-flex; align-self: flex-start; width: fit-content; max-width: 100%; box-sizing: border-box;
+    align-items: center; gap: 6px; margin: 4px 0 6px; padding: 2px 10px; transform-origin: left center;
+    border: 1px solid #8fe0c4; border-radius: 12px; color: #8fe0c4; font-weight: 700; font-size: 14px; }
+.triage-client.aw-skin .aw-team-tally img, .triage-client.aw-skin .aw-team-tally svg { width: 14px; height: 14px; }
+.aw-team-pop { animation: aw-report-pop 0.6s ease-out 1; }
+.aw-team { margin: 0 0 10px; font-weight: 600; color: var(--aw-accent); }
+/* aw4: the shared rule of thumb; aw1: the organisation's route to report */
+.aw-rule { margin: 0 0 10px; padding: 10px 14px; background: #fff; border: 1px solid var(--aw-line); border-left: 4px solid var(--aw-accent); border-radius: 4px; }
+.aw-rule-heading, .aw-report-route-heading { margin: 0 0 4px; font-size: 16px; }
+.aw-rule-text, .aw-report-route-text { margin: 4px 0; font-size: 15px; }
+.aw-report-route { margin: 0 0 10px; padding: 10px 14px; background: #fff; border: 1px dashed var(--aw-accent); border-radius: 4px; }
+@media (prefers-reduced-motion: reduce) { .aw-team-pop { animation: none; } }
+
+/* The montage flip of a consequence episode (ENG-04): one block per beat, the headline beat first. */
+.aw-montage { margin: 0 0 12px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; max-width: 70ch; }
+.aw-montage-beat { margin: 0; padding: 10px 12px; background: #fff; border: 1px solid var(--aw-line); border-left: 4px solid var(--aw-line); }
+.aw-montage-headline { border-left-color: var(--aw-accent); border-width: 2px; border-left-width: 6px; }
+.aw-montage-taken.aw-montage-unsafe, .aw-montage-taken:not(.aw-montage-safe) { border-left-color: var(--aw-warn); }
+/* A beat the learner handled safely: calm green stripe, the tag says so in words. */
+.aw-montage-taken.aw-montage-safe { border-left-color: #2f7d4f; background: #f3f9f5; }
+.aw-montage-tag { margin: 0 0 4px; font-size: 13px; font-weight: 700; color: var(--aw-warn); }
+.aw-montage-safe .aw-montage-tag { color: #1f5d33; }
+.aw-montage-situation { margin: 0 0 4px; font-size: 14px; color: #52606d; }
+.aw-montage-line { margin: 0; font-size: 16px; font-weight: 600; }

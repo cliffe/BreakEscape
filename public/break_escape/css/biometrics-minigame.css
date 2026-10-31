@@ -1,0 +1,933 @@
+/* Biometrics Minigame Styles */
+
+.biometrics-minigame-container {
+    /* Compact interface similar to Bluetooth scanner */
+    position: fixed !important;
+    top: 5vh !important;
+    right: 2vw !important;
+    width: 350px !important;
+    height: auto !important;
+    max-height: 60vh !important;
+    background: linear-gradient(135deg, #2e1a1a 0%, #3e1616 50%, #600f0f 100%) !important;
+    box-shadow: 0 0 20px rgba(231, 76, 60, 0.3), inset 0 0 10px rgba(231, 76, 60, 0.1) !important;
+    border: 4px solid #e74c3c !important;
+    clip-path: polygon(
+      0px calc(100% - 10px),
+      2px calc(100% - 10px),
+      2px calc(100% - 6px),
+      4px calc(100% - 6px),
+      4px calc(100% - 4px),
+      6px calc(100% - 4px),
+      6px calc(100% - 2px),
+      10px calc(100% - 2px),
+      10px 100%,
+      calc(100% - 10px) 100%,
+      calc(100% - 10px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 10px),
+      100% calc(100% - 10px),
+      100% 10px,
+      calc(100% - 2px) 10px,
+      calc(100% - 2px) 6px,
+      calc(100% - 4px) 6px,
+      calc(100% - 4px) 4px,
+      calc(100% - 6px) 4px,
+      calc(100% - 6px) 2px,
+      calc(100% - 10px) 2px,
+      calc(100% - 10px) 0px,
+      10px 0px,
+      10px 2px,
+      6px 2px,
+      6px 4px,
+      4px 4px,
+      4px 6px,
+      2px 6px,
+      2px 10px,
+      0px 10px
+    ) !important;
+    color: #e0e0e0 !important;
+    overflow: hidden !important;
+    transition: all 0.3s ease !important;
+}
+
+.biometrics-minigame-container.expanded {
+    width: 450px !important;
+    max-height: 70vh !important;
+}
+
+.biometrics-minigame-game-container {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    position: relative !important;
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 15px !important;
+    box-sizing: border-box !important;
+}
+
+/* Scanner Header */
+.biometrics-scanner-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid #e74c3c;
+    /* border-radius: 6px; */
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.2);
+}
+
+.biometrics-scanner-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #e74c3c;
+    text-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
+}
+
+.samples-count-header {
+    font-size: 12px;
+    color: #4caf50;
+    background: rgba(76, 175, 80, 0.2);
+    padding: 2px 6px;
+    /* border-radius: 3px; */
+    border: 1px solid #4caf50;
+    margin-left: auto;
+}
+
+.scanner-icon {
+    height: 24px;
+    filter: drop-shadow(0 0 3px rgba(231, 76, 60, 0.5));
+    image-rendering: pixelated;
+}
+
+.biometrics-scanner-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #4caf50;
+}
+
+.scanner-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4caf50;
+    box-shadow: 0 0 6px rgba(76, 175, 80, 0.8);
+    animation: pulse 2s infinite;
+}
+
+.scanner-indicator.active {
+    background: #4caf50;
+}
+
+.scanner-indicator.inactive {
+    background: #f44336;
+    animation: none;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* Expand/Collapse Toggle */
+.biometrics-expand-toggle {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 24px;
+    height: 24px;
+    background: rgba(231, 76, 60, 0.2);
+    border: 1px solid #e74c3c;
+    /* border-radius: 4px; */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #e74c3c;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.biometrics-expand-toggle:hover {
+    background: rgba(231, 76, 60, 0.3);
+    box-shadow: 0 0 8px rgba(231, 76, 60, 0.4);
+}
+
+.biometrics-expand-toggle.expanded {
+    transform: rotate(180deg);
+}
+
+/* Search Room Button */
+.biometrics-search-room-container {
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+    background: rgba(231, 76, 60, 0.1);
+    /* border-radius: 6px; */
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.2);
+}
+
+/* Controls */
+.biometrics-scanner-controls {
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+    max-height: 200px;
+    overflow: hidden;
+}
+
+.biometrics-minigame-container:not(.expanded) .biometrics-scanner-controls {
+    max-height: 0;
+    margin-bottom: 0;
+    opacity: 0;
+}
+
+.biometrics-search-container {
+    margin-bottom: 10px;
+}
+
+.biometrics-search-input {
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #e74c3c;
+    /* border-radius: 6px; */
+    color: #e0e0e0;
+    font-size: 14px;
+    box-shadow: 0 0 8px rgba(231, 76, 60, 0.2);
+    transition: all 0.3s ease;
+}
+
+.biometrics-search-input:focus {
+    outline: none;
+    border-color: #4caf50;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.biometrics-search-input::placeholder {
+    color: #888;
+}
+
+.biometrics-categories {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.biometrics-category {
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #555;
+    /* border-radius: 4px; */
+    cursor: pointer;
+    font-size: 12px;
+    color: #ccc;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.biometrics-category:hover {
+    background: rgba(231, 76, 60, 0.2);
+    border-color: #e74c3c;
+    color: #e74c3c;
+}
+
+.biometrics-category.active {
+    background: rgba(231, 76, 60, 0.3);
+    border-color: #e74c3c;
+    color: #e74c3c;
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.3);
+}
+
+/* Action Buttons */
+.biometrics-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.biometrics-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: rgba(231, 76, 60, 0.2);
+    border: 1px solid #e74c3c;
+    /* border-radius: 6px; */
+    color: #e74c3c;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+.biometrics-action-btn:hover {
+    background: rgba(231, 76, 60, 0.3);
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.4);
+    transform: translateY(-1px);
+}
+
+.biometrics-action-btn.active {
+    background: rgba(76, 175, 80, 0.3);
+    border-color: #4caf50;
+    color: #4caf50;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
+}
+
+.biometrics-action-btn .btn-icon {
+    font-size: 18px;
+}
+
+/* CSS magnifier: no image file needed (assets/icons/search.png is a placeholder) */
+.biometrics-action-btn .btn-icon-search {
+    position: relative;
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+}
+.biometrics-action-btn .btn-icon-search::before {
+    content: '';
+    position: absolute;
+    left: 1px;
+    top: 1px;
+    width: 9px;
+    height: 9px;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+}
+.biometrics-action-btn .btn-icon-search::after {
+    content: '';
+    position: absolute;
+    left: 11px;
+    top: 14px;
+    width: 7px;
+    height: 2px;
+    background: currentColor;
+    transform-origin: 0 50%;
+    transform: rotate(45deg);
+}
+
+.biometrics-action-btn .btn-text {
+    font-weight: bold;
+}
+
+/* Samples List */
+.biometrics-samples-list-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    transition: all 0.3s ease;
+    max-height: 300px;
+    overflow: hidden;
+}
+
+.biometrics-minigame-container:not(.expanded) .biometrics-samples-list-container {
+    max-height: 0;
+    opacity: 0;
+}
+
+.biometrics-samples-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid #444;
+    /* border-radius: 6px; */
+    font-size: 14px;
+    font-weight: bold;
+    color: #e74c3c;
+}
+
+.samples-count {
+    font-size: 12px;
+    color: #4caf50;
+    background: rgba(76, 175, 80, 0.2);
+    padding: 2px 6px;
+    /* border-radius: 3px; */
+    border: 1px solid #4caf50;
+}
+
+.biometrics-samples-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid #333;
+    /* border-radius: 6px; */
+    max-height: 300px;
+}
+
+.biometrics-samples-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.biometrics-samples-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    /* border-radius: 4px; */
+}
+
+.biometrics-samples-list::-webkit-scrollbar-thumb {
+    background: #e74c3c;
+    /* border-radius: 4px; */
+}
+
+.biometrics-samples-list::-webkit-scrollbar-thumb:hover {
+    background: #4caf50;
+}
+
+/* Sample Items */
+.sample-item {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #444;
+    /* border-radius: 6px; */
+    margin-bottom: 6px;
+    padding: 10px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.sample-item:hover {
+    background: rgba(231, 76, 60, 0.1);
+    border-color: #e74c3c;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.2);
+}
+
+.sample-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.sample-header strong {
+    color: #e0e0e0;
+    font-weight: bold;
+}
+
+.sample-type {
+    font-size: 12px;
+    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.2);
+    padding: 2px 6px;
+    /* border-radius: 3px; */
+    border: 1px solid #e74c3c;
+}
+
+.sample-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+}
+
+.sample-quality {
+    font-weight: bold;
+    padding: 2px 6px;
+    /* border-radius: 3px; */
+    border: 1px solid;
+}
+
+.sample-quality.quality-perfect {
+    color: #4caf50;
+    background: rgba(76, 175, 80, 0.2);
+    border-color: #4caf50;
+}
+
+.sample-quality.quality-excellent {
+    color: #8bc34a;
+    background: rgba(139, 195, 74, 0.2);
+    border-color: #8bc34a;
+}
+
+.sample-quality.quality-good {
+    color: #ffc107;
+    background: rgba(255, 193, 7, 0.2);
+    border-color: #ffc107;
+}
+
+.sample-quality.quality-fair {
+    color: #ff9800;
+    background: rgba(255, 152, 0, 0.2);
+    border-color: #ff9800;
+}
+
+.sample-quality.quality-acceptable {
+    color: #ff5722;
+    background: rgba(255, 87, 34, 0.2);
+    border-color: #ff5722;
+}
+
+.sample-quality.quality-poor {
+    color: #f44336;
+    background: rgba(244, 67, 54, 0.2);
+    border-color: #f44336;
+}
+
+.sample-date {
+    color: #666;
+    font-style: italic;
+    font-size: 10px;
+}
+
+/* Instructions */
+.biometrics-scanner-instructions {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid #444;
+    /* border-radius: 6px; */
+    font-size: 12px;
+    line-height: 1.4;
+    color: #ccc;
+    transition: all 0.3s ease;
+}
+
+.biometrics-minigame-container:not(.expanded) .biometrics-scanner-instructions {
+    display: none;
+}
+
+.instruction-text {
+    color: #aaa;
+}
+
+.instruction-text strong {
+    color: #e74c3c;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .biometrics-minigame-container {
+        top: 2vh !important;
+        right: 2vw !important;
+        left: 2vw !important;
+        width: 96vw !important;
+        max-width: 400px !important;
+    }
+    
+    .biometrics-minigame-container.expanded {
+        width: 96vw !important;
+        max-width: 500px !important;
+    }
+    
+    .biometrics-scanner-title {
+        font-size: 14px;
+    }
+    
+    .biometrics-categories {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .biometrics-category {
+        text-align: center;
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+    
+    .biometrics-actions {
+        flex-direction: column;
+    }
+    
+    .biometrics-action-btn {
+        justify-content: center;
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    
+    .biometrics-expand-toggle {
+        width: 20px;
+        height: 20px;
+        font-size: 10px;
+    }
+}
+
+/* Animation for new samples */
+@keyframes sampleAppear {
+    0% {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.sample-item.new-sample {
+    animation: sampleAppear 0.5s ease-out;
+}
+
+/* Hover preservation for smooth updates */
+.sample-item.hover-preserved {
+    background: rgba(231, 76, 60, 0.1);
+    border-color: #e74c3c;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.2);
+}
+
+/* ===== Fingerprint reader overlay ===== */
+
+.fingerprint-reader-game-container {
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+    margin: 0 auto;
+    background: transparent;
+    box-shadow: none;
+    display: flex;
+    justify-content: center;
+}
+
+.fingerprint-reader-container .minigame-controls {
+    position: static;
+    transform: none;
+    margin-top: 14px;
+}
+
+.fpr-panel {
+    width: 100%;
+    box-sizing: border-box;
+    background: #0a0f0c;
+    border: 3px solid #00ff41;
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.25), inset 0 0 12px rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    font-family: 'VT323', monospace;
+    color: #c8f5d2;
+}
+
+.fpr-heading {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    font-weight: normal;
+    color: #00ff41;
+    margin: 0;
+    text-align: center;
+    text-shadow: 0 0 6px rgba(0, 255, 65, 0.5);
+}
+
+.fpr-sign {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    text-align: center;
+    color: #0a0f0c;
+    background: #00ff41;
+    padding: 8px 12px;
+}
+
+.fpr-prompt {
+    margin: 0;
+    font-size: 22px;
+    text-align: center;
+}
+
+.fpr-cards {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+
+.fpr-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+    width: 156px;
+    padding: 10px 8px;
+    background: #101a14;
+    border: 2px solid #1f6b35;
+    color: #c8f5d2;
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.fpr-card:hover:not(:disabled),
+.fpr-card:focus-visible {
+    border-color: #00ff41;
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.45);
+    outline: none;
+}
+
+.fpr-card:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.fpr-card:disabled { cursor: default; opacity: 0.6; }
+.fpr-card.fpr-card-chosen { opacity: 1; border-color: #00ff41; }
+
+.fpr-thumb {
+    position: relative;
+    overflow: hidden;
+    line-height: 0;
+    border: 2px solid #3a3a34;
+}
+
+.fpr-canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    display: block;
+}
+
+.fpr-scanline {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 4px;
+    background: #00ff41;
+    box-shadow: 0 0 10px 3px rgba(0, 255, 65, 0.8);
+}
+
+.fpr-scanning .fpr-scanline {
+    display: block;
+    animation: fpr-scan 0.8s linear 1;
+}
+
+@keyframes fpr-scan {
+    from { top: 0; }
+    to { top: calc(100% - 4px); }
+}
+
+.fpr-card-label { text-align: center; line-height: 1.1; }
+.fpr-card-quality { color: #00ff41; }
+
+.fpr-result {
+    min-height: 52px;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    font-size: 22px;
+    line-height: 1.15;
+    text-align: center;
+    border: 2px solid transparent;
+}
+
+.fpr-result-accepted { color: #00ff41; border-color: #00ff41; background: rgba(0, 255, 65, 0.1); }
+.fpr-result-low_quality { color: #ffd34d; border-color: #ffd34d; background: rgba(255, 211, 77, 0.08); }
+.fpr-result-no_match { color: #ff7a6b; border-color: #ff7a6b; background: rgba(255, 122, 107, 0.08); }
+
+.fpr-forensic {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.1;
+    color: #7fa88a;
+    border-top: 1px solid #1f6b35;
+    padding-top: 10px;
+}
+
+@media (max-width: 480px) {
+    .fpr-panel { padding: 12px; }
+    .fpr-card { width: 140px; }
+    .fpr-card:has(.fpr-thumb.has-art) { width: 160px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fpr-scanning .fpr-scanline { animation: none; display: none; }
+}
+
+/* ===== Kit panel: thumbnails and field notes ===== */
+
+.sample-item.has-thumb {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.sample-thumb {
+    flex: 0 0 auto;
+    width: 64px;
+    height: 64px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    border: 1px solid #555;
+}
+
+.sample-body { flex: 1 1 auto; min-width: 0; }
+
+.sample-pattern {
+    text-transform: capitalize;
+    color: #bbb;
+    font-size: 12px;
+}
+
+.biometrics-field-notes {
+    margin-bottom: 10px;
+    border: 1px solid #e74c3c;
+    background: rgba(231, 76, 60, 0.08);
+    font-size: 13px;
+}
+
+.biometrics-field-notes summary {
+    cursor: pointer;
+    padding: 6px 10px;
+    color: #e74c3c;
+    font-weight: bold;
+}
+
+.biometrics-field-notes summary:focus-visible { outline: 2px solid #fff; }
+
+.field-note {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 6px 10px;
+    border-top: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.field-note canvas {
+    flex: 0 0 auto;
+    width: 64px;
+    height: 64px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    border: 1px solid #555;
+}
+
+.field-note strong { text-transform: capitalize; display: block; }
+
+/* ===== Reader: bezel, status light, answers (art slots fall back to these) ===== */
+
+.fpr-bezel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    background: linear-gradient(180deg, #1c2620, #101712);
+    border: 2px solid #2c4535;
+}
+
+.fpr-bezel.has-art {
+    background-image: var(--fp-art);
+    background-size: 100% 100%;
+    image-rendering: pixelated;
+}
+
+.fpr-led {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 14px;
+    height: 14px;
+    background: #3a4a40;
+    border: 2px solid #c8f5d2;
+}
+
+.fpr-led[data-state="scanning"] { background: #ffffff; }
+.fpr-led[data-state="ok"] { background: #00ff41; box-shadow: 0 0 10px #00ff41; }
+.fpr-led[data-state="partial"] { background: #ffd34d; border-radius: 50%; }
+.fpr-led[data-state="no"] { background: #ff7a6b; clip-path: polygon(50% 0, 100% 100%, 0 100%); border: 0; }
+
+.fpr-sign-tag {
+    display: inline-block;
+    margin-right: 6px;
+    padding: 1px 5px;
+    background: #0a0f0c;
+    color: #00ff41;
+}
+
+/* lift-card.png is 70x68 with a 44x44 window at (13,13). Shown at exactly 2x (140x136, window 88x88) so the
+   pixels stay square, with the print canvas sitting in the window instead of covering the card. */
+.fpr-thumb.has-art {
+    box-sizing: border-box;
+    width: 140px;
+    height: 136px;
+    padding: 26px;
+    border: 0;
+    background-image: var(--fp-art);
+    background-size: 140px 136px;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+}
+.fpr-card:has(.fpr-thumb.has-art) { width: 168px; }
+.fpr-thumb.has-art .fpr-canvas {
+    width: 88px !important;
+    height: 88px !important;
+}
+
+.fpr-card { position: relative; }
+.fpr-card-num {
+    position: absolute;
+    top: 4px;
+    left: 6px;
+    color: #7fa88a;
+    font-size: 18px;
+}
+.fpr-card-ident { font-size: 18px; color: #7fa88a; }
+.fpr-card.fpr-card-rejected { border-style: dashed; }
+
+.fpr-result-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+.fpr-result-body { text-align: left; }
+.fpr-result-accepted .fpr-result-title { animation: fpr-pop 0.4s ease-out 1; }
+
+@keyframes fpr-pop {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.fpr-keys { margin: 0; font-size: 16px; color: #5d8068; text-align: center; }
+
+@media (prefers-reduced-motion: reduce) {
+    .fpr-result-accepted .fpr-result-title { animation: none; }
+}
+
+/* reference-card.png is a 72x72 card. It sits behind the example print at 1:1, not stretched across the row,
+   so the text beside it stays on the dark panel. */
+.field-note.has-art {
+    min-height: 84px;
+    padding-left: 10px;
+    background-image: var(--fp-art);
+    background-size: 72px 72px;
+    background-position: 10px center;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+}
+.field-note.has-art canvas {
+    width: 56px;
+    height: 56px;
+    margin: 0 18px 0 8px;
+    border: 0;
+}
+
+.fpr-card-num { z-index: 2; background: #0a0f0c; padding: 0 5px; }
+
+.fpr-result-title span { font-family: 'VT323', monospace; font-size: 24px; vertical-align: -2px; }
+
+.biometrics-minigame-game-container { padding-bottom: 56px; }

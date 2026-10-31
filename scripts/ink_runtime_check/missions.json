@@ -1,0 +1,3692 @@
+{
+  "awareness_e12_visitor_tailgater": {
+    "globals": {
+      "episode_e12_visitor_tailgater_defend_complete": false,
+      "pretext_merrin_front_desk_outcome": "",
+      "delphine_influence": 0,
+      "se_intel_merrin_badge_door": false,
+      "se_intel_merrin_partner_travel": false,
+      "se_intel_merrin_courier_routine": false
+    },
+    "npcs": [
+      {
+        "id": "lorna_easton",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e12_visitor_tailgater/ink/lorna_easton.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      },
+      {
+        "id": "delphine_reception",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e12_visitor_tailgater/ink/delphine_reception.json",
+        "currentKnot": "start",
+        "room": "lobby"
+      }
+    ]
+  },
+  "awareness_e12_visitor_tailgater_defend": {
+    "globals": {
+      "episode_e12_visitor_tailgater_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "lorna_easton",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e12_visitor_tailgater_defend/ink/lorna_easton.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "m01_first_contact": {
+    "globals": {
+      "player_name": "Agent Zero",
+      "briefing_played": false,
+      "mission_started": false,
+      "agent_0x99_contacted": false,
+      "final_choice": "",
+      "derek_confronted": false,
+      "derek_surrendered": false,
+      "derek_fight_triggered": false,
+      "confrontation_approach": "",
+      "derek_knows_safetynet": false,
+      "derek_showed_remorse": false,
+      "kevin_choice": "",
+      "kevin_protected": false,
+      "kevin_ko": false,
+      "kevin_accused": false,
+      "kevin_warned": false,
+      "framing_evidence_seen": false,
+      "derek_office_locked_seen": false,
+      "contingency_file_read": false,
+      "security_audit_completed": false,
+      "audit_correct_answers": 0,
+      "audit_wrong_answers": 0,
+      "sarah_ko": false,
+      "maya_ko": false,
+      "found_casualty_projections": false,
+      "found_target_database": false,
+      "entropy_archive_opened": false,
+      "entropy_reveal_read": false,
+      "has_lockpick": false,
+      "server_room_entered": false,
+      "derek_office_entered": false,
+      "derek_pc_unlocked": false,
+      "derek_cabinet_opened": false,
+      "derek_personal_safe_opened": false,
+      "derek_storage_safe_opened": false,
+      "whiteboard_cipher_seen": false,
+      "decoded_whiteboard": false,
+      "talked_to_maya": false,
+      "talked_to_kevin": false,
+      "maya_identity_protected": true,
+      "discussed_operation": false,
+      "start_debrief_cutscene": false,
+      "operation_shatter_reported": false,
+      "objectives_completed": 0,
+      "lore_collected": 0,
+      "evidence_collected": false,
+      "current_task": "",
+      "ssh_flag_submitted": false,
+      "linux_flag_submitted": false,
+      "sudo_flag_submitted": false,
+      "navigation_flag_submitted": false,
+      "password_list_found": false,
+      "lockpicking_guide_offered": false,
+      "lockpicking_guide_requested": false,
+      "lockpicking_guide_hint_given": false,
+      "field_guide_offered": false,
+      "field_guide_requested": false,
+      "field_guide_received": false,
+      "priv_esc_guide_offered": false,
+      "priv_esc_guide_hint_given": false,
+      "priv_esc_guide_requested": false,
+      "cyberchef_guide_offered": false,
+      "cyberchef_guide_hint_given": false,
+      "cyberchef_guide_requested": false,
+      "launch_code_submitted": false,
+      "player_aborted_attack": false,
+      "player_launched_attack": false,
+      "ready_for_debrief": false,
+      "all_flags_submitted": false
+    },
+    "npcs": [
+      {
+        "id": "briefing_cutscene",
+        "npcType": "person",
+        "storyPath": "scenarios/m01_first_contact/ink/m01_opening_briefing.json",
+        "currentKnot": "start",
+        "room": "reception_area"
+      },
+      {
+        "id": "sarah_martinez",
+        "npcType": "person",
+        "storyPath": "scenarios/m01_first_contact/ink/m01_npc_sarah.json",
+        "currentKnot": "start",
+        "room": "reception_area"
+      },
+      {
+        "id": "agent_0x99",
+        "npcType": "phone",
+        "storyPath": "scenarios/m01_first_contact/ink/m01_phone_agent0x99.json",
+        "currentKnot": "first_call",
+        "room": "reception_area"
+      },
+      {
+        "id": "closing_debrief_person",
+        "npcType": "person",
+        "storyPath": "scenarios/m01_first_contact/ink/m01_closing_debrief.json",
+        "currentKnot": "start",
+        "room": "reception_area"
+      },
+      {
+        "id": "derek_lawson",
+        "npcType": "person",
+        "storyPath": "scenarios/m01_first_contact/ink/m01_derek_confrontation.json",
+        "currentKnot": "start",
+        "room": "break_room"
+      },
+      {
+        "id": "kevin_park",
+        "npcType": "person",
+        "storyPath": "scenarios/m01_first_contact/ink/m01_npc_kevin.json",
+        "currentKnot": "start",
+        "room": "it_room"
+      },
+      {
+        "id": "maya_chen",
+        "npcType": "person",
+        "storyPath": "scenarios/m01_first_contact/ink/m01_npc_maya.json",
+        "currentKnot": "start",
+        "room": "maya_office"
+      }
+    ]
+  },
+  "m02_ransomed_trust": {
+    "globals": {
+      "player_name": "Agent 0x00",
+      "read_night_rota": false,
+      "keycard_held": false,
+      "reeves_known": false,
+      "val_accused": false,
+      "found_boardroom_code": false,
+      "ghost_affiliate_heard": false,
+      "it_door_open": false,
+      "player_was_ko": false,
+      "val_challenged": false,
+      "val_argument_heard": false,
+      "briefing_played": false,
+      "mission_started": false,
+      "ransomware_deployed": true,
+      "agent_0x99_contacted": false,
+      "dr_kim_met": false,
+      "paid_ransom": false,
+      "exposed_hospital": false,
+      "debrief_played": false,
+      "gary_protected": false,
+      "kim_guilt_revealed": false,
+      "ghost_deal_accepted": false,
+      "gary_influence": 0,
+      "gary_defensive": false,
+      "gary_trusts_player": false,
+      "gave_keycard": false,
+      "gary_evidence_recovered": false,
+      "gary_gave_lanyard": false,
+      "player_warned_kim": false,
+      "bernie_influence": 0,
+      "bernie_trusts_player": false,
+      "bernie_vouched": false,
+      "bernie_gave_key": false,
+      "seen_picking_by_bernie": false,
+      "noticed_struck_booking": false,
+      "cover_burned": false,
+      "cover_restored": false,
+      "staff_lanyard_obtained": false,
+      "insider_method_confirmed": false,
+      "flag_ssh_submitted": false,
+      "flag_proftpd_submitted": false,
+      "flag_database_submitted": false,
+      "flag_ghost_log_submitted": false,
+      "backdoor_fully_exploited": false,
+      "network_isolated": false,
+      "lockpicking_guide_offered": false,
+      "ssh_guide_offered": false,
+      "privesc_guide_offered": false,
+      "scanning_guide_offered": false,
+      "vulnerability_guide_offered": false,
+      "exploitation_guide_offered": false,
+      "scanning_exploitation_guide_offered": false,
+      "pin_cracker_found": false,
+      "infoleak_note_offered": false,
+      "ghost_contacted_player": false,
+      "ransom_decision_made": false,
+      "reviewed_consequences": false,
+      "mission_complete": false,
+      "advised_board_pay": false,
+      "advised_board_refuse": false,
+      "offline_keys_recovered": false,
+      "escrow_safe_opened": false,
+      "restore_manifest_obtained": false,
+      "ghost_key_material_obtained": false,
+      "password_hints_found": false,
+      "lore_cryptosecure_found": false,
+      "lore_ghosts_manifesto_found": false,
+      "lore_zds_invoice_found": false,
+      "board_coverup_email_found": false,
+      "pin_attempts": 0,
+      "decoded_ransomware_note": false,
+      "read_ransom_cto": false,
+      "read_operator_note": false,
+      "read_handover_board": false,
+      "found_safe_pin_clue": false,
+      "decoded_recovery_instructions": false,
+      "guard_detections": 0,
+      "guard_knocked_out": false,
+      "attacked_guard": false,
+      "objectives_completed": 0,
+      "lore_collected": 0,
+      "backup_recovery_source": "",
+      "recovery_eta_hours": 0,
+      "backup_restore_initiated": false,
+      "patient_bed4_state": "stable",
+      "patient_bed4_deceased": false,
+      "bed4_critical": false,
+      "bed4_manually_stabilised": false,
+      "patient_bed2_state": "stable",
+      "ward_recovering": false,
+      "slow_path_window_open": false,
+      "receptionist_ko": false,
+      "gary_ko": false,
+      "dr_kim_ko": false,
+      "ward_nurse_ko": false,
+      "debrief_ready": false,
+      "ransom_decision_acknowledged": false,
+      "insider_evidence_partial": false,
+      "insider_badge_id_found": false,
+      "inspected_asset_post": false,
+      "insider_identified": false,
+      "insider_confronted": false,
+      "insider_hostile": false,
+      "insider_asset_arrested": false,
+      "insider_asset_escaped": false,
+      "insider_asset_exposed": false,
+      "accused_wrong_suspect": false,
+      "night_security_supervisor_ko": false
+    },
+    "npcs": [
+      {
+        "id": "opening_briefing_cutscene",
+        "npcType": "person",
+        "storyPath": "scenarios/m02_ransomed_trust/ink/m02_opening_briefing.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "director_netherton",
+        "npcType": "person",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "agent_nightshade",
+        "npcType": "person",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "receptionist",
+        "npcType": "person",
+        "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_receptionist.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "agent_0x99",
+        "npcType": "phone",
+        "storyPath": "scenarios/m02_ransomed_trust/ink/m02_phone_agent0x99.json",
+        "currentKnot": "first_call",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "ghost",
+        "npcType": "phone",
+        "storyPath": "scenarios/m02_ransomed_trust/ink/m02_phone_ghost.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "closing_debrief_trigger",
+        "npcType": "person",
+        "storyPath": "scenarios/m02_ransomed_trust/ink/m02_closing_debrief.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "ward_nurse",
+        "npcType": "person",
+        "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_ward_nurse.json",
+        "currentKnot": "start",
+        "room": "hospital_ward"
+      },
+      {
+        "id": "roaming_ward_nurse",
+        "npcType": "person",
+        "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_roaming_nurse.json",
+        "currentKnot": "start",
+        "room": "hospital_ward"
+      },
+      {
+        "id": "patient_bed4",
+        "npcType": "person",
+        "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_patient_bed4.json",
+        "currentKnot": "start",
+        "room": "hospital_ward"
+      },
+      {
+        "id": "patient_bed2",
+        "npcType": "person",
+        "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_patient_bed2.json",
+        "currentKnot": "start",
+        "room": "hospital_ward"
+      },
+      {
+        "id": "patient_bed5",
+        "npcType": "person",
+        "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_patient_bed5.json",
+        "currentKnot": "start",
+        "room": "hospital_ward"
+      },
+      {
+        "id": "gary_whitlock",
+        "npcType": "person",
+        "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_gary_whitlock.json",
+        "currentKnot": "start",
+        "room": "it_department"
+      },
+      {
+        "id": "dr_sarah_kim",
+        "npcType": "person",
+        "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_sarah_kim.json",
+        "currentKnot": "start",
+        "room": "dr_kim_office"
+      },
+      {
+        "id": "press_terminal_system",
+        "npcType": "phone",
+        "storyPath": "scenarios/m02_ransomed_trust/ink/m02_object_press_terminal.json",
+        "currentKnot": "start",
+        "room": "conference_room"
+      },
+      {
+        "id": "night_security_supervisor",
+        "npcType": "person",
+        "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_asset.json",
+        "currentKnot": "start",
+        "room": "conference_room"
+      },
+      {
+        "id": "security_guard_patrol",
+        "npcType": "person",
+        "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_security_guard.json",
+        "currentKnot": "start",
+        "room": "security_office"
+      }
+    ]
+  },
+  "m03_ghost_in_the_machine": {
+    "globals": {
+      "mission_phase": "act1_meeting",
+      "victoria_influence": 0,
+      "victoria_suspicious": 0,
+      "victoria_trusts_player": false,
+      "victoria_choice_made": false,
+      "danny_evidence_seen": false,
+      "handler_trust": 50,
+      "guard_detection_count": 0,
+      "guard_knocked_out": false,
+      "receptionist_ko": false,
+      "victoria_ko": false,
+      "victoria_fate": "",
+      "player_approach": "",
+      "knows_m2_connection": false,
+      "danny_fate": "",
+      "flag_scan_submitted": false,
+      "flag_ftp_submitted": false,
+      "flag_http_submitted": false,
+      "flag_distcc_submitted": false,
+      "lore_history_found": false,
+      "lore_catalogue_found": false,
+      "lore_directive_found": false,
+      "briefing_played": false,
+      "night_confrontation_ready": false,
+      "victoria_card_cloned": false,
+      "reception_badge_cloned": false,
+      "debrief_played": false,
+      "clone_call_done": false,
+      "whiteboard_seen": false,
+      "draft_seen": false,
+      "catalogue_seen": false,
+      "exec_office_entered": false,
+      "pc_call_done": false,
+      "guard_grace": false,
+      "roster_seen": false,
+      "usb_seen": false,
+      "lockpicking_guide_offered": false,
+      "netexploit_guide_offered": false,
+      "guard_told_safetynet": false,
+      "guard_bribed": false,
+      "called_it_murder": false,
+      "directive_decoded": false,
+      "revelation_heard": false,
+      "exec_wing_entered": false,
+      "guard_challenged": false,
+      "cyberchef_guide_offered": false,
+      "transaction_log_read": false,
+      "sable_named": false,
+      "perfect_stealth_earned": false,
+      "exec_wing_night": false,
+      "night_explored": false,
+      "guard_attacking": false,
+      "clone_read_dropped": false,
+      "sterling_on_call_seen": false,
+      "conference_reader_tried": false,
+      "cloner_explained": false,
+      "directive_guessed": false,
+      "vm_flag1_reward": false,
+      "vm_flag2_reward": false,
+      "vm_flag3_reward": false,
+      "danny_ko": false,
+      "named_target_selection": false,
+      "ffion_night_story": ""
+    },
+    "npcs": [
+      {
+        "id": "briefing_cutscene",
+        "npcType": "person",
+        "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_opening_briefing.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "director_netherton",
+        "npcType": "person",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "agent_nightshade",
+        "npcType": "person",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "ffion_rees",
+        "npcType": "person",
+        "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_ffion_rees.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "agent_0x99",
+        "npcType": "phone",
+        "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_phone_agent0x99.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "closing_debrief",
+        "npcType": "person",
+        "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_closing_debrief.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "victoria_sterling",
+        "npcType": "person",
+        "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_victoria.json",
+        "currentKnot": "start",
+        "room": "conference_room_01"
+      },
+      {
+        "id": "terry_mott",
+        "npcType": "person",
+        "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_terry_mott.json",
+        "currentKnot": "start",
+        "room": "executive_wing_hallway"
+      },
+      {
+        "id": "danny_foster",
+        "npcType": "person",
+        "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_danny_choice.json",
+        "currentKnot": "start",
+        "room": "danny_office"
+      },
+      {
+        "id": "night_transition",
+        "npcType": "person",
+        "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_night_transition.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
+      }
+    ]
+  },
+  "m04_critical_failure": {
+    "globals": {
+      "player_name": "Agent 0x00",
+      "briefing_played": false,
+      "vance_is_ally": false,
+      "vance_trust_level": 0,
+      "vance_phone_available": false,
+      "vance_met": false,
+      "vance_provided_keycard": false,
+      "anomaly_detected": false,
+      "evidence_maintenance_logs_found": false,
+      "evidence_camera_tampering_found": false,
+      "evidence_access_logs_found": false,
+      "evidence_reader_spoof_found": false,
+      "plant_reader_seen": false,
+      "fingerprint_kit_found": false,
+      "vance_card_cloned": false,
+      "relay_card_cloned": false,
+      "cipher_walked": false,
+      "cell_alerted": false,
+      "voltage_print_on_bypass": false,
+      "flag_network_scan_submitted": false,
+      "flag_ftp_intel_submitted": false,
+      "flag_privesc_submitted": false,
+      "flag_distcc_exploit_submitted": false,
+      "operative_cipher_defeated": false,
+      "operative_relay_defeated": false,
+      "operative_static_defeated": false,
+      "security_guard_ko": false,
+      "robert_vance_ko": false,
+      "voltage_captured": false,
+      "voltage_escaped": false,
+      "voltage_fight_started": false,
+      "vented_by_trigger": false,
+      "esd_authorized": false,
+      "voltage_neutralised": false,
+      "mission_complete": false,
+      "attack_prevented": false,
+      "disclosure_choice": "",
+      "lore_architect_directive_found": false,
+      "lore_cross_cell_coordination_found": false,
+      "lore_safehouse_address_found": false,
+      "rfid_guide_offered": false,
+      "rfid_guide_hint_given": false,
+      "lockpicking_guide_offered": false,
+      "lockpicking_guide_hint_given": false,
+      "recon_guide_offered": false,
+      "recon_guide_hint_given": false,
+      "vuln_guide_offered": false,
+      "vuln_guide_hint_given": false,
+      "distcc_guide_offered": false,
+      "distcc_guide_hint_given": false,
+      "cyberchef_guide_offered": false,
+      "cyberchef_guide_hint_given": false,
+      "privesc_guide_offered": false,
+      "privesc_guide_hint_given": false,
+      "proftpd_guide_offered": false,
+      "proftpd_guide_hint_given": false,
+      "server_room_reached": false,
+      "attack_mechanism_known": false,
+      "voltage_priority_discussed": false,
+      "operatives_defeated": 0,
+      "urgency_stage": 1,
+      "hydrogen_alarm": false,
+      "racks_vented": false,
+      "casualties_occurred": false,
+      "all_flags_in": false,
+      "guard_admitted": false,
+      "guard_hostile": false,
+      "cipher_engaged": false,
+      "static_engaged": false,
+      "static_stood_aside": false,
+      "crew_warned": false,
+      "crew_lost": false,
+      "clock_started": false,
+      "debrief_started": false,
+      "plant_room_entered": false,
+      "server_room_advice_given": false,
+      "blackout_named": false,
+      "crew_warned_early": false,
+      "vented_by_alarm_clock": false,
+      "static_left": false,
+      "vance_print_lifted": false,
+      "level1_card_held": false,
+      "checkpoint_passed": false,
+      "static_left_alone": false,
+      "voltage_six_cities": false,
+      "vance_spoken": false,
+      "promised_voltage_alive": false,
+      "asked_the_number": false,
+      "crew_hint_texted": false,
+      "relay_engaged": false
+    },
+    "npcs": [
+      {
+        "id": "opening_briefing_cutscene",
+        "npcType": "person",
+        "storyPath": "scenarios/m04_critical_failure/ink/m04_opening_briefing.json",
+        "currentKnot": "start",
+        "room": "main_entrance"
+      },
+      {
+        "id": "director_netherton",
+        "npcType": "person",
+        "room": "main_entrance"
+      },
+      {
+        "id": "agent_nightshade",
+        "npcType": "person",
+        "room": "main_entrance"
+      },
+      {
+        "id": "security_guard",
+        "npcType": "person",
+        "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_security_guard.json",
+        "currentKnot": "start",
+        "room": "main_entrance"
+      },
+      {
+        "id": "agent_0x99",
+        "npcType": "phone",
+        "storyPath": "scenarios/m04_critical_failure/ink/m04_phone_agent0x99.json",
+        "currentKnot": "start",
+        "room": "main_entrance"
+      },
+      {
+        "id": "robert_vance_phone",
+        "npcType": "phone",
+        "storyPath": "scenarios/m04_critical_failure/ink/m04_phone_robert_vance.json",
+        "currentKnot": "start",
+        "room": "main_entrance"
+      },
+      {
+        "id": "agent_0x99_debrief",
+        "npcType": "person",
+        "storyPath": "scenarios/m04_critical_failure/ink/m04_closing_debrief.json",
+        "currentKnot": "start",
+        "room": "main_entrance"
+      },
+      {
+        "id": "robert_vance",
+        "npcType": "person",
+        "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_robert_vance.json",
+        "currentKnot": "initial_meeting",
+        "room": "operations_office"
+      },
+      {
+        "id": "operative_cipher",
+        "npcType": "person",
+        "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_operative_cipher.json",
+        "currentKnot": "start",
+        "room": "battery_hall_1"
+      },
+      {
+        "id": "operative_relay",
+        "npcType": "person",
+        "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_operative_relay.json",
+        "currentKnot": "start",
+        "room": "battery_hall_2"
+      },
+      {
+        "id": "voltage",
+        "npcType": "person",
+        "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_voltage.json",
+        "currentKnot": "start",
+        "room": "plant_room"
+      },
+      {
+        "id": "operative_static",
+        "npcType": "person",
+        "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_operative_static.json",
+        "currentKnot": "start",
+        "room": "plant_room"
+      }
+    ]
+  },
+  "m05_insider_trading": {
+    "globals": {
+      "briefing_played": false,
+      "player_name": "Agent 0x00",
+      "player_approach": "",
+      "knows_full_stakes": false,
+      "knows_insider_profile": false,
+      "handler_trust": 50,
+      "final_choice": "",
+      "confront_stance": "",
+      "torres_turned": false,
+      "torres_arrested": false,
+      "torres_identified": false,
+      "elena_treatment_funded": false,
+      "entropy_program_exposed": false,
+      "found_pamphlet": false,
+      "found_incident_log": false,
+      "found_vetting_file": false,
+      "found_medical_bills": false,
+      "found_torres_journal": false,
+      "found_upload_schedule": false,
+      "found_manifest": false,
+      "case_ready_notified": false,
+      "case_motive": false,
+      "case_exfil": false,
+      "found_pipeline_list": false,
+      "flags_nag_sent": false,
+      "debrief_played": false,
+      "server_badge_obtained": false,
+      "office_card_obtained": false,
+      "patricia_authorised_office": false,
+      "patricia_authorised_server": false,
+      "server_door_seen": false,
+      "server_password_obtained": false,
+      "vault_reader_seen": false,
+      "torres_print_collected": false,
+      "patricia_phone_available": false,
+      "recruiter_texted": false,
+      "recruiter_deal_decided": false,
+      "found_stand_down_email": false,
+      "privesc_guide_offered": false,
+      "privesc_guide_hint_given": false,
+      "flag1_submitted": false,
+      "flag2_submitted": false,
+      "flag3_submitted": false,
+      "flag4_submitted": false,
+      "architect_approval_confirmed": false,
+      "recruiter_contacted_player": false,
+      "recruiter_deal_offered": false,
+      "recruiter_deal_accepted": false,
+      "recruiter_deal_confessed": false,
+      "patricia_ko": false,
+      "owen_ko": false,
+      "halloran_ko": false,
+      "lisa_ko": false,
+      "torres_ko": false,
+      "recruitment_method_discussed": false,
+      "leverage_discussed": false,
+      "journal_discussed": false,
+      "architect_discussed": false,
+      "recruiter_discussed": false,
+      "flag1_discussed": false,
+      "flag2_discussed": false,
+      "flag3_discussed": false,
+      "flag4_discussed": false,
+      "confrontation_advice_given": false,
+      "bludit_guide_offered": false,
+      "bludit_guide_hint_given": false,
+      "lockpicking_guide_offered": false,
+      "lockpicking_guide_hint_given": false,
+      "recon_guide_offered": false,
+      "recon_guide_hint_given": false,
+      "rfid_guide_offered": false,
+      "rfid_guide_hint_given": false,
+      "torres_suspected": false,
+      "found_door_log": false,
+      "found_halloran_alibi": false,
+      "halloran_questioned": false,
+      "halloran_accused": false,
+      "found_halloran_vetting": false,
+      "door_log_reasoned": false,
+      "it_notice_read": false,
+      "mission_complete": false,
+      "server_room_entered": false,
+      "named_before_portal": false,
+      "owen_office_card_relayed": false,
+      "door_log_held": false,
+      "data_center_entered": false,
+      "torres_reason_guessed": false,
+      "door_log_reasoned_first": false,
+      "door_log_hinted": false,
+      "owen_refused_password": false,
+      "spare_badge_taken": false,
+      "torres_fight_offered": false,
+      "torres_hostile": false,
+      "torres_called_in": false
+    },
+    "npcs": [
+      {
+        "id": "opening_briefing",
+        "npcType": "person",
+        "storyPath": "scenarios/m05_insider_trading/ink/m05_insider_trading_opening.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "director_netherton",
+        "npcType": "person",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "agent_nightshade",
+        "npcType": "person",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "agent_0x99_handler",
+        "npcType": "phone",
+        "storyPath": "scenarios/m05_insider_trading/ink/m05_phone_agent_0x99.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "recruiter",
+        "npcType": "phone",
+        "storyPath": "scenarios/m05_insider_trading/ink/m05_phone_recruiter.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "patricia_phone",
+        "npcType": "phone",
+        "storyPath": "scenarios/m05_insider_trading/ink/m05_phone_patricia.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "closing_debrief_trigger",
+        "npcType": "person",
+        "storyPath": "scenarios/m05_insider_trading/ink/m05_closing_debrief.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "lisa_park",
+        "npcType": "person",
+        "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_lisa_park.json",
+        "currentKnot": "start",
+        "room": "break_room"
+      },
+      {
+        "id": "owen_gallagher",
+        "npcType": "person",
+        "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_owen_gallagher.json",
+        "currentKnot": "start",
+        "room": "open_office_area"
+      },
+      {
+        "id": "dr_halloran",
+        "npcType": "person",
+        "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_dr_halloran.json",
+        "currentKnot": "start",
+        "room": "research_lab"
+      },
+      {
+        "id": "patricia_morgan",
+        "npcType": "person",
+        "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_patricia_morgan.json",
+        "currentKnot": "start",
+        "room": "patricia_office"
+      },
+      {
+        "id": "david_torres",
+        "npcType": "person",
+        "storyPath": "scenarios/m05_insider_trading/ink/m05_torres_confrontation.json",
+        "currentKnot": "start",
+        "room": "data_center"
+      }
+    ]
+  },
+  "m06_follow_the_money": {
+    "globals": {
+      "irina_confirmed_slot": false,
+      "read_settlement_log": false,
+      "entered_data_center": false,
+      "satoshi_stance": "",
+      "trader_heard_out": false,
+      "analyst_walked_through": false,
+      "player_name": "Agent 0x00",
+      "briefing_played": false,
+      "start_debrief_cutscene": false,
+      "debrief_played": false,
+      "mission_complete": false,
+      "flags_nag_sent": false,
+      "resolve_aim_open": false,
+      "asset_decision_deferred": false,
+      "architect_identity_found": false,
+      "assets_decided": false,
+      "assets_seized": false,
+      "monitoring_enabled": false,
+      "irina_fate_decided": false,
+      "irina_recruited": false,
+      "irina_arrested": false,
+      "satoshi_confronted": false,
+      "found_blockchain_evidence": false,
+      "found_architects_fund": false,
+      "found_password_lists": false,
+      "found_wallet_keys": false,
+      "irina_badge_obtained": false,
+      "irina_badge_cloned": false,
+      "irina_exec_badge_given": false,
+      "read_irina_notes": false,
+      "server_passphrase_known": false,
+      "flag1_submitted": false,
+      "flag2_submitted": false,
+      "flag3_submitted": false,
+      "flag4_submitted": false,
+      "financial_network_mapped": false,
+      "exchange_infiltrated": false,
+      "blockchain_debrief_available": false,
+      "fund_debrief_available": false,
+      "irina_ko": false,
+      "satoshi_ko": false,
+      "guard_waved_through": false,
+      "guard_resolved": false,
+      "guard_grace": false,
+      "guard_caught": false,
+      "guard_ko": false,
+      "trader_ko": false,
+      "trader_spoken": false,
+      "analyst_spoken": false,
+      "analyst_ko": false,
+      "cracking_guide_offered": false,
+      "cracking_guide_hint_given": false,
+      "privesc_guide_offered": false,
+      "privesc_guide_hint_given": false,
+      "rfid_guide_offered": false,
+      "rfid_guide_hint_given": false,
+      "recon_guide_offered": false,
+      "recon_guide_hint_given": false,
+      "distcc_guide_offered": false,
+      "distcc_guide_hint_given": false,
+      "lockpick_guide_offered": false,
+      "lockpick_guide_hint_given": false,
+      "cover_strained": false,
+      "irina_suspicious": false,
+      "ready_to_extract": false,
+      "irina_taken": false,
+      "minder_passed": false,
+      "minder_vouched": false,
+      "minder_hostile": false,
+      "minder_ko": false,
+      "minder_challenged": false,
+      "signing_record_found": false,
+      "console_tripped": false,
+      "console_warned": false,
+      "at_console": false,
+      "minder_walked": false,
+      "satoshi_spoken": false,
+      "irina_trust": 0,
+      "asked_research": false,
+      "asked_paperwork": false,
+      "asked_passwords": false,
+      "given_time": false,
+      "badge_discussion": false,
+      "shown_casualties": false,
+      "shown_architects_fund": false,
+      "moral_conflict_revealed": false,
+      "recruitment_offered": false,
+      "recruitment_refused": false,
+      "slot_checked_visit": false,
+      "server_room_entered": false
+    },
+    "npcs": [
+      {
+        "id": "opening_briefing_npc",
+        "npcType": "person",
+        "storyPath": "scenarios/m06_follow_the_money/ink/m06_opening_briefing.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "director_netherton",
+        "npcType": "person",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "agent_nightshade",
+        "npcType": "person",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "agent_0x99_handler",
+        "npcType": "phone",
+        "storyPath": "scenarios/m06_follow_the_money/ink/m06_phone_agent_0x99.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "closing_debrief_person",
+        "npcType": "person",
+        "storyPath": "scenarios/m06_follow_the_money/ink/m06_closing_debrief.json",
+        "currentKnot": "start",
+        "room": "reception_lobby"
+      },
+      {
+        "id": "checkpoint_guard",
+        "npcType": "person",
+        "storyPath": "scenarios/m06_follow_the_money/ink/m06_npc_checkpoint_guard.json",
+        "currentKnot": "start",
+        "room": "security_checkpoint"
+      },
+      {
+        "id": "irina_volkova",
+        "npcType": "person",
+        "storyPath": "scenarios/m06_follow_the_money/ink/m06_npc_irina_volkova.json",
+        "currentKnot": "start",
+        "room": "trading_floor"
+      },
+      {
+        "id": "trader_npc",
+        "npcType": "person",
+        "storyPath": "scenarios/m06_follow_the_money/ink/m06_npc_trader.json",
+        "currentKnot": "start",
+        "room": "trading_floor"
+      },
+      {
+        "id": "blockchain_analyst",
+        "npcType": "person",
+        "storyPath": "scenarios/m06_follow_the_money/ink/m06_npc_analyst.json",
+        "currentKnot": "start",
+        "room": "blockchain_lab"
+      },
+      {
+        "id": "satoshi_nakamoto",
+        "npcType": "person",
+        "storyPath": "scenarios/m06_follow_the_money/ink/m06_satoshi_confrontation.json",
+        "currentKnot": "start",
+        "room": "satoshi_office"
+      },
+      {
+        "id": "satoshi_minder",
+        "npcType": "person",
+        "storyPath": "scenarios/m06_follow_the_money/ink/m06_npc_minder.json",
+        "currentKnot": "start",
+        "room": "executive_wing"
+      }
+    ]
+  },
+  "m07_architects_gambit": {
+    "globals": {
+      "player_name": "Agent 0x00",
+      "briefing_played": false,
+      "mission_complete": false,
+      "start_debrief_cutscene": false,
+      "debrief_played": false,
+      "architect_signoff_started": false,
+      "architect_signoff_done": false,
+      "architect_contact": false,
+      "flags_nag_sent": false,
+      "debrief_requested": false,
+      "debrief_timer_fired": false,
+      "architect_echo_heard": false,
+      "hurt_line_said": false,
+      "elena_met": false,
+      "team_assignment": "",
+      "team_assigned": false,
+      "projection_revised": false,
+      "team_redirected": false,
+      "redirect_window_closed": false,
+      "redirect_declined": false,
+      "revision_found_open": false,
+      "revision_before_commit": false,
+      "decode_read_open": false,
+      "decode_before_commit": false,
+      "architect_t20_played": false,
+      "architect_t10_played": false,
+      "architect_t5_played": false,
+      "architect_t1_played": false,
+      "countdown_expired": false,
+      "cascade_armed": false,
+      "scada_door_reached": false,
+      "logged_in_before_door": false,
+      "hollis_resolved": "",
+      "hollis_backed_off": false,
+      "hollis_cloned": false,
+      "elena_outcome": "",
+      "mercer_fate": "",
+      "mercer_stance": "",
+      "mercer_told_diversion": false,
+      "park_resolved": "",
+      "debrief_stance": "",
+      "hollis_ko": false,
+      "elena_ko": false,
+      "mercer_ko": false,
+      "park_ko": false,
+      "flag1_submitted": false,
+      "flag2_submitted": false,
+      "flag3_submitted": false,
+      "flag4_submitted": false,
+      "found_coordination_traffic": false,
+      "verdict_sent": false,
+      "verdict_from_elena": false,
+      "badge_obtained": false,
+      "maintenance_key_found": false,
+      "vault_pin_found": false,
+      "scada_password_found": false,
+      "visitor_log_read": false,
+      "casualty_projection_found": false,
+      "renewal_signoff_read": false,
+      "generator_hall_reached": false,
+      "vault_entered": false,
+      "splice_found": false,
+      "inside_reached": false,
+      "server_hall_reached": false,
+      "grid_saved": false,
+      "found_tomb_gamma": false,
+      "found_mole_evidence": false,
+      "rfid_guide_offered": false,
+      "rfid_guide_hint_given": false,
+      "lockpicking_guide_offered": false,
+      "lockpicking_guide_hint_given": false,
+      "recon_guide_offered": false,
+      "recon_guide_hint_given": false,
+      "ssh_guide_offered": false,
+      "ssh_guide_hint_given": false,
+      "vm_terminal_used": false,
+      "privesc_guide_offered": false,
+      "privesc_guide_hint_given": false
+    },
+    "npcs": [
+      {
+        "id": "opening_briefing_cutscene",
+        "npcType": "person",
+        "storyPath": "scenarios/m07_architects_gambit/ink/m07_opening_briefing.json",
+        "currentKnot": "start",
+        "room": "security_checkpoint"
+      },
+      {
+        "id": "agent_0x99",
+        "npcType": "phone",
+        "storyPath": "scenarios/m07_architects_gambit/ink/m07_phone_agent_0x99.json",
+        "currentKnot": "start",
+        "room": "security_checkpoint"
+      },
+      {
+        "id": "ray_hollis",
+        "npcType": "person",
+        "storyPath": "scenarios/m07_architects_gambit/ink/m07_npc_ray_hollis.json",
+        "currentKnot": "start",
+        "room": "security_checkpoint"
+      },
+      {
+        "id": "the_architect",
+        "npcType": "phone",
+        "storyPath": "scenarios/m07_architects_gambit/ink/m07_architect_comms.json",
+        "currentKnot": "start",
+        "room": "security_checkpoint"
+      },
+      {
+        "id": "closing_debrief",
+        "npcType": "person",
+        "storyPath": "scenarios/m07_architects_gambit/ink/m07_closing_debrief.json",
+        "currentKnot": "start",
+        "room": "security_checkpoint"
+      },
+      {
+        "id": "elena_rodriguez",
+        "npcType": "person",
+        "storyPath": "scenarios/m07_architects_gambit/ink/m07_npc_elena_rodriguez.json",
+        "currentKnot": "start",
+        "room": "server_room"
+      },
+      {
+        "id": "james_mercer",
+        "npcType": "person",
+        "storyPath": "scenarios/m07_architects_gambit/ink/m07_npc_james_mercer.json",
+        "currentKnot": "start",
+        "room": "scada_control"
+      },
+      {
+        "id": "thomas_park",
+        "npcType": "person",
+        "storyPath": "scenarios/m07_architects_gambit/ink/m07_npc_thomas_park.json",
+        "currentKnot": "start",
+        "room": "cable_vault"
+      }
+    ]
+  },
+  "m08_the_mole": {
+    "globals": {
+      "vector_seen": false,
+      "phantom_seen": false,
+      "nightshade_seen": false,
+      "named_before_box": false,
+      "named_by_director": false,
+      "named_by_hax": false,
+      "nightshade_tipped_off": false,
+      "nightshade_tidied": false,
+      "triple_agent_first_payment": false,
+      "audit_warned": false,
+      "go_bag_lining_known": false,
+      "go_bag_read_named": false,
+      "player_name": "Agent 0x00",
+      "briefing_played": false,
+      "brief_taken": false,
+      "server_room_entered": false,
+      "archives_entered": false,
+      "mission_complete": false,
+      "start_debrief_cutscene": false,
+      "debrief_played": false,
+      "vector_interviewed": false,
+      "phantom_interviewed": false,
+      "nightshade_interviewed": false,
+      "suspect_theory": "",
+      "vector_alibi_known": false,
+      "phantom_alibi_known": false,
+      "nightshade_suspected": false,
+      "accused_vector": false,
+      "accused_phantom": false,
+      "accused_nightshade": false,
+      "found_gitlist_vuln": false,
+      "found_leaked_creds": false,
+      "found_architect_comms": false,
+      "found_access_logs": false,
+      "found_nightshade_profile": false,
+      "found_deep_state_manual": false,
+      "database_theft_understood": false,
+      "found_phantom_lead": false,
+      "found_access_logs_hint": false,
+      "found_architect_comms_local": false,
+      "found_timeline": false,
+      "badge_cloned": false,
+      "flag1_submitted": false,
+      "flag2_submitted": false,
+      "flag3_submitted": false,
+      "flag4_submitted": false,
+      "all_flags_submitted": false,
+      "mole_identified": false,
+      "nightshade_arrested": false,
+      "nightshade_triple_agent": false,
+      "fate_decided": false,
+      "tomb_gamma_location_known": false,
+      "debrief_stance": "",
+      "netherton_ko": false,
+      "nightshade_ko": false,
+      "vector_ko": false,
+      "phantom_ko": false,
+      "recon_guide_offered": false,
+      "recon_guide_hint_given": false,
+      "scanning_guide_offered": false,
+      "scanning_guide_hint_given": false,
+      "vulnanalysis_guide_offered": false,
+      "vulnanalysis_guide_hint_given": false,
+      "privesc_guide_offered": false,
+      "privesc_guide_hint_given": false,
+      "cyberchef_guide_offered": false,
+      "cyberchef_guide_hint_given": false,
+      "gitsecrets_guide_offered": false,
+      "gitsecrets_guide_hint_given": false,
+      "suite_code": "5386",
+      "suite_code_found": false,
+      "found_badge_audit": false,
+      "named_on_evidence": false,
+      "audit_misread": false,
+      "audit_closed": false,
+      "vector_audit_confirmed": false,
+      "nightshade_audit_confirmed": false,
+      "found_go_bag": false,
+      "hax_ko": false,
+      "hax_person_met": false,
+      "netherton_card_taken": false,
+      "debrief_backstop_fired": false,
+      "netherton_card_cloned": false,
+      "nightshade_print_lifted": false,
+      "access_nudge_sent": false,
+      "nightshade_ko_before_fate": false
+    },
+    "npcs": [
+      {
+        "id": "opening_briefing_cutscene",
+        "npcType": "person",
+        "storyPath": "scenarios/m08_the_mole/ink/m08_opening_briefing.json",
+        "currentKnot": "start",
+        "room": "main_lobby"
+      },
+      {
+        "id": "receptionist_ai",
+        "npcType": "person",
+        "storyPath": "scenarios/m08_the_mole/ink/m08_receptionist_ai.json",
+        "currentKnot": "start",
+        "room": "main_lobby"
+      },
+      {
+        "id": "agent_0x99",
+        "npcType": "phone",
+        "storyPath": "scenarios/m08_the_mole/ink/m08_phone_agent_0x99.json",
+        "currentKnot": "start",
+        "room": "main_lobby"
+      },
+      {
+        "id": "closing_debrief",
+        "npcType": "person",
+        "storyPath": "scenarios/m08_the_mole/ink/m08_closing_debrief.json",
+        "currentKnot": "start",
+        "room": "main_lobby"
+      },
+      {
+        "id": "director_netherton",
+        "npcType": "person",
+        "storyPath": "scenarios/m08_the_mole/ink/m08_director_netherton.json",
+        "currentKnot": "start",
+        "room": "director_office"
+      },
+      {
+        "id": "agent_vector",
+        "npcType": "person",
+        "storyPath": "scenarios/m08_the_mole/ink/m08_suspect_vector.json",
+        "currentKnot": "start",
+        "room": "operations_floor"
+      },
+      {
+        "id": "background_analyst",
+        "npcType": "person",
+        "storyPath": "scenarios/m08_the_mole/ink/m08_background_analyst.json",
+        "currentKnot": "start",
+        "room": "operations_floor"
+      },
+      {
+        "id": "agent_phantom",
+        "npcType": "person",
+        "storyPath": "scenarios/m08_the_mole/ink/m08_suspect_phantom.json",
+        "currentKnot": "start",
+        "room": "intel_analysis"
+      },
+      {
+        "id": "agent_nightshade",
+        "npcType": "person",
+        "storyPath": "scenarios/m08_the_mole/ink/m08_suspect_nightshade.json",
+        "currentKnot": "start",
+        "room": "cryptography_lab"
+      },
+      {
+        "id": "nightshade_confrontation",
+        "npcType": "person",
+        "storyPath": "scenarios/m08_the_mole/ink/m08_nightshade_confrontation.json",
+        "currentKnot": "start",
+        "room": "interrogation_room"
+      },
+      {
+        "id": "agent_0x99_person",
+        "npcType": "person",
+        "storyPath": "scenarios/m08_the_mole/ink/m08_agent_0x99.json",
+        "currentKnot": "start",
+        "room": "break_room"
+      },
+      {
+        "id": "background_agent",
+        "npcType": "person",
+        "storyPath": "scenarios/m08_the_mole/ink/m08_background_agent.json",
+        "currentKnot": "start",
+        "room": "break_room"
+      }
+    ]
+  },
+  "m09_digital_archaeology": {
+    "globals": {
+      "recruiter_offer": "",
+      "deck_pulled": "",
+      "sleeper_named": false,
+      "sleeper_shortlist": false,
+      "recruiter_secret": "",
+      "hax_confession_answer": "",
+      "albion_notified": false,
+      "nightshade_shown_file": false,
+      "reading_finished": false,
+      "cage_bin": "",
+      "legacy_files_saved": false,
+      "alpha_annotations_read": false,
+      "raid_team_answer": "",
+      "noor_told": false,
+      "noor_ko": false,
+      "old_coyote_ko": false,
+      "old_coyote_told": false,
+      "sorensen_fate": "left",
+      "tran_outcome": "left",
+      "reading_told_hax": false,
+      "memo_stance": "",
+      "kowalczyk_reply": "",
+      "schedule_read": false,
+      "briefing_played": false,
+      "flag1_submitted": false,
+      "flag2_submitted": false,
+      "flag3_submitted": false,
+      "flag4_submitted": false,
+      "stacks_entered": false,
+      "cage_opened": false,
+      "in_cage": false,
+      "nightshade_file_held": false,
+      "notebook_read": false,
+      "legacy_clock_run": false,
+      "ledger_page_seen": false,
+      "printed_ledger_read": false,
+      "reading_found": false,
+      "salvage_keypad_seen": false,
+      "tape_room_entered": false,
+      "salvage_opened": false,
+      "tran_alerted": false,
+      "office_entered": false,
+      "invoice_booked": false,
+      "alpha_deck_used": false,
+      "alpha_clip_played": false,
+      "alpha_annotations_opened": false,
+      "hatch_talked": false,
+      "bin_chosen": false,
+      "maintenance_code_used": false,
+      "hand_matched": false,
+      "ledger_read_heard": false,
+      "recruiter_call_started": false,
+      "recruiter_said_yes": false,
+      "recruiter_gone": false,
+      "deck_choice_made": false,
+      "afterwards_heard": false,
+      "torres_called": false,
+      "gary_called": false,
+      "identity_scene_started": false,
+      "identity_scene_done": false,
+      "identity_name_said": false,
+      "hour_read_started": false,
+      "hour_read_done": false,
+      "hour_read_choice_reached": false,
+      "tesseract_call_started": false,
+      "tesseract_call_done": false,
+      "start_debrief": false,
+      "debrief_notice_before": false,
+      "debrief_played": false,
+      "report_done": false,
+      "catalogue_guide_offered": false,
+      "catalogue_guide_hint_given": false,
+      "ledger_guide_offered": false,
+      "ledger_guide_hint_given": false,
+      "tomb_beta_guide_offered": false,
+      "tomb_beta_guide_hint_given": false,
+      "archive_code_guide_offered": false,
+      "archive_code_guide_hint_given": false,
+      "rent_ledger_read": false,
+      "refit_ledger_read": false,
+      "danny_sheet_read": false,
+      "case_file_read": false,
+      "legacy_box_read": false,
+      "noor_box_read": false,
+      "legacy_remark_sent": false,
+      "reeves_sheet_read": false,
+      "asset_tag_read": false,
+      "dock_done": false,
+      "debrief_closed": false,
+      "stacks_card_cloned": false,
+      "noor_met": false,
+      "albion_folder_opened": false,
+      "memo_read": false,
+      "archive_guard_ko": false,
+      "m01_final_choice": "",
+      "m01_maya_ko": false,
+      "m01_kevin_ko": false,
+      "m01_sarah_ko": false,
+      "m02_gary_protected": false,
+      "m02_insider_asset_arrested": false,
+      "m02_reeves_fate": "",
+      "m02_patient_assaulted": false,
+      "m02_exposed_hospital": false,
+      "m02_ghost_deal_accepted": false,
+      "m02_paid_ransom": false,
+      "m03_victoria_fate": "",
+      "m03_danny_fate": "",
+      "m03_danny_ko": false,
+      "m03_directive_decoded": false,
+      "m04_crew_lost": false,
+      "m04_disclosure_choice": "",
+      "m04_voltage_captured": false,
+      "m04_lore_safehouse_address_found": false,
+      "m05_recruiter_deal_accepted": false,
+      "m05_recruiter_deal_confessed": false,
+      "m05_found_pipeline_list": false,
+      "m05_torres_turned": false,
+      "m05_final_choice": "",
+      "m06_architect_identity_found": false,
+      "m06_monitoring_enabled": false,
+      "m06_irina_recruited": false,
+      "m06_minder_walked": false,
+      "m06_assets_seized": false,
+      "m07_teacher_discussed": false,
+      "m07_architect_echo_heard": false,
+      "m07_team_assignment": "",
+      "m07_debrief_stance": "",
+      "m07_found_tomb_gamma": false,
+      "m08_nightshade_triple_agent": false,
+      "m08_nightshade_arrested": false,
+      "m08_nightshade_ko_before_fate": false,
+      "m08_tomb_gamma_location_known": false,
+      "m08_nightshade_tidied": false,
+      "m08_debrief_stance": "",
+      "m08_netherton_ko": false,
+      "m08_netherton_hostile": false,
+      "m08_hax_ko": false,
+      "m08_accused_vector": false,
+      "m08_accused_phantom": false,
+      "m08_named_on_evidence": false,
+      "m01_completed": false,
+      "m02_completed": false,
+      "m03_completed": false,
+      "m04_completed": false,
+      "m05_completed": false,
+      "m06_completed": false,
+      "m07_completed": false,
+      "m08_completed": false
+    },
+    "npcs": [
+      {
+        "id": "agent_0x99",
+        "npcType": "phone",
+        "storyPath": "scenarios/m09_digital_archaeology/ink/m09_phone_agent0x99.json",
+        "currentKnot": "start",
+        "room": "loading_dock"
+      },
+      {
+        "id": "recruiter",
+        "npcType": "phone",
+        "storyPath": "scenarios/m09_digital_archaeology/ink/m09_phone_recruiter.json",
+        "currentKnot": "start",
+        "room": "loading_dock"
+      },
+      {
+        "id": "nightshade_phone",
+        "npcType": "phone",
+        "storyPath": "scenarios/m09_digital_archaeology/ink/m09_phone_nightshade.json",
+        "currentKnot": "start",
+        "room": "loading_dock"
+      },
+      {
+        "id": "torres_phone",
+        "npcType": "phone",
+        "storyPath": "scenarios/m09_digital_archaeology/ink/m09_phone_torres.json",
+        "currentKnot": "start",
+        "room": "loading_dock"
+      },
+      {
+        "id": "gary_phone",
+        "npcType": "phone",
+        "storyPath": "scenarios/m09_digital_archaeology/ink/m09_phone_gary.json",
+        "currentKnot": "start",
+        "room": "loading_dock"
+      },
+      {
+        "id": "briefing_cutscene",
+        "npcType": "person",
+        "storyPath": "scenarios/m09_digital_archaeology/ink/m09_briefing.json",
+        "currentKnot": "start",
+        "room": "loading_dock"
+      },
+      {
+        "id": "closing_debrief",
+        "npcType": "person",
+        "storyPath": "scenarios/m09_digital_archaeology/ink/m09_closing_debrief.json",
+        "currentKnot": "start",
+        "room": "loading_dock"
+      },
+      {
+        "id": "noor_haddad",
+        "npcType": "person",
+        "storyPath": "scenarios/m09_digital_archaeology/ink/m09_noor_haddad.json",
+        "currentKnot": "start",
+        "room": "front_desk"
+      },
+      {
+        "id": "old_coyote",
+        "npcType": "person",
+        "storyPath": "scenarios/m09_digital_archaeology/ink/m09_old_coyote.json",
+        "currentKnot": "start",
+        "room": "open_stacks"
+      },
+      {
+        "id": "archive_guard",
+        "npcType": "person",
+        "storyPath": "scenarios/m09_digital_archaeology/ink/m09_archive_guard.json",
+        "currentKnot": "start",
+        "room": "open_stacks"
+      },
+      {
+        "id": "jesse_tran",
+        "npcType": "person",
+        "storyPath": "scenarios/m09_digital_archaeology/ink/m09_jesse_tran.json",
+        "currentKnot": "start",
+        "room": "server_closet"
+      },
+      {
+        "id": "sorensen_hatch",
+        "npcType": "person",
+        "storyPath": "scenarios/m09_digital_archaeology/ink/m09_sorensen_hatch.json",
+        "currentKnot": "start",
+        "room": "restricted_stacks"
+      },
+      {
+        "id": "sorensen",
+        "npcType": "person",
+        "storyPath": "scenarios/m09_digital_archaeology/ink/m09_sorensen_cage.json",
+        "currentKnot": "start",
+        "room": "restricted_cage"
+      },
+      {
+        "id": "sorensen_door",
+        "npcType": "person",
+        "storyPath": "scenarios/m09_digital_archaeology/ink/m09_sorensen_door.json",
+        "currentKnot": "door",
+        "room": "restricted_cage"
+      },
+      {
+        "id": "alpha_recording",
+        "npcType": "person",
+        "storyPath": "scenarios/m09_digital_archaeology/ink/m09_alpha_recording.json",
+        "currentKnot": "deck",
+        "room": "tape_room"
+      }
+    ]
+  },
+  "lab_tesseract_trials": {
+    "globals": {
+      "player_name": "Agent 0x00",
+      "briefing_played": false,
+      "comms_had": false,
+      "lockbox_open": false,
+      "locker_open": false,
+      "guest_terminal_open": false,
+      "corridor_open": false,
+      "library_open": false,
+      "special_collections_open": false,
+      "pigeonholes_open": false,
+      "drop_box_open": false,
+      "workshop_open": false,
+      "relay_opened": false,
+      "ghost_greeted": false,
+      "ghost_offer_made": false,
+      "ghost_offer_heard": false,
+      "decision_made": false,
+      "ending": "",
+      "warned_out_of_band": false,
+      "late_warning": false,
+      "report_read_claimed": "",
+      "refusal_reported": false,
+      "megan_file_read": false,
+      "megan_choice": "",
+      "megan_choice_made": false,
+      "ebcdic_seen": false,
+      "staff_list_read": false,
+      "lookalike_seen": false,
+      "fn04_offered": false,
+      "fn05_offered": false,
+      "fn06_offered": false,
+      "fn07_offered": false,
+      "fn08_offered": false,
+      "fn09_offered": false,
+      "fn10_offered": false,
+      "fn11_offered": false,
+      "fn07_had": false,
+      "fn10_had": false,
+      "start_debrief_cutscene": false
+    },
+    "npcs": [
+      {
+        "id": "briefing_cutscene",
+        "npcType": "person",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/opening_briefing.json",
+        "room": "foyer",
+        "currentKnot": "start"
+      },
+      {
+        "id": "agent_0x99",
+        "npcType": "phone",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/phone_agent_0x99.json",
+        "room": "foyer",
+        "currentKnot": "start"
+      },
+      {
+        "id": "ghost",
+        "npcType": "phone",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/phone_ghost.json",
+        "room": "foyer"
+      },
+      {
+        "id": "closing_debrief_person",
+        "npcType": "person",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/closing_debrief.json",
+        "room": "foyer",
+        "currentKnot": "start"
+      },
+      {
+        "id": "jordan_pike",
+        "npcType": "person",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/npc_jordan.json",
+        "room": "foyer",
+        "currentKnot": "start"
+      },
+      {
+        "id": "tom_shaw",
+        "npcType": "person",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/npc_tom.json",
+        "room": "teaching_lab",
+        "currentKnot": "start"
+      },
+      {
+        "id": "megan_oyelaran",
+        "npcType": "person",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/npc_megan.json",
+        "room": "common_room",
+        "currentKnot": "start"
+      },
+      {
+        "id": "cliffe_schreuders",
+        "npcType": "person",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/npc_cliffe.json",
+        "room": "common_room",
+        "currentKnot": "common_room"
+      },
+      {
+        "id": "sidhu_selvarajan",
+        "npcType": "person",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/npc_sidhu.json",
+        "room": "sidhu_office",
+        "currentKnot": "start"
+      },
+      {
+        "id": "cliffe_workshop",
+        "npcType": "person",
+        "storyPath": "scenarios/lab_tesseract_trials/ink/npc_cliffe.json",
+        "room": "workshop",
+        "currentKnot": "workshop"
+      }
+    ]
+  },
+  "sis02_energy": {
+    "globals": {
+      "briefing_played": false,
+      "helen_briefed": false,
+      "hmi_reviewed": false,
+      "incident_folder_read": false,
+      "battery_hall_badge_collected": false,
+      "anomaly_detected": false,
+      "historian_flatline_found": false,
+      "rate_of_change_viewed": false,
+      "compare_racks_viewed": false,
+      "gauge_verdict": "",
+      "shutdown_argument": "",
+      "jump_server_confirmed": false,
+      "jump_server_isolated": false,
+      "jump_server_threat_intel_viewed": false,
+      "sis_audit_reviewed": false,
+      "castletech_contacted": false,
+      "network_isolated": false,
+      "network_isolation_authorised": false,
+      "cable_pull_agreed": false,
+      "isolation_scope": "",
+      "tom_refused_unverified": false,
+      "tom_told_false_authority": false,
+      "sis_config_seen": false,
+      "sis_certification_seen": false,
+      "sis_tamper_confirmed": false,
+      "helen_patch_view_heard": false,
+      "marcus_airgap_view_heard": false,
+      "esd_stations_live": true,
+      "early_esd_activation": false,
+      "esd_before_dial": false,
+      "esd_activated": false,
+      "evidence_before_esd": "",
+      "bms_registers_exported": false,
+      "bms_registers_saved": false,
+      "entered_hall_in_gas_alarm": false,
+      "esd_pressed_inside_in_alarm": false,
+      "hydrogen_alarm": false,
+      "facility_evacuated": false,
+      "marcus_webb_contacted": false,
+      "network_isolation_requested": false,
+      "en001_claim_assessed": false,
+      "nis_form_read": false,
+      "nis_notified": false,
+      "nis_initial_choice": "",
+      "nis_deadline_missed": false,
+      "trent_water_notified": false,
+      "trent_water_raised": false,
+      "trent_water_verify_first": false,
+      "trent_lateral_ioc_viewed": false,
+      "facility_safe_state": false,
+      "priya_s_visible": false,
+      "en002_verdict": "",
+      "patch_decision": "",
+      "debrief_complete": false,
+      "network_architecture_reviewed": false
+    },
+    "npcs": [
+      {
+        "id": "helen_marsh",
+        "npcType": "person",
+        "storyPath": "scenarios/sis02_energy/ink/npc_helen_marsh.json",
+        "currentKnot": "start",
+        "room": "scada_control_room"
+      },
+      {
+        "id": "priya_s",
+        "npcType": "person",
+        "storyPath": "scenarios/sis02_energy/ink/npc_priya_s.json",
+        "currentKnot": "start",
+        "room": "scada_control_room"
+      },
+      {
+        "id": "marcus_webb",
+        "npcType": "phone",
+        "storyPath": "scenarios/sis02_energy/ink/npc_marcus_webb.json",
+        "currentKnot": "start",
+        "room": "scada_control_room"
+      },
+      {
+        "id": "tom_hadley",
+        "npcType": "phone",
+        "storyPath": "scenarios/sis02_energy/ink/npc_tom_hadley.json",
+        "currentKnot": "start",
+        "room": "scada_control_room"
+      }
+    ]
+  },
+  "m10_full_disclosure": {
+    "globals": {
+      "ending": "",
+      "database_outcome": "",
+      "sleeper_caught": false,
+      "wrong_accusation": false,
+      "head_start_out": "",
+      "partial_release": "none",
+      "media_story_ran": false,
+      "raid_clock": "t0145",
+      "flag1_submitted": false,
+      "flag2_submitted": false,
+      "flag3_submitted": false,
+      "flag4_submitted": false,
+      "briefing_played": false,
+      "briefing_done": false,
+      "aside_done": false,
+      "whodunit_live": true,
+      "whodunit_open": false,
+      "door_scene_done": false,
+      "gate_console_used": false,
+      "split_started": false,
+      "pair_back": false,
+      "arakawa_call_done": false,
+      "breach_open": false,
+      "inner_door_open": false,
+      "stair_open": false,
+      "gallery_open": false,
+      "outer_lock_open": false,
+      "breach_announced": false,
+      "tripwire_armed": false,
+      "tripwire_tripped": false,
+      "wren_warned": false,
+      "security_alerted": false,
+      "ladder_used": false,
+      "override_held": false,
+      "plans_read": false,
+      "payment_read": false,
+      "forward_post_entered": false,
+      "blast_tunnel_entered": false,
+      "security_office_entered": false,
+      "workshop_entered": false,
+      "power_room_entered": false,
+      "server_hall_entered": false,
+      "gallery_entered": false,
+      "core_entered": false,
+      "ghost_call_done": false,
+      "ghost_watch_on_route": false,
+      "door_log_given": false,
+      "signout_read": false,
+      "what_went_out_given": false,
+      "clue_door_log": false,
+      "clue_alibi": false,
+      "clue_bench_log": false,
+      "casualty_sheet_read": false,
+      "margin_note_read": false,
+      "phone_voice_is_hax": false,
+      "cut_by_hand": false,
+      "cut_step": 0,
+      "gallery_shutter_cut": false,
+      "voltage_print_lifted": false,
+      "keypad_dusted": false,
+      "backdoor_channel_live": false,
+      "hax_jammed": false,
+      "at_keypad": false,
+      "lock_guard_challenged": false,
+      "lock_guard_known": false,
+      "gallery_rota_read": false,
+      "core_greeted": false,
+      "flag4_heard": false,
+      "case_heard": false,
+      "wren_entering": false,
+      "wren_stopped": false,
+      "quintero_enters_core": false,
+      "six_done": false,
+      "closing_done": false,
+      "vector_on_team": false,
+      "phantom_on_team": false,
+      "guide1_offered": false,
+      "guide2_offered": false,
+      "guide3_offered": false,
+      "guide4_offered": false,
+      "guide1_given": false,
+      "guide2_given": false,
+      "guide3_given": false,
+      "guide4_given": false,
+      "quintero_stance": "",
+      "nightshade_taken_in": false,
+      "payment_checked": false,
+      "nightshade_map_used": false,
+      "nightshade_deal": "",
+      "nightshade_tethered": false,
+      "ghost_sale": "",
+      "ghost_gift": "",
+      "ghost_answer": "",
+      "imran_outcome": "",
+      "gary_outcome": "",
+      "voltage_outcome": "",
+      "wendell_outcome": "",
+      "server_hall_warned": false,
+      "gallery_camera_blinded": false,
+      "asante_outcome": "untouched",
+      "asante_confirmed_sheet": false,
+      "victoria_line_deal": "",
+      "vos_secret_known": false,
+      "victoria_line_done": false,
+      "vos_secret_used": false,
+      "victoria_gallery": "",
+      "vos_outcome": "",
+      "head_start_killed": "",
+      "share_zero_day": "live",
+      "share_resale": "none",
+      "backdoor_closed": false,
+      "accused": "",
+      "officer_out": "",
+      "wren_held": false,
+      "kowalczyk_gone_ahead": false,
+      "kowalczyk_ko": false,
+      "quintero_ko": false,
+      "arakawa_ko": false,
+      "vector_ko": false,
+      "phantom_ko": false,
+      "malhotra_recalled": false,
+      "arakawa_recalled": false,
+      "quintero_recalled": false,
+      "vector_recalled": false,
+      "phantom_recalled": false,
+      "fonoti_ko": false,
+      "gary_ko": false,
+      "mercer_ko": false,
+      "wren_at_core": false,
+      "quintero_wounded": false,
+      "kowalczyk_answer": "",
+      "exchange_1": "",
+      "exchange_2": "",
+      "exchange_3": "",
+      "points_landed": 0,
+      "console_choice": "",
+      "join_step": 0,
+      "cold_lowered": false,
+      "fire_held": false,
+      "hax_asked_database": false,
+      "close_secure_cell": "",
+      "close_cell_name": "",
+      "close_cells": "",
+      "close_human": "",
+      "close_zero_day": "",
+      "hall_team_present": false,
+      "hall_guards_stood_down": false,
+      "six_open": false,
+      "hearing_open": false,
+      "citadel_open": false,
+      "teaser_enabled": false,
+      "night_closed": false,
+      "asante_ko": false,
+      "m01_final_choice": "",
+      "m01_player_launched_attack": false,
+      "m01_player_aborted_attack": false,
+      "m01_maya_ko": false,
+      "m01_kevin_ko": false,
+      "m01_sarah_ko": false,
+      "m02_ghost_deal_accepted": false,
+      "m02_exposed_hospital": false,
+      "m02_ghost_deal_refused": false,
+      "m02_ghost_keys_used": false,
+      "m02_gary_protected": false,
+      "m02_reeves_fate": "",
+      "m02_insider_asset_arrested": false,
+      "m02_insider_asset_escaped": false,
+      "m02_patient_assaulted": false,
+      "m02_receptionist_ko": false,
+      "m02_ward_nurse_ko": false,
+      "m02_raval_ko": false,
+      "m02_gary_ko": false,
+      "m02_dr_kim_ko": false,
+      "m02_bed4_manually_stabilised": false,
+      "m02_patient_bed4_deceased": false,
+      "m03_victoria_fate": "",
+      "m03_sterling_on_call_seen": false,
+      "m03_guard_bribed": false,
+      "m03_guard_knocked_out": false,
+      "m03_receptionist_ko": false,
+      "m03_danny_ko": false,
+      "m04_voltage_captured": false,
+      "m04_voltage_escaped": false,
+      "m04_voltage_print_on_bypass": false,
+      "m04_static_left": false,
+      "m04_static_left_alone": false,
+      "m04_vance_is_ally": false,
+      "m04_disclosure_choice": "",
+      "m04_crew_lost": false,
+      "m04_robert_vance_ko": false,
+      "m04_security_guard_ko": false,
+      "m05_entropy_program_exposed": false,
+      "m05_elena_treatment_funded": false,
+      "m05_final_choice": "",
+      "m05_found_pipeline_list": false,
+      "m05_recruiter_deal_accepted": false,
+      "m05_recruiter_deal_confessed": false,
+      "m05_lisa_ko": false,
+      "m05_owen_ko": false,
+      "m05_halloran_ko": false,
+      "m05_patricia_ko": false,
+      "m06_assets_seized": false,
+      "m06_satoshi_stance": "",
+      "m06_monitoring_enabled": false,
+      "m06_guard_ko": false,
+      "m06_trader_ko": false,
+      "m06_analyst_ko": false,
+      "m07_elena_outcome": "",
+      "m07_mercer_fate": "",
+      "m07_mercer_ko": false,
+      "m07_hollis_resolved": "",
+      "m07_debrief_stance": "",
+      "m07_team_assignment": "",
+      "m07_team_redirected": false,
+      "m07_countdown_expired": false,
+      "m07_architect_echo_heard": false,
+      "m07_elena_ko": false,
+      "m08_nightshade_triple_agent": false,
+      "m08_triple_agent_first_payment": false,
+      "m08_nightshade_arrested": false,
+      "m08_nightshade_ko_before_fate": false,
+      "m08_accused_vector": false,
+      "m08_accused_phantom": false,
+      "m08_vector_apologised": false,
+      "m08_phantom_apologised": false,
+      "m08_vector_hostile": false,
+      "m08_phantom_hostile": false,
+      "m08_offduty_agent_ko": false,
+      "m08_analyst_ko": false,
+      "m08_athena_ko": false,
+      "m08_netherton_ko": false,
+      "m08_hax_ko": false,
+      "m08_named_on_evidence": false,
+      "m09_nightshade_shown_file": false,
+      "m09_sleeper_named": false,
+      "m09_recruiter_offer": "",
+      "m09_deck_pulled": "",
+      "m09_sleeper_shortlist": false,
+      "m09_recruiter_secret": "",
+      "m09_reading_finished": false,
+      "m09_albion_notified": false,
+      "m09_cage_bin": "",
+      "m09_legacy_files_saved": false,
+      "m09_hax_confession_answer": "",
+      "m09_alpha_annotations_read": false,
+      "m09_memo_stance": "",
+      "m09_raid_team_answer": "",
+      "m09_kowalczyk_reply": "",
+      "m09_sorensen_fate": "",
+      "m09_tran_outcome": "",
+      "m09_noor_told": false,
+      "m09_alpha_clip_played": false,
+      "m09_reading_told_hax": false,
+      "m09_noor_ko": false,
+      "m09_old_coyote_ko": false,
+      "m09_debrief_notice_before": false,
+      "m01_completed": false,
+      "m02_completed": false,
+      "m03_completed": false,
+      "m04_completed": false,
+      "m05_completed": false,
+      "m06_completed": false,
+      "m07_completed": false,
+      "m08_completed": false,
+      "m09_completed": false
+    },
+    "npcs": [
+      {
+        "id": "director_netherton",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_director_netherton.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "hax_post",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_hax_post.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "agent_0x99",
+        "npcType": "phone",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_phone_agent0x99.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "nightshade_table",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_nightshade.json",
+        "currentKnot": "table",
+        "room": "forward_post"
+      },
+      {
+        "id": "nightshade_van",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_nightshade.json",
+        "currentKnot": "van",
+        "room": "forward_post"
+      },
+      {
+        "id": "nightshade_blast",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_nightshade.json",
+        "currentKnot": "blast",
+        "room": "forward_post"
+      },
+      {
+        "id": "kowalczyk_post",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk.json",
+        "currentKnot": "post",
+        "room": "forward_post"
+      },
+      {
+        "id": "kowalczyk_van",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk.json",
+        "currentKnot": "van",
+        "room": "forward_post"
+      },
+      {
+        "id": "quintero_post",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_quintero.json",
+        "currentKnot": "post",
+        "room": "forward_post"
+      },
+      {
+        "id": "arakawa_post",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_arakawa.json",
+        "currentKnot": "post",
+        "room": "forward_post"
+      },
+      {
+        "id": "arakawa_gate",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_arakawa.json",
+        "currentKnot": "gate",
+        "room": "forward_post"
+      },
+      {
+        "id": "arakawa_blast",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_arakawa.json",
+        "currentKnot": "blast",
+        "room": "forward_post"
+      },
+      {
+        "id": "minder_blast",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_minders.json",
+        "currentKnot": "blast",
+        "room": "forward_post"
+      },
+      {
+        "id": "malhotra_post",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_malhotra.json",
+        "currentKnot": "post",
+        "room": "forward_post"
+      },
+      {
+        "id": "vector_post",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_vector.json",
+        "currentKnot": "post",
+        "room": "forward_post"
+      },
+      {
+        "id": "phantom_post",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_phantom.json",
+        "currentKnot": "post",
+        "room": "forward_post"
+      },
+      {
+        "id": "minder_post",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_minders.json",
+        "currentKnot": "post",
+        "room": "forward_post"
+      },
+      {
+        "id": "voltage_van",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_voltage.json",
+        "currentKnot": "van",
+        "room": "forward_post"
+      },
+      {
+        "id": "ghost_phone",
+        "npcType": "phone",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_ghost_phone.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "victoria_line",
+        "npcType": "phone",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_victoria_line.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "vance_phone",
+        "npcType": "phone",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_vance_phone.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "elena_phone",
+        "npcType": "phone",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_elena_phone.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "six_oclock",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_six_oclock.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "hearing",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_hearing.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "citadel",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_citadel.json",
+        "currentKnot": "start",
+        "room": "forward_post"
+      },
+      {
+        "id": "tunnel_guard",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "tunnel",
+        "room": "blast_tunnel"
+      },
+      {
+        "id": "tunnel_guard_kettle",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "kettle",
+        "room": "blast_tunnel"
+      },
+      {
+        "id": "duty_guard",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "duty",
+        "room": "security_office"
+      },
+      {
+        "id": "duty_guard_b",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "duty_b",
+        "room": "security_office"
+      },
+      {
+        "id": "vector_so",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_vector.json",
+        "currentKnot": "so",
+        "room": "security_office"
+      },
+      {
+        "id": "kowalczyk_so",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk.json",
+        "currentKnot": "so",
+        "room": "security_office"
+      },
+      {
+        "id": "arakawa_so",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_arakawa.json",
+        "currentKnot": "so",
+        "room": "security_office"
+      },
+      {
+        "id": "quintero_so",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_quintero.json",
+        "currentKnot": "so",
+        "room": "security_office"
+      },
+      {
+        "id": "imran",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_imran.json",
+        "currentKnot": "workshop",
+        "room": "workshop_floor"
+      },
+      {
+        "id": "imran_watched",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_imran.json",
+        "currentKnot": "workshop",
+        "room": "workshop_floor"
+      },
+      {
+        "id": "gary_consultant",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_gary.json",
+        "currentKnot": "consultant",
+        "room": "workshop_floor"
+      },
+      {
+        "id": "gary_tech",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_gary.json",
+        "currentKnot": "tech",
+        "room": "workshop_floor"
+      },
+      {
+        "id": "workshop_guard",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "workshop",
+        "room": "workshop_floor"
+      },
+      {
+        "id": "kowalczyk_ws",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk.json",
+        "currentKnot": "ws",
+        "room": "workshop_floor"
+      },
+      {
+        "id": "arakawa_ws",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_arakawa.json",
+        "currentKnot": "ws",
+        "room": "workshop_floor"
+      },
+      {
+        "id": "quintero_ws",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_quintero.json",
+        "currentKnot": "ws",
+        "room": "workshop_floor"
+      },
+      {
+        "id": "wendell",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_wendell.json",
+        "currentKnot": "wendell",
+        "room": "power_room"
+      },
+      {
+        "id": "wendell_far",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_wendell.json",
+        "currentKnot": "far",
+        "room": "power_room"
+      },
+      {
+        "id": "voltage_power_captured",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_voltage.json",
+        "currentKnot": "captured",
+        "room": "power_room"
+      },
+      {
+        "id": "voltage_power",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_voltage.json",
+        "currentKnot": "escaped",
+        "room": "power_room"
+      },
+      {
+        "id": "static_power",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_static.json",
+        "currentKnot": "power",
+        "room": "power_room"
+      },
+      {
+        "id": "kowalczyk_pr",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk.json",
+        "currentKnot": "pr",
+        "room": "power_room"
+      },
+      {
+        "id": "arakawa_pr",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_arakawa.json",
+        "currentKnot": "pr",
+        "room": "power_room"
+      },
+      {
+        "id": "quintero_pr",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_quintero.json",
+        "currentKnot": "pr",
+        "room": "power_room"
+      },
+      {
+        "id": "asante",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_asante.json",
+        "currentKnot": "hall",
+        "room": "server_hall"
+      },
+      {
+        "id": "mercer",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_mercer.json",
+        "currentKnot": "hall",
+        "room": "server_hall"
+      },
+      {
+        "id": "hall_guard_a",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "hall_a",
+        "room": "server_hall"
+      },
+      {
+        "id": "hall_guard_b",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "hall_b",
+        "room": "server_hall"
+      },
+      {
+        "id": "kowalczyk_hall",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk.json",
+        "currentKnot": "hall",
+        "room": "server_hall"
+      },
+      {
+        "id": "arakawa_hall",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_arakawa.json",
+        "currentKnot": "hall",
+        "room": "server_hall"
+      },
+      {
+        "id": "quintero_hall",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_quintero.json",
+        "currentKnot": "hall",
+        "room": "server_hall"
+      },
+      {
+        "id": "victoria_gallery",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_victoria.json",
+        "currentKnot": "start",
+        "room": "gallery"
+      },
+      {
+        "id": "victoria_threat",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_victoria.json",
+        "currentKnot": "threat",
+        "room": "gallery"
+      },
+      {
+        "id": "vos",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_vos.json",
+        "currentKnot": "gallery",
+        "room": "gallery"
+      },
+      {
+        "id": "lock_guard",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_fonoti.json",
+        "currentKnot": "talk",
+        "room": "gallery"
+      },
+      {
+        "id": "monitor_guard",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "monitor",
+        "room": "gallery"
+      },
+      {
+        "id": "farah_guard",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "farah",
+        "room": "gallery"
+      },
+      {
+        "id": "reinforcement_a",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "reinforcement",
+        "room": "gallery"
+      },
+      {
+        "id": "reinforcement_b",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_guards.json",
+        "currentKnot": "reinforcement",
+        "room": "gallery"
+      },
+      {
+        "id": "quintero_lock",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_quintero.json",
+        "currentKnot": "lock",
+        "room": "gallery"
+      },
+      {
+        "id": "minder_lock",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_minders.json",
+        "currentKnot": "lock",
+        "room": "gallery"
+      },
+      {
+        "id": "nightshade_lock",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_nightshade.json",
+        "currentKnot": "lock",
+        "room": "gallery"
+      },
+      {
+        "id": "tesseract",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_tesseract.json",
+        "currentKnot": "start",
+        "room": "core"
+      },
+      {
+        "id": "kowalczyk_core_waiting",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk_core.json",
+        "currentKnot": "start",
+        "room": "core"
+      },
+      {
+        "id": "kowalczyk_core",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_kowalczyk_core.json",
+        "currentKnot": "start",
+        "room": "core"
+      },
+      {
+        "id": "quintero_core",
+        "npcType": "person",
+        "storyPath": "scenarios/m10_full_disclosure/ink/m10_quintero.json",
+        "currentKnot": "core",
+        "room": "core"
+      }
+    ]
+  },
+  "awareness_e1_invoice_fraud": {
+    "globals": {
+      "episode_e1_invoice_fraud_defend_percent": 0,
+      "episode_e1_invoice_fraud_defend_reportRate": 0,
+      "episode_e1_invoice_fraud_defend_complete": false,
+      "phish_supplier_contact_landed": false
+    },
+    "npcs": [
+      {
+        "id": "adaeze_okafor",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e1_invoice_fraud/ink/adaeze_okafor.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e1_invoice_fraud_defend": {
+    "globals": {
+      "episode_e1_invoice_fraud_defend_defend_percent": 0,
+      "episode_e1_invoice_fraud_defend_defend_reportRate": 0,
+      "episode_e1_invoice_fraud_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "adaeze_okafor",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e1_invoice_fraud_defend/ink/adaeze_okafor.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e10_downloads_and_fake_checks": {
+    "globals": {
+      "episode_e10_downloads_and_fake_checks_defend_percent": 0,
+      "episode_e10_downloads_and_fake_checks_defend_reportRate": 0,
+      "episode_e10_downloads_and_fake_checks_defend_complete": false,
+      "phish_order_colleague_attempts": 0
+    },
+    "npcs": [
+      {
+        "id": "niamh_doherty",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e10_downloads_and_fake_checks/ink/niamh_doherty.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e10_downloads_and_fake_checks_defend": {
+    "globals": {
+      "episode_e10_downloads_and_fake_checks_defend_defend_percent": 0,
+      "episode_e10_downloads_and_fake_checks_defend_defend_reportRate": 0,
+      "episode_e10_downloads_and_fake_checks_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "niamh_doherty",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e10_downloads_and_fake_checks_defend/ink/niamh_doherty.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e8_after_the_click": {
+    "globals": {
+      "episode_e8_after_the_click_defend_percent": 0,
+      "episode_e8_after_the_click_defend_reportRate": 0,
+      "episode_e8_after_the_click_defend_complete": false,
+      "phish_takeover_victim_landed": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e8_after_the_click/ink/anjali_rao.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e8_after_the_click_defend": {
+    "globals": {
+      "episode_e8_after_the_click_defend_defend_percent": 0,
+      "episode_e8_after_the_click_defend_defend_reportRate": 0,
+      "episode_e8_after_the_click_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e8_after_the_click_defend/ink/anjali_rao.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e14_social_media": {
+    "globals": {
+      "episode_e14_social_media_defend_percent": 0,
+      "episode_e14_social_media_defend_reportRate": 0,
+      "episode_e14_social_media_defend_complete": false,
+      "phish_df_cover_landed": false
+    },
+    "npcs": [
+      {
+        "id": "julian_sallow",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e14_social_media/ink/julian_sallow.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e14_social_media_defend": {
+    "globals": {
+      "episode_e14_social_media_defend_defend_percent": 0,
+      "episode_e14_social_media_defend_defend_reportRate": 0,
+      "episode_e14_social_media_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "julian_sallow",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e14_social_media_defend/ink/julian_sallow.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e13_ai_assistant": {
+    "globals": {
+      "episode_e13_ai_assistant_defend_percent": 0,
+      "episode_e13_ai_assistant_defend_reportRate": 0,
+      "episode_e13_ai_assistant_defend_complete": false,
+      "phish_assist_reader_landed": false
+    },
+    "npcs": [
+      {
+        "id": "gwen_pritchard",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e13_ai_assistant/ink/gwen_pritchard.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e13_ai_assistant_defend": {
+    "globals": {
+      "episode_e13_ai_assistant_defend_defend_percent": 0,
+      "episode_e13_ai_assistant_defend_defend_reportRate": 0,
+      "episode_e13_ai_assistant_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "gwen_pritchard",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e13_ai_assistant_defend/ink/gwen_pritchard.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e9_passwords": {
+    "globals": {
+      "episode_e9_passwords_defend_percent": 0,
+      "episode_e9_passwords_defend_reportRate": 0,
+      "episode_e9_passwords_defend_complete": false,
+      "guess_e9_landed": false
+    },
+    "npcs": [
+      {
+        "id": "nilesh_solanki",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e9_passwords/ink/nilesh_solanki.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e9_passwords_defend": {
+    "globals": {
+      "episode_e9_passwords_defend_defend_percent": 0,
+      "episode_e9_passwords_defend_defend_reportRate": 0,
+      "episode_e9_passwords_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "nilesh_solanki",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e9_passwords_defend/ink/nilesh_solanki.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e18_credential_attacks_at_scale": {
+    "globals": {
+      "episode_e18_credential_attacks_at_scale_defend_percent": 0,
+      "episode_e18_credential_attacks_at_scale_defend_reportRate": 0,
+      "episode_e18_credential_attacks_at_scale_defend_complete": false,
+      "guess_e18_landed": false
+    },
+    "npcs": [
+      {
+        "id": "ama_owusu",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e18_credential_attacks_at_scale/ink/ama_owusu.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e18_credential_attacks_at_scale_defend": {
+    "globals": {
+      "episode_e18_credential_attacks_at_scale_defend_defend_percent": 0,
+      "episode_e18_credential_attacks_at_scale_defend_defend_reportRate": 0,
+      "episode_e18_credential_attacks_at_scale_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "ama_owusu",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e18_credential_attacks_at_scale_defend/ink/ama_owusu.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e16_insider_risk": {
+    "globals": {
+      "episode_e16_insider_risk_defend_percent": 0,
+      "episode_e16_insider_risk_defend_reportRate": 0,
+      "episode_e16_insider_risk_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e16_insider_risk/ink/anjali_rao.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e16_insider_risk_defend": {
+    "globals": {
+      "episode_e16_insider_risk_defend_defend_percent": 0,
+      "episode_e16_insider_risk_defend_defend_reportRate": 0,
+      "episode_e16_insider_risk_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e16_insider_risk_defend/ink/anjali_rao.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e17_acceptable_use_defend": {
+    "globals": {
+      "episode_e17_acceptable_use_defend_defend_percent": 0,
+      "episode_e17_acceptable_use_defend_defend_reportRate": 0,
+      "episode_e17_acceptable_use_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "nilesh_solanki",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e17_acceptable_use_defend/ink/nilesh_solanki.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e19_malware_and_updates": {
+    "globals": {
+      "episode_e19_malware_and_updates_defend_percent": 0,
+      "episode_e19_malware_and_updates_defend_reportRate": 0,
+      "episode_e19_malware_and_updates_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e19_malware_and_updates/ink/anjali_rao.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e11_misdirected_data": {
+    "globals": {
+      "episode_e11_misdirected_data_defend_percent": 0,
+      "episode_e11_misdirected_data_defend_reportRate": 0,
+      "episode_e11_misdirected_data_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "tomasz_wisniewski",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e11_misdirected_data/ink/tomasz_wisniewski.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e11_misdirected_data_defend": {
+    "globals": {
+      "episode_e11_misdirected_data_defend_defend_percent": 0,
+      "episode_e11_misdirected_data_defend_defend_reportRate": 0,
+      "episode_e11_misdirected_data_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "tomasz_wisniewski",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e11_misdirected_data_defend/ink/tomasz_wisniewski.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e15_shadow_it": {
+    "globals": {
+      "episode_e15_shadow_it_defend_percent": 0,
+      "episode_e15_shadow_it_defend_reportRate": 0,
+      "episode_e15_shadow_it_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "nilesh_solanki",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e15_shadow_it/ink/nilesh_solanki.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e15_shadow_it_defend": {
+    "globals": {
+      "episode_e15_shadow_it_defend_defend_percent": 0,
+      "episode_e15_shadow_it_defend_defend_reportRate": 0,
+      "episode_e15_shadow_it_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "nilesh_solanki",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e15_shadow_it_defend/ink/nilesh_solanki.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e19_malware_and_updates_defend": {
+    "globals": {
+      "episode_e19_malware_and_updates_defend_defend_percent": 0,
+      "episode_e19_malware_and_updates_defend_defend_reportRate": 0,
+      "episode_e19_malware_and_updates_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e19_malware_and_updates_defend/ink/anjali_rao.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e20_remote_and_mobile_working": {
+    "globals": {
+      "episode_e20_remote_and_mobile_working_defend_percent": 0,
+      "episode_e20_remote_and_mobile_working_defend_reportRate": 0,
+      "episode_e20_remote_and_mobile_working_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "zainab_hussain",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e20_remote_and_mobile_working/ink/zainab_hussain.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e20_remote_and_mobile_working_defend": {
+    "globals": {
+      "episode_e20_remote_and_mobile_working_defend_defend_percent": 0,
+      "episode_e20_remote_and_mobile_working_defend_defend_reportRate": 0,
+      "episode_e20_remote_and_mobile_working_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "zainab_hussain",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e20_remote_and_mobile_working_defend/ink/zainab_hussain.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_finance_ab": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_complete": false
+    },
+    "npcs": [
+      {
+        "id": "graham_whitfield",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_finance_ab/ink/graham_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_finance_ab": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_complete": false
+    },
+    "npcs": [
+      {
+        "id": "graham_whitfield",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_finance_ab/ink/graham_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_finance_ba": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_complete": false
+    },
+    "npcs": [
+      {
+        "id": "joanne_pell",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_finance_ba/ink/joanne_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_finance_ba": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_complete": false
+    },
+    "npcs": [
+      {
+        "id": "joanne_pell",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_finance_ba/ink/joanne_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e3_helpdesk_reset_defend": {
+    "globals": {
+      "episode_e3_helpdesk_reset_defend_defend_percent": 0,
+      "episode_e3_helpdesk_reset_defend_defend_reportRate": 0,
+      "episode_e3_helpdesk_reset_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "darren_price",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e3_helpdesk_reset_defend/ink/darren_price.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e5_signin_pages_defend": {
+    "globals": {
+      "episode_e5_signin_pages_defend_defend_percent": 0,
+      "episode_e5_signin_pages_defend_defend_reportRate": 0,
+      "episode_e5_signin_pages_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "niamh_doherty",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e5_signin_pages_defend/ink/niamh_doherty.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_helpdesk_ab": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_complete": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_helpdesk_ab/ink/anjali_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_helpdesk_ab": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_complete": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_helpdesk_ab/ink/anjali_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_helpdesk_ba": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_complete": false
+    },
+    "npcs": [
+      {
+        "id": "sofia_marchetti",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_helpdesk_ba/ink/sofia_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_helpdesk_ba": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_complete": false
+    },
+    "npcs": [
+      {
+        "id": "sofia_marchetti",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_helpdesk_ba/ink/sofia_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e2_cv_lures_defend": {
+    "globals": {
+      "episode_e2_cv_lures_defend_defend_percent": 0,
+      "episode_e2_cv_lures_defend_defend_reportRate": 0,
+      "episode_e2_cv_lures_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "fatima_begum",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e2_cv_lures_defend/ink/fatima_begum.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_hr_ab": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_complete": false
+    },
+    "npcs": [
+      {
+        "id": "jun_watanabe",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_hr_ab/ink/jun_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_hr_ab": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_complete": false
+    },
+    "npcs": [
+      {
+        "id": "jun_watanabe",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_hr_ab/ink/jun_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_hr_ba": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_complete": false
+    },
+    "npcs": [
+      {
+        "id": "ibrahim_diallo",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_hr_ba/ink/ibrahim_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_hr_ba": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_complete": false
+    },
+    "npcs": [
+      {
+        "id": "ibrahim_diallo",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_hr_ba/ink/ibrahim_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e4_exec_whaling_defend": {
+    "globals": {
+      "episode_e4_exec_whaling_defend_defend_percent": 0,
+      "episode_e4_exec_whaling_defend_defend_reportRate": 0,
+      "episode_e4_exec_whaling_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "thandiwe_moyo",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e4_exec_whaling_defend/ink/thandiwe_moyo.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_executive_ab": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_complete": false
+    },
+    "npcs": [
+      {
+        "id": "yasmin_chaudhry",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_executive_ab/ink/yasmin_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_executive_ab": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_complete": false
+    },
+    "npcs": [
+      {
+        "id": "yasmin_chaudhry",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_executive_ab/ink/yasmin_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_executive_ba": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_complete": false
+    },
+    "npcs": [
+      {
+        "id": "julian_sallow",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_executive_ba/ink/julian_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_executive_ba": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_complete": false
+    },
+    "npcs": [
+      {
+        "id": "julian_sallow",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_executive_ba/ink/julian_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e6_texts_and_qr_defend": {
+    "globals": {
+      "episode_e6_texts_and_qr_defend_defend_percent": 0,
+      "episode_e6_texts_and_qr_defend_defend_reportRate": 0,
+      "episode_e6_texts_and_qr_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "chidi_okeke",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e6_texts_and_qr_defend/ink/chidi_okeke.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_mobile_ab": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_complete": false
+    },
+    "npcs": [
+      {
+        "id": "lerato_dlamini",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_mobile_ab/ink/lerato_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_mobile_ab": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_complete": false
+    },
+    "npcs": [
+      {
+        "id": "lerato_dlamini",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_mobile_ab/ink/lerato_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_mobile_ba": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_complete": false
+    },
+    "npcs": [
+      {
+        "id": "jun_watanabe",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_mobile_ba/ink/jun_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_mobile_ba": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_complete": false
+    },
+    "npcs": [
+      {
+        "id": "jun_watanabe",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_mobile_ba/ink/jun_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e7_voice_ceo_defend": {
+    "globals": {
+      "episode_e7_voice_ceo_defend_defend_percent": 0,
+      "episode_e7_voice_ceo_defend_defend_reportRate": 0,
+      "episode_e7_voice_ceo_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "agnieszka_duda",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e7_voice_ceo_defend/ink/agnieszka_duda.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e4_exec_whaling": {
+    "globals": {
+      "episode_e4_exec_whaling_defend_percent": 0,
+      "episode_e4_exec_whaling_defend_reportRate": 0,
+      "episode_e4_exec_whaling_defend_complete": false,
+      "phish_exec_pa_landed": false
+    },
+    "npcs": [
+      {
+        "id": "thandiwe_moyo",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e4_exec_whaling/ink/thandiwe_moyo.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e2_cv_lures": {
+    "globals": {
+      "episode_e2_cv_lures_defend_percent": 0,
+      "episode_e2_cv_lures_defend_reportRate": 0,
+      "episode_e2_cv_lures_defend_complete": false,
+      "phish_recruiter_contact_landed": false
+    },
+    "npcs": [
+      {
+        "id": "fatima_begum",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e2_cv_lures/ink/fatima_begum.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e6_texts_and_qr": {
+    "globals": {
+      "episode_e6_texts_and_qr_defend_percent": 0,
+      "episode_e6_texts_and_qr_defend_reportRate": 0,
+      "episode_e6_texts_and_qr_defend_complete": false,
+      "phish_mobile_staff_landed": false
+    },
+    "npcs": [
+      {
+        "id": "chidi_okeke",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e6_texts_and_qr/ink/chidi_okeke.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e3_helpdesk_reset": {
+    "globals": {
+      "episode_e3_helpdesk_reset_defend_percent": 0,
+      "episode_e3_helpdesk_reset_defend_reportRate": 0,
+      "episode_e3_helpdesk_reset_defend_complete": false,
+      "leila_reset_granted": false,
+      "pretext_quayholt_helpdesk_reset_outcome": ""
+    },
+    "npcs": [
+      {
+        "id": "darren_price",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e3_helpdesk_reset/ink/darren_price.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      },
+      {
+        "id": "leila_servicedesk",
+        "npcType": "phone",
+        "storyPath": "scenarios/awareness_e3_helpdesk_reset/ink/leila_servicedesk.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e5_signin_pages": {
+    "globals": {
+      "episode_e5_signin_pages_defend_percent": 0,
+      "episode_e5_signin_pages_defend_reportRate": 0,
+      "episode_e5_signin_pages_defend_complete": false,
+      "phish_sso_staff_landed": false
+    },
+    "npcs": [
+      {
+        "id": "niamh_doherty",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e5_signin_pages/ink/niamh_doherty.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_e7_voice_ceo": {
+    "globals": {
+      "episode_e7_voice_ceo_defend_percent": 0,
+      "episode_e7_voice_ceo_defend_reportRate": 0,
+      "episode_e7_voice_ceo_defend_complete": false,
+      "phish_ceo_voice_target_landed": false
+    },
+    "npcs": [
+      {
+        "id": "agnieszka_duda",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_e7_voice_ceo/ink/agnieszka_duda.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_general_v2_ab": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_complete": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_general_v2_ab/ink/anjali_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_general_v2_ba": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_complete": false
+    },
+    "npcs": [
+      {
+        "id": "darren_price",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_general_v2_ba/ink/darren_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_general_v2_ab": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_complete": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_general_v2_ab/ink/anjali_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_general_v2_ba": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_complete": false
+    },
+    "npcs": [
+      {
+        "id": "darren_price",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_general_v2_ba/ink/darren_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_core_17_annual_2027_defend": {
+    "globals": {
+      "episode_core_17_annual_2027_defend_defend_percent": 0,
+      "episode_core_17_annual_2027_defend_defend_reportRate": 0,
+      "episode_core_17_annual_2027_defend_defend_complete": false
+    },
+    "npcs": [
+      {
+        "id": "graham_whitfield",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_core_17_annual_2027_defend/ink/graham_whitfield.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_core_00_first_play": {
+    "globals": {
+      "episode_core_00_first_play_done": false
+    },
+    "npcs": [
+      {
+        "id": "anjali_rao",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_core_00_first_play/ink/anjali_rao.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_data_conduct_ab": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_complete": false
+    },
+    "npcs": [
+      {
+        "id": "tomasz_wisniewski",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_data_conduct_ab/ink/tomasz_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_pre_data_conduct_ba": {
+    "globals": {
+      "triage_pre_percent": 0,
+      "triage_pre_reportRate": 0,
+      "triage_pre_complete": false
+    },
+    "npcs": [
+      {
+        "id": "yusuf_demir",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_pre_data_conduct_ba/ink/yusuf_pre.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_data_conduct_ab": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_complete": false
+    },
+    "npcs": [
+      {
+        "id": "tomasz_wisniewski",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_data_conduct_ab/ink/tomasz_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  },
+  "awareness_post_data_conduct_ba": {
+    "globals": {
+      "triage_post_percent": 0,
+      "triage_post_reportRate": 0,
+      "triage_post_complete": false
+    },
+    "npcs": [
+      {
+        "id": "yusuf_demir",
+        "npcType": "person",
+        "storyPath": "scenarios/awareness_post_data_conduct_ba/ink/yusuf_post.json",
+        "currentKnot": "start",
+        "room": "training_room"
+      }
+    ]
+  }
+}

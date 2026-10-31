@@ -1,0 +1,45 @@
+TAP version 13
+# Subtest: isAtBottom allows a few px of rounding
+ok 1 - isAtBottom allows a few px of rounding
+  ---
+  duration_ms: 1.825159
+  ...
+# Subtest: the choices panel taking height after the scroll started puts the thread back at the bottom
+ok 2 - the choices panel taking height after the scroll started puts the thread back at the bottom
+  ---
+  duration_ms: 0.937373
+  ...
+# Subtest: a window resize keeps a pinned thread on its last bubble
+ok 3 - a window resize keeps a pinned thread on its last bubble
+  ---
+  duration_ms: 0.228219
+  ...
+# Subtest: the player scrolling up is not undone by a resize; scrolling back down pins again
+ok 4 - the player scrolling up is not undone by a resize; scrolling back down pins again
+  ---
+  duration_ms: 0.272393
+  ...
+# Subtest: the wheel mid smooth scroll counts as the player at once
+ok 5 - the wheel mid smooth scroll counts as the player at once
+  ---
+  duration_ms: 0.524305
+  ...
+# Subtest: watches the choices panel, every bubble and bubbles added later; destroy stops it all
+ok 6 - watches the choices panel, every bubble and bubbles added later; destroy stops it all
+  ---
+  duration_ms: 1.368588
+  ...
+# Subtest: works without ResizeObserver (old browser, node): pin still scrolls
+ok 7 - works without ResizeObserver (old browser, node): pin still scrolls
+  ---
+  duration_ms: 0.195435
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 167.194147

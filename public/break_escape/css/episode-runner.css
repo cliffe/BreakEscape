@@ -1,0 +1,125 @@
+/* Awareness episode runner (SE design 11 N1, packet P7-A). The layout around P7-B's views:
+   the step strip and Close in a bar, then one stage panel. Colours come from the neutral
+   skin's --aw-* tokens (css/awareness-skin.css); the fallbacks match it so the runner still
+   reads correctly if that file is missing. */
+
+.minigame-container[data-minigame="episode-runner"] .minigame-game-container { display: flex; flex-direction: column; min-height: 0; }
+
+.epr-root {
+    --aw-accent: #2f6f5e;
+    --aw-ink: #1f2933;
+    --aw-surface: #f6f8f7;
+    --aw-line: #cfd8d4;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    max-width: 100%;
+    font-family: var(--se-font-readable, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
+    color: var(--aw-ink);
+    background: var(--aw-surface);
+    box-sizing: border-box;
+}
+
+.epr-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border-bottom: 2px solid var(--aw-line);
+}
+.epr-strip { flex: 1 1 auto; min-width: 0; }
+.epr-strip .aw-strip { border-bottom: 0; }
+.epr-bar .se-overlay-close { flex: 0 0 auto; margin: 6px 10px; }
+
+/* padding-bottom (E8 F8): the scroll area keeps room below its last control, so the debrief Finish
+   button is fully scrollable into view at a tall viewport (1400x1000) rather than clipped at the fold. */
+.epr-body { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
+
+.epr-panel { padding: 16px; line-height: 1.45; }
+.epr-heading { margin: 0 0 8px; font-size: 22px; color: var(--aw-accent); }
+.epr-heading:focus { outline: none; }
+.epr-text { margin: 0 0 12px; font-size: 16px; max-width: 60ch; }
+/* batch 13: the send-off under the Episode finished panel */
+.epr-send-off { margin: 0 0 12px; padding: 10px 12px; font-size: 16px; max-width: 60ch; border-left: 4px solid var(--aw-accent, #2f6f8f); }
+.epr-scope {
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    max-width: 60ch;
+    font-size: 15px;
+    background: #fff;
+    border-left: 4px solid var(--aw-accent);
+}
+.epr-card-count { margin: 12px 0 0; font-size: 14px; }
+.epr-brief-card .epr-button + .epr-button { margin-left: 8px; }
+.epr-notice { margin: 0; font-size: 15px; color: #8a5a00; }
+.epr-notice:empty { display: none; }
+/* E14 F11: the write-stage "your draft starts again" reload note. */
+.epr-reload-note { margin: 4px 0 0; font-size: 14px; color: #52606d; }
+
+.epr-button {
+    margin-top: 14px;
+    padding: 8px 18px;
+    font: inherit;
+    font-weight: 700;
+    color: #fff;
+    background: var(--aw-accent);
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.epr-button:focus-visible { outline: 3px solid var(--aw-ink); outline-offset: 2px; }
+
+/* Facilitated mode (11 N5, P7-I): the group prompt and the pause between stages. Large
+   enough to read from across a room on a shared screen. */
+.epr-facilitator {
+    display: block;
+    margin: 12px 16px 0;
+    padding: 10px 14px;
+    max-width: 60ch;
+    font-size: 18px;
+    background: #fff;
+    border: 2px dashed var(--aw-accent);
+    border-radius: 4px;
+}
+.epr-panel .epr-facilitator { margin: 12px 0 0; }
+.epr-facilitator-label { display: block; font-size: 14px; font-weight: 700; color: var(--aw-accent); }
+.epr-facilitator-text { display: block; font-weight: 600; }
+.epr-pause .epr-text { font-size: 18px; }
+
+@media (max-width: 767px) {
+    .epr-bar { flex-wrap: wrap; }
+    .epr-panel { padding: 12px; }
+}
+
+/* The consequence sandbox (ENG-04): the `mistake` stage's own overlay. One beat at a time on a
+   light card; readable type, nothing under 13px. */
+.epr-sbx-root {
+    --aw-accent: #2f6f5e;
+    --aw-ink: #1f2933;
+    --aw-surface: #f6f8f7;
+    --aw-line: #cfd8d4;
+    font-family: var(--se-font-readable, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
+    color: var(--aw-ink);
+    box-sizing: border-box;
+    max-width: 640px;
+    max-height: min(92vh, 760px);
+    overflow-y: auto;
+    margin: 2vh auto;
+    padding: 12px;
+    background: var(--aw-surface);
+    line-height: 1.45;
+}
+.epr-sbx-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.epr-sbx-title { font-size: 14px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--aw-accent); }
+.epr-sbx-card { padding: 12px; background: #fff; border: 1px solid var(--aw-line); }
+.epr-sbx-intro { margin: 0 0 10px; font-size: 15px; color: #52606d; }
+.epr-sbx-heading { margin: 0 0 6px; font-size: 18px; color: var(--aw-accent); }
+.epr-sbx-heading:focus { outline: none; }
+.epr-sbx-situation { margin: 0 0 12px; font-size: 16px; max-width: 60ch; }
+.epr-sbx-options { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px; }
+.epr-sbx-legend { padding: 0; margin: 0 0 6px; font-size: 14px; font-weight: 700; }
+.epr-sbx-option { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; font-size: 16px; border: 1px solid var(--aw-line); border-radius: 4px; cursor: pointer; background: #fff; }
+.epr-sbx-radio { margin: 4px 0 0; flex: none; }
+.epr-sbx-picked { border-color: var(--aw-accent); background: #eef6f3; }
+.epr-sbx-confirm:disabled { opacity: 1; background: #d3dae2; color: #3a4452; cursor: default; }

@@ -1,0 +1,778 @@
+{
+  "abena_asante": {
+    "character_id": "45cf70d2-00e5-45ce-963e-8148a358a8ff",
+    "name": "Make portrait for Dr Abena Asante\nA tall Ghanaian-...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "adrian_tesseract": {
+    "character_id": "f23e1d84-4d61-498e-a4eb-e3a29155f5b1",
+    "name": "Make portrait for Dr Adrian Tesseract\nA lean, upri...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "agent_hax": {
+    "character_id": "52c4d2cc-aca3-4ee0-bfa6-20b526b6db6f",
+    "name": "A woman spy with long dark brown hair under a brow...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-29"
+  },
+  "agent_phantom": {
+    "character_id": "35cd6b16-d62c-431d-81fe-4e0b2194fb1b",
+    "name": "Make portrait for Agent Phantom\nA tall, easy-going...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "agent_vector": {
+    "character_id": "0daaefa6-72b4-4113-a736-248c00d8f44e",
+    "name": "Make portrait for Agent Vector\nA slim, slightly hu...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "amy_clarke": {
+    "character_id": "32c736ae-0ffa-48eb-b493-3fd0d71c19d0",
+    "name": "Make portrait for Amy Clarke\nA white British woman...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-03"
+  },
+  "athena": {
+    "character_id": "ddf2599c-c2e8-41f3-a023-18aa2e74561b",
+    "name": "Make portrait for ATHENA\nA holographic AI receptio...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "bernie_nwosu": {
+    "character_id": "923f3e6c-10c0-4f2e-afe9-4d65cbc9c55e",
+    "name": "A Black British woman of Nigerian heritage in her ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "cliffe_schreuders": {
+    "character_id": "6006155e-74f3-487c-847e-aec2dfa41512",
+    "name": "Man in his early forties, light skin tone, univers...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-06"
+  },
+  "cody_old_coyote": {
+    "character_id": "30db8608-97e0-46fc-9bb2-1860721e6585",
+    "name": "Make portrait for Cody Old Coyote\nA young Aps\u00e1aloo...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "dani_okonkwo": {
+    "character_id": "767f499f-074f-4067-bdb4-6f2b84789e48",
+    "name": "Make portrait for Dani Okonkwo\nA lean British-Nige...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "danny_foster": {
+    "character_id": "c0b52964-6a42-4be3-b9b0-2bb2da39ab0d",
+    "name": "Make portrait for Danny Foster\nA British security ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-12"
+  },
+  "david_osei": {
+    "character_id": "ca153084-c850-42c8-85fc-8ec685ec6bdb",
+    "name": "Make portrait for Hospital Clinical Engineer\nA Bla...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-02"
+  },
+  "david_torres": {
+    "character_id": "41eda13e-7ab3-4b81-9d8a-a698634b7698",
+    "name": "Make portrait for David Torres\nA Spanish man of ab...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "dev_malhotra": {
+    "character_id": "17bea81b-0912-4868-b9ac-3ed08f124c09",
+    "name": "Make portrait for Officer Dev Malhotra\nA slim Brit...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "elena_rodriguez": {
+    "character_id": "2f1f7a20-6606-4a07-b264-9330cbfdc312",
+    "name": "Make portrait for Elena Rodriguez\nA tall, athletic...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "farah_qureshi": {
+    "character_id": "39dfe7c3-8ef6-45b5-a240-d74e93f46ecd",
+    "name": "Make portrait for Farah Qureshi\nA Pakistani-Americ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "female_blowse_v2": {
+    "character_id": "df960bf2-20c6-4600-b725-44846cb0337f",
+    "name": "A woman with long wavy black hair, light skin, a r...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
+  "female_hacker_hood_down_v2": {
+    "character_id": "41542288-ce3e-4823-8c10-51c1586622ed",
+    "name": "A young woman hacker with dark brown hair tied up ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-29",
+    "idle_from": "9b005e8f-8923-41eb-b2dd-c70f963f68e9"
+  },
+  "female_hacker_hood_v2": {
+    "character_id": "c14d8060-5196-4812-adb8-5efff2d3b67b",
+    "name": "Woman, light skin tone, hacker. Wearing an all-bla...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "female_nurse1_v2": {
+    "character_id": "ac1ee7cd-57c9-4780-bee1-c740f289a33a",
+    "name": "Female curves. Nurse RN. A professional and friend...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-27"
+  },
+  "female_nurse2_v2": {
+    "character_id": "78997eba-8b6e-42bd-8502-35144cfac60f",
+    "name": "Nurse RN. A professional and friendly female healt...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-27"
+  },
+  "female_office_worker_v2": {
+    "character_id": "c7f54eae-f3cc-4358-980d-35d076247969",
+    "name": "A young woman office worker with shoulder-length w...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-29"
+  },
+  "female_scientist_v2": {
+    "character_id": "9179b19e-bd42-427d-b0ba-b27ea874ce16",
+    "name": "A young East Asian woman scientist with long strai...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-29"
+  },
+  "female_security_guard_v2": {
+    "character_id": "a394dbab-dc0e-4c6e-b74a-85a5e4c7b568",
+    "name": "Security Guard\nWoman, light skin tone, security gu...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "female_telecom_v2": {
+    "character_id": "c9ae81c0-04c7-4d6f-af99-437fd3ecd4b0",
+    "name": "A young woman telecoms engineer with brown hair ti...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-29"
+  },
+  "ffion_rees": {
+    "character_id": "19c3a98e-6cbc-429b-83d4-f6a517db285a",
+    "name": "Make portrait for Ffion Rees\nA Welsh woman recepti...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-12"
+  },
+  "fiona_hartley": {
+    "character_id": "21604761-bfe3-464c-b091-1deeb4842758",
+    "name": "Make portrait for Dr Fiona Hartley\nA white Scottis...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-03"
+  },
+  "gareth_fairbairn": {
+    "character_id": "46fc0e4f-fea2-45f4-841e-30f8e0c2af2c",
+    "name": "Make portrait for Gareth Fairbairn\nA white Scottis...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "gary_whitlock": {
+    "character_id": "2b2d5800-1695-4dcd-bdc4-593bc34e4b43",
+    "name": "Gary Whitlock A white British man in his late thir...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "graham_reeves": {
+    "character_id": "4909ebbd-79c1-47fb-99be-7889d50af44b",
+    "name": "A white British man in his early fifties, a plain-...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "halina_kowalczyk": {
+    "character_id": "a444c74f-b8ea-4d0a-b26e-c9e0eb98c29d",
+    "name": "Make portrait for Agent Halina Kowalczyk\nA sturdy,...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "hamza_iqbal": {
+    "character_id": "2298578f-deaa-49d9-b40a-d7f8b4e31886",
+    "name": "Make portrait for Hamza Iqbal\nA British Pakistani ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-03"
+  },
+  "hashchain_guard": {
+    "character_id": "429ff98c-3927-4eb8-9d37-0b2abd2c30f5",
+    "name": "Make portrait for the Checkpoint Guard\nA stocky Br...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "helen_carver": {
+    "character_id": "588ca268-fa48-4c24-84a8-54772f85dc83",
+    "name": "Make portrait for Helen Carver\nA white British wom...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-03"
+  },
+  "imran_siddiqui": {
+    "character_id": "0f14b104-c083-4b06-adf4-d28592be8965",
+    "name": "Make portrait for Imran Siddiqui\nA slim, boyish Br...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "irina_volkova": {
+    "character_id": "95fc9762-3a9d-4bff-9892-b1876aa69c95",
+    "name": "Make portrait for Dr Irina Volkova\nA slender white...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "james_mercer": {
+    "character_id": "2e9acd6e-94b2-4dc0-bc42-c939d179fa7a",
+    "name": "Make portrait for Dr James Mercer\nA lean, tall whi...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "jesse_tran": {
+    "character_id": "0492a91f-7896-4b4c-8142-362161eebfd7",
+    "name": "Make portrait for Jesse Tran\nA lanky Vietnamese-Am...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "junior_analyst": {
+    "character_id": "83c3edaa-ea1c-4130-a310-64adf6dd3713",
+    "name": "Make portrait for Junior Analyst\nA British-Indian ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "kemal_aydin": {
+    "character_id": "4a3ac519-2fe1-41b1-a8fd-ba5f0541a5ad",
+    "name": "Make portrait for Kemal Aydin\nA tall, lean but bro...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-16"
+  },
+  "kenji_arakawa": {
+    "character_id": "cbe8850d-35b7-4447-b707-3e4d30c222b6",
+    "name": "Make portrait for Officer Kenji Arakawa\nA fit, com...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "lisa_park": {
+    "character_id": "d652c8a0-906c-4762-9679-b0ac0af08855",
+    "name": "Make portrait for Lisa Park\nA petite British-Korea...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "lyle_dillard": {
+    "character_id": "274429e7-ac0b-476f-a1e9-973922a5cae9",
+    "name": "Make portrait for Lyle Dillard\nA big, heavy-set wh...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "male_hacker_hood_down_v2": {
+    "character_id": "fa5a8818-00da-475c-87fb-4b21d84e39b2",
+    "name": "Make portrait for Hacker\nMan, light skin tone, hac...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-27"
+  },
+  "male_hacker_hood_v2": {
+    "character_id": "e50525a5-0139-439f-83a5-31461054c3ac",
+    "name": "Hacker in a hoodie. Hood up, black obscured face s...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-27",
+    "idle_from": "b57e62b8-2e5a-4eff-982b-303a4b7f576f"
+  },
+  "male_nerd_v2": {
+    "character_id": "ae175532-182f-435a-8f0a-d7408d88eb2f",
+    "name": "A young man with short dark hair, a full dark bear...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
+  "male_office_worker_v2": {
+    "character_id": "f9fdf0ce-34a5-424e-a4c1-af43aaaa8f37",
+    "name": "A man office worker in his forties with short dark...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
+  "male_security_guard_v2": {
+    "character_id": "7f4b98d0-6ef6-4064-8f01-c032e0cd8050",
+    "name": "Man, light skin tone, security guard. Wearing a da...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "male_spy_v2": {
+    "character_id": "7f1e42c3-a32c-49b3-ba27-f9190b4c6a93",
+    "name": "A man spy with light skin, a brown fedora pulled l...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
+  "male_telecom_v2": {
+    "character_id": "7295d940-3676-431e-8a55-b3124508f56f",
+    "name": "A man telecoms engineer with short brown hair unde...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
+  "margaret_sorensen": {
+    "character_id": "866ff41a-08ea-48a0-a07e-1ae403d904a8",
+    "name": "Make portrait for Margaret Sorensen\nA small, uprig...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "marisol_quintero": {
+    "character_id": "23f73103-d882-4376-9397-922e3c6c68d1",
+    "name": "Agent Marisol Quintero, a WOMAN of about 52, Mexic...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "netherton": {
+    "character_id": "37ee8f05-6adf-4c4c-b780-810098d9f00b",
+    "name": "Make portrait for Director Magnus Netherton\nA Blac...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-13"
+  },
+  "nightshade": {
+    "character_id": "d363cc74-5990-4eb9-b65f-95483c28c1e9",
+    "name": "An older man scientist with swept-back white hair,...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-30"
+  },
+  "noor_haddad": {
+    "character_id": "c27871de-0282-43d0-a8d4-932f659ae1f4",
+    "name": "Make portrait for Noor Haddad\nA slim Lebanese-Amer...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "offduty_agent": {
+    "character_id": "fdc09fe1-86ce-4314-b660-884ac8216284",
+    "name": "Make portrait for Off-Duty Agent\nA lanky white Geo...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "oleg_illiashenko": {
+    "character_id": "6bddfcaa-7589-4411-88b1-b2aaee551c0c",
+    "name": "Make portrait for a university lecturer character\n...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-06"
+  },
+  "operative_cipher": {
+    "character_id": "9b83fe5e-3f8c-4d5d-9593-ec0d73b33ac9",
+    "name": "Make portrait for ENTROPY Operative Cipher\nA young...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-13"
+  },
+  "operative_relay": {
+    "character_id": "4e1534f2-ffb3-452b-b3e3-699da4c2b5a1",
+    "name": "Make portrait for ENTROPY Operative Relay\nA Black ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-13"
+  },
+  "operative_static": {
+    "character_id": "54f2dfbd-fa2f-418e-9dec-5199fa24943e",
+    "name": "Make portrait for ENTROPY Operative Static\nA white...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-13"
+  },
+  "owen_gallagher": {
+    "character_id": "cae53036-8a55-4ec4-9bbe-2a4123c78ed0",
+    "name": "Make portrait for Owen Gallagher\nA stocky mixed-ra...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "patricia_morgan": {
+    "character_id": "40f5666b-9824-4288-893d-1f812ff34ace",
+    "name": "Make portrait for Patricia Morgan\nA solidly built ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "pieter_vos": {
+    "character_id": "cc1b5d89-ad2f-47c6-a775-2d6c382d3b85",
+    "name": "Make portrait for Pieter Vos\nA tall, lean Dutch ma...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "priya_raghavan": {
+    "character_id": "33cfa6c3-2dcf-448e-a7a0-7576078b32ce",
+    "name": "Make portrait for Priya Raghavan\nA British-Indian ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "priya_s": {
+    "character_id": "eb263472-5d6d-43c9-9aa3-bf613f2983b3",
+    "name": "Make portrait for Priya S.\nA British Indian woman ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-02"
+  },
+  "ravi_anand": {
+    "character_id": "3b22a014-0abc-4519-9484-2364693cd02b",
+    "name": "Make portrait for Ravi Anand\nA British Indian man ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-02"
+  },
+  "ray_hollis": {
+    "character_id": "e2cc0216-9fcd-4d39-bc1f-6212b29c2f9b",
+    "name": "Make portrait for Ray Hollis\nA lean, tired-looking...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "robert_vance": {
+    "character_id": "6edbd770-785c-4f56-91ea-45953f7d1594",
+    "name": "Make portrait for Robert Vance\nA British Pakistani...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-13"
+  },
+  "ruth_adeyemi": {
+    "character_id": "bf8ff217-fe3e-4479-a142-3a99655187da",
+    "name": "Make portrait for Ruth Adeyemi\nA Black British wom...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "ruth_halloran": {
+    "character_id": "95250c5f-3ff8-4987-9900-1367ad0c2a23",
+    "name": "Make portrait for Dr Ruth Halloran\nA white Irish w...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "sarah_kim": {
+    "character_id": "1792c7b7-4189-4a22-857e-4a0a738bd83d",
+    "name": "An East Asian (Korean) woman in her forties, the C...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-09-26"
+  },
+  "sarah_mitchell": {
+    "character_id": "7bb85b6b-36bb-41be-a1f1-2974b37ffd15",
+    "name": "Make portrait for Sarah Mitchell\nA Black British w...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-03"
+  },
+  "satoshi_nakamoto": {
+    "character_id": "9ea1972f-67d1-420e-b81e-138c247e58df",
+    "name": "Make portrait for Satoshi Nakamoto II\nA lean white...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "security_guard": {
+    "character_id": "29efd3e6-40d7-4ca9-a30e-9d8a21bf2d3f",
+    "name": "Make portrait for Security Guard\nA white British s...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-13"
+  },
+  "sidhu_selvarajan": {
+    "character_id": "683d2a03-378d-4e03-acf2-3f97b07741b5",
+    "name": "Make portrait for a university lecturer character\n...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-06"
+  },
+  "sione_fonoti": {
+    "character_id": "ebde2b54-3007-40af-aee5-492ecd422626",
+    "name": "Make portrait for Sione Fonoti\nA very big, heavy, ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "terry_mott": {
+    "character_id": "f00ed76b-8cfd-4591-9fc7-367dd354af70",
+    "name": "Make portrait for Terry Mott\nA Black British night...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-12"
+  },
+  "the_architect": {
+    "character_id": "53bd1c77-eaad-4877-82fc-cd649cb0f0ef",
+    "name": "Make portrait for The Architect\nA man in his sixti...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "the_recruiter": {
+    "character_id": "54df40d4-bb63-44af-bbc2-f854ba93aa8e",
+    "name": "Make portrait for The Recruiter\nA full-figured Afr...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "thomas_park": {
+    "character_id": "b5f70700-f3b0-4b11-b9fc-85f8b4319c02",
+    "name": "Make portrait for Thomas Park\nA lean Korean-Americ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-17"
+  },
+  "tom_shaw": {
+    "character_id": "e0906801-40c7-4260-a098-c95dac9cdddc",
+    "name": "Make portrait for Dr Tom Shaw\nMan in his late twen...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-06"
+  },
+  "tomasz": {
+    "character_id": "81200bb1-30bf-4c86-886b-aee046bad9bb",
+    "name": "Make portrait for Tomasz\nA Polish British man of a...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  },
+  "victoria_sterling": {
+    "character_id": "57297be2-3977-4a1d-a0cc-0a92240f9355",
+    "name": "Make portrait for Victoria Sterling\nA polished Bri...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-12"
+  },
+  "voltage": {
+    "character_id": "a51966d8-6ef5-4dec-8404-15e0799f18ae",
+    "name": "Make portrait for Voltage\nAn Indian South African ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-13"
+  },
+  "wendell_briggs": {
+    "character_id": "2975936c-1bfe-45b1-a29b-2a723ce432d4",
+    "name": "Make portrait for Wendell Briggs\nA wiry white man ...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-10-22"
+  }
+}

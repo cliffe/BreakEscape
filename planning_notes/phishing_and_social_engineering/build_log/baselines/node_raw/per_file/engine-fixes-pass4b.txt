@@ -1,0 +1,60 @@
+TAP version 13
+# Subtest: static NPC approached from the north: blocked 36px out on centres, reachable on the body edge
+ok 1 - static NPC approached from the north: blocked 36px out on centres, reachable on the body edge
+  ---
+  duration_ms: 0.80278
+  ...
+# Subtest: static NPC: still out of reach a tile and a half away, and across a one-tile counter
+ok 2 - static NPC: still out of reach a tile and a half away, and across a one-tile counter
+  ---
+  duration_ms: 0.07958
+  ...
+# Subtest: walking NPCs keep the centre measure
+ok 3 - walking NPCs keep the centre measure
+  ---
+  duration_ms: 0.059423
+  ...
+# Subtest: pointToRectDistSq: inside is zero, outside is to the nearest edge or corner
+ok 4 - pointToRectDistSq: inside is zero, outside is to the nearest edge or corner
+  ---
+  duration_ms: 0.061525
+  ...
+# Subtest: door repeat guard: a second call within the window is ignored, later ones are not
+ok 5 - door repeat guard: a second call within the window is ignored, later ones are not
+  ---
+  duration_ms: 0.077143
+  ...
+# Subtest: door interaction goes through the repeat guard before reaching handleUnlock
+ok 6 - door interaction goes through the repeat guard before reaching handleUnlock
+  ---
+  duration_ms: 0.214997
+  ...
+# Subtest: " -- " shows as a spaced en dash; hyphens, flags and "---" are left alone
+ok 7 - " -- " shows as a spaced en dash; hyphens, flags and "---" are left alone
+  ---
+  duration_ms: 1.270034
+  ...
+# Subtest: the dash change is display-only: TTS and history keep the typed text
+ok 8 - the dash change is display-only: TTS and history keep the typed text
+  ---
+  duration_ms: 0.60884
+  ...
+# Subtest: scenario text sinks run through displayDashes; matching and stored text do not
+ok 9 - scenario text sinks run through displayDashes; matching and stored text do not
+  ---
+  duration_ms: 1.568075
+  ...
+# Subtest: bespoke minigames show scenario text through displayDashes; ids and data keep the raw text
+ok 10 - bespoke minigames show scenario text through displayDashes; ids and data keep the raw text
+  ---
+  duration_ms: 1.859311
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 186.501517

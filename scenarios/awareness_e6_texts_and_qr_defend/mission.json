@@ -1,0 +1,25 @@
+{
+  "display_name": "Texts and QR codes: spot it",
+  "description": "An awareness episode of about 8 minutes for staff with a work phone, on the defending side only. Six items on a phone at Tarrowby Logistics, a fictional haulier: texts, printed notices with QR codes and an email. Some are real and some were built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
+  "difficulty_level": 1,
+  "scoring": "completion",
+  "resultGlobal": "episode_e6_texts_and_qr_defend_defend_percent",
+  "stage": "episode",
+  "secgen_scenario": null,
+  "collection": "training",
+  "ui_theme": "general",
+  "title_art": "title_art/awareness_e6_texts_and_qr.jpg",
+  "estimated_duration_minutes": 8,
+  "cybok": [
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": [
+        "Smishing",
+        "QR code phishing",
+        "Mobile security",
+        "Security awareness"
+      ]
+    }
+  ]
+}

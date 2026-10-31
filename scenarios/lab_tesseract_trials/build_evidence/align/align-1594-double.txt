@@ -1,0 +1,19 @@
+GLOBALS: {"ok":true,"cmd":"eval","result":{"ending":"double","dm":true,"warned":true,"greeted":false}}
+GHOST THREAD: {"ok":true,"cmd":"eval","result":["Special Collections. Fourteen left. The key to the next one is somewhere a careful man keeps his accounts.","Hybrid encryption. Nine candidates got this far. It's how we locked forty companies. Hospitals pay fastest.","Opened. Thank you, Candidate. That was the last Trial. The studentship is withdrawn: anyone a handler can send, a handler can recall."]}
+BACKGROUND: {"ok":true,"cmd":"eval","result":["assets/backgrounds/hq2.png","http://127.0.0.1:3001/break_escape/assets/backgrounds/hq2.png"]}
+Agent HaX: Someone came to look at four. We have their photograph. The field HQ never showed up on anyone's screen.
+Agent HaX: Thank you for the flag.
+Agent HaX: Ghost withdrew the studentship this morning anyway. They don't keep anyone a handler sent. Today, take that as a compliment.
+Agent HaX: One pixel. A picture too small to see, fetched from Ghost's server the moment anyone opens the report. That's all a location costs.
+Agent HaX: Your mail app does the same thing every day, unless you turn remote images off.
+Agent HaX: I bet Ghost never saw your face at St Catherine's. I lost.
+Agent HaX: I said I'd take either outcome. Ghost recognised you and wanted you anyway. That's worth knowing. I didn't enjoy learning it.
+Agent HaX: We're replacing your phone anyway. Ghost had the building's network all week.
+Agent HaX: Megan Oyelaran took a CryptoSecure summer placement. We'll keep an eye on her. You could have.
+Agent HaX: Jordan Pike got his referral bonus. He'll never know what for.
+Agent HaX: You can read Base64 now. Most people who'd have opened that report can't.
+demo_player: That's everything.
+Agent HaX: Term starts Monday. Go to your lectures. You never know who's watching.
+[no dialogue] mg= None
+CREDITS: {"ok":true,"cmd":"eval","result":["KEYHOLDER: OFFER WITHDRAWN","THE KEYHOLDER TRIALS","── HANDLER ──","DECOY FLAT, LEEDS: One visitor at four. Photographed.","AGENT HaX: Still your handler.","THE KEYHOLDER STUDENTSHIP: Never awarded.","── CAMPUS ──","MEGAN OYELARAN: Took the CryptoSecure placement.","JORDAN PIKE: Referral bonus paid.","DR TOM SHAW: Reported the stand to the department.","DR SIDHU SELVARAJAN: Still checks everything twice.","MISKATONIC UNIVERSITY: Term starts Monday.","On the map, a room you haven't been in has a light on."]}
+DONE

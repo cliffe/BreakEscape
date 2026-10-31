@@ -1,0 +1,72 @@
+{
+  "_about": "Full-episode-only keys for scenarios/awareness_e18_credential_attacks_at_scale/scenario.json.erb. The wiring agent pastes each value into the full erb at the path its note gives. None of these is in the fragment-erb parity comparison (episode-level, or allow-listed erb-only), and the generated defend-only shell never carries them. Authored by opus48. ENG-02 (the guess stage), ENG-02b (the spray/stuff modes), ENG-01 (flipAftermath) and ENG-09b (conceptPanel array) must have landed before the full shell validates; all were confirmed on main (password-guesser-model.js MODE_BUILDERS has spray/stuff; awareness.rb has guess_spray_checks/guess_stuff_checks; test/js/social-password-guesser-spray.test.mjs).",
+
+  "_notes": {
+    "guess": "Paste at social.awarenessEpisode.guess (ENG-02 + ENG-02b, mode 'spray'). Episode-level, full-only; dropped from the defend-only shell because `guess` is an ATTACK_STAGES id (episode-model.js stagesFor). mode 'spray' reads roster, wordList, spray, (optional) stuff and passphraseDemo; it must NOT carry target/patternSlots/reuseStep/commonList (awareness.rb guess_spray_checks rejects them). roster.namesFactId, roster.patternFactId and each wordList.slots[].factId name a declared se_intel_* fact (attack.json intelFacts). Each wordList slot's template interpolates ONLY its own {id} token with the slot's own `word` (the made-up string the fact stands for); seasonYear strings are baked literals; tokens never cross slots. spray.passes each carry exactly one of fromSlot (a wordList slot id) or literal (a baked string); spray.opensCount is a whole number not greater than roster.sample length, shown as a count, never a named colleague. stuff.rows are { label, opens } with generic account labels only (no @, : or =, and no password value). landedGlobal (guess_e18_landed) must be a declared global (false). See E18 section 9. P1 F-E18-13/F-E18-12: guess.strings overrides the console's status labels (password-guesser-model.js DEFAULT_TEXT) so they read in plain words: found->collected, opened->opened (not 'opens the account'), trying->'did not open' (settles the held passphrase row), switchOff->'Finish and see the results' (a completion label, not 'rig' and not an abort; B1 F1). B2 F2: the missing-fact lines are reworded so a non-technical player knows what to pin and 'half' is dropped when nothing was collected: strings.rosterMissing names both facts the address list needs (staff names + email pattern), strings.sprayMissing drops the word 'pass' and says the address list or the word is still missing, and each wordList slot carries a `label` (shown only when its fact is uncollected, model wordListPanel) naming the page the word comes from; strings.wordListMissing is a plain fallback. The sprayResult template still reads '0 of 0 accounts opened' in a zero-research run (no conditional available in a single string); left as-is, noted for engine. The row data-state keys are unchanged, so the bridge's state checks still hold.",
+    "flipAftermath": "Paste at social.awarenessEpisode.flipAftermath (ENG-01). Episode-level, items authored inline; the runner shows it only when the attack landed (guess_e18_landed true, written by ENG-02b). Re-seats the learner in their own seat as the first alerts arrive, which sets up the defend half. victimName is \"you\" (the learner's own seat, not a named colleague; the ENG-08 schema requires a string here, so \"you\" is used rather than the brief's null, matching E9's flipAftermath). The item ids (fa_signin, fa_lockout) are flip-only and are not the defend-set card ids; the scored lockout/sign-in cards are e18_lockout_* and e18_signin_* in defend.json.",
+    "stepLabels": "Paste at social.awarenessEpisode.stepLabels (ENG-01, reused by ENG-02). Labels the guess step 'Campaign'. The built shells author none, so they are unchanged; optional.",
+    "conceptPanel": "Paste at social.awarenessEpisode.strings.conceptPanel (ENG-09b array form). IDENTICAL to the value in e18/defend.json awarenessEpisode.strings.conceptPanel: the generator carries that into the defend-only shell too, so all four cards show in both variants. Reproduced here only so the full erb's strings block carries them. conceptPanel is value-exempt and erb-only-OK in the parity allow-list, so no allow-list change is needed."
+  },
+
+  "guess": {
+    "mode": "spray",
+    "strings": { "found": "collected", "opened": "opened", "trying": "did not open", "switchOff": "Finish and see the results", "rosterMissing": "No address list yet: it needs the staff names from the People page and the email pattern from the Contact page.", "wordListMissing": "Not collected yet: this word comes from a page you have not read.", "sprayMissing": "This password can't be tried yet: the address list, or the word it is built from, is still missing." },
+    "roster": {
+      "namesFactId": "ms_team_roster",
+      "patternFactId": "ms_email_pattern",
+      "domain": "merrinsallow.example",
+      "sample": ["catherine.merrin", "julian.sallow", "yasmin.chaudhry", "thandiwe.moyo", "dani.fenwick"],
+      "note": "The staff list and address pattern came off the practice's public pages, not from any password."
+    },
+    "wordList": {
+      "slots": [
+        { "id": "project", "factId": "ms_projects", "word": "Calderbank", "template": "{project}2026", "label": "A project from the Projects page (not collected yet)" },
+        { "id": "motto",   "factId": "ms_motto",    "word": "DesignThatLasts", "template": "{motto}1", "label": "The strapline from the Home page (not collected yet)" },
+        { "id": "place",   "factId": "ms_place",    "word": "Verrow", "template": "{place}!", "label": "The street from the Visit page (not collected yet)" }
+      ],
+      "seasonYear": ["Autumn2026"],
+      "note": "Candidate passwords built from the practice's own website words plus the season and the year; all made up."
+    },
+    "spray": {
+      "passes": [
+        { "id": "pass_project", "fromSlot": "project" },
+        { "id": "pass_motto",   "fromSlot": "motto" },
+        { "id": "pass_place",   "fromSlot": "place" },
+        { "id": "pass_season",  "literal": "Autumn2026" }
+      ],
+      "opensCount": 3,
+      "note": "One candidate tried once against every account in a pass, so no single account ever locks."
+    },
+    "stuff": {
+      "rows": [
+        { "label": "A work email account", "opens": true },
+        { "label": "A supplier portal login", "opens": true },
+        { "label": "A staff wiki login, used nowhere else", "opens": false }
+      ],
+      "note": "A password leaked from another site was tried across many services; the ones that open are where someone reused that password at work."
+    },
+    "passphraseDemo": { "words": ["harbour", "ladder", "crimson"], "neverLands": true },
+    "landedGlobal": "guess_e18_landed",
+    "note": "No real password is typed here; every account, word and pair is made up for the exercise."
+  },
+
+  "flipAftermath": {
+    "heading": "A few minutes later, at your desk",
+    "victimName": "you",
+    "intro": "The attack set alarms ringing across the practice. These first two alerts are already in your inbox; you handle the full set next.",
+    "items": [
+      { "id": "fa_signin", "kind": "email", "folder": "inbox", "subject": "New sign-in to your account", "time": "08:50", "note": "An alert about a sign-in; genuine ones send you to the real site, fakes to a look-alike." },
+      { "id": "fa_lockout", "kind": "email", "folder": "inbox", "subject": "Some accounts were briefly locked", "time": "08:52", "note": "The practice locks accounts after a run of bad sign-ins." }
+    ],
+    "line": "Most of the harm comes from acting on the fake alert instead of the real one."
+  },
+
+  "stepLabels": { "guess": "Campaign", "flip": "Your inbox" },
+
+  "conceptPanel": [
+    { "heading": "Password spraying", "text": "One likely password, tried just once against every account, so no single account locks. The accounts that open are the predictable ones: a company word, a project name, a season and a year." },
+    { "heading": "Credential stuffing", "text": "A list of address and password pairs stolen from one website, tried automatically across many others. Where someone reused that password at work, the attacker is straight in." },
+    { "heading": "The one habit", "text": "A different password for every account, not a word off the website, kept in a manager, breaks both: the spray has nothing predictable to try, and a stolen pair opens nothing else." },
+    { "heading": "What the practice does", "text": "On the practice's side: accounts lock after a run of bad sign-ins, MFA is on everything, the obvious words are blocked from passwords, and a monitoring partner watches the breach lists for the practice's addresses. These are set up for you; you don't have to switch them on." }
+  ]
+}

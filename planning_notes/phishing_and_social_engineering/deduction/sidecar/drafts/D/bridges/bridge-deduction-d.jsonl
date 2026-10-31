@@ -1,0 +1,158 @@
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "new", "autoBrief": true}
+{"cmd": "note", "message": "bridge-deduction-d (deduction-d:test_social_deduction_d): the right call, earned. About 120 s of real waiting for stop 1 (plan §9.4 Bridges, §11.6). Sidecar DRAFT outline: board getTestState() field names follow §6.8 and are provisional until P10-I/J land."}
+{"cmd": "eval", "fn": "async () => { /* D0 baseline: globals declared, runtime installed, guard registered with its door mappings before the carriages load, no stop yet; install the toast spy and record t0 */ window.__toasts = window.__toasts || []; if (!window.__toastSpy) { window.__toastSpy = true; const orig = window.gameAlert; window.gameAlert = (...a) => { window.__toasts.push({ t: Date.now(), a }); return orig ? orig(...a) : undefined; }; } const G = window.gameState.globalVariables; const R = window.deductionRuntime; window.__t0 = Date.now(); const guard = window.npcManager && window.npcManager.npcs && window.npcManager.npcs.get('ded_d_guard');\n  const sus = ['ded_d_sato','ded_d_chen','ded_d_devries','ded_d_volkov','ded_d_mensah'];\n  return !!R && !!guard && G.d_stop_1 === false && G.d_last_stop === false && G.mission_failed === '' && G.deduction_closed === false\n    && sus.every(x => G['deduction_verdict_' + x] === '' && G['deduction_outcome_' + x] === '')\n    && ['d_sato_pass','d_chen_charm','d_devries_sim'].every(f => G['deduction_faded_' + f] === false);  }"}
+{"cmd": "moveToNear", "id": "d_board_notes"}
+{"cmd": "interact", "id": "d_board_notes"}
+{"cmd": "waitFor", "kind": "minigame", "id": "intel-board", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* D0 board: deduction mode, title Night train, three profile cards, 13 count lines '… 0 found', five suspect cards, 18 cells all Hidden, strict stakes line with the score suffix (scoreLine) and briefText, nudge on, and NO 'Make the call' on the notes-only board */ const mg = window.MinigameFramework.currentMinigame; const s = mg && mg.getTestState ? mg.getTestState() : null; const b = s && s.board; const txt = mg.container.textContent;\n  return !!b && b.mode === 'deduction' && b.deduction.title === 'Night train' && b.deduction.profiles.length === 3\n    && b.deduction.counts.length === 13 && b.deduction.counts.every(c => c.found === 0)\n    && b.deduction.suspects.length === 5 && b.deduction.suspects.flatMap(x => x.cells).length === 18\n    && b.deduction.suspects.flatMap(x => x.cells).every(c => c.state === 'hidden')\n    && /one wrong or missed call loses the mission/i.test(txt) && /score/i.test(txt)\n    && txt.includes('Name an innocent, or leave a cultist unnamed, and the ritual completes.')\n    && b.deduction.nudge === true && !/Make the call/.test(txt);  }"}
+{"cmd": "eval", "fn": "async () => { /* D0 Space and E inert while the board is open: the player does not move and no interaction starts */ const p = window.player; const x0 = p.x, y0 = p.y; for (const key of [' ', 'e']) { window.dispatchEvent(new KeyboardEvent('keydown', { key })); window.dispatchEvent(new KeyboardEvent('keyup', { key })); }\n  await new Promise(r => setTimeout(r, 400)); return p.x === x0 && p.y === y0 && window.MinigameFramework.currentMinigame && window.__test.getState().activeMinigame === 'intel-board';  }"}
+{"cmd": "eval", "fn": "async () => { /* D0 Tab order: Tab walks the profile card, then each suspect card in list order, then Close */ const mg = window.MinigameFramework.currentMinigame; const seen = []; for (let i = 0; i < 40; i++) { document.activeElement && document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true })); const el = document.activeElement; const card = el && el.closest && el.closest('[data-suspect]'); if (card) seen.push(card.dataset.suspect); }\n  const order = [...new Set(seen)]; return JSON.stringify(order) === JSON.stringify(['ded_d_sato','ded_d_chen','ded_d_devries','ded_d_volkov','ded_d_mensah']);  }"}
+{"cmd": "mg", "action": "pressKey", "args": ["Escape"]}
+{"cmd": "waitFor", "kind": "minigameClosed", "timeoutMs": 10000}
+{"cmd": "eval", "fn": "async () => { /* D0 Esc closed the board as a normal exit (no minigame_failed in the log) */ const log = window.__test.drainLog ? window.__test.drainLog() : []; return !window.MinigameFramework.currentMinigame && !JSON.stringify(log).includes('minigame_failed');  }"}
+{"cmd": "note", "message": "D1 stay in car 1, do NOT take the rack label; talk to the steward (Q1 free, Q2 -15, Q3 -30 and wary), then wait out stop 1 in real time"}
+{"cmd": "moveToNear", "id": "ded_d_steward"}
+{"cmd": "interact", "id": "ded_d_steward"}
+{"cmd": "waitFor", "kind": "dialogue", "timeoutMs": 15000}
+{"cmd": "mg", "action": "chooseMatching", "args": ["woman in 1A"]}
+{"cmd": "mg", "action": "continue"}
+{"cmd": "eval", "fn": "async () => { /* D1 steward Q1 grants d_sato_want; influence 0 after the answer */ const G = window.gameState.globalVariables; const R = window.deductionRuntime; await new Promise(r => setTimeout(r, 300)); return G.se_intel_d_sato_want === true && G.ded_d_steward_influence === 0;  }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["carriage two"]}
+{"cmd": "mg", "action": "continue"}
+{"cmd": "eval", "fn": "async () => { /* D1 steward Q2 grants d_chen_want; influence -15 after the answer */ const G = window.gameState.globalVariables; const R = window.deductionRuntime; await new Promise(r => setTimeout(r, 300)); return G.se_intel_d_chen_want === true && G.ded_d_steward_influence === -15;  }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["old man"]}
+{"cmd": "mg", "action": "continue"}
+{"cmd": "eval", "fn": "async () => { /* D1 steward Q3 grants d_mensah_want; influence -30 after the answer */ const G = window.gameState.globalVariables; const R = window.deductionRuntime; await new Promise(r => setTimeout(r, 300)); return G.se_intel_d_mensah_want === true && G.ded_d_steward_influence === -30 && G.ded_d_steward_wary === true;  }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["get on"]}
+{"cmd": "waitFor", "kind": "minigameClosed", "timeoutMs": 10000}
+{"cmd": "eval", "fn": "async () => { /* D1 nudge: nothing is decidable yet from car 1 alone (hand check: 0 decided, 5 open) */ const st = window.deductionRuntime.getState(); return Object.values(st.decidable || {}).every(v => v === false) && (st.state.nudged || []).length === 0;  }"}
+{"cmd": "waitFor", "kind": "condition", "fn": "() => (window.__toasts || []).some(x => JSON.stringify(x.a).includes('The train is slowing.'))", "timeoutMs": 110000}
+{"cmd": "eval", "fn": "async () => { /* D1 the 'slowing' hint came about 90 s in (timer d_stop_1_warn), before the stop */ const G = window.gameState.globalVariables; const R = window.deductionRuntime; const t = window.__toasts.find(x => JSON.stringify(x.a).includes('The train is slowing.')).t - window.__t0; return t > 80000 && t < 100000 && G.d_stop_1 === false;  }"}
+{"cmd": "waitFor", "kind": "global", "name": "d_stop_1", "expected": true, "timeoutMs": 45000}
+{"cmd": "eval", "fn": "async () => { /* D1 stop 1 ran from the timer: d_sato_pass faded (first not held), state.faded lists it, the tamper toast showed, the guard opened car 2 */ const G = window.gameState.globalVariables; const R = window.deductionRuntime; await new Promise(r => setTimeout(r, 1500)); const st = R.getState().state;\n  return G.deduction_faded_d_sato_pass === true && JSON.stringify(st.faded) === '[\"d_sato_pass\"]' && G.se_intel_d_sato_pass === false\n    && window.__toasts.some(x => JSON.stringify(x.a).includes('a clue you had not found yet has gone with it'))\n    && (window.gameState.unlockedRooms || []).includes('d_car2');  }"}
+{"cmd": "moveToNear", "id": "d_rack_label"}
+{"cmd": "interact", "id": "d_rack_label"}
+{"cmd": "eval", "fn": "async () => { /* D1 the rack label now grants nothing (t_d_rack condition reads deduction_faded_d_sato_pass) */ const G = window.gameState.globalVariables; const R = window.deductionRuntime; await new Promise(r => setTimeout(r, 800)); return G.se_intel_d_sato_pass === false && !(G.scenario_triggers_fired || {}).t_d_rack;  }"}
+{"cmd": "interact", "id": "d_board_notes"}
+{"cmd": "waitFor", "kind": "minigame", "id": "intel-board", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* D1 board: Sato's pass cell reads 'Evidence destroyed' */ const mg = window.MinigameFramework.currentMinigame; const s = mg && mg.getTestState ? mg.getTestState() : null; const b = s && s.board; const sato = b.deduction.suspects.find(x => x.id === 'ded_d_sato'); const cell = sato.cells.find(c => c.slot === 'pass'); return cell.state === 'destroyed' && mg.container.textContent.includes('Evidence destroyed');  }"}
+{"cmd": "mg", "action": "clickText", "args": ["Close"]}
+{"cmd": "note", "message": "D1 reload: the faded cell and the opened car 2 door hold"}
+{"cmd": "sync"}
+{"cmd": "waitFor", "kind": "condition", "fn": "() => { window.__preReload = true; setTimeout(() => location.assign(location.pathname + \"?skip_resume=1\"), 50); return true; }"}
+{"cmd": "waitFor", "kind": "condition", "fn": "() => !window.__preReload && window.__test && window.__test.isReady() === true", "timeoutMs": 60000}
+{"cmd": "eval", "fn": "async () => { /* D1 after reload: faded global and state.faded survive; car 2 is still open (server unlock record or the guard's game_loaded backstop) */ const G = window.gameState.globalVariables; const R = window.deductionRuntime; await new Promise(r => setTimeout(r, 2000)); return G.deduction_faded_d_sato_pass === true && R.getState().state.faded.includes('d_sato_pass') && (window.gameState.unlockedRooms || []).includes('d_car2');  }"}
+{"cmd": "note", "message": "D2 car 2: Chen's ticket and Chen's notebook; leave the coat; bring stop 2 forward at the door object"}
+{"cmd": "enter", "room": "d_car2"}
+{"cmd": "waitFor", "kind": "global", "name": "d_in_car2", "expected": true, "timeoutMs": 10000}
+{"cmd": "moveToNear", "id": "d_chen_ticket"}
+{"cmd": "interact", "id": "d_chen_ticket"}
+{"cmd": "waitFor", "kind": "global", "name": "se_intel_d_chen_pass", "expected": true, "timeoutMs": 10000}
+{"cmd": "converse", "id": "ded_d_chen", "choices": ["What are you reading"], "maxTurns": 12}
+{"cmd": "waitFor", "kind": "global", "name": "se_intel_d_chen_notebook", "expected": true, "timeoutMs": 10000}
+{"cmd": "moveToNear", "id": "d_door2"}
+{"cmd": "interact", "id": "d_door2"}
+{"cmd": "eval", "fn": "async () => { /* D2 the door object asks first: the warning text is shown */ await new Promise(r => setTimeout(r, 400)); return document.body.textContent.includes('whatever the cult is after in this carriage may go with it. Wait for the stop?');  }"}
+{"cmd": "eval", "fn": "async () => { /* click Confirm in the gameConfirm modal (notifications.js: default labels Confirm / Cancel) */ await new Promise(r => setTimeout(r, 300)); const btn = [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'Confirm'); if (!btn) return false; btn.click(); return true; }"}
+{"cmd": "waitFor", "kind": "global", "name": "d_stop_2", "expected": true, "timeoutMs": 10000}
+{"cmd": "eval", "fn": "async () => { /* D2 stop 2 ran at once (well before the 120 s timer): Chen's charm faded, the coat route closed, car 3 open; the stop-2 timer later does nothing (trigger once) */ const G = window.gameState.globalVariables; const R = window.deductionRuntime; await new Promise(r => setTimeout(r, 1500)); return G.deduction_faded_d_chen_charm === true && G.se_intel_d_chen_charm === false && (window.gameState.unlockedRooms || []).includes('d_car3') && R.getState().state.faded.length === 2;  }"}
+{"cmd": "note", "message": "D3 car 3: the shredded receipt recovers Chen's charm; lost property, newspaper, the glass; leave the phone; stop 3 at the door object"}
+{"cmd": "enter", "room": "d_car3"}
+{"cmd": "moveToNear", "id": "d_shred"}
+{"cmd": "interact", "id": "d_shred"}
+{"cmd": "waitFor", "kind": "minigame", "timeoutMs": 15000}
+{"cmd": "eval", "fn": "async () => { /* D3 shredded document: complete it through the minigame's own completion path (drag-and-drop is not machine-playable; exercised, not earned). Its stateWrites write d_shred_done */ const mg = window.MinigameFramework.currentMinigame; if (typeof mg._onComplete !== 'function') return false; mg._onComplete(); await new Promise(r => setTimeout(r, 800)); return window.gameState.globalVariables.d_shred_done === true;  }"}
+{"cmd": "mg", "action": "close"}
+{"cmd": "eval", "fn": "async () => { /* D3 recovered: d_chen_charm held through t_d_shred though its first route faded; state.faded still lists it (the debrief's 'recovered' line) */ const G = window.gameState.globalVariables; const R = window.deductionRuntime; await new Promise(r => setTimeout(r, 800)); return G.se_intel_d_chen_charm === true && G.deduction_faded_d_chen_charm === true && R.getState().state.faded.includes('d_chen_charm');  }"}
+{"cmd": "moveToNear", "id": "d_lost_property"}
+{"cmd": "interact", "id": "d_lost_property"}
+{"cmd": "waitFor", "kind": "minigame", "id": "container", "timeoutMs": 15000}
+{"cmd": "mg", "action": "take", "args": ["Notebook, handed in"]}
+{"cmd": "mg", "action": "close"}
+{"cmd": "waitFor", "kind": "global", "name": "se_intel_d_sato_notebook", "expected": true, "timeoutMs": 10000}
+{"cmd": "moveToNear", "id": "d_newspaper"}
+{"cmd": "interact", "id": "d_newspaper"}
+{"cmd": "waitFor", "kind": "global", "name": "se_intel_d_devries_want", "expected": true, "timeoutMs": 10000}
+{"cmd": "moveToNear", "id": "d_glass"}
+{"cmd": "interact", "id": "d_glass"}
+{"cmd": "note", "message": "D3 dusting: drive the fingerprint minigame; if synthetic input cannot finish it, record that and grant d_devries_ring from the console (exercised, not earned)"}
+{"cmd": "waitFor", "kind": "global", "name": "se_intel_d_devries_ring", "expected": true, "timeoutMs": 60000}
+{"cmd": "moveToNear", "id": "d_door3"}
+{"cmd": "interact", "id": "d_door3"}
+{"cmd": "eval", "fn": "async () => { /* click Confirm in the gameConfirm modal (notifications.js: default labels Confirm / Cancel) */ await new Promise(r => setTimeout(r, 300)); const btn = [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'Confirm'); if (!btn) return false; btn.click(); return true; }"}
+{"cmd": "waitFor", "kind": "global", "name": "d_stop_3", "expected": true, "timeoutMs": 10000}
+{"cmd": "eval", "fn": "async () => { /* D3 stop 3: de Vries's SIM faded (the phone was never taken), car 4 open */ const G = window.gameState.globalVariables; const R = window.deductionRuntime; await new Promise(r => setTimeout(r, 1500)); return G.deduction_faded_d_devries_sim === true && G.se_intel_d_devries_sim === false && (window.gameState.unlockedRooms || []).includes('d_car4');  }"}
+{"cmd": "note", "message": "D3b car 4: backup recovery recovers the SIM; the conductor (with the kind word) recovers Sato's pass and gives the other three; the briefcase; Volkov's charm; stop 4"}
+{"cmd": "enter", "room": "d_car4"}
+{"cmd": "moveToNear", "id": "d_backup"}
+{"cmd": "interact", "id": "d_backup"}
+{"cmd": "waitFor", "kind": "minigame", "timeoutMs": 15000}
+{"cmd": "eval", "fn": "async () => { /* D3b backup recovery: commit the one source (exercised through the minigame's own commitSelection; a click path is preferred if getTestState exposes the source button) */ const mg = window.MinigameFramework.currentMinigame; const src = (mg.sources || mg.backupRecoverySources || (mg.params && mg.params.minigameData && mg.params.minigameData.backupRecoverySources) || [])[0]; if (!src) return false; mg.commitSelection(src); await new Promise(r => setTimeout(r, 800)); return window.gameState.globalVariables.backup_restore_initiated === true;  }"}
+{"cmd": "mg", "action": "close"}
+{"cmd": "waitFor", "kind": "global", "name": "se_intel_d_devries_sim", "expected": true, "timeoutMs": 10000}
+{"cmd": "moveToNear", "id": "ded_d_conductor"}
+{"cmd": "interact", "id": "ded_d_conductor"}
+{"cmd": "waitFor", "kind": "dialogue", "timeoutMs": 15000}
+{"cmd": "mg", "action": "chooseMatching", "args": ["woman in 1A"]}
+{"cmd": "mg", "action": "continue"}
+{"cmd": "eval", "fn": "async () => { /* D3b conductor Q1 grants d_sato_pass; influence 0 */ const G = window.gameState.globalVariables; const R = window.deductionRuntime; await new Promise(r => setTimeout(r, 300)); return G.se_intel_d_sato_pass === true && G.ded_d_conductor_influence === 0;  }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["carriage three"]}
+{"cmd": "mg", "action": "continue"}
+{"cmd": "eval", "fn": "async () => { /* D3b conductor Q2 grants d_devries_pass; influence -15 */ const G = window.gameState.globalVariables; const R = window.deductionRuntime; await new Promise(r => setTimeout(r, 300)); return G.se_intel_d_devries_pass === true && G.ded_d_conductor_influence === -15;  }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["before he got on"]}
+{"cmd": "mg", "action": "continue"}
+{"cmd": "eval", "fn": "async () => { /* D3b conductor Q3 grants d_volkov_pass; influence -30 */ const G = window.gameState.globalVariables; const R = window.deductionRuntime; await new Promise(r => setTimeout(r, 300)); return G.se_intel_d_volkov_pass === true && G.ded_d_conductor_influence === -30;  }"}
+{"cmd": "eval", "fn": "async () => { /* D3b the conductor is wary at -30: Sato's pass recovered through the second witness */ const G = window.gameState.globalVariables; const R = window.deductionRuntime; return G.ded_d_conductor_wary === true && G.se_intel_d_sato_pass === true && G.deduction_faded_d_sato_pass === true;  }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["hold the ticket box"]}
+{"cmd": "mg", "action": "continue"}
+{"cmd": "eval", "fn": "async () => { /* D3b kind word: influence -10, wary cleared (clearOnRearm), the choice gone */ const G = window.gameState.globalVariables; const R = window.deductionRuntime; const labels = (window.__test.minigame.getState().dialogue || {}).choices || []; return G.ded_d_conductor_influence === -10 && G.ded_d_conductor_wary === false && !labels.some(c => /ticket box/.test(c.text));  }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["travelling for"]}
+{"cmd": "mg", "action": "continue"}
+{"cmd": "eval", "fn": "async () => { /* D3b Q4 answered: d_volkov_want held; influence -25 */ const G = window.gameState.globalVariables; const R = window.deductionRuntime; await new Promise(r => setTimeout(r, 300)); return G.se_intel_d_volkov_want === true && G.ded_d_conductor_influence === -25;  }"}
+{"cmd": "mg", "action": "chooseMatching", "args": ["That's all"]}
+{"cmd": "waitFor", "kind": "minigameClosed", "timeoutMs": 10000}
+{"cmd": "moveToNear", "id": "d_briefcase"}
+{"cmd": "interact", "id": "d_briefcase"}
+{"cmd": "waitFor", "kind": "minigame", "timeoutMs": 15000}
+{"cmd": "mg", "action": "completeLockpick", "args": [{"reason": "dexterity minigame not machine-playable"}]}
+{"cmd": "waitFor", "kind": "minigame", "id": "container", "timeoutMs": 15000}
+{"cmd": "mg", "action": "take", "args": ["Letter in the briefcase"]}
+{"cmd": "mg", "action": "close"}
+{"cmd": "waitFor", "kind": "global", "name": "se_intel_d_volkov_key", "expected": true, "timeoutMs": 10000}
+{"cmd": "converse", "id": "ded_d_volkov", "choices": ["charm on your wrist"], "maxTurns": 10}
+{"cmd": "waitFor", "kind": "global", "name": "se_intel_d_volkov_charm", "expected": true, "timeoutMs": 10000}
+{"cmd": "eval", "fn": "async () => { /* D3b nudge toasts so far name Chen, de Vries and Volkov (each now decidable); never which way */ const st = window.deductionRuntime.getState(); const n = st.state.nudged; return ['ded_d_chen','ded_d_devries','ded_d_volkov'].every(x => n.includes(x)) && !window.__toasts.some(x => /cultist|guilty|innocent/i.test(JSON.stringify(x.a)) && /enough to decide/.test(JSON.stringify(x.a)));  }"}
+{"cmd": "moveToNear", "id": "d_door4"}
+{"cmd": "interact", "id": "d_door4"}
+{"cmd": "eval", "fn": "async () => { /* D3b car 4's door says only 'The train will stop now. Wait for the stop?' */ await new Promise(r => setTimeout(r, 400)); const t = document.body.textContent; return t.includes('The train will stop now. Wait for the stop?') && !t.includes('may go with it');  }"}
+{"cmd": "eval", "fn": "async () => { /* click Confirm in the gameConfirm modal (notifications.js: default labels Confirm / Cancel) */ await new Promise(r => setTimeout(r, 300)); const btn = [...document.querySelectorAll('button')].find(x => x.textContent.trim() === 'Confirm'); if (!btn) return false; btn.click(); return true; }"}
+{"cmd": "waitFor", "kind": "global", "name": "d_last_stop", "expected": true, "timeoutMs": 10000}
+{"cmd": "eval", "fn": "async () => { /* D3b stop 4 fades nothing; car 5 open */ const G = window.gameState.globalVariables; const R = window.deductionRuntime; await new Promise(r => setTimeout(r, 1500)); return R.getState().state.faded.length === 3 && (window.gameState.unlockedRooms || []).includes('d_car5');  }"}
+{"cmd": "note", "message": "D4 car 5: Mensah's ticket and umbrella; marks; 'Make the call' refused while someone is undecided; then a correct submit"}
+{"cmd": "enter", "room": "d_car5"}
+{"cmd": "moveToNear", "id": "d_mensah_ticket"}
+{"cmd": "interact", "id": "d_mensah_ticket"}
+{"cmd": "converse", "id": "ded_d_mensah", "choices": ["your umbrella"], "maxTurns": 10}
+{"cmd": "eval", "fn": "async () => { /* D4 all 18 facts held; every suspect decidable; truth as the plan's table */ const st = window.deductionRuntime.getState(); const G = window.gameState.globalVariables; const facts = Object.keys(window.gameScenario.social.intelFacts); return facts.length === 18 && facts.every(f => G['se_intel_' + f] === true) && Object.values(st.decidable).every(Boolean)\n    && st.truth.ded_d_sato === 'guilty' && st.truth.ded_d_chen === 'clear' && st.truth.ded_d_devries === 'guilty' && st.truth.ded_d_volkov === 'guilty' && st.truth.ded_d_mensah === 'clear';  }"}
+{"cmd": "eval", "fn": "async () => { /* D4 marks through the runtime (the board UI path is covered by P10-J's jsdom tests): four of five, Mensah left undecided */ const R = window.deductionRuntime; R.setMark('ded_d_sato', 'guilty', { profile: 'courier' }); R.setMark('ded_d_devries', 'guilty', { profile: 'devotee' }); R.setMark('ded_d_volkov', 'guilty', { profile: 'keyholder' }); R.setMark('ded_d_chen', 'clear', { because: ['d_chen_charm'] }); return R.getState().state.marks.ded_d_volkov.mark === 'guilty';  }"}
+{"cmd": "moveToNear", "id": "d_board_call"}
+{"cmd": "interact", "id": "d_board_call"}
+{"cmd": "waitFor", "kind": "minigame", "id": "intel-board", "timeoutMs": 30000}
+{"cmd": "mg", "action": "clickText", "args": ["Make the call"]}
+{"cmd": "eval", "fn": "async () => { /* D4 requiresAll refuses: the live region names Mensah as undecided; no verdict recorded */ await new Promise(r => setTimeout(r, 400)); const mg = window.MinigameFramework.currentMinigame; const live = mg.container.querySelector('[aria-live]'); return !!live && /Mensah/.test(live.textContent) && window.gameState.globalVariables.deduction_verdict_ded_d_mensah === '' && window.gameState.globalVariables.deduction_closed === false;  }"}
+{"cmd": "eval", "fn": "async () => { /* D4 mark Mensah clear with a reason */ window.deductionRuntime.setMark('ded_d_mensah', 'clear', { because: ['d_mensah_umbrella'] }); await new Promise(r => setTimeout(r, 300)); return true;  }"}
+{"cmd": "mg", "action": "clickText", "args": ["Make the call"]}
+{"cmd": "eval", "fn": "async () => { /* D4 confirm panel: each suspect with mark and profile, 'This closes the case.', Go back offered */ await new Promise(r => setTimeout(r, 400)); const t = window.MinigameFramework.currentMinigame.container.textContent; return t.includes('This closes the case.') && t.includes('Confirm the call') && t.includes('Go back') && /Keyholder/.test(t) && /Courier/.test(t) && /Devotee/.test(t);  }"}
+{"cmd": "mg", "action": "clickText", "args": ["Go back"]}
+{"cmd": "eval", "fn": "async () => { /* D4 Go back: still open */ return window.gameState.globalVariables.deduction_closed === false;  }"}
+{"cmd": "mg", "action": "clickText", "args": ["Make the call"]}
+{"cmd": "mg", "action": "clickText", "args": ["Confirm the call"]}
+{"cmd": "eval", "fn": "async () => { /* D4 five 'final' verdicts, all right; the debrief shows in place on the same board; no outcome toasts (reveal end) */ await new Promise(r => setTimeout(r, 1000)); const st = window.deductionRuntime.getState().state; const v = st.verdicts; const ids = Object.keys(v); const mg = window.MinigameFramework.currentMinigame; const s = mg.getTestState();\n  return ids.length === 5 && ids.every(k => v[k].kind === 'final') && v.ded_d_sato.outcome === 'right_guilty' && v.ded_d_chen.outcome === 'right_clear' && v.ded_d_devries.outcome === 'right_guilty' && v.ded_d_volkov.outcome === 'right_guilty' && v.ded_d_mensah.outcome === 'right_clear'\n    && st.closed === true && st.debriefPending === true && s.board.view === 'debrief'\n    && /Evidence destroyed|destroyed/i.test(mg.container.textContent) && /recovered/i.test(mg.container.textContent);  }"}
+{"cmd": "eval", "fn": "async () => { /* D4 debrief 'Why' lines on every card: Volkov names the brass key; de Vries his three marked clues; Sato the Courier clause; Chen 'Courier: no, carries a ward charm' */ const t = window.MinigameFramework.currentMinigame.container.textContent; return /Keyholder: carries the brass Tesseract key/i.test(t) && /Devotee: 3 marked clues/i.test(t) && /Courier/.test(t) && /Courier: no, carries a ward charm/i.test(t);  }"}
+{"cmd": "mg", "action": "clickText", "args": ["Finish"]}
+{"cmd": "waitFor", "kind": "task", "id": "d_case_closed", "timeoutMs": 30000}
+{"cmd": "waitFor", "kind": "global", "name": "d_ending", "expected": true, "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* D4 Finish: d_case_solved and d_case_closed completed; mission_failed empty; credits under 'CASE CLOSED' with the right-call lines; ticker reads CASE CLOSED … NIGHT TRAIN; no MISSION COMPLETE anywhere */ await new Promise(r => setTimeout(r, 4000)); const om = window.objectivesManager; const h = document.querySelector('.bv-title-block h1'); const tk = document.querySelector('.bv-ticker-inner'); const body = document.body.textContent;\n  return om.taskIndex.d_case_solved.status === 'completed' && om.taskIndex.d_case_closed.status === 'completed' && window.gameState.globalVariables.mission_failed === ''\n    && !!h && /CASE CLOSED/.test(h.textContent) && !!tk && /CASE CLOSED/.test(tk.textContent) && /NIGHT TRAIN/.test(tk.textContent)\n    && /Dmitri Volkov was named/.test(body) && !/MISSION COMPLETE/.test(body);  }"}
+{"cmd": "sync"}
+{"cmd": "note", "message": "verify-run.rb: conclusion recorded, score 100 (both tasks, one aim)"}
+{"cmd": "quit"}

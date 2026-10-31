@@ -1,0 +1,262 @@
+{
+ "scenario_brief": "OSINT lint fixture: every fact has one award path.",
+ "startRoom": "lab",
+ "globalVariables": {
+  "se_intel_pierce_role": false,
+  "se_intel_email_pattern": false,
+  "se_intel_pierce_trusts_jed": false,
+  "se_intel_username_convention": false,
+  "se_intel_lord_portal_name": false,
+  "se_intel_cv_highlight": false,
+  "se_osint_state": {}
+ },
+ "rooms": {
+  "lab": {
+   "type": "room_office",
+   "connections": {},
+   "objects": [
+    {
+     "id": "ws1",
+     "name": "Recon workstation",
+     "type": "osint-workstation",
+     "minigameData": {
+      "siteIds": [
+       "company",
+       "deck"
+      ]
+     }
+    },
+    {
+     "id": "ws2",
+     "name": "Spare workstation",
+     "type": "osint-workstation",
+     "minigameData": {}
+    }
+   ]
+  }
+ },
+ "social": {
+  "people": [
+   {
+    "id": "pierce",
+    "address": "m.pierce@ledgerwell.example"
+   }
+  ],
+  "conceptCards": [
+   {
+    "id": "tool_hunter",
+    "title": "Hunter",
+    "text": "Hunter lists the address pattern a domain uses, such as initial.surname@ledgerwell.example. Files like Q3.pdf are not hosts. Some firms end in .co.uk."
+   },
+   {
+    "id": "tool_exiftool",
+    "title": "exiftool",
+    "text": "exiftool reads the metadata a file carries."
+   }
+  ],
+  "intelFacts": {
+   "pierce_role": {
+    "text": "Melanie works in Finance.",
+    "subject": "pierce",
+    "source": "row_pierce",
+    "provides": []
+   },
+   "email_pattern": {
+    "text": "Addresses follow initial.surname.",
+    "subject": "company",
+    "source": "r_pattern",
+    "provides": [
+     {
+      "type": "address",
+      "address": "j.baker@ledgerwell.example",
+      "label": "an address"
+     }
+    ]
+   },
+   "pierce_trusts_jed": {
+    "text": "Melanie trusts Jed.",
+    "subject": "pierce",
+    "source": "post_pierce_jed",
+    "provides": []
+   },
+   "username_convention": {
+    "text": "Usernames are mpierce.",
+    "subject": "company",
+    "source": "f_author",
+    "provides": []
+   },
+   "lord_portal_name": {
+    "text": "The payroll portal is called PayPoint.",
+    "subject": "lord",
+    "source": "portal_name",
+    "provides": []
+   },
+   "cv_highlight": {
+    "text": "Chris wants CVs.",
+    "subject": "hampshire",
+    "source": "hl_cv",
+    "provides": []
+   }
+  },
+  "mailClient": {
+   "accounts": [
+    {
+     "id": "guest",
+     "address": "guest@workstation.example",
+     "createMenu": [
+      {
+       "id": "c1",
+       "address": "tarnside.test@freemail.example"
+      }
+     ]
+    }
+   ],
+   "contacts": [
+    {
+     "id": "c_pierce",
+     "addresses": [
+      "m.pierce@ledgerwell.example"
+     ]
+    }
+   ],
+   "seededMessages": [
+    {
+     "id": "msg1",
+     "mailbox": "guest",
+     "folder": "inbox",
+     "body": "Please send your CV to us.",
+     "highlights": [
+      {
+       "id": "hl_cv",
+       "text": "send your CV",
+       "grants": "cv_highlight"
+      }
+     ]
+    }
+   ]
+  },
+  "pretextNpcs": [
+   {
+    "id": "call_lord",
+    "character": "lord",
+    "callId": "call_lord",
+    "asks": {
+     "portal_name": {
+      "grants": {
+       "intel": [
+        "lord_portal_name"
+       ]
+      }
+     }
+    }
+   }
+  ],
+  "osint": {
+   "profile": "student",
+   "sites": [
+    {
+     "id": "company",
+     "url": "ledgerwell.example",
+     "type": "company-site",
+     "pages": [
+      {
+       "id": "team",
+       "title": "Our Team",
+       "blocks": [
+        {
+         "id": "row_pierce",
+         "kind": "staff",
+         "person": "pierce",
+         "name": "Melanie Pierce",
+         "address": "m.pierce@ledgerwell.example",
+         "fact": "pierce_role"
+        },
+        {
+         "id": "row_baker",
+         "kind": "staff",
+         "person": "baker",
+         "name": "Jed Baker",
+         "address": "j.baker@ledgerwell.example"
+        }
+       ],
+       "url": "ledgerwell.example/team"
+      }
+     ]
+    },
+    {
+     "id": "social",
+     "url": "friendface.example",
+     "type": "social",
+     "profiles": [
+      {
+       "person": "pierce",
+       "showIf": "se_intel_pierce_role",
+       "posts": [
+        {
+         "id": "post_pierce_jed",
+         "text": "Jed is showing me the ropes.",
+         "fact": "pierce_trusts_jed"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "deck",
+     "url": "https://ledgerwell.example/Q3.pdf",
+     "type": "document",
+     "card": "tool_exiftool",
+     "fields": [
+      {
+       "id": "f_author",
+       "label": "Author",
+       "value": "mpierce",
+       "fact": "username_convention"
+      }
+     ]
+    }
+   ],
+   "tools": [
+    {
+     "id": "hunter",
+     "label": "Hunter lookup: ledgerwell.example",
+     "card": "tool_hunter",
+     "unlockedBy": {
+      "visited": "company.team"
+     },
+     "results": [
+      {
+       "id": "r_pattern",
+       "text": "initial.surname@ledgerwell.example",
+       "fact": "email_pattern"
+      }
+     ]
+    },
+    {
+     "id": "later",
+     "label": "Later lookup",
+     "unlockedBy": {
+      "fact": "pierce_role"
+     },
+     "results": []
+    },
+    {
+     "id": "deck_visit",
+     "label": "Deck lookup",
+     "unlockedBy": {
+      "visited": "deck"
+     },
+     "results": []
+    },
+    {
+     "id": "profile_visit",
+     "label": "Profile lookup",
+     "unlockedBy": {
+      "visited": "social.pierce"
+     },
+     "results": []
+    }
+   ]
+  }
+ }
+}

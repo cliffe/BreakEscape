@@ -1,0 +1,390 @@
+{
+ "globalVariables": {
+  "se_intel_pierce_role": true,
+  "se_intel_pierce_trusts_jed": false,
+  "se_intel_username_convention": false,
+  "se_intel_lord_portal_name": false,
+  "se_intel_cv_highlight": false,
+  "se_osint_state": [],
+  "se_intel_ghost": false,
+  "se_intel_dup_fact": false,
+  "se_intel_orphan_fact": false,
+  "se_intel_wrong_source": false,
+  "se_intel_hl_and_el": false
+ },
+ "rooms": {
+  "lab": {
+   "objects": [
+    {
+     "id": "ws1",
+     "type": "osint-workstation",
+     "minigameData": {
+      "siteIds": [
+       "company",
+       "nosuchsite"
+      ]
+     }
+    },
+    {
+     "id": "ws2",
+     "type": "osint-workstation",
+     "minigameData": {}
+    }
+   ]
+  }
+ },
+ "social": {
+  "people": [
+   {
+    "id": "pierce",
+    "address": "m.pierce@ledgerwell.co.uk"
+   }
+  ],
+  "conceptCards": [
+   {
+    "id": "tool_hunter",
+    "title": "H",
+    "text": "Visit google.com or dropbox.co.uk for results. Also ledgerwell.example is fine and Q3.pdf is a file."
+   },
+   {
+    "id": "tool_exiftool",
+    "title": "E",
+    "text": "Microsoft makes it. Also a pay pal look-alike paypa1 appears, plus xn--ledgerwll-m0h.example is fine, and ledgerwe\u043bl.example is not."
+   },
+   {
+    "id": "tool_recon",
+    "title": "R",
+    "text": "Reach us at helpdesk@ledgerwell.example or visit docusign.example."
+   }
+  ],
+  "intelFacts": {
+   "pierce_role": {
+    "text": "Melanie works in Finance.",
+    "subject": "pierce",
+    "source": "row_pierce",
+    "provides": []
+   },
+   "email_pattern": {
+    "text": "Addresses follow initial.surname.",
+    "subject": "company",
+    "source": "r_pattern",
+    "provides": [
+     {
+      "type": "address",
+      "address": "j.baker@microsoft.com",
+      "label": "an address"
+     }
+    ]
+   },
+   "pierce_trusts_jed": {
+    "text": "Melanie trusts Jed.",
+    "subject": "pierce",
+    "source": "post_pierce_jed",
+    "provides": []
+   },
+   "username_convention": {
+    "text": "Usernames are mpierce.",
+    "subject": "company",
+    "source": "f_author",
+    "provides": []
+   },
+   "lord_portal_name": {
+    "text": "The payroll portal is called PayPoint.",
+    "subject": "lord",
+    "source": "portal_name",
+    "provides": []
+   },
+   "cv_highlight": {
+    "text": "Chris wants CVs.",
+    "subject": "hampshire",
+    "source": "hl_cv",
+    "provides": []
+   },
+   "dup_fact": {
+    "text": "t",
+    "subject": "company",
+    "source": "dup_a",
+    "provides": []
+   },
+   "orphan_fact": {
+    "text": "t",
+    "subject": "company",
+    "source": "nowhere",
+    "provides": []
+   },
+   "wrong_source": {
+    "text": "t",
+    "subject": "company",
+    "source": "not_the_id",
+    "provides": []
+   },
+   "hl_and_el": {
+    "text": "t",
+    "subject": "company",
+    "source": "el_two_paths",
+    "provides": []
+   }
+  },
+  "mailClient": {
+   "accounts": [
+    {
+     "id": "guest",
+     "address": "guest@gmail.com",
+     "createMenu": [
+      {
+       "id": "c1",
+       "address": "x@hsbc.example"
+      }
+     ]
+    }
+   ],
+   "contacts": [
+    {
+     "id": "c_pierce",
+     "addresses": [
+      "a@ledgerwell.example",
+      "b@amazon.com"
+     ]
+    }
+   ],
+   "seededMessages": [
+    {
+     "id": "msg1",
+     "mailbox": "guest",
+     "folder": "inbox",
+     "body": "Please send your CV to us.",
+     "highlights": [
+      {
+       "id": "hl_cv",
+       "text": "send your CV",
+       "grants": "cv_highlight"
+      },
+      {
+       "id": "hl_two",
+       "text": "CV",
+       "grants": "hl_and_el"
+      }
+     ]
+    }
+   ]
+  },
+  "pretextNpcs": [
+   {
+    "id": "call_lord",
+    "asks": {
+     "portal_name": {
+      "grants": {
+       "intel": [
+        "lord_portal_name"
+       ]
+      }
+     }
+    }
+   }
+  ],
+  "osint": {
+   "profile": "student",
+   "sites": [
+    {
+     "id": "company",
+     "url": "ledgerwell.com",
+     "type": "company-site",
+     "pages": [
+      {
+       "id": "team",
+       "title": "Our Team",
+       "blocks": [
+        {
+         "id": "row_pierce",
+         "kind": "staff",
+         "person": "pierce",
+         "name": "Melanie Pierce",
+         "address": "m.pierce@ledgerwell.example",
+         "fact": "pierce_role"
+        },
+        {
+         "id": "row_baker",
+         "kind": "staff",
+         "person": "baker",
+         "name": "Jed Baker",
+         "address": "j.baker@ledgerwell.example"
+        }
+       ],
+       "url": "ledgerwell.com/team"
+      },
+      {
+       "id": "extra",
+       "blocks": [
+        {
+         "id": "dup_a",
+         "kind": "p",
+         "text": "a",
+         "fact": "dup_fact"
+        },
+        {
+         "id": "dup_b",
+         "kind": "p",
+         "text": "b",
+         "fact": "dup_fact"
+        },
+        {
+         "id": "w1",
+         "kind": "p",
+         "text": "c",
+         "fact": "wrong_source"
+        },
+        {
+         "id": "el_two_paths",
+         "kind": "p",
+         "text": "d",
+         "fact": "hl_and_el"
+        },
+        {
+         "id": "ghost_el",
+         "kind": "p",
+         "text": "e",
+         "fact": "no_such_fact"
+        },
+        {
+         "id": "gated",
+         "kind": "p",
+         "text": "f",
+         "showIf": "se_no_such_global"
+        },
+        {
+         "id": "row_pierce",
+         "kind": "p",
+         "text": "duplicate id"
+        },
+        {
+         "id": "cardy",
+         "kind": "p",
+         "text": "g",
+         "card": "tool_missing"
+        }
+       ]
+      },
+      {
+       "id": "extra",
+       "blocks": []
+      }
+     ]
+    },
+    {
+     "id": "social",
+     "url": "paypal.example/login",
+     "type": "social",
+     "profiles": [
+      {
+       "person": "pierce",
+       "showIf": "se_intel_pierce_role",
+       "posts": [
+        {
+         "id": "post_pierce_jed",
+         "text": "Jed is showing me the ropes.",
+         "fact": "pierce_trusts_jed"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "id": "deck",
+     "url": "https://ledgerwell.example/Q3.pdf",
+     "type": "document",
+     "card": "tool_exiftool",
+     "fields": [
+      {
+       "id": "f_author",
+       "label": "Author",
+       "value": "mpierce",
+       "fact": "username_convention"
+      }
+     ]
+    },
+    {
+     "id": "leeds",
+     "url": "https://paypa1.example",
+     "type": "social",
+     "profiles": []
+    },
+    {
+     "id": "cyr",
+     "url": "ledgerwe\u043bl.example",
+     "type": "social",
+     "profiles": []
+    },
+    {
+     "id": "dots",
+     "url": "pay.pal.example",
+     "type": "social",
+     "profiles": []
+    },
+    {
+     "id": "fine_hyphen",
+     "url": "pineapple-fans.example/x",
+     "type": "social",
+     "profiles": []
+    }
+   ],
+   "tools": [
+    {
+     "id": "hunter",
+     "label": "Hunter lookup: ledgerwell.example",
+     "card": "tool_hunter",
+     "unlockedBy": {
+      "visited": "company.nopage"
+     },
+     "results": [
+      {
+       "id": "r_pattern",
+       "text": "initial.surname@ledgerwell.example",
+       "fact": "email_pattern"
+      }
+     ]
+    },
+    {
+     "id": "later",
+     "label": "Later lookup",
+     "unlockedBy": {
+      "fact": "no_such_fact"
+     },
+     "results": []
+    },
+    {
+     "id": "deck_visit",
+     "label": "Deck lookup",
+     "unlockedBy": {
+      "visited": "nosite"
+     },
+     "results": []
+    },
+    {
+     "id": "t4",
+     "label": "x",
+     "unlockedBy": {
+      "visited": "deck",
+      "fact": "pierce_role"
+     },
+     "results": []
+    },
+    {
+     "id": "t5",
+     "label": "x",
+     "unlockedBy": {
+      "seen": "deck"
+     },
+     "results": []
+    },
+    {
+     "id": "t6",
+     "label": "x",
+     "unlockedBy": {
+      "visited": "social.nobody"
+     },
+     "results": []
+    }
+   ]
+  }
+ }
+}

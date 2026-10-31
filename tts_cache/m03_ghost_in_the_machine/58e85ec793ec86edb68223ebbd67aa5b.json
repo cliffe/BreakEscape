@@ -1,0 +1,13 @@
+{
+  "key": "58e85ec793ec86edb68223ebbd67aa5b",
+  "npc": "ffion_rees",
+  "text": "Oh, we break into places. For money. Companies pay us to find the holes before somebody nasty does.",
+  "voice": "Kore",
+  "style": "Front-desk receptionist at a smart tech firm, mid-twenties. Speak with a consistent South Wales (Cardiff) accent throughout -- do not shift to any other accent. Bright, slightly high pitch; quick, chatty pace. Genuinely friendly, a little in awe of her boss and not remotely suspicious of visitors.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T00:57:40Z"
+}

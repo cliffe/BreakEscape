@@ -1,0 +1,14 @@
+game            1585  (mission 79)
+created         2026-10-06 04:38:19 UTC
+last write      2026-10-06 04:47:57 UTC
+played for      579s of wall clock
+current room    "foyer"
+unlocked rooms  6: foyer, teaching_lab, common_room, corridor, library, workshop
+unlocked objs   8: cryptosecure_lockbox, candidate_locker_4, keyholder_guest_terminal, special_collections_safe, pigeonholes, cryptosecure_drop_box, relay_terminal, hacktivity_scoreboard
+inventory       9: Your Phone, Notepad, Comms Discipline, Keyholder Leaflet, Trial II Card, Keyholder Device, Trial III Card, Brass Key, Final Trial Card
+NPCs met        9: briefing_cutscene, agent_0x99, ghost, closing_debrief_person, jordan_pike, tom_shaw, megan_oyelaran, cliffe_schreuders, cliffe_workshop
+flags submitted 0: 
+globals set     31: briefing_played, comms_had, corridor_open, decision_made, drop_box_open, ending, engine_tutorial_declined, fn04_offered, fn05_offered, fn06_offered, fn07_offered, fn08_offered, fn09_offered, fn10_offered, ghost_greeted, ghost_offer_heard, ghost_offer_made, guest_terminal_open, late_warning, library_open, lockbox_open, locker_open, megan_choice, pigeonholes_open, player_name, relay_opened, report_read_claimed, special_collections_open, start_debrief_cutscene, warned_out_of_band, workshop_open
+
+VERDICT: progress recorded — 5 rooms beyond the first, 8 objects unlocked, 0 flags submitted.
+Cross-check the specifics above against the report.

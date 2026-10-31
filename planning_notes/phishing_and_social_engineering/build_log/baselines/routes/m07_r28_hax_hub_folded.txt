@@ -1,0 +1,262 @@
+
+## R28 (Phase 4 dialogue C1, D7-5): HaX's hub in the state the review counted 15 choices in (team on Fracture, correction found after the window, Hollis talked, Elena turned, Mercer arrested, the vault searched, the echo heard, flag 3 in, a guide waiting). People, vault finds and the stuck topics are one choice each; the layout-and-clock choice is gone past the server hall. Each sub-menu's Never mind returns to the hub, and a reopen that re-runs a sub-menu lands on the hub.
+
+--- briefing ---
+  Narrator: Two forty-one in the morning, Pacific time. Rain on the I-5, and the secure tablet on the passenger seat lights up. Behind the Director, a wall map with four red pins.
+  Director Magnus Netherton: Agent 0x00. Keep driving. I would rather you heard this from me than read it off a screen.
+  Director Magnus Netherton: Four ENTROPY operations went live inside the same sixty seconds. Three days ago you followed the fund behind them.
+  Director Magnus Netherton: Frozen or watched, the advances had already been paid. Tonight is what they paid for.
+  Director Magnus Netherton: Washington. Austin. San Francisco. And a grid control facility outside Portland, Oregon.
+  Narrator: The Portland pin stops blinking and goes solid.
+  Director Magnus Netherton: Pacific Northwest Regional Grid Control. One hundred and forty-seven substations. Eight point four million people in Washington, Oregon and Northern California.
+  Director Magnus Netherton: A sequence on their SCADA stack takes it all down in four steps. It waits on a signal from a host inside the building. Nobody stops it from outside.
+  Director Magnus Netherton: You have your go-bag: picks, the cloner, the print kit. No PIN cracker. Analysis still has it in pieces.
+     (5 options)
+ > Understood. Talk to me about the other three.
+  Narrator: He keeps the line open while the desk pulls the other three together. Forty minutes of rain and empty interstate. Then an industrial park outside Portland, three twenty-four by the dashboard clock.
+  Director Magnus Netherton: We have one tactical team airborne and uncommitted. One. It can reach one of the other three in time to matter.
+  Director Magnus Netherton: The other two go unanswered.
+  Narrator: The line holds for a second longer than a bad connection would explain.
+  Director Magnus Netherton: Fracture, in Washington. Trojan Horse, outside Austin. Meltdown, in San Francisco. Ask about any of them, in any order.
+  Director Magnus Netherton: The desk's summary is on your handset if you want the figures on paper. The team needs your call before you are through the gate.
+     (5 options)
+ > I've made the call.
+  Director Magnus Netherton: Say the word and their aircraft turns.
+     (4 options)
+ > Send them to Fracture. Washington.
+      [set_global team_assignment=fracture]
+      [set_global team_assigned=true]
+      [mapping agent_0x99: set hurt_line_said=true]
+      [clock: architect_taunt_t20 started at 0 min]
+      [clock: architect_taunt_t10 started at 0 min]
+      [clock: redirect_window_close started at 0 min]
+      [clock: redirect_window_display started at 0 min]
+   [text agent_0x99 +2000ms] Team's turned. Two of the three go unanswered tonight. Let it hurt afterwards, not during.
+      [task: assign_tactical_team]
+      [mapping agent_0x99: set team_assigned=true]
+  Director Magnus Netherton: Fracture. Confirmed.
+  Narrator: The pin over Washington changes colour. The other two stay red.
+  Director Magnus Netherton: They will be on the ground in eleven minutes. Reeves will not be there. His cluster will.
+  Director Magnus Netherton: Two operations now run with nobody in their way. On the record, that is my decision as much as yours.
+  Director Magnus Netherton: Go. I will pick you up on the secure channel when it matters.
+  Narrator: Chain-link, a lowered barrier, three storeys of concrete. People are coming out of the front doors with coats over their heads.
+  Director Magnus Netherton: The building is evacuating. The operations floor is past the security checkpoint, and one guard on that shift is compromised.
+  Director Magnus Netherton: Assume the badge readers are logging you. The sequence has not started. Assume that changes the moment they notice you. Agent HaX has your channel from here.
+  Director Magnus Netherton: Eight point four million people, Agent. Go and do the part you can reach.
+  [end]
+   [text agent_0x99 +2500ms] The checkpoint guard is bought. If anyone swings at you: Q for fists, E or click to punch, face them squarely. Q until the open hand shows to use anything.
+
+--- phone ---
+  HaX here, Agent. I've got your channel and the board.
+  The ops room's running four fires tonight. If I go quiet for ten seconds, it isn't personal.
+  The team's logged for Fracture, Washington. It's on the record. It'd take something new to move it.
+  Get past the checkpoint to the operations floor.
+     (3 options)
+ > Understood. Let's go.
+  Call me the second you hit something you can't open.
+     [0] Talk to me about the two we're not covering.
+     [1] Where do I stand?
+     [2] Remind me of the layout and the clock.
+     [3] I'll call you back.
+  [stopped: no pick]
+   [PASS] said: "[choice] Remind me of the layout and the clock."
+   {set {"server_hall_reached":true,"inside_reached":true,"vm_terminal_used":true,"found_coordination_traffic":true,"redirect_window_closed":true,"projection_revised":true,"hollis_resolved":"talked","elena_outcome":"turned","mercer_fate":"arrested","vault_entered":true,"found_tomb_gamma":true,"found_mole_evidence":true,"architect_echo_heard":true,"flag1_submitted":true,"flag2_submitted":true,"flag3_submitted":true,"cascade_armed":true,"privesc_guide_offered":true}}
+   [text agent_0x99 +3000ms] If a row in there doesn't match what we were told, call me and say which.
+      [mapping agent_0x99: set decode_read_open=true]
+      [text from agent_0x99 skipped: found_coordination_traffic]
+      [mapping agent_0x99: set scada_password_found=true]
+      [mapping agent_0x99: set ssh_guide_offered=true]
+   [text agent_0x99 +1500ms] Their listener gives out passwords in clear, the control room door's included. Capture's in your inventory. You've got a name and a password now. Want the SSH guide?
+      [mapping agent_0x99: set logged_in_before_door=true]
+      [mapping agent_0x99: set redirect_window_closed=true]
+      [mapping agent_0x99: set cascade_armed=true]
+      [clock: architect_taunt_t5 started at 0 min]
+      [clock: architect_taunt_t1 started at 0 min]
+      [clock: cascade_zero started at 0 min]
+   [text agent_0x99 +1500ms] They saw you. Sequence armed: fifteen minutes. The window to move the team just shut. A user shell can't kill it. Get root. Privesc guide's yours if you want it.
+      [mapping agent_0x99: set privesc_guide_offered=true]
+
+--- phone @hub ---
+     [0] Can I still move the team to Trojan Horse?
+     [1] Talk to me about the two we're not covering.
+     [2] The share. Four operations running off one schedule.
+     [3] About the people in here.
+     [4] What I found in the vault.
+     [5] He used your line. "Let it hurt afterwards."
+     [6] I'm stuck on something.
+     [7] Where do I stand?
+     [8] I'll call you back.
+  [stopped: no pick]
+   [PASS] said: "[choice] Can I still move the team to Trojan Horse?"
+   [PASS] said: "[choice] Talk to me about the two we're not covering."
+   [PASS] said: "[choice] The share. Four operations running off one schedule."
+   [PASS] said: "[choice] About the people in here."
+   [PASS] said: "[choice] What I found in the vault."
+   [PASS] said: "[choice] He used your line."
+   [PASS] said: "[choice] I'm stuck on something."
+   [PASS] said: "[choice] Where do I stand?"
+   [PASS] said: "[choice] I'll call you back."
+   [PASS] not said: "[choice] I've dealt with Mercer."
+   [PASS] not said: "[choice] A dossier. Tomb Gamma."
+   [PASS] not said: "[choice] I'm in as their operator."
+   [PASS] not said: "[choice] Send me a field guide."
+   [PASS] not said: "[choice] Remind me of the layout and the clock."
+
+--- phone @hub ---
+     (9 options)
+ > About the people in here.
+     (4 options)
+ > I've dealt with Mercer.
+  Blackout himself. James Mercer, twenty years a Department of Energy grid engineer. Then he built the failure he'd warned about.
+  He read the projection and signed it. Nobody was talking him down.
+  Good. He's waited twenty years for a room that has to listen.
+     [0] Can I still move the team to Trojan Horse?
+     [1] Talk to me about the two we're not covering.
+     [2] The share. Four operations running off one schedule.
+     [3] About the people in here.
+     [4] What I found in the vault.
+     [5] He used your line. "Let it hurt afterwards."
+     [6] I'm stuck on something.
+     [7] Where do I stand?
+     [8] I'll call you back.
+  [stopped: no pick]
+   [PASS] said: "[choice] The guard on the checkpoint, Hollis. He was dirty."
+   [PASS] said: "[choice] Elena's numbers don't match the brief."
+   [PASS] said: "[choice] Never mind."
+   [PASS] said: "Good. He's waited twenty years for a room that has to listen."
+   [PASS] said: "[choice] Where do I stand?"
+   [PASS] not said: "[choice] The man in the vault won't stop."
+   [PASS] not said: "He'll talk."
+   [PASS] not said: "What you said is his to live with now."
+
+--- phone @hub ---
+     (9 options)
+ > I'm stuck on something.
+  Tell me where.
+     (4 options)
+ > Never mind.
+     [0] Can I still move the team to Trojan Horse?
+     [1] Talk to me about the two we're not covering.
+     [2] The share. Four operations running off one schedule.
+     [3] About the people in here.
+     [4] What I found in the vault.
+     [5] He used your line. "Let it hurt afterwards."
+     [6] I'm stuck on something.
+     [7] Where do I stand?
+     [8] I'll call you back.
+  [stopped: no pick]
+   [PASS] said: "[choice] The man in the vault won't stop. What would reach him?"
+   [PASS] said: "[choice] I'm in as their operator. How do I stop the cascade?"
+   [PASS] said: "[choice] Send me a field guide."
+   [PASS] said: "[choice] Where do I stand?"
+
+--- phone @hub ---
+     (9 options)
+ > What I found in the vault.
+     [0] A dossier. Tomb Gamma.
+     [1] An intercept. They didn't leak the operation. They leaked me.
+     [2] Never mind.
+  [stopped: no pick]
+   [PASS] said: "[choice] A dossier. Tomb Gamma."
+   [PASS] said: "[choice] An intercept. They didn't leak the operation. They leaked me."
+
+## A reopen with changed globals re-runs the sub-menu knot: it goes to the hub.
+   {set {"flag4_submitted":true}}
+
+--- phone ---
+     [0] Can I still move the team to Trojan Horse?
+     [1] Talk to me about the two we're not covering.
+     [2] The share. Four operations running off one schedule.
+     [3] About the people in here.
+     [4] What I found in the vault.
+     [5] He used your line. "Let it hurt afterwards."
+     [6] I'm stuck on something.
+     [7] Where do I stand?
+     [8] I'll call you back.
+  [stopped: no pick]
+   [PASS] said: "[choice] Where do I stand?"
+   [PASS] not said: "[choice] Never mind."
+
+--- phone @hub ---
+     (9 options)
+ > What I found in the vault.
+     (3 options)
+ > An intercept. They didn't leak the operation. They leaked me.
+  Narrator: A long pause on the line.
+  Slowly. I want to be sure I'm hearing this.
+  He had your deployment before the order went out. Somebody handed ENTROPY you, by name.
+  I'll tell Netherton myself. Not on this line.
+  And the grid's still yours to hold, so hold it first.
+  Get that intercept out of the building. It's the first thread of whatever comes next.
+     [0] Can I still move the team to Trojan Horse?
+     [1] Talk to me about the two we're not covering.
+     [2] The share. Four operations running off one schedule.
+     [3] About the people in here.
+     [4] What I found in the vault.
+     [5] He used your line. "Let it hurt afterwards."
+     [6] I'm stuck on something.
+     [7] Where do I stand?
+     [8] I'll call you back.
+  [stopped: no pick]
+   [PASS] said: "Slowly. I want to be sure I'm hearing this."
+
+--- phone @hub ---
+     (9 options)
+ > Talk to me about the two we're not covering.
+  Yeah. I've been sitting with that since you made the call.
+  Whichever way you turned it, two went unanswered. One team, three fires.
+  ENTROPY built that arithmetic on purpose.
+     (2 options)
+ > Was there a right answer?
+  Not on the brief we gave you. He wrote the brief.
+     [0] Can I still move the team to Trojan Horse?
+     [1] The share. Four operations running off one schedule.
+     [2] About the people in here.
+     [3] What I found in the vault.
+     [4] He used your line. "Let it hurt afterwards."
+     [5] I'm stuck on something.
+     [6] Where do I stand?
+     [7] I'll call you back.
+  [stopped: no pick]
+   [PASS] said: "Not on the brief we gave you. He wrote the brief."
+   [PASS] not said: "didn't read the briefs"
+
+--- phone @hub ---
+     (8 options)
+ > Where do I stand?
+  The clock's running. Fifteen minutes from your login on their host.
+  Root's in. Put the abort in at the console in the control room.
+  The door's north of the server hall.
+  Elena gave you the password.
+     [0] Can I still move the team to Trojan Horse?
+     [1] The share. Four operations running off one schedule.
+     [2] About the people in here.
+     [3] What I found in the vault.
+     [4] He used your line. "Let it hurt afterwards."
+     [5] I'm stuck on something.
+     [6] Where do I stand?
+     [7] I'll call you back.
+  [stopped: no pick]
+   [PASS] said: "The clock's running. Fifteen minutes from your login on their host."
+   [PASS] said: "Root's in. Put the abort in at the console in the control room."
+
+## After the abort the closed-window question is gone (D7-5).
+   {set {"grid_saved":true}}
+      [clock: debrief_fallback started at 0 min]
+
+--- phone @hub ---
+     [0] Bring me in.
+     [1] The share. Four operations running off one schedule.
+     [2] About the people in here.
+     [3] What I found in the vault.
+     [4] He used your line. "Let it hurt afterwards."
+     [5] I'm stuck on something.
+     [6] Where do I stand?
+     [7] I'll call you back.
+  [stopped: no pick]
+   [PASS] said: "[choice] Bring me in."
+   [PASS] not said: "[choice] Can I still move the team to Trojan Horse?"
+   [PASS] longest run 9 (briefing) <= 9
+
+[stats] spoken/narrated lines 48, choices 14, longest run without a choice 9 (briefing); runs>=6: briefing:9, briefing:6, briefing:9, phone:6
+[result] all expectations met

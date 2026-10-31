@@ -1,0 +1,7 @@
+{
+  "display_name": "NPC Personal Space Test",
+  "description": "Technical test for NPC personal space and collision avoidance.",
+  "difficulty_level": 1,
+  "secgen_scenario": null,
+  "collection": "testing"
+}

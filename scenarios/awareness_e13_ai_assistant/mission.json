@@ -1,0 +1,25 @@
+{
+  "display_name": "The AI assistant",
+  "description": "An awareness episode of about 15 minutes for all staff. On an authorised exercise at Brightwell Foods, a fictional company, you first play the red team: write a supplier brief for the firm's new assistant to read, plain or with a line hidden in it. Then you use the assistant for real and handle a supplier email, a voicemail and a video call. Only the second part is scored, and checking another way when you're unsure is always fine and never marked down.",
+  "difficulty_level": 1,
+  "scoring": "completion",
+  "resultGlobal": "episode_e13_ai_assistant_defend_percent",
+  "stage": "episode",
+  "secgen_scenario": null,
+  "collection": "training",
+  "ui_theme": "general",
+  "title_art": "title_art/awareness_e13_ai_assistant.jpg",
+  "estimated_duration_minutes": 15,
+  "cybok": [
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": [
+        "Deepfakes",
+        "Prompt injection",
+        "AI assistants",
+        "Security awareness"
+      ]
+    }
+  ]
+}

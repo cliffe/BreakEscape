@@ -1,0 +1,384 @@
+{
+  "scenario_id": "awareness_e6_texts_and_qr_defend",
+  "scenario_name": "Texts and QR codes: your work phone",
+  "titleScreenName": "Texts and QR codes",
+  "scenario_brief": "Awareness episode E6, phone only. It's your break at the Shipley depot of Tarrowby Logistics, a fictional haulier, and six things are waiting on your work phone: texts, two printed notices with QR codes and an email. Some are real and some were built to trick you: decide what to do with each, and report or check anything that doesn't sit right.",
+  "endGoal": "Go through the six items on the work phone at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "work_phone_aim",
+      "title": "Check the work phone",
+      "description": "Go through the six items on the work phone at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e6_texts_and_qr_defend_defend_complete"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Work phone done",
+        "body": "That's the work phone finished. The debrief goes through each item."
+      },
+      "tasks": [
+        {
+          "taskId": "check_work_phone",
+          "title": "Check the work phone",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e6_texts_and_qr_defend_state": {},
+    "se_awareness_records": [],
+    "episode_e6_texts_and_qr_defend_defend_percent": 0,
+    "episode_e6_texts_and_qr_defend_defend_reportRate": 0,
+    "episode_e6_texts_and_qr_defend_defend_complete": false
+  },
+  "social": {
+    "triageSets": [
+      {
+        "id": "e6_phone_messages",
+        "title": "Tarrowby work phone",
+        "brief": "It's your break at Tarrowby's Shipley depot, and six things are waiting on your work phone: texts, two printed notices you passed on site, and an email. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. On a notice, press 'Where does this code go?' to see the address behind the code. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "realLabel": "Real texts and notices",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "unexpected_qr",
+          "smish_shortlink_urgency",
+          "lookalike_domain",
+          "secrecy_or_bypass"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "episode_e6_texts_and_qr_defend_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e6_parcel_fee",
+            "kind": "sms",
+            "from": {
+              "address": "07700 900583 (not in your contacts)"
+            },
+            "time": "10:02",
+            "body": "ASAParcels: we couldn't deliver your parcel. A £1.45 redelivery fee is due by 6pm today or it goes back to the sender: {{link:fee}}",
+            "links": [
+              {
+                "id": "fee",
+                "text": "shrtn.example/Pk3x9",
+                "destination": "https://asaparcels-redelivery.example/fee"
+              }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "smish_shortlink_urgency"
+              ],
+              "perFlagNote": {
+                "smish_shortlink_urgency": "A text from a number you don't have saved, a shortened link that hides where it goes, and 'by 6pm today'. A small fee is the hook: the page behind it asks for your card details, not £1.45"
+              },
+              "ifTrusted": "The link opens a payment page that collects your card number. The tiny fee is just the hook to get you onto it.",
+              "reportReply": "Thanks. That link went to a card-collecting page, not a courier. We've added the number to the block list for Tarrowby phones. At home, you can forward a scam text like this to 7726 for free, and your mobile provider can look into it and block the number; if a call ever claims to be your bank, hang up and call 159 to reach your own bank's fraud line."
+            }
+          },
+          {
+            "id": "e6_shift_moved",
+            "kind": "sms",
+            "from": {
+              "name": "Shauna Lofthouse (Transport)",
+              "address": "Shauna (mobile), in your contacts"
+            },
+            "time": "10:15",
+            "earlier": [
+              {
+                "text": "Thanks for covering Tuesday. Shauna",
+                "time": "Mon 16:40"
+              }
+            ],
+            "body": "Hi, Thursday's Halifax run now starts at 6am, not 7. It's updated on the staff app. No need to reply. Shauna",
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "smish_shortlink_urgency": "There's no link at all. It points you to the staff app you already use, so you can check it there.",
+                "default": "It's from Shauna's number, which is already saved on your phone with earlier messages in the thread. It tells you about a change and asks you to do nothing except turn up."
+              },
+              "falseAlarmCost": "Dismissed as a scam, the new start time gets missed and the early run goes short-handed."
+            }
+          },
+          {
+            "id": "e6_parking_permit",
+            "kind": "qr",
+            "subject": "Staff car park: set up contactless payment",
+            "time": "10:20",
+            "body": "The staff car park is switching to contactless payment from Monday. Scan to set up your vehicle and card. Vehicles not set up may be clamped.",
+            "qr": {
+              "destination": "https://tarrowby-parking.example/pay",
+              "location": "Taped to the barrier at the staff car park entrance",
+              "caption": "Tarrowby Facilities"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unexpected_qr",
+                "lookalike_domain",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "unexpected_qr": "A taped-on notice with a code and a payment set-up is exactly where you can't see the address before you scan. Anyone can stick a notice to a barrier",
+                "lookalike_domain": "The code goes to tarrowby-parking.example. Tarrowby's own pages are on tarrowby.example; the added word makes it a different site",
+                "urgencyCalibrated": "'Vehicles not set up may be clamped', from Monday, is there to make you scan now rather than stop to check where the code goes"
+              },
+              "ifTrusted": "The page would take your card details and your number plate. A change to how you park would not reach you first as a code taped to a barrier.",
+              "reportReply": "Thanks. Facilities didn't put that up, and there's no contactless parking scheme. We've taken the notices down and checked the other gates."
+            }
+          },
+          {
+            "id": "e6_canteen_qr",
+            "kind": "qr",
+            "subject": "How was lunch? Rate this week's menu",
+            "time": "10:24",
+            "body": "Two quick questions. No sign-in, no names. Results go up on the canteen board on Friday.",
+            "qr": {
+              "destination": "https://forms.tarrowby.example/canteen-menu",
+              "location": "Printed on the table cards in the canteen",
+              "caption": "Put up by Eilidh Strachan, Facilities"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "unexpected_qr": "A QR code is fine when you'd expect one, it comes from someone you know, and it asks for nothing sensitive. This one wants no password and no card.",
+                "lookalike_domain": "forms.tarrowby.example ends in tarrowby.example, Tarrowby's own domain. The 'forms.' in front is one of Tarrowby's own services, the same as 'mail.' or 'hr.' would be.",
+                "default": "Printed table cards in the canteen, put up by the facilities manager you know in person, and all it collects is a menu rating."
+              }
+            }
+          },
+          {
+            "id": "e6_mfa_scan",
+            "from": {
+              "name": "Tarrowby IT Service Desk",
+              "address": "it-servicedesk@tarrowbey.example"
+            },
+            "to": "all-staff@tarrowby.example",
+            "subject": "Action needed: scan to keep your work sign-in",
+            "time": "10:31",
+            "body": "Your sign-in security check runs out at midnight tonight.\nTo keep access to email and the staff app, scan the QR code in this email with your phone camera and confirm your details.\nIf you don't, your account will be locked and you'll need to visit IT in person.\nIT Service Desk",
+            "attachments": [
+              {
+                "label": "scan-to-confirm.png",
+                "kind": "image"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.tarrowbey.example",
+              "replyTo": "it-servicedesk@tarrowbey.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unexpected_qr",
+                "lookalike_domain",
+                "urgencyCalibrated"
+              ],
+              "flagAlternatives": [
+                [
+                  "lookalike_domain",
+                  "senderTrust"
+                ]
+              ],
+              "perFlagNote": {
+                "unexpected_qr": "A code in an email does what a link does, but you can't read where it goes, and it moves you onto your phone, away from the checks on your work mail",
+                "lookalike_domain": "The sender is tarrowbey.example, with an extra e. Tarrowby's IT desk writes from tarrowby.example",
+                "urgencyCalibrated": "'Midnight tonight' and 'your account will be locked' are there to make you scan before you think"
+              },
+              "ifTrusted": "The code opens a copy of the Tarrowby sign-in page. Whoever made it gets your password and the code from your authenticator app.",
+              "reportReply": "Thanks. That wasn't us: our address is tarrowby.example, and we never ask you to scan anything to keep your sign-in. If you're unsure, ring Nilesh or anyone on the IT desk on the number on the intranet."
+            }
+          },
+          {
+            "id": "e6_chat_new_number",
+            "kind": "sms",
+            "from": {
+              "address": "07700 900512 (not in your contacts)"
+            },
+            "time": "10:40",
+            "body": "Hi, it's Dermot, lost my old phone so this is my new number. Quick one before the 2pm run: can you sort something for me? Don't mention it to the others just yet.",
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "secrecy_or_bypass",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "secrecy_or_bypass": "'Don't mention it to the others' and an urgent favour are the 'hi, it's me, new number' trick. A new number is a new account, not proof it's the person: Dermot's real number is already saved on your phone, so a text from an unknown number saying 'it's me' is the warning sign, not proof it's him.",
+                "urgencyCalibrated": "The rush 'before the 2pm run' is there to stop you checking Dermot's saved number first."
+              },
+              "ifTrusted": "The favour that follows is usually gift cards, a payment or staff details, handed to someone who isn't Dermot at all.",
+              "reportReply": "Thanks. Dermot is on his usual saved number and didn't text you; the new number isn't his. At work, report it the Tarrowby way. At home, a 'new number' message on a chat app is blocked and reported inside the app itself (7726 doesn't cover chat apps), and a plain scam text goes to 7726."
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e6_texts_and_qr_defend",
+      "role": "mobile",
+      "company": "tarrowby_logistics",
+      "brand": {
+        "name": "Tarrowby Logistics",
+        "logoText": "TARROWBY",
+        "accent": "#3b5b8c"
+      },
+      "variant": "defendOnly",
+      "durationTargetMin": 8,
+      "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: six items on a Tarrowby work phone.",
+      "stages": [
+        "brief",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "check_work_phone",
+      "defend": {
+        "setId": "e6_phone_messages",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional haulier in West Yorkshire. It's your break at the Shipley depot, and six things are waiting on your work phone: texts, two printed notices you passed on site, and an email. Some are real and some were built to trick you. Sort them, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "flipMissedHeading": "Nothing to replay this time",
+        "flipLandedNoTells": "It landed clean on the phone, with nothing in it to flag. Next, the same kind of message turns up on a Tarrowby work phone, and you're the one reading it.",
+        "noBlameLine": "Being caught by one of these is no fault of yours. These were built to look like Tarrowby's own messages, and they land on a phone you're reading between jobs. Catching them is a habit, not a test of how clever you are.",
+        "mondayCard": "On Monday: if a text, a notice or an email wants you to scan a code or tap a short link to pay, sign in or confirm something, stop. Don't reply, not even STOP. A message from a new number saying 'it's me' is a warning sign, not proof: reach the person on the number you already hold. Open the app or site the way you normally would, or ring the sender on a number you already have, then report the message using the route in the box below. At home, forward a scam text to 7726 for free, call 159 for a call that says it's your bank, and report fraud to Report Fraud.",
+        "defendOnly": "These landed on a phone between jobs, and they were built to read like Tarrowby's own messages, so anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away.",
+        "defendIntro": "Go through the work phone and decide what to do with each text, notice and email. On a notice, check where the code goes before you would scan it. There's no clock on you here; the whole job is one or two small habits."
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on",
+    "ambient": "#bcc2cc"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_tarrowby",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_tarrowby_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "drinks_vending": {
+            "color": "#e0f0ff",
+            "radius": 40,
+            "intensity": 0.45
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 4.5,
+            "y": 5,
+            "color": "#dfe8f4",
+            "radius": 110,
+            "intensity": 0.25
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "chidi_okeke",
+          "displayName": "Chidi Okeke",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/awareness_e6_texts_and_qr_defend/ink/chidi_okeke.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_e6_texts_and_qr_defend_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "check_work_phone"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk set up as a Tarrowby work phone, with texts, notices and an email waiting.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e6_texts_and_qr_defend_defend_complete",
+              "value": "A touch-screen kiosk set up as a Tarrowby work phone. Nothing left to do here."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e6_texts_and_qr_defend"
+          }
+        }
+      ]
+    }
+  }
+}

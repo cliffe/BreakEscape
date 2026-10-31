@@ -1,0 +1,10 @@
+Make portrait for Patricia Morgan
+A solidly built white Welsh woman of about 53 from Cardiff, fair weathered skin with crow's feet and a faint old scar on her chin, short silver-blonde hair cropped neat and brushed back, pale grey eyes, the Chief Security Officer and ex-army. She wears a black wool security manager's jumper with plain reinforced shoulder and elbow patches and no badges or text, the white collar of a shirt showing at the neck, a compact black radio clipped high on the shoulder strap, a lanyard with a blank white card, black cargo-style trousers and a black duty belt carrying a torch. Hands clasped behind her back, at ease, mouth closed, steady and unimpressed. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain light grey background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-16, no reference images. Already faced right, so reframed with reframe_portrait.py without --flip; original is patricia_morgan_concept_2_raw.png.

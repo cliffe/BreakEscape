@@ -1,0 +1,13 @@
+{
+  "key": "1b490b5b86ab5d63c1b684a8a72a3e73",
+  "npc": "closing_debrief",
+  "text": "You told him she'd answer for it. She's in the wind. He asked me this morning if that was still true. I said \"not yet\".",
+  "voice": "Aoede",
+  "style": "Intelligence handler giving a mission debrief in person. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:07:55Z"
+}

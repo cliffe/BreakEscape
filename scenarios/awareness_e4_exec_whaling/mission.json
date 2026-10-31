@@ -1,0 +1,26 @@
+{
+  "display_name": "Executive impersonation",
+  "description": "An awareness episode of about 15 minutes for executive assistants and PAs. On an authorised exercise at Merrin & Sallow Architects, a fictional practice, you first play the attacker: research what's public about the travelling managing partner, then send one email to her PA that looks as if it came from her. Then you swap seats and work the PA's inbox a message like it lands in, including a voicemail in a copied voice. Only the inbox is scored, and reporting or checking when you're unsure is always fine and never marked down.",
+  "difficulty_level": 1,
+  "scoring": "completion",
+  "resultGlobal": "episode_e4_exec_whaling_defend_percent",
+  "stage": "episode",
+  "secgen_scenario": null,
+  "collection": "training",
+  "ui_theme": "general",
+  "title_art": "title_art/awareness_e4_exec_whaling.jpg",
+  "estimated_duration_minutes": 15,
+  "cybok": [
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": [
+        "Whaling",
+        "Vishing",
+        "Voice cloning",
+        "Security awareness",
+        "OSINT"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,213 @@
+import { COMBAT_CONFIG } from '../config/combat-config.js';
+import { CombatEvents } from '../events/combat-events.js';
+import { closeMinigameOnDamage } from './player-damage-interrupt.js';
+
+let state = null;
+
+function createInitialState() {
+  return {
+    currentHP: COMBAT_CONFIG.player.maxHP,
+    maxHP: COMBAT_CONFIG.player.maxHP,
+    isKO: false
+  };
+}
+
+export function initPlayerHealth() {
+  state = createInitialState();
+  console.log('✅ Player health system initialized');
+
+  return {
+    getHP: () => state.currentHP,
+    getMaxHP: () => state.maxHP,
+    isKO: () => state.isKO,
+    damage: (amount) => damagePlayer(amount),
+    heal: (amount) => healPlayer(amount),
+    reset: () => { state = createInitialState(); },
+    exportState: () => exportPlayerHealth(),
+    restore: (saved) => restorePlayerHealth(saved)
+  };
+}
+
+/**
+ * { hp, maxHP } for the server (state-sync.js playerHealth), so a reload
+ * mid-fight is no longer a free full heal (m05 E6, user 2026-10-17).
+ */
+export function exportPlayerHealth() {
+  if (!state) return null;
+  return { hp: state.currentHP, maxHP: state.maxHP };
+}
+
+/**
+ * Restore HP saved before a reload (savedPlayerHealth, game.js). A save at 0 HP
+ * (a knockout) or anything invalid gives full health: the player wakes up. The
+ * saved fraction of health is kept if the configured max HP has changed.
+ * @param {{hp:number, maxHP:number}} saved
+ * @returns {boolean} true if HP was set below full
+ */
+export function restorePlayerHealth(saved) {
+  if (!state) return false;
+  state = createInitialState();
+  if (!saved || typeof saved !== 'object') return false;
+  const { hp, maxHP } = saved;
+  if (!Number.isFinite(hp) || !Number.isFinite(maxHP) || maxHP <= 0 || hp <= 0 || hp >= maxHP) {
+    return false;
+  }
+  const restored = maxHP === state.maxHP ? hp : Math.round((hp / maxHP) * state.maxHP);
+  state.currentHP = Math.max(1, Math.min(state.maxHP, restored));
+  if (state.currentHP >= state.maxHP) return false;
+  console.log(`❤️ Restored player HP: ${state.currentHP}/${state.maxHP}`);
+  return true;
+}
+
+function damagePlayer(amount) {
+  if (!state) {
+    console.error('Player health not initialized');
+    return false;
+  }
+
+  if (typeof amount !== 'number' || amount < 0) {
+    console.error('Invalid damage amount:', amount);
+    return false;
+  }
+
+  const oldHP = state.currentHP;
+  state.currentHP = Math.max(0, state.currentHP - amount);
+
+  // Emit HP changed event
+  if (window.eventDispatcher) {
+    window.eventDispatcher.emit(CombatEvents.PLAYER_HP_CHANGED, {
+      hp: state.currentHP,
+      maxHP: state.maxHP,
+      delta: -amount
+    });
+  }
+
+  // Mark the knockout before closing the open minigame: its onComplete can open
+  // another (the notepad returns to the phone), and startMinigame refuses only
+  // once isKO is set (m04 confirmation R2 N1)
+  const knockedOut = state.currentHP <= 0 && !state.isKO;
+  if (knockedOut) state.isKO = true;
+
+  // Taking damage closes any open minigame so the player can respond (the
+  // phone stays open unless the hit is a knockout: player-damage-interrupt.js)
+  closeMinigameOnDamage(amount, { ko: state.currentHP <= 0 });
+
+  // Check for KO
+  if (knockedOut) {
+
+    // Play death animation
+    if (window.player) {
+      playPlayerDeathAnimation();
+    }
+
+    // Play KO sounds: Wilhelm scream then body fall
+    if (window.soundManager) {
+      window.soundManager.play('wilhelm_scream');
+      window.soundManager.play('body_fall', { delay: 400 });
+    }
+
+    if (window.eventDispatcher) {
+      window.eventDispatcher.emit(CombatEvents.PLAYER_KO, {});
+    }
+  }
+
+  console.log(`Player HP: ${oldHP} → ${state.currentHP}`);
+  return true;
+}
+
+/**
+ * Play death animation for player
+ */
+function playPlayerDeathAnimation() {
+  const player = window.player;
+  if (!player || !player.scene) return;
+
+  // Get player's last facing direction
+  const direction = player.lastDirection || 'down';
+  
+  // Check if player uses atlas-based animations
+  const texture = player.scene.textures.get(player.texture.key);
+  const frames = texture ? texture.getFrameNames() : [];
+  const isAtlas = frames.length > 0 && typeof frames[0] === 'string' && frames[0].includes('_frame_');
+  
+  if (isAtlas) {
+    // Try atlas-based death animations
+    // Convert player direction to atlas compass direction
+    const compassMap = {
+      'down': 'south',
+      'up': 'north',
+      'left': 'west',
+      'right': 'east',
+      'down-left': 'south-west',
+      'down-right': 'south-east',
+      'up-left': 'north-west',
+      'up-right': 'north-east'
+    };
+    
+    const compassDir = compassMap[direction] || 'south';
+    const deathAnimKey = `falling-back-death_${compassDir}`;
+    
+    if (player.scene.anims.exists(deathAnimKey)) {
+      // Store original origin for visual shift
+      const originalOriginY = player.originY;
+      
+      // Add animation update listener to progressively shift visual display downward
+      player.on('animationupdate', (anim, frame) => {
+        if (anim.key === deathAnimKey) {
+          // Calculate progress through animation (0 to 1)
+          const totalFrames = anim.getTotalFrames();
+          const currentFrame = frame.index;
+          const progress = currentFrame / totalFrames;
+          
+          // Shift player's visual display downward by adjusting origin
+          // Decrease originY by ~0.4 to shift texture down (~32px for 80px sprite)
+          const originOffset = progress * 0.4;
+          player.setOrigin(player.originX, originalOriginY - originOffset);
+        }
+      });
+      
+      // Clean up listener when animation completes
+      player.once('animationcomplete', (anim) => {
+        if (anim.key === deathAnimKey) {
+          player.off('animationupdate');
+          // Origin stays shifted - defeated player appears lower but depth unchanged
+        }
+      });
+      
+      player.play(deathAnimKey);
+      console.log(`💀 Playing player death animation: ${deathAnimKey}`);
+    } else {
+      console.warn(`⚠️ Death animation not found: ${deathAnimKey}`);
+      // Log available death animations for debugging
+      const deathAnims = Object.keys(player.scene.anims.anims.entries)
+        .filter(key => key.includes('falling-back-death'));
+      if (deathAnims.length > 0) {
+        console.log(`   Available death animations: ${deathAnims.join(', ')}`);
+      }
+    }
+  }
+  
+  // Disable player physics body to prevent further movement
+  if (player.body) {
+    player.body.setVelocity(0, 0);
+    // Don't disable body entirely to keep collision detection for NPCs
+  }
+}
+
+function healPlayer(amount) {
+  if (!state) return false;
+
+  const oldHP = state.currentHP;
+  state.currentHP = Math.min(state.maxHP, state.currentHP + amount);
+
+  if (window.eventDispatcher) {
+    window.eventDispatcher.emit(CombatEvents.PLAYER_HP_CHANGED, {
+      hp: state.currentHP,
+      maxHP: state.maxHP,
+      delta: amount
+    });
+  }
+
+  console.log(`Player HP: ${oldHP} → ${state.currentHP}`);
+  return true;
+}

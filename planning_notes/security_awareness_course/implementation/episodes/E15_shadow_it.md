@@ -1,0 +1,448 @@
+# E15: Shadow IT (removable media, cloud storage and workarounds)
+
+Buildable by a fresh Sonnet implementer from this spec plus "Read first". All companies, people,
+domains and figures are fictional; `.example` domains only. UK spelling; "cyber security" two words; no
+em or en dashes. No real tooling, no payloads.
+
+E15 is a **consequence-flip** episode. The normative `mistake`/montage config shape is owned by
+**`02_ENGINE_WORK.md` ENG-04**; `E11_misdirected_data.md` section 10a is a worked example of it. Do not
+redefine that shape here; this spec only names the `mistake` beats, the `flipBeat` and the montage strings.
+
+## 1. Goal and module(s)
+
+Teach **core_13 (removable media, cloud storage and shadow IT)**: found media goes to IT unplugged;
+work stays in approved places; free is not free (no contract, no control, no backup, no off switch); if
+the official way is slow, ask IT; already using a workaround, tell IT, no blame. The topic has no single
+attacker, so the learner does the ordinary thing under a Friday deadline in a safe sandbox, and the flip
+("six months later") shows where each shortcut led. Then a scored defend half and the built debrief.
+Target length about 15 minutes. Shape: the **consequence flip**.
+
+Source of truth: `modules/core_13_removable_media_cloud_and_shadow_it/concepts.md`. Shape from
+`.../game_design.md` ("Workaround").
+
+## 2. Read first (exact paths)
+
+- `modules/core_13_removable_media_cloud_and_shadow_it/concepts.md` (source of truth), `.../game_design.md`,
+  `.../assessment.md`.
+- **`02_ENGINE_WORK.md` ENG-04** (the normative `mistake`/montage config shape); **`E11_misdirected_data.md`
+  section 10a** is a worked example of it (required reading, do not re-derive the shape).
+- `designs/00_data_contract.md` sections 2 (channel tells) and 11 (`awarenessEpisode`).
+- `designs/11_awareness_product_episodes.md` sections 3.1, 4.1, 5.1, the "Built note".
+- `awareness/BRAND_SET.md`, the Tarrowby Logistics cast and the E6 additions (Nilesh Solanki, Colin
+  Mather, Shauna Lofthouse, Chidi Okeke and the Tarrowby look-alikes and third parties).
+- Nearest built episodes: E6 (Tarrowby, mobile) `awareness/e6/{attack,defend}.json` and E4
+  `awareness/e4/defend.json` (the `triageSets` item shape, the `awarenessEpisode` block, the
+  defend-only split). Shells `scenarios/awareness_e6_texts_and_qr*/`.
+- Engine: `episode-runner/` (`flip-view.js`, `debrief-view.js`), `systems/episode-starter.js`,
+  `awareness-measure.js`; the inbox-triage defender, the `Verify` verdict.
+- Validators as E11 section 2.
+
+## 3. Depends on
+
+- **ENG-04** (the consequence-flip `mistake` stage + montage flip): the normative config shape
+  (`02_ENGINE_WORK.md`); `E11` section 10a is a worked example of it.
+- **ENG-08** schema/validator for the ENG-04 keys (if not carried by ENG-04).
+- **Built, no new packet:** the inbox-triage defender under the `awareness` profile with `Verify`; the
+  mail client's recipient check (the "Me (personal)" autocomplete in the sandbox); the montage flip
+  (ENG-04); the measurement store; the debrief view; the shared rule of thumb.
+- **ENG-11** (reusable sort drill): the **"Swap Shop" match drill** uses ENG-11's `sortDrill` surface
+  with its own `bins` (the approved ways), `scored: false` (teaching). A match-to-one-of-N is a sort into
+  N bins, so it folds into ENG-11; it is not a bespoke surface and not scored by the `awareness` profile.
+- **Check forms (no engine packet):** E15's topic (removable media, cloud, shadow IT, core_13) is a
+  message-triage-friendly topic, so it feeds the shared **`general_v2`** pair built per
+  `10_CHECK_FORMS.md`, not a per-topic form. Do not edit the six built role forms. Section 14.
+
+## 4. Owner models
+
+Content to `opus48`; engine (ENG-04 reuse, the Swap Shop drill, check-form wiring) to general-purpose or
+Sonnet.
+
+## 5. Company, room and host
+
+- **Company: Tarrowby Logistics** (built brand, `tarrowby.example`, look-alikes
+  `tarrowby-careers.example`, `tarrowbey.example`, plus the E6 additions `tarrowby-parking`,
+  `-charging`, `-wifi`; wordmark `TARROWBY`, accent `#3b5b8c`). A regional haulier and warehousing firm;
+  mixed, largely non-technical workforce (drivers, warehouse, office).
+- **Room: `room_aw_tarrowby`** (the built Tarrowby training-room type). The desktop, the sharing panels,
+  the swap board and the montage are overlays; no new room.
+- **Host: Nilesh Solanki**, IT service desk analyst (`nilesh.solanki@tarrowby.example`), built Tarrowby
+  cast. Quick, kind, funny; asking him is always the easiest move. Carries the per-item feedback, the
+  conclusion `eventMappings`, and reveals the authorised USB-drop test in the debrief.
+- **Cast (built Tarrowby):** Colin Mather (warehouse manager, likeable, offers the shortcuts, comes
+  round); Shauna Lofthouse (depot, rings about the rota in a free app). The client contact and the
+  departed agency temp are phone-only or off-screen. No new cast needed; confirm each is in the built
+  Tarrowby roster (`BRAND_SET.md`) before authoring. No new BRAND_SET entry is required for E15.
+  - **Name-clash note:** all four are built Tarrowby names already in the shipped E2/E6 shells, so no new
+    clash check is needed; keep the built spellings (Nilesh Solanki, not "Dev Mistry").
+
+## 6. Timing budget per stage (about 15 minutes)
+
+| Stage | Minutes | What happens |
+|-------|---------|--------------|
+| brief | 1 | Nilesh welcomes, reads the scope and the Friday deadline; the sync bar reads "about 2 hours remaining" |
+| mistake | 4 to 5 | Four shortcuts arrive inside the work; take the shortcut or the approved route (section 9); unscored |
+| flip | 1 to 2 | "Six months later": where each shortcut led, personal email first (section 10) |
+| defend | 4 to 5 | A six-item triage set (scored) plus the unscored Swap Shop drill (section 11) |
+| debrief | 1 to 2 | Per-item cards, the habit to keep, the Monday card, the no-blame line, the USB-test reveal (section 12) |
+
+## 7. Stages (runner stage ids)
+
+Full: `"stages": ["brief", "mistake", "flip", "defend", "debrief"]`. Defend-only: `"stages":
+["brief", "defend", "debrief"]`. The Swap Shop drill runs inside `defend` as an unscored sub-activity.
+
+## 8. Brief and scope note (host draft lines)
+
+- **Scope note** (`scopeNote`): "Authorised exercise at Tarrowby Logistics, a fictional firm. It's
+  Friday afternoon, a pack is due at a client by Monday, and the share has crawled to a halt. See where
+  the shortcuts lead."
+- **Brief** (`strings.brief`): "You're on an authorised exercise at Tarrowby Logistics, a fictional
+  firm. A pack is due at a client by Monday and the file share has slowed to a crawl. First you make the
+  calls anyone would under a deadline; then you see, six months on, where each shortcut led. Then you
+  sort a short set of found sticks and shortcut messages, and match each shortcut to the approved way.
+  Only the sort is scored."
+- **Defend-only brief** (`_defendOnly.brief`): "You're on an authorised exercise at Tarrowby Logistics,
+  a fictional firm. A pack is due by Monday and the share is slow. Found sticks and 'quicker way'
+  messages are waiting: some are safe, some aren't. Sort them, and match each shortcut to the approved
+  way. Reporting or checking when you're unsure is always fine and never marked down."
+- **Defend-only scope note** (`_defendOnly.scopeNote`): "Authorised exercise at Tarrowby Logistics, a
+  fictional firm. In scope: a short set of found sticks and messages, and the approved swaps."
+- **Host welcome (draft):** "Nilesh, service desk. Ask us first. We'd rather help than clean up. That
+  slow share? Tell us and we'll fix it, we can't mend what we don't know about."
+
+## 8b. Shell and generator metadata (every value final; no guessing)
+
+Every metadata value the shell wiring (01 P2/P3) and the generator (01 P4, `gen_e8_e17_shells.py`) need,
+as final strings, copying the shapes from the built **E6** erb and the generator shape from
+`gen_e6_e7_shells.py`. E15 is a **consequence-flip** episode with **no `phish_*` target**, so the full
+shell carries a single aim (the one-aim design, as E11 section 15a; follow it, with no `red_team_aim` and
+no attack-landed global).
+
+### Host and learner sprites
+
+- **Host Nilesh Solanki's generator `HOSTS['nilesh']` entry** (new in `gen_e8_e17_shells.py`, shared with
+  E17; following the E6/E7 `HOSTS` shape; `defend_host: 'nilesh'` below points to it):
+
+  ```python
+  'nilesh': {
+      'id': 'nilesh_solanki', 'displayName': 'Nilesh Solanki', 'sprite': 'male_telecom',
+      'about': "Tarrowby's IT service desk analyst, 30s, Gujarati-British, grew up in Leicester (BRAND_SET.md, E6 additions; renamed from Dev Mistry). Quick, kind, funny; asking him is always the easiest move. Placeholder sprite until the PixelLab reset.",
+  },
+  ```
+
+  Sprite `male_telecom` is the built placeholder the other Tarrowby/service-desk hosts use (for example
+  Darren Price in `gen_e3_e5_shells.py`); Nilesh has no sprite assigned in the built E6, which uses him as
+  a sender only, so this is a placeholder until the PixelLab reset.
+- **Nilesh's in-scenario host NPC sprite keys** (full erb `rooms.training_room.npcs[]`, E6 host NPC
+  shape): `"spriteSheet": "male_telecom_v2"`, `"spriteTalk": "assets/characters/male_telecom_talk.png"`,
+  `"spriteVisemes": "assets/characters/male_telecom_visemes.png"`, `"npcType": "person"`,
+  `"id": "nilesh_solanki"`, `"displayName": "Nilesh Solanki"`,
+  `"storyPath": "scenarios/awareness_e15_shadow_it/ink/nilesh_solanki.json"`, `"currentKnot": "start"`,
+  plus the N16 done-event `eventMappings`. Host art is a placeholder until the PixelLab reset.
+- **Learner avatar** (full erb `player`, as E6): `"spriteSheet": "female_office_worker_v2"`,
+  `"spriteTalk": "assets/characters/female_office_worker_talk.png"`.
+
+### Full-episode objectives, globals and conclusion (one aim, no phish target)
+
+Like E11, a consequence-flip episode has no `phish_*` global and no `red_team_aim`, so the full shell
+carries **one** aim (`missionConclusion: true`), concluded on the defend set's done global (follow E11
+section 15a's shape exactly):
+
+```jsonc
+"objectives": [
+  {
+    "aimId": "shortcuts_aim",
+    "title": "Sort the shortcuts",
+    "description": "Go through the found sticks and shortcut messages and match each to the approved way at the training kiosk.",
+    "status": "active",
+    "order": 0,
+    "missionConclusion": true,
+    "concludeRequires": { "globals": ["episode_e15_shadow_it_defend_done"] },
+    "conclusionScreen": {
+      "type": "success",
+      "title": "Shadow IT episode done",
+      "body": "You've seen where an ordinary Friday shortcut leads and sorted the inbox yourself, so this episode is finished."
+    },
+    "tasks": [
+      { "taskId": "sort_shortcuts", "title": "Sort the shortcuts", "type": "custom", "status": "active" }
+    ]
+  }
+]
+```
+
+- `awarenessEpisode.conclusionTaskId: "sort_shortcuts"`; the host NPC (Nilesh) carries the
+  `eventMappings` entry completing the task on `episode_e15_shadow_it_defend_done` (E11 section 15a shape).
+- `globalVariables` for the **full** shell (as E11 section 15a, no `phish_*` or attack-landed global):
+  `episode_e15_shadow_it_state: {}`, `se_awareness_records: []`, `episode_e15_shadow_it_defend_percent: 0`,
+  `episode_e15_shadow_it_defend_reportRate: 0`, `episode_e15_shadow_it_defend_done: false`,
+  `episode_e15_shadow_it_defend_pass: false`. (`episode_<id>_state` also holds `mistakeChoices` at runtime,
+  cleared on `flip`.)
+- The **defend-only** shell uses the double-suffix prefix (section 13): done global
+  `episode_e15_shadow_it_defend_defend_done`, result globals `episode_e15_shadow_it_defend_defend_{percent,reportRate,pass}`,
+  state global `episode_e15_shadow_it_defend_state`.
+
+### Full-episode training kiosk (full erb `rooms.training_room.objects[]` kiosk, E6 shape)
+
+- `observations`: "A touch-screen training kiosk for the Tarrowby shadow-IT exercise: first the Friday
+  shortcuts to take or not, then where each led, then the found sticks and shortcut messages to sort."
+- `observationVariants[0]`: `{ "condition": "globalVars.episode_e15_shadow_it_defend_done", "value": "A
+  touch-screen training kiosk for the Tarrowby shadow-IT exercise. The Friday is played out and the inbox
+  is all sorted." }`
+- `minigameData.episodeId`: `e15_shadow_it`.
+
+### Full-episode `mission.json` (E6 mission.json shape)
+
+- `display_name`: "Awareness E15: Shadow IT (full episode)"
+- `description`: "An awareness episode of about 15 minutes for all staff. On an authorised exercise at
+  Tarrowby Logistics, a fictional haulier, you first make the calls anyone would under a Friday deadline
+  with a slow file share, then see, six months on, where each shortcut led. Then you sort a short set of
+  found sticks and shortcut messages and match each to the approved way. Only the sort is scored, and
+  reporting when you're unsure is always fine and never marked down."
+- `difficulty_level`: 1; `scoring`: "completion"; `secgen_scenario`: null; `collection`: "training";
+  `ui_theme`: "general"; `estimated_duration_minutes`: 15.
+- `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Removable media", "Cloud storage", "Shadow IT", "Security awareness"] } ]`.
+
+Top-level erb strings (copy E6's): `scenario_id` `awareness_e15_shadow_it`; `scenario_name` "Shadow IT:
+the shortcuts"; `scenario_brief` = `strings.brief` (section 8); `endGoal` "Play out the Friday, then sort
+the inbox and match the swaps at the training kiosk."; `version` "1.0"; `disableAttacks` true; `startRoom`
+`training_room`; `startPosition` as E6.
+
+### Defend-only shell: generator `EPISODES['e15']` entry (`gen_e8_e17_shells.py`, the `gen_e6_e7_shells.py` `EPISODES` shape)
+
+```python
+'e15': {
+    'frag': f'{AW}/e15/defend.json',
+    'full_id': 'e15_shadow_it',
+    'role_word': 'general',
+    'role_label': 'all staff',
+    'defend_set': 'e15_shortcuts_inbox',
+    'defend_host': 'nilesh',
+    # No 'forms'/'check_hosts': E15 feeds general_v2, built by 10's own generator, not this one (section 14).
+    'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
+               'keywords': ['Removable media', 'Cloud storage', 'Shadow IT', 'Security awareness']}],
+    'defend': {
+        'name': 'Shadow IT: the shortcuts',
+        'brief': "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. A pack is due by Monday and the share is slow. Found sticks and 'quicker way' messages are waiting: some are safe, some aren't. Sort them, and match each shortcut to the approved way. Reporting or checking when you're unsure is always fine and never marked down.",
+        'endGoal': 'Sort the inbox and match the swaps at the training kiosk.',
+        'aim': ('shortcuts_aim', 'Sort the shortcuts', 'Go through the found sticks and shortcut messages and match each to the approved way at the training kiosk.'),
+        'task': ('sort_shortcuts', 'Sort the shortcuts'),
+        'kiosk': ("A touch-screen kiosk showing a Tarrowby desktop: found sticks, shortcut messages and the approved swaps to match.",
+         "A touch-screen kiosk showing a Tarrowby desktop. The sticks and messages are sorted and the swaps are matched."),
+        'display': 'Awareness E15: Shadow IT (defend only)',
+        'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Sort found sticks and shortcut messages at Tarrowby Logistics, a fictional haulier, and match each shortcut to its approved way. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
+        'minutes': 8,
+        'defendIntro': "Go through the found sticks and 'quicker way' messages and decide what to do with each, then match each shortcut to its approved swap. A found or posted stick goes to IT unplugged; if the official way is slow, ask IT rather than build a way round it. There's no clock on you here.",
+        'conclusion': ('Shortcuts sorted', "You've sorted the inbox and matched the approved swaps, and finished this episode."),
+    },
+},
+```
+
+The entry uses the real `gen_e6_e7_shells.py` keys (`conclusion`, `defendIntro`). This `brief` equals the
+section 8 `_defendOnly.brief` (keep them identical). The defend-only shell id is `e15_shadow_it_defend`,
+prefix `episode_e15_shadow_it_defend_defend_` (section 13).
+
+### Defend-host lines: generator `LINES[('e15', 'defend')]` (the tuple `(before, after, choice, reply)`, Nilesh's voice)
+
+```python
+('e15', 'defend'): (
+    "Nilesh, service desk. The kiosk's got a few found sticks and 'quicker way' messages, and a board to match each shortcut to the approved swap. Ask us first, we'd rather help than clean up.",
+    "That's the lot sorted, thanks. If the official way's ever slow, tell us and we'll fix it, we can't mend what we don't know about.",
+    'Thanks, Nilesh.', 'Any time.'),
+```
+
+### Host spoken lines for the full shell (ink, Nilesh)
+
+- **Welcome** (at the hub): the section 8 host welcome line; names the Friday deadline and the slow share.
+- **After the mistake/flip** (hand-off into the defend half): "That's six months on. Now sort what's
+  actually in front of you: a few found sticks and 'quicker way' messages, and match each shortcut to the
+  approved swap."
+- **On completion** (defend done): "That's the lot. If the official way's slow, tell us, don't build your
+  own way round, we can't mend what we don't know about. Nobody's in trouble for a workaround."
+
+## 9. The consequence stage (the `mistake` sandbox)
+
+Four shortcuts arrive about a minute apart, inside the work. For each, take the shortcut or the approved
+route; nothing is scored. Exactly one `safe: true` option per beat. Config shape: `E11` section 10a.
+Taking a shortcut always "works" in the moment; asking Nilesh always works too and fixes the slow share.
+
+| Beat id | Situation (on screen) | Unsafe option | Safe option (approved route) | Teaches |
+|---------|-----------------------|---------------|------------------------------|---------|
+| `personal_email` | Colin: "Share's dying. Just email the pack to your personal address and finish at home." The compose window offers "Me (personal)" in autocomplete. | "Send it to your personal email" | "Ask Nilesh; work from home through remote access" | Personal email is outside the firm's protection (core_13). **This is the `flipBeat`.** |
+| `free_transfer` | The video is too big for email. Colin: "Use a free transfer site, everyone does." | "Upload it to the free site" | "Share it from the file-sharing service, to a named person, with an end date" | A free tool has no contract, control or backup (core_13) |
+| `posted_stick` | A padded envelope: "From the client: survey results, please add to the pack." Inside, a USB stick and a note with a phone number. | "Plug the stick in to read it" | "Don't plug it in. Ring the client on the number you already hold, not the note; give the stick to IT" | Found/posted removable media (core_13) |
+| `rota_app` | Shauna rings: the delivery rota lives in a free app on a former temp's personal account, "anyone with the link can edit". | "Add this week's slots in the app" | "Add nothing there; ask IT to move it into the team space and remove the old access" | Shadow IT already in use; leaver access that never ends (core_13) |
+
+The one consequential choice quoted in the flip (aw2) is `personal_email` (`flipBeat`).
+
+## 10. Flip (the montage)
+
+Montage mode (ENG-04), headed **"Six months later"**, showing every beat; the taken option framed "Your
+choice", an untaken one framed "the version where it was taken instead". `personal_email` first.
+`strings.flipMontageByChoice` (full text):
+
+- `personal_email` / `send_personal`: "Your choice. Months on, the personal inbox was broken into with a
+  reused password; the pack sat in its sent items, and the client got a convincing fake invoice built
+  from it."
+- `personal_email` / `ask_nilesh`: "The version where the pack went to a personal inbox instead: it was
+  broken into with a reused password and the pack was copied. Remote access left nothing outside the
+  firm to find."
+- `free_transfer` / `use_free_site`: "Your choice. The free transfer site was breached; old public
+  links, including a video with people in the background, turned up in search results."
+- `free_transfer` / `use_fileshare`: "The version where a free site was used: its old links were still
+  live when it was breached. The firm's link expired after seven days, so there was nothing to find."
+- `posted_stick` / `plug_in`: "Your choice. The same stick reached four other firms; one plugged it in
+  and was down for nine days."
+- `posted_stick` / `to_it`: "The version where the stick was plugged in: it carried malware and took a
+  firm offline for nine days. The client confirmed they had posted nothing; IT checked the stick
+  safely."
+- `rota_app` / `use_app`: "Your choice. The rota stayed editable by the departed temp, then vanished
+  when the free app closed the unused account, the week before a busy run."
+- `rota_app` / `ask_it`: "The version where the rota stayed in the free app: the departed temp could
+  still edit it, and it was lost when the account was closed. IT moved it to the team space in minutes."
+
+`flipHeading` = "Six months later". For where `flipHeading` and `flipMontageByChoice` live (the heading
+in the `defend.json` fragment, only `flipMontageByChoice` erb-only and on the parity allow-list), see
+`E11` section 10a and `02` ENG-04; E15 follows the same rule.
+
+## 11. Defend set
+
+**Scored set:** six items on the built inbox-triage defender, `scoringProfile: "awareness"`,
+`verifyVerdict: true` (ringing the client / asking IT is a real move here), `feedbackMode: "immediate"`,
+`headerPanel: "off"`, `glossary: "closed"`. Set id `e15_shortcuts_inbox`. `outcome.setGlobalPrefix:
+"episode_e15_shadow_it_defend_"`, `passPercent: 0`. `channelTells`: `["lookalike_domain",
+"vish_callback_pressure"]` plus the scenario-local tells `found_media` and `unapproved_tool`. Both are
+declared on E15's set with a short `flagChips` label (`found_media`: "Found or posted media";
+`unapproved_tool`: "Unapproved tool or app"); the validator accepts a `channelTells` id that `flagChips`
+labels and that is not a factor (`triage.rb` `flag_universe`), so this needs **no** shared-library change.
+
+`unapproved_tool` is also used by E17's set (`e17_acceptable_use_inbox`), but both tells stay
+scenario-local: a tell is shared only when a `10` check-form item scores it, and no `10` item scores
+`found_media` or `unapproved_tool`. The two sets are never merged, so each declares `unapproved_tool`
+with its own `flagChips` label and nothing is appended to the shared library (the tell table and this
+rule are in `02` ENG-08). The full sentence for each flagging message is carried on a **message-level
+`factorStrings` object (a sibling of `truth`, never inside it)**, keyed `factorStrings.<id>.redFlag`
+(`triage-flags.js` `redFlagString` reads `message.factorStrings`; `truth` is `additionalProperties: false`,
+so a `factorStrings` under `truth` fails `--strict-social`). For example, `unapproved_tool`: "a free app
+or online service with no contract, no control and no off switch"; `found_media`: "a found, posted or
+giveaway stick or device".
+
+| # | Id | Kind / from | Subject or line | Tells and flags | Correct verdict | Reason text |
+|---|----|-------------|-----------------|-----------------|-----------------|-------------|
+| 1 | `e15_posted_stick` | note/email, "the client" with a USB and a phone number on the note | "Survey results, please add to the pack" | `found_media`, `vish_callback_pressure` | **Verify** (ring the client on the number you already hold, not the note; give the stick to IT) or **Report** | "Never plug in a found or posted stick; a note's number proves nothing. Ring the client on the number you already hold, and hand the stick to IT, who can check it safely. The number on the note goes to whoever sent it." |
+| 2 | `e15_free_transfer` | email link to a free transfer site (`hastypost.example` relay or a look-alike) | "Too big for email, upload it here" | `unapproved_tool` | **Report** | "A free transfer site has no contract and no off switch; its old links stay live. Share from the file-sharing service, to a named person, with an end date." |
+| 3 | `e15_giveaway_stick` | email, a supplier from a fair, "we posted you a branded USB with our catalogue" | "Plug in to see our range" | `found_media` | **Report** | "A giveaway stick is still a stick; hand it to IT. Kindness and curiosity are why people plug them in, so the kind move is to hand it in." |
+| 4 | `e15_free_pdf_tool` | email, "everyone uses this", a link to install a free PDF editor | "Free PDF editor, install in one click" | `unapproved_tool` | **Report** or **Delete** | "Unknown software can carry malware, and a free online tool hands the firm's data to a provider we haven't checked. There's an approved one; ask the service desk. (The normal-looking phish half of the mirror pair.)" |
+| 5 | `e15_fileshare_notice` | email, the approved file-sharing service, genuine | "A file was shared with you; this link expires in 7 days" | none (genuine) | **Trust** (or **Verify** if unsure) | "It looks like a share-link email, which is exactly what a phish mimics, but it's the firm's own file-sharing service, named people only, with an end date. That's the approved way. (The suspicious-looking genuine half of the mirror pair.)" |
+| 6 | `e15_it_tool_reply` | email, Nilesh / the service desk, genuine | "Re: Request a tool, approved, here's the approved equivalent" | none (genuine) | **Trust** | "You asked IT and they answered with an approved tool. That's the quick yes. Handle it." |
+
+**Mirror pair (aw5):** item 4 (normal-looking phish/unapproved-tool lure, Report/Delete) and item 5
+(suspicious-looking genuine share-link email, Trust).
+
+**Unscored teaching drill in the defend stage (ENG-11 `sortDrill`):** **Swap Shop** uses ENG-11's
+reusable `sortDrill` surface, `scored: false`, with `bins` set to the approved ways: match each shortcut
+to its approved swap, one line of why on each (an ENG-11 card's `reason`): personal email to the work
+laptop and remote access; a free transfer site to a file-sharing link with an end date; a rota in a free
+app to the team space; a found stick to IT. A match-to-one-of-N is a sort into N bins, so it is ENG-11's
+surface, not a bespoke one. Unscored (not the `awareness` profile).
+
+## 12. Debrief cards
+
+Built debrief view: per-item cards (section 11); feedback on the genuine items (the file-sharing notice,
+the IT reply); the team-protected tally; then
+
+- **The habit to keep** (shared rule of thumb, verbatim): "When a message pressures you to move money,
+  grant access, sign in or read back a code, stop and check it yourself through a route you already
+  trust, not the link, number or page the message gives you. Taking a minute to confirm is always a
+  fair thing to do." The debrief adds the plain line: "If the official way is slow, tell IT. Don't build
+  your own way round."
+- **The "On Monday" card:** "Pick the shortcut you reach for most, and learn the approved swap for it.
+  If the official way is slow, tell IT." Report route from `slot:customer_report_route`, which brings in
+  the DPO when personal data went to a personal account.
+- **The no-blame line** (`noBlameLine: true`): "Shortcuts are well meant, usually under a deadline.
+  Nobody is in trouble for a workaround; the move is to tell IT so the data gets somewhere safe."
+- **The USB-test reveal (Nilesh):** "That stick in the post was ours. Authorised test. It just tells us
+  it was plugged in." Show only the learner's own result; name nobody; say why people plug sticks in.
+
+`defendOnly` string (where the flip would have been): "Every shortcut here is the kind a busy person
+takes with good intentions, and every one has a quiet cost. The ones you were caught out by are shown
+below, with the approved way."
+
+## 13. Defend-only variant
+
+Own shell, id `e15_shadow_it_defend`, `variant: "defendOnly"`, same `defend.setId`
+(`e15_shortcuts_inbox`), stages `["brief","defend","debrief"]`, set prefix
+`episode_e15_shadow_it_defend_defend_`. Drops the sandbox and the montage; keeps the scored set and the
+ENG-11 Swap Shop drill, so measurement is unchanged. Ships alongside the full shell; both join the two
+seeded Hacktivity courses (full in the both-versions course, defend-only in the defend-only course)
+**through 01 P12**.
+
+## 14. Check-form items it feeds (`general_v2`; see `10_CHECK_FORMS.md`)
+
+E15's topic (removable media, cloud storage and shadow IT, core_13) is message-triage-friendly, so it
+feeds the shared **`general_v2`** pair (Quayholt, Verify off), defined and built in `10_CHECK_FORMS.md`;
+there is no per-topic form. The six built role forms are the measured baseline and are not edited. (The
+trade-off the orchestrator reports to the user is that two broad pairs give no per-topic pre/post
+figure.)
+
+`general_v2` scores only `00`-library tells, so E15's scenario-local tells (`found_media`,
+`unapproved_tool`) stay in E15's own defend set, never in a form; the tell table and the shared-vs-local
+rule are in `02` ENG-08.
+
+E15's contribution is the core_13 rows of `10`'s `general_v2` pair (see `10`'s item list): the "ask IT,
+here's the approved way" / cloud how-to genuine item (`gva_approved_tools` / `gvb_cloud_howto`) and the
+free-converter / posted-USB unsafe item (`gva_free_converter` / `gvb_usb_courier`). These are authored as
+part of `10`, aligned to E15's framing; they are not a separate E15 form.
+
+## 15. Files to create or change
+
+Writer: this spec only.
+Implementer: `awareness/e15/mistake.json` (the sandbox beats and the `awarenessEpisode` block, by
+analogy with `e4/attack.json` but with no `04` target) and `awareness/e15/defend.json` (the
+`triageSets` entry `e15_shortcuts_inbox`, the `awarenessEpisode` defend/debrief/strings/_defendOnly keys,
+by analogy with `e4/defend.json`); shells `scenarios/awareness_e15_shadow_it/` and `.../_defend/`
+(one-room `room_aw_tarrowby` kiosk, host Nilesh, kiosk `{ episodeId }`); the Swap Shop drill as ENG-11's
+`sortDrill` config (section 11); the `found_media`/`unapproved_tool` scenario-local tells; the ENG-04
+schema/validator/parity updates (shared with E11). The `general_v2` check shells are built by `10`'s
+check generator, not here (section 14). Never run a generator into the repo.
+
+## 16. Bridge script outline
+
+`tools/playtest/se/bridge-e15-full.jsonl`: open kiosk; brief; the four `mistake` beats (take at least
+one shortcut so the montage headline has a "your choice" branch); the montage flip (assert the
+`personal_email` headline and that every beat shows a line); the six triage items (one verdict each,
+assert immediate feedback); the Swap Shop drill; debrief (assert the habit-to-keep box, the Monday card,
+the USB-test reveal line); conclusion global `episode_e15_shadow_it_defend_done` set. A second bridge for
+the defend-only shell.
+
+## 17. Acceptance checks
+
+As E11 section 17, for the E15 shells (the `general_v2` pair's parity is `10`'s acceptance, not E15's).
+The montage flip renders every beat; `flipHeading` is in the fragment and `flipMontageByChoice` is
+erb-only; the ENG-11 Swap Shop drill renders its bins; `social.awareness.ruleOfThumb` byte-identical.
+
+## 18. Do not
+
+- Do not make IT the villain or a scold; Nilesh is quick and kind, and asking him is always the easiest
+  option, which is the point.
+- Do not shame anyone for a workaround; Colin is likeable and right that the share was slow; the montage
+  shows consequences, not idiots.
+- Do not teach "delete it and it's gone"; copies persist and IT should handle it.
+- Do not redefine the ENG-04 shape here; reference `E11` section 10a.
+- Do not treat the Verify-on-the-note branch as a trap; the learner still didn't plug the stick in; the
+  debrief explains why the note's number proves nothing (core_02).
+- Do not edit the six built role check forms; no real brands; `.example` only; never run a generator into
+  the repo; never `git stash`; no attribution lines in commits.
+
+## 19. Stop and ask if
+
+- The ENG-04 shape as built differs from `E11` section 10a.
+- The Swap Shop drill (ENG-11 `sortDrill`) is wanted scored rather than an unscored drill (this changes
+  section 11). ENG-11 notes that if the user wants Swap Shop to feel like a matching game rather than an
+  N-bin sort, that is its own packet; the sort covers the teaching either way.
+
+## 20. Open questions
+
+- **Swap Shop scoring:** kept unscored so the measured set is a standard six-item triage set with a
+  mirror pair. If the product wants the swap drill scored, that is a request to `05`.
+- **Host reuse with E17:** this spec and `E17_acceptable_use.md` both put Nilesh Solanki at Tarrowby; if
+  E15 and E17 ship together, that reuse is deliberate (saves art) but means the same host in two
+  episodes. See E17 section 20.

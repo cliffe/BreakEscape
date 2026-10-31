@@ -1,0 +1,13 @@
+{
+  "key": "5f033fd514099b82f4fef1b5072030f5",
+  "npc": "jordan_pike",
+  "text": "Nine grand a year and fees paid. It's literally free money.",
+  "voice": "Puck",
+  "style": "Third-year student working a careers-fair stand for a referral bonus. Consistent Estuary English accent throughout. Upbeat, fast, salesy, laughs at his own lines.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

@@ -1,0 +1,252 @@
+/* Main game styles */
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: #333;
+    font-smooth: never;
+}
+
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    background: #333;
+}
+
+/* Canvas styling for pixel-perfect rendering */
+#game-container canvas {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    display: block;
+}
+
+#loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 18px;
+}
+
+/* Laptop popup styles - matching minigame style */
+#laptop-popup {
+    display: none;
+    position: fixed;
+    top: 2vh;
+    left: 2vw;
+    width: 96vw;
+    height: 96vh;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 2000;
+    pointer-events: auto;
+    clip-path: polygon(
+      0px calc(100% - 10px),
+      2px calc(100% - 10px),
+      2px calc(100% - 6px),
+      4px calc(100% - 6px),
+      4px calc(100% - 4px),
+      6px calc(100% - 4px),
+      6px calc(100% - 2px),
+      10px calc(100% - 2px),
+      10px 100%,
+      calc(100% - 10px) 100%,
+      calc(100% - 10px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 10px),
+      100% calc(100% - 10px),
+      100% 10px,
+      calc(100% - 2px) 10px,
+      calc(100% - 2px) 6px,
+      calc(100% - 4px) 6px,
+      calc(100% - 4px) 4px,
+      calc(100% - 6px) 4px,
+      calc(100% - 6px) 2px,
+      calc(100% - 10px) 2px,
+      calc(100% - 10px) 0px,
+      10px 0px,
+      10px 2px,
+      6px 2px,
+      6px 4px,
+      4px 4px,
+      4px 6px,
+      2px 6px,
+      2px 10px,
+      0px 10px
+    );
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+}
+
+.laptop-frame {
+    background: transparent;
+    width: 100%;
+    height: calc(100%);
+    position: relative;
+}
+
+.laptop-screen {
+    width: 100%;
+    height: 100%;
+    background: #1a1a1a;
+    /* border: 2px solid #333; */
+
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.title-bar {
+    background: #2a2a2a;
+    color: #fff;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #444;
+    font-family: 'GNF', monospace;
+    font-size: 18px;
+    min-height: 25px;
+    position: relative;
+}
+
+.title-bar .close-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border: 2px solid #333;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.title-bar .close-btn:hover {
+    background: #c0392b;
+}
+
+/* Center minigame buttons vertically in title-bar */
+.title-bar .minigame-close-button {
+    top: 50%;
+    transform: translateY(-50%);
+    right: 15px;
+}
+
+#cyberchef-container {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#cyberchef-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border: 2px solid #333;
+}
+
+/* Lab workstation popup styles - matching laptop popup style */
+#lab-popup {
+    display: none;
+    position: fixed;
+    top: 2vh;
+    left: 2vw;
+    width: 96vw;
+    height: 96vh;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 2000;
+    pointer-events: auto;
+    clip-path: polygon(
+      0px calc(100% - 10px),
+      2px calc(100% - 10px),
+      2px calc(100% - 6px),
+      4px calc(100% - 6px),
+      4px calc(100% - 4px),
+      6px calc(100% - 4px),
+      6px calc(100% - 2px),
+      10px calc(100% - 2px),
+      10px 100%,
+      calc(100% - 10px) 100%,
+      calc(100% - 10px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 10px),
+      100% calc(100% - 10px),
+      100% 10px,
+      calc(100% - 2px) 10px,
+      calc(100% - 2px) 6px,
+      calc(100% - 4px) 6px,
+      calc(100% - 4px) 4px,
+      calc(100% - 6px) 4px,
+      calc(100% - 6px) 2px,
+      calc(100% - 10px) 2px,
+      calc(100% - 10px) 0px,
+      10px 0px,
+      10px 2px,
+      6px 2px,
+      6px 4px,
+      4px 4px,
+      4px 6px,
+      2px 6px,
+      2px 10px,
+      0px 10px
+    );
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+}
+
+#lab-container {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#lab-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border: 2px solid #333;
+}
+
+.laptop-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 30px;
+    height: 30px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border: 2px solid #333;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.laptop-close-btn:hover {
+    background: #c0392b;
+} 

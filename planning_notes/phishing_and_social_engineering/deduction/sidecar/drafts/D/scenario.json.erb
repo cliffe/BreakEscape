@@ -1,0 +1,888 @@
+{
+  "_draft": "Sidecar draft of fixture D (DEDUCTION_IMPLEMENTATION_PLAN.md §9.4, read at 3327 lines). Proves the plan is buildable; the real fixture is built by P10-K-D at scenarios/test_social_deduction_d/. Every value the plan does not give carries a _note starting 'invented: plan silent'. See INVENTED.md.",
+
+  "scenario_brief": "The last train out of Miskatonic Halt runs nearly empty tonight: five passengers in five carriages, and the cult may have people among them. They mean to finish a working before the train reaches the coast. At every stop they get rid of whatever could give them away, so search a carriage before you move on. The doors open one stop at a time; wait by the far door if you want the next stop sooner.\n\nWhat to look for. A passenger is a cultist if they match any of these.\nKeyholder: Carries the brass Tesseract key. There is only one.\nCourier: Was in the Archive, wants the Codex, and carries no ward charm.\nDevotee: Has three or more marked clues.\n\nName an innocent, or leave a cultist unnamed, and the ritual completes. You will not get a second chance.\n\nMake the call on the case board in the last carriage, after the last stop.",
+  "show_scenario_brief": "once",
+  "_note_brief": "invented: plan silent (brief wording around the verbatim profile texts and briefText; place name Miskatonic Halt)",
+
+  "startRoom": "d_car1",
+  "startPosition": { "x": 2, "y": 4 },
+  "_note_startPosition": "invented: plan silent",
+  "player": { "id": "player", "displayName": "Agent", "spriteSheet": "female_hacker_hood_v2", "_note": "invented: plan silent (placeholder sprite)" },
+
+  "startItemsInInventory": [
+    { "type": "phone", "name": "Your phone", "takeable": true, "phoneId": "player_phone", "npcIds": ["ded_d_guard"],
+      "observations": "The guard gave you her number when you boarded.", "_note": "invented: plan silent (a phone NPC needs a phone item to ring)" },
+    { "type": "lockpick", "name": "Lockpick", "takeable": true, "observations": "For the briefcase you will need it on." },
+    { "type": "fingerprint_kit", "name": "Fingerprint kit", "takeable": true, "observations": "Powder, brush, tape." }
+  ],
+
+  "creditsOverlay": { "ticker": ["CASE CLOSED", "NIGHT TRAIN"] },
+
+  "objectives": [
+    {
+      "aimId": "d_case",
+      "title": "Work out who on the train belongs to the cult",
+      "description": "Search each carriage before its stop, then make the call on the board in carriage 5.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "conclusionScreen": { "type": "bond_visualiser", "bondVisualiserOpts": { "headerText": "CASE CLOSED" } },
+      "tasks": [
+        { "taskId": "d_case_solved", "title": "Make the right call on every passenger", "type": "manual", "status": "active" },
+        { "taskId": "d_case_closed", "title": "Close the case", "type": "manual", "status": "active" }
+      ],
+      "_note": "invented: plan silent (aim id, titles and descriptions; the plan gives the two task ids, one aim, missionConclusion and the conclusionScreen)"
+    }
+  ],
+
+  "music": {
+    "events": [
+      {
+        "trigger": "global_variable_changed:d_ending",
+        "condition": "!globalVars.mission_failed",
+        "playlist": "victory",
+        "autoStop": true,
+        "disableClose": true,
+        "fade": true,
+        "headerText": "CASE CLOSED",
+        "closingCard": {
+          "lines": [
+            "The train reached the coast at dawn, on time and in one piece.",
+            "Whatever the cult meant to wake tonight stayed asleep."
+          ],
+          "_note": "invented: plan silent (win closing card)"
+        },
+        "credits": [
+          { "text": "THE NIGHT TRAIN", "style": "title" },
+          { "text": "CASE CLOSED", "style": "subtitle" },
+          { "text": "" },
+          { "section": "THE PASSENGERS", "lines": [
+            { "text": "Akiko Sato was named. The Codex stays in the Archive.", "condition": "globalVars.deduction_outcome_ded_d_sato === 'right_guilty'" },
+            { "text": "Mei Chen got off at the coast and went to see the Codex in its glass case.", "condition": "globalVars.deduction_outcome_ded_d_chen === 'right_clear'" },
+            { "text": "Pieter de Vries was named. The sigil ring came off at the next station.", "condition": "globalVars.deduction_outcome_ded_d_devries === 'right_guilty'" },
+            { "text": "Dmitri Volkov was named. The brass key went into an evidence bag.", "condition": "globalVars.deduction_outcome_ded_d_volkov === 'right_guilty'" },
+            { "text": "Kwame Mensah slept from the fourth stop to the sea. Nobody bothered him.", "condition": "globalVars.deduction_outcome_ded_d_mensah === 'right_clear'" }
+          ] }
+        ],
+        "_note": "invented: plan silent (credits wording, autoStop and disableClose copied from lab_social_engineering)"
+      },
+      {
+        "trigger": "global_variable_changed:d_ending",
+        "condition": "globalVars.mission_failed",
+        "playlist": "threat",
+        "autoStop": true,
+        "disableClose": true,
+        "fade": true,
+        "headerText": "MISSION FAILED",
+        "closingCard": {
+          "lines": [
+            "The train reached the coast at dawn.",
+            "Something else arrived with it, and the tide went out and did not come back."
+          ]
+        },
+        "credits": [
+          { "text": "THE RITUAL COMPLETED", "style": "title" },
+          { "text": "THE NIGHT TRAIN", "style": "subtitle" },
+          { "text": "" },
+          { "section": "THE PASSENGERS", "lines": [
+            { "text": "Akiko Sato was named.", "condition": "globalVars.deduction_outcome_ded_d_sato === 'right_guilty'" },
+            { "text": "Akiko Sato carried the Codex off the train.", "condition": "globalVars.deduction_outcome_ded_d_sato === 'missed_guilty'" },
+            { "text": "Mei Chen was named, and she had done nothing.", "condition": "globalVars.deduction_outcome_ded_d_chen === 'wrong_guilty'" },
+            { "text": "Pieter de Vries was named.", "condition": "globalVars.deduction_outcome_ded_d_devries === 'right_guilty'" },
+            { "text": "Pieter de Vries finished what he started.", "condition": "globalVars.deduction_outcome_ded_d_devries === 'missed_guilty'" },
+            { "text": "Dmitri Volkov was named.", "condition": "globalVars.deduction_outcome_ded_d_volkov === 'right_guilty'" },
+            { "text": "Dmitri Volkov opened the door the key was made for.", "condition": "globalVars.deduction_outcome_ded_d_volkov === 'missed_guilty'" },
+            { "text": "Kwame Mensah was named, and he had done nothing.", "condition": "globalVars.deduction_outcome_ded_d_mensah === 'wrong_guilty'" }
+          ] }
+        ],
+        "_note": "invented: plan silent (playlist 'threat' as the non-victory playlist; credits and closing-card wording). Plan gives the condition, headerText and the title line."
+      }
+    ]
+  },
+
+  "globalVariables": {
+    "se_intel_d_sato_pass": false,
+    "se_intel_d_sato_want": false,
+    "se_intel_d_sato_notebook": false,
+    "se_intel_d_chen_pass": false,
+    "se_intel_d_chen_want": false,
+    "se_intel_d_chen_charm": false,
+    "se_intel_d_chen_notebook": false,
+    "se_intel_d_devries_pass": false,
+    "se_intel_d_devries_want": false,
+    "se_intel_d_devries_ring": false,
+    "se_intel_d_devries_sim": false,
+    "se_intel_d_volkov_pass": false,
+    "se_intel_d_volkov_want": false,
+    "se_intel_d_volkov_key": false,
+    "se_intel_d_volkov_charm": false,
+    "se_intel_d_mensah_pass": false,
+    "se_intel_d_mensah_want": false,
+    "se_intel_d_mensah_umbrella": false,
+
+    "deduction_state": {},
+    "deduction_closed": false,
+    "deduction_verdict_ded_d_sato": "",
+    "deduction_verdict_ded_d_chen": "",
+    "deduction_verdict_ded_d_devries": "",
+    "deduction_verdict_ded_d_volkov": "",
+    "deduction_verdict_ded_d_mensah": "",
+    "deduction_outcome_ded_d_sato": "",
+    "deduction_outcome_ded_d_chen": "",
+    "deduction_outcome_ded_d_devries": "",
+    "deduction_outcome_ded_d_volkov": "",
+    "deduction_outcome_ded_d_mensah": "",
+    "deduction_faded_d_sato_pass": false,
+    "deduction_faded_d_chen_charm": false,
+    "deduction_faded_d_devries_sim": false,
+    "mission_failed": "",
+    "scenario_triggers_fired": {},
+
+    "d_stop_1_go": false,
+    "d_stop_2_go": false,
+    "d_stop_3_go": false,
+    "d_stop_4_go": false,
+    "d_stop_1": false,
+    "d_stop_2": false,
+    "d_stop_3": false,
+    "d_stop_4": false,
+    "d_last_stop": false,
+    "d_in_car2": false,
+    "d_in_car3": false,
+    "d_in_car4": false,
+    "d_ending": false,
+    "d_shred_done": false,
+
+    "backup_restore_initiated": false,
+    "backup_recovery_source": "",
+    "recovery_eta_hours": 0,
+    "backup_reinfected": false,
+
+    "ded_d_steward_influence": 0,
+    "ded_d_steward_latched": "",
+    "ded_d_steward_wary": false,
+    "ded_d_steward_reported": false,
+    "ded_d_conductor_influence": 0,
+    "ded_d_conductor_latched": "",
+    "ded_d_conductor_wary": false,
+    "ded_d_conductor_reported": false
+  },
+  "_note_globalVariables": "invented: plan silent (d_shred_done is the shredded document's stateWrites global; the four backup_* globals are the fixed globals the backup recovery minigame writes, declared as m02 does; *_latched type \"\" copied from existing social fixtures)",
+
+  "triggers": [
+    { "id": "t_d_rack", "on": "item_picked_up:notes", "where": { "itemId": "d_rack_label" },
+      "condition": "!globalVars.deduction_faded_d_sato_pass", "once": true,
+      "actions": [ { "type": "grant_fact", "fact": "d_sato_pass" } ] },
+    { "id": "t_d_coat", "on": "item_picked_up:notes", "where": { "itemId": "d_chen_coat" },
+      "condition": "!globalVars.deduction_faded_d_chen_charm", "once": true,
+      "actions": [ { "type": "grant_fact", "fact": "d_chen_charm" } ] },
+    { "id": "t_d_shred", "on": "global_variable_changed:d_shred_done", "where": { "value": true }, "once": true,
+      "actions": [ { "type": "grant_fact", "fact": "d_chen_charm" } ] },
+    { "id": "t_d_lost_property", "on": "item_picked_up:notes", "where": { "itemId": "d_sato_notebook_item" }, "once": true,
+      "actions": [ { "type": "grant_fact", "fact": "d_sato_notebook" } ] },
+    { "id": "t_d_glass", "on": "fingerprint_identified:ded_d_devries", "where": { "objectId": "d_glass" }, "once": true,
+      "actions": [ { "type": "grant_fact", "fact": "d_devries_ring" } ] },
+    { "id": "t_d_phone", "on": "item_picked_up:notes", "where": { "itemId": "d_devries_phone" },
+      "condition": "!globalVars.deduction_faded_d_devries_sim", "once": true,
+      "actions": [ { "type": "grant_fact", "fact": "d_devries_sim" } ] },
+    { "id": "t_d_backup", "on": "global_variable_changed:backup_restore_initiated", "where": { "value": true }, "once": true,
+      "actions": [ { "type": "grant_fact", "fact": "d_devries_sim" } ] },
+    { "id": "t_d_briefcase", "on": "item_picked_up:notes", "where": { "itemId": "d_volkov_letter" }, "once": true,
+      "actions": [ { "type": "grant_fact", "fact": "d_volkov_key" } ] },
+    { "id": "t_d_key_drop", "on": "item_picked_up:key", "where": { "itemId": "d_brass_key" }, "once": true,
+      "actions": [ { "type": "grant_fact", "fact": "d_volkov_key" } ] },
+
+    { "id": "t_d_in_car2", "on": "room_entered:d_car2", "once": true, "actions": [ { "type": "set_global", "key": "d_in_car2", "value": true } ] },
+    { "id": "t_d_in_car3", "on": "room_entered:d_car3", "once": true, "actions": [ { "type": "set_global", "key": "d_in_car3", "value": true } ] },
+    { "id": "t_d_in_car4", "on": "room_entered:d_car4", "once": true, "actions": [ { "type": "set_global", "key": "d_in_car4", "value": true } ] },
+
+    { "id": "t_d_stop_1", "on": "global_variable_changed:d_stop_1_go", "where": { "value": true }, "once": true,
+      "actions": [
+        { "type": "set_global", "key": "d_stop_1", "value": true },
+        { "type": "deduction_tamper", "facts": ["d_sato_pass"] }
+      ] },
+    { "id": "t_d_stop_2", "on": "global_variable_changed:d_stop_2_go", "where": { "value": true }, "once": true,
+      "actions": [
+        { "type": "set_global", "key": "d_stop_2", "value": true },
+        { "type": "deduction_tamper", "facts": ["d_chen_charm"] }
+      ] },
+    { "id": "t_d_stop_3", "on": "global_variable_changed:d_stop_3_go", "where": { "value": true }, "once": true,
+      "actions": [
+        { "type": "set_global", "key": "d_stop_3", "value": true },
+        { "type": "deduction_tamper", "facts": ["d_devries_sim"] }
+      ] },
+    { "id": "t_d_stop_4", "on": "global_variable_changed:d_stop_4_go", "where": { "value": true }, "once": true,
+      "actions": [
+        { "type": "set_global", "key": "d_stop_4", "value": true },
+        { "type": "set_global", "key": "d_last_stop", "value": true }
+      ] }
+  ],
+
+  "timers": [
+    { "id": "d_stop_1_warn", "label": "Stop 1", "delayMs": 90000, "condition": "!globalVars.d_stop_1",
+      "actions": [ { "type": "hint", "title": "Night train", "message": "The train is slowing." } ], "showCountdown": false, "onceOnly": true,
+      "_note": "invented: plan silent (the 30 s warning as its own timer, because timers have no warning field; condition skips it once the stop has run; hint title)" },
+    { "id": "d_stop_1_timer", "label": "Stop 1", "delayMs": 120000,
+      "actions": [ { "type": "set_global", "key": "d_stop_1_go", "value": true } ], "showCountdown": false, "onceOnly": true },
+
+    { "id": "d_stop_2_warn", "label": "Stop 2", "delayMs": 90000, "startOnGlobal": "d_in_car2", "condition": "!globalVars.d_stop_2",
+      "actions": [ { "type": "hint", "title": "Night train", "message": "The train is slowing." } ], "showCountdown": false, "onceOnly": true },
+    { "id": "d_stop_2_timer", "label": "Stop 2", "delayMs": 120000, "startOnGlobal": "d_in_car2",
+      "actions": [ { "type": "set_global", "key": "d_stop_2_go", "value": true } ], "showCountdown": false, "onceOnly": true },
+
+    { "id": "d_stop_3_warn", "label": "Stop 3", "delayMs": 90000, "startOnGlobal": "d_in_car3", "condition": "!globalVars.d_stop_3",
+      "actions": [ { "type": "hint", "title": "Night train", "message": "The train is slowing." } ], "showCountdown": false, "onceOnly": true },
+    { "id": "d_stop_3_timer", "label": "Stop 3", "delayMs": 120000, "startOnGlobal": "d_in_car3",
+      "actions": [ { "type": "set_global", "key": "d_stop_3_go", "value": true } ], "showCountdown": false, "onceOnly": true },
+
+    { "id": "d_stop_4_warn", "label": "Stop 4", "delayMs": 90000, "startOnGlobal": "d_in_car4", "condition": "!globalVars.d_stop_4",
+      "actions": [ { "type": "hint", "title": "Night train", "message": "The train is slowing." } ], "showCountdown": false, "onceOnly": true },
+    { "id": "d_stop_4_timer", "label": "Stop 4", "delayMs": 120000, "startOnGlobal": "d_in_car4",
+      "actions": [ { "type": "set_global", "key": "d_stop_4_go", "value": true } ], "showCountdown": false, "onceOnly": true }
+  ],
+
+  "rooms": {
+    "d_car1": {
+      "type": "room_office",
+      "door_sign": "Carriage 1",
+      "_note": "invented: plan silent (room_office stands in: no train-carriage room type exists; door_sign wording; object and NPC positions)",
+      "connections": { "east": "d_car2" },
+      "npcs": [
+        {
+          "id": "ded_d_sato",
+          "displayName": "Akiko Sato",
+          "npcType": "person",
+          "position": { "x": 3, "y": 3 },
+          "spriteSheet": "female_scientist_v2",
+          "storyPath": "scenarios/test_social_deduction_d/ink/sato.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "_note": "invented: plan silent (full name, sprite)"
+        },
+        {
+          "id": "ded_d_steward",
+          "displayName": "Lowri Hughes",
+          "npcType": "person",
+          "koImmune": true,
+          "position": { "x": 6, "y": 5 },
+          "spriteSheet": "female_office_worker_v2",
+          "storyPath": "scenarios/test_social_deduction_d/ink/steward.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "_note": "invented: plan silent (name, sprite, koImmune so a punch cannot take a witness out of a strict case)"
+        },
+        {
+          "id": "ded_d_guard",
+          "displayName": "Nadia Rahman",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_social_deduction_d/ink/guard.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:d_stop_1", "condition": "value === true", "onceOnly": true, "unlockDoor": "d_car2",
+              "bark": "Stop one. Carriage two's open.", "barkDelay": 1500 },
+            { "eventPattern": "global_variable_changed:d_stop_2", "condition": "value === true", "onceOnly": true, "unlockDoor": "d_car3",
+              "bark": "Stop two. Carriage three's open.", "barkDelay": 1500 },
+            { "eventPattern": "global_variable_changed:d_stop_3", "condition": "value === true", "onceOnly": true, "unlockDoor": "d_car4",
+              "bark": "Stop three. Carriage four's open.", "barkDelay": 1500 },
+            { "eventPattern": "global_variable_changed:d_stop_4", "condition": "value === true", "onceOnly": true, "unlockDoor": "d_car5",
+              "bark": "Last stop before the coast. Carriage five's open.", "barkDelay": 1500 },
+
+            { "eventPattern": "door_unlock_attempt", "condition": "data.connectedRoom === 'd_car2' && globalVars.d_stop_1", "unlockDoor": "d_car2", "cooldown": 0 },
+            { "eventPattern": "door_unlock_attempt", "condition": "data.connectedRoom === 'd_car3' && globalVars.d_stop_2", "unlockDoor": "d_car3", "cooldown": 0 },
+            { "eventPattern": "door_unlock_attempt", "condition": "data.connectedRoom === 'd_car4' && globalVars.d_stop_3", "unlockDoor": "d_car4", "cooldown": 0 },
+            { "eventPattern": "door_unlock_attempt", "condition": "data.connectedRoom === 'd_car5' && globalVars.d_stop_4", "unlockDoor": "d_car5", "cooldown": 0 },
+            { "eventPattern": "game_loaded", "condition": "globalVars.d_stop_1", "unlockDoor": "d_car2" },
+            { "eventPattern": "game_loaded", "condition": "globalVars.d_stop_2", "unlockDoor": "d_car3" },
+            { "eventPattern": "game_loaded", "condition": "globalVars.d_stop_3", "unlockDoor": "d_car4" },
+            { "eventPattern": "game_loaded", "condition": "globalVars.d_stop_4", "unlockDoor": "d_car5" },
+
+            { "eventPattern": "door_unlock_attempt", "condition": "(data.connectedRoom === 'd_car2' && !globalVars.d_stop_1) || (data.connectedRoom === 'd_car3' && !globalVars.d_stop_2) || (data.connectedRoom === 'd_car4' && !globalVars.d_stop_3) || (data.connectedRoom === 'd_car5' && !globalVars.d_stop_4)",
+              "bark": "That door stays shut till the next stop. Wait by it if you're in a hurry.", "cooldown": 20000 }
+          ],
+          "_note": "invented: plan silent (name; barks; the door_unlock_attempt retries and game_loaded backstops copied from m09's HaX unlockDoor pattern; the 'stays shut' bark). Plan gives the four global_variable_changed:d_stop_<n> unlockDoor mappings."
+        }
+      ],
+      "objects": [
+        {
+          "id": "d_board_notes",
+          "type": "case-file",
+          "name": "Case board",
+          "takeable": false,
+          "position": { "x": 1, "y": 2 },
+          "observations": "Your notes on the passengers. You can mark people here; the call is made in the last carriage.",
+          "minigameData": { "mode": "deduction", "allowSubmit": false }
+        },
+        {
+          "id": "d_rack_label",
+          "type": "notes",
+          "name": "Luggage rack label, seat 1A",
+          "takeable": true,
+          "readable": true,
+          "position": { "x": 4, "y": 2 },
+          "text": "Seat 1A. A. Sato. Day ticket, stamped: ARCHIVE READING ROOM, this afternoon's date.",
+          "observations": "A brown label tied to the luggage rack above seat 1A."
+        },
+        {
+          "id": "d_door1",
+          "type": "notes",
+          "name": "Wait by the door for the next stop",
+          "takeable": false,
+          "position": { "x": 9, "y": 4 },
+          "observations": "The door to carriage 2. It opens at the next stop.",
+          "triggerOnInteract": [
+            { "type": "confirm_action",
+              "text": "The train will stop now, and whatever the cult is after in this carriage may go with it. Wait for the stop?",
+              "onConfirm": [ { "type": "set_global", "key": "d_stop_1_go", "value": true } ] }
+          ],
+          "_note": "invented: plan silent (object type 'notes' as a stand-in sprite; after the stop, confirming again is a no-op because t_d_stop_1 is once)"
+        }
+      ]
+    },
+
+    "d_car2": {
+      "type": "room_office",
+      "door_sign": "Carriage 2",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "d_door_release",
+      "_note": "invented: plan silent (lock: an RFID lock no card in the scenario opens, so neither the lockpick nor a code opens it and only the guard's unlockDoor does; m09 restricted_stacks pattern; the validator will warn that no item declares 'd_door_release')",
+      "connections": { "west": "d_car1", "east": "d_car3" },
+      "npcs": [
+        {
+          "id": "ded_d_chen",
+          "displayName": "Mei Chen",
+          "npcType": "person",
+          "position": { "x": 4, "y": 3 },
+          "spriteSheet": "female_blowse_v2",
+          "storyPath": "scenarios/test_social_deduction_d/ink/chen.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "_note": "invented: plan silent (full name, sprite)"
+        }
+      ],
+      "objects": [
+        {
+          "id": "d_chen_ticket",
+          "type": "notes",
+          "name": "Chen's ticket",
+          "takeable": false,
+          "position": { "x": 5, "y": 4 },
+          "observations": "A ticket on the fold-down table, stamped by the Archive reading room.",
+          "triggerOnInteract": [ { "type": "grant_fact", "fact": "d_chen_pass" } ]
+        },
+        {
+          "id": "d_chen_coat",
+          "type": "notes",
+          "name": "Chen's coat",
+          "takeable": true,
+          "readable": true,
+          "position": { "x": 2, "y": 2 },
+          "text": "Inside pocket: a small ward charm on a red cord, the kind sold near the Archive. A shop tag is still tied to it.",
+          "observations": "A wool coat on the hook by seat 2C."
+        },
+        {
+          "id": "d_door2",
+          "type": "notes",
+          "name": "Wait by the door for the next stop",
+          "takeable": false,
+          "position": { "x": 9, "y": 4 },
+          "observations": "The door to carriage 3. It opens at the next stop.",
+          "triggerOnInteract": [
+            { "type": "confirm_action",
+              "text": "The train will stop now, and whatever the cult is after in this carriage may go with it. Wait for the stop?",
+              "onConfirm": [ { "type": "set_global", "key": "d_stop_2_go", "value": true } ] }
+          ]
+        }
+      ]
+    },
+
+    "d_car3": {
+      "type": "room_office",
+      "door_sign": "Carriage 3",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "d_door_release",
+      "connections": { "west": "d_car2", "east": "d_car4" },
+      "npcs": [
+        {
+          "id": "ded_d_devries",
+          "displayName": "Pieter de Vries",
+          "npcType": "person",
+          "position": { "x": 5, "y": 3 },
+          "spriteSheet": "male_office_worker_v2",
+          "storyPath": "scenarios/test_social_deduction_d/ink/devries.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "_note": "invented: plan silent (full name, sprite)"
+        }
+      ],
+      "objects": [
+        {
+          "id": "d_lost_property",
+          "type": "suitcase",
+          "name": "Lost-property box",
+          "takeable": false,
+          "locked": false,
+          "position": { "x": 1, "y": 2 },
+          "observations": "A tin box marked LOST PROPERTY. Unlocked.",
+          "contents": [
+            {
+              "id": "d_sato_notebook_item",
+              "type": "notes",
+              "name": "Notebook, handed in",
+              "takeable": true,
+              "readable": true,
+              "text": "A leather notebook. Inside the cover: A. Sato, seat 1A. The pages are lists of shelf marks, all from the Archive's locked stacks.",
+              "observations": "A notebook somebody handed in an hour ago."
+            }
+          ],
+          "_note": "invented: plan silent (the item id d_sato_notebook_item and its text; the plan names only the trigger t_d_lost_property)"
+        },
+        {
+          "id": "d_newspaper",
+          "type": "notes",
+          "name": "Folded newspaper",
+          "takeable": false,
+          "position": { "x": 6, "y": 4 },
+          "observations": "The evening paper, folded open at the job adverts.",
+          "triggerOnInteract": [ { "type": "grant_fact", "fact": "d_devries_want" } ]
+        },
+        {
+          "id": "d_glass",
+          "type": "notes",
+          "name": "Wine glass",
+          "takeable": false,
+          "position": { "x": 6, "y": 3 },
+          "hasFingerprint": true,
+          "fingerprintOwner": "ded_d_devries",
+          "fingerprintDifficulty": "easy",
+          "observations": "A wine glass on de Vries's table. Clear prints round the stem.",
+          "_note": "invented: plan silent (difficulty; de Vries's prints are on this object only, §7.7)"
+        },
+        {
+          "id": "d_devries_phone",
+          "type": "notes",
+          "name": "De Vries's phone",
+          "takeable": true,
+          "readable": true,
+          "position": { "x": 4, "y": 4 },
+          "text": "A cheap handset. The SIM is unregistered. No contacts, and one number dialled every night this week.",
+          "observations": "A cheap phone face down on the seat."
+        },
+        {
+          "id": "d_shred",
+          "type": "shredder",
+          "name": "Carriage bin",
+          "interactionType": "shredded_document",
+          "takeable": false,
+          "position": { "x": 8, "y": 2 },
+          "observations": "Someone has torn a receipt into strips and pushed them into the bin.",
+          "minigameData": {
+            "title": "Torn receipt",
+            "documentTitle": "RECEIPT",
+            "content": "THE HALT CHARM SHOP. Sold to M. Chen. One ward charm on red cord, blessed. Paid in cash. No refunds after dark.",
+            "stripCount": 8,
+            "allowRotation": false,
+            "successMessage": "A receipt for one ward charm, sold to M. Chen.",
+            "stateWrites": { "onComplete": "d_shred_done" }
+          },
+          "_note": "invented: plan silent (the global d_shred_done, strip count, wording)"
+        },
+        {
+          "id": "d_door3",
+          "type": "notes",
+          "name": "Wait by the door for the next stop",
+          "takeable": false,
+          "position": { "x": 9, "y": 4 },
+          "observations": "The door to carriage 4. It opens at the next stop.",
+          "triggerOnInteract": [
+            { "type": "confirm_action",
+              "text": "The train will stop now, and whatever the cult is after in this carriage may go with it. Wait for the stop?",
+              "onConfirm": [ { "type": "set_global", "key": "d_stop_3_go", "value": true } ] }
+          ]
+        }
+      ]
+    },
+
+    "d_car4": {
+      "type": "room_office",
+      "door_sign": "Carriage 4",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "d_door_release",
+      "connections": { "west": "d_car3", "east": "d_car5" },
+      "npcs": [
+        {
+          "id": "ded_d_volkov",
+          "displayName": "Dmitri Volkov",
+          "npcType": "person",
+          "position": { "x": 3, "y": 3 },
+          "spriteSheet": "male_spy_v2",
+          "storyPath": "scenarios/test_social_deduction_d/ink/volkov.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "itemsHeld": [
+            { "type": "key", "id": "d_brass_key", "name": "Brass Tesseract key", "takeable": true, "keyPins": [30, 55, 20, 45],
+              "observations": "Heavy, warm, and older than the train. The bow is cut into a shape that hurts to look at." }
+          ],
+          "_note": "invented: plan silent (full name, sprite, key pins, key wording; the key opens nothing)"
+        },
+        {
+          "id": "ded_d_conductor",
+          "displayName": "Ezra Lindgren",
+          "npcType": "person",
+          "koImmune": true,
+          "position": { "x": 7, "y": 5 },
+          "spriteSheet": "male_telecom_v2",
+          "storyPath": "scenarios/test_social_deduction_d/ink/conductor.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "_note": "invented: plan silent (name, sprite, koImmune: he holds the only recovery route for d_sato_pass)"
+        }
+      ],
+      "objects": [
+        {
+          "id": "d_briefcase",
+          "type": "suitcase",
+          "name": "Volkov's briefcase",
+          "takeable": false,
+          "locked": true,
+          "lockType": "key",
+          "keyPins": [40, 25, 60, 35],
+          "difficulty": "medium",
+          "position": { "x": 2, "y": 2 },
+          "observations": "A locked briefcase under Volkov's seat. No key in sight; the lock is old and simple.",
+          "contents": [
+            {
+              "id": "d_volkov_letter",
+              "type": "notes",
+              "name": "Letter in the briefcase",
+              "takeable": true,
+              "readable": true,
+              "text": "Unsigned, typed: 'D. V. The brass key does not leave your person until the door. Not to sleep, not to wash. If they search the case, let them find this and nothing else.' Beside it, a velvet tray with a key-shaped hollow, empty.",
+              "observations": "A typed letter on top of an empty velvet tray."
+            }
+          ],
+          "_note": "invented: plan silent (key-type lock with pins and no key, so only the lockpick opens it, as m01's briefcase; the notes item id d_volkov_letter and its text)"
+        },
+        {
+          "id": "d_backup",
+          "type": "backup_recovery",
+          "name": "Lost-phone kiosk",
+          "takeable": false,
+          "position": { "x": 6, "y": 2 },
+          "observations": "The railway's lost-phone kiosk. It keeps a cloud backup of any phone left on the train and plugged in to charge.",
+          "minigameData": {
+            "consoleTitle": "NIGHT TRAIN // LOST DEVICE BACKUP",
+            "backupRecoverySources": [
+              {
+                "id": "devries_backup",
+                "name": "Handset charged at seat 3B, 21:10",
+                "compromised": false,
+                "etaHours": 0,
+                "needs": [],
+                "outcomeHeader": "BACKUP RESTORED",
+                "outcomeStatus": "HANDSET RECORD RESTORED",
+                "outcomeBullets": [
+                  "Registered owner: none. The SIM is unregistered.",
+                  "Charging seat: 3B, the seat de Vries had all evening."
+                ],
+                "status": "READY",
+                "bullets": ["One backup on file, from carriage 3."]
+              }
+            ]
+          },
+          "_note": "invented: plan silent (all minigameData; one source, no key slots; shape follows m02's hospital_recovery_console)"
+        },
+        {
+          "id": "d_door4",
+          "type": "notes",
+          "name": "Wait by the door for the next stop",
+          "takeable": false,
+          "position": { "x": 9, "y": 4 },
+          "observations": "The door to carriage 5. It opens at the last stop.",
+          "triggerOnInteract": [
+            { "type": "confirm_action",
+              "text": "The train will stop now. Wait for the stop?",
+              "onConfirm": [ { "type": "set_global", "key": "d_stop_4_go", "value": true } ] }
+          ]
+        }
+      ]
+    },
+
+    "d_car5": {
+      "type": "room_office",
+      "door_sign": "Carriage 5",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "d_door_release",
+      "connections": { "west": "d_car4" },
+      "npcs": [
+        {
+          "id": "ded_d_mensah",
+          "displayName": "Kwame Mensah",
+          "npcType": "person",
+          "position": { "x": 5, "y": 3 },
+          "spriteSheet": "male_nerd_v2",
+          "storyPath": "scenarios/test_social_deduction_d/ink/mensah.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "_note": "invented: plan silent (full name, sprite)"
+        }
+      ],
+      "objects": [
+        {
+          "id": "d_board_call",
+          "type": "case-file",
+          "name": "Case board",
+          "takeable": false,
+          "position": { "x": 8, "y": 2 },
+          "observations": "The case board. After the last stop, this is where you make the call.",
+          "minigameData": { "mode": "deduction", "allowSubmit": true }
+        },
+        {
+          "id": "d_mensah_ticket",
+          "type": "notes",
+          "name": "Mensah's ticket",
+          "takeable": false,
+          "position": { "x": 6, "y": 4 },
+          "observations": "A ticket tucked into the seat back, stamped at the lecture hall.",
+          "triggerOnInteract": [ { "type": "grant_fact", "fact": "d_mensah_pass" } ]
+        }
+      ]
+    }
+  },
+
+  "social": {
+    "people": [
+      { "id": "ded_d_sato",      "name": "Akiko Sato",      "role": "Passenger, carriage 1" },
+      { "id": "ded_d_chen",      "name": "Mei Chen",        "role": "Passenger, carriage 2" },
+      { "id": "ded_d_devries",   "name": "Pieter de Vries", "role": "Passenger, carriage 3" },
+      { "id": "ded_d_volkov",    "name": "Dmitri Volkov",   "role": "Passenger, carriage 4" },
+      { "id": "ded_d_mensah",    "name": "Kwame Mensah",    "role": "Passenger, carriage 5" },
+      { "id": "ded_d_steward",   "name": "Lowri Hughes",    "role": "Steward" },
+      { "id": "ded_d_conductor", "name": "Ezra Lindgren",   "role": "Conductor" },
+      { "id": "ded_d_guard",     "name": "Nadia Rahman",    "role": "Guard" }
+    ],
+    "_note_people": "invented: plan silent (every full name and role; cast: Sato 60s Japanese woman, Chen 20s Chinese woman, de Vries 40s Dutch man, Volkov 50s Belarusian man, Mensah 70s Ghanaian man, Hughes 30s Welsh woman, Lindgren 60s Swedish man, Rahman 40s Bangladeshi British woman)",
+
+    "characters": {
+      "ded_d_steward": {
+        "influence": { "global": "ded_d_steward_influence", "min": -100, "max": 100, "start": 0 },
+        "thresholds": [
+          { "id": "wary",    "at": -20, "effects": [ { "type": "setGlobal", "global": "ded_d_steward_wary", "value": true, "clearOnRearm": true } ] },
+          { "id": "refuses", "at": -40, "effects": [ { "type": "endConversation" } ] },
+          { "id": "reports", "at": -60, "effects": [ { "type": "setGlobal", "global": "ded_d_steward_reported", "value": true } ] }
+        ],
+        "channels": { "person": "ded_d_steward" }
+      },
+      "ded_d_conductor": {
+        "influence": { "global": "ded_d_conductor_influence", "min": -100, "max": 100, "start": 0 },
+        "thresholds": [
+          { "id": "wary",    "at": -20, "effects": [ { "type": "setGlobal", "global": "ded_d_conductor_wary", "value": true, "clearOnRearm": true } ] },
+          { "id": "refuses", "at": -40, "effects": [ { "type": "endConversation" } ] },
+          { "id": "reports", "at": -60, "effects": [ { "type": "setGlobal", "global": "ded_d_conductor_reported", "value": true } ] }
+        ],
+        "channels": { "person": "ded_d_conductor" }
+      }
+    },
+    "_note_characters": "invented: plan silent (band-flag global names; the reports flag is set but nothing reads it, so no witness-report tamper: each witness's answers never take it below -30, so -60 is unreachable in D)",
+
+    "intelFacts": {
+      "d_sato_pass": {
+        "text": "Akiko Sato's day ticket carries the Archive reading room's stamp from this afternoon.",
+        "label": "Sato: was in the Archive",
+        "subject": "ded_d_sato", "source": "d_rack_label",
+        "deduction": { "suspect": "ded_d_sato", "clue": "archive_pass", "routes": [
+          { "via": "trigger", "id": "t_d_rack", "closedBy": "deduction_faded_d_sato_pass" },
+          { "via": "npc", "id": "ded_d_conductor" } ] }
+      },
+      "d_sato_want": {
+        "text": "Sato has asked the steward three times whether the Codex is on board.",
+        "label": "Sato: wants the Codex",
+        "subject": "ded_d_sato", "source": "ded_d_steward",
+        "deduction": { "suspect": "ded_d_sato", "clue": "wants_codex", "routes": [ { "via": "npc", "id": "ded_d_steward" } ] }
+      },
+      "d_sato_notebook": {
+        "text": "Sato's notebook was handed in to lost property. Her name and seat are inside the cover.",
+        "label": "Sato: a notebook",
+        "subject": "ded_d_sato", "source": "d_lost_property",
+        "deduction": { "suspect": "ded_d_sato", "clue": "notebook", "routes": [ { "via": "trigger", "id": "t_d_lost_property" } ] }
+      },
+      "d_chen_pass": {
+        "text": "Mei Chen's ticket is stamped at the Archive reading room.",
+        "label": "Chen: was in the Archive",
+        "subject": "ded_d_chen", "source": "d_chen_ticket",
+        "deduction": { "suspect": "ded_d_chen", "clue": "archive_pass", "routes": [ { "via": "object", "id": "d_chen_ticket" } ] }
+      },
+      "d_chen_want": {
+        "text": "Chen told the steward she came a long way to see the Codex.",
+        "label": "Chen: wants the Codex",
+        "subject": "ded_d_chen", "source": "ded_d_steward",
+        "deduction": { "suspect": "ded_d_chen", "clue": "wants_codex", "routes": [ { "via": "npc", "id": "ded_d_steward" } ] }
+      },
+      "d_chen_charm": {
+        "text": "Chen bought a ward charm on a red cord this week, and carries it.",
+        "label": "Chen: a ward charm",
+        "subject": "ded_d_chen", "source": "d_chen_coat",
+        "deduction": { "suspect": "ded_d_chen", "clue": "ward_charm", "routes": [
+          { "via": "trigger", "id": "t_d_coat", "closedBy": "deduction_faded_d_chen_charm" },
+          { "via": "trigger", "id": "t_d_shred" } ] }
+      },
+      "d_chen_notebook": {
+        "text": "Chen carries a battered notebook full of reading notes.",
+        "label": "Chen: a notebook",
+        "subject": "ded_d_chen", "source": "ded_d_chen",
+        "deduction": { "suspect": "ded_d_chen", "clue": "notebook", "routes": [ { "via": "npc", "id": "ded_d_chen" } ] }
+      },
+      "d_devries_pass": {
+        "text": "Pieter de Vries came straight from a lecture, with the hall pass still round his neck.",
+        "label": "De Vries: was in the lecture hall",
+        "subject": "ded_d_devries", "source": "ded_d_conductor",
+        "deduction": { "suspect": "ded_d_devries", "clue": "lecture_hall", "routes": [ { "via": "npc", "id": "ded_d_conductor" } ] }
+      },
+      "d_devries_want": {
+        "text": "De Vries has circled an advert for Deputy Keeper of the Archive and underlined 'apply now' twice.",
+        "label": "De Vries: wants a promotion",
+        "subject": "ded_d_devries", "source": "d_newspaper",
+        "deduction": { "suspect": "ded_d_devries", "clue": "wants_promotion", "routes": [ { "via": "object", "id": "d_newspaper" } ] }
+      },
+      "d_devries_ring": {
+        "text": "De Vries's prints on the wine glass carry the pressed mark of a sigil ring.",
+        "label": "De Vries: a sigil ring",
+        "subject": "ded_d_devries", "source": "d_glass",
+        "deduction": { "suspect": "ded_d_devries", "clue": "sigil_ring", "routes": [ { "via": "trigger", "id": "t_d_glass" } ] }
+      },
+      "d_devries_sim": {
+        "text": "De Vries carries a phone with an unregistered SIM.",
+        "label": "De Vries: a burner SIM",
+        "subject": "ded_d_devries", "source": "d_devries_phone",
+        "deduction": { "suspect": "ded_d_devries", "clue": "burner_sim", "routes": [
+          { "via": "trigger", "id": "t_d_phone", "closedBy": "deduction_faded_d_devries_sim" },
+          { "via": "trigger", "id": "t_d_backup" } ] }
+      },
+      "d_volkov_pass": {
+        "text": "Dmitri Volkov spent the evening in the college garden.",
+        "label": "Volkov: was in the garden",
+        "subject": "ded_d_volkov", "source": "ded_d_conductor",
+        "deduction": { "suspect": "ded_d_volkov", "clue": "garden", "routes": [ { "via": "npc", "id": "ded_d_conductor" } ] }
+      },
+      "d_volkov_want": {
+        "text": "Volkov is chasing a backer for a project of his own.",
+        "label": "Volkov: wants funding",
+        "subject": "ded_d_volkov", "source": "ded_d_conductor",
+        "deduction": { "suspect": "ded_d_volkov", "clue": "wants_funding", "routes": [ { "via": "npc", "id": "ded_d_conductor" } ] }
+      },
+      "d_volkov_key": {
+        "text": "Volkov carries the brass Tesseract key on his person.",
+        "label": "Volkov: the brass Tesseract key",
+        "subject": "ded_d_volkov", "source": "d_briefcase",
+        "deduction": { "suspect": "ded_d_volkov", "clue": "brass_key", "routes": [
+          { "via": "trigger", "id": "t_d_briefcase" },
+          { "via": "trigger", "id": "t_d_key_drop" } ] }
+      },
+      "d_volkov_charm": {
+        "text": "Volkov wears a ward charm on his wrist.",
+        "label": "Volkov: a ward charm",
+        "subject": "ded_d_volkov", "source": "ded_d_volkov",
+        "deduction": { "suspect": "ded_d_volkov", "clue": "ward_charm", "routes": [ { "via": "npc", "id": "ded_d_volkov" } ] }
+      },
+      "d_mensah_pass": {
+        "text": "Kwame Mensah's ticket is stamped at the lecture hall this evening.",
+        "label": "Mensah: was in the lecture hall",
+        "subject": "ded_d_mensah", "source": "d_mensah_ticket",
+        "deduction": { "suspect": "ded_d_mensah", "clue": "lecture_hall", "routes": [ { "via": "object", "id": "d_mensah_ticket" } ] }
+      },
+      "d_mensah_want": {
+        "text": "Mensah asked for an empty carriage and no visitors. He wants peace and quiet.",
+        "label": "Mensah: wants peace and quiet",
+        "subject": "ded_d_mensah", "source": "ded_d_steward",
+        "deduction": { "suspect": "ded_d_mensah", "clue": "wants_peace", "routes": [ { "via": "npc", "id": "ded_d_steward" } ] }
+      },
+      "d_mensah_umbrella": {
+        "text": "Mensah carries an umbrella, and his pockets hold nothing else.",
+        "label": "Mensah: an umbrella",
+        "subject": "ded_d_mensah", "source": "ded_d_mensah",
+        "deduction": { "suspect": "ded_d_mensah", "clue": "umbrella", "routes": [ { "via": "npc", "id": "ded_d_mensah" } ] }
+      }
+    },
+    "_note_intelFacts": "invented: plan silent (every fact text, label and source; the plan gives ids, clues and routes)",
+
+    "deduction": {
+      "title": "Night train",
+      "verdictNoun": { "guilty": "Cultist", "clear": "Not a cultist" },
+      "suspects": ["ded_d_sato", "ded_d_chen", "ded_d_devries", "ded_d_volkov", "ded_d_mensah"],
+      "slots": [
+        { "id": "pass",  "label": "Where they were", "perSuspect": "exactlyOne" },
+        { "id": "want",  "label": "What they want",  "perSuspect": "exactlyOne" },
+        { "id": "carry", "label": "What they carry", "perSuspect": "oneOrMore" }
+      ],
+      "clues": {
+        "archive_pass":    { "slot": "pass",  "label": "was in the Archive",      "marked": false, "count": 2 },
+        "lecture_hall":    { "slot": "pass",  "label": "was in the lecture hall", "marked": false, "count": 2 },
+        "garden":          { "slot": "pass",  "label": "was in the garden",       "marked": false, "count": 1 },
+        "wants_codex":     { "slot": "want",  "label": "wants the Codex",         "marked": true,  "count": 2 },
+        "wants_promotion": { "slot": "want",  "label": "wants a promotion",       "marked": true,  "count": 1 },
+        "wants_funding":   { "slot": "want",  "label": "wants funding",           "marked": false, "count": 1 },
+        "wants_peace":     { "slot": "want",  "label": "wants peace and quiet",   "marked": false, "count": 1 },
+        "brass_key":       { "slot": "carry", "label": "brass Tesseract key",     "marked": true,  "count": 1 },
+        "sigil_ring":      { "slot": "carry", "label": "sigil ring",              "marked": true,  "count": 1 },
+        "burner_sim":      { "slot": "carry", "label": "burner SIM",              "marked": true,  "count": 1 },
+        "ward_charm":      { "slot": "carry", "label": "ward charm",              "marked": false, "count": 2 },
+        "notebook":        { "slot": "carry", "label": "notebook",                "marked": false, "count": 2 },
+        "umbrella":        { "slot": "carry", "label": "umbrella",                "marked": false, "count": 1 }
+      },
+      "_note": "invented: plan silent (every clue label; slot labels and profiles come from fixture A, §9.2)",
+      "profiles": [
+        { "id": "keyholder", "label": "Keyholder", "text": "Carries the brass Tesseract key. There is only one.",
+          "rule": { "has": "brass_key" } },
+        { "id": "courier", "label": "Courier", "text": "Was in the Archive, wants the Codex, and carries no ward charm.",
+          "rule": { "all": [ { "has": "archive_pass" }, { "has": "wants_codex" }, { "not": { "has": "ward_charm" } } ] } },
+        { "id": "devotee", "label": "Devotee", "text": "Has three or more marked clues.",
+          "rule": { "markedAtLeast": 3 } }
+      ],
+      "solution": {
+        "ded_d_sato": "courier",
+        "ded_d_chen": null,
+        "ded_d_devries": "devotee",
+        "ded_d_volkov": "keyholder",
+        "ded_d_mensah": null
+      },
+      "brief": { "source": "scenario_brief" },
+      "verdicts": {
+        "allowed": ["final", "ko"],
+        "when": "final",
+        "reveal": "end",
+        "finalCall": { "requiresAll": true, "requireGlobal": "d_last_stop" }
+      },
+      "stakes": {
+        "rigidity": "strict",
+        "disclosure": "brief",
+        "briefText": "Name an innocent, or leave a cultist unnamed, and the ritual completes. You will not get a second chance.",
+        "twistNote": null,
+        "onRightGuilty":  [],
+        "onWrongGuilty":  [ { "type": "fail_mission", "reason": "wrong_call" } ],
+        "onMissedGuilty": [ { "type": "fail_mission", "reason": "wrong_call" } ],
+        "onRightClear":   [],
+        "suspects": {},
+        "escalation": [],
+        "solvedTask": "d_case_solved",
+        "scoreLine": true,
+        "onClose": [
+          { "type": "complete_task", "taskId": "d_case_closed" },
+          { "type": "set_global", "key": "d_ending", "value": true }
+        ],
+        "retry": 0
+      },
+      "favours": {},
+      "tamperText": "The train stops. When it pulls away, a clue you had not found yet has gone with it.",
+      "nudge": true,
+      "debrief": {
+        "closingLine": "Every stop cost you something. The tickets, the witnesses and what the cult threw away were enough to put it back."
+      },
+      "_note_values": "invented: plan silent (tamperText, debrief.closingLine; set_global value true for d_ending; no closeHint, since when is final)"
+    }
+  }
+}

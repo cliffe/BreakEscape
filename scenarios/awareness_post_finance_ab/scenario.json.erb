@@ -1,0 +1,551 @@
+{
+  "scenario_id": "awareness_post_finance_ab",
+  "scenario_name": "Payments inbox check: after (AB)",
+  "titleScreenName": "Final check",
+  "scenario_brief": "The second of two short checks for finance staff at Brightwell Foods, a fictional company. Ten new messages from a payments inbox. If you took the first check, the end screen shows how the two compare.",
+  "endGoal": "Sort the ten messages at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "second_check_aim",
+      "title": "Do the second check",
+      "description": "Sort ten messages at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "triage_post_complete"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Second check done",
+        "body": "Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side."
+      },
+      "tasks": [
+        {
+          "taskId": "finish_check",
+          "title": "Finish the second check",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_post_finance_ab_state": {},
+    "se_awareness_records": [],
+    "triage_post_percent": 0,
+    "triage_post_reportRate": 0,
+    "triage_post_complete": false
+  },
+  "importGlobals": [
+    {
+      "from": "awareness_pre_finance_ab",
+      "prefer": "earliest",
+      "var": "triage_pre_percent",
+      "as": "triage_pre_percent",
+      "default": 0
+    },
+    {
+      "from": "awareness_pre_finance_ab",
+      "prefer": "earliest",
+      "var": "triage_pre_reportRate",
+      "as": "triage_pre_reportRate",
+      "default": 0
+    },
+    {
+      "from": "awareness_pre_finance_ab",
+      "prefer": "earliest",
+      "var": "triage_pre_complete",
+      "as": "triage_pre_complete",
+      "default": false
+    },
+    {
+      "from": "awareness_pre_finance_ab",
+      "prefer": "earliest",
+      "completed": "pre_check_completed"
+    }
+  ],
+  "social": {
+    "triageSets": [
+      {
+        "id": "finance_form_b",
+        "title": "Payments inbox check",
+        "brief": "Ten messages from a Brightwell Foods payments inbox. Brightwell banks with Calderbrook Bank and only pays suppliers it already deals with. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "stage": "post",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "end",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "changed_bank_details",
+          "secrecy_or_bypass",
+          "reply_to_differs"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "triage_{stage}_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "fb_seren_query",
+            "from": {
+              "name": "Daniel Osei",
+              "address": "daniel.osei@serenvalley.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Query on remittance for SV-3310",
+            "time": "12:20",
+            "body": "Hi,\nThanks for last week's payment. I can't match SV-3310 on the remittance; it may have been paid with another invoice. No rush; when you get a moment, could you check?\nDaniel Osei\nAccounts, Seren Valley Mushrooms",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "serenvalley.example",
+              "replyTo": "daniel.osei@serenvalley.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "A supplier's real domain, a routine query, no change to bank details and no pressure: 'no rush' is the opposite of the fake ones."
+              }
+            }
+          },
+          {
+            "id": "fb_castell_bank",
+            "from": {
+              "name": "Castell Fruit Co. Accounts",
+              "address": "accounts@castellfruit-co.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Our bank details have changed",
+            "time": "08:50",
+            "body": "Dear Accounts Payable,\nWe have moved our business banking. Please update your records and pay all invoices from today, including CF-20931, to the account below.\nAccount name: Castell Fruit Co. Ltd\nAccount number ending 5521\nDiolch,\nIfan Jenkins\nAccounts",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.castellfruit-co.example",
+              "replyTo": "accounts@castellfruit-co.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "lookalike_domain",
+                "changed_bank_details"
+              ],
+              "flagAlternatives": [
+                [
+                  "senderTrust",
+                  "lookalike_domain"
+                ]
+              ],
+              "perFlagNote": {
+                "senderTrust": "This isn't the address Castell's accounts team use, so it isn't really who it says it is",
+                "lookalike_domain": "Castell's real domain is castellfruit.example; this one adds -co",
+                "changed_bank_details": "New bank details for every invoice from today is the change invoice fraud depends on. Ring Castell on the number in your supplier file"
+              },
+              "headerNote": "These pass because whoever owns castellfruit-co.example really did send it. That proves the sending domain, not that the domain belongs to Castell.",
+              "ifTrusted": "Castell's payments would go to the sender's account until someone noticed Castell hadn't been paid.",
+              "reportReply": "Thanks. That isn't Castell's domain. We've rung them on the number on file: their bank hasn't changed."
+            }
+          },
+          {
+            "id": "fb_bank_portal",
+            "from": {
+              "name": "Fernhill Business Bank",
+              "address": "alerts@fernhillbusinessbank.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Payment held: sign in to release",
+            "time": "11:02",
+            "body": "A payment from your business account has been held for review. Sign in to release it.\n{{link:signin}}\nFernhill Business Bank",
+            "links": [
+              {
+                "id": "signin",
+                "text": "fernhillbusinessbank.example/secure",
+                "destination": "https://fernhill-secure-login.example/release"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "none",
+              "dmarc": "none",
+              "envelopeFrom": "fernhillbusinessbank.example",
+              "replyTo": "alerts@fernhillbusinessbank.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "linkCredible",
+                "pretextRelevant"
+              ],
+              "perFlagNote": {
+                "linkCredible": "The link reads 'fernhillbusinessbank.example/secure' but it opens fernhill-secure-login.example, a sign-in page that isn't the bank's",
+                "pretextRelevant": "Brightwell banks with Calderbrook, not Fernhill, so a 'payment held' alert from Fernhill has no reason to reach this inbox"
+              },
+              "ifTrusted": "The link opens a sign-in page that collects banking passwords.",
+              "reportReply": "Thanks. Brightwell doesn't bank with Fernhill, and we've blocked the sign-in page."
+            }
+          },
+          {
+            "id": "fb_castell_invoice",
+            "from": {
+              "name": "Castell Fruit Co.",
+              "address": "invoices@castellfruit.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Invoice CF-20874 for PO-4318",
+            "time": "08:32",
+            "body": "Hello,\nPlease find attached invoice CF-20874 for the apple purée delivered on 15 October against your PO-4318.\nPayment terms as agreed. Any questions, ring us on the number on your supplier record.\nCastell Fruit Co.",
+            "attachments": [
+              {
+                "label": "CF-20874.pdf",
+                "kind": "pdf"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "castellfruit.example",
+              "replyTo": "invoices@castellfruit.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "attachmentPlausible": "An invoice PDF against a purchase order you raised is exactly what a supplier sends.",
+                "default": "Castell's real address at castellfruit.example, a purchase order Brightwell raised, and no change to how you pay them."
+              }
+            }
+          },
+          {
+            "id": "fb_quarter_end",
+            "from": {
+              "name": "Ravinder Sandhu",
+              "address": "ravinder.sandhu@brightwellfoods.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Quarter end: approvals by Friday",
+            "time": "10:30",
+            "body": "Hi all,\nThank you for a strong quarter. To close it on time, please make sure every supplier invoice you're holding is in the approval queue by Friday. Adaeze's team will take it from there as usual.\nRavinder",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "brightwellfoods.example",
+              "replyTo": "ravinder.sandhu@brightwellfoods.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "urgencyCalibrated": "There's a deadline, but it sends work into the normal approval queue rather than round it.",
+                "secrecy_or_bypass": "Nothing here is secret, and it keeps Adaeze's team in the loop.",
+                "default": "The chief executive's real address, a note to everyone, and the usual process kept."
+              }
+            }
+          },
+          {
+            "id": "fb_insurance_renewal",
+            "from": {
+              "name": "Marcus Bell",
+              "address": "marcus.bell@brookwaterbrokers.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Your insurance renewal schedule",
+            "time": "11:45",
+            "body": "Hello,\nAttached is the renewal schedule for Brightwell's property and stock cover, as discussed with Adaeze last week. The premium is collected by direct debit as before, so there's nothing to pay by hand.\nBest wishes,\nMarcus Bell\nAccount Manager, Brookwater Insurance Brokers",
+            "attachments": [
+              {
+                "label": "Brightwell_renewal_schedule.pdf",
+                "kind": "pdf"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "brookwaterbrokers.example",
+              "replyTo": "marcus.bell@brookwaterbrokers.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "attachmentPlausible": "A renewal schedule as a PDF is what a broker sends, and it asks for no payment.",
+                "default": "The broker's real domain, a renewal Adaeze already discussed, and payment by the usual direct debit."
+              }
+            }
+          },
+          {
+            "id": "fb_creditors_spoof",
+            "from": {
+              "name": "Mei Lin Chau",
+              "address": "meilin.chau@brightwellfood.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Aged creditors list please",
+            "time": "10:05",
+            "body": "Hi,\nCould you send me this month's aged creditors list, with the supplier contact details column included? I'm reviewing suppliers off site today, so just reply with it attached.\nThanks,\nMei Lin",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.brightwellfood.example",
+              "replyTo": "meilin.chau@brightwellfood.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "lookalike_domain"
+              ],
+              "flagAlternatives": [
+                [
+                  "senderTrust",
+                  "lookalike_domain"
+                ]
+              ],
+              "perFlagNote": {
+                "senderTrust": "The name is Mei Lin's, but the address isn't a Brightwell one: it's brightwellfood.example",
+                "lookalike_domain": "Brightwell's domain is brightwellfoods.example; this one drops the final s to brightwellfood.example"
+              },
+              "headerNote": "These checks pass because whoever owns brightwellfood.example really did send it. That proves the sending domain, not that it's Brightwell.",
+              "ifTrusted": "An aged creditors list names every supplier, what they're owed and who to contact: everything needed to write a convincing bank-change email.",
+              "reportReply": "Thanks. That isn't a Brightwell address: brightwellfood.example drops the final s. Mei Lin is in the office and didn't send it."
+            }
+          },
+          {
+            "id": "fb_expenses_cutoff",
+            "from": {
+              "name": "Agnieszka Duda",
+              "address": "agnieszka.duda@brightwellfoods.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "October expenses: claims by Thursday",
+            "time": "08:05",
+            "body": "Hi everyone,\nOctober expense claims need to be approved in the expenses system by Thursday to make this month's payroll. Anything later goes into November as usual.\nThanks,\nAgnieszka\nPayroll",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "brightwellfoods.example",
+              "replyTo": "agnieszka.duda@brightwellfoods.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "urgencyCalibrated": "Thursday is the normal payroll cut-off, and anything late simply rolls to next month.",
+                "default": "Payroll's real address, a routine reminder, and no link or payment anywhere in it."
+              }
+            }
+          },
+          {
+            "id": "fb_system_maintenance",
+            "from": {
+              "name": "Gwen Pritchard",
+              "address": "gwen.pritchard@brightwellfoods.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Finance system offline Saturday 08:00 to 12:00",
+            "time": "09:40",
+            "body": "Hi all,\nThe finance system will be offline on Saturday from 08:00 to 12:00 for planned updates. You don't need to do anything. Progress will be on the IT status page:\n{{link:status}}\nGwen\nIT Service Desk",
+            "links": [
+              {
+                "id": "status",
+                "text": "status.brightwellfoods.example",
+                "destination": "https://status.brightwellfoods.example/"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "brightwellfoods.example",
+              "replyTo": "gwen.pritchard@brightwellfoods.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "linkCredible": "The link goes where it says, to a status page on Brightwell's own domain, and it doesn't ask you to sign in.",
+                "default": "IT's real address, a planned outage, and 'you don't need to do anything'."
+              }
+            }
+          },
+          {
+            "id": "fb_fd_vouchers",
+            "from": {
+              "name": "Adaeze Okafor",
+              "address": "adaeze.okafor.finance@hastypost.example"
+            },
+            "to": "payments@brightwellfoods.example",
+            "subject": "Quick favour before 2pm",
+            "time": "09:14",
+            "body": "Hi, are you free? I need ten £100 shopping vouchers for this afternoon's staff awards. It's a surprise, so don't mention it to anyone, and put it through petty cash rather than a purchase order.\nSend me the voucher codes by 2. I'm on calls all day so email is best.\nAdaeze",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "hastypost.example",
+              "replyTo": "adaeze.okafor.finance@hastypost.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "secrecy_or_bypass",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The finance manager's name on a personal inbox at hastypost.example",
+                "secrecy_or_bypass": "'Don't mention it' and 'petty cash rather than a purchase order' route round the normal checks",
+                "urgencyCalibrated": "'By 2' and 'on calls all day' leave no time to walk over and ask"
+              },
+              "ifTrusted": "£1,000 of voucher codes would go to the sender, and vouchers can't be traced or clawed back.",
+              "reportReply": "Thanks. Adaeze didn't send it. Her real address is on brightwellfoods.example."
+            }
+          }
+        ],
+        "comparison": {
+          "requireGlobal": "pre_check_completed"
+        }
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "post_finance_ab",
+      "role": "finance",
+      "company": "brightwell_foods",
+      "brand": {
+        "name": "Brightwell Foods",
+        "logoText": "BRIGHTWELL",
+        "accent": "#2f6f5e"
+      },
+      "variant": "full",
+      "durationTargetMin": 9,
+      "scopeNote": "Authorised exercise at Brightwell Foods, a fictional company. In scope: ten messages from the Brightwell payments inbox.",
+      "stages": [
+        "check"
+      ],
+      "conclusionTaskId": "finish_check",
+      "defend": {
+        "setId": "finance_form_b",
+        "stage": "post",
+        "reportAlwaysVisible": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_brightwell",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_brightwell_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "window_blinds": {
+            "color": "#ffd9a0",
+            "radius": 48,
+            "intensity": 0.1,
+            "floorTint": 0.5
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.6,
+            "color": "#ffe2b0",
+            "radius": 110,
+            "intensity": 0.5
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "graham_whitfield",
+          "displayName": "Graham Whitfield",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/awareness_post_finance_ab/ink/graham_post.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:triage_post_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "finish_check"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk with ten messages from a payments inbox, ready for the second check.",
+          "minigameData": {
+            "episodeId": "post_finance_ab"
+          }
+        }
+      ]
+    }
+  }
+}

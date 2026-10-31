@@ -1,0 +1,847 @@
+{
+  "scenario_id": "awareness_e18_credential_attacks_at_scale",
+  "scenario_name": "Credential stuffing and password spraying: both sides",
+  "titleScreenName": "Password guessing at scale",
+  "scenario_brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team: you don't go after one person, you go after the whole practice at once. Gather the staff and how their email addresses are built, build a word list from the practice's own website, then try one likely password against every account, and a stolen breach list across many services. Then it's your own seat: the alerts arrive, and you tell the real from the fake. Only that part is scored.",
+  "endGoal": "Run the campaign, then handle the security alerts at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "red_team_campaign_aim",
+      "title": "Run the campaign",
+      "description": "Build a staff list and a word list from the practice's public pages, then spray one password across every account and run a stolen breach list across many services.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        {
+          "taskId": "run_the_campaign",
+          "title": "Run the campaign against the practice",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "aimId": "tell_them_apart_aim",
+      "title": "Tell the real alerts from the fakes",
+      "description": "Work through the security alerts at the training kiosk.",
+      "status": "active",
+      "order": 1,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e18_credential_attacks_at_scale_defend_complete"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Credential attacks at scale: finished",
+        "body": "You've seen a whole practice sprayed and stuffed from its public pages, then worked through the alerts from your own seat. That's this episode finished. The debrief goes through each one."
+      },
+      "tasks": [
+        {
+          "taskId": "handle_the_alerts",
+          "title": "Handle the security alerts",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e18_credential_attacks_at_scale_state": {},
+    "se_awareness_records": [],
+    "episode_e18_credential_attacks_at_scale_defend_percent": 0,
+    "episode_e18_credential_attacks_at_scale_defend_reportRate": 0,
+    "episode_e18_credential_attacks_at_scale_defend_complete": false,
+    "se_osint_state": {},
+    "se_intel_ms_team_roster": false,
+    "se_intel_ms_email_pattern": false,
+    "se_intel_ms_projects": false,
+    "se_intel_ms_motto": false,
+    "se_intel_ms_place": false,
+    "guess_e18_landed": false
+  },
+  "social": {
+    "triageSets": [
+      {
+        "id": "e18_atscale_inbox",
+        "title": "After the attack: your alerts",
+        "brief": "A password-guessing campaign has just hit Merrin & Sallow, and the alerts are arriving in your inbox: six in all, some genuine and some fakes built to finish the job. For each one, choose Trust, Report, Delete or Verify (check it through a route you already trust, not the link in the message), then tick what you noticed. Never type a password to 'unlock' or 'check' anything. Reporting when you're unsure is always fine and never marked down.",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "fake_lockout_notice",
+          "fake_signin_alert",
+          "fake_breach_alert"
+        ],
+        "flagChips": {
+          "fake_lockout_notice": "A lockout message that makes you unlock through a link",
+          "fake_signin_alert": "A sign-in alert that makes you 'review' by signing in through its link",
+          "fake_breach_alert": "A 'breach checker' that asks for your password"
+        },
+        "labels": {
+          "verdict": {
+            "report": { "hint": "This is a fake. Tell security." }
+          },
+          "verdictFeedback": {
+            "verify": { "phish": "Checking first is a sound habit. That one was a fake." },
+            "trust": { "phish": "Not this time. That one was a fake." }
+          },
+          "teamBadge": "Fakes stopped for the team: {n}",
+          "teamBadgeTitle": "Messages you reported or checked this round rather than acting on them",
+          "phishCaughtLabel": "Fakes caught",
+          "scoreLine": "Right call is most of the score; naming what you noticed is the rest."
+        },
+        "bands": [
+          { "min": 85, "headline": "Well done: you caught the fakes and knew why" },
+          { "min": 60, "headline": "Getting there: a few signs slipped past" },
+          { "min": 0, "headline": "Worth practising: here's where to look first" }
+        ],
+        "resultCopy": {
+          "criticalLead": "let an attacker straight in",
+          "reportedPct": "Reported {pct}% of the fakes",
+          "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+          "noFlags": "Next time, tick what looks off. The review cards show what to look for in each one."
+        },
+        "genuineCopy": {
+          "binnedLeadOne": "One real alert was treated as a fake",
+          "binnedLeadMany": "{n} real alerts were treated as fakes",
+          "costBoth": "Reporting when you're unsure is never wrong, but a report on a real alert takes the service desk's time, and deleting one can leave a real problem unseen.",
+          "costReport": "Reporting when you're unsure is never wrong, but a report on a real alert takes the service desk's time to check.",
+          "costBin": "Deleting a real alert has a cost: a genuine warning goes unread.",
+          "whyBothHalves": "Both halves matter: stopping the fakes protects your account, and acting on the real alerts keeps you informed."
+        },
+        "criticalWhat": "trusting a look-alike message",
+        "skillNames": {
+          "fake_lockout_notice": "Spotting a fake lockout notice",
+          "fake_signin_alert": "Spotting a fake sign-in alert",
+          "fake_breach_alert": "Spotting a fake breach checker"
+        },
+        "outcome": {
+          "setGlobalPrefix": "episode_e18_credential_attacks_at_scale_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e18_lockout_genuine",
+            "from": {
+              "name": "Fenlow Managed IT",
+              "address": "security@fenlow.example"
+            },
+            "to": "you@merrinsallow.example",
+            "subject": "Some accounts were briefly locked this morning",
+            "time": "08:54",
+            "body": "Hello,\nAfter a run of unusual sign-in attempts across the practice this morning, some staff accounts were briefly locked as a precaution. You don't need to do anything unless you can't sign in, in which case use the usual service-desk route. We will never ask you for your password.\nFenlow Managed IT",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "fenlow.example",
+              "replyTo": "security@fenlow.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "This is the provider's real address, telling you what happened and asking you for nothing, with the usual route if you're locked out. Trusting it is right, and checking with the service desk or reporting it still scores full."
+              },
+              "falseAlarmCost": "Reporting a genuine precautionary notice costs nothing but a moment of the service desk's time, and it is never the wrong call when you're unsure."
+            }
+          },
+          {
+            "id": "e18_lockout_fake",
+            "from": {
+              "name": "Merrin & Sallow Security",
+              "address": "security@merrin-sallow.example"
+            },
+            "to": "you@merrinsallow.example",
+            "subject": "Your account is locked - act now",
+            "time": "09:06",
+            "body": "Your account has been locked after suspicious activity. Unlock it now or it will be permanently deleted within 24 hours. Use the Unlock account link below to restore access immediately.\n[ Unlock account ]",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "merrin-sallow.example",
+              "replyTo": "security@merrin-sallow.example"
+            },
+            "factorStrings": {
+              "fake_lockout_notice": {
+                "redFlag": "A lockout message that makes you unlock through a link"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "fake_lockout_notice"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "The address is merrin-sallow.example, a hyphen added to the real merrinsallow.example. A real notice from the practice's provider does not come from a changed address.",
+                "fake_lockout_notice": "A genuine lockout never asks you to unlock through a link. The provider's own notice tells you to use the usual service-desk route."
+              },
+              "whyFine": {
+                "urgencyCalibrated": "The 24-hour deletion deadline is there to rush you, and distrusting it is fair. What marks this one as fake, though, is the look-alike address and the unlock-through-a-link, not the hurry by itself.",
+                "senderTrust": "This one's catch is counted as the look-alike domain above: the address is a near-copy of the real one, rather than an obvious stranger's address behind a trusted-looking name."
+              },
+              "ifTrusted": "Clicking through and signing in would hand your password straight to whoever is running the attack.",
+              "reportReply": "Thanks. That wasn't us: the address is a look-alike, and we never ask you to unlock through a link. Reporting it is exactly right."
+            }
+          },
+          {
+            "id": "e18_signin_genuine",
+            "from": {
+              "name": "Merrin & Sallow Sign-in",
+              "address": "no-reply@merrinsallow.example"
+            },
+            "to": "you@merrinsallow.example",
+            "subject": "New sign-in to your account",
+            "time": "09:14",
+            "body": "Hello,\nThere was a new sign-in to your account from a Windows PC in London. If this was you, no action is needed. If it wasn't, go to the sign-in page yourself, the way you normally reach it, and change your password.\nMerrin & Sallow Sign-in",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "merrinsallow.example",
+              "replyTo": "no-reply@merrinsallow.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "A real alert on the practice's own address: it tells you what happened and sends you to the real site, it never asks you to confirm by signing in through a link. Trust it, or go to the site yourself to check; reporting it is no error either."
+              },
+              "falseAlarmCost": "If you report a genuine sign-in alert, nothing is lost: the worst case is a quick 'that one was fine' from the service desk."
+            }
+          },
+          {
+            "id": "e18_signin_fake",
+            "from": {
+              "name": "Account Security",
+              "address": "alerts@merrinsallow-studio.example"
+            },
+            "to": "you@merrinsallow.example",
+            "subject": "We blocked a suspicious sign-in - review it now",
+            "time": "09:21",
+            "body": "We blocked a suspicious sign-in to your account. To keep your access, review this sign-in now and confirm it was you. Use the Review sign-in link below to confirm.\n[ Review sign-in ]",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "merrinsallow-studio.example",
+              "replyTo": "alerts@merrinsallow-studio.example"
+            },
+            "factorStrings": {
+              "fake_signin_alert": {
+                "redFlag": "A sign-in alert that makes you 'review' by signing in through its link"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "fake_signin_alert",
+                "lookalike_domain"
+              ],
+              "perFlagNote": {
+                "fake_signin_alert": "A genuine alert never makes you 'review' a sign-in by signing in through its link. This one sends you to a page built to capture your password.",
+                "lookalike_domain": "The address is merrinsallow-studio.example, an extra word added to the real merrinsallow.example. The genuine sign-in alert comes from the practice's own address."
+              },
+              "whyFine": {
+                "urgencyCalibrated": "'Review it now to keep your access' leans on urgency, and distrusting it is fair. What marks this one as fake, though, is the look-alike address and the review-through-its-link, not the hurry by itself.",
+                "senderTrust": "This one's catch is counted as the look-alike domain above: the address is a near-copy of the real one with an extra word, rather than an obvious stranger's address behind a trusted-looking name."
+              },
+              "ifTrusted": "Signing in through the link would hand your password to the page behind it.",
+              "reportReply": "Thanks. The real alert sends you to the site yourself; this one wanted you to sign in through its link. Reporting it is the right move."
+            }
+          },
+          {
+            "id": "e18_breach_fake",
+            "kind": "page",
+            "subject": "Free breach checker",
+            "time": "09:33",
+            "body": "A page that offers to tell you whether your password has leaked, if you type it into the box.",
+            "page": {
+              "url": "breach-check-now.example",
+              "padlock": false,
+              "heading": "Free breach checker: type your password to see if it has leaked"
+            },
+            "factorStrings": {
+              "fake_breach_alert": {
+                "redFlag": "A 'breach checker' that asks you to type your password"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "fake_breach_alert"
+              ],
+              "perFlagNote": {
+                "fake_breach_alert": "Nothing genuine asks for your password to tell you whether it has leaked. A real breach check uses only your email address, never your password."
+              },
+              "ifTrusted": "Typing your password into the box hands it straight to whoever set the page up.",
+              "reportReply": "Thanks. A real breach check only ever needs your email address. Never type a password to 'check' it; reporting this is exactly right."
+            }
+          },
+          {
+            "id": "e18_breach_genuine",
+            "from": {
+              "name": "Fenlow Managed IT",
+              "address": "breach-monitoring@fenlow.example"
+            },
+            "to": "you@merrinsallow.example",
+            "subject": "Your work address was found in a breach of another site",
+            "time": "09:40",
+            "body": "Hello,\nOur monitoring found your work address in a breach of another website. Change that password on the real site, and anywhere you have reused it. Don't reply with any password; this is for your information only, and we never ask for it.\nFenlow Managed IT",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "fenlow.example",
+              "replyTo": "breach-monitoring@fenlow.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "A genuine breach notice from the provider: it names the problem, tells you to change the password on the real site and anywhere you reused it, and asks for nothing. The safe action is to change a reused password, not to reply or click. Reporting it is no error."
+              },
+              "falseAlarmCost": "If you report this genuine notice, nothing is lost; checking with the service desk before you change anything is always a fair call."
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e18_credential_attacks_at_scale",
+      "role": "general_staff",
+      "company": "merrin_sallow",
+      "brand": {
+        "name": "Merrin & Sallow Architects",
+        "logoText": "MERRIN & SALLOW",
+        "accent": "#8a5a2b"
+      },
+      "variant": "full",
+      "durationTargetMin": 15,
+      "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional company. No real password is ever typed or stored; every account, word and pair is made up.",
+      "stages": [
+        "brief",
+        "osint",
+        "guess",
+        "flip",
+        "defend",
+        "debrief"
+      ],
+      "stepLabels": {
+        "guess": "Campaign",
+        "flip": "Your inbox"
+      },
+      "conclusionTaskId": "handle_the_alerts",
+      "attack": {
+        "siteIds": [
+          "merrin_site",
+          "merrin_social"
+        ],
+        "scored": false
+      },
+      "guess": {
+        "mode": "spray",
+        "strings": {
+          "found": "collected",
+          "opened": "opened",
+          "trying": "did not open",
+          "switchOff": "Finish and see the results",
+          "rosterMissing": "No address list yet: it needs the staff names from the People page and the email pattern from the Contact page.",
+          "wordListMissing": "Not collected yet: this word comes from a page you have not read.",
+          "sprayMissing": "This password can't be tried yet: the address list, or the word it is built from, is still missing."
+        },
+        "roster": {
+          "namesFactId": "ms_team_roster",
+          "patternFactId": "ms_email_pattern",
+          "domain": "merrinsallow.example",
+          "sample": [
+            "catherine.merrin",
+            "julian.sallow",
+            "yasmin.chaudhry",
+            "thandiwe.moyo",
+            "dani.fenwick"
+          ],
+          "note": "The staff list and address pattern came off the practice's public pages, not from any password."
+        },
+        "wordList": {
+          "slots": [
+            {
+              "id": "project",
+              "factId": "ms_projects",
+              "word": "Calderbank",
+              "template": "{project}2026",
+              "label": "A project from the Projects page (not collected yet)"
+            },
+            {
+              "id": "motto",
+              "factId": "ms_motto",
+              "word": "DesignThatLasts",
+              "template": "{motto}1",
+              "label": "The strapline from the Home page (not collected yet)"
+            },
+            {
+              "id": "place",
+              "factId": "ms_place",
+              "word": "Verrow",
+              "template": "{place}!",
+              "label": "The street from the Visit page (not collected yet)"
+            }
+          ],
+          "seasonYear": [
+            "Autumn2026"
+          ],
+          "note": "Candidate passwords built from the practice's own website words plus the season and the year; all made up."
+        },
+        "spray": {
+          "passes": [
+            {
+              "id": "pass_project",
+              "fromSlot": "project"
+            },
+            {
+              "id": "pass_motto",
+              "fromSlot": "motto"
+            },
+            {
+              "id": "pass_place",
+              "fromSlot": "place"
+            },
+            {
+              "id": "pass_season",
+              "literal": "Autumn2026"
+            }
+          ],
+          "opensCount": 3,
+          "note": "One candidate tried once against every account in a pass, so no single account ever locks."
+        },
+        "stuff": {
+          "rows": [
+            {
+              "label": "A work email account",
+              "opens": true
+            },
+            {
+              "label": "A supplier portal login",
+              "opens": true
+            },
+            {
+              "label": "A staff wiki login, used nowhere else",
+              "opens": false
+            }
+          ],
+          "note": "A password leaked from another site was tried across many services; the ones that open are where someone reused that password at work."
+        },
+        "passphraseDemo": {
+          "words": [
+            "harbour",
+            "ladder",
+            "crimson"
+          ],
+          "neverLands": true
+        },
+        "landedGlobal": "guess_e18_landed",
+        "note": "No real password is typed here; every account, word and pair is made up for the exercise."
+      },
+      "defend": {
+        "setId": "e18_atscale_inbox",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "flipAftermath": {
+        "heading": "A few minutes later, at your desk",
+        "victimName": "you",
+        "intro": "The attack set alarms ringing across the practice. These first two alerts are already in your inbox; you handle the full set next.",
+        "items": [
+          {
+            "id": "fa_signin",
+            "kind": "email",
+            "folder": "inbox",
+            "subject": "New sign-in to your account",
+            "time": "08:50",
+            "note": "An alert about a sign-in; genuine ones send you to the real site, fakes to a look-alike."
+          },
+          {
+            "id": "fa_lockout",
+            "kind": "email",
+            "folder": "inbox",
+            "subject": "Some accounts were briefly locked",
+            "time": "08:52",
+            "note": "The practice locks accounts after a run of bad sign-ins."
+          }
+        ],
+        "line": "Most of the harm comes from acting on the fake alert instead of the real one."
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team: you don't go after one person, you go after the whole practice at once. Gather the staff and how their email addresses are built, build a word list from the practice's own website, then try one likely password against every account, and a stolen breach list across many services. Then it's your own seat: the alerts arrive, and you tell the real from the fake. Only that part is scored.",
+        "stages": {
+          "osint": {
+            "text": "Open the browser and read the practice's public pages. Click a line to add it to your notes; the useful lines are the patterns and projects, not individual staff. Five useful facts are there to find, and the more you note, the more the campaign has to work with."
+          }
+        },
+        "flipHeading": "Now it's your inbox.",
+        "flipGuessIntro": "You watched one password open the predictable accounts across the whole practice, and a stolen one open the accounts where it had been reused. Here is the other end: your own seat, with the alerts starting to arrive.",
+        "flipDefenderLine": "One password off the website, tried once across everyone, opened the predictable accounts. No clever cracking, just reuse and words anyone could read. A different password for every account, and not a word off the website, is what would have stopped it. Now the alerts are arriving, and some are fakes.",
+        "flipNoSend": "Nothing of the practice's was opened to replay, but the lesson holds: a reused password, or a word off the website, is what opens an account. Next, you tell the real alerts from the fakes.",
+        "flipMissed": "The attack opened nothing this time, but a reused password or a company word is still what opens accounts at scale. Next, you tell the real alerts from the fakes.",
+        "flipMissedHeading": "Nothing landed this time",
+        "flipLandedNoTells": "It opened the predictable accounts with nothing clever at all, just reuse and words off the website. Next, you tell the real alerts from the fakes.",
+        "noBlameLine": "Reusing a password, or using a word off the website, is ordinary and common; this is how accounts are opened at scale, not a sign anyone was careless. A miss here just shows what to change tonight.",
+        "allPhishRight": "Every fake was caught, with every sign named.",
+        "teamLine": "By reporting or checking {n} of these rather than acting on them, you kept a fake away from the rest of your team.",
+        "mondayCard": "On Monday, three things at home: switch on a password manager and let it make a different password for every account, starting with your email; check your personal email address on a breach-checking site (the NCSC suggests Have I Been Pwned); and turn on 2-step verification, or a passkey, for your email first. Report anything at work using the route in the box below.",
+        "defendOnly": "These alerts follow an attack on the whole practice, and anyone can be caught out by a convincing fake. Any you were caught out by are shown below, with what gave each one away.",
+        "conceptPanel": [
+          {
+            "heading": "Password spraying",
+            "text": "One likely password, tried just once against every account, so no single account locks. The accounts that open are the predictable ones: a company word, a project name, a season and a year."
+          },
+          {
+            "heading": "Credential stuffing",
+            "text": "A list of address and password pairs stolen from one website, tried automatically across many others. Where someone reused that password at work, the attacker is straight in."
+          },
+          {
+            "heading": "The one habit",
+            "text": "A different password for every account, not a word off the website, kept in a manager, breaks both: the spray has nothing predictable to try, and a stolen pair opens nothing else."
+          },
+          {
+            "heading": "What the practice does",
+            "text": "On the practice's side: accounts lock after a run of bad sign-ins, MFA is on everything, the obvious words are blocked from passwords, and a monitoring partner watches the breach lists for the practice's addresses. These are set up for you; you don't have to switch them on."
+          }
+        ]
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "people": [
+      {
+        "id": "catherine",
+        "kind": "cast",
+        "address": "catherine.merrin@merrinsallow.example",
+        "forms": {
+          "first": "Catherine",
+          "formal": "Ms Merrin",
+          "full": "Catherine Merrin"
+        }
+      },
+      {
+        "id": "julian",
+        "kind": "cast",
+        "address": "julian.sallow@merrinsallow.example",
+        "forms": {
+          "first": "Julian",
+          "formal": "Mr Sallow",
+          "full": "Julian Sallow"
+        }
+      },
+      {
+        "id": "yasmin",
+        "kind": "cast",
+        "address": "yasmin.chaudhry@merrinsallow.example",
+        "forms": {
+          "first": "Yasmin",
+          "formal": "Ms Chaudhry",
+          "full": "Yasmin Chaudhry"
+        }
+      },
+      {
+        "id": "thandiwe",
+        "kind": "cast",
+        "address": "thandiwe.moyo@merrinsallow.example",
+        "forms": {
+          "first": "Thandiwe",
+          "formal": "Ms Moyo",
+          "full": "Thandiwe Moyo"
+        }
+      },
+      {
+        "id": "dani",
+        "kind": "cast",
+        "address": "dani.fenwick@merrinsallow.example",
+        "forms": {
+          "first": "Dani",
+          "formal": "Mr Fenwick",
+          "full": "Dani Fenwick"
+        }
+      }
+    ],
+    "intelFacts": {
+      "ms_team_roster": {
+        "text": "The 'People' page lists the practice's staff by full name: Catherine Merrin, Julian Sallow, Yasmin Chaudhry, Thandiwe Moyo, Dani Fenwick and others.",
+        "subject": "company",
+        "source": "blk_people",
+        "provides": [],
+        "reduceNote": "A public team page hands an attacker the whole staff list in one go, without needing a single password."
+      },
+      "ms_email_pattern": {
+        "text": "Staff email addresses are built as firstname.lastname@merrinsallow.example.",
+        "subject": "company",
+        "source": "blk_contact",
+        "provides": [],
+        "reduceNote": "Once the address pattern is known, every name on the team page turns into a working address to try."
+      },
+      "ms_projects": {
+        "text": "The 'Projects' page names current schemes, among them Calderbank Mills and Elmgate Pavilion.",
+        "subject": "company",
+        "source": "blk_projects",
+        "provides": [],
+        "reduceNote": "Project names on the website are exactly the kind of word people put in a password, so they go straight into the word list."
+      },
+      "ms_motto": {
+        "text": "The practice's strapline is 'Design that lasts'.",
+        "subject": "company",
+        "source": "blk_home",
+        "provides": [],
+        "reduceNote": "A strapline printed on the home page is a handful of memorable words, and memorable words become passwords."
+      },
+      "ms_place": {
+        "text": "The studio is on Verrow Street.",
+        "subject": "company",
+        "source": "blk_visit",
+        "provides": [],
+        "reduceNote": "A street name from the 'Visit us' page is one more word off the website to add to the list."
+      }
+    },
+    "osint": {
+      "profile": "awareness",
+      "pinHints": true,
+      "sites": [
+        {
+          "id": "merrin_site",
+          "name": "Merrin & Sallow Architects",
+          "url": "merrinsallow.example",
+          "type": "company-site",
+          "pages": [
+            {
+              "id": "people",
+              "title": "Our people",
+              "blocks": [
+                {
+                  "id": "blk_people",
+                  "kind": "p",
+                  "text": "Our people: Catherine Merrin (Managing Partner), Julian Sallow (Partner), Yasmin Chaudhry (Finance Controller), Thandiwe Moyo (Studio Manager), Dani Fenwick (Junior Architect) and the wider studio team.",
+                  "fact": "ms_team_roster"
+                },
+                {
+                  "id": "blk_staff_catherine",
+                  "kind": "staff",
+                  "person": "catherine",
+                  "name": "Catherine Merrin",
+                  "role": "Managing Partner",
+                  "address": "catherine.merrin@merrinsallow.example"
+                },
+                {
+                  "id": "blk_staff_julian",
+                  "kind": "staff",
+                  "person": "julian",
+                  "name": "Julian Sallow",
+                  "role": "Partner",
+                  "address": "julian.sallow@merrinsallow.example"
+                },
+                {
+                  "id": "blk_staff_dani",
+                  "kind": "staff",
+                  "person": "dani",
+                  "name": "Dani Fenwick",
+                  "role": "Junior Architect",
+                  "address": "dani.fenwick@merrinsallow.example"
+                }
+              ]
+            },
+            {
+              "id": "contact",
+              "title": "Contact us",
+              "blocks": [
+                {
+                  "id": "blk_contact",
+                  "kind": "field",
+                  "text": "General enquiries reach us at hello@merrinsallow.example. Individual staff can be reached at firstname.lastname@merrinsallow.example.",
+                  "fact": "ms_email_pattern"
+                }
+              ]
+            },
+            {
+              "id": "projects",
+              "title": "Projects",
+              "blocks": [
+                {
+                  "id": "blk_projects",
+                  "kind": "p",
+                  "text": "Current schemes include Calderbank Mills, a canalside housing scheme, and Elmgate Pavilion, a community sports building.",
+                  "fact": "ms_projects"
+                }
+              ]
+            },
+            {
+              "id": "home",
+              "title": "Home",
+              "blocks": [
+                {
+                  "id": "blk_home",
+                  "kind": "p",
+                  "text": "Merrin & Sallow Architects. Design that lasts.",
+                  "fact": "ms_motto"
+                }
+              ]
+            },
+            {
+              "id": "visit",
+              "title": "Visit us",
+              "blocks": [
+                {
+                  "id": "blk_visit",
+                  "kind": "field",
+                  "text": "The studio is on Verrow Street, a short walk from the station.",
+                  "fact": "ms_place"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "merrin_social",
+          "name": "Friendface",
+          "url": "friendface.example",
+          "type": "social",
+          "profiles": [
+            {
+              "person": "thandiwe",
+              "posts": [
+                {
+                  "id": "post_thandiwe_other",
+                  "text": "Models back from the workshop for the Calderbank Mills review. Long day, good one."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on",
+    "ambient": "#cac4bc"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_merrin_sallow",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_merrin_sallow_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "bankers_lamp": {
+            "color": "#ffd9a0",
+            "radius": 40,
+            "intensity": 0.5
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 7.55,
+            "y": 2.3,
+            "color": "#f0f4ff",
+            "radius": 96,
+            "intensity": 0.4
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "ama_owusu",
+          "displayName": "Ama Owusu",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/awareness_e18_credential_attacks_at_scale/ink/ama_owusu.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:guess_e18_landed",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "run_the_campaign"
+            },
+            {
+              "eventPattern": "global_variable_changed:episode_e18_credential_attacks_at_scale_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "handle_the_alerts"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen training kiosk for the Merrin & Sallow credential exercise: first a campaign built from the practice's public pages, then the security alerts to handle from your own seat.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e18_credential_attacks_at_scale_defend_complete",
+              "value": "A touch-screen training kiosk for the Merrin & Sallow credential exercise. Episode finished."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e18_credential_attacks_at_scale"
+          }
+        }
+      ]
+    }
+  }
+}

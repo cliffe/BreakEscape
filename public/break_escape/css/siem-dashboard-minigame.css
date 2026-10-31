@@ -1,0 +1,521 @@
+.siem-minigame-container {
+    background: #0d1324;
+    border: 2px solid #2f3a59;
+}
+
+.siem-minigame-game-container {
+    padding: 14px;
+    box-sizing: border-box;
+    overflow: visible;
+}
+
+.siem-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    box-sizing: border-box;
+    min-height: 520px;
+    background: #1a1a2e;
+    border: 2px solid #3a4a6d;
+    overflow: hidden;
+}
+
+.siem-result-banner {
+    position: absolute;
+    top: -60px;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    height: 56px;
+    display: block;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: #ffffff;
+    transition: top 0.25s ease;
+    padding: 0 72px 0 16px;
+    box-sizing: border-box;
+    text-align: center;
+    line-height: 56px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.siem-result-banner.show {
+    top: 0;
+}
+
+.siem-result-banner.success {
+    background: #1f7a3b;
+    border-bottom: 2px solid #39c164;
+}
+
+.siem-result-banner.failure {
+    background: #7a1f2e;
+    border-bottom: 2px solid #ff3a5a;
+}
+
+.siem-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    border-bottom: 2px solid #364261;
+    background: #11192b;
+}
+
+.siem-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    color: #c8d8ff;
+    letter-spacing: 1px;
+}
+
+.siem-clock {
+    font-family: 'GNF', monospace;
+    font-size: 32px;
+    color: #ffd27f;
+    margin-right: 64px;
+}
+
+.siem-body {
+    display: grid;
+    grid-template-columns: 7fr 3fr;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+    padding: 10px;
+}
+
+.siem-alert-pane,
+.siem-queue-pane {
+    border: 2px solid #2e3957;
+    background: #131f38;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.siem-pane-title {
+    padding: 10px;
+    border-bottom: 2px solid #2e3957;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    color: #9ac1ff;
+    background: #0f1730;
+}
+
+.siem-alert-list,
+.siem-queue-list {
+    padding: 8px;
+    overflow-y: auto;
+}
+
+.siem-alert-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.siem-alert-row {
+    display: grid;
+    grid-template-columns: 70px 86px 140px minmax(0, 1fr) 200px;
+    gap: 10px;
+    align-items: center;
+    min-height: 60px;
+    padding: 8px;
+    border: 2px solid #32466f;
+    background: #1a2745;
+    transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.siem-alert-row.status-dismissed {
+    opacity: 0.3;
+    transform: translateX(-6px);
+}
+
+.siem-alert-row.status-escalated {
+    border-left: 4px solid #47c46a;
+}
+
+.siem-severity {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    color: #ffffff;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.siem-severity.sev-LOW {
+    background: #6e7583;
+}
+
+.siem-severity.sev-MED {
+    background: #c28733;
+}
+
+.siem-severity.sev-HIGH {
+    background: #d86a29;
+}
+
+.siem-severity.sev-CRIT {
+    background: #cf2b45;
+    animation: siem-crit-flash 1s steps(1, end) infinite;
+}
+
+@keyframes siem-crit-flash {
+    0% { opacity: 1; }
+    50% { opacity: 0.35; }
+    100% { opacity: 1; }
+}
+
+.siem-time,
+.siem-source,
+.siem-description,
+.siem-queue-text,
+.siem-queue-count,
+.siem-status-bar {
+    font-family: 'GNF', monospace;
+}
+
+.siem-time,
+.siem-source,
+.siem-description {
+    font-size: 20px;
+    color: #d0dbf0;
+}
+
+.siem-source {
+    color: #8bd0f0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.siem-description {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.siem-actions {
+    display: inline-flex;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.siem-btn {
+    min-width: 90px;
+    height: 36px;
+    border: 2px solid #2d3856;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.siem-btn.dismiss {
+    background: #4b5260;
+}
+
+.siem-btn.escalate {
+    background: #c28733;
+}
+
+.siem-btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.siem-queue-count {
+    padding: 10px;
+    font-size: 22px;
+    color: #d2e0ff;
+    border-bottom: 2px solid #2e3957;
+}
+
+.siem-queue-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.siem-queue-item {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
+    min-height: 42px;
+    padding: 6px;
+    border: 2px solid #32466f;
+    background: #17243f;
+}
+
+.siem-queue-sev {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: #ffffff;
+}
+
+.siem-queue-sev.sev-LOW {
+    background: #6e7583;
+}
+
+.siem-queue-sev.sev-MED {
+    background: #c28733;
+}
+
+.siem-queue-sev.sev-HIGH {
+    background: #d86a29;
+}
+
+.siem-queue-sev.sev-CRIT {
+    background: #cf2b45;
+}
+
+.siem-queue-text {
+    font-size: 19px;
+    color: #d6e2ff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.siem-status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 48px;
+    padding: 10px 12px;
+    border-top: 2px solid #364261;
+    background: #101729;
+    font-size: 24px;
+    color: #d2e0ff;
+}
+
+.siem-panel.ransomware-pulse {
+    animation: siem-panel-pulse 0.8s steps(1, end) infinite;
+}
+
+@keyframes siem-panel-pulse {
+    0% {
+        border-color: #3a4a6d;
+        box-shadow: 0 0 0 0 rgba(255, 70, 94, 0);
+    }
+    50% {
+        border-color: #ff4f67;
+        box-shadow: 0 0 28px 6px rgba(255, 70, 94, 0.6);
+    }
+    100% {
+        border-color: #3a4a6d;
+        box-shadow: 0 0 0 0 rgba(255, 70, 94, 0);
+    }
+}
+
+/* ── Severity Breakdown Section ───────────────────────────────────────── */
+
+.siem-queue-section-title {
+    padding: 10px 8px 6px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: #ffd700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-top: 2px solid #2e3957;
+    background: #0f1730;
+    margin-top: 8px;
+}
+
+.siem-severity-chart {
+    padding: 8px;
+    display: flex;
+    align-items: stretch;
+    gap: 3px;
+    height: 20px;
+    min-height: 20px;
+    flex: 0 0 auto;
+    box-sizing: content-box;
+    margin-bottom: 6px;
+    border: 2px solid #2e3957;
+    background: #131f38;
+}
+
+.siem-severity-bar {
+    flex: 1;
+    height: 100%;
+    min-height: 100%;
+    box-sizing: border-box;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-width: 4px;
+}
+
+.siem-severity-bar.sev-LOW {
+    background: #6e7583;
+}
+
+.siem-severity-bar.sev-MED {
+    background: #c28733;
+}
+
+.siem-severity-bar.sev-HIGH {
+    background: #d86a29;
+}
+
+.siem-severity-bar.sev-CRIT {
+    background: #cf2b45;
+}
+
+.siem-severity-legend {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 6px;
+}
+
+.siem-severity-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    color: #d2e0ff;
+}
+
+.siem-severity-item-color {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.siem-severity-item-color.sev-LOW {
+    background: #6e7583;
+}
+
+.siem-severity-item-color.sev-MED {
+    background: #c28733;
+}
+
+.siem-severity-item-color.sev-HIGH {
+    background: #d86a29;
+}
+
+.siem-severity-item-color.sev-CRIT {
+    background: #cf2b45;
+}
+
+.siem-severity-item-count {
+    margin-left: auto;
+    color: #a8b8d8;
+    font-size: 10px;
+}
+
+.siem-alert-score-box {
+    padding: 8px;
+    margin-top: 6px;
+    border: 2px solid #2e3957;
+    background: #131f38;
+    text-align: center;
+}
+
+.siem-alert-score-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: #00ffff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.siem-alert-score-value {
+    font-family: 'GNF', monospace;
+    font-size: 24px;
+    color: #00ff41;
+}
+
+/* ── Top Sources Section ───────────────────────────────────────── */
+
+.siem-sources-box {
+    padding: 8px;
+    border: 2px solid #2e3957;
+    background: #131f38;
+    margin-top: 6px;
+}
+
+.siem-sources-empty {
+    font-family: 'GNF', monospace;
+    font-size: 12px;
+    color: #6e7583;
+    text-align: center;
+    padding: 12px;
+}
+
+.siem-sources-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.siem-source-row {
+    display: grid;
+    grid-template-columns: 80px minmax(0, 1fr) 28px;
+    gap: 6px;
+    align-items: center;
+    min-height: 24px;
+    padding: 4px;
+}
+
+.siem-source-name {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    color: #d2e0ff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.siem-source-bar-container {
+    background: rgba(0, 255, 255, 0.1);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    height: 12px;
+    position: relative;
+}
+
+.siem-source-bar {
+    background: #00ffff;
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.siem-source-count {
+    font-family: 'GNF', monospace;
+    font-size: 10px;
+    color: #00ffff;
+    text-align: right;
+    min-width: 28px;
+}
+
+@media (max-width: 1100px) {
+    .siem-alert-row {
+        grid-template-columns: 56px 72px 105px minmax(0, 1fr) 168px;
+    }
+
+    .siem-time,
+    .siem-source,
+    .siem-description {
+        font-size: 16px;
+    }
+}

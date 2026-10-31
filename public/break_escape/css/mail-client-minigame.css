@@ -1,0 +1,689 @@
+/* Mail client overlay (SE design 01). Chrome uses the --ui-* theme tokens and the
+   theme fonts; every string the player reads or compares (names, addresses,
+   subjects, bodies, file names, link text) uses var(--se-font-readable).
+   UI art is drawn at 1x and shown at 2x with image-rendering: pixelated. */
+
+.mail-client {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 960px;
+    /* Fill the short viewports too (lab R15 N2: 70vh left a 490 px window and a 200 px empty
+       band at 900x700, and the Send bar covered the form rows). 80 px leaves the frame margin.
+       Tall viewports use the height too (E8 F2/F3: a 640 px cap left 360 px of a 1000 px screen
+       empty while the composer and the verdict row were cut off), up to 900 px. */
+    height: min(900px, calc(100vh - 80px));
+    max-height: 900px;
+    margin: 0 auto;
+    padding: 16px;
+    box-sizing: border-box;
+    color: var(--ui-text, #eef1f8);
+    background-color: var(--ui-surface, rgba(24, 30, 48, 0.94));
+    border: 16px solid transparent;
+    /* A theme can swap the frame art by setting --se-frame-image: url(...) on an ancestor. */
+    border-image: var(--se-frame-image, url('/break_escape/assets/ui/social/mail-frame.png')) 8 fill / 16px stretch;
+    image-rendering: pixelated;
+}
+
+.mail-client img.mail-icon {
+    width: 32px;
+    height: 32px;
+    image-rendering: pixelated;
+    vertical-align: middle;
+    flex: none;
+}
+.mail-client .mail-row-mark img.mail-icon { width: 16px; height: 16px; }
+.mail-client .mail-chip img.mail-icon { width: 32px; height: 32px; }
+
+.mail-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* Toolbar */
+.mail-toolbar {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+}
+.mail-account { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 0 1 auto; margin-right: 8px; }
+/* The label shrinks and ellipses so the whole toolbar, Close included, stays on one row. */
+.mail-account-label { font-family: var(--se-font-address); font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-folders { display: flex; gap: 4px; flex: none; }
+/* Toolbar buttons size to their label and never shrink, so Contacts, Compose and
+   Close keep their whole label on one row; only the account label (min-width:0,
+   ellipsis) gives way when the row is tight (A9; P1-T2 clip at 1400 px). */
+.mail-toolbar .minigame-button,
+.mail-toolbar .se-overlay-close { white-space: nowrap; width: auto; flex: none; }
+.mail-client .minigame-button,
+.mail-client .se-overlay-close {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 6px 12px;
+}
+/* Close sits at the right of the header row, never wrapped to its own line (P1-T). */
+.mail-toolbar .se-overlay-close { margin-left: auto; }
+.mail-folder-btn { display: inline-flex; align-items: center; gap: 6px; }
+.mail-folder-btn.active { outline: 2px solid var(--ui-accent, #ffcc44); }
+.mail-folder-count {
+    min-width: 1.4em;
+    padding: 0 4px;
+    border-radius: 0;
+    background: var(--ui-accent, #ffcc44);
+    color: #1a1a1a;
+    font-family: var(--se-font-readable);
+    font-weight: 700;
+    font-size: 14px;
+    text-align: center;
+}
+.mail-folder-count:empty { display: none; }
+.mail-toolbar-actions { display: flex; gap: 4px; flex: none; }
+
+.mail-notice {
+    margin: 0;
+    min-height: 1.2em;
+    font-family: var(--se-font-readable);
+    font-size: 15px;
+    color: var(--ui-accent, #ffcc44);
+}
+/* An empty live region is kept in the tree (hidden by size, not display:none) so a later notice is announced. */
+.mail-notice:empty { min-height: 0; height: 0; overflow: hidden; }
+
+/* Reader: two panes */
+.mail-reader {
+    display: grid;
+    grid-template-columns: minmax(220px, 34%) 1fr;
+    gap: 8px;
+    flex: 1;
+    min-height: 0;
+}
+.mail-list-pane,
+.mail-read-pane {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 8px;
+    background: var(--ui-surface-raised, rgba(38, 48, 74, 0.96));
+    border: 2px solid var(--ui-line, #4c5b80);
+    font-family: var(--se-font-readable);
+}
+
+.mail-empty,
+.mail-placeholder {
+    margin: 8px;
+    color: var(--ui-text-dim, #a8b2c8);
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+}
+
+.mail-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    width: 100%;
+    min-height: 44px;
+    margin: 0 0 4px;
+    padding: 6px;
+    text-align: left;
+    color: inherit;
+    background: transparent;
+    border: 2px solid transparent;
+    cursor: pointer;
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+}
+.mail-row:hover,
+.mail-row:focus-visible { background: var(--ui-surface-hover, rgba(50, 62, 94, 0.96)); }
+.mail-row.selected { border-color: var(--ui-accent, #ffcc44); }
+.mail-row-mark { width: 16px; flex: none; padding-top: 3px; }
+.mail-row-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.mail-row-top { display: flex; justify-content: space-between; gap: 8px; }
+.mail-row-who { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-row-who.mail-row-address { font-family: var(--se-font-address); font-size: 15px; }
+.mail-row[data-unread='true'] .mail-row-who,
+.mail-row[data-unread='true'] .mail-row-subject { font-weight: 700; }
+.mail-row-time { flex: none; color: var(--ui-text-dim, #a8b2c8); font-size: 14px; }
+.mail-row-subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ui-text-dim, #a8b2c8); }
+
+/* Reading pane */
+.mail-subject { margin: 0 0 8px; font-family: var(--se-font-readable); font-size: 22px; font-weight: 700; }
+.mail-headers { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; margin: 0 0 8px; font-size: 16px; }
+.mail-headers dt { color: var(--ui-text-dim, #a8b2c8); }
+.mail-headers dd { margin: 0; overflow-wrap: anywhere; }
+.mail-from-name { font-weight: 700; }
+.mail-details {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 2px 10px;
+    margin: 8px 0;
+    padding: 8px;
+    background: var(--ui-surface, rgba(24, 30, 48, 0.94));
+    border: 2px solid var(--ui-line, #4c5b80);
+    font-size: 15px;
+    overflow-wrap: anywhere;
+}
+.mail-details dt { color: var(--ui-text-dim, #a8b2c8); }
+.mail-details dd { margin: 0; }
+.mail-body {
+    margin: 12px 0;
+    font-family: var(--se-font-readable);
+    font-size: 17px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+/* A web or email address inside the body reads in the address font, like every other address in the
+   game (E17-n3, E8 F15), so look-alike characters show as they would in a browser bar. */
+.mail-body .mail-body-url { font-family: var(--se-font-address); }
+
+.mail-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.mail-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 10px 2px 4px;
+    color: inherit;
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+    border: 8px solid transparent;
+    /* --se-chip-image does the same for the attachment chip. */
+    border-image: var(--se-chip-image, url('/break_escape/assets/ui/social/mail-chip-attachment.png')) 4 fill / 8px stretch;
+    image-rendering: pixelated;
+    background-color: var(--ui-slot-bg, rgba(66, 80, 118, 0.88));
+}
+.mail-chip-link { cursor: pointer; min-height: 44px; vertical-align: middle; text-decoration: underline; }
+.mail-link-status { min-height: 1.4em; margin: 4px 0; color: var(--ui-accent, #ffcc44); font-family: var(--se-font-address); font-size: 15px; overflow-wrap: anywhere; }
+
+.mail-judged { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; font-family: var(--se-font-readable); font-size: 16px; }
+.mail-judged.landed { color: var(--ui-success, #6ee08f); }
+.mail-judged.not-landed { color: var(--ui-danger, #ff7a6b); }
+.mail-judged-waiting { color: var(--ui-text-dim, #a8b2c8); }
+.mail-judged img.mail-icon { width: 16px; height: 16px; }
+
+.mail-back { display: none; margin-bottom: 8px; }
+
+/* A floating panel over the reader must be fully opaque, or the list and reader
+   beneath it show through (the theme --ui-surface tokens are translucent). The
+   solid base under the tinted surface layer keeps the theme colour while blocking
+   everything behind (P1-T T1). */
+.mail-checklist,
+.mail-contacts-panel,
+.mail-composer,
+.mail-picker-list {
+    background-color: #10152a;
+    background-image: linear-gradient(var(--ui-surface, rgba(24, 30, 48, 1)), var(--ui-surface, rgba(24, 30, 48, 1)));
+}
+
+/* Send checklist (01 §3, N17): the teaching layer over the composer */
+.mail-checklist {
+    position: absolute;
+    inset: 16px;
+    z-index: 7;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px;
+    overflow-y: auto;
+    border: 2px solid var(--ui-border, #42506f);
+    border-radius: 6px;
+    font-family: var(--se-font-readable);
+    color: var(--ui-text, #e7ecf6);
+}
+.mail-checklist-banner { margin: 0 0 4px; font-size: 18px; font-weight: 600; }
+.mail-checklist-banner.landed { color: var(--ui-success, #6ee08f); }
+.mail-checklist-banner.not-landed { color: var(--ui-danger, #ff7a6b); }
+.mail-checklist-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.mail-check-row { display: flex; align-items: flex-start; gap: 6px; font-size: 16px; line-height: 1.35; }
+.mail-check-mark { width: 16px; height: 16px; flex: none; margin-top: 2px; image-rendering: pixelated; }
+.mail-check-text { min-width: 0; }
+.mail-check-row.pass { color: var(--ui-success, #6ee08f); }
+.mail-check-row.fail { color: var(--ui-danger, #ff7a6b); }
+.mail-checklist-advisory { margin: 2px 0 0; font-size: 14px; color: var(--ui-warn, #e6b04d); }
+.mail-checklist-reply { margin: 6px 0 0; font-size: 15px; color: var(--ui-accent, #ffcc44); }
+.mail-checklist-replyto { margin: 4px 0 0; font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+.mail-checklist-hint { margin: 6px 0 0; padding: 6px 8px; font-size: 15px; color: var(--ui-text, #e6ecf5); border-left: 3px solid var(--ui-accent, #ffcc44); background: rgba(255, 204, 68, 0.08); }
+.mail-checklist-edit,
+.mail-checklist-done { align-self: flex-start; margin-top: 8px; }
+
+/* Contacts panel */
+.mail-contacts-panel {
+    position: absolute;
+    inset: 16px;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    overflow-y: auto;
+    border: 2px solid var(--ui-line, #4c5b80);
+}
+.mail-contacts-title { margin: 0; font-family: var(--ui-heading-font, 'GNF', monospace); font-size: 16px; }
+.mail-contacts-list { margin: 0; padding: 0; list-style: none; flex: 1; }
+.mail-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    padding: 8px 4px;
+    border-bottom: 1px solid var(--ui-line, #4c5b80);
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+}
+.mail-contact-name { font-weight: 700; }
+.mail-contact-role { color: var(--ui-text-dim, #a8b2c8); }
+.mail-contact-addresses { flex-basis: 100%; overflow-wrap: anywhere; }
+
+/* One column below 768 px: list, then the message with a Back button */
+/* Composer (P1-E2): a panel over the reader. Player-read strings use the
+   readable font; the blank picker is a listbox. */
+.mail-composer {
+    position: absolute;
+    inset: 16px;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    overflow: auto;
+    box-sizing: border-box;
+    border: 2px solid var(--ui-line, #4c5b80);
+}
+/* The composer scrolls; its rows keep their height instead of shrinking into each other
+   when the form is taller than the window (lab R15 N2: the blank's gate line and pointer
+   overlapped at 900x700). */
+.mail-composer > *,
+.mail-blank-field > * { flex-shrink: 0; }
+.mail-compose-title { margin: 0; font-family: var(--ui-heading-font, 'GNF', monospace); font-size: 16px; }
+.mail-compose-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
+.mail-compose-label {
+    flex: none;
+    min-width: 84px;
+    font-family: var(--ui-heading-font, 'GNF', monospace);
+    font-size: 14px;
+    color: var(--ui-text-dim, #a8b2c8);
+}
+.mail-compose-value,
+.mail-compose-from-own { margin: 0; font-family: var(--se-font-address); font-size: 16px; overflow-wrap: anywhere; }
+.mail-compose-fixed { flex: 1 1 auto; min-width: 180px; font-family: var(--se-font-readable); }
+.mail-compose-hint { color: var(--ui-text-dim, #a8b2c8); font-size: 14px; }
+/* E13 B2 finding 12: a template's white-text "line for the assistant", shown in the compose view
+   as a distinct block so the learner can see what the hidden-line pretext plants. */
+.mail-compose-hidden {
+    margin: 2px 0 6px;
+    padding: 8px 10px;
+    border-left: 3px dashed var(--ui-text-dim, #a8b2c8);
+    background: rgba(168, 178, 200, 0.12);
+    border-radius: 4px;
+}
+.mail-compose-hidden-label {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ui-text-dim, #a8b2c8);
+    margin-bottom: 2px;
+}
+.mail-compose-hidden-text { margin: 0; font-family: var(--se-font-readable); font-style: italic; overflow-wrap: anywhere; }
+.mail-burned { color: var(--ui-text-dim, #a8b2c8); text-decoration: line-through; }
+.mail-compose-note { margin: 0; font-family: var(--se-font-readable); font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+.mail-composer select {
+    flex: 1 1 auto;
+    min-width: 180px;
+    font-family: var(--se-font-readable);
+    font-size: 15px;
+    padding: 6px;
+    background: var(--ui-surface-2, rgba(16, 22, 38, 0.9));
+    color: var(--ui-text, #eef1f8);
+    border: 1px solid var(--ui-line, #4c5b80);
+}
+.mail-compose-blanks { display: flex; flex-wrap: wrap; gap: 8px; margin-left: 94px; }
+/* line-height set here: dusting.css has a global [data-slot] { line-height: 0 } that reached
+   these fields and stacked the gate line and the Stuck? pointer on one line (R15 N2/N5). */
+.mail-blank-field { display: flex; flex-direction: column; gap: 2px; line-height: 1.3; }
+.mail-blank { font-family: var(--se-font-readable); font-size: 15px; min-height: 44px; line-height: 1.3; }
+.mail-blank[data-empty="true"] { opacity: 0.7; }
+/* An address inside a composed blank reads in the address font (E10 F-E10-9), as every other
+   address in the game does; the label prefix stays in the readable pixel font. */
+.mail-blank-address { font-family: var(--se-font-address); }
+.mail-blank-gate { margin: 0; font-family: var(--se-font-readable); font-size: 13px; color: var(--ui-warn, #e6b04d); }
+.mail-blank-stuck { max-width: 280px; font-family: var(--se-font-readable); font-size: 13px; color: var(--ui-text-dim, #a8b2c8); }
+.mail-blank-stuck-summary { cursor: pointer; text-decoration: underline; }
+.mail-blank-stuck-text { display: block; margin-top: 2px; color: var(--ui-text, #eef1f8); }
+/* Keep Send, Back and the gate line in view when the form is taller than the
+   frame, so they are never clipped below the fold with no cue (A7). */
+.mail-compose-send-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: auto;
+    position: sticky;
+    bottom: -16px;
+    padding: 8px 0 0;
+    /* The surface token is slightly translucent, so a single layer let the rows scrolling
+       under the bar show through it (R15 N2). Two layers make it opaque in every skin. */
+    background:
+        linear-gradient(to bottom, transparent, var(--ui-surface, rgba(24, 30, 48, 1)) 8px),
+        linear-gradient(to bottom, transparent 8px, var(--ui-surface, rgba(24, 30, 48, 1)) 8px);
+    z-index: 1;
+}
+/* The meter and the Send bar travel together at the foot of the panel (E8 F2). The meter scrolls
+   inside itself if a draft raises many flags, so Send never leaves the screen. */
+.mail-compose-foot {
+    position: sticky;
+    bottom: -16px;
+    z-index: 1;
+    margin: auto -16px -16px;
+    padding: 8px 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background-color: #10152a;
+    background-image: linear-gradient(var(--ui-surface, rgba(24, 30, 48, 1)), var(--ui-surface, rgba(24, 30, 48, 1)));
+    border-top: 2px solid var(--ui-line, #4c5b80);
+    box-shadow: 0 -6px 8px -6px rgba(0, 0, 0, 0.5);
+}
+.mail-compose-foot > .mail-redflag-meter { max-height: 30vh; overflow-y: auto; padding: 6px 10px; gap: 4px; }
+.mail-compose-foot > .mail-compose-send-bar { position: static; margin-top: 0; padding: 0; background: none; }
+.mail-compose-gate { margin: 0; font-family: var(--se-font-readable); font-size: 14px; color: var(--ui-warn, #e6b04d); }
+.mail-compose-send[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+/* Live red-flag meter (01, 04): a side panel beside the composed message that lists
+   the red flags the current draft would raise and clears them as it improves. */
+.mail-redflag-meter {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    border: 2px solid var(--ui-line, #4c5b80);
+    border-left: 4px solid var(--ui-danger, #ff7a6b);
+    background: color-mix(in srgb, var(--ui-danger, #ff7a6b) 8%, transparent);
+    font-family: var(--se-font-readable);
+}
+.mail-redflag-meter[data-count="0"] {
+    border-left-color: var(--ui-success, #6ee08f);
+    background: color-mix(in srgb, var(--ui-success, #6ee08f) 8%, transparent);
+}
+.mail-redflag-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mail-redflag-title { font-family: var(--ui-heading-font, 'GNF', monospace); font-size: 14px; color: var(--ui-text-dim, #a8b2c8); }
+/* The red-team framing line under the head (E8 F8): a lower count is better. */
+.mail-redflag-sub { margin: 2px 0 6px; font-size: 13px; color: var(--ui-text-dim, #a8b2c8); }
+.mail-redflag-count {
+    min-width: 1.6em;
+    padding: 0 6px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: #1a1a1a;
+    background: var(--ui-danger, #ff7a6b);
+}
+.mail-redflag-meter[data-count="0"] .mail-redflag-count { background: var(--ui-success, #6ee08f); }
+.mail-redflag-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.mail-redflag-item,
+.mail-redflag-clean { display: flex; align-items: flex-start; gap: 6px; margin: 0; font-size: 15px; line-height: 1.35; }
+.mail-redflag-item { color: var(--ui-danger, #ff7a6b); }
+.mail-redflag-clean { color: var(--ui-success, #6ee08f); }
+.mail-redflag-mark { width: 16px; height: 16px; flex: none; margin-top: 2px; image-rendering: pixelated; }
+.mail-redflag-text { min-width: 0; }
+/* Advice (E6/E7 F1): the forged From, shown as a note, not a counted fault. */
+.mail-redflag-advice { display: flex; align-items: flex-start; gap: 6px; margin: 0; font-size: 15px; line-height: 1.35; color: var(--ui-warning, #f2c14e); }
+/* With advice present and no faults, the meter must not read as all-clear green. */
+.mail-redflag-meter[data-count="0"]:not([data-advice="0"]) { border-left-color: var(--ui-warning, #f2c14e); background: color-mix(in srgb, var(--ui-warning, #f2c14e) 8%, transparent); }
+.mail-redflag-meter[data-count="0"]:not([data-advice="0"]) .mail-redflag-count { background: var(--ui-warning, #f2c14e); }
+
+.mail-picker {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 10, 20, 0.6);
+}
+.mail-picker-list {
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    max-height: 70%;
+    min-width: 240px;
+    overflow: auto;
+    border: 2px solid var(--ui-line, #4c5b80);
+}
+.mail-picker-option {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    min-height: 44px;
+    align-items: center;
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+    cursor: pointer;
+}
+/* A tinted highlight with a strong accent edge, so the active row keeps the
+   readable light text whatever colour the theme's accent is (A6: white-on-amber
+   was illegible). */
+.mail-picker-option.active,
+.mail-picker-option[aria-selected="true"] {
+    background: color-mix(in srgb, var(--ui-accent, #3b6ea5) 28%, transparent);
+    box-shadow: inset 4px 0 0 var(--ui-accent, #ffcc44);
+}
+.mail-picker-kind {
+    font-size: 13px;
+    color: var(--ui-text-dim, #c3ccdf);
+    font-family: var(--se-font-readable);
+    font-style: italic;
+    white-space: nowrap;
+}
+.mail-picker-kind.kind-stale { color: var(--ui-warn, #e6b04d); }
+
+/* Keyboard focus ring on every control (the theme buttons only style hover). */
+.mail-client button:focus-visible,
+.mail-client select:focus-visible,
+.mail-client [tabindex]:focus-visible {
+    outline: 3px solid var(--ui-accent, #ffcc44);
+    outline-offset: 2px;
+}
+.mail-subject:focus { outline: none; }
+.mail-picker-list:focus-visible { outline: 3px solid var(--ui-accent, #ffcc44); outline-offset: -3px; }
+.mail-composer select,
+.mail-details-toggle,
+.mail-contacts-close { min-height: 44px; }
+.mail-compose-label { overflow-wrap: anywhere; }
+
+@media (max-width: 767px) {
+    .mail-client { height: 85vh; max-height: none; padding: 8px; max-width: 100vw; overflow-x: hidden; }
+    .mail-client * { max-width: 100%; }
+    .mail-toolbar > * { min-width: 0; }
+    .mail-account { flex: 1 1 100%; margin-right: 0; }
+    .mail-toolbar .se-overlay-close { margin-left: 0; }
+    .mail-list-pane, .mail-read-pane { overflow-x: hidden; }
+    .mail-chip { max-width: 100%; box-sizing: border-box; }
+    .mail-back { min-height: 44px; }
+    .mail-checklist, .mail-contacts-panel { inset: 8px; }
+    .mail-compose-row { flex-direction: column; align-items: stretch; }
+    .mail-compose-label { min-width: 0; }
+    .mail-composer select { min-width: 0; width: 100%; flex: none; box-sizing: border-box; }
+    .mail-compose-fixed { min-width: 0; }
+    /* Narrow: the toolbar may wrap again rather than squeeze everything onto one row. */
+    .mail-toolbar { flex-wrap: wrap; }
+    .mail-reader { grid-template-columns: 1fr; }
+    .mail-reader.has-selection .mail-list-pane { display: none; }
+    .mail-reader:not(.has-selection) .mail-read-pane { display: none; }
+    .mail-back { display: inline-block; }
+    /* Blanks become full-width; the picker is a bottom sheet (01 "Narrow screens") */
+    .mail-composer { inset: 8px; }
+    .mail-compose-blanks { margin-left: 0; }
+    .mail-blank-field { width: 100%; }
+    .mail-blank { width: 100%; }
+    .mail-picker { align-items: flex-end; }
+    .mail-picker-list { width: 100%; min-width: 0; max-height: 60%; }
+}
+
+/* A short window with a pointer: a tighter composer so the form down to Ask fits above the pinned
+   meter and Send (E8 F2). Touch screens keep the 44 px controls. */
+@media (min-width: 768px) and (max-height: 820px) and (hover: hover) {
+    .mail-composer { gap: 4px; padding: 10px 14px; }
+    .mail-composer select { min-height: 34px; padding: 3px 6px; }
+    .mail-composer .mail-blank { min-height: 34px; }
+    .mail-compose-foot { bottom: -10px; margin: auto -14px -10px; padding: 6px 14px 8px; }
+    .mail-compose-foot > .mail-redflag-meter { max-height: 24vh; }
+    .mail-compose-send-bar .minigame-button { min-height: 38px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mail-client *,
+    .mail-client *::before,
+    .mail-client *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* Accounts (P1-L; 01 N11): switcher, Create-account panel, Send as select */
+.mail-account-select,
+.mail-compose-sendas-select {
+    min-height: 44px;
+    max-width: 100%;
+    min-width: 0;
+    font-family: var(--se-font-readable);
+    font-size: 15px;
+    padding: 6px;
+    background: var(--ui-surface-2, rgba(16, 22, 38, 0.9));
+    color: var(--ui-text, #eef1f8);
+    border: 1px solid var(--ui-line, #4c5b80);
+}
+.mail-account-select { flex: 0 1 auto; }
+.mail-account-select[hidden], .mail-account-label[hidden] { display: none; }
+.mail-create-panel {
+    position: absolute;
+    inset: 16px;
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    overflow-y: auto;
+    border: 2px solid var(--ui-line, #4c5b80);
+    background-color: #10152a;
+    background-image: linear-gradient(var(--ui-surface, rgba(24, 30, 48, 1)), var(--ui-surface, rgba(24, 30, 48, 1)));
+}
+.mail-create-title { margin: 0; font-family: var(--ui-heading-font, 'GNF', monospace); font-size: 16px; }
+.mail-create-help { margin: 0; font-family: var(--se-font-readable); font-size: 15px; color: var(--ui-text-dim, #a8b2c8); }
+.mail-create-menu { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.mail-create-option {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    min-height: 44px;
+    padding: 6px 8px;
+    border: 1px solid var(--ui-line, #4c5b80);
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+    cursor: pointer;
+}
+/* accent-color makes the checked radio read as selected on dark surfaces; the
+   browser default filled an unchecked radio bright white so it looked picked (A8). */
+.mail-create-option input[type="radio"] { width: 20px; height: 20px; accent-color: var(--ui-accent, #ffcc44); }
+.mail-create-option:has(input:checked) { border-color: var(--ui-accent, #ffcc44); background: color-mix(in srgb, var(--ui-accent, #ffcc44) 14%, transparent); }
+.mail-create-name { font-weight: 700; }
+.mail-create-address { overflow-wrap: anywhere; color: var(--ui-text-dim, #a8b2c8); }
+.mail-create-service { font-family: var(--se-font-readable); font-size: 14px; color: var(--ui-text-dim, #a8b2c8); margin: 0; }
+.mail-create-bar { display: flex; gap: 8px; justify-content: flex-end; }
+@media (max-width: 767px) {
+    .mail-account-select { width: 100%; }
+    .mail-account { flex: 1 1 100%; }
+    .mail-create-panel { inset: 8px; }
+}
+
+/* Send cap line (episodes): shown once maxSends is reached. */
+.mail-cap-note {
+    margin: 0;
+    font-family: var(--se-font-readable);
+    font-size: 15px;
+    color: var(--ui-accent, #ffcc44);
+}
+.mail-cap-note:empty { min-height: 0; height: 0; overflow: hidden; }
+.mail-compose-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Phone layout (layout: "phone", E6): the narrow rules above, applied at any viewport width
+   and wrapped in a phone-shaped frame. Keep in step with the two max-width: 767px blocks. */
+.mail-client.mail-client--phone {
+    width: 390px; max-width: 100%; height: min(85vh, 760px); max-height: none;
+    padding: 8px; overflow-x: hidden;
+    border-radius: 36px;
+    box-shadow: 0 0 0 6px #0b0e18, 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+.mail-client--phone * { max-width: 100%; }
+.mail-client--phone .mail-toolbar > * { min-width: 0; }
+.mail-client--phone .mail-account { flex: 1 1 100%; margin-right: 0; }
+.mail-client--phone .mail-toolbar .se-overlay-close { margin-left: 0; }
+.mail-client--phone .mail-list-pane, .mail-client--phone .mail-read-pane { overflow-x: hidden; }
+.mail-client--phone .mail-chip { max-width: 100%; box-sizing: border-box; }
+.mail-client--phone .mail-back { min-height: 44px; display: inline-block; }
+.mail-client--phone .mail-checklist, .mail-client--phone .mail-contacts-panel { inset: 8px; }
+.mail-client--phone .mail-compose-row { flex-direction: column; align-items: stretch; }
+.mail-client--phone .mail-compose-label { min-width: 0; }
+.mail-client--phone .mail-composer select { min-width: 0; width: 100%; flex: none; box-sizing: border-box; }
+.mail-client--phone .mail-compose-fixed { min-width: 0; }
+.mail-client--phone .mail-toolbar { flex-wrap: wrap; }
+.mail-client--phone .mail-reader { grid-template-columns: 1fr; }
+.mail-client--phone .mail-reader.has-selection .mail-list-pane { display: none; }
+.mail-client--phone .mail-reader:not(.has-selection) .mail-read-pane { display: none; }
+.mail-client--phone .mail-composer { inset: 8px; }
+.mail-client--phone .mail-compose-blanks { margin-left: 0; }
+.mail-client--phone .mail-blank-field { width: 100%; }
+.mail-client--phone .mail-blank { width: 100%; }
+.mail-client--phone .mail-picker { align-items: flex-end; }
+.mail-client--phone .mail-picker-list { width: 100%; min-width: 0; max-height: 60%; }
+.mail-client--phone .mail-account-select { width: 100%; }
+.mail-client--phone .mail-create-panel { inset: 8px; }
+
+/* Addresses keep Source Sans 3 so look-alike letters read as a real mail client shows them. */
+.mail-reader .mail-from-address,
+.mail-reader .mail-to,
+.mail-client select.mail-account-select,
+.mail-composer select.mail-compose-sendas-select,
+.mail-contact .mail-contact-addresses,
+.mail-create-option .mail-create-address,
+.mail-chip .mail-chip-address {
+    font-family: var(--se-font-address);
+}
+
+/* Ink-driven plain email: suggested-reply chips under an open message and in Compose
+   (systems/mail-ink.js; README_scenario_design.md "Ink-driven email"). */
+.mail-suggest { margin: 12px 0 0; }
+.mail-suggest-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+.mail-suggest-chip {
+    max-width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 6px 14px;
+    text-align: left;
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+    line-height: 1.3;
+    border-radius: 18px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+.mail-suggest-chip:hover, .mail-suggest-chip:focus-visible { border-color: var(--ui-accent, #ffcc44); }
+.mail-ink-compose { display: flex; flex-direction: column; gap: 10px; }
+.mail-ink-body {
+    white-space: pre-wrap;
+    padding: 10px 12px;
+    font-family: var(--se-font-readable);
+    font-size: 16px;
+    line-height: 1.45;
+    color: inherit;
+    border: 1px solid var(--ui-border, rgba(168, 178, 200, 0.4));
+    background: var(--ui-slot-bg, rgba(66, 80, 118, 0.4));
+    overflow-wrap: anywhere;
+}
+.mail-ink-waiting, .mail-ink-nothing { font-style: italic; }
+.mail-ink-own, .mail-ink-suggestions, .mail-ink-another { margin: 6px 0; }

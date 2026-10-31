@@ -1,0 +1,10 @@
+{
+  "scenario": "test_npc_patrol_override",
+  "start_room": "test_room_emergency",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

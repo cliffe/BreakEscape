@@ -1,0 +1,11 @@
+== lab_tesseract_trials / agent_0x99 (phone_agent_0x99.json): 1800 reopens, 982 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+   held back in hub: 2 line(s)
+      "Go ahead."
+      "I'm here. Careful what you say on this line."
+--
+== lab_tesseract_trials / ghost (phone_ghost.json): 1800 reopens, 529 re-runs, 0 problem(s)
+   entry: currentKnot "start" -> enters at "start"; 0 walk(s) ended and restarted: 0 replayed the opening, 0 greeted again then the hub
+   held back in waiting: 6 line(s)
+      "One more door. You have the key."
+      "Two hundred and twelve candidates. I'd rather watch you than most of them."

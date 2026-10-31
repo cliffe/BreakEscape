@@ -1,0 +1,430 @@
+
+## R1 (pass 5 alignment): the quiet route. Regulator cover at the gate, Vance brought in and his card copied, the dial read, then Vance sounds the evacuation (decision 1). The clock starts on the alarm, before the attack is mapped. Relay's card cloned mid-talk, Static talked past, Voltage given the button stance (offered only now the case is made), ESD, a sweep, a turned-down call-in, a page reload, then 'Bring me in' (A4). Relay turned hostile when she caught the clone, so the call-in first says why it waits and the player takes the 'well clear' way out (final check F1). Credits: ALL ELEVEN, NIGHT CREW out, VOLTAGE ESCAPED.
+
+--- briefing ---
+  Narrator: A SAFETYNET operations room. Director Netherton is already on his feet; Agent HaX is patching in the technical desk.
+  Director Magnus Netherton: Agent 0x00. ENTROPY used to steal. Now they break the things people can't live without.
+  Director Magnus Netherton: I want my best in the room and my best on the wire. Nightshade has read the control systems. HaX has the rest.
+  Agent 0x47 'Nightshade': The physics doesn't lie and neither do I. If they reach the safety interlocks, this stops being a hack and starts being a body count.
+  Agent 0x47 'Nightshade': Get me a real reading off that floor, and I'll tell you how much time we actually have.
+  Director Magnus Netherton: HaX. Go.
+  Agent HaX: A grid battery site, and ENTROPY are inside it.
+  Agent HaX: Worse than Ransomware Incorporated. This lot don't want paying.
+     (3 options)
+ > Go ahead. I'm listening.
+  Agent HaX: Albion Energy Storage. Two hundred megawatt-hours of grid batteries.
+  Agent HaX: A cell called Critical Mass got in as maintenance contractors, under the name OptiGrid Solutions.
+  Agent HaX: They own the SCADA network now, the control system that runs the battery racks.
+  Agent HaX: Two hundred and forty thousand people get their power through that site.
+     (5 options)
+ > Critical Mass. What do we know about them?
+  Agent HaX: ENTROPY's infrastructure cell. Power storage, generation, transport.
+      [set_global blackout_named=true]
+  Agent HaX: They answer to Blackout: Dr James Mercer. He signs the casualty models, and he has never once revised one down.
+  Agent HaX: Mercer won't be on site. His lieutenant runs Albion, calls himself Voltage. Former grid engineer, which is why he got this one.
+  Agent HaX: Don't go in hoping to talk him round. He knows exactly what happens to the night crew. He's costed them.
+     (2 options)
+ > Right. What else should I know?
+  Agent HaX: Ask. Quickly.
+     (4 options)
+ > I've got what I need. What are my orders?
+  Agent HaX: The Zero Day job left us one line. "Zero Day supplies, Critical Mass executes. Grid storage, this winter."
+  Agent HaX: Well, it's winter, and this is the site.
+  Agent HaX: Social Fabric are standing by to amplify the panic. Strikes across the region, all timed for eight o'clock.
+  Agent HaX: One mind behind it, the one the directive named: The Architect. Voltage answers up that chain. Take him, and we're closer to whoever's setting the clock on all of it.
+     (2 options)
+ > So this is the attack the directive warned us about.
+  Agent HaX: The same one. Stop it, take Voltage if you can, and bring out anything that names the next target.
+  Agent HaX: So. Get in on the regulator cover and find Vance.
+  Agent HaX: Then prove how they took the control network. Their jump server's in the engineering workshop. Whatever you pull off it goes into the drop-site terminal.
+  Agent HaX: The plant room has a hardwired Emergency Shutdown button, the ESD. No network path, so it's the one control they couldn't take.
+  Agent HaX: Press it and the banks isolate, once grid control believes you. They'll believe Nightshade, if you get a real reading off those racks.
+  Agent HaX: And the operatives. Voltage alive, if you can.
+  Agent HaX: Kit: your picks, the cloner from the WhiteHat job, and a laptop with CyberChef on it. No PIN cracker. We have one, it's ENTROPY's, and it isn't leaving the lab.
+     (3 options)
+ > Got it. I'm on my way.
+  Agent HaX: Go carefully. They've had three days to get ready for you.
+  Agent HaX: The site's twenty minutes out. The gate will want your credentials.
+  Agent HaX: Show them the regulator badge. You're a routine audit that came early.
+  Agent HaX: Stay alert. They're expecting somebody.
+  Agent HaX: Good luck. Find Vance first.
+  [end]
+   {set {"briefing_played":true}}
+
+--- guard ---
+  Narrator: The guard looks up from the desk as you approach.
+  Security Guard: Morning. Bit early for visitors.
+     (3 options)
+ > Grid-safety regulator. I'm here for the audit.
+  Narrator: He turns your badge over, glances at the clipboard, hands it back.
+  Security Guard: Regulator, is it.
+  Security Guard: Alright, sign in here. Mr Vance said there was an audit today. He's not happy about it, fair warning.
+     (2 options)
+ > Routine procedure. Where do I find Mr Vance?
+  Security Guard: He'll be at his desk or in the control room at this hour.
+      [set_global guard_admitted=true]
+  Security Guard: Go on through, my lover. Operations office is straight down the hall.
+  [chat closes]
+   [PASS] guard_admitted = true (expected true)
+
+--- vance ---
+      [task: meet_robert_vance]
+      [set_global vance_spoken=true]
+  A grid-safety audit at four in the morning. You regulator lot keep strange hours.
+     (3 options)
+ > I apologise for the inconvenience. I know this is unexpected.
+  I appreciate that. I know you're only doing your job.
+  It's just, we're short-staffed, short of money, and now an audit four hours early.
+     (2 options)
+ > Anything out of the ordinary lately?
+  Unusual? Not that I've seen. Why?
+     (2 options)
+ > There's something we should talk about in private.
+  Alright. You've got my attention. What's this really about?
+     (2 options)
+ > You deserve the truth. ENTROPY are inside your facility.
+  Narrator: You drop the cover and tell him who you work for. ENTROPY operatives are inside his facility, and his battery storage is the target.
+  ...What?
+  ENTROPY. Here. In my plant.
+     (2 options)
+ > Those OptiGrid technicians. That was them. Never contractors.
+  I let them in. I signed them through myself.
+  They had credentials, background checks, the lot. I never once rang the firm.
+     (2 options)
+ > You couldn't have known. The credentials were forged. Stop them with me now.
+  You'll have the halls. And I know the SCADA side better than they do.
+  I'll have the access logs and the monitoring up from here.
+  Come back to the ops desk when you need me. I'm on comms while you move.
+     (2 options)
+ > I'll need into the halls.
+  Robert Vance: I'm not handing my card over. If this goes wrong I need the halls. Copy it. You've got something for that.
+  Narrator: You hold the cloner up to his lanyard.
+      [RFID minigame: card saved]
+  Narrator: He watches the screen like it might bite.
+  Narrator: The cloner buzzes once. Old prox. It didn't even have to work for it.
+  Robert Vance: That's uncomfortably easy. We were meant to replace those readers this year.
+ > Right. Going.
+  Robert Vance: Go. I'll be on the desk.
+  [chat closes]
+   [PASS] vance_is_ally = true (expected true)
+   [PASS] vance_provided_keycard = true (expected true)
+   [PASS] vance_met = true (expected true)
+
+## The dial in Hall 1 (triggerOnInteract) and the work order on Vance's desk.
+   {set {"anomaly_detected":true,"evidence_maintenance_logs_found":true}}
+
+--- phone ---
+     (4 options)
+ > Where do I stand?
+  The engineering workshop, off Hall 1. It wants a Level 2 card.
+  Relay carries one. She walks Hall 2, and Hall 2 opens on any Level 1 card.
+     (4 options)
+ > Nothing right now.
+  Line's open. Call it in when you have something.
+     (4 options)
+ > Can we get the night crew out of Hall 2?
+  Not from here. The site's evacuation alarm is on Vance's desk.
+  Ask him. He'll do it.
+  But think first. The minute that alarm goes, Voltage knows we've found him. You'd have about half an hour, not till eight.
+     (3 options)
+ > Nothing right now.
+  Line's open. Call it in when you have something.
+  [chat closes]
+
+## Decision 1: the night crew, from Vance's phone. He names the cost, the player holds off once, then sounds it.
+
+--- vance_phone ---
+  Vance. What do you need?
+     (6 options)
+ > The night crew in Hall 2. Can you get them out?
+  I can sound the evacuation from here. Klaxon and strobes in every hall.
+  And whoever's in my plant room hears it too. He'll not wait for morning.
+  Half an hour, maybe, and you've not finished in the workshop.
+     (2 options)
+ > Not yet.
+  Your call. Say the word and it goes.
+     (6 options)
+ > The night crew in Hall 2. Can you get them out?
+  I can sound the evacuation from here. Klaxon and strobes in every hall.
+  And whoever's in my plant room hears it too. He'll not wait for morning.
+  Half an hour, maybe, and you've not finished in the workshop.
+     (2 options)
+ > Sound it. Get them out.
+      [set_global crew_warned=true]
+  Sounding it now. They're moving. Nine of them, out through the Hall 2 fire doors.
+      [engine: early alarm -> crew_warned_early, clock_started]
+      [clock: h2_advisory_alarm started at 0 min]
+      [clock: racks_vent_alarm started at 0 min]
+     (5 options)
+ > That's everything for now.
+  Call me if you need it.
+  I'm not going anywhere.
+  [chat closes]
+   [PASS] crew_warned = true (expected true)
+   [PASS] clock_started = true (expected true)
+   [PASS] attack_mechanism_known = false (expected false)
+   [PASS] crew_warned_early = true (expected true)
+
+## Round 2 clock model: the early alarm starts its own 30-minute clock. Twenty minutes pass on the workshop and the VM; nothing has vented yet.
+   {advance 20 min}
+   [PASS] racks_vented = false (expected false)
+   [PASS] hydrogen_alarm = false (expected false)
+
+## Hall 2: the alarm went, the crew walked past Relay. Her card is cloned while she talks.
+   {set {"rfid_guide_offered":true}}
+
+--- relay ---
+  Narrator: The strobes are still going. She's standing in the middle of the aisle, watching the door, as if she's been waiting for it to open.
+  ENTROPY Operative 'Relay': Nine of them went past me in their hi-vis. Somebody told them to. That'll be you.
+  ENTROPY Operative 'Relay': You're not getting to those rack banks.
+     (4 options)
+ > (Keep her talking. Step in close enough for the cloner to find her card.)
+  Narrator: You let her talk and drift closer while she does, until the cloner on your hip is a hand's width from the card on her belt.
+      [RFID minigame: card saved]
+  Narrator: She keeps talking.
+  Narrator: The cloner buzzes once. She hears it.
+  ENTROPY Operative 'Relay': ...Was that what I think it was?
+  ENTROPY Operative 'Relay': That was my card. Run, then.
+      [engine: operative_relay hostile]
+  [end]
+   [PASS] relay_card_cloned = true (expected true)
+   {set {"plant_reader_seen":true,"server_room_reached":true,"recon_guide_offered":true,"vuln_guide_offered":true}}
+
+--- phone ---
+     (6 options)
+ > Send me a field guide.
+  Which one?
+     (4 options)
+ > The network mapping guide.
+  Sent. Find what's alive on that subnet before you touch anything.
+     (6 options)
+ > Send me a field guide.
+  Which one?
+     (3 options)
+ > Not now.
+     (6 options)
+ > I'm on the OT network. What am I looking at?
+  You're in the workshop. That's their way in.
+  The BMS jump server runs through there, and so does the route onto the SCADA network.
+     (2 options)
+ > Where do I start on it?
+  Scan what's on that network first, then see what each box is running.
+  Where they got in is on the jump server. Anything you find goes into the drop-site terminal.
+ > On it.
+  They'll know someone's opened the workshop. Keep an eye on the door.
+  Call when you've got something.
+  [chat closes]
+   {advance 3 min}
+   {set {"fingerprint_kit_found":true,"flag_network_scan_submitted":true,"flag_ftp_intel_submitted":true,"flag_distcc_exploit_submitted":true,"flag_privesc_submitted":true,"all_flags_in":true,"attack_mechanism_known":true}}
+      [clock: h2_advisory started at 23 min]
+      [clock: racks_vent started at 23 min]
+
+## Plant room: Static challenges on entry (room_entered); the player talks past him.
+   {set {"plant_room_entered":true}}
+
+--- static ---
+  Narrator: He steps out from behind the plant-room door frame, putting himself squarely between you and the man at the laptop.
+  ENTROPY Operative 'Static': Voltage. Company.
+  Narrator: Behind him, Voltage does not look up from the screen.
+  ENTROPY Operative 'Static': He doesn't need long. I just need you to be slow.
+     (4 options)
+ > I'm not here for you. I'm here to talk to him.
+      [set_global static_stood_aside=true]
+  Narrator: He weighs you for a long second, then takes one step to the side. One step, no more.
+  ENTROPY Operative 'Static': Talk, then. From there.
+  [chat closes]
+   [PASS] static_stood_aside = true (expected true)
+   [PASS] static_engaged = false (expected false)
+
+--- static ---
+  ENTROPY Operative 'Static': Talk.
+     (2 options)
+ > (Leave him be.)
+  [chat closes]
+
+--- voltage ---
+  One of you. I'd budgeted for more.
+  And Static let you walk up to my bench. He'll explain that later.
+  Your klaxon. Nine people in hi-vis on my cameras, walking out the fire doors. Very humane.
+  But you're late. This place has no security worth the name, and we've had three days in it.
+     (2 options)
+ > It's over, Voltage. Stand down.
+  Polite. They train that into you.
+  One keystroke and it's now, not eight o'clock. The racks go critical, the hall burns, and the grid drops.
+  Your move.
+     (2 options)
+ > Make me understand it first.
+      [set_global voltage_six_cities=true]
+  You want to talk? Fine.
+  This site is one test run. The Architect has six cities lined up.
+  Infrastructure attacks, and Social Fabric ready to turn the panic into a riot.
+  You stop this one. How many of the others can you be standing in front of?
+     (3 options)
+ > Why infrastructure? Why civilians?
+  Voltage: You want the reasoning. They always want the reasoning.
+  Voltage: Two hundred megawatt-hours in a shed on a floodplain, holding up a city that never asked whether it should.
+  Voltage: Budget cuts, ageing cells, one fake maintenance firm, and we walked in the front.
+  Voltage: We didn't make it fragile. We just stopped pretending it wasn't.
+     (2 options)
+ > How many does the hall take with it?
+      [set_global asked_the_number=true]
+      [set_global blackout_named=true]
+  Narrator: He answers without hesitating, and without looking away.
+  Voltage: Eleven on site tonight. Nine on the night crew in Hall 2, the duty engineer, and the man on the gate.
+  Voltage: On the feed, best case, forty-odd. Oxygen concentrators, the dialysis unit at Saint Aldate's, home ventilators. That's the number Blackout signed, and I countersigned.
+  Voltage: You think I don't know it. I know it to one decimal place.
+     (2 options)
+ > Say their names, then.
+  Narrator: For the first time something moves behind his face. His eyes go to the laptop clock.
+  Voltage: *flat* I don't need their names to know the number.
+  Voltage: There's no version of this where I blink. You should have worked that out on the way in.
+  Narrator: The laptop's open on the bench, the trigger armed on screen. Behind him, on the wall, is the red mushroom head of the hardwired shutdown. You cannot reach both.
+  Voltage: So. The button, or me.
+  Voltage: You don't get to have both. I'd decide quickly.
+     (3 options)
+ > Go for the button and let him run.
+  Narrator: You break for the wall. He doesn't try to stop you. He goes the other way, for the dock door.
+  Narrator: Static peels off the wall and goes with him without a word.
+  Voltage: Good. That's the right call.
+  Voltage: You save your eleven and your forty. I'll be long gone before anyone counts them.
+      [task: confront_voltage]
+  Narrator: The dock door bangs open onto the loading bay and the cold, and he's gone into it.
+      [task: confront_voltage]
+      [engine: Static leaves with Voltage -> static_left]
+  [chat closes]
+   [PASS] voltage_escaped = true (expected true)
+
+## Engine: voltage_escaped -> voltage_neutralised -> esd_authorized; the ESD sets attack_prevented, NOT mission_complete; HaX's mapping unlocks the call-in.
+   {set {"voltage_neutralised":true,"esd_authorized":true,"attack_prevented":true}}
+   [PASS] mission_complete = false (expected false)
+
+--- phone ---
+     (4 options)
+ > I'm done here. Bring me in.
+  Not with Relay still on you. Lose her or put her down, then call.
+     (2 options)
+ > I'm well clear of them. Bring me in.
+  Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+  Voltage's operation log is still on the plant-room bench, for one.
+  And there's a go-bag at the dock nobody's opened.
+     (2 options)
+ > Not yet. I'm still looking.
+  Take your time. The banks aren't going anywhere.
+     (4 options)
+ > Nothing right now.
+  Line's open. Call it in when you have something.
+  [chat closes]
+   [PASS] mission_complete = false (expected false)
+
+## The sweep: Voltage's operation log and the marked blueprints in the plant room, the go-bag at the dock.
+   {set {"lore_architect_directive_found":true,"blackout_named":true,"lore_safehouse_address_found":true}}
+
+## Page reload mid-sweep: the hub still offers the way out (attack_prevented and mission_complete are synced).
+
+--- phone ---
+   (after a reload: variables kept, visit counts and position reset)
+     (4 options)
+ > I'm done here. Bring me in.
+  Not with Relay still on you. Lose her or put her down, then call.
+     (2 options)
+ > I'm well clear of them. Bring me in.
+  Once you're out, you don't go back in. Whatever you haven't read stays for forensics.
+     (2 options)
+ > Bring me in.
+  Car's at the loading dock. Two minutes.
+ > On my way.
+      [task: call_in_after_sweep]
+      [set_global mission_complete=true]
+  See you at HQ.
+     [0] Send me a field guide.
+     [1] Where do I stand?
+     [2] Nothing right now.
+  [stopped: no pick]
+   [PASS] mission_complete = true (expected true)
+
+--- debrief ---
+      [set_global debrief_started=true]
+  Agent, report.
+     (2 options)
+ > Shutdown engaged before the racks went. Banks isolated, hall intact.
+  Clean. Runaway aborted before a single cell vented. Banks isolated.
+  Vance says the grid held because of you. He wants that in writing.
+  And Voltage got out through the dock.
+ > What did we get out of there?
+  The directive said it: Zero Day supplies, Critical Mass executes, grid storage this winter. Tonight was that plan, running.
+  Voltage is gone, so the paper will have to talk.
+  You got his number out of him, at least. It goes in the file next to Blackout's signature.
+  The documents show Critical Mass and Social Fabric coordinating the one attack, in their own handwriting. That's the proof we've chased since Zero Day.
+  And that card from the go-bag. It decodes to Calder Wharf, Social Fabric's regional safehouse. That goes on the board.
+  Keep the OptiGrid print kit. Forensics can have the case it came in.
+ > And how did they get in? How did I?
+  Agent HaX: Before you write it up. Here's what let them in. Nearly all of it let you in too.
+  Agent HaX: Vance's door card copied from across his own desk. Old prox hands its number to anything that asks.
+  Agent HaX: You did it to Relay too, while she was talking.
+  Agent HaX: The HV door took one finger, and that finger was on a panel he touched every two hours. A print names you. It can't prove you're the one standing there.
+  Agent HaX: And the control room believed its own sensors. The honest ones weren't on the bus: a dial on a wall, and a gas monitor off their network.
+     (2 options)
+ > And the network?
+  Agent HaX: A legacy compile service on an OT box, trusting whatever it was sent. That comes off the network.
+  Agent HaX: An FTP service handing their cross-cell plan to anyone who looked, and a jump-server account with more privilege than it ever needed. Somebody reviews those.
+  Agent HaX: And on site: encrypted cards, a second factor on the HV door, and a gauge in every hall that somebody reads.
+     (2 options)
+ > It goes in the report. Vance will want every line.
+  Social Fabric had disinformation queued for the morning, ready to turn a fire into a panic.
+     (2 options)
+ > The Architect. He's running all of it.
+  The same name the Zero Day directive carried. The Architect.
+  We've just watched one of his strikes from the inside. Now we know how the cells fit together.
+  This site was a rehearsal.
+  Netherton wants a standing team on The Architect. Hunt the coordination, not the cells.
+  He's calling it Task Force Null. Your name's on his list.
+     (2 options)
+ > I'm in. When do we start?
+  He'll call when he's ready. Not tonight.
+  Agent HaX: Eleven people walked out of there tonight. Two hundred and forty thousand people kept their lights on and never knew why.
+  Agent HaX: And Vance's alarm had the night crew out before the button went in. It started your clock early.
+  Narrator: Vance is on the line from the Albion ops desk.
+  How do we handle this publicly?
+     (3 options)
+ > Full public disclosure. People have a right to know.
+  Full transparency. The attack, the holes it came through, ENTROPY. All of it.
+  Robert Vance: It'll hurt us. People should still know how close it came.
+  The public gets the truth and the warning with it. Albion takes the hit, every other storage site gets audited, and someone in Parliament finally answers for the funding.
+  Netherton will back that.
+  Done.
+  Statement goes out with the local authorities.
+  Robert Vance: Thank you.
+  Robert Vance: I don't know what you are. I know what you did.
+  Robert Vance: Nobody in that hall died, and two hundred and forty thousand never lost the lights.
+     (2 options)
+ > It was an honour working with you, Mr Vance.
+  Robert Vance: We've run this place on hope and gaffer tape for years.
+  Robert Vance: That stops on my shift.
+  Voltage is out there. So is The Architect.
+  And not one of his operatives on the floor. Harder than it looks.
+  Sleep. I'll call.
+      [task: report_to_0x99]
+  [end]
+   [PASS] debrief_started = true (expected true)
+
+--- credits ---
+   MISSION COMPLETE
+   MISSION 4: CRITICAL FAILURE
+   ALBION ENERGY STORAGE: THERMAL RUNAWAY AVERTED — Emergency Shutdown engaged
+   GRID HELD: 240,000 residents kept on supply
+   ALL ELEVEN ON SITE WALKED OUT
+   NIGHT CREW: out of Hall 2 on Vance's alarm, and the cell heard it too
+   ── DECISIONS ──
+   VOLTAGE: ESCAPED — you took the button and let him reach the dock
+   ROBERT VANCE: brought in — ran the desk while you ran the halls
+   STATIC: stood aside, and left with Voltage
+   RELAY: card copied mid-standoff
+   THE BREAK-IN: traced on paper to the OptiGrid crew
+   SOCIAL FABRIC SAFEHOUSE: located
+   DISCLOSED IN FULL — the attack, the vulnerabilities, and how close it came
+   BLACKOUT: signed the casualty model. Still at large.
+   THE ARCHITECT: identity still unknown. Phase 3 looms.
+   ENTROPY: Still operational. Cross-cell strikes continue.
+
+[stats] spoken/narrated lines 184, choices 58, longest run without a choice 9 (debrief); runs>=6: briefing:8, briefing:7, voltage:6, debrief:6, debrief:9
+[result] all expectations met

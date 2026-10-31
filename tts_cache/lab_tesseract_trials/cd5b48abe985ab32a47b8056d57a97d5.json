@@ -1,0 +1,13 @@
+{
+  "key": "cd5b48abe985ab32a47b8056d57a97d5",
+  "npc": "cliffe_schreuders",
+  "text": "Committee's still looking for me.",
+  "voice": "Orus",
+  "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

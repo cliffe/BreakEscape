@@ -1,0 +1,10 @@
+{
+  "scenario": "test-npc-waypoints",
+  "start_room": "test_waypoint_patrol",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

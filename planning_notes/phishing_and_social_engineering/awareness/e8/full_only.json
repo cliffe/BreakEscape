@@ -1,0 +1,40 @@
+{
+  "_about": "Full-episode-only keys for scenarios/awareness_e8_after_the_click/scenario.json.erb (the E8 pilot). The Sonnet wiring agent pastes each value into the full erb at the path its note gives. None of these is in the fragment-erb parity comparison (episode-level, or allow-listed erb-only), and the generated defend-only shell never carries them. Authored by opus48. ENG-01 (flipAftermath, stepLabels) and ENG-09b (conceptPanel array) and ENG-08 (schema) must have landed first.",
+
+  "_notes": {
+    "flipAftermath": "Paste at social.awarenessEpisode.flipAftermath (ENG-01). Episode level, items authored inline; the runner shows it only when the attack landed (never on missed/noSend/landedNoTells). items[0] fa_sent is an inline copy of defend row 1 e8_sent_invoice with a DIFFERENT id (the flip item and the defend item must never share an id).",
+    "stepLabels": "Paste at social.awarenessEpisode.stepLabels (ENG-01). Labels the flip step 'The click'. The built shells author none, so they are unchanged.",
+    "conceptPanel": "Paste at social.awarenessEpisode.strings.conceptPanel (ENG-09b array form). IDENTICAL to the value already in e8/defend.json awarenessEpisode.strings.conceptPanel: the generator carries that into the defend-only shell too, so both cards show in both variants (E8 spec section 12). Reproduced here only so the full erb's strings block carries both panels. conceptPanel is value-exempt and erb-only-OK in the parity allow-list, so no allow-list change is needed.",
+    "playerSentAuth": "Paste at social.triageSets[0].playerSentAuth (the e8_used_account set) in the FULL erb only. Erb-only (SET_ERB_ONLY_OK); it is the flip's auth read of the sent email. Deliberately NOT in the fragment, so the generated defend-only shell (which has no flip) stays clean. Copied from E5's analyst block."
+  },
+
+  "flipAftermath": {
+    "heading": "Now you are Ayaan, and it is just gone three",
+    "victimName": "Ayaan Warsame",
+    "intro": "Ayaan read it between two claims, in the week his team was clearing a backlog. The service desk's own address was on it, and it only asked him to sign in again, which IT had said would happen while single sign-on moved. So he did. That was not carelessness: it was built to pass for the notice he acts on. Here is his account a few minutes later.",
+    "items": [
+      { "id": "fa_sent", "kind": "email", "folder": "sent", "to": "claims-client@marsden-holloway.example", "subject": "Your settlement payment", "time": "15:08", "note": "Ayaan did not write this; it is in his Sent folder, sent while someone else was signed in as him." },
+      { "id": "fa_push", "kind": "push", "push": { "app": "Quayholt Sign-in", "account": "ayaan.warsame@quayholt.example", "location": "Unknown location, outside the UK", "device": "Windows PC" }, "note": "A sign-in prompt he did not start, from a device that is not his." }
+    ],
+    "line": "Most of the damage happens between noticing and reporting."
+  },
+
+  "stepLabels": { "flip": "The click" },
+
+  "conceptPanel": [
+    { "heading": "The five questions a report answers", "text": "A useful report answers five questions, as far as you know: what you noticed, when, where (which account, device or system), who is affected, and what you have done so far. Be honest about the last one: 'I clicked the link', 'I signed in', 'I restarted it'. A rough report now beats a perfect one later; the team will ask for the rest." },
+    { "heading": "First steps and recovery", "text": "If you clicked or signed in: report it, change the password on the real site (not through any link), then change it anywhere you used the same one, and follow the service desk. For anything on a device: leave it as it is. Do not switch it off unless you are told to, do not delete the evidence, and do not try to fix it. If the service desk asks, unplug the network cable or turn off Wi-Fi and leave it on." }
+  ],
+
+  "playerSentAuth": {
+    "accounts": {
+      "analyst": {
+        "spf": "pass",
+        "dkim": "fail",
+        "dmarc": "fail",
+        "envelopeFrom": "bounce.quayholt.example",
+        "replyTo": "{account_address}"
+      }
+    }
+  }
+}

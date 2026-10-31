@@ -1,0 +1,865 @@
+// ===========================================
+// Mission 5: Closing Debrief - Act 3
+// Reflects on player choices and mission outcome.
+//
+// PASS 2:
+// - The case is read from found_* booleans and flags. evidence_level and
+//   lore_collected never counted (the engine assigns setVariable values
+//   literally), so every run used to land in the "thin case" branch.
+// - Each ending has its own authored branch; combat_nonlethal no longer
+//   borrows the "he lawyered up" text, and the combat_lethal branch matches
+//   what the player actually did (left him on the floor).
+// - The Recruiter's offer now has a consequence here and in the credits.
+// - Meta references ("Mission 6", "Missions 6 through 10") are in-world.
+// - Linear person-chat cutscene (hidden NPC, the m02/m04 pattern): it ends
+//   the mission, so it terminates at END. debrief_played stops a replay.
+// - Canon (review M2): SAFETYNET has no arrest powers. Torres is handed to
+//   the police via Patricia; sentencing is not SAFETYNET's to promise.
+//
+// PASS 4 (design review fixes 1, 2, 5):
+// - Friendly knockouts are acknowledged and cost handler_trust; lines that
+//   named Patricia branch on patricia_ko.
+// - The briefing answer is held against the night (case strength, KOs).
+// - A recap of the warning signs the player actually found, and the
+//   "someone else's trust" line.
+// - The TalentStack list is only claimed for SAFETYNET when the deal was
+//   not taken, so the Recruiter reckoning can't contradict an earlier line.
+// - Public exposure costs SAFETYNET its deniability (canon,
+//   universe_bible/02_organisations/safetynet/overview.md, "The Shadow War").
+// ===========================================
+
+// Act 1 (opening)
+VAR player_approach = "" // cautious, aggressive, diplomatic
+VAR knows_full_stakes = false
+VAR handler_trust = 50 // Synced scenario global: HaX's confidence (0-100), built up in the briefing; also raised by m05_insider_trading_opening
+
+// Act 2 (the case)
+VAR found_pamphlet = false
+VAR found_incident_log = false
+VAR found_vetting_file = false
+VAR found_medical_bills = false
+VAR found_torres_journal = false
+VAR found_upload_schedule = false
+VAR found_manifest = false
+VAR flag3_submitted = false
+VAR flag4_submitted = false
+
+// Act 3 (confrontation)
+VAR final_choice = "" // turn_double_agent, arrest, combat_nonlethal, combat_lethal, public_exposure
+VAR confront_stance = "" // sympathetic or hardline
+VAR elena_treatment_funded = false
+VAR recruiter_deal_offered = false
+VAR recruiter_deal_accepted = false
+VAR recruiter_deal_decided = false
+VAR found_pipeline_list = false
+VAR debrief_played = false
+VAR recruiter_deal_confessed = false
+VAR found_stand_down_email = false
+
+VAR player_name = "Agent 0x00"
+
+// Knockouts (synced from scenario globals)
+VAR patricia_ko = false
+VAR owen_ko = false
+VAR lisa_ko = false
+VAR halloran_ko = false
+
+// Whodunnit (PASS 4)
+VAR found_door_log = false
+VAR halloran_accused = false
+VAR door_log_reasoned = false
+VAR halloran_questioned = false
+VAR found_halloran_vetting = false
+
+// PASS 5 (D1): Torres named before flag 3 (set by HaX's torres_identified mapping)
+VAR named_before_portal = false
+// PASS 5 R2 (B2): a wrong reason was given before the right one
+VAR torres_reason_guessed = false
+VAR torres_called_in = false // Synced scenario global (struggling run A, D1): the player backed off a hostile Torres and HaX sent Security (final_choice "arrest"); set by m05_phone_agent_0x99
+VAR torres_fight_offered = false // Synced scenario global (scenario design R1, m2): Torres turned on the player from the fight line, set in combat_offer; read by the debrief
+VAR door_log_hinted = false // Synced scenario global (puzzle R1, P1/D-D): HaX spelled out the front-door method; bars the early-naming reward
+VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
+
+=== function friendly_kos()
+~ temp n = 0
+{patricia_ko:
+    ~ n = n + 1
+}
+{owen_ko:
+    ~ n = n + 1
+}
+{lisa_ko:
+    ~ n = n + 1
+}
+{halloran_ko:
+    ~ n = n + 1
+}
+~ return n
+
+=== function indicators_found()
+~ temp n = 0
+{found_medical_bills or found_vetting_file:
+    ~ n = n + 1
+}
+{found_incident_log or found_door_log:
+    ~ n = n + 1
+}
+{found_pamphlet:
+    ~ n = n + 1
+}
+{found_stand_down_email or found_vetting_file:
+    ~ n = n + 1
+}
+~ return n
+
+=== function case_strength()
+~ temp n = 0
+{found_pamphlet:
+    ~ n = n + 1
+}
+{found_incident_log:
+    ~ n = n + 1
+}
+{found_vetting_file:
+    ~ n = n + 1
+}
+{found_medical_bills:
+    ~ n = n + 1
+}
+{found_torres_journal:
+    ~ n = n + 1
+}
+{found_upload_schedule:
+    ~ n = n + 1
+}
+{found_manifest:
+    ~ n = n + 1
+}
+{flag3_submitted:
+    ~ n = n + 1
+}
+{flag4_submitted:
+    ~ n = n + 1
+}
+{found_door_log:
+    ~ n = n + 1
+}
+~ return n
+
+// ===========================================
+// DEBRIEF START
+// ===========================================
+
+=== start ===
+~ debrief_played = true
+// PASS 4 fix 5: HaX's trust reflects the night, not only the briefing and
+// the Recruiter. The debrief owns this value; debrief_played stops a rerun.
+{patricia_ko:
+    ~ handler_trust = handler_trust - 15
+}
+{owen_ko:
+    ~ handler_trust = handler_trust - 10
+}
+{lisa_ko:
+    ~ handler_trust = handler_trust - 10
+}
+{halloran_ko:
+    ~ handler_trust = handler_trust - 10
+}
+{final_choice == "combat_lethal":
+    ~ handler_trust = handler_trust - 20
+}
+{final_choice == "public_exposure":
+    ~ handler_trust = handler_trust - 10
+}
+{halloran_accused:
+    ~ handler_trust = handler_trust - 10
+}
+#speaker:narrator
+// Phase 4 dialogue C1 (D5-1, B3): five player beats and a set of cuts keep
+// every run without a choice to nine lines or fewer (route driver maxRun).
+Narrator: SAFETYNET headquarters, Thursday, nine o'clock. HaX has your report up on the screen.
+
+#speaker:agent_0x99
+Agent HaX: Let's go through it.
+
+-> mission_outcome_assessment
+
+// ===========================================
+// THE CASE
+// ===========================================
+
+=== mission_outcome_assessment ===
+#speaker:agent_0x99
+
+// Round 2: the top praise needs a clean route and a full file.
+{
+- case_strength() >= 8 and found_pamphlet and not halloran_accused:
+    Agent HaX: It's the best file we've had on the Initiative. Motive, means, the Architect's signature and the Recruiter's calling card.
+- halloran_accused and case_strength() >= 7:
+    Agent HaX: The file's strong now. It went through an innocent woman on the way, and that's in it too.
+- case_strength() >= 4:
+    Agent HaX: You built enough to move, and you closed it. There are gaps in the file, but it'll stand.
+- else:
+    Agent HaX: You stopped the upload. The file behind it is thin. The police will get what we send them, and it won't be much.
+}
+
+{
+- found_stand_down_email:
+    Agent HaX: Patricia's copy of the CEO's email went to the Home Office review with everything else. Nobody signs off on a stand-down like that twice.
+// Phase 4 dialogue C2 (D5C2-13): the interview is only in the vetting file;
+// every player hears that Patricia was stopped (her ask_investigation, Owen).
+- found_vetting_file:
+    Agent HaX: QDC's readiness review passed. Nobody asked who cancelled Patricia's interview.
+- else:
+    Agent HaX: QDC's readiness review passed. Nobody asked who told Patricia to stop looking.
+}
+
+// PASS 4 fix 5: the briefing answer is a promise, checked against the night.
+// C2 (D5C2-7, D5C2-15): naming the wrong woman wasn't methodical, or reading the room.
+{player_approach == "cautious":
+    {
+    - halloran_accused:
+        Agent HaX: You said you'd be methodical. Most of the night, you were.
+    - case_strength() >= 6:
+        Agent HaX: You said you'd be methodical. You were.
+    - else:
+        Agent HaX: You said you'd be methodical. The file's thinner than that promise.
+    }
+}
+{player_approach == "aggressive":
+    {case_strength() >= 4:
+        Agent HaX: You said fast and direct. Fast, and the file still holds. That's harder than it looks.
+    - else:
+        Agent HaX: You said fast and direct. Fast, yes. The file paid for it.
+    }
+}
+{player_approach == "diplomatic":
+    {
+    - friendly_kos() > 0:
+        Agent HaX: You said you'd read the room. Then you put people in it on the floor.
+    - halloran_accused:
+        Agent HaX: You said you'd read the room. Most of the night, you did.
+    - else:
+        Agent HaX: You said you'd read the room. You did.
+    }
+}
+
+// PASS 5 (D1, D2): the bar in Torres' scene, and what a wrong accusation cost.
+{
+- halloran_accused:
+    Agent HaX: The final upload stopped at ninety-nine per cent. Most of the rotation windows were in the last of it, and they never went.
+    Agent HaX: One region's did. When Security moved on Dr Halloran, he brought the upload forward, and its window went out before you got there.
+    Agent HaX: The Home Office is re-keying the East of England a month early.
+// Struggling run A (D1): Security's breaker stopped it, at 99.
+- torres_called_in:
+    Agent HaX: The final upload stopped at ninety-nine per cent, when the data-centre breaker went. The rotation windows were in the last of it, and they never went.
+    Agent HaX: One per cent from the whole lot. Without it, what they have is a very expensive paperweight.
+- named_before_portal:
+    Agent HaX: The final upload stopped at ninety-one per cent. The key material left in pieces over six weeks. The rotation windows were in the last of it, and they never went.
+    Agent HaX: Without those, what they have is a very expensive paperweight.
+- else:
+    Agent HaX: The final upload stopped at ninety-seven per cent. The key material left in pieces over six weeks. The rotation windows were in the last of it, and they never went.
+    Agent HaX: Without those, what they have is a very expensive paperweight.
+}
+
+-> bar_reaction
+
+// Beat 1 (D5-1): a reaction to the bar, varied by route. Choices only.
+=== bar_reaction ===
++ {halloran_accused} [That one's on me.]
+    Agent HaX: Yes. Dr Halloran will want to hear you say it.
+    -> the_night
++ {halloran_accused} [How bad is the East of England?]
+    Agent HaX: A month of overtime for the Home Office. Nobody dies of it, because they moved first.
+    -> the_night
++ {not halloran_accused} [How close was it?]
+    {
+    - torres_called_in:
+        Agent HaX: One per cent. The breaker did what you couldn't.
+    - named_before_portal:
+        Agent HaX: Nine per cent to spare. You bought that yourself.
+    - else:
+        Agent HaX: Three per cent. I'd rather not do that again.
+    }
+    -> the_night
++ {not halloran_accused} [Then it worked.]
+    Agent HaX: It worked. This time.
+    -> the_night
+
+// ===========================================
+// HOW THE PLAYER GOT THERE (PASS 4 fix 5)
+// ===========================================
+
+=== the_night ===
+#speaker:agent_0x99
+
+// PASS 5 (D1): the deduction paid off before the server confirmed it.
+// R2 (B1, B2), R3-1: only when it came from reading the log, first time
+// (a reason-menu answer before the naming, not the post-naming disclosure).
+{named_before_portal and door_log_reasoned_first and not torres_reason_guessed and not halloran_accused and not door_log_hinted:
+    Agent HaX: You had him before the server did. The research portal only showed a badge; you'd already put his name to it.
+}
+
+// PASS 4 (whodunnit): how the player read the badge log.
+{
+- halloran_accused:
+    Agent HaX: Dr Halloran spent hours suspended because of a badge log read halfway. She was in Zurich. She's lodged a complaint, and she's right to.
+- door_log_reasoned and torres_reason_guessed:
+    Agent HaX: You got to the front-door times in the end. It took a couple of goes.
+// Struggling run A (D3): a wrong name or reason, without the log reasoning.
+- torres_reason_guessed:
+    Agent HaX: You gave a wrong name or a wrong reason before the right one. Patricia's report says so, and so does mine.
+- door_log_reasoned:
+    Agent HaX: You read past the obvious line on the badge log. Halloran's spare on the server hallway, Torres' badge on the front door six minutes before, every night.
+- halloran_questioned:
+    Agent HaX: Halloran told you whose spare it was. The log had already said who carried it.
+- found_door_log:
+    Agent HaX: The badge log was in your kit. Its front-door lines had him all along.
+}
+
+{patricia_ko:
+    Agent HaX: Patricia Morgan spent the night in hospital. She's the one who got you into that building. She wants to know why, and so do I.
+}
+{owen_ko:
+    Agent HaX: Owen Gallagher has a concussion. He'd have given you anything you asked for.
+}
+{lisa_ko:
+    Agent HaX: Lisa Park ran the collection for Elena. She's off work with a head injury.
+}
+// PASS 5 R2 (m6): turned, Torres goes back to work.
+{halloran_ko:
+    {final_choice == "turn_double_agent":
+        Agent HaX: Dr Halloran is off work. Her division's running without its head for a fortnight.
+    - else:
+        Agent HaX: Dr Halloran is off work. Her division lost its two most senior people in one night.
+    }
+}
+
+Agent HaX: Every locked door in that building, you opened on someone else's trust. A colleague's badge, a colleague's password, his thumbprint.
+
+Agent HaX: In the logs, that looks exactly like an insider. It's why nobody saw him.
+
+// Scenario design R1 (M2/U4): what the four flags exposed, at m04's "what
+// failed" level: no commands, versions or exploit mechanics. Needs checking
+// against SecGen by the user (D12).
+// Beat 2 (D5-1, D5-18): the portal, and the remedy handed to a person the
+// player has met. Owen's own words are "Budget cuts" and "nobody watches it
+// live" (m05_npc_owen_gallagher.ink, ask_security); the CEO's "clean file" is
+// Patricia's (ask_company_politics). The three-item fix line is gone.
++ [And the research portal?]
+    Agent HaX: Old software with a known flaw nobody had patched, and an admin login sitting in a handover note.
++ [Nobody was watching the logs?]
+    Agent HaX: Owen was, when he wasn't fixing everything else. The portal was worse: old software nobody had patched, and an admin login in a handover note.
+-
+Agent HaX: Once you were in, one account was allowed to run far more than its job needed. That's how you reached the Architect's sign-off.
++ [Whose job was it to fix that?]
+    Agent HaX: Owen's, on paper. One sysadmin, after the budget cuts. The CEO wanted a clean audit more than a safe one.
++ [QDC won't like seeing that in my report.]
+    Agent HaX: The board won't. Owen might.
+-
+// Beat 5 cut (D5-1): the header rides on the first sign found.
+~ temp header_said = false
+{indicators_found() > 0:
+    {found_medical_bills or found_vetting_file:
+        ~ header_said = true
+        Agent HaX: For the training file: money. Debts he didn't declare, and treatment no insurer would touch.
+    }
+    {found_door_log or found_incident_log:
+        {header_said:
+            // C2 (D5C2-2): the_night has already given the badge log's facts.
+            {found_door_log:
+                Agent HaX: Hours. Two in the morning, week after week, and nobody asked why.
+            - else:
+                Agent HaX: Hours. A cryptography badge in the server hallway near midnight, and nobody asked why.
+            }
+        - else:
+            {found_door_log:
+                Agent HaX: For the training file: hours. Two in the morning, week after week, and nobody asked why.
+            - else:
+                Agent HaX: For the training file: hours. A cryptography badge in the server hallway near midnight, and nobody asked why.
+            }
+        }
+        ~ header_said = true
+    }
+    {found_pamphlet:
+        {header_said:
+            Agent HaX: An approach. A recruiter's leaflet, with a deadline scribbled on the back.
+        - else:
+            Agent HaX: For the training file: an approach. A recruiter's leaflet, with a deadline scribbled on the back.
+        }
+        ~ header_said = true
+    }
+    {found_stand_down_email or found_vetting_file:
+        {header_said:
+            Agent HaX: And a boss who told Security to stop asking.
+        - else:
+            Agent HaX: For the training file: a boss who told Security to stop asking.
+        }
+    }
+    // Round 2 (m5): the lesson the two vetting files set up.
+    {found_halloran_vetting:
+        Agent HaX: Halloran had the same recruiter at her table in Zurich. She reported it, late. Torres never reported anything.
+    }
+- else:
+    Agent HaX: You found him by what he did. Next time, look for the signs that come before.
+}
+
+-> torres_outcome
+
+// ===========================================
+// TORRES OUTCOME
+// ===========================================
+
+=== torres_outcome ===
+#speaker:agent_0x99
+
+{final_choice == "turn_double_agent":
+    -> torres_turned_path
+}
+{final_choice == "combat_lethal":
+    -> torres_killed_path
+}
+{final_choice == "public_exposure":
+    -> public_exposure_path
+}
+{final_choice == "combat_nonlethal":
+    -> torres_subdued_path
+}
+{torres_called_in:
+    -> torres_called_in_path
+}
+{final_choice == "arrest" and elena_treatment_funded:
+    -> torres_arrested_with_treatment_path
+}
+-> torres_arrested_no_treatment_path
+
+// ===========================================
+// PATH 1: TURNED
+// ===========================================
+
+=== torres_turned_path ===
+#speaker:agent_0x99
+
+Agent HaX: You turned him. The riskiest thing you could have done, and the most useful.
+
+Agent HaX: Elena starts the trial on Monday. We're paying, quietly, and if it ever gets dangerous we can move the family.
+
+Agent HaX: In exchange, he gives us the Insider Threat Initiative from the inside.
+
++ [What have we got from him so far?]
+    -> torres_intelligence_gained
+
++ [Can we trust him?]
+    -> torres_trust_question
+
+=== torres_intelligence_gained ===
+#speaker:agent_0x99
+
+Agent HaX: Twenty-three active placements. He's giving us the companies, and some of the names.
+
+// PASS 4 fix 2: never claim the list if the player sold it.
+{
+- found_pipeline_list and not recruiter_deal_accepted:
+    Agent HaX: And the forty-seven on that TalentStack list. We're getting to them before the Recruiter does.
+- recruiter_deal_accepted:
+    Agent HaX: He's met some of the Recruiter's other candidates. Not the list. We'll come back to that.
+- else:
+    // C2 (D5C2-10): the number only where the player has heard it.
+    Agent HaX: {recruiter_deal_offered: He's met some of the Recruiter's other candidates. Not all forty-seven, but it's a start.|He's met some of the Recruiter's other candidates. It's a start.}
+}
+
+Agent HaX: And how TalentStack actually works: the front, the payments, the approach.
+
+-> recruiter_reckoning
+
+=== torres_trust_question ===
+#speaker:agent_0x99
+
+Agent HaX: He's motivated. Elena's treatment depends on him.
+
+Agent HaX: And you got him early. Three months in, not three years. He still knows it was wrong. We can work with that.
+
+Agent HaX: If he wobbles, we'll know. That's the job now.
+
+-> recruiter_reckoning
+
+// ===========================================
+// PATH 2: LEFT ON THE FLOOR
+// ===========================================
+
+=== torres_killed_path ===
+#speaker:agent_0x99
+
+Agent HaX: David Torres is dead.
+
+{patricia_ko:
+    Agent HaX: He hit his head on the rack when he went down. You killed the upload and walked out. Nobody found him until the cleaners came through, forty minutes later.
+- else:
+    Agent HaX: He hit his head on the rack when he went down. You killed the upload and walked out. Nobody found him until Patricia went looking, forty minutes later.
+}
+
+Agent HaX: The pathologist thinks twenty minutes would have been enough.
+
+// Scenario design R1 (m2): only true if he turned on the player from the fight line.
++ {torres_fight_offered} [He came at me. I did what the mission needed.]
+    -> torres_tactical_discussion
+
++ {not torres_fight_offered} [I didn't give him the chance. The upload was running.]
+    -> torres_tactical_discussion
+
++ [I should have stayed with him. I know.]
+    -> torres_weight_discussion
+
+=== torres_tactical_discussion ===
+#speaker:agent_0x99
+
+Agent HaX: The upload was the priority. Nobody will argue that.
+
+Agent HaX: But there was a gap between stopping it and walking away, and a man died in it. The review board will ask about that gap.
+
+-> torres_family_impact
+
+=== torres_weight_discussion ===
+#speaker:agent_0x99
+
+Agent HaX: Yes. You should have.
+
+Agent HaX: He'd been ENTROPY's for three months. He was also a husband and a father. Both of those were true on the floor of that data centre.
+
+-> torres_family_impact
+
+=== torres_family_impact ===
+#speaker:agent_0x99
+
+Agent HaX: Elena Torres is a widow now, still fighting Stage 3 cancer. No treatment, no protection.
+
+Agent HaX: Sofia is eleven. Miguel is eight.
+
+Agent HaX: And everything he knew about the Initiative died with him. We're mapping it the hard way now.
+
+-> recruiter_reckoning
+
+// ===========================================
+// PATH 3: SUBDUED
+// ===========================================
+
+=== torres_subdued_path ===
+#speaker:agent_0x99
+
+{patricia_ko:
+    // Scenario design R2 (R2-m2): no praise if the player struck first.
+    {torres_fight_offered:
+        Agent HaX: Detained after a fight. You stayed with him, kept his airway clear, and the ambulance came with the police. Textbook, once it came to that.
+    - else:
+        Agent HaX: Detained at the terminal. You stayed with him, kept his airway clear, and the ambulance came with the police.
+    }
+- else:
+    {torres_fight_offered:
+        Agent HaX: Detained after a fight. You stayed with him, kept his airway clear, and Patricia brought the police and an ambulance. Textbook, once it came to that.
+    - else:
+        Agent HaX: Detained at the terminal. You stayed with him, kept his airway clear, and Patricia brought the police and an ambulance.
+    }
+}
+
+Agent HaX: He woke up in hospital under police guard, angry, and he hasn't said a word to anyone since. What happens to him now is up to them.
+
+Agent HaX: Elena's treatment is unfunded. He never talked to us, so there's no deal to hang it on.
+
+// Scenario design R1 (m2): only true if he turned on the player from the fight line.
++ {torres_fight_offered} [He chose to fight. I gave him the chance to step away.]
+    Agent HaX: You did. And now we're both living with what came after.
+    -> recruiter_reckoning
++ {not torres_fight_offered} [I didn't give him the chance. The upload was running.]
+    Agent HaX: No. And he'll say so, if anyone ever asks him.
+    -> recruiter_reckoning
++ [Is there any way back to a cooperation deal?]
+    Agent HaX: Not through us. He's in police hands now, and we don't get to walk into their interview rooms.
+    -> recruiter_reckoning
+
+// ===========================================
+// PATH 3b: CALLED IN (struggling run A, D1)
+// The player backed off a hostile Torres and HaX sent Security.
+// ===========================================
+
+=== torres_called_in_path ===
+#speaker:agent_0x99
+{patricia_ko:
+    Agent HaX: You backed off and I called it in. The night desk's guards walked him out, and the police were waiting at the side door.
+- else:
+    Agent HaX: You backed off and I called it in. Patricia's guards walked him out, and she handed him to the police.
+}
+Agent HaX: He hasn't said a word since. Nobody talked to him with the upload dead, so there was never a deal to offer.
+Agent HaX: Elena's treatment is unfunded. Sofia and Miguel have a father on remand.
++ [I couldn't win that fight.]
+    Agent HaX: Then backing off was right. It cost us whatever he knew, and I'd still rather have you back.
+    -> campaign_impact_arrested_no_coop
++ [He'd stopped listening. Talking was over.]
+    Agent HaX: Maybe. We'll never know what he'd have said with the upload dead and his hands empty.
+    -> campaign_impact_arrested_no_coop
+
+// ===========================================
+// PATH 4: ARRESTED (no cooperation)
+// ===========================================
+
+=== torres_arrested_no_treatment_path ===
+#speaker:agent_0x99
+
+{patricia_ko:
+    Agent HaX: You held him until the police came. He hasn't said a word to them or to us.
+- else:
+    Agent HaX: You held him and Patricia called the police. He hasn't said a word to them or to us.
+}
+
+Agent HaX: Our evidence reached them without our name on it. What a court gives him is out of our hands.
+
+Agent HaX: Elena's treatment is unfunded. She has months, maybe. Sofia and Miguel may watch that with their father on remand.
+
++ [He did this. Actions have consequences.]
+    Agent HaX: They do. For everyone near him.
+    -> campaign_impact_arrested_no_coop
+
++ [I did my job. The rest isn't my department.]
+    Agent HaX: That's what the review board will want to hear. I'm not sure I do.
+    -> campaign_impact_arrested_no_coop
+
+=== campaign_impact_arrested_no_coop ===
+#speaker:agent_0x99
+
+{found_pipeline_list and not recruiter_deal_accepted:
+    Agent HaX: Without him, we're blind on the Initiative. The placements carry on. We have forty-seven names, and no idea which of them she's already turned.
+- else:
+    Agent HaX: Without him, we're blind on the Initiative. The placements carry on, and so does TalentStack's recruiting.
+}
+
+-> recruiter_reckoning
+
+// ===========================================
+// PATH 5: ARRESTED (with cooperation)
+// ===========================================
+
+=== torres_arrested_with_treatment_path ===
+#speaker:agent_0x99
+
+Agent HaX: He talked to you before the police arrived. Everything he knows about the Initiative, for Elena's treatment.
+
+Agent HaX: She starts on Monday, and we're paying. What happens to him is the court's business now. We couldn't promise him anything there, and you didn't.
+
+// Beat 3 (D5-1): the deal ending had no choice at all.
++ [Will the court know he talked?]
+    Agent HaX: No. What he told us stays with us. The court sees him without it.
++ [And the family?]
+    Agent HaX: Sofia and Miguel get their mother through this, and a father on remand. It's more than they had at eight o'clock last night.
+-
+// C2 (D5C2-9): the line needs its subject after either reply.
+Agent HaX: What he gave us is less than a double agent would. A good deal more than nothing, and clean.
+
+-> recruiter_reckoning
+
+// ===========================================
+// PATH 6: PUBLIC EXPOSURE
+// ===========================================
+
+=== public_exposure_path ===
+#speaker:agent_0x99
+
+Agent HaX: You went public. The Initiative is front-page news, TalentStack's offices are empty, and the police picked Torres up the next morning.
+{found_pipeline_list and not recruiter_deal_accepted:
+    Agent HaX: We rang the forty-seven on that list before the story broke. Most of them had never heard of ENTROPY. They have now.
+}
+
+Agent HaX: The twenty-three placements are blown. Their employers are running their own investigations.
+
++ [It was the only way to make sure they can't rebuild it.]
+    Agent HaX: That part worked.
+    -> public_exposure_consequence
+
++ [ENTROPY needed to see this cost them something.]
+    Agent HaX: It did. Not only them.
+    -> public_exposure_consequence
+
+=== public_exposure_consequence ===
+#speaker:agent_0x99
+
+Agent HaX: The Initiative is finished in this country, for now.
+
+Agent HaX: And David Torres is "The Quantum Traitor". Sofia and Miguel's classmates have seen their father's face on the news.
+
+Agent HaX: Elena is reading about it from a hospital bed.
+
+// PASS 4: canon. SAFETYNET works on deniability; if it goes right, nobody
+// hears about it at all. This ending keeps its win and pays for it here.
+Agent HaX: And you did it as one of ours. When this goes right, nobody hears about us at all. This week, three newspapers are asking who their source was.
+
+// D5-1: a player beat here too, because the run from the exposure choice
+// through the Recruiter to the revelation came to ten. "Expect them to hit
+// back" is cut: future_implications says it ("We'll be watching for their reply").
++ [Will it come back to SAFETYNET?]
+    Agent HaX: It already has. Your consultant cover is burnt, and Netherton wants you in his office at two.
++ [It had to come out.]
+    Agent HaX: {handler_trust >= 60: You put the programme ahead of the man. I understand the logic.|It's a win for the file. His family paid for it.}
+    Agent HaX: Your consultant cover is burnt. Netherton wants you in his office at two.
+-
+-> recruiter_reckoning
+
+// ===========================================
+// THE RECRUITER'S OFFER
+// ===========================================
+
+=== recruiter_reckoning ===
+#speaker:agent_0x99
+
+{not recruiter_deal_offered:
+    -> entropy_revelation
+}
+{not recruiter_deal_decided and not recruiter_deal_accepted:
+    Agent HaX: And the Recruiter. You never answered her offer. She'll have taken the silence for a no by now.
+    {found_pipeline_list:
+        Agent HaX: The TalentStack list went into your report. We've reached three of the forty-seven already.
+    - else:
+        Agent HaX: We never found the list she was protecting. Her courier probably has it by now.
+    }
+    -> entropy_revelation
+}
+{not recruiter_deal_accepted:
+    Agent HaX: And the Recruiter. She rang you, she made you an offer, and you turned her down.
+    {found_pipeline_list:
+        Agent HaX: The TalentStack list went into your report. We've reached three of the forty-seven already. That's three she doesn't get.
+    - else:
+        Agent HaX: We never found the list she was protecting. Her courier probably has it by now. Still, you didn't sell.
+    }
+    -> entropy_revelation
+}
+
+Agent HaX: One more thing. Your report doesn't mention the Recruiter's call.
+
+Agent HaX: The phone logs do. Four minutes, from a TalentStack number, right after you named him.
+
++ [She offered to keep me out of it for the list. I said yes.]
+    ~ recruiter_deal_confessed = true
+    Agent HaX: ...Thank you for telling me. That's the only reason this stays between us.
+    {found_pipeline_list:
+        Agent HaX: The list goes in today. It's late, and some of those forty-seven will already have signed. That's on the record now, and on you.
+    - else:
+        Agent HaX: Whatever that list was, it's with her courier now. That's on the record, and on you.
+    }
+    ~ handler_trust = handler_trust - 10
+    -> entropy_revelation
+
++ [It was nothing. A sales pitch. I hung up.]
+    Agent HaX: Four minutes is a long sales pitch.
+    Agent HaX: I'll leave it there. For now.
+    ~ handler_trust = handler_trust - 25
+    -> entropy_revelation
+
+// ===========================================
+// ENTROPY REVELATION
+// ===========================================
+
+=== entropy_revelation ===
+#speaker:agent_0x99
+
+// PASS 5 (m7): the debrief needs all four flags, so the "never got the
+// authorisation" branch could not play and has gone.
+Agent HaX: The Architect's authorisation is the part I keep coming back to. A casualty projection, reviewed, and filed as an acceptable cost.
+
+// Beat 4 (D5-1): two stances on the same facts; convergent by design.
++ [Same hand as the other cells?]
+    Agent HaX: The same hand.
+    -> cells
++ [Who signs off on a number like that?]
+    Agent HaX: Someone who never has to hear the ambulance not come.
+    -> cells
+
+= cells
+Agent HaX: Ransomware Incorporated. Zero Day Syndicate. Critical Mass. Now the Insider Threat Initiative.
+
+Agent HaX: The cells share suppliers, targets and a signature. The Architect runs them like a business.
+
+Agent HaX: And pays them like one. The Initiative got eight hundred and forty-seven thousand dollars for this job alone.
+
+// PASS 5 (A5): m04's Task Force Null, paid off. Promises nothing about m06.
+// R2 (m2): after the money, so "pays them like one" follows "a business".
+Agent HaX: The authorisation goes up on Task Force Null's wall, with every other directive we've pulled off a cell.
+
+-> future_implications
+
+// ===========================================
+// FUTURE IMPLICATIONS & CLOSURE
+// ===========================================
+
+=== future_implications ===
+#speaker:agent_0x99
+
+{final_choice == "turn_double_agent":
+    Agent HaX: Torres is an asset now. We'll be leaning on him for months.
+}
+// C2 (D5C2-3): the lethal and no-deal paths have already said it.
+{final_choice == "combat_nonlethal":
+    Agent HaX: We'll map the Initiative the slow way. Harder, but doable.
+}
+{final_choice == "public_exposure":
+    Agent HaX: We'll be watching for their reply.
+}
+
+// C2 (D5C2-14): fewer money lines; sets up m06's "Every cell we have hit is
+// being paid by someone."
+Agent HaX: Somebody pays the Architect, too. Next, we follow the money.
+
+{final_choice == "turn_double_agent" or elena_treatment_funded:
+    Agent HaX: Torres knows where his came from. That's a thread we can pull.
+}
+
+-> final_reflection
+
+=== final_reflection ===
+#speaker:agent_0x99
+
+// Beat 5 (D5-1, D5-21): the summing-up line is replaced by the player's own.
++ [Did I get him right?]
+    Agent HaX: {final_choice == "combat_lethal": You know the answer to that.|Ask me in a year.}
++ [I'd do it the same way again.]
+    Agent HaX: I know. I read the report.
+-
+// C2 (D5C2-1): on the lethal ending the stance praise and the trust praise
+// would soften HaX's verdict, so that ending gets its own close.
+// C2 (D5C2-17): the 50-69 trust line said nothing; that band prints nothing.
+{
+- final_choice == "combat_lethal":
+    {confront_stance == "sympathetic":
+        Agent HaX: You went looking for the man underneath. Then you left him on the floor.
+    }
+    Agent HaX: The job got done. I'm still deciding about the rest.
+- else:
+    {confront_stance == "sympathetic":
+        Agent HaX: You went looking for the man underneath. That mattered, whatever you decided in the end.
+    }
+    {confront_stance == "hardline":
+        Agent HaX: You never let him hide behind his story. Cold, maybe. But you saw it clearly.
+    }
+    {
+    - handler_trust >= 70:
+        Agent HaX: I trust your judgement. Last night proved that.
+    - handler_trust < 50:
+        Agent HaX: The job got done. I'm still deciding about the rest.
+    }
+}
+
+-> mission_end
+
+=== mission_end ===
+#speaker:agent_0x99
+
+Agent HaX: Go home. Take the rest of the day.
+
+{knows_full_stakes:
+    Agent HaX: The people who'd have waited too long for that ambulance will never know your name. But they're alive.
+}
+
+// The conclusion task completes HERE, at the end of the debrief, so the
+// bond_visualiser screen is raised after the player has heard it (m04 pattern).
+#complete_task:hear_debrief
+Agent HaX: That's everything.
+
+#exit_conversation
+-> END

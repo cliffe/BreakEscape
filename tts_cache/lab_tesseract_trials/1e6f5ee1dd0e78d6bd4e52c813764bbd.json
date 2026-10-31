@@ -1,0 +1,13 @@
+{
+  "key": "1e6f5ee1dd0e78d6bd4e52c813764bbd",
+  "npc": "cliffe_schreuders",
+  "text": "Interesting choice of channel.",
+  "voice": "Orus",
+  "style": "Academic who builds learning tools and capture-the-flag games. Consistent Australian accent throughout. Relaxed, dry, quick, amused, sentences that stop a beat early.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

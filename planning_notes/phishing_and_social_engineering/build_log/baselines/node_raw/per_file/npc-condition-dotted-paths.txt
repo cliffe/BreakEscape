@@ -1,0 +1,35 @@
+TAP version 13
+# Subtest: a two-level data path compares the nested value
+ok 1 - a two-level data path compares the nested value
+  ---
+  duration_ms: 2.804089
+  ...
+# Subtest: a missing link resolves to undefined instead of throwing
+ok 2 - a missing link resolves to undefined instead of throwing
+  ---
+  duration_ms: 0.542871
+  ...
+# Subtest: deeper paths, includes and && terms work with dotted operands
+ok 3 - deeper paths, includes and && terms work with dotted operands
+  ---
+  duration_ms: 0.384363
+  ...
+# Subtest: dotted globalVars paths read nested global values
+ok 4 - dotted globalVars paths read nested global values
+  ---
+  duration_ms: 0.428903
+  ...
+# Subtest: single-level operands behave as before
+ok 5 - single-level operands behave as before
+  ---
+  duration_ms: 0.327598
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 160.890919

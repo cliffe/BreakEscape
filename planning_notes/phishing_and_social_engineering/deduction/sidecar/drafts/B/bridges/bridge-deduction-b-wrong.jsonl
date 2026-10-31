@@ -1,0 +1,21 @@
+{"cmd": "bootstrap", "tutorial": "decline", "resume": "new", "autoBrief": true}
+{"cmd": "note", "message": "bridge-deduction-b-wrong: a fresh game. All twelve facts are granted from the console with grantFact: exercised, not earned. Name Lindqvist only, then close."}
+{"cmd": "eval", "fn": "async () => { /* W1 grant every fact from the console; every suspect decidable */ window.__toasts = window.__toasts || []; if (!window.__toastSpy) { const orig = window.gameAlert; window.gameAlert = (...a) => { window.__toasts.push(a); return orig ? orig(...a) : undefined; }; window.__toastSpy = true; } const facts = ['b_okoro_access','b_lindqvist_access','b_haddad_access','b_morgan_access','b_okoro_device','b_lindqvist_device','b_haddad_device','b_morgan_device','b_okoro_grievance','b_lindqvist_grievance','b_haddad_grievance','b_morgan_grievance']; for (const f of facts) window.deductionRuntime.grantFact(f, { source: 'bridge' });\n  const S = window.deductionRuntime.getState(); return Object.values(S.decidable).every(v => v === true) && S.truth.ded_b_okoro === 'guilty'; }"}
+{"cmd": "eval", "fn": "async () => { /* open the phone and Nair's thread (outline) */ const ph = window.inventory.items.find(i => i.scenarioData && i.scenarioData.phoneId === 'player_phone'); if (!ph) return false; window.handleObjectInteraction(ph); return true; }"}
+{"cmd": "waitFor", "kind": "minigame", "id": "phone-chat", "timeoutMs": 30000}
+{"cmd": "mg", "action": "clickText", "args": ["Priya Nair"]}
+{"cmd": "mg", "action": "chooseMatching", "args": ["ready to give you names"]}
+{"cmd": "mg", "action": "chooseMatching", "args": ["Name Lindqvist"]}
+{"cmd": "mg", "action": "chooseMatching", "args": ["That's everyone"]}
+{"cmd": "mg", "action": "chooseMatching", "args": ["Yes, send it"]}
+{"cmd": "eval", "fn": "async () => { /* W2 Nair's reply reads the outcome globals written at close */ const d = window.__test.minigame && window.__test.minigame.getState(); return /doesn't sit right/.test(JSON.stringify(d || {})); }"}
+{"cmd": "waitFor", "kind": "minigameClosed", "timeoutMs": 30000}
+{"cmd": "waitFor", "kind": "minigame", "id": "intel-board", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* W3 debrief: Lindqvist wrong_guilty, decided at the verdict, 'You already held what settled it: no personal device'; Okoro missed_guilty, Not named, decided at close; the no-blame line is the rule-misread one (it outranks 'worked out but not named', §6.3) */ const mg = window.MinigameFramework.currentMinigame; const d = mg.getTestState().board.debrief; const G = window.__test.getState().globals; const st = G.deduction_state;\n  const card = id => d.cards.find(c => c.id === id);\n  return G.deduction_outcome_ded_b_lindqvist === 'wrong_guilty' && st.verdicts.ded_b_lindqvist.decidedAtVerdict === true\n    && /You already held what settled it: no personal device/.test(card('ded_b_lindqvist').text)\n    && G.deduction_outcome_ded_b_okoro === 'missed_guilty' && /Not named/.test(card('ded_b_okoro').text)\n    && d.noBlameCase === 'rule_misread' && !/You failed to/i.test(mg.container.textContent); }"}
+{"cmd": "mg", "action": "clickText", "args": ["Finish"]}
+{"cmd": "waitFor", "kind": "task", "id": "b_case_closed", "timeoutMs": 30000}
+{"cmd": "eval", "fn": "async () => { /* W4 Finish: b_case_solved skipped, b_case_closed completed, b_wrong_name true, b_insider_named false, the success screen with its neutral text */ await new Promise(r => setTimeout(r, 1000)); const om = window.objectivesManager; const G = window.__test.getState().globals;\n  return om.taskIndex.b_case_solved.status === 'skipped' && om.taskIndex.b_case_closed.status === 'completed' && G.b_wrong_name === true && G.b_insider_named === false\n    && /Case closed/.test(document.body.textContent) && !/MISSION COMPLETE/.test(document.body.textContent); }"}
+{"cmd": "dismiss", "label": null}
+{"cmd": "sync"}
+{"cmd": "drain"}
+{"cmd": "quit"}

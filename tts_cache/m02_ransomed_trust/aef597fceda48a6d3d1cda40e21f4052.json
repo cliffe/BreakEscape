@@ -1,0 +1,13 @@
+{
+  "key": "aef597fceda48a6d3d1cda40e21f4052",
+  "npc": "receptionist",
+  "text": "But I've a supervisor telling me one thing and a phone call telling me another. Back the wrong one and I'm out of a job I've done eleven years.",
+  "voice": "Despina",
+  "style": "Night reception coordinator, eleven years on this desk. South London / Multicultural London English accent throughout -- warm, quick, dry. Unflappable on the surface, running on fumes underneath.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

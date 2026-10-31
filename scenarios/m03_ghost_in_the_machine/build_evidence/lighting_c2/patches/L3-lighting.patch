@@ -1,0 +1,98 @@
+--- a/public/break_escape/js/systems/lighting.js
++++ b/public/break_escape/js/systems/lighting.js
+@@ -38,6 +38,9 @@
+  * Brownout: lightingSystem.dip({ level: 0.5, ms: 1600 }), the "lighting_dip" scenario action, or the
+  * ink tag #lighting_dip[:level]. One slow dip of the room lights; screens and racks hold (UPS). It
+  * waits until any conversation or minigame has closed, and is skipped under prefers-reduced-motion.
++ * Torch on an NPC (scenario npc "behavior"): "torch": true, or { "condition": "globalVars.night", "color": "#fff0d8" }.
++ * The NPC carries a beam the way they face, like the player's phone torch; it shows only in a dim
++ * room (strength from the room's current ambient, npcTorchStrength), so it is invisible in a lit office.
+  * Disable for one player: ?lighting=off, or localStorage breakEscapeLighting=off.
+  */
+ 
+@@ -170,6 +173,14 @@
+   return { cfg: base, index: -1 };
+ }
+ 
++/**
++ * How strongly an NPC's torch shows in a room whose ambient is currently `ambient`:
++ * 0 in a lit office, rising as the room darkens, 1 in a dark room.
++ */
++export function npcTorchStrength(ambient) {
++  return Math.max(0, Math.min(1, (0.62 - luma(ambient)) / 0.4));
++}
++
+ /** A scenario emitter variant with its colours parsed. */
+ function normaliseVariant(v) {
+   if (!v || typeof v !== 'object') return null;
+@@ -964,6 +975,7 @@
+         }
+       }
+       if (state === here) this.stampTorch(rt, stamp, ox, oy, here, player);
++      this.stampNpcTorches(rt, stamp, ox, oy, state, ambient, time);
+     }
+     // Spill goes on after every fill, since it is meant to cross the doorway.
+     for (const state of visible) this.stampDoorSpill(state, stamp);
+@@ -1004,6 +1016,62 @@
+   }
+ 
+   /**
++   * NPCs with a torch (behavior.torch) standing in this room carry a beam the way they
++   * face. Drawn with their room, so darker neighbours drawn later cover any leak, and
++   * scaled by how dark the room is now, so it doesn't show in a lit office.
++   */
++  stampNpcTorches(rt, stamp, ox, oy, state, ambient, time) {
++    const npcs = window.npcManager?.npcs;
++    if (!npcs) return;
++    const k = npcTorchStrength(ambient);
++    if (k <= 0.01) return;
++    const room = window.rooms[state.roomId];
++    const gv = window.gameState?.globalVariables || {};
++    const angles = this.npcTorchAngles || (this.npcTorchAngles = new Map());
++    for (const npc of npcs.values()) {
++      const torch = npc.behavior?.torch;
++      if (!torch) continue;
++      const sp = npc._sprite;
++      if (!sp?.active || !sp.visible) continue;
++      if (typeof torch === 'object' && torch.condition) {
++        let holds = false;
++        try { holds = evaluateGlobalCondition(torch.condition, gv); } catch (err) { holds = false; }
++        if (!holds) continue;
++      }
++      const fx = sp.body?.center?.x ?? sp.x, fy = sp.body?.center?.y ?? sp.y;
++      if (!this.fillAreas(state.roomId).some(a => fx >= a.x && fx <= a.x + a.w && fy >= a.y && fy <= a.y + a.h)) continue;
++      const beh = window.npcBehaviorManager?.getBehavior?.(npc.id);
++      if (window.npcHostileSystem?.isNPCKO?.(npc.id)) continue;  // a guard on the floor drops his torch
++      const target = FACING_ANGLES[beh?.direction] ?? 90;
++      const prev = angles.get(npc.id) ?? target;
++      const diff = ((target - prev + 540) % 360) - 180;
++      const angle = (prev + diff * 0.25 + 360) % 360;
++      angles.set(npc.id, angle);
++      const color = parseColor(typeof torch === 'object' ? torch.color : null, 0xfff0d8);
++      this.stampBeam(rt, stamp, ox, oy, room, sp.x, fy - 4, angle, k * 0.85, color);
++    }
++  }
++
++  /** A torch: a faint pool at (px, py) and a beam along `angle`, cut short at the wall it points at. */
++  stampBeam(rt, stamp, ox, oy, room, px, py, angle, k, color) {
++    const rad = Phaser.Math.DegToRad(angle);
++    const dx = Math.cos(rad), dy = Math.sin(rad);
++    let reach = Infinity;
++    if (dx > 0.01) reach = Math.min(reach, (room.position.x + room.map.widthInPixels - px) / dx);
++    if (dx < -0.01) reach = Math.min(reach, (room.position.x - px) / dx);
++    if (dy > 0.01) reach = Math.min(reach, (room.position.y + room.map.heightInPixels - py) / dy);
++    if (dy < -0.01) reach = Math.min(reach, (room.position.y + TILE_SIZE - py) / dy);
++    stamp(px, py + 2, 30, color, 0.4 * k);
++    const opts = this.beamOpts || (this.beamOpts = { blendMode: Phaser.BlendModes.ADD, originX: 0, originY: 0.5, tint: 0xfff0d8, scaleX: 1.1, scaleY: 1.1, angle: 0, alpha: 1, skipBatch: true });
++    opts.tint = color;
++    opts.angle = angle;
++    opts.scaleX = Phaser.Math.Clamp((reach + 24) / LIGHT_TEX_SIZE, 0.35, 1.1) * RES;
++    opts.scaleY = 1.1 * RES;
++    opts.alpha = Math.min(1, 0.95 * k);
++    rt.stamp(CONE_TEX, null, (px - ox) * RES, (py - oy) * RES, opts);
++  }
++
++  /**
+    * The part of the world a room's ambient fill covers. A room's map overlaps the
+    * room to its south by two tiles: that strip is the south room's back wall, so
+    * it takes the south room's light, and the north room's fill leaves it out.

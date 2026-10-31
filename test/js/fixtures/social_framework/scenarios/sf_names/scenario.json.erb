@@ -1,0 +1,84 @@
+{
+  "scenario_brief": "Fixture: objects whose id or name collides with an earlier object's name or id.",
+  "startRoom": "a",
+  "objectives": [
+    {
+      "aimId": "a1",
+      "title": "One",
+      "status": "active",
+      "order": 0,
+      "tasks": []
+    }
+  ],
+  "globalVariables": {
+    "n": 0
+  },
+  "rooms": {
+    "a": {
+      "type": "room_office",
+      "connections": {
+        "north": "b"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "id": "safe",
+          "name": "Wall safe",
+          "locked": true,
+          "lockType": "key",
+          "requires": "k"
+        },
+        {
+          "type": "notes",
+          "id": "cab",
+          "name": "Cabinet",
+          "locked": true,
+          "lockType": "key",
+          "requires": "k"
+        },
+        {
+          "type": "notes",
+          "name": "Desk",
+          "locked": true,
+          "lockType": "key",
+          "requires": "k"
+        }
+      ]
+    },
+    "b": {
+      "type": "room_office",
+      "connections": {
+        "south": "a"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Desk",
+          "locked": true,
+          "lockType": "key",
+          "requires": "k"
+        },
+        {
+          "type": "notes",
+          "id": "Cabinet",
+          "name": "Second cabinet",
+          "locked": true,
+          "lockType": "key",
+          "requires": "k"
+        },
+        {
+          "type": "notes",
+          "id": "fine",
+          "name": "Wall safe",
+          "locked": true,
+          "lockType": "key",
+          "requires": "k"
+        },
+        {
+          "type": "notes",
+          "name": "Desk"
+        }
+      ]
+    }
+  }
+}

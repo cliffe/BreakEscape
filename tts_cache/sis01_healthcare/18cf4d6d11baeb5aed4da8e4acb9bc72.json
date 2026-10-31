@@ -1,0 +1,13 @@
+{
+  "key": "18cf4d6d11baeb5aed4da8e4acb9bc72",
+  "npc": "pharmacist_npc",
+  "text": "When the pump console's back on its own network and I've checked it. IT will call it restored before I call it safe.",
+  "voice": "Enceladus",
+  "style": "British Pakistani clinical pharmacist in his early thirties, professional and brisk. Speak with a consistent Bradford, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

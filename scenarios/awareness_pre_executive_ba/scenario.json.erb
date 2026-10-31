@@ -1,0 +1,521 @@
+{
+  "scenario_id": "awareness_pre_executive_ba",
+  "scenario_name": "PA inbox check: before (BA)",
+  "titleScreenName": "Starting check",
+  "scenario_brief": "The first of two short checks for executive assistants and PAs at Merrin & Sallow Architects, a fictional practice. Ten emails and voicemails from a managing partner's PA inbox. Decide what to do with each one. Your result is saved so the second check can compare with it.",
+  "endGoal": "Work through the ten items at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "first_check_aim",
+      "title": "Do the first check",
+      "description": "Work through ten items at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "triage_pre_complete"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "First check done",
+        "body": "Your result is saved, ready for the second check to compare with."
+      },
+      "tasks": [
+        {
+          "taskId": "finish_check",
+          "title": "Finish the first check",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_pre_executive_ba_state": {},
+    "se_awareness_records": [],
+    "triage_pre_percent": 0,
+    "triage_pre_reportRate": 0,
+    "triage_pre_complete": false
+  },
+  "exportGlobals": [
+    "triage_pre_percent",
+    "triage_pre_reportRate",
+    "triage_pre_complete"
+  ],
+  "social": {
+    "triageSets": [
+      {
+        "id": "executive_form_b",
+        "title": "PA inbox check",
+        "brief": "Ten emails and voicemails from the inbox of a PA at Merrin & Sallow Architects. For each one, choose Trust, Report, Delete or Verify (ring someone on a number you already hold), then tick what you noticed. You'll see how you did at the end. Reporting or checking when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "stage": "pre",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "end",
+        "headerPanel": "collapsed",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "changed_bank_details",
+          "secrecy_or_bypass",
+          "vish_callback_pressure",
+          "borrowed_authority",
+          "reply_to_differs"
+        ],
+        "outcome": {
+          "setGlobalPrefix": "triage_{stage}_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "eb_studio_closed",
+            "from": {
+              "name": "Thandiwe Moyo",
+              "address": "thandiwe.moyo@merrinsallow.example"
+            },
+            "to": "all-staff@merrinsallow.example",
+            "subject": "Studio closed Monday for the floor works",
+            "time": "08:05",
+            "body": "Hi all,\nThe studio is closed on Monday while the new floor goes down. Please work from home, and take anything you need on Friday. Normal service on Tuesday.\nThanks,\nThandiwe\nStudio Manager",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "merrinsallow.example",
+              "replyTo": "thandiwe.moyo@merrinsallow.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "The studio manager's real address and a notice to everyone. It asks for nothing."
+              }
+            }
+          },
+          {
+            "id": "eb_harbourloft_booking",
+            "from": {
+              "name": "The Harbour Loft",
+              "address": "events@harbourloft.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Booking RW-1907 confirmed: Julian Sallow",
+            "time": "08:40",
+            "body": "Dear Tomás,\nThis confirms booking RW-1907: Julian Sallow's talk on Thursday at 14:00 and a stand in the main hall. Our invoice follows on the usual terms, payable to the account on file.\nKind regards,\nThe Harbour Loft Events Team",
+            "attachments": [
+              {
+                "label": "RW-1907-confirmation.pdf",
+                "kind": "pdf"
+              }
+            ],
+            "auth": {
+              "spf": "fail",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "mailer.venuedesk.example",
+              "replyTo": "events@harbourloft.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "attachmentPlausible": "A booking confirmation PDF for a booking you made is what you'd expect.",
+                "default": "The venue's real domain, a booking you made, payment to the account on file, and nothing changed. It asks for nothing new."
+              }
+            }
+          },
+          {
+            "id": "eb_harbourloft_bank",
+            "from": {
+              "name": "The Harbour Loft Events",
+              "address": "accounts@harbourloft-events.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Booking RW-1907: please use our new bank details",
+            "time": "09:10",
+            "body": "Dear Tomás,\nWe have changed banks. The balance on booking RW-1907 (Julian Sallow's talk and stand) should now be paid to:\nAccount name: The Harbour Loft Ltd\nAccount number ending 2274\nPlease update your records before you pay.\nKind regards,\nThe Harbour Loft Accounts",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "bounce.harbourloft-events.example",
+              "replyTo": "accounts@harbourloft-events.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "changed_bank_details",
+                "senderTrust"
+              ],
+              "flagAlternatives": [
+                [
+                  "senderTrust",
+                  "lookalike_domain"
+                ]
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "The Harbour Loft's real domain is harbourloft.example. This is harbourloft-events.example, with an added word",
+                "changed_bank_details": "New bank details on an open booking is the commonest invoice-fraud move. The safe step is to ring the venue on the number you already hold",
+                "senderTrust": "The name says The Harbour Loft, but the address is on harbourloft-events.example, which isn't the venue's"
+              },
+              "headerNote": "All three checks passed because the sender owns harbourloft-events.example. A pass tells you which domain sent it, not that it's the venue.",
+              "ifTrusted": "The booking payment would go to an account the sender controls.",
+              "reportReply": "Thanks. The Harbour Loft haven't changed bank, and that domain isn't theirs."
+            }
+          },
+          {
+            "id": "eb_statements_noon",
+            "from": {
+              "name": "Yasmin Chaudhry",
+              "address": "yasmin.chaudhry@merrinsallow.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Card statements signed by noon tomorrow, please",
+            "time": "11:20",
+            "body": "Hi Tomás,\nThe auditors are in tomorrow afternoon, so I need Catherine's and Julian's card statements signed by noon. They're in the usual tray in finance. Sorry for the rush.\nThanks,\nYasmin",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "merrinsallow.example",
+              "replyTo": "yasmin.chaudhry@merrinsallow.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "urgencyCalibrated": "It's a tight deadline, but for a normal job done the normal way. Hurry on its own isn't the tell; hurry to skip a check is.",
+                "senderTrust": "Yasmin's real work address.",
+                "default": "Her real address, a routine audit task, and the statements are in the usual tray. Nothing is paid, sent outside or kept quiet."
+              }
+            }
+          },
+          {
+            "id": "eb_consultant_fee",
+            "from": {
+              "name": "Catherine Merrin",
+              "address": "catherine.m.private@lintbox.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Pay this today, between us",
+            "time": "09:35",
+            "body": "Tomás,\nI've agreed a fee of £6,750 with a heritage consultant for the Brackenmoor scheme and it has to be paid today to hold her diary. Details attached in the next email. Please keep this between us and don't raise it with Yasmin until I'm back, it's a delicate one.\nCatherine\nSent from my phone",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "catherine.m.private@lintbox.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "secrecy_or_bypass",
+                "urgencyCalibrated"
+              ],
+              "perFlagNote": {
+                "senderTrust": "The managing partner's name on a personal inbox at lintbox.example, not merrinsallow.example",
+                "secrecy_or_bypass": "'Keep this between us' and 'don't raise it with Yasmin' keep out the person who would check",
+                "urgencyCalibrated": "'Paid today to hold her diary' leaves no time to check"
+              },
+              "headerNote": "All three checks passed because the sender owns lintbox.example. A pass tells you which domain sent it, not that it's Catherine.",
+              "ifTrusted": "£6,750 would go to an account the sender controls.",
+              "reportReply": "Thanks. Catherine didn't send it, and her real address is on merrinsallow.example."
+            }
+          },
+          {
+            "id": "eb_vm_hearing",
+            "kind": "voicemail",
+            "from": {
+              "name": "Catherine Merrin",
+              "address": "Number withheld"
+            },
+            "subject": "Voicemail from Catherine Merrin",
+            "time": "10:02",
+            "duration": "0:20",
+            "audio": {
+              "clipId": "VO7_eb_vm_hearing"
+            },
+            "transcript": [
+              {
+                "who": "Catherine",
+                "text": "Tomás, it's Catherine. I'm in a client meeting and can't talk. Please send the signed Brackenmoor contract to the solicitor's address I'm texting you, and leave it off the shared drive until I'm back. Don't ring, I can't pick up. Thanks."
+              }
+            ],
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "vish_callback_pressure",
+                "secrecy_or_bypass"
+              ],
+              "perFlagNote": {
+                "vish_callback_pressure": "The number is withheld and she tells you not to ring, so you can't check it on the number in your contacts",
+                "secrecy_or_bypass": "'Leave it off the shared drive' keeps the people who would notice out of it"
+              },
+              "ifTrusted": "A signed client contract would go to an address the sender chose.",
+              "reportReply": "Thanks. We rang Catherine's mobile at the break: she hadn't called, and the solicitor already has the contract. The voice sounded like hers, which is why the number and the request matter more."
+            }
+          },
+          {
+            "id": "eb_planning_panel",
+            "from": {
+              "name": "Leah Abramson",
+              "address": "leah@abramsonplanning.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Planning committee date for Mill Lane",
+            "time": "14:40",
+            "body": "Hi Tomás,\nThe council has set the Mill Lane committee for the 18th at 6pm. Could you pencil it in for Julian? I'll send the officer's report when it's published.\nBest wishes,\nLeah\nAbramson Planning",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "abramsonplanning.example",
+              "replyTo": "leah@abramsonplanning.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "pretextRelevant": "Keeping the partners' diaries is your job, and Leah is the firm's planning consultant.",
+                "default": "A known consultant's real address and a diary date. Nothing to pay, sign in to or keep quiet."
+              }
+            }
+          },
+          {
+            "id": "eb_travel_dates_spoof",
+            "from": {
+              "name": "Thandiwe Moyo",
+              "address": "thandiwe.moyo@merrinsallow-group.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Partners' travel dates for the insurance",
+            "time": "10:30",
+            "body": "Hi Tomás,\nThe insurers want the partners' travel for the next two months: dates, flights and hotels. Could you reply with the list today? Easiest to paste it in.\nThanks,\nThandiwe",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "merrinsallow-group.example",
+              "replyTo": "thandiwe.moyo@merrinsallow-group.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "senderTrust",
+                "lookalike_domain"
+              ],
+              "flagAlternatives": [
+                [
+                  "senderTrust",
+                  "lookalike_domain"
+                ]
+              ],
+              "perFlagNote": {
+                "senderTrust": "The name says Thandiwe, but the address is on merrinsallow-group.example, which isn't the firm's",
+                "lookalike_domain": "The firm's domain is merrinsallow.example. merrinsallow-group.example adds a word with a hyphen, making a separate domain anyone can register, so don't assume it's theirs"
+              },
+              "ifTrusted": "A list of when each partner is away, and where, is what someone needs to pretend to be them while they travel.",
+              "reportReply": "Thanks. Thandiwe didn't send it, her real address is on merrinsallow.example, and the insurers have asked for nothing."
+            }
+          },
+          {
+            "id": "eb_vm_sitevisit",
+            "kind": "voicemail",
+            "from": {
+              "name": "Oskar Berglund",
+              "address": "Oskar (Brackenmoor), in your contacts"
+            },
+            "subject": "Voicemail from Oskar Berglund",
+            "time": "15:30",
+            "duration": "0:16",
+            "audio": {
+              "clipId": "VO7_eb_vm_sitevisit"
+            },
+            "transcript": [
+              {
+                "who": "Oskar",
+                "text": "Hi Tomás, Oskar at Brackenmoor. Could we move tomorrow's site visit to two o'clock? If that doesn't work for Julian, ring me back on this number. Thanks."
+              }
+            ],
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "vish_callback_pressure": "He invites a call back on the number already in your contacts.",
+                "default": "A client from his own number, moving a meeting. Nothing to pay or send, and ringing him back would settle any doubt."
+              }
+            }
+          },
+          {
+            "id": "eb_travel_portal",
+            "from": {
+              "name": "Larkmoor Travel Portal",
+              "address": "bookings@larkmoor-travel.example"
+            },
+            "to": "tomas.carvalho@merrinsallow.example",
+            "subject": "Action needed: confirm the partner's travel documents",
+            "time": "13:15",
+            "body": "Hello,\nWe are finalising the travel booking for your managing partner's trip. Please sign in to the travel portal and confirm her passport details and dates:\n{{link:portal}}\nLarkmoor Travel",
+            "links": [
+              {
+                "id": "portal",
+                "text": "larkmoortravel.example/manage",
+                "destination": "https://travel-portal-signin.example/larkmoor"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "none",
+              "dmarc": "none",
+              "envelopeFrom": "larkmoor-travel.example",
+              "replyTo": "bookings@larkmoor-travel.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "linkCredible"
+              ],
+              "perFlagNote": {
+                "linkCredible": "The link text names one site, but it really goes to travel-portal-signin.example"
+              },
+              "ifTrusted": "The page would ask for passport details and a sign-in, and the sender would keep both.",
+              "reportReply": "Thanks. We didn't book through them, and the link went to a sign-in page that isn't theirs."
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "pre_executive_ba",
+      "role": "executive",
+      "company": "merrin_sallow",
+      "brand": {
+        "name": "Merrin & Sallow Architects",
+        "logoText": "MERRIN & SALLOW",
+        "accent": "#8a5a2b"
+      },
+      "variant": "full",
+      "durationTargetMin": 9,
+      "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional practice. In scope: ten emails and voicemails in a PA's inbox.",
+      "stages": [
+        "check"
+      ],
+      "conclusionTaskId": "finish_check",
+      "defend": {
+        "setId": "executive_form_b",
+        "stage": "pre",
+        "reportAlwaysVisible": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on",
+    "ambient": "#cac4bc"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_merrin_sallow",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_merrin_sallow_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "bankers_lamp": {
+            "color": "#ffd9a0",
+            "radius": 40,
+            "intensity": 0.5
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 7.55,
+            "y": 2.3,
+            "color": "#f0f4ff",
+            "radius": 96,
+            "intensity": 0.4
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "julian_sallow",
+          "displayName": "Julian Sallow",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/awareness_pre_executive_ba/ink/julian_pre.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:triage_pre_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "finish_check"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk with ten emails and voicemails from a PA's inbox, ready for the first check.",
+          "minigameData": {
+            "episodeId": "pre_executive_ba"
+          }
+        }
+      ]
+    }
+  }
+}

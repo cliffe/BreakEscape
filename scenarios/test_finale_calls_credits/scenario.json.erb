@@ -1,0 +1,151 @@
+{
+  "scenario_brief": "TEST: Finale calls and credits (F14 engine trial)\n\nHaX calls two seconds in, and the call can't be closed. Force it shut (or take a hit) and it rings again at the question you left. A text from the Director lands during the call. Finish the call to roll the closing card and credits.",
+  "endGoal": "Finish HaX's call.",
+  "startRoom": "test_room",
+
+  "globalVariables": {
+    "call_started": false,
+    "call_done": false,
+    "hax_trusted": false,
+    "teaser_enabled": false
+  },
+
+  "objectives": [
+    {
+      "aimId": "finish_call",
+      "title": "Take the Call",
+      "description": "Answer HaX's questions.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "tasks": [
+        { "taskId": "answer_hax", "title": "Answer HaX", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "music": {
+    "events": [
+      {
+        "trigger": "global_variable_changed:call_done",
+        "condition": "value === true",
+        "playlist": "victory",
+        "autoStop": true,
+        "fade": true,
+        "closingCard": {
+          "lines": [
+            { "text": "The call went through to the end.", "condition": "globalVars.call_done" },
+            { "text": "You told HaX you trusted her.", "condition": "globalVars.hax_trusted" },
+            { "text": "You kept it short with HaX.", "condition": "!globalVars.hax_trusted" },
+            { "text": "Nobody outside the room will hear about it." },
+            { "text": "The Director is waiting." },
+            { "text": "Five lines is the cap." },
+            { "text": "A sixth line that holds is never shown." }
+          ],
+          "teaser": {
+            "enabledBy": "teaser_enabled",
+            "lines": [{ "text": "Somewhere, a phone rings." }]
+          }
+        },
+        "credits": [
+          { "text": "MISSION COMPLETE", "style": "title" },
+          { "text": "FINALE ENGINE TRIAL", "style": "subtitle" },
+          { "section": "IN THIS OPERATION", "people": [
+            { "name": "AGENT HAX", "clauses": [
+              { "text": "Trusted, and told so.", "condition": "globalVars.hax_trusted" },
+              { "text": "Kept at arm's length.", "style": "warning" }
+            ] },
+            { "name": "DIRECTOR NETHERTON", "clauses": [
+              { "text": "Waited his turn on the line." }
+            ] }
+          ] },
+          { "section": "ELSEWHERE", "lines": [
+            { "text": "THE ARCHITECT: At large.", "style": "warning" }
+          ] },
+          { "section": "NEVER SHOWN", "lines": [
+            { "text": "Only if the call never started.", "condition": "!globalVars.call_started" }
+          ] }
+        ]
+      }
+    ]
+  },
+
+  "startItemsInInventory": [
+    {
+      "type": "phone",
+      "name": "Your Phone",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": ["agent_0x99", "director_netherton"],
+      "observations": "Your phone."
+    }
+  ],
+
+  "rooms": {
+    "test_room": {
+      "type": "room_office",
+      "door_sign": "Test Room",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "agent_0x99",
+          "displayName": "Agent HaX",
+          "npcType": "phone",
+          "storyPath": "scenarios/test_finale_calls_credits/ink/hax_call.json",
+          "avatar": "assets/characters/agent_hax_headshot.png",
+          "voice": {"name": "Aoede", "style": "Professional intelligence handler in debrief. Speak with a consistent British Received Pronunciation accent throughout \u2014 do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.", "language": "en-GB"},
+          "phoneId": "player_phone",
+          "currentKnot": "hub",
+          "timedConversation": {
+            "delay": 2000,
+            "targetKnot": "forced_call",
+            "waitForEvent": "game_loaded",
+            "disableClose": true,
+            "voiced": true
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "conversation_closed:agent_0x99",
+              "condition": "globalVars.call_started && !globalVars.call_done",
+              "conversationMode": "phone-chat",
+              "targetKnot": "forced_call",
+              "resume": true,
+              "disableClose": true,
+              "voiced": true,
+              "cooldown": 0
+            },
+            {
+              "eventPattern": "global_variable_changed:call_done",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "answer_hax"
+            }
+          ]
+        },
+        {
+          "id": "director_netherton",
+          "displayName": "Director Netherton",
+          "npcType": "phone",
+          "storyPath": "scenarios/test_finale_calls_credits/ink/netherton.json",
+          "voice": { "name": "Charon", "style": "A tired senior director on a bad line. Low, dry and unhurried.", "language": "en-GB", "fx": "radio" },
+          "phoneId": "player_phone",
+          "currentKnot": "start",
+          "timedMessages": [
+            { "delay": 6000, "message": "Director Netherton: Is she still on the line?", "waitForEvent": "game_loaded" }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Instructions",
+          "position": { "x": 2, "y": 2 },
+          "takeable": false,
+          "readable": true,
+          "text": "TEST: HaX's call can't be closed. Esc does nothing. If it is closed another way before the last answer, it rings again at the unanswered question.",
+          "observations": "Test instructions."
+        }
+      ]
+    }
+  }
+}

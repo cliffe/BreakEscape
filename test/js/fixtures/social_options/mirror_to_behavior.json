@@ -1,0 +1,24 @@
+{
+  "_comment": "mirrorToBehavior lint fixture. ann is clean; bob has no person channel; cat names a missing NPC; dan has a string value; eve is off.",
+  "scenario_brief": "mirrorToBehavior fixture",
+  "startRoom": "office",
+  "globalVariables": {
+    "ann_influence": 0, "ann_latched": [], "bob_influence": 0, "bob_latched": [], "cat_influence": 0, "cat_latched": [],
+    "dan_influence": 0, "dan_latched": [], "eve_influence": 0, "eve_latched": []
+  },
+  "rooms": {
+    "office": {
+      "type": "room_office", "connections": {}, "objects": [],
+      "npcs": [ { "id": "ann_desk", "displayName": "Ann", "npcType": "person", "position": { "x": 2, "y": 2 } } ]
+    }
+  },
+  "social": {
+    "characters": {
+      "ann": { "displayName": "Ann", "channels": { "person": "ann_desk" }, "mirrorToBehavior": true },
+      "bob": { "displayName": "Bob", "channels": { "phone": "bob_phone" }, "mirrorToBehavior": true },
+      "cat": { "displayName": "Cat", "channels": { "person": "cat_desk" }, "mirrorToBehavior": true },
+      "dan": { "displayName": "Dan", "channels": { "person": "ann_desk" }, "mirrorToBehavior": "yes" },
+      "eve": { "displayName": "Eve", "channels": { "phone": "eve_phone" }, "mirrorToBehavior": false }
+    }
+  }
+}

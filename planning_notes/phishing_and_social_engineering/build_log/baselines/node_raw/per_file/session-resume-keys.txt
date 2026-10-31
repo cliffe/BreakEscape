@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: isResumeKey: Enter and numpad Enter only
+ok 1 - isResumeKey: Enter and numpad Enter only
+  ---
+  duration_ms: 0.723606
+  ...
+# Subtest: Enter resumes once and never reaches the title screen, keyup and keypress included
+ok 2 - Enter resumes once and never reaches the title screen, keyup and keypress included
+  ---
+  duration_ms: 0.868025
+  ...
+# Subtest: numpad Enter resumes too
+ok 3 - numpad Enter resumes too
+  ---
+  duration_ms: 0.138353
+  ...
+# Subtest: other keys do nothing while the overlay shows
+ok 4 - other keys do nothing while the overlay shows
+  ---
+  duration_ms: 0.216157
+  ...
+# Subtest: browser shortcuts keep their default but still do not reach the game
+ok 5 - browser shortcuts keep their default but still do not reach the game
+  ---
+  duration_ms: 0.119986
+  ...
+# Subtest: a held Enter repeating does not resume twice
+ok 6 - a held Enter repeating does not resume twice
+  ---
+  duration_ms: 0.077617
+  ...
+# Subtest: with the overlay gone, keys pass straight through; the guard can be removed
+ok 7 - with the overlay gone, keys pass straight through; the guard can be removed
+  ---
+  duration_ms: 0.124963
+  ...
+# Subtest: show.html.erb loads the guard as a module before the overlay script and resumes through the button
+ok 8 - show.html.erb loads the guard as a module before the overlay script and resumes through the button
+  ---
+  duration_ms: 0.331954
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 119.74016

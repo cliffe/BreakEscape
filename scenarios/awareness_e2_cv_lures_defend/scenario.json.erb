@@ -1,0 +1,455 @@
+{
+  "scenario_id": "awareness_e2_cv_lures_defend",
+  "scenario_name": "CV lures: the recruitment inbox",
+  "titleScreenName": "CV lures",
+  "scenario_brief": "Awareness episode E2, inbox only. You're covering the recruitment inbox at Tarrowby Logistics, a fictional haulier, and six messages are waiting, applications and CVs among them. Some are real and some were built to trick you: sort them, and report anything that doesn't sit right.",
+  "endGoal": "Sort the six messages at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "recruitment_inbox_aim",
+      "title": "Cover the recruitment inbox",
+      "description": "Sort the recruitment inbox at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e2_cv_lures_defend_defend_complete"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Recruitment inbox done",
+        "body": "You've worked through all six messages; the debrief goes through each one."
+      },
+      "tasks": [
+        {
+          "taskId": "sort_recruitment_inbox",
+          "title": "Sort the recruitment inbox",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e2_cv_lures_defend_state": {},
+    "se_awareness_records": [],
+    "episode_e2_cv_lures_defend_defend_percent": 0,
+    "episode_e2_cv_lures_defend_defend_reportRate": 0,
+    "episode_e2_cv_lures_defend_defend_complete": false
+  },
+  "social": {
+    "triageSets": [
+      {
+        "id": "e2_recruitment_inbox",
+        "title": "Tarrowby recruitment inbox",
+        "brief": "You're covering Tarrowby's recruitment inbox while Fatima is in interviews. Six messages are waiting, and attachments show as labels. For each one, choose Trust, Report or Delete, then tick what you noticed. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "scoringProfile": "awareness",
+        "verifyVerdict": false,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "enable_content_prompt"
+        ],
+        "flagChips": {
+          "enable_content_prompt": "It asks me to turn on editing or content to see it"
+        },
+        "outcome": {
+          "setGlobalPrefix": "episode_e2_cv_lures_defend_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e2_agency_shortlist",
+            "from": {
+              "name": "Roseanne Wadsworth",
+              "address": "roseanne.wadsworth@kettlewick.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Shortlist: warehouse supervisor (nights)",
+            "time": "08:40",
+            "body": "Morning Fatima,\nAs promised on Friday, here are my three candidates for Colin's night supervisor role. All three have done nights before and can start within a month. Let me know who he'd like to meet and I'll set up the times.\nBest,\nRoseanne\nKettlewick Talent",
+            "attachments": [
+              {
+                "id": "cv1",
+                "label": "Shortlist_CV_1.pdf",
+                "kind": "pdf"
+              },
+              {
+                "id": "cv2",
+                "label": "Shortlist_CV_2.pdf",
+                "kind": "pdf"
+              },
+              {
+                "id": "cv3",
+                "label": "Shortlist_CV_3.pdf",
+                "kind": "pdf"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "kettlewick.example",
+              "replyTo": "roseanne.wadsworth@kettlewick.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "lookalike_domain": "kettlewick.example is the agency's real domain, the one Tarrowby already deals with.",
+                "attachmentPlausible": "Three PDFs for three shortlisted candidates is exactly what she said she'd send, and PDFs open in the viewer without asking for anything.",
+                "default": "The agency you already use, writing from its real address, following up a conversation you know about."
+              }
+            }
+          },
+          {
+            "id": "e2_portfolio_lookalike",
+            "from": {
+              "name": "Liam Baxter",
+              "address": "liam.baxter@lintbox.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "CV attached: warehouse supervisor",
+            "time": "09:05",
+            "body": "Hello,\nPlease find my CV attached for the warehouse supervisor job. If the attachment doesn't come through, I've also put my CV and portfolio on your careers portal:\n{{link:cv}}\nYou'll need to sign in with your Tarrowby account to see it.\nThanks,\nLiam Baxter",
+            "links": [
+              {
+                "id": "cv",
+                "text": "tarrowby-careers.example/cv/4471",
+                "destination": "https://tarrowby-careers.example/cv/4471"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "liam.baxter@lintbox.example"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "attachmentPlausible",
+                "linkCredible"
+              ],
+              "flagAlternatives": [
+                [
+                  "lookalike_domain",
+                  "linkCredible"
+                ]
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "The link goes to tarrowby-careers.example, not tarrowby.example. Tarrowby's own sites all end in tarrowby.example; the added word with a hyphen makes a separate domain anyone can register, so don't assume it's theirs",
+                "attachmentPlausible": "It says the CV is attached, but nothing is. The 'portfolio' link is there to replace it, and it wants your Tarrowby sign-in",
+                "linkCredible": "Read it as a link and it still doesn't add up: it doesn't go to Tarrowby's own recruitment system, and a real CV never needs you to sign in on a careers portal you reached from an email"
+              },
+              "ifTrusted": "The link opens a sign-in page that collects your Tarrowby password, so whoever runs tarrowby-careers.example could read the recruitment inbox and every candidate's details in it.",
+              "reportReply": "Thanks. Tarrowby has no careers portal on that address, and no candidate needs your password to send a CV. We've blocked tarrowby-careers.example.",
+              "whyFine": {
+                "pretextRelevant": "A recruitment inbox is exactly where CVs land, so a CV turning up is no surprise. The tells are the missing attachment and the link that wants your Tarrowby sign-in, not that a CV arrived."
+              }
+            }
+          },
+          {
+            "id": "e2_cv_pdf",
+            "from": {
+              "name": "Tendai Moyo",
+              "address": "tendai.moyo@lintbox.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Application: warehouse supervisor (nights)",
+            "time": "09:30",
+            "body": "Dear Fatima,\nI saw Tarrowby's post asking for CVs for the night supervisor role, and I'd like to apply. I've run a night shift of twenty pickers at a supermarket distribution centre for the last four years. My CV is attached as a PDF.\nI'm free for interview any weekday.\nKind regards,\nTendai Moyo",
+            "attachments": [
+              {
+                "id": "cv",
+                "label": "Tendai_Moyo_CV.pdf",
+                "kind": "pdf"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "tendai.moyo@lintbox.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderTrust": "Candidates apply from their personal email, so an lintbox.example address is normal here. The name and the address match.",
+                "attachmentPlausible": "It says the CV is attached, and it is: one PDF, which opens in the viewer.",
+                "addressedTo": "It's addressed to Fatima by name and names the job.",
+                "default": "A personal address is normal for a candidate. The CV is attached, the email names the job and the person, and it asks for nothing but an interview."
+              }
+            }
+          },
+          {
+            "id": "e2_enable_content",
+            "from": {
+              "name": "Jordan Kerr",
+              "address": "jordan.kerr.cv@hastypost.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "Job application",
+            "time": "10:10",
+            "body": "Dear Hiring Manager,\nPlease find my CV attached for the vacancy.\nFor my privacy the document is protected. When it opens, click Enable Editing and then Enable Content at the top of the page, and the CV will appear.\nRegards,\nJordan Kerr",
+            "attachments": [
+              {
+                "id": "cv",
+                "label": "CV_JKerr_protected.docx",
+                "kind": "document"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "hastypost.example",
+              "replyTo": "jordan.kerr.cv@hastypost.example"
+            },
+            "factorStrings": {
+              "enable_content_prompt": {
+                "redFlag": "The document asks you to enable editing or content before it will show anything"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "enable_content_prompt",
+                "addressedTo"
+              ],
+              "perFlagNote": {
+                "enable_content_prompt": "A real CV shows up as soon as you open it. 'Click Enable Editing and then Enable Content' is the step the file needs you to take before it can run anything",
+                "addressedTo": "'Dear Hiring Manager' and 'the vacancy', with no name and no job: it could have gone to any company with any job open"
+              },
+              "ifTrusted": "Switching on content would let the document run a small program on your computer, which could give whoever sent it a way into Tarrowby's network.",
+              "reportReply": "Thanks. That file was set up to run a hidden program once content was switched on. We've blocked the sender and checked nobody else opened it.",
+              "whyFine": {
+                "attachmentPlausible": "A Word document is a normal way to send a CV, so the file itself fits. What doesn't fit is being told to enable editing and content before it will show: a real CV never needs that."
+              }
+            }
+          },
+          {
+            "id": "e2_cv_docx",
+            "from": {
+              "name": "Darius Petrauskas",
+              "address": "darius.petrauskas@lintbox.example"
+            },
+            "to": "jobs@tarrowby.example",
+            "subject": "HGV driver (Class 1): application",
+            "time": "10:45",
+            "body": "Hello Fatima,\nI'm applying for the Class 1 driver job on your website. I have twelve years of general haulage and a clean licence. My CV is attached as a Word document.\nThank you,\nDarius Petrauskas",
+            "attachments": [
+              {
+                "id": "cv",
+                "label": "Darius_Petrauskas_CV.docx",
+                "kind": "document"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "darius.petrauskas@lintbox.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "enable_content_prompt": "It's a Word file, which is normal for a CV. In the viewer it shows the whole CV read-only and asks you to switch nothing on.",
+                "attachmentPlausible": "A CV attached to an application is what you'd expect, and a Word document is a common way to send one.",
+                "senderTrust": "Candidates apply from their personal email, so an lintbox.example address is normal here.",
+                "default": "A named job, a named person, a CV that's really attached, and nothing to switch on or sign in to."
+              }
+            }
+          },
+          {
+            "id": "e2_colin_interviews",
+            "from": {
+              "name": "Colin Mather",
+              "address": "colin.mather@tarrowby.example"
+            },
+            "to": "recruitment@tarrowby.example",
+            "subject": "Night supervisor interviews: Thursday?",
+            "time": "11:20",
+            "body": "Hi both,\nThanks for the shortlist from Kettlewick. Could we see all three on Thursday morning? I'm on site from seven. Put them in the recruitment system as usual and I'll pick up the details there.\nColin\nWarehouse Manager, Normanton",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "tarrowby.example",
+              "replyTo": "colin.mather@tarrowby.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "senderTrust": "Colin's real Tarrowby address, and it's his vacancy.",
+                "default": "The hiring manager, writing from his own address, wants three candidates seen through the normal system. Nothing is attached, and nothing needs signing in to."
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e2_cv_lures_defend",
+      "role": "hr_recruitment",
+      "company": "tarrowby_logistics",
+      "brand": {
+        "name": "Tarrowby Logistics",
+        "logoText": "TARROWBY",
+        "accent": "#3b5b8c"
+      },
+      "variant": "defendOnly",
+      "durationTargetMin": 8,
+      "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: the Tarrowby recruitment inbox.",
+      "stages": [
+        "brief",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "sort_recruitment_inbox",
+      "defend": {
+        "setId": "e2_recruitment_inbox",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. You're covering the recruitment inbox this morning, and six messages are waiting. Some are real applications and some were built to trick you. Sort them, and report anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+        "flipMissedHeading": "Nothing to replay this time",
+        "flipLandedNoTells": "It opened like any real application, with nothing off to pick up on. Next, the same kind of message lands in a recruitment inbox, and you're the one opening it.",
+        "noBlameLine": "Every one of these was built to look right, and opening attachments from strangers is a recruiter's whole job. A miss here points to a busy inbox, and to where to look next time.",
+        "mondayCard": "On Monday: read CVs in the viewer, and if a document asks you to enable editing or content, don't. If a CV 'doesn't come through' and sits behind a link that wants you to sign in, ask the candidate to send it as an attachment instead. Then report anything odd using the route in the box below.",
+        "defendOnly": "These were built by people who know exactly what a real application looks like, and opening a CV is a recruiter's job, not a lapse. Any you were caught out by are shown below, with what gave each one away.",
+        "conceptPanel": {
+          "heading": "Why 'enable content' matters",
+          "text": "Office documents can carry macros, small programs that run inside the file. Many organisations now block macros in files that arrive from the internet, so this trick works less often than it used to. The lure still turns up, though, because it only has to work once. Reading a CV in the viewer is always enough; a real CV never needs you to switch anything on."
+        }
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on",
+    "ambient": "#bcc2cc"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_tarrowby",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_tarrowby_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "drinks_vending": {
+            "color": "#e0f0ff",
+            "radius": 40,
+            "intensity": 0.45
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 4.5,
+            "y": 5,
+            "color": "#dfe8f4",
+            "radius": 110,
+            "intensity": 0.25
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "fatima_begum",
+          "displayName": "Fatima Begum",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/awareness_e2_cv_lures_defend/ink/fatima_begum.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_e2_cv_lures_defend_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "sort_recruitment_inbox"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk showing the Tarrowby recruitment inbox. Six messages are waiting.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e2_cv_lures_defend_defend_complete",
+              "value": "A touch-screen kiosk showing the Tarrowby recruitment inbox. Nothing left to do here."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e2_cv_lures_defend"
+          }
+        }
+      ]
+    }
+  }
+}

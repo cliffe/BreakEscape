@@ -1,0 +1,13 @@
+{
+  "key": "92015ee44f0db190f027f54fb4e8fc77",
+  "npc": "ffion_rees",
+  "text": "Since 2010. Ms. Sterling started it.",
+  "voice": "Kore",
+  "style": "Front-desk receptionist at a smart tech firm, mid-twenties. Speak with a consistent South Wales (Cardiff) accent throughout -- do not shift to any other accent. Bright, slightly high pitch; quick, chatty pace. Genuinely friendly, a little in awe of her boss and not remotely suspicious of visitors.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-10-13",
+  "recorded_at": "2026-10-13T01:00:22Z"
+}

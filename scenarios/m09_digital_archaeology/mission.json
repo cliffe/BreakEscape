@@ -1,0 +1,209 @@
+{
+  "display_name": "Digital Archaeology",
+  "description": "A courier carried the Architect's order to a records archive in Helena, Montana: burn Helena before the Publication. Get inside after hours while the director feeds a shredder box by box, take the restricted series before it is ash, and follow the paper to the man who signed it. The Season 1 finale begins.",
+  "difficulty_level": 3,
+  "secgen_scenario": "break_escape/safetynet/m09_digital_archaeology.xml",
+  "_vm_wire": "VM-WIRE: secgen_scenario points at the SecGen draft (two targets, catalogue_server and tomb_beta_server, plus the Kali attack_vm). The box is not built yet; flag values are generated at build (F9: confirm the two hostnames, per-machine flag numbering and the catalogue service account off the built VM).",
+  "collection": "season_1",
+  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m09-digital-archaeology/",
+  "ui_theme": "spy",
+  "id": "m09_digital_archaeology",
+  "title": "Mission 9: Digital Archaeology",
+  "subtitle": "The Archive Burns",
+  "difficulty": 3,
+  "tier": "Advanced",
+  "estimatedDuration": "75-85 minutes",
+  "season": 1,
+  "episodeNumber": 9,
+  "requiredPrecedingMissions": [],
+  "recommendedPrecedingMissions": [
+    "m08_the_mole"
+  ],
+  "campaignEnhanced": true,
+  "standalonePlayable": true,
+  "primaryCell": "Insider Threat Initiative",
+  "secondaryCells": ["Social Fabric"],
+  "location": "Mountain States Records & Retention, Helena, Montana",
+  "missionType": "Infiltration and Investigation",
+  "narrativeThemes": [
+    "Records and what they cost",
+    "A handler's secret",
+    "The teacher behind the Architect",
+    "Coordinated disclosure",
+    "Insider threat"
+  ],
+  "cybok": [
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["user authentication", "BIOMETRICS", "SMART CARDS", "PERSONAL IDENTIFICATION NUMBER AND MEMORABLE INFORMATION"]
+    },
+    {
+      "ka": "AB",
+      "topic": "Characterisation of Adversaries",
+      "keywords": ["THE INSIDER THREAT", "SOCIAL ENGINEERING"]
+    },
+    {
+      "ka": "C",
+      "topic": "Symmetric Cryptography",
+      "keywords": ["CIPHER(S) - POLYALPHABETIC"]
+    },
+    {
+      "ka": "LR",
+      "topic": "Ethics",
+      "keywords": ["vulnerability testing", "VULNERABILITY DISCLOSURE", "PUBLIC DISCLOSURE"]
+    },
+    {
+      "ka": "SSL",
+      "topic": "Motivations for Secure Software Lifecycle",
+      "keywords": ["customers don’t apply patches", "VULNERABILITY RESPONSE AND DISCLOSURE"]
+    },
+    {
+      "ka": "OSV",
+      "topic": "Primitives for Isolation and Mediation",
+      "keywords": ["physical access and secure deletion", "authentication and identification", "PRIVILEGE ESCALATION"]
+    },
+    {
+      "ka": "NS",
+      "topic": "Networking Applications",
+      "keywords": ["NMAP", "PORT SCANNING"]
+    },
+    {
+      "ka": "WAM",
+      "topic": "Server-Side Vulnerabilities and Mitigations",
+      "keywords": ["server-side misconfiguration and vulnerable components", "injection vulnerabilities"]
+    },
+    {
+      "ka": "SS",
+      "topic": "Categories of Vulnerabilities",
+      "keywords": ["CVES AND CWES"]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "Fundamental Concepts",
+      "keywords": ["VULNERABILITY ANALYSIS", "PENETRATION TESTING - SOFTWARE TOOLS"]
+    }
+  ],
+  "secgen": {
+    "scenario": "m09_digital_archaeology (Break Escape SAFETYNET: Mission 9 — Digital Archaeology VMs)",
+    "vulnerabilities": [
+      "Credentialed access with a recovered login (catalogue server foothold)",
+      "Nostromo web server RCE (Tomb Beta server foothold)",
+      "Sudo misconfiguration on a pager utility (root on both servers)",
+      "Document and credential analysis on the recovered hosts"
+    ],
+    "flags": 4,
+    "difficulty": "Advanced",
+    "integrationMethod": "Two targets, two stations: the reading-room drop terminal takes the catalogue server's two flags, the tape-room drop link takes Tomb Beta's two; each flag sets a story global that rings the night's calls"
+  },
+  "mechanics": {
+    "new": [
+      "A villain behind a counter: clone her card and lift her print while she talks",
+      "Voiced forced calls that ring again at the unanswered choice",
+      "A Vigenere-keyed archive code, decoded with the shelf marks on the wall",
+      "A sale offered against the evidence, with the cost said before the answer"
+    ],
+    "reinforced": [
+      "Lockpicking",
+      "RFID cloning",
+      "Fingerprint lifting",
+      "PIN cracker",
+      "CyberChef decoding",
+      "Social engineering"
+    ]
+  },
+  "keyNPCs": [
+    {
+      "name": "Agent HaX",
+      "role": "Handler",
+      "affiliation": "SAFETYNET",
+      "recurring": true,
+      "significance": "Had the Architect's name the night Fraser and Ferreira died, and said nothing"
+    },
+    {
+      "name": "Director Magnus Netherton",
+      "role": "SAFETYNET Director",
+      "affiliation": "SAFETYNET",
+      "recurring": true,
+      "significance": "Says the name once it can be proved, and signs the Montana order"
+    },
+    {
+      "name": "Margaret Sorensen",
+      "role": "Director, Mountain States Records & Retention",
+      "affiliation": "ENTROPY (Insider Threat Initiative)",
+      "significance": "The Initiative's archivist, burning eleven years of placements on the Architect's order"
+    },
+    {
+      "name": "The Recruiter",
+      "role": "Insider Threat Initiative",
+      "affiliation": "ENTROPY",
+      "recurring": true,
+      "significance": "Offers WREN's name for her tape deck"
+    },
+    {
+      "name": "Noor Haddad",
+      "role": "Records clerk",
+      "affiliation": "None",
+      "significance": "On a recruiting list she has never seen"
+    },
+    {
+      "name": "Jesse Tran",
+      "role": "IT contractor",
+      "affiliation": "ENTROPY (Social Fabric)",
+      "significance": "Social Fabric's man in the archive, wiping the tape side"
+    },
+    {
+      "name": "Cody Old Coyote",
+      "role": "Night guard",
+      "affiliation": "None",
+      "significance": "Logged the shredder every night for a week; nobody read it"
+    }
+  ],
+  "moralChoices": [
+    {
+      "choicePoint": "The bins at the hatch",
+      "options": [
+        { "choice": "Derek Lawson's file", "consequence": "Why m01's asset did it; the Reading's margin bet comes true", "variable": "cage_bin = \"derek_file\"" },
+        { "choice": "The Social Fabric letters (or Nightshade's copy)", "consequence": "Villanueva warned, Tran's lever; or what Nightshade cleared", "variable": "cage_bin = \"letters\" / \"nightshade_copy\"" }
+      ]
+    },
+    {
+      "choicePoint": "The Recruiter's offer",
+      "options": [
+        { "choice": "Take the name, let the deck wipe", "consequence": "WREN named; booked in her ledger", "variable": "recruiter_offer = \"taken\"" },
+        { "choice": "Take the name and pull her file anyway", "consequence": "Half her network; she warns the rest, and WREN runs", "variable": "recruiter_offer = \"double_crossed\"" },
+        { "choice": "Refuse, pull her file", "consequence": "Her network, no name", "variable": "recruiter_offer = \"named\"" },
+        { "choice": "Refuse, pull the Alpha tapes", "consequence": "His teaching, recorded; no name", "variable": "recruiter_offer = \"refused\"" }
+      ]
+    },
+    {
+      "choicePoint": "HaX's confession",
+      "options": [
+        { "choice": "You should have told me", "variable": "hax_confession_answer = \"should_have_told\"" },
+        { "choice": "I'd have done the same", "variable": "hax_confession_answer = \"same_in_your_place\"" },
+        { "choice": "Afterwards. Not during.", "variable": "hax_confession_answer = \"afterwards\"" }
+      ]
+    },
+    {
+      "choicePoint": "His vendor notice",
+      "options": [
+        { "choice": "Send it", "consequence": "The vendor starts a fix for four hundred sites; the watch comes down", "variable": "albion_notified = true" },
+        { "choice": "Hold it", "consequence": "The flaw stays open; he can call SAFETYNET hoarders", "variable": "albion_notified = false" }
+      ]
+    }
+  ],
+  "campaignConnections": {
+    "fromMission8": [
+      "Nightshade's fate (triple agent: his call and his file; arrested: the wall)",
+      "Tomb Gamma's coordinates, or none",
+      "The Helena ticket in his go-bag"
+    ],
+    "toMission10": [
+      "Twelve exports: the Recruiter's sale, the tape pulled, WREN named or shortlisted, the confession answer, the notice, Nightshade's file, the Reading, the bin, the legacy files, the Alpha annotations"
+    ]
+  },
+  "developmentStatus": "Stage 9 build (placeholders; VM not wired)",
+  "version": "0.1.0",
+  "estimated_duration_minutes": 85,
+  "lastUpdated": "2026-10-21"
+}

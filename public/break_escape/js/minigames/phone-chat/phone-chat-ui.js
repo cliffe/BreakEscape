@@ -1,0 +1,1135 @@
+/**
+ * PhoneChatUI - UI Rendering and Management
+ * 
+ * Manages the phone chat UI, rendering contact lists, conversation views,
+ * message bubbles, and choice buttons. Based on phone-messages minigame visual style.
+ * 
+ * @module phone-chat-ui
+ */
+
+import { ASSETS_PATH } from '../../config.js';
+import TTSManager from '../../systems/tts-manager.js';
+import MusicController from '../../music/music-controller.js';
+import { displayPhoneLine, otherSpeaker } from './phone-chat-speaker.js';
+import { displayDashes } from '../../utils/display-dashes.js';
+import { messageClockText } from '../../systems/game-clock.js';
+import { hasHiddenChoicesBelow, numberedChoiceText } from './phone-chat-choices.js';
+import { createBottomPin } from './phone-chat-scroll.js';
+import { portraitFor } from '../../utils/portrait-variants.js';
+import { ChatInfluence } from '../../ui/pretext-chrome.js';
+import PhoneChatConversation from './phone-chat-conversation.js';
+import { npcDmFields, onAccentColour } from './phone-app.js';
+
+const escHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+import InkEngine from '../../systems/ink/ink-engine.js';
+
+export default class PhoneChatUI {
+    /**
+     * Create a PhoneChatUI instance
+     * @param {HTMLElement} container - Container element for the UI
+     * @param {Object} params - Configuration parameters
+     * @param {Object} npcManager - NPCManager instance
+     * @param {Array<string>} allowedNpcIds - Optional array of NPC IDs to show (filters contact list)
+     */
+    constructor(container, params, npcManager, allowedNpcIds = null) {
+        if (!container) {
+            throw new Error('PhoneChatUI requires a container element');
+        }
+        
+        this.container = container;
+        this.params = params || {};
+        this.isTerminalTheme = this.params.theme === 'terminal';
+        // The device's app block (title, accent, chrome), resolved by the minigame; null for
+        // every phone that has none, which then renders exactly as before
+        this.app = this.params.app || null;
+        this.isSocialTheme = this.params.theme === 'social';
+        this.appChrome = this.app?.chrome === 'app';
+        this._typewriterCancel = null;
+        this.npcManager = npcManager;
+        this.allowedNpcIds = allowedNpcIds;  // Filter contacts to only these NPCs if provided
+        this.currentView = 'contact-list'; // 'contact-list' or 'conversation'
+        this.currentNPCId = null;
+        this.elements = {};
+        
+        // Server TTS (primary)
+        this.ttsManager = new TTSManager();
+
+        // Browser speech synthesis (fallback)
+        this.speechSynthesis = window.speechSynthesis;
+        this.currentUtterance = null;
+        this.isPlaying = false;
+        this.currentPlayButton = null;
+        this.speechAvailable = !!this.speechSynthesis;
+        this.selectedVoice = null;
+        this.voiceSettings = {
+            rate: 1.0,
+            pitch: 1.0,
+            volume: 1.0
+        };
+
+        // Setup voice selection for fallback
+        if (this.speechAvailable) {
+            this.setupVoiceSelection();
+        }
+        
+        console.log('📱 PhoneChatUI initialized', { allowedNpcIds });
+    }
+    
+    /**
+     * Render the complete phone UI structure
+     * Matches phone-messages-minigame.js structure
+     */
+    render() {
+        this.container.innerHTML = `
+            <div class="phone-messages-container">
+                <div class="phone-screen">
+                    ${this.appChrome ? '' : `<div class="phone-header">
+                        <div class="signal-bars">
+                            <span class="bar"></span>
+                            <span class="bar"></span>
+                            <span class="bar"></span>
+                            <span class="bar"></span>
+                        </div>
+                        <div class="battery">85%</div>
+                    </div>`}
+                    
+                    <!-- Contact List View -->
+                    <div class="contact-list-view" id="contact-list-view">
+                        <div class="contact-list-header">
+                            ${this.appTitleHtml()}
+                        </div>
+                        <div class="contact-list" id="contact-list">
+                            <!-- Contacts will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Conversation View -->
+                    <div class="conversation-view" id="conversation-view" style="display: none;">
+                        <div class="conversation-header" id="conversation-header">
+                            <button class="back-button" id="back-button">←</button>
+                            <div class="conversation-info">
+                                <span class="npc-name" id="npc-name"></span>
+                            </div>
+                        </div>
+                        <div class="messages-container" id="messages-container">
+                            <!-- Message bubbles will be added here -->
+                        </div>
+                        <div class="typing-indicator" id="typing-indicator" style="display: none;">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <div class="choices-container" id="choices-container">
+                            <!-- Choice buttons will be added here -->
+                        </div>
+                        <div class="choices-more-cue" id="choices-more-cue" aria-hidden="true">▼ more choices</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        if (this.isTerminalTheme) {
+            this.container.querySelector('.phone-messages-container')
+                .classList.add('phone-terminal-theme');
+        }
+        if (this.isSocialTheme) {
+            const shell = this.container.querySelector('.phone-messages-container');
+            shell.classList.add('phone-social-theme');
+            if (this.appChrome) shell.classList.add('phone-app-chrome');
+            if (this.app?.accent) {
+                shell.style.setProperty('--dm-accent', this.app.accent);
+                shell.style.setProperty('--dm-on-accent', onAccentColour(this.app.accent));
+            }
+        }
+
+        // Store element references
+        this.elements = {
+            contactListView: document.getElementById('contact-list-view'),
+            contactList: document.getElementById('contact-list'),
+            conversationView: document.getElementById('conversation-view'),
+            conversationHeader: document.getElementById('conversation-header'),
+            npcName: document.getElementById('npc-name'),
+            backButton: document.getElementById('back-button'),
+            messagesContainer: document.getElementById('messages-container'),
+            typingIndicator: document.getElementById('typing-indicator'),
+            choicesContainer: document.getElementById('choices-container'),
+            choicesMoreCue: document.getElementById('choices-more-cue')
+        };
+
+        // The cue sits below the list, not over it (m08 R4: it covered the fourth choice)
+        this.elements.choicesMoreCue?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const box = this.elements.choicesContainer;
+            box?.scrollBy?.({ top: box.clientHeight, behavior: 'smooth' });
+        });
+        
+        // Show or hide the "more choices" cue as the player scrolls the list
+        this.elements.choicesContainer?.addEventListener('scroll', () => this.updateChoicesScrollCue());
+
+        // Keep the last bubble above the choices as the panel fills in or changes
+        // height, and when the window resizes (round 7, m06 M2)
+        this._bottomPin?.destroy();
+        this._bottomPin = createBottomPin(this.elements.messagesContainer, {
+            watch: [this.elements.choicesContainer, this.elements.typingIndicator]
+        });
+
+        console.log('✅ Phone UI rendered');
+    }
+    
+    /** The contact-list heading: "Messages", or the app's title (and logo). */
+    appTitleHtml() {
+        const title = this.app?.title;
+        if (!title) return '<h3>Messages</h3>';
+        const logo = this.app.logo
+            ? `<img class="app-logo" src="/break_escape/assets/logos/${escHtml(this.app.logo)}" alt="">`
+            : '';
+        return `<h3 class="app-title">${logo}<span>${escHtml(title)}</span></h3>`;
+    }
+
+    /**
+     * Setup voice selection for speech synthesis
+     */
+    setupVoiceSelection() {
+        if (!this.speechSynthesis) return;
+        
+        const voices = this.speechSynthesis.getVoices();
+        console.log('🎤 Initial voices count:', voices.length);
+        
+        if (voices.length === 0) {
+            // Wait for voices to load
+            this.speechSynthesis.addEventListener('voiceschanged', () => {
+                console.log('🎤 Voices changed, count:', this.speechSynthesis.getVoices().length);
+                this.selectBestVoice();
+            });
+            
+            // Fallback: try again after a delay
+            setTimeout(() => {
+                const delayedVoices = this.speechSynthesis.getVoices();
+                if (delayedVoices.length > 0) {
+                    this.selectBestVoice();
+                }
+            }, 1000);
+        } else {
+            this.selectBestVoice();
+        }
+    }
+    
+    /**
+     * Select the best available voice for speech synthesis
+     */
+    selectBestVoice() {
+        if (!this.speechSynthesis) return;
+        
+        const voices = this.speechSynthesis.getVoices();
+        console.log('🎤 Available voices:', voices.map(v => v.name));
+        
+        // Prefer natural-sounding voices
+        const preferredVoices = [
+            'Google UK English Female',
+            'Google UK English Male',
+            'Google US English',
+            'Microsoft Zira Desktop',
+            'Microsoft David Desktop',
+            'en-US',
+            'en-GB'
+        ];
+        
+        for (const preferredName of preferredVoices) {
+            const voice = voices.find(v => 
+                v.name.includes(preferredName) || 
+                v.lang.includes(preferredName)
+            );
+            if (voice) {
+                this.selectedVoice = voice;
+                console.log('🎤 Selected voice:', voice.name);
+                return;
+            }
+        }
+        
+        // Fallback to first English voice
+        const englishVoice = voices.find(v => v.lang.startsWith('en'));
+        if (englishVoice) {
+            this.selectedVoice = englishVoice;
+            console.log('🎤 Selected fallback voice:', englishVoice.name);
+        }
+    }
+    
+    /**
+     * Play a voice message — tries server TTS first, falls back to browser speech synthesis
+     * @param {string} text - Text to speak (already stripped of "voice:" prefix)
+     * @param {HTMLElement} playButton - Play button element to update
+     */
+    async playVoiceMessage(text, playButton) {
+        // If already playing, stop and return
+        if (this.isPlaying) {
+            this.stopVoiceMessage(playButton);
+            return;
+        }
+
+        // --- Try server TTS first (only if NPC has a voice config) ---
+        const npcId = this.currentNPCId;
+        const npcData = npcId && this.npcManager.getNPC(npcId);
+        const npcHasVoice = !!npcData?.voice;
+        if (npcHasVoice) {
+            // Apply this NPC's voice FX (e.g. Ghost's masked comms) so phone contacts match the video call.
+            if (npcData.voice.fx) {
+                this.ttsManager.setVoiceFX(npcId, npcData.voice.fx);
+            }
+            try {
+                this.isPlaying = true;
+                this.currentPlayButton = playButton;
+                this.updatePlayButton(playButton, true);
+
+                this.ttsManager.onEnded(() => {
+                    this.isPlaying = false;
+                    this.currentPlayButton = null;
+                    this.updatePlayButton(playButton, false);
+                });
+
+                const duration = await this.ttsManager.play(npcId, text);
+                if (duration !== null) {
+                    console.log('🎤 Playing voice message via server TTS');
+                    return;
+                }
+            } catch (e) {
+                // fall through to speech synthesis
+            }
+            // TTS failed — reset state before fallback
+            this.isPlaying = false;
+            this.currentPlayButton = null;
+            this.updatePlayButton(playButton, false);
+        }
+
+
+        // --- Fallback: browser speech synthesis ---
+        if (!this.speechAvailable) {
+            console.warn('🎤 Neither server TTS nor speech synthesis available');
+            return;
+        }
+
+        this.speechSynthesis.cancel();
+
+        this.currentUtterance = new SpeechSynthesisUtterance(text);
+        this.currentUtterance.rate = this.voiceSettings.rate;
+        this.currentUtterance.pitch = this.voiceSettings.pitch;
+        // Speech synthesis is outside Web Audio; approximate Voice × Master from music widget
+        const st = MusicController.getState() || {};
+        const vw = typeof st.voiceVolume === 'number' ? st.voiceVolume : 1;
+        const mw = typeof st.masterVolume === 'number' ? st.masterVolume : 1;
+        this.currentUtterance.volume = Math.max(0, Math.min(1, vw * mw * this.voiceSettings.volume));
+
+        if (this.selectedVoice) {
+            this.currentUtterance.voice = this.selectedVoice;
+        }
+
+        this.currentUtterance.onstart = () => {
+            this.isPlaying = true;
+            this.currentPlayButton = playButton;
+            this.updatePlayButton(playButton, true);
+        };
+
+        this.currentUtterance.onend = () => {
+            this.isPlaying = false;
+            this.currentPlayButton = null;
+            this.updatePlayButton(playButton, false);
+        };
+
+        this.currentUtterance.onerror = (event) => {
+            console.error('🎤 Speech synthesis error:', event);
+            this.isPlaying = false;
+            this.currentPlayButton = null;
+            this.updatePlayButton(playButton, false);
+        };
+
+        try {
+            this.speechSynthesis.speak(this.currentUtterance);
+            console.log('🎤 Playing voice message via speech synthesis (fallback)');
+        } catch (error) {
+            console.error('🎤 Failed to start speech synthesis:', error);
+            this.isPlaying = false;
+            this.currentPlayButton = null;
+            this.updatePlayButton(playButton, false);
+        }
+    }
+    
+    /**
+     * Stop current voice message playback (TTS or speech synthesis)
+     * @param {HTMLElement} playButton - Play button element to update
+     */
+    stopVoiceMessage(playButton) {
+        this.ttsManager.stop();
+
+        if (this.speechSynthesis && this.isPlaying) {
+            this.speechSynthesis.cancel();
+        }
+
+        this.isPlaying = false;
+        const btn = playButton || this.currentPlayButton;
+        this.currentPlayButton = null;
+        this.updatePlayButton(btn, false);
+        console.log('🎤 Stopped voice message');
+    }
+    
+    /**
+     * Update play button appearance
+     * @param {HTMLElement} playButton - Play button element
+     * @param {boolean} playing - Whether message is playing
+     */
+    updatePlayButton(playButton, playing) {
+        if (!playButton) return;
+        
+        if (playing) {
+            // Show stop icon
+            playButton.innerHTML = '<img src="/break_escape/assets/icons/stop.png" alt="Stop" class="icon">';
+            playButton.title = 'Stop';
+        } else {
+            // Show play icon
+            playButton.innerHTML = '<img src="/break_escape/assets/icons/play.png" alt="Play" class="icon">';
+            playButton.title = 'Play';
+        }
+    }
+    
+    /**
+     * Show the contact list view
+     * @param {string} phoneId - Optional phone ID to filter contacts
+     */
+    showContactList(phoneId = null) {
+        // Torn down (the phone closed while a start was still awaiting): nothing to show
+        if (!this.elements.contactListView || !this.elements.conversationView) {
+            console.warn('⚠️ Phone UI torn down; not showing the contact list');
+            return;
+        }
+        this.currentView = 'contact-list';
+        this.currentNPCId = null;
+        
+        // Hide conversation, show contact list
+        this.elements.conversationView.style.display = 'none';
+        this.elements.contactListView.style.display = 'flex';
+        
+        // Populate contacts
+        this.populateContactList(phoneId);
+        
+        console.log('📋 Showing contact list');
+    }
+    
+    /**
+     * Populate the contact list with NPCs
+     * @param {string} phoneId - Optional phone ID to filter contacts
+     */
+    populateContactList(phoneId = null) {
+        const contactList = this.elements.contactList;
+        contactList.innerHTML = '';
+        
+        // Get NPCs for this phone
+        let npcs;
+        if (phoneId) {
+            npcs = this.npcManager.getNPCsByPhone(phoneId);
+        } else {
+            // Get all NPCs (convert Map to array)
+            npcs = Array.from(this.npcManager.npcs.values());
+        }
+        
+        // Filter to only allowed NPCs if npcIds was specified
+        if (this.allowedNpcIds && this.allowedNpcIds.length > 0) {
+            console.log(`🔍 Filtering contacts: allowed NPCs = ${this.allowedNpcIds.join(', ')}`);
+            npcs = npcs.filter(npc => {
+                // Include if in allowed list
+                if (this.allowedNpcIds.includes(npc.id)) {
+                    return true;
+                }
+                // Include if has conversation history (i.e., has been activated by events)
+                const history = this.npcManager.getConversationHistory(npc.id);
+                return history && history.length > 0;
+            });
+            console.log(`✅ Filtered to ${npcs.length} contacts`);
+        }
+        
+        if (!npcs || npcs.length === 0) {
+            contactList.innerHTML = `
+                <div class="no-contacts">
+                    <p>No contacts available</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Create contact items
+        npcs.forEach(npc => {
+            const contactItem = this.createContactItem(npc);
+            contactList.appendChild(contactItem);
+            // Opt-in (NPC "livePreview": true, lab R5 F4): a looping hint contact
+            // previews the line opening its thread would add now
+            if (npc.livePreview === true) this.refreshLivePreview(npc, contactItem);
+        });
+
+        console.log(`📋 Populated ${npcs.length} contacts`);
+    }
+
+    /**
+     * Replace an opted-in contact's preview with the line its thread would gain if
+     * opened now (PhoneChatConversation.previewReopen). A dry run: the thread, the
+     * unread count and the saved story are not touched. The row keeps its history
+     * preview if the run adds nothing, fails, or the row or thread changed meanwhile.
+     * @param {Object} npc - the NPC entry
+     * @param {HTMLElement} contactItem - its row in the list
+     * @returns {Promise<string|null>} the preview shown, or null
+     */
+    async refreshLivePreview(npc, contactItem) {
+        const historyLength = this.npcManager.getConversationHistory(npc.id).length;
+        const stateManager = typeof window !== 'undefined' ? window.npcConversationStateManager : null;
+        const raw = await PhoneChatConversation.previewReopen(npc, this.npcManager, new InkEngine(`${npc.id}-preview`), {
+            syncGlobals: story => {
+                stateManager?.syncGlobalVariablesToStory?.(story);
+                stateManager?.applyEngineVariables?.(npc.id, story, { channel: 'phone-chat' });
+            }
+        });
+        if (!raw || !contactItem?.isConnected) return null;
+        // The thread was opened (or texted) while the dry run ran: its own line stands
+        if (this.npcManager.getConversationHistory(npc.id).length !== historyLength) return null;
+        const el = contactItem.querySelector('.contact-last-message');
+        if (!el) return null;
+        const preview = this.previewText({ type: 'npc', text: raw }, npc);
+        if (preview === null) return null;
+        el.innerHTML = displayDashes(preview);
+        return preview;
+    }
+
+    /**
+     * A message's text as the contact list previews it: the speaker prefix handled,
+     * "You: " on the player's lines, cut to 40 characters. Null for narration.
+     * @param {Object} message - { type, text }
+     * @param {Object} npc - the contact
+     * @returns {string|null}
+     */
+    previewText(message, npc) {
+        const maxLength = 40;
+        const line = displayPhoneLine(message.type, message.text, npc);
+        if (line.type === 'narrator') return null;
+        const previewText = line.type === 'player' ? `You: ${line.text}` : line.text;
+        return previewText.length > maxLength
+            ? previewText.substring(0, maxLength) + '...'
+            : previewText;
+    }
+    
+    /**
+     * Create a contact list item
+     * @param {Object} npc - NPC data
+     * @returns {HTMLElement} Contact item element
+     */
+    createContactItem(npc) {
+        const history = this.npcManager.getConversationHistory(npc.id);
+        // The preview is the last line that isn't narration ("Narrator: …" is no one's text)
+        const isNarration = msg => displayPhoneLine(msg.type, msg.text, npc).type === 'narrator';
+        let lastMessage = null;
+        for (let i = history.length - 1; i >= 0; i--) {
+            if (!isNarration(history[i])) { lastMessage = history[i]; break; }
+        }
+        const unreadCount = history.filter(msg => !msg.read && msg.type === 'npc').length;
+        
+        const contactItem = document.createElement('div');
+        contactItem.className = 'contact-item';
+        contactItem.dataset.npcId = npc.id;
+        
+        // Format last message preview
+        let lastMessagePreview = 'No messages yet';
+        let lastMessageTime = '';
+        
+        if (lastMessage) {
+            const maxLength = 40;
+            const line = displayPhoneLine(lastMessage.type, lastMessage.text, npc);
+            const previewText = line.type === 'player' ? `You: ${line.text}` : line.text;
+            lastMessagePreview = previewText.length > maxLength
+                ? previewText.substring(0, maxLength) + '...'
+                : previewText;
+            lastMessageTime = this.formatTimestamp(lastMessage.timestamp);
+        }
+        
+        // Resolve avatar path to full URL if relative (portraitVariants may swap it)
+        const avatar = portraitFor(npc)?.avatar;
+        let avatarSrc = avatar;
+        if (avatar && !avatar.startsWith('/') && !avatar.startsWith('http')) {
+            if (avatar.startsWith('assets/')) {
+                avatarSrc = `/break_escape/${avatar}`;
+            } else {
+                avatarSrc = `${ASSETS_PATH}/${avatar}`;
+            }
+        }
+
+        contactItem.innerHTML = `
+            <div class="contact-avatar">
+                ${avatar ? `<img src="${avatarSrc}" alt="${npc.displayName}">` : '👤'}
+            </div>
+            <div class="contact-info">
+                <div class="contact-name">${npc.displayName || npc.id}</div>
+                ${npcDmFields(npc).handle ? `<div class="contact-handle">${escHtml(npcDmFields(npc).handle)}</div>` : ''}
+                <div class="contact-last-message">${displayDashes(lastMessagePreview)}</div>
+            </div>
+            <div class="contact-meta">
+                ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+                <div class="contact-time">${lastMessageTime}</div>
+            </div>
+        `;
+        
+        return contactItem;
+    }
+    
+    /**
+     * Show conversation view with specific NPC
+     * @param {string} npcId - NPC identifier
+     */
+    showConversation(npcId) {
+        if (!npcId) {
+            console.error('❌ No NPC ID provided');
+            return;
+        }
+        
+        const npc = this.npcManager.getNPC(npcId);
+        if (!npc) {
+            console.error(`❌ NPC not found: ${npcId}`);
+            return;
+        }
+        
+        // Torn down (the phone closed while a start was still awaiting): nothing to show
+        if (!this.elements.contactListView || !this.elements.conversationView) {
+            console.warn(`⚠️ Phone UI torn down; not showing conversation with ${npcId}`);
+            return;
+        }
+
+        this.currentView = 'conversation';
+        this.currentNPCId = npcId;
+        
+        // Hide contact list, show conversation
+        this.elements.contactListView.style.display = 'none';
+        this.elements.conversationView.style.display = 'flex';
+        
+        // Update header with avatar
+        this.updateHeader(npc.displayName || npc.id, npc.id);
+        
+        // Clear messages and choices
+        this.elements.messagesContainer.innerHTML = '';
+        this.elements.choicesContainer.innerHTML = '';
+        this._bottomPin?.pin(false);
+        
+        console.log(`💬 Showing conversation with ${npc.displayName || npcId}`);
+    }
+    
+    /**
+     * Update the conversation header
+     * @param {string} npcName - NPC display name
+     * @param {string} npcId - NPC identifier
+     */
+    updateHeader(npcName, npcId) {
+        // portraitVariants may swap the avatar (a knocked-out headshot, say)
+        const npc = portraitFor(this.npcManager.getNPC(npcId));
+        
+        // Clear and rebuild header content
+        const conversationInfo = this.elements.conversationHeader.querySelector('.conversation-info');
+        if (conversationInfo) {
+            conversationInfo.innerHTML = '';
+            
+            // Add avatar if available
+            if (npc?.avatar) {
+                const avatarImg = document.createElement('img');
+                // Resolve avatar path to full URL if relative
+                let avatarSrc = npc.avatar;
+                if (!avatarSrc.startsWith('/') && !avatarSrc.startsWith('http')) {
+                    if (avatarSrc.startsWith('assets/')) {
+                        avatarSrc = `/break_escape/${avatarSrc}`;
+                    } else {
+                        avatarSrc = `${ASSETS_PATH}/${avatarSrc}`;
+                    }
+                }
+                avatarImg.src = avatarSrc;
+                avatarImg.alt = npcName;
+                avatarImg.className = 'conversation-avatar';
+                conversationInfo.appendChild(avatarImg);
+            } else {
+                // Placeholder avatar
+                const avatarPlaceholder = document.createElement('div');
+                avatarPlaceholder.className = 'conversation-avatar-placeholder';
+                avatarPlaceholder.textContent = '👤';
+                conversationInfo.appendChild(avatarPlaceholder);
+            }
+            
+            // Add name
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'npc-name';
+            nameSpan.textContent = npcName;
+            const { handle, profile } = npcDmFields(this.npcManager.getNPC(npcId));
+            if (handle || profile) {
+                // Name, handle and the profile link stack beside the avatar
+                const block = document.createElement('div');
+                block.className = 'npc-id-block';
+                block.appendChild(nameSpan);
+                if (handle) {
+                    const handleEl = document.createElement('span');
+                    handleEl.className = 'npc-handle';
+                    handleEl.textContent = handle;
+                    block.appendChild(handleEl);
+                }
+                // No profile link in a judged chat: leaving it would close the call
+                if (profile && !this.params.pretextCallId) {
+                    const link = document.createElement('button');
+                    link.type = 'button';
+                    link.className = 'npc-profile-link';
+                    link.dataset.siteId = profile.siteId;
+                    link.dataset.person = profile.person;
+                    link.textContent = 'View profile';
+                    block.appendChild(link);
+                }
+                conversationInfo.appendChild(block);
+            } else {
+                conversationInfo.appendChild(nameSpan);
+            }
+            
+            // Update reference
+            this.elements.npcName = nameSpan;
+        } else {
+            // Fallback to old method
+            this.elements.npcName.textContent = npcName;
+        }
+        this.mountInfluenceBar(npcId);
+    }
+
+    /**
+     * Influence bar and tells for a social contact (06 N4, P4-E).
+     * Tells also land in the thread as render-only bubbles, not history.
+     * A non-social contact mounts nothing.
+     */
+    _social() {
+        if (!this._chatInfluence) {
+            this._chatInfluence = new ChatInfluence({
+                parent: () => this.elements?.conversationHeader || null,
+                messages: () => this.elements?.messagesContainer || null,
+                mount: 'phone-chat',
+                place: 'end',
+                onBand: (band) => {
+                    const header = this.elements?.conversationHeader;
+                    if (!header) return;
+                    header.dataset.band = String(band);
+                    const img = header.querySelector('.conversation-avatar');
+                    if (img) img.dataset.band = String(band);
+                }
+            });
+        }
+        return this._chatInfluence;
+    }
+
+    mountInfluenceBar(npcId) { return this._social().mountBar(npcId); }
+    mountPretext(opts) { return this._social().mountPretext(opts); }
+    refreshPretext() { return this._social().refresh(); }
+    socialHeaderState() { return this._chatInfluence ? this._chatInfluence.state() : null; }
+    
+    /**
+     * Add a message bubble to the conversation
+     * @param {string} type - Message type ('npc' or 'player')
+     * @param {string} text - Message text
+     * @param {boolean} scrollToBottom - Whether to auto-scroll
+     * @param {Object} [message] - the history entry being shown (its timestamp and
+     *   gameTime give the time on the bubble); omitted for a line arriving now
+     */
+    addMessage(type, text, scrollToBottom = true, message = null) {
+        if (!text || text.trim() === '') {
+            return Promise.resolve();
+        }
+
+        // A "You: …" line is the player's bubble, prefix stripped (U3); the contact's own
+        // "Name:" prefix is dropped from its lines (also before any voice: transcript)
+        const contact = this.currentNPCId ? this.npcManager?.getNPC(this.currentNPCId) : null;
+        ({ type, text } = displayPhoneLine(type, text.trim(), contact));
+        const trimmedText = text.trim();
+        // Only the NPC's lines are voice messages: a player line is never voiced in their voice
+        const isVoiceMessage = type === 'npc' && trimmedText.toLowerCase().startsWith('voice:');
+
+        if (this.isTerminalTheme && type === 'npc' && !isVoiceMessage) {
+            return this._typewriterMessage(displayDashes(trimmedText), scrollToBottom);
+        }
+
+        if (type === 'narrator') {
+            // Narration: centred, italic, muted; no bubble, tail, avatar, time or typeout
+            const narration = document.createElement('div');
+            narration.className = 'message-narration';
+            narration.textContent = displayDashes(trimmedText);
+            this.elements.messagesContainer.appendChild(narration);
+            if (scrollToBottom) {
+                this.scrollToBottom();
+            }
+            return Promise.resolve();
+        }
+
+        const messageBubble = document.createElement('div');
+        messageBubble.className = `message-bubble ${type}`;
+
+        if (isVoiceMessage) {
+            // Extract transcript (remove "voice:" prefix)
+            const transcript = trimmedText.substring(6).trim();
+            
+            // Create voice message display
+            const voiceDisplay = document.createElement('div');
+            voiceDisplay.className = 'voice-message-display';
+            
+            // Audio controls
+            const audioControls = document.createElement('div');
+            audioControls.className = 'audio-controls';
+            audioControls.style.cursor = 'pointer';
+            
+            const playButton = document.createElement('div');
+            playButton.className = 'play-button';
+            const playIcon = document.createElement('img');
+            playIcon.src = '/break_escape/assets/icons/play.png';
+            playIcon.alt = 'Play';
+            playIcon.className = 'icon';
+            playButton.appendChild(playIcon);
+            
+            const audioSprite = document.createElement('img');
+            audioSprite.src = '/break_escape/assets/mini-games/audio.png';
+            audioSprite.alt = 'Audio';
+            audioSprite.className = 'audio-sprite';
+            
+            audioControls.appendChild(playButton);
+            audioControls.appendChild(audioSprite);
+            
+            // Add click handler to play/stop voice message
+            audioControls.addEventListener('click', () => {
+                this.playVoiceMessage(transcript, playButton);
+            });
+            
+            // Transcript
+            const transcriptDiv = document.createElement('div');
+            transcriptDiv.className = 'transcript';
+            transcriptDiv.innerHTML = `<strong>Transcript:</strong><br>${displayDashes(transcript)}`;
+            
+            voiceDisplay.appendChild(audioControls);
+            voiceDisplay.appendChild(transcriptDiv);
+            messageBubble.appendChild(voiceDisplay);
+            
+            console.log(`🎤 Added voice message: ${transcript.substring(0, 30)}...`);
+        } else {
+            // Regular text message
+            const messageText = document.createElement('div');
+            messageText.className = 'message-text';
+            // Another character's line in this thread ("Name: …") gets their name over
+            // the bubble, prefix dropped, instead of reading as the contact's own (F14)
+            let bodyText = trimmedText;
+            const other = type === 'npc' ? otherSpeaker(trimmedText, contact, this._knownSpeakerNames()) : null;
+            if (other) {
+                const sender = document.createElement('div');
+                sender.className = 'message-sender';
+                sender.textContent = displayDashes(other.name);
+                messageBubble.appendChild(sender);
+                messageBubble.classList.add('other-speaker');
+                bodyText = other.text;
+            }
+            // Terminal theme adds its own "> " prompt in CSS; skip it when the line already starts with one
+            if (/^\s*>/.test(bodyText)) messageText.classList.add('has-own-prompt');
+            messageText.textContent = displayDashes(bodyText);
+            
+            messageBubble.appendChild(messageText);
+            
+            console.log(`💬 Added ${type} message: ${trimmedText.substring(0, 30)}...`);
+        }
+        
+        // Add timestamp, but only an in-world one. A scenario with a gameClock stamps each
+        // bubble with the game time it arrived at. Without one the only time to show would be
+        // the player's real clock ("12:29" in a mission set at night), so the bubble carries no
+        // time and the thread's order is the only time cue (F18 item 5).
+        if (typeof window !== 'undefined' && window.gameClock?.configured) {
+            const messageTime = document.createElement('div');
+            messageTime.className = 'message-time';
+            messageTime.textContent = message ? messageClockText(message) : this.getCurrentTime();
+            messageBubble.appendChild(messageTime);
+        }
+        
+        this.elements.messagesContainer.appendChild(messageBubble);
+        
+        if (scrollToBottom) {
+            this.scrollToBottom();
+        }
+
+        return Promise.resolve();
+    }
+
+    /** Display names of every registered character, for otherSpeaker(). */
+    _knownSpeakerNames() {
+        const npcs = this.npcManager?.npcs;
+        if (!npcs || typeof npcs.values !== 'function') return [];
+        return Array.from(npcs.values()).map(n => n?.displayName).filter(Boolean);
+    }
+
+    _typewriterMessage(text, scrollToBottom) {
+        const CHAR_DELAY = 28;
+        const BLINK_DURATION = 700;
+
+        const messageBubble = document.createElement('div');
+        messageBubble.className = 'message-bubble npc';
+
+        const messageText = document.createElement('span');
+        messageText.className = 'message-text terminal-typing';
+        if (/^\s*>/.test(text)) messageText.classList.add('has-own-prompt');
+
+        const cursor = document.createElement('span');
+        cursor.className = 'terminal-cursor';
+        cursor.textContent = '█';
+
+        messageBubble.appendChild(messageText);
+        messageBubble.appendChild(cursor);
+        this.elements.messagesContainer.appendChild(messageBubble);
+
+        const chars = [...text];
+        let i = 0;
+        let cancelled = false;
+
+        return new Promise(resolve => {
+            this._typewriterCancel = () => {
+                cancelled = true;
+                resolve();
+            };
+
+            const tick = () => {
+                if (cancelled) return;
+                if (i < chars.length) {
+                    messageText.textContent += chars[i++];
+                    if (scrollToBottom) this.scrollToBottom(false);
+                    setTimeout(tick, CHAR_DELAY);
+                } else {
+                    messageText.classList.remove('terminal-typing');
+                    cursor.classList.add('blink');
+                    setTimeout(() => {
+                        if (!cancelled) cursor.remove();
+                        resolve();
+                    }, BLINK_DURATION);
+                }
+            };
+            setTimeout(tick, CHAR_DELAY);
+        });
+    }
+
+    /**
+     * Add multiple messages at once (for loading history)
+     * @param {Array} messages - Array of message objects
+     */
+    addMessages(messages) {
+        if (!messages || messages.length === 0) {
+            return;
+        }
+
+        const savedTheme = this.isTerminalTheme;
+        this.isTerminalTheme = false;
+        messages.forEach(msg => {
+            this.addMessage(msg.type, msg.text, false, msg);
+        });
+        this.isTerminalTheme = savedTheme;
+
+        this.scrollToBottom();
+        console.log(`💬 Added ${messages.length} messages from history`);
+    }
+    
+    /**
+     * Clear all messages from the conversation
+     */
+    clearMessages() {
+        this.elements.messagesContainer.innerHTML = '';
+        console.log('🗑️ Cleared all messages');
+    }
+    
+    /**
+     * Add choice buttons to the conversation
+     * @param {Array} choices - Array of choice objects from Ink
+     */
+    addChoices(choices) {
+        if (!choices || choices.length === 0) {
+            this.clearChoices();
+            return;
+        }
+        
+        this.elements.choicesContainer.innerHTML = '';
+        
+        choices.forEach((choice, index) => {
+            const choiceButton = document.createElement('button');
+            choiceButton.className = 'choice-button';
+            choiceButton.dataset.index = index;
+            // Number prefix for choices 1-9, as person-chat shows (keys 1-9 pick them)
+            // The plain text is kept for the player's message bubble
+            choiceButton.dataset.text = displayDashes(choice.text);
+            choiceButton.textContent = numberedChoiceText(choiceButton.dataset.text, index);
+            
+            this.elements.choicesContainer.appendChild(choiceButton);
+        });
+
+        this.scrollToBottom();
+        this.updateChoicesScrollCue();
+        // Measure again once the buttons have laid out
+        if (typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(() => this.updateChoicesScrollCue());
+        }
+        console.log(`🔘 Added ${choices.length} choices`);
+    }
+    
+    /**
+     * Show the "more choices" cue only while choices are hidden below the fold
+     */
+    updateChoicesScrollCue() {
+        const box = this.elements?.choicesContainer;
+        const cue = this.elements?.choicesMoreCue;
+        if (!box || !cue) return;
+        cue.classList.toggle('visible', hasHiddenChoicesBelow(box));
+    }
+
+    /**
+     * Clear all choice buttons
+     */
+    clearChoices() {
+        this.elements.choicesContainer.innerHTML = '';
+        this.elements.choicesMoreCue?.classList.remove('visible');
+    }
+    
+    /**
+     * Show typing indicator (NPC is "typing")
+     */
+    showTypingIndicator() {
+        // The phone can be torn down under a typeout: a tag on the chosen line
+        // (start_debrief_cutscene) closes it before the reply is typed (m06 N-6-1)
+        const el = this.elements?.typingIndicator;
+        if (!el) return;
+        el.style.display = 'flex';
+        this.scrollToBottom();
+    }
+    
+    /**
+     * Hide typing indicator
+     */
+    hideTypingIndicator() {
+        const el = this.elements?.typingIndicator;
+        if (el) el.style.display = 'none';
+    }
+    
+    /**
+     * Scroll messages container to bottom
+     * @param {boolean} smooth - Whether to use smooth scrolling
+     */
+    scrollToBottom(smooth = true) {
+        const container = this.elements?.messagesContainer;
+        if (!container) return;
+        if (this._bottomPin) {
+            this._bottomPin.pin(smooth);
+            return;
+        }
+        container.scrollTo({
+            top: container.scrollHeight,
+            behavior: smooth ? 'smooth' : 'auto'
+        });
+    }
+    
+    /**
+     * Get current time as formatted string
+     * @returns {string} Time in HH:MM format
+     */
+    getCurrentTime() {
+        // Game time when the scenario has an in-game clock, else the wall clock (h:mm)
+        return messageClockText(null);
+    }
+    
+    /**
+     * Format timestamp into human-readable string
+     * @param {number} timestamp - Unix timestamp in milliseconds
+     * @returns {string} Formatted time string
+     */
+    formatTimestamp(timestamp) {
+        if (!timestamp) return '';
+        
+        const now = Date.now();
+        const diff = now - timestamp;
+        
+        // Less than 1 minute
+        if (diff < 60000) {
+            return 'Just now';
+        }
+        
+        // Less than 1 hour
+        if (diff < 3600000) {
+            const minutes = Math.floor(diff / 60000);
+            return `${minutes}m`;
+        }
+        
+        // Less than 24 hours
+        if (diff < 86400000) {
+            const hours = Math.floor(diff / 3600000);
+            return `${hours}h`;
+        }
+        
+        // More than 24 hours - show time
+        const date = new Date(timestamp);
+        const hours = date.getHours();
+        const minutes = date.getMinutes();
+        const displayHours = hours % 12 || 12;
+        const displayMinutes = minutes < 10 ? `0${minutes}` : minutes;
+        
+        return `${displayHours}:${displayMinutes}`;
+    }
+    
+    /**
+     * Show a temporary message/notification
+     * @param {string} message - Message to display
+     * @param {string} type - Type ('info', 'success', 'error')
+     * @param {number} duration - Duration in milliseconds
+     */
+    showNotification(message, type = 'info', duration = 2000) {
+        const notification = document.createElement('div');
+        notification.className = `phone-notification ${type}`;
+        notification.textContent = message;
+        
+        this.container.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.add('fade-out');
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, duration);
+    }
+    
+    /**
+     * Get the current view
+     * @returns {string} Current view ('contact-list' or 'conversation')
+     */
+    getCurrentView() {
+        return this.currentView;
+    }
+    
+    /**
+     * Get the current NPC ID
+     * @returns {string|null} Current NPC ID or null
+     */
+    getCurrentNPCId() {
+        return this.currentNPCId;
+    }
+    
+    /**
+     * Cleanup and remove UI
+     */
+    cleanup() {
+        this._chatInfluence?.destroy();
+        this._chatInfluence = null;
+        // Stop and destroy TTS manager
+        this.ttsManager.destroy();
+
+        // Stop any browser speech synthesis
+        if (this.speechSynthesis && this.isPlaying) {
+            this.speechSynthesis.cancel();
+        }
+
+        this.isPlaying = false;
+        this.currentPlayButton = null;
+        if (this._typewriterCancel) {
+            this._typewriterCancel();
+            this._typewriterCancel = null;
+        }
+        this._bottomPin?.destroy();
+        this._bottomPin = null;
+        this.container.innerHTML = '';
+        this.elements = {};
+        this.currentView = 'contact-list';
+        this.currentNPCId = null;
+        console.log('🧹 Phone UI cleaned up');
+    }
+}

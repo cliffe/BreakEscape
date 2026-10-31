@@ -1,0 +1,27 @@
+{
+ "imports": {
+  "m02_completed": true,
+  "m02_paid_ransom": true,
+  "m02_ward_recovering": true
+ },
+ "steps": [
+  {
+   "note": "R33: the short briefing (Skip the background) skips the St. Catherine's knot, so even a finished m02 hears no carry-over line there."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Skip the background"
+   ]
+  },
+  {
+   "notSaid": [
+    "You paid the ransom and had the wards back",
+    "You took Ghost's keys",
+    "You ran the combined restore",
+    "bagged Mr Pryce by hand",
+    "Eleven and a half hours, and six people died"
+   ]
+  }
+ ]
+}

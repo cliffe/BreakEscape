@@ -1,0 +1,650 @@
+{
+  "_note": "DRAFT of fixture C (plan §9.3, 'The sleeper'), written to prove the plan is buildable. Pure JSON so it parses as-is; the real packet P10-K-C may move these _note keys into <%# %> ERB comments where a closed schema refuses them. Every value marked 'invented: plan silent' is listed in INVENTED.md with its plan line.",
+  "scenario_brief": "Safe house. Three field contacts share this house with you, and on the night of the leak someone passed our network to the cult. What to look for: Sleeper: Carries a cult-issued burner (there is one), or went to the quarry site and has no verified alibi for the night of the leak. Check what they carry, where they have been and where they were that night. Trust no one.",
+  "show_scenario_brief": "on_start",
+  "_note_brief": "invented: plan silent on show_scenario_brief; 'on_start' so the profile is read before play (DL10 reads the brief text, not when it shows).",
+  "startRoom": "c_lounge",
+  "startPosition": { "x": 5, "y": 6 },
+  "_note_startPosition": "invented: plan silent",
+  "player": {
+    "id": "player",
+    "displayName": "Agent",
+    "spriteSheet": "female_hacker_hood_v2"
+  },
+  "creditsOverlay": { "ticker": ["EXTRACTED", "SAFE HOUSE"] },
+
+  "startItemsInInventory": [
+    {
+      "type": "phone",
+      "name": "Your Phone",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": ["ded_c_handler"],
+      "observations": "Your SAFETYNET phone. HaX is on speed dial."
+    },
+    {
+      "type": "lockpick",
+      "name": "Lock Pick Kit",
+      "takeable": true,
+      "observations": "Picks and a tension wrench."
+    },
+    {
+      "type": "fingerprint_kit",
+      "name": "Fingerprint Kit",
+      "takeable": true,
+      "observations": "Powder, brush, lifting tape.",
+      "_note": "plan §9.3 lists it in the start inventory although no C route uses dusting (§9.5 'Physical puzzles' for C omits it). Kept because the plan lists it."
+    },
+    {
+      "type": "rfid_cloner",
+      "name": "RFID Cloner",
+      "takeable": true,
+      "observations": "Get close to a badge to copy it."
+    },
+    {
+      "type": "keycard",
+      "id": "c_keycard",
+      "name": "Safe-house keycard",
+      "takeable": true,
+      "opens_lock": "c_safehouse_card",
+      "observations": "Your keycard for the safe house. It opens the bedroom and the comms room.",
+      "_note": "opens_lock id 'c_safehouse_card' invented: plan silent. Not type 'key', so remove_item can take it (DL14)."
+    }
+  ],
+
+  "globalVariables": {
+    "se_intel_c_ahmed_safenet": false,
+    "se_intel_c_ahmed_field_kit": false,
+    "se_intel_c_ahmed_travel": false,
+    "se_intel_c_ahmed_alibi": false,
+    "se_intel_c_novak_burner": false,
+    "se_intel_c_novak_safenet": false,
+    "se_intel_c_novak_travel": false,
+    "se_intel_c_novak_alibi": false,
+    "se_intel_c_baptiste_safenet": false,
+    "se_intel_c_baptiste_field_kit": false,
+    "se_intel_c_baptiste_travel": false,
+    "se_intel_c_baptiste_alibi": false,
+
+    "deduction_state": {},
+    "deduction_closed": false,
+    "deduction_verdict_ded_c_ahmed": "",
+    "deduction_verdict_ded_c_novak": "",
+    "deduction_verdict_ded_c_baptiste": "",
+    "deduction_outcome_ded_c_ahmed": "",
+    "deduction_outcome_ded_c_novak": "",
+    "deduction_outcome_ded_c_baptiste": "",
+    "scenario_triggers_fired": {},
+
+    "c_keycard_revoked": false,
+    "c_hax_trust_down": false,
+    "c_pull_out": false,
+    "c_network_scattered": false,
+    "c_sleeper_escaped": false,
+    "c_ending": false,
+    "c_leaving": false,
+    "c_comms_locked": false,
+    "c_waiting_ded_c_ahmed": false,
+    "c_waiting_ded_c_novak": false,
+    "c_waiting_ded_c_baptiste": false,
+    "c_door_log_done": false,
+    "c_novak_badge_cloned": false,
+
+    "ded_c_baptiste_influence": 0,
+    "ded_c_baptiste_latched": "",
+    "ded_c_baptiste_wary": false,
+    "ded_c_baptiste_reported": false
+  },
+  "_note_globals": "c_door_log_done and c_novak_badge_cloned invented: plan silent on the log filter's completion global and on how Novak's clone choice retires. c_waiting_<id> uses the full suspect id (plan writes c_waiting_<id>, and <id> is the suspect id in the same paragraph's verdict action).",
+
+  "objectives": [
+    {
+      "aimId": "c_safe_house",
+      "title": "Safe house",
+      "description": "Work out who you can trust, deal with them, then leave by the exit phone.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "conclusionScreen": { "type": "bond_visualiser", "bondVisualiserOpts": { "headerText": "EXTRACTED" } },
+      "tasks": [
+        { "taskId": "c_case_solved", "title": "Get every call right", "type": "manual", "status": "active" },
+        { "taskId": "c_extracted", "title": "Leave the safe house", "type": "manual", "status": "active" }
+      ],
+      "_note": "aim id, titles and task titles invented: plan silent. One aim with both tasks, as fixture D's scoring sentence assumes (two tasks in one aim: a wrong run scores 65 %)."
+    }
+  ],
+
+  "music": {
+    "events": [
+      {
+        "trigger": "global_variable_changed:c_ending",
+        "condition": "globalVars.c_ending === true",
+        "playlist": "spy-action",
+        "autoStop": true,
+        "disableClose": true,
+        "fade": true,
+        "headerText": "EXTRACTED",
+        "statusText": "OUT",
+        "_note": "playlist 'spy-action', statusText 'OUT', the closingCard lines and the per-innocent credit lines are invented: plan silent (§9.3 names only the three condition globals and the header). The per-innocent lines come from §9.3's 'names two innocents taken down in the credits'.",
+        "closingCard": {
+          "lines": [
+            { "text": "The safe house is empty now. The cult knows its address." },
+            { "text": "Whoever you trusted, you trusted on the evidence.", "condition": "!globalVars.c_hax_trust_down" },
+            { "text": "HaX will be checking your calls for a while.", "condition": "globalVars.c_hax_trust_down" }
+          ]
+        },
+        "credits": [
+          { "text": "EXTRACTED", "style": "title" },
+          { "text": "SAFE HOUSE", "style": "subtitle" },
+          { "text": "" },
+          { "text": "A sleeper walked out of the safe house with the network's names.", "style": "warning", "condition": "globalVars.c_sleeper_escaped" },
+          { "text": "Tariq Ahmed was taken down for nothing.", "style": "entry", "condition": "globalVars.deduction_outcome_ded_c_ahmed === 'wrong_guilty'" },
+          { "text": "Odile Baptiste was taken down for nothing.", "style": "entry", "condition": "globalVars.deduction_outcome_ded_c_baptiste === 'wrong_guilty'" },
+          { "text": "HaX revoked your keycard and stopped trusting your judgement.", "style": "entry", "condition": "globalVars.c_hax_trust_down" },
+          { "text": "The network scattered.", "style": "entry", "condition": "globalVars.c_network_scattered" }
+        ]
+      }
+    ]
+  },
+
+  "triggers": [
+    { "id": "t_c_ahmed_locker", "on": "item_picked_up:notes", "where": { "itemId": "c_ahmed_kit_list" },
+      "actions": [ { "type": "grant_fact", "fact": "c_ahmed_field_kit" } ] },
+    { "id": "t_c_baptiste_bag", "on": "item_picked_up:notes", "where": { "itemId": "c_baptiste_kit_list" },
+      "actions": [ { "type": "grant_fact", "fact": "c_baptiste_field_kit" } ] },
+    { "id": "t_c_novak_bag", "on": "item_picked_up:notes", "where": { "itemId": "c_novak_bag_list" },
+      "actions": [ { "type": "grant_fact", "fact": "c_novak_burner" } ] },
+    { "id": "t_c_travel_log", "on": "item_picked_up:notes", "where": { "itemId": "c_travel_log" },
+      "actions": [
+        { "type": "grant_fact", "fact": "c_ahmed_travel" },
+        { "type": "grant_fact", "fact": "c_novak_travel" },
+        { "type": "grant_fact", "fact": "c_baptiste_travel" }
+      ] },
+    { "id": "t_c_door_log", "on": "global_variable_changed:c_door_log_done", "where": { "value": true },
+      "actions": [
+        { "type": "grant_fact", "fact": "c_ahmed_alibi" },
+        { "type": "grant_fact", "fact": "c_baptiste_alibi" },
+        { "type": "grant_fact", "fact": "c_novak_alibi" }
+      ] },
+    { "id": "t_c_badge", "on": "card_emulated", "where": { "cardName": "Novak's badge", "success": true },
+      "actions": [
+        { "type": "hint", "title": "Garage reader", "message": "The reader blinks as it opens: LAST USED 03:40." },
+        { "type": "grant_fact", "fact": "c_novak_alibi" }
+      ],
+      "_note": "the 'Last used 03:40' display (plan §9.3 clue routes) has no engine field, so it is a hint action here: invented wording and mechanism." },
+    { "id": "t_c_badge_cloned", "on": "card_cloned", "where": { "cardName": "Novak's badge" },
+      "actions": [ { "type": "set_global", "key": "c_novak_badge_cloned", "value": true } ],
+      "_note": "invented: plan silent on how Novak's clone choice retires. Mirrors m05's card_cloned -> global pattern." },
+    { "id": "t_c_wait_ahmed", "on": "global_variable_changed:c_comms_locked", "where": { "value": true },
+      "condition": "globalVars.c_waiting_ded_c_ahmed",
+      "actions": [ { "type": "verdict", "suspect": "ded_c_ahmed", "kind": "act" } ] },
+    { "id": "t_c_wait_novak", "on": "global_variable_changed:c_comms_locked", "where": { "value": true },
+      "condition": "globalVars.c_waiting_ded_c_novak",
+      "actions": [ { "type": "verdict", "suspect": "ded_c_novak", "kind": "act" } ] },
+    { "id": "t_c_wait_baptiste", "on": "global_variable_changed:c_comms_locked", "where": { "value": true },
+      "condition": "globalVars.c_waiting_ded_c_baptiste",
+      "actions": [ { "type": "verdict", "suspect": "ded_c_baptiste", "kind": "act" } ] }
+  ],
+
+  "rooms": {
+    "c_lounge": {
+      "type": "room_office",
+      "door_sign": "Lounge",
+      "connections": { "north": "c_office", "east": "c_bedroom", "west": "c_garage", "south": "c_comms" },
+      "_note": "room types, door directions and object positions invented: plan silent (it gives only which door joins which room and the lock on each).",
+      "npcs": [
+        {
+          "id": "ded_c_ahmed",
+          "displayName": "Tariq Ahmed",
+          "npcType": "person",
+          "position": { "x": 3.5, "y": 4.5 },
+          "spriteSheet": "male_scientist",
+          "storyPath": "scenarios/test_social_deduction_c/ink/ded_c_ahmed.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "_note": "name, sprite and position invented: plan gives only the surname. Cast: a retired archivist in his sixties, British Pakistani."
+        },
+        {
+          "id": "ded_c_baptiste",
+          "displayName": "Odile Baptiste",
+          "npcType": "person",
+          "position": { "x": 7.5, "y": 4.5 },
+          "spriteSheet": "female_telecom_v2",
+          "storyPath": "scenarios/test_social_deduction_c/ink/ded_c_baptiste.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "_note": "name, sprite and position invented: plan gives only the surname. Cast: a Haitian-French courier and locksmith in her late twenties."
+        },
+        {
+          "id": "ded_c_handler",
+          "displayName": "Agent HaX",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_social_deduction_c/ink/ded_c_handler.json",
+          "currentKnot": "start",
+          "_note": "id ded_c_handler invented by analogy with fixture A's ded_a_handler: plan silent. Registered in the start room's npcs, as §4.1 requires for client registration.",
+          "eventMappings": [
+            { "eventPattern": "game_loaded", "onceOnly": true, "targetKnot": "start", "voiced": true,
+              "_note": "invented: plan silent on how the opening call starts" },
+            { "eventPattern": "global_variable_changed:c_keycard_revoked", "condition": "value === true", "onceOnly": true,
+              "bark": "Your keycard's dead. Call me if you need the office.", "barkDelay": 1500,
+              "_note": "invented: plan silent. Points at the second office-code source without saying why the card went." },
+            { "eventPattern": "global_variable_changed:c_pull_out", "condition": "globalVars.c_pull_out && !globalVars.c_leaving", "onceOnly": true,
+              "targetKnot": "pull_out", "voiced": true }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "c_board",
+          "type": "case-file",
+          "name": "Case file",
+          "takeable": false,
+          "position": { "x": 5, "y": 3 },
+          "observations": "Your notes on the three contacts.",
+          "minigameData": { "mode": "deduction", "allowSubmit": false }
+        },
+        {
+          "id": "c_exit_phone",
+          "type": "aes_emergency_phone1",
+          "name": "Exit phone",
+          "takeable": false,
+          "position": { "x": 9, "y": 7 },
+          "observations": "A direct line to the extraction team. One call and you're out.",
+          "_note": "object type (sprite) invented: plan silent. Not type 'phone', which would open the phone UI.",
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "text": "Call extraction and leave? Anyone waiting in the comms room is locked in; anyone else you haven't dealt with stays in the field.",
+              "onConfirm": [
+                { "type": "set_global", "key": "c_leaving", "value": true },
+                { "type": "set_global", "key": "c_comms_locked", "value": true },
+                { "type": "verdict_close" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "c_comms_sign",
+          "type": "notes",
+          "name": "Sign by the comms door",
+          "takeable": false,
+          "readable": true,
+          "position": { "x": 5, "y": 9 },
+          "text": "Comms room: locked remotely by HaX",
+          "observations": "A printed sign taped beside the comms room door."
+        }
+      ]
+    },
+
+    "c_comms": {
+      "type": "room_closet",
+      "door_sign": "Comms room",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "c_safehouse_card",
+      "connections": { "north": "c_lounge" },
+      "npcs": [],
+      "objects": [
+        {
+          "id": "c_comms_radio",
+          "type": "pc",
+          "name": "Dead radio set",
+          "takeable": false,
+          "position": { "x": 3, "y": 3 },
+          "observations": "Valves, dust, a headset. Nobody has used it in years.",
+          "_note": "invented prop: plan says only 'a holding room; nothing in it is needed'"
+        }
+      ]
+    },
+
+    "c_bedroom": {
+      "type": "room_office",
+      "door_sign": "Bedroom",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "c_safehouse_card",
+      "connections": { "west": "c_lounge" },
+      "npcs": [],
+      "objects": [
+        {
+          "id": "c_bedroom_drawer",
+          "type": "filing_cabinet",
+          "name": "Bedroom drawer",
+          "takeable": false,
+          "position": { "x": 4, "y": 3 },
+          "locked": true,
+          "lockType": "key",
+          "requires": "c_bedroom_drawer_key",
+          "keyPins": [30, 50, 20, 40],
+          "difficulty": "easy",
+          "observations": "A chest of drawers. The bottom drawer is locked and sticks.",
+          "_note": "lock as an unkeyed key lock, so only the picks open it (no key exists). Pins invented.",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "c_baptiste_kit_list",
+              "name": "Baptiste's kit bag",
+              "takeable": true,
+              "readable": true,
+              "text": "Field kit, standard issue: torch, gloves, sample jars, seals unbroken. Spare SIM, SAFETYNET. A scrap of paper in the side pocket: 'OFFICE 5183. Irena, when she was ill.'",
+              "observations": "A canvas kit bag with O.B. stencilled on the flap."
+            }
+          ]
+        }
+      ]
+    },
+
+    "c_office": {
+      "type": "room_ceo",
+      "door_sign": "Office",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "5183",
+      "_note": "office code 5183 invented: plan silent",
+      "connections": { "south": "c_lounge" },
+      "npcs": [
+        {
+          "id": "ded_c_novak",
+          "displayName": "Irena Novak",
+          "npcType": "person",
+          "position": { "x": 4.5, "y": 3.5 },
+          "spriteSheet": "female_spy",
+          "storyPath": "scenarios/test_social_deduction_c/ink/ded_c_novak.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "_note": "name, sprite and position invented: plan gives only the surname. Cast: a Czech comms specialist in her forties. The badge is both an rfidCard (what #clone_keycard reads, chat-helpers.js clone_keycard) and an itemsHeld keycard (plan §9.3; drops on a KO). Card names match t_c_badge's where.",
+          "rfidCard": { "card_id": "c_novak_badge", "rfid_protocol": "EM4100", "name": "Novak's badge" },
+          "itemsHeld": [
+            {
+              "type": "keycard",
+              "id": "c_novak_badge_card",
+              "name": "Novak's badge",
+              "takeable": true,
+              "opens_lock": "c_novak_badge",
+              "card_id": "c_novak_badge",
+              "rfid_protocol": "EM4100",
+              "observations": "Irena Novak's badge. The garage reader takes nothing else."
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "c_novak_drawer",
+          "type": "filing_cabinet",
+          "name": "Novak's desk drawer",
+          "takeable": false,
+          "position": { "x": 6, "y": 3 },
+          "locked": true,
+          "lockType": "key",
+          "requires": "c_novak_drawer_key",
+          "keyPins": [45, 25, 55, 35],
+          "difficulty": "medium",
+          "observations": "A locked desk drawer. Novak's bag is wedged inside.",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "c_novak_bag_list",
+              "name": "Novak's bag",
+              "takeable": true,
+              "readable": true,
+              "text": "Wallet. Cigarettes. A second phone: a cheap burner with a sigil scratched into the back, the same mark as the quarry carvings. Not SAFETYNET issue.",
+              "observations": "A worn leather satchel."
+            }
+          ]
+        },
+        {
+          "id": "c_ahmed_locker",
+          "type": "filing_cabinet",
+          "name": "Ahmed's locker",
+          "takeable": false,
+          "position": { "x": 2, "y": 6 },
+          "locked": true,
+          "lockType": "key",
+          "requires": "c_ahmed_locker_key",
+          "keyPins": [20, 40, 30, 50],
+          "difficulty": "easy",
+          "observations": "A grey locker with T. AHMED on a strip of tape.",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "c_ahmed_kit_list",
+              "name": "Ahmed's field kit",
+              "takeable": true,
+              "readable": true,
+              "text": "Field kit, standard issue: torch, gloves, sample jars, seals unbroken. A paperback with a SAFETYNET bookmark.",
+              "observations": "A neat canvas roll, tied with string."
+            }
+          ]
+        },
+        {
+          "id": "c_office_safe",
+          "type": "safe",
+          "name": "Office safe",
+          "takeable": false,
+          "position": { "x": 8, "y": 6 },
+          "locked": true,
+          "lockType": "pin",
+          "requires": "1890",
+          "_note": "safe code 1890 invented: plan silent",
+          "observations": "A squat wall safe with a four-digit keypad.",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "c_travel_log",
+              "name": "Travel log",
+              "takeable": true,
+              "readable": true,
+              "text": "SIGN-OUTS, THIS MONTH\n\n3rd: I. Novak. Quarry site. Back 23:10.\n14th: T. Ahmed. Quarry site, samples for HaX. Back 19:40.\n19th: I. Novak. Quarry site. Back 02:15.\n\nO. Baptiste: city only. No sign-outs.",
+              "observations": "A ledger of who signed out of the safe house, and where to."
+            }
+          ]
+        },
+        {
+          "id": "c_safe_note",
+          "type": "notes",
+          "name": "Note under the desk",
+          "takeable": true,
+          "readable": true,
+          "position": { "x": 4, "y": 4 },
+          "text": "1890. Don't forget it again. -I.",
+          "observations": "A slip of paper taped to the underside of the desk."
+        }
+      ]
+    },
+
+    "c_garage": {
+      "type": "room_servers",
+      "door_sign": "Garage",
+      "locked": true,
+      "lockType": "rfid",
+      "requires": "c_novak_badge",
+      "connections": { "east": "c_lounge" },
+      "npcs": [],
+      "objects": [
+        {
+          "id": "c_door_log",
+          "type": "log_filter_terminal",
+          "name": "Door reader log",
+          "takeable": false,
+          "position": "as-type:pc",
+          "observations": "The terminal that keeps every badge swipe in the house.",
+          "_note": "logType ics_rdp reused for a door log (its ACCOUNT / SOURCE_IP columns read as badge holder / reader); entries, times and the anomaly invented: plan silent.",
+          "minigameData": {
+            "minigameId": "log-filter",
+            "title": "SAFE HOUSE: DOOR READER LOG, NIGHT OF THE LEAK",
+            "logType": "ics_rdp",
+            "logEntries": [
+              { "timestamp": "2026-10-11 22:10", "sessionId": "BED-01", "account": "o.baptiste", "sourceIp": "BEDROOM-RDR", "duration": "08:50", "status": "CLOSED", "accessLevel": "ENGINEER" },
+              { "timestamp": "2026-10-11 23:52", "sessionId": "LNG-02", "account": "t.ahmed", "sourceIp": "LOUNGE-RDR", "duration": "06:38", "status": "CLOSED", "accessLevel": "ENGINEER" },
+              { "timestamp": "2026-10-12 00:15", "sessionId": "OFF-03", "account": "i.novak", "sourceIp": "OFFICE-RDR", "duration": "03:25", "status": "CLOSED", "accessLevel": "ADMIN" },
+              { "timestamp": "2026-10-12 03:40", "sessionId": "GAR-04", "account": "i.novak", "sourceIp": "GARAGE-RDR", "duration": "01:55", "status": "ACTIVE", "accessLevel": "ADMIN" }
+            ],
+            "anomaly": { "account": "i.novak", "sourceIp": "GARAGE-RDR", "status": "ACTIVE", "accessLevel": "ADMIN", "durationDisplay": "01:55" },
+            "flagActionLabel": "FLAG ENTRY",
+            "flagConfirmTitle": "CONFIRM FLAG",
+            "flagConfirmBody": "Novak's badge opened the garage at 03:40 and nothing puts her anywhere else until dawn. Ahmed and Baptiste never left their rooms.",
+            "completeBanner": "Door log reviewed.",
+            "completionActions": [ { "type": "set_global", "key": "c_door_log_done", "value": true } ]
+          }
+        }
+      ]
+    }
+  },
+
+  "social": {
+    "people": [
+      { "id": "ded_c_ahmed",    "name": "Tariq Ahmed",    "role": "Field contact, archivist" },
+      { "id": "ded_c_novak",    "name": "Irena Novak",    "role": "Field contact, comms" },
+      { "id": "ded_c_baptiste", "name": "Odile Baptiste", "role": "Field contact, courier" },
+      { "id": "ded_c_handler",  "name": "Agent HaX",      "role": "Handler" }
+    ],
+    "_note_people": "names and roles invented: plan silent beyond surnames",
+    "characters": {
+      "ded_c_baptiste": {
+        "displayName": "Odile Baptiste",
+        "influence": { "global": "ded_c_baptiste_influence", "min": -100, "max": 100, "start": 0 },
+        "syncedVars": ["ded_c_baptiste_influence"],
+        "thresholds": [
+          { "id": "wary",    "at": -20, "effects": [ { "type": "setGlobal", "global": "ded_c_baptiste_wary", "value": true, "clearOnRearm": true } ] },
+          { "id": "refuses", "at": -40, "effects": [ { "type": "endConversation" } ] },
+          { "id": "reports", "at": -60, "effects": [ { "type": "setGlobal", "global": "ded_c_baptiste_reported", "value": true } ] }
+        ],
+        "channels": { "person": "ded_c_baptiste" },
+        "_note": "the plan's §9.3 says only 'gossip with an influence cost'; default thresholds of §7.2 used. C has no tamper (DL6 note), so the reports flag feeds HaX's hub line only (invented)."
+      }
+    },
+    "intelFacts": {
+      "c_ahmed_safenet": {
+        "text": "Ahmed showed you his phone. SAFETYNET issue; the serial matches.",
+        "label": "Ahmed: SAFETYNET phone", "subject": "ded_c_ahmed", "source": "ded_c_ahmed",
+        "deduction": { "suspect": "ded_c_ahmed", "clue": "safenet_phone", "routes": [ { "via": "npc", "id": "ded_c_ahmed" } ] }
+      },
+      "c_ahmed_field_kit": {
+        "text": "Ahmed's locker holds a standard field kit, seals unbroken.",
+        "label": "Ahmed: field kit", "subject": "ded_c_ahmed", "source": "c_ahmed_locker",
+        "deduction": { "suspect": "ded_c_ahmed", "clue": "field_kit", "routes": [ { "via": "trigger", "id": "t_c_ahmed_locker" } ] }
+      },
+      "c_ahmed_travel": {
+        "text": "Ahmed went out to the quarry site this month.",
+        "label": "Ahmed: went to the quarry site", "subject": "ded_c_ahmed", "source": "c_travel_log",
+        "deduction": { "suspect": "ded_c_ahmed", "clue": "arkham_trip", "routes": [ { "via": "npc", "id": "ded_c_baptiste" }, { "via": "trigger", "id": "t_c_travel_log" } ] }
+      },
+      "c_ahmed_alibi": {
+        "text": "The door log has Ahmed badging into the lounge at 23:52 on the night of the leak and not out again until morning.",
+        "label": "Ahmed: verified alibi", "subject": "ded_c_ahmed", "source": "c_door_log",
+        "deduction": { "suspect": "ded_c_ahmed", "clue": "verified_alibi", "routes": [ { "via": "trigger", "id": "t_c_door_log" } ] }
+      },
+      "c_novak_burner": {
+        "text": "Novak's bag holds a cheap burner with a sigil scratched into the back. Not SAFETYNET issue.",
+        "label": "Novak: cult-issued burner", "subject": "ded_c_novak", "source": "c_novak_drawer",
+        "deduction": { "suspect": "ded_c_novak", "clue": "cult_burner", "routes": [ { "via": "trigger", "id": "t_c_novak_bag" } ] }
+      },
+      "c_novak_safenet": {
+        "text": "Novak showed you her phone. SAFETYNET issue, genuine.",
+        "label": "Novak: SAFETYNET phone", "subject": "ded_c_novak", "source": "ded_c_novak",
+        "deduction": { "suspect": "ded_c_novak", "clue": "safenet_phone", "routes": [ { "via": "npc", "id": "ded_c_novak" } ] }
+      },
+      "c_novak_travel": {
+        "text": "The travel log has Novak signing out to the quarry site twice this month.",
+        "label": "Novak: went to the quarry site", "subject": "ded_c_novak", "source": "c_travel_log",
+        "deduction": { "suspect": "ded_c_novak", "clue": "arkham_trip", "routes": [ { "via": "trigger", "id": "t_c_travel_log" } ] }
+      },
+      "c_novak_alibi": {
+        "text": "Novak's badge opened the garage at 03:40 on the night of the leak. Nothing puts her anywhere else.",
+        "label": "Novak: no alibi", "subject": "ded_c_novak", "source": "c_door_log",
+        "deduction": { "suspect": "ded_c_novak", "clue": "no_alibi", "routes": [ { "via": "trigger", "id": "t_c_door_log" }, { "via": "trigger", "id": "t_c_badge", "room": "c_garage" } ] }
+      },
+      "c_baptiste_safenet": {
+        "text": "Baptiste showed you her phone. SAFETYNET issue, crest and all.",
+        "label": "Baptiste: SAFETYNET phone", "subject": "ded_c_baptiste", "source": "ded_c_baptiste",
+        "deduction": { "suspect": "ded_c_baptiste", "clue": "safenet_phone", "routes": [ { "via": "npc", "id": "ded_c_baptiste" } ] }
+      },
+      "c_baptiste_field_kit": {
+        "text": "Baptiste's kit bag holds a standard field kit, seals unbroken.",
+        "label": "Baptiste: field kit", "subject": "ded_c_baptiste", "source": "c_bedroom_drawer",
+        "deduction": { "suspect": "ded_c_baptiste", "clue": "field_kit", "routes": [ { "via": "trigger", "id": "t_c_baptiste_bag" } ] }
+      },
+      "c_baptiste_travel": {
+        "text": "The travel log has no quarry trips for Baptiste. She has not left the city this month.",
+        "label": "Baptiste: never went to the quarry site", "subject": "ded_c_baptiste", "source": "c_travel_log",
+        "deduction": { "suspect": "ded_c_baptiste", "clue": "no_arkham", "routes": [ { "via": "trigger", "id": "t_c_travel_log" } ] }
+      },
+      "c_baptiste_alibi": {
+        "text": "The door log has Baptiste in the bedroom from 22:10 on the night of the leak, with no exit until morning.",
+        "label": "Baptiste: verified alibi", "subject": "ded_c_baptiste", "source": "c_door_log",
+        "deduction": { "suspect": "ded_c_baptiste", "clue": "verified_alibi", "routes": [ { "via": "trigger", "id": "t_c_door_log" } ] }
+      }
+    },
+    "_note_intelFacts": "fact ids, texts and labels invented: plan names only the triggers and clue ids. Fact order within a slot follows suspects order (Ahmed, Novak, Baptiste) so the board is stable (§6.2).",
+
+    "deduction": {
+      "title": "Safe house",
+      "verdictNoun": { "guilty": "Sleeper", "clear": "Not a sleeper" },
+      "suspects": ["ded_c_ahmed", "ded_c_novak", "ded_c_baptiste"],
+      "slots": [
+        { "id": "kit",    "label": "What they carry",       "perSuspect": "oneOrMore" },
+        { "id": "travel", "label": "Where they have been",  "perSuspect": "exactlyOne" },
+        { "id": "alibi",  "label": "The night of the leak", "perSuspect": "exactlyOne" }
+      ],
+      "clues": {
+        "cult_burner":    { "slot": "kit",    "label": "cult-issued burner",           "marked": true,  "count": 1 },
+        "safenet_phone":  { "slot": "kit",    "label": "SAFETYNET phone",              "marked": false, "count": 3 },
+        "field_kit":      { "slot": "kit",    "label": "field kit",                    "marked": false, "count": 2 },
+        "arkham_trip":    { "slot": "travel", "label": "went to the quarry site",      "marked": false, "count": 2 },
+        "no_arkham":      { "slot": "travel", "label": "never went to the quarry site", "marked": false, "count": 1 },
+        "verified_alibi": { "slot": "alibi",  "label": "verified alibi",               "marked": false, "count": 2 },
+        "no_alibi":       { "slot": "alibi",  "label": "no alibi",                     "marked": false, "count": 1 }
+      },
+      "_note_clues": "labels for kit and alibi clues invented (plan gives labels only for the two travel clues)",
+      "profiles": [
+        {
+          "id": "sleeper",
+          "label": "Sleeper",
+          "text": "Carries a cult-issued burner (there is one), or went to the quarry site and has no verified alibi for the night of the leak.",
+          "rule": { "any": [
+            { "has": "cult_burner" },
+            { "all": [ { "has": "arkham_trip" }, { "not": { "has": "verified_alibi" } } ] }
+          ] }
+        }
+      ],
+      "solution": { "ded_c_ahmed": null, "ded_c_novak": "sleeper", "ded_c_baptiste": null },
+      "brief": { "source": "scenario_brief" },
+      "verdicts": { "allowed": ["ko", "act"], "when": "anytime", "reveal": "end" },
+      "closeHint": "Everyone has been dealt with. Use the exit phone when you're ready to leave.",
+      "stakes": {
+        "rigidity": "costly",
+        "disclosure": "hidden",
+        "twistNote": "Trust no one. The player is not told what a wrong call costs. Losing the keycard straight after a wrong takedown tells them they got it wrong, but not why; the debrief explains.",
+        "onRightGuilty":  [],
+        "onWrongGuilty":  [
+          { "type": "remove_item", "itemId": "c_keycard", "text": "HaX revokes your safe-house keycard.", "at": "verdict" },
+          { "type": "set_global", "key": "c_keycard_revoked", "value": true, "at": "verdict" },
+          { "type": "set_global", "key": "c_hax_trust_down", "value": true }
+        ],
+        "onMissedGuilty": [ { "type": "set_global", "key": "c_sleeper_escaped", "value": true } ],
+        "onRightClear":   [],
+        "escalation": [
+          { "wrongCount": 2, "actions": [
+            { "type": "set_global", "key": "c_pull_out", "value": true, "cost": true, "at": "verdict" },
+            { "type": "set_global", "key": "c_network_scattered", "value": true }
+          ] }
+        ],
+        "solvedTask": "c_case_solved",
+        "scoreLine": false,
+        "onClose": [
+          { "type": "complete_task", "taskId": "c_extracted" },
+          { "type": "set_global", "key": "c_ending", "value": true }
+        ],
+        "retry": 0,
+        "_note": "scoreLine false: plan silent, and a hidden case shows 'The stakes are not known.' with no suffix. c_keycard_revoked carries no 'cost: true' because the plan does not mark it; rigidity is costly through remove_item either way."
+      },
+      "nudge": false,
+      "debrief": {
+        "closingLine": "Novak's bag and the 03:40 garage door each settled her. The travel log and the door log cleared the others.",
+        "_note": "closingLine invented: plan silent"
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "key": "b86b4d3d3aece796af584eaaf71144f5",
+  "npc": "closing_debrief_person",
+  "text": "You can read Base64 now. Most people who'd have opened that report can't.",
+  "voice": "Aoede",
+  "style": "Intelligence handler in a debrief. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. Dry, level, short sentences.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "lab_tesseract_trials",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

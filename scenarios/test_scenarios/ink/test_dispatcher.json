@@ -1,0 +1,1 @@
+{"inkVersion":21,"root":[[["done",{"#n":"g-0"}],null],"done",{"test_dispatcher":["#","^Dispatcher NPC for visibility toggle test","/#",{"->":"idle"},null],"idle":["^Dispatch controller standing by.","\n","end",null],"alert_response":["^Pharmacist has been dispatched.","\n","end",null]}],"listDefs":{}}

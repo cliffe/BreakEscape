@@ -1,0 +1,13 @@
+{
+  "key": "e499402b7ccf8f7e3289c99b1ccd065d",
+  "npc": "narrator",
+  "text": "The night shift should be going home by now. Nobody is. Two ambulances wait under the A&E canopy.",
+  "voice": "Schedar",
+  "style": "Calm, clinical narrator with a neutral southern English accent; measured, even pace. Keep the same accent throughout.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "manifest",
+  "generated": "2026-10-09",
+  "recorded_at": "2026-10-09T12:34:47Z"
+}

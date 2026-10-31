@@ -1,0 +1,133 @@
+{
+  "display_name": "Insider Trading",
+  "description": "Infiltrate Quantum Dynamics Corporation to identify and stop an insider threat. ENTROPY has recruited an employee to exfiltrate quantum-safe key material for the National Emergency-Services Dispatch Network. You have 4 hours to find the insider, gather evidence, and stop the acquisition before the 999 dispatch network's key-rotation window opens.",
+  "difficulty_level": 2,
+  "secgen_scenario": "break_escape/safetynet/m05_insider_trading.xml",
+  "collection": "season_1",
+  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m05-insider-trading/",
+  "ui_theme": "spy",
+  "scenarioId": "m05_insider_trading",
+  "title": "Insider Trading",
+  "difficulty": 2,
+  "estimatedDuration": 5400,
+
+  "entropy_cell": "Insider Threat Initiative",
+  "mission_type": "investigation",
+  "tags": ["corporate_espionage", "insider_threat", "hybrid_vm", "moral_choice"],
+
+  "cybok": [
+    {
+      "ka": "NS",
+      "topic": "Networking Applications",
+      "keywords": ["NMAP", "PORT SCANNING"]
+    },
+    {
+      "ka": "WAM",
+      "topic": "Server-Side Vulnerabilities and Mitigations",
+      "keywords": ["injection vulnerabilities", "server-side misconfiguration and vulnerable components"]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "Fundamental Concepts",
+      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS", "PENETRATION TESTING - ACTIVE PENETRATION"]
+    },
+    {
+      "ka": "OSV",
+      "topic": "Primitives for Isolation and Mediation",
+      "keywords": ["physical access and secure deletion", "authentication and identification", "PRIVILEGE ESCALATION"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["user authentication", "facets of authentication", "BIOMETRICS", "SMART CARDS"]
+    },
+    {
+      "ka": "AB",
+      "topic": "Characterisation of Adversaries",
+      "keywords": ["THE INSIDER THREAT", "interpersonal crimes", "SOCIAL ENGINEERING"]
+    }
+  ],
+
+  "learning_objectives": [
+    "Identify indicators of insider threats through behavioural analysis",
+    "Correlate digital evidence (VM flags) with physical evidence (documents, interviews)",
+    "Exploit Bludit CMS via leaked credentials and authenticated image-upload remote code execution",
+    "Navigate complex moral decisions with lasting consequences",
+    "Understand ENTROPY's systematic recruitment and radicalisation methodology"
+  ],
+
+  "vm_integration": {
+    "scenario_name": "m05_insider_trading",
+    "provider": "SecGen",
+    "flags": 4,
+    "challenges": [
+      "Reconnaissance - leaked Bludit admin credentials",
+      "Web Exploitation - authenticated Bludit image-upload RCE",
+      "User Access - Torres' exfiltration staging manifest",
+      "Root - The Architect's acquisition authorisation"
+    ]
+  },
+
+  "narrative_summary": {
+    "act1": "Arrive at Quantum Dynamics, a Home Office contractor near Cambridge, as a SAFETYNET security consultant. Meet CSO Patricia Morgan, interview staff and talk your way into the access you need.",
+    "act2": "Clone a staff badge off Owen's lanyard (or borrow Dr Halloran's), then talk Owen out of the server-room password with Patricia's log or her authority. Get Torres' office card on Patricia's authority and lift his print for the key vault. Build both halves of the case: why (the journal, the vetting file, the medical bills in his briefcase) and proof of exfiltration (the research portal flags, the data-centre paperwork). Name him to Patricia, in person or by phone. The Recruiter texts; ring her back and she offers a deal to leave her other targets unwarned.",
+    "act3": "Find Torres at the upload terminal in the data centre. Confront him with choices: turn as double agent, hand over to the police with cooperation, hand over without, combat (which resolves to a post-KO choice), or public exposure. No ending is ranked above another — each carries its own consequences. Then sweep the key vault and call HaX to be brought in."
+  },
+
+  "key_npcs": [
+    {
+      "id": "patricia_morgan",
+      "name": "Patricia Morgan",
+      "role": "Chief Security Officer",
+      "importance": "Mission handler, provides security access and intelligence"
+    },
+    {
+      "id": "owen_gallagher",
+      "name": "Owen Gallagher",
+      "role": "IT Systems Administrator",
+      "importance": "His badge is cloned off his lanyard; holds the office spare and the server-room password, which he gives up for evidence or Patricia's authority, and names the key vault's reader"
+    },
+    {
+      "id": "dr_halloran",
+      "name": "Dr Ruth Halloran",
+      "role": "Chief Scientist, Project Heisenberg Lead",
+      "importance": "Second route to a server-hallway badge; reacts to the accusation"
+    },
+    {
+      "id": "lisa_park",
+      "name": "Lisa Park",
+      "role": "Marketing Coordinator",
+      "importance": "Optional NPC, humanises Torres through family context"
+    },
+    {
+      "id": "david_torres",
+      "name": "David Torres",
+      "role": "Cryptography Lead, ENTROPY Insider",
+      "importance": "Primary antagonist, subject of confrontation with multiple unranked endings"
+    },
+    {
+      "id": "recruiter",
+      "name": "The Recruiter",
+      "role": "ENTROPY Insider Threat Initiative Handler",
+      "importance": "Live phone antagonist, calls once Torres is identified and offers the player a deal"
+    },
+    {
+      "id": "agent_0x99",
+      "name": "Agent HaX",
+      "role": "SAFETYNET Handler",
+      "importance": "Phone support, event-triggered guidance"
+    }
+  ],
+
+  "moral_complexity": {
+    "primary_dilemma": "Torres is both perpetrator (knowingly enabled a lethal delay to emergency dispatch) and victim (radicalised through medical debt). He's only 3 months into radicalisation - early enough to potentially save. The Recruiter argues the harder case: he made an informed choice, and forty-seven more candidates are already in her pipeline.",
+    "entropy_portrayal": "A systematic recruitment methodology run by people who calculate and approve civilian casualties as an acceptable cost. The Recruiter is unapologetic and persuasive, not a cartoon villain.",
+    "player_agency": "Multiple ending paths, unranked, with differences in campaign impact, Elena's treatment, and future intelligence gathering"
+  },
+
+  "version": "1.0.0",
+  "created": "2026-01-03",
+  "campaign_position": 5,
+  "prerequisites": ["m01_first_contact", "m02_ransomed_trust", "m03_ghost_in_the_machine", "m04_critical_failure"],
+  "unlocks": ["m06_follow_the_money"]
+}

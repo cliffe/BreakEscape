@@ -1,0 +1,51 @@
+{
+  "display_name": "Follow the Money",
+  "description": "Track cryptocurrency payments from previous ENTROPY operations to the Crypto Anarchists' HashChain Exchange. Infiltrate the exchange as a visiting FCA supervisor, access financial records, and map ENTROPY's funding network. Discover 'The Architect's Fund' and the financial infrastructure supporting all ENTROPY cells.",
+  "difficulty_level": 2,
+  "secgen_scenario": "break_escape/safetynet/m06_follow_the_money.xml",
+  "collection": "season_1",
+  "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m06-follow-the-money/",
+  "ui_theme": "spy",
+  "cybok": [
+    {
+      "ka": "NS",
+      "topic": "Networking Applications",
+      "keywords": ["NMAP", "PORT SCANNING", "SECURE SHELL (SSH)"]
+    },
+    {
+      "ka": "SS",
+      "topic": "Categories of Vulnerabilities",
+      "keywords": ["CVES AND CWES"]
+    },
+    {
+      "ka": "SOIM",
+      "topic": "Fundamental Concepts",
+      "keywords": ["PENETRATION TESTING - SOFTWARE TOOLS", "PENETRATION TESTING - ACTIVE PENETRATION"]
+    },
+    {
+      "ka": "AAA",
+      "topic": "Authentication",
+      "keywords": ["user authentication", "HASHED PASSWORDS", "BIOMETRICS", "SMART CARDS", "PERSONAL IDENTIFICATION NUMBER AND MEMORABLE INFORMATION"]
+    },
+    {
+      "ka": "OSV",
+      "topic": "Primitives for Isolation and Mediation",
+      "keywords": ["physical access and secure deletion", "authentication and identification", "PRIVILEGE ESCALATION"]
+    },
+    {
+      "ka": "AC",
+      "topic": "Key Management",
+      "keywords": ["key storage", "CRYPTOCURRENCY", "BLOCKCHAIN"]
+    },
+    {
+      "ka": "AB",
+      "topic": "Models",
+      "keywords": ["flow of capital", "MONEY LAUNDERING"]
+    },
+    {
+      "ka": "AB",
+      "topic": "Characterisation of Adversaries",
+      "keywords": ["cyber-dependent organised crime", "SOCIAL ENGINEERING"]
+    }
+  ]
+}

@@ -1,0 +1,182 @@
+/**
+ * credits-theme.js — themes for the end-of-mission visualiser (bond-visualiser.js).
+ *
+ * A scenario picks one with its top-level "creditsTheme". Without the field it
+ * gets DEFAULT_CREDITS_THEME ("safetynet"), the campaign look.
+ *
+ *   safetynet  The SAFETYNET debrief as originally built: classified stamps,
+ *              global threat map, agency panel, S/N shield, SAFETYNET ticker.
+ *   cyber      A generic cyber security / incident-review look for standalone
+ *              exercises (the CyBOK SIS games): still a lively SOC-style
+ *              visualiser (SIEM feed, matrix rain), but no agency, no stamps,
+ *              no fake "ATTACK: X → Y" threat map; headings come from the
+ *              scenario's own name and credits.
+ *
+ * Each theme lists the visualiser modes it enables. To add a theme, add an entry
+ * to CREDITS_THEMES, give it an overlay() for its header/panel/ticker text (or
+ * null to keep the overlay as built), and add its name to the schema enum.
+ * Pure (no DOM, no imports) so it can be unit tested.
+ */
+
+export const ALL_VIS_MODES = ['cybermap', 'wave', 'siem', 'bars', 'circle', 'matrix', 'tunnel', 'plasma', 'particles', 'lissajous'];
+
+export const DEFAULT_CREDITS_THEME = 'safetynet';
+
+/** First "subtitle" credit line: the scenario's own organisation and setting. */
+export function creditsSetting(credits) {
+    const line = (credits || []).find(l => l && l.style === 'subtitle' && l.text && l.text.trim());
+    return line ? line.text.trim() : '';
+}
+
+export const CREDITS_THEMES = {
+    safetynet: {
+        modes:         ALL_VIS_MODES,
+        matrixChars:   'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*<>{}[]|/\\ENTROPYSAFETYNET',
+        logo:          'shield',
+        centreLabel:   'S/N',
+        stamp:         true,
+        rotateOps:     true,
+        logCredits:    false,
+        logMessages: [
+            ['> SCANNING FREQUENCIES...', ''],
+            ['> ENCRYPTION VERIFIED', ''],
+            ['> QUANTUM KEY EXCHANGE OK', ''],
+            ['> SIGNAL TRACE: NEGATIVE', 'warn'],
+            ['> THREAT SCAN COMPLETE', ''],
+            ['> INTRUDER DETECTED — LAYER 3', 'alert'],
+            ['> DECOY DEPLOYED', 'warn'],
+            ['> FIREWALL: NOMINAL', ''],
+            ['> DPI BYPASS CONFIRMED', ''],
+            ['> CIPHER ROTATION OK', ''],
+        ],
+        trackLabel: (state) => ({
+            label:  'INTEL:',
+            detail: `${state.trackTitle.toUpperCase()}  ·  ${(state.playlistName || '').toUpperCase()}`,
+        }),
+        overlay: () => null, // the overlay exactly as bond-visualiser.js builds it
+    },
+
+    cyber: {
+        // No threat map: its random city-to-city "ATTACK" arcs and log lines are spy-campaign fiction.
+        modes:         ['wave', 'siem', 'bars', 'circle', 'matrix', 'tunnel', 'plasma', 'particles', 'lissajous'],
+        matrixChars:   '0123456789ABCDEF{}[]<>/\\|#$%&*=+:;',
+        logo:          'padlock',
+        centreLabel:   '',
+        stamp:         false,
+        rotateOps:     false,
+        logCredits:    true, // the review log echoes each credit line as it is shown
+        logMessages: [
+            ['> TIMELINE RECONSTRUCTED', ''],
+            ['> EVIDENCE PRESERVED', ''],
+            ['> LOGS RETAINED FOR REVIEW', ''],
+            ['> CONTROLS UNDER REVIEW', 'warn'],
+            ['> LESSONS LEARNED RECORDED', ''],
+            ['> MONITORING RESTORED', ''],
+        ],
+        trackLabel: () => ({ label: 'MUSIC:', detail: 'CLOSING THEME' }),
+        overlay: ({ missionName, credits }) => {
+            const name = (missionName || '').trim() || 'BREAK ESCAPE';
+            const setting = creditsSetting(credits);
+            const ticker = ['INCIDENT REVIEW', name.toUpperCase()];
+            if (setting) ticker.push(setting.toUpperCase());
+            ticker.push('THANK YOU FOR PLAYING');
+            return {
+                heading:    'INCIDENT REVIEW',
+                subheading: name.toUpperCase(),
+                liveBadge:  '● REVIEW',
+                badge:      'DEBRIEF',
+                scene:      ['SCENE:', setting ? setting.toUpperCase() : name.toUpperCase()],
+                status:     'COMPLETE',
+                phase:      ['PHASE:', 'REVIEW'], // replaces the audio-driven THREAT row
+                leftTitle:  '▸ SIGNAL ANALYSIS',
+                logTitle:   '▸ REVIEW LOG',
+                logFirst:   '> OUTCOMES FOLLOW',
+                rightTitle: '▸ EXERCISE',
+                rows:       [['SCENARIO', name], ...(setting ? [['SETTING', setting]] : [])],
+                footer:     name.toUpperCase(),
+                ticker:     `██ ${ticker.join(' ██ ')} ██`,
+                mapLabel:   'BREAK ESCAPE // INCIDENT REVIEW',
+            };
+        },
+    },
+};
+
+/**
+ * A scenario's own words for the safetynet credits overlay (m07 E7: every mission
+ * showed "OPERATION: IRONSEAL" and "ENTROPY CONTAINED ... WELL PLAYED"). Both are
+ * optional; without them the overlay keeps its built-in text.
+ *   "creditsOverlay": { "operation": "SCHRODINGER", "ticker": ["LINE", "LINE"] }
+ * operation fills the header's OPERTN: row (no rotation); ticker replaces the
+ * footer ticker (an array is joined with the ██ separators). With no operation,
+ * the row takes the mission's display name in capitals when one is given
+ * (fallbackName), so it never shows another mission's code name (2026-10-17).
+ * @param {object} scenario
+ * @param {string} [fallbackName] - the mission's display name
+ * @returns {{operation: string|null, ticker: string|null}}
+ */
+export function scenarioCreditsOverlay(scenario, fallbackName) {
+    const cfg = scenario?.creditsOverlay;
+    const clean = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+    const fallback = clean(fallbackName);
+    const operation = clean(cfg?.operation) || (fallback ? fallback.toUpperCase() : null);
+    let ticker = null;
+    if (Array.isArray(cfg?.ticker)) {
+        const lines = cfg.ticker.map(clean).filter(Boolean);
+        if (lines.length) ticker = `██ ${lines.join(' ██ ')} ██`;
+    } else {
+        ticker = clean(cfg?.ticker);
+    }
+    return { operation, ticker };
+}
+
+/** The visualiser's header when neither the ending nor the theme sets one. */
+export const DEFAULT_CREDITS_HEADER = 'MISSION COMPLETE // AUDIO INTEL';
+
+/**
+ * The header text an open of the visualiser leaves in place. A credits entry's
+ * `headerText` (e.g. "MISSION FAILED // AUDIO INTEL") sets it; a new credits roll
+ * without one goes back to the default (null); an open with no credits, such as a
+ * conclusionScreen's open({}) after the credits, keeps what is there.
+ * @param {string|null} current
+ * @param {object} [opts] - the open() options
+ * @returns {string|null}
+ */
+export function nextCreditsHeader(current, opts) {
+    return nextCreditsText(current, opts, 'headerText');
+}
+
+/** The same rule for any opt-in text field of a credits entry (headerText, statusText). */
+export function nextCreditsText(current, opts, key) {
+    const text = typeof opts?.[key] === 'string' ? opts[key].trim() : '';
+    if (text) return text;
+    if (opts?.credits?.length) return null;
+    return current ?? null;
+}
+
+/** The STATUS row's value when neither the ending nor the theme sets one. */
+export const DEFAULT_CREDITS_STATUS = 'MONITORING';
+
+/** What the STATUS row shows: the ending's statusText, else the theme's status, else the default. */
+export function creditsStatus(statusText, themeStatus) {
+    return statusText || themeStatus || DEFAULT_CREDITS_STATUS;
+}
+
+/** What the header shows: the ending's text, else the theme's heading, else the default. */
+export function creditsHeader(headerText, themeHeading) {
+    return headerText || themeHeading || DEFAULT_CREDITS_HEADER;
+}
+
+export function resolveCreditsTheme(scenario) {
+    const name = scenario?.creditsTheme;
+    return Object.prototype.hasOwnProperty.call(CREDITS_THEMES, name) ? name : DEFAULT_CREDITS_THEME;
+}
+
+export function getCreditsTheme(name) {
+    return CREDITS_THEMES[name] || CREDITS_THEMES[DEFAULT_CREDITS_THEME];
+}
+
+/** HUD track label for a theme. */
+export function trackInfoLabel(name, state) {
+    if (!state?.trackTitle) return { label: 'AWAITING SIGNAL', detail: '' };
+    return getCreditsTheme(name).trackLabel(state);
+}

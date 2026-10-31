@@ -1,0 +1,10 @@
+Make portrait for Gareth Fairbairn
+A white Scottish man of about 63, with fair, ruddy, lightly lined skin, thinning sandy-grey hair combed neatly to one side, and half-moon reading glasses low on his nose, the founder and managing director of a small family accountancy firm who has run it for forty years. Pale blue eyes over the glasses and a polite, slightly formal, guarded look, a man who hired most of his staff himself. He wears a navy V-neck wool cardigan over a pale blue shirt and a dark red tie, grey wool trousers and a brown leather belt; his hands rest at his sides. Standing alone against an empty plain light-grey backdrop, no room or furniture behind him. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, one call (SE art batch A). Reframed with reframe_portrait.py --flip; unflipped original is wip/gareth_fairbairn_concept_1_raw.png.

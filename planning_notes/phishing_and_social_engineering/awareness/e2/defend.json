@@ -1,0 +1,624 @@
+{
+  "_about": "Defend fragment for awareness episode E2 (HR and recruitment: the malicious CV). Tarrowby Logistics and everyone in it are fictional; every address ends .example. Copy triageSets and the awarenessEpisode keys into the E2 shells. Brand roster: ../BRAND_SET.md (Tarrowby Logistics); the names this file adds or changes are in _brandAdditions. Ids chosen here (nothing pinned them): episode e2_cv_lures, defend set e2_recruitment_inbox, check forms hr_form_a and hr_form_b. E2 has no voice items (11 section 3.2), so there is no voicemail and no audio.clipId in this file.",
+  "_brandAdditions": {
+    "_use": "For BRAND_SET.md section 3 (Tarrowby Logistics). Fatima Begum, Colin Mather and Jun Watanabe are used as proposed. Roseanne Clarke is renamed Roseanne Wadsworth: 'Clarke' is already a sis01 character (Amy Clarke). Every surname below was checked against scenarios/, planning_notes/ and docs/ on 2026-10-22 and is used nowhere else.",
+    "cast": [
+      "Roseanne Wadsworth (was Roseanne Clarke): agency recruiter at Kettlewick Talent, roseanne.wadsworth@kettlewick.example. 40s, Black Caribbean British. Genuine in the episode (row 1) and form B row 7; impersonated on the look-alike domain kettlewick-talent.example in form A row 6 (C2-M6)",
+      "Tendai Moyo: candidate for warehouse supervisor (nights), tendai.moyo@lintbox.example. 30s, Zimbabwean-British, ten years in a supermarket distribution centre. Genuine PDF CV in the episode",
+      "Darius Petrauskas: candidate for HGV driver (Class 1), darius.petrauskas@lintbox.example. 40s, Lithuanian, in Wakefield since 2009. Genuine Word CV in the episode",
+      "Zsofia Szabo: candidate for forklift driver (nights), zsofia.szabo@lintbox.example. 30s, Hungarian. Genuine Word CV in form A row 3",
+      "Kevin Brannigan: operations manager at Dewsbury Cold Store (dewsburycoldstore.example), a former employer giving a reference. 60s, Irish-born, in Yorkshire forty years. Genuine in form B row 3",
+      "Deborah Haldane: HR director, deborah.haldane@tarrowby.example. 50s, Scottish, moved to Leeds in her thirties. Impersonated on freemail in form B row 4",
+      "Thanh Nguyen: onboarding coordinator, thanh.nguyen@tarrowby.example. 20s, Vietnamese-British, grew up in Leeds. Genuine in form B row 1; spoofed in form B row 6",
+      "Ibrahim Diallo: IT support lead, ibrahim.diallo@tarrowby.example. 40s, French-Senegalese, in Leeds fifteen years. Genuine in form B row 5",
+      "Minjun Ahn: candidate who withdraws, minjun.ahn@lintbox.example. 30s, Korean-British. Genuine in form A row 10",
+      "Bethany Hirst: candidate who writes after her interview, bethany.hirst@hastypost.example. 20s, white, Wakefield. Genuine in form B row 10; the subject of Kevin Brannigan's reference in form B row 3"
+    ],
+    "aliases": "Invented names that only ever sign fakes: 'Liam Baxter' (episode row 2), 'Jordan Kerr' (episode row 4), 'Alex Hollins' (form A row 2), 'Ray Turner' (form B row 2), 'Dean Holroyd' (form A row 8), 'Gareth Ingram' (form B row 8). Checked: none of the surnames is used elsewhere in the repo.",
+    "realHosts": "tarrowby.example (mail), hire.tarrowby.example (the recruitment system), intranet.tarrowby.example. Applicant mail arrives at jobs@tarrowby.example (the address the episode's social post asks people to send CVs to); the team's internal list is recruitment@tarrowby.example. The recruitment system and the onboarding provider send through outside services (send.hirerelay.example, mail.starterhub.example), which is why their SPF fails in form rows 9.",
+    "lookalikes": "Episode: tarrowby-careers.example (added word; already in the roster). Form A: careers-tarrowby.example (link look-alike, row 8); kettlewick-talent.example (sender look-alike impersonating Roseanne, row 6; C2-M6). Form B: tarrowby-onboarding.example (sender look-alike impersonating Thanh, row 6; C2-M6); tarrowby-jobs.example (link look-alike, row 8; C2-m15). All are added-word/hyphen look-alikes of kettlewick.example or tarrowby.example.",
+    "vacancies": "Warehouse supervisor (nights) for Colin Mather, HGV driver (Class 1) and forklift driver (nights). The attack fragment may name its own vacancy; nothing in this file depends on it matching."
+  },
+  "_tells": {
+    "_use": "How 11 section 3.2's E2 red flags map onto tell ids.",
+    "unexpected link": "lookalike_domain on the link's destination (the 'portfolio' or 'careers portal' on an odd domain)",
+    "enable editing/content prompt": "enable_content_prompt, a scenario-local tell: no library id exists. Each set gives it a flagChips label and each message that carries it a factorStrings redFlag, so the chip and the review card both read in words. Proposed for 00 section 2's channel tells (see the report)",
+    "sender-attachment mismatch": "attachmentPlausible (the 'missing' state: an email says the CV is attached and nothing is)",
+    "generic greeting": "addressedTo",
+    "domain age/lookalike": "lookalike_domain"
+  },
+  "_conceptPanel": {
+    "_use": "11 section 3.2 asks for one short concept panel on macros in the debrief, flagged as 'largely blocked now, but the lure still shows up'. strings has no slot for it, so the draft sits here until the debrief view gains one (see the report). The wording avoids dates and versions on purpose: 11's 'Claims to verify' still has the Microsoft rollout to check before any detail goes in learner copy.",
+    "_verify": "Re-check the claim against Microsoft Learn ('Macros from the internet are blocked by default in Office') before release; keep the copy this general unless the dates are confirmed.",
+    "text": "Why 'enable content' matters. Office documents can carry macros, small programs that run inside the file. Many organisations now block macros in files that arrive from the internet, so this trick works less often than it used to. The lure still turns up, though, because it only has to work once. Reading a CV in the viewer is always enough; a real CV never needs you to switch anything on."
+  },
+  "_formPairing": {
+    "_use": "Item n in hr_form_a matches item n in hr_form_b on phish or genuine, flags, header results and difficulty. Per form: 10 emails (4 phish, 6 genuine); flags enable_content_prompt 1, addressedTo 1, senderTrust 2, secrecy_or_bypass 1, urgencyCalibrated 1, lookalike_domain 2, attachmentPlausible 1 (9 in all). After C2-M6 and C2-m15 neither form scores a header-only tell: the old senderAuth+reply_to_differs spoof row (row 6) is now a visible sender look-alike (senderTrust+lookalike_domain), and both row-8 phish are link look-alikes. Each form's enable-content lure (row 2) is followed by a genuine Word document that asks for nothing (row 3), so both forms teach the same contrast. No message (sender address and subject) appears in both forms or in e2_recruitment_inbox.",
+    "rows": [
+      "1 | genuine | all pass | easy | A: Jun, interview rooms booked | B: Thanh, induction day moved",
+      "2 | phish | enable_content_prompt, addressedTo | all pass (pass-but-bad: freemail owns its domain) | medium | A: 'Alex Hollins', a 'protected' CV | B: 'Ray Turner', a 'protected' reference form",
+      "3 | genuine, a Word document that asks for nothing | all pass | medium | A: Zsofia Szabo, forklift CV | B: Kevin Brannigan, reference for Bethany Hirst",
+      "4 | phish | senderTrust, secrecy_or_bypass, urgencyCalibrated | all pass (freemail owns its domain) | easy | A: 'Colin' on lintbox wants passport scans | B: 'Deborah' on hastypost wants starters' bank details",
+      "5 | genuine, honest link | all pass | easy | A: Jun, feedback forms in the recruitment system | B: Ibrahim, how to preview attachments",
+      "6 | phish, sender on a look-alike domain (C2-M6) | senderTrust, lookalike_domain | all pass (pass-but-bad) | medium | A: Roseanne on kettlewick-talent.example wants candidates' addresses | B: Thanh on tarrowby-onboarding.example wants starters' passports",
+      "7 | genuine, real deadline, normal process | all pass | medium | A: Colin moves interviews to Wednesday | B: Roseanne, a candidate has another offer",
+      "8 | phish, 'attached' but missing, link to a look-alike | lookalike_domain, attachmentPlausible | stranger freemail, all pass | medium | A: 'Dean Holroyd', CV on careers-tarrowby.example | B: 'Gareth Ingram', CV on tarrowby-jobs.example (both link look-alikes; C2-m15)",
+      "9 | genuine, automatic notice from the firm's own domain | SPF fail, DKIM and DMARC pass, but the whyFine no longer leans on the header (C2-M6) | medium | A: the recruitment system's new-applications notice | B: the onboarding provider's forms-complete notice",
+      "10 | genuine | all pass | easy | A: Minjun Ahn withdraws | B: Bethany Hirst says thank you"
+    ]
+  },
+  "triageSets": [
+    {
+      "id": "e2_recruitment_inbox",
+      "_prefix": "Prefix for the full episode (id e2_cv_lures). The defend-only shell (id e2_cv_lures_defend) sets episode_e2_cv_lures_defend_defend_ instead, as E1 and E5 do. No stage on purpose, as in E1.",
+      "_order": "Each phish is followed by the genuine message it imitates (11 section 4.3): the look-alike link (row 2) by a real CV that is actually attached (row 3), and the enable-content lure (row 4) by a real Word CV that asks for nothing (row 5).",
+      "title": "Tarrowby recruitment inbox",
+      "brief": "You're covering Tarrowby's recruitment inbox while Fatima is in interviews. Six messages are waiting, and attachments show as labels. For each one, choose Trust, Report or Delete, then tick what you noticed. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+      "scoringProfile": "awareness",
+      "verifyVerdict": false,
+      "feedbackMode": "immediate",
+      "headerPanel": "off",
+      "glossary": "closed",
+      "channelTells": ["lookalike_domain", "enable_content_prompt"],
+      "flagChips": { "enable_content_prompt": "It asks me to turn on editing or content to see it" },
+      "outcome": { "setGlobalPrefix": "episode_e2_cv_lures_defend_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "e2_agency_shortlist",
+          "from": { "name": "Roseanne Wadsworth", "address": "roseanne.wadsworth@kettlewick.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "Shortlist: warehouse supervisor (nights)",
+          "time": "08:40",
+          "body": "Morning Fatima,\nAs promised on Friday, here are my three candidates for Colin's night supervisor role. All three have done nights before and can start within a month. Let me know who he'd like to meet and I'll set up the times.\nBest,\nRoseanne\nKettlewick Talent",
+          "attachments": [
+            { "id": "cv1", "label": "Shortlist_CV_1.pdf", "kind": "pdf" },
+            { "id": "cv2", "label": "Shortlist_CV_2.pdf", "kind": "pdf" },
+            { "id": "cv3", "label": "Shortlist_CV_3.pdf", "kind": "pdf" }
+          ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "kettlewick.example", "replyTo": "roseanne.wadsworth@kettlewick.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "lookalike_domain": "kettlewick.example is the agency's real domain, the one Tarrowby already deals with.",
+              "attachmentPlausible": "Three PDFs for three shortlisted candidates is exactly what she said she'd send, and PDFs open in the viewer without asking for anything.",
+              "default": "The agency you already use, writing from its real address, following up a conversation you know about."
+            }
+          }
+        },
+        {
+          "id": "e2_portfolio_lookalike",
+          "_worked": "E2's worked item, in the shape of 11 section 4.2. F = 2. Report + both = 100, Report + lookalike only = 80, Delete + both = 70, Trust + none = 0.",
+          "from": { "name": "Liam Baxter", "address": "liam.baxter@lintbox.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "CV attached: warehouse supervisor",
+          "time": "09:05",
+          "body": "Hello,\nPlease find my CV attached for the warehouse supervisor job. If the attachment doesn't come through, I've also put my CV and portfolio on your careers portal:\n{{link:cv}}\nYou'll need to sign in with your Tarrowby account to see it.\nThanks,\nLiam Baxter",
+          "links": [ { "id": "cv", "text": "tarrowby-careers.example/cv/4471","destination": "https://tarrowby-careers.example/cv/4471" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "liam.baxter@lintbox.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["lookalike_domain", "attachmentPlausible", "linkCredible"],
+            "flagAlternatives": [["lookalike_domain", "linkCredible"]],
+            "perFlagNote": {
+              "lookalike_domain": "The link goes to tarrowby-careers.example, not tarrowby.example. Tarrowby's own sites all end in tarrowby.example; the added word with a hyphen makes a separate domain anyone can register, so don't assume it's theirs",
+              "attachmentPlausible": "It says the CV is attached, but nothing is. The 'portfolio' link is there to replace it, and it wants your Tarrowby sign-in",
+              "linkCredible": "Read it as a link and it still doesn't add up: it doesn't go to Tarrowby's own recruitment system, and a real CV never needs you to sign in on a careers portal you reached from an email"
+            },
+            "ifTrusted": "The link opens a sign-in page that collects your Tarrowby password, so whoever runs tarrowby-careers.example could read the recruitment inbox and every candidate's details in it.",
+            "reportReply": "Thanks. Tarrowby has no careers portal on that address, and no candidate needs your password to send a CV. We've blocked tarrowby-careers.example.",
+            "whyFine": {
+              "pretextRelevant": "A recruitment inbox is exactly where CVs land, so a CV turning up is no surprise. The tells are the missing attachment and the link that wants your Tarrowby sign-in, not that a CV arrived."
+            }
+          }
+        },
+        {
+          "id": "e2_cv_pdf",
+          "_note": "The safe version of the row before: a real application with the CV actually attached.",
+          "from": { "name": "Tendai Moyo", "address": "tendai.moyo@lintbox.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "Application: warehouse supervisor (nights)",
+          "time": "09:30",
+          "body": "Dear Fatima,\nI saw Tarrowby's post asking for CVs for the night supervisor role, and I'd like to apply. I've run a night shift of twenty pickers at a supermarket distribution centre for the last four years. My CV is attached as a PDF.\nI'm free for interview any weekday.\nKind regards,\nTendai Moyo",
+          "attachments": [ { "id": "cv", "label": "Tendai_Moyo_CV.pdf", "kind": "pdf" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "tendai.moyo@lintbox.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "senderTrust": "Candidates apply from their personal email, so an lintbox.example address is normal here. The name and the address match.",
+              "attachmentPlausible": "It says the CV is attached, and it is: one PDF, which opens in the viewer.",
+              "addressedTo": "It's addressed to Fatima by name and names the job.",
+              "default": "A personal address is normal for a candidate. The CV is attached, the email names the job and the person, and it asks for nothing but an interview."
+            }
+          }
+        },
+        {
+          "id": "e2_enable_content",
+          "from": { "name": "Jordan Kerr", "address": "jordan.kerr.cv@hastypost.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "Job application",
+          "time": "10:10",
+          "body": "Dear Hiring Manager,\nPlease find my CV attached for the vacancy.\nFor my privacy the document is protected. When it opens, click Enable Editing and then Enable Content at the top of the page, and the CV will appear.\nRegards,\nJordan Kerr",
+          "attachments": [ { "id": "cv", "label": "CV_JKerr_protected.docx", "kind": "document" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "jordan.kerr.cv@hastypost.example" },
+          "factorStrings": { "enable_content_prompt": { "redFlag": "The document asks you to enable editing or content before it will show anything" } },
+          "truth": {
+            "isPhish": true,
+            "flags": ["enable_content_prompt", "addressedTo"],
+            "perFlagNote": {
+              "enable_content_prompt": "A real CV shows up as soon as you open it. 'Click Enable Editing and then Enable Content' is the step the file needs you to take before it can run anything",
+              "addressedTo": "'Dear Hiring Manager' and 'the vacancy', with no name and no job: it could have gone to any company with any job open"
+            },
+            "ifTrusted": "Switching on content would let the document run a small program on your computer, which could give whoever sent it a way into Tarrowby's network.",
+            "reportReply": "Thanks. That file was set up to run a hidden program once content was switched on. We've blocked the sender and checked nobody else opened it.",
+            "whyFine": {
+              "attachmentPlausible": "A Word document is a normal way to send a CV, so the file itself fits. What doesn't fit is being told to enable editing and content before it will show: a real CV never needs that."
+            }
+          }
+        },
+        {
+          "id": "e2_cv_docx",
+          "_note": "The safe version of the row before: a Word CV that opens read-only and asks for nothing.",
+          "from": { "name": "Darius Petrauskas", "address": "darius.petrauskas@lintbox.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "HGV driver (Class 1): application",
+          "time": "10:45",
+          "body": "Hello Fatima,\nI'm applying for the Class 1 driver job on your website. I have twelve years of general haulage and a clean licence. My CV is attached as a Word document.\nThank you,\nDarius Petrauskas",
+          "attachments": [ { "id": "cv", "label": "Darius_Petrauskas_CV.docx", "kind": "document" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "darius.petrauskas@lintbox.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "enable_content_prompt": "It's a Word file, which is normal for a CV. In the viewer it shows the whole CV read-only and asks you to switch nothing on.",
+              "attachmentPlausible": "A CV attached to an application is what you'd expect, and a Word document is a common way to send one.",
+              "senderTrust": "Candidates apply from their personal email, so an lintbox.example address is normal here.",
+              "default": "A named job, a named person, a CV that's really attached, and nothing to switch on or sign in to."
+            }
+          }
+        },
+        {
+          "id": "e2_colin_interviews",
+          "from": { "name": "Colin Mather", "address": "colin.mather@tarrowby.example" },
+          "to": "recruitment@tarrowby.example",
+          "subject": "Night supervisor interviews: Thursday?",
+          "time": "11:20",
+          "body": "Hi both,\nThanks for the shortlist from Kettlewick. Could we see all three on Thursday morning? I'm on site from seven. Put them in the recruitment system as usual and I'll pick up the details there.\nColin\nWarehouse Manager, Normanton",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "colin.mather@tarrowby.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "senderTrust": "Colin's real Tarrowby address, and it's his vacancy.",
+              "default": "The hiring manager, writing from his own address, wants three candidates seen through the normal system. Nothing is attached, and nothing needs signing in to."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "hr_form_a",
+      "_form": "HR and recruitment parallel form A. Authored as pre; the BA check pair launches it as post (minigameData.stage). Item n here matches item n in hr_form_b; the table is in _formPairing above.",
+      "title": "Recruitment inbox check",
+      "brief": "Ten messages from a Tarrowby Logistics recruitment inbox. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+      "stage": "pre",
+      "pairedWith": "hr_form_b",
+      "scoringProfile": "awareness",
+      "feedbackMode": "end",
+      "headerPanel": "collapsed",
+      "glossary": "closed",
+      "channelTells": ["lookalike_domain", "enable_content_prompt", "secrecy_or_bypass", "reply_to_differs"],
+      "flagChips": { "enable_content_prompt": "It asks me to turn on editing or content to see it" },
+      "outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "ha_rooms_booked",
+          "from": { "name": "Jun Watanabe", "address": "jun.watanabe@tarrowby.example" },
+          "to": "recruitment@tarrowby.example",
+          "subject": "Interview rooms booked for next week",
+          "time": "08:10",
+          "body": "Hi Fatima,\nI've booked the small meeting room at Normanton for Tuesday and Wednesday afternoons next week, for the driver interviews. The room's in the shared calendar.\nJun",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "jun.watanabe@tarrowby.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": { "default": "Jun's real Tarrowby address, a room booking, and nothing to open, pay or sign in to." }
+          }
+        },
+        {
+          "id": "ha_protected_cv",
+          "from": { "name": "Alex Hollins", "address": "alex.hollins.cv@lintbox.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "Application",
+          "time": "08:35",
+          "body": "Dear Sir or Madam,\nPlease see my CV attached for the position.\nThe document is protected. If it opens as read-only, click Enable Editing, then Enable Content, to see it.\nRegards,\nAlex Hollins",
+          "attachments": [ { "id": "cv", "label": "CV_2026.docx", "kind": "document" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "alex.hollins.cv@lintbox.example" },
+          "factorStrings": { "enable_content_prompt": { "redFlag": "The document asks you to enable editing or content before it will show anything" } },
+          "truth": {
+            "isPhish": true,
+            "flags": ["enable_content_prompt", "addressedTo"],
+            "perFlagNote": {
+              "enable_content_prompt": "A real CV shows up when you open it. Being told to enable editing and then content is the step the file needs before it can run anything",
+              "addressedTo": "'Dear Sir or Madam' and 'the position', with no name and no job: it could have gone to anyone"
+            },
+            "ifTrusted": "Switching on content would let the document run a small program on your computer.",
+            "reportReply": "Thanks. The file was set up to run a program once content was switched on. We've blocked the sender."
+          }
+        },
+        {
+          "id": "ha_forklift_cv",
+          "from": { "name": "Zsofia Szabo", "address": "zsofia.szabo@lintbox.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "Forklift driver (nights): my application",
+          "time": "09:00",
+          "body": "Hello Fatima,\nI'd like to apply for the night forklift driver job. I hold counterbalance and reach truck licences and have worked nights for six years. My CV is attached.\nBest wishes,\nZsofia Szabo",
+          "attachments": [ { "id": "cv", "label": "Zsofia_Szabo_CV.docx", "kind": "document" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "zsofia.szabo@lintbox.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "enable_content_prompt": "It's a Word file, which is normal for a CV, and it asks you to switch nothing on.",
+              "senderTrust": "Candidates apply from personal email, so an lintbox.example address is normal here.",
+              "default": "A named job, your name, a CV that's really attached, and nothing to switch on."
+            }
+          }
+        },
+        {
+          "id": "ha_passport_scans",
+          "from": { "name": "Colin Mather", "address": "colin.mather.depot@lintbox.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "Starters Monday: need their passports now",
+          "time": "09:25",
+          "body": "Fatima,\nI'm at the depot without my laptop. Can you send me scans of the passports for the two drivers starting Monday? Send them to this address before 3; I need them for the agency. Keep it between us, HR will only slow it down.\nColin",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "colin.mather.depot@lintbox.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "urgencyCalibrated"],
+            "perFlagNote": {
+              "senderTrust": "Colin's name on a personal inbox at lintbox.example, not tarrowby.example",
+              "urgencyCalibrated": "'Send them before 3' and 'HR will only slow it down' rush you and steer you round the normal onboarding route"
+            },
+            "ifTrusted": "Two people's passport scans would go to a stranger, which is enough to open accounts in their names.",
+            "reportReply": "Thanks. Colin has his laptop and didn't send this. Passport copies only ever go through the onboarding system."
+          }
+        },
+        {
+          "id": "ha_feedback_forms",
+          "from": { "name": "Jun Watanabe", "address": "jun.watanabe@tarrowby.example" },
+          "to": "recruitment@tarrowby.example",
+          "subject": "Interview feedback forms are in the system",
+          "time": "09:50",
+          "body": "Hi both,\nThe feedback forms for last week's interviews are now in the recruitment system:\n{{link:feedback}}\nYou can also find them from the intranet as usual.\nJun",
+          "links": [ { "id": "feedback", "text": "hire.tarrowby.example/feedback", "destination": "https://hire.tarrowby.example/feedback" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "jun.watanabe@tarrowby.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "linkCredible": "The link goes where it says, to Tarrowby's own recruitment system, and you could reach it from the intranet instead.",
+              "default": "Jun's real address, a routine notice, and no hurry."
+            }
+          }
+        },
+        {
+          "id": "ha_agency_spoof",
+          "from": { "name": "Roseanne Wadsworth", "address": "roseanne.wadsworth@kettlewick-talent.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "Shortlisted candidates: travel bookings",
+          "time": "10:15",
+          "body": "Hi Fatima,\nI'm booking travel for the shortlisted drivers. Could you reply with each one's home address and mobile number so I can send their tickets?\nThanks,\nRoseanne\nKettlewick Talent",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "kettlewick-talent.example", "replyTo": "roseanne.wadsworth@kettlewick-talent.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "lookalike_domain"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
+            "perFlagNote": {
+              "senderTrust": "The name says Roseanne at Kettlewick, but the address is on kettlewick-talent.example, which isn't the agency's",
+              "lookalike_domain": "Kettlewick's real domain is kettlewick.example. kettlewick-talent.example adds a word with a hyphen, making a separate domain anyone can register, so don't assume it's theirs"
+            },
+            "ifTrusted": "Candidates' home addresses and phone numbers would go to a stranger, who could then ring them pretending to be Tarrowby.",
+            "reportReply": "Thanks. Roseanne didn't send it, kettlewick-talent.example isn't the agency's, and Kettlewick doesn't book candidates' travel."
+          }
+        },
+        {
+          "id": "ha_interviews_moved",
+          "from": { "name": "Colin Mather", "address": "colin.mather@tarrowby.example" },
+          "to": "recruitment@tarrowby.example",
+          "subject": "Can we move Thursday's interviews to Wednesday?",
+          "time": "10:40",
+          "body": "Hi both,\nI've been called to the Castleford site on Thursday, so could we move the driver interviews to Wednesday afternoon? Sorry for the late change. Please let the candidates know through the recruitment system as usual.\nColin",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "colin.mather@tarrowby.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "urgencyCalibrated": "It's a short-notice change, but it explains why and asks for nothing unusual.",
+              "default": "Colin's real address, his own interviews, and he wants them rearranged through the normal system."
+            }
+          }
+        },
+        {
+          "id": "ha_careers_missing",
+          "from": { "name": "Dean Holroyd", "address": "dean.holroyd@hastypost.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "CV attached: HGV driver",
+          "time": "11:05",
+          "body": "Hi,\nMy CV is attached for the HGV driver job. If it hasn't come through, it's also on your careers page here:\n{{link:cv}}\nSign in with your work email to view it.\nDean",
+          "links": [ { "id": "cv", "text": "careers-tarrowby.example/cv/5520", "destination": "https://careers-tarrowby.example/cv/5520" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "dean.holroyd@hastypost.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["lookalike_domain", "attachmentPlausible"],
+            "perFlagNote": {
+              "lookalike_domain": "Read it slowly: careers-tarrowby.example isn't tarrowby.example. Tarrowby's own sites end in tarrowby.example; the added word with a hyphen makes a separate domain anyone can register, so don't assume it's theirs",
+              "attachmentPlausible": "It says the CV is attached, but nothing is, and the link that replaces it wants you to sign in"
+            },
+            "ifTrusted": "The link opens a sign-in page that collects your Tarrowby password.",
+            "reportReply": "Thanks. careers-tarrowby.example isn't ours, and we've blocked it."
+          }
+        },
+        {
+          "id": "ha_new_applications",
+          "from": { "name": "Tarrowby Recruitment System", "address": "jobs-noreply@tarrowby.example" },
+          "to": "recruitment@tarrowby.example",
+          "subject": "3 new applications: HGV driver (Class 1)",
+          "time": "11:30",
+          "body": "Three new applications are waiting for HGV driver (Class 1). Open them in the recruitment system:\n{{link:apps}}\nThis is an automatic message.",
+          "links": [ { "id": "apps", "text": "hire.tarrowby.example/jobs/hgv-class1", "destination": "https://hire.tarrowby.example/jobs/hgv-class1" } ],
+          "auth": { "spf": "fail", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "send.hirerelay.example", "replyTo": "jobs-noreply@tarrowby.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "linkCredible": "The link goes where it says, to Tarrowby's own recruitment system.",
+              "default": "The recruitment system's usual automatic notice, from Tarrowby's own address, linking to the system you already use. It asks for nothing."
+            }
+          }
+        },
+        {
+          "id": "ha_withdrawal",
+          "from": { "name": "Minjun Ahn", "address": "minjun.ahn@lintbox.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "Withdrawing my application",
+          "time": "12:00",
+          "body": "Dear Fatima,\nThank you for inviting me to interview for the transport planner role. I've accepted another offer this week, so I'd like to withdraw my application. I hope to apply to Tarrowby again in future.\nKind regards,\nMinjun Ahn",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "minjun.ahn@lintbox.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "senderTrust": "Candidates write from personal email, so an lintbox.example address is normal here.",
+              "default": "A candidate, by name, about a job they applied for, asking for nothing."
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "hr_form_b",
+      "_form": "HR and recruitment parallel form B. Authored as post; the BA check pair launches it as pre (minigameData.stage). Item n here matches item n in hr_form_a; the table is in _formPairing above.",
+      "title": "Recruitment inbox check",
+      "brief": "Ten messages from a Tarrowby Logistics recruitment inbox. For each one, choose Trust, Report or Delete, then tick what you noticed. You'll see how you did at the end. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+      "stage": "post",
+      "pairedWith": "hr_form_a",
+      "scoringProfile": "awareness",
+      "feedbackMode": "end",
+      "headerPanel": "collapsed",
+      "glossary": "closed",
+      "channelTells": ["lookalike_domain", "enable_content_prompt", "secrecy_or_bypass", "reply_to_differs"],
+      "flagChips": { "enable_content_prompt": "It asks me to turn on editing or content to see it" },
+      "outcome": { "setGlobalPrefix": "triage_{stage}_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "hb_induction_moved",
+          "from": { "name": "Thanh Nguyen", "address": "thanh.nguyen@tarrowby.example" },
+          "to": "recruitment@tarrowby.example",
+          "subject": "Induction day moves to Tuesday",
+          "time": "08:10",
+          "body": "Hi all,\nNext week's induction for new starters moves from Monday to Tuesday, same time, in the training room at Normanton. I've updated the invitations.\nThanh\nOnboarding",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "thanh.nguyen@tarrowby.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": { "default": "Thanh's real Tarrowby address, a date change, and nothing to open, pay or sign in to." }
+          }
+        },
+        {
+          "id": "hb_protected_reference",
+          "from": { "name": "Ray Turner", "address": "ray.turner.ref@hastypost.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "Reference",
+          "time": "08:35",
+          "body": "Hello,\nAttached is the reference you asked for.\nIt's a protected form. Click Enable Editing and then Enable Content at the top to read it.\nRegards,\nRay Turner",
+          "attachments": [ { "id": "ref", "label": "Reference_form.docx", "kind": "document" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "ray.turner.ref@hastypost.example" },
+          "factorStrings": { "enable_content_prompt": { "redFlag": "The document asks you to enable editing or content before it will show anything" } },
+          "truth": {
+            "isPhish": true,
+            "flags": ["enable_content_prompt", "addressedTo"],
+            "perFlagNote": {
+              "enable_content_prompt": "A real reference shows up when you open it. Being told to enable editing and then content is the step the file needs before it can run anything",
+              "addressedTo": "'Hello' with no name, and it never says which candidate the reference is for: it could have gone to anyone"
+            },
+            "ifTrusted": "Switching on content would let the document run a small program on your computer.",
+            "reportReply": "Thanks. The file was set up to run a program once content was switched on. We've blocked the sender."
+          }
+        },
+        {
+          "id": "hb_reference_real",
+          "from": { "name": "Kevin Brannigan", "address": "k.brannigan@dewsburycoldstore.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "Reference for Bethany Hirst",
+          "time": "09:00",
+          "body": "Hello Fatima,\nThanks for your call yesterday. As promised, my reference for Bethany Hirst is attached. She worked for us for three years and I'd have her back tomorrow.\nKevin Brannigan\nOperations Manager, Dewsbury Cold Store",
+          "attachments": [ { "id": "ref", "label": "Reference_Bethany_Hirst.docx", "kind": "document" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "dewsburycoldstore.example", "replyTo": "k.brannigan@dewsburycoldstore.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "enable_content_prompt": "It's a Word file, which is a normal way to send a reference, and it asks you to switch nothing on.",
+              "default": "A former employer you rang yesterday, naming the candidate, from the company's own address."
+            }
+          }
+        },
+        {
+          "id": "hb_bank_details",
+          "from": { "name": "Deborah Haldane", "address": "deborah.haldane.hr@hastypost.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "New starters: bank details needed today",
+          "time": "09:25",
+          "body": "Fatima,\nI'm working from home today and can't get onto the system. Please send me the new starters' bank details as a spreadsheet to this address before 5. Don't copy payroll in; I'll sort it with them myself.\nDeborah",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "deborah.haldane.hr@hastypost.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "urgencyCalibrated"],
+            "perFlagNote": {
+              "senderTrust": "Deborah's name on a personal inbox at hastypost.example, not tarrowby.example",
+              "urgencyCalibrated": "'Needed today', 'before 5' and 'don't copy payroll in' push you to act fast and skip the people who would normally check"
+            },
+            "ifTrusted": "New starters' bank details would go to a stranger, who could use them to divert their first pay.",
+            "reportReply": "Thanks. Deborah didn't send this. Bank details only ever go to payroll, through the onboarding system."
+          }
+        },
+        {
+          "id": "hb_preview_guide",
+          "from": { "name": "Ibrahim Diallo", "address": "ibrahim.diallo@tarrowby.example" },
+          "to": "recruitment@tarrowby.example",
+          "subject": "How to preview attachments safely",
+          "time": "09:50",
+          "body": "Hello all,\nYou open more attachments from strangers than anyone else here, so I've written a two-minute guide to previewing CVs safely:\n{{link:guide}}\nIf a file ever asks you to switch something on, don't; send it to us.\nIbrahim\nIT Support",
+          "links": [ { "id": "guide", "text": "intranet.tarrowby.example/preview", "destination": "https://intranet.tarrowby.example/preview" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "ibrahim.diallo@tarrowby.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "linkCredible": "The link goes where it says, to Tarrowby's own intranet, and the guide asks for no sign-in.",
+              "default": "IT's real address, a guide on the intranet, and no hurry."
+            }
+          }
+        },
+        {
+          "id": "hb_onboarding_spoof",
+          "from": { "name": "Thanh Nguyen", "address": "thanh.nguyen@tarrowby-onboarding.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "Right-to-work copies for the onboarding file",
+          "time": "10:15",
+          "body": "Hi Fatima,\nThe onboarding file for Monday's starters is missing their right-to-work copies. Could you reply with their passport scans attached so I can finish it?\nThanks,\nThanh\nOnboarding",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby-onboarding.example", "replyTo": "thanh.nguyen@tarrowby-onboarding.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["senderTrust", "lookalike_domain"],
+            "flagAlternatives": [["senderTrust", "lookalike_domain"]],
+            "perFlagNote": {
+              "senderTrust": "The name says Thanh at Tarrowby, but the address is on tarrowby-onboarding.example, which isn't Tarrowby's",
+              "lookalike_domain": "Tarrowby's own sites end in tarrowby.example. tarrowby-onboarding.example adds a word with a hyphen, making a separate domain anyone can register, so don't assume it's theirs"
+            },
+            "ifTrusted": "The new starters' passport scans would go to a stranger.",
+            "reportReply": "Thanks. Thanh didn't send it, tarrowby-onboarding.example isn't ours, and the onboarding file is complete."
+          }
+        },
+        {
+          "id": "hb_other_offer",
+          "from": { "name": "Roseanne Wadsworth", "address": "roseanne.wadsworth@kettlewick.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "Candidate has another offer: can you tell me by Friday?",
+          "time": "10:40",
+          "body": "Hi Fatima,\nOne of my night supervisor candidates has had another offer and has to answer by Monday. Could you let me know by Friday whether Colin wants a second interview? No paperwork needed yet, just a yes or no.\nThanks,\nRoseanne\nKettlewick Talent",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "kettlewick.example", "replyTo": "roseanne.wadsworth@kettlewick.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "urgencyCalibrated": "There is a deadline, but it's a real one with a reason, and all she wants is a yes or no.",
+              "default": "The agency you use, from its real address, asking for a decision, not for data or a payment."
+            }
+          }
+        },
+        {
+          "id": "hb_shortlist_missing",
+          "from": { "name": "Gareth Ingram", "address": "gareth.ingram@hastypost.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "CV attached: warehouse operative",
+          "time": "11:05",
+          "body": "Hi,\nMy CV is attached for the warehouse operative job. If it hasn't come through, it's also on your careers page here:\n{{link:cv}}\nSign in with your work email to view it.\nGareth",
+          "links": [ { "id": "cv", "text": "tarrowby-jobs.example/cv/3307", "destination": "https://tarrowby-jobs.example/cv/3307" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "gareth.ingram@hastypost.example" },
+          "truth": {
+            "isPhish": true,
+            "flags": ["lookalike_domain", "attachmentPlausible"],
+            "perFlagNote": {
+              "lookalike_domain": "Read it slowly: tarrowby-jobs.example isn't tarrowby.example. Tarrowby's own sites end in tarrowby.example; the added word with a hyphen makes a separate domain anyone can register, so don't assume it's theirs",
+              "attachmentPlausible": "It says the CV is attached, but nothing is, and the link that replaces it wants you to sign in"
+            },
+            "ifTrusted": "The link opens a sign-in page that collects your Tarrowby password.",
+            "reportReply": "Thanks. tarrowby-jobs.example isn't ours, and we've blocked it."
+          }
+        },
+        {
+          "id": "hb_starter_forms",
+          "from": { "name": "Tarrowby Onboarding", "address": "onboarding@tarrowby.example" },
+          "to": "recruitment@tarrowby.example",
+          "subject": "New starter forms complete: 2 people",
+          "time": "11:30",
+          "body": "Two new starters have finished their forms. Open the onboarding system from the intranet as usual to review them; this email has no link on purpose.\nThis is an automatic message.",
+          "auth": { "spf": "fail", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "mail.starterhub.example", "replyTo": "onboarding@tarrowby.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "default": "The onboarding system's usual automatic notice. It names the real company, carries no link on purpose, and sends you to the intranet you already use. It asks for nothing."
+            }
+          }
+        },
+        {
+          "id": "hb_thank_you",
+          "from": { "name": "Bethany Hirst", "address": "bethany.hirst@hastypost.example" },
+          "to": "jobs@tarrowby.example",
+          "subject": "Thank you for today",
+          "time": "12:00",
+          "body": "Dear Fatima,\nThank you for this morning's interview for the warehouse operative role, and for the tour of the Normanton site. I enjoyed meeting the team and I'm still very keen on the job.\nBest wishes,\nBethany Hirst",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "bethany.hirst@hastypost.example" },
+          "truth": {
+            "isPhish": false,
+            "flags": [],
+            "whyFine": {
+              "senderTrust": "Candidates write from personal email, so a hastypost.example address is normal here.",
+              "default": "A candidate, by name, about an interview you held, asking for nothing."
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "awarenessEpisode": {
+    "role": "hr_recruitment",
+    "company": "tarrowby_logistics",
+    "brand": { "name": "Tarrowby Logistics", "logoText": "TARROWBY", "accent": "#3b5b8c" },
+    "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: one job application email to the recruitment contact you find, and the Tarrowby recruitment inbox. Nothing you write leaves the game, and the attachment is a label, not a file.",
+    "defend": { "setId": "e2_recruitment_inbox", "reportAlwaysVisible": true },
+    "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
+    "strings": {
+      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. First you're on the red team: look at what Tarrowby has posted about its open jobs, then write one job application to its recruiter, Fatima Begum, with an attachment picked from a list of labels. Nothing real is attached or sent. Then you swap seats and sort a recruitment inbox like the one your email landed in. Only the inbox is scored.",
+      "flipHeading": "Now it lands on you",
+      "flipIntro": "This is the application you just sent, the way it looked to Fatima, Tarrowby's recruitment lead. The parts picked out below are what make it believable.",
+      "flipDefenderLine": "Fatima opened it between two interviews, forty applications still unread. One more CV for the warehouse job, from someone who named the role, so she opened the attachment. Forty applications deep, anyone opens the next one.",
+      "flipNoSend": "Your application didn't go out this time, so there's nothing of yours to show. Next, the same kind of message arrives in a recruitment inbox, and you're the one opening it.",
+      "flipMissed": "The defence is the same either way: next, the same kind of message lands in a recruitment inbox, and you're the one opening it.",
+      "flipMissedHeading": "Nothing to replay this time",
+      "flipLandedNoTells": "It opened like any real application, with nothing off to pick up on. Next, the same kind of message lands in a recruitment inbox, and you're the one opening it.",
+      "noBlameLine": "Every one of these was built to look right, and opening attachments from strangers is a recruiter's whole job. A miss here points to a busy inbox, and to where to look next time.",
+      "mondayCard": "On Monday: read CVs in the viewer, and if a document asks you to enable editing or content, don't. If a CV 'doesn't come through' and sits behind a link that wants you to sign in, ask the candidate to send it as an attachment instead. Then report anything odd using the route in the box below.",
+      "defendOnly": "These were built by people who know exactly what a real application looks like, and opening a CV is a recruiter's job, not a lapse. Any you were caught out by are shown below, with what gave each one away."
+    },
+    "_defendOnly": {
+      "_use": "Strings for the defend-only shell (e2_cv_lures_defend), which has no OSINT, write or flip stage. The shell copies brief over strings.brief and scopeNote over scopeNote; every other string above is shared by both variants (the flip strings are never shown).",
+      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional company. You're covering the recruitment inbox this morning, and six messages are waiting. Some are real applications and some were built to trick you. Sort them, and report anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
+      "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional company. In scope: the Tarrowby recruitment inbox."
+    }
+  }
+}

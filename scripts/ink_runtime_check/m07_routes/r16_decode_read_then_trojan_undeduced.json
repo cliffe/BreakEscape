@@ -1,0 +1,115 @@
+{
+ "steps": [
+  {
+   "note": "R16 (puzzle chains r1, C2; was probe q2): decode read with no team, never deduced, then Trojan Horse chosen on the hub. Their schedule was in the kit at the commit."
+  },
+  {
+   "talk": "briefing",
+   "picks": [
+    "Understood. Talk to me"
+   ]
+  },
+  {
+   "talk": "phone",
+   "picks": []
+  },
+  {
+   "enter": "operations_floor"
+  },
+  {
+   "read": "shift_handover_sheet"
+  },
+  {
+   "pickup": "printed_contractor_badge"
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "event": "object_interacted",
+   "data": {
+    "objectType": "vm-launcher"
+   }
+  },
+  {
+   "flag": 1
+  },
+  {
+   "read": "coordination_extract"
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "ready to make the call",
+    "Trojan"
+   ]
+  },
+  {
+   "expect": {
+    "team_assignment": "trojan_horse",
+    "revision_before_commit": false,
+    "decode_before_commit": true
+   }
+  },
+  {
+   "flag": 2
+  },
+  {
+   "enter": "scada_control"
+  },
+  {
+   "flag": 3
+  },
+  {
+   "flag": 4
+  },
+  {
+   "task": "shut_down_the_cascade"
+  },
+  {
+   "talk": "phone",
+   "picks": [
+    "Bring me in"
+   ]
+  },
+  {
+   "enter": "server_room"
+  },
+  {
+   "talk": "debrief",
+   "picks": [
+    0,
+    1,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    1,
+    "Nothing on the record",
+    "I made the call",
+    0
+   ]
+  },
+  {
+   "said": [
+    "Their schedule was in your kit when you made the call. Whatever you read in it, you sent them to Austin."
+   ],
+   "notSaid": [
+    "You had no way to know"
+   ]
+  },
+  {
+   "creditsSaid": [
+    "840 signing keys burned"
+   ],
+   "creditsNotSaid": [
+    "CORRECTION"
+   ]
+  },
+  {
+   "maxRun": 9
+  }
+ ]
+}

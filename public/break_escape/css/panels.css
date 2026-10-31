@@ -1,0 +1,615 @@
+/* UI Panels Styles */
+
+
+/* Bluetooth Panel */
+#bluetooth-panel {
+    position: fixed;
+    bottom: 80px;
+    right: 90px;
+    width: 350px;
+    max-height: 500px;
+    background-color: rgba(0, 0, 0, 0.9);
+    color: white;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.5);
+    z-index: 1999;
+    font-family: 'Press Start 2P';
+    display: none;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid #444;
+}
+
+#bluetooth-header {
+    background-color: #222;
+    padding: 12px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #444;
+}
+
+#bluetooth-title {
+    font-weight: bold;
+    font-size: 18px;
+    color: #9b59b6;
+}
+
+#bluetooth-close {
+    cursor: pointer;
+    font-size: 18px;
+    color: #aaa;
+    transition: color 0.2s;
+}
+
+#bluetooth-close:hover {
+    color: white;
+}
+
+#bluetooth-search-container {
+    padding: 10px 15px;
+    background-color: #333;
+    border-bottom: 1px solid #444;
+}
+
+#bluetooth-search {
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    background-color: #222;
+    color: white;
+    font-size: 18px;
+}
+
+#bluetooth-search:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(155, 89, 182, 0.5);
+}
+
+#bluetooth-categories {
+    display: flex;
+    padding: 5px 15px;
+    background-color: #2c2c2c;
+    border-bottom: 1px solid #444;
+}
+
+.bluetooth-category {
+    padding: 5px 10px;
+    margin-right: 5px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s;
+}
+
+.bluetooth-category.active {
+    background-color: #9b59b6;
+    color: white;
+}
+
+.bluetooth-category:hover:not(.active) {
+    background-color: #444;
+}
+
+#bluetooth-content {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.bluetooth-device {
+    background-color: #333;
+    border: 1px solid #444;
+    /* border-radius: 5px; */
+    padding: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bluetooth-device:hover {
+    background-color: #444;
+    border-color: #9b59b6;
+}
+
+.bluetooth-device:last-child {
+    margin-bottom: 0;
+}
+
+.bluetooth-device.expanded {
+    background-color: #2a2a2a;
+}
+
+.bluetooth-device-name {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.bluetooth-device-icons {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.bluetooth-device-icon {
+    font-size: 18px;
+}
+
+.bluetooth-device-details {
+    display: none;
+    font-size: 18px;
+    color: #ccc;
+    margin-top: 8px;
+    white-space: pre-line;
+}
+
+.bluetooth-device.expanded .bluetooth-device-details {
+    display: block;
+}
+
+.bluetooth-device-timestamp {
+    font-size: 18px;
+    color: #888;
+    margin-top: 5px;
+    text-align: right;
+}
+
+/* Bluetooth Signal Strength Bar */
+.bluetooth-signal-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.bluetooth-signal-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+}
+
+.bluetooth-signal-bar {
+    width: 3px;
+    background-color: #666;
+    /* border-radius: 1px; */
+    transition: all 0.2s;
+}
+
+.bluetooth-signal-bar.active {
+    background-color: currentColor;
+}
+
+.bluetooth-signal-bar:nth-child(1) { height: 3px; }
+.bluetooth-signal-bar:nth-child(2) { height: 6px; }
+.bluetooth-signal-bar:nth-child(3) { height: 9px; }
+.bluetooth-signal-bar:nth-child(4) { height: 12px; }
+.bluetooth-signal-bar:nth-child(5) { height: 16px; }
+
+.bluetooth-signal-text {
+    font-size: 18px;
+    color: #aaa;
+}
+
+.bluetooth-device.hover-preserved {
+    background-color: #444;
+    border-color: #9b59b6;
+}
+
+.bluetooth-device:hover .bluetooth-device-name,
+.bluetooth-device:hover .bluetooth-device-details,
+.bluetooth-device:hover .bluetooth-device-timestamp,
+.bluetooth-device:hover {
+    color: inherit;
+}
+
+/* Biometrics Panel */
+#biometrics-panel {
+    position: fixed;
+    bottom: 80px;
+    right: 160px;
+    width: 350px;
+    max-height: 500px;
+    background-color: rgba(0, 0, 0, 0.9);
+    color: white;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.5);
+    z-index: 1999;
+    font-family: 'Press Start 2P';
+    display: none;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid #444;
+}
+
+#biometrics-header {
+    background-color: #222;
+    padding: 12px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #444;
+}
+
+#biometrics-title {
+    font-weight: bold;
+    font-size: 18px;
+    color: #e74c3c;
+}
+
+#biometrics-close {
+    cursor: pointer;
+    font-size: 18px;
+    color: #aaa;
+    transition: color 0.2s;
+}
+
+#biometrics-close:hover {
+    color: white;
+}
+
+#biometrics-search-container {
+    padding: 10px 15px;
+    background-color: #333;
+    border-bottom: 1px solid #444;
+}
+
+#biometrics-search {
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    background-color: #222;
+    color: white;
+    font-size: 18px;
+}
+
+#biometrics-search:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.5);
+}
+
+#biometrics-categories {
+    display: flex;
+    padding: 5px 15px;
+    background-color: #2c2c2c;
+    border-bottom: 1px solid #444;
+}
+
+.biometrics-category {
+    padding: 5px 10px;
+    margin-right: 5px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s;
+}
+
+.biometrics-category.active {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.biometrics-category:hover:not(.active) {
+    background-color: #444;
+}
+
+/* Panels Styles */
+
+
+/* Bluetooth Panel */
+.bluetooth-panel {
+    background-color: #2c3e50;
+    color: white;
+    padding: 20px;
+    /* border-radius: 8px; */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 320px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.bluetooth-panel h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #ecf0f1;
+    text-align: center;
+}
+
+.bluetooth-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.bluetooth-scan-btn {
+    flex: 1;
+    padding: 8px 16px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    /* border-radius: 4px; */
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.bluetooth-scan-btn:hover {
+    background-color: #2980b9;
+}
+
+.bluetooth-scan-btn:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+}
+
+.bluetooth-devices {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.device-item {
+    background-color: #34495e;
+    margin-bottom: 8px;
+    padding: 10px;
+    /* border-radius: 4px; */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.device-info {
+    flex: 1;
+}
+
+.device-name {
+    font-weight: bold;
+    color: #ecf0f1;
+    margin-bottom: 2px;
+}
+
+.device-address {
+    font-size: 18px;
+    color: #bdc3c7;
+    font-family: monospace;
+}
+
+.device-signal {
+    font-size: 18px;
+    color: #f39c12;
+    margin-left: 10px;
+}
+
+.device-status {
+    font-size: 18px;
+    padding: 2px 6px;
+    /* border-radius: 3px; */
+    margin-left: 10px;
+}
+
+.device-status.nearby {
+    background-color: #27ae60;
+    color: white;
+}
+
+.device-status.saved {
+    background-color: #3498db;
+    color: white;
+}
+
+/* Biometric Panel */
+.biometric-panel {
+    background-color: #2c3e50;
+    color: white;
+    padding: 20px;
+    /* border-radius: 8px; */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 320px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.biometric-panel h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #ecf0f1;
+    text-align: center;
+}
+
+.panel-section {
+    margin-bottom: 20px;
+}
+
+.panel-section h4 {
+    color: #3498db;
+    margin-bottom: 10px;
+    font-size: 18px;
+    border-bottom: 1px solid #34495e;
+    padding-bottom: 5px;
+}
+
+.sample-item {
+    background-color: #34495e;
+    margin-bottom: 10px;
+    padding: 12px;
+    /* border-radius: 4px; */
+    border-left: 4px solid #27ae60;
+}
+
+.sample-item strong {
+    color: #ecf0f1;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.sample-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.sample-type {
+    font-size: 18px;
+    color: #bdc3c7;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sample-quality {
+    font-size: 18px;
+    font-weight: bold;
+    padding: 2px 6px;
+    /* border-radius: 3px; */
+}
+
+.sample-quality.quality-perfect {
+    background-color: #27ae60;
+    color: white;
+}
+
+.sample-quality.quality-excellent {
+    background-color: #2ecc71;
+    color: white;
+}
+
+.sample-quality.quality-good {
+    background-color: #f39c12;
+    color: white;
+}
+
+.sample-quality.quality-fair {
+    background-color: #e67e22;
+    color: white;
+}
+
+.sample-quality.quality-poor {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.sample-date {
+    font-size: 18px;
+    color: #7f8c8d;
+}
+
+#scanner-status {
+    font-size: 18px;
+    color: #bdc3c7;
+}
+
+/* General Panel Styles */
+.panel-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: none;
+}
+
+.panel-container.active {
+    display: block;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.panel-close {
+    background: none;
+    border: none;
+    color: #bdc3c7;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.panel-close:hover {
+    color: #e74c3c;
+}
+
+/* Toggle Buttons Container */
+#toggle-buttons-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1000;
+}
+
+#bluetooth-toggle,
+#biometrics-toggle {
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s, opacity 0.2s;
+    background: rgba(0, 0, 0, 0.7);
+    /* border-radius: 8px; */
+    padding: 8px;
+    border: 2px solid #444;
+}
+
+#bluetooth-toggle:hover,
+#biometrics-toggle:hover {
+    transform: scale(1.05);
+    border-color: #3498db;
+}
+
+#bluetooth-count,
+#biometrics-count {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    font-family: 'Press Start 2P', monospace;
+    border: 2px solid #fff;
+}
+
+/* Scrollbar styling for panels */
+.notes-panel::-webkit-scrollbar,
+.bluetooth-panel::-webkit-scrollbar,
+.biometric-panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.notes-panel::-webkit-scrollbar-track,
+.bluetooth-panel::-webkit-scrollbar-track,
+.biometric-panel::-webkit-scrollbar-track {
+    background: #34495e;
+    /* border-radius: 4px; */
+}
+
+.notes-panel::-webkit-scrollbar-thumb,
+.bluetooth-panel::-webkit-scrollbar-thumb,
+.biometric-panel::-webkit-scrollbar-thumb {
+    background: #555;
+    /* border-radius: 4px; */
+}
+
+.notes-panel::-webkit-scrollbar-thumb:hover,
+.bluetooth-panel::-webkit-scrollbar-thumb:hover,
+.biometric-panel::-webkit-scrollbar-thumb:hover {
+    background: #666;
+}
+
+/* Toggle Button Images */
+.toggle-buttons img {
+    width: 64px;
+    height: 64px;
+}
+
+/* Spotify Play Button — removed; replaced by Music Widget */

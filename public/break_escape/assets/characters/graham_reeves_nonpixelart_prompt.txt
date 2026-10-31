@@ -1,0 +1,13 @@
+Make portrait for Graham Reeves
+A white British man in his early fifties, a plain-clothes night security supervisor who is deliberately unremarkable and forgettable. He wears a plain, slightly cheap charcoal-grey suit jacket over an open-collared pale shirt, no tie, and crucially NO uniform, NO peaked cap, NO ID lanyard and NO badge. Short greying hair, clean-shaven, a calm flat watchful neutral expression, tired pale eyes. He looks like an ordinary anonymous man, not a guard.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a solid plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+solid plain background, no gradient, no pattern
+
+# Post: reframe_portrait.py --flip (character faces right, cast convention). Background was solid pink/raspberry, not magenta.
+
+# Saved 2026-10-12 from tmp/pixellab/graham_reeves/concept.png (the concept the pipeline used)

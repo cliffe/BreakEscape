@@ -1,0 +1,934 @@
+{
+  "scenario_id": "test_social_deduction_b",
+  "scenario_name": "Night shift",
+  "scenario_brief": "Priya Nair runs security at Kelvedon Data, and she wants a second pair of eyes on tonight's shift. Just after two this morning the server room door alarm went off. By four, a copy of the payroll export was on a file-sharing site. Four people on the night shift had the chance. What to look for: Went into the server room outside their role, had a personal device on the staff network, and raised a grievance in the last month. Anyone who fits all three is an insider. Gather the evidence, mark the case board, then call Priya and name as many as the evidence supports. Name the wrong people, or miss someone, and the report will say so. Sending the report ends the exercise.",
+  "endGoal": "Work out who on the night shift fits the insider profile and report to Priya Nair.",
+  "version": "1.0",
+  "show_scenario_brief": "on_resume",
+  "disableAttacks": true,
+  "startRoom": "b_office",
+  "startPosition": {
+    "x": 4,
+    "y": 6
+  },
+  "gameClock": {
+    "start": "Thu 22:30"
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Analyst",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/female_hacker_hood_talk.png"
+  },
+  "startItemsInInventory": [
+    {
+      "type": "phone",
+      "name": "Your phone",
+      "takeable": true,
+      "phoneId": "player_phone",
+      "npcIds": [
+        "ded_b_security_manager"
+      ],
+      "observations": "Your work phone. Priya Nair is on it."
+    }
+  ],
+  "globalVariables": {
+    "se_intel_b_okoro_access": false,
+    "se_intel_b_lindqvist_access": false,
+    "se_intel_b_haddad_access": false,
+    "se_intel_b_morgan_access": false,
+    "se_intel_b_okoro_device": false,
+    "se_intel_b_lindqvist_device": false,
+    "se_intel_b_haddad_device": false,
+    "se_intel_b_morgan_device": false,
+    "se_intel_b_okoro_grievance": false,
+    "se_intel_b_lindqvist_grievance": false,
+    "se_intel_b_haddad_grievance": false,
+    "se_intel_b_morgan_grievance": false,
+    "deduction_state": {},
+    "deduction_closed": false,
+    "deduction_verdict_ded_b_okoro": "",
+    "deduction_verdict_ded_b_lindqvist": "",
+    "deduction_verdict_ded_b_haddad": "",
+    "deduction_verdict_ded_b_morgan": "",
+    "deduction_outcome_ded_b_okoro": "",
+    "deduction_outcome_ded_b_lindqvist": "",
+    "deduction_outcome_ded_b_haddad": "",
+    "deduction_outcome_ded_b_morgan": "",
+    "scenario_triggers_fired": {},
+    "b_badge_log_done": false,
+    "b_heard_alarm": false,
+    "b_insider_named": false,
+    "b_wrong_name": false,
+    "ded_b_tomas_influence": 0,
+    "ded_b_tomas_latched": "",
+    "ded_b_tomas_wary": false,
+    "ded_b_tomas_reported": false
+  },
+  "objectives": [
+    {
+      "aimId": "b_case",
+      "title": "The night shift case",
+      "description": "Gather the evidence, mark the case board, and send Priya your report.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {},
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Case closed",
+        "body": "Your report is with Priya. The debrief shows how each call stood."
+      },
+      "tasks": [
+        {
+          "taskId": "b_case_solved",
+          "title": "Get every call right",
+          "type": "manual",
+          "status": "active"
+        },
+        {
+          "taskId": "b_case_closed",
+          "title": "Send the shift report to Priya",
+          "type": "manual",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "t_b_badge_log",
+      "on": "global_variable_changed:b_badge_log_done",
+      "where": {
+        "value": true
+      },
+      "actions": [
+        {
+          "type": "grant_fact",
+          "fact": "b_okoro_access"
+        },
+        {
+          "type": "grant_fact",
+          "fact": "b_lindqvist_access"
+        },
+        {
+          "type": "grant_fact",
+          "fact": "b_haddad_access"
+        },
+        {
+          "type": "grant_fact",
+          "fact": "b_morgan_access"
+        }
+      ]
+    },
+    {
+      "id": "t_b_hr_summary",
+      "on": "item_picked_up:notes",
+      "where": {
+        "itemId": "hr_summary"
+      },
+      "actions": [
+        {
+          "type": "grant_fact",
+          "fact": "b_okoro_grievance"
+        },
+        {
+          "type": "grant_fact",
+          "fact": "b_lindqvist_grievance"
+        },
+        {
+          "type": "grant_fact",
+          "fact": "b_haddad_grievance"
+        },
+        {
+          "type": "grant_fact",
+          "fact": "b_morgan_grievance"
+        }
+      ]
+    },
+    {
+      "id": "t_b_complaint_copy",
+      "on": "item_picked_up:notes",
+      "where": {
+        "itemId": "b_overtime_complaint"
+      },
+      "actions": [
+        {
+          "type": "grant_fact",
+          "fact": "b_lindqvist_grievance"
+        }
+      ]
+    }
+  ],
+  "rooms": {
+    "b_office": {
+      "type": "room_office",
+      "door_sign": "Operations Office",
+      "connections": {
+        "east": "b_kitchen"
+      },
+      "npcs": [
+        {
+          "id": "ded_b_okoro",
+          "displayName": "Ngozi Okoro",
+          "npcType": "person",
+          "position": {
+            "x": 2.5,
+            "y": 3.5
+          },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/female_office_worker_visemes.png",
+          "storyPath": "scenarios/test_social_deduction_b/ink/ded_b_okoro.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true
+        },
+        {
+          "id": "ded_b_haddad",
+          "displayName": "Samira Haddad",
+          "npcType": "person",
+          "position": {
+            "x": 7.5,
+            "y": 3.5
+          },
+          "spriteSheet": "female_blowse_v2",
+          "spriteTalk": "assets/characters/female_blowse_talk.png",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_social_deduction_b/ink/ded_b_haddad.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true
+        },
+        {
+          "id": "ded_b_security_manager",
+          "displayName": "Priya Nair",
+          "npcType": "phone",
+          "phoneId": "player_phone",
+          "avatar": "assets/characters/female_telecom_headshot.png",
+          "storyPath": "scenarios/test_social_deduction_b/ink/ded_b_security_manager.json",
+          "currentKnot": "start",
+          "timedMessages": [
+            {
+              "delay": 2500,
+              "message": "You're in. Ring me when you've got your coat off and I'll talk you through it.",
+              "type": "text",
+              "waitForEvent": "game_loaded"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "id": "b_board",
+          "type": "case-file",
+          "name": "Case Board",
+          "takeable": false,
+          "position": {
+            "x": 4,
+            "y": 2
+          },
+          "observations": "Tonight's case: four names, three kinds of evidence.",
+          "minigameData": {
+            "mode": "deduction"
+          }
+        },
+        {
+          "id": "hr_cabinet",
+          "type": "filing_cabinet",
+          "name": "HR Cabinet",
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "7310",
+          "position": {
+            "x": 9,
+            "y": 2
+          },
+          "observations": "A grey cabinet with a keypad. HR keeps a summary for each team in here.",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "hr_summary",
+              "name": "HR Summary: Night Shift",
+              "takeable": true,
+              "readable": true,
+              "observations": "HR's open cases for the night team, one line each.",
+              "text": "HR SUMMARY: NIGHT SHIFT (OPEN AND RECENT)\n\nNgozi Okoro, night operator: appeal against the new shift pattern heard three weeks ago. Not upheld.\n\nErik Lindqvist, facilities engineer: complaint about overtime pay, filed last week. Open.\n\nSamira Haddad, service desk analyst: nothing on file.\n\nGwen Morgan, shift supervisor: nothing on file."
+            }
+          ]
+        }
+      ]
+    },
+    "b_kitchen": {
+      "type": "room_break",
+      "door_sign": "Staff Kitchen",
+      "connections": {
+        "west": "b_office",
+        "north": "b_server"
+      },
+      "npcs": [
+        {
+          "id": "ded_b_tomas",
+          "displayName": "Tomás Rivera",
+          "npcType": "person",
+          "position": {
+            "x": 3.5,
+            "y": 4.5
+          },
+          "spriteSheet": "male_telecom_v2",
+          "spriteTalk": "assets/characters/male_telecom_talk.png",
+          "spriteVisemes": "assets/characters/male_telecom_visemes.png",
+          "storyPath": "scenarios/test_social_deduction_b/ink/ded_b_tomas.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true
+        },
+        {
+          "id": "ded_b_lindqvist",
+          "displayName": "Erik Lindqvist",
+          "npcType": "person",
+          "position": {
+            "x": 6.5,
+            "y": 3.5
+          },
+          "spriteSheet": "male_office_worker_v2",
+          "spriteTalk": "assets/characters/male_office_worker_talk.png",
+          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
+          "storyPath": "scenarios/test_social_deduction_b/ink/ded_b_lindqvist.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "itemsHeld": [
+            {
+              "type": "notes",
+              "id": "b_overtime_complaint",
+              "name": "Overtime Complaint (copy)",
+              "takeable": true,
+              "readable": true,
+              "observations": "Erik Lindqvist's own copy of his complaint to HR.",
+              "text": "To: HR\nFrom: Erik Lindqvist, Facilities\nSubject: Overtime for the chiller works\n\nI have covered nights for the chiller replacement all month at my day rate. The overtime agreement says time and a half after 20:00. Four weeks of nights, no extra pay. Please put this right before the next pay run.\n\nE. Lindqvist"
+            }
+          ]
+        },
+        {
+          "id": "ded_b_morgan",
+          "displayName": "Gwen Morgan",
+          "npcType": "person",
+          "position": {
+            "x": 8.5,
+            "y": 5.5
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/test_social_deduction_b/ink/ded_b_morgan.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true
+        }
+      ],
+      "objects": [
+        {
+          "id": "b_coffee",
+          "type": "coffee_station",
+          "name": "Coffee Machine",
+          "takeable": false,
+          "position": {
+            "x": 2,
+            "y": 2
+          },
+          "observations": "Tomás keeps it running all night. The jar says 'Tips for the coffee man'."
+        }
+      ]
+    },
+    "b_server": {
+      "type": "room_servers",
+      "door_sign": "Server Room",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "4417",
+      "connections": {
+        "south": "b_kitchen"
+      },
+      "npcs": [],
+      "objects": [
+        {
+          "id": "badge_log_terminal",
+          "type": "log_filter_terminal",
+          "name": "Door Access Terminal",
+          "takeable": false,
+          "position": "as-type:pc",
+          "observations": "The server room door controller's log, with a filter.",
+          "minigameData": {
+            "minigameId": "log-filter",
+            "title": "KELVEDON DATA: SERVER ROOM DOOR LOG (LAST 24 HOURS)",
+            "logType": "ics_rdp",
+            "logEntries": [
+              {
+                "timestamp": "Wed 06:10",
+                "sessionId": "BADGE-1101",
+                "account": "g.morgan",
+                "sourceIp": "door-srv-01",
+                "duration": "00:06",
+                "status": "CLOSED",
+                "accessLevel": "SUPERVISOR"
+              },
+              {
+                "timestamp": "Wed 21:05",
+                "sessionId": "BADGE-1103",
+                "account": "g.morgan",
+                "sourceIp": "door-srv-01",
+                "duration": "00:05",
+                "status": "CLOSED",
+                "accessLevel": "SUPERVISOR"
+              },
+              {
+                "timestamp": "Wed 22:47",
+                "sessionId": "BADGE-1102",
+                "account": "s.haddad",
+                "sourceIp": "door-srv-01",
+                "duration": "00:11",
+                "status": "CLOSED",
+                "accessLevel": "SERVICE DESK"
+              },
+              {
+                "timestamp": "Wed 23:40",
+                "sessionId": "BADGE-1104",
+                "account": "e.lindqvist",
+                "sourceIp": "door-srv-01",
+                "duration": "00:22",
+                "status": "CLOSED",
+                "accessLevel": "FACILITIES (DAYS)"
+              },
+              {
+                "timestamp": "Thu 02:10",
+                "sessionId": "BADGE-1105",
+                "account": "n.okoro",
+                "sourceIp": "door-srv-01",
+                "duration": "00:04",
+                "status": "CLOSED",
+                "accessLevel": "OPERATOR"
+              },
+              {
+                "timestamp": "Thu 02:14",
+                "sessionId": "ALARM-0007",
+                "account": "door_contact",
+                "sourceIp": "door-srv-01",
+                "duration": "00:03",
+                "status": "HELD OPEN",
+                "accessLevel": "ALARM"
+              },
+              {
+                "timestamp": "Thu 02:31",
+                "sessionId": "BADGE-1106",
+                "account": "e.lindqvist",
+                "sourceIp": "door-panel",
+                "duration": "00:00",
+                "status": "RESET",
+                "accessLevel": "FACILITIES (DAYS)"
+              },
+              {
+                "timestamp": "Thu 05:02",
+                "sessionId": "BADGE-1107",
+                "account": "g.morgan",
+                "sourceIp": "door-srv-01",
+                "duration": "00:06",
+                "status": "CLOSED",
+                "accessLevel": "SUPERVISOR"
+              }
+            ],
+            "anomaly": {
+              "account": "door_contact",
+              "sourceIp": "door-srv-01",
+              "status": "HELD OPEN",
+              "accessLevel": "ALARM",
+              "durationDisplay": "00:03"
+            },
+            "accountHistory": [
+              {
+                "account": "n.okoro",
+                "fullName": "Ngozi Okoro",
+                "role": "Night operator. Server room: not on her rota.",
+                "accessLevel": "OPERATOR"
+              },
+              {
+                "account": "e.lindqvist",
+                "fullName": "Erik Lindqvist",
+                "role": "Facilities engineer. Cooling checks are a day job.",
+                "accessLevel": "FACILITIES (DAYS)"
+              },
+              {
+                "account": "s.haddad",
+                "fullName": "Samira Haddad",
+                "role": "Service desk analyst. Visit matches her ticket INC-4471.",
+                "accessLevel": "SERVICE DESK"
+              },
+              {
+                "account": "g.morgan",
+                "fullName": "Gwen Morgan",
+                "role": "Shift supervisor. Visits match her supervisor checks.",
+                "accessLevel": "SUPERVISOR"
+              }
+            ],
+            "flagActionLabel": "FLAG EVENT",
+            "flagConfirmTitle": "CONFIRM FLAG",
+            "flagConfirmBody": "The door was held open for three minutes at 02:14, four minutes after the last badge in. Flag it and send the log to the case board.",
+            "completionActions": [
+              {
+                "type": "set_global",
+                "key": "b_badge_log_done",
+                "value": true
+              }
+            ]
+          }
+        },
+        {
+          "id": "dhcp_printout",
+          "type": "notes",
+          "name": "DHCP Lease Printout",
+          "takeable": false,
+          "position": {
+            "x": 7,
+            "y": 3
+          },
+          "observations": "The network team's printout of who took an address on the staff network this week.",
+          "triggerOnInteract": [
+            {
+              "type": "grant_fact",
+              "fact": "b_okoro_device"
+            },
+            {
+              "type": "grant_fact",
+              "fact": "b_lindqvist_device"
+            },
+            {
+              "type": "grant_fact",
+              "fact": "b_haddad_device"
+            },
+            {
+              "type": "grant_fact",
+              "fact": "b_morgan_device"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "social": {
+    "people": [
+      {
+        "id": "ded_b_okoro",
+        "name": "Ngozi Okoro",
+        "role": "Night operator"
+      },
+      {
+        "id": "ded_b_lindqvist",
+        "name": "Erik Lindqvist",
+        "role": "Facilities engineer"
+      },
+      {
+        "id": "ded_b_haddad",
+        "name": "Samira Haddad",
+        "role": "Service desk analyst"
+      },
+      {
+        "id": "ded_b_morgan",
+        "name": "Gwen Morgan",
+        "role": "Shift supervisor"
+      },
+      {
+        "id": "ded_b_tomas",
+        "name": "Tomás Rivera",
+        "role": "Cleaner, night shift"
+      },
+      {
+        "id": "ded_b_security_manager",
+        "name": "Priya Nair",
+        "role": "Security manager"
+      }
+    ],
+    "characters": {
+      "ded_b_tomas": {
+        "influence": {
+          "global": "ded_b_tomas_influence",
+          "min": -100,
+          "max": 100,
+          "start": 0
+        },
+        "thresholds": [
+          {
+            "id": "wary",
+            "at": -20,
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "ded_b_tomas_wary",
+                "value": true,
+                "clearOnRearm": true
+              }
+            ]
+          },
+          {
+            "id": "refuses",
+            "at": -40,
+            "effects": [
+              {
+                "type": "endConversation"
+              }
+            ]
+          },
+          {
+            "id": "reports",
+            "at": -60,
+            "effects": [
+              {
+                "type": "setGlobal",
+                "global": "ded_b_tomas_reported",
+                "value": true
+              }
+            ]
+          }
+        ],
+        "channels": {
+          "person": "ded_b_tomas"
+        }
+      }
+    },
+    "intelFacts": {
+      "b_okoro_access": {
+        "text": "The badge log puts Ngozi Okoro in the server room at 02:10. Nothing on her rota needed it.",
+        "label": "Okoro: server room, outside her role",
+        "subject": "ded_b_okoro",
+        "source": "badge_log_terminal",
+        "deduction": {
+          "suspect": "ded_b_okoro",
+          "clue": "access_out_of_role",
+          "routes": [
+            {
+              "via": "trigger",
+              "id": "t_b_badge_log"
+            }
+          ]
+        }
+      },
+      "b_lindqvist_access": {
+        "text": "The badge log puts Erik Lindqvist in the server room at 23:40, though cooling checks are a day job.",
+        "label": "Lindqvist: server room, outside his role",
+        "subject": "ded_b_lindqvist",
+        "source": "badge_log_terminal",
+        "deduction": {
+          "suspect": "ded_b_lindqvist",
+          "clue": "access_out_of_role",
+          "routes": [
+            {
+              "via": "trigger",
+              "id": "t_b_badge_log"
+            }
+          ]
+        }
+      },
+      "b_haddad_access": {
+        "text": "Samira Haddad badged into the server room once, for a ticket she logged.",
+        "label": "Haddad: server room, for her own ticket",
+        "subject": "ded_b_haddad",
+        "source": "badge_log_terminal",
+        "deduction": {
+          "suspect": "ded_b_haddad",
+          "clue": "access_in_role",
+          "routes": [
+            {
+              "via": "trigger",
+              "id": "t_b_badge_log"
+            }
+          ]
+        }
+      },
+      "b_morgan_access": {
+        "text": "Gwen Morgan's server room visits match her supervisor checks.",
+        "label": "Morgan: server room, her own checks",
+        "subject": "ded_b_morgan",
+        "source": "badge_log_terminal",
+        "deduction": {
+          "suspect": "ded_b_morgan",
+          "clue": "access_in_role",
+          "routes": [
+            {
+              "via": "trigger",
+              "id": "t_b_badge_log"
+            }
+          ]
+        }
+      },
+      "b_okoro_device": {
+        "text": "A phone of Okoro's has been on the staff network during her shifts.",
+        "label": "Okoro: personal phone on the staff network",
+        "subject": "ded_b_okoro",
+        "source": "dhcp_printout",
+        "deduction": {
+          "suspect": "ded_b_okoro",
+          "clue": "personal_device",
+          "routes": [
+            {
+              "via": "object",
+              "id": "dhcp_printout"
+            },
+            {
+              "via": "npc",
+              "id": "ded_b_tomas"
+            }
+          ]
+        }
+      },
+      "b_lindqvist_device": {
+        "text": "No device of Lindqvist's appears on the staff network.",
+        "label": "Lindqvist: no personal device",
+        "subject": "ded_b_lindqvist",
+        "source": "dhcp_printout",
+        "deduction": {
+          "suspect": "ded_b_lindqvist",
+          "clue": "no_personal_device",
+          "routes": [
+            {
+              "via": "object",
+              "id": "dhcp_printout"
+            }
+          ]
+        }
+      },
+      "b_haddad_device": {
+        "text": "Haddad's own laptop took a lease on the staff network.",
+        "label": "Haddad: personal laptop on the staff network",
+        "subject": "ded_b_haddad",
+        "source": "dhcp_printout",
+        "deduction": {
+          "suspect": "ded_b_haddad",
+          "clue": "personal_device",
+          "routes": [
+            {
+              "via": "object",
+              "id": "dhcp_printout"
+            }
+          ]
+        }
+      },
+      "b_morgan_device": {
+        "text": "No device of Morgan's appears on the staff network.",
+        "label": "Morgan: no personal device",
+        "subject": "ded_b_morgan",
+        "source": "dhcp_printout",
+        "deduction": {
+          "suspect": "ded_b_morgan",
+          "clue": "no_personal_device",
+          "routes": [
+            {
+              "via": "object",
+              "id": "dhcp_printout"
+            }
+          ]
+        }
+      },
+      "b_okoro_grievance": {
+        "text": "Okoro lost a shift-pattern appeal three weeks ago.",
+        "label": "Okoro: lost an appeal this month",
+        "subject": "ded_b_okoro",
+        "source": "hr_cabinet",
+        "deduction": {
+          "suspect": "ded_b_okoro",
+          "clue": "grievance",
+          "routes": [
+            {
+              "via": "npc",
+              "id": "ded_b_tomas"
+            },
+            {
+              "via": "trigger",
+              "id": "t_b_hr_summary"
+            }
+          ]
+        }
+      },
+      "b_lindqvist_grievance": {
+        "text": "Lindqvist filed a complaint about overtime pay last week.",
+        "label": "Lindqvist: overtime complaint",
+        "subject": "ded_b_lindqvist",
+        "source": "hr_cabinet",
+        "deduction": {
+          "suspect": "ded_b_lindqvist",
+          "clue": "grievance",
+          "routes": [
+            {
+              "via": "npc",
+              "id": "ded_b_tomas"
+            },
+            {
+              "via": "trigger",
+              "id": "t_b_hr_summary"
+            },
+            {
+              "via": "trigger",
+              "id": "t_b_complaint_copy"
+            }
+          ]
+        }
+      },
+      "b_haddad_grievance": {
+        "text": "HR has nothing on file for Haddad.",
+        "label": "Haddad: no grievance",
+        "subject": "ded_b_haddad",
+        "source": "hr_cabinet",
+        "deduction": {
+          "suspect": "ded_b_haddad",
+          "clue": "no_grievance",
+          "routes": [
+            {
+              "via": "trigger",
+              "id": "t_b_hr_summary"
+            }
+          ]
+        }
+      },
+      "b_morgan_grievance": {
+        "text": "HR has nothing on file for Morgan.",
+        "label": "Morgan: no grievance",
+        "subject": "ded_b_morgan",
+        "source": "hr_cabinet",
+        "deduction": {
+          "suspect": "ded_b_morgan",
+          "clue": "no_grievance",
+          "routes": [
+            {
+              "via": "trigger",
+              "id": "t_b_hr_summary"
+            }
+          ]
+        }
+      }
+    },
+    "deduction": {
+      "title": "Night shift",
+      "verdictNoun": {
+        "guilty": "Insider",
+        "clear": "Not an insider"
+      },
+      "suspects": [
+        "ded_b_okoro",
+        "ded_b_lindqvist",
+        "ded_b_haddad",
+        "ded_b_morgan"
+      ],
+      "slots": [
+        {
+          "id": "access",
+          "label": "Server room access",
+          "perSuspect": "exactlyOne"
+        },
+        {
+          "id": "device",
+          "label": "Devices on the network",
+          "perSuspect": "exactlyOne"
+        },
+        {
+          "id": "grievance",
+          "label": "Recent grievance",
+          "perSuspect": "exactlyOne"
+        }
+      ],
+      "clues": {
+        "access_out_of_role": {
+          "slot": "access",
+          "label": "went in outside their role",
+          "count": 2
+        },
+        "access_in_role": {
+          "slot": "access",
+          "label": "went in for their own work",
+          "count": 2
+        },
+        "personal_device": {
+          "slot": "device",
+          "label": "personal device",
+          "count": 2
+        },
+        "no_personal_device": {
+          "slot": "device",
+          "label": "no personal device",
+          "count": 2
+        },
+        "grievance": {
+          "slot": "grievance",
+          "label": "grievance this month",
+          "count": 2
+        },
+        "no_grievance": {
+          "slot": "grievance",
+          "label": "no grievance",
+          "count": 2
+        }
+      },
+      "profiles": [
+        {
+          "id": "insider",
+          "label": "Insider",
+          "text": "Went into the server room outside their role, had a personal device on the staff network, and raised a grievance in the last month.",
+          "rule": {
+            "all": [
+              {
+                "has": "access_out_of_role"
+              },
+              {
+                "has": "personal_device"
+              },
+              {
+                "has": "grievance"
+              }
+            ]
+          }
+        }
+      ],
+      "solution": {
+        "ded_b_okoro": "insider",
+        "ded_b_lindqvist": null,
+        "ded_b_haddad": null,
+        "ded_b_morgan": null
+      },
+      "brief": {
+        "source": "scenario_brief"
+      },
+      "verdicts": {
+        "allowed": [
+          "report"
+        ],
+        "when": "final",
+        "reveal": "end"
+      },
+      "stakes": {
+        "rigidity": "light",
+        "disclosure": "brief",
+        "briefText": "Name the wrong people, or miss someone, and the report will say so.",
+        "onRightGuilty": [
+          {
+            "type": "set_global",
+            "key": "b_insider_named",
+            "value": true
+          }
+        ],
+        "onWrongGuilty": [
+          {
+            "type": "set_global",
+            "key": "b_wrong_name",
+            "value": true
+          }
+        ],
+        "onMissedGuilty": [],
+        "onRightClear": [],
+        "solvedTask": "b_case_solved",
+        "onClose": [
+          {
+            "type": "complete_task",
+            "taskId": "b_case_closed"
+          }
+        ]
+      },
+      "nudge": true,
+      "debrief": {
+        "closingLine": "The access log, the network and the HR file each cleared someone. Okoro fitted all three."
+      }
+    }
+  }
+}

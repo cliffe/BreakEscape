@@ -1,0 +1,142 @@
+{
+  "scenario_brief": "Test Scenario: Complex Multi-Direction Layout\n\nThis scenario demonstrates complex layouts using all four directions with the new grid-based system.\n\nLayout:\n   [Storage]    [CEO]\n       ↑          ↑\n   [Office1] ← [Office2] → [Servers]\n                  ↑\n             [Reception]\n\nTests:\n- All four directions in use\n- Multiple connection types\n- Complex navigation paths\n- Door alignment in mixed layouts",
+  "startRoom": "reception",
+  "startItemsInInventory": [
+    {
+      "type": "notes",
+      "name": "Mission Brief",
+      "takeable": true,
+      "readable": true,
+      "text": "Complex Multi-Direction Test\n\nYour mission: Navigate through a facility with rooms in all directions.\n\nAll offices require keys. Search thoroughly!"
+    }
+  ],
+  "rooms": {
+    "reception": {
+      "type": "room_reception",
+      "connections": {
+        "north": "office2"
+      },
+      "objects": [
+        {
+          "type": "key",
+          "name": "Office 2 Key",
+          "takeable": true,
+          "observations": "Key to Office 2"
+        }
+      ]
+    },
+    "office2": {
+      "type": "room_office",
+      "locked": true,
+      "lockType": "key",
+      "requires": "office2_key",
+      "connections": {
+        "south": "reception",
+        "north": "ceo",
+        "west": "office1",
+        "east": "servers"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Central Hub",
+          "takeable": true,
+          "readable": true,
+          "text": "Office 2 - Central Hub\n\nConnections:\nNorth: CEO Office\nSouth: Reception\nEast: Server Room\nWest: Office 1\n\nThis room connects in all four directions!"
+        },
+        {
+          "type": "key",
+          "name": "Office 1 Key",
+          "takeable": true,
+          "observations": "Key to Office 1"
+        },
+        {
+          "type": "key",
+          "name": "Server Room Key",
+          "takeable": true,
+          "observations": "Key to Server Room"
+        }
+      ]
+    },
+    "office1": {
+      "type": "room_office",
+      "locked": true,
+      "lockType": "key",
+      "requires": "office1_key",
+      "connections": {
+        "east": "office2",
+        "north": "storage"
+      },
+      "objects": [
+        {
+          "type": "key",
+          "name": "Storage Key",
+          "takeable": true,
+          "observations": "Key to storage room"
+        },
+        {
+          "type": "notes",
+          "name": "Office 1 Log",
+          "takeable": true,
+          "readable": true,
+          "text": "Office 1 - West Wing\n\nStorage room is to the north.\nOffice 2 is to the east."
+        }
+      ]
+    },
+    "storage": {
+      "type": "room_office",
+      "locked": true,
+      "lockType": "key",
+      "requires": "storage_key",
+      "connections": {
+        "south": "office1"
+      },
+      "objects": [
+        {
+          "type": "key",
+          "name": "CEO Office Key",
+          "takeable": true,
+          "observations": "Golden key to CEO office"
+        }
+      ]
+    },
+    "servers": {
+      "type": "room_servers",
+      "locked": true,
+      "lockType": "key",
+      "requires": "server_key",
+      "connections": {
+        "west": "office2"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Server Log",
+          "takeable": true,
+          "readable": true,
+          "text": "Server Room - East Wing\n\nThis room is accessed from the west.\nMakes a good test for west-facing doors."
+        }
+      ]
+    },
+    "ceo": {
+      "type": "room_ceo",
+      "locked": true,
+      "lockType": "key",
+      "requires": "ceo_key",
+      "connections": {
+        "south": "office2"
+      },
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Victory!",
+          "takeable": true,
+          "readable": true,
+          "text": "Congratulations! Complex multi-direction layout complete!\n\nThis scenario tested:\n- All four directions (N, S, E, W)\n- Central hub room with 4 connections\n- Complex navigation requiring backtracking\n- Door alignment in all directions\n- Grid-based positioning for complex layouts",
+          "important": true,
+          "isEndGoal": true
+        }
+      ]
+    }
+  }
+}

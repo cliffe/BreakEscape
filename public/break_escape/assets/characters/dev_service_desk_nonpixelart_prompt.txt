@@ -1,0 +1,10 @@
+Make portrait for Dev
+A British Indian man of about 42, with medium-brown skin, a round friendly face, short black hair going a little grey at the sides and a clean-shaven face, the service desk analyst at a small accountancy firm and the friendliest voice in the building. Warm dark brown eyes and an open, helpful, cheerful look. He wears a short-sleeved light blue button-up shirt, a black telephone headset resting round his neck, a dark staff lanyard with a blank white card, navy chinos and a brown belt; his hands rest at his sides. Standing alone against an empty plain light-grey backdrop, no room or furniture behind him. No text, no writing and no logos anywhere.
+Body angled slightly to the side in a three-quarter turn, head turned toward the camera.
+Dialog view of character
+Dramatic lighting
+In the style of a detailed vector graphics illustration. the portrait shows the body from the hips up, including the waistline, belt, pockets and top of the trousers, against a plain background, in a game art design, realism and digital art aesthetic. Dialog character. Gritty realism.
+Slightly anime. Neutral expression.
+Square aspect ratio
+
+# Gemini (nanobanana), 2026-10-22, no reference images, one call (SE art batch A). Reframed with reframe_portrait.py --flip; unflipped original is wip/dev_service_desk_concept_1_raw.png.

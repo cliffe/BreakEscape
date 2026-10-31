@@ -1,0 +1,98 @@
+INCLUDE m10_carryover_vars.ink
+VAR end_quiet = false   // end_rest: skip the line once after an exit
+// ================================================
+// Mission 10: Full Disclosure - Agent 0x88 'Phantom' (phantom_post)
+// Group B, stage 7b. Contract §1.4. Shown only on phantom_on_team. m08's
+// voice: arch, dry, keeps his own lists.
+// His list replaces clue 3 (arc §8.3, R3-15): one more unit in the case than
+// its sheet lists, and the two names who signed for it. It sets
+// clue_bench_log. On taken / double-crossed the whodunit is off and the list
+// balances. The face-to-face wrong accusation once clue 1 is in.
+// No DONE or END: exits divert to post.
+// ================================================
+
+VAR pha_quiet = false
+VAR pha_list_heard = false
+
+=== function pha_can_accuse() ===
+~ return clue_door_log and whodunit_live and accused == "" and officer_out == "" and not wren_at_core and ending == ""
+
+=== start ===
+{ending != "": -> end_rest}
+-> post
+
+=== post ===
+{ending != "": -> end_rest}
+{
+- pha_quiet:
+    ~ pha_quiet = false
+- else:
+    Agent 0x88 'Phantom': The Director's bloodhound again. Sit, if you like. I'm counting.
+}
++ {not pha_list_heard} [Counting what?]
+    ~ pha_list_heard = true
+    -> the_list
++ {whodunit_live and pha_list_heard and not clue_bench_log} [Who signed for the case?]
+    ~ clue_bench_log = true
+    Agent 0x88 'Phantom': Kowalczyk and Arakawa. Both signatures are good. The count isn't.
+    ~ pha_quiet = true
+    -> post
++ {pha_can_accuse()} [You're WREN.]
+    -> accuse_check
++ [Carry on counting.]
+    Agent 0x88 'Phantom': I never stop.
+    ~ pha_quiet = true
+    #exit_conversation
+    -> post
+
+=== the_list ===
+{
+- whodunit_live:
+    Agent 0x88 'Phantom': Since Portland I audit every sign-out. That case went out with one more unit than its sheet lists.
+    Agent 0x88 'Phantom': Two names signed for it.
+- else:
+    Agent 0x88 'Phantom': Since Portland I audit every sign-out. Tonight's balances. I checked twice, out of habit.
+}
+~ pha_quiet = true
+-> post
+
+// The face-to-face wrong accusation: the same writes as the line accusation.
+=== accuse_check ===
+// Alignment R10-m1: a reopen enters here, so the accusation gate is tested again.
+{ not pha_can_accuse():
+    -> post
+}
+// Playtest R1 m-1: a condition, not a verdict, for the right officer too.
+Agent HaX: If that's wrong, Netherton loses Phantom till you can clear him. Sure?
++ [I'm sure.]
+    ~ officer_out = "phantom"
+    ~ wrong_accusation = true
+    Agent 0x88 'Phantom': Ask me for my list next time. It has a name on it, and it isn't mine.
+    Director Magnus Netherton: Then I am a pair of hands short. Carry on.
+    ~ pha_quiet = true
+    #exit_conversation
+    -> post
++ [Forget I said it.]
+    Agent 0x88 'Phantom': Already written down. Never mind.
+    ~ pha_quiet = true
+    -> post
+
+// Stage 9 walkthrough R1b-M1: after his ending, nothing in-raid. One quiet line
+// by ending, none from SAFETYNET people on Join (a narrator beat), and the exit.
+=== end_rest ===
+{
+- end_quiet:
+    ~ end_quiet = false
+- ending == "joined":
+    Narrator: Phantom doesn't look at you.
+- ending == "executed":
+    Narrator: Phantom writes something down and says nothing.
+- ending == "scorched":
+    Agent 0x88 'Phantom': Out first. I'll count us after.
+- else:
+    Agent 0x88 'Phantom': Tonight balances. Mostly.
+}
++ [(Leave it.)]
+    ~ end_quiet = true
+    #exit_conversation
+    -> end_rest
