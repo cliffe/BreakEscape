@@ -45,6 +45,31 @@ Questions for the user. Each has a recommendation; the plan follows the recommen
 
 ## Decided
 
+### CyberAware catalogue form answers (2026-10-31, owner; https://claude.ai/artifact/3UytMpoGSSoek9ib4mRNwf)
+
+Catalogue B, all placements as recommended (full proposal: Hacktivity docs/awareness_course/catalogue_proposal.md). Each course is one CyberAware event:
+- Introduction to cyber threats: core_00, E5, E8. The owner said not "Day One" but "introduction to cyber threats or something like that"; the form pick was "Getting started", so the orchestrator chose "Introduction to cyber threats" to honour the note (overrule if wanted).
+- Payment fraud: E1, E4, E7.
+- Social engineering: E3, E12, E14.
+- Phishing and fake messages: E2, E5, E8.
+- AI and new scams: E6, E10, E13.
+- Passwords and accounts: E9, E18.
+- Handling data and conduct: E11, E16, E17.
+- Devices and working away: E15, E19, E20.
+- Complete programme.
+- Refresher drills (spot-it versions, no checks).
+- Annual refresher: core_17, then a general_v2 final check.
+- Incident simulations.
+
+core_00 opens the introduction, the Complete programme and every threat course. Roles are handled through "Recommended for" lines, a "By team" panel and check swaps named in the organiser note.
+
+Checks: general_v2 is used for now where nothing fits, with "people and calls" and "links and pages" topic checks planned for later. Organiser guidance says the first course's pair is the measure and later pairs are practice. The Complete programme has one general_v2 pair.
+
+Wording:
+- Marketing phrase: "Play the attacker. Then stop the attack." (true for 14 of 19; consequence-first episodes E11, E15, E16, E19, E20 need course copy that doesn't claim an attacker half). A supporting line on the sales page gives the honest count.
+- Titles: full versions have no suffix; spot-it versions, E17 and core_17 end ": spot it".
+- The 11 habit lines are used as drafted (the starter line goes to Introduction to cyber threats).
+
 ### CyberAware launch form answers (2026-10-31, owner; https://claude.ai/artifact/TyvrBcwTaZTQKMQT9q5Vf7)
 
 Scoring rollout (overrides the plan's cautious defaults):
