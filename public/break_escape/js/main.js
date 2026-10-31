@@ -26,6 +26,8 @@ import './systems/npc-game-bridge.js'; // Bridge for NPCs to influence game stat
 import { getObjectivesManager } from './systems/objectives-manager.js';
 // conclusionScreen type "success": sets window.showSuccessScreen for the objectives manager
 import './ui/success-screen.js';
+// The warning before an ending that leaves optional objectives open: sets window.endingCheck
+import './systems/ending-check.js';
 
 // Import Tutorial System
 import { getTutorialManager } from './systems/tutorial-manager.js';

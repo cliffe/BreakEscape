@@ -548,9 +548,44 @@ export class ObjectivesManager {
     }
   }
 
+  /**
+   * Would completing this task conclude the mission? True for the last required task of a
+   * missionConclusion aim whose concludeRequires tasks are all done. Used by the ending
+   * warning (systems/ending-check.js); the server stays the authority on the conclusion.
+   */
+  wouldConcludeMission(task) {
+    const aim = this.aimIndex[task.aimId];
+    if (!aim?.missionConclusion || aim.status === 'completed') return false;
+    const hasRequired = aim.tasks.some(t => !t.optional);
+    const othersSettled = aim.tasks.every(t =>
+      t === task || (hasRequired && t.optional) || this.isTaskSettled(t));
+    if (!othersSettled) return false;
+    const required = aim.concludeRequires?.tasksCompleted || [];
+    return required.every(id => id === task.taskId || this.taskIndex[id]?.status === 'completed');
+  }
+
   async completeTask(taskId) {
     const task = this.taskIndex[taskId];
     if (!task || task.status === 'completed' || task.status === 'completing') return;
+
+    // The ending warning: the task that would end the mission waits while optional
+    // objectives are open and the player decides. "Keep going" leaves the task undone and the
+    // ending held (a button on the panel, or it ends by itself once nothing optional is open).
+    if (window.endingCheck?.needsAnswer?.() && this.wouldConcludeMission(task)) {
+      if (task._endingChecking) return;
+      task._endingChecking = true;
+      let endNow = true;
+      try {
+        endNow = await window.endingCheck.confirm({ reason: 'aim' });
+      } finally {
+        task._endingChecking = false;
+      }
+      if (!endNow) {
+        window.endingCheck.hold(() => this.completeTask(taskId), { reason: 'aim' });
+        return;
+      }
+      if (task.status === 'completed' || task.status === 'completing') return;
+    }
 
     // Mark as completing immediately to block further event increments (race condition guard)
     task.status = 'completing';
