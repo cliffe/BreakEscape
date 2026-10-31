@@ -786,6 +786,7 @@ def main():
             json.dump(sc, f, indent=2, ensure_ascii=False)
             f.write('\n')
         meta = with_title_art(meta, mission)
+        meta = awareness_deploy.with_result_fields(meta, sc)
         with open(os.path.join(d, 'mission.json'), 'w') as f:
             json.dump(meta, f, indent=2, ensure_ascii=False)
             f.write('\n')

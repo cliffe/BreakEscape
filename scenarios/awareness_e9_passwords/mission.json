@@ -3,6 +3,8 @@
   "description": "An awareness episode of about 15 minutes for all staff. On an authorised exercise at Tarrowby Logistics, a fictional haulier, you first play the attacker: build a guess list from a colleague's public details and watch a reused password open his work account. Then it's your own account under attack, and you lock it down. Only the lock-down part is scored, and reporting when you're unsure is always fine and never marked down. No real password is ever typed.",
   "difficulty_level": 1,
   "scoring": "completion",
+  "resultGlobal": "episode_e9_passwords_defend_percent",
+  "stage": "episode",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",

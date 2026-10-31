@@ -3,6 +3,8 @@
   "description": "An awareness episode of about 15 minutes for all staff. On an authorised exercise at Quayholt Insurance, a fictional company, you first play the attacker: research a colleague and send one email dressed up as the IT service desk. Then you swap seats into that colleague's account, now being used by someone else, and sort the signs that follow. Only the second part is scored, and reporting when you're unsure is always fine and never marked down.",
   "difficulty_level": 1,
   "scoring": "completion",
+  "resultGlobal": "episode_e8_after_the_click_defend_percent",
+  "stage": "episode",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",

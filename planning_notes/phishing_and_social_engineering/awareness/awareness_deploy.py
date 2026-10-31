@@ -44,3 +44,41 @@ CHECK_ORGANISER_NOTE = (
 def check_title(stage, role_word):
     """Scheme-A check title: 'Starting check: <group>' (pre) or 'Final check: <group>' (post)."""
     return f"{'Starting' if stage == 'pre' else 'Final'} check: {CHECK_GROUPS[role_word]}"
+
+
+# mission.json "resultGlobal" + "stage" (read by BreakEscape::Mission#result_global /
+# #result_stage, checked by scripts/validate_scenario.rb check_mission_result). Every
+# awareness check and episode declares exactly one numeric *_percent global that holds
+# its result; the stage is read from that global's name the same way Mission#result_stage
+# does (triage_pre_* -> pre, triage_post_* -> post, episode_* -> episode). core_00 has no
+# result global, so it gets neither field.
+def result_fields(scenario):
+    """{'resultGlobal': ..., 'stage': ...} for a scenario, or {} when it has no result."""
+    gv = scenario.get('globalVariables', {}) if isinstance(scenario, dict) else {}
+    pcts = [k for k, v in gv.items() if k.endswith('_percent') and isinstance(v, (int, float))]
+    if len(pcts) != 1:
+        return {}
+    name = pcts[0]
+    if name.startswith('triage_pre_'):
+        stage = 'pre'
+    elif name.startswith('triage_post_'):
+        stage = 'post'
+    else:
+        stage = 'episode'
+    return {'resultGlobal': name, 'stage': stage}
+
+
+def with_result_fields(meta, scenario):
+    """Return meta with resultGlobal + stage inserted right after 'scoring' (no-op with no result)."""
+    rf = result_fields(scenario)
+    if not rf:
+        return meta
+    out = {}
+    for k, v in meta.items():
+        out[k] = v
+        if k == 'scoring':
+            out['resultGlobal'] = rf['resultGlobal']
+            out['stage'] = rf['stage']
+    if 'resultGlobal' not in out:  # meta had no 'scoring' key
+        out.update(rf)
+    return out

@@ -447,6 +447,7 @@ def main():
         with open(os.path.join(d, 'scenario.json.erb'), 'w') as f:
             json.dump(sc, f, indent=2, ensure_ascii=False)
             f.write('\n')
+        meta = awareness_deploy.with_result_fields(meta, sc)
         with open(os.path.join(d, 'mission.json'), 'w') as f:
             json.dump(meta, f, indent=2, ensure_ascii=False)
             f.write('\n')
