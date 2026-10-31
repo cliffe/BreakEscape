@@ -1,8 +1,10 @@
 {
-  "display_name": "Awareness E9: Passwords and password managers (defend only)",
+  "display_name": "Passwords and password managers: spot it",
   "description": "An awareness episode of about 8 minutes for all staff, on the defending side only. Your own account at Tarrowby Logistics, a fictional haulier, is under attack: sign-in prompts you didn't start, a message dressed up as IT, and password choices to make. Each answer is explained, and reporting when you're unsure is always fine and never marked down. No real password is ever typed.",
   "difficulty_level": 1,
   "scoring": "completion",
+  "resultGlobal": "episode_e9_passwords_defend_defend_percent",
+  "stage": "episode",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",

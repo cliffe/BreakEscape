@@ -31,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "triage_post_done"
+          "triage_post_complete"
         ]
       },
       "conclusionScreen": {
@@ -54,8 +54,7 @@
     "se_awareness_records": [],
     "triage_post_percent": 0,
     "triage_post_reportRate": 0,
-    "triage_post_done": false,
-    "triage_post_pass": false
+    "triage_post_complete": false
   },
   "importGlobals": [
     {
@@ -75,8 +74,8 @@
     {
       "from": "awareness_pre_general_v2_ba",
       "prefer": "earliest",
-      "var": "triage_pre_done",
-      "as": "triage_pre_done",
+      "var": "triage_pre_complete",
+      "as": "triage_pre_complete",
       "default": false
     },
     {
@@ -248,7 +247,7 @@
             "id": "gva_ceo_video",
             "from": {
               "name": "Helen Achterberg",
-              "address": "helen.achterberg@inboxly.example"
+              "address": "helen.achterberg@lintbox.example"
             },
             "to": "you@quayholt.example",
             "subject": "A short message from me: please watch today",
@@ -265,8 +264,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "helen.achterberg@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "helen.achterberg@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -275,7 +274,7 @@
                 "linkCredible"
               ],
               "perFlagNote": {
-                "senderTrust": "The chief executive's name sits on a personal inbox at inboxly.example, not quayholt.example. A video or a voice can be faked now, so a familiar face or name is not proof of who really sent something.",
+                "senderTrust": "The chief executive's name sits on a personal inbox at lintbox.example, not quayholt.example. A video or a voice can be faked now, so a familiar face or name is not proof of who really sent something.",
                 "linkCredible": "The link text says team-briefing.quayholt.example, but it actually goes to quayholt-briefing.example, a different site that asks for your Quayholt password."
               },
               "ifTrusted": "The page the link opens collects your Quayholt password. The 'video' is bait, and the sign-in to 'confirm you've viewed it' is the whole point.",
@@ -344,7 +343,7 @@
             "id": "gva_free_converter",
             "from": {
               "name": "Wesley Tan",
-              "address": "wesley.tan@fastmail-pro.example"
+              "address": "wesley.tan@larchmail.example"
             },
             "to": "you@quayholt.example",
             "subject": "Quicker way to turn the client files round",
@@ -354,8 +353,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "fastmail-pro.example",
-              "replyTo": "w.tan.docs@quickpost-mail.example"
+              "envelopeFrom": "larchmail.example",
+              "replyTo": "w.tan.docs@hastypost.example"
             },
             "truth": {
               "isPhish": true,
@@ -363,9 +362,9 @@
                 "senderTrust"
               ],
               "perFlagNote": {
-                "senderTrust": "The name reads like a colleague, but the address is an outside inbox at fastmail-pro.example, not quayholt.example. A workmate writes to you from the Quayholt domain."
+                "senderTrust": "The name reads like a colleague, but the address is an outside inbox at larchmail.example, not quayholt.example. A workmate writes to you from the Quayholt domain."
               },
-              "headerNote": "The automatic checks pass because the message really was sent from fastmail-pro.example, a domain the sender owns. A pass tells you which mail system sent it, not that the sender is who the name suggests. You could also see, if you open the header, that the reply-to is a different outside address again (quickpost-mail.example), so a reply would go there, not to anyone at Quayholt.",
+              "headerNote": "The automatic checks pass because the message really was sent from larchmail.example, a domain the sender owns. A pass tells you which mail system sent it, not that the sender is who the name suggests. You could also see, if you open the header, that the reply-to is a different outside address again (hastypost.example), so a reply would go there, not to anyone at Quayholt.",
               "ifTrusted": "A free converter site can keep a copy of every file you put through it, so the client files would leave Quayholt. The 'shortcut' is also how an attacker gets you to skip the approved route. The approved way is to ask IT.",
               "reportReply": "Thanks. There's no Wesley Tan on quayholt.example, and client files should never go through a random converter. We've blocked the address."
             }
@@ -491,7 +490,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:triage_post_done",
+              "eventPattern": "global_variable_changed:triage_post_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "finish_check"

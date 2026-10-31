@@ -83,7 +83,7 @@ Carried over from P2/P3:
 | E3-11 (MFA has no decision) | unchanged | E3 a: three pushes, then "The target tapped Approve. The attacker is now signed in — this is MFA fatigue." |
 | E3-T (E3 length) | unchanged, unmeasured | See the timing note. |
 | D1 (learner shown as a hooded figure) | not fixed | `P4_screenshots/e3_quayholt.png`: hooded sprite at the kiosk, hooded face as the player avatar bottom left. |
-| E4 N2 (only the webmail address offered) | not fixed (trivial) | E4 a and b: the only address offered is catherine.merrin@inboxly.example. |
+| E4 N2 (only the webmail address offered) | not fixed (trivial) | E4 a and b: the only address offered is catherine.merrin@lintbox.example. |
 
 Counts: of the 21 P3 N items, 14 are fixed (N1, N2, N3, N4, N6, N8, N11, N13, N14, N15, N16, N17, N19, N21), 2 are partly fixed (N5, N7), 4 are not fixed (N9, N10 minor; N12, N20 trivial) and 1 was not reached (N18). Carried-over rows: m3 fixed, t1 by design, t2 partly, t3 not tested, E3-11 and E3-T unchanged, D1 and E4 N2 not fixed.
 

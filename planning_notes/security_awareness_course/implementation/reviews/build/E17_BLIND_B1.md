@@ -29,7 +29,7 @@ Reloaded the page after verdict 1 with message 2 open. Result: title screen "Con
 
 ### Real decisions: given away?
 - Cards: wording mostly arguable. "Install a game on your work phone" read as Not allowed to me; Ask first was the answer, and "Not sure? Ask first" being the third bin is a fair reason. "Check your own bank account on the work laptop at lunch" is a real judgement call and a good one. The last card ("Can you wait and say nothing...?") is obvious from the wording (a yes/no question mapped on to three bins).
-- Inbox: Harlow's install request, Shauna's personal lookup, Colin's shared login are all "obviously wrong" once the sentence is read, but they are plausible, not marked by colour. Verify or Report both score full marks, so the decision is open. Intranet and HR are real and the debrief pays off the "scary monitoring email" well. QuickConvert: Delete scored 70, with "Safe, but not reported", which is arguable and explained. Consequence shows immediately in the feedback, not later.
+- Inbox: Harlow's install request, Shauna's personal lookup, Colin's shared login are all "obviously wrong" once the sentence is read, but they are plausible, not marked by colour. Verify or Report both score full marks, so the decision is open. Intranet and HR are real and the debrief pays off the "scary monitoring email" well. Formatmoor: Delete scored 70, with "Safe, but not reported", which is arguable and explained. Consequence shows immediately in the feedback, not later.
 
 ### What I learned (own words)
 Allowed / Not allowed / Ask first, and Ask first is the safe default. Do not install apps, do not log in as someone else, do not look people up for personal reasons, use the approved route (service desk, remote desktop). Monitoring exists, is limited, and I should be told. Report your own mistakes quickly and you will not be punished.
@@ -52,7 +52,7 @@ Allowed / Not allowed / Ask first, and Ask first is the safe default. Do not ins
 Rushed. Skipped Nilesh. Answered Allowed on every card, Trust on every message except Report for the scary intranet one, no clues ticked.
 
 - Cards: 4 of 9 right (the draw was different from run 1: badge lending, football streaming, guest Wi-Fi, team chat, social media post, famous customer lookup, own laptop; so cards are drawn from a larger pool). Each wrong answer said "Not this one. It goes in Not allowed/Ask first. [reason]" with no blame.
-- Inbox: Trust on Harlow (0), Shauna (0), Colin (0), QuickConvert (0). Each feedback block said "Not this time." and gave a one-line "What would have happened", which is fair and concrete. Reporting the genuine intranet mail scored 100 and the card said "Reported, and that's never wrong", then explained why it was fine.
+- Inbox: Trust on Harlow (0), Shauna (0), Colin (0), Formatmoor (0). Each feedback block said "Not this time." and gave a one-line "What would have happened", which is fair and concrete. Reporting the genuine intranet mail scored 100 and the card said "Reported, and that's never wrong", then explained why it was fine.
 - Debrief: "Round score: 0%. Worth practising: here's where to look first." Per-message "Here is what to look for next time" with a "What could have happened" line. Tone is not blaming. But:
   - "The tell most often missed: Spotting an unapproved tool or app (caught 0 of 2)" is fine.
   - "You didn't name any flags on these messages" (jargon; the tick list is called "what you noticed" on screen).

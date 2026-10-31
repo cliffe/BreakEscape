@@ -1,7 +1,7 @@
 {
   "_about": "E19 malware-and-updates defend fragment (consequence-flip episode, ENG-04). Quayholt Insurance and everyone in it are fictional; every address ends .example. triageSets holds only the episode set e19_lock_the_doors (E19's update content is already measured by the general_v2 check pair, built by 10_CHECK_FORMS.md's own generator, not this fragment; see E19 spec section 14). Copy triageSets and the awarenessEpisode keys into the E19 shells: the wiring agent builds the full erb, the generator (gen_e8_e17_shells.py) builds the defend-only shell. The mistake/flip stage content (the sandbox beats, flip.mode and flipMontageByChoice) is NOT here: it is full-episode-only, so it lives in full_only.json, exactly as AGENT_RULES_CONTENT.md item 2 places `mistake`, `flip` and erb-only strings. The defend-only shell drops mistake/flip (awareness.rb mistake_checks errors if a defendOnly episode carries either block), so keeping them out of this shared fragment is deliberate. Brand roster and cast: ../BRAND_SET.md (Quayholt Insurance) plus the E19 additions in ./BRAND_ADDITIONS.md. ENG-04 (mistake/flip schema) and ENG-09b (conceptPanel array) and ENG-08 (schema) must have landed before the shells validate.",
 
-  "_brandAdditions_note": "The P11 brand-set additions for E19 (TidyDocs, Leo Brennan, the fake-IT look-alike) and the reuse notes (Quayholt Files, Quayholt Protect, Fernside Catering, extension 4444) are written up in ./BRAND_ADDITIONS.md, with the name-clash grep recorded there. The orchestrator folds them into BRAND_SET.md.",
+  "_brandAdditions_note": "The P11 brand-set additions for E19 (Piledocs, Leo Brennan, the fake-IT look-alike) and the reuse notes (Quayholt Files, Quayholt Protect, Fernside Catering, extension 4444) are written up in ./BRAND_ADDITIONS.md, with the name-clash grep recorded there. The orchestrator folds them into BRAND_SET.md.",
 
   "triageSets": [
     {
@@ -84,12 +84,12 @@
         {
           "id": "e19_consent_unknown",
           "_note": "Row 1. The normal-looking phish half of the consent mirror pair (aw5). An 'allow this app' request from an app the learner did not install or start. The tell is not that a box appeared (row 2 is the same shape and genuine): it is that you, or IT, did not set this up. This is the staff-level form of 'a link that acts as you'; the word CSRF never appears.",
-          "from": { "name": "TidyDocs", "address": "invites@tidydocs.example" },
+          "from": { "name": "Piledocs", "address": "invites@piledocs.example" },
           "to": "you@quayholt.example",
-          "subject": "Connect TidyDocs to your Quayholt account",
+          "subject": "Connect Piledocs to your Quayholt account",
           "time": "13:20",
-          "body": "TidyDocs is asking to:\n- read your email\n- read and save your files\nReview and allow to finish connecting.\nTidyDocs",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tidydocs.example", "replyTo": "invites@tidydocs.example" },
+          "body": "Piledocs is asking to:\n- read your email\n- read and save your files\nReview and allow to finish connecting.\nPiledocs",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "piledocs.example", "replyTo": "invites@piledocs.example" },
           "factorStrings": {
             "app_consent_grab": { "redFlag": "An app you didn't install or start, asking to read your mail or your files" }
           },
@@ -97,9 +97,9 @@
             "isPhish": true,
             "flags": ["app_consent_grab"],
             "perFlagNote": {
-              "app_consent_grab": "Clicking Allow here hands TidyDocs your access to your mail and files, with no password needed, for as long as you leave it connected. You didn't install TidyDocs or start this; only ever allow an app you, or IT, set up and trust"
+              "app_consent_grab": "Clicking Allow here hands Piledocs your access to your mail and files, with no password needed, for as long as you leave it connected. You didn't install Piledocs or start this; only ever allow an app you, or IT, set up and trust"
             },
-            "ifTrusted": "Allowing it would give TidyDocs your access to your mail and files, as you, for as long as it stayed connected.",
+            "ifTrusted": "Allowing it would give Piledocs your access to your mail and files, as you, for as long as it stayed connected.",
             "reportReply": "Thanks. We've denied the request and blocked the app. An app asking for your access, that you or IT didn't start, is one to deny and report every time."
           }
         },

@@ -31,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e11_misdirected_data_defend_defend_done"
+          "episode_e11_misdirected_data_defend_defend_complete"
         ]
       },
       "conclusionScreen": {
@@ -54,8 +54,7 @@
     "se_awareness_records": [],
     "episode_e11_misdirected_data_defend_defend_percent": 0,
     "episode_e11_misdirected_data_defend_defend_reportRate": 0,
-    "episode_e11_misdirected_data_defend_defend_done": false,
-    "episode_e11_misdirected_data_defend_defend_pass": false
+    "episode_e11_misdirected_data_defend_defend_complete": false
   },
   "social": {
     "triageSets": [
@@ -268,7 +267,7 @@
             "id": "e11_sar_everything",
             "from": {
               "name": "Gareth Hale",
-              "address": "gareth.hale@inboxly.example"
+              "address": "gareth.hale@lintbox.example"
             },
             "to": "carelaundry@carrholme.example",
             "subject": "Mum's cardigan is missing AGAIN",
@@ -278,8 +277,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "gareth.hale@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "gareth.hale@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -296,18 +295,18 @@
             }
           },
           {
-            "id": "e11_kestrel_inbound",
+            "id": "e11_wychbourne_inbound",
             "from": {
-              "name": "Kestrel Court Laundry",
-              "address": "laundry@kestrelcourt.example"
+              "name": "Wychbourne Court Laundry",
+              "address": "laundry@wychbournecourt.example"
             },
             "to": "carelaundry@carrholme.example",
             "subject": "This week's laundry list",
             "time": "10:48",
-            "body": "Morning,\nHere's this week's list for collection. Let me know if the Thursday slot still works.\nThanks,\nKestrel Court",
+            "body": "Morning,\nHere's this week's list for collection. Let me know if the Thursday slot still works.\nThanks,\nWychbourne Court",
             "attachments": [
               {
-                "label": "Kestrel-Court-residents-care-summary.xlsx",
+                "label": "Wychbourne-Court-residents-care-summary.xlsx",
                 "kind": "spreadsheet"
               }
             ],
@@ -315,8 +314,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "kestrelcourt.example",
-              "replyTo": "laundry@kestrelcourt.example"
+              "envelopeFrom": "wychbournecourt.example",
+              "replyTo": "laundry@wychbournecourt.example"
             },
             "truth": {
               "isPhish": true,
@@ -324,14 +323,14 @@
                 "personal_data_breach",
                 "attachmentPlausible"
               ],
-              "kindLine": "Kestrel Court is real, but the file attached is their residents' care summary, not a laundry list: personal data we should not hold. Report it so the data protection lead can decide what to do.",
+              "kindLine": "Wychbourne Court is real, but the file attached is their residents' care summary, not a laundry list: personal data we should not hold. Report it so the data protection lead can decide what to do.",
               "missLabel": "holding personal data we were sent in error",
               "perFlagNote": {
                 "personal_data_breach": "The sender is real, but the file is their residents' full care summary: names, conditions and medicines, which are theirs to hold, not ours. Do not open it further or forward it. Tell the sender, report it, and delete it when the DPO says so.",
                 "attachmentPlausible": "The attachment is a care summary on a laundry-list email, so it doesn't fit what the message says it is. Check what a file is before you open it."
               },
               "ifTrusted": "Treat it as a normal laundry list and the care summary sits in our inbox unreported: we hold data we should not, and nobody decides what to do with it.",
-              "reportReply": "Thanks, reported. The DPO will tell Kestrel Court and decide how to delete it safely. Don't open or forward the file in the meantime."
+              "reportReply": "Thanks, reported. The DPO will tell Wychbourne Court and decide how to delete it safely. Don't open or forward the file in the meantime."
             }
           },
           {
@@ -467,7 +466,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:episode_e11_misdirected_data_defend_defend_done",
+              "eventPattern": "global_variable_changed:episode_e11_misdirected_data_defend_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_desk_inbox"
@@ -487,7 +486,7 @@
           "observations": "A touch-screen kiosk showing the Care Laundry desk inbox at Carrholme Services: a handful of items to sort.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e11_misdirected_data_defend_defend_done",
+              "condition": "globalVars.episode_e11_misdirected_data_defend_defend_complete",
               "value": "A touch-screen kiosk showing the Care Laundry desk inbox at Carrholme Services. Episode finished."
             }
           ],

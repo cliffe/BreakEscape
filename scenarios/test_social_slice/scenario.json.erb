@@ -127,12 +127,10 @@
 
     "slice_triage_percent": 0,
     "slice_triage_reportRate": 0,
-    "slice_triage_done": false,
-    "slice_triage_pass": false,
+    "slice_triage_complete": false,
     "slice_triage2_percent": 0,
     "slice_triage2_reportRate": 0,
-    "slice_triage2_done": false,
-    "slice_triage2_pass": false,
+    "slice_triage2_complete": false,
     "defender_profile_done": false
   },
 
@@ -997,7 +995,7 @@
               "completeTask": "teague_landed"
             },
             {
-              "eventPattern": "global_variable_changed:slice_triage_done",
+              "eventPattern": "global_variable_changed:slice_triage_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "triage_sorted"

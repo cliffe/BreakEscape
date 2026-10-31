@@ -96,10 +96,10 @@ const check = (name, ok, data = {}) => {
       const after = await eventsFor(prefix);
       const lastOk = puts.filter(x => x.mode === 'open' && x.status === 200).at(-1);
       check('lifted: confirmed', result?.confirmed === true, { result });
-      check('lifted: events emitted, done last, then the done event',
-        JSON.stringify(after) === JSON.stringify([`${prefix}percent`, `${prefix}reportRate`, `${prefix}pass`, `${prefix}done`, 'inbox_triage_completed']),
+      check('lifted: events emitted, complete last, then the done event',
+        JSON.stringify(after) === JSON.stringify([`${prefix}percent`, `${prefix}reportRate`, `${prefix}pass`, `${prefix}complete`, 'inbox_triage_completed']),
         { after });
-      check('lifted: the confirmed PUT carried <prefix>done', lastOk?.globals?.[`${prefix}done`] === true, { lastOkGlobals: lastOk && Object.keys(lastOk.globals) });
+      check('lifted: the confirmed PUT carried <prefix>complete', lastOk?.globals?.[`${prefix}complete`] === true, { lastOkGlobals: lastOk && Object.keys(lastOk.globals) });
       check('lifted: the notice was hidden after the emit', JSON.stringify(await savingFor(prefix)) === JSON.stringify(['saving', 'saved']));
     }
 

@@ -32,10 +32,10 @@
       "reduceNote": "A public diary tells an attacker when the executive is unreachable and gives a believable reason to be emailing on the move."
     },
     "ms_exec_travel_email": {
-      "text": "Catherine's speaker bio says that while she is travelling she takes urgent enquiries at catherine.merrin@inboxly.example.",
+      "text": "Catherine's speaker bio says that while she is travelling she takes urgent enquiries at catherine.merrin@lintbox.example.",
       "subject": "catherine", "source": "blk_bio",
       "provides": [
-        { "type": "address", "value": "catherine_address", "label": "catherine.merrin@inboxly.example", "kind": "distinctive" }
+        { "type": "address", "value": "catherine_address", "label": "catherine.merrin@lintbox.example", "kind": "distinctive" }
       ],
       "reduceNote": "An executive's personal or travel email in public lets an attacker send as a name staff trust, on a channel nobody can check against the company address book."
     },
@@ -109,7 +109,7 @@
               "text": "This week: Catherine Merrin speaks at the Lisbon Design Forum (Wednesday 10:00), flying out Tuesday at 09:55 and home Thursday evening.",
               "fact": "ms_exec_calendar" },
             { "id": "blk_bio", "kind": "p",
-              "text": "Speaker: Catherine Merrin. While she is travelling, urgent enquiries reach her at catherine.merrin@inboxly.example.",
+              "text": "Speaker: Catherine Merrin. While she is travelling, urgent enquiries reach her at catherine.merrin@lintbox.example.",
               "fact": "ms_exec_travel_email" } ] } ] },
 
       { "id": "merrinsallow_social", "name": "Friendface", "url": "friendface.example", "type": "social",

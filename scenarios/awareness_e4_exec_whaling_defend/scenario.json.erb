@@ -31,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e4_exec_whaling_defend_defend_done"
+          "episode_e4_exec_whaling_defend_defend_complete"
         ]
       },
       "conclusionScreen": {
@@ -54,8 +54,7 @@
     "se_awareness_records": [],
     "episode_e4_exec_whaling_defend_defend_percent": 0,
     "episode_e4_exec_whaling_defend_defend_reportRate": 0,
-    "episode_e4_exec_whaling_defend_defend_done": false,
-    "episode_e4_exec_whaling_defend_defend_pass": false
+    "episode_e4_exec_whaling_defend_defend_complete": false
   },
   "social": {
     "triageSets": [
@@ -112,7 +111,7 @@
             "id": "e4_boarding_payment",
             "from": {
               "name": "Catherine Merrin",
-              "address": "catherine.merrin.travel@inboxly.example"
+              "address": "catherine.merrin.travel@lintbox.example"
             },
             "to": "tomas.carvalho@merrinsallow.example",
             "subject": "About to board: need this paid before I land",
@@ -122,8 +121,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "catherine.merrin.travel@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "catherine.merrin.travel@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -134,7 +133,7 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "A payment request from the managing partner on a free webmail inbox (inboxly.example), not her merrinsallow.example address. Anyone can open a free inbox in a name you know, so stop and ring her on the number in your contacts",
+                "senderTrust": "A payment request from the managing partner on a free webmail inbox (lintbox.example), not her merrinsallow.example address. Anyone can open a free inbox in a name you know, so stop and ring her on the number in your contacts",
                 "borrowed_authority": "'I'll sign it off when I land' leans on the managing partner's own authority to push the payment past Yasmin's approval. A name in the From line is no proof she sent it",
                 "secrecy_or_bypass": "'Keep it between us' and 'don't send it through Yasmin' skip the approval that would catch this",
                 "urgencyCalibrated": "'Before I land' and 'three hours in the air' leave no time to check and steer you away from ringing her. The flight time came from her public posts"
@@ -356,7 +355,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:episode_e4_exec_whaling_defend_defend_done",
+              "eventPattern": "global_variable_changed:episode_e4_exec_whaling_defend_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_pa_inbox"
@@ -376,7 +375,7 @@
           "observations": "A touch-screen kiosk showing Tomás Carvalho's inbox. Five emails and voicemails are waiting.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e4_exec_whaling_defend_defend_done",
+              "condition": "globalVars.episode_e4_exec_whaling_defend_defend_complete",
               "value": "A touch-screen kiosk showing Tomás Carvalho's inbox. Nothing left to do here."
             }
           ],

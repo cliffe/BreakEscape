@@ -31,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e15_shadow_it_defend_defend_done"
+          "episode_e15_shadow_it_defend_defend_complete"
         ]
       },
       "conclusionScreen": {
@@ -54,8 +54,7 @@
     "se_awareness_records": [],
     "episode_e15_shadow_it_defend_defend_percent": 0,
     "episode_e15_shadow_it_defend_defend_reportRate": 0,
-    "episode_e15_shadow_it_defend_defend_done": false,
-    "episode_e15_shadow_it_defend_defend_pass": false
+    "episode_e15_shadow_it_defend_defend_complete": false
   },
   "social": {
     "triageSets": [
@@ -188,26 +187,26 @@
           {
             "id": "e15_free_transfer",
             "from": {
-              "name": "SwiftDrop",
-              "address": "no-reply@swiftdrop-free.example"
+              "name": "Chuckbox",
+              "address": "no-reply@chuckbox-free.example"
             },
             "to": "you@tarrowby.example",
             "subject": "Too big for email? Upload it here, free",
             "time": "11:48",
-            "body": "Your file is too large to email. Upload it to SwiftDrop for free and we'll make a link anyone can download, no account needed. Files up to 5GB, just drag and drop.\n{{link:send}}",
+            "body": "Your file is too large to email. Upload it to Chuckbox for free and we'll make a link anyone can download, no account needed. Files up to 5GB, just drag and drop.\n{{link:send}}",
             "links": [
               {
                 "id": "send",
-                "text": "swiftdrop-free.example/upload",
-                "destination": "https://swiftdrop-free.example/upload"
+                "text": "chuckbox-free.example/upload",
+                "destination": "https://chuckbox-free.example/upload"
               }
             ],
             "auth": {
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "swiftdrop-free.example",
-              "replyTo": "no-reply@swiftdrop-free.example"
+              "envelopeFrom": "chuckbox-free.example",
+              "replyTo": "no-reply@chuckbox-free.example"
             },
             "factorStrings": {
               "unapproved_tool": {
@@ -273,26 +272,26 @@
           {
             "id": "e15_free_pdf_tool",
             "from": {
-              "name": "PDFMerge Free",
-              "address": "download@pdfmerge-free.example"
+              "name": "PDFmangle Free",
+              "address": "download@pdfmangle-free.example"
             },
             "to": "you@tarrowby.example",
             "subject": "Edit any PDF free, everyone's using it",
             "time": "10:05",
-            "body": "Need to tidy the PDF before it goes out? PDFMerge Free merges, splits and edits PDFs in your browser, or as a one-click install. It's free and everyone's using it.\n{{link:get}}",
+            "body": "Need to tidy the PDF before it goes out? PDFmangle Free merges, splits and edits PDFs in your browser, or as a one-click install. It's free and everyone's using it.\n{{link:get}}",
             "links": [
               {
                 "id": "get",
-                "text": "pdfmerge-free.example/install",
-                "destination": "https://pdfmerge-free.example/install"
+                "text": "pdfmangle-free.example/install",
+                "destination": "https://pdfmangle-free.example/install"
               }
             ],
             "auth": {
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "pdfmerge-free.example",
-              "replyTo": "download@pdfmerge-free.example"
+              "envelopeFrom": "pdfmangle-free.example",
+              "replyTo": "download@pdfmangle-free.example"
             },
             "factorStrings": {
               "unapproved_tool": {
@@ -554,7 +553,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:episode_e15_shadow_it_defend_defend_done",
+              "eventPattern": "global_variable_changed:episode_e15_shadow_it_defend_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_shortcuts"
@@ -574,7 +573,7 @@
           "observations": "A touch-screen kiosk showing a Tarrowby desktop: found sticks, shortcut messages and the approved swaps to match.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e15_shadow_it_defend_defend_done",
+              "condition": "globalVars.episode_e15_shadow_it_defend_defend_complete",
               "value": "A touch-screen kiosk showing a Tarrowby desktop. That's this one finished."
             }
           ],

@@ -9,7 +9,7 @@
     "phones": "Ravinder's mobile 07700 900418 (in the office contacts); the caller in the cloned voicemail rings from 07700 900771 (not in contacts); Lindiwe's extension 2214 shows as 0116 496 0214. All in Ofcom's drama ranges.",
     "nameCheck": "Mokoena and Lindiwe had no hits in scenarios, planning_notes, docs or the README files on 2026-10-22."
   },
-  "_formPairing": "E7 has no role of its own: it is the cross-role 'everyone' episode (11 section 3.2), and 11 section 5.2 says episodes outside a learner's primary role have no check of their own. An organiser who wants checks around E7 uses the general-staff pair from ../e5/defend.json: general_form_a and general_form_b (awareness_pre_general_ab / awareness_post_general_ab and the BA pair). No E7 forms are authored here.",
+  "_formPairing": "E7 has no role of its own: it is the cross-role 'everyone' episode (11 section 3.2), and 11 section 5.2 says episodes outside a learner's primary role have no check of their own. An organiser who wants checks around E7 uses the All-staff pair from ../checks_v2/general_v2.json: general_v2_form_a and general_v2_form_b (awareness_pre_general_v2_ab / awareness_post_general_v2_ab and the BA pair). The original general pair (awareness_pre_general_ab etc.) was retired 2026-10-31. No E7 forms are authored here.",
   "triageSets": [
     {
       "id": "e7_finance_line",
@@ -99,17 +99,17 @@
         {
           "id": "e7_ceo_wire",
           "_reusedFrom": "e1_ceo_wire (E1, ../e1/defend.json). Same sender, amount and wording, with one sentence added ('I've left you a voicemail about it too') so it backs up the cloned voicemail: two channels agreeing is not proof either. New id so measurement records keep E1 and E7 apart.",
-          "from": { "name": "Ravinder Sandhu", "address": "ravinder.sandhu.private@inboxly.example" },
+          "from": { "name": "Ravinder Sandhu", "address": "ravinder.sandhu.private@lintbox.example" },
           "to": "finance@brightwellfoods.example",
           "subject": "Need this paid today",
           "time": "15:31",
           "body": "Are you at your desk? I need a payment of £18,400 made today to secure a new site in Leeds. I've left you a voicemail about it too. It's confidential until the board announces it, so please keep it to yourself and don't put it through the usual approval. I'll sign it off when I'm back.\nI'm in meetings all afternoon, so reply here rather than calling.\nRavinder\nSent from my phone",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "ravinder.sandhu.private@inboxly.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "ravinder.sandhu.private@lintbox.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "borrowed_authority", "secrecy_or_bypass", "urgencyCalibrated", "vish_callback_pressure"],
             "perFlagNote": {
-              "senderTrust": "The name is the chief executive's, but the address is a personal inbox at inboxly.example, not brightwellfoods.example. The voicemail it mentions doesn't make it more real: a fake voice and a fake email can come from the same sender",
+              "senderTrust": "The name is the chief executive's, but the address is a personal inbox at lintbox.example, not brightwellfoods.example. The voicemail it mentions doesn't make it more real: a fake voice and a fake email can come from the same sender",
               "borrowed_authority": "The chief executive's name is doing the job the approval process should do. 'I'll sign it off when I'm back' and 'don't put it through the usual approval' lean on his seniority to push it past the check, and a name in the From line is no proof he sent it",
               "secrecy_or_bypass": "'Keep it to yourself' and 'don't put it through the usual approval' ask you to skip the check that would catch this",
               "urgencyCalibrated": "'Today' and 'in meetings all afternoon' leave no time to check before the money would move",

@@ -13,7 +13,7 @@
 // ================================================
 
 VAR phish_ceo_voice_target_attempts = 0
-VAR episode_e7_voice_ceo_defend_done = false
+VAR episode_e7_voice_ceo_defend_complete = false
 VAR hub_quiet = false
 
 === start ===
@@ -23,7 +23,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { episode_e7_voice_ceo_defend_done:
+    { episode_e7_voice_ceo_defend_complete:
         Agnieszka Duda: Both ends done now, thank you. Whoever's voice it is, ringing back on a number we already hold is what settles it.
     - else:
         { phish_ceo_voice_target_attempts > 0:

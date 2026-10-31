@@ -22,12 +22,12 @@ All fictional; every domain ends `.example`; no homographs.
 
 ## Reused third-party brand
 
-- **FuelWise** (`fuelwise.example`): the new supplier portal in defend rows 5 and 6. Reused from E6's third-party list. **Note for the orchestrator:** E6 only ever used the scam look-alike `fuelwise-rewards.example` (now an unused leftover brand); `fuelwise.example` is FuelWise's legitimate domain and is introduced here for the genuine portal sign-up. FuelWise is already on the Tarrowby pre-ship web-search list.
+- **Fuelr** (`fuelr.example`): the new supplier portal in defend rows 5 and 6. Reused from E6's third-party list. **Note for the orchestrator:** E6 only ever used the scam look-alike `fuelr-rewards.example` (now an unused leftover brand); `fuelr.example` is Fuelr's legitimate domain and is introduced here for the genuine portal sign-up. Fuelr is already on the Tarrowby pre-ship web-search list.
 
 ## Name-clash search (`grep -rn "<name>" scenarios planning_notes docs`, 2026-10-29)
 
 - `RiverReach`, `riverreachangling`, `Pennington`, `Bramble`: zero hits anywhere except the E9 implementation briefs (`planning_notes/security_awareness_course/implementation/`, which are these specs). Clean for a new episode.
-- `FuelWise` / `fuelwise`: existing hits are the E6 fragment and BRAND_SET only (the reuse is intended).
+- `Fuelr` / `fuelr`: existing hits are the E6 fragment and BRAND_SET only (the reuse is intended).
 - `Nilesh` / `Solanki`, `Colin Mather`: existing Tarrowby cast (E6); intended reuse.
 - `otter`, `crimson`: appear as ordinary words in unrelated mission scenarios (e.g. `m04`, `m05`, `m10`, `sis02`); they are game words here, not names, so no clash.
 
@@ -37,6 +37,6 @@ Web-search against real businesses, clubs and products, as the usual check:
 
 - **RiverReach Angling** and **riverreachangling.example**
 - **Pennington Rangers** (an amateur football club name)
-- **FuelWise** (already on the Tarrowby pre-ship list)
+- **Fuelr** (already on the Tarrowby pre-ship list)
 
 Everyone and every company is fictional; every address and domain ends `.example`.

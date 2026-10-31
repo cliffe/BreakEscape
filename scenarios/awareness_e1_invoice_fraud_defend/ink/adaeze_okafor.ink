@@ -8,7 +8,7 @@
 // quietly, and a re-talk re-enters it and says the line that fits the moment.
 // ================================================
 
-VAR episode_e1_invoice_fraud_defend_defend_done = false
+VAR episode_e1_invoice_fraud_defend_defend_complete = false
 VAR hub_quiet = false
 
 === start ===
@@ -18,7 +18,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { episode_e1_invoice_fraud_defend_defend_done:
+    { episode_e1_invoice_fraud_defend_defend_complete:
         Adaeze Okafor: That's the inbox sorted, thank you. If anything still bothers you, ring the sender on a number we already hold.
     - else:
         Adaeze Okafor: Thanks for covering the payments inbox before the three o'clock run. It's open on the kiosk.

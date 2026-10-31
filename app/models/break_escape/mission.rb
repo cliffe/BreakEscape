@@ -64,6 +64,12 @@ module BreakEscape
       load_mission_metadata&.dig('lab_sheet_url').presence
     end
 
+    # Optional organiser-only note, from mission.json's "organiser_note": guidance for
+    # course organisers that is not shown to learners (awareness checks and the opening brief).
+    def organiser_note
+      load_mission_metadata&.dig('organiser_note').presence
+    end
+
     # HUD skins, styled in public/break_escape/css/ui-themes.css. A mission picks
     # one with "ui_theme" in mission.json; anything else falls back to the default.
     UI_THEMES = %w[general spy cyberpunk crt eldritch circuit secops].freeze
@@ -87,6 +93,58 @@ module BreakEscape
     def scoring_mode
       mode = load_mission_metadata&.dig('scoring').to_s
       SCORING_MODES.include?(mode) ? mode : DEFAULT_SCORING_MODE
+    end
+
+    # The game global that holds an awareness check's result percent, from
+    # mission.json "resultGlobal" (for example "triage_pre_percent"). nil for
+    # every mission that does not report a result. Only a plain global name is
+    # accepted. The sibling globals share its prefix: <prefix>reportRate and
+    # <prefix>complete (older saved games: <prefix>done).
+    RESULT_GLOBAL_PATTERN = /\A[A-Za-z][A-Za-z0-9_]*_percent\z/
+    RESULT_STAGES = %w[pre post episode].freeze
+
+    def result_global
+      name = load_mission_metadata&.dig('resultGlobal').to_s
+      RESULT_GLOBAL_PATTERN.match?(name) ? name : nil
+    end
+
+    # Where a result sits in the awareness course: pre (before-check), post
+    # (after-check) or episode. mission.json "stage" wins; without it the stage
+    # is read from the result global's name (triage_pre_percent, triage_post_percent,
+    # episode_<id>_defend_percent). nil when the mission has no result.
+    def result_stage
+      return nil unless result_global
+
+      declared = load_mission_metadata&.dig('stage').to_s
+      return declared if RESULT_STAGES.include?(declared)
+
+      case result_global
+      when /\Atriage_pre_/ then 'pre'
+      when /\Atriage_post_/ then 'post'
+      when /\Aepisode_/ then 'episode'
+      end
+    end
+    alias stage result_stage
+
+    # Whether the game warns the player, before the ending fires, that optional
+    # objectives are still open. On unless mission.json says "endingCheck": false.
+    def ending_check?
+      load_mission_metadata&.dig('endingCheck') != false
+    end
+    alias ending_check ending_check?
+
+    # A mission that runs under time pressure and is not meant for a perfect
+    # score (sis01, sis02): "endingCheck": false, or an explicit "timed": true.
+    def timed?
+      meta = load_mission_metadata
+      meta&.dig('timed') == true || meta&.dig('endingCheck') == false
+    end
+
+    # What a game's score breakdown needs from this mission, read once per
+    # mission (Game.score_breakdowns builds one per mission, not per game).
+    def score_facts
+      { result_global: result_global, result_stage: result_stage, ending_check: ending_check?,
+        timed: timed?, scoring_mode: scoring_mode }
     end
 
     # Painted title art, from mission.json "title_art": a path under

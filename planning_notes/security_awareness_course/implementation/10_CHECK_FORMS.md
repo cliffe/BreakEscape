@@ -20,8 +20,8 @@ reuse the built shell machinery.
 - `planning_notes/phishing_and_social_engineering/awareness/e3/defend.json` and
   `awareness/e5/defend.json` (a built form fragment pair: `helpdesk_form_a`/`_b`,
   `general_form_a`/`_b`, with `_formPairing`, `perFlagNote`, `whyFine`, `flagAlternatives`).
-- A built shell, read in full: `scenarios/awareness_pre_general_ab/scenario.json.erb` and
-  `scenarios/awareness_post_general_ab/scenario.json.erb` (the pre export block, the post
+- A built shell, read in full: `scenarios/awareness_pre_general_v2_ab/scenario.json.erb` and
+  `scenarios/awareness_post_general_v2_ab/scenario.json.erb` (the pre export block, the post
   `importGlobals` block with `pre_check_completed`, `awarenessEpisode`, the `training_room`).
 - `planning_notes/phishing_and_social_engineering/designs/00_data_contract.md` section 2 (the
   factor library and the channel-tell library: the exact scored flag ids you may use).
@@ -176,7 +176,7 @@ Everything here mirrors the built forms. Read a built pre and post shell alongsi
     every pair of arrays is disjoint (for example `[2, 0, 1, 4, 3, 6, 5, 9, 7, 8]` /
     `[7, 3, 0, 6, 1, 8, 5, 2, 9, 4]` leaves slots 4 and 6 phish in both), so run the audit's
     disjointness check (step 2) on whatever arrays you ship.
-- Each pair becomes four shells, exactly as the built roles (`gen_e3_e5_shells.py` `check()` and
+- Each pair becomes four shells, exactly as the built roles (`gen_checks_v2_shells.py` `check()` and
   `main()`): `pre_*_ab` carries form A at stage `pre`; `post_*_ab` carries form B at stage `post`;
   `pre_*_ba` carries form B at stage `pre`; `post_*_ba` carries form A at stage `post`. The form
   selection map in `check()` is `{('ab','pre'): fa, ('ab','post'): fb, ('ba','pre'): fb,
@@ -220,8 +220,8 @@ in the item tables below).
 
 ### Pre/post export and import globals
 
-Identical to the built checks (`gen_e3_e5_shells.py` `check()`, and
-`scenarios/awareness_post_general_ab/scenario.json.erb`). The global names are reused across every
+Identical to the built checks (`gen_checks_v2_shells.py` `check()`, and
+`scenarios/awareness_post_general_v2_ab/scenario.json.erb`). The global names are reused across every
 role, which is safe because each post shell imports from a named pre mission; a learner does one
 pair's pre+post in a session.
 
@@ -349,7 +349,7 @@ Anjali's and Darren's sprite keys come from `gen_e3_e5_shells.py` `HOSTS` (`anja
 
 ### Mission titles, names and collection
 
-Follow the built strings exactly (`gen_e3_e5_shells.py` `check()`):
+Follow the built strings exactly (`gen_checks_v2_shells.py` `check()`):
 
 - `scenario_name`: `"<check name>: before (AB)"` / `"<check name>: after (AB)"` and the BA variants.
   Check name: `general_v2` -> "Everyday threats check (part two)"; `data_conduct` -> "Data and

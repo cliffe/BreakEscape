@@ -31,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "triage_pre_done"
+          "triage_pre_complete"
         ]
       },
       "conclusionScreen": {
@@ -54,13 +54,12 @@
     "se_awareness_records": [],
     "triage_pre_percent": 0,
     "triage_pre_reportRate": 0,
-    "triage_pre_done": false,
-    "triage_pre_pass": false
+    "triage_pre_complete": false
   },
   "exportGlobals": [
     "triage_pre_percent",
     "triage_pre_reportRate",
-    "triage_pre_done"
+    "triage_pre_complete"
   ],
   "social": {
     "triageSets": [
@@ -116,7 +115,7 @@
             "id": "mb_fatima_vouchers",
             "from": {
               "name": "Fatima Begum",
-              "address": "fatima.begum.hr@quickpost-mail.example"
+              "address": "fatima.begum.hr@hastypost.example"
             },
             "to": "you@tarrowby.example",
             "subject": "Welcome vouchers for Monday's new drivers",
@@ -126,8 +125,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "quickpost-mail.example",
-              "replyTo": "fatima.begum.hr@quickpost-mail.example"
+              "envelopeFrom": "hastypost.example",
+              "replyTo": "fatima.begum.hr@hastypost.example"
             },
             "truth": {
               "isPhish": true,
@@ -135,7 +134,7 @@
                 "senderTrust"
               ],
               "perFlagNote": {
-                "senderTrust": "The recruitment lead's name on a personal inbox at quickpost-mail.example, not tarrowby.example"
+                "senderTrust": "The recruitment lead's name on a personal inbox at hastypost.example, not tarrowby.example"
               },
               "ifTrusted": "£300 of voucher codes would go to the sender, and vouchers can't be traced or clawed back.",
               "reportReply": "Thanks. Fatima didn't send it. Her address is on tarrowby.example, and HR never asks staff to buy vouchers."
@@ -424,7 +423,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:triage_pre_done",
+              "eventPattern": "global_variable_changed:triage_pre_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "finish_check"

@@ -43,7 +43,7 @@ module ValidateSocial
     EPISODE_MESSAGES = (4..8) # 4 since the E3 timing trim (TIMING_TRIM_PLAN Cut D)
     CHECK_MESSAGES = 10
     REPLY_DELAY = (5..8)
-    PRE_NAMES = %w[triage_pre_percent triage_pre_reportRate triage_pre_done].freeze
+    PRE_NAMES = %w[triage_pre_percent triage_pre_reportRate triage_pre_complete].freeze
     PRE_COMPLETED = 'pre_check_completed'
 
     def self.check(ctx)
@@ -815,7 +815,7 @@ module ValidateSocial
         prefix = set.dig('outcome', 'setGlobalPrefix')
         if prefix != want
           extra = ep['variant'] == 'defendOnly' ? " (a defendOnly id already ends in '_defend', so the prefix reads '_defend_defend_'; the runner's defendPrefix() builds it the same way)" : ''
-          issues << err("#{where} outcome.setGlobalPrefix is #{prefix.inspect}; it must be '#{want}', so its done global is '#{want}done'#{extra}")
+          issues << err("#{where} outcome.setGlobalPrefix is #{prefix.inspect}; it must be '#{want}', so its done global is '#{want}complete'#{extra}")
         end
       end
       issues
@@ -829,11 +829,12 @@ module ValidateSocial
       stage = ep.dig('defend', 'stage')
       return nil if prefix.include?('{stage}') && Mail.blank?(stage)
 
-      "#{prefix.gsub('{stage}', stage.to_s)}done"
+      "#{prefix.gsub('{stage}', stage.to_s)}complete"
     end
 
-    # The shell reads percent, reportRate, done and pass from the set's prefix. `done` is an error in
-    # conclusion_checks; the other three are a warning here.
+    # The shell reads percent, reportRate and complete from the set's prefix. `complete` is an error in
+    # conclusion_checks; the other two are a warning here. (Awareness sets have passPercent 0, so no
+    # `pass` global is written since the 2026-10-31 rename.)
     def self.result_global_checks(ctx, ep, set)
       prefix = set.dig('outcome', 'setGlobalPrefix')
       return [] if Mail.blank?(prefix)
@@ -842,11 +843,11 @@ module ValidateSocial
       return [] if prefix.include?('{stage}') && Mail.blank?(stage)
 
       base = prefix.gsub('{stage}', stage.to_s)
-      %w[percent reportRate pass].filter_map do |suffix|
+      %w[percent reportRate].filter_map do |suffix|
         name = "#{base}#{suffix}"
         next if ctx.all_globals.key?(name)
 
-        warn_("the result global '#{name}' is not declared in globalVariables; the shell declares all four (percent, reportRate, done, pass)")
+        warn_("the result global '#{name}' is not declared in globalVariables; the shell declares percent, reportRate and complete")
       end
     end
 
@@ -1929,7 +1930,7 @@ module ValidateSocial
 
     def self.pre_exports(ctx, set)
       prefix = set.dig('outcome', 'setGlobalPrefix').to_s.gsub('{stage}', 'pre')
-      names = %w[percent reportRate done].map { |s| "#{prefix}#{s}" }
+      names = %w[percent reportRate complete].map { |s| "#{prefix}#{s}" }
       exports = Array(ctx.json['exportGlobals'])
       names.reject { |n| exports.include?(n) }.map do |n|
         err("the pre check does not list '#{n}' in exportGlobals; the post check could not import its baseline")

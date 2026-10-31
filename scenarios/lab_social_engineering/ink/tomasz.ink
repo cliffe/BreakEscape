@@ -16,7 +16,7 @@
 
 VAR triage_pass = false
 VAR profile_done = false
-VAR triage_done = false
+VAR triage_complete = false
 VAR dev_reported = false
 VAR fairbairn_payoff_heard = false
 VAR phish_pierce_attempts = 0
@@ -61,7 +61,7 @@ Tomasz: Tomasz. I run security here, me and half a person's budget.
 }
 + {triage_pass and profile_done} [Debrief me.]
     -> debrief_confirm
-+ {triage_done and not explained_own} [Two of those emails were mine.]
++ {triage_complete and not explained_own} [Two of those emails were mine.]
     -> own_mail
 + {not explained_dev} [Dev on the service desk — what's the gap?]
     -> dev_finding

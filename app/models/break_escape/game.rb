@@ -3,6 +3,7 @@ module BreakEscape
     self.table_name = 'break_escape_games'
 
     include CarryOver
+    include ScoreBreakdown
 
     # Associations
     belongs_to :player, polymorphic: true
@@ -62,12 +63,7 @@ module BreakEscape
 
     # 70 × tasks/total + 30 × aims/total. The default ("tasks") score.
     def raw_task_score
-      return 0.0 if total_tasks.zero?
-
-      task_score = (tasks_completed.to_f / total_tasks) * 70
-      aim_score = total_aims.positive? ? (objectives_completed.to_f / total_aims) * 30 : 0
-
-      task_score + aim_score
+      self.class.raw_score(tasks_completed, total_tasks, objectives_completed, total_aims)
     end
 
     # Get score based on game_slot scoring method (if available)

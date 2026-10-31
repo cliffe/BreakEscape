@@ -31,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e2_cv_lures_defend_defend_done"
+          "episode_e2_cv_lures_defend_defend_complete"
         ]
       },
       "conclusionScreen": {
@@ -54,8 +54,7 @@
     "se_awareness_records": [],
     "episode_e2_cv_lures_defend_defend_percent": 0,
     "episode_e2_cv_lures_defend_defend_reportRate": 0,
-    "episode_e2_cv_lures_defend_defend_done": false,
-    "episode_e2_cv_lures_defend_defend_pass": false
+    "episode_e2_cv_lures_defend_defend_complete": false
   },
   "social": {
     "triageSets": [
@@ -128,7 +127,7 @@
             "id": "e2_portfolio_lookalike",
             "from": {
               "name": "Liam Baxter",
-              "address": "liam.baxter@inboxly.example"
+              "address": "liam.baxter@lintbox.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "CV attached: warehouse supervisor",
@@ -145,8 +144,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "liam.baxter@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "liam.baxter@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -177,7 +176,7 @@
             "id": "e2_cv_pdf",
             "from": {
               "name": "Tendai Moyo",
-              "address": "tendai.moyo@inboxly.example"
+              "address": "tendai.moyo@lintbox.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "Application: warehouse supervisor (nights)",
@@ -194,14 +193,14 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "tendai.moyo@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "tendai.moyo@lintbox.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderTrust": "Candidates apply from their personal email, so an inboxly.example address is normal here. The name and the address match.",
+                "senderTrust": "Candidates apply from their personal email, so an lintbox.example address is normal here. The name and the address match.",
                 "attachmentPlausible": "It says the CV is attached, and it is: one PDF, which opens in the viewer.",
                 "addressedTo": "It's addressed to Fatima by name and names the job.",
                 "default": "A personal address is normal for a candidate. The CV is attached, the email names the job and the person, and it asks for nothing but an interview."
@@ -212,7 +211,7 @@
             "id": "e2_enable_content",
             "from": {
               "name": "Jordan Kerr",
-              "address": "jordan.kerr.cv@quickpost-mail.example"
+              "address": "jordan.kerr.cv@hastypost.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "Job application",
@@ -229,8 +228,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "quickpost-mail.example",
-              "replyTo": "jordan.kerr.cv@quickpost-mail.example"
+              "envelopeFrom": "hastypost.example",
+              "replyTo": "jordan.kerr.cv@hastypost.example"
             },
             "factorStrings": {
               "enable_content_prompt": {
@@ -258,7 +257,7 @@
             "id": "e2_cv_docx",
             "from": {
               "name": "Darius Petrauskas",
-              "address": "darius.petrauskas@inboxly.example"
+              "address": "darius.petrauskas@lintbox.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "HGV driver (Class 1): application",
@@ -275,8 +274,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "darius.petrauskas@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "darius.petrauskas@lintbox.example"
             },
             "truth": {
               "isPhish": false,
@@ -284,7 +283,7 @@
               "whyFine": {
                 "enable_content_prompt": "It's a Word file, which is normal for a CV. In the viewer it shows the whole CV read-only and asks you to switch nothing on.",
                 "attachmentPlausible": "A CV attached to an application is what you'd expect, and a Word document is a common way to send one.",
-                "senderTrust": "Candidates apply from their personal email, so an inboxly.example address is normal here.",
+                "senderTrust": "Candidates apply from their personal email, so an lintbox.example address is normal here.",
                 "default": "A named job, a named person, a CV that's really attached, and nothing to switch on or sign in to."
               }
             }
@@ -422,7 +421,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:episode_e2_cv_lures_defend_defend_done",
+              "eventPattern": "global_variable_changed:episode_e2_cv_lures_defend_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_recruitment_inbox"
@@ -442,7 +441,7 @@
           "observations": "A touch-screen kiosk showing the Tarrowby recruitment inbox. Six messages are waiting.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e2_cv_lures_defend_defend_done",
+              "condition": "globalVars.episode_e2_cv_lures_defend_defend_complete",
               "value": "A touch-screen kiosk showing the Tarrowby recruitment inbox. Nothing left to do here."
             }
           ],

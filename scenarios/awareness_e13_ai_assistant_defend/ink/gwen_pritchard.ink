@@ -2,7 +2,7 @@
 // Awareness E13, defend only: Gwen Pritchard (person, Training Room)
 // Brightwell Foods' IT service desk lead, late 30s, Welsh (BRAND_SET.md, Brightwell cast). She runs the announced assistant demo and receives the reports. Placeholder sprite until the PixelLab reset.
 // One welcome line; the kiosk does the rest. The record carries the mapping that
-// completes the task when episode_e13_ai_assistant_defend_defend_done changes (11 S5.1), so the ink only reads that global.
+// completes the task when episode_e13_ai_assistant_defend_defend_complete changes (11 S5.1), so the ink only reads that global.
 // Resting point is the hub (m03 hub_quiet pattern): the goodbye parks there
 // quietly, and a re-talk re-enters it and says the line that fits the moment.
 // Written by planning_notes/phishing_and_social_engineering/awareness/gen_e8_e17_shells.py,
@@ -10,7 +10,7 @@
 // demo_call, reveal) is not in the generator, as in the full shell's ink.
 // ================================================
 
-VAR episode_e13_ai_assistant_defend_defend_done = false
+VAR episode_e13_ai_assistant_defend_defend_complete = false
 VAR e13_demo_offered = false
 VAR demo_answer = ""
 VAR hub_quiet = false
@@ -22,13 +22,13 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { episode_e13_ai_assistant_defend_defend_done:
+    { episode_e13_ai_assistant_defend_defend_complete:
         Gwen Pritchard: That's them all handled, thanks. A voice or a face can be faked. Check another way, on a number you already hold: that always works.
     - else:
         Gwen Pritchard: Brightwell's switched on its assistant, and the kiosk has the inbox beside it: supplier emails, voicemails and video calls. Some are real, some aren't.
     }
 }
-+ {episode_e13_ai_assistant_defend_defend_done and not e13_demo_offered} [Optional: hear what a faked call sounds like]
++ {episode_e13_ai_assistant_defend_defend_complete and not e13_demo_offered} [Optional: hear what a faked call sounds like]
     Gwen Pritchard: I'll ring you on Brightwell Meet and play the caller, as someone with a copy of my face and voice could.
     Gwen Pritchard: Answer it any way you like. It takes a minute or two, and nothing is scored.
     ~ hub_quiet = true

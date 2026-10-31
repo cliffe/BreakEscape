@@ -31,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "triage_post_done"
+          "triage_post_complete"
         ]
       },
       "conclusionScreen": {
@@ -54,8 +54,7 @@
     "se_awareness_records": [],
     "triage_post_percent": 0,
     "triage_post_reportRate": 0,
-    "triage_post_done": false,
-    "triage_post_pass": false
+    "triage_post_complete": false
   },
   "importGlobals": [
     {
@@ -75,8 +74,8 @@
     {
       "from": "awareness_pre_executive_ba",
       "prefer": "earliest",
-      "var": "triage_pre_done",
-      "as": "triage_pre_done",
+      "var": "triage_pre_complete",
+      "as": "triage_pre_complete",
       "default": false
     },
     {
@@ -154,7 +153,7 @@
             "id": "ea_venue_deposit",
             "from": {
               "name": "Catherine Merrin",
-              "address": "catherine.merrin.personal@quickpost-mail.example"
+              "address": "catherine.merrin.personal@hastypost.example"
             },
             "to": "tomas.carvalho@merrinsallow.example",
             "subject": "Pay this before 11, keep it quiet",
@@ -164,8 +163,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "quickpost-mail.example",
-              "replyTo": "catherine.merrin.personal@quickpost-mail.example"
+              "envelopeFrom": "hastypost.example",
+              "replyTo": "catherine.merrin.personal@hastypost.example"
             },
             "truth": {
               "isPhish": true,
@@ -175,11 +174,11 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "The managing partner's name on a personal inbox at quickpost-mail.example, not merrinsallow.example",
+                "senderTrust": "The managing partner's name on a personal inbox at hastypost.example, not merrinsallow.example",
                 "secrecy_or_bypass": "'Keep it between us, Yasmin included' keeps out the person who would check",
                 "urgencyCalibrated": "'Before 11' while she's in meetings leaves no time to ask her"
               },
-              "headerNote": "All three checks passed because the sender owns quickpost-mail.example. A pass tells you which domain sent it, not that it's Catherine.",
+              "headerNote": "All three checks passed because the sender owns hastypost.example. A pass tells you which domain sent it, not that it's Catherine.",
               "ifTrusted": "£4,200 would go to an account the sender controls.",
               "reportReply": "Thanks. Catherine didn't send it, and her real address is on merrinsallow.example."
             }
@@ -262,7 +261,7 @@
               "spf": "fail",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "mailer.bookingsuite.example",
+              "envelopeFrom": "mailer.roomwright.example",
               "replyTo": "invoices@larkspurtravel.example"
             },
             "truth": {
@@ -520,7 +519,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:triage_post_done",
+              "eventPattern": "global_variable_changed:triage_post_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "finish_check"

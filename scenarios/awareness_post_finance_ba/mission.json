@@ -1,8 +1,11 @@
 {
-  "display_name": "Awareness check: finance, after (BA)",
-  "description": "A check of about 8 to 10 minutes for finance staff, taken after the awareness episodes (pair BA). Ten new messages from the payments inbox of Brightwell Foods, a fictional company, matched to the first check (awareness_pre_finance_ba). The end screen compares the two results when the first check was finished. Organiser note: each role's check tests the channel that role meets in its episode, and in a session that runs more than one episode only the learner's primary-role check is recorded.",
+  "display_name": "Final check: Finance team",
+  "description": "A check of about 8 to 10 minutes for finance staff, taken after the awareness episodes (pair BA). Ten new messages from the payments inbox of Brightwell Foods, a fictional company, matched to the first check (awareness_pre_finance_ba). The end screen compares the two results when the first check was finished.",
+  "organiser_note": "each role's check tests the channel that role meets in its episode, and in a session that runs more than one episode only the learner's primary-role check is recorded.",
   "difficulty_level": 1,
   "scoring": "completion",
+  "resultGlobal": "triage_post_percent",
+  "stage": "post",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",

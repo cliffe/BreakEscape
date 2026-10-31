@@ -1,8 +1,10 @@
 {
-  "display_name": "Awareness E4: Executive whaling (inbox only)",
+  "display_name": "Executive impersonation: spot it",
   "description": "An awareness episode of about 8 minutes for executive assistants and PAs, on the inbox side only. Sit in the PA's seat at Merrin & Sallow Architects, a fictional practice, while the managing partner travels: five emails and voicemails, some real and some made to trick you, one in a copied voice. Each answer is explained, and reporting or checking when you're unsure is always fine and never marked down.",
   "difficulty_level": 1,
   "scoring": "completion",
+  "resultGlobal": "episode_e4_exec_whaling_defend_defend_percent",
+  "stage": "episode",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",

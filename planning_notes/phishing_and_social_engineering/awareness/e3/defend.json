@@ -137,21 +137,21 @@
         },
         {
           "id": "ha_ceo_mfa_bypass",
-          "from": { "name": "Helen Achterberg", "address": "helen.achterberg.ceo@inboxly.example" },
+          "from": { "name": "Helen Achterberg", "address": "helen.achterberg.ceo@lintbox.example" },
           "to": "servicedesk@quayholt.example",
           "subject": "Urgent: remove my sign-in prompts today",
           "time": "09:05",
           "body": "I'm flying to Rotterdam this morning and the sign-in prompts keep failing on my new phone. Please turn off the extra sign-in step on my account before 10. No need to raise a ticket or tell Darren, I'll explain when I'm back.\nHelen\nSent from my phone",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "helen.achterberg.ceo@inboxly.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "helen.achterberg.ceo@lintbox.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
             "perFlagNote": {
-              "senderTrust": "The chief executive's name on a personal inbox at inboxly.example, not quayholt.example",
+              "senderTrust": "The chief executive's name on a personal inbox at lintbox.example, not quayholt.example",
               "secrecy_or_bypass": "'No need to raise a ticket or tell Darren' skips the record and the person who would check",
               "urgencyCalibrated": "'Before 10' while she's 'flying' leaves no time to ring her"
             },
-            "headerNote": "The automatic checks pass because the message really was sent from inboxly.example. A pass tells you which mail system sent it, not that it's Helen.",
+            "headerNote": "The automatic checks pass because the message really was sent from lintbox.example. A pass tells you which mail system sent it, not that it's Helen.",
             "ifTrusted": "Her account would lose its second sign-in step, so anyone with her password could get straight in.",
             "reportReply": "Thanks. Helen didn't send it, and her account is unchanged. Her real address is on quayholt.example."
           }
@@ -344,21 +344,21 @@
         },
         {
           "id": "hb_coo_reset_bypass",
-          "from": { "name": "Patrick Kerrigan", "address": "patrick.kerrigan.coo@quickpost-mail.example" },
+          "from": { "name": "Patrick Kerrigan", "address": "patrick.kerrigan.coo@hastypost.example" },
           "to": "servicedesk@quayholt.example",
           "subject": "Reset my password and send it here",
           "time": "09:05",
           "body": "I'm locked out and boarding in twenty minutes. Reset my Quayholt password and send the new one to this address. Keep it off the ticket system, it's a sensitive week, and there's no need to ring me.\nPatrick\nSent from my phone",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "patrick.kerrigan.coo@quickpost-mail.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "patrick.kerrigan.coo@hastypost.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
             "perFlagNote": {
-              "senderTrust": "The chief operating officer's name on a personal inbox at quickpost-mail.example, not quayholt.example",
+              "senderTrust": "The chief operating officer's name on a personal inbox at hastypost.example, not quayholt.example",
               "secrecy_or_bypass": "'Keep it off the ticket system' and 'no need to ring me' remove the record and the check",
               "urgencyCalibrated": "'Boarding in twenty minutes' leaves no time to ring him"
             },
-            "headerNote": "The automatic checks pass because the message really was sent from quickpost-mail.example. A pass tells you which mail system sent it, not that it's Patrick.",
+            "headerNote": "The automatic checks pass because the message really was sent from hastypost.example. A pass tells you which mail system sent it, not that it's Patrick.",
             "ifTrusted": "A new password would go to whoever owns that inbox, and they would be in Patrick's account.",
             "reportReply": "Thanks. Patrick didn't send it. His real address is on quayholt.example."
           }

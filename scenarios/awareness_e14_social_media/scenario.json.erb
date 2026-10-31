@@ -46,7 +46,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e14_social_media_defend_done"
+          "episode_e14_social_media_defend_complete"
         ]
       },
       "conclusionScreen": {
@@ -69,8 +69,7 @@
     "se_awareness_records": [],
     "episode_e14_social_media_defend_percent": 0,
     "episode_e14_social_media_defend_reportRate": 0,
-    "episode_e14_social_media_defend_done": false,
-    "episode_e14_social_media_defend_pass": false,
+    "episode_e14_social_media_defend_complete": false,
     "se_osint_state": {},
     "se_intel_df_profile": false,
     "se_intel_df_system": false,
@@ -917,7 +916,7 @@
               "completeTask": "write_pretext_message"
             },
             {
-              "eventPattern": "global_variable_changed:episode_e14_social_media_defend_done",
+              "eventPattern": "global_variable_changed:episode_e14_social_media_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_social_inbox"
@@ -937,11 +936,11 @@
           "observations": "A touch-screen training kiosk for the Merrin & Sallow social-media exercise: first the colleague's public posts to pin and the one message to write, then the feed, the inbox and the settings.",
           "observationVariants": [
             {
-              "condition": "globalVars.phish_df_cover_landed && !globalVars.episode_e14_social_media_defend_done",
+              "condition": "globalVars.phish_df_cover_landed && !globalVars.episode_e14_social_media_defend_complete",
               "value": "A touch-screen training kiosk for the Merrin & Sallow social-media exercise. Your message to Yasmin is sent and it worked; next, the feed, the inbox and the settings."
             },
             {
-              "condition": "globalVars.episode_e14_social_media_defend_done",
+              "condition": "globalVars.episode_e14_social_media_defend_complete",
               "value": "A touch-screen training kiosk for the Merrin & Sallow social-media exercise. The message is sent and the feed, inbox and settings are all done."
             }
           ],

@@ -31,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e9_passwords_defend_defend_done"
+          "episode_e9_passwords_defend_defend_complete"
         ]
       },
       "conclusionScreen": {
@@ -54,8 +54,7 @@
     "se_awareness_records": [],
     "episode_e9_passwords_defend_defend_percent": 0,
     "episode_e9_passwords_defend_defend_reportRate": 0,
-    "episode_e9_passwords_defend_defend_done": false,
-    "episode_e9_passwords_defend_defend_pass": false
+    "episode_e9_passwords_defend_defend_complete": false
   },
   "social": {
     "triageSets": [
@@ -236,9 +235,9 @@
           {
             "id": "e9_signup_password",
             "kind": "choice",
-            "subject": "A password for the new FuelWise portal",
+            "subject": "A password for the new Fuelr portal",
             "choice": {
-              "prompt": "The new FuelWise supplier portal asks you to set a password. What do you use?",
+              "prompt": "The new Fuelr supplier portal asks you to set a password. What do you use?",
               "options": [
                 {
                   "id": "unique",
@@ -257,16 +256,16 @@
               "isPhish": true,
               "flags": [],
               "correct": "report",
-              "reportReply": "A unique generated password means a breach of FuelWise can't open anything else. Let the manager make and remember it; you never have to type or recall it.",
+              "reportReply": "A unique generated password means a breach of Fuelr can't open anything else. Let the manager make and remember it; you never have to type or recall it.",
               "ifTrusted": "Reusing your usual password is the one habit that turns a breach of any site you used into a break-in everywhere you used the same one."
             }
           },
           {
             "id": "e9_security_answer",
             "kind": "choice",
-            "subject": "A security question on the FuelWise sign-up",
+            "subject": "A security question on the Fuelr sign-up",
             "choice": {
-              "prompt": "FuelWise asks for your mother's maiden name as a security question. What do you give it?",
+              "prompt": "Fuelr asks for your mother's maiden name as a security question. What do you give it?",
               "options": [
                 {
                   "id": "true",
@@ -474,7 +473,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:episode_e9_passwords_defend_defend_done",
+              "eventPattern": "global_variable_changed:episode_e9_passwords_defend_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "lock_the_account"
@@ -494,7 +493,7 @@
           "observations": "A touch-screen kiosk set up as your Tarrowby account under attack: sign-in prompts to handle and password choices to make.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e9_passwords_defend_defend_done",
+              "condition": "globalVars.episode_e9_passwords_defend_defend_complete",
               "value": "A touch-screen kiosk set up as your Tarrowby account. That's this one finished."
             }
           ],

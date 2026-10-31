@@ -37,7 +37,7 @@ const TELLS = ['padlock_myth', 'vish_callback_pressure'];
 const truth = (f) => ({ isPhish: true, flags: [f], perFlagNote: { [f]: 'n' } });
 function mini(messages) {
   return {
-    globalVariables: { k_percent: 0, k_reportRate: 0, k_done: false, k_pass: false },
+    globalVariables: { k_percent: 0, k_reportRate: 0, k_complete: false, k_pass: false },
     rooms: { r: { objects: [{ type: 'triage-workstation', id: 'ws', minigameData: { triageSetId: 'k' } }] } },
     social: {
       triageSets: [{
@@ -140,6 +140,6 @@ test('defendOnly prefix: the doubled _defend_defend_ stays the rule, and the err
 test('05 N5: setGlobalPrefix names, with {stage} filled, count as written for exportGlobals', { skip }, () => {
   const j = fx('clean_check_pre.json');
   const writes = rb('puts JSON.generate(carry_over_json_writes(json).keys)', j);
-  for (const n of ['percent', 'reportRate', 'done', 'pass']) assert.ok(writes.includes(`triage_pre_${n}`), writes.join(','));
-  assert.deepEqual(j.exportGlobals, ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_done']);
+  for (const n of ['percent', 'reportRate', 'complete']) assert.ok(writes.includes(`triage_pre_${n}`), writes.join(','));
+  assert.deepEqual(j.exportGlobals, ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_complete']);
 });

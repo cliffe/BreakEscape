@@ -22,7 +22,7 @@ Verifier output (tail of each run):
 | Defend intro | "If you didn't start it, don't open it, and tell me." | Now the real task: sort six messages. |
 | Inbox, 3 of 6 done | Reloaded the page here. | |
 | After reload | Title screen "Continue?", then (ignored per brief) the Mission Brief popup. Kiosk reopened at the Defend stage. Inbox restarted at "0 of 6 sorted". Choices and "where it led" were not repeated. | Lost the three sorted messages (about 2 minutes of work), kept the earlier stages. The Brief screen had said this would happen ("Closing or reloading before the end restarts this round"), so it was fair and warned. |
-| Inbox 1-6 | TidyDocs: Report. Quayholt Apps: Trust. Leo: Report. Fernside: Report. IT Support: Report. Device management: Trust. Ticked the matching tells. 100 of 100 on all six. | |
+| Inbox 1-6 | Piledocs: Report. Quayholt Apps: Trust. Leo: Report. Fernside: Report. IT Support: Report. Device management: Trust. Ticked the matching tells. 100 of 100 on all six. | |
 | Result and Debrief | 100%, "Sharp: you caught the phish and knew why", four teaching cards, "The habit to keep". | Finished; clear. |
 | End | Success overlay "Malware and updates episode done" with Return to missions / Close. | Done. |
 
@@ -30,7 +30,7 @@ Lost progress on reload: stage position kept, choices kept, inbox round lost (3 
 
 ## Persona 2: "Struggling player" (full, game 4976)
 
-Rushed, no Anjali, first-looking option in the warm-up (Remind me tomorrow, Enable content, Allow, leave on desktop). Inbox: trusted TidyDocs, Quayholt Apps, Leo, Fernside, IT Support; deleted the device-management update; ticked nothing.
+Rushed, no Anjali, first-looking option in the warm-up (Remind me tomorrow, Enable content, Allow, leave on desktop). Inbox: trusted Piledocs, Quayholt Apps, Leo, Fernside, IT Support; deleted the device-management update; ticked nothing.
 
 - "Where it led" was non-blaming and specific ("At a quarter to four, ransomware swept the floor, and the machines that had never restarted were the ones it locked"; "Quayholt Protect caught this one, but it doesn't catch every one"). It did not use "your fault" language. Good.
 - Per-message feedback: "Not this time. This one was a phish. The right call was Report or Verify", with "Missed" tells and "What would have happened".
@@ -61,7 +61,7 @@ No moment where a player would stay stuck for more than a few seconds. The kiosk
 | Allow vs leave protection on | Obvious | "tell the service desk what it found" is the attractive, long phrase. | Shown. |
 | Desktop vs team drive | Obvious | "Move it to the team drive" is the more specific. | Shown. |
 | Every "Where it led" card for a safe pick is headed "Your call: the safe route" | n/a | Yes, it names the right answer on the picks. Confirms I was right; for a wrong pick it reads "Your call" with no label, which is a gentle asymmetry. | |
-| Inbox 1 TidyDocs | Arguable on first read | Mildly: unknown app asks for mail and files. | Debrief card. |
+| Inbox 1 Piledocs | Arguable on first read | Mildly: unknown app asks for mail and files. | Debrief card. |
 | Inbox 2 Quayholt Apps | Arguable, good | The line "you started setting up... a moment ago" gives it away; a player who did not start anything has no way to know. | Debrief explains who started it is the tell. |
 | Inbox 3 Leo | Arguable | The defend intro says "one is a colleague whose screen has just locked" and "If a screen has locked, get it to the security team straight away" (defend-only). | Debrief gives the 4444 extension. |
 | Inbox 4 Fernside, 5 IT Support | Fairly obvious | Extra words in the sender domain plus the enable-content and "click Allow" asks. | Tells named after. |

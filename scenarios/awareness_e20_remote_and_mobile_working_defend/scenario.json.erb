@@ -31,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e20_remote_and_mobile_working_defend_defend_done"
+          "episode_e20_remote_and_mobile_working_defend_defend_complete"
         ]
       },
       "conclusionScreen": {
@@ -54,8 +54,7 @@
     "se_awareness_records": [],
     "episode_e20_remote_and_mobile_working_defend_defend_percent": 0,
     "episode_e20_remote_and_mobile_working_defend_defend_reportRate": 0,
-    "episode_e20_remote_and_mobile_working_defend_defend_done": false,
-    "episode_e20_remote_and_mobile_working_defend_defend_pass": false
+    "episode_e20_remote_and_mobile_working_defend_defend_complete": false
   },
   "social": {
     "triageSets": [
@@ -508,7 +507,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:episode_e20_remote_and_mobile_working_defend_defend_done",
+              "eventPattern": "global_variable_changed:episode_e20_remote_and_mobile_working_defend_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "tell_them_apart"
@@ -528,7 +527,7 @@
           "observations": "A touch-screen kiosk showing the public networks and sign-in pages you meet on the road: some safe, some look-alikes to catch you.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e20_remote_and_mobile_working_defend_defend_done",
+              "condition": "globalVars.episode_e20_remote_and_mobile_working_defend_defend_complete",
               "value": "A touch-screen kiosk showing the public networks and sign-in pages. That's this one finished."
             }
           ],

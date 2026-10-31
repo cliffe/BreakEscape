@@ -31,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e8_after_the_click_defend_defend_done"
+          "episode_e8_after_the_click_defend_defend_complete"
         ]
       },
       "conclusionScreen": {
@@ -54,8 +54,7 @@
     "se_awareness_records": [],
     "episode_e8_after_the_click_defend_defend_percent": 0,
     "episode_e8_after_the_click_defend_defend_reportRate": 0,
-    "episode_e8_after_the_click_defend_defend_done": false,
-    "episode_e8_after_the_click_defend_defend_pass": false
+    "episode_e8_after_the_click_defend_defend_complete": false
   },
   "social": {
     "triageSets": [
@@ -445,7 +444,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:episode_e8_after_the_click_defend_defend_done",
+              "eventPattern": "global_variable_changed:episode_e8_after_the_click_defend_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_the_signs"
@@ -465,7 +464,7 @@
           "observations": "A touch-screen kiosk showing the colleague's Quayholt inbox after a click: a handful of signs to sort.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e8_after_the_click_defend_defend_done",
+              "condition": "globalVars.episode_e8_after_the_click_defend_defend_complete",
               "value": "A touch-screen kiosk showing the colleague's Quayholt inbox after a click. Nothing left to do here."
             }
           ],

@@ -222,6 +222,7 @@ Copy. Leave by the front. Don't run. Then call me.
 
 === debrief ===
 ~ parked = true
+#ending_check
 #set_global:start_debrief_cutscene:true
 #exit_conversation
 On my way to you.

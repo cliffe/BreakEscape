@@ -1,8 +1,10 @@
 {
-  "display_name": "Awareness E17: Acceptable use",
+  "display_name": "Acceptable use: spot it",
   "description": "An awareness episode of about 12 minutes for all staff. Sort everyday 'can I?' moments against Tarrowby Logistics' own rules, a fictional haulier, and handle a short inbox. Each answer has its reason on screen, Ask first is never the wrong answer, and reporting when you're unsure is always fine and never marked down.",
   "difficulty_level": 1,
   "scoring": "completion",
+  "resultGlobal": "episode_e17_acceptable_use_defend_defend_percent",
+  "stage": "episode",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",

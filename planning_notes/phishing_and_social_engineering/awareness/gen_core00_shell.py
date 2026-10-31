@@ -206,7 +206,8 @@ TASK = 'complete_brief'
 
 META = {
     'display_name': 'Before you start: how this works',
-    'description': "A short brief shown before your first episode at Quayholt Insurance, a fictional company. It covers how the course works, that nothing real is asked for, what is recorded and who sees it, the habit to keep, and how to report. There is nothing to get wrong. Organiser note: place this as the opening mission so a learner meets it before their first episode.",
+    'description': "A short brief shown before your first episode at Quayholt Insurance, a fictional company. It covers how the course works, that nothing real is asked for, what is recorded and who sees it, the habit to keep, and how to report. There is nothing to get wrong.",
+    'organiser_note': "place this as the opening mission so a learner meets it before their first episode.",
     'difficulty_level': 1,
     'scoring': 'completion',
     'secgen_scenario': None,
@@ -256,6 +257,7 @@ def main():
         json.dump(sc, f, indent=2, ensure_ascii=False)
         f.write('\n')
     meta = with_title_art(meta, mission)
+    meta = awareness_deploy.with_result_fields(meta, sc)
     with open(os.path.join(d, 'mission.json'), 'w') as f:
         json.dump(meta, f, indent=2, ensure_ascii=False)
         f.write('\n')

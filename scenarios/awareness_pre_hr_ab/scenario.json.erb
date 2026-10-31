@@ -31,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "triage_pre_done"
+          "triage_pre_complete"
         ]
       },
       "conclusionScreen": {
@@ -54,13 +54,12 @@
     "se_awareness_records": [],
     "triage_pre_percent": 0,
     "triage_pre_reportRate": 0,
-    "triage_pre_done": false,
-    "triage_pre_pass": false
+    "triage_pre_complete": false
   },
   "exportGlobals": [
     "triage_pre_percent",
     "triage_pre_reportRate",
-    "triage_pre_done"
+    "triage_pre_complete"
   ],
   "social": {
     "triageSets": [
@@ -128,7 +127,7 @@
             "id": "ha_withdrawal",
             "from": {
               "name": "Minjun Ahn",
-              "address": "minjun.ahn@inboxly.example"
+              "address": "minjun.ahn@lintbox.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "Withdrawing my application",
@@ -138,14 +137,14 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "minjun.ahn@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "minjun.ahn@lintbox.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderTrust": "Candidates write from personal email, so an inboxly.example address is normal here.",
+                "senderTrust": "Candidates write from personal email, so an lintbox.example address is normal here.",
                 "default": "A candidate, by name, about a job they applied for, asking for nothing."
               }
             }
@@ -179,7 +178,7 @@
             "id": "ha_passport_scans",
             "from": {
               "name": "Colin Mather",
-              "address": "colin.mather.depot@inboxly.example"
+              "address": "colin.mather.depot@lintbox.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "Starters Monday: need their passports now",
@@ -189,8 +188,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "colin.mather.depot@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "colin.mather.depot@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -199,7 +198,7 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "Colin's name on a personal inbox at inboxly.example, not tarrowby.example",
+                "senderTrust": "Colin's name on a personal inbox at lintbox.example, not tarrowby.example",
                 "urgencyCalibrated": "'Send them before 3' and 'HR will only slow it down' rush you and steer you round the normal onboarding route"
               },
               "ifTrusted": "Two people's passport scans would go to a stranger, which is enough to open accounts in their names.",
@@ -243,7 +242,7 @@
             "id": "ha_careers_missing",
             "from": {
               "name": "Dean Holroyd",
-              "address": "dean.holroyd@quickpost-mail.example"
+              "address": "dean.holroyd@hastypost.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "CV attached: HGV driver",
@@ -260,8 +259,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "quickpost-mail.example",
-              "replyTo": "dean.holroyd@quickpost-mail.example"
+              "envelopeFrom": "hastypost.example",
+              "replyTo": "dean.holroyd@hastypost.example"
             },
             "truth": {
               "isPhish": true,
@@ -340,7 +339,7 @@
             "id": "ha_protected_cv",
             "from": {
               "name": "Alex Hollins",
-              "address": "alex.hollins.cv@inboxly.example"
+              "address": "alex.hollins.cv@lintbox.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "Application",
@@ -357,8 +356,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "alex.hollins.cv@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "alex.hollins.cv@lintbox.example"
             },
             "factorStrings": {
               "enable_content_prompt": {
@@ -383,7 +382,7 @@
             "id": "ha_forklift_cv",
             "from": {
               "name": "Zsofia Szabo",
-              "address": "zsofia.szabo@inboxly.example"
+              "address": "zsofia.szabo@lintbox.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "Forklift driver (nights): my application",
@@ -400,15 +399,15 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "zsofia.szabo@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "zsofia.szabo@lintbox.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
                 "enable_content_prompt": "It's a Word file, which is normal for a CV, and it asks you to switch nothing on.",
-                "senderTrust": "Candidates apply from personal email, so an inboxly.example address is normal here.",
+                "senderTrust": "Candidates apply from personal email, so an lintbox.example address is normal here.",
                 "default": "A named job, your name, a CV that's really attached, and nothing to switch on."
               }
             }
@@ -502,7 +501,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:triage_pre_done",
+              "eventPattern": "global_variable_changed:triage_pre_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "finish_check"

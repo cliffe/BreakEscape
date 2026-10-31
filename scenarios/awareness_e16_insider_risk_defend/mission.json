@@ -1,8 +1,10 @@
 {
-  "display_name": "Awareness E16: Insider risk (defend only)",
+  "display_name": "Insider risk: spot it",
   "description": "An awareness episode of about 8 minutes for all staff, on the defending side only. Sort a short set of messages from a leaver's last week at Quayholt Insurance, a fictional insurer, and learn to raise a concern as facts, not a verdict. Each answer is explained, reporting when you're unsure is always fine, though a real message does take a colleague's time to check, and you are never asked to investigate anyone.",
   "difficulty_level": 1,
   "scoring": "completion",
+  "resultGlobal": "episode_e16_insider_risk_defend_defend_percent",
+  "stage": "episode",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",

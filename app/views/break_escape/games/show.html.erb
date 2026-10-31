@@ -239,6 +239,8 @@
       vmSetActivatedUntil: <%= raw(_vm_set_activated_until&.iso8601.to_json) %>,
       vmActivationMode: '<%= BreakEscape::Mission.hacktivity_mode? ? @game.mission.vm_activation_mode.to_s : '' %>',
       missionConcludedAt: <%= raw(@game.mission_concluded_at&.iso8601.to_json) %>,
+      // false when mission.json says "endingCheck": false: no warning before the ending (systems/ending-check.js)
+      endingCheck: <%= @mission.ending_check? ? 'true' : 'false' %>,
       missionId: <%= @game.mission_id %>,
       missionDisplayName: <%= raw(@mission.display_name.to_json) %>,
       <% _title_name = @game.scenario_data.is_a?(Hash) ? @game.scenario_data['titleScreenName'].to_s.gsub(/[[:cntrl:]]/, ' ').strip[0, 80] : '' %>

@@ -7,14 +7,14 @@
 // He frames the exercise; the kiosk runs it (brief, the Friday shortcuts, the
 // "six months later" montage, then the scored sort and the Swap Shop drill).
 // His record in the erb carries the eventMappings that complete sort_shortcuts
-// on episode_e15_shadow_it_defend_done; the ink reads that global only for its
+// on episode_e15_shadow_it_defend_complete; the ink reads that global only for its
 // closing line.
 // Resting point is the hub (m03 hub_quiet pattern): the goodbye parks there
 // quietly, and a re-talk re-enters it and says the line that fits the moment.
 // Placeholder sprite (male_telecom) until the PixelLab reset.
 // ================================================
 
-VAR episode_e15_shadow_it_defend_done = false
+VAR episode_e15_shadow_it_defend_complete = false
 VAR hub_quiet = false
 
 === start ===
@@ -24,7 +24,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { episode_e15_shadow_it_defend_done:
+    { episode_e15_shadow_it_defend_complete:
         Nilesh Solanki: That's the lot. If the official way's slow, tell us, don't build your own way round.
         Nilesh Solanki: We can't mend what we don't know about. And nobody's in trouble for a workaround.
     - else:

@@ -31,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "triage_post_done"
+          "triage_post_complete"
         ]
       },
       "conclusionScreen": {
@@ -54,8 +54,7 @@
     "se_awareness_records": [],
     "triage_post_percent": 0,
     "triage_post_reportRate": 0,
-    "triage_post_done": false,
-    "triage_post_pass": false
+    "triage_post_complete": false
   },
   "importGlobals": [
     {
@@ -75,8 +74,8 @@
     {
       "from": "awareness_pre_finance_ab",
       "prefer": "earliest",
-      "var": "triage_pre_done",
-      "as": "triage_pre_done",
+      "var": "triage_pre_complete",
+      "as": "triage_pre_complete",
       "default": false
     },
     {
@@ -403,7 +402,7 @@
             "id": "fb_fd_vouchers",
             "from": {
               "name": "Adaeze Okafor",
-              "address": "adaeze.okafor.finance@quickpost-mail.example"
+              "address": "adaeze.okafor.finance@hastypost.example"
             },
             "to": "payments@brightwellfoods.example",
             "subject": "Quick favour before 2pm",
@@ -413,8 +412,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "quickpost-mail.example",
-              "replyTo": "adaeze.okafor.finance@quickpost-mail.example"
+              "envelopeFrom": "hastypost.example",
+              "replyTo": "adaeze.okafor.finance@hastypost.example"
             },
             "truth": {
               "isPhish": true,
@@ -424,7 +423,7 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "The finance manager's name on a personal inbox at quickpost-mail.example",
+                "senderTrust": "The finance manager's name on a personal inbox at hastypost.example",
                 "secrecy_or_bypass": "'Don't mention it' and 'petty cash rather than a purchase order' route round the normal checks",
                 "urgencyCalibrated": "'By 2' and 'on calls all day' leave no time to walk over and ask"
               },
@@ -524,7 +523,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:triage_post_done",
+              "eventPattern": "global_variable_changed:triage_post_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "finish_check"
