@@ -18,8 +18,11 @@
  * confirmed save of the same prefix (a "Try again" round) emits them even
  * though writing the same value again is not a change.
  *
- * <prefix>pass means percent >= outcome.passPercent and is never cleared by a
- * lower round. <prefix>percent and <prefix>reportRate keep the best round's values
+ * <prefix>pass means percent >= the pass mark and is never cleared by a lower
+ * round. The pass mark is the host's after-check mark (window.breakEscapeConfig
+ * .awareness.passPercent) when set, else the set's outcome.passPercent. <prefix>pass
+ * is written only when that mark is above 0: with no mark a check has no pass/fail.
+ * <prefix>percent and <prefix>reportRate keep the best round's values
  * (a lower later round does not overwrite them). <prefix>done means a round was completed at any score.
  *
  * Reopen: when <prefix>done is already true and the conclusion task
@@ -61,6 +64,34 @@ const saved = new WeakMap();
 const reemits = new Map();
 
 const win = () => (typeof window !== 'undefined' ? window : {});
+
+/** The host's awareness settings (window.breakEscapeConfig.awareness), or {}. */
+function hostAwareness() {
+    const a = win().breakEscapeConfig?.awareness;
+    return a && typeof a === 'object' ? a : {};
+}
+
+/** The host after-check pass mark (1-100), or null when none is set. */
+export function hostPassPercent() {
+    const v = hostAwareness().passPercent;
+    return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;
+}
+
+/** Whether the host wants the result percent shown. Default yes; only a host false hides it. */
+export function showResultSetting() {
+    return hostAwareness().showResult !== false;
+}
+
+/**
+ * The pass mark that applies to a set: the host's after-check mark when it is set
+ * (it wins over the set's own), else the set's outcome.passPercent, else 0.
+ */
+export function effectivePassPercent(set) {
+    const host = hostPassPercent();
+    if (host !== null) return host;
+    const own = set?.outcome?.passPercent;
+    return typeof own === 'number' && Number.isFinite(own) ? own : 0;
+}
 
 function defaults(deps = {}) {
     const w = win();
@@ -184,7 +215,8 @@ async function saveRound(result, ctx, d) {
     const prefix = ctx.prefix;
     const globals = d.globals;
     const n = triageGlobalNames(prefix);
-    const passPercent = typeof ctx.set?.outcome?.passPercent === 'number' ? ctx.set.outcome.passPercent : 0;
+    // The host's after-check pass mark wins over the set's own (05, Phase 6).
+    const passPercent = effectivePassPercent(ctx.set);
     let percent = typeof result.percent === 'number' ? result.percent : 0;
     let reportRate = typeof result.reportRate === 'number' ? result.reportRate : 0;
     // A later round that scores lower keeps the best round's percent and reportRate
@@ -196,7 +228,11 @@ async function saveRound(result, ctx, d) {
     const pass = globals[n.pass] === true || percent >= passPercent; // never cleared
 
     const names = heldFor(prefix);
-    const writes = [[n.percent, percent], [n.reportRate, reportRate], [n.pass, pass], [n.done, true]];
+    // <prefix>pass is written only when a pass mark applies (above 0): with no mark a
+    // check has no pass/fail, so the flag stays unset rather than claiming a pass.
+    const writes = [[n.percent, percent], [n.reportRate, reportRate]];
+    if (passPercent > 0) writes.push([n.pass, pass]);
+    writes.push([n.done, true]);
     for (const [name, value] of writes) {
         const r = d.write(name, value, { deferEmit: true });
         for (const ev of r?.events || []) names.add(ev.data?.name ?? name);
@@ -390,6 +426,10 @@ export function startInboxTriageMinigame(lockable, options = {}) {
         readOnly,
         storedResult: readOnly ? stored : null,
         savingNotice: SAVING_NOTICE,
+        // Host awareness settings (Phase 6): the after-check pass mark (null when none) and whether
+        // to show the result percent. The debrief reads both; the save path prefers the pass mark.
+        hostPassPercent: hostPassPercent(),
+        showResult: showResultSetting(),
         // The launcher's skin wins; otherwise the workstation's minigameData.skin ('awareness' is the
         // only skin). Neither set: no skin, as before.
         skin: (options.skin !== undefined ? options.skin : data.skin) === 'awareness' ? 'awareness' : null,

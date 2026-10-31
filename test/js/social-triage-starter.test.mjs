@@ -40,6 +40,7 @@ const { StateSync } = await import(pathToFileURL(join(dir, 'state-sync.mjs')).hr
 const { writeGlobal: starterWriter } = await import(pathToFileURL(join(dir, 'global-writer.mjs')).href);
 const {
     startInboxTriageMinigame, persistTriageResult, reemitTriageDone, resolvePrefix,
+    hostPassPercent, showResultSetting, effectivePassPercent,
     TRIAGE_DONE_EVENT, _resetTriageStarterForTests
 } = starter;
 
@@ -231,6 +232,56 @@ test('a round below passPercent writes pass false and done true', async () => {
     assert.equal(env.globals.triage_done, true);
 });
 
+// ---- host pass mark (Phase 6) ----------------------------------------------
+
+test('effectivePassPercent / hostPassPercent / showResultSetting read the host config', () => {
+    setup();
+    assert.equal(hostPassPercent(), null, 'no host config: null');
+    assert.equal(showResultSetting(), true, 'default: show the result');
+    assert.equal(effectivePassPercent(labSet), 60, 'no host mark: the set\'s own 60');
+    assert.equal(effectivePassPercent(preSet), 0, 'no host mark, set passPercent 0');
+    window.breakEscapeConfig.awareness = { passPercent: 70, showResult: false };
+    try {
+        assert.equal(hostPassPercent(), 70);
+        assert.equal(showResultSetting(), false);
+        assert.equal(effectivePassPercent(preSet), 70, 'the host mark wins over the set');
+        assert.equal(effectivePassPercent(labSet), 70, 'the host mark wins over the set\'s own 60');
+    } finally { delete window.breakEscapeConfig.awareness; }
+    window.breakEscapeConfig.awareness = { passPercent: 0 };
+    try { assert.equal(effectivePassPercent(preSet), 0, 'a host 0 is no mark; fall back to the set'); }
+    finally { delete window.breakEscapeConfig.awareness; }
+});
+
+test('the host pass mark wins over the set: below it writes pass false, at or above writes pass true', async () => {
+    const env = setup();
+    window.breakEscapeConfig.awareness = { passPercent: 70 };
+    try {
+        const sync = stubSync();
+        // preSet's own outcome.passPercent is 0, but the host mark of 70 applies.
+        const below = persistTriageResult({ percent: 60, reportRate: 0 }, ctxFor(preSet), { stateSync: sync });
+        await tick(); sync.settleAll(true); await below;
+        assert.equal(env.globals.triage_pre_pass, false, 'below the host mark, pass is written false');
+        assert.equal(env.globals.triage_pre_done, true);
+
+        const above = persistTriageResult({ percent: 80, reportRate: 1 }, ctxFor(preSet), { stateSync: sync });
+        await tick(); sync.settleAll(true); await above;
+        assert.equal(env.globals.triage_pre_pass, true, 'a round at or above the mark writes pass true');
+    } finally { delete window.breakEscapeConfig.awareness; }
+});
+
+test('params carry the host pass mark and showResult for the debrief', () => {
+    setup();
+    window.breakEscapeConfig.awareness = { passPercent: 65, showResult: false };
+    try {
+        const params = startInboxTriageMinigame({ scenarioData: { minigameData: { triageSetId: 'pre_a' } } }, { stage: 'post' });
+        assert.equal(params.hostPassPercent, 65);
+        assert.equal(params.showResult, false);
+    } finally { delete window.breakEscapeConfig.awareness; }
+    const plain = startInboxTriageMinigame({ scenarioData: { minigameData: { triageSetId: 'pre_a' } } }, { stage: 'post' });
+    assert.equal(plain.hostPassPercent, null, 'no host config: null mark');
+    assert.equal(plain.showResult, true, 'no host config: show the result');
+});
+
 test('the same result object saves once (persistResult, then onComplete)', async () => {
     const env = setup();
     const sync = stubSync();
@@ -290,7 +341,7 @@ test('the {stage} prefix takes the launch stage', async () => {
     const p = params.persistResult({ percent: 86, reportRate: 1 });
     await tick(); window.stateSync.settleAll(true); await p;
     assert.equal(env.globals.triage_post_done, true);
-    assert.equal(env.globals.triage_post_pass, true, 'passPercent 0: a check set always passes');
+    assert.equal(env.globals.triage_post_pass, undefined, 'passPercent 0: no pass mark, so the pass flag is not written');
 });
 
 test('a round of the paired set saves under that set\'s prefix', async () => {

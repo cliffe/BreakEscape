@@ -159,8 +159,17 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     }
 
     get passPercent() {
+        // The host's after-check pass mark (params.hostPassPercent, set by the triage starter) wins
+        // over the set's own; it applies to the whole check, so it holds across a "try the other set".
+        const host = this.params?.hostPassPercent;
+        if (Number.isFinite(host) && host > 0) return host;
         const p = this.set?.outcome?.passPercent;
         return Number.isFinite(p) ? p : 0;
+    }
+
+    /** Whether to show the result percent. Default yes; only a host false (params.showResult) hides it. */
+    get showResult() {
+        return this.params?.showResult !== false;
     }
 
     _findSet(id) {
@@ -1454,9 +1463,17 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const title = el('h3', 'tri-result-title', headline);
         title.tabIndex = -1;
         p.appendChild(title);
-        const score = el('p', 'tri-score', `${percent}%`);
-        score.setAttribute('aria-label', `Score ${percent} percent`);
-        p.appendChild(score);
+        // The result percent is hidden when the host turns it off (awareness show_result = false).
+        if (this.showResult) {
+            const score = el('p', 'tri-score', `${percent}%`);
+            score.setAttribute('aria-label', `Score ${percent} percent`);
+            p.appendChild(score);
+        }
+        // A check below the pass mark: Hacktivity lets the learner retake it from the course page.
+        const passMark = this.passPercent;
+        if (['pre', 'post'].includes(this.stage) && passMark > 0 && percent < passMark) {
+            p.appendChild(el('p', 'tri-below-pass', 'Below the pass mark: you can try again from the course page.'));
+        }
 
         const nums = el('dl', 'tri-numbers');
         const addNum = (k, v, key) => { const dd = el('dd', null, v); dd.dataset.number = key; nums.append(el('dt', null, k), dd); };
@@ -1668,7 +1685,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         }
         p.appendChild(bar);
 
-        this._announce(`Score ${percent} percent. ${headline}`);
+        this._announce(this.showResult ? `Score ${percent} percent. ${headline}` : headline);
         if (!stored) this._notifyResult(result);
     }
 
