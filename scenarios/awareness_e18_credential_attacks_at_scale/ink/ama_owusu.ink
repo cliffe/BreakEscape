@@ -15,7 +15,7 @@
 // ================================================
 
 VAR guess_e18_landed = false
-VAR episode_e18_credential_attacks_at_scale_defend_done = false
+VAR episode_e18_credential_attacks_at_scale_defend_complete = false
 VAR hub_quiet = false
 
 === start ===
@@ -25,7 +25,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { episode_e18_credential_attacks_at_scale_defend_done:
+    { episode_e18_credential_attacks_at_scale_defend_complete:
         Ama Owusu: That's both sides done. A different password for every account, not a word off the website, kept in a manager, is what breaks the spray.
         Ama Owusu: On our side we lock accounts after a few bad tries, put MFA on everything, block the obvious words and watch the breach lists.
         Ama Owusu: Nobody's ever in trouble for reporting.

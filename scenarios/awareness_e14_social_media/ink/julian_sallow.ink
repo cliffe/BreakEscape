@@ -11,7 +11,7 @@
 // ================================================
 
 VAR phish_df_cover_attempts = 0
-VAR episode_e14_social_media_defend_done = false
+VAR episode_e14_social_media_defend_complete = false
 VAR hub_quiet = false
 
 === start ===
@@ -21,7 +21,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { episode_e14_social_media_defend_done:
+    { episode_e14_social_media_defend_complete:
         Julian Sallow: That's the lot. A well-made message is built from scraps anyone could find.
         Julian Sallow: The fix is a setting and a pause, not shame. Nobody's in trouble for having posted them.
     - else:

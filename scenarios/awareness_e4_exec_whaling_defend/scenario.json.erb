@@ -31,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e4_exec_whaling_defend_defend_done"
+          "episode_e4_exec_whaling_defend_defend_complete"
         ]
       },
       "conclusionScreen": {
@@ -54,8 +54,7 @@
     "se_awareness_records": [],
     "episode_e4_exec_whaling_defend_defend_percent": 0,
     "episode_e4_exec_whaling_defend_defend_reportRate": 0,
-    "episode_e4_exec_whaling_defend_defend_done": false,
-    "episode_e4_exec_whaling_defend_defend_pass": false
+    "episode_e4_exec_whaling_defend_defend_complete": false
   },
   "social": {
     "triageSets": [
@@ -356,7 +355,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:episode_e4_exec_whaling_defend_defend_done",
+              "eventPattern": "global_variable_changed:episode_e4_exec_whaling_defend_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_pa_inbox"
@@ -376,7 +375,7 @@
           "observations": "A touch-screen kiosk showing Tomás Carvalho's inbox. Five emails and voicemails are waiting.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e4_exec_whaling_defend_defend_done",
+              "condition": "globalVars.episode_e4_exec_whaling_defend_defend_complete",
               "value": "A touch-screen kiosk showing Tomás Carvalho's inbox. Nothing left to do here."
             }
           ],

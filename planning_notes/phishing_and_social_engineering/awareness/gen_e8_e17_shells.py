@@ -94,7 +94,7 @@ def host_npc(host, done_global, task_id, ink_path):
 
 def kiosk(ep_id, observations):
     """observations: a string, or (before, after) where `after` shows once the round is done
-    (observationVariants on episode_<id>_defend_done, so the kiosk stops saying items are waiting)."""
+    (observationVariants on episode_<id>_defend_complete, so the kiosk stops saying items are waiting)."""
     done_obs = None
     if isinstance(observations, tuple):
         observations, done_obs = observations
@@ -110,7 +110,7 @@ def kiosk(ep_id, observations):
     }
     if done_obs:
         obj['observationVariants'] = [
-            {'condition': f'globalVars.episode_{ep_id}_defend_done', 'value': done_obs}]
+            {'condition': f'globalVars.episode_{ep_id}_defend_complete', 'value': done_obs}]
     obj['minigameData'] = {'episodeId': ep_id}
     return obj
 
@@ -687,7 +687,7 @@ def defend_only(ekey):
     ep_id = f"{cfg['full_id']}_defend"
     mission = f'awareness_{ep_id}'
     prefix = f'episode_{ep_id}_defend_'          # doubled `_defend_defend_`, as defendPrefix() gives
-    done = f'{prefix}done'
+    done = f'{prefix}complete'
     s = clean_set(sets, cfg['defend_set'])
     s['outcome']['setGlobalPrefix'] = prefix
     strings = strip_private(copy.deepcopy(EP['strings']))
@@ -731,7 +731,6 @@ def defend_only(ekey):
         f'{prefix}percent': 0,
         f'{prefix}reportRate': 0,
         done: False,
-        f'{prefix}pass': False,
     }
     host = HOSTS[cfg['defend_host']]
     ink_name = host['id']

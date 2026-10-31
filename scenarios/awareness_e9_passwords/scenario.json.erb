@@ -46,7 +46,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e9_passwords_defend_done"
+          "episode_e9_passwords_defend_complete"
         ]
       },
       "conclusionScreen": {
@@ -69,8 +69,7 @@
     "se_awareness_records": [],
     "episode_e9_passwords_defend_percent": 0,
     "episode_e9_passwords_defend_reportRate": 0,
-    "episode_e9_passwords_defend_done": false,
-    "episode_e9_passwords_defend_pass": false,
+    "episode_e9_passwords_defend_complete": false,
     "se_osint_state": {},
     "se_intel_tarrowby_mather_role": false,
     "se_intel_tarrowby_mather_team": false,
@@ -736,13 +735,13 @@
               "completeTask": "run_the_guesser"
             },
             {
-              "eventPattern": "global_variable_changed:episode_e9_passwords_defend_done",
+              "eventPattern": "global_variable_changed:episode_e9_passwords_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "run_the_guesser"
             },
             {
-              "eventPattern": "global_variable_changed:episode_e9_passwords_defend_done",
+              "eventPattern": "global_variable_changed:episode_e9_passwords_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "lock_the_account"
@@ -762,7 +761,7 @@
           "observations": "A touch-screen training kiosk for the Tarrowby passwords exercise: first a guess list built from a colleague's public details, then your own account to lock down.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e9_passwords_defend_done",
+              "condition": "globalVars.episode_e9_passwords_defend_complete",
               "value": "A touch-screen training kiosk for the Tarrowby passwords exercise. Nothing left to do here."
             }
           ],

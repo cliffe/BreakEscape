@@ -8,7 +8,7 @@
 // desk) as the organisation's controls, not staff duties.
 // Her record carries the mapping that completes the two-days aim when the
 // mistake stage is done and the defend half when
-// episode_e20_remote_and_mobile_working_defend_done changes; the ink only reads
+// episode_e20_remote_and_mobile_working_defend_complete changes; the ink only reads
 // that done global, for its welcome/done line.
 // Resting point is the hub (m03 hub_quiet pattern): the goodbye parks there
 // quietly, and a re-talk re-enters it and says the line that fits the moment.
@@ -25,7 +25,7 @@
 //    global would be needed to say it in ink (same as E16).
 // ================================================
 
-VAR episode_e20_remote_and_mobile_working_defend_done = false
+VAR episode_e20_remote_and_mobile_working_defend_complete = false
 VAR hub_quiet = false
 
 === start ===
@@ -35,7 +35,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { episode_e20_remote_and_mobile_working_defend_done:
+    { episode_e20_remote_and_mobile_working_defend_complete:
         Zainab Hussain: That's both sides done. On the venue's own network with the VPN, ordinary work is fine.
         Zainab Hussain: A Wi-Fi page wanting your work password is always a fake, and when you're not sure, use your phone's hotspot.
         Zainab Hussain: Keep your devices with you, and if you lose one, ring the service desk straight away, day or night. Nobody's ever in trouble for reporting.

@@ -46,7 +46,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e1_invoice_fraud_defend_done"
+          "episode_e1_invoice_fraud_defend_complete"
         ]
       },
       "conclusionScreen": {
@@ -69,8 +69,7 @@
     "se_awareness_records": [],
     "episode_e1_invoice_fraud_defend_percent": 0,
     "episode_e1_invoice_fraud_defend_reportRate": 0,
-    "episode_e1_invoice_fraud_defend_done": false,
-    "episode_e1_invoice_fraud_defend_pass": false,
+    "episode_e1_invoice_fraud_defend_complete": false,
     "se_osint_state": {},
     "se_intel_brightwell_finance_manager": false,
     "se_intel_harlow_supplier_contact": false,
@@ -826,7 +825,7 @@
               "completeTask": "land_supplier_contact"
             },
             {
-              "eventPattern": "global_variable_changed:episode_e1_invoice_fraud_defend_done",
+              "eventPattern": "global_variable_changed:episode_e1_invoice_fraud_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_payments_inbox"
@@ -846,7 +845,7 @@
           "observations": "A touch-screen training kiosk for the Brightwell Foods exercise: first the red-team brief and research, then the payments inbox.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e1_invoice_fraud_defend_done",
+              "condition": "globalVars.episode_e1_invoice_fraud_defend_complete",
               "value": "A touch-screen training kiosk for the Brightwell Foods exercise. Episode finished."
             }
           ],

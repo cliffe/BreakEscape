@@ -10,7 +10,7 @@
 // ================================================
 
 VAR phish_recruiter_contact_attempts = 0
-VAR episode_e2_cv_lures_defend_done = false
+VAR episode_e2_cv_lures_defend_complete = false
 VAR hub_quiet = false
 
 === start ===
@@ -20,7 +20,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { episode_e2_cv_lures_defend_done:
+    { episode_e2_cv_lures_defend_complete:
         Fatima Begum: Inbox and all, that's the pair of them done.
         Fatima Begum: A real CV opens straight in the viewer, so anything that wants more than that from you has earned a second look.
     - else:

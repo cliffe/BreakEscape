@@ -31,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "triage_post_done"
+          "triage_post_complete"
         ]
       },
       "conclusionScreen": {
@@ -54,8 +54,7 @@
     "se_awareness_records": [],
     "triage_post_percent": 0,
     "triage_post_reportRate": 0,
-    "triage_post_done": false,
-    "triage_post_pass": false
+    "triage_post_complete": false
   },
   "importGlobals": [
     {
@@ -72,8 +71,8 @@
     },
     {
       "from": "awareness_pre_general_v2_ab",
-      "var": "triage_pre_done",
-      "as": "triage_pre_done",
+      "var": "triage_pre_complete",
+      "as": "triage_pre_complete",
       "default": false
     },
     {
@@ -487,7 +486,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:triage_post_done",
+              "eventPattern": "global_variable_changed:triage_post_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "finish_check"

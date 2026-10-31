@@ -96,7 +96,7 @@ def host_npc(host, done_global, task_id, ink_path):
 
 def kiosk(ep_id, observations):
     """observations: a string, or (before, after) where `after` shows once the round is done
-    (observationVariants on episode_<id>_defend_done, so the kiosk stops saying items are waiting)."""
+    (observationVariants on episode_<id>_defend_complete, so the kiosk stops saying items are waiting)."""
     done_obs = None
     if isinstance(observations, tuple):
         observations, done_obs = observations
@@ -112,7 +112,7 @@ def kiosk(ep_id, observations):
     }
     if done_obs:
         obj['observationVariants'] = [
-            {'condition': f'globalVars.episode_{ep_id}_defend_done', 'value': done_obs}]
+            {'condition': f'globalVars.episode_{ep_id}_defend_complete', 'value': done_obs}]
     obj['minigameData'] = {'episodeId': ep_id}
     return obj
 
@@ -176,7 +176,7 @@ def defend_only():
     mission = 'awareness_e1_invoice_fraud_defend'
     ep_id = 'e1_invoice_fraud_defend'
     prefix = f'episode_{ep_id}_defend_'
-    done = f'{prefix}done'
+    done = f'{prefix}complete'
     s = clean_set('e1_payments_inbox')
     # C2-m23: the defend-only shell has no write/flip stage, so it never replays a
     # player-sent message; drop the authored sender profile the full set carries.
@@ -205,7 +205,6 @@ def defend_only():
         f'{prefix}percent': 0,
         f'{prefix}reportRate': 0,
         done: False,
-        f'{prefix}pass': False,
     }
     sc = scenario(
         mission, 'Invoice fraud: the payments inbox',
@@ -240,7 +239,7 @@ def check(pair, stage):
     comparison = {'requireGlobal': 'pre_check_completed'} if stage == 'post' else None
     s = clean_set(form, stage=stage, comparison=comparison)
     prefix = f'triage_{stage}_'
-    done = f'{prefix}done'
+    done = f'{prefix}complete'
     ep = {
         'id': ep_id, **brand_block(),
         'variant': 'full',
@@ -256,18 +255,17 @@ def check(pair, stage):
         f'{prefix}percent': 0,
         f'{prefix}reportRate': 0,
         done: False,
-        f'{prefix}pass': False,
     }
     extra = {}
     pre_mission = f'awareness_pre_finance_{pair}'
     if stage == 'pre':
-        extra['exportGlobals'] = ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_done']
+        extra['exportGlobals'] = ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_complete']
     else:
         # Imported names are not redeclared (the validator rejects the collision).
         extra['importGlobals'] = [
             {'from': pre_mission, 'var': 'triage_pre_percent', 'as': 'triage_pre_percent', 'default': 0},
             {'from': pre_mission, 'var': 'triage_pre_reportRate', 'as': 'triage_pre_reportRate', 'default': 0},
-            {'from': pre_mission, 'var': 'triage_pre_done', 'as': 'triage_pre_done', 'default': False},
+            {'from': pre_mission, 'var': 'triage_pre_complete', 'as': 'triage_pre_complete', 'default': False},
             {'from': pre_mission, 'completed': 'pre_check_completed'},
         ]
     host = HOSTS['graham' if pair == 'ab' else 'joanne']

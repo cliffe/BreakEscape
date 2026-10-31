@@ -46,7 +46,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e18_credential_attacks_at_scale_defend_done"
+          "episode_e18_credential_attacks_at_scale_defend_complete"
         ]
       },
       "conclusionScreen": {
@@ -69,8 +69,7 @@
     "se_awareness_records": [],
     "episode_e18_credential_attacks_at_scale_defend_percent": 0,
     "episode_e18_credential_attacks_at_scale_defend_reportRate": 0,
-    "episode_e18_credential_attacks_at_scale_defend_done": false,
-    "episode_e18_credential_attacks_at_scale_defend_pass": false,
+    "episode_e18_credential_attacks_at_scale_defend_complete": false,
     "se_osint_state": {},
     "se_intel_ms_team_roster": false,
     "se_intel_ms_email_pattern": false,
@@ -814,7 +813,7 @@
               "completeTask": "run_the_campaign"
             },
             {
-              "eventPattern": "global_variable_changed:episode_e18_credential_attacks_at_scale_defend_done",
+              "eventPattern": "global_variable_changed:episode_e18_credential_attacks_at_scale_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "handle_the_alerts"
@@ -834,7 +833,7 @@
           "observations": "A touch-screen training kiosk for the Merrin & Sallow credential exercise: first a campaign built from the practice's public pages, then the security alerts to handle from your own seat.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e18_credential_attacks_at_scale_defend_done",
+              "condition": "globalVars.episode_e18_credential_attacks_at_scale_defend_complete",
               "value": "A touch-screen training kiosk for the Merrin & Sallow credential exercise. Episode finished."
             }
           ],

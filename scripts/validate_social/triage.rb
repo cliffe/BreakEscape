@@ -58,8 +58,11 @@ module ValidateSocial
       'page' => %w[page], 'call' => %w[callerId transcript], 'push' => %w[push], 'choice' => %w[choice]
     }.freeze
     KINDS = (%w[email playerSent] + NON_EMAIL_KINDS).freeze
-    # The four globals a set writes, with the declared type each takes.
-    RESULT_GLOBALS = { 'percent' => :number, 'reportRate' => :number, 'done' => :bool, 'pass' => :bool }.freeze
+    # The globals a set always writes, with the declared type each takes.
+    RESULT_GLOBALS = { 'percent' => :number, 'reportRate' => :number, 'complete' => :bool }.freeze
+    # <prefix>pass is written only when the set's passPercent is above 0 (05 N6, 2026-10-31 rename).
+    PASS_GLOBAL = { 'pass' => :bool }.freeze
+    GLOBAL_TYPES = RESULT_GLOBALS.merge(PASS_GLOBAL).freeze
     PLACEHOLDERS = %w[account_address domain].freeze
     LINK_TOKEN_RE = /\{\{link:([^}]*)\}\}/.freeze
     GLOBAL_NAME_RE = /\A[A-Za-z_][A-Za-z0-9_]*\z/.freeze
@@ -243,13 +246,17 @@ module ValidateSocial
       issues
     end
 
-    # The four names a launch writes, or nil when the prefix is unusable.
+    # The names a launch writes, or nil when the prefix is unusable. <prefix>pass is
+    # included only when passPercent is above 0 (awareness/check sets, passPercent 0, omit it).
     def self.result_names(set, stage)
       prefix = set.dig('outcome', 'setGlobalPrefix') if set['outcome'].is_a?(Hash)
       return nil if blank?(prefix)
       return nil if prefix.include?('{stage}') && blank?(stage)
 
-      RESULT_GLOBALS.keys.to_h { |suffix| [suffix, "#{prefix.gsub('{stage}', stage.to_s)}#{suffix}"] }
+      pp = set.dig('outcome', 'passPercent')
+      suffixes = RESULT_GLOBALS.keys
+      suffixes += PASS_GLOBAL.keys if pp.is_a?(Integer) && pp.positive?
+      suffixes.to_h { |suffix| [suffix, "#{prefix.gsub('{stage}', stage.to_s)}#{suffix}"] }
     end
 
     # ---- flags, chips, bands ---------------------------------------------------
@@ -1327,8 +1334,8 @@ module ValidateSocial
           next
         end
         v = ctx.own_globals[name]
-        ok = RESULT_GLOBALS[suffix] == :bool ? [true, false].include?(v) : v.is_a?(Numeric)
-        issues << err("global '#{name}' (set '#{set['id']}') must be declared as a #{RESULT_GLOBALS[suffix] == :bool ? 'boolean' : 'number'}, not #{v.inspect}") unless ok
+        ok = GLOBAL_TYPES[suffix] == :bool ? [true, false].include?(v) : v.is_a?(Numeric)
+        issues << err("global '#{name}' (set '#{set['id']}') must be declared as a #{GLOBAL_TYPES[suffix] == :bool ? 'boolean' : 'number'}, not #{v.inspect}") unless ok
       end
       issues
     end
@@ -1356,7 +1363,7 @@ module ValidateSocial
       ids
     end
 
-    # A task keyed on `<prefix>done` while the set has a non-zero passPercent completes on a failed
+    # A task keyed on `<prefix>complete` while the set has a non-zero passPercent completes on a failed
     # round too (05 N6); key it on `<prefix>pass`. Check sets (passPercent 0) are exempt.
     def self.task_keys(ctx, sets)
       by_name = {}
@@ -1367,7 +1374,7 @@ module ValidateSocial
         stages = s['outcome']['setGlobalPrefix'].to_s.include?('{stage}') ? LAUNCH_STAGES + %w[training mission] : [nil]
         stages.each do |st|
           n = result_names(s, st)
-          by_name[n['done']] = s['id'] if n
+          by_name[n['complete']] = s['id'] if n
         end
       end
       return [] if by_name.empty?

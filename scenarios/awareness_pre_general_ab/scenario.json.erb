@@ -31,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "triage_pre_done"
+          "triage_pre_complete"
         ]
       },
       "conclusionScreen": {
@@ -54,13 +54,12 @@
     "se_awareness_records": [],
     "triage_pre_percent": 0,
     "triage_pre_reportRate": 0,
-    "triage_pre_done": false,
-    "triage_pre_pass": false
+    "triage_pre_complete": false
   },
   "exportGlobals": [
     "triage_pre_percent",
     "triage_pre_reportRate",
-    "triage_pre_done"
+    "triage_pre_complete"
   ],
   "social": {
     "triageSets": [
@@ -490,7 +489,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:triage_pre_done",
+              "eventPattern": "global_variable_changed:triage_pre_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "finish_check"
