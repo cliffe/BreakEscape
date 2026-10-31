@@ -104,6 +104,15 @@ module BreakEscape
       end
     end
 
+    test "the shipped missions: sis01 and sis02 opt out of the ending warning, m01 and the Tesseract trials do not" do
+      { 'sis01_healthcare' => false, 'sis02_energy' => false,
+        'm01_first_contact' => true, 'lab_tesseract_trials' => true }.each do |name, expected|
+        mission = Mission.new(name: name, display_name: name)
+        assert_equal expected, mission.ending_check?, name
+        assert_equal !expected, mission.timed?, name
+      end
+    end
+
     test "score_facts bundles what a breakdown needs from the mission" do
       mission = Mission.new(name: 'no_such_mission', display_name: 'X')
       mission.define_singleton_method(:load_mission_metadata) { { 'resultGlobal' => 'triage_pre_percent', 'endingCheck' => false, 'scoring' => 'completion' } }

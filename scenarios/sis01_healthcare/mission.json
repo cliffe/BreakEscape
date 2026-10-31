@@ -2,6 +2,7 @@
   "display_name": "Northgate General: Code Black",
   "description": "A ransomware attack has encrypted the cardiac ward monitoring station at Northgate General Hospital NHS Trust. With patient safety at immediate risk, you must triage the attack, isolate the network, verify the integrity of safety-critical clinical systems, and navigate competing governance obligations — all before a patient comes to harm.",
   "difficulty_level": 1,
+  "endingCheck": false,
   "secgen_scenario": null,
   "collection": "cybok_sis",
   "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/security_informed_safety/sis01-healthcare/",

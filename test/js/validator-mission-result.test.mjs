@@ -7,6 +7,8 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const ruby = spawnSync('ruby', ['--version']);
@@ -71,4 +73,39 @@ test('endingCheck must be a boolean', { skip }, () => {
         assert.equal(out.length, 1, JSON.stringify(bad));
         assert.match(out[0], /INVALID: mission\.json 'endingCheck'/);
     }
+});
+
+// --- check_mission_ending_check: the route that cannot be intercepted after the fact -----------
+
+function endingIssues(mission, scenario, inkFiles = {}) {
+    const dir = mkdtempSync(join(tmpdir(), 'ending-check-validator-'));
+    mkdirSync(join(dir, 'ink'));
+    for (const [name, text] of Object.entries(inkFiles)) writeFileSync(join(dir, 'ink', name), text);
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+      input = JSON.parse(STDIN.read)
+      puts JSON.generate(check_mission_ending_check(input['mission'], input['scenario'], ${JSON.stringify(dir)}))`;
+    const r = spawnSync('ruby', ['-e', script], {
+        input: JSON.stringify({ mission, scenario }), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+
+const withOptional = { objectives: [
+    { aimId: 'a', tasks: [{ taskId: 'x' }, { taskId: 'y', optional: true }] },
+    { aimId: 'end', missionConclusion: true, tasks: [{ taskId: 'z' }] }] };
+const noOptional = { objectives: [{ aimId: 'end', missionConclusion: true, tasks: [{ taskId: 'z' }] }] };
+const noConclusion = { objectives: [{ aimId: 'a', tasks: [{ taskId: 'y', optional: true }] }] };
+
+test('ending check: warns when optional tasks, a conclusion aim and no #ending_check tag', { skip }, () => {
+    const out = endingIssues({}, withOptional, { 'x.ink': '+ [Debrief]\n  #set_global:start:true\n' });
+    assert.equal(out.length, 1);
+    assert.match(out[0], /WARNING: .* no ink file uses #ending_check/);
+});
+
+test('ending check: quiet with the tag, the opt-out, no optional tasks or no conclusion aim', { skip }, () => {
+    assert.deepEqual(endingIssues({}, withOptional, { 'x.ink': '+ [Debrief]\n  #ending_check\n  #set_global:start:true\n' }), []);
+    assert.deepEqual(endingIssues({ endingCheck: false }, withOptional), []);
+    assert.deepEqual(endingIssues({}, noOptional), []);
+    assert.deepEqual(endingIssues({}, noConclusion), []);
 });
