@@ -45,6 +45,53 @@ Questions for the user. Each has a recommendation; the plan follows the recommen
 
 ## Decided
 
+### CyberAware launch form answers (2026-10-31, owner; https://claude.ai/artifact/TyvrBcwTaZTQKMQT9q5Vf7)
+
+Scoring rollout (overrides the plan's cautious defaults):
+- Switch everything at deploy, including listings that already have players.
+- Event 153 moves to Completion as soon as it is built.
+- Before the ending, show today's 70/30 capped at 99.
+- Pass marks: any attempt at or above the mark completes; the reported result stays the first attempt's.
+- Event, Experience and Pool listings default to Completion.
+- Production is NOT on the 22 October engine: raising Tesseract finishers to 100 is wanted.
+- Rank letters use the share of objectives done for finished games.
+- The ending warning is on for m01 and the Tesseract trials; sis01 and sis02 opt out (time pressure, not meant for a perfect score).
+- "Objectives 7 of 9" counts tasks.
+
+CyberAware:
+- New `type_of_hacktivity` value `aware`, displayed as "CyberAware".
+- A copied pool is CyberAware when all its listings are awareness_*.
+- Separate "Your CyberAware" and org CyberAware dashboard rows, and a CyberAware section on the signed-out landing page after Games.
+- The sims (sis01 to sis03) go under CyberAware now as their own course; the client's existing event 153 is left as it is.
+- Both sides is the product; spot-it is kept as an optional refresher course.
+- Marketing phrase: "Try it first, then spot it", but the owner wants more impact language (threat or attack); alternatives to be proposed.
+- Full Programme: full versions once each, plus E17 and core_17.
+- Habit line via a new course key `awareness_habit`, with the five lines as drafted; each scenario's own line stays as the fallback.
+- Owner note: the five course names are not liked; propose courses organised under more interesting topics (social engineering etc.).
+
+Brand renames:
+- Inboxly to Lintbox
+- QuickPost Mail to Hastypost
+- FuelWise to Fuelr
+- Parceline to ASAParcels
+- MailGuard to Spamwarden
+- FastMail Pro to Larchmail
+- DocShare/docshore to Fileharbour
+- DocShift to Pagewrangle
+- TidyDocs to Piledocs
+- SwiftDrop to Chuckbox
+- PDFMerge to PDFmangle
+- Meetly to Roomcall
+- BookingSuite to Roomwright
+- The Ropewalk to The Harbour Loft
+- PaySuite to Payrollery
+- ShiftPlanner to Shiftle
+- Kestrel Court to Wychbourne Court
+- QuickConvert to Formatmoor
+- WebMail Plus to Cobweb Mail
+
+The owner's own names (Fuelr, ASAParcels) need the same web check.
+
 ### Hacktivity setup form answers (2026-10-31, owner; https://claude.ai/artifact/29LbxBhtp1v6W67Pt6yNap)
 
 Scoring (all as recommended): every game reports a breakdown (Complete, Objectives, Result, Verified) and each Hacktivity listing's policy turns it into its score; four policies (Completion, Completion plus objectives, Objectives, Awareness) with defaults course = Completion, game event = Completion plus objectives, awareness = Awareness; the engine warns before an ending that leaves objectives open, with a per-mission `endingCheck: false` opt-out for time pressure; staff get a Verified column and a "check this" flag; the same words in the game and in Hacktivity (completion badge, objectives as the small line); leaderboards rank completed, then objectives, then earliest finish; attempts by stage (first for before- and after-checks, best for episodes, staff override per listing); the breakdown is computed from the saved game (no migration); optional pass marks on after-checks only, off by default; new behaviour on by default with a dry-run recalculation; `defend_pass` retired and `done` renamed `complete`.
