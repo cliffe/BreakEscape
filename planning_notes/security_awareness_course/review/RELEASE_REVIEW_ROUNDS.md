@@ -51,3 +51,24 @@ All fourteen "fixing" findings were fixed: engine merge bc74eae2c; Hacktivity sc
 ## Round 2
 
 Three fresh reviewers: engine and wording; Hacktivity scoring and seed; security across both repos. Each confirms round 1's closures first.
+
+| Reviewer | Blocker | Major | Minor |
+|---|---|---|---|
+| Engine and wording | 0 | 1 | 0 |
+| Hacktivity scoring and seed | 0 | 0 | 1 |
+| Security | 0 | 0 | 1 |
+| **Total** | **0** | **1** | **2** |
+
+Closures: all fourteen round 1 fixes confirmed closed with file:line evidence (A1, A2, E1, E2, B1 on both sides, H1-H7, S1, N3). The seed swap was checked against four criteria: games guard, idempotent, slot and position kept, nothing deleted.
+
+| Id | Sev | Finding | Outcome |
+|---|---|---|---|
+| R2-E1 | major | The check's per-message "Score for this message: N of 100" still showed with results hidden, in both feedback modes | fixed (engine 48b10c597, merged 8d3c5f755) |
+| R2-H1 | minor | A crash at commit could leave a usable but stale scoring revert file | fixed (Hacktivity: revert file is written as `.part` and renamed only after commit) |
+| R2-S1 | minor | The scoring preview CSV (learner emails) and revert file had default permissions; revert read any path | fixed (Hacktivity: both files mode 0600; revert only reads `scoring_switch_*.json` in tmp) |
+
+Suite: the full Hacktivity suite gives 3965 runs with the two known unrelated failures. Engine: 347 JS files and 239 model tests pass; the validator sweep matches the baseline.
+
+## Round 3
+
+Confirmation round, run because round 2 found a major.
