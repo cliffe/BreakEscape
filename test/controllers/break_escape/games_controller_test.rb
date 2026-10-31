@@ -103,6 +103,20 @@ module BreakEscape
       assert_match(/window\.breakEscapeConfig/, response.body)
     end
 
+    # The config object is emitted inside a <script> tag. A scenario-author
+    # string containing </script> must not close the tag and inject markup;
+    # json_escape turns < > & into \uXXXX so the breakout is impossible.
+    test 'a scenario-author display name cannot break out of the config script' do
+      @mission.update!(display_name: %q{</script><script>alert('xss')</script>})
+      get game_url(@game)
+      assert_response :success
+
+      # the raw breakout sequence must not reach the page
+      assert_no_match(%r{</script><script>alert}, response.body)
+      # the value is still present, escaped, so the game reads the real name
+      assert_match(/missionDisplayName: "\\u003c\/script\\u003e\\u003cscript\\u003ealert/, response.body)
+    end
+
     test 'show passes a host game shell its links, and leaves them null without a hook' do
       get game_url(@game)
       assert_match(/shellReturnUrl: null/, response.body)
