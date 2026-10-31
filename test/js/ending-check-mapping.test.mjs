@@ -1,8 +1,10 @@
 // The engine-level ending warning on an eventMapping (`endingCheck: true`). A mapping that opens
 // the debrief asks systems/ending-check.js first when optional objectives are open, BEFORE running
-// any of its side effects. "Keep going" cancels and re-arms (the mapping is not marked triggered,
-// so the same trigger fires again later); "End the mission now" runs the mapping once; a second
-// trigger after the player agreed never asks again.
+// any of its side effects. "End the mission now" runs the mapping once; "Keep going" does not run
+// it but HOLDS the ending (as the credits trigger does), so the objectives panel can end it later
+// and it ends by itself once nothing optional is open — no soft-lock, whatever the trigger. The
+// mapping is marked triggered when it asks, so a re-emit of the same trigger never asks twice; the
+// agreed/held path re-runs it with _endingConfirmed, which bypasses the once/cooldown check.
 // Run with: node --test test/js/ending-check-mapping.test.mjs
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -40,19 +42,23 @@ function makeManager() {
     return m;
 }
 
-// A fake ending-check: needsAnswer until the player agrees; confirm resolves a controllable answer.
+// A fake ending-check: needsAnswer until the player agrees; confirm resolves a controllable answer;
+// hold captures the held action so the test can fire it like the panel button / auto-complete would.
 function fakeEndingCheck() {
     let open = true;            // an optional objective is open
     let agreed = false;         // the player chose "End the mission now"
     let pending = null;         // resolve() of the current confirm()
+    let heldFn = null;          // the action passed to hold()
     return {
         api: {
             needsAnswer: () => open && !agreed,
-            confirm: () => new Promise((resolve) => { pending = resolve; })
+            confirm: () => new Promise((resolve) => { pending = resolve; }),
+            hold: (fn) => { if (!heldFn) heldFn = fn; }
         },
         answer(endNow) { if (endNow) agreed = true; const r = pending; pending = null; r(endNow); },
         asking() { return pending !== null; },
-        closeObjective() { open = false; }
+        fireHeld() { agreed = true; const f = heldFn; heldFn = null; f && f(); },  // panel button / auto-end
+        hasHeld() { return heldFn !== null; }
     };
 }
 
@@ -70,10 +76,9 @@ test('with an optional objective open, the mapping asks before running any side 
     await tick();
     assert.equal(ec.asking(), true, 'the player was asked');
     assert.equal(window.gameState.globalVariables.start_debrief, undefined, 'the debrief global was not set yet');
-    assert.deepEqual(m.exportTriggeredEvents(), {}, 'the mapping is not marked triggered while the question is open');
 });
 
-test('Keep going cancels and re-arms; the trigger fires again and End now runs it once', async () => {
+test('Keep going does not run the mapping; it holds the ending, and firing the held action runs it once', async () => {
     const m = makeManager();
     const ec = fakeEndingCheck();
     window.endingCheck = ec.api;
@@ -83,16 +88,30 @@ test('Keep going cancels and re-arms; the trigger fires again and End now runs i
     ec.answer(false);   // Keep going
     await tick();
     assert.equal(window.gameState.globalVariables.start_debrief, undefined, 'the debrief did not start');
-    assert.deepEqual(m.exportTriggeredEvents(), {}, 'nothing persisted: the mapping can fire again');
+    assert.equal(ec.hasHeld(), true, 'the ending was held for the objectives panel');
 
-    // Player comes back and re-closes the conversation
+    // A re-emit of the same trigger while the ending is held must NOT ask again (marked triggered).
     m._handleEventMapping('debrief', 'conversation_closed:debrief', mapping, {});
     await tick();
-    assert.equal(ec.asking(), true, 'asked again on the next trigger');
+    assert.equal(ec.asking(), false, 'no second question while held');
+    assert.equal(window.gameState.globalVariables.start_debrief, undefined);
+
+    // The panel button / auto-complete fires the held action: the debrief runs, once.
+    ec.fireHeld();
+    await tick();
+    assert.equal(window.gameState.globalVariables.start_debrief, true, 'the held ending ran the mapping');
+});
+
+test('End the mission now runs the mapping once, straight away', async () => {
+    const m = makeManager();
+    const ec = fakeEndingCheck();
+    window.endingCheck = ec.api;
+    m._handleEventMapping('debrief', 'conversation_closed:debrief', mapping, {});
+    await tick();
     ec.answer(true);    // End the mission now
     await tick();
-    assert.equal(window.gameState.globalVariables.start_debrief, true, 'the debrief ran once End now was chosen');
-    assert.deepEqual(m.exportTriggeredEvents(), { 'debrief:conversation_closed:debrief:0': 1 }, 'now recorded');
+    assert.equal(window.gameState.globalVariables.start_debrief, true, 'the debrief ran');
+    assert.equal(ec.hasHeld(), false, 'nothing held when the player ended now');
 });
 
 test('after the player agreed, a later trigger never asks again (no second ask at the credits)', async () => {
@@ -103,7 +122,6 @@ test('after the player agreed, a later trigger never asks again (no second ask a
     await tick();
     ec.answer(true);
     await tick();
-    assert.equal(window.gameState.globalVariables.start_debrief, true);
     // A fresh handler (handlerIndex 1) standing in for a credits-time re-check: needsAnswer is false.
     window.gameState.globalVariables = {};
     const credits = { ...mapping, handlerIndex: 1 };
@@ -116,7 +134,7 @@ test('after the player agreed, a later trigger never asks again (no second ask a
 test('nothing optional open: the mapping runs synchronously, never calls confirm', async () => {
     const m = makeManager();
     let confirmCalls = 0;
-    window.endingCheck = { needsAnswer: () => false, confirm: () => { confirmCalls += 1; return Promise.resolve(true); } };
+    window.endingCheck = { needsAnswer: () => false, confirm: () => { confirmCalls += 1; return Promise.resolve(true); }, hold: () => {} };
     m._handleEventMapping('debrief', 'conversation_closed:debrief', mapping, {});
     assert.equal(confirmCalls, 0, 'confirm was not called');
     assert.equal(window.gameState.globalVariables.start_debrief, true, 'the debrief ran at once');

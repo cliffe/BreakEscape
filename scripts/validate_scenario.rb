@@ -319,9 +319,10 @@ end
 
 # True when any eventMapping in the scenario carries "endingCheck": true — the engine-level
 # point-of-no-return warning (npc-manager.js _handleEventMapping, systems/ending-check.js).
-# That mapping asks before it opens the debrief and re-arms on "Keep going", so a debrief
-# with no player choice to tag can still warn in time. Walks the whole tree because mappings
-# live under rooms[].npcs[].eventMappings[] (array or object form).
+# That mapping asks before it opens the debrief and, on "Keep going", holds the ending for the
+# objectives panel, so a debrief with no player choice to tag can still warn in time without a
+# soft-lock. Walks the whole tree because mappings live under rooms[].npcs[].eventMappings[]
+# (array or object form).
 def scenario_has_ending_check_mapping?(node)
   case node
   when Hash

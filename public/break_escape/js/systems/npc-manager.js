@@ -896,9 +896,12 @@ export default class NPCManager {
       return;
     }
 
-    // Check if event should be handled (once-only, maxTriggers, cooldown, condition)
+    // Check if event should be handled (once-only, maxTriggers, cooldown, condition).
+    // A confirmed ending re-run (eventData._endingConfirmed, set below) bypasses this: the
+    // player already agreed to the ending, so the handler must run even though it has been
+    // marked triggered to stop the warning asking twice.
     const check = this._mappingWouldFire(npcId, eventPattern, config, eventData);
-    if (!check.fire) {
+    if (!check.fire && !eventData?._endingConfirmed) {
       console.log(`⏭️ Skipping ${eventPattern} for ${npcId}: ${check.reason}`, eventData);
       return;
     }
@@ -906,17 +909,30 @@ export default class NPCManager {
 
     // The ending warning at the point of no return (systems/ending-check.js). A mapping with
     // `endingCheck: true` opens the debrief or a closing scene that cannot be taken back, so when
-    // optional objectives are still open the player is asked first. "Keep going" cancels this run
-    // and leaves the mapping un-triggered (count/lastTime are set below, after this gate), so the
-    // same trigger — re-entering the room, closing the conversation again — fires it again later.
-    // "End the mission now" re-runs the handler with the check already satisfied, and the agreed
-    // objectives are remembered so the credits never ask a second time. Only asked when something
-    // is open: endingNeedsAnswer keeps the ordinary synchronous path when the answer is plainly yes.
+    // optional objectives are still open the player is asked first, BEFORE any of the mapping's
+    // side effects run. "End the mission now" runs the mapping once (through the confirmed re-run
+    // below) and the agreed objectives are remembered so the credits never ask again. "Keep going"
+    // does not run it: the ending is held (as the credits trigger holds it), so the objectives
+    // panel shows an "End the mission" button and the ending runs by itself once nothing optional
+    // is open — no soft-lock, whatever the trigger. The handler is marked triggered here so a
+    // re-emit of the same trigger (a reload backstop, a room-entry re-emit) does not ask a second
+    // time while the question is open or the ending is held; the agreed/held path re-runs it with
+    // _endingConfirmed, which bypasses the fire check above. Only asked when something is open:
+    // endingNeedsAnswer keeps the ordinary synchronous path when the answer is plainly yes.
     if (config.endingCheck && !eventData?._endingConfirmed && window.endingCheck?.needsAnswer?.()) {
+      triggered.count++;
+      triggered.lastTime = now;
+      this.triggeredEvents.set(eventKey, triggered);
       const proceed = () => this._handleEventMapping(npcId, eventPattern, config, { ...(eventData || {}), _endingConfirmed: true });
       window.endingCheck.confirm({ reason: 'mapping' }).then((endNow) => {
-        if (endNow) proceed();
-        else console.log(`[ending-check] mapping ${eventPattern} for ${npcId}: keeping going (re-armed)`);
+        if (endNow) {
+          proceed();
+        } else if (window.endingCheck?.hold) {
+          window.endingCheck.hold(proceed, { reason: 'mapping' });
+          console.log(`[ending-check] mapping ${eventPattern} for ${npcId}: keeping going (ending held)`);
+        } else {
+          proceed();   // no hold available: fail safe to running the ending rather than stranding it
+        }
       }, (e) => { console.warn('[ending-check] mapping confirm failed, proceeding', e); proceed(); });
       return;
     }
