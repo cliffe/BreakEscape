@@ -247,6 +247,26 @@ test('F-E10-2: the debrief summary keeps the score but does not repeat the band 
     assert.doesNotMatch(t, /Getting there/, 'the band headline is the result card title, not repeated in the summary');
 });
 
+test('round-1 fix E1: showScore false drops the score figures (round score, reported %, per-message score); counts stay', () => {
+    const hidden = host();
+    renderDebrief(hidden, { result: result(), set: set(), strings: {}, variant: 'full', onFinish() {}, showScore: false });
+    const hs = hidden.querySelector('.aw-summary')?.textContent ?? '';
+    assert.doesNotMatch(hs, /Round score/);
+    assert.doesNotMatch(hs, /Reported/);
+    assert.doesNotMatch(hs, /%/, 'no percentage left in the summary');
+    assert.equal(hidden.querySelector('.aw-card-score'), null, 'no per-message score line');
+    assert.ok(hidden.querySelector('[data-message-id="m1"]'), 'the missed item still gets a card');
+    // a count stays (result() has verifyCount 1)
+    assert.match(hs, /Checked by another route: 1/);
+
+    const shown = host();
+    renderDebrief(shown, { result: result(), set: set(), strings: {}, variant: 'full', onFinish() {} });
+    const ss = shown.querySelector('.aw-summary').textContent;
+    assert.match(ss, /Round score: 72%/);
+    assert.match(ss, /Reported 50% of the phish/);
+    assert.ok(shown.querySelector('.aw-card-score'), 'per-message score shows by default');
+});
+
 test('debrief (Cut A): a weakest-skill line appears when a tell was missed and perFactor is present', () => {
     const h = host();
     // batch-12 item 3: the weakest line shows once the learner named at least one flag (here a

@@ -720,6 +720,29 @@ test('a facilitated debrief with the real view hides the score; an unfacilitated
     }
 });
 
+test('round-1 fix E1: an unfacilitated debrief hides the score when the host hides results (show_result false)', () => {
+    const result = { setId: 'fixture_inbox', percent: 80, reportRate: 0.5, verifyCount: 0,
+        answers: [{ id: 'm1', verdict: 'trust', flags: [], score: 60, ms: 900 }] };
+    const realViews = { measure: deps.measure, startTriage: deps.startTriage, now: deps.now };
+    window.breakEscapeConfig = { awareness: { showResult: false } };
+    try {
+        const ep = { ...fullEpisode() };
+        setup(ep, { [M.stateKey(ep.id)]: { v: 1, done: ['brief', 'osint', 'write', 'flip'] } });
+        startEpisodeRunner(kiosk(ep.id), { deps: realViews });
+        click('.epr-launch');
+        cur().gameResult = result;
+        cur().complete(true);
+        assert.ok(cur().container.querySelector('.aw-debrief'));
+        const text = panelText();
+        assert.doesNotMatch(text, /Round score/, 'no round score when results are hidden');
+        assert.doesNotMatch(text, /Reported \d+%/, 'no reported percentage when results are hidden');
+        assert.doesNotMatch(text, /\d+%/, 'no percentage figure at all');
+        assert.equal(cur().container.querySelector('.aw-card-score'), null, 'no per-message score');
+    } finally {
+        delete window.breakEscapeConfig;
+    }
+});
+
 test('a facilitated defendOnly episode pauses between its three stages', () => {
     const ep = { ...facilitatedEpisode(), id: 'e1_fixture_defend', variant: 'defendOnly' };
     setup(ep);

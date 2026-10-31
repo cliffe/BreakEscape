@@ -895,7 +895,10 @@ export function awarenessSettings(social, config) {
     return {
         reportRoute: textBlock(pick('reportRoute')),
         ruleOfThumb: textBlock(pick('ruleOfThumb')),
-        teamSize: Number.isInteger(size) && size >= 2 && size <= 100000 ? size : null
+        teamSize: Number.isInteger(size) && size >= 2 && size <= 100000 ? size : null,
+        // Whether the learner sees the score figures. Shown unless the host (or scenario) sets it
+        // false; the debrief hides its score lines when this is false (same rule as the result card).
+        showResult: pick('showResult') !== false
     };
 }
 

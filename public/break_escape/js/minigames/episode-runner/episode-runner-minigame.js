@@ -675,13 +675,18 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
     _renderDebrief() {
         const stored = this.state.defend || {};
         const raw = isObj(this.params.triageResult) ? this.params.triageResult : { ...stored, answers: [] };
-        const result = this.facilitated ? hideScore(raw) : raw;
         // aw1, aw4, aw6: the deployment's report route, shared rule of thumb and team size
         // (social.awareness, with the host page's breakEscapeConfig.awareness winning).
         const config = win().breakEscapeConfig;
         const settings = awarenessSettings(this.social, config);
+        // Hide the per-learner score in facilitated mode (shared screen) and when the host hides
+        // results (show_result false). hideScore strips the stored figures; showScore also drops the
+        // report-rate percentage, which the stored result keeps. The item counts stay either way.
+        const showScore = !this.facilitated && settings.showResult !== false;
+        const result = showScore ? raw : hideScore(raw);
         this.view = this.deps.renderDebrief(this.body, {
             result,
+            showScore,
             set: this.defendSet,
             strings: this.strings,
             variant: variantOf(this.episode),
