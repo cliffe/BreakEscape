@@ -47,6 +47,7 @@ const { MailComposer } = await import(pathToFileURL(join(dir, 'minigames/mail-cl
 const rules = await import(pathToFileURL(join(dir, 'systems/phish-rules.js')));
 const { MailClientMinigame } = await import(pathToFileURL(join(dir, 'minigames/mail-client/mail-client-minigame.js')));
 const { MailScheduler } = await import(pathToFileURL(join(dir, 'systems/mail-scheduler.js')));
+const { MailReader } = await import(pathToFileURL(join(dir, 'minigames/mail-client/mail-reader.js')));
 const runner = await import(pathToFileURL(join(dir, 'systems/mail-runner.js')));
 
 // A small Hampshire-style social block: an open inbox (trusts "*"), so a send with the
@@ -273,4 +274,42 @@ test('end to end: with the box off, nothing stray is stored even if the message 
     const sent = sentRecords(scheduler);
     assert.equal(sent.length, 1);
     assert.equal(sent[0].body, "Hello,\n\nI'm applying for the open role.\n\nCould you review my CV?");
+});
+
+// The learner's free-text body and the subject are player/host-supplied strings. The reader must
+// render them as literal text, never as mark-up: textContent/createTextNode only (mail-reader.js
+// header comment), so hostile input makes no element node and runs no script.
+test('hostile learner/host text in a mail body and subject renders as literal text, no element nodes', () => {
+    const win = dom.window;
+    delete win.pwned;
+    const host = win.document.getElementById('host');
+    host.textContent = '';
+    const reader = new MailReader(host, {});
+
+    const evilBody = 'Dear sir <script>window.pwned=1</script>\n\nPS <img src=x onerror="window.pwned=1"> keep {token} literal';
+    const evilSubject = 'Re: <script>bad()</script> {heading}';
+    reader.setMessages([{
+        id: 'm1', subject: evilSubject,
+        from: { name: 'A Learner', address: 'who@work.example' },
+        to: 'you@work.example', body: evilBody
+    }], 'inbox');
+    assert.equal(reader.select('m1'), true);
+
+    const pane = host.querySelector('.mail-read-pane');
+    const body = pane.querySelector('.mail-body');
+    const subject = pane.querySelector('.mail-subject');
+    assert.ok(body && subject, 'body and subject rendered');
+
+    // No element node was created from the hostile strings.
+    assert.equal(body.querySelector('script'), null, 'no script element in the body');
+    assert.equal(body.querySelector('img'), null, 'no img element in the body');
+    assert.equal(subject.querySelector('script'), null, 'no script element in the subject');
+    assert.equal(body.querySelectorAll('script,img,iframe,object,svg').length, 0);
+
+    // The characters are shown exactly as typed, braces and angle brackets included.
+    assert.equal(body.textContent, evilBody, 'body shown verbatim as text');
+    assert.equal(subject.textContent, evilSubject, 'subject shown verbatim as text');
+
+    // Nothing executed: the onerror/script payload never ran.
+    assert.equal(win.pwned, undefined, 'no script ran from the rendered mail');
 });

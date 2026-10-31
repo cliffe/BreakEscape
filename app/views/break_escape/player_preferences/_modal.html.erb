@@ -74,7 +74,7 @@
 
   // Initialize sprite preview when modal is shown
   window.initPlayerPreferencesModal = function() {
-    const sprites = <%= raw @avatar_menu.reject { |e| e['status'] == 'locked' }.map { |e| e['sprite'] }.to_json %>;
+    const sprites = <%= raw json_escape(@avatar_menu.reject { |e| e['status'] == 'locked' }.map { |e| e['sprite'] }.to_json) %>;
     // Use current sprite or default
     let selectedSprite = '<%= @player_preference.selected_sprite.presence || BreakEscape::PlayerPreference::DEFAULT_SPRITE %>';
 
