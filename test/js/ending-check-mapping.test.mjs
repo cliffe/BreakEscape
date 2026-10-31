@@ -53,7 +53,8 @@ function fakeEndingCheck() {
         api: {
             needsAnswer: () => open && !agreed,
             confirm: () => new Promise((resolve) => { pending = resolve; }),
-            hold: (fn) => { if (!heldFn) heldFn = fn; }
+            hold: (fn) => { if (!heldFn) heldFn = fn; },
+            hasHeld: () => heldFn !== null
         },
         answer(endNow) { if (endNow) agreed = true; const r = pending; pending = null; r(endNow); },
         asking() { return pending !== null; },
@@ -100,6 +101,23 @@ test('Keep going does not run the mapping; it holds the ending, and firing the h
     ec.fireHeld();
     await tick();
     assert.equal(window.gameState.globalVariables.start_debrief, true, 'the held ending ran the mapping');
+});
+
+test('a sibling endingCheck mapping does not ask again once an ending is held (m07 OR-triggers)', async () => {
+    const m = makeManager();
+    const ec = fakeEndingCheck();
+    window.endingCheck = ec.api;
+    // First trigger (one of several OR'd debrief openers) — player keeps going, ending held.
+    m._handleEventMapping('debrief', 'room_entered:server_room', { ...mapping, handlerIndex: 0 }, {});
+    await tick();
+    ec.answer(false);
+    await tick();
+    assert.equal(ec.hasHeld(), true);
+    // A sibling mapping (different trigger/handler) fires on the next room entry: must NOT re-ask.
+    m._handleEventMapping('debrief', 'room_entered:scada_control', { ...mapping, handlerIndex: 3 }, {});
+    await tick();
+    assert.equal(ec.asking(), false, 'no second question from a sibling mapping while held');
+    assert.equal(window.gameState.globalVariables.start_debrief, undefined, 'the sibling did not open the debrief');
 });
 
 test('End the mission now runs the mapping once, straight away', async () => {

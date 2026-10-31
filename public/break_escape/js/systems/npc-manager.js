@@ -917,8 +917,17 @@ export default class NPCManager {
     // is open — no soft-lock, whatever the trigger. The handler is marked triggered here so a
     // re-emit of the same trigger (a reload backstop, a room-entry re-emit) does not ask a second
     // time while the question is open or the ending is held; the agreed/held path re-runs it with
-    // _endingConfirmed, which bypasses the fire check above. Only asked when something is open:
-    // endingNeedsAnswer keeps the ordinary synchronous path when the answer is plainly yes.
+    // _endingConfirmed, which bypasses the fire check above. hasHeld also stops a SIBLING mapping
+    // (a mission that opens the debrief from several OR'd triggers, m07) asking again once one has
+    // already held the ending. Only asked when something is open: endingNeedsAnswer keeps the
+    // ordinary synchronous path when the answer is plainly yes.
+    if (config.endingCheck && !eventData?._endingConfirmed && window.endingCheck?.hasHeld?.()) {
+      // An ending is already held (the player chose "Keep going" at this or a sibling debrief
+      // opener). This mapping must neither open the debrief nor ask again: the held ending owns
+      // the pending ending, and its own re-run (with _endingConfirmed) is what finally opens it.
+      console.log(`[ending-check] mapping ${eventPattern} for ${npcId}: an ending is already held, standing down`);
+      return;
+    }
     if (config.endingCheck && !eventData?._endingConfirmed && window.endingCheck?.needsAnswer?.()) {
       triggered.count++;
       triggered.lastTime = now;
