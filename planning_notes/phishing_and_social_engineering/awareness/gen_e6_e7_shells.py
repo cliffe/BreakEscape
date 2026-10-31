@@ -278,7 +278,7 @@ EPISODES = {
             'task': ('check_work_phone', 'Check the work phone'),
             'kiosk': ('A touch-screen kiosk set up as a Tarrowby work phone, with texts, notices and an email waiting.',
              'A touch-screen kiosk set up as a Tarrowby work phone. Nothing left to do here.'),
-            'display': 'Awareness E6: Texts and QR codes (phone only)',
+            'display': 'Texts and QR codes: spot it',
             'desc': "An awareness episode of about 8 minutes for staff with a work phone, on the defending side only. Six items on a phone at Tarrowby Logistics, a fictional haulier: texts, printed notices with QR codes and an email. Some are real and some were built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'defendIntro': "Go through the work phone and decide what to do with each text, notice and email. On a notice, check where the code goes before you would scan it. There's no clock on you here; the whole job is one or two small habits.",
@@ -310,7 +310,7 @@ EPISODES = {
             'task': ('check_finance_line', 'Cover the finance line'),
             'kiosk': ("A touch-screen kiosk showing the finance office's phone and inbox, with voicemails and emails waiting.",
              "A touch-screen kiosk showing the finance office's phone and inbox. Nothing left to do here."),
-            'display': 'Awareness E7: Voice and the CEO (phone and inbox only)',
+            'display': 'Cloned voices and the CEO: spot it',
             'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Cover the finance office's phone and inbox at Brightwell Foods, a fictional company: three voicemails, one of them in a copied voice, and two emails. Each answer is explained, and ringing back when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'defendIntro': "Go through the voicemails and emails and decide what to do with each one. Read each voicemail's transcript: what it asks you to do matters more than whose voice it is. Work through them at your own pace; it all comes back to ringing the person yourself.",
@@ -329,10 +329,14 @@ def load(ekey):
     return {s['id']: s for s in frag['triageSets']}, frag['awarenessEpisode']
 
 
-def meta_for(display, desc, minutes, cybok):
-    return {
+def meta_for(display, desc, minutes, cybok, organiser_note=None):
+    m = {
         'display_name': display,
         'description': desc,
+    }
+    if organiser_note:
+        m['organiser_note'] = organiser_note
+    m.update({
         'difficulty_level': 1,
         'scoring': 'completion',
         'secgen_scenario': None,
@@ -340,7 +344,8 @@ def meta_for(display, desc, minutes, cybok):
         'ui_theme': 'general',
         'estimated_duration_minutes': minutes,
         'cybok': cybok,
-    }
+    })
+    return m
 
 
 def defend_only(ekey):
@@ -446,7 +451,7 @@ def check(ekey, pair, stage):
                  f"{c['items_pre']} Decide what to do with each one. Your result is saved so the second check can compare with it.")
         aim = ('first_check_aim', 'Do the first check', c['aim_desc'])
         task = ('finish_check', 'Finish the first check')
-        display = f'Awareness check: {word}, before ({letters})'
+        display = awareness_deploy.check_title('pre', word)
         desc = (f"A short check for {cfg['role_label']} at {company}, taken before the awareness episodes (pair {letters}). "
                 f"{c['items_pre']} The result is kept so the matching after-check (awareness_post_{word}_{pair}) "
                 "can show how the two compare.")
@@ -458,19 +463,16 @@ def check(ekey, pair, stage):
                  f"{c['items_post']} If you took the first check, the end screen shows how the two compare.")
         aim = ('second_check_aim', 'Do the second check', c['aim_desc'])
         task = ('finish_check', 'Finish the second check')
-        display = f'Awareness check: {word}, after ({letters})'
+        display = awareness_deploy.check_title('post', word)
         desc = (f"A short check for {cfg['role_label']} at {company}, taken after the awareness episodes (pair {letters}). "
                 f"{c['items_post']} It is matched to the first check (awareness_pre_{word}_{pair}), and the end screen "
                 "compares the two results when the first check was finished.")
         obs = c['kiosk'].format(nth='second')
         conclusion = ('Second check done', 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.')
-    desc += (" Organiser note: each role's check tests the channel that role meets in its "
-             "episode, and in a session that runs more than one episode only the learner's "
-             "primary-role check is recorded.")
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, c['end'], aim, task, done, globals_,
                        {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, conclusion, extra)
-    meta = meta_for(display, desc, c['minutes'], cfg['cybok'])
+    meta = meta_for(display, desc, c['minutes'], cfg['cybok'], awareness_deploy.CHECK_ORGANISER_NOTE)
     when = 'before' if stage == 'pre' else 'after'
     ink = ink_source(f"Awareness check, {word}, {when} ({letters})", host, done, CHECK_LINES[(host['id'], stage)])
     return mission, sc, meta, ink_name, ink

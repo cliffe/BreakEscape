@@ -161,7 +161,7 @@ EPISODES = {
             'task': ('sort_recruitment_inbox', 'Sort the recruitment inbox'),
             'kiosk': ('A touch-screen kiosk showing the Tarrowby recruitment inbox. Six messages are waiting.',
              'A touch-screen kiosk showing the Tarrowby recruitment inbox. Nothing left to do here.'),
-            'display': 'Awareness E2: CV lures (inbox only)',
+            'display': 'CV lures: spot it',
             'desc': "An awareness episode of about 8 minutes for HR and recruitment staff, on the inbox side only. Cover the recruitment inbox at Tarrowby Logistics, a fictional company: six messages, applications and CVs among them, some real and some built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'ending': {'type': 'success', 'title': 'Recruitment inbox done',
@@ -199,7 +199,7 @@ EPISODES = {
             'task': ('sort_pa_inbox', "Sort the PA's inbox"),
             'kiosk': ("A touch-screen kiosk showing Tomás Carvalho's inbox. Five emails and voicemails are waiting.",
              "A touch-screen kiosk showing Tomás Carvalho's inbox. Nothing left to do here."),
-            'display': 'Awareness E4: Executive whaling (inbox only)',
+            'display': 'Executive impersonation: spot it',
             'desc': "An awareness episode of about 8 minutes for executive assistants and PAs, on the inbox side only. Sit in the PA's seat at Merrin & Sallow Architects, a fictional practice, while the managing partner travels: five emails and voicemails, some real and some made to trick you, one in a copied voice. Each answer is explained, and reporting or checking when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'ending': {'type': 'success', 'title': 'PA inbox done',
@@ -512,7 +512,7 @@ def check(ekey, pair, stage):
                  f"{c['items_pre']} Decide what to do with each one. Your result is saved so the second check can compare with it.")
         aim = ('first_check_aim', 'Do the first check', c['aim_desc'])
         task = ('finish_check', 'Finish the first check')
-        display = f"Awareness check: {cfg['display_word']}, before ({letters})"
+        display = awareness_deploy.check_title('pre', cfg['role_word'])
         desc = (f"A short check for {cfg['role_label']} at {company}, taken before the awareness episodes (pair {letters}). "
                 f"{c['items_pre']} The result is kept so the matching after-check (awareness_post_{word}_{pair}) "
                 "can show how the two compare.")
@@ -523,14 +523,11 @@ def check(ekey, pair, stage):
                  f"{c['items_post']} If you took the first check, the end screen shows how the two compare.")
         aim = ('second_check_aim', 'Do the second check', c['aim_desc'])
         task = ('finish_check', 'Finish the second check')
-        display = f"Awareness check: {cfg['display_word']}, after ({letters})"
+        display = awareness_deploy.check_title('post', cfg['role_word'])
         desc = (f"A short check for {cfg['role_label']} at {company}, taken after the awareness episodes (pair {letters}). "
                 f"{c['items_post']} It is matched to the first check (awareness_pre_{word}_{pair}), and the end screen "
                 "compares the two results when the first check was finished.")
         obs = c['kiosk'].format(nth='second')
-    desc += (" Organiser note: each role's check tests the channel that role meets in its "
-             "episode, and in a session that runs more than one episode only the learner's "
-             "primary-role check is recorded.")
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, c['end'], aim, task, done, CHECK_ENDINGS[stage],
                   round_globals(ep_id, prefix, done),
@@ -538,6 +535,7 @@ def check(ekey, pair, stage):
     meta = {
         'display_name': display,
         'description': desc,
+        'organiser_note': awareness_deploy.CHECK_ORGANISER_NOTE,
         'difficulty_level': 1,
         'scoring': 'completion',
         'secgen_scenario': None,

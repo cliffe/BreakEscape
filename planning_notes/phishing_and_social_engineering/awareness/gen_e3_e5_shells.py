@@ -136,7 +136,7 @@ EPISODES = {
             'task': ('work_service_desk_queue', 'Work through the service desk queue'),
             'kiosk': ("A touch-screen kiosk showing the Quayholt service desk queue. Three calls are waiting, and a phone beside it shows a sign-in prompt.",
              'A touch-screen kiosk showing the Quayholt service desk queue. Episode finished.'),
-            'display': 'Awareness E3: Helpdesk reset (service desk only)',
+            'display': 'Help desk password resets: spot it',
             'desc': "An awareness episode of about 8 minutes for IT service desk staff, on the defending side only. Sit in the service desk seat at Quayholt Insurance, a fictional company: three callers want password resets or changes to their sign-in, and a sign-in prompt turns up on your own phone. Each answer is explained, and ringing back when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'ending': ('Service desk queue done', "That's the three calls and the sign-in prompt finished. The debrief goes through each one."),
@@ -171,7 +171,7 @@ EPISODES = {
             'task': ('check_signin_pages', 'Check the sign-in pages'),
             'kiosk': ('A touch-screen kiosk with five web pages open, each reached from a link in a Quayholt inbox.',
              'A touch-screen kiosk with five web pages open, each reached from a link in a Quayholt inbox. You have checked them all.'),
-            'display': 'Awareness E5: Sign-in pages (pages only)',
+            'display': 'Fake sign-in pages: spot it',
             'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Five web pages from links in an inbox at Quayholt Insurance, a fictional company: some are the real sign-in, some were built to collect passwords. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'ending': ('Sign-in pages checked', "That's all five pages finished. The debrief goes through each one."),
@@ -474,7 +474,7 @@ def check(ekey, pair, stage):
                  f"{c['items_pre']} Decide what to do with each one. Your result is saved so the second check can compare with it.")
         aim = ('first_check_aim', 'Do the first check', c['aim_desc'])
         task = ('finish_check', 'Finish the first check')
-        display = f'Awareness check: {word}, before ({letters})'
+        display = awareness_deploy.check_title('pre', word)
         desc = (f"A short check for {cfg['role_label']} at {company}, taken before the awareness episodes (pair {letters}). "
                 f"{c['items_pre']} The result is kept so the matching after-check (awareness_post_{word}_{pair}) "
                 "can show how the two compare.")
@@ -486,21 +486,19 @@ def check(ekey, pair, stage):
                  f"{c['items_post']} If you took the first check, the end screen shows how the two compare.")
         aim = ('second_check_aim', 'Do the second check', c['aim_desc'])
         task = ('finish_check', 'Finish the second check')
-        display = f'Awareness check: {word}, after ({letters})'
+        display = awareness_deploy.check_title('post', word)
         desc = (f"A short check for {cfg['role_label']} at {company}, taken after the awareness episodes (pair {letters}). "
                 f"{c['items_post']} It is matched to the first check (awareness_pre_{word}_{pair}), and the end screen "
                 "compares the two results when the first check was finished.")
         obs = c['kiosk'].format(nth='second')
         ending = success_screen('Second check done', 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.')
-    desc += (" Organiser note: each role's check tests the channel that role meets in its "
-             "episode, and in a session that runs more than one episode only the learner's "
-             "primary-role check is recorded.")
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, c['end'], aim, task, done, globals_,
                   {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, ending, extra)
     meta = {
         'display_name': display,
         'description': desc,
+        'organiser_note': awareness_deploy.CHECK_ORGANISER_NOTE,
         'difficulty_level': 1,
         'scoring': 'completion',
         'secgen_scenario': None,

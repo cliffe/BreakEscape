@@ -218,7 +218,7 @@ def defend_only():
              "A touch-screen kiosk showing Brightwell's payments inbox. That's this one finished."),
         success_screen('Payments inbox done', "That's this episode finished. The debrief goes through each one."))
     meta = {
-        'display_name': 'Awareness E1: Invoice fraud (inbox only)',
+        'display_name': 'Invoice fraud: spot it',
         'description': "An awareness episode of about 8 minutes for finance staff, on the inbox side only. Cover the payments inbox at Brightwell Foods, a fictional company, before the afternoon payment run: six messages, some real and some built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
         'difficulty_level': 1,
         'scoring': 'completion',
@@ -277,7 +277,7 @@ def check(pair, stage):
                  "Ten messages from a payments inbox: decide what to do with each one. Your result is saved so the second check can compare with it.")
         aim = ('first_check_aim', 'Do the first check', 'Sort ten messages at the training kiosk.')
         task = ('finish_check', 'Finish the first check')
-        display = f'Awareness check: finance, before ({letters})'
+        display = awareness_deploy.check_title('pre', 'finance')
         desc = (f"A check of about 8 to 10 minutes for finance staff, taken before the awareness episodes (pair {letters}). "
                 "Ten messages from the payments inbox of Brightwell Foods, a fictional company. The result is kept so the "
                 f"matching after-check (awareness_post_finance_{pair}) can show how the two compare.")
@@ -289,21 +289,19 @@ def check(pair, stage):
                  "Ten new messages from a payments inbox. If you took the first check, the end screen shows how the two compare.")
         aim = ('second_check_aim', 'Do the second check', 'Sort ten messages at the training kiosk.')
         task = ('finish_check', 'Finish the second check')
-        display = f'Awareness check: finance, after ({letters})'
+        display = awareness_deploy.check_title('post', 'finance')
         desc = (f"A check of about 8 to 10 minutes for finance staff, taken after the awareness episodes (pair {letters}). "
                 "Ten new messages from the payments inbox of Brightwell Foods, a fictional company, matched to the "
                 f"first check (awareness_pre_finance_{pair}). The end screen compares the two results when the first check was finished.")
         obs = 'A touch-screen kiosk with ten messages from a payments inbox, ready for the second check.'
         ending = success_screen('Second check done', 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.')
-    desc += (" Organiser note: each role's check tests the channel that role meets in its "
-             "episode, and in a session that runs more than one episode only the learner's "
-             "primary-role check is recorded.")
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, 'Sort the ten messages at the training kiosk.', aim, task, done,
                   globals_, {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, ending, extra)
     meta = {
         'display_name': display,
         'description': desc,
+        'organiser_note': awareness_deploy.CHECK_ORGANISER_NOTE,
         'difficulty_level': 1,
         'scoring': 'completion',
         'secgen_scenario': None,

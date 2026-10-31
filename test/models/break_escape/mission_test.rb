@@ -53,6 +53,23 @@ module BreakEscape
       assert_nil Mission.new(name: 'm01_first_contact', display_name: 'M1').title_art_path
     end
 
+    test "organiser_note returns the note or nil, stubbed" do
+      mission = Mission.new(name: 'no_such_mission', display_name: 'X')
+      assert_nil mission.organiser_note # no mission.json
+
+      { {} => nil, { 'organiser_note' => '' } => nil, { 'organiser_note' => '  ' } => nil,
+        { 'organiser_note' => 'For organisers only.' } => 'For organisers only.' }.each do |meta, expected|
+        mission.define_singleton_method(:load_mission_metadata) { meta }
+        assert_equal expected, mission.organiser_note, "organiser_note #{meta.inspect}"
+      end
+    end
+
+    test "organiser_note reads the real mission.json files" do
+      note = Mission.new(name: 'awareness_pre_finance_ab', display_name: 'A').organiser_note
+      assert_match(/each role's check tests the channel/, note)
+      assert_nil Mission.new(name: 'm01_first_contact', display_name: 'M1').organiser_note
+    end
+
     test "scoring_mode returns each valid value and falls back to tasks" do
       mission = Mission.new(name: 'no_such_mission', display_name: 'X')
       assert_equal 'tasks', mission.scoring_mode # no mission.json

@@ -64,6 +64,12 @@ module BreakEscape
       load_mission_metadata&.dig('lab_sheet_url').presence
     end
 
+    # Optional organiser-only note, from mission.json's "organiser_note": guidance for
+    # course organisers that is not shown to learners (awareness checks and the opening brief).
+    def organiser_note
+      load_mission_metadata&.dig('organiser_note').presence
+    end
+
     # HUD skins, styled in public/break_escape/css/ui-themes.css. A mission picks
     # one with "ui_theme" in mission.json; anything else falls back to the default.
     UI_THEMES = %w[general spy cyberpunk crt eldritch circuit secops].freeze
