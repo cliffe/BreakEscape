@@ -1239,18 +1239,27 @@ export class MailClientMinigame extends SocialOverlayScene {
         this.lastSendResult = result || null;
     }
 
+    /** True when this client was opened from a chat (a composeTo / trigger_minigame launch),
+     *  so a returnTo points back into that conversation. */
+    _fromChat() {
+        const scene = this.params.returnTo?.sceneType;
+        return scene === 'phone-chat' || scene === 'person-chat';
+    }
+
     /**
      * Close with nothing sent ends as { aborted: true } and records nothing (01 "Closing the
-     * client"). An episode child is the exception: it closes normally so its returnTo reopens
-     * the episode runner on the write step, instead of aborting all the way out to the game
-     * world (P1 m6/F12, E5-11). closeResult carries an empty sentIds, so the runner sees nothing
-     * was sent and stays on write rather than advancing to the flip.
+     * client"). Two exceptions close normally so their returnTo reopens the parent instead of
+     * aborting all the way out to the game world: an episode child (reopens the runner on the
+     * write step, P1 m6/F12, E5-11) and a composer opened from a chat (reopens the conversation
+     * where it was, as if the player had chosen not to write yet; item 2). Either way nothing
+     * was sent, so closeResult records no send.
      */
     get closeMode() {
         // A read-only mailbox can never send, so leaving it is a normal exit, not a failed run.
         if (this.params.readOnly === true) return 'close';
         if (this.sentThisSession > 0) return 'close';
         if (this._episodeMode() && this.params.returnTo) return 'close';
+        if (this._fromChat()) return 'close';
         return 'abort';
     }
 

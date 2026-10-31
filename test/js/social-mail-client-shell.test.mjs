@@ -256,6 +256,16 @@ test('an arriving message is appended with no bark while the client is open; clo
     assert.equal(toasts.length, 2);
 });
 
+test('a composer opened from a chat closes normally so its chat reopens (item 2)', () => {
+    // No send, opened from a phone or person chat: a normal exit so the returnTo reopens
+    // the conversation, rather than aborting all the way out to the game world.
+    assert.equal(open({ returnTo: { sceneType: 'phone-chat', params: {} } }).scene.closeMode, 'close');
+    assert.equal(open({ returnTo: { sceneType: 'person-chat', params: {} } }).scene.closeMode, 'close');
+    // No chat behind it (a desk mail terminal): unchanged, still aborts with nothing sent.
+    assert.equal(open().scene.closeMode, 'abort');
+    assert.equal(open({ returnTo: { sceneType: 'osint-browser', params: {} } }).scene.closeMode, 'abort');
+});
+
 test('getTestState has the documented shape and is plain JSON', () => {
     const { scene } = open();
     const s = scene.getTestState();
