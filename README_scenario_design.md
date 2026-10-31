@@ -1314,6 +1314,45 @@ Contacts in the player's phone. Not rendered in the world — they exist only in
 - `conversationMode` other than `"phone-chat"` is ignored on phone NPCs
 - A phone NPC with no `timedMessages` still works as a contact the player can call manually
 
+#### Direct messages (social theme)
+
+A phone device can be skinned as a messaging app (a "Friendface" DM client, an encrypted messenger) rather than the default Messages phone. Everything is opt-in: a phone with no `app` block renders exactly as before, so the handler phones and the m02/m07 terminals are untouched.
+
+The look belongs to the **device**, because the contact list does. Put an `app` block on the `type: "phone"` item or object:
+
+```json
+"startItemsInInventory": [
+  { "type": "phone", "id": "friendface_phone", "name": "Friendface", "takeable": true,
+    "phoneId": "friendface_dm", "npcIds": ["priya_dm", "dom_dm"],
+    "app": { "title": "Friendface", "theme": "social", "accent": "#3b5bdb", "chrome": "app" },
+    "observations": "Your Friendface account, open on your phone." }
+]
+```
+
+- `theme: "social"` is the generic DM-app look (a light bubble thread with an accent). The other value is `"terminal"` (the CRT look m02/m07 already use). A device's `app.theme` wins over the contacts' `phoneTheme`, which stays the fallback.
+- `accent` is a hex colour; the app chooses readable text over it automatically.
+- `chrome: "app"` drops the phone's signal bars and battery (a desktop or web app has none).
+- `title` replaces the "Messages" heading. `logo` (optional) names a file in `assets/logos` shown beside the title.
+- The same app can appear in the world as a `type: "phone"` **object** (a laptop or terminal on a desk) with the same `phoneId`, `npcIds` and `app`. Do not give that object a `callId`: a judged contact is reached from inside the list, not by opening the device straight into a call.
+
+Phone NPCs gain two optional fields for a DM app:
+
+```json
+{
+  "id": "priya_dm", "displayName": "Priya Nair", "npcType": "phone",
+  "phoneId": "friendface_dm", "handle": "@priya.nextdoor",
+  "profile": { "siteId": "friendface", "person": "priya" },
+  "storyPath": "scenarios/my_scenario/ink/priya_dm.json", "currentKnot": "start"
+}
+```
+
+- `handle` shows under the name in the contact list and the open thread (for example `@priya.nextdoor`).
+- `profile` adds a **View profile** link that opens the OSINT browser at that person's profile and returns to the chat on close. `siteId` is a `social.osint.sites` id and `person` a `social.people` id with a profile on that site. There is no profile link inside a judged chat (leaving would close the call).
+
+A **judged DM** (a gatekeeper the player must talk round, such as a members' club secretary) is the existing pretext-call mechanic: give the contact a `callId` that names a `social.pretextNpcs` entry, exactly as a desk phone would. Opening that contact runs the prep card and the suspicion meter. The debrief, prep and refusal wording default to a chat vocabulary under the social theme ("Chat debrief", "The chat was reported.", "Start the chat") instead of the call wording. Override any of it per theme with a `labels` block on the pretext entry (`labels.social.debriefTitle`, `.got_it`, `.partial`, `.reported`, `.walked_away`); `outcomeLabels` still wins over both. The influence channel stays `phone`.
+
+Fixture: `scenarios/test_dm_social/` (a plain neighbour chat with a timed follow-up, a judged guest-list chat, handles, View profile, and the same app on a desk laptop).
+
 #### Forced phone calls that ring again
 
 A call the player must finish: it opens by itself, can't be closed, and if something does close it before the end (a hit from a hostile NPC closes it, so the player can fight), it rings again at the question they left rather than starting over.

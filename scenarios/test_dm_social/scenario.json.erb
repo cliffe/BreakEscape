@@ -1,0 +1,207 @@
+{
+  "scenario_id": "test_dm_social",
+  "scenario_name": "Test: direct messages (social theme)",
+  "scenario_brief": "Fixture for direct messages on phone-chat with the social theme (README_scenario_design.md \"Direct messages (social theme)\"). Open the Friendface app from your inventory, or from the laptop on the desk: the same two contacts appear under a titled, status-bar-free app frame with their handles. Priya next door is an ordinary chat; waving back releases her timed follow-up. Dom, The Rookery's secretary, is a judged guest-list chat with its suspicion meter and chat-worded debrief. Each contact has a View profile link into the OSINT browser.",
+  "endGoal": "Chat to both Friendface contacts, and talk Dom into Saturday's guest list.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "flat",
+
+  "player": {
+    "id": "player",
+    "displayName": "You",
+    "spriteSheet": "female_hacker_hood_v2",
+    "spriteTalk": "assets/characters/female_hacker_hood_talk.png",
+    "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 12 }
+  },
+
+  "startItemsInInventory": [
+    {
+      "type": "phone",
+      "id": "friendface_phone",
+      "name": "Friendface",
+      "takeable": true,
+      "phoneId": "friendface_dm",
+      "npcIds": ["priya_dm", "dom_dm"],
+      "app": { "title": "Friendface", "theme": "social", "accent": "#3b5bdb", "chrome": "app" },
+      "observations": "Your Friendface account, open on your phone."
+    }
+  ],
+
+  "objectives": [
+    {
+      "aimId": "settle_in",
+      "title": "Settle in",
+      "description": "Say hello on Friendface and sort out Saturday.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "wave_back", "title": "Say hello to Priya next door", "type": "custom", "status": "active" },
+        { "taskId": "guest_list", "title": "Get onto The Rookery's guest list for Saturday", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "globalVariables": {
+    "waved_back": false,
+    "guest_list_added": false,
+    "dom_influence": 0,
+    "dom_reported": false,
+    "dom_wary": false,
+    "dom_refusing": false,
+    "dom_latched": "",
+    "se_osint_state": {},
+    "pretext_guest_list_chat_state": {},
+    "pretext_guest_list_chat_outcome": "",
+    "pretext_guest_list_chat_lowest": 0
+  },
+
+  "social": {
+    "people": [
+      { "id": "priya", "kind": "cast", "avatar": "dani_okonkwo_headshot",
+        "forms": { "first": "Priya", "full": "Priya Nair" } },
+      { "id": "dom", "kind": "cast", "avatar": "david_torres_headshot",
+        "forms": { "first": "Dom", "full": "Dom Fuller" } }
+    ],
+
+    "characters": {
+      "dom": {
+        "displayName": "Dom Fuller",
+        "channels": { "person": "dom_dm", "phone": "dom_dm" },
+        "influence": { "global": "dom_influence", "min": -100, "max": 100, "start": 0 },
+        "syncedVars": ["dom_influence"],
+        "thresholds": [
+          { "id": "wary", "at": -30, "icon": "wary",
+            "effects": [ { "type": "setGlobal", "global": "dom_wary", "value": true, "clearOnRearm": true } ] },
+          { "id": "refuses", "at": -50, "icon": "refuses",
+            "effects": [ { "type": "setGlobal", "global": "dom_refusing", "value": true, "clearOnRearm": true } ] },
+          { "id": "reports", "at": -70, "icon": "reports",
+            "effects": [
+              { "type": "setGlobal", "global": "dom_reported", "value": true },
+              { "type": "endConversation" }
+            ] }
+        ]
+      }
+    },
+
+    "osint": {
+      "profile": "student",
+      "sites": [
+        { "id": "friendface", "name": "Friendface", "url": "friendface.example", "type": "social",
+          "profiles": [
+            { "person": "priya", "name": "Priya Nair", "posts": [
+              { "id": "post_priya_plants", "text": "The window boxes are finally coming along. Number 11 has been empty too long, nice to have a new face on the landing." },
+              { "id": "post_priya_bins", "text": "Reminder to the building: bins go out Thursday night, not Wednesday." } ] },
+            { "person": "dom", "name": "Dom Fuller", "posts": [
+              { "id": "post_dom_saturday", "text": "The Rookery's Saturday social is nearly full. Members, bring a guest if you'd like, just drop me a name beforehand." },
+              { "id": "post_dom_quiz", "text": "Thanks to everyone who came to the quiz night. The committee says the raffle raised a tidy sum." } ] }
+          ] }
+      ]
+    },
+
+    "pretextNpcs": [
+      {
+        "character": "dom",
+        "callId": "guest_list_chat",
+        "tuning": { "matchCreditCapPerLine": 10, "maxRefusals": 2, "feedbackMode": "live", "tellDetail": "full", "showTechniqueNames": "live" },
+        "susceptibility": { "candour": 10, "authority_borrowed": -15, "urgency": -10 },
+        "lines": {
+          "open_polite": { "technique": "candour", "claims": [] },
+          "member_ref":  { "technique": "authority_borrowed", "claims": [] },
+          "press_time":  { "technique": "urgency", "claims": [] }
+        },
+        "asks": {
+          "guest_list": { "pressure": 0, "floor": -30, "verification": [],
+                          "grants": { "setGlobal": { "guest_list_added": true } } }
+        },
+        "outcomes": {
+          "got_it": {},
+          "reported": { "line": "I think I'd better run this past the committee first.", "setGlobal": { "dom_reported": true } },
+          "walked_away": {}
+        },
+        "tells": {
+          "techniques": {
+            "candour": "Candour. An honest, unhurried opener puts a volunteer at ease.",
+            "authority_borrowed": "Borrowed authority. Naming a member you can't name back is thin.",
+            "urgency": "Urgency. Rushing a favour is the oldest pressure line there is."
+          },
+          "ask": { "accepted": "He added the name.", "pending": "He wants one more thing first.", "refused": "He won't do that over a message." },
+          "bands": { "calm": "Dom is relaxed.", "wary": "Dom has gone careful.", "refusing": "Dom has stopped helping." }
+        },
+        "hints": [ "A friendly, honest opener lands better than a rushed one.", "Dom's own post says to drop him a member's name beforehand." ]
+      }
+    ]
+  },
+
+  "rooms": {
+    "flat": {
+      "type": "room_office",
+      "door_sign": "Flat 11",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "priya_dm",
+          "displayName": "Priya Nair",
+          "npcType": "phone",
+          "storyPath": "scenarios/test_dm_social/ink/priya_dm.json",
+          "avatar": "assets/characters/dani_okonkwo_headshot.png",
+          "phoneId": "friendface_dm",
+          "handle": "@priya.nextdoor",
+          "profile": { "siteId": "friendface", "person": "priya" },
+          "currentKnot": "start",
+          "timedMessages": [
+            {
+              "delay": 2000,
+              "message": "Priya: Oh, and bin day is Thursday, not Wednesday. Everyone gets it wrong the first week!",
+              "type": "text",
+              "waitForEvent": "global_variable_changed:waved_back"
+            }
+          ],
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:waved_back",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "wave_back"
+            }
+          ]
+        },
+        {
+          "id": "dom_dm",
+          "displayName": "Dom Fuller",
+          "npcType": "phone",
+          "storyPath": "scenarios/test_dm_social/ink/dom_dm.json",
+          "avatar": "assets/characters/david_torres_headshot.png",
+          "phoneId": "friendface_dm",
+          "handle": "@therookery.dom",
+          "profile": { "siteId": "friendface", "person": "dom" },
+          "callId": "guest_list_chat",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:guest_list_added",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "guest_list"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "phone",
+          "id": "desk_laptop",
+          "name": "Laptop (Friendface)",
+          "position": { "x": 6, "y": 3 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "phoneId": "friendface_dm",
+          "npcIds": ["priya_dm", "dom_dm"],
+          "app": { "title": "Friendface", "theme": "social", "accent": "#3b5bdb", "chrome": "app" },
+          "observations": "A laptop on the desk, signed in to the same Friendface account."
+        }
+      ]
+    }
+  }
+}
