@@ -7,7 +7,7 @@
 // post mission normally imports from the pre mission under those names. Per-factor counts
 // are not carried between missions, so only the two headline numbers are compared.
 //
-// No-baseline gate: the comparison shows only when `<prePrefix>done` is true and, when the
+// No-baseline gate: the comparison shows only when `<prePrefix>complete` is true and, when the
 // set names one, the `comparison.requireGlobal` flag is true too (the mission's
 // `pre_check_completed`). Otherwise the panel says there is no baseline and the round's own
 // result stands alone.
@@ -49,7 +49,10 @@ export function comparisonFor(set, stage, globals, current) {
     const prePrefix = prePrefixFor(set);
     if (!prePrefix) return null;
     const g = isObj(globals) ? globals : {};
-    if (g[`${prePrefix}done`] !== true) return { baseline: false, reason: 'pre-not-done', prePrefix };
+    // The pre round records <prePrefix>complete (pre-rename saves hold <prePrefix>done; still read).
+    if (g[`${prePrefix}complete`] !== true && g[`${prePrefix}done`] !== true) {
+        return { baseline: false, reason: 'pre-not-done', prePrefix };
+    }
     const flag = isObj(set.comparison) && isStr(set.comparison.requireGlobal) ? set.comparison.requireGlobal : null;
     if (flag && g[flag] !== true) return { baseline: false, reason: 'flag-not-set', prePrefix };
 

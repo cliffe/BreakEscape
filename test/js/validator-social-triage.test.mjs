@@ -83,7 +83,7 @@ function mini() {
       : { isPhish: false, flags: [], whyFine: { default: 'fine' } },
   });
   return {
-    globalVariables: { triage_percent: 0, triage_reportRate: 0, triage_done: false, triage_pass: false },
+    globalVariables: { triage_percent: 0, triage_reportRate: 0, triage_complete: false, triage_pass: false },
     rooms: { r: { objects: [{ type: 'triage-workstation', id: 'ws', minigameData: { triageSetId: 's' } }] } },
     social: {
       mailClient: { accounts: [{ id: 'guest' }] },
@@ -279,9 +279,9 @@ test('05 N5: the stage launch parameter, workstation pointers and the four resul
   has(/❌.*minigameData\.triageSetId 'ghost_set' is not a social\.triageSets id/);
   has(/❌.*\(triage-workstation\) has no minigameData\.triageSetId/);
   // the four globals for the stage a workstation launches
-  has(/❌.*global 'undecl_pre_(percent|reportRate|done|pass)'/, 4);
-  has(/❌.*global 'bm_(percent|reportRate|done|pass)'/, 4);
-  has(/❌.*global 'wrongtype_done' \(set 'pair_y'\) must be declared as a boolean, not 0/);
+  has(/❌.*global 'undecl_pre_(percent|reportRate|complete)'/, 3);
+  has(/❌.*global 'bm_(percent|reportRate|complete)'/, 3);
+  has(/❌.*global 'wrongtype_complete' \(set 'pair_y'\) must be declared as a boolean, not 0/);
   has(/wrongtype_(percent|reportRate|pass)/, 0);
   // a {stage} set launched as post declares triage_post_*, which the clean fixture declares
   has(/triage_post_/, 0);
@@ -292,12 +292,12 @@ test('05 N5: the stage launch parameter, workstation pointers and the four resul
   expectIn(lintJson(j), /has a \{stage\} prefix but no usable stage/);
   j.rooms.r.objects[0].minigameData.stage = 'post';
   const out = lintJson(j);
-  expectIn(out, /global 'triage_post_(percent|reportRate|done|pass)'/, 4);
+  expectIn(out, /global 'triage_post_(percent|reportRate|complete|pass)'/, 4);
   // declaring them, with the right types, clears it
-  Object.assign(j.globalVariables, { triage_post_percent: 0, triage_post_reportRate: 0, triage_post_done: false, triage_post_pass: false });
+  Object.assign(j.globalVariables, { triage_post_percent: 0, triage_post_reportRate: 0, triage_post_complete: false, triage_post_pass: false });
   // a post round also reads the pre globals for its comparison (05 N11), so those want declaring too
-  expectIn(lintJson(j), /the comparison reads 'triage_pre_(done|percent|reportRate)'/, 3);
-  Object.assign(j.globalVariables, { triage_pre_percent: 0, triage_pre_reportRate: 0, triage_pre_done: false });
+  expectIn(lintJson(j), /the comparison reads 'triage_pre_(complete|percent|reportRate)'/, 3);
+  Object.assign(j.globalVariables, { triage_pre_percent: 0, triage_pre_reportRate: 0, triage_pre_complete: false });
   assert.deepEqual(lintJson(j), []);
 });
 
@@ -322,16 +322,16 @@ test('05 N5: a name the mission imports is skipped, an own declaration is not', 
 });
 
 test('05 N5: a task keyed on <prefix>done warns when the set has a non-zero passPercent', { skip }, () => {
-  has(/⚠️.*eventMapping on 'tr_lab_done' \(host\) completes a task on the round being done, but set 'lab' has a non-zero passPercent/);
+  has(/⚠️.*eventMapping on 'tr_lab_complete' \(host\) completes a task on the round being done, but set 'lab' has a non-zero passPercent/);
   // a check set (passPercent 0) keyed on done raises nothing; so does the pass global
   has(/⚠️.*eventMapping on 'triage_pre_pass'/, 0);
-  has(/⚠️.*eventMapping on 'wrongtype_done'/, 0);
+  has(/⚠️.*eventMapping on 'wrongtype_complete'/, 0);
   const j = mini();
-  j.rooms.r.npcs = [{ id: 'n', eventMappings: [{ eventPattern: 'global_variable_changed:triage_done', completeTask: 't' }] }];
-  expectIn(lintJson(j), /eventMapping on 'triage_done'/);
+  j.rooms.r.npcs = [{ id: 'n', eventMappings: [{ eventPattern: 'global_variable_changed:triage_complete', completeTask: 't' }] }];
+  expectIn(lintJson(j), /eventMapping on 'triage_complete'/);
   j.social.triageSets[0].outcome.passPercent = 0;
   j.social.triageSets[0].stage = 'pre';
-  expectIn(lintJson(j), /eventMapping on 'triage_done'/, 0);
+  expectIn(lintJson(j), /eventMapping on 'triage_complete'/, 0);
   j.social.triageSets[0].outcome.passPercent = 60;
   j.rooms.r.npcs[0].eventMappings[0].eventPattern = 'global_variable_changed:triage_pass';
   expectIn(lintJson(j), /eventMapping on/, 0);

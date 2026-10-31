@@ -47,7 +47,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e13_ai_assistant_defend_done"
+          "episode_e13_ai_assistant_defend_complete"
         ]
       },
       "conclusionScreen": {
@@ -70,8 +70,7 @@
     "se_awareness_records": [],
     "episode_e13_ai_assistant_defend_percent": 0,
     "episode_e13_ai_assistant_defend_reportRate": 0,
-    "episode_e13_ai_assistant_defend_done": false,
-    "episode_e13_ai_assistant_defend_pass": false,
+    "episode_e13_ai_assistant_defend_complete": false,
     "phish_assist_reader_landed": false,
     "phish_assist_reader_plain_sent": false,
     "phish_assist_reader_attempts": 0,
@@ -815,7 +814,7 @@
               "completeTask": "plant_hidden_instruction"
             },
             {
-              "eventPattern": "global_variable_changed:episode_e13_ai_assistant_defend_done",
+              "eventPattern": "global_variable_changed:episode_e13_ai_assistant_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "handle_assistant_inbox"
@@ -844,7 +843,7 @@
           "observations": "A touch-screen training kiosk for the Brightwell assistant exercise: first the one supplier brief to write, then the assistant and the messages to handle.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e13_ai_assistant_defend_done",
+              "condition": "globalVars.episode_e13_ai_assistant_defend_complete",
               "value": "A touch-screen training kiosk for the Brightwell assistant exercise. Episode finished."
             }
           ],

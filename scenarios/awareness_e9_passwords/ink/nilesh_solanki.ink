@@ -11,7 +11,7 @@
 // ================================================
 
 VAR guess_e9_landed = false
-VAR episode_e9_passwords_defend_done = false
+VAR episode_e9_passwords_defend_complete = false
 VAR hub_quiet = false
 
 === start ===
@@ -21,7 +21,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { episode_e9_passwords_defend_done:
+    { episode_e9_passwords_defend_complete:
         Nilesh Solanki: Both sides done. A different password for every account, kept in a manager, three random words for the few you must remember by heart, and deny what you didn't start.
         Nilesh Solanki: Nobody's ever in trouble for reporting.
     - else:

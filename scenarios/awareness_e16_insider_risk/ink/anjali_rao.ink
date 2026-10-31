@@ -4,7 +4,7 @@
 // She receives the reports and takes the concern, which is why she hosts the
 // insider-risk episode. She frames the exercise; the kiosk does the rest.
 // Her record carries the mapping that completes handle_leaver_week when
-// episode_e16_insider_risk_defend_done changes (11 S5.1), so the ink only reads
+// episode_e16_insider_risk_defend_complete changes (11 S5.1), so the ink only reads
 // that global, for its welcome/done line.
 // Resting point is the hub (m03 hub_quiet pattern): the goodbye parks there
 // quietly, and a re-talk re-enters it and says the line that fits the moment.
@@ -21,7 +21,7 @@
 //    after the kiosk, so a mid-episode global would be needed to say it in ink.
 // ================================================
 
-VAR episode_e16_insider_risk_defend_done = false
+VAR episode_e16_insider_risk_defend_complete = false
 VAR hub_quiet = false
 
 === start ===
@@ -31,7 +31,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { episode_e16_insider_risk_defend_done:
+    { episode_e16_insider_risk_defend_complete:
         Anjali Rao: That's them handled. Your login is you, offers get reported, and an honest concern that turns out to be nothing is never a failure.
         Anjali Rao: Nobody's in trouble for being approached, and nobody's a suspect for having a hard week.
     - else:

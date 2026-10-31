@@ -29,7 +29,7 @@
 // ================================================
 
 VAR phish_assist_reader_attempts = 0
-VAR episode_e13_ai_assistant_defend_done = false
+VAR episode_e13_ai_assistant_defend_complete = false
 VAR e13_demo_offered = false
 VAR demo_answer = ""
 VAR hub_quiet = false
@@ -41,7 +41,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { episode_e13_ai_assistant_defend_done:
+    { episode_e13_ai_assistant_defend_complete:
         Gwen Pritchard: That's them handled, thank you. You can't always tell a fake voice or face, so the answer's always the same.
         Gwen Pritchard: Check another way, on a number you already hold. Nobody's ever in trouble for checking.
     - else:
@@ -54,7 +54,7 @@ VAR hub_quiet = false
         }
     }
 }
-+ {episode_e13_ai_assistant_defend_done and not e13_demo_offered} [Optional: hear what a faked call sounds like]
++ {episode_e13_ai_assistant_defend_complete and not e13_demo_offered} [Optional: hear what a faked call sounds like]
     Gwen Pritchard: I'll ring you on Brightwell Meet and play the caller, as someone with a copy of my face and voice could.
     Gwen Pritchard: Answer it any way you like. It takes a minute or two, and nothing is scored.
     ~ hub_quiet = true

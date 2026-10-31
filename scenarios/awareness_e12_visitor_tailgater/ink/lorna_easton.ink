@@ -12,7 +12,7 @@
 // Placeholder sprite (female_office_worker_v2) until the PixelLab reset.
 // ================================================
 
-VAR episode_e12_visitor_tailgater_defend_done = false
+VAR episode_e12_visitor_tailgater_defend_complete = false
 VAR pretext_merrin_front_desk_outcome = ""
 VAR delphine_buzzed_through = false
 VAR hub_quiet = false
@@ -24,7 +24,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { episode_e12_visitor_tailgater_defend_done:
+    { episode_e12_visitor_tailgater_defend_complete:
         Lorna Easton: That's the desk done. A front of house that signs people in and walks them up stops nearly all of this.
         Lorna Easton: Nobody's in trouble for slowing a pushy visitor down.
     - else:

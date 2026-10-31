@@ -94,7 +94,7 @@ def host_npc(host, done_global, task_id, ink_path):
 
 def kiosk(ep_id, observations):
     """observations: a string, or (before, after) where `after` shows once the round is done
-    (observationVariants on episode_<id>_defend_done, so the kiosk stops saying items are waiting)."""
+    (observationVariants on episode_<id>_defend_complete, so the kiosk stops saying items are waiting)."""
     done_obs = None
     if isinstance(observations, tuple):
         observations, done_obs = observations
@@ -110,7 +110,7 @@ def kiosk(ep_id, observations):
     }
     if done_obs:
         obj['observationVariants'] = [
-            {'condition': f'globalVars.episode_{ep_id}_defend_done', 'value': done_obs}]
+            {'condition': f'globalVars.episode_{ep_id}_defend_complete', 'value': done_obs}]
     obj['minigameData'] = {'episodeId': ep_id}
     return obj
 
@@ -235,14 +235,14 @@ CFG = {
     'host': 'graham',
     'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
                'keywords': ['Security awareness', 'Phishing', 'Vishing', 'Annual assessment']}],
-    'name': 'Year End: the annual mixed edition',
+    'name': 'Year-end review: spot it',
     'brief': "You're on an authorised exercise: a fictional year-end edition. Eight messages from across the year, from three fictional companies, arrive by email, call, voicemail, text, sign-in prompt and web page. Some are real and some are scams. Check another way and report what doesn't sit right. Reporting when you're unsure is always fine and never marked down.",
     'endGoal': 'Work through the year-end messages at the training kiosk.',
     'aim': ('annual_edition_aim', 'Work through the year in review', 'Go through the eight messages at the training kiosk.'),
     'task': ('check_annual_edition', 'Work through the year in review'),
     'kiosk': ('A touch-screen kiosk with eight messages from across the year, waiting to be checked.',
               'A touch-screen kiosk with the year in review. Episode finished.'),
-    'display': 'Year End: the annual mixed edition',
+    'display': 'Year-end review: spot it',
     'desc': "An awareness edition of about 10 minutes for all staff, on the defending side only. A mixed run of the year's messages across email, calls, a voicemail, a text, a sign-in prompt and a web page, from three fictional companies. Your organiser places your existing role post-check after it, which compares against your role pre-check. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
     'minutes': 10,
     'conclusion': ('Year in review done', "You've worked through the year's messages. The debrief goes through each one."),
@@ -256,7 +256,7 @@ def build():
     ep_id = EP['id']
     mission = f'awareness_{ep_id}'
     prefix = f'episode_{ep_id}_defend_'
-    done = f'{prefix}done'
+    done = f'{prefix}complete'
     s = clean_set(sets, CFG['set'])
     assert s['outcome']['setGlobalPrefix'] == prefix, 'fragment prefix does not match the episode id'
     assert EP['conclusionTaskId'] == CFG['task'][0]
@@ -266,7 +266,6 @@ def build():
         f'{prefix}percent': 0,
         f'{prefix}reportRate': 0,
         done: False,
-        f'{prefix}pass': False,
     }
     host = HOSTS[CFG['host']]
     sc = scenario(mission, CFG['name'], CFG['brief'], CFG['endGoal'], CFG['aim'], CFG['task'], done,

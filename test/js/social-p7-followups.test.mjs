@@ -1,7 +1,7 @@
 // Phase 7 follow-up runtime packet (PHASE7_PACKETS.md "Follow-up runtime packet"), the two
 // items that live in scenario data and are checked here on the real modules:
 //  - the defend-only shells' training kiosk stops saying "N messages are waiting" once the
-//    round is done: observationVariants on episode_<id>_defend_done, resolved by
+//    round is done: observationVariants on episode_<id>_defend_complete, resolved by
 //    utils/conditional-text.js (the same call the hover menu and the interaction use);
 //  - E7's debrief does not say the same thing three times: the voice panel, rendered by the
 //    real debrief view, no longer repeats the defendOnly line and the Monday card.
@@ -73,12 +73,12 @@ test('kiosk fixture: observationVariants on the done global swap the text withou
     window.gameState.globalVariables = {};
 });
 
-test('defend-only shells: the kiosk text changes once episode_<id>_defend_done is true', () => {
+test('defend-only shells: the kiosk text changes once episode_<id>_defend_complete is true', () => {
     for (const name of DEFEND_SHELLS) {
         const scn = loadShell(name);
         const kiosk = kioskOf(scn);
         assert.ok(kiosk, `${name} has a kiosk`);
-        const doneKey = `episode_${kiosk.minigameData.episodeId}_defend_done`;
+        const doneKey = `episode_${kiosk.minigameData.episodeId}_defend_complete`;
         assert.equal(scn.globalVariables[doneKey], false, `${name} declares ${doneKey}`);
         assert.equal(kiosk.observationVariants?.[0]?.condition, `globalVars.${doneKey}`, name);
         const before = resolveObjectField(kiosk, 'observations', null, { [doneKey]: false });

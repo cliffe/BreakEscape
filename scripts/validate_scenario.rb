@@ -4437,7 +4437,7 @@ $carry_over_source_cache = {}
 # imports the pre check's. Those names are set by the set's prefix, not chosen, so the lower_snake_case
 # rule does not apply to them: the prefix with {stage} filled by pre or post (or left as is) plus a
 # result suffix, the comparison.prePrefix, and the fixed baseline names the comparison reads.
-CARRY_OVER_PRE_NAMES = %w[triage_pre_percent triage_pre_reportRate triage_pre_done].freeze
+CARRY_OVER_PRE_NAMES = %w[triage_pre_percent triage_pre_reportRate triage_pre_complete].freeze
 CARRY_OVER_RESULT_NAME_RE = /\A[A-Za-z_][A-Za-z0-9_]*\z/.freeze
 
 def carry_over_triage_result_name?(json_data, name)
@@ -4545,8 +4545,9 @@ def carry_over_json_writes(json_data)
   writes
 end
 
-# Records <setGlobalPrefix>percent, reportRate, done and pass as writes.
-TRIAGE_RESULT_SUFFIXES = %w[percent reportRate done pass].freeze
+# Records <setGlobalPrefix>percent, reportRate and complete as writes, plus pass when passPercent > 0.
+TRIAGE_RESULT_SUFFIXES = %w[percent reportRate complete pass].freeze
+TRIAGE_BASE_SUFFIXES = %w[percent reportRate complete].freeze
 
 def carry_over_record_triage_writes(json_data, writes)
   sets = json_data.is_a?(Hash) ? json_data.dig('social', 'triageSets') : nil
@@ -4603,9 +4604,12 @@ def carry_over_record_triage_writes(json_data, writes)
                [nil]
     end
     where = "/social/triageSets[#{i}] (triage starter)"
+    pp = set.dig('outcome', 'passPercent')
+    suffixes = TRIAGE_BASE_SUFFIXES.dup
+    suffixes << 'pass' if pp.is_a?(Integer) && pp.positive?
     stages.each do |stage|
       resolved = stage ? prefix.gsub('{stage}', stage) : prefix
-      TRIAGE_RESULT_SUFFIXES.each do |suffix|
+      suffixes.each do |suffix|
         name = "#{resolved}#{suffix}"
         writes[name] << [where, nil] if name.match?(/\A[A-Za-z_][A-Za-z0-9_]*\z/)
       end

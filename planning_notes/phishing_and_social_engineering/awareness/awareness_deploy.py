@@ -24,3 +24,23 @@ AWARENESS_RULE_OF_THUMB_HEADING = 'The habit to keep'
 def awareness_block():
     """The social.awareness block every shell carries."""
     return {'ruleOfThumb': {'heading': AWARENESS_RULE_OF_THUMB_HEADING, 'text': AWARENESS_RULE_OF_THUMB_TEXT}}
+
+
+# Scheme-A catalogue titles (CyberAware form, 2026-10-31). Check listings read
+# "Starting check: <group>" / "Final check: <group>"; AB/BA share a title.
+CHECK_GROUPS = {
+    'finance': 'Finance team', 'hr': 'HR and recruitment', 'helpdesk': 'IT help desk',
+    'executive': 'Executive assistants', 'mobile': 'Staff with a work phone',
+    'data_conduct': 'Data and conduct', 'general_v2': 'All staff', 'general': 'All staff (original)',
+}
+
+# The organiser-only note carried by every role check (moved out of the learner description).
+CHECK_ORGANISER_NOTE = (
+    "each role's check tests the channel that role meets in its episode, and in a session that runs "
+    "more than one episode only the learner's primary-role check is recorded."
+)
+
+
+def check_title(stage, role_word):
+    """Scheme-A check title: 'Starting check: <group>' (pre) or 'Final check: <group>' (post)."""
+    return f"{'Starting' if stage == 'pre' else 'Final'} check: {CHECK_GROUPS[role_word]}"

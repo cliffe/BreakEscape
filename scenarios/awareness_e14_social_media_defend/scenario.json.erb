@@ -31,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e14_social_media_defend_defend_done"
+          "episode_e14_social_media_defend_defend_complete"
         ]
       },
       "conclusionScreen": {
@@ -54,8 +54,7 @@
     "se_awareness_records": [],
     "episode_e14_social_media_defend_defend_percent": 0,
     "episode_e14_social_media_defend_defend_reportRate": 0,
-    "episode_e14_social_media_defend_defend_done": false,
-    "episode_e14_social_media_defend_defend_pass": false,
+    "episode_e14_social_media_defend_defend_complete": false,
     "se_intel_df_profile": false,
     "se_intel_df_system": false,
     "se_intel_df_badge": false,
@@ -508,7 +507,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:episode_e14_social_media_defend_defend_done",
+              "eventPattern": "global_variable_changed:episode_e14_social_media_defend_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_social_inbox"
@@ -528,7 +527,7 @@
           "observations": "A touch-screen kiosk showing a feed and an inbox at Merrin & Sallow: posts to weigh, messages to sort and settings to tighten.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e14_social_media_defend_defend_done",
+              "condition": "globalVars.episode_e14_social_media_defend_defend_complete",
               "value": "A touch-screen kiosk showing a feed and an inbox at Merrin & Sallow. The feed, the inbox and the settings are all done."
             }
           ],

@@ -136,7 +136,7 @@ EPISODES = {
             'task': ('work_service_desk_queue', 'Work through the service desk queue'),
             'kiosk': ("A touch-screen kiosk showing the Quayholt service desk queue. Three calls are waiting, and a phone beside it shows a sign-in prompt.",
              'A touch-screen kiosk showing the Quayholt service desk queue. Episode finished.'),
-            'display': 'Awareness E3: Helpdesk reset (service desk only)',
+            'display': 'Help desk password resets: spot it',
             'desc': "An awareness episode of about 8 minutes for IT service desk staff, on the defending side only. Sit in the service desk seat at Quayholt Insurance, a fictional company: three callers want password resets or changes to their sign-in, and a sign-in prompt turns up on your own phone. Each answer is explained, and ringing back when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'ending': ('Service desk queue done', "That's the three calls and the sign-in prompt finished. The debrief goes through each one."),
@@ -171,7 +171,7 @@ EPISODES = {
             'task': ('check_signin_pages', 'Check the sign-in pages'),
             'kiosk': ('A touch-screen kiosk with five web pages open, each reached from a link in a Quayholt inbox.',
              'A touch-screen kiosk with five web pages open, each reached from a link in a Quayholt inbox. You have checked them all.'),
-            'display': 'Awareness E5: Sign-in pages (pages only)',
+            'display': 'Fake sign-in pages: spot it',
             'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Five web pages from links in an inbox at Quayholt Insurance, a fictional company: some are the real sign-in, some were built to collect passwords. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'ending': ('Sign-in pages checked', "That's all five pages finished. The debrief goes through each one."),
@@ -252,7 +252,7 @@ def host_npc(host, done_global, task_id, ink_path):
 
 def kiosk(ep_id, observations):
     """observations: a string, or (before, after) where `after` shows once the round is done
-    (observationVariants on episode_<id>_defend_done, so the kiosk stops saying items are waiting)."""
+    (observationVariants on episode_<id>_defend_complete, so the kiosk stops saying items are waiting)."""
     done_obs = None
     if isinstance(observations, tuple):
         observations, done_obs = observations
@@ -268,7 +268,7 @@ def kiosk(ep_id, observations):
     }
     if done_obs:
         obj['observationVariants'] = [
-            {'condition': f'globalVars.episode_{ep_id}_defend_done', 'value': done_obs}]
+            {'condition': f'globalVars.episode_{ep_id}_defend_complete', 'value': done_obs}]
     obj['minigameData'] = {'episodeId': ep_id}
     return obj
 
@@ -368,7 +368,7 @@ def defend_only(ekey):
     ep_id = f"{cfg['full_id']}_defend"
     mission = f'awareness_{ep_id}'
     prefix = f'episode_{ep_id}_defend_'          # doubled `_defend_defend_`, as defendPrefix() gives
-    done = f'{prefix}done'
+    done = f'{prefix}complete'
     s = clean_set(sets, cfg['defend_set'])
     s['outcome']['setGlobalPrefix'] = prefix
     strings = copy.deepcopy(EP['strings'])
@@ -400,7 +400,6 @@ def defend_only(ekey):
         f'{prefix}percent': 0,
         f'{prefix}reportRate': 0,
         done: False,
-        f'{prefix}pass': False,
     }
     host = HOSTS[cfg['defend_host']]
     ink_name = host['id']
@@ -435,7 +434,7 @@ def check(ekey, pair, stage):
     comparison = {'requireGlobal': 'pre_check_completed'} if stage == 'post' else None
     s = clean_set(sets, form, stage=stage, comparison=comparison)
     prefix = f'triage_{stage}_'
-    done = f'{prefix}done'
+    done = f'{prefix}complete'
     ep = {
         'id': ep_id,
         'role': EP['role'], 'company': EP['company'], 'brand': copy.deepcopy(EP['brand']),
@@ -452,18 +451,17 @@ def check(ekey, pair, stage):
         f'{prefix}percent': 0,
         f'{prefix}reportRate': 0,
         done: False,
-        f'{prefix}pass': False,
     }
     extra = {}
     pre_mission = f'awareness_pre_{word}_{pair}'
     if stage == 'pre':
-        extra['exportGlobals'] = ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_done']
+        extra['exportGlobals'] = ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_complete']
     else:
         # Imported names are not redeclared (as the committed E1 post shells).
         extra['importGlobals'] = [
             {'from': pre_mission, 'var': 'triage_pre_percent', 'as': 'triage_pre_percent', 'default': 0},
             {'from': pre_mission, 'var': 'triage_pre_reportRate', 'as': 'triage_pre_reportRate', 'default': 0},
-            {'from': pre_mission, 'var': 'triage_pre_done', 'as': 'triage_pre_done', 'default': False},
+            {'from': pre_mission, 'var': 'triage_pre_complete', 'as': 'triage_pre_complete', 'default': False},
             {'from': pre_mission, 'completed': 'pre_check_completed'},
         ]
     host = HOSTS[cfg['check_hosts'][pair]]
@@ -476,7 +474,7 @@ def check(ekey, pair, stage):
                  f"{c['items_pre']} Decide what to do with each one. Your result is saved so the second check can compare with it.")
         aim = ('first_check_aim', 'Do the first check', c['aim_desc'])
         task = ('finish_check', 'Finish the first check')
-        display = f'Awareness check: {word}, before ({letters})'
+        display = awareness_deploy.check_title('pre', word)
         desc = (f"A short check for {cfg['role_label']} at {company}, taken before the awareness episodes (pair {letters}). "
                 f"{c['items_pre']} The result is kept so the matching after-check (awareness_post_{word}_{pair}) "
                 "can show how the two compare.")
@@ -488,21 +486,19 @@ def check(ekey, pair, stage):
                  f"{c['items_post']} If you took the first check, the end screen shows how the two compare.")
         aim = ('second_check_aim', 'Do the second check', c['aim_desc'])
         task = ('finish_check', 'Finish the second check')
-        display = f'Awareness check: {word}, after ({letters})'
+        display = awareness_deploy.check_title('post', word)
         desc = (f"A short check for {cfg['role_label']} at {company}, taken after the awareness episodes (pair {letters}). "
                 f"{c['items_post']} It is matched to the first check (awareness_pre_{word}_{pair}), and the end screen "
                 "compares the two results when the first check was finished.")
         obs = c['kiosk'].format(nth='second')
         ending = success_screen('Second check done', 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.')
-    desc += (" Organiser note: each role's check tests the channel that role meets in its "
-             "episode, and in a session that runs more than one episode only the learner's "
-             "primary-role check is recorded.")
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, c['end'], aim, task, done, globals_,
                   {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, ending, extra)
     meta = {
         'display_name': display,
         'description': desc,
+        'organiser_note': awareness_deploy.CHECK_ORGANISER_NOTE,
         'difficulty_level': 1,
         'scoring': 'completion',
         'secgen_scenario': None,
@@ -540,7 +536,9 @@ def main():
     built = []
     for ekey in ('e3', 'e5'):
         built.append(defend_only(ekey))
-        built += [check(ekey, p, st) for p in ('ab', 'ba') for st in ('pre', 'post')]
+    # The original E5 'general' check pair was retired 2026-10-31 (the general_v2 pair under
+    # gen_checks_v2_shells.py is the 'All staff' check now). Only E3 keeps its role checks here.
+    built += [check('e3', p, st) for p in ('ab', 'ba') for st in ('pre', 'post')]
     for mission, sc, meta, ink_name, ink in built:
         sc = with_title_screen_name(sc, mission)
         d = os.path.join(out, mission)

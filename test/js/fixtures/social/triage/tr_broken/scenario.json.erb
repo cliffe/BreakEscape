@@ -25,13 +25,13 @@
     "triage_pre_reportRate": 0,
     "triage_post_reportRate": 0,
     "tr_lab_reportRate": 0,
-    "triage_pre_done": false,
-    "triage_post_done": false,
+    "triage_pre_complete": false,
+    "triage_post_complete": false,
     "triage_pre_pass": false,
     "triage_post_pass": false,
-    "tr_lab_done": false,
+    "tr_lab_complete": false,
     "tr_lab_pass": false,
-    "wrongtype_done": 0,
+    "wrongtype_complete": 0,
     "wrongtype_percent": 0,
     "wrongtype_reportRate": 0,
     "wrongtype_pass": false,
@@ -200,7 +200,7 @@
           },
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:tr_lab_done",
+              "eventPattern": "global_variable_changed:tr_lab_complete",
               "condition": "value === true",
               "completeTask": "t1"
             },

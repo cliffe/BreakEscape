@@ -1,5 +1,5 @@
 {
-  "display_name": "Awareness E18: Credential stuffing and password spraying (full episode)",
+  "display_name": "Password guessing at scale",
   "description": "An awareness episode of about 15 minutes for all staff. On an authorised exercise at Merrin & Sallow Architects, a fictional architecture practice, you first play the attacker at scale: build a staff list and a word list from the practice's public pages, spray one password across every account at once, and run a stolen breach list across many services. Then it's your own seat, telling the genuine security alerts from the fakes. Only that part is scored, and reporting when you're unsure is always fine and never marked down. No real password is ever typed.",
   "difficulty_level": 1,
   "scoring": "completion",

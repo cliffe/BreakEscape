@@ -9,7 +9,7 @@
     "phones": "Ravinder's mobile 07700 900418 (in the office contacts); the caller in the cloned voicemail rings from 07700 900771 (not in contacts); Lindiwe's extension 2214 shows as 0116 496 0214. All in Ofcom's drama ranges.",
     "nameCheck": "Mokoena and Lindiwe had no hits in scenarios, planning_notes, docs or the README files on 2026-10-22."
   },
-  "_formPairing": "E7 has no role of its own: it is the cross-role 'everyone' episode (11 section 3.2), and 11 section 5.2 says episodes outside a learner's primary role have no check of their own. An organiser who wants checks around E7 uses the general-staff pair from ../e5/defend.json: general_form_a and general_form_b (awareness_pre_general_ab / awareness_post_general_ab and the BA pair). No E7 forms are authored here.",
+  "_formPairing": "E7 has no role of its own: it is the cross-role 'everyone' episode (11 section 3.2), and 11 section 5.2 says episodes outside a learner's primary role have no check of their own. An organiser who wants checks around E7 uses the All-staff pair from ../checks_v2/general_v2.json: general_v2_form_a and general_v2_form_b (awareness_pre_general_v2_ab / awareness_post_general_v2_ab and the BA pair). The original general pair (awareness_pre_general_ab etc.) was retired 2026-10-31. No E7 forms are authored here.",
   "triageSets": [
     {
       "id": "e7_finance_line",

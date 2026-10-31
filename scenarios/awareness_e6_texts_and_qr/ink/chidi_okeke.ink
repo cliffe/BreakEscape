@@ -13,7 +13,7 @@
 // ================================================
 
 VAR phish_mobile_staff_attempts = 0
-VAR episode_e6_texts_and_qr_defend_done = false
+VAR episode_e6_texts_and_qr_defend_complete = false
 VAR hub_quiet = false
 
 === start ===
@@ -23,7 +23,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { episode_e6_texts_and_qr_defend_done:
+    { episode_e6_texts_and_qr_defend_complete:
         Chidi Okeke: There, both ends done. On a phone it's one move every time: if a message wants a code scanned or a link tapped, open the app yourself instead.
     - else:
         { phish_mobile_staff_attempts > 0:

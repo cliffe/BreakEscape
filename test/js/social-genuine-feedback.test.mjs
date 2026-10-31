@@ -412,7 +412,7 @@ function mini() {
             : { isPhish: false, flags: [], whyFine: { default: 'fine' } }
     });
     return {
-        globalVariables: { triage_percent: 0, triage_reportRate: 0, triage_done: false, triage_pass: false },
+        globalVariables: { triage_percent: 0, triage_reportRate: 0, triage_complete: false, triage_pass: false },
         rooms: { r: { objects: [{ type: 'triage-workstation', id: 'ws', minigameData: { triageSetId: 's' } }] } },
         social: { mailClient: { accounts: [{ id: 'guest' }] }, triageSets: [{
             id: 's', stage: 'mission', scoringProfile: 'analyst', outcome: { setGlobalPrefix: 'triage_', passPercent: 60 },

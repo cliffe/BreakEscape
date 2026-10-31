@@ -4,7 +4,7 @@
 // Precise, kind, dry; he receives the reports, which is why he hosts the
 // misdirected-data episode. He frames the exercise; the kiosk does the rest.
 // His record carries the eventMapping that completes sort_desk_inbox on the
-// defend set's done global (episode_e11_misdirected_data_defend_done). The ink
+// defend set's done global (episode_e11_misdirected_data_defend_complete). The ink
 // reads that global only for its line.
 // Consequence-flip episode (ENG-04): there is no attack-attempt global, so the
 // host has two states only, welcome (before the inbox is sorted) and the sign-off
@@ -19,7 +19,7 @@
 // Placeholder sprite (male_office_worker) until the PixelLab reset.
 // ================================================
 
-VAR episode_e11_misdirected_data_defend_done = false
+VAR episode_e11_misdirected_data_defend_complete = false
 VAR hub_quiet = false
 
 === start ===
@@ -29,7 +29,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { episode_e11_misdirected_data_defend_done:
+    { episode_e11_misdirected_data_defend_complete:
         Tomasz Wiśniewski: That's the desk sorted. Anything about someone's personal data comes to the DPO the same day.
         Tomasz Wiśniewski: And nobody here is ever in trouble for reporting, including their own slip.
     - else:

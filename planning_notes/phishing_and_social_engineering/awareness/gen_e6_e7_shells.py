@@ -98,7 +98,7 @@ def host_npc(host, done_global, task_id, ink_path):
 
 def kiosk(ep_id, observations):
     """observations: a string, or (before, after) where `after` shows once the round is done
-    (observationVariants on episode_<id>_defend_done, so the kiosk stops saying items are waiting)."""
+    (observationVariants on episode_<id>_defend_complete, so the kiosk stops saying items are waiting)."""
     done_obs = None
     if isinstance(observations, tuple):
         observations, done_obs = observations
@@ -114,7 +114,7 @@ def kiosk(ep_id, observations):
     }
     if done_obs:
         obj['observationVariants'] = [
-            {'condition': f'globalVars.episode_{ep_id}_defend_done', 'value': done_obs}]
+            {'condition': f'globalVars.episode_{ep_id}_defend_complete', 'value': done_obs}]
     obj['minigameData'] = {'episodeId': ep_id}
     return obj
 
@@ -278,7 +278,7 @@ EPISODES = {
             'task': ('check_work_phone', 'Check the work phone'),
             'kiosk': ('A touch-screen kiosk set up as a Tarrowby work phone, with texts, notices and an email waiting.',
              'A touch-screen kiosk set up as a Tarrowby work phone. Nothing left to do here.'),
-            'display': 'Awareness E6: Texts and QR codes (phone only)',
+            'display': 'Texts and QR codes: spot it',
             'desc': "An awareness episode of about 8 minutes for staff with a work phone, on the defending side only. Six items on a phone at Tarrowby Logistics, a fictional haulier: texts, printed notices with QR codes and an email. Some are real and some were built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'defendIntro': "Go through the work phone and decide what to do with each text, notice and email. On a notice, check where the code goes before you would scan it. There's no clock on you here; the whole job is one or two small habits.",
@@ -310,7 +310,7 @@ EPISODES = {
             'task': ('check_finance_line', 'Cover the finance line'),
             'kiosk': ("A touch-screen kiosk showing the finance office's phone and inbox, with voicemails and emails waiting.",
              "A touch-screen kiosk showing the finance office's phone and inbox. Nothing left to do here."),
-            'display': 'Awareness E7: Voice and the CEO (phone and inbox only)',
+            'display': 'Cloned voices and the CEO: spot it',
             'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Cover the finance office's phone and inbox at Brightwell Foods, a fictional company: three voicemails, one of them in a copied voice, and two emails. Each answer is explained, and ringing back when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'defendIntro': "Go through the voicemails and emails and decide what to do with each one. Read each voicemail's transcript: what it asks you to do matters more than whose voice it is. Work through them at your own pace; it all comes back to ringing the person yourself.",
@@ -329,10 +329,14 @@ def load(ekey):
     return {s['id']: s for s in frag['triageSets']}, frag['awarenessEpisode']
 
 
-def meta_for(display, desc, minutes, cybok):
-    return {
+def meta_for(display, desc, minutes, cybok, organiser_note=None):
+    m = {
         'display_name': display,
         'description': desc,
+    }
+    if organiser_note:
+        m['organiser_note'] = organiser_note
+    m.update({
         'difficulty_level': 1,
         'scoring': 'completion',
         'secgen_scenario': None,
@@ -340,7 +344,8 @@ def meta_for(display, desc, minutes, cybok):
         'ui_theme': 'general',
         'estimated_duration_minutes': minutes,
         'cybok': cybok,
-    }
+    })
+    return m
 
 
 def defend_only(ekey):
@@ -350,7 +355,7 @@ def defend_only(ekey):
     ep_id = f"{cfg['full_id']}_defend"
     mission = f'awareness_{ep_id}'
     prefix = f'episode_{ep_id}_defend_'          # doubled `_defend_defend_`, as defendPrefix() gives
-    done = f'{prefix}done'
+    done = f'{prefix}complete'
     s = clean_set(sets, cfg['defend_set'])
     s['outcome']['setGlobalPrefix'] = prefix
     strings = strip_private(copy.deepcopy(EP['strings']))
@@ -384,7 +389,6 @@ def defend_only(ekey):
         f'{prefix}percent': 0,
         f'{prefix}reportRate': 0,
         done: False,
-        f'{prefix}pass': False,
     }
     host = HOSTS[cfg['defend_host']]
     ink_name = host['id']
@@ -407,7 +411,7 @@ def check(ekey, pair, stage):
     comparison = {'requireGlobal': 'pre_check_completed'} if stage == 'post' else None
     s = clean_set(sets, form, stage=stage, comparison=comparison)
     prefix = f'triage_{stage}_'
-    done = f'{prefix}done'
+    done = f'{prefix}complete'
     ep = {
         'id': ep_id,
         'role': EP['role'], 'company': EP['company'], 'brand': copy.deepcopy(EP['brand']),
@@ -424,18 +428,17 @@ def check(ekey, pair, stage):
         f'{prefix}percent': 0,
         f'{prefix}reportRate': 0,
         done: False,
-        f'{prefix}pass': False,
     }
     extra = {}
     pre_mission = f'awareness_pre_{word}_{pair}'
     if stage == 'pre':
-        extra['exportGlobals'] = ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_done']
+        extra['exportGlobals'] = ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_complete']
     else:
         # Imported names are not redeclared (as the committed E1, E3 and E5 post shells).
         extra['importGlobals'] = [
             {'from': pre_mission, 'var': 'triage_pre_percent', 'as': 'triage_pre_percent', 'default': 0},
             {'from': pre_mission, 'var': 'triage_pre_reportRate', 'as': 'triage_pre_reportRate', 'default': 0},
-            {'from': pre_mission, 'var': 'triage_pre_done', 'as': 'triage_pre_done', 'default': False},
+            {'from': pre_mission, 'var': 'triage_pre_complete', 'as': 'triage_pre_complete', 'default': False},
             {'from': pre_mission, 'completed': 'pre_check_completed'},
         ]
     host = HOSTS[cfg['check_hosts'][pair]]
@@ -448,7 +451,7 @@ def check(ekey, pair, stage):
                  f"{c['items_pre']} Decide what to do with each one. Your result is saved so the second check can compare with it.")
         aim = ('first_check_aim', 'Do the first check', c['aim_desc'])
         task = ('finish_check', 'Finish the first check')
-        display = f'Awareness check: {word}, before ({letters})'
+        display = awareness_deploy.check_title('pre', word)
         desc = (f"A short check for {cfg['role_label']} at {company}, taken before the awareness episodes (pair {letters}). "
                 f"{c['items_pre']} The result is kept so the matching after-check (awareness_post_{word}_{pair}) "
                 "can show how the two compare.")
@@ -460,19 +463,16 @@ def check(ekey, pair, stage):
                  f"{c['items_post']} If you took the first check, the end screen shows how the two compare.")
         aim = ('second_check_aim', 'Do the second check', c['aim_desc'])
         task = ('finish_check', 'Finish the second check')
-        display = f'Awareness check: {word}, after ({letters})'
+        display = awareness_deploy.check_title('post', word)
         desc = (f"A short check for {cfg['role_label']} at {company}, taken after the awareness episodes (pair {letters}). "
                 f"{c['items_post']} It is matched to the first check (awareness_pre_{word}_{pair}), and the end screen "
                 "compares the two results when the first check was finished.")
         obs = c['kiosk'].format(nth='second')
         conclusion = ('Second check done', 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.')
-    desc += (" Organiser note: each role's check tests the channel that role meets in its "
-             "episode, and in a session that runs more than one episode only the learner's "
-             "primary-role check is recorded.")
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, c['end'], aim, task, done, globals_,
                        {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, conclusion, extra)
-    meta = meta_for(display, desc, c['minutes'], cfg['cybok'])
+    meta = meta_for(display, desc, c['minutes'], cfg['cybok'], awareness_deploy.CHECK_ORGANISER_NOTE)
     when = 'before' if stage == 'pre' else 'after'
     ink = ink_source(f"Awareness check, {word}, {when} ({letters})", host, done, CHECK_LINES[(host['id'], stage)])
     return mission, sc, meta, ink_name, ink

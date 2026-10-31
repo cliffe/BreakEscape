@@ -8,25 +8,31 @@
  * here, re-exports it and puts it on window.
  *
  * A round's result is saved like this (persistTriageResult):
- *   1. write <prefix>percent, <prefix>reportRate, <prefix>pass, <prefix>done
+ *   1. write <prefix>percent, <prefix>reportRate, <prefix>complete (and
+ *      <prefix>pass when the set's outcome.passPercent is above 0)
  *      through the shared writer with deferEmit, so nothing is emitted yet;
  *   2. await stateSync.syncConfirmed() (back-off, capped attempts, a 403 is
  *      final; a section the server refused counts as unconfirmed);
  *   3. only on true: emit global_variable_changed:<name> for the names whose
- *      value changed (done last), then the done event inbox_triage_completed.
+ *      value changed (complete last), then the done event inbox_triage_completed.
  * On false nothing is emitted. The held names are remembered, so the next
  * confirmed save of the same prefix (a "Try again" round) emits them even
  * though writing the same value again is not a change.
  *
- * <prefix>pass means percent >= outcome.passPercent and is never cleared by a
- * lower round. <prefix>percent and <prefix>reportRate keep the best round's values
- * (a lower later round does not overwrite them). <prefix>done means a round was completed at any score.
+ * <prefix>percent and <prefix>reportRate keep the best round's values
+ * (a lower later round does not overwrite them). <prefix>complete means a round
+ * was completed at any score. <prefix>pass means percent >= outcome.passPercent
+ * and is never cleared by a lower round; it is written only when passPercent is
+ * above 0 (awareness sets, passPercent 0, no longer write it). Saves from before
+ * the 2026-10-31 rename hold <prefix>done instead of <prefix>complete; they still
+ * open read-only, but nothing is re-emitted for them.
  *
- * Reopen: when <prefix>done is already true and the conclusion task
+ * Reopen: when <prefix>complete is already true and the conclusion task
  * (conclusionTaskId) is not completed, the starter awaits syncConfirmed() and
- * re-emits the done events, because the 30 s timer or the pagehide flush may
- * have carried done to the server before the tab closed with nothing emitted.
- * A pre or post set with done true opens read-only (params.storedResult).
+ * re-emits the complete events (and <prefix>pass when true), because the 30 s
+ * timer or the pagehide flush may have carried them to the server before the tab
+ * closed with nothing emitted. A pre or post set already complete opens
+ * read-only (params.storedResult).
  *
  * What the minigame (P3-B) gets in its params:
  *   triageSetId, set, stage (effective), prefix, conclusionTaskId
@@ -34,7 +40,7 @@
  *       call it when the result screen appears, so the notice shows there;
  *       if it is never called, the starter saves on complete(true) instead.
  *       Calling it again with the same result object does nothing new.
- *   storedResult  { percent, reportRate, pass, headline, readOnly: true } or
+ *   storedResult  { percent, reportRate, headline, readOnly: true } or
  *       null: a pre/post reopen; show the result from it, no replay
  *   savingNotice  'Saving your result...'
  * and the starter calls minigame.setSavingState(state), when the minigame has
@@ -49,7 +55,9 @@ import { bandFor } from '../minigames/inbox-triage/triage-scoring.js';
 export const TRIAGE_DONE_EVENT = 'inbox_triage_completed';
 export const SAVING_NOTICE = 'Saving your result...';
 export const CHECK_STAGES = ['pre', 'post'];
-const FIELDS = ['percent', 'reportRate', 'pass', 'done']; // emit order: done last
+// Result globals in emit order (complete last). pass is written only when the
+// set's passPercent is above 0; percent, reportRate and complete are always written.
+const EMIT_ORDER = ['percent', 'reportRate', 'pass', 'complete'];
 
 // Per prefix: names whose change event an unconfirmed save is still holding
 const held = new Map();
@@ -87,9 +95,24 @@ export function resolvePrefix(set, stage) {
     return raw.split('{stage}').join(effectiveStage(set, stage));
 }
 
-/** The four result global names for a prefix. */
+/**
+ * The result global names for a prefix: percent, reportRate, complete always,
+ * pass for the sets whose passPercent is above 0, plus the pre-rename `done`
+ * name read for old saves.
+ */
 export function triageGlobalNames(prefix) {
-    return Object.fromEntries(FIELDS.map(f => [f, `${prefix}${f}`]));
+    return {
+        percent: `${prefix}percent`,
+        reportRate: `${prefix}reportRate`,
+        complete: `${prefix}complete`,
+        pass: `${prefix}pass`,
+        legacyDone: `${prefix}done`
+    };
+}
+
+/** True when a round is recorded: <prefix>complete, or the pre-rename <prefix>done in an old save. */
+function isRoundComplete(globals, n) {
+    return globals[n.complete] === true || globals[n.legacyDone] === true;
 }
 
 /** The set with this id from scenario.social.triageSets, or null. */
@@ -108,13 +131,12 @@ export function isTaskCompleted(taskId, objectives = win().objectivesManager) {
 export function readStoredResult(set, prefix, globals = win().gameState?.globalVariables) {
     if (!prefix || !globals) return null;
     const n = triageGlobalNames(prefix);
-    if (globals[n.done] !== true) return null;
+    if (!isRoundComplete(globals, n)) return null;
     const percent = typeof globals[n.percent] === 'number' ? globals[n.percent] : 0;
     const band = bandFor(percent, set?.bands);
     return {
         percent,
         reportRate: typeof globals[n.reportRate] === 'number' ? globals[n.reportRate] : 0,
-        pass: globals[n.pass] === true,
         headline: band?.headline || '',
         readOnly: true
     };
@@ -130,26 +152,26 @@ function heldFor(prefix) {
 }
 
 /**
- * Build the events to emit after a confirmed sync, in FIELDS order, valued
+ * Build the events to emit after a confirmed sync, in EMIT_ORDER, valued
  * from the globals as they are now. `extra` adds names regardless of a change
  * (a reopen, or a conclusion task still open).
  */
 function eventsFor(prefix, globals, names) {
     const n = triageGlobalNames(prefix);
     const events = [];
-    for (const f of FIELDS) {
+    for (const f of EMIT_ORDER) {
         if (!names.has(n[f])) continue;
         events.push({ event: `global_variable_changed:${n[f]}`, data: { name: n[f], value: globals[n[f]] } });
     }
     return events;
 }
 
-/** The done globals a reopen re-emits: pass when it is true, then done. */
+/** The done globals a reopen re-emits: pass when it is true, then complete. */
 function doneNames(prefix, globals) {
     const n = triageGlobalNames(prefix);
     const names = new Set();
     if (globals[n.pass] === true) names.add(n.pass);
-    if (globals[n.done] === true) names.add(n.done);
+    if (globals[n.complete] === true) names.add(n.complete);
     return names;
 }
 
@@ -161,7 +183,6 @@ function doneEventData(ctx, prefix, globals, extra = {}) {
         prefix,
         percent: globals[n.percent],
         reportRate: globals[n.reportRate],
-        pass: globals[n.pass] === true,
         ...extra
     };
 }
@@ -189,14 +210,16 @@ async function saveRound(result, ctx, d) {
     let reportRate = typeof result.reportRate === 'number' ? result.reportRate : 0;
     // A later round that scores lower keeps the best round's percent and reportRate
     // (a tie keeps the earlier round), as <prefix>pass is never cleared.
-    if (globals[n.done] === true && typeof globals[n.percent] === 'number' && globals[n.percent] >= percent) {
+    if (isRoundComplete(globals, n) && typeof globals[n.percent] === 'number' && globals[n.percent] >= percent) {
         percent = globals[n.percent];
         if (typeof globals[n.reportRate] === 'number') reportRate = globals[n.reportRate];
     }
-    const pass = globals[n.pass] === true || percent >= passPercent; // never cleared
 
     const names = heldFor(prefix);
-    const writes = [[n.percent, percent], [n.reportRate, reportRate], [n.pass, pass], [n.done, true]];
+    const writes = [[n.percent, percent], [n.reportRate, reportRate]];
+    // <prefix>pass only for sets with a real pass mark; never cleared by a lower round
+    if (passPercent > 0) writes.push([n.pass, globals[n.pass] === true || percent >= passPercent]);
+    writes.push([n.complete, true]);
     for (const [name, value] of writes) {
         const r = d.write(name, value, { deferEmit: true });
         for (const ev of r?.events || []) names.add(ev.data?.name ?? name);
@@ -257,9 +280,9 @@ export function persistTriageResult(result, ctx = {}, deps = {}) {
 }
 
 /**
- * Reopen: when <prefix>done is true and the conclusion task is not completed,
+ * Reopen: when <prefix>complete is true and the conclusion task is not completed,
  * await a confirmed sync and re-emit the done globals (pass when true, then
- * done) and the done event. One re-emit per prefix at a time.
+ * complete) and the done event. One re-emit per prefix at a time.
  *
  * @returns {Promise<{confirmed:boolean, emitted:string[], skipped?:string}>}
  */
@@ -268,7 +291,7 @@ export function reemitTriageDone(ctx = {}, deps = {}) {
     const prefix = ctx.prefix;
     const globals = d.globals;
     if (!prefix || !globals) return Promise.resolve({ confirmed: false, emitted: [], skipped: 'no-prefix' });
-    if (globals[triageGlobalNames(prefix).done] !== true) {
+    if (globals[triageGlobalNames(prefix).complete] !== true) {
         return Promise.resolve({ confirmed: false, emitted: [], skipped: 'not-done' });
     }
     if (!ctx.conclusionTaskId) return Promise.resolve({ confirmed: false, emitted: [], skipped: 'no-task' });
@@ -415,7 +438,7 @@ export function startInboxTriageMinigame(lockable, options = {}) {
     const notify = savingNotifier(params);
     params.persistResult = (result) => persistTriageResult(result, ctxFor(result), { onSaving: notify });
 
-    // Reopen re-emits: done reached the server earlier, the task did not complete
+    // Reopen re-emits: complete reached the server earlier, the task did not complete
     if (stored && conclusionTaskId && !isTaskCompleted(conclusionTaskId)) {
         reemitTriageDone(ctx, { onSaving: notify });
     }

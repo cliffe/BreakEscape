@@ -31,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e17_acceptable_use_defend_defend_done"
+          "episode_e17_acceptable_use_defend_defend_complete"
         ]
       },
       "conclusionScreen": {
@@ -54,8 +54,7 @@
     "se_awareness_records": [],
     "episode_e17_acceptable_use_defend_defend_percent": 0,
     "episode_e17_acceptable_use_defend_defend_reportRate": 0,
-    "episode_e17_acceptable_use_defend_defend_done": false,
-    "episode_e17_acceptable_use_defend_defend_pass": false
+    "episode_e17_acceptable_use_defend_defend_complete": false
   },
   "social": {
     "triageSets": [
@@ -682,7 +681,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:episode_e17_acceptable_use_defend_defend_done",
+              "eventPattern": "global_variable_changed:episode_e17_acceptable_use_defend_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_can_i"
@@ -702,7 +701,7 @@
           "observations": "A touch-screen kiosk showing the 'can I?' cards and a short inbox at Tarrowby Logistics: everyday moments to sort against the firm's rules.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e17_acceptable_use_defend_defend_done",
+              "condition": "globalVars.episode_e17_acceptable_use_defend_defend_complete",
               "value": "A touch-screen kiosk showing the 'can I?' cards and a short inbox at Tarrowby Logistics. The cards and the inbox are all done."
             }
           ],

@@ -26,7 +26,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e11_stub_defend_done"
+          "episode_e11_stub_defend_complete"
         ]
       },
       "tasks": [
@@ -44,8 +44,7 @@
     "episode_e11_stub_state": {},
     "episode_e11_stub_defend_percent": 0,
     "episode_e11_stub_defend_reportRate": 0,
-    "episode_e11_stub_defend_done": false,
-    "episode_e11_stub_defend_pass": false
+    "episode_e11_stub_defend_complete": false
   },
   "social": {
     "people": [
@@ -431,7 +430,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:episode_e11_stub_defend_done",
+              "eventPattern": "global_variable_changed:episode_e11_stub_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "finish_episode"
