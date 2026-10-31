@@ -40,15 +40,24 @@ export function factLabel(factId, given = null) {
  * The overlay's own wording. `prepLabels` on the call entry overrides each piece; `approachTitle`
  * is the heading for an in-person approach (default: same as `title`).
  */
-export function callWords(spec, npc = null) {
+export function callWords(spec, npc = null, theme = null) {
     const l = isObject(spec?.prepLabels) ? spec.prepLabels : {};
     const pick = (k, d) => (isStr(l[k]) ? l[k] : d);
-    const title = pick('title', 'Prepare the call');
+    // A DM app (theme 'social') prepares a chat, not a call; prepLabels still wins
+    const title = pick('title', theme === 'social' && npc?.npcType === 'phone' ? 'Prepare the chat' : 'Prepare the call');
     return {
         title: npc && npc.npcType !== 'phone' ? pick('approachTitle', title) : title,
         heldTitle: pick('heldTitle', 'On the board'),
         heldEmpty: pick('heldEmpty', 'Nothing on the board yet.')
     };
+}
+
+/** The prep card's start button: "Make the call" for a phone, "Start the chat" in a DM app. */
+export function callBeginLabel(spec, npc = null, theme = null) {
+    const own = isObject(spec?.prepLabels) && isStr(spec.prepLabels.beginLabel) ? spec.prepLabels.beginLabel : null;
+    if (own) return own;
+    if (npc?.npcType === 'phone') return theme === 'social' ? 'Start the chat' : 'Make the call';
+    return npc ? 'Approach' : 'Begin';
 }
 
 /**

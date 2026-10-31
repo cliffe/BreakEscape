@@ -21,6 +21,7 @@ import { whenSessionOverlayClosed } from '../../utils/session-overlay-pause.js';
 import { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS } from './phone-call-lock.js';
 import { isVoicedCall, phoneLineVoice, outcomeLineVoice, PhoneCallVoice, voicedCallKnots, callStartKnots, callHomeKnot } from './phone-call-voice.js';
 import TTSManager from '../../systems/tts-manager.js';
+import { resolvePhoneApp, npcDmFields, profileLaunch } from './phone-app.js';
 
 export class PhoneChatMinigame extends MinigameScene {
     /**
@@ -130,11 +131,31 @@ export class PhoneChatMinigame extends MinigameScene {
         // Ensure params exists
         const safeParams = this.params || {};
         
+        // The device's look: its `app` block, else the contacts' phoneTheme (unchanged for
+        // every phone without an app). Written back to the params so a chat reopened after
+        // a profile or a minigame keeps it.
+        const firstNpcId = safeParams.npcId || (Array.isArray(this.allowedNpcIds) ? this.allowedNpcIds[0] : null);
+        const resolved = resolvePhoneApp({
+            params: safeParams,
+            npc: firstNpcId ? this.npcManager.getNPC(firstNpcId) : null
+        });
+        if (resolved.app) safeParams.app = resolved.app;
+        if (resolved.theme) safeParams.theme = resolved.theme;
+        this.appTheme = resolved.theme || null;
+
         // Customize header
-        this.headerElement.innerHTML = `
+        if (resolved.app?.title) {
+            const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            this.headerElement.innerHTML = `
+            <h3>${esc(resolved.app.title)}</h3>
+            <p>Direct messages</p>
+        `;
+        } else {
+            this.headerElement.innerHTML = `
             <h3>${safeParams.title || 'Phone'}</h3>
             <p>Messages and conversations</p>
         `;
+        }
         
         // Initialize UI
         this.ui = new PhoneChatUI(this.gameContainer, safeParams, this.npcManager, this.allowedNpcIds);
@@ -175,8 +196,17 @@ export class PhoneChatMinigame extends MinigameScene {
             const contactItem = e.target.closest('.contact-item');
             if (contactItem) {
                 const npcId = contactItem.dataset.npcId;
+                if (this.openJudgedContact(npcId)) return;
                 this.openConversation(npcId);
             }
+        });
+
+        // "View profile" under a contact's handle: opens the OSINT browser at that person
+        this.addEventListener(this.ui.elements.conversationHeader, 'click', (e) => {
+            const link = e.target.closest?.('.npc-profile-link');
+            if (!link) return;
+            e.preventDefault?.();
+            this.openContactProfile(this.currentNPCId);
         });
         
         // Back button (return to contact list). A forced call has none: leaving the
@@ -336,6 +366,32 @@ export class PhoneChatMinigame extends MinigameScene {
      * Open a conversation with an NPC
      * @param {string} npcId - NPC identifier
      */
+    /**
+     * A contact that carries a pretext `callId` (a judged DM, such as a gatekeeper) is
+     * reached through the same pretext card as a desk phone: prepare, then chat. Returns
+     * true when it took the click. A chat already running that call (pretextCallId) and a
+     * contact with no callId fall through to the plain open.
+     */
+    openJudgedContact(npcId) {
+        const npc = this.npcManager.getNPC(npcId);
+        if (!npc?.callId || this.params?.pretextCallId) return false;
+        if (typeof window.startPretextCall !== 'function') return false;
+        window.startPretextCall(npc.callId, { npcId, channel: 'phone' });
+        return true;
+    }
+
+    /**
+     * Open the OSINT browser at this contact's profile through the minigame starter
+     * registry (the `# trigger_minigame` route). The chat is paused, not ended: closing
+     * the browser normally reopens the same thread.
+     */
+    openContactProfile(npcId) {
+        const { profile } = npcDmFields(this.npcManager.getNPC(npcId));
+        const launcher = window.inkMinigameLaunch;
+        if (!profile || typeof launcher?.launchFromChat !== 'function') return false;
+        return launcher.launchFromChat(this, 'osint-workstation', profileLaunch(profile));
+    }
+
     async openConversation(npcId) {
         // The phone was closed before this ran (a deferred reopen, e.g. back from notes)
         if (!this.gameState.isActive) return;

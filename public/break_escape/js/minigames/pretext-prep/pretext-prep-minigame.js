@@ -21,8 +21,9 @@
 // startMinigame reads params. Esc closes an open picker first (00 §6).
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
+import { resolvePhoneApp } from '../phone-chat/phone-app.js';
 import {
-    blankSlot, blanksPayload, briefCopy, callGate, callWords, callLaunch, cardFacts, cardLines, heldIdsFor,
+    blankSlot, blanksPayload, briefCopy, callGate, callWords, callBeginLabel, callLaunch, cardFacts, cardLines, heldIdsFor,
     factLabel, heldOnBoard, hintLine, kindText, optionsForFact, readinessLines, textParts
 } from './pretext-card.js';
 
@@ -129,9 +130,10 @@ export class PretextPrepMinigame extends SocialOverlayScene {
         const factIds = facts.map((fact) => fact.factId);
         const labelFor = (id) => options[id]?.find((option) => option.value === this.chosen[id])?.label || '';
         const npc = npcMissing ? null : this.npc();
-        const beginLabel = npc?.npcType === 'phone' ? 'Make the call' : (npc ? 'Approach' : 'Begin');
+        const theme = npc?.npcType === 'phone' ? resolvePhoneApp({ npc }).theme : null;
+        const beginLabel = callBeginLabel(spec, npc, theme);
 
-        const words = callWords(spec, npc);
+        const words = callWords(spec, npc, theme);
         const root = h('div', { class: 'pretext-prep', role: 'dialog', 'aria-label': words.title, tabindex: '-1' });
         this.root = root;
 

@@ -702,6 +702,9 @@ function startPretextCall(callId, { npcId = null, channel } = {}) {
     window.startPretextPrepMinigame({ callId, character: characterId, npcId: recordNpcId });
 }
 
+// A judged contact inside a phone-chat list (a DM gatekeeper) reaches the pretext card from there
+if (typeof window !== 'undefined') window.startPretextCall = startPretextCall;
+
 export function handleObjectInteraction(sprite) {
     console.log('OBJECT INTERACTION', {
         name: sprite.name, 
@@ -1488,7 +1491,9 @@ export function handleObjectInteraction(sprite) {
 
         // SE lockout on the phone channel (00 §8, S10): refuse before opening
         // phone-chat when any listed NPC is a locked-out social character.
-        if (window.socialInfluence && Array.isArray(data.npcIds)) {
+        // A DM app (an `app` block) lists several contacts: one locked-out contact must not
+        // shut the whole app, so a judged contact is refused from the list instead.
+        if (window.socialInfluence && Array.isArray(data.npcIds) && !data.app) {
             for (const nid of data.npcIds) { if (socialChannelLocked(nid, 'phone')) return; }
         }
 
@@ -1504,6 +1509,7 @@ export function handleObjectInteraction(sprite) {
                     phoneId: phoneId,
                     npcIds: data.npcIds,
                     title: data.name || 'Phone',
+                    app: data.app,
                     theme: window.npcManager.getNPC(data.npcIds[0])?.phoneTheme
                 });
                 return;

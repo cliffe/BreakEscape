@@ -432,6 +432,40 @@ export function fillPretextVars(story, blanks) {
 
 // -------------------------------------------------------------- the debrief (N7)
 
+/**
+ * The debrief's wording by theme. The default is the call copy every existing scenario
+ * shows. A DM app (theme 'social') says chat, not call. A pretext entry's own
+ * `labels: { <theme>: { debriefTitle, got_it, reported, walked_away, partial } }` wins over
+ * these, and `outcomeLabels` (older, per outcome, any theme) wins over both.
+ */
+export const DEBRIEF_LABELS = {
+    default: {
+        debriefTitle: 'Call debrief',
+        got_it: 'You got what you came for.',
+        partial: 'You got some of what you came for.',
+        reported: 'The call was reported.',
+        walked_away: 'You rang off.'
+    },
+    social: {
+        debriefTitle: 'Chat debrief',
+        got_it: 'You got what you came for.',
+        partial: 'You got some of what you came for.',
+        reported: 'The chat was reported.',
+        walked_away: 'You left the chat.'
+    }
+};
+
+/** The merged label set for a theme and a pretext spec. Always returns every key. */
+export function debriefLabels(spec, theme) {
+    const base = DEBRIEF_LABELS[theme] || DEBRIEF_LABELS.default;
+    const own = isObject(spec?.labels) && isObject(spec.labels[theme]) ? spec.labels[theme] : {};
+    const out = { ...DEBRIEF_LABELS.default, ...base };
+    for (const key of Object.keys(out)) {
+        if (typeof own[key] === 'string' && own[key]) out[key] = own[key];
+    }
+    return out;
+}
+
 /** Technique/fact label from a log reason, kept plain (the panel is text). */
 const reasonLabel = (reason) => (typeof reason === 'string' && reason ? reason.replace(/_/g, ' ') : 'line');
 
@@ -440,18 +474,19 @@ const reasonLabel = (reason) => (typeof reason === 'string' && reason ? reason.r
  * log (N7), one row per line with its delta, band and factor, then the defender
  * notes. Calls `onDone` when the player dismisses it. Pure DOM; no game state.
  */
-export function renderDebrief(container, { session, spec, onDone } = {}) {
+export function renderDebrief(container, { session, spec, onDone, theme = null } = {}) {
+    const words = debriefLabels(spec, theme);
     if (!container || typeof document === 'undefined') { if (typeof onDone === 'function') onDone(); return null; }
     const BANDS = ['CALM', 'WARY', 'REFUSING', 'REPORTED', 'LOCKED'];
 
     const panel = document.createElement('div');
     panel.className = 'pretext-debrief';
     panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', 'Call debrief');
+    panel.setAttribute('aria-label', words.debriefTitle);
 
     const heading = document.createElement('h2');
     heading.className = 'pretext-debrief-title';
-    heading.textContent = 'Call debrief';
+    heading.textContent = words.debriefTitle;
     panel.appendChild(heading);
 
     const outcome = document.createElement('p');
@@ -462,9 +497,9 @@ export function renderDebrief(container, { session, spec, onDone } = {}) {
     // pretext that sets nothing is exactly as before.
     const ownLabels = isObject(spec?.outcomeLabels) ? spec.outcomeLabels : {};
     const outcomeText = {
-        got_it: typeof ownLabels.got_it === 'string' && ownLabels.got_it ? ownLabels.got_it : 'You got what you came for.',
-        reported: typeof ownLabels.reported === 'string' && ownLabels.reported ? ownLabels.reported : 'The call was reported.',
-        walked_away: typeof ownLabels.walked_away === 'string' && ownLabels.walked_away ? ownLabels.walked_away : 'You rang off.'
+        got_it: typeof ownLabels.got_it === 'string' && ownLabels.got_it ? ownLabels.got_it : words.got_it,
+        reported: typeof ownLabels.reported === 'string' && ownLabels.reported ? ownLabels.reported : words.reported,
+        walked_away: typeof ownLabels.walked_away === 'string' && ownLabels.walked_away ? ownLabels.walked_away : words.walked_away
     };
     const outcomeKey = outcomeFor(session);
     // `got_it` means at least one ask was granted, but the call may also have had an
@@ -476,7 +511,7 @@ export function renderDebrief(container, { session, spec, onDone } = {}) {
         .filter((row) => row && row.kind === 'ask' && typeof row.id === 'string').map((row) => row.id);
     const ungranted = askedIds.some((id) => !(session.grantedAsks || []).includes(id));
     outcome.textContent = (outcomeKey === 'got_it' && (session.refusals > 0 || ungranted))
-        ? 'You got some of what you came for.'
+        ? words.partial
         : (outcomeText[outcomeKey] || '');
     panel.appendChild(outcome);
 
@@ -662,6 +697,7 @@ export async function attachPretext(minigame, { chat, judge: injected = null } =
             debriefUp = true;
             renderDebrief(container, {
                 session, spec,
+                theme: minigame.appTheme || minigame.params?.theme || null,
                 onDone: () => { debriefUp = false; originalComplete(true); }
             });
         }
