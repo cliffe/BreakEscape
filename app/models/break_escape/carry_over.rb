@@ -183,8 +183,17 @@ module BreakEscape
           end
           name = mission_names[mission_id]
           current = result[name]
-          keep = current.nil? || (earliest_from.include?(name) ? at < current[:at] : at > current[:at])
-          result[name] = { id: id, at: at, globals: globals } if keep
+          # Newest goes by the snapshot time (a replayed older run can win, as before).
+          # Earliest goes by mission_concluded_at, the genuine first attempt, which a later
+          # credits replay does not move; its snapshot globals still carry over.
+          keep = if current.nil?
+                   true
+          elsif earliest_from.include?(name)
+                   concluded_at < current[:concluded_at]
+          else
+                   at > current[:at]
+          end
+          result[name] = { id: id, at: at, concluded_at: concluded_at, globals: globals } if keep
         end
       end
       result
