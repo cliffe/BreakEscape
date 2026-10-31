@@ -15,6 +15,7 @@ const clone = (o) => JSON.parse(JSON.stringify(o));
 
 const copies = [
     'minigames/pretext-prep/pretext-card.js', 'minigames/pretext-prep/pretext-prep-minigame.js',
+    'minigames/phone-chat/phone-app.js',
     'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
     'minigames/mail-client/mail-composer.js', 'minigames/person-chat/person-chat-pretext.js',
     'systems/phish-rules.js', 'systems/global-writer.js', 'systems/social-intel.js',
