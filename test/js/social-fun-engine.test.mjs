@@ -136,6 +136,38 @@ test('aw1: a host route of several lines draws one paragraph per line, in order'
     ]);
 });
 
+test('aw1: a Report verdict names the configured route under the verdict line, as plain text', () => {
+    // A phish Reported but with a tell missed is a review card, so the Report verdict shows.
+    const reported = () => ({ result: { answers: [{ id: 'p1', verdict: 'report', flags: [], isPhish: true }] }, set: set() });
+
+    // configured route with an organiser heading, carrying braces and a script tag
+    const evil = 'Report it {here} <script>bad()</script>';
+    const h = host();
+    renderDebrief(h, { ...reported(), reportRoute: { heading: evil, text: 'Forward it to security.', configured: true }, onFinish() {} });
+    const card = h.querySelector('.aw-card[data-message-id="p1"]');
+    const route = card.querySelector('.aw-card-route');
+    assert.ok(route, 'route line drawn after a Report verdict with a configured route');
+    assert.equal(route.textContent, `At work, that means: ${evil}.`);
+    assert.equal(card.querySelector('script'), null, 'organiser text is plain, never HTML');
+    // order: the route line sits directly after the verdict line
+    assert.equal(card.querySelector('.aw-card-verdict').nextElementSibling, route, 'route line directly after the verdict line');
+
+    // no route configured: nothing extra
+    const h2 = host();
+    renderDebrief(h2, { ...reported(), onFinish() {} });
+    assert.equal(h2.querySelector('.aw-card-route'), null, 'no route configured: no extra line');
+
+    // the generic (unconfigured) fallback never names a route in the verdict
+    const h3 = host();
+    renderDebrief(h3, { ...reported(), reportRoute: M.reportRouteFor(slotEpisode, {}), onFinish() {} });
+    assert.equal(h3.querySelector('.aw-card-route'), null, 'generic fallback never names a route in the verdict');
+
+    // configured but with no organiser heading (the generic heading is not a name): nothing extra
+    const h4 = host();
+    renderDebrief(h4, { ...reported(), reportRoute: { heading: 'How to report here', text: 'Forward it to security.', configured: true }, onFinish() {} });
+    assert.equal(h4.querySelector('.aw-card-route'), null, 'the generic box heading is not shown as a route name');
+});
+
 // ── aw4: the shared rule of thumb (hook) ─────────────────────────────────────
 
 test('aw4: social.awareness.ruleOfThumb renders above the Monday card; absent, nothing', () => {
