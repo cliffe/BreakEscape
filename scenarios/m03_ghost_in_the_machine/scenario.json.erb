@@ -1263,6 +1263,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "global_variable_changed:victoria_choice_made",
               "condition": "value === true && globalVars.debrief_played !== true",
               "onceOnly": true,
+              "endingCheck": true,
               "conversationMode": "person-chat",
               "targetKnot": "start",
               "background": "assets/backgrounds/hq1.png",

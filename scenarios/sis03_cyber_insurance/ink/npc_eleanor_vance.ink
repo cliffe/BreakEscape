@@ -599,10 +599,15 @@ Eleanor Vance: The cabinet PIN is a reference code in the CMS policy notes. Find
 
     + [That completes the scenario]
         Eleanor Vance: Well done. This was hard work, and it matters.
-        // One write: the VAR sync emits global_variable_changed:debrief_complete once,
-        // which rolls the credits and concludes the mission. A #set_global tag as well
-        // emitted it twice (two /conclude POSTs in one instant).
-        ~ debrief_complete = true
+        // #ending_check first: with an optional objective still open, the player is warned this
+        // ends the mission, and "Keep going" skips the rest of this line's tags (so debrief_complete
+        // is never set and the hub choice above, gated on `not debrief_complete`, is offered again).
+        // "End the mission now" lets the rest run. One write of the ending global: #set_global emits
+        // global_variable_changed:debrief_complete once (which rolls the credits and concludes the
+        // mission). The old `~ debrief_complete = true` is gone: a tag plus a `~` emitted it twice
+        // (two /conclude POSTs in one instant), and a `~` cannot be skipped by "Keep going".
+        #ending_check
+        #set_global:debrief_complete:true
         #complete_task:talk_to_eleanor_debrief
         -> hub
 }

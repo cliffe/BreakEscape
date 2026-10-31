@@ -793,6 +793,7 @@ export default class NPCManager {
         openMinigame:  mapping.openMinigame  || null,   // a minigame registry type, or { type, minigameData }
         emitEvent:     mapping.emitEvent     || null,   // event name to emit when mapping fires
         emitEventData: mapping.emitEventData || {},     // optional payload for that event
+        endingCheck:   mapping.endingCheck === true,    // this mapping opens the ending/debrief: warn first (systems/ending-check.js)
         disableClose:  mapping.disableClose  || false,  // hide × and block Esc for this conversation
         resume:        mapping.resume === true,         // phone-chat: reopen the saved thread, no knot jump
         voiced:        mapping.voiced === true,         // phone-chat: speak the NPC's lines through TTS (F17)
@@ -895,14 +896,56 @@ export default class NPCManager {
       return;
     }
 
-    // Check if event should be handled (once-only, maxTriggers, cooldown, condition)
+    // Check if event should be handled (once-only, maxTriggers, cooldown, condition).
+    // A confirmed ending re-run (eventData._endingConfirmed, set below) bypasses this: the
+    // player already agreed to the ending, so the handler must run even though it has been
+    // marked triggered to stop the warning asking twice.
     const check = this._mappingWouldFire(npcId, eventPattern, config, eventData);
-    if (!check.fire) {
+    if (!check.fire && !eventData?._endingConfirmed) {
       console.log(`⏭️ Skipping ${eventPattern} for ${npcId}: ${check.reason}`, eventData);
       return;
     }
     const { eventKey, triggered, now } = check;
-    
+
+    // The ending warning at the point of no return (systems/ending-check.js). A mapping with
+    // `endingCheck: true` opens the debrief or a closing scene that cannot be taken back, so when
+    // optional objectives are still open the player is asked first, BEFORE any of the mapping's
+    // side effects run. "End the mission now" runs the mapping once (through the confirmed re-run
+    // below) and the agreed objectives are remembered so the credits never ask again. "Keep going"
+    // does not run it: the ending is held (as the credits trigger holds it), so the objectives
+    // panel shows an "End the mission" button and the ending runs by itself once nothing optional
+    // is open — no soft-lock, whatever the trigger. The handler is marked triggered here so a
+    // re-emit of the same trigger (a reload backstop, a room-entry re-emit) does not ask a second
+    // time while the question is open or the ending is held; the agreed/held path re-runs it with
+    // _endingConfirmed, which bypasses the fire check above. hasHeld also stops a SIBLING mapping
+    // (a mission that opens the debrief from several OR'd triggers, m07) asking again once one has
+    // already held the ending. Only asked when something is open: endingNeedsAnswer keeps the
+    // ordinary synchronous path when the answer is plainly yes.
+    if (config.endingCheck && !eventData?._endingConfirmed && window.endingCheck?.hasHeld?.()) {
+      // An ending is already held (the player chose "Keep going" at this or a sibling debrief
+      // opener). This mapping must neither open the debrief nor ask again: the held ending owns
+      // the pending ending, and its own re-run (with _endingConfirmed) is what finally opens it.
+      console.log(`[ending-check] mapping ${eventPattern} for ${npcId}: an ending is already held, standing down`);
+      return;
+    }
+    if (config.endingCheck && !eventData?._endingConfirmed && window.endingCheck?.needsAnswer?.()) {
+      triggered.count++;
+      triggered.lastTime = now;
+      this.triggeredEvents.set(eventKey, triggered);
+      const proceed = () => this._handleEventMapping(npcId, eventPattern, config, { ...(eventData || {}), _endingConfirmed: true });
+      window.endingCheck.confirm({ reason: 'mapping' }).then((endNow) => {
+        if (endNow) {
+          proceed();
+        } else if (window.endingCheck?.hold) {
+          window.endingCheck.hold(proceed, { reason: 'mapping' });
+          console.log(`[ending-check] mapping ${eventPattern} for ${npcId}: keeping going (ending held)`);
+        } else {
+          proceed();   // no hold available: fail safe to running the ending rather than stranding it
+        }
+      }, (e) => { console.warn('[ending-check] mapping confirm failed, proceeding', e); proceed(); });
+      return;
+    }
+
     console.log(`✅ Event ${eventPattern} conditions passed, triggering NPC reaction`);
     
     // Update triggered tracking
