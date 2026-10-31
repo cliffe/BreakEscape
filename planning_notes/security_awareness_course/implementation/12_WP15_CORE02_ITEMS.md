@@ -202,7 +202,7 @@ flat.
   lever (chat-app impersonation) in place of a second shortlink smish. `e6_fuel_card_offer`'s
   `reply_stop_trick` lesson is still taught in the mobile forms (`ma_phone_bill_failed`,
   `mb_parking_charge`), so nothing is lost from the measured content. Keep `e6_parcel_fee` (it
-  carries the 7726 teaching). Note the bookkeeping: FuelWise then appears in no shipped item; either
+  carries the 7726 teaching). Note the bookkeeping: Fuelr then appears in no shipped item; either
   leave it as an unused brand or note it in `BRAND_SET.md`'s E6 additions.
 - **E3: swap, do not add (recommended).** The set is one push plus three calls (impostor, real,
   on-behalf). **Replace the third call `e3_call_on_behalf` with `e3_call_remote_access`.** The count

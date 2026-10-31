@@ -124,7 +124,7 @@
             "id": "hb_coo_reset_bypass",
             "from": {
               "name": "Patrick Kerrigan",
-              "address": "patrick.kerrigan.coo@quickpost-mail.example"
+              "address": "patrick.kerrigan.coo@hastypost.example"
             },
             "to": "servicedesk@quayholt.example",
             "subject": "Reset my password and send it here",
@@ -134,8 +134,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "quickpost-mail.example",
-              "replyTo": "patrick.kerrigan.coo@quickpost-mail.example"
+              "envelopeFrom": "hastypost.example",
+              "replyTo": "patrick.kerrigan.coo@hastypost.example"
             },
             "truth": {
               "isPhish": true,
@@ -145,11 +145,11 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "The chief operating officer's name on a personal inbox at quickpost-mail.example, not quayholt.example",
+                "senderTrust": "The chief operating officer's name on a personal inbox at hastypost.example, not quayholt.example",
                 "secrecy_or_bypass": "'Keep it off the ticket system' and 'no need to ring me' remove the record and the check",
                 "urgencyCalibrated": "'Boarding in twenty minutes' leaves no time to ring him"
               },
-              "headerNote": "The automatic checks pass because the message really was sent from quickpost-mail.example. A pass tells you which mail system sent it, not that it's Patrick.",
+              "headerNote": "The automatic checks pass because the message really was sent from hastypost.example. A pass tells you which mail system sent it, not that it's Patrick.",
               "ifTrusted": "A new password would go to whoever owns that inbox, and they would be in Patrick's account.",
               "reportReply": "Thanks. Patrick didn't send it. His real address is on quayholt.example."
             }

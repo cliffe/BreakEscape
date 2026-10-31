@@ -271,7 +271,7 @@
             "id": "dcb_journalist_probe",
             "from": {
               "name": "Neil Garrity",
-              "address": "neil.garrity.news@quickpost-mail.example"
+              "address": "neil.garrity.news@hastypost.example"
             },
             "to": "you@carrholme.example",
             "subject": "Background for a piece I'm writing",
@@ -281,8 +281,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "quickpost-mail.example",
-              "replyTo": "neil.garrity.news@quickpost-mail.example"
+              "envelopeFrom": "hastypost.example",
+              "replyTo": "neil.garrity.news@hastypost.example"
             },
             "truth": {
               "isPhish": true,
@@ -291,7 +291,7 @@
                 "pretextRelevant"
               ],
               "perFlagNote": {
-                "senderTrust": "A stranger on a personal inbox at quickpost-mail.example, not a contact Carrholme knows. 'Off the record' and a friendly tone are not reasons to trust a name you don't recognise.",
+                "senderTrust": "A stranger on a personal inbox at hastypost.example, not a contact Carrholme knows. 'Off the record' and a friendly tone are not reasons to trust a name you don't recognise.",
                 "pretextRelevant": "Who runs each team, who they answer to and when seniors are away is not background to hand an outsider. It's the same map an impersonator needs, and press enquiries go to Comms anyway."
               },
               "ifTrusted": "The team structure and a diary of when managers are away lets an attacker impersonate the right person at the right time. The 'journalist' framing is just a way to get you talking.",
@@ -354,7 +354,7 @@
             "id": "dcb_skip_dlp",
             "from": {
               "name": "Rhona Baxter",
-              "address": "rhona.baxter.docs@webmail-plus.example"
+              "address": "rhona.baxter.docs@cobweb-mail.example"
             },
             "to": "you@carrholme.example",
             "subject": "Just send it out, don't flag it",
@@ -364,8 +364,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "webmail-plus.example",
-              "replyTo": "r.baxter.send@quickpost-mail.example"
+              "envelopeFrom": "cobweb-mail.example",
+              "replyTo": "r.baxter.send@hastypost.example"
             },
             "truth": {
               "isPhish": true,
@@ -374,10 +374,10 @@
                 "secrecy_or_bypass"
               ],
               "perFlagNote": {
-                "senderTrust": "The name reads like a colleague, but the address is an outside inbox at webmail-plus.example, not carrholme.example. A real workmate writes from the Carrholme domain.",
+                "senderTrust": "The name reads like a colleague, but the address is an outside inbox at cobweb-mail.example, not carrholme.example. A real workmate writes from the Carrholme domain.",
                 "secrecy_or_bypass": "'Don't flag it as sensitive' and 'just send it out' are there to get round the check that's doing its job. The block flagged the file for a reason; the safe move is to ask IT, not to override it."
               },
-              "headerNote": "The automatic checks pass because the message really was sent from webmail-plus.example, a domain the sender owns. A pass shows which mail system sent it, not that the sender is a Carrholme colleague. You could also see, if you open the header, that the reply-to is a different outside address again (quickpost-mail.example), so a reply wouldn't reach anyone at Carrholme.",
+              "headerNote": "The automatic checks pass because the message really was sent from cobweb-mail.example, a domain the sender owns. A pass shows which mail system sent it, not that the sender is a Carrholme colleague. You could also see, if you open the header, that the reply-to is a different outside address again (hastypost.example), so a reply wouldn't reach anyone at Carrholme.",
               "ifTrusted": "Overriding the sensitivity check sends client data out unprotected, which may be a breach, and it trains you to switch off the one control that was working. The 'just this once' is the whole trick.",
               "reportReply": "Thanks. There's no Rhona Baxter on carrholme.example, and we don't override the sensitivity check to send a file out. We've reported it to the DPO and blocked the address."
             }

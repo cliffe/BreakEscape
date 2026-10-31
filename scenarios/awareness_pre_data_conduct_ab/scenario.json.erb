@@ -227,7 +227,7 @@
             "id": "dca_recruiter_probe",
             "from": {
               "name": "Carla Mendes",
-              "address": "carla.mendes.hire@inboxly.example"
+              "address": "carla.mendes.hire@lintbox.example"
             },
             "to": "you@carrholme.example",
             "subject": "Quick one about the team structure",
@@ -237,8 +237,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "carla.mendes.hire@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "carla.mendes.hire@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -247,7 +247,7 @@
                 "pretextRelevant"
               ],
               "perFlagNote": {
-                "senderTrust": "A stranger writing from a personal inbox at inboxly.example, not a contact Carrholme deals with. A friendly tone isn't a reason to trust a name you don't know.",
+                "senderTrust": "A stranger writing from a personal inbox at lintbox.example, not a contact Carrholme deals with. A friendly tone isn't a reason to trust a name you don't know.",
                 "pretextRelevant": "Who reports to whom and when managers are away is not something you'd tell an outsider. It's exactly what someone building an impersonation wants to know."
               },
               "ifTrusted": "An org chart and a diary of when managers are out is the map an attacker uses to impersonate the right person at the right moment. 'Recruiter' is just the cover story.",
@@ -310,7 +310,7 @@
             "id": "dca_personal_email_push",
             "from": {
               "name": "Gavin Shaw",
-              "address": "gavin.shaw.work@fastmail-pro.example"
+              "address": "gavin.shaw.work@larchmail.example"
             },
             "to": "you@carrholme.example",
             "subject": "Easier if you send it from your personal email",
@@ -320,8 +320,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "fastmail-pro.example",
-              "replyTo": "g.shaw.files@webmail-plus.example"
+              "envelopeFrom": "larchmail.example",
+              "replyTo": "g.shaw.files@cobweb-mail.example"
             },
             "truth": {
               "isPhish": true,
@@ -330,10 +330,10 @@
                 "secrecy_or_bypass"
               ],
               "perFlagNote": {
-                "senderTrust": "The name reads like a colleague, but the address is an outside inbox at fastmail-pro.example, not carrholme.example. A workmate writes to you from the Carrholme domain.",
+                "senderTrust": "The name reads like a colleague, but the address is an outside inbox at larchmail.example, not carrholme.example. A workmate writes to you from the Carrholme domain.",
                 "secrecy_or_bypass": "'Send it from your personal email' and 'don't wait on a ticket' are there to get work data out through a route nobody can see or protect. The approved way is to ask IT, who will give you a safe one."
               },
-              "headerNote": "The automatic checks pass because the message really was sent from fastmail-pro.example, a domain the sender owns. A pass tells you which mail system sent it, not that the sender is a Carrholme colleague. You could also see, if you open the header, that the reply-to is a different outside address again (webmail-plus.example), so a reply would go there, not to anyone at Carrholme.",
+              "headerNote": "The automatic checks pass because the message really was sent from larchmail.example, a domain the sender owns. A pass tells you which mail system sent it, not that the sender is a Carrholme colleague. You could also see, if you open the header, that the reply-to is a different outside address again (cobweb-mail.example), so a reply would go there, not to anyone at Carrholme.",
               "ifTrusted": "Work data moved to a personal email leaves Carrholme's control for good, and it may be personal data you're now responsible for losing. The 'shortcut' is also how an attacker gets you to skip the route that would have stopped it.",
               "reportReply": "Thanks. There's no Gavin Shaw on carrholme.example, and work files never go out through a personal email. We've reported it to the DPO and blocked the address."
             }

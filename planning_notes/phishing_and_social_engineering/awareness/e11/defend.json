@@ -7,12 +7,12 @@
     "castUsed": [
       "Tomasz Wiśniewski: Carrholme DPO (host; receives the reports). tomasz.wisniewski@carrholme.example. Not a defend-set sender; he is the report recipient and debrief voice.",
       "Sam Whitlow: manager, Hollinsbrook House (client care home, hollinsbrookhouse.example). sam.whitlow@hollinsbrookhouse.example. Genuine sender in items 1 and 6.",
-      "Gareth Hale: son of a resident at Hollinsbrook House, on freemail. gareth.hale@inboxly.example. Genuine sender in item 4 (the subject access request inside a complaint).",
-      "Kestrel Court: client care home (kestrelcourt.example). laundry@kestrelcourt.example. Genuine sender in item 5 (the misdirected care summary, a received-in-error breach).",
+      "Gareth Hale: son of a resident at Hollinsbrook House, on freemail. gareth.hale@lintbox.example. Genuine sender in item 4 (the subject access request inside a complaint).",
+      "Wychbourne Court: client care home (wychbournecourt.example). laundry@wychbournecourt.example. Genuine sender in item 5 (the misdirected care summary, a received-in-error breach).",
       "DC Rowley, North Pennine Police: voice-only police-impersonation caller in item 2 (a phish). RENAMED from the brief's 'DC Hendry': see BRAND_ADDITIONS.md, the surname Hendry is already the built genuine 'Pauline Hendry, Payroll' in the general_ba / helpdesk_ba check forms."
     ],
     "onScreenOnly": "Edna Hale (87, Hollinsbrook House, Room 12), Albert Finch (Room 14, continence-care note), Pauline Grant (Room 9), Lee Corrigan (Care Laundry driver, item 2), the staff on the overtime sheet. No art, no sender address.",
-    "nameCheck": "See BRAND_ADDITIONS.md for the full grep (scenarios, planning_notes, docs, public/break_escape/js, 2026-10-29). Clean to use: Carrholme, Wiśniewski, Whitlow, Whitaker, Hollinsbrook, Kestrel Court, Corrigan, Finch, Lyons. Resolved: DC Hendry -> DC Rowley (Hendry clashes with built Pauline Hendry). Recorded near-miss: Hale (E11 Gareth/Edna Hale at Carrholme vs E3 fraudster Marcus Hale at Quayholt; different people, firms and games). Pre-ship web search owed for Carrholme Services, Hollinsbrook House and Kestrel Court."
+    "nameCheck": "See BRAND_ADDITIONS.md for the full grep (scenarios, planning_notes, docs, public/break_escape/js, 2026-10-29). Clean to use: Carrholme, Wiśniewski, Whitlow, Whitaker, Hollinsbrook, Wychbourne Court, Corrigan, Finch, Lyons. Resolved: DC Hendry -> DC Rowley (Hendry clashes with built Pauline Hendry). Recorded near-miss: Hale (E11 Gareth/Edna Hale at Carrholme vs E3 fraudster Marcus Hale at Quayholt; different people, firms and games). Pre-ship web search owed for Carrholme Services, Hollinsbrook House and Wychbourne Court."
   },
 
   "triageSets": [
@@ -163,12 +163,12 @@
         },
         {
           "id": "e11_sar_everything",
-          "from": { "name": "Gareth Hale", "address": "gareth.hale@inboxly.example" },
+          "from": { "name": "Gareth Hale", "address": "gareth.hale@lintbox.example" },
           "to": "carelaundry@carrholme.example",
           "subject": "Mum's cardigan is missing AGAIN",
           "time": "10:04",
           "body": "This is the second time Mum's cardigan has gone missing from the laundry. Edna Hale, Room 12 at Hollinsbrook House. I'm her son. Frankly I've had enough, and I want EVERYTHING you hold on Mum and on me. Every note, every call, every email. I want to see the lot.\nGareth Hale",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "gareth.hale@inboxly.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "gareth.hale@lintbox.example" },
           "truth": {
             "isPhish": true,
             "flags": ["data_rights_request"],
@@ -182,25 +182,25 @@
           }
         },
         {
-          "id": "e11_kestrel_inbound",
-          "from": { "name": "Kestrel Court Laundry", "address": "laundry@kestrelcourt.example" },
+          "id": "e11_wychbourne_inbound",
+          "from": { "name": "Wychbourne Court Laundry", "address": "laundry@wychbournecourt.example" },
           "to": "carelaundry@carrholme.example",
           "subject": "This week's laundry list",
           "time": "10:48",
-          "body": "Morning,\nHere's this week's list for collection. Let me know if the Thursday slot still works.\nThanks,\nKestrel Court",
-          "attachments": [ { "label": "Kestrel-Court-residents-care-summary.xlsx", "kind": "spreadsheet" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "kestrelcourt.example", "replyTo": "laundry@kestrelcourt.example" },
+          "body": "Morning,\nHere's this week's list for collection. Let me know if the Thursday slot still works.\nThanks,\nWychbourne Court",
+          "attachments": [ { "label": "Wychbourne-Court-residents-care-summary.xlsx", "kind": "spreadsheet" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "wychbournecourt.example", "replyTo": "laundry@wychbournecourt.example" },
           "truth": {
             "isPhish": true,
             "flags": ["personal_data_breach", "attachmentPlausible"],
-            "kindLine": "Kestrel Court is real, but the file attached is their residents' care summary, not a laundry list: personal data we should not hold. Report it so the data protection lead can decide what to do.",
+            "kindLine": "Wychbourne Court is real, but the file attached is their residents' care summary, not a laundry list: personal data we should not hold. Report it so the data protection lead can decide what to do.",
             "missLabel": "holding personal data we were sent in error",
             "perFlagNote": {
               "personal_data_breach": "The sender is real, but the file is their residents' full care summary: names, conditions and medicines, which are theirs to hold, not ours. Do not open it further or forward it. Tell the sender, report it, and delete it when the DPO says so.",
               "attachmentPlausible": "The attachment is a care summary on a laundry-list email, so it doesn't fit what the message says it is. Check what a file is before you open it."
             },
             "ifTrusted": "Treat it as a normal laundry list and the care summary sits in our inbox unreported: we hold data we should not, and nobody decides what to do with it.",
-            "reportReply": "Thanks, reported. The DPO will tell Kestrel Court and decide how to delete it safely. Don't open or forward the file in the meantime."
+            "reportReply": "Thanks, reported. The DPO will tell Wychbourne Court and decide how to delete it safely. Don't open or forward the file in the meantime."
           }
         },
         {

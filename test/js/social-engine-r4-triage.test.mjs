@@ -240,15 +240,15 @@ test('E1-E4 P4-6: after a safe Refuse the ifTrusted line is what the caller was 
 
 test('P7-7: a text with no subject gets a clean card title, not a body cut off with dots', () => {
     const sms = { id: 'sms_parcel', kind: 'sms', time: '10:02', from: { address: '07700 900583 (not in your contacts)' },
-        body: "Parceline: we couldn't deliver your parcel. A £1.45 redelivery fee is due by 6pm today or it goes back to the sender: {{link:fee}}",
-        links: [{ id: 'fee', text: 'shrtn.example/Pk3x9', destination: 'https://parceline-redelivery.example/fee' }],
+        body: "ASAParcels: we couldn't deliver your parcel. A £1.45 redelivery fee is due by 6pm today or it goes back to the sender: {{link:fee}}",
+        links: [{ id: 'fee', text: 'shrtn.example/Pk3x9', destination: 'https://asaparcels-redelivery.example/fee' }],
         truth: { isPhish: true, flags: ['lookalike_domain'] } };
     const s = open(awareSet([sms, realMail]));
     click($(s, '.tri-start'));
     act(s, 'sms_parcel', 'report', ['lookalike_domain']);
     const t = $(s, '.tri-card-title').textContent;
     assert.doesNotMatch(t, /\.\.\.|…/);
-    assert.match(t, /Parceline: we couldn't deliver your parcel\.$/);
+    assert.match(t, /ASAParcels: we couldn't deliver your parcel\.$/);
 });
 
 test('F20-1: missedPhishLine names the phish the learner trusted; off by default and for caught phish', () => {

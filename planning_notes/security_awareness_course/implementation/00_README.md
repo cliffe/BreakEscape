@@ -305,7 +305,7 @@ Suggested first run: the engine packets ENG-01 and ENG-09b, then the E8 pilot en
   - Host art for E1 to E7 waits on the PixelLab reset (3 November).
   - E12's Lorna Easton reuses a built sheet that the learner may also wear. This is cosmetic only.
 - **Pre-ship web searches.** New invented names must be searched against real businesses before release:
-  - companies and products: Carrholme Services, Marsden Holloway, RiverReach Angling, Pagewright, Fernside Catering, Ashby Supplies, Mossgate Cleaning Supplies, Hollinsbrook House, Kestrel Court, Kettlewick Talent, Fenlow Managed IT, TidyDocs, Calderbank Mills, Elmgate Pavilion, Verrow Street, the motto "Design that lasts";
+  - companies and products: Carrholme Services, Marsden Holloway, RiverReach Angling, Pagewright, Fernside Catering, Ashby Supplies, Mossgate Cleaning Supplies, Hollinsbrook House, Wychbourne Court, Kettlewick Talent, Fenlow Managed IT, Piledocs, Calderbank Mills, Elmgate Pavilion, Verrow Street, the motto "Design that lasts";
   - people: Delphine Arvanitis, Lorna Easton, Dani Fenwick, Samira Nawaz, Ross Garside, Craig Pickering, Ama Owusu, Leo Brennan, Zainab Hussain.
 - **Measurement trade-off.** The two broad check pairs give no per-topic pre and post figure. If a buyer needs one, a topic pair can be added later without touching the six role forms.
 - **Line numbers.** Code citations were verified on 2026-10-28. Re-check any line number at the point of use, because main keeps moving.

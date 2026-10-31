@@ -4,7 +4,7 @@
   "_brandAdditions": {
     "_use": "For BRAND_SET.md (Quayholt Insurance additions from E10). Fuller P11 entry is in e10/BRAND_ADDITIONS.md. E10 reuses E5's host Niamh Doherty, who frames the exercise and names the three web habits herself (P1 F-E10-11: Leila Nassar was dropped from the host lines, as she never appears; the habits now come from Niamh and the debrief concept panel). It names Leo Brennan (operations assistant, the attack-half colleague, a 03_WORLD_AND_CAST no-clash pool name) and adds fictional supplier and vendor brands, all .example.",
     "newNames": "Leo Brennan (leo.brennan@quayholt.example): operations assistant, the colleague who places the weekly Fernside order and meets the built fake check in the attack-half flip. A 03_WORLD_AND_CAST no-clash pool name (mid 20s, white Irish-English). Fernside Catering (fernside.example; order portal orders.fernside.example): a small family catering supplier Quayholt orders through; its genuine (compromised) portal hosts the attack-half fake check and defend rows 1-2. Fernside is from the core_08 Quayholt slots in concepts.md. Pagewright (pagewright.example; advert look-alike pagewright-download.example): a PDF software vendor from the module docs, used only in the concept teaching about software sources (the module docs wrote .co.uk/.com; swapped to .example per the awareness domain rule). Ashby Supplies (ashbysupplies.example; look-alike ashby-trade-login.example): a supplier from the module docs; not used in any item here, carried for the brand set. hauliernews.example: a fictional industry-news site (defend row 3's genuine page carrying a fake-update banner). secure-alert.example, addons.example, downloads.example: throwaway scam/store hosts for defend rows 5-7.",
-    "software": "Quayholt Apps (the staff software portal), Quayholt Protect (security software), DocShift (the approved PDF converter in Quayholt Apps): all from the core_08/core_07 Quayholt slots. Report route: the browser Report button, the 'Report an incident' form, or the security team on extension 4444.",
+    "software": "Quayholt Apps (the staff software portal), Quayholt Protect (security software), Pagewrangle (the approved PDF converter in Quayholt Apps): all from the core_08/core_07 Quayholt slots. Report route: the browser Report button, the 'Report an incident' form, or the security team on extension 4444.",
     "domainSwapNote": "The module docs (core_08) write Pagewright as pagewright.co.uk / pagewright-download.com and Fernside/Ashby with mixed suffixes. The awareness product rule is every domain ends .example, so all are swapped to .example here. Flagged for the pre-ship web search (Pagewright, Fernside Catering, Ashby Supplies)."
   },
 
@@ -225,7 +225,7 @@
         },
         {
           "id": "e10_extension_permission",
-          "_row": "6. Extension-permission grab. Phish -> Close and report (full marks); Go the trusted way (DocShift in Quayholt Apps, or ask IT) is safe-but-partial.",
+          "_row": "6. Extension-permission grab. Phish -> Close and report (full marks); Go the trusted way (Pagewrangle in Quayholt Apps, or ask IT) is safe-but-partial.",
           "kind": "page",
           "subject": "An extension store page a search result led to",
           "time": "13:40",
@@ -242,8 +242,8 @@
             "kindLine": "That extension was asking to read and change everything you do.",
             "flags": ["browser_permission_grab"],
             "perFlagNote": { "browser_permission_grab": "An extension with that access can see and change everything you do in the browser, the finance system and the intranet included, and it can change what it does when it updates. Stars and a user count do not make it safe." },
-            "ifTrusted": "Adding it hands a stranger everything you do in the browser. Close and report it; get a PDF tool from Quayholt Apps (DocShift), or ask the service desk.",
-            "reportReply": "Thanks. We've reported that extension. DocShift in Quayholt Apps does the same job and is approved."
+            "ifTrusted": "Adding it hands a stranger everything you do in the browser. Close and report it; get a PDF tool from Quayholt Apps (Pagewrangle), or ask the service desk.",
+            "reportReply": "Thanks. We've reported that extension. Pagewrangle in Quayholt Apps does the same job and is approved."
           },
           "factorStrings": { "browser_permission_grab": { "redFlag": "A page or extension asking to read or change everything in your browser, or to send you notifications" } }
         },

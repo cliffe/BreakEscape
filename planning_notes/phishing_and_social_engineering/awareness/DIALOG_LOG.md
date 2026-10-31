@@ -145,12 +145,12 @@ Host hub/welcome lines (old → new):
 
 ### Job 3 — E4 "published travel address" contradiction (playtest M2, P1_E1_E2_E4.md)
 
-The OSINT/Events page presents `catherine.merrin@inboxly.example` as Catherine's real published travel
+The OSINT/Events page presents `catherine.merrin@lintbox.example` as Catherine's real published travel
 address, but the flip's `senderTrust` redFlag called it "a personal inbox anyone can open in her name,"
 so the learner who sent from her real published address was told it was the tell. **Fixed** by reframing
 the flip redFlag (hand-authored full erb `awareness_e4_exec_whaling/scenario.json.erb`, `factorStrings.senderTrust.redFlag`):
-- old: "The From line carries Catherine's name on catherine.merrin@inboxly.example, a personal inbox anyone can open in her name, not her Merrin & Sallow address."
-- new: "The From line is catherine.merrin@inboxly.example, the free webmail travel address from her bio, not her Merrin & Sallow address. A senior name on free webmail is no proof it's really her."
+- old: "The From line carries Catherine's name on catherine.merrin@lintbox.example, a personal inbox anyone can open in her name, not her Merrin & Sallow address."
+- new: "The From line is catherine.merrin@lintbox.example, the free webmail travel address from her bio, not her Merrin & Sallow address. A senior name on free webmail is no proof it's really her."
 
 Now consistent with the attack: her published travel address is free webmail (the realistic weakness), and
 the taught tell is "a senior name on free webmail is no proof — verify on a number you hold." The string
@@ -389,7 +389,7 @@ lookalike_domain-led for a link tell.
 - `["senderTrust","lookalike_domain"]` — the look-alike **From address**: `e1_lookalike_bank`,
   `fa_pennine_bank`, `fa_remittance_spoof`, `fb_castell_bank`, `fb_creditors_spoof` (E1);
   `ha_agency_spoof`, `hb_onboarding_spoof` (E2/HR); `ha_list_spoof`, `hb_resets_spoof` (E3/helpdesk
-  checks); `e4_wrenfield_lookalike`, `ea_larkspur_bank`, `ea_card_spoof`, `eb_ropewalk_bank`,
+  checks); `e4_wrenfield_lookalike`, `ea_larkspur_bank`, `ea_card_spoof`, `eb_harbourloft_bank`,
   `eb_travel_dates_spoof` (E4); `ga_payroll_spoof`, `gb_facilities_spoof` (E5/general);
   `ma_drivers_numbers_spoof`, `mb_new_starters_spoof` (E6/mobile). 19 messages in all.
 - **Not grouped:** `unexpected_qr`+`lookalike_domain` QR rows (E6) stay two tells — "it's a QR at all"
@@ -491,8 +491,8 @@ not touched here.
   already deals with." perFlagNote and the brief rewritten to match. A/B change is identical
   (`fa` slot 7 ↔ `fb` slot 7), so form parity and the balance lint hold. **Audit of every
   check-form and defend-set phish across all six roles:** only these two matched the pattern. Every
-  other single-flag phish is catchable on screen — internal sender on free webmail (inboxly/
-  quickpost) → visible `senderTrust`; `linkCredible`-only portal phish (ea_speaker_portal,
+  other single-flag phish is catchable on screen — internal sender on free webmail (lintbox/
+  hastypost) → visible `senderTrust`; `linkCredible`-only portal phish (ea_speaker_portal,
   eb_travel_portal, ga_solicitor_share, gb_quarantine_notice) → visible link; look-alike/urgency/QR
   tells visible. No further fixes.
 - **Item 3 + m3 — E2/E4 "careful" flip after a failed send (P3 N1).** `flipMissed` in the
@@ -1160,12 +1160,12 @@ only genuine mismatch (E5 "Five pages"/5 and E6 "six things"/6 are correct; othe
 whichever padlock choice the learner made: "The page wore the Quayholt look, so she began typing her
 password. … only the address in the bar gave it away."
 
-### E5–E7 P5-8: E5 miss reason / Hana's reply named Quayholt for a DocShare build
+### E5–E7 P5-8: E5 miss reason / Hana's reply named Quayholt for a Fileharbour build
 Hana's `replies.missed` (attack fragment + full erb) reworded to name the service point without
 assuming the chosen brand: "That page wasn't Quayholt's own sign-in — the address was wrong, and it
 isn't where I log in — so I didn't put my password in. I'll go to the portal the normal way." True
-for both a Quayholt look-alike and a DocShare build. (Naming the specific chosen service — e.g.
-"DocShare" — would need the engine to inject the build's brand into the flip reply; left for engine.)
+for both a Quayholt look-alike and a Fileharbour build. (Naming the specific chosen service — e.g.
+"Fileharbour" — would need the engine to inject the build's brand into the flip reply; left for engine.)
 
 ### E5–E7 P5-12: E5 landed advisory "That feels rushed." too thin
 The E5 phish target had no `factorStrings.urgencyCalibrated.fail`, so the engine default
@@ -1451,7 +1451,7 @@ Files: `e5/attack.json`, `awareness_e5_signin_pages/scenario.json.erb`. Attack-o
 
 ### P6-2 (minor) and P5-8 (minor) — E5 Hana's miss reply doesn't match the miss — PARTLY FIXED (data) + ENGINE
 `replies.missed` was a single string asserting "the address was wrong", shown whatever the cause (no page
-attached, a DocShare page Hana doesn't use, or a too-far look-alike). Data can only hold one string, so made
+attached, a Fileharbour page Hana doesn't use, or a too-far look-alike). Data can only hold one string, so made
 it cause-neutral and true for every miss; it no longer asserts a false cause.
 - Old: "That page wasn't Quayholt's own sign-in — the address was wrong, and it isn't where I log in — so I
   didn't put my password in. I'll go to the portal the normal way."
@@ -1463,7 +1463,7 @@ it can name the service (P5-8). `dataOnlyReply`/`phish-rules.js` read only one `
 per-cause hook (e.g. keyed by `result.firstFail`, or `missNoPage`/`missWrongService`/`missWrongAddress`)
 would let the data author these. Suggested strings for the engine fixer to wire once the hook exists:
 no page — "There was nothing to sign in to behind that link, so I just closed it."; wrong service —
-"That's a DocShare page, and I don't use DocShare for Quayholt, so I didn't sign in."; wrong address —
+"That's a Fileharbour page, and I don't use Fileharbour for Quayholt, so I didn't sign in."; wrong address —
 "The address wasn't Quayholt's own sign-in, so I didn't put my password in."
 
 ### P6-3 (minor) — E5 meter urgency text names the Ask line even when the pretext is the cause — FIXED (data)
@@ -1538,12 +1538,12 @@ fragment + erb in parity, regen the affected defend shell, validate).
 
 ### P6-2 / P5-8 (minor, E5 Hana) — DONE (data). Per-cause link-miss replies.
 Confirmed the brand ids match before wiring: the E5 target's `expectedLink.brandId` is "quayholt" and the
-Quayholt landing-page brand's `id` is "quayholt" (the only other brand is "docshare"), so the engine's
-`linkCauseOf` returns `wrongService` for a DocShare page and `wrongAddress` for a too-far Quayholt address.
+Quayholt landing-page brand's `id` is "quayholt" (the only other brand is "fileharbour"), so the engine's
+`linkCauseOf` returns `wrongService` for a Fileharbour page and `wrongAddress` for a too-far Quayholt address.
 Set the three cause replies on `sso_staff.replies` (the engine reads them when `firstFail === 'linkCredible'`
 via `MISS_KEY`), keeping the generic `missed` as the fallback:
 - missNoPage: "There was nothing to sign in to behind that link, so I just closed it."
-- missWrongService: "That's a DocShare page, and I don't use DocShare for Quayholt, so I didn't sign in."
+- missWrongService: "That's a Fileharbour page, and I don't use Fileharbour for Quayholt, so I didn't sign in."
   (names the service — closes P5-8.)
 - missWrongAddress: "The address wasn't Quayholt's own sign-in, so I didn't put my password in. I'll go to
   the portal the normal way."
@@ -1598,7 +1598,7 @@ only the E6 defend `scenario.json.erb` differed, by exactly these two changes.
 Checks: both E6 shells `--strict-social --no-graph --skip-ink` exit 0; node suite 1843/1843 pass, parity green.
 
 ### P7-3 (minor, E5) — a wrong-service page no longer lands on Hana — DONE (data)
-P7 found that a DocShare page (the wrong service) still landed on Hana at 60/100 even though the builder
+P7 found that a Fileharbour page (the wrong service) still landed on Hana at 60/100 even though the builder
 said "FAIL Brand: Hana doesn't use that service", so the wrong-service/wrong-address replies were
 unreachable and the lesson that she signs in only on her own service didn't hold. The lever is the landing
 page's per-target `brandGate`: `landingPages[0].targets.sso_staff` had `brandGate: false`, so the brand gate
@@ -1609,7 +1609,7 @@ when the chosen brand equals the pretext brand ("quayholt"); a failed gate makes
 page now fails to land, and `linkCauseOf` returns `wrongService`.
 Tested with the scoring functions (the live reply path P7-1 was still in flight; it has since landed as
 0c3f6379d):
-- DocShare, best page (tier-2 domain, padlock, crisp logo): credibility 67 but gatesPassed=false ->
+- Fileharbour, best page (tier-2 domain, padlock, crisp logo): credibility 67 but gatesPassed=false ->
   meetsThreshold=false -> linkState=fail, cause=wrongService. Wrong service now misses.
 - Quayholt quaybolt (tier-1 look-alike), no padlock: credibility 65, gate passes, meetsThreshold=true ->
   lands. The close-look-alike landing is KEPT: E5's lesson is that a convincing look-alike is exactly what

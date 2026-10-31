@@ -3,9 +3,9 @@
 
   "_brandAdditions": {
     "_use": "For BRAND_SET.md section 3 (Tarrowby Logistics). E15 adds NO cast and NO new sender person: Nilesh Solanki (host), Colin Mather and Shauna Lofthouse are all built Tarrowby cast already shipped in the E2/E6 shells (keep the built spellings: Nilesh Solanki, not 'Dev Mistry'). It adds only a few new .example third-party senders and the approved file-sharing service host; full detail and the pre-ship web-search list are in BRAND_ADDITIONS.md.",
-    "newThirdParties": "SwiftDrop (swiftdrop-free.example), an unapproved free file-transfer site (defend row 2); Benmoor Packaging (benmoor-packaging.example), a trade-fair supplier that posts a giveaway USB (defend row 3); PDFMerge Free (pdfmerge-free.example), a free PDF editor pushed by email (defend row 4). None is a Tarrowby look-alike; each is a plainly unapproved outside service.",
+    "newThirdParties": "Chuckbox (chuckbox-free.example), an unapproved free file-transfer site (defend row 2); Benmoor Packaging (benmoor-packaging.example), a trade-fair supplier that posts a giveaway USB (defend row 3); PDFmangle Free (pdfmangle-free.example), a free PDF editor pushed by email (defend row 4). None is a Tarrowby look-alike; each is a plainly unapproved outside service.",
     "newTarrowbyHost": "fileshare.tarrowby.example, Tarrowby's own approved file-sharing service, on the real domain (defend row 5, genuine). Follows the E6 pattern of Tarrowby sub-service hosts (forms./facilities./guest.tarrowby.example).",
-    "preShipCheck": "Web-search SwiftDrop, Benmoor Packaging and PDFMerge Free for real businesses of the same name before release (BRAND_SET rule)."
+    "preShipCheck": "Web-search Chuckbox, Benmoor Packaging and PDFmangle Free for real businesses of the same name before release (BRAND_SET rule)."
   },
 
   "triageSets": [
@@ -109,14 +109,14 @@
         },
         {
           "id": "e15_free_transfer",
-          "_note": "Row 2. An unapproved free file-transfer site, offered for the big video. isPhish true (an unapproved route; flags apply only to a phish), flag unapproved_tool. SwiftDrop is a plainly outside service, not a Tarrowby look-alike. Report.",
-          "from": { "name": "SwiftDrop", "address": "no-reply@swiftdrop-free.example" },
+          "_note": "Row 2. An unapproved free file-transfer site, offered for the big video. isPhish true (an unapproved route; flags apply only to a phish), flag unapproved_tool. Chuckbox is a plainly outside service, not a Tarrowby look-alike. Report.",
+          "from": { "name": "Chuckbox", "address": "no-reply@chuckbox-free.example" },
           "to": "you@tarrowby.example",
           "subject": "Too big for email? Upload it here, free",
           "time": "11:48",
-          "body": "Your file is too large to email. Upload it to SwiftDrop for free and we'll make a link anyone can download, no account needed. Files up to 5GB, just drag and drop.\n{{link:send}}",
-          "links": [ { "id": "send", "text": "swiftdrop-free.example/upload", "destination": "https://swiftdrop-free.example/upload" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "swiftdrop-free.example", "replyTo": "no-reply@swiftdrop-free.example" },
+          "body": "Your file is too large to email. Upload it to Chuckbox for free and we'll make a link anyone can download, no account needed. Files up to 5GB, just drag and drop.\n{{link:send}}",
+          "links": [ { "id": "send", "text": "chuckbox-free.example/upload", "destination": "https://chuckbox-free.example/upload" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "chuckbox-free.example", "replyTo": "no-reply@chuckbox-free.example" },
           "factorStrings": {
             "unapproved_tool": { "redFlag": "A free app or online service with no contract, no control and no off switch" }
           },
@@ -165,13 +165,13 @@
         {
           "id": "e15_free_pdf_tool",
           "_note": "Row 4. The normal-looking phish half of the mirror pair: an everyday 'everyone uses it' email pushing a free PDF editor to install or use online. isPhish true, flag unapproved_tool. Report or Delete both score full on a phish.",
-          "from": { "name": "PDFMerge Free", "address": "download@pdfmerge-free.example" },
+          "from": { "name": "PDFmangle Free", "address": "download@pdfmangle-free.example" },
           "to": "you@tarrowby.example",
           "subject": "Edit any PDF free, everyone's using it",
           "time": "10:05",
-          "body": "Need to tidy the PDF before it goes out? PDFMerge Free merges, splits and edits PDFs in your browser, or as a one-click install. It's free and everyone's using it.\n{{link:get}}",
-          "links": [ { "id": "get", "text": "pdfmerge-free.example/install", "destination": "https://pdfmerge-free.example/install" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "pdfmerge-free.example", "replyTo": "download@pdfmerge-free.example" },
+          "body": "Need to tidy the PDF before it goes out? PDFmangle Free merges, splits and edits PDFs in your browser, or as a one-click install. It's free and everyone's using it.\n{{link:get}}",
+          "links": [ { "id": "get", "text": "pdfmangle-free.example/install", "destination": "https://pdfmangle-free.example/install" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "pdfmangle-free.example", "replyTo": "download@pdfmangle-free.example" },
           "factorStrings": {
             "unapproved_tool": { "redFlag": "A free app or online service with no contract, no control and no off switch" }
           },

@@ -22,7 +22,7 @@ E13 adds no cast. The host and everyone impersonated are built Brightwell Foods 
 | Mossgate Cleaning Supplies | Fictional supplier | `mossgate-supplies.example` | The supplier whose brief carries the hidden instruction (attack); the genuine monthly invoice (defend item 2) and the planted one (defend item 1) | "Mossgate" / "mossgate-supplies" return zero hits outside the course design docs and this episode's own brief; no clash with built scenarios or other episodes' content. Pre-ship: web-search the firm name against real businesses with the usual check. |
 | (look-alike meeting domain) | Look-alike of `brightwellfoods.example` | `brightwell-board.example` | The fake Project Heron meeting link (defend item 5); tagged External | "brightwell-board" appears only in the course design docs and this brief; no built-scenario clash. Distinct from the E1 pin look-alike `brightwel1foods.example`. |
 | Project Heron | Fictional confidential project | n/a | The pretext on the deepfake video call (defend item 5) | "Project Heron" / "Heron" appear only in the course design docs and this brief; no built-scenario clash. |
-| contacts.export@inboxly.example | Exfil drop address | `inboxly.example` (already in brand set) | The address the hidden instruction tells the assistant to send the contact list to (attack `inject_contacts`; defend item 1 `hiddenText`) | `inboxly.example` is already a shared invented freemail in `BRAND_SET.md` (freemail for impersonated executives and spoofed reply-to addresses); only the local part `contacts.export` is new. The string "contacts.export" elsewhere (core_05 design) is narrative prose, not this address: no clash. |
+| contacts.export@lintbox.example | Exfil drop address | `lintbox.example` (already in brand set) | The address the hidden instruction tells the assistant to send the contact list to (attack `inject_contacts`; defend item 1 `hiddenText`) | `lintbox.example` is already a shared invented freemail in `BRAND_SET.md` (freemail for impersonated executives and spoofed reply-to addresses); only the local part `contacts.export` is new. The string "contacts.export" elsewhere (core_05 design) is narrative prose, not this address: no clash. |
 
 ## Phone number (Ofcom drama range)
 
@@ -36,4 +36,4 @@ E13 adds no cast. The host and everyone impersonated are built Brightwell Foods 
   built mail composer sources address blanks only from held OSINT `provides` and pools them across all
   address slots, and E13 has no osint stage, so the drop address is hard-coded in `inject_contacts`
   rather than offered as a blank (see `attack.json` `_brief_gap`). If that chooser is restored, a second
-  freemail decoy such as the existing `quickpost-mail.example` can carry it; no new domain is needed.
+  freemail decoy such as the existing `hastypost.example` can carry it; no new domain is needed.

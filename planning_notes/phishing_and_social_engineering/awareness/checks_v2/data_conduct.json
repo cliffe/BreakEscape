@@ -9,14 +9,14 @@
       "Trevor Oakes: an outside 'IT vendor' an impostor uses in data_conduct_form_b item 2 (itrollout-support.example). Genuine in neither form",
       "Kenny Dolan: a former member of staff whose voice an impostor uses on a mobile in data_conduct_form_a item 4 (the call). Genuine in neither form",
       "Deborah Vale: a colleague an impostor claims to be on a mobile in data_conduct_form_b item 4 (the call). Genuine in neither form",
-      "Carla Mendes: a 'recruiter' on freemail an impostor uses in data_conduct_form_a item 6 (inboxly.example). Genuine in neither form",
-      "Neil Garrity: a 'journalist' on freemail an impostor uses in data_conduct_form_b item 6 (quickpost-mail.example). Genuine in neither form",
-      "Gavin Shaw: an internal-sounding name an impostor uses on an outside inbox in data_conduct_form_a item 8 (fastmail-pro.example). Genuine in neither form",
-      "Rhona Baxter: an internal-sounding name an impostor uses on an outside inbox in data_conduct_form_b item 8 (webmail-plus.example). Genuine in neither form"
+      "Carla Mendes: a 'recruiter' on freemail an impostor uses in data_conduct_form_a item 6 (lintbox.example). Genuine in neither form",
+      "Neil Garrity: a 'journalist' on freemail an impostor uses in data_conduct_form_b item 6 (hastypost.example). Genuine in neither form",
+      "Gavin Shaw: an internal-sounding name an impostor uses on an outside inbox in data_conduct_form_a item 8 (larchmail.example). Genuine in neither form",
+      "Rhona Baxter: an internal-sounding name an impostor uses on an outside inbox in data_conduct_form_b item 8 (cobweb-mail.example). Genuine in neither form"
     ],
     "genuineSenders": "Carrholme genuine senders use carrholme.example: Shauna Campbell, Sam Whitaker, Martin Fletcher, Elaine Prentice, Tomasz Wisniewski, and the team addresses comms@, people@, dpo@ and records@carrholme.example.",
-    "lookalikes": "This pair introduces no carrholme look-alike domain on screen (E11 owns carrholme-payroll.example etc.). The four phish instead sit on outside firms/inboxes the impostor owns, so their automatic checks pass: northgate-audit.example (new), itrollout-support.example (roster), inboxly.example (roster), quickpost-mail.example (roster), fastmail-pro.example (roster) and webmail-plus.example (new). The item 8 reply-to points to a further outside inbox again.",
-    "nameCheck": "Elaine Prentice, Yusuf Demir, Grant Faulkner, Trevor Oakes, Kenny Dolan, Deborah Vale, Carla Mendes, Neil Garrity, Gavin Shaw, Rhona Baxter, northgate-audit.example and webmail-plus.example: 0 hits in scenarios, planning_notes and docs on 2026-10-29. Faulkner and Garrity surnames chosen after Mercer and Brandt turned out to be built character surnames."
+    "lookalikes": "This pair introduces no carrholme look-alike domain on screen (E11 owns carrholme-payroll.example etc.). The four phish instead sit on outside firms/inboxes the impostor owns, so their automatic checks pass: northgate-audit.example (new), itrollout-support.example (roster), lintbox.example (roster), hastypost.example (roster), larchmail.example (roster) and cobweb-mail.example (new). The item 8 reply-to points to a further outside inbox again.",
+    "nameCheck": "Elaine Prentice, Yusuf Demir, Grant Faulkner, Trevor Oakes, Kenny Dolan, Deborah Vale, Carla Mendes, Neil Garrity, Gavin Shaw, Rhona Baxter, northgate-audit.example and cobweb-mail.example: 0 hits in scenarios, planning_notes and docs on 2026-10-29. Faulkner and Garrity surnames chosen after Mercer and Brandt turned out to be built character surnames."
   },
   "_formPairing": {
     "_use": "Item n in form A matches item n in form B on kind, phish or genuine, the scored-flag multiset and difficulty; only the lure content differs. Per form: 10 items (4 phish, 6 genuine; 9 emails, 1 call). Scored-flag multiset per form: senderTrust 3, pretextRelevant 2, secrecy_or_bypass 2, vish_callback_pressure 1 (8 scored flags, identical in A and B). Item 8 does NOT score reply_to_differs (C2-M6 / WAVE1_DESIGN_C1 P1-M1: episode defend rounds run headerPanel off, so no episode teaches opening a header); like general_v2's item 8, it scores senderTrust (visible: an internal-looking display name over a plainly external address) and secrecy_or_bypass, and the reply-to point lives in its headerNote as a 'you could also see' line. reply_to_differs is therefore not in channelTells. Difficulty mix per form: 5 easy, 4 medium, 1 hard, identical in A and B. Phish at ordinal slots 2, 4, 6, 8 before the generator's PERMUTE. Item 8 is the pass-but-bad phish (SPF, DKIM, DMARC all pass, outside inbox the sender owns); item 9 is the fail-but-fine genuine item (DKIM fail). Verify is on in both forms because the call (item 4) needs the ring-back verdict, so the pre and post still compare like with like. No item repeats a built form or an episode defend set.",
@@ -141,17 +141,17 @@
         },
         {
           "id": "dca_recruiter_probe",
-          "from": { "name": "Carla Mendes", "address": "carla.mendes.hire@inboxly.example" },
+          "from": { "name": "Carla Mendes", "address": "carla.mendes.hire@lintbox.example" },
           "to": "you@carrholme.example",
           "subject": "Quick one about the team structure",
           "time": "11:40",
           "body": "Hi,\nI'm a recruiter placing candidates in your sector and I'd love to understand Carrholme better. Could you tell me who heads each team, who reports to whom, and when your managers are usually out of the office? It really helps me pitch the right roles.\nThanks so much,\nCarla",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "carla.mendes.hire@inboxly.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "carla.mendes.hire@lintbox.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "pretextRelevant"],
             "perFlagNote": {
-              "senderTrust": "A stranger writing from a personal inbox at inboxly.example, not a contact Carrholme deals with. A friendly tone isn't a reason to trust a name you don't know.",
+              "senderTrust": "A stranger writing from a personal inbox at lintbox.example, not a contact Carrholme deals with. A friendly tone isn't a reason to trust a name you don't know.",
               "pretextRelevant": "Who reports to whom and when managers are away is not something you'd tell an outsider. It's exactly what someone building an impersonation wants to know."
             },
             "ifTrusted": "An org chart and a diary of when managers are out is the map an attacker uses to impersonate the right person at the right moment. 'Recruiter' is just the cover story.",
@@ -176,20 +176,20 @@
         },
         {
           "id": "dca_personal_email_push",
-          "from": { "name": "Gavin Shaw", "address": "gavin.shaw.work@fastmail-pro.example" },
+          "from": { "name": "Gavin Shaw", "address": "gavin.shaw.work@larchmail.example" },
           "to": "you@carrholme.example",
           "subject": "Easier if you send it from your personal email",
           "time": "12:45",
           "body": "Hi,\nI know the file's too big for the system and IT take forever. Easiest thing: copy it to your personal email and send it on from there, it'll go straight through. Don't wait on a ticket for this one, we need it out today.\nCheers,\nGavin",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "fastmail-pro.example", "replyTo": "g.shaw.files@webmail-plus.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "larchmail.example", "replyTo": "g.shaw.files@cobweb-mail.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "secrecy_or_bypass"],
             "perFlagNote": {
-              "senderTrust": "The name reads like a colleague, but the address is an outside inbox at fastmail-pro.example, not carrholme.example. A workmate writes to you from the Carrholme domain.",
+              "senderTrust": "The name reads like a colleague, but the address is an outside inbox at larchmail.example, not carrholme.example. A workmate writes to you from the Carrholme domain.",
               "secrecy_or_bypass": "'Send it from your personal email' and 'don't wait on a ticket' are there to get work data out through a route nobody can see or protect. The approved way is to ask IT, who will give you a safe one."
             },
-            "headerNote": "The automatic checks pass because the message really was sent from fastmail-pro.example, a domain the sender owns. A pass tells you which mail system sent it, not that the sender is a Carrholme colleague. You could also see, if you open the header, that the reply-to is a different outside address again (webmail-plus.example), so a reply would go there, not to anyone at Carrholme.",
+            "headerNote": "The automatic checks pass because the message really was sent from larchmail.example, a domain the sender owns. A pass tells you which mail system sent it, not that the sender is a Carrholme colleague. You could also see, if you open the header, that the reply-to is a different outside address again (cobweb-mail.example), so a reply would go there, not to anyone at Carrholme.",
             "ifTrusted": "Work data moved to a personal email leaves Carrholme's control for good, and it may be personal data you're now responsible for losing. The 'shortcut' is also how an attacker gets you to skip the route that would have stopped it.",
             "reportReply": "Thanks. There's no Gavin Shaw on carrholme.example, and work files never go out through a personal email. We've reported it to the DPO and blocked the address."
           }
@@ -337,17 +337,17 @@
         },
         {
           "id": "dcb_journalist_probe",
-          "from": { "name": "Neil Garrity", "address": "neil.garrity.news@quickpost-mail.example" },
+          "from": { "name": "Neil Garrity", "address": "neil.garrity.news@hastypost.example" },
           "to": "you@carrholme.example",
           "subject": "Background for a piece I'm writing",
           "time": "11:44",
           "body": "Hi there,\nI'm writing a piece on the care sector and I'd value some background, off the record. Who runs each of your teams, who they answer to, and when the senior managers tend to be away? Nothing sensitive, just to get the lay of the land.\nCheers,\nNeil",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "neil.garrity.news@quickpost-mail.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "neil.garrity.news@hastypost.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "pretextRelevant"],
             "perFlagNote": {
-              "senderTrust": "A stranger on a personal inbox at quickpost-mail.example, not a contact Carrholme knows. 'Off the record' and a friendly tone are not reasons to trust a name you don't recognise.",
+              "senderTrust": "A stranger on a personal inbox at hastypost.example, not a contact Carrholme knows. 'Off the record' and a friendly tone are not reasons to trust a name you don't recognise.",
               "pretextRelevant": "Who runs each team, who they answer to and when seniors are away is not background to hand an outsider. It's the same map an impersonator needs, and press enquiries go to Comms anyway."
             },
             "ifTrusted": "The team structure and a diary of when managers are away lets an attacker impersonate the right person at the right time. The 'journalist' framing is just a way to get you talking.",
@@ -372,20 +372,20 @@
         },
         {
           "id": "dcb_skip_dlp",
-          "from": { "name": "Rhona Baxter", "address": "rhona.baxter.docs@webmail-plus.example" },
+          "from": { "name": "Rhona Baxter", "address": "rhona.baxter.docs@cobweb-mail.example" },
           "to": "you@carrholme.example",
           "subject": "Just send it out, don't flag it",
           "time": "12:48",
           "body": "Hi,\nThe system keeps blocking the client file when I try to send it out, flags it as sensitive. It's fine, honestly. Could you send it from your side and don't flag it as sensitive this time? We just need it with them today.\nThanks,\nRhona",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "webmail-plus.example", "replyTo": "r.baxter.send@quickpost-mail.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "cobweb-mail.example", "replyTo": "r.baxter.send@hastypost.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "secrecy_or_bypass"],
             "perFlagNote": {
-              "senderTrust": "The name reads like a colleague, but the address is an outside inbox at webmail-plus.example, not carrholme.example. A real workmate writes from the Carrholme domain.",
+              "senderTrust": "The name reads like a colleague, but the address is an outside inbox at cobweb-mail.example, not carrholme.example. A real workmate writes from the Carrholme domain.",
               "secrecy_or_bypass": "'Don't flag it as sensitive' and 'just send it out' are there to get round the check that's doing its job. The block flagged the file for a reason; the safe move is to ask IT, not to override it."
             },
-            "headerNote": "The automatic checks pass because the message really was sent from webmail-plus.example, a domain the sender owns. A pass shows which mail system sent it, not that the sender is a Carrholme colleague. You could also see, if you open the header, that the reply-to is a different outside address again (quickpost-mail.example), so a reply wouldn't reach anyone at Carrholme.",
+            "headerNote": "The automatic checks pass because the message really was sent from cobweb-mail.example, a domain the sender owns. A pass shows which mail system sent it, not that the sender is a Carrholme colleague. You could also see, if you open the header, that the reply-to is a different outside address again (hastypost.example), so a reply wouldn't reach anyone at Carrholme.",
             "ifTrusted": "Overriding the sensitivity check sends client data out unprotected, which may be a breach, and it trains you to switch off the one control that was working. The 'just this once' is the whole trick.",
             "reportReply": "Thanks. There's no Rhona Baxter on carrholme.example, and we don't override the sensitivity check to send a file out. We've reported it to the DPO and blocked the address."
           }

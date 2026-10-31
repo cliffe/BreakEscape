@@ -48,11 +48,11 @@ function openBody(rec) {
 // ── item 5 (E17-n3, E8 F15): a URL or email in the body is set in the address font ──
 test('a URL in the body is wrapped in .mail-body-url, the rest stays plain text', () => {
     const body = openBody({ id: 'm1', from: { name: 'Projects', address: 'p@h.example' }, subject: 's',
-        body: 'Install: https://get.meetly-app.example/win\nThanks' });
+        body: 'Install: https://get.roomcall-app.example/win\nThanks' });
     const urls = body.querySelectorAll('.mail-body-url');
     assert.equal(urls.length, 1);
-    assert.equal(urls[0].textContent, 'https://get.meetly-app.example/win');
-    assert.equal(body.textContent, 'Install: https://get.meetly-app.example/win\nThanks', 'text is unchanged');
+    assert.equal(urls[0].textContent, 'https://get.roomcall-app.example/win');
+    assert.equal(body.textContent, 'Install: https://get.roomcall-app.example/win\nThanks', 'text is unchanged');
 });
 
 test('an email address in the body is wrapped too', () => {
@@ -65,9 +65,9 @@ test('an email address in the body is wrapped too', () => {
 
 test('a trailing full stop stays outside the address span', () => {
     const body = openBody({ id: 'm2b', from: { name: 'A', address: 'p@h.example' }, subject: 's',
-        body: 'See https://meetly-app.example/win.' });
-    assert.equal(body.querySelector('.mail-body-url').textContent, 'https://meetly-app.example/win');
-    assert.equal(body.textContent, 'See https://meetly-app.example/win.');
+        body: 'See https://roomcall-app.example/win.' });
+    assert.equal(body.querySelector('.mail-body-url').textContent, 'https://roomcall-app.example/win');
+    assert.equal(body.textContent, 'See https://roomcall-app.example/win.');
 });
 
 test('a body with no address renders as before (one text node, no span)', () => {
@@ -82,9 +82,9 @@ test('a body with no address renders as before (one text node, no span)', () => 
 test('an in-body link chip with a URL label carries mail-chip-address', () => {
     const body = openBody({ id: 'm4', from: { name: 'A', address: 'p@h.example' }, subject: 's',
         body: 'Upload here: {{link:send}}',
-        links: [{ id: 'send', linkText: 'swiftdrop-free.example/upload', destination: 'https://swiftdrop-free.example/upload' }] });
+        links: [{ id: 'send', linkText: 'chuckbox-free.example/upload', destination: 'https://chuckbox-free.example/upload' }] });
     const label = body.querySelector('.mail-chip-link .mail-chip-label');
-    assert.equal(label.textContent, 'swiftdrop-free.example/upload');
+    assert.equal(label.textContent, 'chuckbox-free.example/upload');
     assert.ok(label.classList.contains('mail-chip-address'), 'URL label reads in the address font');
 });
 

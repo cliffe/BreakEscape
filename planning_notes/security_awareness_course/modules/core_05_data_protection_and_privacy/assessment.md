@@ -11,14 +11,14 @@ Each row is recorded through BE-01 and shown in the debrief and the learner's re
 | C05-B3 | Handles Gareth's request for "everything" | C05-LO3 | Apply | Passes it to the DPO before the queue is cleared, with the holding reply | Passes it to Shauna instead; or asks why he wants it, then passes it on; or passes it on only after the queue | Replies with the notes themselves, or never passes it on |
 | C05-B4 | Prepares the incident report for Gareth | C05-LO1, C05-LO2 | Apply (MG-12) | Removes all four items (two other residents, the care note, the driver's mobile) and keeps what Gareth needs | Removes the care note and at least one other item; or also removes Edna's own details | Leaves the care note in, or sends the report unredacted |
 | C05-B5 | Responds to Martin's marketing idea | C05-LO2 | Apply | Asks Tomasz first, with or without arguing the point with Martin | Says no but doesn't involve Tomasz | Exports the list, in full or "just the happy ones" |
-| C05-B6 | Reports a personal data breach (the wrong Sam, or the Kestrel Court attachment) | C05-LO5 | Apply | Reports within two game-minutes of Sam's reply or of opening the attachment | Reports later in the module; or only after asking for deletion and waiting | Never reports it (deletion request only, recall, or leaves it) |
+| C05-B6 | Reports a personal data breach (the wrong Sam, or the Wychbourne Court attachment) | C05-LO5 | Apply | Reports within two game-minutes of Sam's reply or of opening the attachment | Reports later in the module; or only after asking for deletion and waiting | Never reports it (deletion request only, recall, or leaves it) |
 | C05-B7 | Checks the recipient before sending the overtime sheet | C05-LO5 (prevention) | Apply (MG-01) | Sends it to Sam Whitaker | Picks the external Sam, sees the "External recipient" chip and corrects it before sending | (not used: a slip is not a failure; the response to it is C05-B6) |
 | C05-B8 | Recognises special category data | C05-LO1 | Learn (Tomasz's first check question) | Correct first time | Correct after the chunk replays | Wrong again after the replay |
 | C05-B9 | Routes situations in "Pass It On?" | C05-LO3, C05-LO4, C05-LO5 | Practise | 9 or 10 of 10, including the three "help them" items | 7 or 8 of 10 | 6 or fewer |
 
 The **before and after** for each learner is C05-B1 against C05-B2: the same behaviour (giving out a person's whereabouts or contact details to a caller) under a friendly voice in the hook and an official one in the mission.
 
-C05-B6 is always assessed: players who send the overtime sheet to the right Sam meet the Kestrel Court attachment instead. C05-B7 is recorded for the organisation's picture of recipient-checking, but never counts against completion.
+C05-B6 is always assessed: players who send the overtime sheet to the right Sam meet the Wychbourne Court attachment instead. C05-B7 is recorded for the organisation's picture of recipient-checking, but never counts against completion.
 
 ## Critical behaviours
 
