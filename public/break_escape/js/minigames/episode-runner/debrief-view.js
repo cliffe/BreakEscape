@@ -1,6 +1,10 @@
 // Awareness episodes: the debrief (11 stage 6, packet P7-B).
 //
-// renderDebrief(container, { result, set, strings, variant, onFinish, drillRecap, sandboxRecap, assistantRecap, concernRecap }) -> { destroy, getState }
+// renderDebrief(container, { result, set, strings, variant, onFinish, drillRecap, sandboxRecap, assistantRecap, concernRecap, showScore }) -> { destroy, getState }
+// `showScore` (optional, default true): when false, the score figures are dropped: the "Round score: N%"
+// summary, the per-message "Score for this message: N of 100" line, and the "Reported N% of the phish"
+// line. The item counts (Phish caught: N of M) stay. Set false in facilitated mode and when the host
+// hides results (awarenessSettings().showResult === false).
 // `concernRecap` (optional, batch 13): the concern form's report, { facts: [label], missing: [label],
 // conclusion: label | '' } (episode-model.js concernRecap). When it holds a fact, a "Your report"
 // section lists the facts filed, any required fact left out and whether a conclusion was left in.
@@ -183,7 +187,7 @@ function wrongVerdict(answer, msg, profile, scoring = null) {
     }
 }
 
-function buildCard(answer, msg, set = null, routeName = null) {
+function buildCard(answer, msg, set = null, routeName = null, showScore = true) {
     const truth = isObj(msg?.truth) ? msg.truth : { isPhish: false, flags: [] };
     const phish = truth.isPhish === true;
     const verdict = answer.verdict;
@@ -264,7 +268,7 @@ function buildCard(answer, msg, set = null, routeName = null) {
             card.appendChild(el('p', 'aw-if-trusted', `${lead}: ${truth.ifTrusted}`));
         }
     }
-    if (Number.isFinite(answer.score)) card.appendChild(el('p', 'aw-card-score', `Score for this message: ${answer.score} of 100`));
+    if (showScore && Number.isFinite(answer.score)) card.appendChild(el('p', 'aw-card-score', `Score for this message: ${answer.score} of 100`));
     return card;
 }
 
@@ -412,7 +416,7 @@ function textBox(tag, className, label, block) {
 
 export function renderDebrief(container, { result, set, strings = {}, variant = 'full', onFinish,
     reportRoute = null, ruleOfThumb = null, teamSize = null, drillRecap = [], sandboxRecap = [], assistantRecap = [],
-    concernRecap = null } = {}) {
+    concernRecap = null, showScore = true } = {}) {
     const root = el('section', 'aw-debrief');
     const heading = el('h2', 'aw-heading', DEFAULTS.heading);
     heading.tabIndex = -1;
@@ -433,7 +437,7 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
 
     const summary = el('p', 'aw-summary');
     const bits = [];
-    if (Number.isFinite(result?.percent)) bits.push(`Round score: ${result.percent}%`);
+    if (showScore && Number.isFinite(result?.percent)) bits.push(`Round score: ${result.percent}%`);
     // F-E10-2: the triage result card above the debrief already shows the band headline as its
     // title, so the debrief summary does not repeat it ("Round score: N% — headline" alongside the
     // same headline read as a duplication). The summary keeps the score and the caught counts.
@@ -454,7 +458,7 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     } else if (!(Number.isFinite(total) && total === 0)) {
         // batch-6 C3: "Reported N% of the phish" is overridable (strings.reportedPct, {pct}) and
         // hidden entirely when the set has no phish at all (total 0), where the line is meaningless.
-        if (Number.isFinite(result?.reportRate)) {
+        if (showScore && Number.isFinite(result?.reportRate)) {
             const pct = Math.round(result.reportRate * 100);
             // batch-8: the set's resultCopy.reportedPct is the single source shared with the reopened
             // result card (inbox-triage-minigame.js); the debrief's own strings.reportedPct still wins
@@ -480,7 +484,7 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
         && reportRoute.heading.trim() !== GENERIC_ROUTE_HEADING
         ? reportRoute.heading.trim() : null;
     const cards = el('div', 'aw-cards');
-    for (const a of reviewed) cards.appendChild(buildCard(a, messageFor(set, a.id), set, routeName));
+    for (const a of reviewed) cards.appendChild(buildCard(a, messageFor(set, a.id), set, routeName, showScore));
     root.appendChild(cards);
 
     // batch-12 item 3: the "signs most often missed" line only makes sense once the learner named at

@@ -218,3 +218,28 @@ test('batch-10: drillRecord keeps the wrong-bin recap on a scored drill, and non
     const unscored = drillRecord({ scored: false, total: 3, placed: 3, recap: [{ id: 'c2', situation: 'x' }] });
     assert.equal('recap' in unscored, false, 'no recap kept on an unscored drill');
 });
+
+// ── round-1 fix A2: the critical-miss points clause is a score figure, hidden with show_result false ──
+
+test('batch-10: show_result false hides the points off a critical miss (no figures); lead and item name stay', () => {
+    const s = open(awareSet([phishEmail, ...reals(5)]), { showResult: false });
+    click($(s, '.tri-start'));
+    act(s, 'phish_mail', 'trust');
+    for (const m of reals(5)) act(s, m.id, 'trust');
+    toResult(s);
+    const crit = $(s, '.tri-critical');
+    assert.ok(crit, 'the critical-miss line still shows');
+    const txt = crit.textContent;
+    assert.doesNotMatch(txt, /\d+\s*points/, 'no points figure when the result is hidden');
+    assert.doesNotMatch(txt, /%/, 'no percentage when the result is hidden');
+    assert.match(txt, /let an attacker straight in/, 'the lead stays');
+    assert.match(txt, /The item was/, 'the item name stays');
+
+    // control: with the default (shown) the points clause is present
+    const s2 = open(awareSet([phishEmail, ...reals(5)]));
+    click($(s2, '.tri-start'));
+    act(s2, 'phish_mail', 'trust');
+    for (const m of reals(5)) act(s2, m.id, 'trust');
+    toResult(s2);
+    assert.match($(s2, '.tri-critical').textContent, /\d+ points off the round/, 'shown by default');
+});

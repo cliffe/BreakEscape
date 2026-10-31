@@ -352,8 +352,26 @@ def check_mission_ending_check(mission, json_data, scenario_dir)
 
   return [] if scenario_has_ending_check_mapping?(json_data)
 
+  # The engine runs the compiled .json, not the .ink source. A #ending_check tag compiles to
+  # "^ending_check" in the sibling .json, so accept the tag only when that compiled .json carries
+  # it. If the .ink has the tag but its sibling .json does not, the compile is stale and the live
+  # game will not warn before the debrief, so flag that separately.
   ink_files = Dir.glob(File.join(scenario_dir.to_s, '{ink,}', '*.ink'))
-  return [] if ink_files.any? { |f| File.read(f).match?(/#\s*ending_check\b/) }
+  json_files = Dir.glob(File.join(scenario_dir.to_s, '{ink,}', '*.json'))
+  json_has_tag = json_files.any? { |f| File.read(f).match?(/\^\s*ending_check\b/) }
+  stale = ink_files.select do |f|
+    next false unless File.read(f).match?(/#\s*ending_check\b/)
+    compiled = f.sub(/\.ink\z/, '.json')
+    !(File.file?(compiled) && File.read(compiled).match?(/\^\s*ending_check\b/))
+  end.map { |f| File.basename(f) }
+
+  unless stale.empty?
+    return ["⚠️ WARNING: #{stale.join(', ')} uses #ending_check in its ink, but the compiled .json beside it " \
+            "does not carry the tag (stale compile). The engine runs the compiled .json, not the .ink source, so " \
+            "the ending warning will not fire in the live game. Recompile the ink (bin/inklecate) so the tag " \
+            "reaches the .json."]
+  end
+  return [] if json_has_tag
 
   ["⚠️ WARNING: the mission has optional tasks and concludes through a missionConclusion aim, but it neither uses " \
    "#ending_check in its ink nor carries \"endingCheck\": true on the eventMapping that opens the debrief. The engine still " \

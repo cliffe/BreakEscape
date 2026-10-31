@@ -1,6 +1,6 @@
 {
   "display_name": "Starting check: Data and conduct",
-  "description": "A short check for all staff at Carrholme Services, a fictional company, taken before the awareness episodes (pair BA). Ten items from a Carrholme inbox and phone: emails and a call about data and conduct. The result is kept so the matching after-check (awareness_post_data_conduct_ba) can show how the two compare.",
+  "description": "A short check for all staff at Carrholme Services, a fictional company, taken before the awareness episodes. Ten items from a Carrholme inbox and phone: emails and a call about data and conduct. The result is kept so the matching final check can show how the two compare.",
   "organiser_note": "each role's check tests the channel that role meets in its episode, and in a session that runs more than one episode only the learner's primary-role check is recorded.",
   "difficulty_level": 1,
   "scoring": "completion",

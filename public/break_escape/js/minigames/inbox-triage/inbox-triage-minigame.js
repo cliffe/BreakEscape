@@ -1557,15 +1557,18 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // cap the per-miss wording is unchanged; with an authored cap or a custom per-miss rate
             // the line reads the real total instead ("took 30 points off the round"), so "each" never
             // overstates a capped round.
+            // The points clause names a score figure, so it is dropped when the result is hidden
+            // (owner decision): the lead and the item names stay, the points off do not.
             const per = Number.isFinite(result.criticalPenaltyPer) ? result.criticalPenaltyPer : CRITICAL_PENALTY;
             const off = Number.isFinite(result.criticalPenalty) ? result.criticalPenalty : per * result.criticalMisses.length;
-            const penaltyLine = (result.criticalPenaltyCapped || per !== CRITICAL_PENALTY)
+            const penaltyLine = !this.showResult ? ''
+                : (result.criticalPenaltyCapped || per !== CRITICAL_PENALTY)
                 ? `That took ${off} points off the round, on top of the item itself.`
                 : `That costs ${per} points off the round${result.criticalMisses.length === 1 ? "" : " each"}, on top of the item itself.`;
             p.appendChild(el('p', 'tri-critical',
                 `${result.criticalMisses.length === 1 ? 'One answer' : `${result.criticalMisses.length} answers`} ${allLabelled ? 'missed something that needed reporting' : criticalLead} ` +
-                `(${criticalWhat(result.criticalKinds, labels, this.set?.criticalWhat) || "approving a sign-in you didn't start, or doing what an impostor asked on a call"}).` + nameLine + ` ` +
-                penaltyLine));
+                `(${criticalWhat(result.criticalKinds, labels, this.set?.criticalWhat) || "approving a sign-in you didn't start, or doing what an impostor asked on a call"}).` + nameLine +
+                (penaltyLine ? ` ${penaltyLine}` : '')));
             // E11 B2 finding 8: when those penalties floored the round at 0, say the score stops
             // there, so "0%" beside a right answer does not read as unexplained. Overridable via
             // set.resultCopy.clampedNote (''/absent keeps the default; shown only when clamped).

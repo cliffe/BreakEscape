@@ -1,6 +1,6 @@
 {
   "display_name": "Starting check: IT help desk",
-  "description": "A short check for IT service desk staff at Quayholt Insurance, a fictional company, taken before the awareness episodes (pair BA). Ten items from the IT service desk queue: calls, a voicemail, emails and a sign-in prompt. The result is kept so the matching after-check (awareness_post_helpdesk_ba) can show how the two compare.",
+  "description": "A short check for IT service desk staff at Quayholt Insurance, a fictional company, taken before the awareness episodes. Ten items from the IT service desk queue: calls, a voicemail, emails and a sign-in prompt. The result is kept so the matching final check can show how the two compare.",
   "organiser_note": "each role's check tests the channel that role meets in its episode, and in a session that runs more than one episode only the learner's primary-role check is recorded.",
   "difficulty_level": 1,
   "scoring": "completion",
