@@ -3279,7 +3279,6 @@
           "patternProperties": {"^_": {}},
           "additionalProperties": false
         },
-        "labels": {"type": "object", "additionalProperties": {"type": "string"}},
         "prepLabels": {
           "type": "object",
           "description": "Wording of the preparation overlay; each defaults to today's text. approachTitle is the title for an in-person call (default: title).",
@@ -3385,14 +3384,14 @@
         "requireFactLine": {"type": "string", "description": "batch-11: line shown while requireFact holds Approach back"},
         "labels": {
           "type": "object",
-          "description": "Debrief wording by theme. 'social' (a DM app) defaults to chat wording (Chat debrief, The chat was reported, You left the chat.); a key here overrides it. outcomeLabels, per outcome, still wins over both.",
+          "description": "Fact labels (fact id: label string), plus debrief wording by theme under the reserved keys default, social and terminal. 'social' (a DM app) defaults to chat wording (Chat debrief, The chat was reported, You left the chat.); a key there overrides it. outcomeLabels, per outcome, still wins over both.",
           "properties": {
             "default": {"$ref": "#/definitions/socialPretextLabelSet"},
             "social": {"$ref": "#/definitions/socialPretextLabelSet"},
             "terminal": {"$ref": "#/definitions/socialPretextLabelSet"}
           },
           "patternProperties": {"^_": {}},
-          "additionalProperties": false
+          "additionalProperties": {"type": "string"}
         },
         "outcomeLabels": {"type": "object", "properties": {"got_it": {"type": "string"}, "reported": {"type": "string"}, "walked_away": {"type": "string"}}, "additionalProperties": false, "description": "batch-11: pretext debrief outcome labels; defaults are phone wording (You rang off.)"}
       },
