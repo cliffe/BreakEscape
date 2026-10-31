@@ -426,3 +426,14 @@ test('a phone contact marked voiced: true opens its pretext call as a voiced cal
     // person-chat is never voiced this way
     assert.equal(callLaunch(devCall, { npcType: 'person', displayName: 'X', voiced: true }, 'x', {}).params.voiced, undefined);
 });
+
+test('the device app frame is carried into a judged phone chat, not a person chat (item 1)', () => {
+    const phone = { npcType: 'phone', displayName: 'Dom', currentKnot: 'start' };
+    const app = { title: 'Friendface', theme: 'social', accent: '#3b5bdb', chrome: 'app' };
+    // Phone: the judged chat opens with the same app block the plain DM list had
+    assert.deepEqual(callLaunch(devCall, phone, 'dom_dm', {}, app).params.app, app);
+    // No app passed (an ordinary desk phone): nothing added, chat resolves as before
+    assert.equal('app' in callLaunch(devCall, phone, 'dom_dm', {}).params, false);
+    // person-chat never carries an app frame even if one is passed
+    assert.equal('app' in callLaunch(devCall, { npcType: 'person', displayName: 'X' }, 'x', {}, app).params, false);
+});

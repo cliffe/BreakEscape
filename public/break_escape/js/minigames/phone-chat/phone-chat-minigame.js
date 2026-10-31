@@ -376,7 +376,10 @@ export class PhoneChatMinigame extends MinigameScene {
         const npc = this.npcManager.getNPC(npcId);
         if (!npc?.callId || this.params?.pretextCallId) return false;
         if (typeof window.startPretextCall !== 'function') return false;
-        window.startPretextCall(npc.callId, { npcId, channel: 'phone' });
+        // Carry this DM list's device app frame into the judged chat (item 1): the
+        // runtime gameScenario holds no device definitions, so the judged chat cannot
+        // resolve the app by phoneId the way it would from a device in hand.
+        window.startPretextCall(npc.callId, { npcId, channel: 'phone', app: this.params?.app || null });
         return true;
     }
 

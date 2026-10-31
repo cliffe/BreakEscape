@@ -277,9 +277,16 @@ export function blanksPayload(facts, optionsByFact, chosen) {
 /**
  * What opening the chat needs. Phone records open phone-chat; any other record
  * opens person-chat. No channel field: the record's npcType decides.
+ *
+ * `app` is the opening device's app block (title, accent, chrome, logo), passed
+ * down from the phone or DM list that started the call. The judged chat needs it
+ * handed in: the client's runtime gameScenario carries no device definitions, so
+ * phone-chat's own resolvePhoneApp cannot recover it by phoneId (the plain chat
+ * gets it the same way, from the device it was opened on). Without this the
+ * judged DM lost the Friendface frame and read as a bare "Messages" phone.
  * @returns {{ scene: string, params: object }|null}
  */
-export function callLaunch(spec, npc, npcId, blanks) {
+export function callLaunch(spec, npc, npcId, blanks, app = null) {
     if (!npc || !isStr(npcId)) return null;
     const scene = npc.npcType === 'phone' ? 'phone-chat' : 'person-chat';
     const startKnot = isStr(spec?.startKnot) ? spec.startKnot : (isStr(npc.currentKnot) ? npc.currentKnot : 'start');
@@ -293,6 +300,8 @@ export function callLaunch(spec, npc, npcId, blanks) {
     if (isStr(npc.displayName)) params.title = npc.displayName;
     // A phone contact marked `voiced: true` speaks its call lines through TTS (F17)
     if (scene === 'phone-chat' && npc.voiced === true) params.voiced = true;
+    // Carry the device app frame into the judged phone chat (person-chat has none)
+    if (scene === 'phone-chat' && app && typeof app === 'object') params.app = app;
     return { scene, params };
 }
 
