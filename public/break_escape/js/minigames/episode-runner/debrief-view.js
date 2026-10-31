@@ -57,6 +57,11 @@ const PANEL_HEADINGS = Object.freeze({
     voicePanel: 'A voice is not proof'
 });
 
+// The generic "How to report here" box heading (episode-model.js GENERIC_REPORT_ROUTE). It stands
+// in for an organiser who set a route but no heading, so it is not a real route name and never
+// names the route in a verdict line (WP-02).
+const GENERIC_ROUTE_HEADING = 'How to report here';
+
 const LINES = Object.freeze({
     phish: {
         report: 'Reported. That warns everyone else.',
@@ -178,7 +183,7 @@ function wrongVerdict(answer, msg, profile, scoring = null) {
     }
 }
 
-function buildCard(answer, msg, set = null) {
+function buildCard(answer, msg, set = null, routeName = null) {
     const truth = isObj(msg?.truth) ? msg.truth : { isPhish: false, flags: [] };
     const phish = truth.isPhish === true;
     const verdict = answer.verdict;
@@ -189,6 +194,15 @@ function buildCard(answer, msg, set = null) {
     card.appendChild(title);
     const { word, line } = verdictWordAndLine(answer, msg, phish, set?.labels, set?.scoring);
     card.appendChild(el('p', 'aw-card-verdict', `You chose ${word}. ${line}`.trim()));
+
+    // aw1 (WP-02): after a Report verdict (email Report, call Escalate, push Deny and report, all
+    // verdict 'report'), name the organisation's own route, so the learner knows what "report it"
+    // means where they work. Only when the host configured a route (routeName is null otherwise);
+    // a choice card's own outcome wording stands alone.
+    if (routeName && answer.verdict === 'report' && kindOf(msg) !== 'choice') {
+        const tail = /[.!?]$/.test(routeName) ? '' : '.';
+        card.appendChild(el('p', 'aw-card-route', `At work, that means: ${routeName}${tail}`));
+    }
 
     const picked = new Set(Array.isArray(answer.flags) ? answer.flags : []);
     const notes = isObj(truth.perFlagNote) ? truth.perFlagNote : {};
@@ -457,8 +471,16 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     // A card per missed item, then one weakest-skill line; if nothing was missed, one short line
     // says so. The score summary, panels, Monday card and no-blame line stay. (`answers` and
     // `reviewed` were computed above, before the defendOnly lead.)
+    // aw1 (WP-02): a configured route's own name, to name after a Report verdict (buildCard). The
+    // organiser's route heading when they set one; never the generic 'How to report here' fallback
+    // (that heading means no name was typed), and nothing without a configured route. Hacktivity
+    // sends no short route name apart from the composed paragraph, so the heading is the best name.
+    const routeName = isObj(reportRoute) && reportRoute.configured === true
+        && isStr(reportRoute.heading) && reportRoute.heading.trim()
+        && reportRoute.heading.trim() !== GENERIC_ROUTE_HEADING
+        ? reportRoute.heading.trim() : null;
     const cards = el('div', 'aw-cards');
-    for (const a of reviewed) cards.appendChild(buildCard(a, messageFor(set, a.id), set));
+    for (const a of reviewed) cards.appendChild(buildCard(a, messageFor(set, a.id), set, routeName));
     root.appendChild(cards);
 
     // batch-12 item 3: the "signs most often missed" line only makes sense once the learner named at
