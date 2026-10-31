@@ -1234,7 +1234,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         // answer, so it is suppressed.
         const scorableTells = truth.isPhish === true && Array.isArray(per.units) && per.units.length > 0;
         if (ans.unflagged === true && scorableTells) card.appendChild(el('p', 'tri-card-nudge', this._nudgeLine()));
-        card.appendChild(el('p', 'tri-card-score', `Score for this message: ${per.score} of 100`));
+        // A score figure: hidden with the host's show_result false, as in the episode debrief.
+        if (this.showResult) card.appendChild(el('p', 'tri-card-score', `Score for this message: ${per.score} of 100`));
         return card;
     }
 
@@ -1266,7 +1267,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
                 card.appendChild(ul);
             }
         }
-        card.appendChild(el('p', 'tri-card-score', `Score for this message: ${per.score} of 100`));
+        // A score figure: hidden with the host's show_result false, as in the episode debrief.
+        if (this.showResult) card.appendChild(el('p', 'tri-card-score', `Score for this message: ${per.score} of 100`));
         return card;
     }
 

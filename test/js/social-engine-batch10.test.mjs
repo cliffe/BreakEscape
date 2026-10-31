@@ -243,3 +243,23 @@ test('batch-10: show_result false hides the points off a critical miss (no figur
     toResult(s2);
     assert.match($(s2, '.tri-critical').textContent, /\d+ points off the round/, 'shown by default');
 });
+
+// ── round-2 fix: the per-message "Score for this message" line is a score figure too ──
+
+test('batch-10: show_result false hides "Score for this message" on review cards, in both feedback modes', () => {
+    for (const feedbackMode of ['immediate', 'end']) {
+        const s = open(awareSet([phishEmail, ...reals(5)], { feedbackMode }), { showResult: false });
+        click($(s, '.tri-start'));
+        act(s, 'phish_mail', 'trust');
+        for (const m of reals(5)) act(s, m.id, 'trust');
+        toResult(s);
+        assert.doesNotMatch(document.body.textContent, /Score for this message/, `hidden (${feedbackMode})`);
+        assert.doesNotMatch(document.body.textContent, /\d+ of 100/, `no "N of 100" (${feedbackMode})`);
+    }
+    // control: shown by default
+    const s2 = open(awareSet([phishEmail, ...reals(5)], { feedbackMode: 'end' }));
+    click($(s2, '.tri-start'));
+    act(s2, 'phish_mail', 'trust');
+    for (const m of reals(5)) act(s2, m.id, 'trust');
+    assert.match(document.body.textContent, /Score for this message: \d+ of 100/, 'shown by default');
+});
