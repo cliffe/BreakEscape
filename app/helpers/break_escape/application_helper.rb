@@ -10,8 +10,11 @@ module BreakEscape
     AWARENESS_INVISIBLE   = /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]/
 
     # The host's awareness settings for a game, as the client's window.breakEscapeConfig.awareness
-    # ({ reportRoute:, ruleOfThumb:, teamSize: }; only keys that have a value). {} when there is no
-    # hook, nothing is set, or the hook raises. Keys are whitelisted; text is plain text.
+    # ({ reportRoute:, ruleOfThumb:, teamSize:, showResult:, passPercent: }; only keys that have a
+    # value). {} when there is no hook, nothing is set, or the hook raises. Keys are whitelisted;
+    # text is plain text. showResult is a tri-state at the host (true/false/unset): false hides the
+    # in-game result percent, and an unset key leaves the engine default (show). passPercent is the
+    # after-check pass mark (1-100); the triage save path prefers it over the set's own.
     def break_escape_awareness_config(game)
       hook = BreakEscape.configuration&.awareness_settings
       raw  = hook&.call(game)
@@ -26,10 +29,24 @@ module BreakEscape
       out[:ruleOfThumb] = rule if rule.present?
       size = be_team_size(raw[:team_size])
       out[:teamSize] = size if size
+      show = raw[:show_result]
+      out[:showResult] = show if show == true || show == false
+      pass = be_pass_percent(raw[:pass_percent])
+      out[:passPercent] = pass if pass
       out
     rescue StandardError => e
       Rails.logger.warn "[BreakEscape] awareness_settings hook failed: #{e.class}: #{e.message}"
       {}
+    end
+
+    # An integer from 1 to 100 (the after-check pass mark), or nil.
+    def be_pass_percent(value)
+      n = case value
+      when Integer then value
+      when String  then value.strip.match?(/\A\d+\z/) ? value.strip.to_i : nil
+      when Float   then value == value.to_i ? value.to_i : nil
+      end
+      n && n >= 1 && n <= 100 ? n : nil
     end
 
     # Plain text: control characters removed (newlines and tabs kept as newline/space), trimmed, capped.

@@ -21,11 +21,13 @@
  *
  * <prefix>percent and <prefix>reportRate keep the best round's values
  * (a lower later round does not overwrite them). <prefix>complete means a round
- * was completed at any score. <prefix>pass means percent >= outcome.passPercent
- * and is never cleared by a lower round; it is written only when passPercent is
- * above 0 (awareness sets, passPercent 0, no longer write it). Saves from before
- * the 2026-10-31 rename hold <prefix>done instead of <prefix>complete; they still
- * open read-only, but nothing is re-emitted for them.
+ * was completed at any score. <prefix>pass means percent >= the pass mark and is
+ * never cleared by a lower round; it is written only when the mark is above 0
+ * (awareness sets, passPercent 0, no longer write it). The pass mark is the
+ * host's after-check mark (window.breakEscapeConfig.awareness.passPercent) when
+ * set, else the set's outcome.passPercent. Saves from before the 2026-10-31
+ * rename hold <prefix>done instead of <prefix>complete; they still open
+ * read-only, but nothing is re-emitted for them.
  *
  * Reopen: when <prefix>complete is already true and the conclusion task
  * (conclusionTaskId) is not completed, the starter awaits syncConfirmed() and
@@ -69,6 +71,34 @@ const saved = new WeakMap();
 const reemits = new Map();
 
 const win = () => (typeof window !== 'undefined' ? window : {});
+
+/** The host's awareness settings (window.breakEscapeConfig.awareness), or {}. */
+function hostAwareness() {
+    const a = win().breakEscapeConfig?.awareness;
+    return a && typeof a === 'object' ? a : {};
+}
+
+/** The host after-check pass mark (1-100), or null when none is set. */
+export function hostPassPercent() {
+    const v = hostAwareness().passPercent;
+    return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;
+}
+
+/** Whether the host wants the result percent shown. Default yes; only a host false hides it. */
+export function showResultSetting() {
+    return hostAwareness().showResult !== false;
+}
+
+/**
+ * The pass mark that applies to a set: the host's after-check mark when it is set
+ * (it wins over the set's own), else the set's outcome.passPercent, else 0.
+ */
+export function effectivePassPercent(set) {
+    const host = hostPassPercent();
+    if (host !== null) return host;
+    const own = set?.outcome?.passPercent;
+    return typeof own === 'number' && Number.isFinite(own) ? own : 0;
+}
 
 function defaults(deps = {}) {
     const w = win();
@@ -205,7 +235,8 @@ async function saveRound(result, ctx, d) {
     const prefix = ctx.prefix;
     const globals = d.globals;
     const n = triageGlobalNames(prefix);
-    const passPercent = typeof ctx.set?.outcome?.passPercent === 'number' ? ctx.set.outcome.passPercent : 0;
+    // The host's after-check pass mark wins over the set's own (05, Phase 6).
+    const passPercent = effectivePassPercent(ctx.set);
     let percent = typeof result.percent === 'number' ? result.percent : 0;
     let reportRate = typeof result.reportRate === 'number' ? result.reportRate : 0;
     // A later round that scores lower keeps the best round's percent and reportRate
@@ -217,7 +248,8 @@ async function saveRound(result, ctx, d) {
 
     const names = heldFor(prefix);
     const writes = [[n.percent, percent], [n.reportRate, reportRate]];
-    // <prefix>pass only for sets with a real pass mark; never cleared by a lower round
+    // <prefix>pass only when a pass mark applies (above 0): the host's after-check mark
+    // when set, else the set's own. With no mark a check has no pass/fail. Never cleared.
     if (passPercent > 0) writes.push([n.pass, globals[n.pass] === true || percent >= passPercent]);
     writes.push([n.complete, true]);
     for (const [name, value] of writes) {
@@ -413,6 +445,10 @@ export function startInboxTriageMinigame(lockable, options = {}) {
         readOnly,
         storedResult: readOnly ? stored : null,
         savingNotice: SAVING_NOTICE,
+        // Host awareness settings (Phase 6): the after-check pass mark (null when none) and whether
+        // to show the result percent. The debrief reads both; the save path prefers the pass mark.
+        hostPassPercent: hostPassPercent(),
+        showResult: showResultSetting(),
         // The launcher's skin wins; otherwise the workstation's minigameData.skin ('awareness' is the
         // only skin). Neither set: no skin, as before.
         skin: (options.skin !== undefined ? options.skin : data.skin) === 'awareness' ? 'awareness' : null,

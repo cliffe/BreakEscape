@@ -159,8 +159,17 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     }
 
     get passPercent() {
+        // The host's after-check pass mark (params.hostPassPercent, set by the triage starter) wins
+        // over the set's own; it applies to the whole check, so it holds across a "try the other set".
+        const host = this.params?.hostPassPercent;
+        if (Number.isFinite(host) && host > 0) return host;
         const p = this.set?.outcome?.passPercent;
         return Number.isFinite(p) ? p : 0;
+    }
+
+    /** Whether to show the result percent. Default yes; only a host false (params.showResult) hides it. */
+    get showResult() {
+        return this.params?.showResult !== false;
     }
 
     _findSet(id) {
@@ -1454,14 +1463,26 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const title = el('h3', 'tri-result-title', headline);
         title.tabIndex = -1;
         p.appendChild(title);
-        const score = el('p', 'tri-score', `${percent}%`);
-        score.setAttribute('aria-label', `Score ${percent} percent`);
-        p.appendChild(score);
+        // The result percent is hidden when the host turns it off (awareness show_result = false).
+        if (this.showResult) {
+            const score = el('p', 'tri-score', `${percent}%`);
+            score.setAttribute('aria-label', `Score ${percent} percent`);
+            p.appendChild(score);
+        }
+        // A check below the pass mark: Hacktivity lets the learner retake it from the course page.
+        const passMark = this.passPercent;
+        if (['pre', 'post'].includes(this.stage) && passMark > 0 && percent < passMark) {
+            p.appendChild(el('p', 'tri-below-pass', 'Below the pass mark: you can try again from the course page.'));
+        }
 
         const nums = el('dl', 'tri-numbers');
         const addNum = (k, v, key) => { const dd = el('dd', null, v); dd.dataset.number = key; nums.append(el('dt', null, k), dd); };
         let appendNums = true;
-        if (stored) {
+        if (stored && !this.showResult) {
+            // The reopened card's only figure is the report rate (a percentage); with the result
+            // hidden there is nothing left to show on it.
+            appendNums = false;
+        } else if (stored) {
             // batch-8: the reopened result card shares the debrief's reportedPct override
             // (set.resultCopy.reportedPct, {pct} is the percentage), so a non-phishing set reads the
             // same on reopen as it does in the debrief. The debrief's reportRate line (debrief-view.js)
@@ -1548,7 +1569,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // E11 B2 finding 8: when those penalties floored the round at 0, say the score stops
             // there, so "0%" beside a right answer does not read as unexplained. Overridable via
             // set.resultCopy.clampedNote (''/absent keeps the default; shown only when clamped).
-            if (result.clamped && percent === 0) {
+            // The clamped note names the "0%" score, so it is dropped when the result is hidden.
+            if (this.showResult && result.clamped && percent === 0) {
                 const own = isObj(this.set?.resultCopy) ? this.set.resultCopy.clampedNote : undefined;
                 const note = own === '' ? '' : (isStr(own) && own.trim() ? own
                     : 'The round score stops at 0%, so the points taken off do not show below it.');
@@ -1627,7 +1649,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         // there is no baseline. Shown on a fresh round and on the read-only reopen alike.
         this.comparison = comparisonFor(this.set, this.stage, this.globals, { percent, reportRate });
         const cmpText = comparisonText(this.comparison);
-        if (cmpText) {
+        // The before/after panel is nothing but scores, so it is hidden whole when the host
+        // turns the result off (show_result false): no "N%" is left on the screen.
+        if (this.showResult && cmpText) {
             const box = el('section', `tri-compare ${this.comparison.baseline ? 'has-baseline' : 'no-baseline'}`);
             box.dataset.baseline = this.comparison.baseline ? 'true' : 'false';
             box.setAttribute('aria-label', cmpText.heading);
@@ -1668,7 +1692,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         }
         p.appendChild(bar);
 
-        this._announce(`Score ${percent} percent. ${headline}`);
+        this._announce(this.showResult ? `Score ${percent} percent. ${headline}` : headline);
         if (!stored) this._notifyResult(result);
     }
 

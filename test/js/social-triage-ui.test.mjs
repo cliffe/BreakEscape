@@ -452,6 +452,30 @@ test('a stored result (the pre/post reopen) shows the result only; Finish report
     assert.deepEqual(ended[0].result, { setId: 'demo_4', stage: 'pre', reopened: true, percent: 72, reportRate: 0.5 });
 });
 
+test('show_result false hides the result percent; the default shows it', () => {
+    const shown = open(makeSet({ stage: 'post', scoringProfile: 'awareness' }),
+        { stage: 'post', storedResult: { percent: 72, reportRate: 0.5 } });
+    assert.equal($(shown, '.tri-score').textContent, '72%', 'default: the percent shows');
+    const hidden = open(makeSet({ stage: 'post', scoringProfile: 'awareness' }),
+        { stage: 'post', storedResult: { percent: 72, reportRate: 0.5 }, showResult: false });
+    assert.equal($(hidden, '.tri-score'), null, 'show_result false: no result percent');
+    assert.ok($(hidden, '.tri-result-title').textContent.length > 0, 'the headline still shows');
+});
+
+test('a check below the host pass mark shows the try-again line; at or above it, and with no mark, it does not', () => {
+    const below = open(makeSet({ stage: 'post', scoringProfile: 'awareness' }),
+        { stage: 'post', hostPassPercent: 70, storedResult: { percent: 50, reportRate: 0 } });
+    assert.match($(below, '.tri-below-pass').textContent, /try again from the course page/);
+    const above = open(makeSet({ stage: 'post', scoringProfile: 'awareness' }),
+        { stage: 'post', hostPassPercent: 70, storedResult: { percent: 80, reportRate: 1 } });
+    assert.equal($(above, '.tri-below-pass'), null, 'at or above the mark: no line');
+    // A real check set carries outcome.passPercent 0 (no mark of its own); with no host mark either,
+    // no line shows even at a low score.
+    const noMark = open(makeSet({ stage: 'post', scoringProfile: 'awareness', outcome: { setGlobalPrefix: 'triage_{stage}_', passPercent: 0 } }),
+        { stage: 'post', storedResult: { percent: 10, reportRate: 0 } });
+    assert.equal($(noMark, '.tri-below-pass'), null, 'no pass mark: no line even at a low score');
+});
+
 test('the stage parameter overrides the set stage; an empty round cannot start', () => {
     const s = open(makeSet({ stage: 'pre' }), { stage: 'post' });
     assert.equal(state(s).stage, 'post');
