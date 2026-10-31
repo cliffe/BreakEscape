@@ -876,7 +876,7 @@ module ValidateSocial
       prefix = set.dig('outcome', 'setGlobalPrefix') if set['outcome'].is_a?(Hash)
       pre = c['prePrefix']
       if c.key?('prePrefix')
-        if blank?(pre) || !pre.is_a?(String) || pre =~ /[{}]/ || !"#{pre}done".match?(GLOBAL_NAME_RE)
+        if blank?(pre) || !pre.is_a?(String) || pre =~ /[{}]/ || !"#{pre}complete".match?(GLOBAL_NAME_RE)
           issues << err("#{where}.comparison.prePrefix '#{pre}' must be a literal global-name prefix (no braces)")
           pre = nil
         end
@@ -887,7 +887,7 @@ module ValidateSocial
         pre = nil
       end
       if pre && post
-        %w[done percent reportRate].each do |suffix|
+        %w[complete percent reportRate].each do |suffix|
           name = "#{pre}#{suffix}"
           next if ctx.own_globals.key?(name) || ctx.import_names.include?(name)
 
