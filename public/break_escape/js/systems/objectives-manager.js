@@ -17,8 +17,15 @@ export class ObjectivesManager {
     this.listeners = [];      // UI update callbacks
     this.syncTimeouts = {};   // Debounced sync timers
     this.initialized = false;
-    
+
     this.setupEventListeners();
+
+    // Teach the ending warning how to rebuild a held missionConclusion-aim ending after a reload
+    // (systems/ending-check.js): re-run the task completion that would conclude the mission.
+    if (typeof window !== 'undefined') {
+      window.endingCheck?.registerRebuilder?.('aim', (record) =>
+        (record?.taskId ? () => this.completeTask(record.taskId) : null));
+    }
   }
   
   /**
@@ -575,13 +582,14 @@ export class ObjectivesManager {
       if (task._endingChecking) return;
       task._endingChecking = true;
       let endNow = true;
+      const persist = { reason: 'aim', taskId };
       try {
-        endNow = await window.endingCheck.confirm({ reason: 'aim' });
+        endNow = await window.endingCheck.confirm({ reason: 'aim', persist });
       } finally {
         task._endingChecking = false;
       }
       if (!endNow) {
-        window.endingCheck.hold(() => this.completeTask(taskId), { reason: 'aim' });
+        window.endingCheck.hold(() => this.completeTask(taskId), { reason: 'aim', persist });
         return;
       }
       if (task.status === 'completed' || task.status === 'completing') return;

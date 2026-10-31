@@ -73,12 +73,48 @@ let showing = null;            // the open modal's promise, shared by a second a
 let held = null;               // { proceed, reason } after "Keep going" from a late trigger
 let watching = false;
 
-/** Test seam: forget decisions, any open modal and any held ending. */
+// A held ending must survive a page reload, or the mission soft-locks: the in-memory `held`
+// is gone, the panel button and the auto-run never come back, and the trigger that opened the
+// ending (a onceOnly mapping on a global that is already set) never fires again. So a descriptor
+// identifying the held trigger is kept in the saved game state, as the non-declared global
+// `__ending_held` (persisted and restored with globalVariables, never synced into ink). On load
+// a rebuilder for the trigger's `reason` turns the descriptor back into the `proceed` that runs
+// the ending, and the hold is re-established. The record is written the moment the warning is
+// shown (so a reload taken with the modal open is restored, not stranded) and cleared when the
+// ending finally runs.
+const HELD_GLOBAL = '__ending_held';
+const holdRebuilders = {};     // reason -> (record) => proceedFn | null, registered by each trigger's subsystem
+let heldRecord = null;         // the descriptor mirrored into gameState.globalVariables.__ending_held
+
+function heldGlobals() {
+    return win()?.gameState?.globalVariables || null;
+}
+
+/** Mirror the held-ending descriptor into the saved globals (null clears it). */
+function writeHeldRecord(record) {
+    heldRecord = record || null;
+    const g = heldGlobals();
+    if (!g) return;
+    if (record) g[HELD_GLOBAL] = record;
+    else delete g[HELD_GLOBAL];
+}
+
+/**
+ * A trigger's subsystem registers how to turn a held-ending descriptor back into the action that
+ * runs the ending: npc-manager for `mapping`, objectives-manager for `aim`, music events for
+ * `credits`. The rebuilder returns the `proceed` function, or null if it can't rebuild it.
+ */
+export function registerHoldRebuilder(reason, fn) {
+    if (typeof reason === 'string' && typeof fn === 'function') holdRebuilders[reason] = fn;
+}
+
+/** Test seam: forget decisions, any open modal, any held ending and the saved record. */
 export function _resetEndingCheck() {
     confirmed.clear();
     held = null;
     watching = false;
     showing = null;
+    writeHeldRecord(null);
     const doc = typeof document !== 'undefined' ? document : null;
     doc?.getElementById(ENDING_CHECK_ID)?.remove();
 }
@@ -109,10 +145,19 @@ export function confirmEnding(opts = {}, deps = {}) {
     if (showing) return showing;
     if (typeof document === 'undefined') return Promise.resolve(true);
 
+    // Record the held trigger as soon as the warning is up, so a reload taken while the modal is
+    // open (before any answer) restores the hold on load instead of stranding the mission. "End
+    // the mission now" clears it below (the ending runs); "Keep going" leaves it, and holdEnding
+    // rewrites the same record.
+    if (opts.persist) writeHeldRecord(opts.persist);
+
     showing = new Promise((resolve) => {
         openModal(open, (endNow) => {
             showing = null;
-            if (endNow) open.forEach((o) => confirmed.add(o.taskId));
+            if (endNow) {
+                open.forEach((o) => confirmed.add(o.taskId));
+                writeHeldRecord(null);
+            }
             console.log(`[ending-check] ${opts.reason || 'ending'}: ${endNow ? 'end now' : 'keep going'} (${open.length} open)`);
             resolve(endNow);
         });
@@ -125,9 +170,10 @@ export function confirmEnding(opts = {}, deps = {}) {
  * finish by itself. `proceed` runs the ending (it must not ask again; confirmEnding answers
  * true once nothing optional is open). Only the first held ending is kept.
  */
-export function holdEnding(proceed, { reason = 'ending' } = {}, deps = {}) {
+export function holdEnding(proceed, { reason = 'ending', persist = null } = {}, deps = {}) {
     if (typeof proceed !== 'function') return false;
     if (!held) held = { proceed, reason };
+    if (persist) writeHeldRecord(persist);
     watchObjectives(deps.manager);
     win()?.objectivesManager?.notifyListeners?.();
     return true;
@@ -137,11 +183,41 @@ export function hasHeldEnding() {
     return held !== null;
 }
 
+/**
+ * Re-establish a held ending saved before a page reload. Reads the `__ending_held` descriptor
+ * from the saved globals and asks the matching rebuilder for the `proceed` that runs the ending,
+ * then holds it again: the panel button comes back and the ending runs by itself once nothing
+ * optional is open. Called on game_loaded, before the scenario's own reload backstops, so a
+ * sibling or backstop re-emit stands down (hasHeld) instead of asking a second time. A no-op if
+ * an ending is already held this session, the game has already concluded (a stale record is
+ * dropped), or no rebuilder can rebuild the trigger.
+ */
+export function restoreHeldEnding(deps = {}) {
+    if (held) return false;
+    const g = heldGlobals();
+    const record = g?.[HELD_GLOBAL];
+    if (!record || typeof record !== 'object' || !record.reason) return false;
+    if (!endingCheckEnabled(deps.config)) { writeHeldRecord(null); return false; }
+    const rebuild = holdRebuilders[record.reason];
+    const proceed = rebuild ? rebuild(record) : null;
+    if (typeof proceed !== 'function') {
+        console.warn(`[ending-check] could not restore a held ${record.reason} ending (no rebuilder or no action)`);
+        return false;   // leave the record in place; a later load may be able to rebuild it
+    }
+    held = { proceed, reason: record.reason };
+    heldRecord = record;
+    console.log(`[ending-check] restored a held ${record.reason} ending after reload`);
+    watchObjectives(deps.manager);
+    win()?.objectivesManager?.notifyListeners?.();
+    return true;
+}
+
 /** End the mission now, from the panel button or once nothing optional is open. */
 export function endHeldEnding() {
     if (!held) return false;
     const { proceed, reason } = held;
     held = null;
+    writeHeldRecord(null);   // the hold is spent: a reload now must not restore it
     // The player asked to end it (or nothing optional is left): do not ask a second time.
     openOptionalObjectives().forEach((o) => confirmed.add(o.taskId));
     console.log(`[ending-check] ending the held ${reason} ending`);
@@ -263,6 +339,9 @@ if (typeof window !== 'undefined') {
         endHeld: endHeldEnding,
         needsAnswer: endingNeedsAnswer,
         openOptional: openOptionalObjectives,
-        enabled: endingCheckEnabled
+        enabled: endingCheckEnabled,
+        registerRebuilder: registerHoldRebuilder,
+        restoreHeld: restoreHeldEnding,
+        heldRecord: () => heldRecord
     };
 }

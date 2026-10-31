@@ -212,12 +212,13 @@ function switchIfConditionMet(entry, data) {
     if (hasEnding && window.endingCheck?.needsAnswer?.()) {
         if (_endingCheckPending) return;
         _endingCheckPending = true;
-        window.endingCheck.confirm({ reason: 'credits' }).then((endNow) => {
+        const persist = { reason: 'credits', trigger: entry.trigger };
+        window.endingCheck.confirm({ reason: 'credits', persist }).then((endNow) => {
             _endingCheckPending = false;
             if (endNow) {
                 playEntry(entry, data);
             } else {
-                window.endingCheck.hold(() => playEntry(entry, data), { reason: 'credits' });
+                window.endingCheck.hold(() => playEntry(entry, data), { reason: 'credits', persist });
             }
         }, () => {
             _endingCheckPending = false;
@@ -383,6 +384,16 @@ export function initScenarioMusicEvents(scenario) {
     }
 
     console.log(`${TAG} Initialising ${musicConfig.events.length} music event(s) from scenario.`);
+
+    // Teach the ending warning how to rebuild a held credits ending after a reload
+    // (systems/ending-check.js): find the ending music entry by its trigger and replay it.
+    if (typeof window !== 'undefined') {
+        window.endingCheck?.registerRebuilder?.('credits', (record) => {
+            const e = musicConfig.events.find(ev =>
+                ev.trigger === record?.trigger && (ev.credits?.length || ev.closingCard));
+            return e ? (() => playEntry(e, {})) : null;
+        });
+    }
 
     for (const entry of musicConfig.events) {
         const { trigger } = entry;
