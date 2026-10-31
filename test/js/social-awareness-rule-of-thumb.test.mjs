@@ -50,7 +50,6 @@ const CHECK_ROLES = [
   'data_conduct',
   'executive',
   'finance',
-  'general',
   'general_v2',
   'helpdesk',
   'hr',
