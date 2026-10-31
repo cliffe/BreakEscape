@@ -201,13 +201,16 @@ test('aw6: teamProtectedOf counts reports and checks, not deletes; the summary k
 test('aw7: the host config, as the server writes it, overrides the scenario for reportRoute, ruleOfThumb and teamSize', () => {
     const social = { awareness: { reportRoute: 'Scenario route.', ruleOfThumb: 'Scenario rule.', teamSize: 8 } };
     assert.deepEqual(M.awarenessSettings(social, undefined),
-        { reportRoute: { heading: '', text: 'Scenario route.' }, ruleOfThumb: { heading: '', text: 'Scenario rule.' }, teamSize: 8 });
+        { reportRoute: { heading: '', text: 'Scenario route.' }, ruleOfThumb: { heading: '', text: 'Scenario rule.' }, teamSize: 8, showResult: true });
     const host = { awareness: { reportRoute: { heading: 'Report it', text: 'Host route.' }, ruleOfThumb: 'Host rule.', teamSize: 250 } };
     assert.deepEqual(M.awarenessSettings(social, host),
-        { reportRoute: { heading: 'Report it', text: 'Host route.' }, ruleOfThumb: { heading: '', text: 'Host rule.' }, teamSize: 250 });
+        { reportRoute: { heading: 'Report it', text: 'Host route.' }, ruleOfThumb: { heading: '', text: 'Host rule.' }, teamSize: 250, showResult: true });
     // a key the host leaves out falls back to the scenario, key by key
     assert.deepEqual(M.awarenessSettings(social, { awareness: { teamSize: 40 } }),
-        { reportRoute: { heading: '', text: 'Scenario route.' }, ruleOfThumb: { heading: '', text: 'Scenario rule.' }, teamSize: 40 });
+        { reportRoute: { heading: '', text: 'Scenario route.' }, ruleOfThumb: { heading: '', text: 'Scenario rule.' }, teamSize: 40, showResult: true });
+    // the host (or scenario) can hide the score figures; default shown
+    assert.equal(M.awarenessSettings(social, { awareness: { showResult: false } }).showResult, false);
+    assert.equal(M.awarenessSettings({ awareness: { showResult: false } }, undefined).showResult, false);
 });
 
 test('aw6: the debrief thanks the learner for phish kept from the team, with no denominator', () => {
