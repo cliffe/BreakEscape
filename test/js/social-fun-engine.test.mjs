@@ -118,6 +118,24 @@ test('aw1: the debrief draws the route box under the Monday card, as plain text'
     assert.equal(h3.querySelector('.aw-report-route'), null);
 });
 
+test('aw1: a host route of several lines draws one paragraph per line, in order', () => {
+    // A host (Hacktivity) composes the route from its pre-canned options; the engine sees only the
+    // two strings and splits the text on blank lines into one paragraph each (WP-02).
+    const text = 'Use the Report button in your mail app to report it.\n\nCall the service desk on 4000.\n\nDo not reply.';
+    const route = M.reportRouteFor(slotEpisode, {}, { awareness: { reportRoute: { heading: '', text } } });
+    const h = host();
+    renderDebrief(h, { result: { percent: 100, answers: [] }, set: set(), strings: { mondayCard: 'On Monday: report it.' }, reportRoute: route, onFinish() {} });
+    const box = h.querySelector('.aw-report-route');
+    assert.equal(box.dataset.configured, 'true');
+    assert.equal(box.querySelector('.aw-report-route-heading').textContent, 'How to report here');
+    const paras = [...box.querySelectorAll('.aw-report-route-text')].map((p) => p.textContent);
+    assert.deepEqual(paras, [
+        'Use the Report button in your mail app to report it.',
+        'Call the service desk on 4000.',
+        'Do not reply.'
+    ]);
+});
+
 // ── aw4: the shared rule of thumb (hook) ─────────────────────────────────────
 
 test('aw4: social.awareness.ruleOfThumb renders above the Monday card; absent, nothing', () => {
