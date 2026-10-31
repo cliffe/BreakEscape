@@ -97,14 +97,19 @@ const withOptional = { objectives: [
 const noOptional = { objectives: [{ aimId: 'end', missionConclusion: true, tasks: [{ taskId: 'z' }] }] };
 const noConclusion = { objectives: [{ aimId: 'a', tasks: [{ taskId: 'y', optional: true }] }] };
 
-test('ending check: warns when optional tasks, a conclusion aim and no #ending_check tag', { skip }, () => {
+test('ending check: warns when optional tasks, a conclusion aim and neither route used', { skip }, () => {
     const out = endingIssues({}, withOptional, { 'x.ink': '+ [Debrief]\n  #set_global:start:true\n' });
     assert.equal(out.length, 1);
-    assert.match(out[0], /WARNING: .* no ink file uses #ending_check/);
+    assert.match(out[0], /WARNING: .* neither uses #ending_check .* nor carries "endingCheck": true/);
 });
 
-test('ending check: quiet with the tag, the opt-out, no optional tasks or no conclusion aim', { skip }, () => {
+const withEndingCheckMapping = { objectives: withOptional.objectives, rooms: [
+    { id: 'r', npcs: [{ id: 'hax', eventMappings: [
+        { eventPattern: 'global_variable_changed:mission_complete', conversationMode: 'person-chat', endingCheck: true }] }] }] };
+
+test('ending check: quiet with the tag, with an endingCheck mapping, the opt-out, or no optional/conclusion', { skip }, () => {
     assert.deepEqual(endingIssues({}, withOptional, { 'x.ink': '+ [Debrief]\n  #ending_check\n  #set_global:start:true\n' }), []);
+    assert.deepEqual(endingIssues({}, withEndingCheckMapping), []);
     assert.deepEqual(endingIssues({ endingCheck: false }, withOptional), []);
     assert.deepEqual(endingIssues({}, noOptional), []);
     assert.deepEqual(endingIssues({}, noConclusion), []);
