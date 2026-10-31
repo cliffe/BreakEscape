@@ -1,6 +1,6 @@
 {
   "display_name": "Starting check: Finance team",
-  "description": "A check of about 8 to 10 minutes for finance staff, taken before the awareness episodes (pair AB). Ten messages from the payments inbox of Brightwell Foods, a fictional company. The result is kept so the matching after-check (awareness_post_finance_ab) can show how the two compare.",
+  "description": "A check of about 8 to 10 minutes for finance staff, taken before the awareness episodes (pair AB). Ten messages from the payments inbox of Brightwell Foods, a fictional company. The result is kept so the matching final check can show how the two compare.",
   "organiser_note": "each role's check tests the channel that role meets in its episode, and in a session that runs more than one episode only the learner's primary-role check is recorded.",
   "difficulty_level": 1,
   "scoring": "completion",

@@ -1,6 +1,6 @@
 {
   "display_name": "Final check: HR and recruitment",
-  "description": "A short check for HR and recruitment staff at Tarrowby Logistics, a fictional company, taken after the awareness episodes (pair AB). Ten new emails from the Tarrowby recruitment inbox, the same kinds as before. It is matched to the first check (awareness_pre_hr_ab), and the end screen compares the two results when the first check was finished.",
+  "description": "A short check for HR and recruitment staff at Tarrowby Logistics, a fictional company, taken after the awareness episodes (pair AB). Ten new emails from the Tarrowby recruitment inbox, the same kinds as before. It is matched to your starting check, and the end screen compares the two results once you have done it.",
   "organiser_note": "each role's check tests the channel that role meets in its episode, and in a session that runs more than one episode only the learner's primary-role check is recorded.",
   "difficulty_level": 1,
   "scoring": "completion",
