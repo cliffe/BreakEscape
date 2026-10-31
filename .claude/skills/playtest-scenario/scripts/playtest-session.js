@@ -658,7 +658,23 @@ function substituteFlags(node, at) {
       let staleLines = 0;
       let exhaustedBranches = false;
       let turns = 0;
+      let endingAccepted = false;
       for (; turns < maxTurns; turns++) {
+        // The debrief choice can carry #ending_check, which raises the "Before the
+        // mission ends" overlay (systems/ending-check.js) when optional objectives
+        // are still open. It awaits a click inside the chat's tag processing, so a
+        // scripted run that reaches the ending with tasks open would stall here.
+        // Accept it ("End the mission now") so the debrief proceeds, and note it.
+        if (await page.evaluate(() => {
+          const el = document.getElementById('ending-check-overlay');
+          const btn = el && el.querySelector('#ending-check-end');
+          if (btn) { btn.click(); return true; }
+          return false;
+        })) {
+          endingAccepted = true;
+          await pause(speed.dialogue);
+          await page.evaluate(() => window.__test.waitForDialogue({ timeoutMs: 15000 })).catch(() => {});
+        }
         const d = await page.evaluate(() => {
           const st = window.__test.minigame.getState();
           return st && st.dialogue ? st.dialogue : null;
@@ -731,6 +747,7 @@ function substituteFlags(node, at) {
         stoppedAtChoice: pendingChoice || undefined,
         turns,
         exhaustedBranches,
+        endingAccepted: endingAccepted || undefined,
         hitTurnLimit: turns >= maxTurns,
         chose: picked,
         transcript,
