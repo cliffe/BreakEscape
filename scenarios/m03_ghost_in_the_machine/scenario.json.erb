@@ -99,9 +99,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       briefing has played. %>
   <%
     music_day      = "globalVars.briefing_played === true && globalVars.clone_call_done !== true"
-    music_confront = "globalVars.night_confrontation_ready === true && globalVars.victoria_ko !== true && globalVars.victoria_choice_made !== true"
-    music_night    = "globalVars.clone_call_done === true && globalVars.victoria_choice_made !== true && !(#{music_confront})"
-    music_after    = "globalVars.victoria_choice_made === true"
+    music_confront = "globalVars.night_confrontation_ready === true && globalVars.victoria_ko !== true && globalVars.debrief_played !== true"
+    music_night    = "globalVars.clone_call_done === true && globalVars.debrief_played !== true && !(#{music_confront})"
+    music_after    = "globalVars.debrief_played === true"
   %>
   "music": {
     "events": [
@@ -144,8 +144,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         "fade": true
       },
       {
-        "_comment": "P1-16: the debrief plays under a settled end cue. victoria_choice_made opens the debrief; the credits/victory cue follows on conversation_closed:closing_debrief.",
-        "trigger": "global_variable_changed:victoria_choice_made",
+        "_comment": "P1-16: the debrief plays under a settled end cue. The cue keys on debrief_played, which the debrief sets on its first line, not on victoria_choice_made: that global now raises the ending warning first, and a player who picks Keep going stays in the mission with the night music. The credits/victory cue follows on conversation_closed:closing_debrief.",
+        "trigger": "global_variable_changed:debrief_played",
         "condition": "value === true",
         "playlist": "end",
         "fade": true
