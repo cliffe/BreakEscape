@@ -130,6 +130,17 @@ export function dropPendingInkMinigame() {
     if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
 }
 
+/**
+ * Open a registered minigame from a chat that is open now, without an ink tag (a "View
+ * profile" link). Same pause and return as the tag: a normal close reopens the chat.
+ */
+export function launchMinigameFromChat(chat, type, minigameData = {}) {
+    if (!chat || !CHAT_SCENES.includes(chat._sceneType) || !hasMinigameStarter(type)) return false;
+    if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
+    pending = { type, minigameData, chat };
+    return launchPending();
+}
+
 function launchPending() {
     const w = win();
     const request = pending;
@@ -162,6 +173,7 @@ if (typeof window !== 'undefined') {
     window.inkMinigameLaunch = {
         request: requestInkMinigame,
         flush: flushInkMinigame,
+        launchFromChat: launchMinigameFromChat,
         dropPending: dropPendingInkMinigame,
         isTriggerTag: isTriggerMinigameTag,
         hasPending: hasPendingInkMinigame

@@ -18,6 +18,9 @@ import { createBottomPin } from './phone-chat-scroll.js';
 import { portraitFor } from '../../utils/portrait-variants.js';
 import { ChatInfluence } from '../../ui/pretext-chrome.js';
 import PhoneChatConversation from './phone-chat-conversation.js';
+import { npcDmFields, onAccentColour } from './phone-app.js';
+
+const escHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 import InkEngine from '../../systems/ink/ink-engine.js';
 
 export default class PhoneChatUI {
@@ -36,6 +39,11 @@ export default class PhoneChatUI {
         this.container = container;
         this.params = params || {};
         this.isTerminalTheme = this.params.theme === 'terminal';
+        // The device's app block (title, accent, chrome), resolved by the minigame; null for
+        // every phone that has none, which then renders exactly as before
+        this.app = this.params.app || null;
+        this.isSocialTheme = this.params.theme === 'social';
+        this.appChrome = this.app?.chrome === 'app';
         this._typewriterCancel = null;
         this.npcManager = npcManager;
         this.allowedNpcIds = allowedNpcIds;  // Filter contacts to only these NPCs if provided
@@ -75,7 +83,7 @@ export default class PhoneChatUI {
         this.container.innerHTML = `
             <div class="phone-messages-container">
                 <div class="phone-screen">
-                    <div class="phone-header">
+                    ${this.appChrome ? '' : `<div class="phone-header">
                         <div class="signal-bars">
                             <span class="bar"></span>
                             <span class="bar"></span>
@@ -83,12 +91,12 @@ export default class PhoneChatUI {
                             <span class="bar"></span>
                         </div>
                         <div class="battery">85%</div>
-                    </div>
+                    </div>`}
                     
                     <!-- Contact List View -->
                     <div class="contact-list-view" id="contact-list-view">
                         <div class="contact-list-header">
-                            <h3>Messages</h3>
+                            ${this.appTitleHtml()}
                         </div>
                         <div class="contact-list" id="contact-list">
                             <!-- Contacts will be populated here -->
@@ -123,6 +131,15 @@ export default class PhoneChatUI {
         if (this.isTerminalTheme) {
             this.container.querySelector('.phone-messages-container')
                 .classList.add('phone-terminal-theme');
+        }
+        if (this.isSocialTheme) {
+            const shell = this.container.querySelector('.phone-messages-container');
+            shell.classList.add('phone-social-theme');
+            if (this.appChrome) shell.classList.add('phone-app-chrome');
+            if (this.app?.accent) {
+                shell.style.setProperty('--dm-accent', this.app.accent);
+                shell.style.setProperty('--dm-on-accent', onAccentColour(this.app.accent));
+            }
         }
 
         // Store element references
@@ -159,6 +176,16 @@ export default class PhoneChatUI {
         console.log('✅ Phone UI rendered');
     }
     
+    /** The contact-list heading: "Messages", or the app's title (and logo). */
+    appTitleHtml() {
+        const title = this.app?.title;
+        if (!title) return '<h3>Messages</h3>';
+        const logo = this.app.logo
+            ? `<img class="app-logo" src="/break_escape/assets/logos/${escHtml(this.app.logo)}" alt="">`
+            : '';
+        return `<h3 class="app-title">${logo}<span>${escHtml(title)}</span></h3>`;
+    }
+
     /**
      * Setup voice selection for speech synthesis
      */
@@ -534,6 +561,7 @@ export default class PhoneChatUI {
             </div>
             <div class="contact-info">
                 <div class="contact-name">${npc.displayName || npc.id}</div>
+                ${npcDmFields(npc).handle ? `<div class="contact-handle">${escHtml(npcDmFields(npc).handle)}</div>` : ''}
                 <div class="contact-last-message">${displayDashes(lastMessagePreview)}</div>
             </div>
             <div class="contact-meta">
@@ -627,7 +655,32 @@ export default class PhoneChatUI {
             const nameSpan = document.createElement('span');
             nameSpan.className = 'npc-name';
             nameSpan.textContent = npcName;
-            conversationInfo.appendChild(nameSpan);
+            const { handle, profile } = npcDmFields(this.npcManager.getNPC(npcId));
+            if (handle || profile) {
+                // Name, handle and the profile link stack beside the avatar
+                const block = document.createElement('div');
+                block.className = 'npc-id-block';
+                block.appendChild(nameSpan);
+                if (handle) {
+                    const handleEl = document.createElement('span');
+                    handleEl.className = 'npc-handle';
+                    handleEl.textContent = handle;
+                    block.appendChild(handleEl);
+                }
+                // No profile link in a judged chat: leaving it would close the call
+                if (profile && !this.params.pretextCallId) {
+                    const link = document.createElement('button');
+                    link.type = 'button';
+                    link.className = 'npc-profile-link';
+                    link.dataset.siteId = profile.siteId;
+                    link.dataset.person = profile.person;
+                    link.textContent = 'View profile';
+                    block.appendChild(link);
+                }
+                conversationInfo.appendChild(block);
+            } else {
+                conversationInfo.appendChild(nameSpan);
+            }
             
             // Update reference
             this.elements.npcName = nameSpan;

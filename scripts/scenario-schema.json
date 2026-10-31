@@ -3285,7 +3285,8 @@
           "description": "Wording of the preparation overlay; each defaults to today's text. approachTitle is the title for an in-person call (default: title).",
           "properties": {
             "title": {"type": "string"}, "approachTitle": {"type": "string"},
-            "heldTitle": {"type": "string"}, "heldEmpty": {"type": "string"}
+            "heldTitle": {"type": "string"}, "heldEmpty": {"type": "string"},
+            "beginLabel": {"type": "string", "description": "The start button (default 'Make the call'; 'Start the chat' in a social DM app)"}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
@@ -3382,7 +3383,27 @@
         "ethics": {"type": "string"},
         "requireFact": {"type": "boolean", "description": "batch-11: block Approach / Make the call until at least one fact is held. Default off."},
         "requireFactLine": {"type": "string", "description": "batch-11: line shown while requireFact holds Approach back"},
+        "labels": {
+          "type": "object",
+          "description": "Debrief wording by theme. 'social' (a DM app) defaults to chat wording (Chat debrief, The chat was reported, You left the chat.); a key here overrides it. outcomeLabels, per outcome, still wins over both.",
+          "properties": {
+            "default": {"$ref": "#/definitions/socialPretextLabelSet"},
+            "social": {"$ref": "#/definitions/socialPretextLabelSet"},
+            "terminal": {"$ref": "#/definitions/socialPretextLabelSet"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
         "outcomeLabels": {"type": "object", "properties": {"got_it": {"type": "string"}, "reported": {"type": "string"}, "walked_away": {"type": "string"}}, "additionalProperties": false, "description": "batch-11: pretext debrief outcome labels; defaults are phone wording (You rang off.)"}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialPretextLabelSet": {
+      "type": "object",
+      "properties": {
+        "debriefTitle": {"type": "string"}, "got_it": {"type": "string"}, "partial": {"type": "string"},
+        "reported": {"type": "string"}, "walked_away": {"type": "string"}
       },
       "patternProperties": {"^_": {}},
       "additionalProperties": false
@@ -4204,8 +4225,23 @@
         "phoneId": { "type": "string" },
         "phoneTheme": {
           "type": "string",
-          "enum": ["terminal"],
-          "description": "Optional visual theme for the phone-chat minigame. 'terminal' uses a black-screen CRT aesthetic with phosphor green text."
+          "enum": ["terminal", "social"],
+          "description": "Optional visual theme for the phone-chat minigame. 'terminal' uses a black-screen CRT aesthetic with phosphor green text. 'social' is the generic DM-app look (accent colour from the device's app block). A device's own app.theme wins over this."
+        },
+        "handle": {
+          "type": "string",
+          "description": "A phone NPC's handle in a DM app, shown under the name (for example \"@mara.of.the.deep\")"
+        },
+        "profile": {
+          "type": "object",
+          "description": "A phone NPC's profile page: shows a View profile link that opens the OSINT browser at that person's profile and returns to the chat",
+          "required": ["siteId", "person"],
+          "properties": {
+            "siteId": {"type": "string", "description": "A social.osint.sites id"},
+            "person": {"type": "string", "description": "A social.people id with a profile on that site"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
         },
         "unlockable": {
           "type": "array",
@@ -4596,6 +4632,19 @@
         "npcIds": {
           "type": "array",
           "items": { "type": "string" }
+        },
+        "app": {
+          "type": "object",
+          "description": "The look of a phone device's chat (type 'phone'): a DM app. Its theme wins over the contacts' phoneTheme, which stays the fallback. chrome 'app' hides the signal bars and battery; title replaces 'Messages'.",
+          "properties": {
+            "title": {"type": "string", "description": "The app's name, shown as the list heading (default 'Messages')"},
+            "theme": {"type": "string", "enum": ["social", "terminal"]},
+            "accent": {"type": "string", "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$", "description": "Accent colour of the social theme, as hex"},
+            "chrome": {"type": "string", "enum": ["app"], "description": "'app' drops the phone's status bar (signal and battery)"},
+            "logo": {"type": "string", "description": "A file in assets/logos shown beside the title, such as friendface.png"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
         },
         "hacktivityMode": { "type": "boolean" },
         "vm": {
