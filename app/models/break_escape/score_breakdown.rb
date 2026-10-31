@@ -308,7 +308,7 @@ module BreakEscape
     def policy_score(policy, pass_percent: nil)
       case policy.to_s
       when 'task_completion' then calculate_task_score
-      when 'flags' then vm_set&.score || 0.0
+      when 'flags' then (respond_to?(:vm_set) ? vm_set&.score : nil) || 0.0 # vm_set exists under Hacktivity only
       else self.class.policy_score_for(score_breakdown, policy, pass_percent: pass_percent)
       end
     end
