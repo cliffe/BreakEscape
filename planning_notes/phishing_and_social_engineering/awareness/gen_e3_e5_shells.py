@@ -536,7 +536,9 @@ def main():
     built = []
     for ekey in ('e3', 'e5'):
         built.append(defend_only(ekey))
-        built += [check(ekey, p, st) for p in ('ab', 'ba') for st in ('pre', 'post')]
+    # The original E5 'general' check pair was retired 2026-10-31 (the general_v2 pair under
+    # gen_checks_v2_shells.py is the 'All staff' check now). Only E3 keeps its role checks here.
+    built += [check('e3', p, st) for p in ('ab', 'ba') for st in ('pre', 'post')]
     for mission, sc, meta, ink_name, ink in built:
         sc = with_title_screen_name(sc, mission)
         d = os.path.join(out, mission)

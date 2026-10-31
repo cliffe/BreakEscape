@@ -404,7 +404,7 @@ function cli(scenario) {
 }
 
 test('CLI: a post check shell no longer trips the carry-over name lint, and the episode fixture is clean', { skip }, () => {
-  const post = cli('awareness_post_general_ab');
+  const post = cli('awareness_post_general_v2_ab');
   assert.equal(post.status, 0, post.out);
   assert.equal(hits(post.out.split('\n'), /imported name 'triage_pre_reportRate' must be lower_snake_case/), 0, post.out);
   const fixture = cli('test_social_episode');
