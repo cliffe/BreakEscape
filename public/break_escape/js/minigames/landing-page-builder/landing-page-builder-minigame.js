@@ -66,7 +66,22 @@ const RESULT_WORD = { pass: 'Pass', partial: 'Partly', fail: 'Fail' };
 const GIVEAWAY_WORDS = Object.freeze({
     brand: 'the service', purpose: 'what the page is for', domain: 'the address', logo: 'the logo',
     wording: 'the wording', form: 'the form fields', padlock: 'the missing padlock',
-    formOrigin: 'where the form sends what you type', hoverMismatch: 'where the link really goes'
+    formOrigin: 'where the form sends what you type', hoverMismatch: 'where the link really goes',
+    // ENG-03b (fake check): the one giveaway is that it asks you to run a step on your computer.
+    fake_check_paste: 'the step it asks you to run'
+});
+
+// ENG-03b: built-in chrome strings for the fake-check builder rows and note. Overridable per page
+// through pageDef.check.strings, exactly as the sign-in chrome is through pageDef.strings. The
+// learner-facing option labels themselves are authored data (check.hosts/pretexts/urgencies/steps).
+const CHECK_BUILDER_STRINGS = Object.freeze({
+    hostRowLabel: 'Where does the check sit?',
+    pretextRowLabel: 'Why should they do the steps?',
+    urgencyRowLabel: 'How much pressure?',
+    stepsRowLabel: 'How are the steps worded?',
+    pretextNoteTitle: 'Why the check must fit the visit',
+    pretextNote: 'A fake check borrows the trust of a site the visitor already uses. Pick the host, ' +
+        'the reason and the pace that fit what they came to do, or they will stop and think.'
 });
 
 // P5-14: the two giveaways every fake page carries, as neutral score rows (no factor scores them).
@@ -182,6 +197,23 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         return (this.social.conceptCards || []).find((c) => c && c.id === id) || null;
     }
 
+    // ── fake-check mode (ENG-03b) ──────────────────────────────────────────────
+    _isFakeCheck() {
+        return !!(this.pageDef && this.pageDef.pageType === 'fakeCheck');
+    }
+
+    _checkDef() {
+        return this.pageDef && typeof this.pageDef.check === 'object' && this.pageDef.check ? this.pageDef.check : {};
+    }
+
+    /** A fake-check chrome string: pageDef.check.strings[key], else the built default. */
+    _checkString(key) {
+        const s = this._checkDef().strings;
+        const over = s && typeof s === 'object' ? s[key] : undefined;
+        if (typeof over === 'string' && over.length) return over;
+        return CHECK_BUILDER_STRINGS[key] || '';
+    }
+
     _held(factId) {
         return this.globals[INTEL_PREFIX + factId] === true;
     }
@@ -226,6 +258,22 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         return { brand: null, purpose: null, domainId: null, logo: null, wording: null, fields: [], padlock: false };
     }
 
+    /** The fake-check choice shape (ENG-03b): the four menu picks, nothing else. */
+    _defaultsFakeCheck() {
+        return { check: { hostId: null, pretextId: null, urgencyId: null, stepsId: null } };
+    }
+
+    /** The closed four-key fake-check choice block from any source (ids only, never anything else). */
+    _pickCheck(c) {
+        const v = c && typeof c === 'object' ? c : {};
+        return {
+            hostId: v.hostId ?? null,
+            pretextId: v.pretextId ?? null,
+            urgencyId: v.urgencyId ?? null,
+            stepsId: v.stepsId ?? null
+        };
+    }
+
     _matchingWordingId() {
         const w = (this.pageDef.wordings || []).find((x) => x && x.match === true);
         return w ? w.id : null;
@@ -263,13 +311,19 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         return list.filter((d) => d && this._profileAllows(d.minProfile));
     }
 
-    /** A stable signature of the current choices, for staleness checks. */
+    /** A stable signature of the current choices, for staleness checks. A fake-check page's `check`
+     *  block joins the signature only when present, so a sign-in signature is byte-identical. */
     _sig(choices = this.choices) {
         const c = choices || {};
-        return JSON.stringify([
+        const base = [
             c.brand ?? null, c.purpose ?? null, c.domainId ?? null, c.logo ?? null,
             c.wording ?? null, (Array.isArray(c.fields) ? c.fields.slice().sort() : []), c.padlock === true
-        ]);
+        ];
+        if (c.check && typeof c.check === 'object') {
+            const k = this._pickCheck(c.check);
+            base.push([k.hostId, k.pretextId, k.urgencyId, k.stepsId]);
+        }
+        return JSON.stringify(base);
     }
 
     _pick7(choices) {
@@ -279,6 +333,10 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
             else if (k === 'padlock') out.padlock = choices.padlock === true;
             else out[k] = choices[k] ?? null;
         }
+        // ENG-03b: the fake-check draft/record also carries the closed four-key `check` block. It is
+        // added ONLY when present (a fake-check page), so a sign-in page's draft/record is byte-
+        // identical (no `check` key) and the model's normChoices keeps its sign-in shape.
+        if (choices.check && typeof choices.check === 'object') out.check = this._pickCheck(choices.check);
         return out;
     }
 
@@ -308,13 +366,20 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         // Restore: defaults, then the draft or the scored record, then presets for rows this
         // profile does not edit (07 §5, §7).
         const restored = this._drafts()[this.pageId] || (this._record() ? this._record().choices : null) || {};
-        this.choices = { ...this._defaults(), ...this._pick7({ ...this._defaults(), ...restored }) };
-        for (const row of ['brand', 'purpose', 'domain', 'logo', 'wording', 'form', 'padlock']) {
-            if (this._isEditable(row)) continue;
-            const v = this._presetValue(row);
-            if (row === 'domain') { if (v != null) this.choices.domainId = v; continue; }
-            if (row === 'form') { this.choices.fields = Array.isArray(v) ? v : []; continue; }
-            this.choices[row] = v;
+        if (this._isFakeCheck()) {
+            // Fake-check mode (ENG-03b): the only choices are the four-key `check` block. No sign-in
+            // rows, so no presets.
+            const d = this._defaultsFakeCheck();
+            this.choices = { ...d, check: { ...d.check, ...this._pickCheck(restored && restored.check) } };
+        } else {
+            this.choices = { ...this._defaults(), ...this._pick7({ ...this._defaults(), ...restored }) };
+            for (const row of ['brand', 'purpose', 'domain', 'logo', 'wording', 'form', 'padlock']) {
+                if (this._isEditable(row)) continue;
+                const v = this._presetValue(row);
+                if (row === 'domain') { if (v != null) this.choices.domainId = v; continue; }
+                if (row === 'form') { this.choices.fields = Array.isArray(v) ? v : []; continue; }
+                this.choices[row] = v;
+            }
         }
 
         // A reload after a real Score restores the panel: the record's choices match ours and it
@@ -424,7 +489,9 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
     _wireHotspots(regions) {
         const map = {
             address: regions.addressBar, padlock: regions.padlock,
-            logo: regions.logo, wording: regions.wording, form: regions.form
+            logo: regions.logo, wording: regions.wording, form: regions.form,
+            // ENG-03b: the fake-check steps panel is the one hot-spot (fake_check_paste).
+            steps: regions.steps
         };
         const s = this._suspect;
         for (const [name, el] of Object.entries(map)) {
@@ -449,7 +516,14 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
             return;
         }
         this.panel.appendChild(this._pretextCard());
-        if (this._editableRows().length) {
+        if (this._isFakeCheck()) {
+            const rows = h('div', { class: 'lpb-rows' });
+            rows.appendChild(this._checkHostRow());
+            rows.appendChild(this._checkPretextRow());
+            rows.appendChild(this._checkUrgencyRow());
+            rows.appendChild(this._checkStepsRow());
+            this.panel.appendChild(rows);
+        } else if (this._editableRows().length) {
             const rows = h('div', { class: 'lpb-rows' });
             if (this._isEditable('brand')) rows.appendChild(this._brandRow());
             if (this._isEditable('purpose')) rows.appendChild(this._purposeRow());
@@ -498,14 +572,46 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
             card.appendChild(h('p', { class: 'lpb-pretext-empty',
                 text: 'You haven’t found out what ' + this._firstName() + ' would expect to see yet.' }));
             if (this.social.intelBoard) {
+                const caseLabel = this.social.intelBoard.labels?.caseButton || 'Case file';
                 const caseBtn = h('button', { type: 'button', class: 'lpb-case minigame-button',
-                    'data-focus': 'case-file', text: 'Case file' });
+                    'data-focus': 'case-file', text: caseLabel });
                 this.addEventListener(caseBtn, 'click', (e) => { e.preventDefault?.(); this._openCaseFile(); });
                 card.appendChild(caseBtn);
             }
         }
-        card.appendChild(this._builtInNote('why-match', 'Why the page must match the story', pageString(this.pageDef, 'pretextNote')));
+        const noteTitle = this._isFakeCheck() ? this._checkString('pretextNoteTitle') : 'Why the page must match the story';
+        const noteText = this._isFakeCheck() ? this._checkString('pretextNote') : pageString(this.pageDef, 'pretextNote');
+        card.appendChild(this._builtInNote('why-match', noteTitle, noteText));
         return card;
+    }
+
+    // ── step 2 (fake-check): the four persuasion rows (ENG-03b) ──────────────────
+    _checkHostRow() {
+        const opts = (this._checkDef().hosts || []).map((o) => ({ value: o.id, label: o.label || o.id }));
+        const body = this._radioGroup('check-host', opts, this.choices.check && this.choices.check.hostId,
+            (v) => this._setCheck('hostId', v));
+        return this._row('check-host', this._checkString('hostRowLabel'), body);
+    }
+
+    _checkPretextRow() {
+        const opts = (this._checkDef().pretexts || []).map((o) => ({ value: o.id, label: o.label || o.id }));
+        const body = this._radioGroup('check-pretext', opts, this.choices.check && this.choices.check.pretextId,
+            (v) => this._setCheck('pretextId', v), { readable: true });
+        return this._row('check-pretext', this._checkString('pretextRowLabel'), body);
+    }
+
+    _checkUrgencyRow() {
+        const opts = (this._checkDef().urgencies || []).map((o) => ({ value: o.id, label: o.label || o.id }));
+        const body = this._radioGroup('check-urgency', opts, this.choices.check && this.choices.check.urgencyId,
+            (v) => this._setCheck('urgencyId', v), { readable: true });
+        return this._row('check-urgency', this._checkString('urgencyRowLabel'), body);
+    }
+
+    _checkStepsRow() {
+        const opts = (this._checkDef().steps || []).map((o) => ({ value: o.id, label: o.label || o.id }));
+        const body = this._radioGroup('check-steps', opts, this.choices.check && this.choices.check.stepsId,
+            (v) => this._setCheck('stepsId', v), { readable: true });
+        return this._row('check-steps', this._checkString('stepsRowLabel'), body);
     }
 
     // ── step 2: build rows ────────────────────────────────────────────────────
@@ -699,11 +805,16 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         // factor scores. Give each a neutral row, so every giveaway counted has a line.
         const rowIds = new Set(s.factors.map((f) => f.id));
         for (const t of Array.isArray(s.tells) ? s.tells : []) {
-            if (!t || !ALWAYS_TELL_ROWS[t.id] || rowIds.has(t.id)) continue;
+            if (!t || rowIds.has(t.id)) continue;
+            // The two sign-in page tells read from the built table; the one fake-check tell
+            // (fake_check_paste) carries its own authored line (ENG-03b). A sign-in page never hits
+            // the fake-check branch, so its rows are byte-identical.
+            const line = ALWAYS_TELL_ROWS[t.id] || (this._isFakeCheck() ? t.line : null);
+            if (!line) continue;
             rowIds.add(t.id);
             list.appendChild(h('li', { class: 'lpb-check-item is-neutral lpb-check-always', 'data-factor': t.id },
                 h('span', { class: 'lpb-check-word', text: 'Always' }),
-                h('span', { class: 'lpb-check-line lpb-readable', text: ALWAYS_TELL_ROWS[t.id] })));
+                h('span', { class: 'lpb-check-line lpb-readable', text: line })));
         }
         panel.appendChild(list);
         if (this._stale()) panel.appendChild(h('p', { class: 'lpb-stale-note', text: 'Score again — a choice changed.' }));
@@ -757,6 +868,14 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         const set = new Set(this.choices.fields || []);
         if (set.has(field)) set.delete(field); else set.add(field);
         this.choices.fields = Array.from(set);
+        this._onChoiceChanged();
+    }
+
+    /** Set one fake-check menu pick (ENG-03b). Re-picking the current value is a no-op, as _set is. */
+    _setCheck(key, value) {
+        if (!this.choices.check || typeof this.choices.check !== 'object') this.choices.check = this._pickCheck(null);
+        if (this.choices.check[key] === value) return;
+        this.choices.check[key] = value;
         this._onChoiceChanged();
     }
 
@@ -837,9 +956,14 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         const record = setBuilt(scoredRecord, true);
         this._writeRecord(record);
 
-        // Bridge to the scenario globals (07 §5, §6; 00 S3). A global alone opens no lock.
+        // Bridge to the scenario globals (07 §5, §6; 00 S3). A global alone opens no lock. For a
+        // fake-check page there is no look-alike domain, so landing_<id>_domain carries the chosen
+        // host-option id instead (E10 §15; the flip reads the built page from the record, not this).
         writeGlobal(`landing_${this.pageId}_built`, true);
-        writeGlobal(`landing_${this.pageId}_domain`, this.choices.domainId || '');
+        const domainValue = this._isFakeCheck()
+            ? ((this.choices.check && this.choices.check.hostId) || '')
+            : (this.choices.domainId || '');
+        writeGlobal(`landing_${this.pageId}_domain`, domainValue);
         this._attached = true;
         this._announce('Page attached.');
         this.gameResult = this.closeResult();
@@ -1003,12 +1127,16 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
             panel.appendChild(h('p', { class: 'lpb-fine-line', text: this._lastFine }));
         }
 
-        const linkFound = this._found.has('hoverMismatch');
-        const linkBtn = h('button', { type: 'button', class: 'lpb-link-btn minigame-button',
-            'data-focus': 'show-link', disabled: linkFound ? true : undefined,
-            text: linkFound ? 'Link target shown' : 'Show the link target' });
-        if (!linkFound) this.addEventListener(linkBtn, 'click', (e) => { e.preventDefault?.(); this._showLinkTarget(); });
-        panel.appendChild(linkBtn);
+        // The "Show the link target" button reveals the hoverMismatch tell; a fake-check page has no
+        // such tell (its address is the genuine one), so the button is left out there (ENG-03b).
+        if (s.tellsById && s.tellsById.hoverMismatch) {
+            const linkFound = this._found.has('hoverMismatch');
+            const linkBtn = h('button', { type: 'button', class: 'lpb-link-btn minigame-button',
+                'data-focus': 'show-link', disabled: linkFound ? true : undefined,
+                text: linkFound ? 'Link target shown' : 'Show the link target' });
+            if (!linkFound) this.addEventListener(linkBtn, 'click', (e) => { e.preventDefault?.(); this._showLinkTarget(); });
+            panel.appendChild(linkBtn);
+        }
 
         const bar = h('div', { class: 'lpb-inspect-actions' });
         if (!this._inspectionComplete) {

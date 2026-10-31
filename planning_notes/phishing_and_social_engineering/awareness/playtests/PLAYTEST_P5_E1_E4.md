@@ -64,7 +64,7 @@ Carried from P3/P4:
 | D1 (learner shown as a hooded figure) | **fixed for a chosen avatar** | Map sprite and bottom-left HUD portrait follow the saved choice (seen for female_office_worker_v2 and male_office_worker_v2; the other avatars checked through `window.breakEscapeConfig.playerSprite`). A learner who has never chosen still gets the hooded default. |
 | E3-11 (MFA has no decision) | unchanged | E3 c: three pushes, then "The target tapped Approve. The attacker is now signed in — this is MFA fatigue." |
 | E3-T (E3 length) | unchanged, unmeasured | See the timing note. |
-| E4 N2 (only the webmail address offered) | not re-checked | I picked "inboxly" by text and did not list the options. |
+| E4 N2 (only the webmail address offered) | not re-checked | I picked "lintbox" by text and did not list the options. |
 | t1 (round score vs persisted) | by design | Every run showed 0 to 100% on screen and `score 100` in verify-run. |
 | t3 (converse repeats the welcome line) | **not reproduced** | E4 defend-only, Thandiwe, twice after the end card: "That's everything cleared, thanks. When it's money and it's in a hurry, ring her on the number you already have, or ask Yasmin." Same line both times, which is not the welcome line. |
 

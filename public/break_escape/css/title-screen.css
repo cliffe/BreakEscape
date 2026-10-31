@@ -120,3 +120,64 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.55; }
 }
+
+/* Opt-in painted backdrop (mission.json "title_art"). The art keeps its right 40% calm, so the
+   typed title and prompt sit there over a dark gradient (right and bottom) for contrast. */
+.title-screen-art {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 1.4s ease-out;
+}
+
+.title-screen-art.is-in {
+    opacity: 0.8; /* dimmed so the title stays the brightest thing on screen */
+}
+
+.title-screen-art::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 40%),
+        linear-gradient(to left, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.7) 38%, rgba(0, 0, 0, 0) 68%);
+}
+
+/* The logo stays centred while the text moves into the calm right-hand strip. */
+.title-screen-container.has-art {
+    align-items: flex-end;
+}
+
+.title-screen-container.has-art .title-screen-logo {
+    inset: 0;
+    margin: auto;
+}
+
+.title-screen-container.has-art .title-screen-title,
+.title-screen-container.has-art .title-screen-prompt {
+    width: 36%;
+    margin-right: 2%;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+    text-shadow: 0 0 6px rgba(0, 0, 0, 0.9), 0 2px 2px rgba(0, 0, 0, 0.9);
+}
+
+.title-screen-container.has-art .title-screen-title {
+    font-size: 22px;
+}
+
+@media (max-width: 700px) {
+    /* Narrow screens: no calm strip to use, so centre the text and darken the whole picture. */
+    .title-screen-container.has-art { align-items: center; }
+    .title-screen-container.has-art .title-screen-title,
+    .title-screen-container.has-art .title-screen-prompt { width: 90%; margin-right: 0; }
+    .title-screen-art::after { background: rgba(0, 0, 0, 0.6); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .title-screen-art { transition: none; }
+}

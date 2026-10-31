@@ -1,6 +1,7 @@
 {
   "scenario_id": "awareness_e1_invoice_fraud",
   "scenario_name": "Invoice fraud: both sides",
+  "titleScreenName": "Invoice fraud",
   "scenario_brief": "Awareness episode E1. You're on an authorised exercise at Brightwell Foods, a fictional food manufacturer. First you're on the red team: research the company and its supplier, then write one email to Adaeze, the finance manager, that looks as if it came from the supplier. Then you swap seats and cover the payments inbox the same kind of email lands in. Only the inbox is scored.",
   "endGoal": "Send the email in Derek's name, then sort the payments inbox at the training kiosk.",
   "version": "1.0",
@@ -45,13 +46,13 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e1_invoice_fraud_defend_done"
+          "episode_e1_invoice_fraud_defend_complete"
         ]
       },
       "conclusionScreen": {
         "type": "success",
-        "title": "Invoice fraud episode done",
-        "body": "You've seen both sides of invoice fraud and sorted the payments inbox, so this episode is finished."
+        "title": "Invoice fraud: finished",
+        "body": "You've seen both sides of invoice fraud and worked through the payments inbox. That's this episode finished. The debrief goes through each one."
       },
       "tasks": [
         {
@@ -68,8 +69,7 @@
     "se_awareness_records": [],
     "episode_e1_invoice_fraud_defend_percent": 0,
     "episode_e1_invoice_fraud_defend_reportRate": 0,
-    "episode_e1_invoice_fraud_defend_done": false,
-    "episode_e1_invoice_fraud_defend_pass": false,
+    "episode_e1_invoice_fraud_defend_complete": false,
     "se_osint_state": {},
     "se_intel_brightwell_finance_manager": false,
     "se_intel_harlow_supplier_contact": false,
@@ -147,7 +147,7 @@
               "address": "accounts@brightwel1foods.example"
             },
             "to": "payments@brightwellfoods.example",
-            "subject": "Updated bank details — please action today",
+            "subject": "Updated bank details, please action today",
             "time": "10:12",
             "body": "Hi team,\nHarlow Packaging have moved to a new bank. Please change the payee account on invoice INV-2217 before today's payment run, so the payment doesn't bounce.\nNew account name: Harlow Packaging Ltd\nNew account number ending 7716\nThanks,\nAccounts",
             "auth": {
@@ -250,7 +250,7 @@
             "id": "e1_ceo_wire",
             "from": {
               "name": "Ravinder Sandhu",
-              "address": "ravinder.sandhu.private@inboxly.example"
+              "address": "ravinder.sandhu.private@lintbox.example"
             },
             "to": "payments@brightwellfoods.example",
             "subject": "Need this paid today",
@@ -260,8 +260,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "ravinder.sandhu.private@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "ravinder.sandhu.private@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -271,7 +271,7 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "The name is the chief executive's, but the address is a personal inbox at inboxly.example, not brightwellfoods.example",
+                "senderTrust": "The name is the chief executive's, but the address is a personal inbox at lintbox.example, not brightwellfoods.example",
                 "secrecy_or_bypass": "'Keep it to yourself' and 'don't put it through the usual approval' ask you to skip the check that would catch this",
                 "urgencyCalibrated": "'Today' and 'in meetings all afternoon' leave no time to check, and steer you away from ringing him"
               },
@@ -825,7 +825,7 @@
               "completeTask": "land_supplier_contact"
             },
             {
-              "eventPattern": "global_variable_changed:episode_e1_invoice_fraud_defend_done",
+              "eventPattern": "global_variable_changed:episode_e1_invoice_fraud_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_payments_inbox"
@@ -845,8 +845,8 @@
           "observations": "A touch-screen training kiosk for the Brightwell Foods exercise: first the red-team brief and research, then the payments inbox.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e1_invoice_fraud_defend_done",
-              "value": "A touch-screen training kiosk for the Brightwell Foods exercise. The message is written and the payments inbox is all dealt with."
+              "condition": "globalVars.episode_e1_invoice_fraud_defend_complete",
+              "value": "A touch-screen training kiosk for the Brightwell Foods exercise. Episode finished."
             }
           ],
           "minigameData": {

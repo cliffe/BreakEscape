@@ -33,7 +33,10 @@ export const TELL_REGIONS = Object.freeze({
     form: 'form',
     padlock: 'padlock',
     formOrigin: 'form',
-    hoverMismatch: 'link'
+    hoverMismatch: 'link',
+    // ENG-03b: a fake "verify you are human" check has one tell — it still has to tell the visitor
+    // to paste and run something. It lives on the steps panel of the fake-check preview.
+    fake_check_paste: 'steps'
 });
 
 // 07 N5 names the export "the tells table"; it is the region map above.
@@ -50,7 +53,9 @@ export const FINE_LINES = Object.freeze({
     padlock: 'The padlock is shown. That is not reassurance — tap it to see why.',
     logo: 'The logo looks right. But any logo is easy to copy, so it never proves a page is genuine.',
     wording: 'The wording reads cleanly. Good spelling is not proof either; a careful forger gets it right.',
-    form: 'The form looks ordinary for a sign-in.'
+    form: 'The form looks ordinary for a sign-in.',
+    // ENG-03b: the fake-check steps panel; the one giveaway is that it asks you to run something.
+    steps: 'The heading and the look are fine. The one thing to question is that it asks you to run a step on your computer.'
 });
 export const FINE_FALLBACK = 'That part looks fine on this page.';
 
@@ -88,7 +93,11 @@ function resolveString(pageDef, key) {
  */
 export function buildSuspectPage(pageDef, record, target) {
     const choices = isObj(record) && isObj(record.choices) ? record.choices : {};
-    const padlockOn = choices.padlock === true;
+    // A fake-check page sits on a genuine (compromised) site, so its padlock is always shown and is
+    // a decoy just the same (ENG-03b): a real certificate on a real address says nothing about the
+    // "verify you are human" panel over it.
+    const fakeCheck = isObj(pageDef) && pageDef.pageType === 'fakeCheck';
+    const padlockOn = choices.padlock === true || fakeCheck;
     const padlockDecoyLine = resolveString(pageDef, 'padlockDecoy');
 
     const result = scorePage(pageDef, choices, target);

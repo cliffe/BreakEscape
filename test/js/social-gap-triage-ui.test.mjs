@@ -16,6 +16,10 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { JSDOM } from 'jsdom';
 
+// batch 13 item 6: the no-ticks confirm prompt is on by default now. These tests predate it and
+// press Confirm once expecting a lock, so their sets pin it off unless they name it themselves.
+const withOneConfirm = (set) => (set && typeof set === 'object' && !('confirmPrompt' in set) ? { ...set, confirmPrompt: false } : set);
+
 const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 
@@ -86,6 +90,7 @@ function open(set, params = {}) {
     document.body.innerHTML = '';
     const container = document.createElement('div');
     document.body.appendChild(container);
+    set = withOneConfirm(set);
     const scene = new InboxTriageMinigame(container, { set, social: { triageSets: [set] }, ...params });
     scene._sceneType = 'inbox-triage';
     window.MinigameFramework.currentMinigame = scene;
@@ -185,7 +190,9 @@ test('a confirmed verdict is locked: no verdict buttons, and re-opening the shee
     click($(s, '.tri-start'));
     verdict(s, 'm1_it', 'trust');
     assert.equal($$(s, '.tri-verdict').length, 0);
-    assert.ok($(s, '.tri-locked'));
+    // F-E19-3: immediate mode confirms via the review card's verdict line, not a .tri-locked line.
+    assert.equal($(s, '.tri-locked'), null);
+    assert.ok($(s, '.tri-card-verdict'));
     s._openSheet(s.messages[0], 'report');
     assert.equal(state(s).sheet.open, false);
     assert.equal(s.answers.get('m1_it').verdict, 'trust');
@@ -213,20 +220,22 @@ test('ms is recorded for the message and never negative; unopened-by-click messa
 
 // ── sort order and progress ──────────────────────────────────────────────────
 
-test('answering out of order: "Next message" goes to the next unanswered after this one and wraps to earlier ones', () => {
+test('answering out of order: "Next message" goes to the first unsorted item in list order (E11 B2 finding 6)', () => {
+    // batch-11 item 6: Next lands on the first unsorted item, not the next one after the one just
+    // answered, so an earlier unsorted item (a call near the top) is never stranded.
     const s = open(makeSet());
     click($(s, '.tri-start'));
     verdict(s, 'm3_parcel', 'delete');
     assert.equal($(s, '.tri-next').textContent, 'Next message');
     click($(s, '.tri-next'));
-    assert.equal(state(s).selectedId, 'm4_jed');
-    verdict(s, 'm4_jed', 'trust');
-    click($(s, '.tri-next'));
-    assert.equal(state(s).selectedId, 'm1_it', 'wraps to the first unanswered');
+    assert.equal(state(s).selectedId, 'm1_it', 'the earliest unsorted item, not the one after m3');
     verdict(s, 'm1_it', 'trust');
     click($(s, '.tri-next'));
     assert.equal(state(s).selectedId, 'm2_payroll');
     verdict(s, 'm2_payroll', 'report');
+    click($(s, '.tri-next'));
+    assert.equal(state(s).selectedId, 'm4_jed');
+    verdict(s, 'm4_jed', 'trust');
     assert.equal($(s, '.tri-next').textContent, 'See result');
 });
 

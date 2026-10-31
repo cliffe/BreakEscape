@@ -1174,6 +1174,8 @@ Trigger a conversation automatically when the player loads the room:
 | `skipIfGlobal` | Skip if this global variable is truthy (prevents cutscene replaying on resume) |
 | `setGlobalOnStart` | Set this global variable to `true` when conversation starts |
 | `disableClose` | `true` prevents player closing the dialog (person-chat and phone; on the phone it also hides the back arrow and ignores Esc). Honoured since 2026-10-21; before that the field was read but dropped. |
+| `videoCall` | `true` opens the conversation as a video call, as an event mapping's `conversationMode: "video-call"` does: person-chat framed as a call, with the player's chosen avatar as a self-view. It works for a phone NPC too (the call is always a person-chat). `conversationMode: "video-call"` is accepted as the same thing. Absent, nothing changes. |
+| `videoLabel`, `participantTag` | With `videoCall`: the meeting-tool name on the call bar (default "SECURE VIDEO LINK") and a tag beside the peer's name (for example "External"). |
 
 #### NPC Event Mappings
 
@@ -1231,6 +1233,7 @@ Event mapping actions (can be combined):
 | `unlockTask: "task_id"` | Unlock a locked task |
 | `unlockAim: "aim_id"` | Unlock a locked objective aim |
 | `unlockDoor: "room_id"` or `["id1","id2"]` | Unlock the door to that room on the server, as this NPC, so it survives a reload (like ink `#unlock_door`, but the NPC needn't have been met or list the room in `unlockable`: the mapping is the permission). Fires `door_unlocked_by_npc`. The validator errors on a room that doesn't exist |
+| `openMinigame: "mail_terminal"` or `{ "type": "exercise-station", "minigameData": { ... }, "name": "..." }` | Open a minigame from the starter registry (see [Opening a minigame from a scenario](#opening-a-minigame-from-a-scenario)). `type` is an object type from that table, `minigameData` is what an object of that type would carry. `onceOnly`, `maxTriggers`, `cooldown`, `condition` and `delayMs` apply as for any action. It opens a moment after the event, and waits behind any minigame that is open (a conversation closing, a scripted call). A `onceOnly` mapping is saved for a reload only once the minigame closes normally, so a reload mid-exercise lets it open again. Use it instead of `conversationMode`, not with it. An unknown type warns and opens nothing; the validator errors. |
 | `onceOnly: true` | Ensure mapping only fires once |
 | `delayMs: ms` | Run the whole mapping this long after the event instead of at once (e.g. `8000` on `room_entered:` so the player can look round before a scene opens). The checks run at the event (nothing is scheduled if the condition fails then) and again when the delay is up, so a `globalVars` term that has stopped holding cancels it. One delay per mapping is pending at a time; if a minigame or conversation is open when it is up, it waits for that to close. A pending delay is not saved, so a reload before it fires leaves the mapping to fire on the next event. Not for `lockpick_used_in_view` (the pick is stopped at once regardless). |
 
@@ -1310,6 +1313,47 @@ Contacts in the player's phone. Not rendered in the world — they exist only in
 - `targetKnot` in event mappings does **not** work after first conversation — use `setGlobal` + an Ink conditional hub choice instead
 - `conversationMode` other than `"phone-chat"` is ignored on phone NPCs
 - A phone NPC with no `timedMessages` still works as a contact the player can call manually
+
+#### Direct messages (social theme)
+
+A phone device can be skinned as a messaging app (a "Friendface" DM client, an encrypted messenger) rather than the default Messages phone. Everything is opt-in: a phone with no `app` block renders exactly as before, so the handler phones and the m02/m07 terminals are untouched.
+
+The look belongs to the **device**, because the contact list does. Put an `app` block on the `type: "phone"` item or object:
+
+```json
+"startItemsInInventory": [
+  { "type": "phone", "id": "friendface_phone", "name": "Friendface", "takeable": true,
+    "phoneId": "friendface_dm", "npcIds": ["priya_dm", "dom_dm"],
+    "app": { "title": "Friendface", "theme": "social", "accent": "#3b5bdb", "chrome": "app" },
+    "observations": "Your Friendface account, open on your phone." }
+]
+```
+
+- `theme: "social"` is the generic DM-app look (a light bubble thread with an accent). The other value is `"terminal"` (the CRT look m02/m07 already use). A device's `app.theme` wins over the contacts' `phoneTheme`, which stays the fallback.
+- `accent` is a hex colour; the app chooses readable text over it automatically.
+- `chrome: "app"` drops the phone's signal bars and battery (a desktop or web app has none).
+- `title` replaces the "Messages" heading. `logo` (optional) names a file in `assets/logos` shown beside the title.
+- The same app can appear in the world as a `type: "phone"` **object** (a laptop or terminal on a desk) with the same `phoneId`, `npcIds` and `app`. Do not give that object a `callId`: a judged contact is reached from inside the list, not by opening the device straight into a call.
+
+Phone NPCs gain two optional fields for a DM app:
+
+```json
+{
+  "id": "priya_dm", "displayName": "Priya Nair", "npcType": "phone",
+  "phoneId": "friendface_dm", "handle": "@priya.nextdoor",
+  "profile": { "siteId": "friendface", "person": "priya" },
+  "storyPath": "scenarios/my_scenario/ink/priya_dm.json", "currentKnot": "start"
+}
+```
+
+- `handle` shows under the name in the contact list and the open thread (for example `@priya.nextdoor`).
+- `profile` adds a **View profile** link that opens the OSINT browser at that person's profile and returns to the chat on close. `siteId` is a `social.osint.sites` id and `person` a `social.people` id with a profile on that site. There is no profile link inside a judged chat (leaving would close the call).
+
+A **judged DM** (a gatekeeper the player must talk round, such as a members' club secretary) is the existing pretext-call mechanic: give the contact a `callId` that names a `social.pretextNpcs` entry, exactly as a desk phone would. Opening that contact runs the prep card and the suspicion meter. The debrief, prep and refusal wording switch to a chat vocabulary under the social theme ("Chat debrief", "The chat was reported.", "Start the chat") instead of the call wording. Override any of it per theme with a `labels` block on the pretext entry (`labels.social.debriefTitle`, `.got_it`, `.partial`, `.reported`, `.walked_away`); `outcomeLabels` still wins over both. The influence channel stays `phone`.
+
+- **Set `phoneTheme: "social"` on a judged DM contact as well as the device `app`.** The prep card and the judged chat are reached through the pretext path, not by opening the device, so they take the theme from the contact's `phoneTheme` fallback rather than the device `app`. Without it the prep card and debrief keep the default call wording. Giving every social-app contact a `phoneTheme: "social"` is the safe habit: it also covers a thread opened by a timed message with no device in hand.
+
+Fixture: `scenarios/test_dm_social/` (a plain neighbour chat with a timed follow-up, a judged guest-list chat, handles, View profile, and the same app on a desk laptop).
 
 #### Forced phone calls that ring again
 
@@ -1556,6 +1600,20 @@ For a story mission, follow all four of these in every new scenario, lab games i
 3. **The credits roll from a music event** carrying `credits` (and optionally `closingCard`), triggered when the debrief closes: `conversation_closed:<debrief npc>`, or `global_variable_changed:<global>` for a global set on the last line. If the debrief NPC is also an ordinary hub NPC, guard the trigger with a condition on a global the last line sets (`"condition": "globalVars.engagement_closed === true"`), because their conversation closes many times before the ending. Put any closing sentiment in `closingCard.lines`, not in a separate end card. See [Closing card and credits](#closing-card-and-credits).
 4. **`conclusionScreen` is `{ "type": "bond_visualiser" }`.** It only re-opens the credits screen when a concluded game is reloaded, as m02–m10 do. Don't use `success` in a scenario with a story, because the story's ending is the credits. Don't use `end_screen` at all: it blocks the game with its own card in place of the credits, and it reappears on every reload. Pick `"creditsTheme": "cyber"` for anything outside the SAFETYNET campaign.
 
+#### The engine's ending warning (`endingCheck`)
+
+The engine adds a second warning on top of the story's own. Before an ending fires with optional objectives still open, a dialog lists them (only ones the player can already see) and offers **End the mission now** or **Keep going** (`public/break_escape/js/systems/ending-check.js`). Every ending trigger goes through that one check:
+
+| Trigger | Where it asks | "Keep going" does |
+|---|---|---|
+| ink tag `#ending_check` | When the tag is read | Skips the rest of that line's tags, so a `#set_global` after it never starts the debrief. The story carries on. |
+| the credits music event (`credits` or `closingCard`) | Before the ending track and the conclude request | Holds the ending; the objectives panel shows an **End the mission** button, and the ending runs by itself once nothing optional is open. |
+| the last required task of a `missionConclusion` aim | Before the task is posted to the server | The task stays undone; the same held ending. |
+
+Put `#ending_check` as the **first tag** in the choice that starts the debrief (before its `#set_global` or `#complete_task`), because a debrief that plays once cannot be taken back. The other two triggers are the safety net. The dialog never appears when no optional objective is open, after "End the mission now" for the same objectives, or on a game that had already concluded when the page loaded.
+
+`mission.json` `"endingCheck": false` turns the warning off, for a mission under time pressure that is not meant for a perfect score (sis01 and sis02). It also marks the game as `timed` in `Game#score_breakdown`. The validator warns when a mission with optional tasks that concludes through a `missionConclusion` aim has no `#ending_check` in its ink and has not opted out.
+
 #### Score and `missionConclusion`
 
 By default, scores are computed as a raw formula: `(tasks_completed / total_tasks) × 70 + (aims_completed / total_aims) × 30`. The conclusion flag does **not** force the score to 100 %. A player who concludes the mission having skipped optional tasks will receive a proportional score.
@@ -1588,6 +1646,13 @@ Declare all variables in `globalVariables` at the scenario root. Referenced in I
 ```
 
 Values can be `false`, `true`, `0`, or `""`. The validator will error if any `setVariable`, `globalVarOnKO`, or event mapping references a variable not defined here.
+
+#### Title screen: `title_art` and `titleScreenName`
+
+Two optional keys dress the title screen a mission opens on. Missions that set neither look exactly as before.
+
+- **`title_art`** (in `mission.json`) is a painted backdrop: a path under `public/break_escape/assets/`, written `title_art/<name>.jpg` (also `.jpeg`, `.png` or `.webp`; letters, digits, `_` and `-` only, otherwise it is ignored). The awareness episodes use 1200 x 630 cards. **Composition rule: keep the right 40% of the picture calm.** The mission's name and the "press to continue" prompt are drawn there over a dark gradient on the right and bottom, so put the subject in the left 60% and leave the right side quiet (sky, wall, blur). A Hacktivity host can show the same file on course tiles at `/break_escape/assets/<path>`.
+- **`titleScreenName`** (a top-level string in `scenario.json.erb`, at most 80 characters, control characters are replaced by spaces) is the name the title screen shows in place of the mission's `display_name`. Blank or absent falls back to `display_name`. The awareness shells use it to show the episode's own name.
 
 ### Carrying choices between missions (`exportGlobals`, `importGlobals`)
 
@@ -1909,6 +1974,7 @@ These are the mistakes that most often leave a mission unfinishable or silently 
 
 - **Never end an NPC conversation in `DONE` or `END`.** Re-talking an ended story shows "(End of conversation)". Every exit is `#exit_conversation` on its own line, then `-> hub` (or `-> after_choice`).
 - **Guard once-only decision scenes.** Use `{fate != "": -> after_choice}`, or talking again replays the scene and overwrites the outcome.
+- **Open a minigame with `# trigger_minigame:<type> key=value`.** The type is any object type in the [starter registry](#opening-a-minigame-from-a-scenario); it opens once the line has been read and the conversation comes back when the minigame closes. Ink reads `{` as logic, so the pairs are space-separated `key=value`, not JSON (or write the JSON with `\{` and `\}`).
 - **Put action tags above the line they belong to.** A tag on its own line attaches to the next line of text below it, so a tag between two lines of a knot fires with the second; it need not be the knot's first line. Don't leave one after the knot's last line with only a divert, choice or `}` below it (the validator warns). Use `#give_item:<type>:<itemId>`, with the id on the NPC's `itemsHeld` entry, and set "given" globals from an `item_picked_up:<type>` mapping, not in ink.
 - **A mapping's global doesn't reach the chat that is open.** An `eventMappings` `setGlobal` (the `item_picked_up` one above included) writes `gameState` and the cached stories, not the story of the conversation on screen, so a choice or status line guarded on that global changes only when the chat is next opened. Guard a hand-over choice on an ink-local flag as well, set in the hand-over knot before the tag: `VAR key_offered = false`, `~ key_offered = true` in the knot, and `+ {not soc_key_given and not key_offered} [Can I have the SOC key?]`. Picking the choice twice never gives a second key (the first give removes it from `itemsHeld`; the second shows a "doesn't have" or "has no items to give" warning toast), so the flag is there to keep that toast and the stale offer off the screen.
 - **An `EXTERNAL` needs an ink fallback function of the same name and arity.** The engine turns ink fallbacks on, so an unbound external runs its fallback (`=== function se_influence(delta, reason) ===`, returning a neutral value such as 0). Without a fallback it still throws, story-wide, at the first `Continue()`. The chats bind only six read-only externals and the bark path binds none, so every external must have a fallback. For state, prefer synced-global `VAR`s.
@@ -1992,6 +2058,7 @@ Everything lives under one top-level key. `scripts/scenario-schema.json` closes 
 | `pretextNpcs` | Pretext calls | [Pretext calls](#pretext-calls-socialpretextnpcs) |
 | `landingPages` | The landing-page builder | [Landing pages](#landing-pages-sociallandingpages) |
 | `awarenessEpisode` | The episode an awareness shell's kiosk runs: stages, attack and defend halves, strings | [Awareness episodes](#awareness-episodes) |
+| `exercises` | Named scene configs (`{ id, scene, config }`) that exercise stations, ink tags and event mappings open by id | [Exercise stations](#exercise-stations-socialexercises) |
 
 Each overlay opens from an object that carries only a pointer in `minigameData` (checked against `scripts/minigame-data-schemas.json`):
 
@@ -1999,13 +2066,23 @@ Each overlay opens from an object that carries only a pointer in `minigameData` 
 |---|---|---|
 | `case-file` | `{ mode }`: `recon` (default), `defender`, `scope` or `plan` | the intel board in that mode |
 | `osint-workstation` | `{ siteIds?, start? }` | the OSINT browser, limited to `siteIds` (every site when absent) |
-| `triage-workstation` | `{ triageSetId, stage?, conclusionTaskId? }` | inbox triage |
+| `triage-workstation` | `{ triageSetId, stage?, conclusionTaskId?, skin? }` | inbox triage. `skin: "awareness"` turns on the awareness behaviours (see [Inbox triage](#inbox-triage-socialtriagesets)); leave it out for the plain triage |
 | `report-workstation` | `{ requiresGlobal?, lockedMessage? }` | the engagement report; with `requiresGlobal` set and not yet true, a toast shows `lockedMessage` (default "There is nothing to write up yet.") instead |
-| `mail_terminal` | `{ accountIds, defaultAccount? }` | the mail client (attack section) |
+| `mail_terminal` | `{ accountIds, defaultAccount?, maxSends?, layout?, readOnly? }` | the mail client (attack section). `maxSends` caps the sends in one visit (after that Compose is disabled and a line says the message has gone; Close carries on). `layout: "phone"` draws the narrow layout in a phone frame on any screen. `readOnly: true` hides Compose and Contacts, so the terminal is a mailbox to read, not send from; closing it is a normal exit, never a failed run (an evidence inbox in a mission) |
 | `page-builder` | `{ landingPageId, targetId? }` | the landing-page builder (attack section) |
+| `authenticator-device` | `{ pushes, approvesAt }` or `{ choice, pushTemplate, defenderNote }`, plus `mode?`, `strings?`, `setGlobalPrefix?`, `lockUntilOutcome?` | a phone in the room that plays a stream of sign-in prompts (see [The authenticator](#the-authenticator-the-mfa-stage)) |
 | `kiosk` | `{ episodeId }` | the awareness episode runner; `episodeId` must equal `social.awarenessEpisode.id` ([Awareness episodes](#the-kiosk)) |
+| `exercise-station` | `{ scene?, exerciseId?, config?, setGlobalPrefix?, skin? }` | one of five exercise scenes (`sort-drill`, `concern-form`, `privacy-panel`, `assistant-chat`, `password-guesser`); on finishing it writes `<setGlobalPrefix>done` and emits `<scene>_completed` ([Exercise stations](#exercise-stations-socialexercises)) |
 
 Lab examples: `{"type": "case-file", "minigameData": {"mode": "scope"}}` is the Rules of Engagement sheet; the report workstation carries `{"requiresGlobal": "phish_lord_landed", "lockedMessage": "Nothing to write up yet. Finish the sending first, then come back to the report."}`. Each object type also needs its sprite, `assets/objects/<type>.png` (a missing one is a social lint error), and the lab places them on real furniture with `"position": "as-type:pc"` and similar.
+
+**One of each, per scenario (documented limits).** The social suite keeps one copy of three things, so a second one in the same scenario would share or collide with the first:
+
+- one `awarenessEpisode` (the kiosk's `episodeId` must equal its `id`; the starter reads this single block);
+- one intel board, whose picks live in the single global `se_board_state`: two `case-file` objects in one scenario open boards that share their state;
+- one engagement report, whose progress lives in `se_report_state`: a second `report-workstation` opens the same report.
+
+The OSINT browser has the same shape for what it remembers (`se_osint_state` holds the visited pages for every workstation), which is harmless but means two workstations with different `siteIds` share their visited list. Landing pages, pretext calls, triage sets and authenticator phones are all keyed by their own id, so several of those are fine.
 
 **Tasks complete on globals, never on an overlay closing.** The board, OSINT browser and report treat Close and Esc as a normal exit, so their completion event fires whether or not the player did anything (triage closed before its result is an abort). Each mechanic writes a global instead (`se_intel_<id>`, `target_ready_<id>`, `roe_signed`, `triage_pass`, `report_filed` and so on), and a start-room NPC's `eventMappings` completes the task on `global_variable_changed:<name>` with `"condition": "value === true"` and `"onceOnly": true`. In the lab that NPC is Ruth, in the start room, because an NPC in a room the player hasn't visited hears nothing (see [Common bugs](#common-bugs-and-how-to-avoid-them)).
 
@@ -2259,12 +2336,13 @@ An in-world browser for researching the target company (design `02`). The player
 | `name` | The site's tab label (falls back to `title`, then the id) |
 | `type` | `company-site` (has `pages[]`), `social` (has `profiles[]`, one page per person) or `document` (has `fields[]`, its properties panel) |
 | `card` | A concept card id shown with the site |
-| `logo`, `logoAlt` | An image under `assets/osint/` |
+| `logo`, `logoAlt` | `logo` is an image under `assets/logos/`; `logoAlt` is its alt text, and a logo with alt text stands in for the site's title. Any site whose name, title, url or id matches "friend face" gets the shared FriendFace wordmark by default; set `"logo": false` to switch that off and show no logo (the title is shown instead) |
 | `pages[]` | `{ id, title, path?, url?, showIf?, blocks[] }`. `path` is appended to the site's url in the address bar (e.g. `path: "/careers"` shows `ledgerwell.example/careers`), so it is a plain URL path and may start with `/`; `url` replaces the whole address instead |
+| page id `archive` | Special: a page with the id `archive` is left out of the page navigation and shown as a small "Archive" link in the footer of the other pages of that site. Use the id on purpose (an old-pages footer), and don't use it for an ordinary page or it will vanish from the nav |
 | `profiles[]` | `{ person, name?, avatar?, handle?, bio?, showIf?, posts[], blocks[] }`; `person` is a `people` id |
 | `fields[]` | `{ id, label, value, fact? }`, the document's metadata |
 
-A **block** is `{ id, kind?, text, fact?, note?, showIf? }` plus fields for its kind: `heading` (or `h`), `link` (`to`: a page id on the same site, `site.page` or a site id), `image` (`src` under `assets/osint/`, `alt`), `list` (`items[]`), `staff` (`person`, `name`, `role`, `address`), `post`, `field` (`label`, `value`); anything else is a paragraph. `fact` is the fact a selection grants, and the validator requires the fact's `source` to equal this block's `id`. `note` is an extra line shown on selection, alone when the block grants nothing. `showIf` names one global (a string; the validator rejects an array); the block, page or profile appears only while that global is truthy.
+A **block** is `{ id, kind?, text, fact?, note?, showIf? }` plus fields for its kind: `heading` (or `h`), `link` (`to`: a page id on the same site, `site.page` or a site id), `image` (`src` relative to `assets/`, `alt`), `list` (`items[]`), `staff` (`person`, `name`, `role`, `address`), `post`, `field` (`label`, `value`); anything else is a paragraph. `fact` is the fact a selection grants, and the validator requires the fact's `source` to equal this block's `id`. `note` is an extra line shown on selection, alone when the block grants nothing. `showIf` names one global (a string; the validator rejects an array); the block, page or profile appears only while that global is truthy.
 
 A **tool** is a lookup, `{ id, label, card?, unlockedBy?, results[], emptyText? }`. It is listed once `unlockedBy` holds: `{ "visited": "<siteId>" }` or `{ "visited": "<siteId>.<pageId>" }` (the player has opened that place), or `{ "fact": "<factId>" }`. `results[]` are blocks; with none, it shows `emptyText` (default "No public results.").
 
@@ -2302,6 +2380,10 @@ Gotchas:
 The defender's seat (design `05`). The player works through a fixed inbox in four steps (Brief, Sort, Review, Result): each message gets a verdict (Trust, Report or Delete, plus Verify in awareness sets that allow it) and the red flags that justified it, chosen from chips. Feedback explains each one, and the round ends with a score and a band headline. The reading pane is the mail client's own reader, read-only, with a header panel that explains SPF, DKIM and DMARC. A `playerSent` entry replays the player's own phishing email as its target received it, which is the lab's turning point from attacker to defender.
 
 A `triage-workstation` object opens a set by `minigameData.triageSetId`. `conclusionTaskId` names the task that completes on the set's result, so a reopen can repair a save that never reached the server; `stage` overrides the set's stage.
+
+**`minigameData.skin`.** The awareness course's triage differs from the plain one in more than colour. With `"skin": "awareness"` the overlay adds the `aw-skin` class and these behaviours: Report plays a positive animation, a sound and a thank-you line; a "team kept safe" tally counts phish reported or checked another way (immediate feedback only, no denominator); the chips offered for each message put the relevant ones first; the header tells stay hidden until that message's header details are opened (the `awareness` profile does this too); and the result screen points at the learner's own inbox and security team instead of the mail client and the lab sheet. The default (no `skin`) is the plain triage, unchanged, so a mission workstation opts in explicitly. The only value is `awareness`; the validator errors on any other. An episode launches its defend round with this skin itself, so the key matters only for a room object.
+
+**The default scoring profile is `awareness`, and some features are awareness-only.** A set with no `scoringProfile` scores as `awareness` (Report and Verify never wrong, hidden header tells, a capped band when no skills were named). Set `"scoringProfile": "analyst"` for a SAFETYNET or lab-style round. The `call` and `push` message kinds and the Verify verdict (`verifyVerdict`) belong to `awareness` sets only: the validator refuses them in an `analyst` set, so a mission set cannot use a vishing call or a sign-in prompt unless it runs as `awareness`. See also [Inbox triage in a mission](docs/INBOX_TRIAGE_USAGE.md).
 
 | Set field | What it does |
 |---|---|
@@ -2467,6 +2549,63 @@ Gotchas:
 - **A player with a lockpick never sees it.** They are offered the pick instead.
 - **Key locks only.** The validator errors on an empty or non-string hint and warns when the hint sits on something unlocked or on another lock type, where it is never shown.
 
+### Opening a minigame from a scenario
+
+Three routes open the same minigames, through one starter registry keyed by object type (`systems/minigame-registry.js`). The types are `case-file`, `osint-workstation`, `triage-workstation`, `authenticator-device`, `kiosk`, `page-builder`, `report-workstation`, `mail_terminal` and `exercise-station`. What each needs in `minigameData` is in the object table above.
+
+| Route | How | Notes |
+|---|---|---|
+| An object | `{ "type": "<type>", "minigameData": { ... } }` in a room | As before. A locked object still reaches its lock first; the report workstation's `requiresGlobal` gate still applies. |
+| An ink tag | `# trigger_minigame:<type>` or `# trigger_minigame:<type> key=value key=value` | The pairs become `minigameData`. A value is read as JSON when it parses (`maxSends=3`, `readOnly=true`, `accountIds=["a","b"]`), else it is the text, and cannot contain a space. For anything bigger name a shared entry by id (`exercise-station exerciseId=phish_sort`) or write a JSON object with ink's escapes: `# trigger_minigame:mail_terminal \{"accountIds":["a"]\}`. Plain `{` in an ink tag is read as logic, and a `|` after dialogue on the same line does not compile (inklecate: "Expected end of line"), so the pairs are separated by spaces. The engine also accepts bars, for tags built outside ink. |
+| An event mapping | `"openMinigame": "<type>"` or `{ "type", "minigameData", "name" }` | See the action table under [NPC Event Mappings](#npc-event-mappings). |
+
+An unknown type warns in the console and opens nothing (the validator errors on it, and on an `exercise-station` tag whose `exerciseId` is not in `social.exercises`).
+
+**What the ink tag does to the conversation.** In a person-chat the minigame opens after the line carrying the tag has been shown (the moment `#exit_conversation` closes a chat), so put the tag on, or just above, the line that introduces it. The chat is paused, not ended: its story is saved, and when the minigame closes normally the same conversation reopens with the same NPC and options, at the choices it showed. A close that is not a normal exit (Esc on a scene that aborts) leaves the player in the world. A phone-chat opens it about a second after the tag and returns to the thread the same way. With no chat open it opens at once. If another minigame is already open the tag is refused. If the chat is closed before its line finishes, nothing opens.
+
+```ink
+=== assistant ===
+Reed: Here it comes. # trigger_minigame:exercise-station exerciseId=assistant_demo setGlobalPrefix=ex_assistant_
+-> hub
+```
+
+`scenarios/test_exercise_station` uses all three routes.
+
+### Exercise stations (`social.exercises`)
+
+Five scenes the awareness episode runner uses can also stand alone in any mission: `sort-drill`, `concern-form`, `privacy-panel`, `assistant-chat` and `password-guesser`. An `exercise-station` object opens one:
+
+```json
+{ "type": "exercise-station", "id": "station_sort", "name": "Sort Drill", "position": { "x": 2, "y": 2 },
+  "minigameData": { "scene": "sort-drill", "exerciseId": "sort_basic", "setGlobalPrefix": "ex_sort_" } }
+```
+
+| `minigameData` key | Meaning |
+|---|---|
+| `scene` | One of the five. Optional when `exerciseId` names an entry (the entry's scene is used); if both are given they must agree. |
+| `exerciseId` | An `id` in `social.exercises[]`. |
+| `config` | An inline config instead of a named one. When both are given, the inline config wins, so a station can override a shared exercise. |
+| `setGlobalPrefix` | Prefix for the result globals. Falls back to the exercise's own `setGlobalPrefix`. With neither, finishing writes no global (the validator warns) and only the event fires. |
+| `skin` | Optional `"awareness"` to use the awareness skin. |
+
+`social.exercises` is a list of named configs: `{ "id", "scene", "config", "setGlobalPrefix"?, "description"? }`. The `config` is exactly the block the awareness episode carries for that scene: `sort-drill` = `sortDrill`, `concern-form` = `concernForm`, `privacy-panel` = `privacyPanel`, `assistant-chat` = `assistant`, `password-guesser` = `guess`. Their schemas (`socialSortDrill` and the others in `scripts/scenario-schema.json`) are shared by the episode and the exercise list, and the same lints run on both (the messages name the exercise or the object instead of the episode). The lints that only make sense inside an episode (a defend stage to host the block, the flip and debrief) do not apply to a station.
+
+**What a finished run writes.** Through the shared writer, so ink and `global_variable_changed:` mappings see them:
+
+- `<prefix>done` is set to `true` and never cleared. Declare it in `globalVariables` (`false`); an undeclared name is not saved, and the validator errors.
+- `<prefix>percent` for a scored sort drill (`scored: true`): the best percent over all rounds. Declare it too (`0`).
+- The event `<scene>_completed` (hyphens as underscores: `sort_drill_completed`, `concern_form_completed`, `privacy_panel_completed`, `assistant_chat_completed`, `password_guesser_completed`) with `{ exerciseId, scene, prefix, percent?, result }`.
+- The password guesser also writes its own `config.landedGlobal`, as in an episode.
+
+What counts as finished: Done on the sort drill, concern form and privacy panel (closing part-way records nothing); a normal close of the assistant; for the password guesser, every guess reached and the rig switched off. After a reload the globals are still true, so a door or objective that waits on them stays open; the scenes themselves can be played again. Gate a door with an event mapping on `global_variable_changed:<prefix>done` that has `unlockDoor` (this is what `test_exercise_station` does), or complete a task from it. Per the rule above, tasks complete on the global and never on the overlay closing.
+
+Two config additions came with this:
+
+- **`concernForm.kinds`**: the fact kinds, in the order the groups are shown. Each entry is an id (`"how"`) or `{ "id": "how", "label": "How it was done" }`. The heading is the `label`, else `strings.kind<Id>` (`kindHow`), else the id. Absent, it is `what`, `when`, `where`, `who`, with their usual headings, so existing forms are unchanged. A fact chip of a kind that is not listed is dropped (the validator errors).
+- **`privacyPanel.facts`**: inline fact text, `{ "<fact id>": { "text": "...", "reduceNote": "..." } }`, read before `social.intelFacts`, so a mission with no OSINT block can name its own facts. An id in both takes the inline text. Without either, the panel shows the raw id as before.
+
+The station's sprite is a copy of the kiosk's (`assets/objects/exercise-station.png`), a placeholder.
+
 ### Writing the ink around the social mechanics
 
 The mechanics write globals; the characters who comment on them are ordinary ink NPCs (the lab's Ruth, Fairbairn and Tomasz have no `social.characters` entry). Most of the lab's blockers came from how a reopened conversation resumes.
@@ -2552,7 +2691,7 @@ The in-game email app (design `01`, `00` §10a). The player composes and sends m
 |---|---|---|
 | `accounts[]` | see below | The sending identities the player can send as. |
 | `mailboxes[]` | `{ id, owner? }` | The mailboxes (folders) the client shows. `owner`, when set, **must be a `social.people` id** (`validate_social/mail.rb` errors on anything else — an account id fails); omit it when the mailbox has no single owning person. A mailbox id must not contain a dot (ids are saved as dotted keys). |
-| `contacts[]` | see below | The address book, revealed entry by entry as intel is earned. |
+| `contacts[]` | see below | The address book, revealed entry by entry as intel is earned. A contact with `npc` is an ink correspondent: see "Ink-driven email". |
 | `seededMessages[]` | see below | Mail placed before play, in an inbox or Sent folder, or scheduled for later. |
 | `payloadKit[]` | `{ id, kind, label, landingPageId? }` | The attachments and links the composer can attach. |
 | `checklistTiming` | `"onSend"` \| `"withReply"` | When the send checklist appears (default `onSend`). Linted by `validate_social/options.rb`. |
@@ -2736,6 +2875,119 @@ The validator requires `on_email` to call `se_influence` on both the landed and 
 **Highlights (`seededMessages[].highlights`).** Each highlight `{ id, text, grants? }` marks an exact substring of the message body (the validator checks the substring and that each granted fact has `source` equal to the highlight `id`, granted by exactly one highlight). In the reading pane a highlighted span is a "Save as evidence" chip: with `grants` set it calls `grantFact(grants)` (one award path, same as the OSINT browser); with no `grants` its text goes to the notepad. Any other text selection can be sent to the notepad too.
 
 **The `found` account kind.** An `accounts[]` entry with `kind: "found"` models credentials the player has obtained (via `unlockedBy`, the global `acct_<id>`). It carries the real person's `address`, `displayName` and `person`, reads from a `mailbox` seeded with that person's history (`seededMessages` with `folder: "inbox"` or `"sent"`, a Sent message naming the account in `fromAccount`), and sends with its own identity forced (a found account is not a spoofer, so its `From` is always its own and sender authentication follows its domain). The ink sees `email_account_kind: "found"`.
+
+### Ink-driven email (`contacts[].npc`)
+
+Plain email that the player answers and that answers back, written in ink the way a phone or person chat is. Nothing is judged and no `social.characters` entry is needed. Use it for a handler who emails, a colleague who chases, a reply that opens a door. Judged phishing (`phishTargets`, `on_email`, `se_influence`) is unchanged and separate. Design: `docs/agents/MAIL_PLAIN_AND_DM_DESIGN.md` (a). Working fixture: `scenarios/test_ink_email/`.
+
+**The model.** Each correspondent is a contact with an `npc` id and one ink story. That story is the email thread. A run of a knot delivers **one email** (the lines are the body, tags give the subject and attachments). When a run ends on ink choices, those choices are the player's **suggested replies**. Mail is never voiced; give the correspondent its own `emailRecord` rather than reusing a voiced person NPC (the validator warns).
+
+```json
+{ "id": "hax", "name": "Agent HaX", "addresses": ["hax@safetynet.example"], "accountIds": ["agent"],
+  "npc": "hax_mail", "replyDelaySeconds": 8,
+  "emailRecord": { "storyPath": "scenarios/x/ink/hax_mail.json", "displayName": "Agent HaX", "unlockable": ["store_room"] },
+  "timedEmails": [ { "knot": "ask_for_log", "waitForEvent": "room_entered:server_room", "delaySeconds": 2 } ] }
+```
+
+| Contact field | Meaning |
+|---|---|
+| `npc` | Makes the contact an ink correspondent: the id of the NPC whose story is the thread. Unique per contact. |
+| `emailRecord` | Defines a headless NPC record under `npc` (server `Game.headless_contact_records`, client `contactNpcRecords`): `storyPath`, `displayName`, `avatar`, `itemsHeld`, `unlockable` and any other NPC field. Omit it to use an NPC defined elsewhere (the validator warns: it shares that NPC's ink state). |
+| `replyDelaySeconds` | Seconds before a reply when the ink gives no `# reply_after` (default 20). |
+| `accountIds` | Which account the thread belongs to. An NPC-started email goes to the first one (else the first account). |
+| `timedEmails[]` | `{ knot, delaySeconds?, waitForEvent?, skipIfGlobal?, account? }`. Starts a thread on its own, once. No `waitForEvent` (or `game_loaded`) sends it from the start, after `delaySeconds`. Each fired entry is marked by the global `mail_timed_<npc>_<index>`, so a reload never repeats it. |
+| `composeKnot` | Knot Compose runs headless for the first suggestions (default `on_compose`). |
+| `targetId`, `judgedWhen` | See "Judged and plain on one contact". |
+
+Threads are keyed `npc:<npcId>:<accountId>` and never collide with `<character>:<accountId>`.
+
+**Starting a thread.** Four ways:
+
+- `timedEmails` on the contact (above).
+- An event mapping action `"sendEmail": { "npc": "hax_mail", "knot": "store_room_note", "delaySeconds": 1 }` on any NPC. `npc` defaults to the NPC that owns the mapping, so name the ink contact explicitly when the owner is a phone NPC. The mapping's `onceOnly`, `condition` and `cooldown` apply as usual.
+- The ink tag `# send_email:<npc>:<knot>[:<seconds>]` in any phone, person or mail story.
+- The player: Compose to the contact, which runs `on_compose` (or `composeKnot`) headless to its first choices. The knot must print nothing before them (the validator warns). If a thread already has pending choices, Compose shows those instead. While a sent message waits for its reply, Compose says so.
+
+`# trigger_minigame:mail_terminal accountIds=["agent"] composeTo=hax` (or `minigameData.composeTo` on a `mail_terminal` object, or an `openMinigame` mapping) opens the client with Compose already on that contact (a contact id or its `npc`). It returns to the chat on a normal close, like any ink-opened minigame.
+
+**Suggested replies: the chip and the body.** The options are written as the **start of the player's own message**, in the player's voice, and shown Outlook style as chips under the open email and in Compose to that contact. Picking a chip opens the composer with the **whole message filled in** (subject, attachments, text); the player presses Send. Ink's own choice syntax carries both halves:
+
+- The **chip** is what ink shows for the choice: the start text plus anything in `[ ]`.
+- The **body** is what ink prints when the choice is taken (the start text plus anything after `]`), followed by the player's continuation lines.
+- With no brackets, chip and first body line are the same text. `* Forwarding the alert.[] Is it ours?` gives the chip "Forwarding the alert." and the body "Forwarding the alert. Is it ours?". A label-only `* [Ask where to look]` prints nothing, so the body is the lines under it, or the label itself if there are none.
+
+Where the player's message ends and the NPC's reply begins, first rule that applies:
+
+1. **`# reply_after:<seconds>`**: the line that carries it is the first line of the reply, delivered after that many seconds. Everything before it (the choice output and any lines) is the player's message. Tags written above a line belong to it, so put `# reply_after` on its own line directly above the reply. Tags in that same group written **before** `reply_after` apply when the player sends; tags after it apply when the reply arrives.
+2. Otherwise the choice output plus the unbroken run of lines tagged `# speaker:player` right after it is the player's message; the rest is the reply, after the contact's `replyDelaySeconds`.
+3. Otherwise the choice output alone is the player's message (the old "Choose a reply" behaviour).
+
+| Tag | Where | Effect |
+|---|---|---|
+| `# subject:<text>` | any email | The subject. Without it a reply is `Re: <thread subject>`, and a thread's first email `(no subject)`. |
+| `# attach:<kitId>` | NPC email or player's part | A `payloadKit` item shown as an attachment chip. Whether the player *has* it is the choice's ink condition, not the tag. |
+| `# forward:<messageId>` | player's part | Quotes a received message (a seeded id, or a delivered `reply_...` id) under the player's lines and keeps `forwardOf` on the Sent record. The choice is refused with a line if that message is not in the inbox. |
+| `# reply_after:<s>` | player's part | See the split above. |
+| `# speaker:player` | player's part | Marks a line as the player's (rule 2). |
+| `# mail_later:<s>:<knot>` | NPC email | A chaser email from the same thread (one pending per thread). |
+| `# compose_reply:<targetId>` | NPC email | Hands the thread to the judged composer for that phish target (any target, not only the same character's). |
+| `# send_email:<npc>:<knot>[:<s>]` | any story | Starts another ink contact's thread. |
+
+Every other tag (`# set_global:name:true`, `# complete_task:`, `# give_item:`, `# unlock_door:`) is an ordinary game tag. In the player's part they apply at send; in the reply they apply on delivery. `# set_global` needs its value: `set_global:report_sent:true`. A reply that unlocks a door needs the NPC's `unlockable` list (put it on the `emailRecord`); a headless record needs no prior encounter. Gate a choice by evidence with an ordinary ink condition on a global (`* {found_jump_log} Log attached...`): the choices are regenerated from the current globals whenever the thread is opened, so the chip appears the moment the global is set, with no new email.
+
+Sends are Sent records with `kind: "plain"`, `targetId: null`. The awareness episodes' sent-record lookups skip them. Events: `mail_sent` and `mail_sent:<npcId>` (with `{ npcId, contactId, accountId, msgId }`), plus the usual `mail_delivered`. A scenario can relabel the few words the plain composer shows through `mailClient.labels` (`suggestedReplies`, `waiting`, `nothing`, `chooseAnother`, `writeYourOwn`, `backToSuggestions`, `send`, ...; defaults in `systems/mail-ink.js`). The plain composer never shows judging, red flags or the account switch.
+
+**Judged and plain on one contact.** A contact may carry both `npc` and `targetId`. The rule:
+
+- Compose to it, or the chips under its email, show the **suggested replies the ink offers**. Whatever the story offers is what appears; no choices means no chips.
+- Beside them sits **"Write your own message"**, the judged composer for that `targetId` (the contact's phishing path, unchanged). It is open whenever the contact is judged, unless `judgedWhen` names a global: then the door shows only once that global is true. Use `judgedWhen` to keep the phishing path closed until the story has earned it.
+- `# compose_reply:<targetId>` in the ink is a second, in-thread door, as before.
+- A contact with only `targetId` is judged exactly as before; a contact with only `npc` has no judged path.
+
+**Worked example.** `ink/hax_mail.ink`:
+
+```ink
+VAR found_jump_log = false
+=== ask_for_log ===
+# subject:Jump server
+You're in. Send me whatever you find on the jump server. Auth logs first.
+-> reply_options
+=== reply_options ===
+* {found_jump_log} Log attached. Logins from 10.0.4.7 at 02:13, outside the change window.
+    -> send_log
+* {not found_jump_log} Nothing yet, still looking.
+    # reply_after:6
+    Keep at it. The auth log should be on the desk in the server room.
+    -> reply_options
+= send_log
+# subject:Re: Jump server
+# attach:kit_jump_log
+# set_global:report_sent_to_hax:true
+# reply_after:8
+02:13 from 10.0.4.7. That is the contractor VPN range, and nobody signed off a change.
+# complete_task:report_findings
+# unlock_door:store_room
+I have opened the store room. The contractor laptop is on the second shelf.
+-> DONE
+=== on_compose ===
+* {found_jump_log} Log attached from the jump server.
+    -> reply_options.send_log
++ Where should I look next?
+    # reply_after:6
+    Server room first. Then tell me what you find.
+    -> DONE
+```
+
+A `timedEmails` entry with `waitForEvent: "room_entered:server_room"` sends `ask_for_log` when the player walks in. The player reads it, picks the log chip once `found_jump_log` is set, sees the subject, the `jump-auth.log` attachment and the message, presses Send, and eight seconds later HaX's reply completes `report_findings` and opens the store room.
+
+**Things to know.**
+
+- Declare every global the ink reads or writes in `globalVariables`, like any ink.
+- Give each correspondent its own story and record id. Sharing a phone NPC's id shares its ink variables and the phone's saved position.
+- Seeded mail stays static. Use `seededMessages` for mail that needs no answer and as the target of `# forward:`; use `timedEmails` with `delaySeconds: 0` for an at-start email the player can answer.
+- A reply that arrives while the client is open appends silently, otherwise a toast. A reload mid-wait keeps the Sent record, the "waiting" thread and the pending reply; nothing is delivered or applied twice.
+- `# trigger_minigame` inside an email story opens over the world on delivery; the validator warns.
+- The validator (`validate_social/mail_ink.rb`) checks the contacts, `timedEmails`/`composeKnot`/`sendEmail` knots, `# attach`, `# forward`, `# subject`, `# reply_after`, `# mail_later`, `# send_email`, `# compose_reply`, `composeTo`, judged vocabulary in a plain story and text before the first compose choice.
 
 ### Pretext calls (`social.pretextNpcs`)
 
@@ -3088,6 +3340,8 @@ Each text is plain, trimmed and capped at 600 characters; a blank line starts a 
 
 A host can set the same three keys per game through `BreakEscape.configuration.awareness_settings`, a callable `->(game) { { report_heading:, report_text:, rule_of_thumb:, team_size: } or nil }` resolved on each play-page load. The engine whitelists the keys, strips control characters, caps text (heading 80, others 600), bounds `teamSize` to 2 to 100000, and writes only the keys that have a value to `window.breakEscapeConfig.awareness`, which wins over `social.awareness` key by key. A hook that raises is logged and ignored.
 
+A blank line in `report_text` starts a new paragraph in the debrief's "How to report here" box, so a host can hand back a route of several steps. The host may compose that text however it likes, for example from its own list of pre-canned options with blanks the organiser fills in, but the engine sees only the two strings `report_heading` and `report_text` and never the parts they were built from.
+
 **The team line** ("Your reports and checks this round kept 2 phish away from the rest of your team.") counts the phish the learner Reported or checked by another route (Verify, Ring back, Escalate, Deny and report). Deleting a phish protects only the learner, so it does not count. The line shows only when the count is at least one and never gives a denominator, so it cannot read as a list of misses. The count is kept in `episode_<id>_state.defend.teamProtected`, so a reopened debrief shows it too. During the round the triage overlay shows the same count live ("Phish stopped for the team: 2"), with immediate feedback only, since under end-of-round feedback a count that rises only on a phish would give the answers away.
 
 **The report sting.** With the awareness skin, a Report verdict (including a call's Escalate and a push's Deny and report) plays the `ui_confirm` sound, pops the locked verdict once and shows "Thanks for reporting. That warns everyone else."
@@ -3179,6 +3433,19 @@ E3's second attack beat shows MFA fatigue: the learner already has the password,
 - The overlay plays the pushes in time order on a phone, then the approval. A "Send another push" button lets the learner add their own; it counts towards the overlay's `sent` and nothing else. Esc and Close are normal exits.
 
 The defend half is a `push` message in the defend set ([Messages that aren't email](#messages-that-arent-email)), with the tell `unrequested_mfa_push`.
+
+#### The `authenticator-device` room object
+
+The same phone can sit in a room, outside any episode: an object of `type: "authenticator-device"` whose `minigameData` holds the stream itself, either the scripted `{ pushes, approvesAt }` or the learner-decision `{ choice, pushTemplate, defenderNote }` (the decision shape is checked by the same lint as `awarenessEpisode.mfa`).
+
+| `minigameData` key | What it does |
+|---|---|
+| `pushes`, `approvesAt` | The scripted stream (see above) |
+| `choice`, `pushTemplate`, `defenderNote` | The decision shape: the learner picks when and how many prompts, then watches them play |
+| `mode` | `attacker`, the only value |
+| `strings` | Wording overrides: `intro`, `approved`, `send`, `confirm`, `wordmark` and `request`; a key you leave out keeps its default |
+| `setGlobalPrefix` | On a normal close, writes `<prefix>approved` (never cleared once true) and `<prefix>sent` (the best count so far). Declare both in `globalVariables` |
+| `lockUntilOutcome` | Decision shape only. Default `true`: before the outcome shows, Close and Esc take the player back to the choices, so the beat cannot be skipped by habit (the episode wants this). `false` lets Close and Esc leave at any time, which a phone in a mission room should use so it is never a trap |
 
 ### The measurement global
 

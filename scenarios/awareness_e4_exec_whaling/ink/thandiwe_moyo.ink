@@ -10,7 +10,7 @@
 // ================================================
 
 VAR phish_exec_pa_attempts = 0
-VAR episode_e4_exec_whaling_defend_done = false
+VAR episode_e4_exec_whaling_defend_complete = false
 VAR hub_quiet = false
 
 === start ===
@@ -20,7 +20,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { episode_e4_exec_whaling_defend_done:
+    { episode_e4_exec_whaling_defend_complete:
         Thandiwe Moyo: Both seats done, thanks.
         Thandiwe Moyo: When it's money and it's in a hurry, or you're told to keep it from finance, ring her on a number you already have, even when the voice is hers.
     - else:

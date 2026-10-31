@@ -1,0 +1,72 @@
+{
+  "_note": "E9 passwords attack fragment (awareness). A fragment of the `social` block; the wiring agent copies people, intelFacts and osint into scenarios/awareness_e9_passwords/scenario.json.erb (01 P2), with the `_` notes stripped. The attack half is the OSINT stage (collect Colin Mather's public details as facts) followed by the `guess` stage (ENG-02), whose config block lives in full_only.json at social.awarenessEpisode.guess (episode-level, full-only; see E09_passwords.md section 9 and the note in full_only.json). There is no mail send, no landing page, no template set and no phishTarget: the guesser is the attack artefact. Nothing typed is a real password. Colin Mather and the company are fictional (BRAND_SET.md, Tarrowby Logistics); every domain ends .example.",
+
+  "_factValueNote": "The ENG-02 guesser interpolates each pattern slot's brace token with its fact's guess value. ENG-02's spec names only factId + template per slot and does not state where the token value is read. Each guess-feeding fact below carries that value in provides[0] (type 'guessToken', value = the exact string the template interpolates: 'Pennington', 'Bramble', '1994'), following the osint intelFacts provides shape (E8). If ENG-02 reads the token from somewhere else, point it here; see E09_passwords.md section 20 and the note to the wiring agent.",
+
+  "people": [
+    { "id": "colin", "kind": "cast", "address": "colin.mather@tarrowby.example",
+      "forms": { "first": "Colin", "formal": "Mr Mather", "full": "Colin Mather" } }
+  ],
+
+  "intelFacts": {
+    "tarrowby_mather_role": {
+      "text": "Colin Mather is Tarrowby's warehouse manager.",
+      "subject": "colin", "source": "blk_warehouse_mgr",
+      "provides": [],
+      "reduceNote": "A named manager on the public team page gives an attacker a specific person to guess a password for."
+    },
+    "tarrowby_mather_team": {
+      "text": "Colin posts about supporting Pennington Rangers every Saturday.",
+      "subject": "colin", "source": "post_mather_team",
+      "provides": [
+        { "type": "guessToken", "value": "Pennington", "label": "Pennington", "kind": "distinctive" }
+      ],
+      "reduceNote": "A favourite team is one of the first things a guesser tries, and he posts his every week."
+    },
+    "tarrowby_mather_pet": {
+      "text": "Colin's photos of his dog Bramble.",
+      "subject": "colin", "source": "post_mather_pet",
+      "provides": [
+        { "type": "guessToken", "value": "Bramble", "label": "Bramble", "kind": "distinctive" }
+      ],
+      "reduceNote": "A pet's name is a classic password and an easy one to lift from a public photo caption."
+    },
+    "tarrowby_founded": {
+      "text": "Tarrowby Logistics has run from the same West Yorkshire depot since 1994.",
+      "subject": "company", "source": "blk_about",
+      "provides": [
+        { "type": "guessToken", "value": "1994", "label": "1994", "kind": "distinctive" }
+      ],
+      "reduceNote": "The founding year on the about page is the digits a guesser adds to the company name or the team."
+    },
+    "tarrowby_mather_forum": {
+      "text": "Colin mentions he has been on the RiverReach Angling forum for years.",
+      "subject": "colin", "source": "post_mather_forum",
+      "provides": [],
+      "reduceNote": "A small hobby site he's used for years is just the sort of place that gets breached and whose password gets reused at work."
+    }
+  },
+
+  "osint": {
+    "profile": "awareness",
+    "sites": [
+      { "id": "tarrowby_site", "name": "Tarrowby Logistics", "url": "tarrowby.example", "type": "company-site",
+        "pages": [
+          { "id": "team", "title": "Our people", "blocks": [
+            { "id": "blk_warehouse_mgr", "kind": "staff", "person": "colin", "name": "Colin Mather",
+              "role": "Warehouse manager", "address": "colin.mather@tarrowby.example", "fact": "tarrowby_mather_role" } ] },
+          { "id": "about", "title": "About us", "blocks": [
+            { "id": "blk_about", "kind": "p",
+              "text": "Tarrowby Logistics has run from the same West Yorkshire depot since 1994, hauling and warehousing for the region.",
+              "fact": "tarrowby_founded" } ] } ] },
+
+      { "id": "tarrowby_social", "name": "Friendface", "url": "friendface.example", "type": "social",
+        "profiles": [
+          { "person": "colin", "posts": [
+            { "id": "post_mather_team", "text": "Up at Pennington Rangers again this Saturday. Same result, same pie. Wouldn't miss it.", "fact": "tarrowby_mather_team" },
+            { "id": "post_mather_pet", "text": "Bramble says morning. Best office dog on the yard.", "fact": "tarrowby_mather_pet" },
+            { "id": "post_mather_forum", "text": "Been on the RiverReach Angling forum donkey's years now. Good crowd on there.", "fact": "tarrowby_mather_forum" },
+            { "id": "post_mather_other", "text": "Trailers backed up to Leeds this morning. Long week already." } ] } ] }
+    ]
+  }
+}

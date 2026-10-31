@@ -20,6 +20,22 @@
       "type": "string",
       "description": "ID of the starting room"
     },
+    "titleScreenName": {
+      "type": "string",
+      "maxLength": 80,
+      "description": "Optional name shown on the title screen in place of the mission's display_name (the server trims it to 80 characters). Blank falls back to display_name."
+    },
+    "resumeSpawn": {
+      "type": "object",
+      "description": "batch-13 (opt-in): where the player respawns in the startRoom after a reload, in startPosition's tile units, e.g. by an awareness kiosk. Applies only to a resumed game and, when whenGlobal is named, only once that global is set (true, non-zero, non-empty). Default (unset): a reload spawns at startPosition, as before.",
+      "properties": {
+        "x": { "type": "number", "description": "Tile column (0 = left wall)" },
+        "y": { "type": "number", "description": "Tile row (0 = top wall)" },
+        "whenGlobal": { "type": "string", "minLength": 1, "description": "Optional: a global that must be set for the respawn to apply (an episode's state global, say)" }
+      },
+      "required": ["x", "y"],
+      "additionalProperties": false
+    },
     "startPosition": {
       "type": "object",
       "description": "Optional tile coordinates where the player spawns in the startRoom. If omitted the player is placed at the room centre.",
@@ -242,6 +258,8 @@
           "properties": {
             "profile": {"type": "string", "description": "Which showIf/profile set the browser reads (for example 'student')"},
             "title": {"type": "string"},
+            "pinHints": {"type": "boolean", "description": "Show a visible 'Pin' affordance on each not-yet-noted selectable block, so it is clear a block can be clicked to add it to notes. Default off (unchanged). Set true for learners unfamiliar with the browse-and-pin pattern"},
+            "pinLabel": {"type": "string", "description": "The word on the pin affordance when pinHints is on; default 'Pin'"},
             "sites": {"type": "array", "items": {"$ref": "#/definitions/socialOsintSite"}},
             "tools": {"type": "array", "items": {"$ref": "#/definitions/socialOsintTool"}}
           },
@@ -252,11 +270,29 @@
           "type": "array",
           "items": {
             "type": "object",
-            "description": "The landing-page builder (design 07). One record per buildable credential-harvest page. Fields are linted by scripts/validate_social/landing.rb (00 S11 lint field list). No form controls, no network, invented brands, .example hosts.",
-            "required": ["id", "targets", "brands"],
+            "description": "The landing-page builder (design 07). One record per buildable credential-harvest page. Fields are linted by scripts/validate_social/landing.rb (00 S11 lint field list). No form controls, no network, invented brands, .example hosts. A sign-in page needs a non-empty brands array (enforced in landing.rb); a fakeCheck page (ENG-03b) has no brands and carries a check block instead.",
+            "required": ["id", "targets"],
             "properties": {
               "id": {"type": "string"},
               "title": {"type": "string"},
+              "pageType": {"type": "string", "enum": ["signin", "fakeCheck"], "description": "ENG-03b: 'signin' (default) is the built look-alike builder; 'fakeCheck' is the persuasion-scored 'verify you are human' mode on a genuine compromised site (no look-alike domain)"},
+              "check": {
+                "type": "object",
+                "description": "ENG-03b fakeCheck config. The page sits on a genuine (compromised) site, so there is no domain to score; the four persuasion menus and their points live here.",
+                "properties": {
+                  "host": {"type": "string", "description": "The genuine site the check sits on (host-only .example, linted)"},
+                  "heading": {"type": "string"},
+                  "clipboardReveal": {"type": "string", "description": "One harmless description of what the page copied; never a working command (linted for shell metacharacters)"},
+                  "hosts": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "trust": {"type": "string", "enum": ["genuine", "lookalike", "unrelated"]}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
+                  "pretexts": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "match": {"type": "boolean"}, "slips": {"type": "boolean"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
+                  "urgencies": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "match": {"type": "boolean"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
+                  "steps": {"type": "array", "items": {"type": "object", "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "match": {"type": "boolean"}, "slips": {"type": "boolean"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}},
+                  "points": {"type": "object", "properties": {"borrowedTrust": {"type": "number"}, "pretext": {"type": "number"}, "stepWording": {"type": "number"}, "urgency": {"type": "number"}}, "patternProperties": {"^_": {}}, "additionalProperties": false},
+                  "strings": {"type": "object", "additionalProperties": {"type": "string"}}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              },
               "profile": {"type": "string", "enum": ["student", "awareness", "mission"]},
               "tellCounter": {"type": "boolean"},
               "linkText": {
@@ -405,6 +441,19 @@
                 "additionalProperties": false
               }
             },
+            "labels": {
+              "type": "object",
+              "description": "Words the plain (ink) composer and suggested-reply chips show; each key optional, defaults in systems/mail-ink.js PLAIN_LABELS",
+              "properties": {
+                "suggestedReplies": {"type": "string"}, "loading": {"type": "string"}, "waiting": {"type": "string"},
+                "nothing": {"type": "string"}, "chooseAnother": {"type": "string"}, "writeYourOwn": {"type": "string"},
+                "backToSuggestions": {"type": "string"}, "from": {"type": "string"}, "subject": {"type": "string"},
+                "attachments": {"type": "string"}, "send": {"type": "string"}, "sending": {"type": "string"},
+                "sentNote": {"type": "string"}, "unavailable": {"type": "string"}, "forwardMissing": {"type": "string"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
             "checklistTiming": {
               "type": "string",
               "enum": ["onSend", "withReply"],
@@ -424,6 +473,7 @@
         },
         "phishTargets": {"type": "array", "items": {"$ref": "#/definitions/socialPhishTarget"}},
         "triageSets": {"type": "array", "items": {"$ref": "#/definitions/socialTriageSet"}},
+        "exercises": {"type": "array", "description": "Named exercise configs an exercise-station object (or an ink tag, or an event mapping) opens by id: each { id, scene, config }. Linted by scripts/validate_social/exercises.rb.", "items": {"$ref": "#/definitions/socialExercise"}},
         "pretextNpcs": {"type": "array", "items": {"$ref": "#/definitions/socialPretextCall"}},
         "awarenessEpisode": {"$ref": "#/definitions/socialAwarenessEpisode"},
         "awareness": {
@@ -843,7 +893,10 @@
         "title": {"type": "string"},
         "type": {"type": "string", "enum": ["company-site", "social", "document"]},
         "card": {"type": "string", "description": "social.conceptCards id shown with the site"},
-        "logo": {"type": "string"},
+        "logo": {
+          "oneOf": [{"type": "string"}, {"type": "boolean", "enum": [false]}],
+          "description": "Logo file under assets/logos/. false means no logo (the FriendFace default is not added, and the site shows its title)."
+        },
         "logoAlt": {"type": "string"},
         "pages": {"type": "array", "items": {"$ref": "#/definitions/socialOsintPage"}},
         "profiles": {"type": "array", "items": {"$ref": "#/definitions/socialOsintProfile"}},
@@ -962,8 +1015,40 @@
         "role": {"type": "string"},
         "revealedBy": {"type": "string"},
         "character": {"type": "string"},
-        "targetId": {"type": "string"},
-        "accountIds": {"type": "array", "items": {"type": "string"}}
+        "targetId": {"type": "string", "description": "A judged phishing target (social.phishTargets id). May be combined with `npc`: see judgedWhen"},
+        "accountIds": {"type": "array", "items": {"type": "string"}},
+        "npc": {"type": "string", "description": "Makes this an ink correspondent: the id of the NPC whose ink story is the email thread (README_scenario_design.md \"Ink-driven email\"). Defined by emailRecord on this contact, or an existing room or phone NPC"},
+        "emailRecord": {
+          "type": "object",
+          "description": "A headless NPC record registered under `npc` (same shape as social.characters.*.emailRecord): storyPath, displayName, avatar, itemsHeld, replyDelaySeconds",
+          "properties": {
+            "storyPath": {"type": "string"},
+            "displayName": {"type": "string"},
+            "itemsHeld": {"type": "array"},
+            "replyDelaySeconds": {"type": "number", "minimum": 0}
+          },
+          "additionalProperties": true
+        },
+        "replyDelaySeconds": {"type": "number", "minimum": 0, "description": "Seconds before this correspondent's reply arrives when the ink gives no `# reply_after` (default 20)"},
+        "composeKnot": {"type": "string", "description": "The knot Compose runs headless to offer the first suggested replies (default on_compose)"},
+        "judgedWhen": {"type": "string", "description": "For a contact with both `npc` and `targetId`: a global that opens the judged \"Write your own message\" door. Absent, the door is always open"},
+        "timedEmails": {
+          "type": "array",
+          "description": "Emails this correspondent starts on its own, once each (marked by the global mail_timed_<npc>_<index>)",
+          "items": {
+            "type": "object",
+            "required": ["knot"],
+            "properties": {
+              "knot": {"type": "string", "description": "The knot whose run is the email"},
+              "delaySeconds": {"type": "number", "minimum": 0},
+              "waitForEvent": {"type": "string", "description": "An event name such as room_entered:server_room; absent or game_loaded sends it from the start"},
+              "skipIfGlobal": {"type": "string"},
+              "account": {"type": "string", "description": "The account it is sent to (default: the contact's first accountIds entry, else the first account)"}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        }
       },
       "patternProperties": {"^_": {}},
       "additionalProperties": false
@@ -1069,6 +1154,10 @@
       "properties": {
         "part": {"type": "string", "enum": ["from", "greeting", "pretext", "ask"]},
         "text": {"type": "string"},
+        "optionLabel": {"type": "string", "description": "batch-12 item 9: the dropdown label for this template, when it should differ from the body text (so a short choice reads in the chooser while the body stays full prose, and the label text never leaks into the sent body — E13 B3 fix notes). Default: the filled body preview."},
+        "meterHint": {"type": "string", "description": "batch-12 item 11: the red-flag meter's hint line while this template is chosen; '' drops it. For a hidden-line brief, where 'fewer flags means harder to spot' says nothing (E13 F-6). A template that carries hiddenText drops the default hint even without this. An explicit target meterHint still wins."},
+        "hiddenText": {"type": "string", "description": "batch-6 (E13 F-3): a line planted for a reader that is not the recipient (an AI assistant). Stored apart from the body and concealed behind the mail reader's 'Show hidden text' reveal, never shown in the visible body. Slots fill as in text. Absent: no hidden line"},
+        "hiddenTextLabel": {"type": "string", "description": "Overrides the reveal button label (default 'Show hidden text')"},
         "slots": {"type": "array", "items": {"$ref": "#/definitions/socialTemplateSlot"}, "maxItems": 2},
         "urgency": {"type": "string", "enum": ["low", "medium", "high"]},
         "flags": {"type": "array", "items": {"type": "string"}, "uniqueItems": true, "description": "P5-8: channel tells this wording carries (e.g. secrecy_or_bypass, borrowed_authority). Added to the send's tells, so the flip, the replayed defend card and the composer's red-flag meter all name them"},
@@ -1382,8 +1471,36 @@
         },
         "replies": {
           "type": "object",
-          "description": "Reply text; the judge reads `landed`",
+          "description": "Reply text; the judge reads `landed`. `byChoice` (optional, E13 D1) lets a data-only (open) target answer per the sent pretext: it wins over landed/missed.",
+          "properties": {
+            "byChoice": {
+              "type": "object",
+              "description": "Per-sent-pretext reply, keyed by the template id the learner picked (a social.templates id, the same pick state.sent.templateId carries). The value is a plain string (used as-is) or { landed, missed } chosen by whether the send landed. Checked by validate_social/mail.rb against social.templates.",
+              "additionalProperties": {
+                "oneOf": [
+                  {"type": "string"},
+                  {
+                    "type": "object",
+                    "properties": {
+                      "landed": {"type": "string"}, "missed": {"type": "string"},
+                      "sentLine": {"description": "batch-5 (E13 F-2): the send-result banner for this sent pretext, beside the reply. A plain string overrides the landing banner only; { landed, missed } picks by whether the send landed. Default: 'It landed. They acted on it.' / 'It did not land.'", "oneOf": [{"type": "string"}, {"type": "object", "properties": {"landed": {"type": "string"}, "missed": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}]}
+                    },
+                    "patternProperties": {"^_": {}},
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "patternProperties": {"^_": {}}
+            }
+          },
+          "patternProperties": {"^_": {}},
           "additionalProperties": {"type": "string"}
+        },
+        "sentLines": {
+          "type": "object",
+          "description": "batch-5 (E13 F-2): the send-result banner by the sent template id, a fallback for when the replies.byChoice entry is a plain-string reply with no room for a sentLine. A plain string overrides the landing banner only; { landed, missed } picks by whether the send landed.",
+          "additionalProperties": {"oneOf": [{"type": "string"}, {"type": "object", "properties": {"landed": {"type": "string"}, "missed": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}]},
+          "patternProperties": {"^_": {}}
         },
         "outcome": {
           "type": "object",
@@ -1391,6 +1508,12 @@
             "setGlobal": {
               "oneOf": [{"type": "string"}, {"type": "object", "additionalProperties": true}],
               "description": "global name -> value, or one global name; the mail client sets the first to true on a landing"
+            },
+            "byChoice": {
+              "type": "object",
+              "description": "batch-6 (E13 F-2): make the landed-send global conditional on the sent template id. An entry keyed by a sent template id is the global name that landing sets (a string), or false/null/'' to set none for that choice. A template with no entry falls back to setGlobal. So only the pretext that actually planted a hidden line sets phish_*_landed.",
+              "additionalProperties": {"oneOf": [{"type": "string"}, {"type": "boolean"}, {"type": "null"}]},
+              "patternProperties": {"^_": {}}
             }
           },
           "patternProperties": {"^_": {}},
@@ -1616,7 +1739,8 @@
       "required": ["id"],
       "properties": {
         "id": {"type": "string"},
-        "kind": {"type": "string", "enum": ["email", "playerSent", "sms", "voicemail", "qr", "page", "call", "push"]},
+        "kind": {"type": "string", "enum": ["email", "playerSent", "sms", "voicemail", "qr", "page", "call", "push", "choice"]},
+        "kindTag": {"type": "string", "minLength": 1, "description": "Optional: the short kind word for THIS item in the list and results, overriding the kind default and any labels.kind.<kind>. For one item that is really something else among a relabelled set (e.g. a genuine sign-in page among Wi-Fi lists)."},
         "from": {
           "oneOf": [
             {"type": "string"},
@@ -1674,9 +1798,30 @@
             "perFlagNote": {"type": "object", "additionalProperties": {"type": "string"}},
             "whyFine": {"type": "object", "additionalProperties": {"type": "string"}},
             "ifTrusted": {"type": "string"},
+            "kindLine": {"type": "string", "minLength": 1, "description": "Phish items only (optional): a genuine message the learner should still report (isPhish true is the scoring vehicle). Replaces \"This one was a phish.\" on the review card (after Trust or Verify) and \"built to look right\" in the debrief, e.g. \"This one was a real notice, but you did not ask for it.\" Default: the phish wording."},
+            "missLabel": {"type": "string", "minLength": 1, "description": "Phish items only (optional): the phrase for a critical miss on this item in the result line, in place of \"trusting a phish email\", e.g. \"acting on a reset notice you did not ask for\". When every critical miss has one, the line also says the answer \"missed something that needed reporting\" instead of \"let an attacker straight in\"."},
+            "verifyLine": {"type": "string", "minLength": 1, "description": "Phish items only (optional): the whole Verify feedback line, for an item where \"Checking first is a sound habit\" pulls against the lesson (a compromise sign where Verify is the fast report), e.g. \"Calling it in straight away is exactly right.\" Default: \"Checking first is a sound habit. \" + kindLine or the phish wording (ENG-03a / E19 D1)."},
+            "reportLine": {"type": "string", "minLength": 1, "description": "Phish items only (optional): the whole Report feedback line, for an item where \"A report warns everyone else\" is wrong (reporting a locked-out colleague is not warning the team about an attack), e.g. \"Right to flag it. The service desk can reset his login the proper way.\" Default: \"Right call: reported. A report warns everyone else.\" (E16 F-E16-1)."},
+            "trustLine": {"type": "string", "minLength": 1, "description": "Real items only (optional): the genuine-Trust feedback line for this one item, in place of the set-wide labels.verdictFeedback.trust.real, e.g. \"Right call — a real internal call that asked for nothing.\" Wins over the set override and the default (\"Right call. This one was real.\"). Item beats set (E13 F-10)."},
+            "deleteLine": {"type": "string", "minLength": 1, "description": "batch-12 item 8: Real items only (optional): the genuine-Delete/Turn-away feedback line for this one item, e.g. a colleague who locked their screen is not a \"visitor\" and nobody was \"left stuck\" (E12 B3 F5). Wins over the set override and the default. Item beats set, like trustLine."},
+            "chips": {"type": "array", "items": {"type": "string"}, "description": "Optional per-item override of the tick list (E11 F8): keep only these tick ids, plus anything the item is scored on (truth.flags and its flagAlternatives are never hidden). Narrows this item's list only; the set-wide list is unchanged for every other item. Default: the set's full list."},
+            "chipsOmit": {"type": "array", "items": {"type": "string"}, "description": "Optional per-item override of the tick list (E11 F8): drop these tick ids from this item's list, except anything the item is scored on (truth.flags / flagAlternatives stay). Applied after truth.chips. Default: nothing dropped."},
             "falseAlarmCost": {"type": "string", "description": "Real items only (optional): one sentence on what reporting or deleting this real one would cost (a payment held up, a colleague left waiting). Shown after what made it safe on the result screen and the debrief (disc_visible)."},
+            "verdictPoints": {
+              "type": "object",
+              "properties": {
+                "trust": {"type": "number", "minimum": 0, "maximum": 60},
+                "report": {"type": "number", "minimum": 0, "maximum": 60},
+                "delete": {"type": "number", "minimum": 0, "maximum": 60},
+                "verify": {"type": "number", "minimum": 0, "maximum": 60}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false,
+              "description": "Optional per-item override of the verdict points (out of 60), opt-in (batch-5 F-E12-1, E13 F-10): e.g. a reception desk that gives full marks for letting in an expected client ({\"trust\": 60}). Names any subset of verdicts; an omitted one keeps the profile/kind default. Wins over set.scoring.kindPoints. Default: scoring unchanged."},
             "headerNote": {"type": "string"},
-            "reportReply": {"type": "string"}
+            "reportReply": {"type": "string"},
+            "reportReplyByVerdict": {"type": "object", "properties": {"trust": {"type": "string", "minLength": 1}, "report": {"type": "string", "minLength": 1}, "delete": {"type": "string", "minLength": 1}, "verify": {"type": "string", "minLength": 1}}, "patternProperties": {"^_": {}}, "additionalProperties": false, "description": "batch-12 item 7: the IT Security reply worded per verdict, so the line matches the action the learner took (a Report reply shown after Verify, or a genuine item's \"declined and asked his manager\" after a plain Report, read as something they did not do — E16 B2 D3). A line here is shown for its verdict (not only Report); a verdict with no entry falls back to the Report-only truth.reportReply / set.reportReply default."},
+            "correct": {"type": "string", "enum": ["trust", "report", "delete", "verify"], "description": "choice only: the verdict of the right option (it must score full marks for isPhish)"}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
@@ -1718,6 +1863,33 @@
             "additionalProperties": false
           }
         },
+        "choice": {
+          "description": "choice: an authored decision. Each option is scored as the built verdict it names (awareness profile); the right one is the option whose verdict equals truth.correct. Nothing is typed.",
+          "type": "object",
+          "required": ["prompt", "options"],
+          "properties": {
+            "prompt": {"type": "string", "minLength": 1},
+            "options": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 4,
+              "items": {
+                "type": "object",
+                "required": ["id", "label", "verdict"],
+                "properties": {
+                  "id": {"type": "string", "minLength": 1},
+                  "label": {"type": "string", "minLength": 1},
+                  "verdict": {"type": "string", "enum": ["trust", "report", "delete", "verify"]}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "note": {"type": "string", "description": "A line under the prompt, such as 'these are made up; no real password is typed'"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
         "duration": {"type": "string", "description": "voicemail: display length such as 0:41"},
         "audio": {
           "description": "voicemail only: names the audio clip for the voicemail card. Ignored until the player control (P7-Z2) exists, so content can name its clip now",
@@ -1728,6 +1900,10 @@
           "additionalProperties": false
         },
         "callerId": {"type": "string", "description": "call: the caller id line"},
+        "videoLabel": {"type": "string", "description": "call (ENG-07): the meeting-tool name shown on a video-call card (e.g. 'Brightwell Meet'). Absent, the card has no meeting-tool line"},
+        "participantTag": {"type": "string", "description": "call (ENG-07): a participant tag shown beside the meeting-tool name (e.g. 'External')"},
+        "hiddenText": {"type": "string", "description": "email (ENG-06): a white-text line hidden in the email (a 'note for AI assistants'), shown by a 'show hidden text' reveal on the email surface. Absent, the email card is unchanged"},
+        "hiddenTextLabel": {"type": "string", "description": "email (ENG-06): overrides the reveal button label (default 'Show hidden text')"},
         "transcript": {
           "description": "call (required) and voicemail (optional, else body): the lines spoken",
           "type": "array",
@@ -1748,11 +1924,33 @@
           "additionalProperties": false
         },
         "page": {
-          "description": "page: the browser card",
+          "description": "page: the browser card. url is required for the web-page states (none, fakeCheck, fakeUpdate, downloadBar, browserWarning) and optional for the chrome/overlay states (relaunchBar, fullScreenAlarm, extensionPermission, wifiList); the rule is enforced in scripts/validate_social/triage.rb (ENG-03a).",
           "type": "object",
-          "required": ["url"],
           "properties": {
             "url": {"type": "string"},
+            "state": {"type": "string", "enum": ["fakeCheck", "fakeUpdate", "fullScreenAlarm", "extensionPermission", "downloadBar", "browserWarning", "relaunchBar", "wifiList"], "description": "ENG-03a browser-screen state, plus ENG-14 wifiList (a Wi-Fi network list, no address bar); absent renders the ordinary E5 page"},
+            "clipboardReveal": {"type": "string", "description": "fakeCheck: one authored harmless description of what the page copied, shown by the 'What did this page copy?' reveal; never a working command"},
+            "alarm": {"type": "object", "properties": {"hintAfterMs": {"type": "number"}}, "patternProperties": {"^_": {}}, "additionalProperties": false, "description": "fullScreenAlarm: when to show the way-out hint (default 30000ms)"},
+            "permissions": {"type": "array", "items": {"type": "string"}, "description": "extensionPermission: the 'It can: ...' permission lines"},
+            "download": {"type": "object", "properties": {"filename": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false, "description": "downloadBar: the downloaded file's name"},
+            "networks": {
+              "type": "array",
+              "description": "wifiList: the network names in range, shown as static rows (nothing can be joined). At least one; the validator refuses any credential-like field",
+              "items": {
+                "type": "object",
+                "required": ["ssid", "signal"],
+                "properties": {
+                  "ssid": {"type": "string"},
+                  "signal": {"type": ["string", "number"], "description": "0-4 as bars, above 4 as a percentage, or strong/good/fair/weak"},
+                  "secured": {"type": "boolean", "description": "true shows a closed lock and the word 'Secured', false an open lock and 'Open'"},
+                  "note": {"type": "string"}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "venueNote": {"type": "string", "description": "wifiList: the context line above the list, e.g. what the venue's sign says the network is called"},
+            "labels": {"type": "object", "properties": {"secured": {"type": "string"}, "open": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false, "description": "wifiList: replaces the lock words (defaults 'Secured (password needed)' and 'Open (no password)')"},
             "padlock": {"type": "boolean"},
             "certificate": {
               "description": "The certificate check: who the certificate was issued to (a host name). It proves the connection is encrypted to that host, not that the host is the organisation it claims to be",
@@ -1767,8 +1965,12 @@
               "additionalProperties": false
             },
             "autofill": {"type": "string", "enum": ["filled", "none"], "description": "Whether the password manager filled the fields in. 'none' shows the 'did not fill this in' cue"},
+            "autofillNote": {"type": "object", "properties": {"none": {"type": "string"}, "filled": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false, "description": "Overrides the autofill cue text, e.g. to add why it matters (F-E20-8). Defaults 'Your password manager did not fill this in.' / '... filled this in.'"},
             "heading": {"type": "string"},
-            "fields": {"type": "array", "items": {"type": "string"}},
+            "fields": {"type": "array", "description": "Form rows. A string is a labelled (static) text box, as before. An object { label, type: \"tick\", checked? } is a drawn tick box for a genuine check (E10 MI2 CAPTCHA); nothing can be ticked or typed.", "items": {"oneOf": [
+              {"type": "string"},
+              {"type": "object", "required": ["label"], "properties": {"label": {"type": "string", "minLength": 1}, "type": {"type": "string", "enum": ["text", "tick"]}, "checked": {"type": "boolean"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}
+            ]}},
             "button": {"type": "string"}
           },
           "patternProperties": {"^_": {}},
@@ -1804,10 +2006,480 @@
       "patternProperties": {"^_": {}},
       "additionalProperties": false
     },
+    "socialExercise": {
+      "type": "object",
+      "description": "One entry of social.exercises: a scene and its config, opened by an exercise-station (minigameData.exerciseId). The config is the scene's own block: sort-drill = socialSortDrill, concern-form = socialConcernForm, privacy-panel = socialPrivacyPanel, assistant-chat = socialAssistant, password-guesser = socialGuess. The lint checks it against that definition's rules.",
+      "required": ["id", "scene", "config"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "scene": {"type": "string", "enum": ["sort-drill", "concern-form", "privacy-panel", "assistant-chat", "password-guesser"]},
+        "config": {"type": "object"},
+        "setGlobalPrefix": {"type": "string", "minLength": 1, "description": "Default result-global prefix for stations that use this exercise and set none of their own"},
+        "description": {"type": "string"}
+      },
+      "oneOf": [
+        {"properties": {"scene": {"enum": ["sort-drill"]}, "config": {"$ref": "#/definitions/socialSortDrill"}}},
+        {"properties": {"scene": {"enum": ["concern-form"]}, "config": {"$ref": "#/definitions/socialConcernForm"}}},
+        {"properties": {"scene": {"enum": ["privacy-panel"]}, "config": {"$ref": "#/definitions/socialPrivacyPanel"}}},
+        {"properties": {"scene": {"enum": ["assistant-chat"]}, "config": {"$ref": "#/definitions/socialAssistant"}}},
+        {"properties": {"scene": {"enum": ["password-guesser"]}, "config": {"$ref": "#/definitions/socialGuess"}}}
+      ],
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialSortDrill": {
+      "type": "object",
+      "description": "ENG-11 (also the config of an exercise-station with scene sort-drill): a reusable sort drill that runs first inside the defend stage (sort-drill-minigame.js). Cards are sorted into 2 to 4 authored bins with the reason on screen. scored true marks each drop against the card's answer; false is teaching only and shows no mark. Linted by awareness.rb.",
+      "required": ["bins", "scored", "cards"],
+      "properties": {
+        "bins": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "required": ["id", "label"],
+            "properties": {"id": {"type": "string", "minLength": 1}, "label": {"type": "string", "minLength": 1}, "hint": {"type": "string"}},
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "scored": {"type": "boolean"},
+        "answerKeyProfile": {"type": "string", "description": "Scored drills only: names the answer key the cards' answers come from (kept in the result)"},
+        "alwaysScoresBin": {"type": "string", "description": "Scored drills only: a bin id. Choosing it on a card it is not the answer to still earns a point (caution is never marked as nothing)"},
+        "acceptable": {"type": "array", "items": {"type": "string", "minLength": 1}, "description": "Scored drills only: bin ids treated as a cautious choice (a point, shown neutrally, never red) on every card whose answer is not already that bin, so a safe 'ask first' bin need not be repeated on every card. A card's own acceptable overrides this for that card; an empty card list switches it off"},
+        "cards": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "situation", "answer", "reason"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "situation": {"type": "string", "minLength": 1},
+              "answer": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}, "minItems": 1}], "description": "A bin id, or a list of bin ids that are all accepted"},
+              "acceptable": {"type": "array", "items": {"type": "string", "minLength": 1}, "description": "Scored drills only: extra bin ids (not the answer) that score as a cautious choice, earning a point and shown neutrally in the summary (never marked red). Use for a safe/ask-first option the brief promises is never wrong. Overrides the drill-level sortDrill.acceptable for this card; an empty array switches it off here"},
+              "reason": {"type": "string", "minLength": 1},
+              "locked": {"type": "boolean", "description": "A deployment's overrides never change or drop this card"},
+              "confirmed": {"type": "boolean", "description": "false: never drawn (an organisation has not confirmed the card). Default true"},
+              "new": {"type": "boolean", "description": "Shown with a New badge, and first when drawRules.newFirst"}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "drawRules": {
+          "type": "object",
+          "properties": {"oneOfEachAnswer": {"type": "boolean"}, "newFirst": {"type": "boolean"}},
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "drawCount": {"type": "integer", "minimum": 1, "description": "Draw this many cards from the confirmed bank (default: all of them)"},
+        "strings": {"type": "object", "description": "Wording over the drill's defaults (sort-drill-model.js DEFAULT_TEXT), keyed by line", "additionalProperties": {"type": "string"}}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialConcernForm": {
+      "type": "object",
+      "description": "ENG-12 (also the config of an exercise-station with scene concern-form): a reusable 'raise a concern' form that runs inside the defend stage, after any sortDrill and before the triage set (concern-form-minigame.js). The learner builds a report from fact chips (what, when, where, who) and may add one conclusion chip; the feedback favours facts over a verdict. Teaching only: it is never scored. Linted by awareness.rb.",
+      "required": ["factChips"],
+      "properties": {
+        "kinds": {
+          "type": "array",
+          "minItems": 1,
+          "description": "The fact kinds, in the order the groups are shown: each an id or { id, label }. The heading is label, else strings.kind<Id> (kindHow for how), else the id. Absent: what, when, where, who (strings.kindWhat ... name their headings), so a config without kinds is unchanged. A factChip whose kind is not listed is dropped.",
+          "items": {
+            "oneOf": [
+              {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+              {
+                "type": "object",
+                "required": ["id"],
+                "properties": {"id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}, "label": {"type": "string", "minLength": 1}},
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "factChips": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "label", "kind"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "label": {"type": "string", "minLength": 1},
+              "kind": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "One of the form's kinds: what, when, where and who by default, or an id from config.kinds. The validator lint (awareness.rb concern_form_config_checks) checks it against that list."},
+              "required": {"type": "boolean", "description": "batch-12 item 15: this fact must be in the report before Done is offered (the outside offer in E16, so a report of only the colleague's hard week cannot be finished — E16 B4 minor 1). strings.feedbackRequired ({missing} = the missing labels) names what is still needed. Default (unset): no fact is compulsory, so Done appears after any non-empty check, as before."}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "conclusionChips": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "label"],
+            "properties": {"id": {"type": "string", "minLength": 1}, "label": {"type": "string", "minLength": 1}},
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "guidance": {"type": "string", "description": "The route to take, shown on the intro and under the feedback (who to tell, and that posting it in a chat is spreading it, not raising it)"},
+        "minFacts": {"type": "integer", "minimum": 1, "description": "How many fact chips make a report (default 2)"},
+        "requireNoConclusion": {"type": "boolean", "description": "batch-11: hold back Done while a conclusion chip is picked (strings.mustRemoveConclusion says why). Default off."},
+        "strings": {"type": "object", "description": "Wording over the form's defaults (concern-form-model.js DEFAULT_TEXT) and the runner's launchHeading, launchText and launchButton, keyed by line. Includes conclusionsNote (batch-12 item 4: the 'only one conclusion is kept' note shown when more than one is offered; '' suppresses it) and feedbackRequired (batch-12 item 15: the line naming the missing required fact, {missing} = labels), and feedbackFactsMissing (batch-13 item 1: the feedback line in place of the feedbackFacts praise while a required fact is still unpicked).", "additionalProperties": {"type": "string"}}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialPrivacyPanel": {
+      "type": "object",
+      "description": "ENG-13 (also the config of an exercise-station with scene privacy-panel): a privacy-settings panel that runs in the defend stage after the sort drill and before the inbox (privacy-panel-minigame.js). Turning a setting to tight marks the social.intelFacts it names as closed in the panel's own view. View-only and unscored: no global is written, so the intel board and OSINT browser are unchanged. Linted by awareness.rb.",
+      "required": ["settings"],
+      "properties": {
+        "settings": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "label", "closesFacts"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "label": {"type": "string", "minLength": 1, "description": "The setting as the learner reads it, e.g. 'Posts: connections only'"},
+              "closesFacts": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "description": "social.intelFacts ids this setting closes (an se_intel_ prefix is allowed and ignored)"},
+              "default": {"type": "string", "enum": ["open", "tight"], "description": "Starting position (default open)"},
+              "hint": {"type": "string", "description": "One line under the switch"},
+              "section": {"type": "string", "description": "A heading shown above this setting and the ones after it (for example the subject's profile, then the learner's own)"}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "facts": {
+          "type": "object",
+          "description": "Inline fact text for the facts the settings close: { <fact id>: { text, reduceNote? } }. Read before social.intelFacts, so a mission with no OSINT block can name its own facts; an id in both takes the inline text.",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["text"],
+            "properties": {"text": {"type": "string", "minLength": 1}, "reduceNote": {"type": "string"}},
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          },
+          "patternProperties": {"^_": {}}
+        },
+        "note": {"type": "string", "description": "A line under the intro, e.g. a teaching reminder"},
+        "strings": {"type": "object", "description": "Wording over the panel's defaults (privacy-model.js DEFAULT_TEXT) and the launch panel (launchHeading, launchText, launchButton), keyed by line", "additionalProperties": {"type": "string"}}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialAssistant": {
+      "type": "object",
+      "description": "ENG-06 (E13): the authored AI-assistant overlay, opened in the flip region (assistant-chat-minigame.js). AUTHORED replies only, no runtime language model and no network. Linted by awareness.rb: no model/free-text field, and every reply is a literal string.",
+      "properties": {
+        "title": {"type": "string"},
+        "intro": {"type": "string"},
+        "disclaimer": {"type": "string", "description": "The 'can make mistakes, check important information' line shown under each answer"},
+        "reloadNote": {"type": "string", "description": "batch-11: the assistant window restart warning; an empty string suppresses it"},
+        "summarise": {
+          "type": "object",
+          "description": "The 'summarise my emails' mode: the reply surfaces the planted hidden instruction as a suggestion; hidden reveals the original white line",
+          "properties": {
+            "button": {"type": "string"},
+            "reply": {"type": "string", "description": "The flat surfacing, shown when no byChoice branch matches the sent pretext (E13 MA3 fallback)"},
+            "empathy": {"type": "string"},
+            "hidden": {
+              "type": "object",
+              "properties": {"button": {"type": "string"}, "text": {"type": "string"}},
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "byChoice": {
+              "type": "object",
+              "description": "E13 MA3: the surfacing per sent pretext, keyed by the template id the learner picked (state.sent.templateId, a social.templates id). The matching branch's reply/empathy/hidden win; any field it omits (and the whole block, if the learner's branch is absent) falls back to the flat summarise above",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "reply": {"type": "string"},
+                  "empathy": {"type": "string"},
+                  "hidden": {
+                    "type": "object",
+                    "properties": {"button": {"type": "string"}, "text": {"type": "string"}},
+                    "patternProperties": {"^_": {}},
+                    "additionalProperties": false
+                  }
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              },
+              "patternProperties": {"^_": {}}
+            }
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "paste": {
+          "type": "object",
+          "description": "The paste-hygiene panel: a source log of lines with information-class tags; the summary lists only the lines left in",
+          "properties": {
+            "heading": {"type": "string"},
+            "task": {"type": "string"},
+            "summaryButton": {"type": "string"},
+            "summaryHeading": {"type": "string"},
+            "lines": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "text"],
+                "properties": {
+                  "id": {"type": "string"},
+                  "text": {"type": "string"},
+                  "classLabel": {"type": "string"},
+                  "safe": {"type": "boolean", "description": "true: a line that belongs; it offers no strike-out. false/unset: it offers a strike-out toggle"},
+                  "secret": {"type": "boolean", "description": "true: a secret left in the summary draws the warning and the one-click report"}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "secretWarning": {"type": "string"},
+            "reportButton": {"type": "string"},
+            "reportReply": {"type": "string"},
+            "feedback": {
+              "type": "object",
+              "description": "E13 MI2: a verdict after the themes summary confirming the lesson. `clean` when every line that does not belong was struck out, `leftPersonal` when a personal detail slipped through, `leftPassword` when a secret did, `bothLeft` (batch-12 item 10) when both a password and a personal detail were left in, so the child's detail is not lost under the password line (E13 B3 finding 3). All optional; `bothLeft` absent, `leftPassword` wins as before.",
+              "properties": {
+                "clean": {"type": "string"},
+                "leftPersonal": {"type": "string"},
+                "leftPassword": {"type": "string"},
+                "bothLeft": {"type": "string"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            }
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "draft": {
+          "type": "object",
+          "description": "The output-check panel: an authored draft whose sentences the learner reads; 'Check source' opens an authored document",
+          "properties": {
+            "button": {"type": "string"},
+            "heading": {"type": "string"},
+            "sentences": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "text"],
+                "properties": {
+                  "id": {"type": "string"},
+                  "text": {"type": "string"},
+                  "wrong": {"type": "boolean", "description": "true: an invented figure or an unsupported claim. No colour tell by default: the learner checks, not spots a highlight"}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "checkSource": {
+              "type": "object",
+              "required": ["documentId"],
+              "properties": {"button": {"type": "string"}, "documentId": {"type": "string", "description": "An assistant.documents id"}},
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "sendButton": {"type": "string", "description": "E13 MI2: the label of the 'send without checking' button that lands the `missed` verdict; default 'Send without checking'. Shown only when feedback.missed is authored"},
+            "feedback": {
+              "type": "object",
+              "description": "E13 MI2: a verdict so the output-check beat lands its point. `caught` fires when the learner opens Check source (the right move); `missed` when they send the draft without checking (via the sendButton). Both optional; absent, the beat is unchanged",
+              "properties": {
+                "caught": {"type": "string"},
+                "missed": {"type": "string"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            }
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "documents": {
+          "type": "array",
+          "description": "Authored documents the 'Check source' action opens",
+          "items": {
+            "type": "object",
+            "required": ["id"],
+            "properties": {"id": {"type": "string"}, "title": {"type": "string"}, "body": {"type": "string"}},
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "exchanges": {
+          "type": "array",
+          "description": "Generic authored question -> answer pairs; each press shows the same reply",
+          "items": {
+            "type": "object",
+            "required": ["id", "prompt", "reply"],
+            "properties": {"id": {"type": "string"}, "prompt": {"type": "string"}, "reply": {"type": "string"}},
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        }
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialGuess": {
+      "type": "object",
+      "description": "ENG-02: the guess stage's authored guesser (E9; the password-guesser scene). Every guess is authored data: no real password, list, tool or method is held or shown. mode picks the render ('target' is the default; 'spray' and 'stuff' are the organisation-scale modes, ENG-02b, E18). The spray and stuff sub-blocks hold authored data only: no real name, password or breach, and stuff rows are masked. Linted by awareness.rb (guess_checks): each patternSlots factId and the reuseStep factId name a social.intelFacts id, landedGlobal is declared false, commonList is short, and no key names a credential.",
+      "required": ["landedGlobal"],
+      "properties": {
+        "mode": {"type": "string", "enum": ["target", "spray", "stuff"], "description": "Which render builds the guess list. Default 'target' (one colleague, E9). 'spray' (ENG-02b, E18) is the organisation-scale console: roster, wordList, spray, optional stuff and passphraseDemo. 'stuff' shows the stuff panel alone"},
+        "target": {"type": "string", "description": "A social.people id, display only"},
+        "commonList": {"type": "array", "maxItems": 8, "items": {"type": "string", "minLength": 1, "maxLength": 24}, "description": "The usual first guesses, shown struck through as already tried. Short and made up"},
+        "patternSlots": {
+          "type": "array",
+          "description": "Guesses built from collected facts. Each reads ONE se_intel_<factId> global; an uncollected fact leaves the slot struck through as not found",
+          "items": {
+            "type": "object",
+            "required": ["id", "factId", "word", "template"],
+            "properties": {
+              "id": {"type": "string", "description": "Also the one token the template may use, in braces"},
+              "factId": {"type": "string", "description": "A social.intelFacts id (bare, without the se_intel_ prefix)"},
+              "word": {"type": "string", "description": "The made-up word the fact stands for; it replaces the {id} token"},
+              "template": {"type": "string", "description": "The guess, with fixed characters and only this slot's own {id} token"},
+              "label": {"type": "string", "description": "What the row says when the fact has not been collected (default: a generic line)"}
+            },
+            "patternProperties": {"^_": {}},
+            "additionalProperties": false
+          }
+        },
+        "reuseStep": {
+          "type": "object",
+          "description": "The lever the flip leans on: a password from a breached small site opens the work account. Lands only if the learner collected factId",
+          "required": ["site", "factId"],
+          "properties": {
+            "site": {"type": "string"}, "domain": {"type": "string"},
+            "factId": {"type": "string"}, "landsOn": {"type": "string"}, "note": {"type": "string"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "passphraseDemo": {
+          "type": "object",
+          "description": "Three unrelated game words, still being tried when the rig is switched off. Never lands",
+          "required": ["words", "neverLands"],
+          "properties": {
+            "words": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+            "neverLands": {"type": "boolean", "enum": [true]}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "roster": {
+          "type": "object",
+          "description": "mode spray: the staff list, built from two collected facts (the team-page names and the address pattern). Half a roster that was not collected shows as not found",
+          "required": ["namesFactId", "patternFactId", "domain", "sample"],
+          "properties": {
+            "namesFactId": {"type": "string", "description": "A social.intelFacts id (bare): the team-page names"},
+            "patternFactId": {"type": "string", "description": "A social.intelFacts id (bare): the email address pattern"},
+            "domain": {"type": "string", "description": "An .example domain; addresses are firstname.lastname@domain"},
+            "sample": {"type": "array", "minItems": 1, "maxItems": 10, "items": {"type": "string", "minLength": 1, "maxLength": 32}, "description": "Made-up staff names, shown as addresses"},
+            "note": {"type": "string"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "wordList": {
+          "type": "object",
+          "description": "mode spray: candidate words built from the practice's own website facts, one fact per slot, plus the season and year",
+          "required": ["slots"],
+          "properties": {
+            "slots": {
+              "type": "array", "maxItems": 8,
+              "items": {
+                "type": "object",
+                "required": ["id", "factId", "word", "template"],
+                "properties": {
+                  "id": {"type": "string", "description": "Also the one token the template may use, in braces"},
+                  "factId": {"type": "string", "description": "A social.intelFacts id (bare)"},
+                  "word": {"type": "string", "description": "The made-up word the fact stands for; it replaces the {id} token"},
+                  "template": {"type": "string"},
+                  "label": {"type": "string", "description": "What the row says when the fact has not been collected"}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "seasonYear": {"type": "array", "maxItems": 4, "items": {"type": "string", "minLength": 1, "maxLength": 24}, "description": "Authored season-plus-year strings, always tried"},
+            "note": {"type": "string"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "spray": {
+          "type": "object",
+          "description": "mode spray: each pass is one candidate tried once on every roster account. opensCount accounts open, shown as a count and never named",
+          "required": ["passes", "opensCount"],
+          "properties": {
+            "passes": {
+              "type": "array", "minItems": 1, "maxItems": 6,
+              "items": {
+                "type": "object",
+                "required": ["id"],
+                "properties": {
+                  "id": {"type": "string"},
+                  "fromSlot": {"type": "string", "description": "A wordList.slots id. Exactly one of fromSlot or literal"},
+                  "literal": {"type": "string", "maxLength": 24, "description": "An authored made-up string, such as a season plus a year"}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "opensCount": {"type": "integer", "minimum": 0, "maximum": 10},
+            "note": {"type": "string"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "stuff": {
+          "type": "object",
+          "description": "modes spray and stuff: a masked credential-stuffing panel. A password leaked from another site was tried here; a row that opens is where a person reused it. Rows carry a label and a flag only, never a value",
+          "required": ["rows"],
+          "properties": {
+            "rows": {
+              "type": "array", "minItems": 1, "maxItems": 8,
+              "items": {
+                "type": "object",
+                "required": ["label", "opens"],
+                "properties": {
+                  "label": {"type": "string", "minLength": 1, "maxLength": 48, "description": "A generic account label (no address, no password)"},
+                  "opens": {"type": "boolean"}
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "note": {"type": "string"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "landedGlobal": {"type": "string", "description": "A declared global (default false) the guesser sets true when an account opens; the flip shows flipAftermath only then"},
+        "note": {"type": "string", "description": "The on-screen line saying nothing real is typed; strings.guessNote wins"},
+        "strings": {"type": "object", "description": "The guesser's own lines over its defaults (password-guesser-model.js DEFAULT_TEXT), keyed by line", "additionalProperties": {"type": "string"}}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
     "socialAwarenessEpisode": {
       "type": "object",
       "description": "An awareness episode (design 11 S5.1, PHASE7_PACKETS S2.1; the episode runner reads it). Linted by scripts/validate_social/awareness.rb. A defend-only episode uses id '<full id>_defend'. A check mission uses stages ['check'] and defend.stage 'pre' or 'post'.",
-      "required": ["id", "stages", "defend"],
+      "required": ["id", "stages"],
       "properties": {
         "id": {"type": "string"},
         "role": {"type": "string"},
@@ -1823,12 +2495,42 @@
           "patternProperties": {"^_": {}},
           "additionalProperties": false
         },
-        "variant": {"type": "string", "enum": ["full", "defendOnly"], "description": "Optional on a check mission (stages [\"check\"]); required for the other two kinds (awareness.rb says so)"},
+        "variant": {"type": "string", "enum": ["full", "defendOnly", "brief"], "description": "Optional on a check mission (stages [\"check\"]); required for the other kinds (awareness.rb says so). 'brief' (ENG-10) runs stages [\"brief\"] only: no attack, no defend block, a doneGlobal"},
+        "doneGlobal": {"type": "string", "description": "ENG-10: a boolean global the scenario declares (false). The runner sets it true when the episode's last stage ends, so an objective's concludeRequires or a host's eventMappings can wait on it. Required on a brief episode"},
+        "oncePerLearner": {"type": "boolean", "description": "ENG-10: true shows the finished panel with strings.alreadySeen when doneGlobal is already true at open. Needs doneGlobal"},
         "durationTargetMin": {"type": "number", "minimum": 0},
         "scopeNote": {"type": "string"},
+        "flipAftermath": {
+          "type": "object",
+          "description": "ENG-01: after a landed attack the flip shows the victim's seat. items are authored inline: an 'email' (one read-only sent-items row) or a non-email kind (sms, voicemail, qr, page, call, push). Shown only when the attack landed",
+          "required": ["items"],
+          "properties": {
+            "heading": {"type": "string"},
+            "victimName": {"type": "string", "description": "The colleague whose account is now in use"},
+            "intro": {"type": "string"},
+            "items": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["id", "kind"],
+                "properties": {
+                  "id": {"type": "string"},
+                  "kind": {"type": "string", "enum": ["email", "sms", "voicemail", "qr", "page", "call", "push"]},
+                  "note": {"type": "string"}
+                },
+                "additionalProperties": true
+              }
+            },
+            "line": {"type": "string"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "stepLabels": {"type": "object", "description": "ENG-01: step-strip labels keyed by stage id; wins over strings.stepLabels", "additionalProperties": {"type": "string"}},
         "stages": {
           "type": "array",
-          "items": {"type": "string", "enum": ["brief", "osint", "build", "write", "flip", "defend", "debrief", "check", "mfa"]}
+          "items": {"type": "string", "enum": ["brief", "osint", "build", "write", "flip", "defend", "debrief", "check", "mfa", "mistake", "guess"]}
         },
         "conclusionTaskId": {"type": "string", "description": "The task the host NPC's mapping completes; passed to the triage starter"},
         "standalone": {"type": "boolean", "description": "Default true. False makes the episode one beat in a bigger mission: awareness.rb then skips the missionConclusion, host-NPC and conclusionTaskId checks"},
@@ -1903,11 +2605,70 @@
           "patternProperties": {"^_": {}},
           "additionalProperties": false
         },
+        "concernForm": {"$ref": "#/definitions/socialConcernForm"},
+        "world": {
+          "type": "object",
+          "description": "ENG-05a/05b: world-play modifier on a call attack (E12). Not a stage: the write stage is still the call. The runner moves the learner into `room`, puts the costume on, and on the call ending (any outcome) or an early exit moves them back and gives the chosen avatar back (aw9). `startRoom` must equal the scenario's startRoom. Linted by awareness.rb",
+          "required": ["room", "startRoom"],
+          "properties": {
+            "room": {"type": "string", "minLength": 1, "description": "The room the attack is played in (a rooms key)"},
+            "startRoom": {"type": "string", "minLength": 1, "description": "The room the learner starts in and returns to (the kiosk room); equals the scenario startRoom"},
+            "spawn": {
+              "type": "object",
+              "description": "Optional landing tile in `room`, in tiles from its top-left; without it the learner lands at the room centre",
+              "required": ["x", "y"],
+              "properties": {"x": {"type": "number", "minimum": 0}, "y": {"type": "number", "minimum": 0}},
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
+            "costume": {
+              "type": "object",
+              "description": "A temporary skin over the chosen avatar (utils/player-costume.js). Never a new chosen avatar",
+              "required": ["sprite"],
+              "properties": {
+                "sprite": {"type": "string", "minLength": 1, "description": "Character atlas key (assets/characters/<sprite>.png)"},
+                "talk": {"type": "string", "minLength": 1, "description": "Talk portrait path; derived from the sprite key when absent"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            }
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "sortDrill": {"$ref": "#/definitions/socialSortDrill"},
+        "privacyPanel": {"$ref": "#/definitions/socialPrivacyPanel"},
         "strings": {
           "type": "object",
           "description": "Every learner-facing line of the episode, as data",
           "properties": {
             "brief": {"type": "string"},
+            "briefCards": {
+              "type": "array",
+              "description": "ENG-10: the brief as a run of cards (Next, Back, 'Card n of m'); the last card's button is briefDone. A blank line in text starts a paragraph. Without it the single strings.brief panel stands",
+              "items": {
+                "type": "object",
+                "required": ["text"],
+                "properties": {"heading": {"type": "string"}, "text": {"type": "string"}},
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "briefDone": {"type": "string", "description": "ENG-10: the last brief card's button label; default 'Got it'"},
+            "alreadySeen": {"type": "string", "description": "ENG-10: the finished panel's line when oncePerLearner finds doneGlobal already true; default 'You have seen this already.'"},
+            "finishedHeading": {"type": "string", "description": "batch-10 (E15/E17 B2): the heading on the end-of-episode panel after Finish; default 'Episode finished'"},
+            "finished": {"type": "string", "description": "batch-10: the body line on the end-of-episode panel after Finish; default 'You have finished this exercise. You can close this window.'"},
+            "sendOff": {"type": "string", "description": "batch-13 item 4: a short closing line under the end-of-episode panel, shown straight after the debrief's Finish only (not on a reopen); '' drops it. Default: a generic 'stop and check' thank-you."},
+            "concernRecapHeading": {"type": "string", "description": "batch-13 item 2: heading over the debrief's recap of the concern form report; default 'Your report'"},
+            "concernRecapFacts": {"type": "string", "description": "batch-13 item 2: the lead before the list of facts the learner filed; default 'The facts you included:'"},
+            "concernRecapMissing": {"type": "string", "description": "batch-13 item 2: the line naming any required fact left out; {missing} = the labels"},
+            "concernRecapConclusion": {"type": "string", "description": "batch-13 item 2: the line when a conclusion was left in the report; {conclusion} = its label"},
+            "concernRecapNoConclusion": {"type": "string", "description": "batch-13 item 2: the line when no conclusion was left in; '' drops it"},
+            "drillRecapHeading": {"type": "string", "description": "batch-10 (E17 B2): the heading over the debrief's sort-drill recap of cards placed in a wrong bin; default 'Cards to look at again'"},
+            "sandboxRecapHeading": {"type": "string", "description": "batch-11: heading over the debrief recap of wrong everyday choices; default Choices worth a second look"},
+            "sandboxRecapMove": {"type": "string", "description": "batch-11: line per recapped choice; {chosen} and {right} placeholders"},
+            "assistantRecapHeading": {"type": "string", "description": "batch-11: heading over the debrief recap of assistant-stage mistakes"},
+            "assistantRecapMove": {"type": "string", "description": "batch-11: line per recapped assistant mistake; {chosen} and {right} placeholders"},
             "flipHeading": {"type": "string"},
             "flipIntro": {"type": "string"},
             "flipDefenderLine": {"type": "string"},
@@ -1918,20 +2679,52 @@
               "patternProperties": {"^_": {}}
             },
             "flipNoSend": {"type": "string"},
+            "flipMontageByChoice": {
+              "type": "object",
+              "description": "ENG-04: the montage flip's line per beat and option, { <beatId>: { <optionId>: string } }. The learner's own option shows when it has a line, else the beat's unsafe option's. Keys are awarenessEpisode.mistake beat and option ids. Full consequence episodes only (the defend-only shell has no flip)",
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": {"type": "string"},
+                "patternProperties": {"^_": {}}
+              },
+              "patternProperties": {"^_": {}}
+            },
+            "flipMontageIntro": {"type": "string", "description": "ENG-04: the line above the montage; default 'Here is where each of those choices led.'"},
+            "sandbox": {
+              "type": "object",
+              "description": "ENG-04: the consequence sandbox's own lines over its defaults (consequence-sandbox.js). progress may hold {n} and {total}",
+              "properties": {
+                "intro": {"type": "string"}, "progress": {"type": "string"}, "legend": {"type": "string"},
+                "empty": {"type": "string"}, "next": {"type": "string"}, "finish": {"type": "string"},
+                "pickPrompt": {"type": "string", "description": "batch-10 (E15 B1): the line shown while the next/finish button is disabled, so pressing it with nothing picked is not silent; default 'Choose an option to continue.'"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
             "noBlameLine": {"type": "string", "description": "The debrief's no-blame line. It shows only after a wrong verdict (a phish not caught, a real one deleted or complied with), never after missed ticks alone (P5-5/P5-15); after a critical miss noBlameLineCritical stands in for it"},
             "noBlameLineCritical": {"type": "string", "description": "The no-blame line after a critical miss (the result has just said what it cost), so it must not claim nobody is marked down. Default: the engine's own line"},
             "mondayCard": {"type": "string"},
             "defendOnly": {"type": "string"},
+            "allRight": {"type": "string", "description": "The debrief line on a round with nothing to review (default 'You read every one of these the right way. Nothing to pick over here.'). Honoured by debrief-view.js; add here so an episode can set it (E19 B1)"},
+            "allPhishRight": {"type": "string", "description": "The debrief line on a clean round where a real one was reported (default 'Every phish was caught, with every tell named.'). For a non-phishing set where 'phish' is wrong (batch-6 C2)"},
+            "reportedPct": {"type": "string", "description": "The stored-reopen summary line 'Reported {pct}% of the phish' ({pct} is the percentage). Hidden when the set has no phish at all. For a non-phishing set (batch-6 C3). batch-8: the defend set's resultCopy.reportedPct wins over this and also covers the reopened result card; prefer setting it there so both read the same"},
+            "weakestTell": {"type": "string", "description": "batch-8: the debrief's weakest-skill line when one skill was missed most ({names} is the skill, {counts} is 'caught X of Y'; default 'The tell most often missed: {names} ({counts}).'). For a non-phishing set where 'tell' reads as phishing jargon"},
+            "weakestTells": {"type": "string", "description": "batch-8: the debrief's weakest-skill line when skills tied ({names} is the joined list, {counts} is 'caught X of Y'; default 'The tells most often missed: {names} ({counts} each).'). For a non-phishing set where 'tells' reads as phishing jargon"},
             "defendIntro": {"type": "string", "description": "Replaces the runner's fixed defend-stage intro, which talks about an inbox (wrong for a page or call set)"},
+            "writeReloadNote": {"type": "string", "description": "batch-6 (E14 F11): the write-stage launch note that a close/reload starts the compose draft again (default 'If you close or reload before you send, your draft starts again.'). '' suppresses it"},
             "flipMissed": {"type": "string", "description": "The flip's line after a send that did not land"},
+            "teamLine": {"type": "string", "description": "aw-ux2: the debrief's team thank-you, with {n} for the count and optionally {team} for the team size (only used when a team size is set). Default: 'Your reports and checks this round kept N phish away from ...'. For sets whose reported items are not all phish"},
             "flipLandedNoTells": {"type": "string", "description": "The flip's line after a send that landed but has nothing to replay (no tells); falls back to flipMissed"},
             "flipMissedHeading": {"type": "string", "description": "The flip's heading when nothing is replayed (a miss, or a landing with no tells); default 'Nothing to replay this time'"},
             "flipPageIntro": {"type": "string", "description": "The flip's intro when it shows a built landing page"},
+            "flipPageHeading": {"type": "string", "description": "E10 MA4: the heading over the page section when the flip shows both a message and a page; default 'The page it links to'. A no-link design (a fake check on the site's own address) overrides it, e.g. 'The page you built', so it does not claim a link"},
             "flipCallIntro": {"type": "string", "description": "The flip's intro when it shows a pretext call"},
+            "flipGuessIntro": {"type": "string", "description": "ENG-02: the flip's intro after a landed password guess (the guess stage), before flipAftermath"},
+            "guessNote": {"type": "string", "description": "ENG-02: the on-screen line in the password guesser saying nothing real is typed; wins over guess.note (default: 'No real password is typed or stored here. Every guess is made up for the exercise.')"},
             "continue": {"type": "string", "description": "The label of the Continue button"},
             "stages": {
               "type": "object",
-              "description": "Per-stage panel copy over the runner's fixed lines, keyed by stage id (brief, osint, build, write, mfa, flip, defend, debrief, check)",
+              "description": "Per-stage panel copy over the runner's fixed lines, keyed by stage id (brief, osint, build, write, mfa, mistake, guess, flip, defend, debrief, check)",
               "additionalProperties": {
                 "type": "object",
                 "properties": {"heading": {"type": "string"}, "text": {"type": "string"}, "button": {"type": "string"}},
@@ -1943,20 +2736,21 @@
             "stepLabels": {"type": "object", "description": "Step-strip labels keyed by stage id", "additionalProperties": {"type": "string"}},
             "facilitator": {
               "type": "object",
-              "description": "Facilitator notes: one string per stage id (brief, osint, build, write, mfa, flip, defend, debrief, check) plus 'pause'",
+              "description": "Facilitator notes: one string per stage id (brief, osint, build, write, mfa, mistake, guess, flip, defend, debrief, check) plus 'pause'",
               "properties": {
                 "brief": {"type": "string"}, "osint": {"type": "string"}, "build": {"type": "string"},
-                "write": {"type": "string"}, "mfa": {"type": "string"}, "flip": {"type": "string"},
+                "write": {"type": "string"}, "mfa": {"type": "string"}, "mistake": {"type": "string"}, "guess": {"type": "string"}, "flip": {"type": "string"},
                 "defend": {"type": "string"}, "debrief": {"type": "string"}, "check": {"type": "string"}, "pause": {"type": "string"}
               },
               "patternProperties": {"^_": {}},
               "additionalProperties": false
             },
             "conceptPanel": {
-              "description": "A short concept panel for the debrief (E2: macros). A string, or { heading, text }",
+              "description": "A short concept panel for the debrief (E2: macros). A string, or { heading, text }, or an array of { heading?, text } for several panels (ENG-09b)",
               "oneOf": [
                 {"type": "string"},
-                {"type": "object", "required": ["text"], "properties": {"heading": {"type": "string"}, "text": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}
+                {"type": "object", "required": ["text"], "properties": {"heading": {"type": "string"}, "text": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false},
+                {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["text"], "properties": {"heading": {"type": "string"}, "text": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false}}
               ]
             },
             "voicePanel": {
@@ -1976,6 +2770,55 @@
           "properties": {
             "mondayCard": {"type": "string", "description": "'slot:customer_report_route' is the only value the runner reads"},
             "noBlameLine": {"type": "boolean"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "guess": {"$ref": "#/definitions/socialGuess"},
+        "mistake": {
+          "type": "object",
+          "description": "ENG-04: the consequence stage of a consequence-flip episode (E11, E15, E16, E19, E20). The learner makes a few everyday choices in a sandbox (the consequence-sandbox scene), unscored; the flip then runs as a montage (flip.mode). Linted by awareness.rb: exactly one safe option per beat, flipBeat is a beat, absent on a defendOnly shell",
+          "required": ["beats", "flipBeat"],
+          "properties": {
+            "scored": {"type": "boolean", "description": "Always false; the sandbox is never scored"},
+            "beats": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["id", "situation", "options"],
+                "properties": {
+                  "id": {"type": "string", "description": "Stable beat id; the montage and strings.flipMontageByChoice key on it"},
+                  "situation": {"type": "string", "description": "The on-screen prompt for this everyday choice"},
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["id", "label", "safe"],
+                      "properties": {
+                        "id": {"type": "string"},
+                        "label": {"type": "string"},
+                        "safe": {"type": "boolean", "description": "True for the approved route; exactly one per beat"},
+                        "approvedRoute": {"type": "boolean", "description": "Marks the single modelled best move (a safe option)"}
+                      },
+                      "patternProperties": {"^_": {}},
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "patternProperties": {"^_": {}},
+                "additionalProperties": false
+              }
+            },
+            "flipBeat": {"type": "string", "description": "The beat whose branch heads the montage (aw2's one consequential choice); a beat id"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "flip": {
+          "type": "object",
+          "description": "ENG-04: how the flip stage is drawn. mode 'montage' replays the consequence sandbox's choices as a montage (needs awarenessEpisode.mistake)",
+          "properties": {
+            "mode": {"type": "string", "enum": ["montage"]}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
@@ -2101,7 +2944,8 @@
           "patternProperties": {"^_": {}},
           "additionalProperties": false
         },
-        "facilitated": {"type": "boolean"}
+        "facilitated": {"type": "boolean"},
+        "assistant": {"$ref": "#/definitions/socialAssistant"}
       },
       "patternProperties": {"^_": {}},
       "additionalProperties": false
@@ -2110,6 +2954,25 @@
       "type": "object",
       "description": "Wording for one triage action: the button label, the past tense on the list badge, the button hint",
       "properties": {"label": {"type": "string"}, "past": {"type": "string"}, "hint": {"type": "string"}},
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialTriageVerdictFeedbackLine": {
+      "type": "object",
+      "description": "The feedback line a verdict shows, by truth: phish (when the item is a phish) and real (when it is genuine). Each a non-empty string.",
+      "properties": {"phish": {"type": "string", "minLength": 1}, "real": {"type": "string", "minLength": 1}},
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialTriageKindPointsMap": {
+      "type": "object",
+      "description": "A verdict->points map (each 0..60) for scoring.kindPoints.",
+      "properties": {
+        "trust": {"type": "number", "minimum": 0, "maximum": 60},
+        "report": {"type": "number", "minimum": 0, "maximum": 60},
+        "delete": {"type": "number", "minimum": 0, "maximum": 60},
+        "verify": {"type": "number", "minimum": 0, "maximum": 60}
+      },
       "patternProperties": {"^_": {}},
       "additionalProperties": false
     },
@@ -2126,11 +2989,62 @@
         "headerPanel": {"type": "string", "enum": ["collapsed", "open", "off"]},
         "glossary": {"type": "string", "enum": ["closed", "open", "off"]},
         "chipStyle": {"type": "string", "enum": ["plain", "technical", "character"]},
+        "chipOrder": {"type": "string", "enum": ["default", "relevantFirst"], "description": "Order of the \"What made you say that?\" ticks. relevantFirst lists the set's own tells (flagChips) and the kind's channel tells before the generic email ones; the awareness episode skin does this unless the set says default."},
         "realLabel": {"type": "string", "minLength": 1, "description": "The noun for the genuine items in the result grid (\"Real texts and notices\"); default follows the queue's channels."},
         "flagPlayerSent": {"type": ["string", "boolean"], "description": "Opt-in (inbox-triage-minigame.js): marks the player's own sends on the review flip; a string is the line shown, true uses a default"},
         "verifyVerdict": {"type": "boolean"},
+        "scoring": {
+          "type": "object",
+          "properties": {
+            "kindPoints": {
+              "type": "object",
+              "additionalProperties": {
+                "oneOf": [
+                  {"$ref": "#/definitions/socialTriageKindPointsMap"},
+                  {
+                    "type": "object",
+                    "properties": {
+                      "phish": {"$ref": "#/definitions/socialTriageKindPointsMap"},
+                      "real": {"$ref": "#/definitions/socialTriageKindPointsMap"}
+                    },
+                    "patternProperties": {"^_": {}},
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "description": "Optional per-kind override of the verdict points (out of 60), keyed by kind (email, call, push, page, sms, qr, voicemail, choice), opt-in (batch-5 F-E12-1, E13 F-10): e.g. a visitor queue where Comply on a genuine caller is full marks ({\"call\": {\"trust\": 60}}). The value is a flat verdict->points map, OR { phish: {...}, real: {...} } (batch-6 M1) to reward a verdict only on genuine items of that kind (so complying with a vishing impostor of the same kind is NOT rewarded). A message's own truth.verdictPoints wins over this. An omitted verdict keeps the profile/kind default. Default: scoring unchanged."},
+            "criticalPenalty": {"type": "number", "minimum": 0, "maximum": 100, "description": "batch-10 (E8/E15/E16): points taken off the round mean per critical miss (a trusted phish of a critical kind, an approved sign-in, an impostor call complied with). Default 15. Lower it so a rushed learner who got the genuine items right need not land on 0%."},
+            "criticalPenaltyCap": {"type": "number", "minimum": 0, "maximum": 100, "description": "batch-10: a total cap on the points taken off for critical misses across the round, however many there were. Default: no cap (each miss costs criticalPenalty)."}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false,
+          "description": "Optional scoring overrides for this set (batch-5)."},
+        "verdictLabels": {"type": "object", "description": "ENG-03a: relabel the three (or four) verdict buttons and review-card wording for this set, by id (trust, report, delete, verify). The verdict ids and scoring are unchanged. Absent keeps the built Trust/Report/Delete labels.", "properties": {"trust": {"type": "string"}, "report": {"type": "string"}, "delete": {"type": "string"}, "verify": {"type": "string"}}, "patternProperties": {"^_": {}}, "additionalProperties": false},
         "missedPhishLine": {"type": "boolean", "description": "Opt-in (inbox-triage-minigame.js): the result card names the phish the learner trusted. Default off."},
         "genuineFeedback": {"type": "boolean", "description": "false hides the result screen's and debrief's lines on the real items (which were trusted, what made a flagged one safe). Default on."},
+        "genuineCopy": {
+          "type": "object",
+          "description": "batch-6 (C1): override the phish-worded lines in the real-items feedback, so a non-phishing set reads without 'phish'. Any key left out keeps its default.",
+          "properties": {
+            "binnedLeadOne": {"type": "string", "description": "When one real one was treated as a phish (default 'One real one was treated as a phish')"},
+            "binnedLeadMany": {"type": "string", "description": "When several were ({n} is the count; default 'N real ones were treated as phish')"},
+            "costBoth": {"type": "string", "description": "The cost line when both a report and a delete/refuse happened"},
+            "costReport": {"type": "string", "description": "The cost line when only a report happened"},
+            "costBin": {"type": "string", "description": "The cost line when only a delete/refuse happened"},
+            "whyBothHalves": {"type": "string", "description": "The 'both halves matter' closing line (default mentions catching a phish)"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
+        },
+        "criticalWhat": {
+          "description": "batch-6 (C4): the 'what counts' wording for a critical miss on an item with no truth.missLabel. A string used for every kind, or a per-kind map (email, call, push, ...). Default 'trusting a phish email' etc.",
+          "oneOf": [
+            {"type": "string", "minLength": 1},
+            {"type": "object", "additionalProperties": {"type": "string"}, "patternProperties": {"^_": {}}}
+          ]
+        },
+        "sheetNudge": {"type": "string", "description": "batch-6 (E8 F11): the one-line nudge shown when Confirm is pressed with nothing ticked. Default 'Tick what made you decide, or choose Nothing looks wrong. Then Confirm again.'"},
+        "confirmPrompt": {"oneOf": [{"type": "boolean"}, {"type": "string"}], "description": "batch-11: the first Confirm with nothing ticked shows a prompt instead of locking; a second Confirm locks. A string replaces the default prompt; false turns the prompt off (one Confirm locks). batch-13 (owner decision): default ON for every set."},
         "brief": {"type": "string"},
         "pairedWith": {"type": "string"},
         "channelTells": {"type": "array", "items": {"type": "string"}},
@@ -2141,26 +3055,62 @@
           "description": "Replaces the result screen's two follow-up lines (default: the mail-client and lab-sheet wording, or the awareness wording). {it} in weakest becomes it or them.",
           "properties": {
             "weakest": {"type": "string", "description": "After 'Weakest skill: ...'"},
-            "noFlags": {"type": "string", "description": "When the learner named no flags"}
+            "noFlags": {"type": "string", "description": "When the learner named no flags"},
+            "noFlagsLead": {"type": "string", "description": "batch-5 (E17): the sentence before noFlags (default \"You didn't name any flags on these messages, so there's nothing to grade skill by skill.\"). For a non-phishing set where 'name any flags' reads wrongly."},
+            "reportedPct": {"type": "string", "description": "batch-8: the reopened result card's report line AND the debrief's stored-reopen summary, one shared source ({pct} is the percentage; default 'Reported {pct}% of the phish'). On reopen a set value replaces the 'Reported rather than just deleted' / 'N% of the phish' label-value pair with one sentence; in the debrief it wins over strings.reportedPct. For a non-phishing set."},
+            "criticalLead": {"type": "string", "description": "batch-8: the result card's critical-miss lead, the phrase after 'One answer'/'N answers' (default 'let an attacker straight in'). For a non-phishing set where no attacker is let in; the labelled-miss branch ('missed something that needed reporting') is used unchanged."},
+            "caughtBreakdown": {"type": "boolean", "description": "batch-11: append the (N reported, M deleted) split to the Phish caught count"},
+            "handledRightLabel": {"type": "string", "description": "batch-11: label for the genuine-items count; {real} is replaced by the item noun"},
+            "clampedNote": {"type": "string", "description": "batch-11: line shown when penalties floored the round at 0%; a default exists"}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
         },
         "reportReplyFrom": {"type": "string", "minLength": 1, "description": "The prefix on the reply shown after a correct report (default 'IT Security')"},
+        "reportReply": {"type": "string", "minLength": 1, "description": "batch-8: the set-wide default reply body shown after a correct report (default \"Thanks. Confirmed as a phish, we've pulled it from the other inboxes.\"). A per-item truth.reportReply still wins. For a non-phishing set where 'phish'/'inboxes' is wrong across every reported item."},
         "skillNames": {"type": "object", "additionalProperties": {"type": "string"}, "description": "Skill name per scenario-local tell id, for the result breakdown (built-in tells keep theirs)"},
         "tellStrings": {"type": "object", "additionalProperties": {"type": "string"}, "description": "Red-flag sentence per scenario-local tell id, for the review card (built-in tells keep theirs; a message's factorStrings still win)"},
         "labels": {
           "type": "object",
           "description": "Wording over the defaults (triage-kinds.js 'kindLabel'): any key left out keeps its default.",
           "properties": {
-            "kind": {"type": "object", "description": "Short kind words by kind: email, sms, voicemail, qr, page, call, push", "additionalProperties": {"type": "string"}},
+            "kind": {"type": "object", "description": "Short kind words by kind: email, sms, voicemail, qr, page, call, push, choice", "additionalProperties": {"type": "string"}},
+            "choice": {
+              "type": "object",
+              "description": "Wording of an authored-choice card (triage-kinds.js CHOICE_TEXT): brief, group, answered, right, wrong, better, whyRight, ifWrong",
+              "properties": {
+                "brief": {"type": "string"}, "group": {"type": "string"}, "answered": {"type": "string"}, "right": {"type": "string"},
+                "wrong": {"type": "string"}, "better": {"type": "string"}, "whyRight": {"type": "string"}, "ifWrong": {"type": "string"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
             "verdict": {"type": "object", "description": "Email verdict buttons and brief legend by trust, report, delete, verify: { label?, past?, hint? }", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
+            "verdictFeedback": {
+              "type": "object",
+              "description": "batch-5 (F-E10-2): override the per-item feedback line a verdict shows the learner, so a relabelled verdict does not leak the engine word ('Deleting protects you' on a page named 'Go the trusted way'). By verdict, each { phish?, real? }. A per-item truth.reportLine / verifyLine still wins. Absent keeps the default lines.",
+              "properties": {
+                "trust": {"$ref": "#/definitions/socialTriageVerdictFeedbackLine"},
+                "report": {"$ref": "#/definitions/socialTriageVerdictFeedbackLine"},
+                "delete": {"$ref": "#/definitions/socialTriageVerdictFeedbackLine"},
+                "verify": {"$ref": "#/definitions/socialTriageVerdictFeedbackLine"}
+              },
+              "patternProperties": {"^_": {}},
+              "additionalProperties": false
+            },
             "callActions": {"type": "object", "description": "By action id comply, escalate, refuse, verify_callback", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
             "pushActions": {"type": "object", "description": "By action id approve, deny, deny_report", "additionalProperties": {"$ref": "#/definitions/socialTriageActionLabel"}},
             "smsHeading": {"type": "string", "description": "The 'Text message' heading on a text (default 'Text message')"},
+            "itemNoun": {"description": "batch-5 (F-E10-8 / F-E12-6): a blanket item-noun override for a set whose kind the derived noun names wrongly ('visitor' on a reception desk). A string gives [noun, noun+'s']; a [singular, plural] pair is taken as-is. A per-queue labels.queue.<key>.item wins over it.", "oneOf": [{"type": "string", "minLength": 1}, {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "string", "minLength": 1}}]},
+            "next": {"type": "string", "minLength": 1, "description": "batch-5 (F-E10-8 / F-E12-6): the 'Next message' button in immediate feedback. Default follows the item noun ('Next call', 'Next visitor')."},
+            "teamBadge": {"type": "string", "description": "aw-ux2: the triage team badge, with {n} for the count (default 'Phish stopped for the team: {n}'). For sets whose reported items are not all phish"},
+            "teamBadgeTitle": {"type": "string", "description": "aw-ux2: the badge's hover text (default 'Phish you reported or checked by another route this round')"},
+            "teamBadgeCountsChecked": {"type": "boolean", "description": "batch-12 item 2: whether a Verify counts toward the team badge. Default true (report and verify both count, matching the default badge and its 'reported or checked by another route' hover text). Set false for a badge worded only 'reported', so the number matches the word (E12 F4, E16 B3)."},
+            "phishCaughtLabel": {"type": "string", "description": "The result counter's label (default 'Phish caught'). For a non-phishing set (E17 acceptable-use) where 'Phish caught' is wrong, e.g. 'Requests handled'"},
+            "scoreLine": {"type": "string", "description": "The scored-round brief line (default 'Right call is most of the score; naming the flags is the rest.'). For a set where 'flags' collides with the compose meter's 'Red flags' (E8 weak-line #5)"},
             "queue": {
               "type": "object",
-              "description": "The brief's wording by queue: inbox, call, push, callPush, voicemail, page, sms, other",
+              "description": "The brief's wording by queue: inbox, call, push, callPush, voicemail, page, sms, choice, other",
               "additionalProperties": {
                 "type": "object",
                 "properties": {
@@ -2329,13 +3279,13 @@
           "patternProperties": {"^_": {}},
           "additionalProperties": false
         },
-        "labels": {"type": "object", "additionalProperties": {"type": "string"}},
         "prepLabels": {
           "type": "object",
           "description": "Wording of the preparation overlay; each defaults to today's text. approachTitle is the title for an in-person call (default: title).",
           "properties": {
             "title": {"type": "string"}, "approachTitle": {"type": "string"},
-            "heldTitle": {"type": "string"}, "heldEmpty": {"type": "string"}
+            "heldTitle": {"type": "string"}, "heldEmpty": {"type": "string"},
+            "beginLabel": {"type": "string", "description": "The start button (default 'Make the call'; 'Start the chat' in a social DM app)"}
           },
           "patternProperties": {"^_": {}},
           "additionalProperties": false
@@ -2429,7 +3379,30 @@
           "additionalProperties": false
         },
         "scope": {"type": "string"},
-        "ethics": {"type": "string"}
+        "ethics": {"type": "string"},
+        "requireFact": {"type": "boolean", "description": "batch-11: block Approach / Make the call until at least one fact is held. Default off."},
+        "requireFactLine": {"type": "string", "description": "batch-11: line shown while requireFact holds Approach back"},
+        "labels": {
+          "type": "object",
+          "description": "Fact labels (fact id: label string), plus debrief wording by theme under the reserved keys default, social and terminal. 'social' (a DM app) defaults to chat wording (Chat debrief, The chat was reported, You left the chat.); a key there overrides it. outcomeLabels, per outcome, still wins over both.",
+          "properties": {
+            "default": {"$ref": "#/definitions/socialPretextLabelSet"},
+            "social": {"$ref": "#/definitions/socialPretextLabelSet"},
+            "terminal": {"$ref": "#/definitions/socialPretextLabelSet"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": {"type": "string"}
+        },
+        "outcomeLabels": {"type": "object", "properties": {"got_it": {"type": "string"}, "reported": {"type": "string"}, "walked_away": {"type": "string"}}, "additionalProperties": false, "description": "batch-11: pretext debrief outcome labels; defaults are phone wording (You rang off.)"}
+      },
+      "patternProperties": {"^_": {}},
+      "additionalProperties": false
+    },
+    "socialPretextLabelSet": {
+      "type": "object",
+      "properties": {
+        "debriefTitle": {"type": "string"}, "got_it": {"type": "string"}, "partial": {"type": "string"},
+        "reported": {"type": "string"}, "walked_away": {"type": "string"}
       },
       "patternProperties": {"^_": {}},
       "additionalProperties": false
@@ -2739,6 +3712,8 @@
             "room_aw_tarrowby",
             "room_aw_quayholt",
             "room_aw_merrin_sallow",
+            "room_aw_carrholme",
+            "room_aw_merrin_lobby",
             "room_zds_reception",
             "room_zds_conference",
             "room_zds_office",
@@ -3249,8 +4224,23 @@
         "phoneId": { "type": "string" },
         "phoneTheme": {
           "type": "string",
-          "enum": ["terminal"],
-          "description": "Optional visual theme for the phone-chat minigame. 'terminal' uses a black-screen CRT aesthetic with phosphor green text."
+          "enum": ["terminal", "social"],
+          "description": "Optional visual theme for the phone-chat minigame. 'terminal' uses a black-screen CRT aesthetic with phosphor green text. 'social' is the generic DM-app look (accent colour from the device's app block). A device's own app.theme wins over this."
+        },
+        "handle": {
+          "type": "string",
+          "description": "A phone NPC's handle in a DM app, shown under the name (for example \"@mara.of.the.deep\")"
+        },
+        "profile": {
+          "type": "object",
+          "description": "A phone NPC's profile page: shows a View profile link that opens the OSINT browser at that person's profile and returns to the chat",
+          "required": ["siteId", "person"],
+          "properties": {
+            "siteId": {"type": "string", "description": "A social.osint.sites id"},
+            "person": {"type": "string", "description": "A social.people id with a profile on that site"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
         },
         "unlockable": {
           "type": "array",
@@ -3297,6 +4287,23 @@
             "setGlobalOnStart": {
               "type": "string",
               "description": "Name of a global variable to set to true when conversation starts. Used with skipIfGlobal to mark as seen."
+            },
+            "videoCall": {
+              "type": "boolean",
+              "description": "Open the conversation as a person-chat video call (a framed call with a player self-view PiP), as an eventMappings entry with conversationMode 'video-call' does. Works for phone NPCs too. conversationMode 'video-call' is accepted as the same thing. Absent, nothing changes."
+            },
+            "conversationMode": {
+              "type": "string",
+              "enum": ["video-call"],
+              "description": "Alias for videoCall: true."
+            },
+            "videoLabel": {
+              "type": "string",
+              "description": "(videoCall) The meeting-tool name on the video-call bar. Absent, the bar keeps the default 'SECURE VIDEO LINK'."
+            },
+            "participantTag": {
+              "type": "string",
+              "description": "(videoCall) A participant tag beside the peer name (e.g. 'External'). Absent, no tag shows."
             }
           }
         },
@@ -3347,10 +4354,34 @@
           "enum": ["person-chat", "phone-chat", "video-call"],
           "description": "Trigger a cutscene. 'person-chat' opens a full-screen overlay. 'phone-chat' opens the phone-chat minigame. 'video-call' opens the person-chat overlay framed as a secure video call with a player self-view PiP (works for phone NPCs too). All require targetKnot."
         },
+        "videoLabel": {
+          "type": "string",
+          "description": "ENG-07 (conversationMode 'video-call'): the meeting-tool name on the video-call bar (e.g. 'Brightwell Meet'). Absent, the bar keeps the default 'SECURE VIDEO LINK'."
+        },
+        "participantTag": {
+          "type": "string",
+          "description": "ENG-07 (conversationMode 'video-call'): a participant tag beside the peer name (e.g. 'External'). Absent, no tag shows."
+        },
         "background": { "type": "string" },
         "disableClose": {
           "type": "boolean",
           "description": "If true, player cannot close this conversation"
+        },
+        "openMinigame": {
+          "description": "Open a minigame when the mapping fires: a starter-registry type (mail_terminal, osint-workstation, triage-workstation, authenticator-device, case-file, kiosk, page-builder, report-workstation, exercise-station) or { type, minigameData?, name? }. minigameData is what an object of that type carries. The mapping's onceOnly, maxTriggers, cooldown, condition and delayMs apply as usual; the minigame waits for any open minigame to close. Use it instead of conversationMode, not with it.",
+          "oneOf": [
+            {"type": "string", "enum": ["mail_terminal", "osint-workstation", "triage-workstation", "authenticator-device", "case-file", "kiosk", "page-builder", "report-workstation", "exercise-station"]},
+            {
+              "type": "object",
+              "required": ["type"],
+              "properties": {
+                "type": {"type": "string", "enum": ["mail_terminal", "osint-workstation", "triage-workstation", "authenticator-device", "case-file", "kiosk", "page-builder", "report-workstation", "exercise-station"]},
+                "minigameData": {"type": "object"},
+                "name": {"type": "string"}
+              },
+              "additionalProperties": false
+            }
+          ]
         },
         "patrolOverride": {
           "type": "object",
@@ -3393,6 +4424,17 @@
             "message": { "type": "string" },
             "targetKnot": { "type": "string" },
             "skipIfGlobal": { "type": "string" }
+          }
+        },
+        "sendEmail": {
+          "type": "object",
+          "description": "An ink contact starts an email thread when the mapping fires (systems/mail-ink.js queuePlainEmail). npc defaults to this NPC",
+          "required": ["knot"],
+          "properties": {
+            "npc": {"type": "string"},
+            "knot": {"type": "string"},
+            "delaySeconds": {"type": "number", "minimum": 0},
+            "account": {"type": "string"}
           }
         },
         "setGlobal": { "type": "object" },
@@ -3589,6 +4631,19 @@
         "npcIds": {
           "type": "array",
           "items": { "type": "string" }
+        },
+        "app": {
+          "type": "object",
+          "description": "The look of a phone device's chat (type 'phone'): a DM app. Its theme wins over the contacts' phoneTheme, which stays the fallback. chrome 'app' hides the signal bars and battery; title replaces 'Messages'.",
+          "properties": {
+            "title": {"type": "string", "description": "The app's name, shown as the list heading (default 'Messages')"},
+            "theme": {"type": "string", "enum": ["social", "terminal"]},
+            "accent": {"type": "string", "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$", "description": "Accent colour of the social theme, as hex"},
+            "chrome": {"type": "string", "enum": ["app"], "description": "'app' drops the phone's status bar (signal and battery)"},
+            "logo": {"type": "string", "description": "A file in assets/logos shown beside the title, such as friendface.png"}
+          },
+          "patternProperties": {"^_": {}},
+          "additionalProperties": false
         },
         "hacktivityMode": { "type": "boolean" },
         "vm": {

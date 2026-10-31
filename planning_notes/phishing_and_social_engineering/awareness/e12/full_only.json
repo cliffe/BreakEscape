@@ -1,0 +1,37 @@
+{
+  "_about": "Full-episode-only keys and wiring facts for scenarios/awareness_e12_visitor_tailgater/scenario.json.erb. The wiring agent pastes each value into the full erb at the path its _note gives. None of these is in the fragment-erb parity comparison, and the generated defend-only shell never carries them (world/attack are attack-side; a defendOnly shell drops the attack they modify). E12 depends on ENG-05a/05b (world modifier + costume), ENG-05c (lobby map room_aw_merrin_lobby + the badge door + NPC door-opening) and ENG-08 (schema/validator accepts awarenessEpisode.world, the lobby room type and the locked lobby->training_room connection). E12 brief: episodes/E12_visitor_and_tailgater.md sections 5, 8b, 9.1-9.6, 13. Use stock sprites only; the hi-vis courier costume is a placeholder stock sprite until art is approved.",
+
+  "_notes": {
+    "world": "Paste at social.awarenessEpisode.world (ENG-05a/05b). Episode-level, full-only. Validated by scripts/validate_social/awareness.rb world_checks: `room` and `startRoom` must both be rooms in the scenario; `startRoom` must equal the top-level scenario startRoom (training_room, the kiosk room the learner starts and returns to); `room` (lobby) is where the world-play attack is played and must differ from startRoom. The costume is a TEMPORARY override of the player sprite and talk portrait for the attack only: ENG-05a restores chosenPlayerSprite() on any write outcome (got_it / reported / walked_away), never the scenario's player.spriteSheet (aw9). `costume.sprite` below is a STOCK PLACEHOLDER (male_telecom_v2) until the real art lands; the intended final sprite is aw_hivis_courier_v2 with the parcel baked into its walk and breathing-idle frames (ENG-05b/05d), talk portrait aw_hivis_courier_talk.png. costume.talk must resolve to assets/characters/<sprite>_talk.png, so the placeholder uses assets/characters/male_telecom_talk.png.",
+    "attack": "Paste at social.awarenessEpisode.attack. Episode-level, full-only; duplicated from attack.json `_episodeAttack` for convenience (keep the two in step). `callId` makes writeKind return 'call', so the runner opens pretext-prep -> person-chat on the lobby NPC delphine_reception. `scored` is false: the attack half is never scored. siteIds are the two OSINT sites in attack.json osint.",
+    "doorKeys": "Paste the lock keys onto the rooms.training_room room block in the full erb (NOT onto a connection): a room lock lives on the block being ENTERED, per 02 ENG-05c, copied from m02's security_office block (m02_ransomed_trust/scenario.json.erb). `requires` names a key id (merrin_studio_badge) that NO object in the scenario holds, so there is no key to pick up; the only in-fiction opener is Delphine buzzing the door via her ink's #unlock_door:training_room line. The learner never needs to traverse the door (defend is at the kiosk in training_room, which is also startRoom), so pickability does not matter.",
+    "connectionsAndNpcs": "The lobby room (type room_aw_merrin_lobby, ENG-05c) holds Delphine (delphine_reception) and a connection to training_room; the training_room block holds the badge-door lock keys (doorKeys above), the kiosk and the kiosk host Lorna (lorna_easton). An NPC is declared inside exactly one room, and the person pretext target is resolved via cfg.channels.person as a placed world NPC, so Delphine must be in the lobby and Lorna at the kiosk in training_room: two front-of-house NPCs (E12 brief sections 5, 20.1). Delphine's record MUST carry \"unlockable\": [\"training_room\"] so the server honours her #unlock_door:training_room tag (npc-game-bridge.js unlockDoor). Lorna's record carries the N16 done-event eventMappings (one on the pretext outcome completing run_front_desk_pretext, one on episode_e12_visitor_tailgater_defend_done completing work_reception_desk). The welcome/brief and debrief lines are Lorna's ink (ink/lorna_easton.ink); Delphine's lobby pretext is ink/delphine_reception.ink.",
+    "npcRecords": "Sprite keys for the two NPC records in the full erb (stock placeholders until the PixelLab queue; E12 brief section 8b). Delphine reuses female_telecom_v2 as the person-chat placeholder; Lorna reuses female_office_worker_v2. Both the name and the record stay whatever art lands.",
+    "unlockedPcProp": "OPTIONAL attack beat (E12 brief section 9.6): a dressed, non-interactive workstation object in the lobby map with an `observations` string the courier reads in passing (suggested: \"A workstation left logged in, the screen awake and a client project list on show. Nobody is sitting at it.\"). No observationVariants, no pickup, no lock, no global. Cut it if the lobby cannot carry an extra prop or it crowds the pretext walk; the defend-set screen-lock pair (items 6 and 7) carries the lesson on its own. Prose only in the flip/concept panel if kept.",
+    "conclusion": "awarenessEpisode.conclusionTaskId is work_reception_desk (the defend task). Aim 2 (reception_desk_aim, missionConclusion true) concludeRequires.globals is [\"episode_e12_visitor_tailgater_defend_done\"] with the section 8b success conclusionScreen. Objectives, kiosk observations and mission.json follow E3's two-aim call-attack shape (E12 brief section 8b)."
+  },
+
+  "world": {
+    "room": "lobby",
+    "startRoom": "training_room",
+    "costume": {
+      "sprite": "male_telecom_v2",
+      "talk": "assets/characters/male_telecom_talk.png"
+    }
+  },
+
+  "attack": {
+    "callId": "merrin_front_desk",
+    "siteIds": ["merrin_site", "merrin_social"],
+    "scored": false
+  },
+
+  "doorKeys": {
+    "_note": "These keys go ON the rooms.training_room room block, alongside the room's own fields, not on a connection. Copied verbatim from m02's security_office block (02 ENG-05c).",
+    "locked": true,
+    "lockType": "key",
+    "requires": "merrin_studio_badge",
+    "keyPins": [40, 30, 55, 35],
+    "difficulty": "easy"
+  }
+}

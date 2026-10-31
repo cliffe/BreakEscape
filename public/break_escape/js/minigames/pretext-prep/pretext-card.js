@@ -40,15 +40,24 @@ export function factLabel(factId, given = null) {
  * The overlay's own wording. `prepLabels` on the call entry overrides each piece; `approachTitle`
  * is the heading for an in-person approach (default: same as `title`).
  */
-export function callWords(spec, npc = null) {
+export function callWords(spec, npc = null, theme = null) {
     const l = isObject(spec?.prepLabels) ? spec.prepLabels : {};
     const pick = (k, d) => (isStr(l[k]) ? l[k] : d);
-    const title = pick('title', 'Prepare the call');
+    // A DM app (theme 'social') prepares a chat, not a call; prepLabels still wins
+    const title = pick('title', theme === 'social' && npc?.npcType === 'phone' ? 'Prepare the chat' : 'Prepare the call');
     return {
         title: npc && npc.npcType !== 'phone' ? pick('approachTitle', title) : title,
         heldTitle: pick('heldTitle', 'On the board'),
         heldEmpty: pick('heldEmpty', 'Nothing on the board yet.')
     };
+}
+
+/** The prep card's start button: "Make the call" for a phone, "Start the chat" in a DM app. */
+export function callBeginLabel(spec, npc = null, theme = null) {
+    const own = isObject(spec?.prepLabels) && isStr(spec.prepLabels.beginLabel) ? spec.prepLabels.beginLabel : null;
+    if (own) return own;
+    if (npc?.npcType === 'phone') return theme === 'social' ? 'Start the chat' : 'Make the call';
+    return npc ? 'Approach' : 'Begin';
 }
 
 /**
@@ -211,13 +220,27 @@ export function readinessLines(facts, optionsByFact) {
  * has lines with no blanks. An unfilled blank that does have options blocks,
  * and the line names the blank, not the missing value.
  */
-export function callGate(facts, optionsByFact, chosen) {
+export function callGate(facts, optionsByFact, chosen, opts = {}) {
     for (const fact of facts) {
         const options = optionsByFact[fact.factId] || [];
         if (options.length === 0) continue;
         const value = chosen?.[fact.factId];
         if (!options.some((option) => option.value === value)) {
             return { ok: false, reason: 'unchosen', line: `Choose an option for the ${factLabel(fact.factId, fact.label)} blank` };
+        }
+    }
+    // E12 B2 row 6 (opt-in): require at least one fact before the approach/call, so a learner who
+    // found nothing is sent back to research rather than approaching with an empty pretext. Default
+    // off → approaching with nothing held still works (the call degrades gracefully). A fact is
+    // held when a blank has a chosen value among its available options.
+    if (opts && opts.requireFact === true) {
+        const anyChosen = facts.some((fact) => {
+            const options = optionsByFact[fact.factId] || [];
+            return options.some((option) => option.value === chosen?.[fact.factId]);
+        });
+        if (!anyChosen) {
+            return { ok: false, reason: 'noFacts',
+                line: (typeof opts.line === 'string' && opts.line) ? opts.line : 'Go back and research first: you need at least one fact to go on.' };
         }
     }
     return { ok: true, reason: null, line: '' };

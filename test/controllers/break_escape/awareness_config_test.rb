@@ -102,6 +102,38 @@ module BreakEscape
       assert_equal 600, data['ruleOfThumb'].length
     end
 
+    test 'show_result true and false reach the config; unset leaves the key out' do
+      hook(report_text: 'route', show_result: true)
+      get game_url(@game)
+      assert_equal true, awareness_json['showResult']
+
+      hook(report_text: 'route', show_result: false)
+      get game_url(@game)
+      assert_equal false, awareness_json['showResult']
+
+      hook(report_text: 'route')
+      get game_url(@game)
+      assert_nil awareness_json['showResult'], 'an unset show_result leaves the key out (engine default)'
+    end
+
+    test 'pass_percent 1..100 reaches the config; out of range or missing is dropped' do
+      hook(report_text: 'route', pass_percent: 70)
+      get game_url(@game)
+      assert_equal 70, awareness_json['passPercent']
+
+      [0, 101, -5, 'abc', '2.5', 3.5, '', nil].each do |bad|
+        hook(report_text: 'route', pass_percent: bad)
+        get game_url(@game)
+        assert_nil awareness_json['passPercent'], "pass_percent #{bad.inspect} should be dropped"
+      end
+
+      ['70', ' 55 '].each do |good|
+        hook(report_text: 'route', pass_percent: good)
+        get game_url(@game)
+        assert_kind_of Integer, awareness_json['passPercent']
+      end
+    end
+
     test 'team size outside 2..100000, or not a whole number, is dropped' do
       [1, 0, -5, 100_001, 'abc', '2.5', 3.5, '', nil, [3]].each do |bad|
         hook(report_text: 'route', team_size: bad)
@@ -137,6 +169,16 @@ module BreakEscape
       assert_equal 100_000, be_team_size(100_000)
       assert_nil be_team_size(1)
       assert_nil be_team_size('100001')
+    end
+
+    test 'be_pass_percent bounds' do
+      assert_equal 1, be_pass_percent(1)
+      assert_equal 100, be_pass_percent('100')
+      assert_equal 55, be_pass_percent(' 55 ')
+      assert_nil be_pass_percent(0)
+      assert_nil be_pass_percent(101)
+      assert_nil be_pass_percent('2.5')
+      assert_nil be_pass_percent(nil)
     end
 
     test 'config is empty without a hook and when the hook returns a non-hash' do

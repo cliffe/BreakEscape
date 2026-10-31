@@ -1,0 +1,25 @@
+{
+  "display_name": "Year-end review: spot it",
+  "description": "An awareness edition of about 10 minutes for all staff, on the defending side only. A mixed run of the year's messages across email, calls, a voicemail, a text, a sign-in prompt and a web page, from three fictional companies. Your organiser places your existing role post-check after it, which compares against your role pre-check. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
+  "difficulty_level": 1,
+  "scoring": "completion",
+  "resultGlobal": "episode_core_17_annual_2027_defend_defend_percent",
+  "stage": "episode",
+  "secgen_scenario": null,
+  "collection": "training",
+  "ui_theme": "general",
+  "title_art": "title_art/awareness_core_17_annual_2027_defend.jpg",
+  "estimated_duration_minutes": 10,
+  "cybok": [
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": [
+        "Security awareness",
+        "Phishing",
+        "Vishing",
+        "Annual assessment"
+      ]
+    }
+  ]
+}

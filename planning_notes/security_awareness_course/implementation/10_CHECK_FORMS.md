@@ -20,8 +20,8 @@ reuse the built shell machinery.
 - `planning_notes/phishing_and_social_engineering/awareness/e3/defend.json` and
   `awareness/e5/defend.json` (a built form fragment pair: `helpdesk_form_a`/`_b`,
   `general_form_a`/`_b`, with `_formPairing`, `perFlagNote`, `whyFine`, `flagAlternatives`).
-- A built shell, read in full: `scenarios/awareness_pre_general_ab/scenario.json.erb` and
-  `scenarios/awareness_post_general_ab/scenario.json.erb` (the pre export block, the post
+- A built shell, read in full: `scenarios/awareness_pre_general_v2_ab/scenario.json.erb` and
+  `scenarios/awareness_post_general_v2_ab/scenario.json.erb` (the pre export block, the post
   `importGlobals` block with `pre_check_completed`, `awarenessEpisode`, the `training_room`).
 - `planning_notes/phishing_and_social_engineering/designs/00_data_contract.md` section 2 (the
   factor library and the channel-tell library: the exact scored flag ids you may use).
@@ -176,7 +176,7 @@ Everything here mirrors the built forms. Read a built pre and post shell alongsi
     every pair of arrays is disjoint (for example `[2, 0, 1, 4, 3, 6, 5, 9, 7, 8]` /
     `[7, 3, 0, 6, 1, 8, 5, 2, 9, 4]` leaves slots 4 and 6 phish in both), so run the audit's
     disjointness check (step 2) on whatever arrays you ship.
-- Each pair becomes four shells, exactly as the built roles (`gen_e3_e5_shells.py` `check()` and
+- Each pair becomes four shells, exactly as the built roles (`gen_checks_v2_shells.py` `check()` and
   `main()`): `pre_*_ab` carries form A at stage `pre`; `post_*_ab` carries form B at stage `post`;
   `pre_*_ba` carries form B at stage `pre`; `post_*_ba` carries form A at stage `post`. The form
   selection map in `check()` is `{('ab','pre'): fa, ('ab','post'): fb, ('ba','pre'): fb,
@@ -220,8 +220,8 @@ in the item tables below).
 
 ### Pre/post export and import globals
 
-Identical to the built checks (`gen_e3_e5_shells.py` `check()`, and
-`scenarios/awareness_post_general_ab/scenario.json.erb`). The global names are reused across every
+Identical to the built checks (`gen_checks_v2_shells.py` `check()`, and
+`scenarios/awareness_post_general_v2_ab/scenario.json.erb`). The global names are reused across every
 role, which is safe because each post shell imports from a named pre mission; a learner does one
 pair's pre+post in a session.
 
@@ -349,7 +349,7 @@ Anjali's and Darren's sprite keys come from `gen_e3_e5_shells.py` `HOSTS` (`anja
 
 ### Mission titles, names and collection
 
-Follow the built strings exactly (`gen_e3_e5_shells.py` `check()`):
+Follow the built strings exactly (`gen_checks_v2_shells.py` `check()`):
 
 - `scenario_name`: `"<check name>: before (AB)"` / `"<check name>: after (AB)"` and the BA variants.
   Check name: `general_v2` -> "Everyday threats check (part two)"; `data_conduct` -> "Data and
@@ -398,6 +398,15 @@ Phish at slots 2, 4, 6, 8 (before permute). Per-form flag multiset: `lookalike_d
 "padlock_myth", "unrequested_mfa_push", "reply_to_differs"]`. The two factors this form scores,
 `senderTrust` (items 6 and 8) and `linkCredible` (item 6), are scored through the factor path and are
 **not** listed in `channelTells` (they are always in `FACTORS`; `triage.rb` rejects a factor id there).
+
+> Divergence (2026-10-29, design review C1 P1-M1): the shipped `general_v2` drops `reply_to_differs`
+> from item 8 (both forms) and from `channelTells`, following the built forms' C2-M6 decision (episode
+> defend rounds run `headerPanel: "off"`, so no episode teaches opening a header). Item 8 now scores
+> `senderTrust` only; the reply-to point lives in each item's `headerNote` as a "you could also see"
+> line. The per-form flag multiset above is therefore `senderTrust` 2, `linkCredible` 1,
+> `lookalike_domain` 1, `padlock_myth` 1, `unrequested_mfa_push` 1 (6 scored flags), and `channelTells`
+> is `["lookalike_domain", "padlock_myth", "unrequested_mfa_push"]`. This row's spec above is kept as
+> authored for the record.
 
 Note on card kinds: item 2 is a `page` (verdicts Trust/Report/Delete; `padlock_myth` is offered only
 on a page, `triage-flags.js` `KIND_TELL_EXCLUDE`). Item 4 is a `push` (verdicts Approve/Deny/Deny and

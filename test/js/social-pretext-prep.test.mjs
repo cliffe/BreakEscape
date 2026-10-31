@@ -16,6 +16,7 @@ const js = join(here, '../../public/break_escape/js');
 const copies = [
     'minigames/pretext-prep/pretext-card.js',
     'minigames/pretext-prep/pretext-prep-minigame.js',
+    'minigames/phone-chat/phone-app.js',
     'minigames/framework/base-minigame.js',
     'minigames/framework/social-overlay.js',
     'minigames/mail-client/mail-composer.js',

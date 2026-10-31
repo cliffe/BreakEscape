@@ -1,0 +1,478 @@
+{
+  "scenario_id": "awareness_e8_after_the_click_defend",
+  "scenario_name": "After the click: the signs that follow",
+  "titleScreenName": "After the click",
+  "scenario_brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. A colleague, Ayaan, clicked a convincing email and signed in, and now his account is being used. You're covering his inbox at the training kiosk. Some of what turns up is a real sign that something is wrong, and some is ordinary. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down.",
+  "endGoal": "Sort the signs in the colleague's inbox at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "used_account_aim",
+      "title": "Sort the signs that follow",
+      "description": "Work through the signs in the colleague's inbox at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e8_after_the_click_defend_defend_complete"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Signs done",
+        "body": "You've worked through the signs in the colleague's inbox. The debrief goes through each one. If it ever happens to you, report it straight away, change your password on the real site, and leave the device as it is."
+      },
+      "tasks": [
+        {
+          "taskId": "sort_the_signs",
+          "title": "Sort the signs that follow",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e8_after_the_click_defend_state": {},
+    "se_awareness_records": [],
+    "episode_e8_after_the_click_defend_defend_percent": 0,
+    "episode_e8_after_the_click_defend_defend_reportRate": 0,
+    "episode_e8_after_the_click_defend_defend_complete": false
+  },
+  "social": {
+    "triageSets": [
+      {
+        "genuineCopy": {
+          "binnedLeadOne": "One everyday item was treated as a sign of a takeover",
+          "binnedLeadMany": "{n} everyday items were treated as signs of a takeover",
+          "costBoth": "Reporting when you're unsure is never wrong, but a report on an everyday item takes security's time to check, and a deleted one can leave a colleague's honest slip or a maintenance warning unseen.",
+          "costReport": "Reporting when you're unsure is never wrong, but a report on an everyday item takes security's time to check, and the real item waits.",
+          "costBin": "Deleting an everyday item has a cost: a colleague's honest slip or a maintenance warning goes unanswered.",
+          "whyBothHalves": "Both halves matter: reporting the signs of a takeover limits the damage, and answering the everyday items keeps work moving."
+        },
+        "bands": [
+          {
+            "min": 85,
+            "headline": "Well done: you read the signs and knew why"
+          },
+          {
+            "min": 60,
+            "headline": "Getting there: a few signs slipped past"
+          },
+          {
+            "min": 0,
+            "headline": "Worth practising: here's where to look first"
+          }
+        ],
+        "criticalWhat": {
+          "email": "treating a sign of a taken-over account as normal",
+          "push": "approving a sign-in you didn't start",
+          "page": "treating a sign of a taken-over account as normal"
+        },
+        "reportReply": "Thanks. We're looking at the account now. Please leave the device as it is.",
+        "resultCopy": {
+          "noFlags": "Next time, tick what looks off. The review cards show what each sign was telling you.",
+          "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+          "criticalLead": "let a problem go unreported",
+          "reportedPct": "Reported {pct}% of the signs of a taken-over account"
+        },
+        "id": "e8_used_account",
+        "title": "Ayaan's inbox after the click",
+        "brief": "You're covering Ayaan's inbox after the click. Six things have turned up. For each one, choose Trust, Report, Delete or Verify (ring the service desk or Anjali on a number you already hold), then tick what you noticed. Reporting when you're unsure is always fine and never marked down.",
+        "scoringProfile": "awareness",
+        "scoring": {
+          "criticalPenalty": 10
+        },
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "unexpected_sent_item",
+          "unrequested_reset",
+          "unrequested_mfa_push",
+          "ransomware_note",
+          "secrecy_or_bypass"
+        ],
+        "flagChips": {
+          "unexpected_sent_item": "Something sent that you didn't write",
+          "unrequested_reset": "A change you didn't make",
+          "ransomware_note": "A demand to unlock your files"
+        },
+        "sheetNudge": "Next time, tick what made you decide, or choose Nothing looks wrong.",
+        "skillNames": {
+          "unexpected_sent_item": "Noticing a sent item you didn't send",
+          "unrequested_reset": "Noticing a change you didn't make",
+          "ransomware_note": "Recognising a ransom note"
+        },
+        "labels": {
+          "teamBadgeTitle": "Signs of a taken-over account you reported or checked this round rather than carrying on",
+          "teamBadge": "Signs reported or checked for the team: {n}",
+          "phishCaughtLabel": "Signs spotted",
+          "verdict": {
+            "report": {
+              "hint": "Something here is wrong. Send it to security."
+            }
+          }
+        },
+        "outcome": {
+          "setGlobalPrefix": "episode_e8_after_the_click_defend_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e8_push_abroad",
+            "kind": "push",
+            "time": "15:02",
+            "push": {
+              "app": "Quayholt Sign-in",
+              "request": "Are you trying to sign in?",
+              "account": "ayaan.warsame@quayholt.example",
+              "location": "Unknown location, outside the UK",
+              "device": "Windows PC"
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "unrequested_mfa_push"
+              ],
+              "perFlagNote": {
+                "unrequested_mfa_push": "A sign-in prompt you did not start, from a Windows PC outside the UK that is not yours, means someone has your password and is hoping you will tap Approve. Deny it and report it"
+              },
+              "ifTrusted": "Approving would let the sender into your account, with your Quayholt access, from a computer you've never used.",
+              "reportReply": "Thanks. We've reset your password and blocked that sign-in. The prompt is what stopped them.",
+              "critical": true
+            }
+          },
+          {
+            "id": "e8_sent_invoice",
+            "from": {
+              "name": "Ayaan Warsame",
+              "address": "ayaan.warsame@quayholt.example"
+            },
+            "to": "claims-client@marsden-holloway.example",
+            "subject": "Your settlement payment",
+            "time": "15:08",
+            "body": "Hello,\nWe're ready to settle your claim. Please make the payment to the account on the attached remittance, and use that account for any future invoices too, as our details have changed. Grateful if you'd keep this to yourself until it has gone through.\nKind regards,\nAyaan Warsame\nClaims, Quayholt Insurance",
+            "attachments": [
+              {
+                "id": "remit",
+                "label": "Remittance_advice.pdf",
+                "kind": "pdf"
+              }
+            ],
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "ayaan.warsame@quayholt.example"
+            },
+            "factorStrings": {
+              "unexpected_sent_item": {
+                "redFlag": "A message or item in your own Sent folder that you did not send"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "kindLine": "This really did leave your mailbox, but you did not write it, so someone is signed in as you. Report it straight away.",
+              "missLabel": "leaving a message the attacker sent from your account",
+              "flags": [
+                "unexpected_sent_item",
+                "secrecy_or_bypass"
+              ],
+              "perFlagNote": {
+                "unexpected_sent_item": "This is in your own Sent folder at 15:08, but you did not write it, which means someone is signed in as you right now",
+                "secrecy_or_bypass": "It quietly moves the client to a new account and asks them to keep it quiet, which is how a mailbox takeover is cashed out"
+              },
+              "ifTrusted": "If you leave it, the client pays a criminal's account and your mailbox keeps sending in your name.",
+              "reportReply": "Thanks. We've locked the account, warned the client not to pay, and started the recovery. You caught it from the Sent folder, which is exactly the sign.",
+              "critical": true
+            }
+          },
+          {
+            "id": "e8_reset_confirm",
+            "from": {
+              "name": "Quayholt IT",
+              "address": "it-servicedesk@quayholt.example"
+            },
+            "to": "ayaan.warsame@quayholt.example",
+            "subject": "Your password was changed",
+            "time": "15:05",
+            "body": "Hello,\nThis confirms that the password for your Quayholt account was changed successfully. If you made this change, no action is needed.\nIf you did not make this change, contact the service desk straight away.\nQuayholt IT Service Desk",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "it-servicedesk@quayholt.example"
+            },
+            "factorStrings": {
+              "unrequested_reset": {
+                "redFlag": "A password reset or security change you did not ask for"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "kindLine": "This confirmation is genuine, but you did not change your password, so someone else did. Report it, or ring the service desk.",
+              "missLabel": "ignoring a password change you didn't make",
+              "flags": [
+                "unrequested_reset"
+              ],
+              "perFlagNote": {
+                "unrequested_reset": "The address is really Quayholt's and this is a genuine confirmation, but you did not change your password, so someone else did"
+              },
+              "ifTrusted": "If you ignore it, the attacker keeps the new password and your access.",
+              "reportReply": "Thanks. We've reset it again to one only you control and locked the old session. A confirmation for a change you didn't make is always worth reporting.",
+              "critical": false
+            }
+          },
+          {
+            "id": "e8_colleague_slip",
+            "from": {
+              "name": "Reuben Ofori",
+              "address": "reuben.ofori@quayholt.example"
+            },
+            "to": "ayaan.warsame@quayholt.example",
+            "subject": "I think I've sent something to the wrong client",
+            "time": "09:21",
+            "body": "Ayaan,\nI think I've just sent a claims spreadsheet to the wrong client by mistake. I've not heard back yet. What should I do, and who do I tell?\nReuben",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "reuben.ofori@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "Reuben's real address, and a colleague owning up to a mistake and asking for help. Reading it and helping him is the call that fits. A report is never marked down, but it sends security a colleague's honest slip."
+              }
+            }
+          },
+          {
+            "id": "e8_locked_files",
+            "kind": "page",
+            "subject": "Your files are locked",
+            "time": "15:40",
+            "body": "Your files are locked. To get them back, follow the instructions in README_UNLOCK.txt.",
+            "page": {
+              "url": "Shared drive",
+              "padlock": false,
+              "heading": "Your files are locked"
+            },
+            "factorStrings": {
+              "ransomware_note": {
+                "redFlag": "A message or on-screen note claiming your files are locked and demanding payment"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "kindLine": "This is a ransom note. Report it at once and leave the device as it is.",
+              "flags": [
+                "ransomware_note"
+              ],
+              "perFlagNote": {
+                "ransomware_note": "Files that will not open and a note demanding payment is a sign to report at once and leave the device as it is: do not restart it, do not delete the note, do not try to open the files again"
+              },
+              "ifTrusted": "Acting on the note, or trying to fix it yourself, could destroy the evidence the team needs.",
+              "reportReply": "Thanks. We've isolated the device and the shared drive. Leaving it as it was is exactly what helps."
+            }
+          },
+          {
+            "id": "e8_maintenance",
+            "from": {
+              "name": "Quayholt IT",
+              "address": "it-servicedesk@quayholt.example"
+            },
+            "to": "all-staff@quayholt.example",
+            "subject": "Planned maintenance on the claims system, Saturday 08:00 to 12:00",
+            "time": "08:05",
+            "body": "Hello all,\nThe claims system will be down for planned maintenance this Saturday from 08:00 to 12:00. You don't need to do anything now. When it is back you may be signed out and asked to sign in again as usual. This notice is also on the intranet.\nQuayholt IT Service Desk",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "quayholt.example",
+              "replyTo": "it-servicedesk@quayholt.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "IT's real address, a planned-outage notice that is on the intranet too and asks nothing of you now. It mentions signing in again, which can read like the signs above, but it has no link and no rush. After a run of real signs it is tempting to report everything. Trusting it is the call that fits, and a report is never marked down."
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e8_after_the_click_defend",
+      "role": "general_staff",
+      "company": "quayholt_insurance",
+      "brand": {
+        "name": "Quayholt Insurance",
+        "logoText": "QUAYHOLT",
+        "accent": "#6b4c9a"
+      },
+      "variant": "defendOnly",
+      "durationTargetMin": 8,
+      "scopeNote": "Authorised exercise at Quayholt Insurance, a fictional company. In scope: the signs that follow in a colleague's inbox after a click.",
+      "stages": [
+        "brief",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "sort_the_signs",
+      "defend": {
+        "setId": "e8_used_account",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "strings": {
+        "allPhishRight": "Every sign was caught, with every reason named.",
+        "teamLine": "By reporting or checking {n} of these rather than carrying on, you got a taken-over account looked at sooner.",
+        "weakestTells": "The signs most often missed: {names} ({counts} each).",
+        "weakestTell": "The sign most often missed: {names} ({counts}).",
+        "brief": "You're on an authorised exercise at Quayholt Insurance, a fictional company. A colleague, Ayaan, clicked a convincing email and signed in, and now his account is being used. You're covering his inbox at the kiosk. Some of what turns up is a real sign that something is wrong, and some is ordinary. Sort it, and report or check anything that doesn't sit right. Reporting when you're unsure is always fine and never marked down.",
+        "allRight": "You read every sign the right way. They all trace back to one email built to look like the service desk, and the real desk never asks you to sign in by email.",
+        "noBlameLine": "Everyone clicks something eventually, and a colleague who reports their own slip is doing exactly the right thing. A miss here just shows where to look next time; nobody is in trouble for reporting.",
+        "mondayCard": "On Monday: if you think you have clicked, signed in or spotted something odd on your account or a colleague's, report it straight away, change your password on the real site, and leave the device as it is. Reporting fast, even your own slip, is what limits the damage, and report it using the route in the box below.",
+        "defendOnly": "These signs were set off by an email built to look right, and anyone can be caught by one. Anything worth another look is shown below, with what gave each one away.",
+        "conceptPanel": [
+          {
+            "heading": "The five questions a report answers",
+            "text": "A useful report answers five questions, as far as you know: what you noticed, when, where (which account, device or system), who is affected, and what you have done so far. Be honest about the last one: 'I clicked the link', 'I signed in', 'I restarted it'. A rough report now beats a perfect one later; the team will ask for the rest."
+          },
+          {
+            "heading": "First steps and recovery",
+            "text": "If you clicked or signed in: report it, change the password on the real site (not through any link), then change it anywhere you used the same one, and follow the service desk. For anything on a device: leave it as it is. Do not switch it off unless you are told to, do not delete the evidence, and do not try to fix it. If the service desk asks, unplug the network cable or turn off Wi-Fi and leave it on."
+          }
+        ],
+        "defendIntro": "Go through the signs in the colleague's inbox and decide what to do with each one. Some mean someone else is in the account, and some are ordinary, and it is not always obvious which from the first line. Take them at your own pace."
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_quayholt",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_quayholt_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "aw_quayholt_queue": {
+            "color": "#9fc0ff",
+            "radius": 32,
+            "intensity": 0.25,
+            "effect": "screen"
+          },
+          "info_screen": {
+            "intensity": 0.25,
+            "radius": 24
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 1.75,
+            "y": 2.3,
+            "color": "#e8f0ff",
+            "radius": 72,
+            "intensity": 0.3
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "anjali_rao",
+          "displayName": "Anjali Rao",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/awareness_e8_after_the_click_defend/ink/anjali_rao.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_e8_after_the_click_defend_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "sort_the_signs"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk showing the colleague's Quayholt inbox after a click: a handful of signs to sort.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e8_after_the_click_defend_defend_complete",
+              "value": "A touch-screen kiosk showing the colleague's Quayholt inbox after a click. Nothing left to do here."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e8_after_the_click_defend"
+          }
+        }
+      ]
+    }
+  }
+}

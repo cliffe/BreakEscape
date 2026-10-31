@@ -1,11 +1,14 @@
 {
-  "display_name": "Awareness E1: Invoice fraud (full episode)",
+  "display_name": "Invoice fraud",
   "description": "An awareness episode of about 15 minutes for finance staff. On an authorised exercise at Brightwell Foods, a fictional company, you first play the attacker: research what's public, then send one lookalike invoice email. Then you swap seats and sort the payments inbox a message like it lands in. Only the inbox is scored, and reporting when you're unsure is always fine and never marked down.",
   "difficulty_level": 1,
   "scoring": "completion",
+  "resultGlobal": "episode_e1_invoice_fraud_defend_percent",
+  "stage": "episode",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",
+  "title_art": "title_art/awareness_e1_invoice_fraud.jpg",
   "estimated_duration_minutes": 15,
   "cybok": [
     {

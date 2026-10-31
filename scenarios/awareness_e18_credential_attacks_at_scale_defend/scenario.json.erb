@@ -1,0 +1,463 @@
+{
+  "scenario_id": "awareness_e18_credential_attacks_at_scale_defend",
+  "scenario_name": "Credential alerts: tell the real from the fake",
+  "titleScreenName": "Password guessing at scale",
+  "scenario_brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional company. Someone has run a password-guessing campaign across the whole practice, and now a wave of alerts is arriving: a lockout, a new sign-in, a breach warning. Some are genuine; some are fakes built to catch you.",
+  "endGoal": "Handle the security alerts at the training kiosk.",
+  "version": "1.0",
+  "disableAttacks": true,
+  "startRoom": "training_room",
+  "startPosition": {
+    "x": 6,
+    "y": 6.2
+  },
+  "player": {
+    "id": "player",
+    "displayName": "Learner",
+    "spriteSheet": "female_office_worker_v2",
+    "spriteTalk": "assets/characters/female_office_worker_talk.png",
+    "spriteConfig": {
+      "idleFrameRate": 6,
+      "walkFrameRate": 12
+    }
+  },
+  "objectives": [
+    {
+      "aimId": "tell_them_apart_aim",
+      "title": "Tell the real alerts from the fakes",
+      "description": "Work through the security alerts at the training kiosk.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "episode_e18_credential_attacks_at_scale_defend_defend_complete"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Alerts done",
+        "body": "That's the alerts finished, genuine and fake. The debrief goes through each one."
+      },
+      "tasks": [
+        {
+          "taskId": "handle_the_alerts",
+          "title": "Handle the security alerts",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+  "globalVariables": {
+    "episode_e18_credential_attacks_at_scale_defend_state": {},
+    "se_awareness_records": [],
+    "episode_e18_credential_attacks_at_scale_defend_defend_percent": 0,
+    "episode_e18_credential_attacks_at_scale_defend_defend_reportRate": 0,
+    "episode_e18_credential_attacks_at_scale_defend_defend_complete": false
+  },
+  "social": {
+    "triageSets": [
+      {
+        "id": "e18_atscale_inbox",
+        "title": "After the attack: your alerts",
+        "brief": "A password-guessing campaign has just hit Merrin & Sallow, and the alerts are arriving in your inbox: six in all, some genuine and some fakes built to finish the job. For each one, choose Trust, Report, Delete or Verify (check it through a route you already trust, not the link in the message), then tick what you noticed. Never type a password to 'unlock' or 'check' anything. Reporting when you're unsure is always fine and never marked down.",
+        "scoringProfile": "awareness",
+        "verifyVerdict": true,
+        "feedbackMode": "immediate",
+        "headerPanel": "off",
+        "glossary": "closed",
+        "channelTells": [
+          "lookalike_domain",
+          "fake_lockout_notice",
+          "fake_signin_alert",
+          "fake_breach_alert"
+        ],
+        "flagChips": {
+          "fake_lockout_notice": "A lockout message that makes you unlock through a link",
+          "fake_signin_alert": "A sign-in alert that makes you 'review' by signing in through its link",
+          "fake_breach_alert": "A 'breach checker' that asks for your password"
+        },
+        "labels": {
+          "verdict": {
+            "report": { "hint": "This is a fake. Tell security." }
+          },
+          "verdictFeedback": {
+            "verify": { "phish": "Checking first is a sound habit. That one was a fake." },
+            "trust": { "phish": "Not this time. That one was a fake." }
+          },
+          "teamBadge": "Fakes stopped for the team: {n}",
+          "teamBadgeTitle": "Messages you reported or checked this round rather than acting on them",
+          "phishCaughtLabel": "Fakes caught",
+          "scoreLine": "Right call is most of the score; naming what you noticed is the rest."
+        },
+        "bands": [
+          { "min": 85, "headline": "Well done: you caught the fakes and knew why" },
+          { "min": 60, "headline": "Getting there: a few signs slipped past" },
+          { "min": 0, "headline": "Worth practising: here's where to look first" }
+        ],
+        "resultCopy": {
+          "criticalLead": "let an attacker straight in",
+          "reportedPct": "Reported {pct}% of the fakes",
+          "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+          "noFlags": "Next time, tick what looks off. The review cards show what to look for in each one."
+        },
+        "genuineCopy": {
+          "binnedLeadOne": "One real alert was treated as a fake",
+          "binnedLeadMany": "{n} real alerts were treated as fakes",
+          "costBoth": "Reporting when you're unsure is never wrong, but a report on a real alert takes the service desk's time, and deleting one can leave a real problem unseen.",
+          "costReport": "Reporting when you're unsure is never wrong, but a report on a real alert takes the service desk's time to check.",
+          "costBin": "Deleting a real alert has a cost: a genuine warning goes unread.",
+          "whyBothHalves": "Both halves matter: stopping the fakes protects your account, and acting on the real alerts keeps you informed."
+        },
+        "criticalWhat": "trusting a look-alike message",
+        "skillNames": {
+          "fake_lockout_notice": "Spotting a fake lockout notice",
+          "fake_signin_alert": "Spotting a fake sign-in alert",
+          "fake_breach_alert": "Spotting a fake breach checker"
+        },
+        "outcome": {
+          "setGlobalPrefix": "episode_e18_credential_attacks_at_scale_defend_defend_",
+          "passPercent": 0
+        },
+        "messages": [
+          {
+            "id": "e18_lockout_genuine",
+            "from": {
+              "name": "Fenlow Managed IT",
+              "address": "security@fenlow.example"
+            },
+            "to": "you@merrinsallow.example",
+            "subject": "Some accounts were briefly locked this morning",
+            "time": "08:54",
+            "body": "Hello,\nAfter a run of unusual sign-in attempts across the practice this morning, some staff accounts were briefly locked as a precaution. You don't need to do anything unless you can't sign in, in which case use the usual service-desk route. We will never ask you for your password.\nFenlow Managed IT",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "fenlow.example",
+              "replyTo": "security@fenlow.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "This is the provider's real address, telling you what happened and asking you for nothing, with the usual route if you're locked out. Trusting it is right, and checking with the service desk or reporting it still scores full."
+              },
+              "falseAlarmCost": "Reporting a genuine precautionary notice costs nothing but a moment of the service desk's time, and it is never the wrong call when you're unsure."
+            }
+          },
+          {
+            "id": "e18_lockout_fake",
+            "from": {
+              "name": "Merrin & Sallow Security",
+              "address": "security@merrin-sallow.example"
+            },
+            "to": "you@merrinsallow.example",
+            "subject": "Your account is locked - act now",
+            "time": "09:06",
+            "body": "Your account has been locked after suspicious activity. Unlock it now or it will be permanently deleted within 24 hours. Use the Unlock account link below to restore access immediately.\n[ Unlock account ]",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "merrin-sallow.example",
+              "replyTo": "security@merrin-sallow.example"
+            },
+            "factorStrings": {
+              "fake_lockout_notice": {
+                "redFlag": "A lockout message that makes you unlock through a link"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "lookalike_domain",
+                "fake_lockout_notice"
+              ],
+              "perFlagNote": {
+                "lookalike_domain": "The address is merrin-sallow.example, a hyphen added to the real merrinsallow.example. A real notice from the practice's provider does not come from a changed address.",
+                "fake_lockout_notice": "A genuine lockout never asks you to unlock through a link. The provider's own notice tells you to use the usual service-desk route."
+              },
+              "whyFine": {
+                "urgencyCalibrated": "The 24-hour deletion deadline is there to rush you, and distrusting it is fair. What marks this one as fake, though, is the look-alike address and the unlock-through-a-link, not the hurry by itself.",
+                "senderTrust": "This one's catch is counted as the look-alike domain above: the address is a near-copy of the real one, rather than an obvious stranger's address behind a trusted-looking name."
+              },
+              "ifTrusted": "Clicking through and signing in would hand your password straight to whoever is running the attack.",
+              "reportReply": "Thanks. That wasn't us: the address is a look-alike, and we never ask you to unlock through a link. Reporting it is exactly right."
+            }
+          },
+          {
+            "id": "e18_signin_genuine",
+            "from": {
+              "name": "Merrin & Sallow Sign-in",
+              "address": "no-reply@merrinsallow.example"
+            },
+            "to": "you@merrinsallow.example",
+            "subject": "New sign-in to your account",
+            "time": "09:14",
+            "body": "Hello,\nThere was a new sign-in to your account from a Windows PC in London. If this was you, no action is needed. If it wasn't, go to the sign-in page yourself, the way you normally reach it, and change your password.\nMerrin & Sallow Sign-in",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "merrinsallow.example",
+              "replyTo": "no-reply@merrinsallow.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "A real alert on the practice's own address: it tells you what happened and sends you to the real site, it never asks you to confirm by signing in through a link. Trust it, or go to the site yourself to check; reporting it is no error either."
+              },
+              "falseAlarmCost": "If you report a genuine sign-in alert, nothing is lost: the worst case is a quick 'that one was fine' from the service desk."
+            }
+          },
+          {
+            "id": "e18_signin_fake",
+            "from": {
+              "name": "Account Security",
+              "address": "alerts@merrinsallow-studio.example"
+            },
+            "to": "you@merrinsallow.example",
+            "subject": "We blocked a suspicious sign-in - review it now",
+            "time": "09:21",
+            "body": "We blocked a suspicious sign-in to your account. To keep your access, review this sign-in now and confirm it was you. Use the Review sign-in link below to confirm.\n[ Review sign-in ]",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "merrinsallow-studio.example",
+              "replyTo": "alerts@merrinsallow-studio.example"
+            },
+            "factorStrings": {
+              "fake_signin_alert": {
+                "redFlag": "A sign-in alert that makes you 'review' by signing in through its link"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "fake_signin_alert",
+                "lookalike_domain"
+              ],
+              "perFlagNote": {
+                "fake_signin_alert": "A genuine alert never makes you 'review' a sign-in by signing in through its link. This one sends you to a page built to capture your password.",
+                "lookalike_domain": "The address is merrinsallow-studio.example, an extra word added to the real merrinsallow.example. The genuine sign-in alert comes from the practice's own address."
+              },
+              "whyFine": {
+                "urgencyCalibrated": "'Review it now to keep your access' leans on urgency, and distrusting it is fair. What marks this one as fake, though, is the look-alike address and the review-through-its-link, not the hurry by itself.",
+                "senderTrust": "This one's catch is counted as the look-alike domain above: the address is a near-copy of the real one with an extra word, rather than an obvious stranger's address behind a trusted-looking name."
+              },
+              "ifTrusted": "Signing in through the link would hand your password to the page behind it.",
+              "reportReply": "Thanks. The real alert sends you to the site yourself; this one wanted you to sign in through its link. Reporting it is the right move."
+            }
+          },
+          {
+            "id": "e18_breach_fake",
+            "kind": "page",
+            "subject": "Free breach checker",
+            "time": "09:33",
+            "body": "A page that offers to tell you whether your password has leaked, if you type it into the box.",
+            "page": {
+              "url": "breach-check-now.example",
+              "padlock": false,
+              "heading": "Free breach checker: type your password to see if it has leaked"
+            },
+            "factorStrings": {
+              "fake_breach_alert": {
+                "redFlag": "A 'breach checker' that asks you to type your password"
+              }
+            },
+            "truth": {
+              "isPhish": true,
+              "flags": [
+                "fake_breach_alert"
+              ],
+              "perFlagNote": {
+                "fake_breach_alert": "Nothing genuine asks for your password to tell you whether it has leaked. A real breach check uses only your email address, never your password."
+              },
+              "ifTrusted": "Typing your password into the box hands it straight to whoever set the page up.",
+              "reportReply": "Thanks. A real breach check only ever needs your email address. Never type a password to 'check' it; reporting this is exactly right."
+            }
+          },
+          {
+            "id": "e18_breach_genuine",
+            "from": {
+              "name": "Fenlow Managed IT",
+              "address": "breach-monitoring@fenlow.example"
+            },
+            "to": "you@merrinsallow.example",
+            "subject": "Your work address was found in a breach of another site",
+            "time": "09:40",
+            "body": "Hello,\nOur monitoring found your work address in a breach of another website. Change that password on the real site, and anywhere you have reused it. Don't reply with any password; this is for your information only, and we never ask for it.\nFenlow Managed IT",
+            "auth": {
+              "spf": "pass",
+              "dkim": "pass",
+              "dmarc": "pass",
+              "envelopeFrom": "fenlow.example",
+              "replyTo": "breach-monitoring@fenlow.example"
+            },
+            "truth": {
+              "isPhish": false,
+              "flags": [],
+              "whyFine": {
+                "default": "A genuine breach notice from the provider: it names the problem, tells you to change the password on the real site and anywhere you reused it, and asks for nothing. The safe action is to change a reused password, not to reply or click. Reporting it is no error."
+              },
+              "falseAlarmCost": "If you report this genuine notice, nothing is lost; checking with the service desk before you change anything is always a fair call."
+            }
+          }
+        ]
+      }
+    ],
+    "awarenessEpisode": {
+      "id": "e18_credential_attacks_at_scale_defend",
+      "role": "general_staff",
+      "company": "merrin_sallow",
+      "brand": {
+        "name": "Merrin & Sallow Architects",
+        "logoText": "MERRIN & SALLOW",
+        "accent": "#8a5a2b"
+      },
+      "variant": "defendOnly",
+      "durationTargetMin": 8,
+      "scopeNote": "Authorised exercise at Merrin & Sallow Architects, a fictional company. In scope: the security alerts you handle after a password-guessing campaign. No real password is ever typed.",
+      "stages": [
+        "brief",
+        "defend",
+        "debrief"
+      ],
+      "conclusionTaskId": "handle_the_alerts",
+      "defend": {
+        "setId": "e18_atscale_inbox",
+        "stage": null,
+        "reportAlwaysVisible": true
+      },
+      "strings": {
+        "brief": "You're on an authorised exercise at Merrin & Sallow Architects, a fictional company. Someone has run a password-guessing campaign across the whole practice, and now a wave of alerts is arriving: a lockout, a new sign-in, a breach warning. Some are genuine; some are fakes built to catch you.",
+        "noBlameLine": "Reusing a password, or using a word off the website, is ordinary and common; this is how accounts are opened at scale, not a sign anyone was careless. A miss here just shows what to change tonight.",
+        "allPhishRight": "Every fake was caught, with every sign named.",
+        "teamLine": "By reporting or checking {n} of these rather than acting on them, you kept a fake away from the rest of your team.",
+        "mondayCard": "On Monday, three things at home: switch on a password manager and let it make a different password for every account, starting with your email; check your personal email address on a breach-checking site (the NCSC suggests Have I Been Pwned); and turn on 2-step verification, or a passkey, for your email first. Report anything at work using the route in the box below.",
+        "defendOnly": "These alerts follow an attack on the whole practice, and anyone can be caught out by a convincing fake. Any you were caught out by are shown below, with what gave each one away.",
+        "conceptPanel": [
+          {
+            "heading": "Password spraying",
+            "text": "One likely password, tried just once against every account, so no single account locks. The accounts that open are the predictable ones: a company word, a project name, a season and a year."
+          },
+          {
+            "heading": "Credential stuffing",
+            "text": "A list of address and password pairs stolen from one website, tried automatically across many others. Where someone reused that password at work, the attacker is straight in."
+          },
+          {
+            "heading": "The one habit",
+            "text": "A different password for every account, not a word off the website, kept in a manager, breaks both: the spray has nothing predictable to try, and a stolen pair opens nothing else."
+          },
+          {
+            "heading": "What the practice does",
+            "text": "On the practice's side: accounts lock after a run of bad sign-ins, MFA is on everything, the obvious words are blocked from passwords, and a monitoring partner watches the breach lists for the practice's addresses. These are set up for you; you don't have to switch them on."
+          }
+        ],
+        "defendIntro": "Go through the security alerts and decide what to do with each one. Report the fakes, act on the real ones the safe way, and there's no clock on you here."
+      },
+      "debrief": {
+        "mondayCard": "slot:customer_report_route",
+        "noBlameLine": true
+      }
+    },
+    "awareness": {
+      "ruleOfThumb": {
+        "heading": "The habit to keep",
+        "text": "When a message pressures you to move money, grant access, sign in or read back a code, stop and check it yourself through a route you already trust, not the link, number or page the message gives you. Taking a minute to confirm is always a fair thing to do."
+      }
+    }
+  },
+  "lighting": {
+    "enabled": true,
+    "defaultMode": "on",
+    "ambient": "#cac4bc"
+  },
+  "rooms": {
+    "training_room": {
+      "type": "room_aw_merrin_sallow",
+      "door_sign": "Training Room",
+      "chatBackground": "assets/backgrounds/rooms/aw_merrin_sallow_blended.png",
+      "lighting": {
+        "emitters": {
+          "kiosk": {
+            "color": "#9fd4ff",
+            "radius": 28,
+            "intensity": 0.45,
+            "offsetY": -20,
+            "effect": "screen"
+          },
+          "bankers_lamp": {
+            "color": "#ffd9a0",
+            "radius": 40,
+            "intensity": 0.5
+          },
+          "fire_alarm_point": [
+            {
+              "intensity": 0
+            }
+          ]
+        },
+        "lights": [
+          {
+            "x": 7.55,
+            "y": 2.3,
+            "color": "#f0f4ff",
+            "radius": 96,
+            "intensity": 0.4
+          }
+        ]
+      },
+      "connections": {},
+      "npcs": [
+        {
+          "id": "ama_owusu",
+          "displayName": "Ama Owusu",
+          "npcType": "person",
+          "position": {
+            "x": 5.5,
+            "y": 3.8
+          },
+          "spriteSheet": "female_scientist_v2",
+          "spriteTalk": "assets/characters/female_scientist_talk.png",
+          "spriteVisemes": "assets/characters/female_scientist_visemes.png",
+          "storyPath": "scenarios/awareness_e18_credential_attacks_at_scale_defend/ink/ama_owusu.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:episode_e18_credential_attacks_at_scale_defend_defend_complete",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "handle_the_alerts"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "kiosk",
+          "id": "training_kiosk",
+          "name": "Training kiosk",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": false,
+          "observations": "A touch-screen kiosk showing the alerts after a password-guessing campaign against the practice: some genuine, some fakes to catch you.",
+          "observationVariants": [
+            {
+              "condition": "globalVars.episode_e18_credential_attacks_at_scale_defend_defend_complete",
+              "value": "A touch-screen kiosk showing the alerts after a password-guessing campaign. That's this one finished."
+            }
+          ],
+          "minigameData": {
+            "episodeId": "e18_credential_attacks_at_scale_defend"
+          }
+        }
+      ]
+    }
+  }
+}

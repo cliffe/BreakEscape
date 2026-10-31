@@ -61,6 +61,24 @@ test('walked away (no grant) and reported lines are unchanged', () => {
     assert.equal(outcomeLine(session({ granted: ['portal_name'], refusals: 2, reported: true })), 'The call was reported.');
 });
 
+test('the debrief is a centred modal over a backdrop, with a real Done (F-E12-3)', () => {
+    document.body.innerHTML = '';
+    const container = document.createElement('div');
+    let done = false;
+    const panel = P.renderDebrief(container, { session: session({ granted: ['portal_name'] }), spec: {}, onDone: () => { done = true; } });
+    const backdrop = container.querySelector('.pretext-debrief-backdrop');
+    assert.ok(backdrop, 'a full backdrop wraps the debrief so the chat behind is covered');
+    assert.equal(panel.parentNode, backdrop, 'the panel sits inside the backdrop');
+    assert.equal(panel.getAttribute('role'), 'dialog');
+    const doneBtn = panel.querySelector('.pretext-debrief-done');
+    assert.ok(doneBtn, 'a Done button');
+    assert.equal(doneBtn.tagName, 'BUTTON');
+    // Done removes the whole backdrop (not just the panel) and reports done.
+    doneBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    assert.equal(done, true);
+    assert.equal(container.querySelector('.pretext-debrief-backdrop'), null, 'the backdrop is cleared on Done');
+});
+
 test('got_it with an ask left pending and never granted reads as partial (lab R9 F3)', () => {
     const s = {
         grantedAsks: ['payslip_date'], refusals: 0, reportedThisCall: false,

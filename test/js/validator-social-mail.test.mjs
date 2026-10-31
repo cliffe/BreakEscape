@@ -443,3 +443,28 @@ test('factorStrings: senderTrust takes a mismatch state; other factors do not (l
   // attachmentPlausible keeps its own states
   assert.deepEqual(run({ attachmentPlausible: { missing: { fail: 'x', redFlag: null } } }), []);
 });
+
+test('replies.byChoice: template ids are checked against social.templates and replies are non-blank (E13 D1)', { skip }, () => {
+  const run = (target, tpls) => {
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_social.rb'))}
+      puts JSON.generate(ValidateSocial::Mail.target_replies(JSON.parse(${JSON.stringify(JSON.stringify(target))}), JSON.parse(${JSON.stringify(JSON.stringify(tpls))}), 'social.phishTargets[t]'))`;
+    const r = spawnSync('ruby', ['-e', script], { encoding: 'utf8', env });
+    assert.equal(r.status, 0, r.stderr);
+    return JSON.parse(r.stdout.trim().split('\n').pop());
+  };
+  const tpls = { inject_contacts: {}, pretext_invoice: {} };
+  // a well-formed byChoice (string and { landed, missed } forms) raises nothing
+  assert.deepEqual(run({ replies: { byChoice: { inject_contacts: 'landed line', pretext_invoice: 'plain line' } } }, tpls), []);
+  assert.deepEqual(run({ replies: { byChoice: { pretext_invoice: { landed: 'won', missed: 'lost' } } } }, tpls), []);
+  // a target without byChoice is untouched
+  assert.deepEqual(run({ replies: { landed: 'ok' } }, tpls), []);
+  // an unknown template id is flagged
+  const unknown = run({ replies: { byChoice: { not_a_template: 'x' } } }, tpls);
+  assert.equal(unknown.filter((s) => /names template 'not_a_template', which is not in social\.templates/.test(s)).length, 1, unknown.join('\n'));
+  // a blank reply is flagged
+  const blank = run({ replies: { byChoice: { inject_contacts: '  ' } } }, tpls);
+  assert.equal(blank.filter((s) => /byChoice\.inject_contacts is empty/.test(s)).length, 1, blank.join('\n'));
+  // an object with neither landed nor missed is flagged
+  const neither = run({ replies: { byChoice: { pretext_invoice: {} } } }, tpls);
+  assert.equal(neither.filter((s) => /byChoice\.pretext_invoice has neither a landed nor a missed reply/.test(s)).length, 1, neither.join('\n'));
+});

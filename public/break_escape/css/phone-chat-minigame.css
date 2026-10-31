@@ -932,3 +932,205 @@
 .phone-terminal-theme .back-button:hover {
     background: rgba(0, 255, 65, 0.08);
 }
+
+/* ── Social (DM app) Theme ────────────────────────────────────────────────────
+   Applied when the resolved theme is 'social' (a device `app` block, or an NPC
+   phoneTheme). Scoped under .phone-social-theme, so no other phone changes.
+   --dm-accent and --dm-on-accent are set inline from app.accent.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.phone-social-theme {
+    --dm-accent: #3b5bdb;
+    --dm-on-accent: #ffffff;
+    --dm-ink: #1c1e21;
+    --dm-muted: #65676b;
+    --dm-paper: #ffffff;
+    --dm-wall: #eef0f3;
+    background: #2b2f36;
+    box-shadow: 0 0 20px color-mix(in srgb, var(--dm-accent) 45%, transparent);
+}
+
+.phone-social-theme .phone-screen {
+    background: var(--dm-wall);
+    color: var(--dm-ink);
+}
+
+.phone-social-theme .phone-header {
+    background: var(--dm-paper);
+    border-bottom: 2px solid #c9ccd1;
+}
+
+.phone-social-theme .phone-header .signal-bars .bar { background: var(--dm-ink); }
+.phone-social-theme .phone-header .battery { color: var(--dm-ink); }
+
+.phone-social-theme .contact-list-header,
+.phone-social-theme .conversation-header {
+    background: var(--dm-accent);
+    border-bottom: 2px solid color-mix(in srgb, var(--dm-accent) 60%, #000);
+    color: var(--dm-on-accent);
+}
+
+.phone-social-theme .contact-list-header h3,
+.phone-social-theme .npc-name {
+    color: var(--dm-on-accent);
+}
+
+.phone-social-theme .app-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.phone-social-theme .app-logo {
+    height: 24px;
+    width: auto;
+    image-rendering: pixelated;
+}
+
+.phone-social-theme .back-button {
+    color: var(--dm-on-accent);
+    border-color: var(--dm-on-accent);
+}
+
+.phone-social-theme .back-button:hover {
+    background: color-mix(in srgb, var(--dm-on-accent) 18%, transparent);
+}
+
+.phone-social-theme .contact-list,
+.phone-social-theme .messages-container {
+    background: var(--dm-wall);
+    scrollbar-color: var(--dm-accent) var(--dm-wall);
+}
+
+.phone-social-theme .contact-list::-webkit-scrollbar-thumb,
+.phone-social-theme .messages-container::-webkit-scrollbar-thumb {
+    background: var(--dm-accent);
+    border-color: var(--dm-wall);
+}
+
+.phone-social-theme .contact-list::-webkit-scrollbar-track,
+.phone-social-theme .messages-container::-webkit-scrollbar-track {
+    background: var(--dm-wall);
+    border-left-color: #c9ccd1;
+}
+
+.phone-social-theme .contact-item {
+    background: var(--dm-paper);
+    border-bottom: 2px solid #d8dadf;
+}
+
+.phone-social-theme .contact-item:hover {
+    background: color-mix(in srgb, var(--dm-accent) 10%, var(--dm-paper));
+}
+
+.phone-social-theme .contact-avatar {
+    border: 2px solid var(--dm-accent);
+    background: color-mix(in srgb, var(--dm-accent) 15%, var(--dm-paper));
+}
+
+.phone-social-theme .contact-name { color: var(--dm-ink); }
+.phone-social-theme .contact-last-message,
+.phone-social-theme .contact-time { color: var(--dm-muted); }
+
+.phone-social-theme .contact-handle,
+.phone-social-theme .npc-handle {
+    font-family: 'GNF', monospace;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+}
+
+.phone-social-theme .contact-handle {
+    color: var(--dm-accent);
+    margin-bottom: 4px;
+}
+
+.phone-social-theme .npc-id-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 0;
+}
+
+.phone-social-theme .npc-handle {
+    color: color-mix(in srgb, var(--dm-on-accent) 85%, transparent);
+}
+
+.phone-social-theme .npc-profile-link {
+    background: transparent;
+    border: 2px solid var(--dm-on-accent);
+    color: var(--dm-on-accent);
+    font-family: 'GNF', monospace;
+    font-size: 13px;
+    padding: 1px 8px;
+    margin-top: 2px;
+    cursor: pointer;
+}
+
+.phone-social-theme .npc-profile-link:hover {
+    background: color-mix(in srgb, var(--dm-on-accent) 20%, transparent);
+}
+
+.phone-social-theme .unread-badge {
+    background: var(--dm-accent);
+    color: var(--dm-on-accent);
+    border-color: var(--dm-ink);
+}
+
+.phone-social-theme .message-bubble {
+    border: 2px solid var(--dm-ink);
+}
+
+.phone-social-theme .message-bubble.npc,
+.phone-social-theme .message-bubble.npc.other-speaker {
+    background: var(--dm-paper);
+    color: var(--dm-ink);
+}
+
+.phone-social-theme .message-bubble.player {
+    background: var(--dm-accent);
+    color: var(--dm-on-accent);
+    font-weight: normal;
+}
+
+.phone-social-theme .message-sender,
+.phone-social-theme .message-time,
+.phone-social-theme .message-narration {
+    color: var(--dm-muted);
+}
+
+.phone-social-theme .message-bubble.player .message-time {
+    color: color-mix(in srgb, var(--dm-on-accent) 75%, transparent);
+}
+
+.phone-social-theme .typing-indicator span {
+    background: var(--dm-accent);
+    border-color: var(--dm-ink);
+}
+
+.phone-social-theme .choices-container {
+    background: var(--dm-paper);
+    border-top: 2px solid #c9ccd1;
+    scrollbar-color: var(--dm-accent) var(--dm-paper);
+}
+
+.phone-social-theme .choice-button {
+    background: var(--dm-paper);
+    color: var(--dm-ink);
+    border: 2px solid var(--dm-accent);
+}
+
+.phone-social-theme .choice-button:hover {
+    background: color-mix(in srgb, var(--dm-accent) 14%, var(--dm-paper));
+}
+
+.phone-social-theme .choice-button:active {
+    background: var(--dm-accent);
+    color: var(--dm-on-accent);
+}
+
+.phone-social-theme .choices-more-cue {
+    background: var(--dm-accent);
+    color: var(--dm-on-accent);
+    border-top: 2px solid var(--dm-ink);
+}

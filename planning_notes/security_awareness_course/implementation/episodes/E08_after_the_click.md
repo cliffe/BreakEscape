@@ -148,8 +148,8 @@ This `brief` is the same text as §13's defend-only brief (keep them identical).
 
 ```python
 ('e8', 'defend'): (
-    "You're covering a colleague's inbox this morning. They clicked a convincing email and signed in, and now someone else is using their account. Some of what's turned up is a real sign; some is ordinary. Take each one as it comes, and report or check anything that doesn't sit right.",
-    "That's the inbox sorted, thanks. The one move that works for every real sign is the same: report it and leave it be.",
+    "You're covering a colleague's inbox. They clicked a convincing email, so someone else is using their account. Some signs are real, some are ordinary. Report anything that doesn't sit right.",
+    "That's the inbox sorted, thanks. The one move that works for every real sign is the same: report it and let the team act.",
     'Thanks, Anjali.', 'Any time.'),
 ```
 
@@ -157,7 +157,7 @@ This `brief` is the same text as §13's defend-only brief (keep them identical).
 
 - **Welcome** (at the hub): the §8 welcome line.
 - **After the attack half** (on the kiosk hand-off into the defend half): "Good. The email's gone, and your colleague fell for it, the way most people eventually do. Now take their seat and see what someone else is doing with their account."
-- **On completion** (defend done): "That's both sides done: you sent the email, then you sorted what it set off. The one move that works for every real sign is the same, report it and leave it be. Nobody's ever in trouble for reporting."
+- **On completion** (defend done): "That's both sides done: you took the red team's seat, then you sorted what turned up in the colleague's account. The one move that works for every real sign is the same, report it and let the team act. Nobody's ever in trouble for reporting."
 
 ## 9. Attack half
 

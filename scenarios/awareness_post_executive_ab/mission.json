@@ -1,8 +1,11 @@
 {
-  "display_name": "Awareness check: executive PA, after (AB)",
-  "description": "A short check for executive assistants and PAs at Merrin & Sallow Architects, a fictional practice, taken after the awareness episodes (pair AB). Ten new emails and voicemails from a PA's inbox, the same kinds as before. It is matched to the first check (awareness_pre_executive_ab), and the end screen compares the two results when the first check was finished. Organiser note: each role's check tests the channel that role meets in its episode, and in a session that runs more than one episode only the learner's primary-role check is recorded.",
+  "display_name": "Final check: Executive assistants",
+  "description": "A short check for executive assistants and PAs at Merrin & Sallow Architects, a fictional practice, taken after the awareness episodes (pair AB). Ten new emails and voicemails from a PA's inbox, the same kinds as before. It is matched to the first check (awareness_pre_executive_ab), and the end screen compares the two results when the first check was finished.",
+  "organiser_note": "each role's check tests the channel that role meets in its episode, and in a session that runs more than one episode only the learner's primary-role check is recorded.",
   "difficulty_level": 1,
   "scoring": "completion",
+  "resultGlobal": "triage_post_percent",
+  "stage": "post",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",

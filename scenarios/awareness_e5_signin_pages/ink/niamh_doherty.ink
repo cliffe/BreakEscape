@@ -8,7 +8,7 @@
 // ================================================
 
 VAR phish_sso_staff_attempts = 0
-VAR episode_e5_signin_pages_defend_done = false
+VAR episode_e5_signin_pages_defend_complete = false
 VAR hub_quiet = false
 
 === start ===
@@ -18,7 +18,7 @@ VAR hub_quiet = false
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    { episode_e5_signin_pages_defend_done:
+    { episode_e5_signin_pages_defend_complete:
         Niamh Doherty: That's both seats done, thanks. The trick is always the address: read the bar before you type a password. A padlock doesn't make a page ours.
     - else:
         { phish_sso_staff_attempts > 0:

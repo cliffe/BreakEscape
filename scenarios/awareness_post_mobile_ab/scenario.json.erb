@@ -1,6 +1,7 @@
 {
   "scenario_id": "awareness_post_mobile_ab",
   "scenario_name": "Work phone check: after (AB)",
+  "titleScreenName": "Final check",
   "scenario_brief": "The second of two short checks for staff with a work phone at Tarrowby Logistics, a fictional company. Ten new items from a Tarrowby work phone, the same kinds as before. If you took the first check, the end screen shows how the two compare.",
   "endGoal": "Go through the ten items at the training kiosk.",
   "version": "1.0",
@@ -30,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "triage_post_done"
+          "triage_post_complete"
         ]
       },
       "conclusionScreen": {
@@ -53,30 +54,33 @@
     "se_awareness_records": [],
     "triage_post_percent": 0,
     "triage_post_reportRate": 0,
-    "triage_post_done": false,
-    "triage_post_pass": false
+    "triage_post_complete": false
   },
   "importGlobals": [
     {
       "from": "awareness_pre_mobile_ab",
+      "prefer": "earliest",
       "var": "triage_pre_percent",
       "as": "triage_pre_percent",
       "default": 0
     },
     {
       "from": "awareness_pre_mobile_ab",
+      "prefer": "earliest",
       "var": "triage_pre_reportRate",
       "as": "triage_pre_reportRate",
       "default": 0
     },
     {
       "from": "awareness_pre_mobile_ab",
-      "var": "triage_pre_done",
-      "as": "triage_pre_done",
+      "prefer": "earliest",
+      "var": "triage_pre_complete",
+      "as": "triage_pre_complete",
       "default": false
     },
     {
       "from": "awareness_pre_mobile_ab",
+      "prefer": "earliest",
       "completed": "pre_check_completed"
     }
   ],
@@ -134,7 +138,7 @@
             "id": "mb_fatima_vouchers",
             "from": {
               "name": "Fatima Begum",
-              "address": "fatima.begum.hr@quickpost-mail.example"
+              "address": "fatima.begum.hr@hastypost.example"
             },
             "to": "you@tarrowby.example",
             "subject": "Welcome vouchers for Monday's new drivers",
@@ -144,8 +148,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "quickpost-mail.example",
-              "replyTo": "fatima.begum.hr@quickpost-mail.example"
+              "envelopeFrom": "hastypost.example",
+              "replyTo": "fatima.begum.hr@hastypost.example"
             },
             "truth": {
               "isPhish": true,
@@ -153,7 +157,7 @@
                 "senderTrust"
               ],
               "perFlagNote": {
-                "senderTrust": "The recruitment lead's name on a personal inbox at quickpost-mail.example, not tarrowby.example"
+                "senderTrust": "The recruitment lead's name on a personal inbox at hastypost.example, not tarrowby.example"
               },
               "ifTrusted": "£300 of voucher codes would go to the sender, and vouchers can't be traced or clawed back.",
               "reportReply": "Thanks. Fatima didn't send it. Her address is on tarrowby.example, and HR never asks staff to buy vouchers."
@@ -445,7 +449,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:triage_post_done",
+              "eventPattern": "global_variable_changed:triage_post_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "finish_check"

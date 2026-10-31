@@ -308,10 +308,10 @@ Live (keyless :3001, own games): the host chat in the E1-E4 defend shells resolv
   `social-engine-r4-triage` (P7-2 and P4-9), `social-aw-p6-engine` (P6-4), `social-triage-scoring`,
   `social-triage-ui`.
 - **P7-7:** a text with no subject took its body as the title, cut at 45 characters with dots
-  ("Parceline: we couldn't deliver your parcel. A..."). `defaultSubject` now cuts at a sentence end when
+  ("ASAParcels: we couldn't deliver your parcel. A..."). `defaultSubject` now cuts at a sentence end when
   one fits in 48 characters, else at a word; the review card title also drops trailing dots from an
   authored subject. Test in `social-engine-r4-triage`.
-- Live (keyless :3001, own games 4615 and 4617): E6 defend's Parceline card title reads without dots;
+- Live (keyless :3001, own games 4615 and 4617): E6 defend's ASAParcels card title reads without dots;
   E5 defend at 92% with Padlock myth and Secrecy on zero reads "Getting there".
 
 ### E3 MFA decision — P7 leftovers (2026-10-27)

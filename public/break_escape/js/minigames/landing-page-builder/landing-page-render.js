@@ -125,6 +125,12 @@ export function renderLandingPage(options = {}) {
     const make = makeFactory(doc);
     const inspect = mode === 'inspect';
 
+    // Fake-check mode (ENG-03b): a "verify you are human" panel over a faded copy of the genuine
+    // (compromised) site. No look-alike domain, so no domain guard; the address is authored.
+    if (pageDef && pageDef.pageType === 'fakeCheck') {
+        return renderFakeCheck({ pageDef, choices, mode, make, doc });
+    }
+
     const root = make('div', 'lpb-preview');
     root.setAttribute('data-mode', mode);
 
@@ -251,6 +257,85 @@ export function renderLandingPage(options = {}) {
     regions.form = form;
 
     root.appendChild(body);
+    return { root, blocked: false, regions };
+}
+
+/**
+ * The fake-check preview (ENG-03b). Draws the genuine site's address bar (padlock shown, as a
+ * compromised genuine site has a real certificate) and a "verify you are human" panel over a
+ * faded site copy. The paste-and-run steps are inert DOM text (the chosen step option's label,
+ * authored; never real shortcuts, nothing typed anywhere). The "What did this page copy?" reveal
+ * is a div role="button" (as the inspect hot-spots are), and shows check.clipboardReveal, one
+ * authored harmless description; no command is ever shown and nothing touches the real clipboard.
+ * Matches the ENG-03a `fakeCheck` triage surface so the attack and defend halves draw the same
+ * page. Holds no <form>/<input>/<button>/<a>/<script> element and no contenteditable (07 §1).
+ */
+function renderFakeCheck({ pageDef, choices, mode, make, doc }) {
+    const check = pageDef && typeof pageDef.check === 'object' && pageDef.check ? pageDef.check : {};
+    const sel = choices && typeof choices.check === 'object' && choices.check ? choices.check : {};
+    const root = make('div', 'lpb-preview lpb-fakecheck');
+    root.setAttribute('data-mode', mode);
+    root.setAttribute('data-page-type', 'fakeCheck');
+    root.setAttribute('role', 'img');
+    const host = typeof check.host === 'string' ? check.host : '';
+    root.setAttribute('aria-label', `A "verify you are human" page over ${host || 'a familiar site'}.`);
+
+    // Chrome: the genuine site's address, padlock shown (a compromised real site keeps its cert).
+    const chrome = make('div', 'lpb-chrome');
+    const padlock = make('div', 'lpb-padlock');
+    const img = make('img', 'lpb-padlock-icon');
+    img.src = PADLOCK_ICON;
+    img.alt = 'Padlock: secure connection';
+    padlock.appendChild(img);
+    padlock.setAttribute('data-region', 'padlock');
+    chrome.appendChild(padlock);
+    const addressBar = make('div', 'lpb-address');
+    addressBar.setAttribute('data-region', 'address');
+    addressBar.appendChild(readable(make('span', 'lpb-address-text', host)));
+    chrome.appendChild(addressBar);
+    root.appendChild(chrome);
+
+    // The faded genuine site behind the panel (decoration only).
+    const behind = make('div', 'lpb-fakecheck-behind');
+    behind.setAttribute('aria-hidden', 'true');
+    root.appendChild(behind);
+
+    const inspect = mode === 'inspect';
+    const panel = make('div', 'lpb-fakecheck-panel');
+    const heading = typeof check.heading === 'string' && check.heading ? check.heading : 'Verify you are human';
+    panel.appendChild(pageText(make('h3', 'lpb-fakecheck-heading', heading)));
+    // The chosen step wording (authored label), shown as inert text. No real shortcut is ever
+    // synthesised here; the renderer only prints what the step option names.
+    const stepOpt = labelFromList(check.steps, sel.stepsId);
+    const steps = pageText(make('p', 'lpb-fakecheck-steps',
+        stepOpt || 'Follow the on-screen steps to continue.'));
+    steps.setAttribute('data-region', 'steps');
+    // In step 6 (Inspect) the steps panel is the one focusable hot-spot: the fake_check_paste tell
+    // (07 §6; div role="button", never a real control).
+    if (inspect) {
+        steps.setAttribute('role', 'button');
+        steps.setAttribute('tabindex', '0');
+        steps.classList.add('lpb-hotspot');
+    }
+    panel.appendChild(steps);
+
+    // "What did this page copy?" reveal: a hot-spot that shows one harmless description.
+    const revealText = typeof check.clipboardReveal === 'string' ? check.clipboardReveal : '';
+    const reveal = make('div', 'lpb-fakecheck-reveal');
+    const revealBtn = make('div', 'lpb-fakecheck-reveal-btn', 'What did this page copy?');
+    revealBtn.setAttribute('role', 'button');
+    revealBtn.setAttribute('tabindex', '0');
+    revealBtn.setAttribute('aria-expanded', 'false');
+    const revealOut = pageText(make('p', 'lpb-fakecheck-reveal-text', revealText));
+    revealOut.hidden = true;
+    const show = () => { revealOut.hidden = false; revealBtn.setAttribute('aria-expanded', 'true'); };
+    revealBtn.addEventListener('click', show);
+    revealBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(); } });
+    reveal.append(revealBtn, revealOut);
+    panel.appendChild(reveal);
+    root.appendChild(panel);
+
+    const regions = { padlock, addressBar, logo: null, wording: null, form: null, steps };
     return { root, blocked: false, regions };
 }
 

@@ -1,0 +1,25 @@
+{
+  "display_name": "The AI assistant: spot it",
+  "description": "An awareness episode of about 8 minutes for all staff, on the defending side only. Handle supplier emails, voicemails and video calls at Brightwell Foods, a fictional company, beside its approved assistant: some are real and some were built to look right. Each answer is explained, and checking another way when you're unsure is always fine and never marked down.",
+  "difficulty_level": 1,
+  "scoring": "completion",
+  "resultGlobal": "episode_e13_ai_assistant_defend_defend_percent",
+  "stage": "episode",
+  "secgen_scenario": null,
+  "collection": "training",
+  "ui_theme": "general",
+  "title_art": "title_art/awareness_e13_ai_assistant.jpg",
+  "estimated_duration_minutes": 8,
+  "cybok": [
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": [
+        "Deepfakes",
+        "Prompt injection",
+        "AI assistants",
+        "Security awareness"
+      ]
+    }
+  ]
+}

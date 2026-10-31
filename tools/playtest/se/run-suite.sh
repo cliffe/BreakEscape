@@ -34,6 +34,22 @@ JOBS=(
   e3-full:awareness_e3_helpdesk_reset e4-full:awareness_e4_exec_whaling
   e5-full:awareness_e5_signin_pages e6-full:awareness_e6_texts_and_qr
   e7-full:awareness_e7_voice_ceo
+  e8-full:awareness_e8_after_the_click
+  e9-full:awareness_e9_passwords
+  e10-full:awareness_e10_downloads_and_fake_checks
+  e11-full:awareness_e11_misdirected_data
+  e12-full:awareness_e12_visitor_tailgater
+  e13-full:awareness_e13_ai_assistant e13-plain:awareness_e13_ai_assistant
+  e14-full:awareness_e14_social_media
+  e15-full:awareness_e15_shadow_it
+  e16-full:awareness_e16_insider_risk
+  e18-full:awareness_e18_credential_attacks_at_scale
+  e18-close:awareness_e18_credential_attacks_at_scale
+  e19-full:awareness_e19_malware_and_updates
+  e20-full:awareness_e20_remote_and_mobile_working
+  e17-defend:awareness_e17_acceptable_use_defend
+  core00:awareness_core_00_first_play
+  core17:awareness_core_17_annual_2027_defend
 )
 
 new_game() { # scenario -> game id

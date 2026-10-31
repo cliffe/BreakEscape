@@ -18,7 +18,7 @@ Learning outcomes (from `modules/core_08_safe_web_and_downloads/`): LO1 (start f
 - Teaching source of truth: `modules/core_08_safe_web_and_downloads/concepts.md` (the whole file: the four tricks, reading the address, browser warnings, downloads, "if you pasted/downloaded/called"); `modules/core_07_malware_ransomware_and_updates/concepts.md` (how it gets in, the signs, "report and leave it", the device instruction); `modules/core_08_.../game_design.md` (the E10 "The Download" design, the decisions and the Practise bank) and `modules/core_08_.../assessment.md` for the scored behaviours and mirror pairs.
 - The nearest built episode, end to end: **E5** `scenarios/awareness_e5_signin_pages/` (same company and room, the page-triage defend set with the `page` card kind, the look-alike-page builder for the attack half) and the fragments `planning_notes/phishing_and_social_engineering/awareness/e5/{attack,defend}.json`. E5 is the model for every `page` card and for the attack half.
 - Shapes and ids: `planning_notes/phishing_and_social_engineering/designs/00_data_contract.md` (the shared channel-tell library: `lookalike_domain`, `padlock_myth`, `linkCredible`; the `page` card in a triageSet `truth`) and `designs/07_landing_page_builder.md` (the builder E5 and E10 share) and `designs/11_awareness_product_episodes.md`.
-- Companies and cast: `planning_notes/phishing_and_social_engineering/awareness/BRAND_SET.md` (Quayholt roster and the E5 `_brandAdditions`: real hosts, look-alikes, DocShare, Ashcombe Solicitors, MailGuard); `planning_notes/security_awareness_course/03_WORLD_AND_CAST.md` (the E10 row: Niamh Doherty plus a Quayholt IT colleague).
+- Companies and cast: `planning_notes/phishing_and_social_engineering/awareness/BRAND_SET.md` (Quayholt roster and the E5 `_brandAdditions`: real hosts, look-alikes, Fileharbour, Ashcombe Solicitors, Spamwarden); `planning_notes/security_awareness_course/03_WORLD_AND_CAST.md` (the E10 row: Niamh Doherty plus a Quayholt IT colleague).
 - Runner: `public/break_escape/js/minigames/episode-runner/episode-model.js` (`STAGE_IDS`, `childLaunch`, `flipPage`).
 - Engine packet: `implementation/02_ENGINE_WORK.md`, packet **ENG-03a** (and ENG-08 for new channel tells and any verdict-label change).
 
@@ -45,10 +45,10 @@ Learning outcomes (from `modules/core_08_safe_web_and_downloads/`): LO1 (start f
 
 ### Brands and names E10 uses (all from the E5 `_brandAdditions` or the Quayholt slots in concepts.md; the new vendor names need a pre-ship web search and a BRAND_SET note)
 
-- The software portal: **Quayholt Apps** (the core_08 Quayholt slot). Security software: **Quayholt Protect** (core_07 slot). Approved converter: **DocShift** (core_08 slot). Report route: the browser Report button, the "Report an incident" form, or the security team on extension 4444 (core_08/core_07 slots).
+- The software portal: **Quayholt Apps** (the core_08 Quayholt slot). Security software: **Quayholt Protect** (core_07 slot). Approved converter: **Pagewrangle** (core_08 slot). Report route: the browser Report button, the "Report an incident" form, or the security team on extension 4444 (core_08/core_07 slots).
 - A PDF software vendor: **Pagewright** (`pagewright.co.uk` the real vendor; `pagewright-download.com` the advert look-alike). *Note:* these are `.com`/`.co.uk` in the module docs, but the awareness product rule is every domain ends `.example`. **Use `pagewright.example` and the look-alike `pagewright-download.example`.** Flag the swap.
 - Suppliers: **Fernside Catering** (`fernside.example`), **Ashby Supplies** (`ashbysupplies.example`, look-alike `ashby-trade-login.example`). Hacked-site fake check sits on Fernside's real site.
-- Reuse from E5 `_brandAdditions`: the real Quayholt hosts (`sso.`, `servicedesk.`, `intranet.`, `mail.quayholt.example`), the look-alike shapes, and `docshare-login.example`.
+- Reuse from E5 `_brandAdditions`: the real Quayholt hosts (`sso.`, `servicedesk.`, `intranet.`, `mail.quayholt.example`), the look-alike shapes, and `fileharbour-login.example`.
 - The manager who sets the task (chat only) and the desk neighbour who recommends an extension: the core_08 design used the pool names Lena Fischer and Leo Brennan (03_WORLD_AND_CAST lists both as no-clash pool names). Reuse them only if the orchestrator wants named colleagues in cards; otherwise keep the chat unattributed. Flag.
 
 All people and companies fictional; every domain `.example`; no homographs.
@@ -103,12 +103,12 @@ Every metadata value the shell wiring (01 P2/P3) and the generator (01 P4, `gen_
 | `order` | 0 | 1 |
 | task `taskId` / `title` / `type` | `build_and_send_page` / "Send your lure email" / `manual` | `work_browser_morning` / "Work through the web pages" / `custom` |
 
-Aim 2 `concludeRequires.globals`: `["episode_e10_downloads_and_fake_checks_defend_done"]`. Aim 2 `conclusionScreen`: `{ "type": "success", "title": "Downloads and fake checks episode done", "body": "You built one page and sent its link, then worked through a morning of web pages, closing and reporting the ones that tried to drive your computer, so this episode is finished." }`.
+Aim 2 `concludeRequires.globals`: `["episode_e10_downloads_and_fake_checks_defend_done"]`. Aim 2 `conclusionScreen`: `{ "type": "success", "title": "Downloads and fake checks episode done", "body": "You built one page on a supplier's own site and sent the email that brings a colleague to it, then worked through a morning of web pages, closing and reporting the ones that tried to drive your computer, so this episode is finished." }`. (Corrected from the E5-shaped "built one page and sent its link" wording, which contradicts E10's no-link fake-check design: E10 C1 MA3.)
 
 ### Full-episode training kiosk (full erb `rooms.training_room.objects[]` kiosk, copy the E5 shape)
 
-- `observations`: "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise: first build one look-alike page and send its link, then a morning of browser screens to sort."
-- `observationVariants[0]`: `{ "condition": "globalVars.episode_e10_downloads_and_fake_checks_defend_done", "value": "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise. The page is sent and the morning's screens are all sorted." }`
+- `observations`: "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise: first build one fake 'verify you are human' check on a supplier's own site and send the email that brings a colleague to it, then a morning of browser screens to sort." (Corrected from "build one look-alike page and send its link", which contradicts the no-link design: E10 C1 MA3.)
+- `observationVariants`: first `{ "condition": "globalVars.phish_order_colleague_landed && !globalVars.episode_e10_downloads_and_fake_checks_defend_done", "value": "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise. Your fake check is live on the supplier's own site and the email is away to your colleague; next, sort the morning's browser screens." }` (added to read `phish_order_colleague_landed` so the global the send outcome sets is no longer dead: E10 C1 MI1), then `{ "condition": "globalVars.episode_e10_downloads_and_fake_checks_defend_done", "value": "A touch-screen training kiosk for the Quayholt downloads-and-fake-checks exercise. The page is sent and the morning's screens are all sorted." }`
 - `minigameData.episodeId`: `e10_downloads_and_fake_checks`.
 
 ### Full-episode `mission.json` (copy the E5 mission.json shape)
@@ -166,7 +166,7 @@ This `brief` is the same text as §13's defend-only brief (keep them identical).
 ### Host spoken lines for the full shell (ink, Niamh)
 
 - **Welcome** (at the hub): the §8 Niamh welcome line.
-- **After the attack half** (on the kiosk hand-off into the defend half): "Good, the page is built and the link's away. Now take the other seat: here's a morning of the web the way it really turns up, and you sort it."
+- **After the attack half** (on the kiosk hand-off into the defend half): "Good, the page is built and the email's away to Leo. Now take the other seat: here's a morning of the web the way it really turns up, and you sort it."
 - **On completion** (defend done): "That's both sides done. Leila's three rules are the whole of it: software from Quayholt Apps, read the address, and never let a page drive your computer. If you ever slip, tell us straight away."
 
 ## 9. Attack half (the fake-check builder, ENG-03b)
@@ -203,7 +203,7 @@ Reuse E5's `flipPage` flip (`episode-model.js:266`), extended by ENG-03b with a 
 
 Add the clipboard beat as a concept preview (not a new engine feature): the flip notes that a page like this can quietly copy a command to the clipboard, described in the one-line `clipboardReveal` wording, which the defend half's fake-check screen (row 1) then shows in full. Nothing is ever written to the real clipboard and no command is shown.
 
-Author the flip strings in E5's voice, reusing E5's keys with the page and victim wording adjusted (for example `flipPageIntro`: "This is the page you built, as your colleague sees it when they open the Fernside portal."). No new flip engine beyond ENG-03b's `pageType: "fakeCheck"` handling in `flipPage` and `renderLandingPage`.
+Author the flip strings in E5's voice, reusing E5's keys with the page and victim wording adjusted (for example `flipPageIntro`: "This is the page you built, as Leo Brennan meets it when he opens the Fernside portal from his own bookmark. Anything that would give it away is picked out below."; the flip's page heading is the string `flipPageHeading`, "The page you built", in the full erb only). No new flip engine beyond ENG-03b's `pageType: "fakeCheck"` handling in `flipPage` and `renderLandingPage`.
 
 ## 11. Defend set
 
@@ -232,12 +232,12 @@ About 6 to 7 screens, with two mirror pairs so "anything unusual is a trap" cann
 | 3 | `e10_fake_update` | A banner on a news page (a genuine site the manager asked you to read): "Your browser is out of date. Download the update." with a download button. (fake-update state) | Close and report | yes | `fake_update_prompt` | Browsers update themselves and finish when you close and reopen them; at work IT manages that. A web page cannot know your browser needs updating, and no genuine update comes from a page. |
 | 4 | `e10_browser_relaunch` | The browser's own menu bar: "An update is ready. Relaunch to finish." (`relaunchBar` state) | Carry on (relaunch) | no | (none) | This one is the browser itself, not a web page, finishing an update it downloaded in the background. The mirror for row 3: a page offering an update is a trap; the browser's own bar is genuine. |
 | 5 | `e10_fake_alarm` | A page takes the whole screen, an alarm (silent by default; "This page is trying to play a loud alarm"), "Your computer has been locked. Call support now." with an 0800 number; the close button reopens it. (full-screen-alarm state) | Close and report; do not call. Press Esc, close the tab or browser; if it will not close, ring the service desk on the number you already hold. | yes | `fake_alarm_callback` | Genuine error messages never include a phone number. Don't call: the "support agent" would ask you to install a remote access tool. Find the safe way out and report. (No siren, no flashing, always a way out, a hint after 30 seconds; core_08 pitfall.) |
-| 6 | `e10_extension_permission` | An extension store page, 4.8 stars, "2 million users", for "Free PDF Tools"; Add brings up "It can: Read and change all your data on all websites. Read your browsing history." (`extensionPermission` state) | Close and report (full marks); Go the trusted way (use DocShift in Quayholt Apps, or ask IT) is safe-but-partial | yes | `browser_permission_grab` | An extension with that access can see and change everything you do in the browser, including the finance system and the intranet, and it can change when it updates. Add extensions only from Quayholt's approved list, or ask the service desk. |
+| 6 | `e10_extension_permission` | An extension store page, 4.8 stars, "2 million users", for "Free PDF Tools"; Add brings up "It can: Read and change all your data on all websites. Read your browsing history." (`extensionPermission` state) | Close and report (full marks); Go the trusted way (use Pagewrangle in Quayholt Apps, or ask IT) is safe-but-partial | yes | `browser_permission_grab` | An extension with that access can see and change everything you do in the browser, including the finance system and the intranet, and it can change when it updates. Add extensions only from Quayholt's approved list, or ask the service desk. |
 | 7 | `e10_download_exe` | A download bar: "Fernside_pricelist.pdf.exe". (download-bar state) | Close and report | yes | `dangerous_download` | You asked for a price list; a price list is a PDF or a spreadsheet, not a program. A name like `pricelist.pdf.exe` is a program pretending to be a document. Don't open it; report it. |
 
 Optional eighth screen if the set needs a plain "believe the warning" item: `e10_browser_warning`, a red "Deceptive site ahead" page, correct move "Go back"/Carry on (a genuine browser warning; believe it, and if you need the site for work ask IT). To reach six, cut **row 7** (`e10_download_exe`) or drop the optional eighth; **keep both mirror pairs** (rows 1 and 2, the fake-check/genuine-CAPTCHA pair; rows 3 and 4, the fake-update/genuine-relaunch pair), so neither row 4 nor the other paired rows may be cut.
 
-Each phish screen carries `truth.ifTrusted` and `truth.reportReply` in the E5 voice (e.g. for row 1: "The command would have downloaded a program and run it, with nothing appearing on screen" / "Thanks. We've blocked that page, warned Fernside their site was hacked, and reported it to the NCSC"). Each genuine screen carries `truth.whyFine` with a `default` and per-factor keys.
+Each phish screen carries `truth.ifTrusted` and `truth.reportReply` in the E5 voice (e.g. for row 1: "The command would have downloaded a program and run it, with nothing appearing on screen" / "Thanks. We've blocked that page, warned Fernside their site had been broken into, and reported it"). Each genuine screen carries `truth.whyFine` with a `default` and per-factor keys.
 
 ### Items as final JSON (ENG-03a `page.state`)
 
@@ -260,10 +260,13 @@ Every item is the built `page` kind with an optional ENG-03a `page.state` (one o
   },
   "truth": {
     "isPhish": true,
+    "critical": true,
+    "missLabel": "running a command a page told you to paste",
+    "kindLine": "That was a fake check that had already copied a command for you to run.",
     "flags": ["fake_check_paste"],
-    "perFlagNote": { "fake_check_paste": "A real check happens on the page: you tick a box or pick pictures. No genuine check ever tells you to press keys or paste something into your computer, and this one has quietly copied a command for you to run." },
-    "ifTrusted": "Following the steps would have run a hidden program with nothing showing on screen. If you did it, report it straight away, do not restart, and do not clear anything.",
-    "reportReply": "Thanks. We've blocked that page, warned Fernside their site was hacked, and reported it. Fernside's own site is fine; it was broken into."
+    "perFlagNote": {"fake_check_paste": "A real check happens on the page: you tick a box or pick pictures. No genuine check ever tells you to press keys or paste something into your computer, and this one has quietly copied a command for you to run. The site is Fernside's own, but a familiar site is not a reason to do what it suddenly tells you; it has been broken into."},
+    "ifTrusted": "Following the steps would have run a hidden program, with nothing showing on screen. If you did it, report it straight away, do not restart, and do not clear anything.",
+    "reportReply": "Thanks. We've blocked that page, warned Fernside their site had been broken into, and reported it. Fernside is a genuine supplier; attackers got into their site, it is not a fake."
   },
   "factorStrings": { "fake_check_paste": { "redFlag": "A page telling you to paste or run something to prove you are human or to fix an error" } }
 }
@@ -312,8 +315,9 @@ Every item is the built `page` kind with an optional ENG-03a `page.state` (one o
   },
   "truth": {
     "isPhish": true,
+    "kindLine": "That 'update' came from a web page, not your browser.",
     "flags": ["fake_update_prompt"],
-    "perFlagNote": { "fake_update_prompt": "A web page cannot know your browser needs updating, and no genuine update ever comes from a page; browsers update themselves and finish when you close and reopen them. At work IT manages that." },
+    "perFlagNote": {"fake_update_prompt": "A web page cannot know your browser needs updating, and no genuine update ever comes from a page; browsers update themselves and finish when you close and reopen them. At work, IT manages that."},
     "ifTrusted": "The download would be a program pretending to be an update. Close the tab and report it.",
     "reportReply": "Thanks. That's not how browsers update. We've reported the page and left a note for the news site."
   },
@@ -364,8 +368,11 @@ Every item is the built `page` kind with an optional ENG-03a `page.state` (one o
   },
   "truth": {
     "isPhish": true,
+    "critical": true,
+    "missLabel": "calling the number on a pop-up",
+    "kindLine": "Your computer was never locked; that was a page pretending.",
     "flags": ["fake_alarm_callback"],
-    "perFlagNote": { "fake_alarm_callback": "A genuine error message never includes a phone number. The alarm and the lock are just a web page; the number reaches whoever made it, who would ask you to install a remote-access tool." },
+    "perFlagNote": {"fake_alarm_callback": "A genuine error message never includes a phone number. The alarm and the lock are just a web page; the number reaches whoever made it, who would ask you to install a remote-access tool. Don't call: press Esc, close the tab or the browser, and if it will not close, ring the service desk on the number you already hold."},
     "ifTrusted": "Calling connects you to the scammer, not support. Press Esc, close the tab or the browser; if it will not close, ring the service desk on the number you already hold, and do not call the number on screen.",
     "reportReply": "Thanks. Your computer was never locked; that was a page pretending. We've blocked it and reported it."
   },
@@ -390,10 +397,11 @@ Every item is the built `page` kind with an optional ENG-03a `page.state` (one o
   },
   "truth": {
     "isPhish": true,
+    "kindLine": "That extension was asking to read and change everything you do.",
     "flags": ["browser_permission_grab"],
-    "perFlagNote": { "browser_permission_grab": "An extension with that access can see and change everything you do in the browser, the finance system and the intranet included, and it can change what it does when it updates. Stars and a user count do not make it safe." },
-    "ifTrusted": "Adding it hands a stranger everything you do in the browser. Close and report it; get a PDF tool from Quayholt Apps (DocShift), or ask the service desk.",
-    "reportReply": "Thanks. We've reported that extension. DocShift in Quayholt Apps does the same job and is approved."
+    "perFlagNote": {"browser_permission_grab": "An extension with that access can see and change everything you do in the browser, the finance system and the intranet included, and it can change what it does when it updates. Stars and a user count do not make it safe."},
+    "ifTrusted": "Adding it hands a stranger everything you do in the browser. Close and report it; get a PDF tool from Quayholt Apps (Pagewrangle), or ask the service desk.",
+    "reportReply": "Thanks. We've reported that extension. Pagewrangle in Quayholt Apps does the same job and is approved."
   },
   "factorStrings": { "browser_permission_grab": { "redFlag": "A page or extension asking to read or change everything in your browser, or to send you notifications" } }
 }
@@ -416,8 +424,11 @@ Every item is the built `page` kind with an optional ENG-03a `page.state` (one o
   },
   "truth": {
     "isPhish": true,
+    "critical": true,
+    "missLabel": "opening a program dressed up as a document",
+    "kindLine": "That was a program dressed up as a document.",
     "flags": ["dangerous_download"],
-    "perFlagNote": { "dangerous_download": "You asked for a price list, which is a PDF or a spreadsheet, not a program. A name ending .pdf.exe is a program dressed up as a document." },
+    "perFlagNote": {"dangerous_download": "You asked for a price list, which is a PDF or a spreadsheet, not a program. A name ending .pdf.exe is a program dressed up as a document."},
     "ifTrusted": "Opening it would run a program, not show a price list. Don't open it; close and report it.",
     "reportReply": "Thanks. We've removed it and asked Fernside to send the price list as a normal PDF."
   },

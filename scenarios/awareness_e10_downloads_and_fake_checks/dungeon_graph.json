@@ -1,0 +1,6 @@
+{
+  "scenario": "awareness_e10_downloads_and_fake_checks",
+  "start_room": "training_room",
+  "nodes": [],
+  "edges": []
+}

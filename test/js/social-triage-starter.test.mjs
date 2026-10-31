@@ -1,11 +1,12 @@
 // The inbox triage starter, systems/triage-starter.js (05 "Bridging", N6; 00 S3 and
 // section 11 "Sync, then emit", "Reopen re-emits"; packet P3-C):
-//  - the four result globals are written with deferEmit, and nothing is emitted until
+//  - the result globals are written with deferEmit, and nothing is emitted until
 //    stateSync.syncConfirmed() resolves true;
-//  - then only the changed names are emitted (done last), then the done event;
+//  - then only the changed names are emitted (complete last), then the done event;
 //  - on false nothing is emitted, and the held names go out with the next confirmed save;
-//  - <prefix>pass is never cleared by a lower round;
-//  - a reopen with <prefix>done set and the conclusion task incomplete re-emits once;
+//  - <prefix>pass is written only when passPercent > 0, and is never cleared by a lower round;
+//  - a reopen with <prefix>complete set and the conclusion task incomplete re-emits once;
+//  - a pre-rename save holding <prefix>done still opens read-only;
 //  - with the real StateSync: a blocked sync shows the notice and emits after it clears;
 //    a 403 stops at once and emits nothing.
 // Run with: bundle exec node --test test/js/social-triage-starter.test.mjs
@@ -40,6 +41,7 @@ const { StateSync } = await import(pathToFileURL(join(dir, 'state-sync.mjs')).hr
 const { writeGlobal: starterWriter } = await import(pathToFileURL(join(dir, 'global-writer.mjs')).href);
 const {
     startInboxTriageMinigame, persistTriageResult, reemitTriageDone, resolvePrefix,
+    hostPassPercent, showResultSetting, effectivePassPercent,
     TRIAGE_DONE_EVENT, _resetTriageStarterForTests
 } = starter;
 
@@ -117,10 +119,10 @@ test('writes with deferEmit, and emits nothing until syncConfirmed resolves true
     const pending = persistTriageResult({ percent: 72, reportRate: 0.5 }, ctxFor(labSet), { stateSync: sync, write });
     await tick();
 
-    assert.deepEqual(seenOpts.map(o => o.name), ['triage_percent', 'triage_reportRate', 'triage_pass', 'triage_done']);
+    assert.deepEqual(seenOpts.map(o => o.name), ['triage_percent', 'triage_reportRate', 'triage_pass', 'triage_complete']);
     assert.ok(seenOpts.every(o => o.deferEmit), 'every result write uses deferEmit');
     assert.equal(env.globals.triage_percent, 72, 'gameState holds the value before the sync');
-    assert.equal(env.globals.triage_done, true);
+    assert.equal(env.globals.triage_complete, true);
     assert.equal(env.events.length, 0, 'nothing emitted while the sync is unconfirmed');
     assert.equal(sync.calls.length, 1);
 
@@ -131,16 +133,15 @@ test('writes with deferEmit, and emits nothing until syncConfirmed resolves true
         'global_variable_changed:triage_percent',
         'global_variable_changed:triage_reportRate',
         'global_variable_changed:triage_pass',
-        'global_variable_changed:triage_done',
+        'global_variable_changed:triage_complete',
         TRIAGE_DONE_EVENT
     ]);
-    assert.deepEqual(env.events[3].data, { name: 'triage_done', value: true });
-    assert.equal(env.events[4].data.pass, true);
+    assert.deepEqual(env.events[3].data, { name: 'triage_complete', value: true });
     assert.equal(env.events[4].data.reemit, false);
 });
 
 test('emits only the names whose value changed, then the done event last', async () => {
-    const env = setup({ globals: { triage_percent: 68, triage_reportRate: 0, triage_pass: false, triage_done: false } });
+    const env = setup({ globals: { triage_percent: 68, triage_reportRate: 0, triage_pass: false, triage_complete: false } });
     const sync = stubSync();
     const pending = persistTriageResult({ percent: 68, reportRate: 0.5 }, ctxFor(labSet), { stateSync: sync });
     await tick();
@@ -149,7 +150,7 @@ test('emits only the names whose value changed, then the done event last', async
     assert.deepEqual(names(env.events), [
         'global_variable_changed:triage_reportRate',
         'global_variable_changed:triage_pass',
-        'global_variable_changed:triage_done',
+        'global_variable_changed:triage_complete',
         TRIAGE_DONE_EVENT
     ], 'percent did not change, so it is not emitted');
 });
@@ -178,7 +179,7 @@ test('on false nothing is emitted; the held names go out with the next confirmed
         'global_variable_changed:triage_percent',
         'global_variable_changed:triage_reportRate',
         'global_variable_changed:triage_pass',
-        'global_variable_changed:triage_done',
+        'global_variable_changed:triage_complete',
         TRIAGE_DONE_EVENT
     ]);
 });
@@ -222,13 +223,73 @@ test('a failed first round is replaced by a better later round, and a worse one 
     assert.equal(env.globals.triage_pass, false);
 });
 
-test('a round below passPercent writes pass false and done true', async () => {
+test('a round below passPercent writes pass false and complete true', async () => {
     const env = setup();
     const sync = stubSync();
     const p = persistTriageResult({ percent: 59, reportRate: 0 }, ctxFor(labSet), { stateSync: sync });
     await tick(); sync.settleAll(true); await p;
     assert.equal(env.globals.triage_pass, false);
-    assert.equal(env.globals.triage_done, true);
+    assert.equal(env.globals.triage_complete, true);
+});
+
+test('a passPercent-0 set writes no pass global, only complete', async () => {
+    const env = setup();
+    window.stateSync = stubSync();
+    const params = startInboxTriageMinigame({ scenarioData: { minigameData: { triageSetId: 'pre_a' } } }, { stage: 'pre' });
+    const p = params.persistResult({ percent: 90, reportRate: 1 });
+    await tick(); window.stateSync.settleAll(true); await p;
+    assert.equal(env.globals.triage_pre_complete, true);
+    assert.equal(env.globals.triage_pre_pass, undefined, 'passPercent 0: no pass global is written');
+});
+
+// ---- host pass mark (Phase 6) ----------------------------------------------
+
+test('effectivePassPercent / hostPassPercent / showResultSetting read the host config', () => {
+    setup();
+    assert.equal(hostPassPercent(), null, 'no host config: null');
+    assert.equal(showResultSetting(), true, 'default: show the result');
+    assert.equal(effectivePassPercent(labSet), 60, 'no host mark: the set\'s own 60');
+    assert.equal(effectivePassPercent(preSet), 0, 'no host mark, set passPercent 0');
+    window.breakEscapeConfig.awareness = { passPercent: 70, showResult: false };
+    try {
+        assert.equal(hostPassPercent(), 70);
+        assert.equal(showResultSetting(), false);
+        assert.equal(effectivePassPercent(preSet), 70, 'the host mark wins over the set');
+        assert.equal(effectivePassPercent(labSet), 70, 'the host mark wins over the set\'s own 60');
+    } finally { delete window.breakEscapeConfig.awareness; }
+    window.breakEscapeConfig.awareness = { passPercent: 0 };
+    try { assert.equal(effectivePassPercent(preSet), 0, 'a host 0 is no mark; fall back to the set'); }
+    finally { delete window.breakEscapeConfig.awareness; }
+});
+
+test('the host pass mark wins over the set: below it writes pass false, at or above writes pass true', async () => {
+    const env = setup();
+    window.breakEscapeConfig.awareness = { passPercent: 70 };
+    try {
+        const sync = stubSync();
+        // preSet's own outcome.passPercent is 0, but the host mark of 70 applies.
+        const below = persistTriageResult({ percent: 60, reportRate: 0 }, ctxFor(preSet), { stateSync: sync });
+        await tick(); sync.settleAll(true); await below;
+        assert.equal(env.globals.triage_pre_pass, false, 'below the host mark, pass is written false');
+        assert.equal(env.globals.triage_pre_complete, true);
+
+        const above = persistTriageResult({ percent: 80, reportRate: 1 }, ctxFor(preSet), { stateSync: sync });
+        await tick(); sync.settleAll(true); await above;
+        assert.equal(env.globals.triage_pre_pass, true, 'a round at or above the mark writes pass true');
+    } finally { delete window.breakEscapeConfig.awareness; }
+});
+
+test('params carry the host pass mark and showResult for the debrief', () => {
+    setup();
+    window.breakEscapeConfig.awareness = { passPercent: 65, showResult: false };
+    try {
+        const params = startInboxTriageMinigame({ scenarioData: { minigameData: { triageSetId: 'pre_a' } } }, { stage: 'post' });
+        assert.equal(params.hostPassPercent, 65);
+        assert.equal(params.showResult, false);
+    } finally { delete window.breakEscapeConfig.awareness; }
+    const plain = startInboxTriageMinigame({ scenarioData: { minigameData: { triageSetId: 'pre_a' } } }, { stage: 'post' });
+    assert.equal(plain.hostPassPercent, null, 'no host config: null mark');
+    assert.equal(plain.showResult, true, 'no host config: show the result');
 });
 
 test('the same result object saves once (persistResult, then onComplete)', async () => {
@@ -271,6 +332,16 @@ test('the notice goes to the open overlay through setSavingState', async () => {
     assert.deepEqual(window.MinigameFramework.currentMinigame.saving, ['saving', 'saved'], 'shown once, then hidden');
 });
 
+test('skin: a workstation can ask for awareness through minigameData.skin; the launcher option wins; default unchanged', () => {
+    setup();
+    const ws = (md) => ({ scenarioData: { minigameData: { triageSetId: 'lab_triage', ...md } } });
+    assert.equal(startInboxTriageMinigame(ws({})).skin, null, 'no skin anywhere: none, as before');
+    assert.equal(startInboxTriageMinigame(ws({ skin: 'awareness' })).skin, 'awareness');
+    assert.equal(startInboxTriageMinigame(ws({ skin: 'neon' })).skin, null, 'an unknown skin is ignored');
+    assert.equal(startInboxTriageMinigame(ws({}), { skin: 'awareness' }).skin, 'awareness', 'the launcher option still works');
+    assert.equal(startInboxTriageMinigame(ws({ skin: 'awareness' }), { skin: null }).skin, null, 'an explicit launcher null wins');
+});
+
 test('the {stage} prefix takes the launch stage', async () => {
     const env = setup();
     window.stateSync = stubSync();
@@ -279,8 +350,8 @@ test('the {stage} prefix takes the launch stage', async () => {
     assert.equal(params.stage, 'post');
     const p = params.persistResult({ percent: 86, reportRate: 1 });
     await tick(); window.stateSync.settleAll(true); await p;
-    assert.equal(env.globals.triage_post_done, true);
-    assert.equal(env.globals.triage_post_pass, true, 'passPercent 0: a check set always passes');
+    assert.equal(env.globals.triage_post_complete, true);
+    assert.equal(env.globals.triage_post_pass, undefined, 'passPercent 0: no pass mark, so the pass flag is not written');
 });
 
 test('a round of the paired set saves under that set\'s prefix', async () => {
@@ -291,29 +362,37 @@ test('a round of the paired set saves under that set\'s prefix', async () => {
     const params = startInboxTriageMinigame({ scenarioData: { minigameData: { triageSetId: 'train_a' } } });
     const p = params.persistResult({ setId: 'train_b', percent: 90, reportRate: 1 });
     await tick(); window.stateSync.settleAll(true); await p;
-    assert.equal(env.globals.train_b_done, true);
-    assert.equal(env.globals.train_a_done, undefined);
+    assert.equal(env.globals.train_b_complete, true);
+    assert.equal(env.globals.train_a_complete, undefined);
 });
 
 // ---- reopen -----------------------------------------------------------------
 
-const doneGlobals = { triage_pre_percent: 86, triage_pre_reportRate: 1, triage_pre_pass: true, triage_pre_done: true };
+const completeGlobals = { triage_pre_percent: 86, triage_pre_reportRate: 1, triage_pre_complete: true };
 
-test('a pre reopen with _done set opens read-only from the stored globals', async () => {
-    const env = setup({ globals: doneGlobals });
+test('a pre reopen with _complete set opens read-only from the stored globals', async () => {
+    const env = setup({ globals: completeGlobals });
     window.stateSync = stubSync();
     const params = startInboxTriageMinigame({ scenarioData: { minigameData: { triageSetId: 'pre_a' } } });
     assert.equal(env.started[0].type, 'inbox-triage');
     assert.equal(params.readOnly, true);
-    assert.deepEqual(params.storedResult, { percent: 86, reportRate: 1, pass: true, headline: 'Sharp', readOnly: true });
+    assert.deepEqual(params.storedResult, { percent: 86, reportRate: 1, headline: 'Sharp', readOnly: true });
     params.onComplete(true, { percent: 10, reportRate: 0 });
     await tick();
     assert.equal(env.globals.triage_pre_percent, 86, 'a read-only reopen overwrites nothing');
     assert.equal(window.stateSync.calls.length, 0, 'no conclusionTaskId: no re-emit, no save');
 });
 
-test('a reopen with _done set and the conclusion task incomplete re-emits once', async () => {
-    const env = setup({ globals: doneGlobals, tasks: { pre_check: 'active' } });
+test('a pre-rename save holding _done still opens read-only', async () => {
+    const env = setup({ globals: { triage_pre_percent: 86, triage_pre_reportRate: 1, triage_pre_done: true } });
+    window.stateSync = stubSync();
+    const params = startInboxTriageMinigame({ scenarioData: { minigameData: { triageSetId: 'pre_a' } } });
+    assert.equal(params.readOnly, true);
+    assert.deepEqual(params.storedResult, { percent: 86, reportRate: 1, headline: 'Sharp', readOnly: true });
+});
+
+test('a reopen with _complete set and the conclusion task incomplete re-emits once', async () => {
+    const env = setup({ globals: completeGlobals, tasks: { pre_check: 'active' } });
     const sync = stubSync();
     window.stateSync = sync;
     const sprite = { scenarioData: { minigameData: { triageSetId: 'pre_a', conclusionTaskId: 'pre_check' } } };
@@ -325,11 +404,10 @@ test('a reopen with _done set and the conclusion task incomplete re-emits once',
     sync.settleAll(true);
     await tick(); await tick();
     assert.deepEqual(names(env.events), [
-        'global_variable_changed:triage_pre_pass',
-        'global_variable_changed:triage_pre_done',
+        'global_variable_changed:triage_pre_complete',
         TRIAGE_DONE_EVENT
     ]);
-    assert.equal(env.events[2].data.reemit, true);
+    assert.equal(env.events[1].data.reemit, true);
 
     // The mapping completed the task: the next reopen emits nothing
     window.objectivesManager.taskIndex.pre_check.status = 'completed';
@@ -341,7 +419,7 @@ test('a reopen with _done set and the conclusion task incomplete re-emits once',
 });
 
 test('a reopen whose sync fails emits nothing; one that finds the task completed emits nothing', async () => {
-    const env = setup({ globals: doneGlobals, tasks: { pre_check: 'active' } });
+    const env = setup({ globals: completeGlobals, tasks: { pre_check: 'active' } });
     const sync = stubSync();
     const ctx = ctxFor(preSet, { conclusionTaskId: 'pre_check' });
     const a = reemitTriageDone(ctx, { stateSync: sync });
@@ -357,15 +435,15 @@ test('a reopen whose sync fails emits nothing; one that finds the task completed
     assert.equal(env.events.length, 0);
 });
 
-test('a mission round with the conclusion task still open re-emits unchanged pass and done', async () => {
+test('a mission round with the conclusion task still open re-emits unchanged pass and complete', async () => {
     // Round 1 confirmed on the server earlier (pagehide), nothing emitted; this round is lower
-    const env = setup({ globals: { triage_percent: 72, triage_reportRate: 1, triage_pass: true, triage_done: true }, tasks: { triage_passed: 'active' } });
+    const env = setup({ globals: { triage_percent: 72, triage_reportRate: 1, triage_pass: true, triage_complete: true }, tasks: { triage_passed: 'active' } });
     const sync = stubSync();
     const p = persistTriageResult({ percent: 50, reportRate: 1 }, ctxFor(labSet, { conclusionTaskId: 'triage_passed' }), { stateSync: sync });
     await tick(); sync.settleAll(true); await p;
     assert.deepEqual(names(env.events), [
         'global_variable_changed:triage_pass',
-        'global_variable_changed:triage_done',
+        'global_variable_changed:triage_complete',
         TRIAGE_DONE_EVENT
     ], 'percent keeps the best round, so it does not change');
     assert.equal(env.globals.triage_percent, 72);
@@ -402,7 +480,7 @@ test('blocked sync: the notice shows, nothing is emitted until the server confir
         });
         assert.equal(out.confirmed, true);
         assert.equal(requests.length, 3);
-        assert.equal(requests[2].globalVariables.triage_done, true, 'the confirmed PUT carried done');
+        assert.equal(requests[2].globalVariables.triage_complete, true, 'the confirmed PUT carried complete');
         assert.deepEqual(states, [{ st: 'saving', emittedSoFar: 0 }, { st: 'saved', emittedSoFar: 5 }]);
         assert.equal(names(env.events).at(-1), TRIAGE_DONE_EVENT);
     } finally { globalThis.console = realConsole; realTimers(); }

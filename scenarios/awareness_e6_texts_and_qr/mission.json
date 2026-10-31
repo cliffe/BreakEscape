@@ -1,11 +1,14 @@
 {
-  "display_name": "Awareness E6: Texts and QR codes (full episode)",
+  "display_name": "Texts and QR codes",
   "description": "An awareness episode of about 16 minutes for staff with a work phone. On an authorised exercise at Tarrowby Logistics, a fictional haulier, you first play the attacker: research the depot, then send one lookalike parking message. Then you swap seats and go through a work phone a message like it lands on. Only the phone is scored, and reporting when you're unsure is always fine and never marked down.",
   "difficulty_level": 1,
   "scoring": "completion",
+  "resultGlobal": "episode_e6_texts_and_qr_defend_percent",
+  "stage": "episode",
   "secgen_scenario": null,
   "collection": "training",
   "ui_theme": "general",
+  "title_art": "title_art/awareness_e6_texts_and_qr.jpg",
   "estimated_duration_minutes": 16,
   "cybok": [
     {

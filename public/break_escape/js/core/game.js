@@ -3,6 +3,7 @@
 import { initializeRooms, calculateWorldBounds, calculateRoomPositions, createRoom, revealRoom, updatePlayerRoom, rooms } from './rooms.js';
 import { createPlayer, updatePlayerMovement, movePlayerToPoint, facePlayerToward, startHoldWalk, stopHoldWalk, player } from './player.js';
 import { initializePathfinder } from './pathfinding.js';
+import { resumeSpawnFor } from './resume-spawn.js';
 import { initializeInventory, processInitialInventoryItems } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
 import { wallClearFrom, findClearStandPoint, sameRoomFrom, playerFeet } from '../systems/interaction-walls.js';
@@ -43,6 +44,8 @@ import { CommandBoardRecorder } from '../minigames/command-board/command-board-t
 import { initLighting } from '../systems/lighting.js';
 import { collectCharacterSprites, queueCharacterAtlases, ensureCharacterTexture } from '../systems/character-textures.js';
 import { mailScheduler } from '../systems/mail-scheduler.js';  // Mail jobs and mailState (social missions)
+import { installTimedEmails } from '../systems/mail-ink.js';  // Ink-driven plain email: contacts' timedEmails
+import { writeGlobal as writeMailGlobal } from '../systems/global-writer.js';
 import '../systems/mail-runner.js';  // Registers the ink-job runner on the mail scheduler (P1-J); self-installs on import after mailScheduler
 import { notifyNewMail } from '../minigames/mail-client/mail-notification.js';  // HUD/bark for delivered mail (P1-F)
 import { watchReadinessGlobals } from '../systems/social-intel.js';  // needsGlobal readiness slots re-check on a global change
@@ -143,6 +146,8 @@ export function preload() {
     this.load.tilemapTiledJSON('room_aw_tarrowby', 'rooms/room_aw_tarrowby.json'); // Tarrowby Logistics depot training room (2x2 GU)
     this.load.tilemapTiledJSON('room_aw_quayholt', 'rooms/room_aw_quayholt.json'); // Quayholt Insurance service-desk training room (2x2 GU)
     this.load.tilemapTiledJSON('room_aw_merrin_sallow', 'rooms/room_aw_merrin_sallow.json'); // Merrin & Sallow Architects studio meeting room (2x2 GU)
+    this.load.tilemapTiledJSON('room_aw_carrholme', 'rooms/room_aw_carrholme.json'); // Carrholme Services support-services training room (2x2 GU)
+    this.load.tilemapTiledJSON('room_aw_merrin_lobby', 'rooms/room_aw_merrin_lobby.json'); // Merrin & Sallow reception lobby (E12; uses the room_aw_merrin_sallow sheet)
     this.load.tilemapTiledJSON('room_zds_reception', 'rooms/room_zds_reception.json'); // m03 Zero Day lobby: WHITEHAT sign, marble desk, plaque, awards, leather sofa (2x2 GU)
     this.load.tilemapTiledJSON('room_zds_conference', 'rooms/room_zds_conference.json'); // m03 boardroom: whiteboard, wall screen, walnut table, leather chairs (2x2 GU)
     this.load.tilemapTiledJSON('room_zds_office', 'rooms/room_zds_office.json'); // m03 consultant's office: desk with PC and photo, review, camp bed (2x2 GU)
@@ -239,6 +244,7 @@ export function preload() {
     this.load.image('room_aw_tarrowby', 'tiles/rooms/room_aw_tarrowby.png'); // awareness: pale grey, steel-blue skirting, sheet vinyl
     this.load.image('room_aw_quayholt', 'tiles/rooms/room_aw_quayholt.png'); // awareness: cool white, purple skirting, blue carpet
     this.load.image('room_aw_merrin_sallow', 'tiles/rooms/room_aw_merrin_sallow.png'); // awareness: warm stone, bronze skirting, concrete
+    this.load.image('room_aw_carrholme', 'tiles/rooms/room_aw_carrholme.png'); // awareness: pale sage, muted-green skirting, grey vinyl
     this.load.image('room_zds_lobby', 'tiles/rooms/room_zds_lobby.png'); // m03: polished stone, hat-mark inlay
     this.load.image('room_zds_carpet', 'tiles/rooms/room_zds_carpet.png'); // m03: slate-blue carpet tiles
     this.load.image('room_zds_exec', 'tiles/rooms/room_zds_exec.png'); // m03: walnut parquet with a navy and gold rug
@@ -367,6 +373,7 @@ export function preload() {
     this.load.image('osint-workstation', 'objects/osint-workstation.png');
     this.load.image('triage-workstation', 'objects/triage-workstation.png');
     this.load.image('kiosk', 'objects/kiosk.png');
+    this.load.image('exercise-station', 'objects/exercise-station.png'); // placeholder art: a copy of the kiosk sprite
     this.load.image('authenticator-device', 'objects/authenticator-device.png');
     this.load.image('aw_brightwell_oatbox1', 'objects/aw_brightwell_oatbox1.png');
     this.load.image('aw_hard_hat1', 'objects/aw_hard_hat1.png');
@@ -382,6 +389,8 @@ export function preload() {
     this.load.image('aw_chair_south_charcoal1', 'objects/aw_chair_south_charcoal1.png');
     this.load.image('aw_chair_north_charcoal1', 'objects/aw_chair_north_charcoal1.png');
     this.load.image('aw_chair_w_charcoal1', 'objects/aw_chair_w_charcoal1.png');
+    this.load.image('aw_logo_carrholme1', 'objects/aw_logo_carrholme1.png');
+    this.load.image('aw_poster_report_carrholme1', 'objects/aw_poster_report_carrholme1.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');
@@ -1679,6 +1688,17 @@ export async function create() {
     // first load. A mission with no social.mailClient and nothing saved stays inactive
     // and sends no mailState (00 S9). Jobs restart their countdown from remainingMs.
     mailScheduler.init({ scenario: gameScenario, saved: gameScenario.savedMailState || null });
+    // Ink-email contacts' timedEmails: queued once each (marked by mail_timed_<npc>_<n>), now or
+    // when their waitForEvent fires. A mission with no ink contacts schedules nothing.
+    try {
+        installTimedEmails({
+            scenario: gameScenario, scheduler: mailScheduler, dispatcher: window.eventDispatcher,
+            globals: window.gameState.globalVariables,
+            writeGlobal: (name, value) => writeMailGlobal(name, value, { openChat: false })
+        });
+    } catch (error) {
+        console.error('Failed to schedule ink-email timedEmails:', error);
+    }
     // Readiness slots that wait on a global (needsGlobal) re-check when it changes. A
     // scenario with no such slot (every shipped mission) installs nothing.
     watchReadinessGlobals({ scenario: gameScenario });
@@ -1981,7 +2001,13 @@ export async function create() {
     const startingRoom = rooms[gameScenario.startRoom];
     if (startingRoom) {
         let playerX, playerY;
-        if (gameScenario.startPosition) {
+        // batch 13: a scenario may name where a reloaded player respawns (resumeSpawn, opt-in,
+        // e.g. by an awareness kiosk). Null for a fresh game or a scenario without the key.
+        const resumeAt = resumeSpawnFor(gameScenario, window.gameState?.globalVariables);
+        if (resumeAt) {
+            playerX = startingRoom.position.x + resumeAt.x * TILE_SIZE;
+            playerY = startingRoom.position.y + resumeAt.y * TILE_SIZE;
+        } else if (gameScenario.startPosition) {
             playerX = startingRoom.position.x + gameScenario.startPosition.x * TILE_SIZE;
             playerY = startingRoom.position.y + gameScenario.startPosition.y * TILE_SIZE;
         } else {

@@ -233,7 +233,7 @@ Full card bank (from `core_16/game_design.md`; Tarrowby defaults, each `id | sit
 
 - S01 | Stream the football on your work laptop at lunch | Allowed | Reasonable personal use in your own time is fine |
 - S02 | Check your own bank account on the work laptop at lunch | Allowed | Personal use in your own time; type the bank's address yourself |
-- S03 | Install a free PDF editor you found online | Ask first (service desk) | There's an approved one; unknown software can carry malware |
+- S03 | Install a free PDF editor you found online | Ask first (service desk) | There's an approved one; unknown software can carry malware. Ask the service desk |
 - S04 | Lend your badge to a colleague who left theirs at home | Not allowed | Everything done with your badge looks like you; reception issues day passes | Locked
 - S05 | Use your work email to sign up to a personal shopping site | Not allowed | Work accounts are for work; if the shop leaks, your work address gets the scams |
 - S06 | Forward a client file to your personal email to finish at home | Not allowed | It leaves the firm's protection; use approved remote access (core_13) |
@@ -241,18 +241,20 @@ Full card bank (from `core_16/game_design.md`; Tarrowby defaults, each `id | sit
 - S08 | Use the company's AI assistant to summarise a public report | Allowed | It's approved, and public information is fine (core_15) |
 - S09 | Paste a customer's complaint into a free public chatbot | Not allowed | Personal data to a firm we have no contract with; use the approved assistant without names (core_15) |
 - S10 | Connect your own phone to the guest Wi-Fi | Allowed | That's what the guest network is for |
-- S11 | Plug in a USB stick a supplier handed you at a fair | Not allowed | Hand it to IT to check (core_13) |
-- S12 | Take your work laptop on holiday abroad | Ask first (manager, then service desk) | Some countries and some data need extra care (core_09) |
+- S11 | Plug in a USB stick a supplier handed you at a fair | Not allowed | Hand it to IT to check first (core_13) |
+- S12 | Take your work laptop on holiday abroad | Ask first (manager, then service desk) | Some countries and some data need extra care; ask your manager, then the service desk (core_09) |
 - S13 | Use the team chat to moan about a colleague | Not allowed | Messages are records and the colleague could read it; talk to your manager |
-- S14 | Install a game on your work phone | Ask first (service desk) | Only apps from the company app store go on work devices |
+- S14 | Install a game on your work phone | Ask first (service desk) | Only apps from the company app store go on work devices; ask the service desk |
 - S15 | Set an out-of-office saying you're away for a fortnight | Allowed | Fine, but say less: your return date and who to contact, not where you are (core_12) |
-- S16 | Log in as a colleague who's off sick, with their permission | Not allowed | It hides who did what; the service desk can give you access | Locked
+- S16 | Log in as a colleague who's off sick, with their permission | Not allowed | It hides who did what; the service desk can give you proper access | Locked
 - S17 | Read out the code from your phone to "IT" on a call | Not allowed | IT never asks for codes; hang up and ring the service desk (core_03) | Locked
 - S18 | Turn off the antivirus because it slows your laptop | Not allowed | It's there to stop malware; ask the service desk to fix the slowness | Locked
 - S19 | Look up a famous customer's address, just to see | Not allowed | Looking without a work reason can be a crime (Data Protection Act 2018, s.170) | Locked
-- S20 | Use your own laptop for work while yours is repaired | Ask first (service desk) | Only through the remote desktop service |
+- S20 | Use your own laptop for work while yours is repaired | Ask first (service desk) | Only through the remote desktop service; ask the service desk |
 - S21 | You think you've sent a file to the wrong customer. Can you wait and say nothing in case it was fine? | Not allowed | Report a suspected mistake straight away; reporting is a duty and the sooner the better (core_04) | Locked
 - S22 | Tell a colleague your password to watch your inbox while you're off | Not allowed | Ask the service desk for shared access; your password is yours alone (core_03) | Locked
+
+(Reasons synced to the shipped bank in `e17/full_only.json` and the shell, design review C1 MI3, 2026-10-29. S03/S14/S20 name "ask the service desk", S11 adds "first", S12 names "ask your manager, then the service desk", S16 says "proper access". All bin assignments and the seven locked answers are unchanged.)
 
 ### 11b. The scored six-item triage set (awareness profile, with a mirror pair)
 
@@ -313,9 +315,9 @@ even though the colleague is genuine; this makes the modelled decline/route the 
   { "id": "e17_meeting_app", "kind": "email",
     "from": { "name": "Harlow Freight (client)", "address": "ops@harlow-freight.example" },
     "to": "you@tarrowby.example",
-    "subject": "Join Tuesday's review, install Meetly first",
+    "subject": "Join Tuesday's review, install Roomcall first",
     "time": "09:40",
-    "body": "Hi,\nWe run our project reviews on Meetly. Please install it from the link below before Tuesday so you can join.\nInstall: https://get.meetly-app.example/win\nThanks,\nHarlow Freight projects",
+    "body": "Hi,\nWe run our project reviews on Roomcall. Please install it from the link below before Tuesday so you can join.\nInstall: https://get.roomcall-app.example/win\nThanks,\nHarlow Freight projects",
     "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "harlow-freight.example", "replyTo": "ops@harlow-freight.example" },
     "truth": { "isPhish": true, "flags": ["unapproved_tool"],
       "perFlagNote": { "unapproved_tool": "Installing an app a client sent is not your call; unknown software can carry malware. Ask the service desk, or suggest our own meeting tool." },
@@ -365,12 +367,12 @@ even though the colleague is genuine; this makes the modelled decline/route the 
       "whyFine": { "default": "A genuine, ordinary policy reminder. Reasonable personal use in your own time is allowed. Handle it." },
       "falseAlarmCost": "Reporting a routine HR reminder just takes a colleague's time." } },
   { "id": "e17_free_tool", "kind": "email",
-    "from": { "name": "QuickConvert", "address": "hello@quickconvert-online.example" },
+    "from": { "name": "Formatmoor", "address": "hello@formatmoor-online.example" },
     "to": "you@tarrowby.example",
     "subject": "Convert any file, free, no install",
     "time": "15:30",
-    "body": "Everyone uses QuickConvert! Upload your file and convert it here, free, no install needed: https://quickconvert-online.example/go",
-    "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickconvert-online.example", "replyTo": "hello@quickconvert-online.example" },
+    "body": "Everyone uses Formatmoor! Upload your file and convert it here, free, no install needed: https://formatmoor-online.example/go",
+    "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "formatmoor-online.example", "replyTo": "hello@formatmoor-online.example" },
     "truth": { "isPhish": true, "flags": ["unapproved_tool"],
       "perFlagNote": { "unapproved_tool": "A free online tool hands the file to a provider we haven't checked; there's an approved way. Ask first, the service desk usually answers the same day." },
       "ifTrusted": "The firm's file goes to an unchecked third party.",
@@ -379,7 +381,7 @@ even though the colleague is genuine; this makes the modelled decline/route the 
 ]
 ```
 
-The invented sender firms (`harlow-freight.example`, `meetly-app.example`, `quickconvert-online.example`)
+The invented sender firms (`harlow-freight.example`, `roomcall-app.example`, `formatmoor-online.example`)
 are generic `.example` lure domains, not named cast; the pre-ship web search for them as real businesses
 is owed (BRAND_SET rule), noted in section 20.
 
@@ -509,4 +511,4 @@ are no flip or `mistake` keys to lint.
 - The organisation answer key's defaults are suggestions; only confirmed cards are drawn, and the seven
   locked cards (S04, S16, S17, S18, S19, S21, S22) cannot be changed.
 - Pre-ship web search for the invented lure sender firms in the section 11b JSON (`harlow-freight.example`,
-  `meetly-app.example`, `quickconvert-online.example`) as real businesses is owed (BRAND_SET rule).
+  `roomcall-app.example`, `formatmoor-online.example`) as real businesses is owed (BRAND_SET rule).

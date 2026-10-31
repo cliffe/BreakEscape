@@ -6097,6 +6097,18 @@
       "w": 17,
       "h": 32,
       "gid": 1448
+    },
+    "aw_logo_carrholme1": {
+      "id": 648,
+      "w": 64,
+      "h": 19,
+      "gid": 1449
+    },
+    "aw_poster_report_carrholme1": {
+      "id": 649,
+      "w": 16,
+      "h": 21,
+      "gid": 1450
     }
   }
 }

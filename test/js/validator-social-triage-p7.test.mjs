@@ -43,7 +43,7 @@ function kindsSet() {
 }
 function mini(over = {}) {
   return {
-    globalVariables: { k_percent: 0, k_reportRate: 0, k_done: false, k_pass: false },
+    globalVariables: { k_percent: 0, k_reportRate: 0, k_complete: false, k_pass: false },
     rooms: { r: { objects: [{ type: 'triage-workstation', id: 'ws', minigameData: { triageSetId: 'k' } }] } },
     social: {
       triageSets: [{
@@ -125,8 +125,8 @@ test('a set holding non-email messages but no channel tells is warned', { skip }
 function check(over = {}, md = { triageSetId: 'c', stage: 'post' }) {
   return {
     globalVariables: {
-      triage_pre_percent: 0, triage_pre_reportRate: 0, triage_pre_done: false, triage_pre_pass: false,
-      triage_post_percent: 0, triage_post_reportRate: 0, triage_post_done: false, triage_post_pass: false
+      triage_pre_percent: 0, triage_pre_reportRate: 0, triage_pre_complete: false, triage_pre_pass: false,
+      triage_post_percent: 0, triage_post_reportRate: 0, triage_post_complete: false, triage_post_pass: false
     },
     rooms: { r: { objects: [{ type: 'triage-workstation', id: 'ws', minigameData: md }] } },
     social: {
@@ -146,9 +146,9 @@ test('comparison: a {stage} set launched as post with its pre globals declared i
 
 test('comparison: pre globals neither declared nor imported are warned; imported ones are fine', { skip }, () => {
   const j = check();
-  for (const k of ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_done', 'triage_pre_pass']) delete j.globalVariables[k];
-  expectIn(lintJson(j), /⚠️.*the comparison reads 'triage_pre_(done|percent|reportRate)', which is neither declared nor imported/, 3);
-  const imports = ['done', 'percent', 'reportRate'].map((s) => ({ from: 'pre_check', var: `triage_pre_${s}`, as: `triage_pre_${s}` }));
+  for (const k of ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_complete', 'triage_pre_pass']) delete j.globalVariables[k];
+  expectIn(lintJson(j), /⚠️.*the comparison reads 'triage_pre_(complete|percent|reportRate)', which is neither declared nor imported/, 3);
+  const imports = ['complete', 'percent', 'reportRate'].map((s) => ({ from: 'pre_check', var: `triage_pre_${s}`, as: `triage_pre_${s}` }));
   assert.deepEqual(lintJson(j, imports), []);
 });
 
@@ -163,7 +163,7 @@ test('comparison: shape, prePrefix, requireGlobal, a literal post prefix, and a 
   assert.deepEqual(lintJson(ok, [{ from: 'pre_check', var: 'x', as: 'pre_check_completed' }].concat([])), []);
   // a literal prefix run as post cannot find the pre globals without prePrefix
   const lit = check({ stage: 'post', outcome: { setGlobalPrefix: 'aw_', passPercent: 0 } }, { triageSetId: 'c' });
-  lit.globalVariables = { aw_percent: 0, aw_reportRate: 0, aw_done: false, aw_pass: false };
+  lit.globalVariables = { aw_percent: 0, aw_reportRate: 0, aw_complete: false, aw_pass: false };
   expectIn(lintJson(lit), /⚠️.*runs as post but its setGlobalPrefix has no \{stage\} token and comparison has no prePrefix/);
   lit.social.triageSets[0].comparison = false;
   assert.deepEqual(lintJson(lit), []);

@@ -89,7 +89,7 @@
 
   "mail_terminal": {
     "required": [],
-    "optional": ["accountIds", "defaultAccount", "maxSends", "layout", "readOnly"]
+    "optional": ["accountIds", "defaultAccount", "maxSends", "layout", "readOnly", "composeTo"]
   },
 
   "case-file": {
@@ -115,12 +115,16 @@
 
   "triage-workstation": {
     "required": [],
-    "optional": ["triageSetId", "stage", "conclusionTaskId"]
+    "optional": ["triageSetId", "stage", "conclusionTaskId", "skin"]
   },
 
   "authenticator-device": {
     "required": [],
-    "optional": ["pushes", "approvesAt", "mode", "choice", "pushTemplate", "defenderNote", "strings", "setGlobalPrefix"]
+    "optional": ["pushes", "approvesAt", "mode", "choice", "pushTemplate", "defenderNote", "strings", "setGlobalPrefix", "lockUntilOutcome"]
+  },
+  "exercise-station": {
+    "required": [],
+    "optional": ["scene", "exerciseId", "config", "setGlobalPrefix", "skin"]
   },
   "kiosk": {
     "required": ["episodeId"],

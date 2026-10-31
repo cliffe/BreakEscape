@@ -14,6 +14,10 @@ Each entry: a short title, where it came from, the idea in two or three sentence
 - **Keypad-residue dusting** (m06 fixer; S–M). Dust a keypad for worn keys to narrow a PIN: a natural, educational second use of the fingerprint kit (e.g. Satoshi's safe).
 - **Pixel-art surfaces for dusting** (fingerprint art pass; S). Mugs, glass and desk surfaces are still drawn procedurally. The PixelLab backing card looked worse than the procedural one, so try surfaces one at a time and keep whichever looks better.
 
+- **Authenticator from the target's side** (minigame reuse review, 2026-10-30; M). A `mode: "target"` where unexpected push prompts arrive and the player must deny them, with live Approve/Deny buttons and an approved/denied result. Suits a SAFETYNET defence beat or an Eldritch victim scene. See docs/agents/MINIGAME_REUSE_REVIEW.md.
+- **Mid-round save for room triage workstations** (minigame reuse review, 2026-10-30; S–M). Opt-in `minigameData.saveProgress` storing answers in a `<prefix>progress` global; today only the episode runner resumes a round.
+- **Route the remaining fixed English text through each minigame's strings table** (minigame reuse review, 2026-10-30; M). Scheduled for after the awareness course release, as one batch. List per minigame in docs/agents/minigame_reuse/.
+
 ## Engine and UI
 
 From the PIN cracker fix (2026-10-10), found but not fixed:

@@ -1,6 +1,7 @@
 {
   "scenario_id": "awareness_pre_helpdesk_ba",
   "scenario_name": "Service desk check: before (BA)",
+  "titleScreenName": "Starting check",
   "scenario_brief": "The first of two short checks for IT service desk staff at Quayholt Insurance, a fictional company. Ten items from the IT service desk queue: calls, a voicemail, emails and a sign-in prompt. Decide what to do with each one. Your result is saved so the second check can compare with it.",
   "endGoal": "Work through the ten items at the training kiosk.",
   "version": "1.0",
@@ -30,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "triage_pre_done"
+          "triage_pre_complete"
         ]
       },
       "conclusionScreen": {
@@ -53,13 +54,12 @@
     "se_awareness_records": [],
     "triage_pre_percent": 0,
     "triage_pre_reportRate": 0,
-    "triage_pre_done": false,
-    "triage_pre_pass": false
+    "triage_pre_complete": false
   },
   "exportGlobals": [
     "triage_pre_percent",
     "triage_pre_reportRate",
-    "triage_pre_done"
+    "triage_pre_complete"
   ],
   "social": {
     "triageSets": [
@@ -124,7 +124,7 @@
             "id": "hb_coo_reset_bypass",
             "from": {
               "name": "Patrick Kerrigan",
-              "address": "patrick.kerrigan.coo@quickpost-mail.example"
+              "address": "patrick.kerrigan.coo@hastypost.example"
             },
             "to": "servicedesk@quayholt.example",
             "subject": "Reset my password and send it here",
@@ -134,8 +134,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "quickpost-mail.example",
-              "replyTo": "patrick.kerrigan.coo@quickpost-mail.example"
+              "envelopeFrom": "hastypost.example",
+              "replyTo": "patrick.kerrigan.coo@hastypost.example"
             },
             "truth": {
               "isPhish": true,
@@ -145,11 +145,11 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "The chief operating officer's name on a personal inbox at quickpost-mail.example, not quayholt.example",
+                "senderTrust": "The chief operating officer's name on a personal inbox at hastypost.example, not quayholt.example",
                 "secrecy_or_bypass": "'Keep it off the ticket system' and 'no need to ring me' remove the record and the check",
                 "urgencyCalibrated": "'Boarding in twenty minutes' leaves no time to ring him"
               },
-              "headerNote": "The automatic checks pass because the message really was sent from quickpost-mail.example. A pass tells you which mail system sent it, not that it's Patrick.",
+              "headerNote": "The automatic checks pass because the message really was sent from hastypost.example. A pass tells you which mail system sent it, not that it's Patrick.",
               "ifTrusted": "A new password would go to whoever owns that inbox, and they would be in Patrick's account.",
               "reportReply": "Thanks. Patrick didn't send it. His real address is on quayholt.example."
             }
@@ -470,7 +470,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:triage_pre_done",
+              "eventPattern": "global_variable_changed:triage_pre_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "finish_check"

@@ -14,6 +14,11 @@
 //            outcome } for the flip and reopens itself once the chat has closed. A reopen
 //            from the kiosk after a reload finds the outcome set and moves on the same way.
 //   mfa      (E3) opens 'authenticator' with episode.mfa { pushes, approvesAt, mode }
+//   guess    (E9, ENG-02) opens 'password-guesser' with episode.guess: an authored guess list stepped
+//            through for one colleague. The scene writes guess.landedGlobal when an account opens; the
+//            flip shows the victim's seat (flipAftermath) only when that global is true
+//   mistake  (consequence episodes, ENG-04) opens 'consequence-sandbox' with episode.mistake; the
+//            beat choices are held in the state for the montage flip (flip.mode "montage")
 //   flip     drawn here with renderFlipView (P7-B): the sent email, the built page (E5) or the
 //            call (E3); flipMissed when something went but did not land. Continue clears the
 //            held ids
@@ -48,7 +53,7 @@
 import { SocialOverlayScene, socialOverlayParams } from '../framework/social-overlay.js';
 import { writeGlobal } from '../../systems/global-writer.js';
 import { recordTriageResult } from '../../systems/awareness-measure.js';
-import { resolvePlayerSent } from '../inbox-triage/triage-messages.js';
+import { resolvePlayerSent, plainSentMessage } from '../inbox-triage/triage-messages.js';
 import { renderStepStrip, applyBrand } from './step-strip.js';
 import { renderFlipView } from './flip-view.js';
 import { renderDebrief } from './debrief-view.js';
@@ -56,8 +61,11 @@ import { episodeDefendSet } from './role-swap.js';
 import {
     stagesFor, stateKey, readState, completeStage, childLaunch, variantOf,
     sentFromRecord, findSentRecord, flipEntry, measurementCtx, defendSummary,
-    writeKind, sentFromCall, callOutcomeKey, flipPage, flipCall, CALL_LANDED,
-    awarenessSettings, reportRouteFor
+    writeKind, worldFor, sentFromCall, callOutcomeKey, flipPage, flipCall, CALL_LANDED,
+    awarenessSettings, reportRouteFor, flipAftermathFor, isMontage, montageProps, guessLanded, sandboxRecap,
+    drillPending, drillLaunchCopy, drillLaunchParams, drillRecord,
+    concernPending, concernLaunchCopy, concernLaunchParams, concernRecord, concernRecap,
+    privacyPending, privacyLaunchCopy, privacyLaunchParams, privacyRecord
 } from './episode-model.js';
 
 /**
@@ -81,6 +89,8 @@ const STAGE_COPY = Object.freeze({
     build: { heading: 'Build', text: 'Build the page your message will link to. Close the builder when the page is ready.', button: 'Open the page builder' },
     write: { heading: 'Write', text: 'Write one message using what you found. The meter gives you hints before you send. Your first Send is final.', button: 'Open the mail client' },
     mfa: { heading: 'Sign-in prompts', text: 'You have the password, but the account still wants a tap on the target\u2019s phone. Choose when to fire the sign-in prompts and how many, then see what happens. Close it when you have seen enough.', button: 'Open the phone' },
+    guess: { heading: 'Guess list', text: 'Step a made-up guesser through one colleague\u2019s guess list, built from what you found. Nothing real is typed and nothing here is a real password.', button: 'Open the guesser' },
+    mistake: { heading: 'Everyday choices', text: 'Work through a few ordinary choices from a normal day. They are not scored, but the debrief comes back to any worth a second look, so choose what you would really do.', button: 'Make the choices' },
     defend: { heading: 'Defend', text: 'Now you are on the receiving end. Go through the inbox and decide what to do with each message.', button: 'Open the inbox' },
     check: { heading: 'Check', text: 'Go through these messages and decide what to do with each one. Your answers are recorded.', button: 'Start' }
 });
@@ -103,6 +113,13 @@ const VOICE_DEFEND_ONLY_COPY = Object.freeze({ heading: 'Defend', text: 'Go thro
 // Message kinds read as a work phone (11 E6; push is the authenticator prompt).
 const PHONE_KINDS = new Set(['sms', 'qr', 'push']);
 const FINISHED_TEXT = 'You have finished this exercise. You can close this window.';
+// batch-13 item 4 (E17 C4 N1): a short send-off under the "Episode finished" panel, shown only
+// straight after the debrief's Finish (not on a reopen). strings.sendOff replaces it; '' drops it.
+const SEND_OFF_TEXT = 'Thanks for working through this one. Take the habit with you: if something seems off, stop and check before you act.';
+// ENG-10: the once-per-learner finished line (strings.alreadySeen), and the multi-card brief's
+// button defaults (strings.briefDone). Card copy and the done global are data.
+const ALREADY_SEEN_TEXT = 'You have seen this already. You can close this window.';
+const BRIEF_COPY = Object.freeze({ next: 'Next', back: 'Back', done: 'Got it' });
 const CALL_WAIT_MS = 300;                 // how often the call watcher looks for the chat closing
 const CALL_WAIT_LIMIT = 4 * 60 * 60 * 1000 / CALL_WAIT_MS; // gives up after four hours (a reopen still resumes)
 const LAUNCH_FAILED = 'That did not open. Close this window and try the kiosk again.';
@@ -203,6 +220,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             now: () => Date.now(),
             schedule: (fn, ms) => setTimeout(fn, ms),
             clearScheduled: (h) => clearTimeout(h),
+            // World-play (ENG-05a): loaded on first use so a runner without `world` never touches them.
+            enterWorld: (world) => import('../../utils/world-play.js').then((m) => m.enterWorld(world)),
+            leaveWorld: (world) => import('../../utils/world-play.js').then((m) => m.leaveWorld(world)),
             ...(isObj(this.params.deps) ? this.params.deps : {})
         };
         this.strip = null;
@@ -260,7 +280,32 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         } catch (e) {
             console.error('[episode] could not write the state global:', e);
         }
+        this._writeDone(state);
         win().stateSync?.sync?.();
+    }
+
+    /**
+     * ENG-10: awarenessEpisode.doneGlobal is set true once, when the last stage ends (state.stage
+     * is null). An episode without the key writes nothing new.
+     */
+    _writeDone(state) {
+        const name = this.episode.doneGlobal;
+        if (!isStr(name) || state.stage) return;
+        const g = this.globals;
+        if (g && g[name] === true) return;
+        try {
+            this.deps.write(name, true, { openChat: false });
+        } catch (e) {
+            console.error('[episode] could not write the done global:', e);
+        }
+    }
+
+    /** ENG-10: oncePerLearner, with the done global already true when the runner opens. */
+    _seenAlready() {
+        const name = this.episode.doneGlobal;
+        if (this.episode.oncePerLearner !== true || !isStr(name)) return false;
+        const g = this.globals;
+        return !!g && g[name] === true;
     }
 
     // ── lifecycle ────────────────────────────────────────────────────────────
@@ -286,7 +331,9 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this.gameContainer.appendChild(root);
 
         this.state = this._readState();
+        this.alreadySeen = this._seenAlready();
         this._settleCall();
+        this._settleWorld();
         // A pause carried back by a child's return or the triage reopen; only for a stage
         // that is done, and never once the episode has finished.
         const after = this.params.pauseAfter;
@@ -328,7 +375,8 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this._destroyView();
         const stage = this.state.stage;
         this.strip?.update?.({ current: stage, done: this.state.done, skipped: this._skippedStages() });
-        if (this.pauseAfter && stage) this._renderPause();
+        if (this.alreadySeen) this._renderFinished();
+        else if (this.pauseAfter && stage) this._renderPause();
         else if (stage === 'brief') this._renderBrief();
         else if (stage === 'flip') this._renderFlip();
         else if (stage === 'debrief') this._renderDebrief();
@@ -381,8 +429,48 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         return btn;
     }
 
+    _briefCards() {
+        const cards = this.strings.briefCards;
+        if (!Array.isArray(cards)) return [];
+        return cards.filter((c) => isObj(c) && isStr(c.text) && c.text.trim());
+    }
+
+    /**
+     * ENG-10: strings.briefCards, one card at a time with Back, Next and "Card n of m"; the last
+     * card's button is strings.briefDone ("Got it") and completes the brief stage. Plain text, a
+     * blank line starts a paragraph.
+     */
+    _renderBriefCards(cards) {
+        const ep = this.episode;
+        const last = cards.length - 1;
+        const index = Math.min(Math.max(this.briefIndex || 0, 0), last);
+        this.briefIndex = index;
+        const card = cards[index];
+        const panel = this._panel(isStr(card.heading) ? card.heading : (ep.brand?.name || this.params.title || 'Brief'));
+        panel.classList.add('epr-brief-card');
+        for (const para of card.text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean)) {
+            panel.appendChild(el('p', 'epr-text', para));
+        }
+        if (index === 0 && isStr(ep.scopeNote)) panel.appendChild(el('p', 'epr-scope', ep.scopeNote));
+        const count = el('p', 'epr-card-count', `Card ${index + 1} of ${cards.length}`);
+        count.setAttribute('aria-live', 'polite');
+        panel.appendChild(count);
+        const prompt = this._groupPrompt(panel, 'brief');
+        if (prompt) panel.appendChild(prompt);
+        const go = (to) => {
+            this.briefIndex = to;
+            this._render();
+            this._focus();
+        };
+        if (index > 0) this._button(panel, BRIEF_COPY.back, () => go(index - 1), 'epr-back');
+        if (index < last) this._button(panel, BRIEF_COPY.next, () => go(index + 1), 'epr-next');
+        else this._button(panel, isStr(this.strings.briefDone) ? this.strings.briefDone : BRIEF_COPY.done, () => this._complete('brief'), 'epr-start epr-done');
+    }
+
     _renderBrief() {
         const ep = this.episode;
+        const cards = this._briefCards();
+        if (cards.length) return this._renderBriefCards(cards);
         const panel = this._panel(ep.brand?.name || this.params.title || 'Brief', this.strings.brief);
         if (isStr(ep.scopeNote)) panel.appendChild(el('p', 'epr-scope', ep.scopeNote));
         const prompt = this._groupPrompt(panel, 'brief');
@@ -392,6 +480,12 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
 
     /** The panel copy for a stage that opens another tool. */
     _stageCopy(stage) {
+        // ENG-11: with a sort drill still to do, the defend panel opens the drill, not the inbox.
+        if (stage === 'defend' && drillPending(this.episode, this.state)) return drillLaunchCopy(this.episode);
+        // ENG-12: then the concern form, if the episode has one.
+        if (stage === 'defend' && concernPending(this.episode, this.state)) return concernLaunchCopy(this.episode);
+        // ENG-13: then the privacy panel, if there is one.
+        if (stage === 'defend' && privacyPending(this.episode, this.state)) return privacyLaunchCopy(this.episode);
         const copy = this._baseStageCopy(stage);
         // strings.stages.<stageId> { heading, text, button } replaces any of the three lines.
         const own = isObj(this.strings.stages) && isObj(this.strings.stages[stage]) ? this.strings.stages[stage] : null;
@@ -419,6 +513,15 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         this.notice = el('p', 'epr-notice');
         this.notice.setAttribute('aria-live', 'polite');
         panel.appendChild(this.notice);
+        // E14 F11: the compose draft is not kept across a close or reload, so a reopen starts the
+        // message again. Say so on the launch panel, as the sort drill and concern form do.
+        // strings.writeReloadNote: '' suppresses it; a compose write stage only (not a call).
+        if (stage === 'write' && writeKind(this.episode) !== 'call') {
+            const note = this.strings.writeReloadNote === '' ? ''
+                : (isStr(this.strings.writeReloadNote) ? this.strings.writeReloadNote
+                    : 'If you close or reload before you send, your draft starts again.');
+            if (note) panel.appendChild(el('p', 'epr-reload-note', note));
+        }
         this._button(panel, copy.button, () => this._launch(stage), 'epr-launch');
         // From the write stage, always offer a way back to research. A learner who closed the
         // browser without noting a contact or a fact the message needs is otherwise stuck with
@@ -437,9 +540,13 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
      * email, so the 'flip' step reads "The call" rather than the default "Your message" (E3-6).
      */
     _stripLabels() {
+        // strings.stepLabels is the built home; ENG-01 adds episode.stepLabels, which wins.
         const own = isObj(this.strings.stepLabels) ? this.strings.stepLabels : null;
-        const base = writeKind(this.episode) === 'call' ? { flip: 'The call' } : undefined;
-        return own ? { ...base, ...own } : base;
+        const top = isObj(this.episode.stepLabels) ? this.episode.stepLabels : null;
+        let base = writeKind(this.episode) === 'call' ? { flip: 'The call' } : undefined;
+        // A consequence episode's flip is the montage of where the choices led (ENG-04).
+        if (isMontage(this.episode)) base = { ...base, flip: 'Where it led' };
+        return own || top ? { ...base, ...own, ...top } : base;
     }
 
     /**
@@ -455,6 +562,12 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             if (outcome && outcome !== CALL_LANDED) out.push('mfa');
         }
         return out;
+    }
+
+    /** True when strings.flipDefenderLineByChoice has a non-empty line for this pretext template id. */
+    _hasChoiceLine(templateId) {
+        const by = this.strings?.flipDefenderLineByChoice;
+        return isObj(by) && isStr(templateId) && isStr(by[templateId]);
     }
 
     _flipMessage() {
@@ -476,8 +589,17 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
      * tells, or a call that did not land.
      */
     _flipProps() {
+        // flip.mode "montage" (ENG-04): every beat, with where the learner's choice led.
+        if (isMontage(this.episode)) return montageProps(this.episode, this.state.mistakeChoices ?? null);
         const sent = this.state.sent;
         const globals = this.globals || {};
+        // ENG-02: a guess stage has no message, page or call to replay. It landed when the guesser wrote
+        // its landed global; the flip then shows the victim's seat, else the did-not-land view.
+        if (sent?.kind === 'guess') {
+            const landed = guessLanded(this.episode, globals);
+            const aftermath = landed ? flipAftermathFor(this.episode, { landed }) : null;
+            return { message: null, page: null, call: null, guess: landed, missed: !landed, ...(aftermath ? { aftermath } : {}) };
+        }
         if (sent?.kind === 'call') {
             const call = flipCall(this.episode, this.social, sent, globals);
             return { message: null, page: null, call, missed: !call };
@@ -487,7 +609,13 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         // narrative would be false — so show the did-not-land view, as a failed call does (N2).
         const rec = sent?.recordId ? findSentRecord(this.mailState, sent.targetId ?? null, [sent.recordId]) : null;
         if (rec && rec.landed === false) return { message: null, page: null, call: null, missed: true };
-        const message = this._flipMessage();
+        let message = this._flipMessage();
+        // aw-ux2: a landed message with no scored tell is replayed (tells list empty) instead of the
+        // "nothing to replay" view, but only when the episode authors a defender line for the pretext
+        // the learner chose (strings.flipDefenderLineByChoice[templateId]); otherwise unchanged.
+        if (!message && rec?.landed === true && this._hasChoiceLine(sent?.templateId)) {
+            message = plainSentMessage(rec, flipEntry(this.episode, this.defendSet));
+        }
         let page = null;
         try { page = flipPage(this.episode, this.social, globals); } catch (e) { console.error('[episode] could not rebuild the page:', e); }
         // Something went but there is nothing to replay. When the record says it landed (a careful
@@ -495,7 +623,11 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         // falling back to flipMissed); a record that cannot be found reads as a miss, as before.
         const nothing = !message && !page && !!sent?.recordId;
         const landedNoTells = nothing && rec?.landed === true;
-        return { message, page, call: null, missed: nothing && !landedNoTells, landedNoTells };
+        const out = { message, page, call: null, missed: nothing && !landedNoTells, landedNoTells };
+        // ENG-01: the victim's seat, only for a landed mail or page (rec.landed === false returned above).
+        const aftermath = (message || page) ? flipAftermathFor(this.episode, { landed: rec?.landed !== false }) : null;
+        if (aftermath) out.aftermath = aftermath;
+        return out;
     }
 
     _renderFlip() {
@@ -505,9 +637,33 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             // aw2: the pretext the learner chose, so the flip can quote back a per-choice defender
             // line (strings.flipDefenderLineByChoice). A call has no pretext template; null there.
             templateId: this.state.sent?.templateId ?? null,
-            onContinue: () => this._complete('flip')
+            onContinue: () => this._flipContinue()
         });
         this._prependPrompt('flip');
+    }
+
+    /**
+     * The flip's Continue. When the episode authors an assistant block (ENG-06, E13), Continue
+     * opens the authored assistant overlay in the flip region; on its normal close the runner
+     * reopens (returnTo) and the stage advances to defend. Without the key, Continue completes
+     * the flip exactly as before, so every built episode is unchanged.
+     */
+    _flipContinue() {
+        const config = this.episode.assistant;
+        if (!isObj(config)) { this._complete('flip'); return; }
+        this._launching = 'flip';
+        const child = this.launchChild('assistant-chat', socialOverlayParams({
+            config,
+            episodeId: this.episode.id ?? null,
+            // E13 MA3: the sent pretext, so the summarise mode surfaces the branch the learner wrote.
+            sentTemplateId: this.state.sent?.templateId ?? null,
+            // batch 11 (E13 B2 finding 11): the assistant window hands back a recap of the wrong
+            // outcomes (password left in, figures sent unchecked). It is kept in the state so the
+            // debrief looks back at the assistant stage, not only the inbox. Absent/empty → no key.
+            onComplete: (success, result) => { if (isNormal(success, result)) this._completeWhileAway('flip', { assistant: result?.recap ?? [] }); }
+        }));
+        this._launching = null;
+        if (!child) this._complete('flip'); // the scene did not open: do not strand the learner
     }
 
     /** Above a P7-B view, the stage's group prompt (facilitated mode). */
@@ -532,9 +688,23 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
             reportRoute: reportRouteFor(this.episode, this.social, config),
             ruleOfThumb: settings.ruleOfThumb,
             teamSize: settings.teamSize,
+            // E17 B2 finding: recap the scored sort-drill cards the learner put in the wrong bin.
+            drillRecap: Array.isArray(this.state.drill?.recap) ? this.state.drill.recap : [],
+            // batch 11: recap the sandbox choices and the assistant window outcomes the learner got
+            // wrong, so the debrief is not only about the inbox. Empty (and so not rendered) for a
+            // defend-only variant, which runs neither stage.
+            sandboxRecap: Array.isArray(this.state.sandbox) ? this.state.sandbox : [],
+            assistantRecap: Array.isArray(this.state.assistant) ? this.state.assistant : [],
+            // batch 13: look back at the concern form's report (facts filed, required ones left
+            // out, any conclusion left in). Null, and so not drawn, without a form record.
+            concernRecap: concernRecap(this.episode, this.state.concern),
             onFinish: () => {
+                // E15/E17 B2 finding: Finish must not drop the learner straight back to the world
+                // (two toasts and a narration line were the only end signal). Completing the last
+                // stage renders the clear "Episode finished" panel; the bar's Close then closes it.
+                this._sendOffDue = true; // the send-off shows under this fresh finish only
                 this._complete('debrief');
-                this.close();
+                if (!this.gameState.isActive) this.close();
             }
         });
         this._prependPrompt('debrief');
@@ -542,8 +712,19 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
 
     /** The bar's Close is the only Close: the panel says it is finished and nothing more. */
     _renderFinished() {
-        const panel = this._panel('Finished', FINISHED_TEXT);
+        const seen = this.alreadySeen;
+        // E15/E17 B2 finding: the end of the episode must be unmistakable. A fresh finish reads
+        // "Episode finished"; a reopen after it was seen keeps the quieter "Finished".
+        const heading = seen ? 'Finished' : (isStr(this.strings.finishedHeading) ? this.strings.finishedHeading : 'Episode finished');
+        const panel = this._panel(heading, seen && isStr(this.strings.alreadySeen) ? this.strings.alreadySeen
+            : (seen ? ALREADY_SEEN_TEXT : (isStr(this.strings.finished) ? this.strings.finished : FINISHED_TEXT)));
         panel.classList.add('epr-finished');
+        // batch-13 item 4: the send-off, once, right after Finish. A reopen of a finished episode
+        // (or a once-per-learner "seen already") shows the panel without it.
+        const due = this._sendOffDue === true && !seen;
+        this._sendOffDue = false;
+        const sendOff = typeof this.strings.sendOff === 'string' ? this.strings.sendOff : SEND_OFF_TEXT;
+        if (due && sendOff.trim()) panel.appendChild(el('p', 'epr-send-off', sendOff));
     }
 
     _complete(stageId, patch = {}) {
@@ -600,13 +781,75 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                     if (isNormal(success, result)) this._completeWhileAway('mfa');
                 }
             }));
+        } else if (spec.kind === 'guess') {
+            child = this.launchChild(spec.sceneType, socialOverlayParams({
+                ...spec.params,
+                onComplete: (success, result) => {
+                    // Advance only once the rig has been switched off after every guess; closing
+                    // part-way stays on the stage. The scene has already written the landed global.
+                    if (isNormal(success, result) && result?.finished === true) {
+                        this._completeWhileAway('guess', { sent: { kind: 'guess' } });
+                    }
+                }
+            }));
+        } else if (spec.kind === 'mistake') {
+            child = this.launchChild(spec.sceneType, socialOverlayParams({
+                ...spec.params,
+                onComplete: (success, result) => {
+                    // Advance only once every beat is answered; closing part-way stays on the stage.
+                    if (isNormal(success, result) && result?.finished === true) {
+                        const choices = result.mistakeChoices ?? {};
+                        // batch 11 (E11 B2 finding 5): keep a recap of the wrong choices so the
+                        // debrief can look back at them (mistakeChoices itself is cleared at the flip).
+                        this._completeWhileAway('mistake', { mistakeChoices: choices, sandbox: sandboxRecap(this.episode, choices) });
+                    }
+                }
+            }));
         } else if (spec.kind === 'call') {
-            child = this._launchCall(spec.params);
+            const world = worldFor(this.episode);
+            // A world-play call places the learner first, so the launch is a promise (truthy);
+            // it reports its own failure.
+            child = world ? this._launchWorldCall(spec.params, world) : this._launchCall(spec.params);
+        } else if (spec.kind === 'triage' && stage === 'defend' && drillPending(this.episode, this._readState())) {
+            // ENG-11: the sort drill comes first in the defend stage. Its record is kept in the
+            // state, so the panel then opens the inbox. A drill closed part-way keeps nothing.
+            child = this.launchChild('sort-drill', socialOverlayParams(drillLaunchParams(this.episode, this._drillOverrides(), {
+                onComplete: (success, result) => {
+                    if (!isNormal(success, result)) return;
+                    this._saveState({ ...this._readState(), drill: drillRecord(result) });
+                }
+            })));
+        } else if (spec.kind === 'triage' && stage === 'defend' && concernPending(this.episode, this._readState())) {
+            // ENG-12: the concern form follows any drill and comes before the inbox. Its record
+            // is kept in the state, so the panel then opens the inbox. Closed part-way keeps nothing.
+            child = this.launchChild('concern-form', socialOverlayParams(concernLaunchParams(this.episode, {
+                onComplete: (success, result) => {
+                    if (!isNormal(success, result)) return;
+                    this._saveState({ ...this._readState(), concern: concernRecord(result) });
+                }
+            })));
+        } else if (spec.kind === 'triage' && stage === 'defend' && privacyPending(this.episode, this._readState())) {
+            // ENG-13: the privacy panel comes after the drill and before the inbox. Its record is
+            // kept in the state. The panel reads the board's found facts and changes none of them.
+            child = this.launchChild('privacy-panel', socialOverlayParams(privacyLaunchParams(this.episode, {
+                social: this.social,
+                globals: this.globals,
+                onComplete: (success, result) => {
+                    if (!isNormal(success, result)) return;
+                    this._saveState({ ...this._readState(), privacy: privacyRecord(result) });
+                }
+            })));
         } else if (spec.kind === 'triage') {
             child = this._launchTriage(stage, spec.options);
         }
         this._launching = null;
         if (!child && this.gameState.isActive && this.notice) this.notice.textContent = isStr(this.strings.launchFailed) ? this.strings.launchFailed : LAUNCH_FAILED;
+    }
+
+    /** A deployment's per-card changes to the drill bank (breakEscapeConfig.awareness.sortDrillCards), or null. */
+    _drillOverrides() {
+        const o = win().breakEscapeConfig?.awareness?.sortDrillCards;
+        return isObj(o) ? o : null;
     }
 
     // ── the pretext call (E3) ────────────────────────────────────────────────
@@ -633,12 +876,24 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
     }
 
     /**
+     * The osint-browser launch the prep card uses for its "Back to research" button (item 5): the
+     * same scene and site list the write panel's Back-to-research opens, starting on the first site.
+     * null when the episode has no research stage, so the prep shows no button.
+     */
+    _researchLaunch() {
+        if (!stagesFor(this.episode).includes('osint')) return null;
+        const spec = childLaunch(this.episode, 'osint');
+        if (!spec || spec.kind !== 'osint') return null;
+        return { scene: spec.sceneType, params: { ...spec.params, start: '@home' } };
+    }
+
+    /**
      * Open pretext-prep for the episode's call. A Close on the prep card returns here with the
      * stage unchanged. Begin replaces the prep with the phone chat, which has no way back, so
      * a watcher waits for the outcome global and for every overlay to close, then holds the
      * call for the flip and reopens the runner.
      */
-    _launchCall(params) {
+    _launchCall(params, handBack = null) {
         const callId = params.callId;
         const spec = (Array.isArray(this.social.pretextNpcs) ? this.social.pretextNpcs : [])
             .find((c) => isObj(c) && c.callId === callId) || null;
@@ -652,16 +907,58 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         const npcId = cfg?.channels?.phone || cfg?.channels?.person || null;
         const before = this._callOutcome();
         const reopen = this._reopenParams();
-        const child = this.launchChild('pretext-prep', socialOverlayParams({ callId, character, npcId }));
+        const child = this.launchChild('pretext-prep', socialOverlayParams({ callId, character, npcId,
+            // batch-12 item 5: when the episode has a research stage, hand the prep card a way back
+            // to it. The prep opens research as its own child (so the player keeps their place and,
+            // in a world-play call, their spot in the lobby) and returns to the card with the fact
+            // now held. Without a research stage the field is absent and no button shows (E12 F1).
+            researchLaunch: this._researchLaunch() }));
         if (child) {
             watchCall({
-                episode: this.episode, callId, before, reopen,
+                episode: this.episode, callId, before, reopen, handBack,
                 globals: () => this.params.globals || win().gameState?.globalVariables || null,
                 save: (state) => { this.deps.write(stateKey(this.episode.id), state, { openChat: false }); win().stateSync?.sync?.(); },
                 schedule: this.deps.schedule, clearScheduled: this.deps.clearScheduled
             });
         }
         return child;
+    }
+
+    /**
+     * World-play (ENG-05a): move the learner into the lobby in the costume, then open the same
+     * pretext-prep card as any call. The watcher puts them back before the runner reopens for the
+     * flip. If the lobby cannot be entered nothing is launched and the learner stays at the kiosk.
+     */
+    async _launchWorldCall(params, world) {
+        const id = this.episode.id;
+        const back = async () => {
+            worldAway.delete(id);
+            try { await this.deps.leaveWorld(world); } catch (e) { console.error('[episode] world hand-back failed:', e); }
+        };
+        const fail = async () => {
+            await back();
+            if (this.gameState.isActive && this.notice) this.notice.textContent = isStr(this.strings.launchFailed) ? this.strings.launchFailed : LAUNCH_FAILED;
+            return null;
+        };
+        worldAway.add(id);
+        let placed = false;
+        try { placed = await this.deps.enterWorld(world); } catch (e) { console.error('[episode] world entry failed:', e); }
+        if (!placed) return fail();
+        this._launching = 'write'; // read by returnParams() while launchChild builds returnTo
+        const child = this._launchCall(params, back);
+        this._launching = null;
+        return child || fail();
+    }
+
+    /**
+     * A reopen with the learner still away (the prep card was closed, so no call ran): bring them
+     * back. A no-op unless this module sent them away, so it costs nothing without `world`.
+     */
+    _settleWorld() {
+        const world = worldFor(this.episode);
+        if (!world || !worldAway.has(this.episode.id)) return;
+        worldAway.delete(this.episode.id);
+        Promise.resolve(this.deps.leaveWorld(world)).catch((e) => console.error('[episode] world hand-back failed:', e));
     }
 
     /** A child's onComplete runs after this overlay has closed: save from the stored state. */
@@ -700,6 +997,11 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                 // A debrief later in this episode carries the real-items cost and why lines, so the
                 // triage result names the items only (disc_visible). A check ends on the result.
                 debriefFollows: debriefAfter(episode, stage),
+                // item 8 (E12 B2 finding 3): save each locked verdict so a reload mid-round resumes
+                // where the learner was, and restore them when the round reopens. The triage
+                // minigame uses these only when present, so every other scenario is unchanged.
+                restoreAnswers: Array.isArray(this.state.defendProgress) ? this.state.defendProgress : null,
+                onProgress: (answers) => this._saveTriageProgress(answers),
                 onComplete: (success, result) => this._triageDone(stage, options, holder, reopenBase, episode, set, success, result)
             });
         } catch (e) {
@@ -708,6 +1010,15 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
         holder.launched = launched;
         if (!launched) this.params.suspended = false;
         return launched;
+    }
+
+    /** item 8: persist the in-progress triage verdicts without advancing the stage. */
+    _saveTriageProgress(answers) {
+        try {
+            this._saveState({ ...this._readState(), defendProgress: Array.isArray(answers) ? answers : [] });
+        } catch (e) {
+            console.error('[episode] saving triage progress failed:', e);
+        }
     }
 
     _triageDone(stage, options, holder, reopenBase, episode, set, success, result) {
@@ -746,6 +1057,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
                 stage: s.stage,
                 done: [...s.done],
                 sentHeld: !!s.sent,
+                mistakeHeld: !!s.mistakeChoices,
                 facilitated: this.facilitated,
                 paused: !!(this.pauseAfter && s.stage)
             }
@@ -756,6 +1068,7 @@ export class EpisodeRunnerMinigame extends SocialOverlayScene {
 // ── the call watcher (module level: the runner is closed while the call runs) ─────
 
 const callWatches = new Map(); // episode id -> { stop }
+const worldAway = new Set();   // episode ids whose learner this module has moved into the world room (ENG-05a)
 
 export function stopCallWatch(episodeId) {
     callWatches.get(episodeId)?.stop?.();
@@ -766,10 +1079,10 @@ export function stopCallWatch(episodeId) {
  * Wait for the pretext call to end. Heard: the outcome global changed (the change event) or
  * holds a value it did not hold at launch. Then, once no overlay is open (the chat and its
  * debrief have closed), write the write stage done with the call held, and reopen the runner.
- * If the runner is open again first (the prep card was closed), the watch ends. Exposed for
- * the tests.
+ * If the runner is open again first (the prep card was closed), the watch ends. `handBack`
+ * (optional, ENG-05a) runs before the reopen and when the watch gives up. Exposed for the tests.
  */
-export function watchCall({ episode, callId, before = null, reopen = {}, globals, save, schedule, clearScheduled }) {
+export function watchCall({ episode, callId, before = null, reopen = {}, handBack = null, globals, save, schedule, clearScheduled }) {
     stopCallWatch(episode.id);
     const w = win();
     const key = callOutcomeKey(callId);
@@ -794,17 +1107,30 @@ export function watchCall({ episode, callId, before = null, reopen = {}, globals
         const ended = outcome && (heard || outcome !== before);
         if (ended && !current) {
             stopCallWatch(episode.id);
-            const written = completeStage(episode, readState(episode, g[stateKey(episode.id)]), 'write',
-                { sent: sentFromCall(callId, outcome) });
-            const state = skipMfaIfUnlanded(episode, written, outcome);
-            save(state);
-            fw?.startMinigame?.('episode-runner', null, {
-                ...reopen,
-                pauseAfter: episode.facilitated === true ? 'write' : null
-            });
+            const finish = () => {
+                const written = completeStage(episode, readState(episode, g[stateKey(episode.id)]), 'write',
+                    { sent: sentFromCall(callId, outcome) });
+                const state = skipMfaIfUnlanded(episode, written, outcome);
+                save(state);
+                fw?.startMinigame?.('episode-runner', null, {
+                    ...reopen,
+                    pauseAfter: episode.facilitated === true ? 'write' : null
+                });
+            };
+            // World-play (ENG-05a): the learner comes back to the kiosk room, and the costume
+            // comes off, before the flip. Whatever the outcome, and even if the hand-back fails.
+            if (typeof handBack === 'function') {
+                Promise.resolve().then(handBack).catch((e) => console.error('[episode] world hand-back failed:', e)).then(finish);
+            } else {
+                finish();
+            }
             return;
         }
-        if (++ticks > CALL_WAIT_LIMIT) { stopCallWatch(episode.id); return; }
+        if (++ticks > CALL_WAIT_LIMIT) {
+            stopCallWatch(episode.id);
+            if (typeof handBack === 'function') Promise.resolve().then(handBack).catch(() => {});
+            return;
+        }
         timer = schedule(tick, CALL_WAIT_MS);
     };
     callWatches.set(episode.id, { stop, tick });

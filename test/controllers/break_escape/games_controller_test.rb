@@ -103,6 +103,20 @@ module BreakEscape
       assert_match(/window\.breakEscapeConfig/, response.body)
     end
 
+    # The config object is emitted inside a <script> tag. A scenario-author
+    # string containing </script> must not close the tag and inject markup;
+    # json_escape turns < > & into \uXXXX so the breakout is impossible.
+    test 'a scenario-author display name cannot break out of the config script' do
+      @mission.update!(display_name: %q{</script><script>alert('xss')</script>})
+      get game_url(@game)
+      assert_response :success
+
+      # the raw breakout sequence must not reach the page
+      assert_no_match(%r{</script><script>alert}, response.body)
+      # the value is still present, escaped, so the game reads the real name
+      assert_match(/missionDisplayName: "\\u003c\/script\\u003e\\u003cscript\\u003ealert/, response.body)
+    end
+
     test 'show passes a host game shell its links, and leaves them null without a hook' do
       get game_url(@game)
       assert_match(/shellReturnUrl: null/, response.body)
@@ -178,6 +192,50 @@ module BreakEscape
       assert_equal 'reception', @game.player_state['currentRoom'],
                    'Player should still be in reception after rejected teleport'
       assert_not_includes @game.player_state['unlockedRooms'], 'office'
+    end
+
+    # Awareness world-play: the episode runner calls window.loadRoom(world.room),
+    # which fetches the room endpoint. Only the declared world room is opened.
+    test 'room endpoint serves the declared awareness world room without a key' do
+      data = @game.scenario_data.deep_dup
+      data['social'] = { 'awarenessEpisode' => { 'world' => { 'room' => 'office', 'startRoom' => 'reception' } } }
+      @game.update!(scenario_data: data)
+
+      get room_game_url(@game, room_id: 'office')
+
+      assert_response :success
+      assert_equal 'office', response.parsed_body['room_id']
+      assert_includes @game.reload.player_state['unlockedRooms'], 'office'
+    end
+
+    test 'room endpoint still returns 403 for a locked room the episode does not declare' do
+      data = @game.scenario_data.deep_dup
+      data['rooms']['vault'] = { 'type' => 'office', 'connections' => {}, 'locked' => true,
+                                 'lockType' => 'pin', 'requires' => '9999', 'objects' => [] }
+      data['social'] = { 'awarenessEpisode' => { 'world' => { 'room' => 'office', 'startRoom' => 'reception' } } }
+      @game.update!(scenario_data: data)
+
+      get room_game_url(@game, room_id: 'vault')
+
+      assert_response :forbidden
+      assert_not_includes @game.reload.player_state['unlockedRooms'], 'vault'
+    end
+
+    test 'room endpoint is unchanged for a scenario with no world block' do
+      data = @game.scenario_data.deep_dup
+      data['social'] = { 'awarenessEpisode' => { 'id' => 'e_no_world' } }
+      @game.update!(scenario_data: data)
+
+      get room_game_url(@game, room_id: 'office')
+
+      assert_response :forbidden
+      assert_not_includes @game.reload.player_state['unlockedRooms'], 'office'
+    end
+
+    test 'room endpoint is unchanged for a scenario with no social block' do
+      get room_game_url(@game, room_id: 'office')
+
+      assert_response :forbidden
     end
 
     test 'SECURITY: submittedFlags pre-injection via update_task_progress is blocked' do

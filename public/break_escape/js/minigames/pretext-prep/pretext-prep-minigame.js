@@ -21,8 +21,9 @@
 // startMinigame reads params. Esc closes an open picker first (00 §6).
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
+import { resolvePhoneApp } from '../phone-chat/phone-app.js';
 import {
-    blankSlot, blanksPayload, briefCopy, callGate, callWords, callLaunch, cardFacts, cardLines, heldIdsFor,
+    blankSlot, blanksPayload, briefCopy, callGate, callWords, callBeginLabel, callLaunch, cardFacts, cardLines, heldIdsFor,
     factLabel, heldOnBoard, hintLine, kindText, optionsForFact, readinessLines, textParts
 } from './pretext-card.js';
 
@@ -106,7 +107,8 @@ export class PretextPrepMinigame extends SocialOverlayScene {
     }
 
     gate() {
-        return callGate(this.facts(), this.optionsByFact(), this.chosen);
+        return callGate(this.facts(), this.optionsByFact(), this.chosen,
+            { requireFact: this.spec?.requireFact === true, line: this.spec?.requireFactLine });
     }
 
     payload() {
@@ -120,7 +122,7 @@ export class PretextPrepMinigame extends SocialOverlayScene {
         const options = this.optionsByFact();
         const brief = briefCopy(spec, this.social);
         const held = heldOnBoard(this.social, this.globals);
-        const gate = callGate(facts, options, this.chosen);
+        const gate = this.gate();
         const ready = readinessLines(facts, options);
         const npcMissing = gate.ok && !this.npc();
         const gateText = npcMissing ? 'This call has no contact.' : gate.line;
@@ -128,9 +130,10 @@ export class PretextPrepMinigame extends SocialOverlayScene {
         const factIds = facts.map((fact) => fact.factId);
         const labelFor = (id) => options[id]?.find((option) => option.value === this.chosen[id])?.label || '';
         const npc = npcMissing ? null : this.npc();
-        const beginLabel = npc?.npcType === 'phone' ? 'Make the call' : (npc ? 'Approach' : 'Begin');
+        const theme = npc?.npcType === 'phone' ? resolvePhoneApp({ npc }).theme : null;
+        const beginLabel = callBeginLabel(spec, npc, theme);
 
-        const words = callWords(spec, npc);
+        const words = callWords(spec, npc, theme);
         const root = h('div', { class: 'pretext-prep', role: 'dialog', 'aria-label': words.title, tabindex: '-1' });
         this.root = root;
 
@@ -159,6 +162,15 @@ export class PretextPrepMinigame extends SocialOverlayScene {
         gateLine.textContent = gateText;
         if (gateText) begin.setAttribute('aria-describedby', 'pretext-gate');
         bar.append(begin, gateLine);
+        // batch-12 item 5: when the call is gated (e.g. no fact held yet) and the episode gave us a
+        // research launch, offer a working way back. It opens research over this card and returns
+        // here with the fact held, so the learner is no longer stuck with only Close (E12 F1).
+        if (!gate.ok && this._canResearch()) {
+            const back = h('button', { type: 'button', class: 'pretext-research minigame-button',
+                text: 'Back to research', 'aria-label': 'Back to research' });
+            this.addEventListener(back, 'click', () => this._backToResearch());
+            bar.appendChild(back);
+        }
         root.appendChild(bar);
 
         this.beginButton = begin;
@@ -326,6 +338,22 @@ export class PretextPrepMinigame extends SocialOverlayScene {
             if (focusAnchor) this._pickerAnchor.focus?.();
             this._pickerAnchor = null;
         }
+    }
+
+    /** batch-12 item 5: the episode gave us a research scene to go back to. */
+    _canResearch() {
+        const rl = this.params?.researchLaunch;
+        return !!(rl && typeof rl === 'object' && typeof rl.scene === 'string' && rl.scene);
+    }
+
+    /**
+     * Open research over this card as a child overlay (not a replacement), so the prep is suspended
+     * and reopens when research closes — with any fact noted now on the board, so the gate can pass.
+     */
+    _backToResearch() {
+        const rl = this.params?.researchLaunch;
+        if (!this._canResearch()) return;
+        this.launchChild(rl.scene, { ...(rl.params && typeof rl.params === 'object' ? rl.params : {}) });
     }
 
     /** Hand the filled card to the chat. No result is recorded on this overlay. */

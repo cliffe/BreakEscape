@@ -12,13 +12,20 @@ module BreakEscape
   # `as` (the name in this mission) defaults to the source's mNN_/sisNN_ prefix
   # plus the variable name: m06_assets_seized.
   #
+  # An entry may add "prefer": "earliest" to take the player's *earliest*
+  # concluded run of the source instead of the newest (the default). The
+  # awareness after-checks use it so a learner's first before-check carries over,
+  # not a later retake. It is resolved per source mission, so every entry reading
+  # the same `from` should agree; any entry setting it is enough for that source.
+  #
   # The values are fixed once per Game row, at creation: they are written into
   # scenario_data['globalVariables'] as the scenario's own defaults, so the
   # client, ink, conditions and credits see them with no further change. A
   # Restart keeps them; a New Session (a new row) looks them up again.
   #
-  # Which run counts: the player's newest *story snapshot* of the source
-  # mission. A snapshot is written when a game concludes and again each time a
+  # Which run counts: by default the player's newest *story snapshot* of the
+  # source mission (or the earliest, when an import sets "prefer": "earliest").
+  # A snapshot is written when a game concludes and again each time a
   # concluded game reaches /conclude (the credits) with its concludeRequires
   # globals met. Restart keeps it, so replaying the source without finishing
   # leaves the last finished run in place. Only games with mission_concluded_at
@@ -134,13 +141,21 @@ module BreakEscape
       scenario_data['importedGlobals'] = record
     end
 
-    # { from_name => { id:, at:, globals: } } for the newest concluded run of
-    # each source mission. Old rows with no snapshot (concluded before carry-over
-    # shipped) are read as their current globals minus their own imports,
-    # timestamped with mission_concluded_at. Nothing is written to those rows.
+    # { from_name => { id:, at:, globals: } } for the chosen concluded run of
+    # each source mission: the newest by default, or the earliest when any entry
+    # for that source sets "prefer": "earliest". Old rows with no snapshot
+    # (concluded before carry-over shipped) are read as their current globals
+    # minus their own imports, timestamped with mission_concluded_at. Nothing is
+    # written to those rows.
     def lookup_carry_over_sources(entries)
       froms = entries.map { |e| e['from'] if e.is_a?(Hash) }.grep(String).uniq
       return {} if froms.empty? || player.nil?
+
+      # Per source mission: keep the earliest concluded run when any entry asks
+      # for it, else the newest (the default).
+      earliest_from = entries.select do |e|
+        e.is_a?(Hash) && e['from'].is_a?(String) && e['prefer'].to_s == 'earliest'
+      end.map { |e| e['from'] }
 
       result = {}
       self.class.transaction(requires_new: true) do
@@ -168,7 +183,17 @@ module BreakEscape
           end
           name = mission_names[mission_id]
           current = result[name]
-          result[name] = { id: id, at: at, globals: globals } if current.nil? || at > current[:at]
+          # Newest goes by the snapshot time (a replayed older run can win, as before).
+          # Earliest goes by mission_concluded_at, the genuine first attempt, which a later
+          # credits replay does not move; its snapshot globals still carry over.
+          keep = if current.nil?
+                   true
+          elsif earliest_from.include?(name)
+                   concluded_at < current[:concluded_at]
+          else
+                   at > current[:at]
+          end
+          result[name] = { id: id, at: at, concluded_at: concluded_at, globals: globals } if keep
         end
       end
       result

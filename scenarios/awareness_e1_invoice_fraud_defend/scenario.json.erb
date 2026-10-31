@@ -1,6 +1,7 @@
 {
   "scenario_id": "awareness_e1_invoice_fraud_defend",
   "scenario_name": "Invoice fraud: the payments inbox",
+  "titleScreenName": "Invoice fraud",
   "scenario_brief": "Awareness episode E1, inbox only. You're covering the payments inbox at Brightwell Foods, a fictional food manufacturer, before the afternoon payment run. Six messages are waiting: sort them, and report or check anything that doesn't sit right.",
   "endGoal": "Sort the six messages in the payments inbox at the training kiosk.",
   "version": "1.0",
@@ -30,13 +31,13 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "episode_e1_invoice_fraud_defend_defend_done"
+          "episode_e1_invoice_fraud_defend_defend_complete"
         ]
       },
       "conclusionScreen": {
         "type": "success",
         "title": "Payments inbox done",
-        "body": "You've sorted all six messages and finished this episode."
+        "body": "That's this episode finished. The debrief goes through each one."
       },
       "tasks": [
         {
@@ -53,8 +54,7 @@
     "se_awareness_records": [],
     "episode_e1_invoice_fraud_defend_defend_percent": 0,
     "episode_e1_invoice_fraud_defend_defend_reportRate": 0,
-    "episode_e1_invoice_fraud_defend_defend_done": false,
-    "episode_e1_invoice_fraud_defend_defend_pass": false
+    "episode_e1_invoice_fraud_defend_defend_complete": false
   },
   "social": {
     "triageSets": [
@@ -119,7 +119,7 @@
               "address": "accounts@brightwel1foods.example"
             },
             "to": "payments@brightwellfoods.example",
-            "subject": "Updated bank details — please action today",
+            "subject": "Updated bank details, please action today",
             "time": "10:12",
             "body": "Hi team,\nHarlow Packaging have moved to a new bank. Please change the payee account on invoice INV-2217 before today's payment run, so the payment doesn't bounce.\nNew account name: Harlow Packaging Ltd\nNew account number ending 7716\nThanks,\nAccounts",
             "auth": {
@@ -223,7 +223,7 @@
             "id": "e1_ceo_wire",
             "from": {
               "name": "Ravinder Sandhu",
-              "address": "ravinder.sandhu.private@inboxly.example"
+              "address": "ravinder.sandhu.private@lintbox.example"
             },
             "to": "payments@brightwellfoods.example",
             "subject": "Need this paid today",
@@ -233,8 +233,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "ravinder.sandhu.private@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "ravinder.sandhu.private@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -244,7 +244,7 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "The name is the chief executive's, but the address is a personal inbox at inboxly.example, not brightwellfoods.example",
+                "senderTrust": "The name is the chief executive's, but the address is a personal inbox at lintbox.example, not brightwellfoods.example",
                 "secrecy_or_bypass": "'Keep it to yourself' and 'don't put it through the usual approval' ask you to skip the check that would catch this",
                 "urgencyCalibrated": "'Today' and 'in meetings all afternoon' leave no time to check, and steer you away from ringing him"
               },
@@ -386,7 +386,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:episode_e1_invoice_fraud_defend_defend_done",
+              "eventPattern": "global_variable_changed:episode_e1_invoice_fraud_defend_defend_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "sort_payments_inbox"
@@ -406,8 +406,8 @@
           "observations": "A touch-screen kiosk showing Brightwell's payments inbox. Six messages are waiting.",
           "observationVariants": [
             {
-              "condition": "globalVars.episode_e1_invoice_fraud_defend_defend_done",
-              "value": "A touch-screen kiosk showing Brightwell's payments inbox. All six messages are sorted."
+              "condition": "globalVars.episode_e1_invoice_fraud_defend_defend_complete",
+              "value": "A touch-screen kiosk showing Brightwell's payments inbox. That's this one finished."
             }
           ],
           "minigameData": {

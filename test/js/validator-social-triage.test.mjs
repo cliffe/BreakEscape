@@ -83,7 +83,7 @@ function mini() {
       : { isPhish: false, flags: [], whyFine: { default: 'fine' } },
   });
   return {
-    globalVariables: { triage_percent: 0, triage_reportRate: 0, triage_done: false, triage_pass: false },
+    globalVariables: { triage_percent: 0, triage_reportRate: 0, triage_complete: false, triage_pass: false },
     rooms: { r: { objects: [{ type: 'triage-workstation', id: 'ws', minigameData: { triageSetId: 's' } }] } },
     social: {
       mailClient: { accounts: [{ id: 'guest' }] },
@@ -102,6 +102,48 @@ test('a clean triage and defender scenario raises nothing', { skip }, () => {
 
 test('the minimal inline scenario is clean (guards the mutation tests below)', { skip }, () => {
   assert.deepEqual(lintJson(mini()), []);
+});
+
+test('batch-5: a valid verdict-points override (per-item and per-set) raises nothing', { skip }, () => {
+    const j = mini();
+    j.social.triageSets[0].scoring = { kindPoints: { call: { trust: 60, report: 30 } } };
+    j.social.triageSets[0].messages[0].truth.verdictPoints = { trust: 60 };
+    assert.deepEqual(lintJson(j), []);
+});
+
+test('batch-5: labels.itemNoun and labels.next validate their shape', { skip }, () => {
+    const ok = mini();
+    ok.social.triageSets[0].labels = { itemNoun: 'visitor', next: 'Next visitor' };
+    assert.deepEqual(lintJson(ok), []);
+    const ok2 = mini();
+    ok2.social.triageSets[0].labels = { itemNoun: ['network', 'networks'] };
+    assert.deepEqual(lintJson(ok2), []);
+    const bad = mini();
+    bad.social.triageSets[0].labels = { itemNoun: ['only-one'], next: '' };
+    const out = lintJson(bad);
+    expectIn(out, /labels\.itemNoun must be a non-empty string or a \[singular, plural\] pair/);
+    expectIn(out, /labels\.next must be a non-empty string/);
+});
+
+test('batch-5: a valid labels.verdictFeedback raises nothing; a bad shape is refused', { skip }, () => {
+    const ok = mini();
+    ok.social.triageSets[0].labels = { verdictFeedback: { delete: { phish: 'Use the service desk.', real: 'It was real.' } } };
+    assert.deepEqual(lintJson(ok), []);
+    const bad = mini();
+    bad.social.triageSets[0].labels = { verdictFeedback: { delete: { phish: '' }, nope: { phish: 'x' } } };
+    const out = lintJson(bad);
+    expectIn(out, /labels\.verdictFeedback\.delete\.phish is empty/);
+    expectIn(out, /labels\.verdictFeedback has the key 'nope'/);
+});
+
+test('batch-5: verdict-points out of range or a bad verdict key is refused', { skip }, () => {
+    const j = mini();
+    j.social.triageSets[0].messages[0].truth.verdictPoints = { trust: 80, bogus: 10 };
+    j.social.triageSets[0].scoring = { kindPoints: { call: { report: -5 } } };
+    const out = lintJson(j);
+    expectIn(out, /truth\.verdictPoints\.trust must be a number from 0 to 60/);
+    expectIn(out, /truth\.verdictPoints: 'bogus' is not a verdict/);
+    expectIn(out, /scoring\.kindPoints\.call\.report must be a number from 0 to 60/);
 });
 
 test('without a social key the triage lints do not run', { skip }, () => {
@@ -237,9 +279,9 @@ test('05 N5: the stage launch parameter, workstation pointers and the four resul
   has(/❌.*minigameData\.triageSetId 'ghost_set' is not a social\.triageSets id/);
   has(/❌.*\(triage-workstation\) has no minigameData\.triageSetId/);
   // the four globals for the stage a workstation launches
-  has(/❌.*global 'undecl_pre_(percent|reportRate|done|pass)'/, 4);
-  has(/❌.*global 'bm_(percent|reportRate|done|pass)'/, 4);
-  has(/❌.*global 'wrongtype_done' \(set 'pair_y'\) must be declared as a boolean, not 0/);
+  has(/❌.*global 'undecl_pre_(percent|reportRate|complete)'/, 3);
+  has(/❌.*global 'bm_(percent|reportRate|complete)'/, 3);
+  has(/❌.*global 'wrongtype_complete' \(set 'pair_y'\) must be declared as a boolean, not 0/);
   has(/wrongtype_(percent|reportRate|pass)/, 0);
   // a {stage} set launched as post declares triage_post_*, which the clean fixture declares
   has(/triage_post_/, 0);
@@ -250,13 +292,21 @@ test('05 N5: the stage launch parameter, workstation pointers and the four resul
   expectIn(lintJson(j), /has a \{stage\} prefix but no usable stage/);
   j.rooms.r.objects[0].minigameData.stage = 'post';
   const out = lintJson(j);
-  expectIn(out, /global 'triage_post_(percent|reportRate|done|pass)'/, 4);
+  expectIn(out, /global 'triage_post_(percent|reportRate|complete|pass)'/, 4);
   // declaring them, with the right types, clears it
-  Object.assign(j.globalVariables, { triage_post_percent: 0, triage_post_reportRate: 0, triage_post_done: false, triage_post_pass: false });
+  Object.assign(j.globalVariables, { triage_post_percent: 0, triage_post_reportRate: 0, triage_post_complete: false, triage_post_pass: false });
   // a post round also reads the pre globals for its comparison (05 N11), so those want declaring too
-  expectIn(lintJson(j), /the comparison reads 'triage_pre_(done|percent|reportRate)'/, 3);
-  Object.assign(j.globalVariables, { triage_pre_percent: 0, triage_pre_reportRate: 0, triage_pre_done: false });
+  expectIn(lintJson(j), /the comparison reads 'triage_pre_(complete|percent|reportRate)'/, 3);
+  Object.assign(j.globalVariables, { triage_pre_percent: 0, triage_pre_reportRate: 0, triage_pre_complete: false });
   assert.deepEqual(lintJson(j), []);
+});
+
+test('workstation minigameData.skin: awareness is accepted, anything else is an error', { skip }, () => {
+  const j = mini();
+  j.rooms.r.objects[0].minigameData.skin = 'awareness';
+  assert.deepEqual(lintJson(j), []);
+  j.rooms.r.objects[0].minigameData.skin = 'neon';
+  expectIn(lintJson(j), /minigameData\.skin 'neon' is not a known skin/);
 });
 
 test('05 N5: a name the mission imports is skipped, an own declaration is not', { skip }, () => {
@@ -272,16 +322,16 @@ test('05 N5: a name the mission imports is skipped, an own declaration is not', 
 });
 
 test('05 N5: a task keyed on <prefix>done warns when the set has a non-zero passPercent', { skip }, () => {
-  has(/⚠️.*eventMapping on 'tr_lab_done' \(host\) completes a task on the round being done, but set 'lab' has a non-zero passPercent/);
+  has(/⚠️.*eventMapping on 'tr_lab_complete' \(host\) completes a task on the round being done, but set 'lab' has a non-zero passPercent/);
   // a check set (passPercent 0) keyed on done raises nothing; so does the pass global
   has(/⚠️.*eventMapping on 'triage_pre_pass'/, 0);
-  has(/⚠️.*eventMapping on 'wrongtype_done'/, 0);
+  has(/⚠️.*eventMapping on 'wrongtype_complete'/, 0);
   const j = mini();
-  j.rooms.r.npcs = [{ id: 'n', eventMappings: [{ eventPattern: 'global_variable_changed:triage_done', completeTask: 't' }] }];
-  expectIn(lintJson(j), /eventMapping on 'triage_done'/);
+  j.rooms.r.npcs = [{ id: 'n', eventMappings: [{ eventPattern: 'global_variable_changed:triage_complete', completeTask: 't' }] }];
+  expectIn(lintJson(j), /eventMapping on 'triage_complete'/);
   j.social.triageSets[0].outcome.passPercent = 0;
   j.social.triageSets[0].stage = 'pre';
-  expectIn(lintJson(j), /eventMapping on 'triage_done'/, 0);
+  expectIn(lintJson(j), /eventMapping on 'triage_complete'/, 0);
   j.social.triageSets[0].outcome.passPercent = 60;
   j.rooms.r.npcs[0].eventMappings[0].eventPattern = 'global_variable_changed:triage_pass';
   expectIn(lintJson(j), /eventMapping on/, 0);
@@ -467,4 +517,110 @@ test('05 "Either tick counts": truth.flagAlternatives shape and membership', { s
 
 test('the fixtures were not rewritten by any run', { skip }, () => {
   assert.equal(folderHash(fx), fixturesBefore);
+});
+
+// ── ENG-09a: the authored-choice kind ──────────────────────────────────────────────
+function choiceScenario(mutate) {
+  const j = mini();
+  const set = j.social.triageSets[0];
+  set.scoringProfile = 'awareness';
+  set.messages = [{
+    id: 'c1', kind: 'choice', subject: 'Which is stronger?',
+    choice: {
+      prompt: 'Which is stronger?',
+      options: [
+        { id: 'words', label: 'three random words together', verdict: 'report' },
+        { id: 'complex', label: 'a company name, a year and a symbol', verdict: 'trust' }
+      ],
+      note: 'These are made up; no real password is typed.'
+    },
+    truth: { isPhish: true, flags: [], correct: 'report', reportReply: 'Length beats symbols.', ifTrusted: 'Guess lists start there.' }
+  }];
+  if (mutate) mutate(set.messages[0], set, j);
+  return j;
+}
+const choiceLint = (mutate) => lintJson(choiceScenario(mutate));
+
+test('choice: a clean choice card raises nothing, and a real-item card with a trust answer is clean too', { skip }, () => {
+  assert.deepEqual(choiceLint(), []);
+  assert.deepEqual(choiceLint((m) => {
+    m.truth = { isPhish: false, flags: [], correct: 'trust', whyFine: { default: 'Generated passwords are unique.' } };
+    m.choice.options = [{ id: 'use', label: 'Use it', verdict: 'trust' }, { id: 'own', label: 'Type your usual one', verdict: 'delete' }];
+  }), []);
+  assert.deepEqual(choiceLint((m) => { m.choice.options.push({ id: 'text', label: 'a code by text', verdict: 'delete' }); }), []);
+});
+
+test('choice: every option verdict is a built verdict; exactly one matches truth.correct', { skip }, () => {
+  const bad = choiceLint((m) => { m.choice.options[1].verdict = 'maybe'; });
+  expectIn(bad, /options\[1\]\.verdict 'maybe' must be one of trust, report, delete, verify/);
+  expectIn(choiceLint((m) => { m.choice.options[0].verdict = 'delete'; }), /0 options have the verdict 'report'/);
+  expectIn(choiceLint((m) => { m.choice.options[1].verdict = 'report'; }), /2 options have the verdict 'report'/);
+});
+
+test('choice: truth.correct must be the full-marks verdict for isPhish', { skip }, () => {
+  expectIn(choiceLint((m) => { m.truth.correct = 'trust'; m.choice.options[1].verdict = 'trust'; m.choice.options[0].verdict = 'delete'; }),
+    /truth\.correct 'trust' does not score full marks for isPhish true/);
+  expectIn(choiceLint((m) => { m.truth.correct = 'delete'; m.choice.options[0].verdict = 'delete'; m.choice.options[1].verdict = 'trust'; }),
+    /truth\.correct 'delete' does not score full marks/);
+  expectIn(choiceLint((m) => { delete m.truth.correct; }), /truth\.correct must be one of trust, report, delete, verify/);
+});
+
+test('choice: no other option may also score full marks', { skip }, () => {
+  // report and verify both score 60 on a phish, so only one of them may be on the card
+  expectIn(choiceLint((m) => { m.choice.options[1].verdict = 'verify'; }), /options\['complex'\] maps to 'verify', which also scores full marks/);
+});
+
+test('choice: one decision only: 2 to 4 options, unique ids, a prompt, no flags, links or attachments', { skip }, () => {
+  expectIn(choiceLint((m) => { m.choice.options = [m.choice.options[0]]; }), /options must hold two to four options/);
+  expectIn(choiceLint((m) => { m.choice.options.push(...['a', 'b', 'c'].map((id) => ({ id, label: id, verdict: 'delete' }))); }), /options must hold two to four options/);
+  expectIn(choiceLint((m) => { m.choice.options[1].id = 'words'; }), /an id is used more than once/);
+  expectIn(choiceLint((m) => { m.choice.prompt = ''; }), /choice\.prompt is empty or missing/);
+  expectIn(choiceLint((m) => { delete m.choice; }), /choice is missing; a choice message needs/);
+  expectIn(choiceLint((m) => { m.truth.flags = ['senderTrust']; }), /authors no flags/);
+  expectIn(choiceLint((m) => { m.links = [{ id: 'l', destination: 'https://x.example' }]; }), /one decision and has no links/);
+  expectIn(choiceLint((m) => { m.choice.options[0].label = ''; }), /label is empty or missing/);
+});
+
+test('choice: an option that is a bare credential-looking string is warned about', { skip }, () => {
+  expectIn(choiceLint((m) => { m.choice.options[1].label = 'Hunter2Fakeco!'; }), /looks like a real credential/);
+  assert.equal(count(choiceLint((m) => { m.choice.options[1].label = 'Fakeco2026! (company, year, symbol)'; }), /credential/), 0);
+});
+
+test('choice: awareness sets only; truth.correct elsewhere is a warning', { skip }, () => {
+  expectIn(choiceLint((_m, set) => { set.scoringProfile = 'analyst'; }), /a choice message belongs in an awareness set/);
+  const j = mini();
+  j.social.triageSets[0].messages[1].truth.correct = 'report';
+  expectIn(lintJson(j), /truth\.correct is on a email message; only a choice card reads it/);
+});
+
+test('choice: labels.choice keys are checked; a choice-only set needs no channel tells', { skip }, () => {
+  assert.deepEqual(choiceLint((_m, set) => { set.labels = { choice: { right: 'Yes.', wrong: 'No.' }, queue: { choice: { label: 'Checks' } } }; }), []);
+  expectIn(choiceLint((_m, set) => { set.labels = { choice: { rihgt: 'Yes.' } }; }), /labels\.choice has the key 'rihgt'/);
+  expectIn(choiceLint((_m, set) => { set.labels = { choice: { right: '' } }; }), /labels\.choice\.right is empty/);
+  expectIn(choiceLint((_m, set) => { set.labels = { choice: 'x' }; }), /labels\.choice must be an object/);
+  assert.equal(count(choiceLint(), /enables no channelTells/), 0);
+});
+
+test('choice schema: the card passes; a mistyped key, a bad verdict and one option fail', { skip }, () => {
+  const cases = [
+    ['a mistyped choice key', (m) => { m.choice.promt = 'x'; }, 'promt'],
+    ['a bad verdict', (m) => { m.choice.options[0].verdict = 'maybe'; }, 'verdict'],
+    ['a single option', (m) => { m.choice.options = [m.choice.options[0]]; }, 'options'],
+    ['a bad truth.correct', (m) => { m.truth.correct = 'maybe'; }, 'correct'],
+    ['a mistyped label key', (_m, set) => { set.labels = { choice: { rihgt: 'x' } }; }, 'rihgt']
+  ];
+  const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+    JSON::Validator.use_multi_json = false
+    out = JSON.parse($stdin.read).map do |j|
+      social, other = ValidateSocial.split_schema_errors(validate_json(j, ${JSON.stringify(join(root, 'scripts/scenario-schema.json'))}))
+      { social: social, other: other }
+    end
+    puts JSON.generate(out)`;
+  const r = spawnSync('ruby', ['-e', script], { encoding: 'utf8', env, input: JSON.stringify([choiceScenario(), ...cases.map(([, mutate]) => choiceScenario(mutate))]), maxBuffer: 64 << 20 });
+  assert.equal(r.status, 0, r.stderr);
+  const results = JSON.parse(r.stdout.trim().split('\n').pop());
+  assert.deepEqual(results[0].social, []);
+  cases.forEach(([name, , detail], i) => {
+    assert.ok(results[i + 1].social.some((e) => e.includes(detail)), `${name}: no error naming ${detail}\n${results[i + 1].social.join('\n')}`);
+  });
 });

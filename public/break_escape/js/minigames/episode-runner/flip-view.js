@@ -12,7 +12,15 @@
 //            `page` card;
 //   call     a pretext call (E3): { callerId, claims, transcript, notes }, drawn as the
 //            triage `call` card the helpdesk agent sees (the learner's own lines and the
-//            facts they claimed), then the helpdesk side's notes on what would have caught it.
+//            facts they claimed), then the helpdesk side's notes on what would have caught it;
+//   aftermath  ENG-01, optional: the victim's seat after a landed message or page.
+//            { heading?, victimName?, intro?, items: [{ id, kind, note?, ... }], line? }. An
+//            `email` item is one read-only sent-items row (folder, to, subject, time, note;
+//            no body, no link); any other non-email kind is drawn with renderKindSurface.
+//            Drawn after the message, page and call and before the defender line, only when
+//            there is a message, page or landed guess and at least one valid item.
+//   guess    ENG-02: true after a landed password guess (the runner's guess stage). It shows
+//            strings.flipGuessIntro, then the aftermath; with `missed` it is ignored.
 // A page may come with a message (E5 sends the email that links to it). With none of them,
 // the view shows flipMissed when `missed` is true (something was sent but did not land, so
 // there is nothing to replay), flipLandedNoTells when `landedNoTells` is true (it landed but
@@ -22,28 +30,43 @@
 // chosen pretext, state.sent.templateId) and a matching strings.flipDefenderLineByChoice entry, the
 // per-branch line shows (in the .aw-defender-line node); otherwise the single
 // strings.flipDefenderLine (see defenderLine()).
-// getState() -> { shown: 'message' | 'page' | 'call' | 'missed' | 'landedNoTells' | 'noSend', parts,
+// Montage mode (ENG-04, a consequence episode with flip.mode "montage"): the runner passes
+// { montage: true, beats: [{ id, situation, optionId, taken, safe, line }], flipBeat } instead. The view
+// draws flipHeading, an optional flipMontageIntro, then one .aw-montage-beat per beat, the flipBeat first
+// (marked .aw-montage-headline) and the rest in authored order, each a situation and the line for the
+// option shown. A learner's own option is marked .aw-montage-taken. The framing ("Your choice", "the
+// version where it was taken instead") is in the authored lines. flipDefenderLine is shown only when authored.
+// getState() -> { shown: 'message' | 'page' | 'call' | 'guess' | 'missed' | 'landedNoTells' | 'noSend' | 'montage', parts,
 // tells } (`shown` is the first part shown; `parts` lists every part; `tells` the sentences on screen).
 // Every string goes in with textContent.
 
 import { MailReader } from '../mail-client/mail-reader.js';
 import { redFlagString } from '../inbox-triage/triage-flags.js';
-import { renderKindSurface } from '../inbox-triage/triage-kinds.js';
+import { renderKindSurface, isNonEmail } from '../inbox-triage/triage-kinds.js';
 import { renderLandingPage } from '../landing-page-builder/landing-page-render.js';
 
 const DEFAULTS = Object.freeze({
     flipHeading: 'Your message, from the other side',
     flipIntro: 'This is the message you just wrote, as the person who receives it would see it.',
     flipPageIntro: 'This is the page you built, as the person who follows the link would see it.',
+    flipGuessHeading: 'The account, from the other side',
+    flipGuessIntro: 'One reused password was enough. This is what the owner of that account sees next.',
     flipCallIntro: 'This is your call from the other end of the line. Here is what would have caught it.',
     flipDefenderLine: 'People who fall for messages like this are not stupid. This one was built to look right.',
+    flipMontageHeading: 'Where each choice led',
+    flipMontageIntro: 'Here is where each of those choices led.',
+    flipMontageTagSafe: 'Your call: the safe route',
+    flipMontageTagUnsafe: 'Your call',
     flipNoSend: 'You did not send a message this time, so there is nothing to flip. On to the next step.',
     flipMissed: 'Your attempt did not land this time, so there is nothing to show from the other side. The defence is the same either way. On to the next step.',
     flipMissedHeading: 'Nothing to replay this time',
+    // E10 MA4: the page section's heading. Default unchanged; a no-link design (a fake check on the
+    // site's own address) overrides it (e.g. "The page you built") so it does not claim a link.
+    flipPageHeading: 'The page it links to',
     continue: 'Continue'
 });
 
-const SECTION = Object.freeze({ message: 'The message', page: 'The page it links to' });
+const SECTION = Object.freeze({ message: 'The message' });
 
 // The landing-page tells a built page stores (07 TELL_IDS) have no library sentence yet.
 const PAGE_TELLS = Object.freeze({
@@ -79,6 +102,27 @@ export function defenderLine(strings, templateId) {
     return str(strings, 'flipDefenderLine');
 }
 
+/** The valid items of a flipAftermath block: an `email` row or a non-email kind, each with an id. */
+function aftermathItems(block) {
+    if (!isObj(block) || !Array.isArray(block.items)) return [];
+    return block.items.filter((it) => isObj(it) && isStr(it.id) && (it.kind === 'email' || isNonEmail(it.kind)));
+}
+
+/** One sent-items row for an aftermath `email` item: textContent only, no body and no link. */
+function aftermathEmailRow(it) {
+    const row = el('div', 'aw-aftermath-email');
+    const dl = el('dl', 'aw-aftermath-fields');
+    // Addresses use the address font, like the flip's own From/To lines.
+    const add = (k, v, cls = null) => { if (isStr(v)) dl.append(el('dt', null, k), el('dd', cls, v)); };
+    add('Folder', isStr(it.folder) ? it.folder.charAt(0).toUpperCase() + it.folder.slice(1) : 'Sent');
+    add('From', it.from, 'aw-aftermath-address');
+    add('To', it.to, 'aw-aftermath-address');
+    add('Subject', it.subject);
+    add('Time', it.time);
+    row.appendChild(dl);
+    return row;
+}
+
 const UNKNOWN_TELL = 'Something about this one did not add up.';
 
 /** The sentence for a tell id: the library's, else the page tells', else a neutral phrase (never the raw id). */
@@ -88,9 +132,53 @@ export function tellSentence(id, message) {
     return PAGE_TELLS[id] || UNKNOWN_TELL;
 }
 
-export function renderFlipView(container, { message = null, page = null, call = null, missed = false, landedNoTells = false, templateId = null, strings = {}, onContinue } = {}) {
+/** The montage: the flipBeat first, then the rest in order. Returns the beat ids shown. */
+function renderMontage(root, container, { beats, flipBeat, strings, onContinue }) {
+    const list = Array.isArray(beats) ? beats.filter((b) => isObj(b) && isStr(b.id)) : [];
+    const head = list.find((b) => b.id === flipBeat);
+    const ordered = head ? [head, ...list.filter((b) => b !== head)] : list;
+    root.appendChild(el('p', 'aw-lead aw-montage-intro', str(strings, 'flipMontageIntro')));
+    const wrap = el('ol', 'aw-montage');
+    wrap.setAttribute('aria-label', 'Where each choice led');
+    for (const b of ordered) {
+        const item = el('li', 'aw-montage-beat');
+        item.dataset.beat = b.id;
+        if (b === head) item.classList.add('aw-montage-headline');
+        if (b.taken) item.classList.add('aw-montage-taken');
+        // The shown option's safety, so a beat handled well does not read like a mistake. A beat the
+        // learner took also carries a words-not-colour tag; a stand-in line (not taken) stays neutral.
+        item.classList.add(b.safe === true ? 'aw-montage-safe' : 'aw-montage-unsafe');
+        if (b.taken) item.appendChild(el('p', 'aw-montage-tag', str(strings, b.safe === true ? 'flipMontageTagSafe' : 'flipMontageTagUnsafe')));
+        if (isStr(b.optionId)) item.dataset.option = b.optionId;
+        if (isStr(b.situation)) item.appendChild(el('p', 'aw-montage-situation', b.situation));
+        if (isStr(b.line)) item.appendChild(el('p', 'aw-montage-line', b.line));
+        wrap.appendChild(item);
+    }
+    root.appendChild(wrap);
+    if (isStr(strings?.flipDefenderLine)) root.appendChild(el('p', 'aw-defender-line', strings.flipDefenderLine));
+    const next = el('button', 'aw-button aw-continue', str(strings, 'continue'));
+    next.type = 'button';
+    next.addEventListener('click', () => { if (typeof onContinue === 'function') onContinue(); });
+    root.appendChild(next);
+    container.appendChild(root);
+    const ids = ordered.map((b) => b.id);
+    return {
+        destroy() { root.remove(); },
+        getState() { return { shown: 'montage', parts: ['montage'], tells: [], beats: [...ids] }; }
+    };
+}
+
+export function renderFlipView(container, { message = null, page = null, call = null, aftermath = null, guess = false, missed = false, landedNoTells = false, templateId = null, montage = false, beats = null, flipBeat = null, strings = {}, onContinue } = {}) {
     const root = el('section', 'aw-flip');
-    const heading = el('h2', 'aw-heading', str(strings, 'flipHeading'));
+    if (montage === true) {
+        const own = isStr(strings?.flipHeading) ? strings.flipHeading : DEFAULTS.flipMontageHeading;
+        const h = el('h2', 'aw-heading', own);
+        h.tabIndex = -1;
+        root.appendChild(h);
+        return renderMontage(root, container, { beats, flipBeat, strings, onContinue });
+    }
+    const hasGuess = guess === true && !missed;
+    const heading = el('h2', 'aw-heading', hasGuess && !isStr(strings?.flipHeading) ? DEFAULTS.flipGuessHeading : str(strings, 'flipHeading'));
     heading.tabIndex = -1;
     root.appendChild(heading);
 
@@ -118,6 +206,12 @@ export function renderFlipView(container, { message = null, page = null, call = 
         if (ids.length) root.appendChild(list);
     };
 
+    // ENG-02: a landed password guess has nothing to replay; it leads straight into the aftermath below.
+    if (hasGuess) {
+        parts.push('guess');
+        root.appendChild(el('p', 'aw-lead', str(strings, 'flipGuessIntro')));
+    }
+
     if (hasMessage) {
         parts.push('message');
         if (both) root.appendChild(el('h3', 'aw-flip-section', SECTION.message));
@@ -137,7 +231,7 @@ export function renderFlipView(container, { message = null, page = null, call = 
 
     if (hasPage) {
         parts.push('page');
-        if (both) root.appendChild(el('h3', 'aw-flip-section', SECTION.page));
+        if (both) root.appendChild(el('h3', 'aw-flip-section', str(strings, 'flipPageHeading')));
         root.appendChild(el('p', 'aw-lead', str(strings, 'flipPageIntro')));
         const note = el('p', 'aw-flip-note');
         note.setAttribute('aria-live', 'polite');
@@ -197,6 +291,38 @@ export function renderFlipView(container, { message = null, page = null, call = 
             }
             root.appendChild(list);
         }
+    }
+
+    // ENG-01: the victim's seat, after the replay and before the defender line. Only with
+    // something replayed from a landed attack (a missed or no-send flip never reaches it).
+    const aftermathList = (hasMessage || hasPage || hasGuess) && !missed && !landedNoTells ? aftermathItems(aftermath) : [];
+    if (aftermathList.length) {
+        parts.push('aftermath');
+        const sec = el('section', 'aw-flip-aftermath');
+        if (isStr(aftermath.heading)) sec.appendChild(el('h3', 'aw-flip-section', aftermath.heading));
+        if (isStr(aftermath.intro)) sec.appendChild(el('p', 'aw-lead', aftermath.intro));
+        if (isStr(aftermath.victimName)) sec.dataset.victim = aftermath.victimName;
+        for (const it of aftermathList) {
+            const item = el('div', 'aw-aftermath-item');
+            item.dataset.id = it.id;
+            item.dataset.kind = it.kind;
+            const note = el('p', 'aw-aftermath-note');
+            const setNote = (t) => { note.textContent = t; };
+            if (it.kind === 'email') {
+                item.appendChild(aftermathEmailRow(it));
+            } else {
+                // The item's own body is drawn (an sms bubble was empty), and a sender label falls back
+                // to the item's subject so the heading never reads "Unknown sender".
+                const rec = !it.from && !it.sender && isStr(it.subject) ? { ...it, sender: it.subject } : it;
+                const bodyNode = (r) => { const d = el('div'); if (isStr(r?.body)) d.textContent = r.body; return d; };
+                const surface = renderKindSurface(rec, { showNote: setNote, showLink: setNote, bodyNode });
+                if (surface) item.appendChild(surface);
+            }
+            if (isStr(it.note)) { note.textContent = it.note; item.appendChild(note); }
+            sec.appendChild(item);
+        }
+        if (isStr(aftermath.line)) sec.appendChild(el('p', 'aw-aftermath-line', aftermath.line));
+        root.appendChild(sec);
     }
 
     if (parts.length) {

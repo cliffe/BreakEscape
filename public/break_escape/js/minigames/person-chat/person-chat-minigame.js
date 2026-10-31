@@ -62,7 +62,9 @@ export class PersonChatMinigame extends MinigameScene {
         this.background = personChatBackgroundFor(params);
         this.startKnot = params.startKnot; // Optional knot to jump to (used for event-triggered conversations)
         this.videoCall = params.videoCall || false; // Render as a framed video call with a player self-view PiP
-        
+        this.videoLabel = params.videoLabel || null;       // ENG-07: meeting-tool label on the video-call bar
+        this.participantTag = params.participantTag || null; // ENG-07: participant tag (e.g. "External")
+
         // Verify NPC exists
         const npc = this.npcManager.getNPC(this.npcId);
         if (!npc) {
@@ -204,7 +206,9 @@ export class PersonChatMinigame extends MinigameScene {
             playerData: this.playerData,
             characters: this.characters,  // Pass multi-character support
             background: this.background,  // Optional background image path
-            videoCall: this.videoCall     // Render as a framed video call with a self-view PiP
+            videoCall: this.videoCall,    // Render as a framed video call with a self-view PiP
+            videoLabel: this.videoLabel,       // ENG-07: meeting-tool label (default SECURE VIDEO LINK)
+            participantTag: this.participantTag // ENG-07: participant tag (e.g. External)
         }, this.npcManager);
 
         this.ui.render();
@@ -1260,6 +1264,16 @@ export class PersonChatMinigame extends MinigameScene {
                 }
                 // If there IS text alongside the exit tag, fall through to display it.
                 // displayDialogueBlocksSequentially will detect the tag and close after showing the text.
+
+                // #trigger_minigame with no text of its own: open it now (with text, it opens
+                // once the blocks have been shown: displayDialogueBlocksSequentially)
+                if (!shouldExit && result.tags.some(t => window.inkMinigameLaunch?.isTriggerTag(t)) && (!result.text || !result.text.trim())) {
+                    if (this.inkEngine && this.inkEngine.story) {
+                        npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
+                    }
+                    this.scheduleDialogueAdvance(() => { window.inkMinigameLaunch?.flush(); }, 300);
+                    return;
+                }
             }
             
             if (!result.text) {
@@ -1455,6 +1469,17 @@ export class PersonChatMinigame extends MinigameScene {
                 this.pendingKnotJump = null;
                 console.log(`🎯 Executing deferred knot jump: ${knotName}`);
                 this.jumpToKnot(knotName);
+                return;
+            }
+
+            // #trigger_minigame: the line has been read, so open the minigame now. The chat is
+            // paused, not ended; a normal close of the minigame reopens it (ink-minigame-launch.js).
+            if (originalResult.tags && originalResult.tags.some(t => window.inkMinigameLaunch?.isTriggerTag(t))) {
+                console.log('🎮 trigger_minigame: all blocks shown, opening the minigame');
+                if (this.inkEngine && this.inkEngine.story) {
+                    npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
+                }
+                this.scheduleDialogueAdvance(() => { window.inkMinigameLaunch?.flush(); }, 1000);
                 return;
             }
 
@@ -1873,6 +1898,7 @@ export class PersonChatMinigame extends MinigameScene {
         this._releaseOverlayHold?.();
         this._releaseOverlayHold = null;
         this._cleanedUp = true;
+        window.inkMinigameLaunch?.dropPending(); // a #trigger_minigame still waiting on this chat's line
 
         // A reply still waiting to be shown: apply its state tags now (the story is
         // already saved past it), then stop its timer so nothing fires after the close.

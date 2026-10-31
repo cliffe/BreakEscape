@@ -171,6 +171,56 @@ module BreakEscape
       assert_equal older.id, game.scenario_data['importedGlobals']['src_team']['sourceGameId']
     end
 
+    test 'prefer earliest keeps the first concluded run, not the newest' do
+      first = finish(source_game, 'team' => 'first_run')
+      finish(source_game, 'team' => 'second_run')
+      imports = [{ 'from' => 'm91_carry_source', 'var' => 'team', 'as' => 'early_team',
+                   'default' => '', 'prefer' => 'earliest' }]
+      game = Game.create!(mission: @reader, player: @player, scenario_data: reader_scenario(imports))
+      assert_equal 'first_run', game.scenario_data['globalVariables']['early_team']
+      assert_equal first.id, game.scenario_data['importedGlobals']['early_team']['sourceGameId']
+    end
+
+    test 'prefer earliest on a later /conclude still keeps the earliest game by snapshot time' do
+      first = finish(source_game, 'team' => 'first_run')
+      finish(source_game, 'team' => 'second_run')
+      # The first game reaches the credits again, later than the second: its game
+      # is still the earliest, but its refreshed snapshot carries the newest globals.
+      first.player_state['globalVariables']['team'] = 'first_run_refreshed'
+      first.save!
+      first.conclude_mission!
+
+      imports = [{ 'from' => 'm91_carry_source', 'var' => 'team', 'as' => 'early_team',
+                   'default' => '', 'prefer' => 'earliest' }]
+      game = Game.create!(mission: @reader, player: @player, scenario_data: reader_scenario(imports))
+      assert_equal 'first_run_refreshed', game.scenario_data['globalVariables']['early_team']
+      assert_equal first.id, game.scenario_data['importedGlobals']['early_team']['sourceGameId']
+    end
+
+    test 'prefer earliest is resolved per source, so sibling imports of the same source all take it' do
+      # The real after-checks set "prefer": "earliest" on every entry reading the
+      # pre-check. One entry is enough: the source is then resolved to the earliest
+      # run for every import that reads it (the documented per-source rule).
+      finish(source_game, 'team' => 'old', 'assets_seized' => true)
+      finish(source_game, 'team' => 'new', 'assets_seized' => false)
+      imports = [{ 'from' => 'm91_carry_source', 'var' => 'team', 'as' => 'early_team',
+                   'default' => '', 'prefer' => 'earliest' }]
+      game = Game.create!(mission: @reader, player: @player, scenario_data: reader_scenario(imports))
+      assert_equal 'old', game.scenario_data['globalVariables']['early_team'], 'the earliest import takes the first run'
+      assert_equal 'old', game.scenario_data['globalVariables']['src_team'],
+                   'the sibling import of the same source follows the earliest choice'
+      assert_equal true, game.scenario_data['globalVariables']['m91_assets_seized'],
+                   'and so does the assets_seized import, from the first run'
+    end
+
+    test 'the default (no prefer) keeps the newest run' do
+      finish(source_game, 'team' => 'old')
+      newer = finish(source_game, 'team' => 'new')
+      game = reader_game
+      assert_equal 'new', game.scenario_data['globalVariables']['src_team']
+      assert_equal newer.id, game.scenario_data['importedGlobals']['src_team']['sourceGameId']
+    end
+
     test 'in-progress, abandoned and Finish-button games never count' do
       source_game(globals: { 'assets_seized' => true })
       source_game(globals: { 'assets_seized' => true }).update!(status: 'abandoned')

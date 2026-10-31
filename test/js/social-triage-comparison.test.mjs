@@ -10,6 +10,10 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { JSDOM } from 'jsdom';
 
+// batch 13 item 6: the no-ticks confirm prompt is on by default now. These tests predate it and
+// press Confirm once expecting a lock, so their sets pin it off unless they name it themselves.
+const withOneConfirm = (set) => (set && typeof set === 'object' && !('confirmPrompt' in set) ? { ...set, confirmPrompt: false } : set);
+
 const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 
@@ -106,6 +110,7 @@ function open(set, params = {}) {
     document.body.innerHTML = '';
     const container = document.createElement('div');
     document.body.appendChild(container);
+    set = withOneConfirm(set);
     const scene = new InboxTriageMinigame(container, { set, social: { triageSets: [set] }, ...params });
     scene._sceneType = 'inbox-triage';
     window.MinigameFramework.currentMinigame = scene;
@@ -139,6 +144,34 @@ test('a post round with the pre done shows the comparison on the result step', (
     assert.equal(box.querySelector('.tri-compare-title').textContent, 'Before and after');
     assert.match(box.textContent, /Score: 52% before, 100% now \(\+48 points\)\./);
     assert.match(box.textContent, /Report rate: 40% before, 100% now \(\+60 points\)\./);
+});
+
+test('show_result false hides the before/after panel and leaves no percentage on the result step', () => {
+    const s = open(checkSet(), { stage: 'post', globals: { ...preDone }, showResult: false });
+    play(s);
+    assert.equal(s.getTestState().triage.step, 'result');
+    assert.equal($(s, '.tri-compare'), null, 'the before/after panel is hidden');
+    assert.equal($(s, '.tri-score'), null, 'the score percent is hidden');
+    assert.ok($(s, '.tri-result-title'), 'the qualitative headline still shows');
+    assert.ok(!/\d+%/.test(s.container.textContent), 'no "N%" is left anywhere on the result step');
+});
+
+test('show_result true (the default) still shows the panel and the score', () => {
+    const s = open(checkSet(), { stage: 'post', globals: { ...preDone } });
+    play(s);
+    assert.ok($(s, '.tri-compare'), 'the before/after panel shows by default');
+    assert.ok($(s, '.tri-score'), 'the score shows by default');
+});
+
+test('a read-only reopen with show_result false hides the comparison and the report-rate figure', () => {
+    const s = open(checkSet(), {
+        stage: 'post', globals: { ...preDone }, showResult: false,
+        storedResult: { percent: 81, reportRate: 0.9, pass: true, readOnly: true }
+    });
+    assert.equal(s.getTestState().triage.step, 'result');
+    assert.equal($(s, '.tri-compare'), null, 'the reopened comparison is hidden');
+    assert.equal($(s, '.tri-score'), null, 'the reopened score is hidden');
+    assert.ok(!/\d+%/.test(s.container.textContent), 'no "N%" on the reopened card');
 });
 
 test('a post round with no pre shows "No baseline" and its own result; a pre round shows no panel', () => {

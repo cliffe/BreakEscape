@@ -6,6 +6,10 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { JSDOM } from 'jsdom';
 
+// batch 13 item 6: the no-ticks confirm prompt is on by default now. These tests predate it and
+// press Confirm once expecting a lock, so their sets pin it off unless they name it themselves.
+const withOneConfirm = (set) => (set && typeof set === 'object' && !('confirmPrompt' in set) ? { ...set, confirmPrompt: false } : set);
+
 const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 
@@ -52,6 +56,7 @@ function open(set, params = {}) {
     document.body.innerHTML = '';
     const container = document.createElement('div');
     document.body.appendChild(container);
+    set = withOneConfirm(set);
     const scene = new InboxTriageMinigame(container, { set, social: { triageSets: [set] }, ...params });
     scene._sceneType = 'inbox-triage';
     window.MinigameFramework.currentMinigame = scene;
@@ -128,6 +133,23 @@ test('P3 N16: Comply on a genuine, unchecked caller is not full marks; Ring back
     assert.equal(num(s, 'realTrusted'), '0 of 1');
 });
 
+test('batch-5 E12: labels.verdictFeedback replaces the built call line; verdictPoints makes Comply full marks', () => {
+    const desk = { ...genuineCall, id: 'call_client', truth: { ...genuineCall.truth, verdictPoints: { trust: 60 } } };
+    const s = open(awareSet([desk], { labels: { verdictFeedback: { trust: { real: 'That visitor was genuine and on the list.' } } } }));
+    click($(s, '.tri-start'));
+    act(s, 'call_client', 'comply');
+    const text = $(s, '.tri-card-verdict').textContent;
+    assert.match(text, /That visitor was genuine and on the list\./);
+    assert.doesNotMatch(text, /ring back|without checking/);
+    // without the override the built phone line is unchanged
+    const s2 = open(awareSet([genuineCall]));
+    click($(s2, '.tri-start'));
+    act(s2, 'call_gordon', 'comply');
+    assert.match($(s2, '.tri-card-verdict').textContent, /ring back/);
+    // verdictPoints: Comply scores full marks on the item that opts in
+    assert.equal(scoreTriage({ messages: [desk], answers: [{ id: 'call_client', verdict: 'trust', action: 'comply', flags: [] }] }).perMessage[0].score, 100);
+});
+
 test('P3 N17: an approved attacker prompt costs CRITICAL_PENALTY more and caps the band below the top', () => {
     const msgs = [pushPhish, ...Array.from({ length: 9 }, (_, i) => ({ ...realMail, id: `r${i}` }))];
     const answers = [{ id: 'push_night', verdict: 'trust', action: 'approve', flags: [] },
@@ -140,7 +162,7 @@ test('P3 N17: an approved attacker prompt costs CRITICAL_PENALTY more and caps t
     // without the approval the same round is Sharp
     const ok = scoreTriage({ messages: msgs, answers: [{ ...answers[0], verdict: 'report', action: 'deny_report' }, ...answers.slice(1)] });
     assert.equal(ok.criticalMisses.length, 0);
-    assert.match(ok.headline, /^Sharp/);
+    assert.match(ok.headline, /^Well done/);
     // a band cap applies even when the penalty leaves the percent high
     const banded = scoreTriage({ messages: msgs, answers, bands: [{ min: 50, headline: 'Top' }, { min: 0, headline: 'Lower' }] });
     assert.equal(banded.headline, 'Lower');

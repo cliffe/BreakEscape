@@ -126,6 +126,39 @@ test('selecting a block collects its fact once: global, note, sync, badge; a dec
     assert.equal(window.gameState.globalVariables.se_intel_baker_namesake, undefined);
 });
 
+test('pinHints off by default: no visible pin affordance on blocks', () => {
+    setGlobals();
+    const s = open();
+    assert.equal(s.container.querySelector('.ob-pin'), null);
+    // the screen-reader hint is still present for assistive tech
+    assert.ok(s.container.querySelector('#ob-hint-add'));
+});
+
+test('pinHints on: each not-yet-noted block shows a visible Pin, replaced by Noted once pinned (E14-M1)', () => {
+    setGlobals();
+    social.osint.pinHints = true;
+    const s = open();
+    const pins = s.container.querySelectorAll('.ob-pin');
+    assert.equal(pins.length, s.container.querySelectorAll('.ob-block:not(.is-noted)').length);
+    assert.ok(pins.length >= 1);
+    assert.match(pins[0].textContent, /Pin/);
+    // the pin label sits inside the block button, so keyboard focus reaches it
+    assert.equal(pins[0].closest('.ob-block').tagName, 'BUTTON');
+    pick(s, 'row_pierce');
+    const pierce = block(s, 'row_pierce');
+    assert.ok(pierce.classList.contains('is-noted'));
+    assert.equal(pierce.querySelector('.ob-pin'), null, 'a pinned block shows Noted, not Pin');
+    assert.match(pierce.textContent, /Noted/);
+});
+
+test('pinHints: the pin word is data (osint.pinLabel)', () => {
+    setGlobals();
+    social.osint.pinHints = true;
+    social.osint.pinLabel = 'Add to notes';
+    const s = open();
+    assert.match(s.container.querySelector('.ob-pin').textContent, /Add to notes/);
+});
+
 test('the four flagship facts found by browsing set target_ready_pierce (and not osint_done)', () => {
     setGlobals();
     const s = open();
@@ -468,4 +501,25 @@ test('R19 F19-2: the status line from a note is cleared when the player moves to
     click(linkTo(s, 'Read the team notes'));
     assert.equal(s.live.textContent, '');
     assert.equal(s.getTestState().osint.live, '');
+});
+
+// ── F-E18-3: an address inside a feedback/"Noted:" line must read dark-on-light, not dark-on-dark.
+//    The inline span uses class ob-addr (address font only), never ob-address, which is the dark
+//    address-bar container; the container keeps its dark box, the inline span has none.
+const { addressify } = await import(pathToFileURL(join(dir, 'minigames/osint-browser/osint-browser-minigame.js')));
+
+test('addressify wraps an address in .ob-addr, never the .ob-address container class (F-E18-3)', () => {
+    const parts = addressify('Noted: built as first.last@merrin-sallow.example for everyone');
+    const spans = parts.filter((p) => p && typeof p === 'object' && p.nodeType === 1);
+    assert.equal(spans.length, 1, 'one address span');
+    assert.equal(spans[0].getAttribute('class'), 'ob-addr');
+    assert.equal(spans[0].textContent, 'first.last@merrin-sallow.example');
+    assert.ok(!spans[0].classList.contains('ob-address'), 'must not reuse the dark address-bar class');
+});
+
+test('CSS: .ob-addr sets the address font with no box; the .ob-address container keeps its dark box (F-E18-3)', () => {
+    const css = readFileSync(join(js, '../css/osint-browser-minigame.css'), 'utf8');
+    assert.match(css, /\.ob-addr\s*\{[^}]*font-family:\s*var\(--se-font-address/);
+    assert.ok(!/\.ob-addr\s*\{[^}]*background/.test(css), 'the inline address span has no background box');
+    assert.match(css, /\.ob-address\s*\{[^}]*background:\s*var\(--ui-bg/, 'the container keeps its dark box');
 });

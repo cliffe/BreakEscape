@@ -37,6 +37,18 @@
       "lights": [ { "x": 1.75, "y": 2.3, "color": "#e8f0ff", "radius": 72, "intensity": 0.3 } ]
     }
   },
+  "carrholme_services": {
+    "mood": "Bright support-services office; the screens carry it.",
+    "scenario": { "enabled": true, "defaultMode": "on" },
+    "room": {
+      "emitters": {
+        "kiosk": { "color": "#9fd4ff", "radius": 28, "intensity": 0.45, "offsetY": -20, "effect": "screen" },
+        "info_screen": { "intensity": 0.25, "radius": 24 },
+        "fire_alarm_point": [ { "intensity": 0 } ]
+      },
+      "lights": [ { "x": 1.75, "y": 2.3, "color": "#e8f0ff", "radius": 72, "intensity": 0.3 } ]
+    }
+  },
   "merrin_sallow": {
     "mood": "Warm studio, the big window on the right (east), a banker's lamp on the crit table.",
     "scenario": { "enabled": true, "defaultMode": "on", "ambient": "#cac4bc" },

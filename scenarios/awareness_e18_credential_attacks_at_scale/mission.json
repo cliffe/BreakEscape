@@ -1,0 +1,26 @@
+{
+  "display_name": "Password guessing at scale",
+  "description": "An awareness episode of about 15 minutes for all staff. On an authorised exercise at Merrin & Sallow Architects, a fictional architecture practice, you first play the attacker at scale: build a staff list and a word list from the practice's public pages, spray one password across every account at once, and run a stolen breach list across many services. Then it's your own seat, telling the genuine security alerts from the fakes. Only that part is scored, and reporting when you're unsure is always fine and never marked down. No real password is ever typed.",
+  "difficulty_level": 1,
+  "scoring": "completion",
+  "resultGlobal": "episode_e18_credential_attacks_at_scale_defend_percent",
+  "stage": "episode",
+  "secgen_scenario": null,
+  "collection": "training",
+  "ui_theme": "general",
+  "title_art": "title_art/awareness_e18_credential_attacks_at_scale.jpg",
+  "estimated_duration_minutes": 15,
+  "cybok": [
+    {
+      "ka": "HF",
+      "topic": "Human Factors",
+      "keywords": [
+        "Passwords",
+        "Credential stuffing",
+        "Password spraying",
+        "Security awareness",
+        "Multi-factor authentication"
+      ]
+    }
+  ]
+}

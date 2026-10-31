@@ -187,17 +187,40 @@ export async function processGameActionTags(tags, ui, options = {}) {
                     }
                     break;
                     
+                case 'send_email':
+                    {
+                        // # send_email:<npc>:<knot>[:<seconds>]: an ink contact starts an email thread
+                        // (systems/mail-ink.js queuePlainEmail), from any chat.
+                        const bits = (param || '').split(':').map((b) => b.trim());
+                        if (bits[0] && bits[1]) {
+                            try {
+                                const mailInk = await import('../../systems/mail-ink.js');
+                                const queued = mailInk.queuePlainEmail(window.mailScheduler, window.gameScenario, {
+                                    npcId: bits[0], knot: bits[1], delaySeconds: Number(bits[2]) || 0
+                                });
+                                result.success = !!queued;
+                                result.message = queued ? `Email queued from ${bits[0]}` : `⚠️ send_email: ${bits[0]} is not an ink contact`;
+                            } catch (e) {
+                                result.message = '⚠️ send_email failed';
+                                console.warn(result.message, e);
+                            }
+                        } else {
+                            result.message = '⚠️ send_email needs <npc>:<knot>';
+                            console.warn(result.message);
+                        }
+                    }
+                    break;
+
                 case 'trigger_minigame':
-                    if (param) {
-                        const minigameName = param;
-                        result.success = true;
-                        result.message = `🎮 Triggering minigame: ${minigameName}`;
-                        if (ui) ui.showNotification(result.message, 'info');
-                        // Note: Actual minigame triggering would be game-specific
-                        console.log('🎮 Minigame trigger tag:', minigameName);
-                    } else {
-                        result.message = '⚠️ trigger_minigame tag missing minigame name';
-                        console.warn(result.message);
+                    {
+                        // # trigger_minigame:<type>[|key=value...]: opens the starter registered
+                        // for that object type (systems/ink-minigame-launch.js). In a person-chat
+                        // it opens after the line is read and the chat comes back on a normal close.
+                        const launch = window.inkMinigameLaunch
+                            ? window.inkMinigameLaunch.request(param)
+                            : { success: false, message: '⚠️ Minigame launcher not loaded' };
+                        result.success = launch.success;
+                        result.message = launch.message;
                     }
                     break;
                     
@@ -407,6 +430,28 @@ export async function processGameActionTags(tags, ui, options = {}) {
                         console.warn(result.message);
                     }
                     break;
+
+                case 'ending_check': {
+                    // # ending_check: put it first in the choice that starts the debrief (README_scenario_design.md,
+                    // "The ending convention"). When optional objectives are open the player is asked whether to end
+                    // the mission now. "Keep going" skips the rest of this line's tags, so a following
+                    // # set_global that starts the debrief does not run, and the story carries on.
+                    const checker = window.endingCheck;
+                    if (!checker) {
+                        result.success = true;
+                        result.message = 'ending_check ignored (not loaded)';
+                        break;
+                    }
+                    const endNow = await checker.confirm({ reason: 'tag' });
+                    result.success = true;
+                    if (endNow) {
+                        result.message = '🏁 Ending check: going ahead';
+                        break;
+                    }
+                    result.message = '🏁 Ending check: keeping going, the rest of this line\'s tags are skipped';
+                    results.push(result);
+                    return results;
+                }
 
                 case 'skip_task':
                     // The story closed this task off: shown as skipped, never as done

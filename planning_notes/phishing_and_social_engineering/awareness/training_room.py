@@ -4,7 +4,7 @@ The awareness training room, shared by every awareness shell
 (TRAINING_ROOM_PLAN.md §4–§6).
 
 Each company has its own map type (room_aw_*, copies of room_uni_seminar), but
-the skeleton is the same in all four: the host spot, the kiosk's map slot and the
+the skeleton is the same in all five: the host spot, the kiosk's map slot and the
 player's start. So the generators share this one module and only the map type,
 the chat background and the lighting change by company.
 
@@ -35,6 +35,7 @@ ROOMS = {
     'tarrowby_logistics': {'type': 'room_aw_tarrowby',      'chatBackground': 'assets/backgrounds/rooms/aw_tarrowby_blended.png'},
     'quayholt_insurance': {'type': 'room_aw_quayholt',      'chatBackground': 'assets/backgrounds/rooms/aw_quayholt_blended.png'},
     'merrin_sallow':      {'type': 'room_aw_merrin_sallow', 'chatBackground': 'assets/backgrounds/rooms/aw_merrin_sallow_blended.png'},
+    'carrholme_services': {'type': 'room_aw_carrholme',     'chatBackground': ''},
 }
 for _co, _room in ROOMS.items():
     _room['ambient'] = _LIGHTING[_co]['scenario'].get('ambient')

@@ -6,6 +6,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from title_art import with_title_art  # noqa: E402
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
 
@@ -95,7 +96,7 @@ def host_npc(host, done_global, task_id, ink_path):
 
 def kiosk(ep_id, observations):
     """observations: a string, or (before, after) where `after` shows once the round is done
-    (observationVariants on episode_<id>_defend_done, so the kiosk stops saying items are waiting)."""
+    (observationVariants on episode_<id>_defend_complete, so the kiosk stops saying items are waiting)."""
     done_obs = None
     if isinstance(observations, tuple):
         observations, done_obs = observations
@@ -111,7 +112,7 @@ def kiosk(ep_id, observations):
     }
     if done_obs:
         obj['observationVariants'] = [
-            {'condition': f'globalVars.episode_{ep_id}_defend_done', 'value': done_obs}]
+            {'condition': f'globalVars.episode_{ep_id}_defend_complete', 'value': done_obs}]
     obj['minigameData'] = {'episodeId': ep_id}
     return obj
 
@@ -175,7 +176,7 @@ def defend_only():
     mission = 'awareness_e1_invoice_fraud_defend'
     ep_id = 'e1_invoice_fraud_defend'
     prefix = f'episode_{ep_id}_defend_'
-    done = f'{prefix}done'
+    done = f'{prefix}complete'
     s = clean_set('e1_payments_inbox')
     # C2-m23: the defend-only shell has no write/flip stage, so it never replays a
     # player-sent message; drop the authored sender profile the full set carries.
@@ -204,7 +205,6 @@ def defend_only():
         f'{prefix}percent': 0,
         f'{prefix}reportRate': 0,
         done: False,
-        f'{prefix}pass': False,
     }
     sc = scenario(
         mission, 'Invoice fraud: the payments inbox',
@@ -215,10 +215,10 @@ def defend_only():
         done, globals_, {'triageSets': [s], 'awarenessEpisode': ep},
         HOSTS['adaeze'], 'adaeze_okafor',
         ("A touch-screen kiosk showing Brightwell's payments inbox. Six messages are waiting.",
-             "A touch-screen kiosk showing Brightwell's payments inbox. All six messages are sorted."),
-        success_screen('Payments inbox done', "You've sorted all six messages and finished this episode."))
+             "A touch-screen kiosk showing Brightwell's payments inbox. That's this one finished."),
+        success_screen('Payments inbox done', "That's this episode finished. The debrief goes through each one."))
     meta = {
-        'display_name': 'Awareness E1: Invoice fraud (inbox only)',
+        'display_name': 'Invoice fraud: spot it',
         'description': "An awareness episode of about 8 minutes for finance staff, on the inbox side only. Cover the payments inbox at Brightwell Foods, a fictional company, before the afternoon payment run: six messages, some real and some built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
         'difficulty_level': 1,
         'scoring': 'completion',
@@ -239,7 +239,7 @@ def check(pair, stage):
     comparison = {'requireGlobal': 'pre_check_completed'} if stage == 'post' else None
     s = clean_set(form, stage=stage, comparison=comparison)
     prefix = f'triage_{stage}_'
-    done = f'{prefix}done'
+    done = f'{prefix}complete'
     ep = {
         'id': ep_id, **brand_block(),
         'variant': 'full',
@@ -255,18 +255,17 @@ def check(pair, stage):
         f'{prefix}percent': 0,
         f'{prefix}reportRate': 0,
         done: False,
-        f'{prefix}pass': False,
     }
     extra = {}
     pre_mission = f'awareness_pre_finance_{pair}'
     if stage == 'pre':
-        extra['exportGlobals'] = ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_done']
+        extra['exportGlobals'] = ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_complete']
     else:
         # Imported names are not redeclared (the validator rejects the collision).
         extra['importGlobals'] = [
             {'from': pre_mission, 'var': 'triage_pre_percent', 'as': 'triage_pre_percent', 'default': 0},
             {'from': pre_mission, 'var': 'triage_pre_reportRate', 'as': 'triage_pre_reportRate', 'default': 0},
-            {'from': pre_mission, 'var': 'triage_pre_done', 'as': 'triage_pre_done', 'default': False},
+            {'from': pre_mission, 'var': 'triage_pre_complete', 'as': 'triage_pre_complete', 'default': False},
             {'from': pre_mission, 'completed': 'pre_check_completed'},
         ]
     host = HOSTS['graham' if pair == 'ab' else 'joanne']
@@ -278,7 +277,7 @@ def check(pair, stage):
                  "Ten messages from a payments inbox: decide what to do with each one. Your result is saved so the second check can compare with it.")
         aim = ('first_check_aim', 'Do the first check', 'Sort ten messages at the training kiosk.')
         task = ('finish_check', 'Finish the first check')
-        display = f'Awareness check: finance, before ({letters})'
+        display = awareness_deploy.check_title('pre', 'finance')
         desc = (f"A check of about 8 to 10 minutes for finance staff, taken before the awareness episodes (pair {letters}). "
                 "Ten messages from the payments inbox of Brightwell Foods, a fictional company. The result is kept so the "
                 f"matching after-check (awareness_post_finance_{pair}) can show how the two compare.")
@@ -290,21 +289,19 @@ def check(pair, stage):
                  "Ten new messages from a payments inbox. If you took the first check, the end screen shows how the two compare.")
         aim = ('second_check_aim', 'Do the second check', 'Sort ten messages at the training kiosk.')
         task = ('finish_check', 'Finish the second check')
-        display = f'Awareness check: finance, after ({letters})'
+        display = awareness_deploy.check_title('post', 'finance')
         desc = (f"A check of about 8 to 10 minutes for finance staff, taken after the awareness episodes (pair {letters}). "
                 "Ten new messages from the payments inbox of Brightwell Foods, a fictional company, matched to the "
                 f"first check (awareness_pre_finance_{pair}). The end screen compares the two results when the first check was finished.")
         obs = 'A touch-screen kiosk with ten messages from a payments inbox, ready for the second check.'
         ending = success_screen('Second check done', 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.')
-    desc += (" Organiser note: each role's check tests the channel that role meets in its "
-             "episode, and in a session that runs more than one episode only the learner's "
-             "primary-role check is recorded.")
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, 'Sort the ten messages at the training kiosk.', aim, task, done,
                   globals_, {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, ending, extra)
     meta = {
         'display_name': display,
         'description': desc,
+        'organiser_note': awareness_deploy.CHECK_ORGANISER_NOTE,
         'difficulty_level': 1,
         'scoring': 'completion',
         'secgen_scenario': None,
@@ -316,15 +313,36 @@ def check(pair, stage):
     return mission, sc, meta
 
 
+# Top-level titleScreenName (engine batch 14), placed right after scenario_name. Values match the committed
+# shells (owner decision 2026-10-30): checks say Starting check / Final check, defend shells use the episode name.
+TITLE_NAMES = {'awareness_e1_invoice_fraud_defend': 'Invoice fraud'}
+
+
+def with_title_screen_name(sc, mission):
+    if '_pre_' in mission:
+        title = 'Starting check'
+    elif '_post_' in mission:
+        title = 'Final check'
+    else:
+        title = TITLE_NAMES.get(mission)
+    if title is None:
+        return sc
+    return {k2: v2 for k, v in sc.items() for k2, v2 in
+            (((k, v), ('titleScreenName', title)) if k == 'scenario_name' else ((k, v),))}
+
+
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else REPO + '/scenarios'
     built = [defend_only()] + [check(p, st) for p in ('ab', 'ba') for st in ('pre', 'post')]
     for mission, sc, meta in built:
+        sc = with_title_screen_name(sc, mission)
         d = os.path.join(out, mission)
         os.makedirs(os.path.join(d, 'ink'), exist_ok=True)
         with open(os.path.join(d, 'scenario.json.erb'), 'w') as f:
             json.dump(sc, f, indent=2, ensure_ascii=False)
             f.write('\n')
+        meta = with_title_art(meta, mission)
+        meta = awareness_deploy.with_result_fields(meta, sc)
         with open(os.path.join(d, 'mission.json'), 'w') as f:
             json.dump(meta, f, indent=2, ensure_ascii=False)
             f.write('\n')

@@ -16,7 +16,7 @@ for (const rel of [
     'minigames/framework/base-minigame.js', 'minigames/framework/social-overlay.js',
     'utils/display-dashes.js', 'ui/modal-stack.js',
     'systems/phish-rules.js', 'systems/global-writer.js', 'systems/social-influence.js', 'ui/influence-bar.js', 'systems/mail-scheduler.js',
-    'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
+    'systems/mail-ink.js', 'minigames/mail-client/mail-client-minigame.js', 'minigames/mail-client/mail-reader.js',
     'minigames/mail-client/mail-data.js', 'minigames/mail-client/mail-notification.js',
     'minigames/mail-client/mail-composer.js', 'minigames/mail-client/mail-bridge.js',
     'minigames/landing-page-builder/landing-page-model.js'
@@ -122,6 +122,73 @@ test('P3 N4: an awareness miss gets no reply made of meter text; replies.missed 
     assert.equal(bridge.dataOnlyText({ id: 't', replies: { landed: 'Thanks Derek' } }, { landed: true, factors: [] }, aw), 'Thanks Derek');
     // the lab (no awarenessEpisode) keeps the factor's own line as the reply
     assert.equal(bridge.dataOnlyText({ id: 't' }, failResult([pretextFail]), {}), pretextFail.reply);
+});
+
+test('E13 D1: replies.byChoice keys the data-only reply on the sent template', () => {
+    const aw = { awarenessEpisode: { id: 'e13' } };
+    const landedRes = { landed: true, factors: [] };
+    const target = { id: 'assist_reader', replies: {
+        landed: 'top-level landed',
+        byChoice: {
+            inject_contacts: 'injection reply',
+            pretext_invoice: 'plain reply'
+        }
+    } };
+    // the chosen template wins over replies.landed
+    assert.equal(bridge.dataOnlyText(target, landedRes, aw, 'pretext_invoice'), 'plain reply');
+    assert.equal(bridge.dataOnlyText(target, landedRes, aw, 'inject_contacts'), 'injection reply');
+    // a template with no byChoice entry, or none passed, falls back to replies.landed (unchanged)
+    assert.equal(bridge.dataOnlyText(target, landedRes, aw, 'unknown_tpl'), 'top-level landed');
+    assert.equal(bridge.dataOnlyText(target, landedRes, aw, null), 'top-level landed');
+    // absent byChoice: behaviour is exactly as before
+    assert.equal(bridge.dataOnlyText({ id: 't', replies: { landed: 'ok' } }, landedRes, aw, 'inject_contacts'), 'ok');
+
+    // the { landed, missed } object form picks by whether the send landed
+    const pairTarget = { id: 't', replies: { byChoice: { tpl: { landed: 'won', missed: 'lost' } } } };
+    assert.equal(bridge.dataOnlyText(pairTarget, landedRes, aw, 'tpl'), 'won');
+    assert.equal(bridge.dataOnlyText(pairTarget, failResult([pretextFail]), aw, 'tpl'), 'lost');
+    // an object form missing the needed branch falls through to the default
+    const halfPair = { id: 't', replies: { landed: 'default landed', byChoice: { tpl: { missed: 'lost' } } } };
+    assert.equal(bridge.dataOnlyText(halfPair, landedRes, aw, 'tpl'), 'default landed');
+});
+
+test('E13 F-2: sentResultLine defaults unchanged and overrides the send banner per sent choice', () => {
+    const landed = { landed: true };
+    const missed = { landed: false };
+    // default is byte-for-byte the old banner, with and without a template id
+    assert.equal(bridge.sentResultLine({ id: 't' }, landed), 'It landed. They acted on it.');
+    assert.equal(bridge.sentResultLine({ id: 't' }, missed), 'It did not land.');
+    assert.equal(bridge.sentResultLine({ id: 't' }, landed, 'any'), 'It landed. They acted on it.');
+    // replies.byChoice[id].sentLine: a bare string overrides the landing banner only
+    const t = { id: 'assist', replies: { byChoice: {
+        pretext_invoice: { sentLine: 'The brief went out as written. Nothing hidden to carry.' },
+        inject_contacts: 'injection reply'
+    } } };
+    assert.equal(bridge.sentResultLine(t, landed, 'pretext_invoice'), 'The brief went out as written. Nothing hidden to carry.');
+    assert.equal(bridge.sentResultLine(t, missed, 'pretext_invoice'), 'It did not land.');
+    // a byChoice entry that is a plain-string reply carries no sentLine: default banner
+    assert.equal(bridge.sentResultLine(t, landed, 'inject_contacts'), 'It landed. They acted on it.');
+    // the { landed, missed } object form picks by result.landed
+    const pair = { id: 't', replies: { byChoice: { tpl: { sentLine: { landed: 'won', missed: 'lost' } } } } };
+    assert.equal(bridge.sentResultLine(pair, landed, 'tpl'), 'won');
+    assert.equal(bridge.sentResultLine(pair, missed, 'tpl'), 'lost');
+    // target-level sentLines[templateId] as the fallback
+    const map = { id: 't', sentLines: { tpl: 'went as plain text' } };
+    assert.equal(bridge.sentResultLine(map, landed, 'tpl'), 'went as plain text');
+    assert.equal(bridge.sentResultLine(map, landed, 'other'), 'It landed. They acted on it.');
+    // and it reaches the rendered checklist banner
+    const panel = bridge.renderChecklist({ landed: true, open: { opened: true }, factors: [], tells: [] },
+        { id: 'assist', replies: { byChoice: { pretext_invoice: { sentLine: 'plain send, nothing planted' } } } },
+        { sentTemplateId: 'pretext_invoice' });
+    assert.equal(panel.querySelector('.mail-checklist-banner').textContent, 'plain send, nothing planted');
+});
+
+test('E13 D1: sentTemplateIdOf picks the pretext part, else the first chosen template', () => {
+    assert.equal(bridge.sentTemplateIdOf({ templates: { from: 'f', pretext: 'pretext_invoice', ask: 'a' } }), 'pretext_invoice');
+    assert.equal(bridge.sentTemplateIdOf({ templates: { from: 'f', ask: 'a' } }), 'f');
+    assert.equal(bridge.sentTemplateIdOf({ templates: {} }), null);
+    assert.equal(bridge.sentTemplateIdOf({}), null);
+    assert.equal(bridge.sentTemplateIdOf(null), null);
 });
 
 test('P3 N4: an awareness send that misses schedules no reply text and promises none', () => {

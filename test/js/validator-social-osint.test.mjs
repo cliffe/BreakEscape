@@ -215,3 +215,10 @@ test('only the listed fields are read: other prose with a real brand is not a fi
   });
   assert.deepEqual(lint(s), []);
 });
+
+test('site.logo: false is accepted (no logo); true is an error', { skip }, () => {
+  const off = mutated((s) => { s.social.osint.sites[0].logo = false; });
+  assert.deepEqual(hits(lint(off), /logo/), []);
+  const on = mutated((s) => { s.social.osint.sites[0].logo = true; });
+  assert.equal(hits(lint(on), /logo is true/).length, 1);
+});

@@ -8,6 +8,8 @@ The course extends a product line that is already built: **Incident Simulations:
 
 ## Start here
 
+Hacktivity platform details (courses, seeding, scoring, reporting routes, admin) are stored in the Hacktivity repo at `docs/awareness_course/`, not here. (Owner decision D10, 2026-10-30.)
+
 **To build the next episodes, start at `implementation/00_README.md`.** The briefs there are checked against the code and win over the planning files below wherever they differ.
 
 1. **`04_BUILT_SO_FAR.md`**: what is built, how each conflict between the plan and the build was settled (R1 to R13), coverage by module and what comes next. Read this first.
@@ -53,7 +55,7 @@ The scenarios are `scenarios/awareness_*`. Where a design doc and a scenario fil
 - **BE**: Break Escape engine features (`features/break_escape_engine.md`), such as the debrief screen, the text route, the organisation profile and accessibility checks.
 - **MG**: minigames (`features/minigames.md`), such as the inbox, MFA prompts and the password manager. MG-30, the pretext workshop, is delivered by the built attack half.
 - **EX**: explainers (`features/explainers_video_and_npc.md`): hosts, concept cards, feedback strings and in-world documents. No video.
-- **HA**: Hacktivity platform features (`features/hacktivity.md`). The only change proposed now is the customer reporting-route setting, which waits for the user's go-ahead; the rest is a later wish list.
+- **HA**: Hacktivity platform features (now in the Hacktivity repo, `docs/awareness_course/hacktivity_features.md`; `features/hacktivity.md` is a pointer). The only change proposed now is the customer reporting-route setting, which waits for the user's go-ahead; the rest is a later wish list.
 
 Two cross-cutting plans: `features/assessment_and_evidence.md` and `features/accessibility_and_inclusion.md`.
 

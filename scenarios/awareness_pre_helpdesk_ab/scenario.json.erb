@@ -1,6 +1,7 @@
 {
   "scenario_id": "awareness_pre_helpdesk_ab",
   "scenario_name": "Service desk check: before (AB)",
+  "titleScreenName": "Starting check",
   "scenario_brief": "The first of two short checks for IT service desk staff at Quayholt Insurance, a fictional company. Ten items from the IT service desk queue: calls, a voicemail, emails and a sign-in prompt. Decide what to do with each one. Your result is saved so the second check can compare with it.",
   "endGoal": "Work through the ten items at the training kiosk.",
   "version": "1.0",
@@ -30,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "triage_pre_done"
+          "triage_pre_complete"
         ]
       },
       "conclusionScreen": {
@@ -53,13 +54,12 @@
     "se_awareness_records": [],
     "triage_pre_percent": 0,
     "triage_pre_reportRate": 0,
-    "triage_pre_done": false,
-    "triage_pre_pass": false
+    "triage_pre_complete": false
   },
   "exportGlobals": [
     "triage_pre_percent",
     "triage_pre_reportRate",
-    "triage_pre_done"
+    "triage_pre_complete"
   ],
   "social": {
     "triageSets": [
@@ -225,7 +225,7 @@
             "id": "ha_ceo_mfa_bypass",
             "from": {
               "name": "Helen Achterberg",
-              "address": "helen.achterberg.ceo@inboxly.example"
+              "address": "helen.achterberg.ceo@lintbox.example"
             },
             "to": "servicedesk@quayholt.example",
             "subject": "Urgent: remove my sign-in prompts today",
@@ -235,8 +235,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "helen.achterberg.ceo@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "helen.achterberg.ceo@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -246,11 +246,11 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "The chief executive's name on a personal inbox at inboxly.example, not quayholt.example",
+                "senderTrust": "The chief executive's name on a personal inbox at lintbox.example, not quayholt.example",
                 "secrecy_or_bypass": "'No need to raise a ticket or tell Darren' skips the record and the person who would check",
                 "urgencyCalibrated": "'Before 10' while she's 'flying' leaves no time to ring her"
               },
-              "headerNote": "The automatic checks pass because the message really was sent from inboxly.example. A pass tells you which mail system sent it, not that it's Helen.",
+              "headerNote": "The automatic checks pass because the message really was sent from lintbox.example. A pass tells you which mail system sent it, not that it's Helen.",
               "ifTrusted": "Her account would lose its second sign-in step, so anyone with her password could get straight in.",
               "reportReply": "Thanks. Helen didn't send it, and her account is unchanged. Her real address is on quayholt.example."
             }
@@ -470,7 +470,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:triage_pre_done",
+              "eventPattern": "global_variable_changed:triage_pre_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "finish_check"

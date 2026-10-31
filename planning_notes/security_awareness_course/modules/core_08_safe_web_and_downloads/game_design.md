@@ -72,7 +72,7 @@ The critical path is marked **(CP)**.
 
 ### 4. Apply: "The 12:00 report" (5 minutes)
 
-- **(CP)** Back at the desk with DocShift installed from Quayholt Apps, the player converts the price list: one satisfying click. The work task bar (BE-18) shows four steps: **Convert Fernside's price list** (done), **Check Ashby's and Fernside's delivery charges**, **Download Fernside's new catalogue**, **Send the report**. Four threats arrive inside the work, one from each slot (BE-13 draws the variant):
+- **(CP)** Back at the desk with Pagewrangle installed from Quayholt Apps, the player converts the price list: one satisfying click. The work task bar (BE-18) shows four steps: **Convert Fernside's price list** (done), **Check Ashby's and Fernside's delivery charges**, **Download Fernside's new catalogue**, **Send the report**. Four threats arrive inside the work, one from each slot (BE-13 draws the variant):
 
 | Slot | What happens | What it tests | Best response |
 |---|---|---|---|

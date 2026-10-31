@@ -121,12 +121,20 @@ function formatAsk(row, spec, at) {
 export function formatPretextTells(session, spec, influenceNow) {
     const log = Array.isArray(session?.log) ? session.log : [];
     const after = new Array(log.length);
-    let cursor = typeof influenceNow === 'number' && Number.isFinite(influenceNow) ? influenceNow : 0;
+    const current = typeof influenceNow === 'number' && Number.isFinite(influenceNow) ? influenceNow : 0;
+    let cursor = current;
     for (let i = log.length - 1; i >= 0; i--) {
         after[i] = cursor;
         cursor -= sumDelta(log[i].entries);
     }
-    return log.map((row, i) => (row?.kind === 'ask' ? formatAsk(row, spec, after[i]) : formatSay(row, spec)));
+    // A resolved ask (granted or refused) keeps the influence it resolved at, walked back from the
+    // current total so a reload shows the same number. A still-pending ask is open and gated on the
+    // influence right now, so its "now at" is the current total: a pending ask made at -10 does not
+    // keep reading "now at -10" after later lines drop the player to -60 (R2 F3, E12 stale ask).
+    const pending = (row) => row?.result === 2 || row?.result === 'pending';
+    return log.map((row, i) => (row?.kind === 'ask'
+        ? formatAsk(row, spec, pending(row) ? current : after[i])
+        : formatSay(row, spec)));
 }
 
 /**

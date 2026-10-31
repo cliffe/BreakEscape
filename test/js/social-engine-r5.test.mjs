@@ -78,7 +78,7 @@ test('P5-3: a trusted phish page (not a critical kind) still keeps the round out
     assert.match(r.headline, /^Getting there/);
     // the same round with the page reported is Sharp
     answers[3] = { id: 'page1', verdict: 'report', flags: ['lookalike_domain'] };
-    assert.match(scoreTriage({ messages, answers, profile: 'awareness' }).headline, /^Sharp/);
+    assert.match(scoreTriage({ messages, answers, profile: 'awareness' }).headline, /^Well done/);
 });
 
 // ── P5-5 / P5-15: when the no-blame line shows, and its critical wording ──────
@@ -127,7 +127,7 @@ test('P5-6: reporting a real item gets a neutral thank-you; a phish keeps "That 
     document.body.innerHTML = '';
     const container = document.createElement('div');
     document.body.appendChild(container);
-    const set = { id: 's', scoringProfile: 'awareness', feedbackMode: 'immediate', messages: [real('r1'), phish('p1')] };
+    const set = { id: 's', scoringProfile: 'awareness', feedbackMode: 'immediate', confirmPrompt: false, messages: [real('r1'), phish('p1')] };
     const scene = new InboxTriageMinigame(container, { set, social: { triageSets: [set] }, skin: 'awareness' });
     scene._sceneType = 'inbox-triage';
     window.MinigameFramework.currentMinigame = scene;
@@ -137,10 +137,14 @@ test('P5-6: reporting a real item gets a neutral thank-you; a phish keeps "That 
     const click = (n) => n.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
     click($('.tri-start'));
     const act = (id, v) => { click($(`.mail-row[data-id="${id}"]`)); click($(`.tri-verdict[data-action="${v}"]`)); click($('.tri-confirm')); };
+    // F-E19-3: immediate mode folds the thanks beat into the review card's verdict line (the single
+    // confirmation), which keeps the aw-report-thanks class. A real report reads neutral; a phish
+    // keeps "A report warns everyone else."
     act('r1', 'report');
-    assert.equal($('.aw-report-thanks').textContent, 'Thanks for reporting. A colleague will check it and let it through.');
+    assert.ok($('.tri-card-verdict.aw-report-thanks'), 'the card verdict line carries the thanks class');
+    assert.match($('.tri-card-verdict').textContent, /never wrong/);
     act('p1', 'report');
-    assert.equal($('.aw-report-thanks').textContent, 'Thanks for reporting. That warns everyone else.');
+    assert.match($('.tri-card-verdict').textContent, /A report warns everyone else/);
     // P5-1: Finish lives in the result bar, the last child of the scrolling result panel (the
     // stylesheet pins it there)
     click($('.tri-next'));
@@ -150,13 +154,17 @@ test('P5-6: reporting a real item gets a neutral thank-you; a phish keeps "That 
     scene.cleanup();
 });
 
-test('P5-1: the stylesheet pins the result bar to the bottom of the result panel', () => {
+test('P5-1 / E8 F5: the result text scrolls in its own body and the action bar sits below it, never over it', () => {
     const css = readFileSync(join(root, 'public/break_escape/css/inbox-triage-minigame.css'), 'utf8');
-    const rule = /\.tri-result > \.tri-result-bar \{([^}]*)\}/.exec(css);
-    assert.ok(rule, 'a .tri-result > .tri-result-bar rule');
-    assert.match(rule[1], /position: sticky/);
-    assert.match(rule[1], /bottom:/);
-    assert.match(rule[1], /background-color:/);
+    const bar = /\.tri-result > \.tri-result-bar \{([^}]*)\}/.exec(css);
+    assert.ok(bar, 'a .tri-result > .tri-result-bar rule');
+    assert.doesNotMatch(bar[1], /position: sticky/, 'the bar no longer overlays the skill lines');
+    assert.match(bar[1], /flex: none/);
+    assert.match(bar[1], /background-color:/);
+    const body = /\.tri-result > \.tri-result-body \{([^}]*)\}/.exec(css);
+    assert.ok(body, 'a .tri-result > .tri-result-body rule');
+    assert.match(body[1], /overflow-y: auto/);
+    assert.match(css, /\.tri-result \{[^}]*flex-direction: column/);
 });
 
 // ── P5-10: email ticks only for tells the email could carry ──────────────────

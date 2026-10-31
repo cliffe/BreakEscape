@@ -10,6 +10,10 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { JSDOM } from 'jsdom';
 
+// batch 13 item 6: the no-ticks confirm prompt is on by default now. These tests predate it and
+// press Confirm once expecting a lock, so their sets pin it off unless they name it themselves.
+const withOneConfirm = (set) => (set && typeof set === 'object' && !('confirmPrompt' in set) ? { ...set, confirmPrompt: false } : set);
+
 const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 
@@ -80,6 +84,7 @@ function open(set, params = {}) {
     document.body.innerHTML = '';
     const container = document.createElement('div');
     document.body.appendChild(container);
+    set = withOneConfirm(set);
     const scene = new InboxTriageMinigame(container, { set, social: { triageSets: [set] }, ...params });
     scene._sceneType = 'inbox-triage';
     window.MinigameFramework.currentMinigame = scene;
@@ -198,7 +203,10 @@ test('the chip list: seven factors then Nothing looks wrong; none is exclusive; 
     click($(s, '.tri-confirm'));
     assert.equal(state(s).messages[0].verdict, 'trust');
     assert.equal($(s, '.tri-verdict'), null);
-    assert.match($(s, '.tri-locked').textContent, /Your verdict: Trust\. Locked in\./);
+    // F-E19-3: immediate mode drops the separate "Your verdict: … Locked in." line; the review
+    // card's verdict line is the single confirmation.
+    assert.equal($(s, '.tri-locked'), null);
+    assert.match($(s, '.tri-card-verdict').textContent, /You chose Trust\./);
 });
 
 test('immediate feedback: the review card names caught, missed and false flags and what would have happened', () => {
@@ -212,7 +220,10 @@ test('immediate feedback: the review card names caught, missed and false flags a
     const text = $(s, '.tri-review-card').textContent;
     assert.match(text, /Right call: reported/);
     assert.match(text, /Caught:.*Sender address doesn't match the display name/);
-    assert.match(text, /Missed:.*Unexpected urgency/);
+    // F-E9-6: the verdict (Report on a phish) is right, so an un-ticked tell reads "Also worth
+    // noticing:", not a red "Missed:".
+    assert.match(text, /Also worth noticing:.*Unexpected urgency/);
+    assert.doesNotMatch(text, /Missed:/);
     assert.match(text, /Not a flag here:/);
     assert.match(text, /Header note: All three passed/);
     assert.match(text, /IT Security: Thanks\. Confirmed as a phish\./);
@@ -439,6 +450,30 @@ test('a stored result (the pre/post reopen) shows the result only; Finish report
     assert.equal($(s, '.tri-skills'), null);
     esc();
     assert.deepEqual(ended[0].result, { setId: 'demo_4', stage: 'pre', reopened: true, percent: 72, reportRate: 0.5 });
+});
+
+test('show_result false hides the result percent; the default shows it', () => {
+    const shown = open(makeSet({ stage: 'post', scoringProfile: 'awareness' }),
+        { stage: 'post', storedResult: { percent: 72, reportRate: 0.5 } });
+    assert.equal($(shown, '.tri-score').textContent, '72%', 'default: the percent shows');
+    const hidden = open(makeSet({ stage: 'post', scoringProfile: 'awareness' }),
+        { stage: 'post', storedResult: { percent: 72, reportRate: 0.5 }, showResult: false });
+    assert.equal($(hidden, '.tri-score'), null, 'show_result false: no result percent');
+    assert.ok($(hidden, '.tri-result-title').textContent.length > 0, 'the headline still shows');
+});
+
+test('a check below the host pass mark shows the try-again line; at or above it, and with no mark, it does not', () => {
+    const below = open(makeSet({ stage: 'post', scoringProfile: 'awareness' }),
+        { stage: 'post', hostPassPercent: 70, storedResult: { percent: 50, reportRate: 0 } });
+    assert.match($(below, '.tri-below-pass').textContent, /try again from the course page/);
+    const above = open(makeSet({ stage: 'post', scoringProfile: 'awareness' }),
+        { stage: 'post', hostPassPercent: 70, storedResult: { percent: 80, reportRate: 1 } });
+    assert.equal($(above, '.tri-below-pass'), null, 'at or above the mark: no line');
+    // A real check set carries outcome.passPercent 0 (no mark of its own); with no host mark either,
+    // no line shows even at a low score.
+    const noMark = open(makeSet({ stage: 'post', scoringProfile: 'awareness', outcome: { setGlobalPrefix: 'triage_{stage}_', passPercent: 0 } }),
+        { stage: 'post', storedResult: { percent: 10, reportRate: 0 } });
+    assert.equal($(noMark, '.tri-below-pass'), null, 'no pass mark: no line even at a low score');
 });
 
 test('the stage parameter overrides the set stage; an empty round cannot start', () => {

@@ -10,13 +10,14 @@
       "Lerato Dlamini: health and safety adviser. 30s, South African, from Durban. Genuine in form A row 1",
       "Chidi Okeke: fleet coordinator. 40s, Nigerian-British. Genuine in form A row 9",
       "Callum Whiteley: warehouse operative. early 20s, white, from Bradford. Genuine in form B row 9",
-      "Marjorie Ackroyd: payroll officer. 60s, white, from Wakefield. Named in form B row 8"
+      "Marjorie Ackroyd: payroll officer. 60s, white, from Wakefield. Named in form B row 8",
+      "Dermot Lynch: transport shift supervisor. 50s, Irish, from Dundalk. WP-15: the colleague impersonated on a 'new number' chat-app text in e6_chat_new_number. Impersonated only; he is not a genuine sender in the episode set or either form, so there is no fraudster-here-and-genuine-in-a-form clash"
     ],
-    "nameCheck": "Ionescu, Lofthouse, Strachan, Solanki, Dlamini, Okeke, Whiteley and Ackroyd had no hits in scenarios, planning_notes, docs or public/break_escape/js on 2026-10-22. Asante, Nwosu, Iqbal and Oyelaran were rejected because they are already in use.",
+    "nameCheck": "Ionescu, Lofthouse, Strachan, Solanki, Dlamini, Okeke, Whiteley and Ackroyd had no hits in scenarios, planning_notes, docs or public/break_escape/js on 2026-10-22. Dermot Lynch (and both 'Dermot' and 'Lynch' on their own) had no hits in scenarios, planning_notes, docs or public/break_escape/js on 2026-10-29. Asante, Nwosu, Iqbal and Oyelaran were rejected because they are already in use.",
     "realHosts": "staff.tarrowby.example (the staff app), hr.tarrowby.example, facilities.tarrowby.example, forms.tarrowby.example, guest.tarrowby.example. Depot: Shipley; sites named: Bradford Road, Halifax, Leeds.",
     "lookalikes": "Episode: tarrowbey.example (in the roster), tarrowby-parking.example (added word). Forms: tarrowby-charging.example, tarrowby-wifi.example (QR notices, added word), tarrowby-depot.example, tarrowby-team.example (row-6 look-alike sender domains, added word).",
-    "thirdParties": "Parceline (parceline-redelivery.example), a courier name on a fake fee text; FuelWise (fuelwise-rewards.example), a fuel-card offer nobody asked for; Telvoro (telvoro-billing.example), a mobile network Tarrowby does not use; PCN Services (pcn-settle.example), a fake parking-charge sender; shrtn.example, an invented link shortener; ShiftPlanner (shiftplanner-mail.example) and PaySuite (paysuite-mail.example), the genuine rota and payroll providers that send Tarrowby mail for it.",
-    "preShipCheck": "Web-search Tarrowby, Parceline, FuelWise, Telvoro, ShiftPlanner and PaySuite for real businesses of the same name before release."
+    "thirdParties": "ASAParcels (asaparcels-redelivery.example), a courier name on a fake fee text; Fuelr (fuelr-rewards.example), a fuel-card offer nobody asked for (WP-15: no longer used in any shipped item after e6_fuel_card_offer was swapped out; left as an unused brand); Telvoro (telvoro-billing.example), a mobile network Tarrowby does not use; PCN Services (pcn-settle.example), a fake parking-charge sender; shrtn.example, an invented link shortener; Shiftle (shiftle-mail.example) and Payrollery (payrollery-mail.example), the genuine rota and payroll providers that send Tarrowby mail for it.",
+    "preShipCheck": "Web-search Tarrowby, ASAParcels, Fuelr, Telvoro, Shiftle and Payrollery for real businesses of the same name before release."
   },
   "_formPairing": {
     "_use": "Item n in form A matches item n in form B on kind, phish or genuine, flags and difficulty. Per form: 10 items (4 phish, 6 genuine; 4 texts, 2 QR notices, 4 emails); flags unexpected_qr 1, lookalike_domain 2 (row 2 QR, row 6 email), senderTrust 2 (row 4, row 6), secrecy_or_bypass 1, urgencyCalibrated 1, smish_shortlink_urgency 1, reply_stop_trick 1 (9 in all); difficulty 6 easy, 4 medium. C2-M6: no row is scored on the header panel any more, so every tell is visible on the message face (row 6 is a look-alike sender domain, row 8 a plainly genuine internal mail). Texts follow the episode contact convention (C2-m13): genuine ones show a saved contact, fakes show a bare number not in your contacts. Each form's look-alike QR notice (row 2) is followed by a real Tarrowby notice on the same subject (row 3); the brief says Tarrowby's sites end in tarrowby.example (C2-m12).",
@@ -37,7 +38,7 @@
     {
       "id": "e6_phone_messages",
       "_prefix": "Prefix for the full episode (id e6_texts_and_qr). The defend-only shell (id e6_texts_and_qr_defend) sets episode_e6_texts_and_qr_defend_defend_ instead, as E1, E3 and E5 do. No stage on purpose, as in E1.",
-      "_order": "Teaching order, so a likely miss is followed by a similar item (11 section 4.3): fake text, then a real text; fake QR notice, then a real one; then a QR code in an email; then a second fake text that adds the reply-STOP trick.",
+      "_order": "Teaching order, so a likely miss is followed by a similar item (11 section 4.3): fake text, then a real text; fake QR notice, then a real one; then a QR code in an email; then a 'hi, it's me, new number' chat-app impersonation (WP-15: replaced the e6_fuel_card_offer reply-STOP smish; that reply-STOP lesson is still carried by the mobile forms ma_phone_bill_failed and mb_parking_charge).",
       "title": "Tarrowby work phone",
       "brief": "It's your break at Tarrowby's Shipley depot, and six things are waiting on your work phone: texts, two printed notices you passed on site, and an email. For each one, choose Trust, Report, Delete or Verify (check with the sender on a number or app you already use), then tick what you noticed. On a notice, press 'Where does this code go?' to see the address behind the code. Reporting when you're unsure is always fine and never marked down, though a real one does take a colleague's time to check.",
       "realLabel": "Real texts and notices",
@@ -46,7 +47,7 @@
       "feedbackMode": "immediate",
       "headerPanel": "off",
       "glossary": "closed",
-      "channelTells": ["unexpected_qr", "smish_shortlink_urgency", "reply_stop_trick", "lookalike_domain"],
+      "channelTells": ["unexpected_qr", "smish_shortlink_urgency", "lookalike_domain", "secrecy_or_bypass"],
       "outcome": { "setGlobalPrefix": "episode_e6_texts_and_qr_defend_", "passPercent": 0 },
       "messages": [
         {
@@ -54,8 +55,8 @@
           "kind": "sms",
           "from": { "address": "07700 900583 (not in your contacts)" },
           "time": "10:02",
-          "body": "Parceline: we couldn't deliver your parcel. A £1.45 redelivery fee is due by 6pm today or it goes back to the sender: {{link:fee}}",
-          "links": [ { "id": "fee", "text": "shrtn.example/Pk3x9", "destination": "https://parceline-redelivery.example/fee" } ],
+          "body": "ASAParcels: we couldn't deliver your parcel. A £1.45 redelivery fee is due by 6pm today or it goes back to the sender: {{link:fee}}",
+          "links": [ { "id": "fee", "text": "shrtn.example/Pk3x9", "destination": "https://asaparcels-redelivery.example/fee" } ],
           "truth": {
             "isPhish": true,
             "flags": ["smish_shortlink_urgency"],
@@ -63,7 +64,7 @@
               "smish_shortlink_urgency": "A text from a number you don't have saved, a shortened link that hides where it goes, and 'by 6pm today'. A small fee is the hook: the page behind it asks for your card details, not £1.45"
             },
             "ifTrusted": "The link opens a payment page that collects your card number. The tiny fee is just the hook to get you onto it.",
-            "reportReply": "Thanks. That link went to a card-collecting page, not a courier. We've added the number to the block list for Tarrowby phones."
+            "reportReply": "Thanks. That link went to a card-collecting page, not a courier. We've added the number to the block list for Tarrowby phones. At home, you can forward a scam text like this to 7726 for free, and your mobile provider can look into it and block the number; if a call ever claims to be your bank, hang up and call 159 to reach your own bank's fraud line."
           }
         },
         {
@@ -153,21 +154,20 @@
           }
         },
         {
-          "id": "e6_fuel_card_offer",
+          "id": "e6_chat_new_number",
           "kind": "sms",
-          "from": { "address": "07700 900702 (not in your contacts)" },
+          "from": { "address": "07700 900512 (not in your contacts)" },
           "time": "10:40",
-          "body": "FUELWISE: as a professional driver you've been picked for a free £250 fuel card. Claim before midnight: {{link:claim}} Reply STOP to opt out",
-          "links": [ { "id": "claim", "text": "shrtn.example/Fw25x", "destination": "https://fuelwise-rewards.example/claim" } ],
+          "body": "Hi, it's Dermot, lost my old phone so this is my new number. Quick one before the 2pm run: can you sort something for me? Don't mention it to the others just yet.",
           "truth": {
             "isPhish": true,
-            "flags": ["smish_shortlink_urgency", "reply_stop_trick"],
+            "flags": ["secrecy_or_bypass", "urgencyCalibrated"],
             "perFlagNote": {
-              "smish_shortlink_urgency": "An offer you never asked for, from a number you don't have, with a shortened link and 'before midnight'",
-              "reply_stop_trick": "Replying STOP tells the sender this number is live and someone reads it, so you get more of these. Don't reply at all; report it and delete it"
+              "secrecy_or_bypass": "'Don't mention it to the others' and an urgent favour are the 'hi, it's me, new number' trick. A new number is a new account, not proof it's the person: Dermot's real number is already saved on your phone, so a text from an unknown number saying 'it's me' is the warning sign, not proof it's him.",
+              "urgencyCalibrated": "The rush 'before the 2pm run' is there to stop you checking Dermot's saved number first."
             },
-            "ifTrusted": "The claim page asks for your name, address and bank card 'to post the fuel card'. A reply of STOP would mark your number as one worth texting again.",
-            "reportReply": "Thanks. There's no FuelWise offer. We've blocked the number, and nobody needs to reply STOP to it."
+            "ifTrusted": "The favour that follows is usually gift cards, a payment or staff details, handed to someone who isn't Dermot at all.",
+            "reportReply": "Thanks. Dermot is on his usual saved number and didn't text you; the new number isn't his. At work, report it the Tarrowby way. At home, a 'new number' message on a chat app is blocked and reported inside the app itself (7726 doesn't cover chat apps), and a plain scam text goes to 7726."
           }
         }
       ]
@@ -243,17 +243,17 @@
         },
         {
           "id": "ma_colin_personal_number",
-          "from": { "name": "Colin Mather", "address": "colin.mather.tby@inboxly.example" },
+          "from": { "name": "Colin Mather", "address": "colin.mather.tby@lintbox.example" },
           "to": "you@tarrowby.example",
           "subject": "Quick favour, text me",
           "time": "08:12",
           "body": "Are you on shift? I'm stuck with a customer and need a favour sorted before 12. Text me on my personal number, 07700 900871, not my work one, and keep it between us for now.\nColin",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "colin.mather.tby@inboxly.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "colin.mather.tby@lintbox.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust"],
             "perFlagNote": {
-              "senderTrust": "The warehouse manager's name on a personal inbox at inboxly.example, not tarrowby.example"
+              "senderTrust": "The warehouse manager's name on a personal inbox at lintbox.example, not tarrowby.example"
             },
             "ifTrusted": "Once you text that number, the 'favour' follows: usually gift cards or a payment, from someone who isn't Colin.",
             "reportReply": "Thanks. Colin didn't send it. His only address is on tarrowby.example."
@@ -433,17 +433,17 @@
         },
         {
           "id": "mb_fatima_vouchers",
-          "from": { "name": "Fatima Begum", "address": "fatima.begum.hr@quickpost-mail.example" },
+          "from": { "name": "Fatima Begum", "address": "fatima.begum.hr@hastypost.example" },
           "to": "you@tarrowby.example",
           "subject": "Welcome vouchers for Monday's new drivers",
           "time": "08:12",
           "body": "Are you free? I need six £50 shopping vouchers for the new drivers starting Monday. Could you buy them on your card today and text the codes to me on 07700 900790? I'll sort your expenses. Keep it quiet so it's a surprise.\nFatima",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "fatima.begum.hr@quickpost-mail.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "fatima.begum.hr@hastypost.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust"],
             "perFlagNote": {
-              "senderTrust": "The recruitment lead's name on a personal inbox at quickpost-mail.example, not tarrowby.example"
+              "senderTrust": "The recruitment lead's name on a personal inbox at hastypost.example, not tarrowby.example"
             },
             "ifTrusted": "£300 of voucher codes would go to the sender, and vouchers can't be traced or clawed back.",
             "reportReply": "Thanks. Fatima didn't send it. Her address is on tarrowby.example, and HR never asks staff to buy vouchers."
@@ -570,7 +570,7 @@
       "flipMissedHeading": "Nothing to replay this time",
       "flipLandedNoTells": "It landed clean on the phone, with nothing in it to flag. Next, the same kind of message turns up on a Tarrowby work phone, and you're the one reading it.",
       "noBlameLine": "Being caught by one of these is no fault of yours. These were built to look like Tarrowby's own messages, and they land on a phone you're reading between jobs. Catching them is a habit, not a test of how clever you are.",
-      "mondayCard": "On Monday: if a text, a notice or an email wants you to scan a code or tap a short link to pay, sign in or confirm something, stop. Don't reply, not even STOP. Open the app or site the way you normally would, or ring the sender on a number you already hold, then report the message using the route in the box below.",
+      "mondayCard": "On Monday: if a text, a notice or an email wants you to scan a code or tap a short link to pay, sign in or confirm something, stop. Don't reply, not even STOP. A message from a new number saying 'it's me' is a warning sign, not proof: reach the person on the number you already hold. Open the app or site the way you normally would, or ring the sender on a number you already have, then report the message using the route in the box below. At home, forward a scam text to 7726 for free, call 159 for a call that says it's your bank, and report fraud to Report Fraud.",
       "defendOnly": "These landed on a phone between jobs, and they were built to read like Tarrowby's own messages, so anyone can be caught by one. Any you were caught out by are shown below, with what gave each one away."
     },
     "_defendOnly": {

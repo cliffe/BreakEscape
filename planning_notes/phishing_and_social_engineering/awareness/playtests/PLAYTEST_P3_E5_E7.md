@@ -11,7 +11,7 @@ Logs and screenshots: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEs
 | Game | Scenario | Run | Driver time |
 | ---- | -------- | --- | ----------- |
 | 3835 | awareness_e5_signin_pages | careful learner, all research, SSO page, send landed, 5/5 defend | 216 s |
-| 3840 | awareness_e5_signin_pages | hurried: no research, DocShare/docshore page, newsletter pretext (did not land), 2 wrong verdicts + 2 missed ticks | 119 s |
+| 3840 | awareness_e5_signin_pages | hurried: no research, Fileharbour/fileharbour page, newsletter pretext (did not land), 2 wrong verdicts + 2 missed ticks | 119 s |
 | 3843 | awareness_e5_signin_pages | second missed send, to read Hana's reply | short |
 | 3889 | awareness_e5_signin_pages | builder only (score reset line, logo asset) | short |
 | 3845 | awareness_e6_texts_and_qr | careful (research, blank needs evidence, back to research, landed, 6 items) | 159 s |
@@ -51,7 +51,7 @@ Defend-only shell: not played as a separate scenario. Every one of the E5/E6/E7 
 | N8 caller transcripts hold the player's line | minor | **fixed** | Helpdesk calls (Niamh, Pauline, Darren) show only the caller's lines. (Niamh herself says "Ring me straight back on the number you hold for me", which gives "Ring back" away on a real call but is the caller's own line.) |
 | N9 sign-in prompt stamped with real clock | trivial | **withdrawn** | The 23:52 is a literal in `scenario.json.erb`, not the wall clock (it was 02:11 here). P2 misread it. |
 | N10 E6/E7 length | minor | **open** | About 17 and 16 minutes. |
-| E5-6 builder meter copy | minor | **open (part)** | "✓ Page: a payslip notice is what the email promised." still shows beside a "Session expired" SSO page and also with the DocShare page. "This page has 3 giveaways" still counts a PARTLY. "What Hana is expecting" now fills in with two bullets (that part fixed). |
+| E5-6 builder meter copy | minor | **open (part)** | "✓ Page: a payslip notice is what the email promised." still shows beside a "Session expired" SSO page and also with the Fileharbour page. "This page has 3 giveaways" still counts a PARTLY. "What Hana is expecting" now fills in with two bullets (that part fixed). |
 | E5-7 email vocabulary on a page set | minor | **fixed** | "Five pages are open in your browser", "Real pages handled right", result ends "Read the address bar before you sign in...". |
 | E5-8 / E5-8 flip time | minor | **fixed** | Flip and reply are stamped 09:05 (scene time). E6 09:04, E7 09:04. |
 | E5-10 password-manager line on every page | minor | **open** | "Your password manager did not fill this in." / "...filled this in." on all five pages, plus the brief's rule about `.quayholt.example`. |

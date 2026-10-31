@@ -1,6 +1,7 @@
 {
   "scenario_id": "awareness_post_finance_ba",
   "scenario_name": "Payments inbox check: after (BA)",
+  "titleScreenName": "Final check",
   "scenario_brief": "The second of two short checks for finance staff at Brightwell Foods, a fictional company. Ten new messages from a payments inbox. If you took the first check, the end screen shows how the two compare.",
   "endGoal": "Sort the ten messages at the training kiosk.",
   "version": "1.0",
@@ -30,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "triage_post_done"
+          "triage_post_complete"
         ]
       },
       "conclusionScreen": {
@@ -53,30 +54,33 @@
     "se_awareness_records": [],
     "triage_post_percent": 0,
     "triage_post_reportRate": 0,
-    "triage_post_done": false,
-    "triage_post_pass": false
+    "triage_post_complete": false
   },
   "importGlobals": [
     {
       "from": "awareness_pre_finance_ba",
+      "prefer": "earliest",
       "var": "triage_pre_percent",
       "as": "triage_pre_percent",
       "default": 0
     },
     {
       "from": "awareness_pre_finance_ba",
+      "prefer": "earliest",
       "var": "triage_pre_reportRate",
       "as": "triage_pre_reportRate",
       "default": 0
     },
     {
       "from": "awareness_pre_finance_ba",
-      "var": "triage_pre_done",
-      "as": "triage_pre_done",
+      "prefer": "earliest",
+      "var": "triage_pre_complete",
+      "as": "triage_pre_complete",
       "default": false
     },
     {
       "from": "awareness_pre_finance_ba",
+      "prefer": "earliest",
       "completed": "pre_check_completed"
     }
   ],
@@ -107,7 +111,7 @@
             "id": "fa_ceo_transfer",
             "from": {
               "name": "Ravinder Sandhu",
-              "address": "ravinder.sandhu.ceo@inboxly.example"
+              "address": "ravinder.sandhu.ceo@lintbox.example"
             },
             "to": "payments@brightwellfoods.example",
             "subject": "Confidential: payment needed this morning",
@@ -117,8 +121,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "ravinder.sandhu.ceo@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "ravinder.sandhu.ceo@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -128,7 +132,7 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "The chief executive's name on a personal inbox at inboxly.example",
+                "senderTrust": "The chief executive's name on a personal inbox at lintbox.example",
                 "secrecy_or_bypass": "'Keep it between us' and 'don't raise it with Adaeze' cut out the person who approves payments",
                 "urgencyCalibrated": "'Before 11' and 'email only' leave no time to ring and check"
               },
@@ -377,7 +381,7 @@
               {
                 "id": "view",
                 "text": "View invoice ML-7731 on merrowlogistics.example",
-                "destination": "https://docshare-login.example/merrow/ml-7731"
+                "destination": "https://fileharbour-login.example/merrow/ml-7731"
               }
             ],
             "auth": {
@@ -394,7 +398,7 @@
                 "pretextRelevant"
               ],
               "perFlagNote": {
-                "linkCredible": "The link reads 'merrowlogistics.example' but it opens docshare-login.example, a sign-in page rather than an invoice",
+                "linkCredible": "The link reads 'merrowlogistics.example' but it opens fileharbour-login.example, a sign-in page rather than an invoice",
                 "pretextRelevant": "Brightwell has never dealt with Merrow Logistics, so a cold invoice-share from them has no reason to reach payments"
               },
               "ifTrusted": "The link opens a sign-in page that collects your email password.",
@@ -524,7 +528,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:triage_post_done",
+              "eventPattern": "global_variable_changed:triage_post_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "finish_check"

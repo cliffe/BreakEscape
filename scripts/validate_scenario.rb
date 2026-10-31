@@ -241,6 +241,7 @@ def check_scenario_directory_structure(erb_path)
       end
 
       issues.concat(check_mission_scoring(mission))
+      issues.concat(check_mission_result(mission))
     rescue JSON::ParserError => e
       issues << "❌ INVALID: mission.json contains invalid JSON: #{e.message}"
     rescue StandardError => e
@@ -274,13 +275,78 @@ def check_mission_scoring(mission, json_data = nil)
    "mission_concluded_at is never set and the score can never reach 100"]
 end
 
+# mission.json "resultGlobal" / "stage" (read by BreakEscape::Mission#result_global
+# and #result_stage) and "endingCheck". resultGlobal names the numeric game global
+# that holds an awareness check's result percent; with the rendered scenario it
+# must be declared there as a number. stage says where the result sits in the
+# course. endingCheck, when present, must be true or false.
+RESULT_STAGES = %w[pre post episode].freeze
+RESULT_GLOBAL_PATTERN = /\A[A-Za-z][A-Za-z0-9_]*_percent\z/
+
+def check_mission_result(mission, json_data = nil)
+  return [] unless mission.is_a?(Hash)
+
+  issues = []
+  if mission.key?('endingCheck') && ![true, false].include?(mission['endingCheck'])
+    issues << "❌ INVALID: mission.json 'endingCheck' is #{mission['endingCheck'].inspect}; it must be true or false " \
+              "(false turns off the warning before the ending)"
+  end
+  if mission.key?('stage') && !RESULT_STAGES.include?(mission['stage'])
+    issues << "❌ INVALID: mission.json 'stage' is #{mission['stage'].inspect}; it must be one of #{RESULT_STAGES.join(', ')}"
+  end
+  return issues unless mission.key?('resultGlobal')
+
+  name = mission['resultGlobal']
+  unless name.is_a?(String) && RESULT_GLOBAL_PATTERN.match?(name)
+    issues << "❌ INVALID: mission.json 'resultGlobal' is #{name.inspect}; it must be a global name ending in _percent " \
+              "(for example triage_pre_percent)"
+    return issues
+  end
+  if json_data
+    declared = json_data['globalVariables']
+    declared = {} unless declared.is_a?(Hash)
+    if !declared.key?(name)
+      issues << "❌ INVALID: mission.json 'resultGlobal' names #{name.inspect}, which the scenario does not declare in globalVariables"
+    elsif !declared[name].is_a?(Numeric)
+      issues << "❌ INVALID: mission.json 'resultGlobal' names #{name.inspect}, which is declared as #{declared[name].inspect} (it must be a number)"
+    end
+  end
+  unless mission.key?('stage')
+    issues << "⚠️ WARNING: mission.json has 'resultGlobal' but no 'stage' (pre, post or episode); the engine will guess it from the global's name"
+  end
+  issues
+end
+
+# The ending warning (public/break_escape/js/systems/ending-check.js). The engine asks
+# the player before the credits and before the last task of a missionConclusion aim is
+# posted, but it cannot warn in time for a one-shot debrief unless the choice that starts
+# it carries `#ending_check`. Warn when a mission has optional tasks, has not opted out with
+# "endingCheck": false, concludes through a missionConclusion aim, and none of its ink uses
+# the tag. `scenario_dir` is the scenario's directory (its ink/ folder is searched).
+def check_mission_ending_check(mission, json_data, scenario_dir)
+  return [] unless mission.is_a?(Hash) && json_data.is_a?(Hash)
+  return [] if mission['endingCheck'] == false
+
+  aims = (json_data['objectives'] || []).select { |a| a.is_a?(Hash) }
+  return [] unless aims.any? { |aim| aim['missionConclusion'] }
+  return [] unless aims.any? { |aim| (aim['tasks'] || []).any? { |t| t.is_a?(Hash) && t['optional'] == true } }
+
+  ink_files = Dir.glob(File.join(scenario_dir.to_s, '{ink,}', '*.ink'))
+  return [] if ink_files.any? { |f| File.read(f).match?(/#\s*ending_check\b/) }
+
+  ["⚠️ WARNING: the mission has optional tasks and concludes through a missionConclusion aim, but no ink file uses " \
+   "#ending_check. The engine still asks before the credits, but it can only warn before the debrief starts if the choice " \
+   "that starts it begins with #ending_check (before its #set_global or #complete_task). Add the tag, or set " \
+   "\"endingCheck\": false in mission.json if the mission is under time pressure."]
+end
+
 # Check for unknown fields in JSON that aren't in the schema
 def check_unknown_fields(json_data)
   warnings = []
 
   # Known top-level fields
   known_top_level = %w[
-    scenario_id scenario_name scenario_brief endGoal version startRoom startPosition
+    scenario_id scenario_name scenario_brief endGoal version startRoom startPosition resumeSpawn titleScreenName
     show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
     player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
     importGlobals exportGlobals social
@@ -304,7 +370,7 @@ def check_unknown_fields(json_data)
   known_npc_fields = %w[
     id displayName npcType position spriteSheet spriteTalk spriteVisemes spriteConfig
     voice behavior globalVarOnKO restartOnRetalk reopenRefreshesHub livePreview taskOnKO koImmune storyPath callId currentKnot avatar
-    phoneId phoneTheme voiced unlockable externalVariables persistentVariables
+    phoneId phoneTheme handle profile voiced unlockable externalVariables persistentVariables
     timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
     observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
   ]
@@ -327,9 +393,10 @@ def check_unknown_fields(json_data)
   known_event_mapping_fields = %w[
     eventPattern condition onceOnly maxTriggers cooldown fireOnlyWhenLoaded delayMs
     bark message barkDelay
-    targetKnot conversationMode background disableClose resume voiced
+    targetKnot conversationMode background disableClose resume voiced videoLabel participantTag
     patrolOverride setPatrolSpeed setDwellMultiplier setVisible
-    sendTimedMessage setGlobal completeTask skipTask unlockTask unlockAim unlockDoor
+    sendTimedMessage sendEmail setGlobal completeTask skipTask unlockTask unlockAim unlockDoor
+    openMinigame
     _comment
   ]
 
@@ -382,7 +449,7 @@ def check_unknown_fields(json_data)
     postitNote showPostit
     hasFingerprint fingerprintOwner fingerprintDifficulty fingerprintQuality
     fingerprintOwnerName fingerprintPattern fingerprintSurface fingerprintCandidates biometricMatchThreshold
-    mac canScanBluetooth phoneId npcIds
+    mac canScanBluetooth phoneId npcIds app
     hacktivityMode vm acceptsVms flags flagRewards
     mode onAbort onLaunch abortConfirmText launchConfirmText
     itemsHeld contents triggerOnInteract
@@ -2613,7 +2680,7 @@ def check_common_issues(json_data, valid_item_types = nil)
                   # phone-chat trigger mappings are self-evidently visible (they open the chat), so skip that check.
                   has_effect = phone_chat_trigger || mapping['setGlobal'] || mapping['sendTimedMessage'] ||
                                mapping['completeTask'] || mapping['unlockTask'] || mapping['unlockAim'] ||
-                               mapping['unlockDoor'] || mapping['bark']
+                               mapping['unlockDoor'] || mapping['bark'] || mapping['sendEmail']
                   unless has_effect
                     issues << "⚠️ WARNING: '#{mapping_path}' is a phone NPC event mapping with no visible effect (no setGlobal, sendTimedMessage, completeTask, unlockTask, unlockAim, unlockDoor, bark or phone-chat trigger). Use 'sendTimedMessage' to notify the player, and 'setGlobal' to flag that a new hub option is available. Example: { \"eventPattern\": \"...\", \"onceOnly\": true, \"setGlobal\": { \"flag_var\": true }, \"sendTimedMessage\": { \"delay\": 1000, \"message\": \"...\" } }"
                   end
@@ -3989,6 +4056,26 @@ def check_recurring_bugs(json_data, repo_root)
       issues << "⚠️ WARNING: '#{rel}' sets global '#{var}' (#set_global), but '#{var}' is not in scenario.globalVariables. " \
                 "Declare it (with its starting value) so it saves, syncs into other inks and can drive mappings, or fix the name."
     end
+
+    # 10. #trigger_minigame:<type>[ key=value...] must name a registry type, and an exercise-station's
+    #     exerciseId must be in social.exercises (an unknown type only warns in the game and opens nothing)
+    code.scan(/#\s*trigger_minigame:([^\n#]*)/).flatten.each do |param|
+      type = param.strip[/\A[A-Za-z0-9_-]+/]
+      known = ValidateSocial::Exercises::REGISTRY_TYPES
+      unless known.include?(type)
+        issues << "❌ ERROR: '#{rel}' has #trigger_minigame:#{param.strip}, but #{type.inspect} is not a minigame type (#{known.join(', ')}); nothing would open."
+        next
+      end
+      next unless type == 'exercise-station'
+
+      ex_id = param[/[\s|]exerciseId=([^|\s]+)/, 1] || param[/"exerciseId"\s*:\s*"([^"]+)"/, 1]
+      ids = Array(json_data.dig('social', 'exercises')).filter_map { |e| e['id'] if e.is_a?(Hash) }
+      if ex_id && !ids.include?(ex_id.delete('"'))
+        issues << "❌ ERROR: '#{rel}' has #trigger_minigame:#{param.strip}, but exerciseId '#{ex_id}' is not in social.exercises."
+      elsif ex_id.nil? && !param.include?('"config"')
+        issues << "❌ ERROR: '#{rel}' has #trigger_minigame:#{param.strip}, which names no exerciseId; the station would open on nothing."
+      end
+    end
   end
 
   issues
@@ -4126,6 +4213,12 @@ def check_globals_never_read(json_data, repo_root)
       sp = npc.is_a?(Hash) ? npc['storyPath'] : nil
       queue << File.join(repo_root, sp.sub(/\.json\z/, '.ink')) if sp.is_a?(String)
     end
+  end
+  # Ink-email correspondents (social.mailClient.contacts[].emailRecord.storyPath) read and set globals too
+  contacts = json_data.dig('social', 'mailClient', 'contacts')
+  Array(contacts.is_a?(Array) ? contacts : nil).each do |c|
+    sp = c.is_a?(Hash) && c['emailRecord'].is_a?(Hash) ? c['emailRecord']['storyPath'] : nil
+    queue << File.join(repo_root, sp.sub(/\.json\z/, '.ink')) if sp.is_a?(String)
   end
   until queue.empty?
     f = queue.shift
@@ -4344,7 +4437,7 @@ $carry_over_source_cache = {}
 # imports the pre check's. Those names are set by the set's prefix, not chosen, so the lower_snake_case
 # rule does not apply to them: the prefix with {stage} filled by pre or post (or left as is) plus a
 # result suffix, the comparison.prePrefix, and the fixed baseline names the comparison reads.
-CARRY_OVER_PRE_NAMES = %w[triage_pre_percent triage_pre_reportRate triage_pre_done].freeze
+CARRY_OVER_PRE_NAMES = %w[triage_pre_percent triage_pre_reportRate triage_pre_complete].freeze
 CARRY_OVER_RESULT_NAME_RE = /\A[A-Za-z_][A-Za-z0-9_]*\z/.freeze
 
 def carry_over_triage_result_name?(json_data, name)
@@ -4452,8 +4545,9 @@ def carry_over_json_writes(json_data)
   writes
 end
 
-# Records <setGlobalPrefix>percent, reportRate, done and pass as writes.
-TRIAGE_RESULT_SUFFIXES = %w[percent reportRate done pass].freeze
+# Records <setGlobalPrefix>percent, reportRate and complete as writes, plus pass when passPercent > 0.
+TRIAGE_RESULT_SUFFIXES = %w[percent reportRate complete pass].freeze
+TRIAGE_BASE_SUFFIXES = %w[percent reportRate complete].freeze
 
 def carry_over_record_triage_writes(json_data, writes)
   sets = json_data.is_a?(Hash) ? json_data.dig('social', 'triageSets') : nil
@@ -4510,9 +4604,12 @@ def carry_over_record_triage_writes(json_data, writes)
                [nil]
     end
     where = "/social/triageSets[#{i}] (triage starter)"
+    pp = set.dig('outcome', 'passPercent')
+    suffixes = TRIAGE_BASE_SUFFIXES.dup
+    suffixes << 'pass' if pp.is_a?(Integer) && pp.positive?
     stages.each do |stage|
       resolved = stage ? prefix.gsub('{stage}', stage) : prefix
-      TRIAGE_RESULT_SUFFIXES.each do |suffix|
+      suffixes.each do |suffix|
         name = "#{resolved}#{suffix}"
         writes[name] << [where, nil] if name.match?(/\A[A-Za-z_][A-Za-z0-9_]*\z/)
       end
@@ -5498,6 +5595,8 @@ def main
     begin
       scoring_mission = JSON.parse(File.read(File.join(File.dirname(erb_path), 'mission.json')))
       wiring_issues.concat(check_mission_scoring(scoring_mission, json_data))
+      wiring_issues.concat(check_mission_result(scoring_mission, json_data))
+      wiring_issues.concat(check_mission_ending_check(scoring_mission, json_data, File.dirname(erb_path)))
     rescue StandardError
       # mission.json problems were already reported by the directory check
     end

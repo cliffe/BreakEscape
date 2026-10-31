@@ -1,6 +1,7 @@
 {
   "scenario_id": "awareness_pre_executive_ba",
   "scenario_name": "PA inbox check: before (BA)",
+  "titleScreenName": "Starting check",
   "scenario_brief": "The first of two short checks for executive assistants and PAs at Merrin & Sallow Architects, a fictional practice. Ten emails and voicemails from a managing partner's PA inbox. Decide what to do with each one. Your result is saved so the second check can compare with it.",
   "endGoal": "Work through the ten items at the training kiosk.",
   "version": "1.0",
@@ -30,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "triage_pre_done"
+          "triage_pre_complete"
         ]
       },
       "conclusionScreen": {
@@ -53,13 +54,12 @@
     "se_awareness_records": [],
     "triage_pre_percent": 0,
     "triage_pre_reportRate": 0,
-    "triage_pre_done": false,
-    "triage_pre_pass": false
+    "triage_pre_complete": false
   },
   "exportGlobals": [
     "triage_pre_percent",
     "triage_pre_reportRate",
-    "triage_pre_done"
+    "triage_pre_complete"
   ],
   "social": {
     "triageSets": [
@@ -112,15 +112,15 @@
             }
           },
           {
-            "id": "eb_ropewalk_booking",
+            "id": "eb_harbourloft_booking",
             "from": {
-              "name": "The Ropewalk",
-              "address": "events@theropewalk.example"
+              "name": "The Harbour Loft",
+              "address": "events@harbourloft.example"
             },
             "to": "tomas.carvalho@merrinsallow.example",
             "subject": "Booking RW-1907 confirmed: Julian Sallow",
             "time": "08:40",
-            "body": "Dear Tomás,\nThis confirms booking RW-1907: Julian Sallow's talk on Thursday at 14:00 and a stand in the main hall. Our invoice follows on the usual terms, payable to the account on file.\nKind regards,\nThe Ropewalk Events Team",
+            "body": "Dear Tomás,\nThis confirms booking RW-1907: Julian Sallow's talk on Thursday at 14:00 and a stand in the main hall. Our invoice follows on the usual terms, payable to the account on file.\nKind regards,\nThe Harbour Loft Events Team",
             "attachments": [
               {
                 "label": "RW-1907-confirmation.pdf",
@@ -132,7 +132,7 @@
               "dkim": "pass",
               "dmarc": "pass",
               "envelopeFrom": "mailer.venuedesk.example",
-              "replyTo": "events@theropewalk.example"
+              "replyTo": "events@harbourloft.example"
             },
             "truth": {
               "isPhish": false,
@@ -144,21 +144,21 @@
             }
           },
           {
-            "id": "eb_ropewalk_bank",
+            "id": "eb_harbourloft_bank",
             "from": {
-              "name": "The Ropewalk Events",
-              "address": "accounts@theropewalk-events.example"
+              "name": "The Harbour Loft Events",
+              "address": "accounts@harbourloft-events.example"
             },
             "to": "tomas.carvalho@merrinsallow.example",
             "subject": "Booking RW-1907: please use our new bank details",
             "time": "09:10",
-            "body": "Dear Tomás,\nWe have changed banks. The balance on booking RW-1907 (Julian Sallow's talk and stand) should now be paid to:\nAccount name: The Ropewalk Ltd\nAccount number ending 2274\nPlease update your records before you pay.\nKind regards,\nThe Ropewalk Accounts",
+            "body": "Dear Tomás,\nWe have changed banks. The balance on booking RW-1907 (Julian Sallow's talk and stand) should now be paid to:\nAccount name: The Harbour Loft Ltd\nAccount number ending 2274\nPlease update your records before you pay.\nKind regards,\nThe Harbour Loft Accounts",
             "auth": {
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "bounce.theropewalk-events.example",
-              "replyTo": "accounts@theropewalk-events.example"
+              "envelopeFrom": "bounce.harbourloft-events.example",
+              "replyTo": "accounts@harbourloft-events.example"
             },
             "truth": {
               "isPhish": true,
@@ -174,13 +174,13 @@
                 ]
               ],
               "perFlagNote": {
-                "lookalike_domain": "The Ropewalk's real domain is theropewalk.example. This is theropewalk-events.example, with an added word",
+                "lookalike_domain": "The Harbour Loft's real domain is harbourloft.example. This is harbourloft-events.example, with an added word",
                 "changed_bank_details": "New bank details on an open booking is the commonest invoice-fraud move. The safe step is to ring the venue on the number you already hold",
-                "senderTrust": "The name says The Ropewalk, but the address is on theropewalk-events.example, which isn't the venue's"
+                "senderTrust": "The name says The Harbour Loft, but the address is on harbourloft-events.example, which isn't the venue's"
               },
-              "headerNote": "All three checks passed because the sender owns theropewalk-events.example. A pass tells you which domain sent it, not that it's the venue.",
+              "headerNote": "All three checks passed because the sender owns harbourloft-events.example. A pass tells you which domain sent it, not that it's the venue.",
               "ifTrusted": "The booking payment would go to an account the sender controls.",
-              "reportReply": "Thanks. The Ropewalk haven't changed bank, and that domain isn't theirs."
+              "reportReply": "Thanks. The Harbour Loft haven't changed bank, and that domain isn't theirs."
             }
           },
           {
@@ -214,7 +214,7 @@
             "id": "eb_consultant_fee",
             "from": {
               "name": "Catherine Merrin",
-              "address": "catherine.m.private@inboxly.example"
+              "address": "catherine.m.private@lintbox.example"
             },
             "to": "tomas.carvalho@merrinsallow.example",
             "subject": "Pay this today, between us",
@@ -224,8 +224,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "catherine.m.private@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "catherine.m.private@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -235,11 +235,11 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "The managing partner's name on a personal inbox at inboxly.example, not merrinsallow.example",
+                "senderTrust": "The managing partner's name on a personal inbox at lintbox.example, not merrinsallow.example",
                 "secrecy_or_bypass": "'Keep this between us' and 'don't raise it with Yasmin' keep out the person who would check",
                 "urgencyCalibrated": "'Paid today to hold her diary' leaves no time to check"
               },
-              "headerNote": "All three checks passed because the sender owns inboxly.example. A pass tells you which domain sent it, not that it's Catherine.",
+              "headerNote": "All three checks passed because the sender owns lintbox.example. A pass tells you which domain sent it, not that it's Catherine.",
               "ifTrusted": "£6,750 would go to an account the sender controls.",
               "reportReply": "Thanks. Catherine didn't send it, and her real address is on merrinsallow.example."
             }
@@ -493,7 +493,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:triage_pre_done",
+              "eventPattern": "global_variable_changed:triage_pre_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "finish_check"

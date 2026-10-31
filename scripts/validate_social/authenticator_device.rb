@@ -2,7 +2,7 @@
 
 # Social lints for `authenticator-device` room objects: a phone in the room that plays the push
 # stream held in its own minigameData. The stream is linted by Awareness.mfa_checks (the same
-# rules as awarenessEpisode.mfa); this file adds the object's setGlobalPrefix.
+# rules as awarenessEpisode.mfa); this file adds the object's setGlobalPrefix and lockUntilOutcome.
 module ValidateSocial
   module AuthenticatorDevice
     def self.check(ctx)
@@ -17,9 +17,12 @@ module ValidateSocial
           issues << Mail.err("'#{path}' (authenticator-device) has no minigameData; the phone would open with no prompts")
           next
         end
-        stream = md.reject { |k, _| %w[setGlobalPrefix strings].include?(k) }
+        stream = md.reject { |k, _| %w[setGlobalPrefix strings lockUntilOutcome].include?(k) }
         Awareness.mfa_checks({ 'stages' => ['mfa'], 'mfa' => stream }).each do |msg|
           issues << msg.gsub('awarenessEpisode.mfa', "'#{path}' minigameData")
+        end
+        if md.key?('lockUntilOutcome') && ![true, false].include?(md['lockUntilOutcome'])
+          issues << Mail.err("'#{path}' minigameData.lockUntilOutcome must be true or false (false lets Close and Esc leave a decision-mode phone before the outcome)")
         end
         next unless md.key?('setGlobalPrefix')
 

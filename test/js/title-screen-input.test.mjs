@@ -11,7 +11,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '../../public/break_escape/js/minigames/title-screen/title-screen-input.js');
 const dir = mkdtempSync(join(tmpdir(), 'title-screen-input-'));
 writeFileSync(join(dir, 'input.mjs'), readFileSync(src, 'utf8'));
-const { isContinueKey, attachContinueHandlers, startDesktopHold, DESKTOP_HOLD_MS } = await import(pathToFileURL(join(dir, 'input.mjs')).href);
+const { titleScreenName, isContinueKey, attachContinueHandlers, startDesktopHold, DESKTOP_HOLD_MS } = await import(pathToFileURL(join(dir, 'input.mjs')).href);
 
 function target() {
     const t = new EventTarget();
@@ -103,4 +103,34 @@ test('desktop hold: cancel stops it', () => {
     const cancel = startDesktopHold(c, d, 1200, () => calls++, t);
     cancel(); t.fire(); c.dispatchEvent(new Event('click'));
     assert.equal(calls, 0);
+});
+
+test('titleScreenName prefers the scenario title name and falls back to display_name', () => {
+    assert.equal(titleScreenName({ missionDisplayName: 'Awareness E8: After the click', missionTitleName: 'After the click' }), 'After the click');
+    assert.equal(titleScreenName({ missionDisplayName: 'm01 First Contact' }), 'm01 First Contact');
+    assert.equal(titleScreenName({ missionDisplayName: 'm01 First Contact', missionTitleName: '   ' }), 'm01 First Contact');
+    assert.equal(titleScreenName({ missionDisplayName: 'x', missionTitleName: 5 }), 'x');
+    assert.equal(titleScreenName(undefined), '');
+});
+
+// Opt-in painted backdrop (mission.json "title_art" -> breakEscapeConfig.missionTitleArt).
+test('titleScreenArt accepts a same-site image path and nothing else', async () => {
+    const { titleScreenArt } = await import(pathToFileURL(join(dir, 'input.mjs')).href);
+    assert.equal(titleScreenArt({ missionTitleArt: '/break_escape/assets/title_art/awareness_e12_visitor_tailgater.jpg' }),
+        '/break_escape/assets/title_art/awareness_e12_visitor_tailgater.jpg');
+    assert.equal(titleScreenArt({ missionTitleArt: '  /break_escape/assets/title_art/a.png ' }), '/break_escape/assets/title_art/a.png');
+    for (const bad of [undefined, null, 5, '', 'title_art/a.jpg', 'https://evil.example/a.jpg', '//evil.example/a.jpg',
+        "/a.jpg');background:url(x", '/break_escape/../a.jpg', '/break_escape/assets/a.svg']) {
+        assert.equal(titleScreenArt({ missionTitleArt: bad }), '', `rejects ${String(bad)}`);
+    }
+    assert.equal(titleScreenArt(undefined), '');
+    assert.equal(titleScreenArt({}), '');
+});
+
+test('title screen CSS and minigame wire the backdrop opt-in with a reduced-motion guard', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/title-screen.css'), 'utf8');
+    const js = readFileSync(join(here, '../../public/break_escape/js/minigames/title-screen/title-screen-minigame.js'), 'utf8');
+    assert.match(css, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.title-screen-art \{ transition: none; \}/);
+    assert.match(js, /titleScreenArt\(window\.breakEscapeConfig\)/);
+    assert.match(js, /artUrl \? ' has-art' : ''/); // no art, no class: other missions unchanged
 });

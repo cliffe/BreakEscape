@@ -1,6 +1,7 @@
 {
   "scenario_id": "awareness_pre_mobile_ab",
   "scenario_name": "Work phone check: before (AB)",
+  "titleScreenName": "Starting check",
   "scenario_brief": "The first of two short checks for staff with a work phone at Tarrowby Logistics, a fictional company. Ten items from a Tarrowby work phone: texts, printed notices with QR codes, and emails. Decide what to do with each one. Your result is saved so the second check can compare with it.",
   "endGoal": "Go through the ten items at the training kiosk.",
   "version": "1.0",
@@ -30,7 +31,7 @@
       "missionConclusion": true,
       "concludeRequires": {
         "globals": [
-          "triage_pre_done"
+          "triage_pre_complete"
         ]
       },
       "conclusionScreen": {
@@ -53,13 +54,12 @@
     "se_awareness_records": [],
     "triage_pre_percent": 0,
     "triage_pre_reportRate": 0,
-    "triage_pre_done": false,
-    "triage_pre_pass": false
+    "triage_pre_complete": false
   },
   "exportGlobals": [
     "triage_pre_percent",
     "triage_pre_reportRate",
-    "triage_pre_done"
+    "triage_pre_complete"
   ],
   "social": {
     "triageSets": [
@@ -292,7 +292,7 @@
             "id": "ma_colin_personal_number",
             "from": {
               "name": "Colin Mather",
-              "address": "colin.mather.tby@inboxly.example"
+              "address": "colin.mather.tby@lintbox.example"
             },
             "to": "you@tarrowby.example",
             "subject": "Quick favour, text me",
@@ -302,8 +302,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "inboxly.example",
-              "replyTo": "colin.mather.tby@inboxly.example"
+              "envelopeFrom": "lintbox.example",
+              "replyTo": "colin.mather.tby@lintbox.example"
             },
             "truth": {
               "isPhish": true,
@@ -311,7 +311,7 @@
                 "senderTrust"
               ],
               "perFlagNote": {
-                "senderTrust": "The warehouse manager's name on a personal inbox at inboxly.example, not tarrowby.example"
+                "senderTrust": "The warehouse manager's name on a personal inbox at lintbox.example, not tarrowby.example"
               },
               "ifTrusted": "Once you text that number, the 'favour' follows: usually gift cards or a payment, from someone who isn't Colin.",
               "reportReply": "Thanks. Colin didn't send it. His only address is on tarrowby.example."
@@ -423,7 +423,7 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "eventPattern": "global_variable_changed:triage_pre_done",
+              "eventPattern": "global_variable_changed:triage_pre_complete",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "finish_check"

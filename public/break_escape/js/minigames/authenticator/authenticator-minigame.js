@@ -76,6 +76,9 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
         this.pushTemplate = isObj(this.params.pushTemplate) ? this.params.pushTemplate : {};
         this.strings = isObj(this.params.strings) ? this.params.strings : {};
         this.defenderNote = isStr(this.params.defenderNote) ? this.params.defenderNote : '';
+        // Decision mode holds the learner on the beat until the outcome shows (the episode wants that).
+        // lockUntilOutcome: false lets Close and Esc leave at any time (a phone object in a mission room).
+        this.lockUntilOutcome = this.params.lockUntilOutcome !== false;
         this.timeline = buildTimeline(this.params);  // empty in decision mode until a choice is made
         this.cursor = 0;        // next event to play
         this.sent = 0;          // prompt cards delivered so far
@@ -163,7 +166,10 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
             // "back to choosing" until the outcome is on screen. Registering a layer makes a
             // single Esc land here even with a radio focused (t-1), ahead of the overlay's
             // text-field blur. The layer is removed once the approval and outcome have shown.
-            if (!this._removeChoiceLayer) this._removeChoiceLayer = this.pushLayer(() => this._backToChoosing(), 'mfa-decision');
+            // Unlocked, the layer still exists so one Esc leaves even with a radio focused (it would
+            // otherwise only blur the radio first).
+            if (!this._removeChoiceLayer) this._removeChoiceLayer = this.pushLayer(
+                () => (this.lockUntilOutcome ? this._backToChoosing() : this.requestClose()), 'mfa-decision');
             this._focusFirstRadio();  // start on the first option, not the disabled Confirm (t-2)
             return;
         }
@@ -419,7 +425,8 @@ export class AuthenticatorMinigame extends SocialOverlayScene {
 
     requestClose() {
         // Before the outcome is on screen, Close and Esc mean "back to choosing", never a skip (m-1).
-        if (this.choice && this.approvedAt === null) { this._backToChoosing(); return; }
+        // With lockUntilOutcome: false the player may leave instead.
+        if (this.lockUntilOutcome && this.choice && this.approvedAt === null) { this._backToChoosing(); return; }
         super.requestClose();
     }
 

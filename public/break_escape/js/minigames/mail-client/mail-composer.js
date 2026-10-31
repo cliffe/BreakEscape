@@ -153,6 +153,44 @@ function el(tag, className, text) {
     return node;
 }
 
+// Fonts rule (00 §address): a web/email address reads in the address font (--se-font-address),
+// prose in the readable pixel font. The same regex mail-reader._appendBodyText uses, so a composed
+// chip's address reads as it does in the inbox (E10 F-E10-9: "operations@quayholt.example" was in
+// the pixel font). Nothing is hardcoded; detection is by the value itself.
+const ADDRESS_RE = /(https?:\/\/[^\s]+|www\.[^\s]+|[^\s@]+@[^\s@]+\.[^\s@]+)/g;
+
+/** Append `text` to `node`, wrapping any web/email address in a `.mail-blank-address` span. */
+export function appendWithAddresses(node, text) {
+    const s = typeof text === 'string' ? text : '';
+    if (!s) return;
+    ADDRESS_RE.lastIndex = 0;
+    let last = 0;
+    let m;
+    while ((m = ADDRESS_RE.exec(s)) !== null) {
+        let token = m[0];
+        const start = m.index;
+        const trail = (token.match(/[.,;:!?)\]}>'"]+$/) || [''])[0];
+        if (trail) token = token.slice(0, token.length - trail.length);
+        if (!token) continue;
+        if (start > last) node.appendChild(document.createTextNode(s.slice(last, start)));
+        node.appendChild(el('span', 'mail-blank-address', token));
+        if (trail) node.appendChild(document.createTextNode(trail));
+        last = start + m[0].length;
+    }
+    if (last === 0) { node.appendChild(document.createTextNode(s)); return; }
+    if (last < s.length) node.appendChild(document.createTextNode(s.slice(last)));
+}
+
+/** True when the trimmed value is, in whole, a single web/email address (so it belongs in the
+ *  address font): used to style a native <option> whose text is just an address. */
+export function isAddressValue(text) {
+    const t = String(text == null ? '' : text).trim();
+    if (!t) return false;
+    ADDRESS_RE.lastIndex = 0;
+    const m = ADDRESS_RE.exec(t);
+    return !!m && m.index === 0 && m[0].length === t.length;
+}
+
 export class MailComposer {
     /**
      * @param {HTMLElement} parent
@@ -217,6 +255,13 @@ export class MailComposer {
         this.root.setAttribute('aria-label', 'New message');
         parent.appendChild(this.root);
 
+        // Ink-driven plain email (systems/mail-ink.js; README_scenario_design.md "Ink-driven email"):
+        // a contact the host calls 'ink' or 'both' gets suggested replies instead of the judged form.
+        // opts.inkMode(contact) -> 'ink' | 'both' | other; opts.ink = { labels, prepare, plan, send };
+        // opts.inkChoice picks a suggested reply on open; opts.onInkSent(result, contact) closes up.
+        this.ink = null;
+        this.judgedChosen = false;
+        this.destroyed = false;
         this._restoreDraft(opts.draft);
         this._selectDefaultContact();
         // "Send as" changed mid-draft: keep what is still valid for the new account (R19 F19-1).
@@ -226,6 +271,7 @@ export class MailComposer {
         this.edited = false;
         if (isObject(opts.carryDraft)) this._carryOver(opts.carryDraft);
         this.render();
+        this._startInk();
     }
 
     /**
@@ -386,6 +432,8 @@ export class MailComposer {
 
     selectContact(id, rerender = true) {
         const c = this.contacts.find((x) => x && x.id === id);
+        this.judgedChosen = false;
+        this.ink = null;
         this.contactId = c ? c.id : null;
         this.toAddress = c ? (arr(c.addresses)[0] || '') : '';
         this.choice = {};
@@ -400,7 +448,168 @@ export class MailComposer {
             const set = this.templateSet(part);
             if (set.length) this.choice[part] = this._defaultTemplate(set);
         }
-        if (rerender) { this._emitChange(); this.render(); }
+        if (rerender) { this._emitChange(); this.render(); this._startInk(); }
+    }
+
+    // ── ink-driven plain email ─────────────────────────────────────────────────
+
+    _inkMode() {
+        const c = this.contact;
+        if (!c || isStr(this.opts.forceTargetId) || typeof this.opts.inkMode !== 'function' || !this.opts.ink) return 'none';
+        return this.opts.inkMode(c);
+    }
+
+    /** True while the plain (suggested replies) form is showing for the selected contact. */
+    _inkActive() {
+        const mode = this._inkMode();
+        return (mode === 'ink' || mode === 'both') && !this.judgedChosen;
+    }
+
+    _inkLabels() {
+        return (this.opts.ink && this.opts.ink.labels) || {};
+    }
+
+    /** Ask the host what this contact offers: pending choices, on_compose's, or a wait. */
+    _startInk() {
+        if (!this._inkActive()) return;
+        const contact = this.contact;
+        const id = contact.id;
+        this.ink = { contactId: id, state: 'loading', options: [], index: null, plan: null, error: '', busy: false };
+        this.render();
+        Promise.resolve(this.opts.ink.prepare(contact)).then((res) => {
+            if (this.destroyed || !this.ink || this.contactId !== id) return;
+            this.ink.state = res && res.state ? res.state : 'none';
+            this.ink.options = res && Array.isArray(res.options) ? res.options : [];
+            const want = this.opts.inkChoice;
+            this.opts.inkChoice = null;
+            if (this.ink.state === 'choices' && Number.isInteger(want)) return this.pickInk(want);
+            this.render();
+            return undefined;
+        }).catch((err) => {
+            console.error('mail ink prepare failed:', err);
+            if (this.destroyed || !this.ink) return;
+            this.ink.state = 'none';
+            this.render();
+        });
+    }
+
+    /** The player picks a suggested reply: show the whole message it would send. */
+    async pickInk(index) {
+        const ink = this.ink;
+        if (!ink || ink.busy) return;
+        const L = this._inkLabels();
+        ink.busy = true; ink.error = '';
+        let plan = null;
+        try { plan = await this.opts.ink.plan(this.contact, index); } catch (err) { console.error('mail ink plan failed:', err); }
+        if (this.destroyed || this.ink !== ink) return;
+        ink.busy = false;
+        if (plan && plan.ok) { ink.index = index; ink.plan = plan; ink.error = ''; }
+        else { ink.index = null; ink.plan = null; ink.error = plan && plan.reason === 'forward-missing' ? L.forwardMissing : L.unavailable; }
+        this.render();
+    }
+
+    /** Back from a filled message to the list of suggestions. */
+    chooseAnotherInk() {
+        if (!this.ink) return;
+        this.ink.index = null; this.ink.plan = null; this.ink.error = '';
+        this.render();
+    }
+
+    /** Send the filled message; the host queues the reply and closes the composer. */
+    async sendInk() {
+        const ink = this.ink;
+        if (!ink || ink.busy || !ink.plan || !Number.isInteger(ink.index)) return;
+        const L = this._inkLabels();
+        ink.busy = true; ink.error = '';
+        this.render();
+        let res = null;
+        try { res = await this.opts.ink.send(this.contact, ink.index, this.opts.inReplyTo || null); } catch (err) { console.error('mail ink send failed:', err); }
+        if (this.destroyed || this.ink !== ink) return;
+        ink.busy = false;
+        if (res && res.ok) {
+            try { this.opts.onInkSent?.(res, this.contact); } catch (err) { console.error('mail onInkSent failed:', err); }
+            return;
+        }
+        ink.error = res && res.reason === 'forward-missing' ? L.forwardMissing : L.unavailable;
+        this.render();
+    }
+
+    _renderInk() {
+        const L = this._inkLabels();
+        const ink = this.ink || { state: 'loading', options: [], plan: null, error: '', busy: false };
+        const wrap = el('div', 'mail-ink-compose');
+        const acct = this.account;
+        const fromRow = el('div', 'mail-compose-row');
+        fromRow.append(el('span', 'mail-compose-label', L.from || 'From'),
+            el('span', 'mail-compose-value', acct ? (acct.address || acct.displayName || '') : ''));
+        wrap.appendChild(fromRow);
+        const plan = ink.plan;
+        if (plan) {
+            if (plan.subject !== undefined) {
+                const row = el('div', 'mail-compose-row');
+                row.append(el('span', 'mail-compose-label', L.subject), el('span', 'mail-compose-value mail-ink-subject', plan.subject || ''));
+                wrap.appendChild(row);
+            }
+            if (Array.isArray(plan.attachments) && plan.attachments.length) {
+                const row = el('div', 'mail-compose-row');
+                row.appendChild(el('span', 'mail-compose-label', L.attachments));
+                const chips = el('span', 'mail-chips');
+                for (const a of plan.attachments) chips.appendChild(el('span', 'mail-chip mail-chip-attachment mail-ink-attachment', a.label || a.kitId || 'Attachment'));
+                row.appendChild(chips);
+                wrap.appendChild(row);
+            }
+            wrap.appendChild(el('div', 'mail-ink-body', plan.body || ''));
+        } else if (ink.state === 'loading') {
+            wrap.appendChild(el('p', 'mail-compose-note', L.loading));
+        } else if (ink.state === 'waiting') {
+            wrap.appendChild(el('p', 'mail-compose-note mail-ink-waiting', L.waiting));
+        } else if (ink.state === 'choices' && ink.options.length) {
+            wrap.appendChild(el('p', 'mail-followup-label', L.suggestedReplies));
+            const list = el('div', 'mail-suggest-list');
+            list.setAttribute('role', 'group');
+            list.setAttribute('aria-label', L.suggestedReplies);
+            ink.options.forEach((text, i) => {
+                const chip = el('button', 'mail-suggest-chip minigame-button', text);
+                chip.type = 'button';
+                chip.title = text;
+                chip.dataset.choice = String(i);
+                chip.disabled = ink.busy === true;
+                chip.addEventListener('click', () => this.pickInk(i));
+                list.appendChild(chip);
+            });
+            wrap.appendChild(list);
+        } else {
+            wrap.appendChild(el('p', 'mail-compose-note mail-ink-nothing', L.nothing));
+        }
+        if (ink.error) {
+            const err = el('p', 'mail-compose-gate mail-ink-error', ink.error);
+            err.setAttribute('role', 'alert');
+            wrap.appendChild(err);
+        }
+        const bar = el('div', 'mail-compose-send-bar');
+        const back = el('button', 'mail-compose-back minigame-button', 'Back');
+        back.type = 'button';
+        back.addEventListener('click', () => { try { this.opts.onClose?.(); } catch (e) { /* host owns close */ } });
+        bar.appendChild(back);
+        if (plan) {
+            const another = el('button', 'mail-ink-another minigame-button', L.chooseAnother);
+            another.type = 'button';
+            another.disabled = ink.busy === true;
+            another.addEventListener('click', () => this.chooseAnotherInk());
+            const send = el('button', 'mail-compose-send mail-ink-send minigame-button', ink.busy ? L.sending : L.send);
+            send.type = 'button';
+            send.disabled = ink.busy === true;
+            send.addEventListener('click', () => this.sendInk());
+            bar.append(another, send);
+            this.sendButton = send;
+        } else if (this._inkMode() === 'both') {
+            const own = el('button', 'mail-ink-own minigame-button', L.writeYourOwn);
+            own.type = 'button';
+            own.addEventListener('click', () => { this.judgedChosen = true; this.render(); });
+            bar.appendChild(own);
+        }
+        wrap.appendChild(bar);
+        this.root.appendChild(wrap);
     }
 
     chooseTemplate(part, id) {
@@ -589,6 +798,25 @@ export class MailComposer {
      * placeholder, and returns as advice — not a counted fault — once a trusted sender is forged,
      * so the meter agrees with the flip and debrief instead of ending at "reads clean".
      */
+    /**
+     * batch-12 item 11: the meter's "fewer flags means harder to spot" line says nothing for a
+     * hidden-line brief, which scores zero visible flags on purpose (E13 F-6). A template may set
+     * its own `meterHint` (or '' to drop it), and a chosen template that carries a hidden line
+     * (`hiddenText`) drops the default line too. An explicit opts.meterHint still wins.
+     */
+    _meterHint() {
+        for (const part of PARTS) {
+            const tpl = templateOf(this.templates, this.choice[part]);
+            if (tpl && typeof tpl.meterHint === 'string') return tpl.meterHint;
+        }
+        if (typeof this.opts.meterHint === 'string') return this.opts.meterHint;
+        const hidesLine = PARTS.some((part) => {
+            const tpl = templateOf(this.templates, this.choice[part]);
+            return tpl && isStr(tpl.hiddenText);
+        });
+        return hidesLine ? '' : 'Fewer flags means harder to spot.';
+    }
+
     _meterData() {
         if (!this._meterOn()) return { on: false, flags: [], advice: [], clean: false, landed: false };
         const result = this._liveResult();
@@ -764,6 +992,8 @@ export class MailComposer {
     }
 
     _emitChange() {
+        // The plain (suggested replies) form has no draft: leave the judged one the player may be keeping.
+        if (this._inkActive()) return;
         this.carryNotice = '';
         this.edited = true;
         try { this.opts.onChange?.(this.draft()); } catch (err) { console.error('composer onChange failed:', err); }
@@ -796,9 +1026,17 @@ export class MailComposer {
         this.evaluateGate();
         this.root.textContent = '';
         this.root.appendChild(el('h2', 'mail-compose-title', 'New message'));
-        this._renderSendAs();
-        if (this.carryNotice) this.root.appendChild(el('p', 'mail-compose-hint mail-compose-carry', this.carryNotice));
+        const inkForm = this._inkActive();
+        if (!inkForm) this._renderSendAs();
+        if (this.carryNotice && !inkForm) this.root.appendChild(el('p', 'mail-compose-hint mail-compose-carry', this.carryNotice));
         this._renderTo();
+        if (inkForm) { this._renderInk(); return; }
+        if (this.judgedChosen && this._inkMode() === 'both') {
+            const back = el('button', 'mail-ink-suggestions minigame-button', this._inkLabels().backToSuggestions);
+            back.type = 'button';
+            back.addEventListener('click', () => { this.judgedChosen = false; this._startInk(); });
+            this.root.appendChild(back);
+        }
         if (this.contact && !this.target) {
             this.root.appendChild(el('p', 'mail-compose-note',
                 'This recipient is not a phishing target: the message is kept in Sent but is not judged and delivers nothing.'));
@@ -950,12 +1188,31 @@ export class MailComposer {
                 // record it, not a greyed-out disabled control (P1-T).
                 if (!this.choice[part]) this.choice[part] = set[0];
                 const only = templateOf(this.templates, set[0]);
-                row.appendChild(el('p', 'mail-compose-value mail-compose-fixed', only ? this._fillPreview(only) : set[0]));
+                // An address in a single-option fixed value (a lone From sender, a reply-to) reads
+                // in the address font too, like the chosen-blank and select cases (E10 F-E10-9).
+                const fixed = el('p', 'mail-compose-value mail-compose-fixed');
+                appendWithAddresses(fixed, String(only ? this._fillPreview(only) : set[0]));
+                row.appendChild(fixed);
             } else {
                 this._renderPartSelect(row, part);
             }
             this.root.appendChild(row);
             this._renderPartBlanks(part);
+            // E13 B2 finding 12: a template may carry a line in white text "for the assistant"
+            // (hiddenText). It is invisible to the reader by design, so choosing the hidden-line
+            // pretext changed nothing in the preview. Show it as a labelled, visually distinct
+            // "hidden from the reader" line so the learner sees what their choice plants. Nothing
+            // renders for a template without hiddenText (every existing one), so defaults hold.
+            const chosenTpl = templateOf(this.templates, this.choice[part]);
+            if (chosenTpl && isStr(chosenTpl.hiddenText) && chosenTpl.hiddenText.trim()) {
+                const hid = el('div', 'mail-compose-hidden');
+                hid.dataset.part = part;
+                hid.appendChild(el('span', 'mail-compose-hidden-label', 'Hidden from the reader'));
+                const body = el('p', 'mail-compose-hidden-text');
+                appendWithAddresses(body, chosenTpl.hiddenText);
+                hid.appendChild(body);
+                this.root.appendChild(hid);
+            }
         }
     }
 
@@ -974,9 +1231,23 @@ export class MailComposer {
         }
         for (const id of set) {
             const tpl = templateOf(this.templates, id);
-            const opt = el('option', null, tpl ? this._fillPreview(tpl) : id);
+            // batch-12 item 9: a template may name its own `optionLabel` for the dropdown, so the
+            // chooser can read as a short choice while the body stays full prose (and the label text
+            // never leaks into the sent body). Default: the filled preview, as before.
+            const preview = tpl && isStr(tpl.optionLabel) ? tpl.optionLabel : (tpl ? this._fillPreview(tpl) : id);
+            const opt = el('option', null, preview);
             opt.value = id;
-            if (id === this.choice[part]) opt.selected = true;
+            // A native <option> cannot split fonts, but one whose whole text is an address (a
+            // From sender address) should read in the address font, not the pixel font (E10 F-E10-9).
+            if (isAddressValue(preview)) {
+                opt.classList.add('mail-compose-template-address');
+                opt.style.fontFamily = 'var(--se-font-address)';
+            }
+            if (id === this.choice[part]) {
+                opt.selected = true;
+                // Reflect the selected option's face on the closed select box.
+                select.style.fontFamily = isAddressValue(preview) ? 'var(--se-font-address)' : '';
+            }
             select.appendChild(opt);
         }
         select.addEventListener('change', () => this.chooseTemplate(part, select.value));
@@ -1019,7 +1290,14 @@ export class MailComposer {
                 // never the value, so the gate line itself stays neutral.
                 if (isStr(slot.stuck) && slot.stuck.trim()) field.appendChild(this._stuckPointer(slot.stuck));
             } else {
-                btn.textContent = chosenOpt ? `${blankLabel}: ${chosenOpt.label}` : `${blankLabel}: choose…`;
+                if (chosenOpt) {
+                    // The label prefix stays in the readable pixel font; an address in the chosen
+                    // value (a From sender address, a reply-to) renders in the address font.
+                    btn.appendChild(document.createTextNode(`${blankLabel}: `));
+                    appendWithAddresses(btn, String(chosenOpt.label ?? ''));
+                } else {
+                    btn.textContent = `${blankLabel}: choose…`;
+                }
                 btn.dataset.chosen = chosen || '';
                 btn.setAttribute('aria-haspopup', 'listbox');
                 btn.addEventListener('click', () => this.openPicker(slot, btn));
@@ -1135,6 +1413,11 @@ export class MailComposer {
         head.appendChild(el('span', 'mail-redflag-title', 'Red flags'));
         head.appendChild(el('span', 'mail-redflag-count', String(data.flags.length)));
         panel.appendChild(head);
+        // In the red-team seat a lower count is better, so the meter needs one line to say so, or
+        // "Red flags 1" reads as a mistake to fix and 0 looks like nothing matters (E8 F8). Authored
+        // override: opts.meterHint; '' hides it.
+        const hint = this._meterHint();
+        if (hint) panel.appendChild(el('p', 'mail-redflag-sub', hint));
         const mark = (cls, src) => {
             const img = el('img', cls);
             img.src = src;
@@ -1187,7 +1470,16 @@ export class MailComposer {
         bar.append(back, send, line);
         this.sendButton = send;
         this.gateLineEl = line;
-        this.root.appendChild(bar);
+        // With the red-flag meter on, the meter and the Send bar share one footer pinned to the foot
+        // of the panel, so the hints are always on screen beside Send (E8 F2), however tall the form.
+        const meter = this.root.querySelector?.('.mail-redflag-meter');
+        if (meter) {
+            const foot = el('div', 'mail-compose-foot');
+            foot.append(meter, bar);
+            this.root.appendChild(foot);
+        } else {
+            this.root.appendChild(bar);
+        }
     }
 
     // ── the blank picker (a listbox; arrow keys, Enter/click, Esc) ────────────
@@ -1303,6 +1595,7 @@ export class MailComposer {
     }
 
     destroy() {
+        this.destroyed = true;
         this._closePicker();
         this.root.remove?.();
     }

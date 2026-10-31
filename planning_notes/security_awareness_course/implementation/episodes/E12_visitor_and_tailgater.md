@@ -920,6 +920,12 @@ Validate with `check-bridge.mjs` / `run-suite.sh`.
    the list / call the host"). The per-set action relabel is **ENG-03a's `triageSet.verdictLabels`**
    (02 ENG-03a), not ENG-07 (ENG-07 is only the person-chat/triage `call` video-call bar label); it is
    cosmetic and the verdict mapping is unchanged, so E12 ships without it, but note it as a polish item.
+   **Ruling (E12 C1, 2026-10-29): relabel.** Design review MA3 found the built `CALL_ACTIONS` phone hints
+   ("Say no and hang up", "Hang up and ring back on a number you already hold") read wrongly for a visitor
+   standing at the desk on all seven cards. Authored `labels.callActions` (label + hint + past per action)
+   on the set, delivered through `triage-kinds.js` `relabel` (not `verdictLabels`, which only sets labels):
+   Comply/"Let them in", Escalate/"Report", Refuse/"Turn away", verify_callback/"Check first". The verdict
+   mapping is unchanged. The set brief now names those four button words.
 3. **Does the learner physically walk through the opened door? No.** The door
    opening is the attack's success and empathy beat (the con worked); defend is played at the kiosk in
    `training_room`, which is also the scenario `startRoom`, so the learner starts there and ENG-05a
@@ -935,6 +941,11 @@ Validate with `check-bridge.mjs` / `run-suite.sh`.
    patient-contractor mirror. The user might instead prefer: keep all eight items (accept a slightly
    longer defend stage, lean on the osint cut in section 6); or keep the contractor and drop a different
    item. Flagged for a steer.
+   **Ruling (E12 C1, 2026-10-29): keep seven.** Design review recommends seven: it fits the ~15-minute
+   full / ~8-minute defend budget and gives three clean adjacent mirror pairs (1<->2, 4<->5, 6<->7). The
+   only gain from eight is a direct patient-contractor mirror for the fire inspector (item 3), which
+   already works unmirrored, and the "genuine visitor, Check first is fine" lesson is carried by items 2
+   and 5. The removed lift-engineer contractor stays out.
 6. **`unlocked_screen` is a new scenario-local tell.** It needs no engine or library change (local tell,
    `flagChips` label plus per-message `factorStrings.redFlag`, exactly as the other four E12 tells). It is
    not yet in ENG-08's tell catalogue table (`02_ENGINE_WORK.md`), which lists E12's tells; that table

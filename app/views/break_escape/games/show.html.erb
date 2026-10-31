@@ -81,8 +81,13 @@
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/inbox-triage-minigame.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/awareness-skin.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/episode-runner.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/assistant-chat-minigame.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/pretext-prep-minigame.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/landing-page-builder-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/sort-drill-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/concern-form-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/privacy-panel-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/password-guesser-minigame.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/engagement-report-minigame.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/authenticator-minigame.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/influence-bar.css') %>">
@@ -100,7 +105,7 @@
     try {
       var beTheme = JSON.parse(localStorage.getItem('be_display_settings') || '{}').theme;
       if (!/[?&]ui_theme=/.test(location.search) &&
-          <%= raw BreakEscape::Mission::UI_THEMES.to_json %>.indexOf(beTheme) !== -1) {
+          <%= raw json_escape(BreakEscape::Mission::UI_THEMES.to_json) %>.indexOf(beTheme) !== -1) {
         document.documentElement.dataset.uiTheme = beTheme;
       }
     } catch (e) {}
@@ -231,18 +236,24 @@
       vmSetPanelUrl: '<%= _vm_set_panel_url %>',
       vmSetActivateUrl: '<%= _vm_set_activate_url %>',
       vmSetActivated: <%= _vm_set_activated ? 'true' : 'false' %>,
-      vmSetActivatedUntil: <%= raw(_vm_set_activated_until&.iso8601.to_json) %>,
+      vmSetActivatedUntil: <%= raw json_escape(_vm_set_activated_until&.iso8601.to_json) %>,
       vmActivationMode: '<%= BreakEscape::Mission.hacktivity_mode? ? @game.mission.vm_activation_mode.to_s : '' %>',
-      missionConcludedAt: <%= raw(@game.mission_concluded_at&.iso8601.to_json) %>,
+      missionConcludedAt: <%= raw json_escape(@game.mission_concluded_at&.iso8601.to_json) %>,
+      // false when mission.json says "endingCheck": false: no warning before the ending (systems/ending-check.js)
+      endingCheck: <%= @mission.ending_check? ? 'true' : 'false' %>,
       missionId: <%= @game.mission_id %>,
-      missionDisplayName: <%= raw(@mission.display_name.to_json) %>,
+      missionDisplayName: <%= raw json_escape(@mission.display_name.to_json) %>,
+      <% _title_name = @game.scenario_data.is_a?(Hash) ? @game.scenario_data['titleScreenName'].to_s.gsub(/[[:cntrl:]]/, ' ').strip[0, 80] : '' %>
+      <% if _title_name.present? %>missionTitleName: <%= raw json_escape(_title_name.to_json) %>,<% end %>
+      <% _title_art = @mission.title_art_path %>
+      <% if _title_art.present? %>missionTitleArt: <%= raw json_escape(("/break_escape/assets/" + _title_art).to_json) %>,<% end %>
       <% if _awareness.present? %>awareness: <%= raw json_escape(_awareness.to_json) %>,<% end %>
       uiTheme: '<%= ui_theme %>',
       // Set when a host game shell launched this mission (BreakEscape.configuration.shell_links)
-      shellMenuUrl: <%= raw((@shell_links || {})[:menu_url].to_json) %>,
-      shellReturnUrl: <%= raw((@shell_links || {})[:return_url].to_json) %>,
-      shellReturnLabel: <%= raw((@shell_links || {})[:return_label].to_json) %>,
-      walkthroughUrl: <%= raw((@shell_links || {})[:walkthrough_url].to_json) %>,
+      shellMenuUrl: <%= raw json_escape((@shell_links || {})[:menu_url].to_json) %>,
+      shellReturnUrl: <%= raw json_escape((@shell_links || {})[:return_url].to_json) %>,
+      shellReturnLabel: <%= raw json_escape((@shell_links || {})[:return_label].to_json) %>,
+      walkthroughUrl: <%= raw json_escape((@shell_links || {})[:walkthrough_url].to_json) %>,
       // Dev-only Playwright/agent test bridge (window.__test). Never true in
       // production, so main.js never imports the bridge code there.
       testBridge: <%= Rails.env.production? ? 'false' : 'true' %>

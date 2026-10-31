@@ -432,6 +432,44 @@ export function fillPretextVars(story, blanks) {
 
 // -------------------------------------------------------------- the debrief (N7)
 
+/**
+ * The debrief's wording by theme. The default is the call copy every existing scenario
+ * shows. A DM app (theme 'social') says chat, not call. A pretext entry's own
+ * `labels: { <theme>: { debriefTitle, got_it, reported, walked_away, partial } }` wins over
+ * these, and `outcomeLabels` (older, per outcome, any theme) wins over both.
+ */
+export const DEBRIEF_LABELS = {
+    default: {
+        debriefTitle: 'Call debrief',
+        got_it: 'You got what you came for.',
+        partial: 'You got some of what you came for.',
+        reported: 'The call was reported.',
+        walked_away: 'You rang off.'
+    },
+    social: {
+        debriefTitle: 'Chat debrief',
+        got_it: 'You got what you came for.',
+        partial: 'You got some of what you came for.',
+        reported: 'The chat was reported.',
+        walked_away: 'You left the chat.'
+    }
+};
+
+// A terminal phone is a call: same copy as the default, but its own `labels.terminal` can override
+DEBRIEF_LABELS.terminal = { ...DEBRIEF_LABELS.default };
+
+/** The merged label set for a theme and a pretext spec. Always returns every key. */
+export function debriefLabels(spec, theme) {
+    const key = DEBRIEF_LABELS[theme] ? theme : 'default';
+    const base = DEBRIEF_LABELS[key];
+    const own = isObject(spec?.labels) && isObject(spec.labels[key]) ? spec.labels[key] : {};
+    const out = { ...DEBRIEF_LABELS.default, ...base };
+    for (const key of Object.keys(out)) {
+        if (typeof own[key] === 'string' && own[key]) out[key] = own[key];
+    }
+    return out;
+}
+
 /** Technique/fact label from a log reason, kept plain (the panel is text). */
 const reasonLabel = (reason) => (typeof reason === 'string' && reason ? reason.replace(/_/g, ' ') : 'line');
 
@@ -440,23 +478,33 @@ const reasonLabel = (reason) => (typeof reason === 'string' && reason ? reason.r
  * log (N7), one row per line with its delta, band and factor, then the defender
  * notes. Calls `onDone` when the player dismisses it. Pure DOM; no game state.
  */
-export function renderDebrief(container, { session, spec, onDone } = {}) {
+export function renderDebrief(container, { session, spec, onDone, theme = null } = {}) {
+    const words = debriefLabels(spec, theme);
     if (!container || typeof document === 'undefined') { if (typeof onDone === 'function') onDone(); return null; }
     const BANDS = ['CALM', 'WARY', 'REFUSING', 'REPORTED', 'LOCKED'];
 
     const panel = document.createElement('div');
     panel.className = 'pretext-debrief';
     panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', 'Call debrief');
+    panel.setAttribute('aria-label', words.debriefTitle);
 
     const heading = document.createElement('h2');
     heading.className = 'pretext-debrief-title';
-    heading.textContent = 'Call debrief';
+    heading.textContent = words.debriefTitle;
     panel.appendChild(heading);
 
     const outcome = document.createElement('p');
     outcome.className = 'pretext-debrief-outcome';
-    const outcomeText = { got_it: 'You got what you came for.', reported: 'The call was reported.', walked_away: 'You rang off.' };
+    // E12 B2 finding 15: the outcome labels are overridable per pretext (spec.outcomeLabels), so
+    // an in-person desk reads "You ended the conversation." rather than "You rang off." The phone
+    // defaults are unchanged (an existing JS assertion and E3/lab voice depend on them), so a
+    // pretext that sets nothing is exactly as before.
+    const ownLabels = isObject(spec?.outcomeLabels) ? spec.outcomeLabels : {};
+    const outcomeText = {
+        got_it: typeof ownLabels.got_it === 'string' && ownLabels.got_it ? ownLabels.got_it : words.got_it,
+        reported: typeof ownLabels.reported === 'string' && ownLabels.reported ? ownLabels.reported : words.reported,
+        walked_away: typeof ownLabels.walked_away === 'string' && ownLabels.walked_away ? ownLabels.walked_away : words.walked_away
+    };
     const outcomeKey = outcomeFor(session);
     // `got_it` means at least one ask was granted, but the call may also have had an
     // ask refused (an earlier grant, a later refusal). Saying "You got what you came
@@ -467,7 +515,7 @@ export function renderDebrief(container, { session, spec, onDone } = {}) {
         .filter((row) => row && row.kind === 'ask' && typeof row.id === 'string').map((row) => row.id);
     const ungranted = askedIds.some((id) => !(session.grantedAsks || []).includes(id));
     outcome.textContent = (outcomeKey === 'got_it' && (session.refusals > 0 || ungranted))
-        ? 'You got some of what you came for.'
+        ? words.partial
         : (outcomeText[outcomeKey] || '');
     panel.appendChild(outcome);
 
@@ -499,12 +547,40 @@ export function renderDebrief(container, { session, spec, onDone } = {}) {
 
     const done = document.createElement('button');
     done.type = 'button';
-    done.className = 'pretext-debrief-done';
+    done.className = 'pretext-debrief-done minigame-button';
     done.textContent = 'Done';
-    done.addEventListener('click', () => { panel.remove(); if (typeof onDone === 'function') onDone(); });
+    // The debrief is a centred modal over a full backdrop (batch-5 F-E12-3): the backdrop covers
+    // the open chat so nothing of the debrief runs behind End Conversation and the stale live bar
+    // is not read beside the final outcome. The backdrop, not the panel, is removed on Done.
+    const backdrop = document.createElement('div');
+    backdrop.className = 'pretext-debrief-backdrop';
+    // m1: the element to restore focus to when the modal closes (the control that ended the call).
+    const opener = (typeof document !== 'undefined' && document.activeElement) || null;
+    const restoreFocus = () => { try { if (opener && typeof opener.focus === 'function' && opener.isConnected !== false) opener.focus(); } catch (e) { /* headless */ } };
+    done.addEventListener('click', () => { backdrop.remove(); restoreFocus(); if (typeof onDone === 'function') onDone(); });
     panel.appendChild(done);
 
-    container.appendChild(panel);
+    // m1: trap Tab within the panel while the modal is up, and stop keystrokes reaching the chat's
+    // global keydown handler behind it. role="dialog" + aria-modal names it a modal to AT.
+    panel.setAttribute('aria-modal', 'true');
+    const focusables = () => Array.from(panel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+        .filter((node) => !node.disabled && node.getAttribute('aria-hidden') !== 'true');
+    backdrop.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+            const items = focusables();
+            if (!items.length) { e.preventDefault(); return; }
+            const first = items[0];
+            const last = items[items.length - 1];
+            const active = (typeof document !== 'undefined' && document.activeElement) || null;
+            if (e.shiftKey && (active === first || !panel.contains(active))) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && (active === last || !panel.contains(active))) { e.preventDefault(); first.focus(); }
+        }
+        // Keep every keystroke (Esc included) from reaching the chat's global keydown behind the modal.
+        e.stopPropagation();
+    });
+
+    backdrop.appendChild(panel);
+    container.appendChild(backdrop);
     try { done.focus(); } catch (e) { /* headless */ }
     return panel;
 }
@@ -625,6 +701,7 @@ export async function attachPretext(minigame, { chat, judge: injected = null } =
             debriefUp = true;
             renderDebrief(container, {
                 session, spec,
+                theme: minigame.appTheme || minigame.params?.theme || null,
                 onDone: () => { debriefUp = false; originalComplete(true); }
             });
         }

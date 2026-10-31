@@ -64,6 +64,29 @@ export const DEFAULT_POINTS = Object.freeze({
 const LOGO_PARTIAL = 4;   // blurry or stretched (section 4: fixed 4)
 const FORM_MISSING = 4;   // a real field missing (section 4: fixed 4)
 
+// Fake-check mode (ENG-03b). A page on a genuine but compromised site has no look-alike
+// domain, so it is scored on four persuasion factors instead of the seven sign-in ones.
+// The one tell every fake check carries, however it scores, is fake_check_paste: the page
+// must still tell the visitor to paste and run something.
+export const CHECK_FACTOR_ORDER = Object.freeze(['borrowedTrust', 'pretext', 'stepWording', 'urgency']);
+export const CHECK_DEFAULT_POINTS = Object.freeze({ borrowedTrust: 35, pretext: 25, stepWording: 25, urgency: 15 });
+export const CHECK_DEFAULT_STRINGS = Object.freeze({
+  verdictLow: 'That wouldn’t fool anyone.',
+  verdictMid: 'Some people would pause. Not {firstName}.',
+  verdictHigh: 'Convincing enough that {firstName} would follow the steps.',
+  borrowedTrustGenuine: '✓ Host: the page sits on the site {firstName} already trusts and has bookmarked.',
+  borrowedTrustLookalike: '~ Host: a look-alike site. Convincing, but it is not the address {firstName} knows.',
+  borrowedTrustUnrelated: '✗ Host: an unrelated page {firstName} has no reason to trust.',
+  pretextPass: '✓ Reason: fits exactly what {firstName} came to do.',
+  pretextPartial: '~ Reason: a generic reason that does not match the visit.',
+  pretextFail: '✗ Reason: off-topic. It gives {firstName} no reason to act.',
+  stepWordingPass: '✓ Steps: worded as a smooth, routine check.',
+  stepWordingFail: '✗ Steps: clumsy. The demand to act on the computer stands out.',
+  urgencyPass: '✓ Pace: one quiet step, so a careful visitor does not stop to think.',
+  urgencyHigh: '~ Pace: heavy pressure makes a careful visitor pause.',
+  defFakeCheckPaste: 'However genuine the site, the page still has to tell you to paste and run something. No real check ever does.'
+});
+
 // Default feedback strings (section 4 tables). Overridable per scenario via pageDef.strings,
 // using only {firstName}, {shown}, {real}, {linkText}. Builder lines are shown in the score
 // panel; defender lines are the step-6 lines shown by the builder only.
@@ -337,6 +360,96 @@ const DEFENDER_KEY = {
   'padlock.fail': 'defPadlock'
 };
 
+// ---------------------------------------------------- fake-check scorer (ENG-03b)
+
+/** One fake-check string: pageDef.check.strings[key], else the built default. */
+function checkStr(pageDef, key) {
+  const s = isObj(pageDef) && isObj(pageDef.check) ? pageDef.check.strings : null;
+  const over = isObj(s) ? s[key] : undefined;
+  const val = (typeof over === 'string' && over.length) ? over : CHECK_DEFAULT_STRINGS[key];
+  return typeof val === 'string' ? val : '';
+}
+
+function checkPoints(pageDef) {
+  const p = isObj(pageDef) && isObj(pageDef.check) && isObj(pageDef.check.points) ? pageDef.check.points : {};
+  const out = {};
+  for (const id of CHECK_FACTOR_ORDER) out[id] = p[id] == null ? CHECK_DEFAULT_POINTS[id] : Number(p[id]) || 0;
+  return out;
+}
+
+function optById(list, id) {
+  return arr(list).find((o) => isObj(o) && o.id === id) || null;
+}
+
+/**
+ * Score a fake "verify you are human" check (ENG-03b). Pure. Same result shape as scorePage.
+ * The four factors read the chosen menu entries from choices.check; the host's trust flag and
+ * the match/slips flags on the pretext/steps/urgency entries decide full/partial/zero, mirroring
+ * how scoreWording reads match/slips. The always-present fake_check_paste tell is appended.
+ */
+export function scoreFakeCheck(pageDef, choices, target) {
+  const def = isObj(pageDef) ? pageDef : {};
+  const check = isObj(def.check) ? def.check : {};
+  const sel = isObj(choices) && isObj(choices.check) ? choices.check : {};
+  const p = checkPoints(def);
+  const targetId = isObj(target) ? target.id : target;
+  const firstName = isObj(target) ? target.firstName : undefined;
+  const cfg = (isObj(def.targets) && isObj(def.targets[targetId])) ? def.targets[targetId] : {};
+  const ctx = { firstName };
+
+  // borrowedTrust: the host's authored trust flag (genuine | lookalike | unrelated).
+  const hostOpt = optById(check.hosts, sel.hostId);
+  const trust = hostOpt && isStrLike(hostOpt.trust) ? hostOpt.trust : 'unrelated';
+  const borrowed = trust === 'genuine'
+    ? { result: 'pass', points: p.borrowedTrust, line: 'borrowedTrustGenuine' }
+    : trust === 'lookalike'
+      ? { result: 'partial', points: half(p.borrowedTrust), line: 'borrowedTrustLookalike' }
+      : { result: 'fail', points: 0, line: 'borrowedTrustUnrelated' };
+
+  // pretext: match -> full, slips -> 0, else generic half.
+  const pretextOpt = optById(check.pretexts, sel.pretextId);
+  const pretext = pretextOpt && pretextOpt.match === true
+    ? { result: 'pass', points: p.pretext, line: 'pretextPass' }
+    : pretextOpt && pretextOpt.slips === true
+      ? { result: 'fail', points: 0, line: 'pretextFail' }
+      : { result: 'partial', points: half(p.pretext), line: 'pretextPartial' };
+
+  // stepWording: smooth (match) -> full, clumsy (slips or not match) -> 0.
+  const stepOpt = optById(check.steps, sel.stepsId);
+  const steps = stepOpt && stepOpt.match === true
+    ? { result: 'pass', points: p.stepWording, line: 'stepWordingPass' }
+    : { result: 'fail', points: 0, line: 'stepWordingFail' };
+
+  // urgency: a calm one-step check (match) -> full; heavy pressure -> half (it makes a careful
+  // visitor pause).
+  const urgencyOpt = optById(check.urgencies, sel.urgencyId);
+  const urgency = urgencyOpt && urgencyOpt.match === true
+    ? { result: 'pass', points: p.urgency, line: 'urgencyPass' }
+    : { result: 'partial', points: half(p.urgency), line: 'urgencyHigh' };
+
+  const byId = { borrowedTrust: borrowed, pretext, stepWording: steps, urgency };
+  let credibility = 0;
+  const factors = CHECK_FACTOR_ORDER.map((id) => {
+    const f = byId[id];
+    credibility += f.points;
+    return { id, result: f.result, points: f.points, line: fill(checkStr(def, f.line), ctx), defenderLine: null };
+  });
+
+  const threshold = Number(cfg.linkThreshold);
+  const meetsThreshold = Number.isFinite(threshold) && credibility >= threshold;
+
+  let verdict;
+  if (credibility < 40) verdict = fill(checkStr(def, 'verdictLow'), ctx);
+  else if (!meetsThreshold) verdict = fill(checkStr(def, 'verdictMid'), ctx);
+  else verdict = fill(checkStr(def, 'verdictHigh'), ctx);
+
+  const tells = [{ id: 'fake_check_paste', line: fill(checkStr(def, 'defFakeCheckPaste'), ctx) }];
+
+  return { credibility, gatesPassed: true, meetsThreshold, factors, gates: [], tells, verdict, gateLines: [], blocked: false };
+}
+
+function isStrLike(v) { return typeof v === 'string' && v.length > 0; }
+
 // ------------------------------------------------------------- scorePage (N2)
 
 /**
@@ -346,6 +459,12 @@ const DEFENDER_KEY = {
  * or non-.example address.
  */
 export function scorePage(pageDef, choices, target) {
+  // Fake-check mode (ENG-03b): no look-alike domain, so the domain guard does not apply and a
+  // parallel four-factor persuasion scorer runs. Same result shape as the sign-in path.
+  if (isObj(pageDef) && pageDef.pageType === 'fakeCheck') {
+    return scoreFakeCheck(pageDef, choices, target);
+  }
+
   const guard = guardDomain(pageDef, choices);
   if (guard.blocked) return { blocked: true };
 
@@ -430,7 +549,7 @@ export function scorePage(pageDef, choices, target) {
 
 function normChoices(choices) {
   const c = choices || {};
-  return {
+  const out = {
     brand: c.brand == null ? null : c.brand,
     purpose: c.purpose == null ? null : c.purpose,
     domainId: c.domainId == null ? null : c.domainId,
@@ -439,6 +558,18 @@ function normChoices(choices) {
     fields: arr(c.fields).slice(),
     padlock: c.padlock === true
   };
+  // Fake-check choices (ENG-03b). Emitted ONLY when present, so a sign-in record is byte-
+  // identical (no `check` key) and the N2/parity guards are unaffected. The shape is closed to
+  // the four menu ids; nothing else is copied.
+  if (isObj(c.check)) {
+    out.check = {
+      hostId: c.check.hostId == null ? null : c.check.hostId,
+      pretextId: c.check.pretextId == null ? null : c.check.pretextId,
+      urgencyId: c.check.urgencyId == null ? null : c.check.urgencyId,
+      stepsId: c.check.stepsId == null ? null : c.check.stepsId
+    };
+  }
+  return out;
 }
 
 function normVictim(v) {
@@ -518,6 +649,24 @@ export function setBuilt(record, built) {
 export function linkInfoFor(record, pageDef, kitId) {
   if (!isObj(record) || record.built !== true) {
     return { kitId: kitId == null ? null : kitId, state: 'missing' };
+  }
+  // Fake-check page (ENG-03b): no look-alike domain, so there is no domain option to resolve. The
+  // page sits on the authored genuine site (check.host), and the chosen host-option id rides back
+  // out. E10 sends a link-less lure, so the mail client never reads a link domain from this.
+  if (isObj(pageDef) && pageDef.pageType === 'fakeCheck') {
+    const check = isObj(pageDef.check) ? pageDef.check : {};
+    const sel = record.choices && isObj(record.choices.check) ? record.choices.check : {};
+    const out = {
+      kitId: kitId == null ? null : kitId,
+      pageId: record.pageId,
+      pageType: 'fakeCheck',
+      host: typeof check.host === 'string' ? check.host : null,
+      hostId: sel.hostId == null ? null : sel.hostId,
+      credibility: Number(record.credibility) || 0,
+      gatesPassed: record.gatesPassed === true,
+      meetsThreshold: record.meetsThreshold === true
+    };
+    return out;
   }
   const option = findDomainOption(pageDef, record.choices && record.choices.brand, record.choices && record.choices.domainId);
   const out = {

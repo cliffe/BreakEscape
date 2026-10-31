@@ -24,6 +24,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from title_art import with_title_art  # noqa: E402
 import training_room  # noqa: E402
 import awareness_deploy  # noqa: E402
 
@@ -97,7 +98,7 @@ def host_npc(host, done_global, task_id, ink_path):
 
 def kiosk(ep_id, observations):
     """observations: a string, or (before, after) where `after` shows once the round is done
-    (observationVariants on episode_<id>_defend_done, so the kiosk stops saying items are waiting)."""
+    (observationVariants on episode_<id>_defend_complete, so the kiosk stops saying items are waiting)."""
     done_obs = None
     if isinstance(observations, tuple):
         observations, done_obs = observations
@@ -113,7 +114,7 @@ def kiosk(ep_id, observations):
     }
     if done_obs:
         obj['observationVariants'] = [
-            {'condition': f'globalVars.episode_{ep_id}_defend_done', 'value': done_obs}]
+            {'condition': f'globalVars.episode_{ep_id}_defend_complete', 'value': done_obs}]
     obj['minigameData'] = {'episodeId': ep_id}
     return obj
 
@@ -276,12 +277,12 @@ EPISODES = {
             'aim': ('work_phone_aim', 'Check the work phone', 'Go through the six items on the work phone at the training kiosk.'),
             'task': ('check_work_phone', 'Check the work phone'),
             'kiosk': ('A touch-screen kiosk set up as a Tarrowby work phone, with texts, notices and an email waiting.',
-             'A touch-screen kiosk set up as a Tarrowby work phone. The texts, notices and email are all dealt with.'),
-            'display': 'Awareness E6: Texts and QR codes (phone only)',
+             'A touch-screen kiosk set up as a Tarrowby work phone. Nothing left to do here.'),
+            'display': 'Texts and QR codes: spot it',
             'desc': "An awareness episode of about 8 minutes for staff with a work phone, on the defending side only. Six items on a phone at Tarrowby Logistics, a fictional haulier: texts, printed notices with QR codes and an email. Some are real and some were built to trick you. Each answer is explained, and reporting when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'defendIntro': "Go through the work phone and decide what to do with each text, notice and email. On a notice, check where the code goes before you would scan it. There's no clock on you here; the whole job is one or two small habits.",
-            'conclusion': ('Work phone done', "You've been through all six items and finished this episode."),
+            'conclusion': ('Work phone done', "That's the work phone finished. The debrief goes through each item."),
         },
         'check': {
             'items_pre': 'Ten items from a Tarrowby work phone: texts, printed notices with QR codes, and emails.',
@@ -308,8 +309,8 @@ EPISODES = {
             'aim': ('finance_line_aim', 'Cover the finance line', 'Go through the three voicemails and two emails at the training kiosk.'),
             'task': ('check_finance_line', 'Cover the finance line'),
             'kiosk': ("A touch-screen kiosk showing the finance office's phone and inbox, with voicemails and emails waiting.",
-             "A touch-screen kiosk showing the finance office's phone and inbox. The voicemails and emails are all dealt with."),
-            'display': 'Awareness E7: Voice and the CEO (phone and inbox only)',
+             "A touch-screen kiosk showing the finance office's phone and inbox. Nothing left to do here."),
+            'display': 'Cloned voices and the CEO: spot it',
             'desc': "An awareness episode of about 8 minutes for all staff, on the defending side only. Cover the finance office's phone and inbox at Brightwell Foods, a fictional company: three voicemails, one of them in a copied voice, and two emails. Each answer is explained, and ringing back when you're unsure is always fine and never marked down.",
             'minutes': 8,
             'defendIntro': "Go through the voicemails and emails and decide what to do with each one. Read each voicemail's transcript: what it asks you to do matters more than whose voice it is. Work through them at your own pace; it all comes back to ringing the person yourself.",
@@ -317,7 +318,7 @@ EPISODES = {
                 'heading': 'How a voice gets copied',
                 'text': "Recordings of someone speaking in public, such as a talk, an interview or a company video, can be used to make new sentences in a voice that sounds like theirs. If you can't reach the person to check, ask someone who would know, such as the finance manager.",
             },
-            'conclusion': ('Finance line done', "You've been through all five messages and finished this episode."),
+            'conclusion': ('Finance line done', "You've worked through all five messages. The debrief goes through each one."),
         },
     },
 }
@@ -328,10 +329,14 @@ def load(ekey):
     return {s['id']: s for s in frag['triageSets']}, frag['awarenessEpisode']
 
 
-def meta_for(display, desc, minutes, cybok):
-    return {
+def meta_for(display, desc, minutes, cybok, organiser_note=None):
+    m = {
         'display_name': display,
         'description': desc,
+    }
+    if organiser_note:
+        m['organiser_note'] = organiser_note
+    m.update({
         'difficulty_level': 1,
         'scoring': 'completion',
         'secgen_scenario': None,
@@ -339,7 +344,8 @@ def meta_for(display, desc, minutes, cybok):
         'ui_theme': 'general',
         'estimated_duration_minutes': minutes,
         'cybok': cybok,
-    }
+    })
+    return m
 
 
 def defend_only(ekey):
@@ -349,7 +355,7 @@ def defend_only(ekey):
     ep_id = f"{cfg['full_id']}_defend"
     mission = f'awareness_{ep_id}'
     prefix = f'episode_{ep_id}_defend_'          # doubled `_defend_defend_`, as defendPrefix() gives
-    done = f'{prefix}done'
+    done = f'{prefix}complete'
     s = clean_set(sets, cfg['defend_set'])
     s['outcome']['setGlobalPrefix'] = prefix
     strings = strip_private(copy.deepcopy(EP['strings']))
@@ -383,7 +389,6 @@ def defend_only(ekey):
         f'{prefix}percent': 0,
         f'{prefix}reportRate': 0,
         done: False,
-        f'{prefix}pass': False,
     }
     host = HOSTS[cfg['defend_host']]
     ink_name = host['id']
@@ -406,7 +411,7 @@ def check(ekey, pair, stage):
     comparison = {'requireGlobal': 'pre_check_completed'} if stage == 'post' else None
     s = clean_set(sets, form, stage=stage, comparison=comparison)
     prefix = f'triage_{stage}_'
-    done = f'{prefix}done'
+    done = f'{prefix}complete'
     ep = {
         'id': ep_id,
         'role': EP['role'], 'company': EP['company'], 'brand': copy.deepcopy(EP['brand']),
@@ -423,18 +428,17 @@ def check(ekey, pair, stage):
         f'{prefix}percent': 0,
         f'{prefix}reportRate': 0,
         done: False,
-        f'{prefix}pass': False,
     }
     extra = {}
     pre_mission = f'awareness_pre_{word}_{pair}'
     if stage == 'pre':
-        extra['exportGlobals'] = ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_done']
+        extra['exportGlobals'] = ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_complete']
     else:
         # Imported names are not redeclared (as the committed E1, E3 and E5 post shells).
         extra['importGlobals'] = [
             {'from': pre_mission, 'var': 'triage_pre_percent', 'as': 'triage_pre_percent', 'default': 0},
             {'from': pre_mission, 'var': 'triage_pre_reportRate', 'as': 'triage_pre_reportRate', 'default': 0},
-            {'from': pre_mission, 'var': 'triage_pre_done', 'as': 'triage_pre_done', 'default': False},
+            {'from': pre_mission, 'var': 'triage_pre_complete', 'as': 'triage_pre_complete', 'default': False},
             {'from': pre_mission, 'completed': 'pre_check_completed'},
         ]
     host = HOSTS[cfg['check_hosts'][pair]]
@@ -447,7 +451,7 @@ def check(ekey, pair, stage):
                  f"{c['items_pre']} Decide what to do with each one. Your result is saved so the second check can compare with it.")
         aim = ('first_check_aim', 'Do the first check', c['aim_desc'])
         task = ('finish_check', 'Finish the first check')
-        display = f'Awareness check: {word}, before ({letters})'
+        display = awareness_deploy.check_title('pre', word)
         desc = (f"A short check for {cfg['role_label']} at {company}, taken before the awareness episodes (pair {letters}). "
                 f"{c['items_pre']} The result is kept so the matching after-check (awareness_post_{word}_{pair}) "
                 "can show how the two compare.")
@@ -459,22 +463,37 @@ def check(ekey, pair, stage):
                  f"{c['items_post']} If you took the first check, the end screen shows how the two compare.")
         aim = ('second_check_aim', 'Do the second check', c['aim_desc'])
         task = ('finish_check', 'Finish the second check')
-        display = f'Awareness check: {word}, after ({letters})'
+        display = awareness_deploy.check_title('post', word)
         desc = (f"A short check for {cfg['role_label']} at {company}, taken after the awareness episodes (pair {letters}). "
                 f"{c['items_post']} It is matched to the first check (awareness_pre_{word}_{pair}), and the end screen "
                 "compares the two results when the first check was finished.")
         obs = c['kiosk'].format(nth='second')
         conclusion = ('Second check done', 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.')
-    desc += (" Organiser note: each role's check tests the channel that role meets in its "
-             "episode, and in a session that runs more than one episode only the learner's "
-             "primary-role check is recorded.")
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
     sc = scenario(mission, name, brief, c['end'], aim, task, done, globals_,
                        {'triageSets': [s], 'awarenessEpisode': ep}, host, ink_name, obs, conclusion, extra)
-    meta = meta_for(display, desc, c['minutes'], cfg['cybok'])
+    meta = meta_for(display, desc, c['minutes'], cfg['cybok'], awareness_deploy.CHECK_ORGANISER_NOTE)
     when = 'before' if stage == 'pre' else 'after'
     ink = ink_source(f"Awareness check, {word}, {when} ({letters})", host, done, CHECK_LINES[(host['id'], stage)])
     return mission, sc, meta, ink_name, ink
+
+
+# Top-level titleScreenName (engine batch 14), placed right after scenario_name. Values match the committed
+# shells (owner decision 2026-10-30): checks say Starting check / Final check, defend shells use the episode name.
+TITLE_NAMES = {'awareness_e6_texts_and_qr_defend': 'Texts and QR codes', 'awareness_e7_voice_ceo_defend': 'Cloned voices and the CEO'}
+
+
+def with_title_screen_name(sc, mission):
+    if '_pre_' in mission:
+        title = 'Starting check'
+    elif '_post_' in mission:
+        title = 'Final check'
+    else:
+        title = TITLE_NAMES.get(mission)
+    if title is None:
+        return sc
+    return {k2: v2 for k, v in sc.items() for k2, v2 in
+            (((k, v), ('titleScreenName', title)) if k == 'scenario_name' else ((k, v),))}
 
 
 def main():
@@ -483,11 +502,14 @@ def main():
     built += [check('e6', p, st) for p in ('ab', 'ba') for st in ('pre', 'post')]
     built.append(defend_only('e7'))
     for mission, sc, meta, ink_name, ink in built:
+        sc = with_title_screen_name(sc, mission)
         d = os.path.join(out, mission)
         os.makedirs(os.path.join(d, 'ink'), exist_ok=True)
         with open(os.path.join(d, 'scenario.json.erb'), 'w') as f:
             json.dump(sc, f, indent=2, ensure_ascii=False)
             f.write('\n')
+        meta = with_title_art(meta, mission)
+        meta = awareness_deploy.with_result_fields(meta, sc)
         with open(os.path.join(d, 'mission.json'), 'w') as f:
             json.dump(meta, f, indent=2, ensure_ascii=False)
             f.write('\n')

@@ -1,3 +1,7 @@
+# Resume note: awareness E8 to E20 build (started 2026-10-29)
+
+Plan `planning_notes/security_awareness_course/implementation/00_README.md`; log `implementation/BUILD_LOG.md` (waves, agents, decisions, review rounds). Wave 1: engine ENG-01/09b/09d, ENG-03a/03b, ENG-04, ENG-09a/11 (Sonnet, worktrees, merged by the orchestrator, bridges run on main after merge); content E8 fragments and ink, general_v2 items, WP-15 and core_17 annual (opus48, shared tree). Next: E8 wiring (Sonnet), then the review phases (design, dialogue, playtests) on E8 before E9/E10.
+
 # Resume note: video pipeline m01 trailer (started 2026-10-29)
 
 Log `docs/video/TRIAL_LOG.md`; style `docs/video/GUIDELINES.md`; recipes and open gaps `docs/video/recipes/README.md`; skills `.claude/skills/video-*`. Status 2026-10-30: m01 60 s trailer v6 final, exported to cliffe/hacktivity-videos master (d0f8357). Review page https://claude.ai/artifact/HhdmENxRVcGuCa5BiZS5Gd. Hacktivity shell title intro + launch curtain: PR cliffe/Hacktivity#77. Lip-sync fix 1f56ea4e. Next: m01 stills pack refresh and export; m02 dry run of the skills; 30 s teaser cut-down. Haiku/Sonnet wherever possible (user). Rails env needs BE_DB_USER=root etc. (see the log).

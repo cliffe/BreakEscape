@@ -305,8 +305,10 @@ function substituteFlags(node, at) {
    * behaviour (choice 1 at each menu, hubs exit on a repeat).
    */
   async function bootstrap({ tutorial = 'decline', resume = 'new', maxSteps = 400,
-                             settleChecks = 4, settleMs = 900, autoBrief = false } = {}) {
+                             settleChecks = 4, settleMs = 900, autoBrief = false, timeoutMs = 90000 } = {}) {
     const trace = [];
+    const deadline = Date.now() + timeoutMs;
+    const closeCounts = new Map();
     // Overlays here are staggered: the mission brief and the opening cutscene
     // each open a beat after the previous one closes. A single "nothing is
     // open" reading is therefore not proof the overworld is ready — require
@@ -315,8 +317,21 @@ function substituteFlags(node, at) {
     // A hub that offers the same menu again would otherwise loop on choice 1.
     const seenMenus = new Map();
     const exitRe = /\b(bye|goodbye|leave|later|that's all|that's it|nothing|done|go|thanks)\b/i;
-    const pw = await waitForPlayer();
-    if (!pw.ready) return { trace, settled: false, ready: false, reason: 'player-not-ready', detail: pw.reason };
+    // After a reload there is no player sprite until the "Continue?" title card (and the resume
+    // overlay) are cleared, so a missing player is only fatal when no overlay is up to clear.
+    {
+      const t0 = Date.now();
+      let ok = false, why = 'no player in state';
+      while (Date.now() - t0 < 30000) {
+        const r = await page.evaluate(() => { try { const s = window.__test.getState();
+          return { ok: !!(s && (s.player || s.activeMinigame || s.blockingUi)) }; } catch (e) { return { ok: false, why: String(e.message || e) }; } })
+          .catch(e => ({ ok: false, why: String(e.message || e) }));
+        if (r.ok) { ok = true; break; }
+        why = r.why || why;
+        await page.waitForTimeout(400);
+      }
+      if (!ok) return { trace, settled: false, ready: false, reason: 'player-not-ready', detail: why };
+    }
     // An ending screen is a terminal state: credits (state.missionEnd) or an end
     // card whose only buttons leave the game. Stop there rather than click it.
     const endCheck = () => page.evaluate(() => {
@@ -339,6 +354,12 @@ function substituteFlags(node, at) {
       return null;
     }).catch(() => null);
     for (let i = 0; i < maxSteps; i++) {
+      // Bounded: a reload leaves overlays that need a real gesture, and a loop that
+      // clicks something inert used to run for minutes (E12/E13/E15 blind runs).
+      if (Date.now() > deadline) {
+        throw new Error(`bootstrap: still not clear after ${timeoutMs} ms (resume:"${resume}"). Last steps: `
+          + `${trace.slice(-4).join(' ; ') || '(none)'}. Screen: ${JSON.stringify(await brief().catch(() => null)).slice(0, 400)}`);
+      }
       const ended = await endCheck();
       if (ended) {
         trace.push(`ending screen (${ended.kind}): left alone`);
@@ -395,7 +416,41 @@ function substituteFlags(node, at) {
             await page.evaluate(() => window.__test.minigame.continue());
           }
           await pause(speed.dialogue);
+        } else if (mg.id === 'title-screen') {
+          // The "Continue?" title card closes only on a player gesture (click, Space or
+          // Enter) once its prompt is showing AND the world has loaded; minigame.close()
+          // does nothing here, which is what looped bootstrap for 4-6 minutes after a
+          // reload. Wait for the prompt, press Enter, then wait for the card to go.
+          const n = (closeCounts.get(mg.id) || 0) + 1;
+          closeCounts.set(mg.id, n);
+          if (n > 6) {
+            throw new Error('bootstrap: the title screen ("Continue?") did not close after 6 Enter presses; '
+              + 'the world may not have finished loading. Check the page, then call bootstrap again.');
+          }
+          const promptShown = await page.waitForFunction(
+            () => { const p = document.querySelector('.title-screen-prompt'); return !!p && p.style.visibility === 'visible'; },
+            null, { timeout: 15000 }).then(() => true).catch(() => false);
+          const gone = (ms) => page.waitForFunction(() => !document.querySelector('.title-screen-container'),
+            null, { timeout: ms }).then(() => true).catch(() => false);
+          // Enter first, then a real click on the card: either is a valid player gesture. Pressing
+          // before the world has loaded only queues "Loading...", so the card can outlast a press.
+          let how = 'Enter';
+          await page.keyboard.press('Enter');
+          let closed = await gone(2500);
+          if (!closed) {
+            how = 'Enter then click';
+            const vp = page.viewportSize() || { width: 800, height: 600 };
+            await page.mouse.click(Math.round(vp.width / 2), Math.round(vp.height / 2));
+            closed = await gone(15000);
+          }
+          trace.push(`title screen: ${promptShown ? '' : 'prompt not shown yet, '}${how} on "Continue?" -> ${closed ? 'closed' : 'still open'}`);
+          await pause(400 + speed.step);
         } else {
+          const n = (closeCounts.get(mg.id) || 0) + 1;
+          closeCounts.set(mg.id, n);
+          if (n > 8) {
+            throw new Error(`bootstrap: ${mg.id} would not close after 8 attempts; close it yourself and call bootstrap again.`);
+          }
           trace.push(`close ${mg.id}`);
           await page.evaluate(() => window.__test.minigame.close());
           await pause(400 + speed.step);
@@ -471,7 +526,23 @@ function substituteFlags(node, at) {
       return r;
     },
     pressKey: async (c) => {
-      const r = await page.evaluate(k => window.__test.pressKey(k), c.key);
+      let r = await page.evaluate(k => window.__test.pressKey(k), c.key);
+      // The "Continue?" title card is a minigame that takes the keyboard (Space, Enter or a click),
+      // but window.__test.pressKey refuses any key while a minigame owns the screen ('minigame-active').
+      // When that card is up, send a real key so a tester can use the keyboard on it, exactly as
+      // bootstrap does — no other minigame gets main-world keys this way.
+      if (r && r.ok === false && r.reason === 'minigame-active') {
+        const onTitle = await page.evaluate(() => {
+          try { return (window.__test.getState().activeMinigame || {}).id === 'title-screen'; }
+          catch (e) { return false; }
+        });
+        if (onTitle) {
+          const map = { ' ': 'Space', space: 'Space', spacebar: 'Space', enter: 'Enter', return: 'Enter' };
+          const key = map[String(c.key).toLowerCase()] || c.key;
+          await page.keyboard.press(key);
+          r = { ok: true, key: c.key, via: 'title-screen keyboard' };
+        }
+      }
       await pause(speed.step);
       return r;
     },
@@ -587,7 +658,23 @@ function substituteFlags(node, at) {
       let staleLines = 0;
       let exhaustedBranches = false;
       let turns = 0;
+      let endingAccepted = false;
       for (; turns < maxTurns; turns++) {
+        // The debrief choice can carry #ending_check, which raises the "Before the
+        // mission ends" overlay (systems/ending-check.js) when optional objectives
+        // are still open. It awaits a click inside the chat's tag processing, so a
+        // scripted run that reaches the ending with tasks open would stall here.
+        // Accept it ("End the mission now") so the debrief proceeds, and note it.
+        if (await page.evaluate(() => {
+          const el = document.getElementById('ending-check-overlay');
+          const btn = el && el.querySelector('#ending-check-end');
+          if (btn) { btn.click(); return true; }
+          return false;
+        })) {
+          endingAccepted = true;
+          await pause(speed.dialogue);
+          await page.evaluate(() => window.__test.waitForDialogue({ timeoutMs: 15000 })).catch(() => {});
+        }
         const d = await page.evaluate(() => {
           const st = window.__test.minigame.getState();
           return st && st.dialogue ? st.dialogue : null;
@@ -660,6 +747,7 @@ function substituteFlags(node, at) {
         stoppedAtChoice: pendingChoice || undefined,
         turns,
         exhaustedBranches,
+        endingAccepted: endingAccepted || undefined,
         hitTurnLimit: turns >= maxTurns,
         chose: picked,
         transcript,

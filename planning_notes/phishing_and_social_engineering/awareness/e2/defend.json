@@ -4,15 +4,15 @@
     "_use": "For BRAND_SET.md section 3 (Tarrowby Logistics). Fatima Begum, Colin Mather and Jun Watanabe are used as proposed. Roseanne Clarke is renamed Roseanne Wadsworth: 'Clarke' is already a sis01 character (Amy Clarke). Every surname below was checked against scenarios/, planning_notes/ and docs/ on 2026-10-22 and is used nowhere else.",
     "cast": [
       "Roseanne Wadsworth (was Roseanne Clarke): agency recruiter at Kettlewick Talent, roseanne.wadsworth@kettlewick.example. 40s, Black Caribbean British. Genuine in the episode (row 1) and form B row 7; impersonated on the look-alike domain kettlewick-talent.example in form A row 6 (C2-M6)",
-      "Tendai Moyo: candidate for warehouse supervisor (nights), tendai.moyo@inboxly.example. 30s, Zimbabwean-British, ten years in a supermarket distribution centre. Genuine PDF CV in the episode",
-      "Darius Petrauskas: candidate for HGV driver (Class 1), darius.petrauskas@inboxly.example. 40s, Lithuanian, in Wakefield since 2009. Genuine Word CV in the episode",
-      "Zsofia Szabo: candidate for forklift driver (nights), zsofia.szabo@inboxly.example. 30s, Hungarian. Genuine Word CV in form A row 3",
+      "Tendai Moyo: candidate for warehouse supervisor (nights), tendai.moyo@lintbox.example. 30s, Zimbabwean-British, ten years in a supermarket distribution centre. Genuine PDF CV in the episode",
+      "Darius Petrauskas: candidate for HGV driver (Class 1), darius.petrauskas@lintbox.example. 40s, Lithuanian, in Wakefield since 2009. Genuine Word CV in the episode",
+      "Zsofia Szabo: candidate for forklift driver (nights), zsofia.szabo@lintbox.example. 30s, Hungarian. Genuine Word CV in form A row 3",
       "Kevin Brannigan: operations manager at Dewsbury Cold Store (dewsburycoldstore.example), a former employer giving a reference. 60s, Irish-born, in Yorkshire forty years. Genuine in form B row 3",
       "Deborah Haldane: HR director, deborah.haldane@tarrowby.example. 50s, Scottish, moved to Leeds in her thirties. Impersonated on freemail in form B row 4",
       "Thanh Nguyen: onboarding coordinator, thanh.nguyen@tarrowby.example. 20s, Vietnamese-British, grew up in Leeds. Genuine in form B row 1; spoofed in form B row 6",
       "Ibrahim Diallo: IT support lead, ibrahim.diallo@tarrowby.example. 40s, French-Senegalese, in Leeds fifteen years. Genuine in form B row 5",
-      "Minjun Ahn: candidate who withdraws, minjun.ahn@inboxly.example. 30s, Korean-British. Genuine in form A row 10",
-      "Bethany Hirst: candidate who writes after her interview, bethany.hirst@quickpost-mail.example. 20s, white, Wakefield. Genuine in form B row 10; the subject of Kevin Brannigan's reference in form B row 3"
+      "Minjun Ahn: candidate who withdraws, minjun.ahn@lintbox.example. 30s, Korean-British. Genuine in form A row 10",
+      "Bethany Hirst: candidate who writes after her interview, bethany.hirst@hastypost.example. 20s, white, Wakefield. Genuine in form B row 10; the subject of Kevin Brannigan's reference in form B row 3"
     ],
     "aliases": "Invented names that only ever sign fakes: 'Liam Baxter' (episode row 2), 'Jordan Kerr' (episode row 4), 'Alex Hollins' (form A row 2), 'Ray Turner' (form B row 2), 'Dean Holroyd' (form A row 8), 'Gareth Ingram' (form B row 8). Checked: none of the surnames is used elsewhere in the repo.",
     "realHosts": "tarrowby.example (mail), hire.tarrowby.example (the recruitment system), intranet.tarrowby.example. Applicant mail arrives at jobs@tarrowby.example (the address the episode's social post asks people to send CVs to); the team's internal list is recruitment@tarrowby.example. The recruitment system and the onboarding provider send through outside services (send.hirerelay.example, mail.starterhub.example), which is why their SPF fails in form rows 9.",
@@ -38,7 +38,7 @@
       "1 | genuine | all pass | easy | A: Jun, interview rooms booked | B: Thanh, induction day moved",
       "2 | phish | enable_content_prompt, addressedTo | all pass (pass-but-bad: freemail owns its domain) | medium | A: 'Alex Hollins', a 'protected' CV | B: 'Ray Turner', a 'protected' reference form",
       "3 | genuine, a Word document that asks for nothing | all pass | medium | A: Zsofia Szabo, forklift CV | B: Kevin Brannigan, reference for Bethany Hirst",
-      "4 | phish | senderTrust, secrecy_or_bypass, urgencyCalibrated | all pass (freemail owns its domain) | easy | A: 'Colin' on inboxly wants passport scans | B: 'Deborah' on quickpost-mail wants starters' bank details",
+      "4 | phish | senderTrust, secrecy_or_bypass, urgencyCalibrated | all pass (freemail owns its domain) | easy | A: 'Colin' on lintbox wants passport scans | B: 'Deborah' on hastypost wants starters' bank details",
       "5 | genuine, honest link | all pass | easy | A: Jun, feedback forms in the recruitment system | B: Ibrahim, how to preview attachments",
       "6 | phish, sender on a look-alike domain (C2-M6) | senderTrust, lookalike_domain | all pass (pass-but-bad) | medium | A: Roseanne on kettlewick-talent.example wants candidates' addresses | B: Thanh on tarrowby-onboarding.example wants starters' passports",
       "7 | genuine, real deadline, normal process | all pass | medium | A: Colin moves interviews to Wednesday | B: Roseanne, a candidate has another offer",
@@ -89,13 +89,13 @@
         {
           "id": "e2_portfolio_lookalike",
           "_worked": "E2's worked item, in the shape of 11 section 4.2. F = 2. Report + both = 100, Report + lookalike only = 80, Delete + both = 70, Trust + none = 0.",
-          "from": { "name": "Liam Baxter", "address": "liam.baxter@inboxly.example" },
+          "from": { "name": "Liam Baxter", "address": "liam.baxter@lintbox.example" },
           "to": "jobs@tarrowby.example",
           "subject": "CV attached: warehouse supervisor",
           "time": "09:05",
           "body": "Hello,\nPlease find my CV attached for the warehouse supervisor job. If the attachment doesn't come through, I've also put my CV and portfolio on your careers portal:\n{{link:cv}}\nYou'll need to sign in with your Tarrowby account to see it.\nThanks,\nLiam Baxter",
           "links": [ { "id": "cv", "text": "tarrowby-careers.example/cv/4471","destination": "https://tarrowby-careers.example/cv/4471" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "liam.baxter@inboxly.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "liam.baxter@lintbox.example" },
           "truth": {
             "isPhish": true,
             "flags": ["lookalike_domain", "attachmentPlausible", "linkCredible"],
@@ -115,18 +115,18 @@
         {
           "id": "e2_cv_pdf",
           "_note": "The safe version of the row before: a real application with the CV actually attached.",
-          "from": { "name": "Tendai Moyo", "address": "tendai.moyo@inboxly.example" },
+          "from": { "name": "Tendai Moyo", "address": "tendai.moyo@lintbox.example" },
           "to": "jobs@tarrowby.example",
           "subject": "Application: warehouse supervisor (nights)",
           "time": "09:30",
           "body": "Dear Fatima,\nI saw Tarrowby's post asking for CVs for the night supervisor role, and I'd like to apply. I've run a night shift of twenty pickers at a supermarket distribution centre for the last four years. My CV is attached as a PDF.\nI'm free for interview any weekday.\nKind regards,\nTendai Moyo",
           "attachments": [ { "id": "cv", "label": "Tendai_Moyo_CV.pdf", "kind": "pdf" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "tendai.moyo@inboxly.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "tendai.moyo@lintbox.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "senderTrust": "Candidates apply from their personal email, so an inboxly.example address is normal here. The name and the address match.",
+              "senderTrust": "Candidates apply from their personal email, so an lintbox.example address is normal here. The name and the address match.",
               "attachmentPlausible": "It says the CV is attached, and it is: one PDF, which opens in the viewer.",
               "addressedTo": "It's addressed to Fatima by name and names the job.",
               "default": "A personal address is normal for a candidate. The CV is attached, the email names the job and the person, and it asks for nothing but an interview."
@@ -135,13 +135,13 @@
         },
         {
           "id": "e2_enable_content",
-          "from": { "name": "Jordan Kerr", "address": "jordan.kerr.cv@quickpost-mail.example" },
+          "from": { "name": "Jordan Kerr", "address": "jordan.kerr.cv@hastypost.example" },
           "to": "jobs@tarrowby.example",
           "subject": "Job application",
           "time": "10:10",
           "body": "Dear Hiring Manager,\nPlease find my CV attached for the vacancy.\nFor my privacy the document is protected. When it opens, click Enable Editing and then Enable Content at the top of the page, and the CV will appear.\nRegards,\nJordan Kerr",
           "attachments": [ { "id": "cv", "label": "CV_JKerr_protected.docx", "kind": "document" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "jordan.kerr.cv@quickpost-mail.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "jordan.kerr.cv@hastypost.example" },
           "factorStrings": { "enable_content_prompt": { "redFlag": "The document asks you to enable editing or content before it will show anything" } },
           "truth": {
             "isPhish": true,
@@ -160,20 +160,20 @@
         {
           "id": "e2_cv_docx",
           "_note": "The safe version of the row before: a Word CV that opens read-only and asks for nothing.",
-          "from": { "name": "Darius Petrauskas", "address": "darius.petrauskas@inboxly.example" },
+          "from": { "name": "Darius Petrauskas", "address": "darius.petrauskas@lintbox.example" },
           "to": "jobs@tarrowby.example",
           "subject": "HGV driver (Class 1): application",
           "time": "10:45",
           "body": "Hello Fatima,\nI'm applying for the Class 1 driver job on your website. I have twelve years of general haulage and a clean licence. My CV is attached as a Word document.\nThank you,\nDarius Petrauskas",
           "attachments": [ { "id": "cv", "label": "Darius_Petrauskas_CV.docx", "kind": "document" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "darius.petrauskas@inboxly.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "darius.petrauskas@lintbox.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
               "enable_content_prompt": "It's a Word file, which is normal for a CV. In the viewer it shows the whole CV read-only and asks you to switch nothing on.",
               "attachmentPlausible": "A CV attached to an application is what you'd expect, and a Word document is a common way to send one.",
-              "senderTrust": "Candidates apply from their personal email, so an inboxly.example address is normal here.",
+              "senderTrust": "Candidates apply from their personal email, so an lintbox.example address is normal here.",
               "default": "A named job, a named person, a CV that's really attached, and nothing to switch on or sign in to."
             }
           }
@@ -228,13 +228,13 @@
         },
         {
           "id": "ha_protected_cv",
-          "from": { "name": "Alex Hollins", "address": "alex.hollins.cv@inboxly.example" },
+          "from": { "name": "Alex Hollins", "address": "alex.hollins.cv@lintbox.example" },
           "to": "jobs@tarrowby.example",
           "subject": "Application",
           "time": "08:35",
           "body": "Dear Sir or Madam,\nPlease see my CV attached for the position.\nThe document is protected. If it opens as read-only, click Enable Editing, then Enable Content, to see it.\nRegards,\nAlex Hollins",
           "attachments": [ { "id": "cv", "label": "CV_2026.docx", "kind": "document" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "alex.hollins.cv@inboxly.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "alex.hollins.cv@lintbox.example" },
           "factorStrings": { "enable_content_prompt": { "redFlag": "The document asks you to enable editing or content before it will show anything" } },
           "truth": {
             "isPhish": true,
@@ -249,36 +249,36 @@
         },
         {
           "id": "ha_forklift_cv",
-          "from": { "name": "Zsofia Szabo", "address": "zsofia.szabo@inboxly.example" },
+          "from": { "name": "Zsofia Szabo", "address": "zsofia.szabo@lintbox.example" },
           "to": "jobs@tarrowby.example",
           "subject": "Forklift driver (nights): my application",
           "time": "09:00",
           "body": "Hello Fatima,\nI'd like to apply for the night forklift driver job. I hold counterbalance and reach truck licences and have worked nights for six years. My CV is attached.\nBest wishes,\nZsofia Szabo",
           "attachments": [ { "id": "cv", "label": "Zsofia_Szabo_CV.docx", "kind": "document" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "zsofia.szabo@inboxly.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "zsofia.szabo@lintbox.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
               "enable_content_prompt": "It's a Word file, which is normal for a CV, and it asks you to switch nothing on.",
-              "senderTrust": "Candidates apply from personal email, so an inboxly.example address is normal here.",
+              "senderTrust": "Candidates apply from personal email, so an lintbox.example address is normal here.",
               "default": "A named job, your name, a CV that's really attached, and nothing to switch on."
             }
           }
         },
         {
           "id": "ha_passport_scans",
-          "from": { "name": "Colin Mather", "address": "colin.mather.depot@inboxly.example" },
+          "from": { "name": "Colin Mather", "address": "colin.mather.depot@lintbox.example" },
           "to": "jobs@tarrowby.example",
           "subject": "Starters Monday: need their passports now",
           "time": "09:25",
           "body": "Fatima,\nI'm at the depot without my laptop. Can you send me scans of the passports for the two drivers starting Monday? Send them to this address before 3; I need them for the agency. Keep it between us, HR will only slow it down.\nColin",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "colin.mather.depot@inboxly.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "colin.mather.depot@lintbox.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "urgencyCalibrated"],
             "perFlagNote": {
-              "senderTrust": "Colin's name on a personal inbox at inboxly.example, not tarrowby.example",
+              "senderTrust": "Colin's name on a personal inbox at lintbox.example, not tarrowby.example",
               "urgencyCalibrated": "'Send them before 3' and 'HR will only slow it down' rush you and steer you round the normal onboarding route"
             },
             "ifTrusted": "Two people's passport scans would go to a stranger, which is enough to open accounts in their names.",
@@ -342,13 +342,13 @@
         },
         {
           "id": "ha_careers_missing",
-          "from": { "name": "Dean Holroyd", "address": "dean.holroyd@quickpost-mail.example" },
+          "from": { "name": "Dean Holroyd", "address": "dean.holroyd@hastypost.example" },
           "to": "jobs@tarrowby.example",
           "subject": "CV attached: HGV driver",
           "time": "11:05",
           "body": "Hi,\nMy CV is attached for the HGV driver job. If it hasn't come through, it's also on your careers page here:\n{{link:cv}}\nSign in with your work email to view it.\nDean",
           "links": [ { "id": "cv", "text": "careers-tarrowby.example/cv/5520", "destination": "https://careers-tarrowby.example/cv/5520" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "dean.holroyd@quickpost-mail.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "dean.holroyd@hastypost.example" },
           "truth": {
             "isPhish": true,
             "flags": ["lookalike_domain", "attachmentPlausible"],
@@ -380,17 +380,17 @@
         },
         {
           "id": "ha_withdrawal",
-          "from": { "name": "Minjun Ahn", "address": "minjun.ahn@inboxly.example" },
+          "from": { "name": "Minjun Ahn", "address": "minjun.ahn@lintbox.example" },
           "to": "jobs@tarrowby.example",
           "subject": "Withdrawing my application",
           "time": "12:00",
           "body": "Dear Fatima,\nThank you for inviting me to interview for the transport planner role. I've accepted another offer this week, so I'd like to withdraw my application. I hope to apply to Tarrowby again in future.\nKind regards,\nMinjun Ahn",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "inboxly.example", "replyTo": "minjun.ahn@inboxly.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "minjun.ahn@lintbox.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "senderTrust": "Candidates write from personal email, so an inboxly.example address is normal here.",
+              "senderTrust": "Candidates write from personal email, so an lintbox.example address is normal here.",
               "default": "A candidate, by name, about a job they applied for, asking for nothing."
             }
           }
@@ -428,13 +428,13 @@
         },
         {
           "id": "hb_protected_reference",
-          "from": { "name": "Ray Turner", "address": "ray.turner.ref@quickpost-mail.example" },
+          "from": { "name": "Ray Turner", "address": "ray.turner.ref@hastypost.example" },
           "to": "jobs@tarrowby.example",
           "subject": "Reference",
           "time": "08:35",
           "body": "Hello,\nAttached is the reference you asked for.\nIt's a protected form. Click Enable Editing and then Enable Content at the top to read it.\nRegards,\nRay Turner",
           "attachments": [ { "id": "ref", "label": "Reference_form.docx", "kind": "document" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "ray.turner.ref@quickpost-mail.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "ray.turner.ref@hastypost.example" },
           "factorStrings": { "enable_content_prompt": { "redFlag": "The document asks you to enable editing or content before it will show anything" } },
           "truth": {
             "isPhish": true,
@@ -467,17 +467,17 @@
         },
         {
           "id": "hb_bank_details",
-          "from": { "name": "Deborah Haldane", "address": "deborah.haldane.hr@quickpost-mail.example" },
+          "from": { "name": "Deborah Haldane", "address": "deborah.haldane.hr@hastypost.example" },
           "to": "jobs@tarrowby.example",
           "subject": "New starters: bank details needed today",
           "time": "09:25",
           "body": "Fatima,\nI'm working from home today and can't get onto the system. Please send me the new starters' bank details as a spreadsheet to this address before 5. Don't copy payroll in; I'll sort it with them myself.\nDeborah",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "deborah.haldane.hr@quickpost-mail.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "deborah.haldane.hr@hastypost.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "urgencyCalibrated"],
             "perFlagNote": {
-              "senderTrust": "Deborah's name on a personal inbox at quickpost-mail.example, not tarrowby.example",
+              "senderTrust": "Deborah's name on a personal inbox at hastypost.example, not tarrowby.example",
               "urgencyCalibrated": "'Needed today', 'before 5' and 'don't copy payroll in' push you to act fast and skip the people who would normally check"
             },
             "ifTrusted": "New starters' bank details would go to a stranger, who could use them to divert their first pay.",
@@ -541,13 +541,13 @@
         },
         {
           "id": "hb_shortlist_missing",
-          "from": { "name": "Gareth Ingram", "address": "gareth.ingram@quickpost-mail.example" },
+          "from": { "name": "Gareth Ingram", "address": "gareth.ingram@hastypost.example" },
           "to": "jobs@tarrowby.example",
           "subject": "CV attached: warehouse operative",
           "time": "11:05",
           "body": "Hi,\nMy CV is attached for the warehouse operative job. If it hasn't come through, it's also on your careers page here:\n{{link:cv}}\nSign in with your work email to view it.\nGareth",
           "links": [ { "id": "cv", "text": "tarrowby-jobs.example/cv/3307", "destination": "https://tarrowby-jobs.example/cv/3307" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "gareth.ingram@quickpost-mail.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "gareth.ingram@hastypost.example" },
           "truth": {
             "isPhish": true,
             "flags": ["lookalike_domain", "attachmentPlausible"],
@@ -577,17 +577,17 @@
         },
         {
           "id": "hb_thank_you",
-          "from": { "name": "Bethany Hirst", "address": "bethany.hirst@quickpost-mail.example" },
+          "from": { "name": "Bethany Hirst", "address": "bethany.hirst@hastypost.example" },
           "to": "jobs@tarrowby.example",
           "subject": "Thank you for today",
           "time": "12:00",
           "body": "Dear Fatima,\nThank you for this morning's interview for the warehouse operative role, and for the tour of the Normanton site. I enjoyed meeting the team and I'm still very keen on the job.\nBest wishes,\nBethany Hirst",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "quickpost-mail.example", "replyTo": "bethany.hirst@quickpost-mail.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "hastypost.example", "replyTo": "bethany.hirst@hastypost.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "senderTrust": "Candidates write from personal email, so a quickpost-mail.example address is normal here.",
+              "senderTrust": "Candidates write from personal email, so a hastypost.example address is normal here.",
               "default": "A candidate, by name, about an interview you held, asking for nothing."
             }
           }

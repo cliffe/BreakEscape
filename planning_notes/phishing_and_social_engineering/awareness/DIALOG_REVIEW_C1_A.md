@@ -101,7 +101,7 @@ E4 `thandiwe_moyo.ink:29` (32w, welcome line): drop "as the red team" →
 
 ### MINOR-1 — E4 "boarding payment" tell depends on OSINT the defend-only learner never did
 `e4/defend.json:96` (`e4_pa_inbox` → `e4_boarding_payment` → `perFlagNote.senderTrust`)
-> "Her published travel address is catherine.merrin@inboxly.example. This is catherine.merrin.travel@inboxly.example, a different inbox, and anyone can open a free one in her name"
+> "Her published travel address is catherine.merrin@lintbox.example. This is catherine.merrin.travel@lintbox.example, a different inbox, and anyone can open a free one in her name"
 
 This is the one item whose tell is "a *different* freemail inbox from the one she publishes" rather than
 the clean "a senior name on freemail, not the company domain" used everywhere else. The published
@@ -109,7 +109,7 @@ address is only established in the OSINT stage (`e4/attack.json:35,111`), which 
 (`awareness_e4_exec_whaling_defend`, same `e4_pa_inbox` set) never runs — so the card asserts a fact the
 learner has no way to know, and the lesson can't be drawn from the card alone.
 **Fix (fragment `e4/defend.json`):** make the note stand on its own, e.g.
-> "A payment request from the managing partner on a free webmail inbox (inboxly.example), not her merrinsallow.example address. Anyone can open a free inbox in a name you know, so stop and ring her on the number in your contacts."
+> "A payment request from the managing partner on a free webmail inbox (lintbox.example), not her merrinsallow.example address. Anyone can open a free inbox in a name you know, so stop and ring her on the number in your contacts."
 
 ### MINOR-2 — Debrief/reassurance strings repeat near-verbatim across episodes
 A learner who does two or three episodes meets the same lines.

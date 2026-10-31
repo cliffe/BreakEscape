@@ -28,7 +28,7 @@ export const NONE_CHIP = 'none';
 
 /** 05 "Round score and bands". Authored bands on the set replace these. */
 export const DEFAULT_BANDS = [
-    { min: 85, headline: 'Sharp: you caught the phish and knew why' },
+    { min: 85, headline: 'Well done: you caught the phish and knew why' },
     { min: 60, headline: 'Getting there: a few tells slipped past' },
     { min: 0, headline: "Worth practising: here's where to look first" },
 ];
@@ -51,6 +51,9 @@ const KIND_VERDICT_POINTS = {
  * (P3 N17: one approved overnight prompt still read "Sharp" territory at 84%).
  */
 export const CRITICAL_KINDS = Object.freeze(['push', 'call', 'email']);
+// The default points off the round mean per critical miss. A set may author its own with
+// `scoring.criticalPenalty` (points per miss) and `scoring.criticalPenaltyCap` (a total cap),
+// so a round of mostly-right genuine answers need not floor at 0% (P4-batch10, E8/E15/E16).
 export const CRITICAL_PENALTY = 15;
 // P4-3: trusting a phish email (paying the invoice, sending the passport scans, signing in through
 // its link) hands over as much as an approved prompt, so Trust on a phish email is a critical
@@ -80,17 +83,61 @@ const VERDICT_POINTS = {
 
 const clamp01 = (n) => Math.min(1, Math.max(0, n));
 const roundHalfUp = (n) => Math.floor(n + 0.5);
+const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+const isStr = (v) => typeof v === 'string' && v.length > 0;
 
 /**
- * Verdict points for one message. Throws on an unknown profile or verdict. `kind` (optional,
- * the message's kind) applies KIND_VERDICT_POINTS under the awareness profile.
+ * The verdict-point range an override may set: 0..FULL_VERDICT_POINTS (the verdict is worth 60
+ * on the 100-point scale). The validator range-checks authored overrides against this.
  */
-export function verdictPoints(profile, isPhish, verdict, kind = null) {
+export const VERDICT_POINTS_MIN = 0;
+export const VERDICT_POINTS_MAX = 60;
+
+/**
+ * An opt-in override of the verdict points (out of 60) for one message (batch-5 F-E12-1, E13
+ * F-10): a reception desk that gives full marks for letting in an expected client, a call set
+ * where Refuse is a decent answer. `truth.verdictPoints` (a map verdict->points on the message)
+ * wins over `scoring.kindPoints[kind]` (a per-kind map on the set). Either may name any subset of
+ * verdicts; a verdict it omits keeps the profile/kind default. Returns the merged map, or null
+ * when nothing is authored (then scoring is byte-for-byte as before).
+ *
+ * `scoring.kindPoints[kind]` may be a flat verdict->points map (applied to every message of that
+ * kind), or `{ phish: {...}, real: {...} }` (batch-6 M1, like `labels.verdictFeedback`): then the
+ * sub-map is picked by the item's `isPhish`, so an author can say "Comply is full marks for a
+ * genuine caller" without also rewarding complying with a vishing impostor of the same kind. The
+ * shape is detected by a `phish`/`real` key; `isPhish` must be passed for it to apply (callers do).
+ */
+export function verdictPointsOverride(truth, kind, scoring, isPhish) {
+    const per = isObj(truth) && isObj(truth.verdictPoints) ? truth.verdictPoints : null;
+    const raw = isObj(scoring) && isObj(scoring.kindPoints) && isObj(scoring.kindPoints[kind])
+        ? scoring.kindPoints[kind] : null;
+    let byKind = raw;
+    if (raw && (isObj(raw.phish) || isObj(raw.real))) {
+        // The phish/real shape: choose by the item's isPhish; undefined isPhish selects nothing so
+        // the profile/kind default stands (a caller that cannot tell must not pick the wrong half).
+        byKind = isPhish === true ? (isObj(raw.phish) ? raw.phish : null)
+            : isPhish === false ? (isObj(raw.real) ? raw.real : null)
+                : null;
+    }
+    if (!per && !byKind) return null;
+    return { ...(byKind || {}), ...(per || {}) };
+}
+
+/**
+ * Verdict points for one message. Throws on an unknown profile or an unavailable verdict. `kind`
+ * (optional) applies KIND_VERDICT_POINTS under the awareness profile. `override` (optional, from
+ * verdictPointsOverride) is an authored map that wins over the profile and kind defaults, but
+ * only for a verdict the profile already offers (an analyst set still cannot score Verify).
+ */
+export function verdictPoints(profile, isPhish, verdict, kind = null, override = null) {
     const table = VERDICT_POINTS[profile];
     if (!table) throw new RangeError(`triage-scoring: unknown scoringProfile "${profile}"`);
     const pts = table[isPhish ? 'phish' : 'real'][verdict];
     if (pts === undefined) {
         throw new RangeError(`triage-scoring: verdict "${verdict}" is not available in the ${profile} profile`);
+    }
+    if (isObj(override) && typeof override[verdict] === 'number' && Number.isFinite(override[verdict])) {
+        return override[verdict];
     }
     if (profile === 'awareness' && kind) {
         const own = KIND_VERDICT_POINTS[kind]?.[isPhish ? 'phish' : 'real']?.[verdict];
@@ -117,11 +164,18 @@ export function isCriticalMiss(profile, isPhish, verdict, kind, critical = null)
  * The bracketed "what counts" part of the result's critical-miss line, naming only the kinds
  * this round's critical misses were ("approving a sign-in you didn't start, or trusting a
  * phish email"). Kinds outside CRITICAL_WHAT read "trusting a phish".
+ *
+ * `fallback` (batch-6 C4, optional) lets a non-phishing set replace the "trusting a phish email"
+ * wording for an item that authored no `truth.missLabel`: a per-kind map { email: '…', call: '…' }
+ * or a single string used for every kind. A per-miss missLabel still wins; absent, defaults stand.
  */
-export function criticalWhat(kinds) {
+export function criticalWhat(kinds, labels = [], fallback = null) {
+    const ofKind = (k) => (isObj(fallback) && isStr(fallback[k])) ? fallback[k]
+        : (isStr(fallback) ? fallback : (CRITICAL_WHAT[k] || 'trusting a phish'));
     const seen = [];
-    for (const k of kinds || []) {
-        const w = CRITICAL_WHAT[k] || 'trusting a phish';
+    // `labels[i]` is that miss's own truth.missLabel (a genuine item that should still be reported).
+    for (const [i, k] of (kinds || []).entries()) {
+        const w = (typeof labels?.[i] === 'string' && labels[i]) || ofKind(k);
         if (!seen.includes(w)) seen.push(w);
     }
     if (!seen.length) return '';
@@ -234,12 +288,13 @@ export function unitAccepts(unit) {
     return [...unit.members, ...(unit.alternates || [])];
 }
 
-export function scoreTriage({ messages, answers, profile = 'awareness', bands, passPercent } = {}) {
+export function scoreTriage({ messages, answers, profile = 'awareness', bands, passPercent, scoring = null } = {}) {
     if (!PROFILES.includes(profile)) throw new RangeError(`triage-scoring: unknown scoringProfile "${profile}"`);
     if (!Array.isArray(messages)) throw new TypeError('triage-scoring: messages must be an array');
     const byId = new Map();
     for (const a of answers || []) byId.set(a.id ?? a.messageId, a);
 
+    const choiceIds = new Set(messages.filter((m) => m && m.kind === 'choice').map((m) => m.id));
     const perMessage = [];
     const perFactor = {};
     const falseByFactor = {};
@@ -248,6 +303,7 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
     let flagsCaught = 0, flagsAuthored = 0;
     const criticalMisses = [];
     const criticalKinds = [];
+    const criticalLabels = []; // truth.missLabel per critical miss, or null
     let phishVerified = 0;
 
     for (const msg of messages) {
@@ -265,7 +321,8 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         }
         const verdict = a.verdict;
         const kind = typeof msg.kind === 'string' && msg.kind ? msg.kind : 'email';
-        const vPts = verdictPoints(profile, isPhish, verdict, kind);
+        const override = verdictPointsOverride(truth, kind, scoring, isPhish);
+        const vPts = verdictPoints(profile, isPhish, verdict, kind, override);
         const ticked = [...new Set(a.flags || [])].filter((f) => f !== NONE_CHIP);
         const tickedSet = new Set(ticked);
         // Score by units, not raw flags: an alternatives group counts once (05 "Either tick
@@ -278,10 +335,18 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         const missed = units.filter((u) => !unitCaught(u)).map((u) => u.note);
         const falseClaims = ticked.filter((f) => !accepted.has(f));
         const caughtUnits = units.filter(unitCaught).length;
-        const fPts = flagPoints(profile, isPhish, { caught: caughtUnits, falseClaims: falseClaims.length, authored: units.length });
-        const score = roundHalfUp(vPts + fPts);
+        // An authored-choice card (ENG-09a) is one decision with no flags to tick, so its score is
+        // the verdict row on the usual 100-point scale (the full-marks option earns 100, as a fully
+        // caught phish does); with the 40 flag points missing it would cap a mixed round at 60.
+        const isChoice = kind === 'choice';
+        const fPts = isChoice ? 0 : flagPoints(profile, isPhish, { caught: caughtUnits, falseClaims: falseClaims.length, authored: units.length });
+        const score = isChoice ? roundHalfUp(vPts * 100 / FULL_VERDICT_POINTS) : roundHalfUp(vPts + fPts);
         const critical = isCriticalMiss(profile, isPhish, verdict, kind, truth.critical);
-        if (critical) { criticalMisses.push(msg.id); criticalKinds.push(kind); }
+        if (critical) {
+            criticalMisses.push(msg.id);
+            criticalKinds.push(kind);
+            criticalLabels.push(typeof truth.missLabel === 'string' && truth.missLabel ? truth.missLabel : null);
+        }
         perMessage.push({
             id: msg.id, isPhish, verdict, verdictPoints: vPts, flagPoints: roundHalfUp(fPts), score,
             caught, missed, falseClaims, answered: true,
@@ -302,6 +367,10 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         }
         for (const f of falseClaims) falseByFactor[f] = (falseByFactor[f] || 0) + 1;
 
+        // A choice card is a decision, not a message to catch or report: it counts toward the score
+        // and the band, but not toward the phish, report, verify or false-alarm tallies (those feed
+        // reportRate and the team-protected line, which would then count password picks).
+        if (isChoice) continue;
         if (verdict === 'verify') verifyCount += 1;
         if (isPhish) {
             phishTotal += 1;
@@ -321,14 +390,23 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
     const mean = perMessage.length
         ? roundHalfUp(perMessage.reduce((s, m) => s + m.score, 0) / perMessage.length)
         : 0;
-    const percent = Math.max(0, mean - CRITICAL_PENALTY * criticalMisses.length);
+    // P4-batch10 (E8/E15/E16): the points off the round mean per critical miss, and an optional
+    // total cap, are authorable per set so a rushed learner who got the genuine items right need
+    // not land on 0%. Defaults are unchanged: CRITICAL_PENALTY (15) per miss and no cap.
+    const criticalPenaltyPer = (isObj(scoring) && Number.isFinite(scoring.criticalPenalty) && scoring.criticalPenalty >= 0)
+        ? scoring.criticalPenalty : CRITICAL_PENALTY;
+    const criticalPenaltyCap = (isObj(scoring) && Number.isFinite(scoring.criticalPenaltyCap) && scoring.criticalPenaltyCap >= 0)
+        ? scoring.criticalPenaltyCap : null;
+    let criticalPenalty = criticalPenaltyPer * criticalMisses.length;
+    if (criticalPenaltyCap !== null) criticalPenalty = Math.min(criticalPenalty, criticalPenaltyCap);
+    const percent = Math.max(0, mean - criticalPenalty);
     let band = bandFor(percent, bands);
     const zeros = zeroSkills(perFactor);
     const zeroMisses = zeros.reduce((n, id) => n + perFactor[id].missed, 0);
     // P5-3 (E5-E7): a phish trusted of a kind that is not critical (a look-alike page, a
     // voicemail) still means a phish was not caught, so the top band ("you caught the phish")
     // is out of reach too.
-    const phishTrusted = perMessage.filter((m) => m.answered && m.isPhish && m.verdict === 'trust').length;
+    const phishTrusted = perMessage.filter((m) => m.answered && m.isPhish && m.verdict === 'trust' && !choiceIds.has(m.id)).length;
     const zeroCap = zeroMisses >= ZERO_SKILL_MISSES_CAP
         || (profile === 'awareness' && zeros.length >= AWARENESS_ZERO_SKILLS_CAP);
     if (criticalMisses.length || phishTrusted || zeroCap) {
@@ -358,11 +436,21 @@ export function scoreTriage({ messages, answers, profile = 'awareness', bands, p
         falseByFactor,
         // Real items given full verdict marks (Trust, Verify, or Report under awareness), so the
         // result grid counts exactly what the review cards call right (P3 N-2).
-        realHandledRight: perMessage.filter((m) => m.answered && !m.isPhish && m.handledRight).length,
-        realTotal: perMessage.filter((m) => !m.isPhish).length,
+        realHandledRight: perMessage.filter((m) => m.answered && !m.isPhish && m.handledRight && !choiceIds.has(m.id)).length,
+        realTotal: perMessage.filter((m) => !m.isPhish && !choiceIds.has(m.id)).length,
         criticalMisses,
         criticalKinds,
-        criticalPenalty: CRITICAL_PENALTY * criticalMisses.length,
+        criticalLabels,
+        // The points actually taken off this round (capped), and the per-miss rate, so the result
+        // screen's line can name the real total (e.g. "took 30 points off") when a cap or a
+        // custom penalty applies. With defaults these are CRITICAL_PENALTY * misses and 15.
+        criticalPenalty,
+        criticalPenaltyPer,
+        criticalPenaltyCapped: criticalPenaltyCap !== null && criticalPenaltyPer * criticalMisses.length > criticalPenalty,
+        // E11 B2 finding 8 (nit): the penalties floored the round at 0 (the earned mean was below
+        // the points taken off), so the result screen can say the score stops at 0 rather than
+        // leaving "0%" beside a right answer reading as unexplained.
+        clamped: criticalPenalty > 0 && (mean - criticalPenalty) < 0,
         // Phish answered Verify / Ring back: caught, but not reported (N7: the report line
         // read like a miss beside a near-perfect round).
         phishVerified,
@@ -417,12 +505,16 @@ export function listCap(titles, max = 3) {
  * Returns null when the round has no answered real item, or the set opts out
  * (set.genuineFeedback === false, read by the callers).
  */
-export function genuineFeedback({ messages, answers, profile = 'awareness', titleOf, actionLabel } = {}) {
+export function genuineFeedback({ messages, answers, profile = 'awareness', titleOf, actionLabel, actionPast, scoring = null } = {}) {
     if (!Array.isArray(messages)) return null;
     const byId = new Map();
     for (const a of answers || []) if (a && typeof a === 'object') byId.set(a.id ?? a.messageId, a);
     const title = (m) => (typeof titleOf === 'function' ? titleOf(m) : null) || m.subject || m.id;
     const label = (m, a) => (typeof actionLabel === 'function' ? actionLabel(m, a) : null) || a.verdict;
+    // The past-tense verb for the "You trusted/approved this real one" line (E9 F-E9-8): a push
+    // prompt was approved, a call complied with, not "trusted". Falls back to "trusted" when the
+    // caller gives no actionPast, so an email-only set reads exactly as before.
+    const pastVerb = (m, a) => { const v = (typeof actionPast === 'function' ? actionPast(m, a) : null); return isStr(v) ? v.toLowerCase() : 'trusted'; };
     const trusted = [];
     const checked = [];
     const flagged = [];
@@ -432,7 +524,7 @@ export function genuineFeedback({ messages, answers, profile = 'awareness', titl
         const truth = m.truth && typeof m.truth === 'object' ? m.truth : {};
         // A playerSent entry is replayed as a phish (triage-messages.js); an answer that says
         // isPhish (the debrief's stored answers) wins over a set entry that lacks truth.
-        if (truth.isPhish || m.kind === 'playerSent' || m.playerSent === true) continue;
+        if (truth.isPhish || m.kind === 'playerSent' || m.playerSent === true || m.kind === 'choice') continue;
         const a = byId.get(m.id);
         if (a && a.isPhish === true) continue;
         realTotal += 1;
@@ -440,9 +532,10 @@ export function genuineFeedback({ messages, answers, profile = 'awareness', titl
         answered += 1;
         const kind = typeof m.kind === 'string' && m.kind ? m.kind : 'email';
         let pts = 0;
-        try { pts = verdictPoints(profile, false, a.verdict, kind); } catch (e) { continue; }
+        try { pts = verdictPoints(profile, false, a.verdict, kind, verdictPointsOverride(truth, kind, scoring, false)); } catch (e) { continue; }
         if (TRUST_VERDICTS.includes(a.verdict) && pts >= FULL_VERDICT_POINTS) {
-            (a.verdict === 'verify' ? checked : trusted).push({ id: m.id, title: title(m) });
+            if (a.verdict === 'verify') checked.push({ id: m.id, title: title(m) });
+            else trusted.push({ id: m.id, title: title(m), verb: pastVerb(m, a) });
         } else if (FLAG_VERDICTS.includes(a.verdict)) {
             const wf = truth.whyFine && typeof truth.whyFine === 'object' ? truth.whyFine : {};
             const why = (typeof wf.default === 'string' && wf.default.trim())
@@ -463,7 +556,8 @@ export function genuineFeedback({ messages, answers, profile = 'awareness', titl
  */
 export function missedPhishText(perMessage, messages, titleOf) {
     const byId = new Map((messages || []).map((m) => [m.id, m]));
-    const titles = (perMessage || []).filter((m) => m && m.answered !== false && m.isPhish === true && m.verdict === 'trust')
+    const titles = (perMessage || []).filter((m) => m && m.answered !== false && m.isPhish === true && m.verdict === 'trust'
+        && byId.get(m.id)?.kind !== 'choice')
         .map((m) => {
             const rec = byId.get(m.id);
             return (rec && typeof titleOf === 'function' ? titleOf(rec) : null) || m.id;
@@ -494,8 +588,12 @@ export const GENUINE_WHY_LINE = 'Both halves matter: catching a phish stops the 
  * the debrief) gives one line per flagged item with what made it safe. Title lists past three
  * end "and N more". Empty strings are left out by the callers.
  */
-export function genuineFeedbackText(fb, { detail = false } = {}) {
+export function genuineFeedbackText(fb, { detail = false, strings = null } = {}) {
     if (!fb || typeof fb !== 'object') return null;
+    // batch-6 (C1): the phish-worded lines are overridable per set (set.genuineCopy), so a
+    // non-phishing episode (acceptable use) reads without "phish". Defaults are unchanged.
+    const S = isObj(strings) ? strings : {};
+    const pick = (key, def) => (isStr(S[key]) ? S[key] : def);
     const trusted = Array.isArray(fb.trusted) ? fb.trusted : [];
     const checked = Array.isArray(fb.checked) ? fb.checked : [];
     const flagged = Array.isArray(fb.flagged) ? fb.flagged : [];
@@ -505,7 +603,20 @@ export function genuineFeedbackText(fb, { detail = false } = {}) {
     const these = (n, all) => (all ? 'the real ones' : n === 1 ? 'this real one' : 'these real ones');
     const sentences = [];
     if (trusted.length) {
-        sentences.push(`You trusted ${these(trusted.length, trusted.length === realTotal && trusted.length > 1)}: ${names(trusted)}.`);
+        // Group by the verb each item was handled with (E9 F-E9-8): "You approved this real one"
+        // for a sign-in prompt, "You trusted this real one" for an email. One verb → one sentence,
+        // unchanged for an email-only round (every verb is "trusted").
+        const groups = new Map();
+        for (const t of trusted) { const v = isStr(t.verb) ? t.verb : 'trusted'; (groups.get(v) || groups.set(v, []).get(v)).push(t); }
+        // F-E13-5: a trusted real item earned full marks, so the line is led by praise — it used to
+        // read like the caught items below it ("You trusted these real ones: ..." under a "tells
+        // slipped past" headline). The checked sentence already carries its own praise.
+        const trustedSentences = [];
+        for (const [verb, items] of groups) {
+            const all = groups.size === 1 && items.length === realTotal && items.length > 1;
+            trustedSentences.push(`You ${verb} ${these(items.length, all)}: ${names(items)}.`);
+        }
+        sentences.push(`Right call. ${trustedSentences.join(' ')}`);
     }
     if (checked.length) {
         const all = checked.length === realTotal && checked.length > 1;
@@ -517,7 +628,9 @@ export function genuineFeedbackText(fb, { detail = false } = {}) {
         const binned = flagged.filter((f) => f.verdict !== 'report');
         const countOf = (n) => (n === 1 ? 'one real one' : `${n} real ones`);
         const repLead = `You reported ${countOf(reported.length)} just in case, which is fine when unsure`;
-        const binLead = binned.length === 1 ? 'One real one was treated as a phish' : `${binned.length} real ones were treated as phish`;
+        const binLead = binned.length === 1
+            ? pick('binnedLeadOne', 'One real one was treated as a phish')
+            : pick('binnedLeadMany', `${binned.length} real ones were treated as phish`).replace(/\{n\}/g, String(binned.length));
         if (detail) {
             out.flaggedLead = !binned.length ? `${repLead}:`
                 : !reported.length ? `${binLead}:`
@@ -536,12 +649,12 @@ export function genuineFeedbackText(fb, { detail = false } = {}) {
         const anyReport = reported.length > 0;
         const anyBin = binned.length > 0;
         out.cost = anyReport && anyBin
-            ? "Reporting when you're unsure is never wrong, but treating a real message as a phish has a cost: a report takes a colleague's time to check, and a deleted or refused one can mean a missed payment or a colleague left waiting."
+            ? pick('costBoth', "Reporting when you're unsure is never wrong, but treating a real message as a phish has a cost: a report takes a colleague's time to check, and a deleted or refused one can mean a missed payment or a colleague left waiting.")
             : anyReport
-                ? "Reporting when you're unsure is never wrong, but a report on a real message has a cost: a colleague has to stop and check it, and the real request waits."
-                : 'Deleting or refusing a real one has a cost: it can mean a missed payment, a missed shift change or a colleague left waiting.';
+                ? pick('costReport', "Reporting when you're unsure is never wrong, but a report on a real message has a cost: a colleague has to stop and check it, and the real request waits.")
+                : pick('costBin', 'Deleting or refusing a real one has a cost: it can mean a missed payment, a missed shift change or a colleague left waiting.');
     }
-    out.why = GENUINE_WHY_LINE;
+    out.why = pick('whyBothHalves', GENUINE_WHY_LINE);
     return out;
 }
 
@@ -577,4 +690,57 @@ export function dedupeSentences(lines, seen = []) {
         if (kept.length) out.push(kept.join(' '));
     }
     return out;
+}
+
+/**
+ * How the caught phish were handled, as display fragments ("3 reported", "1 deleted", ...). The
+ * debrief summary computes this inline; the result grid reuses it when a set opts in to a caught
+ * breakdown (E11 B2 / E16 B1: a half-credit Delete reads as a bare "caught" without this split).
+ * `kindOfId(id)` returns a caught phish's kind so a denied push or a refused call is not called
+ * "deleted" (E8 F6 / E13 F-10). Returns [] when there is no phish to break down.
+ *
+ * batch-12 item 16 (E10 C3 D1): `verbOf(verdict, kind)` optionally relabels a fragment's verb for a
+ * set that renames its verdict buttons (E10's Delete is "Go the trusted way", so the split reads
+ * "2 went the trusted way"). It returns a past-tense phrase or a falsy value to keep the default
+ * word; the caller builds it from the set's own labels. Default (no verbOf) is unchanged.
+ */
+export function caughtHow(result, kindOfId, verbOf = null) {
+    const total = Number(result?.phishTotal);
+    if (!(Number.isFinite(total) && total > 0)) return [];
+    const reported = Number.isFinite(result.reportCount) ? result.reportCount : Math.round((result.reportRate || 0) * total);
+    const checked = Number.isFinite(result.phishVerified) ? result.phishVerified : 0;
+    const residual = Math.max(0, (Number(result.phishCaught) || 0) - reported - checked);
+    const answers = Array.isArray(result.answers) ? result.answers : [];
+    let denied = 0, refused = 0, deleted = residual;
+    const deleteCatches = answers.filter((a) => isObj(a) && a.isPhish === true && a.verdict === 'delete');
+    if (deleteCatches.length && typeof kindOfId === 'function') {
+        denied = 0; refused = 0; deleted = 0;
+        for (const a of deleteCatches) {
+            const k = kindOfId(a.id);
+            if (k === 'push') denied += 1;
+            else if (k === 'call') refused += 1;
+            else deleted += 1;
+        }
+        if (denied + refused + deleted !== residual && !answers.some((a) => isObj(a) && a.isPhish === true)) {
+            denied = 0; refused = 0; deleted = residual;
+        }
+    }
+    // The kind of the first caught phish handled with a verdict, so a relabel that varies by kind
+    // (Report vs Escalate) is read against the right button. null when none / no kindOfId.
+    const kindFor = (verdict) => {
+        if (typeof kindOfId !== 'function') return null;
+        const a = answers.find((x) => isObj(x) && x.isPhish === true && x.verdict === verdict);
+        return a ? kindOfId(a.id) : null;
+    };
+    const verb = (verdict, kind, fallback) => {
+        const over = typeof verbOf === 'function' ? verbOf(verdict, kind) : null;
+        return (typeof over === 'string' && over.trim()) ? over : fallback;
+    };
+    const how = [];
+    if (reported) how.push(`${reported} ${verb('report', kindFor('report'), 'reported')}`);
+    if (checked) how.push(`${checked} ${verb('verify', kindFor('verify'), 'checked by another route')}`);
+    if (refused) how.push(`${refused} ${verb('delete', 'call', 'turned away')}`);
+    if (denied) how.push(`${denied} ${verb('delete', 'push', 'denied')}`);
+    if (deleted) how.push(`${deleted} ${verb('delete', 'email', 'deleted')}`);
+    return how;
 }

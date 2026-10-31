@@ -17,6 +17,9 @@ import { withLockedHint } from '../utils/locked-hint.js';
 import { rejectionAlert } from '../utils/flag-wording.js';
 import { startEpisodeRunner } from './episode-starter.js';
 import { writeGlobal } from './global-writer.js';
+// Side effects: window.inkMinigameLaunch (ink #trigger_minigame) and window.openMinigameFromMapping
+import './ink-minigame-launch.js';
+import './mapping-minigame.js';
 export { startInboxTriageMinigame, startEpisodeRunner };
 
 // Maps Phaser texture keys to their actual filenames (where key !== filename stem)
@@ -1147,6 +1150,8 @@ export function startMailClientMinigame(sprite, options = {}) {
         maxSends: data.maxSends,
         layout: data.layout,
         readOnly: data.readOnly,
+        // Open Compose on this ink contact (contact id or npc id): ink-driven plain email.
+        composeTo: data.composeTo,
         onComplete: (success, result) => {
             if (typeof options.onComplete === 'function') options.onComplete(success, result);
         },

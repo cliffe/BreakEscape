@@ -1,0 +1,220 @@
+{
+  "_about": "Defend fragment for awareness episode E17 (acceptable use and your responsibilities; core_16), defend-only by the user's decision. Company Tarrowby Logistics and everyone in it are fictional; every web address ends .example. E17 has NO attack half, NO mistake stage and NO flip (it does not use ENG-04), so there is no attack.json and no flip strings. E17 ships ONE defend-only shell (scenarios/awareness_e17_acceptable_use_defend), listed in BOTH seeded courses; there is no full shell. Copy triageSets and the awarenessEpisode keys into that one shell. Host: Nilesh Solanki, IT service desk (built Tarrowby cast; reused with E15, deliberately, to save art). Source of truth: modules/core_16_acceptable_use_and_your_responsibilities/concepts.md and game_design.md. The 'can I?' three-way sort (ENG-11 sortDrill) is authored in e17/full_only.json; because E17 has no full shell, it is pasted into THIS shell's social.awarenessEpisode.sortDrill (see full_only.json _notes).",
+  "_sortDrill": "The 'can I?' sort is not in this fragment. It lives in e17/full_only.json (the sortDrill block, section 11a) and the wiring agent pastes it into the one defend-only shell's social.awarenessEpisode.sortDrill, because E17 has no full erb to carry a full-only key.",
+  "triageSets": [
+    {
+      "reportReply": "Thanks. The service desk has it and will tell you the approved way.",
+      "id": "e17_acceptable_use_inbox",
+      "_prefix": "The one defend-only shell has id e17_acceptable_use_defend, so its set prefix is episode_e17_acceptable_use_defend_defend_ (the built double-suffix rule for an id ending _defend, matching the E6 defend-only shell). No stage on purpose, as in E1/E6: the effective stage is 'mission', and an explicit stage with passPercent 0 draws a validator warning.",
+      "_localTell": "unapproved_tool is scenario-local to this set (and, separately, to E15's set): a free app or online service with no contract, handing the firm's data to a provider we have not checked. There is no built equivalent, so 00 section 2's CHANNEL_TELLS and phish-rules.js/triage.rb SKILL_NAMES are untouched: it is declared in channelTells with a flagChips label and a set-level skillNames name (triage-flags.js reads set.skillNames for a local tell's skill name), and the two messages that raise it (items 1 and 6) carry a message-level factorStrings.unapproved_tool.redFlag sentence (a sibling of truth, never inside it: truth is additionalProperties:false under --strict-social). Promote it to the shared library only if a 10 check item later scores it; no 10 item scores it, so it stays local in both E17 and E15. secrecy_or_bypass is a shared-library tell and needs no flagChips/skillNames. lookalike_domain is NOT declared: no item in this set flags it (matching E8's convention of not declaring a tell no item flags).",
+      "_mirrorPair": "aw5 mirror pair: item 1 (e17_meeting_app, a normal-looking unapproved-install lure, Verify/Report) and item 4 (e17_monitoring_notice, a suspicious-looking genuine monitoring notice, Trust). Items 2 and 3 are flagged (isPhish:true) because the ASK is the unsafe one even though the colleague is genuine; this makes the modelled decline/route the full-mark move under the awareness profile, and the human nuance is in the per-item feedback.",
+      "title": "Tarrowby inbox: acceptable use",
+      "brief": "A short inbox at Tarrowby Logistics, a fictional haulier: everyday requests and reminders. For each one, choose Trust, Report, Delete or Verify (ask the service desk, or check with the sender on a route you already use), then tick what you noticed. When you're not sure, checking first is fine. Tick the sign that made you stop, because the reason matters as much as the choice, and a real item does take a colleague's time to check.",
+      "realLabel": "Genuine messages",
+      "scoringProfile": "awareness",
+      "scoring": { "criticalPenalty": 5, "criticalPenaltyCap": 10 },
+      "verifyVerdict": true,
+      "feedbackMode": "immediate",
+      "headerPanel": "off",
+      "glossary": "closed",
+      "channelTells": ["secrecy_or_bypass", "unapproved_tool", "no_work_reason", "shared_login"],
+      "flagChips": {
+        "unapproved_tool": "Unapproved tool or app",
+        "no_work_reason": "Asked to look something up with no work reason",
+        "shared_login": "Asked to use or share someone's login"
+      },
+      "bands": [
+        {
+          "min": 85,
+          "headline": "Well done: you made the right calls and knew why"
+        },
+        {
+          "min": 60,
+          "headline": "Getting there: a few reasons slipped past"
+        },
+        {
+          "min": 0,
+          "headline": "Worth practising: here's where to look first"
+        }
+      ],
+      "resultCopy": {
+        "criticalLead": "let a rule slip",
+        "reportedPct": "Raised {pct}% of the rule-breaking requests",
+        "noFlagsLead": "You didn't tick anything you noticed, so there's nothing to grade skill by skill.",
+        "noFlags": "Next time, tick what you noticed. The review cards give the reason behind each one."
+      },
+      "genuineCopy": {
+        "binnedLeadOne": "One everyday item was treated as against the rules",
+        "binnedLeadMany": "{n} everyday items were treated as against the rules",
+        "costBoth": "Raising something you're unsure about is never wrong, but a report on an everyday item takes the service desk's time, and a deleted notice goes unread.",
+        "costReport": "Raising something you're unsure about is never wrong, but a report on an everyday item takes the service desk's time, and the real item waits.",
+        "costBin": "Deleting an everyday notice has a cost: a rule or reminder you needed goes unread.",
+        "whyBothHalves": "Both halves matter: raising what breaks the rules protects everyone, and getting on with what is fine keeps work moving."
+      },
+      "criticalWhat": "going along with a request that breaks the rules",
+      "skillNames": {
+        "unapproved_tool": "Spotting an unapproved tool or app",
+        "no_work_reason": "Noticing a request with no work reason",
+        "shared_login": "Noticing a request to share a login"
+      },
+      "_labels": "E17-M2 (E14_E17_PLAYTEST_P1): this set is acceptable-use, not phishing. The running team tally defaults to 'Phish stopped for the team: N'; teamBadge/teamBadgeTitle reword it for a set whose flagged items are unsafe requests, not phish (inbox-triage-minigame.js _renderTeamTally).",
+      "labels": {
+        "verdict": {
+          "report": {
+            "hint": "This breaks a rule or needs a look. Tell the service desk."
+          }
+        },
+        "verdictFeedback": {
+          "report": {
+            "phish": "Right call: you raised it. Telling the service desk helps the next person who gets the same request."
+          },
+          "delete": {
+            "phish": "Safe, but not raised. Deleting protects you; telling the service desk helps everyone else.",
+            "real": "That one was a genuine notice, and deleting it left it unread. Trusting it, or checking it first, was the right call here."
+          }
+        },
+        "queue": {
+          "inbox": {
+            "reportLabel": "Raised with the service desk"
+          }
+        },
+        "phishCaughtLabel": "Rule-breaking requests spotted",
+        "scoreLine": "Right call is most of the score; naming the reasons is the rest.",
+        "teamBadge": "Requests handled the right way: {n}",
+        "teamBadgeTitle": "Requests you reported or checked this round rather than just acting on them"
+      },
+      "outcome": { "setGlobalPrefix": "episode_e17_acceptable_use_defend_defend_", "passPercent": 0 },
+      "messages": [
+        {
+          "id": "e17_meeting_app",
+          "kind": "email",
+          "from": { "name": "Harlow Freight (client)", "address": "ops@harlow-freight.example" },
+          "to": "you@tarrowby.example",
+          "subject": "Join Tuesday's review, install Roomcall first",
+          "time": "09:40",
+          "body": "Hi,\nWe run our project reviews on Roomcall. Please install it from the link below before Tuesday so you can join.\nInstall: https://get.roomcall-app.example/win\nThanks,\nHarlow Freight projects",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "harlow-freight.example", "replyTo": "ops@harlow-freight.example" },
+          "truth": { "isPhish": true, "flags": ["unapproved_tool"],
+            "kindLine": "Installing it wasn't your call to make.", "missLabel": "an unapproved app to install",
+            "perFlagNote": { "unapproved_tool": "Installing an app a client sent is not your call; unknown software can carry malware. Ask the service desk, or suggest our own meeting tool." },
+            "whyFine": {
+              "urgencyCalibrated": "'Install it before Tuesday' is an ordinary meeting date, not pressure. The tell is being asked to install an app that wasn't your call to add.",
+              "linkCredible": "The link text is the real address it leads to, so it isn't a disguised link. The tell is installing an unchecked app, whoever sent it."
+            },
+            "ifTrusted": "You install software the firm hasn't checked onto a work laptop.",
+            "reportReply": "Thanks, the service desk can set the meeting up on our approved tool instead." },
+          "factorStrings": { "unapproved_tool": { "redFlag": "a free app or online service with no contract, handing the firm's data to a provider we haven't checked" } }
+        },
+        {
+          "id": "e17_data_lookup",
+          "kind": "email",
+          "from": { "name": "Shauna Lofthouse", "address": "shauna.lofthouse@tarrowby.example" },
+          "to": "you@tarrowby.example",
+          "subject": "Quick favour",
+          "time": "10:15",
+          "body": "Hiya, can you look up a contact's mobile in the system for me? It's a personal thing, nothing to do with work. Ta, Shauna.",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "shauna.lofthouse@tarrowby.example" },
+          "factorStrings": { "no_work_reason": { "redFlag": "A request to look up information with no work reason given, or one that is personal" } },
+          "truth": { "isPhish": true, "flags": ["no_work_reason"],
+            "flagAlternatives": [["no_work_reason", "pretextRelevant"]],
+            "kindLine": "A personal lookup isn't allowed.", "missLabel": "a personal lookup in the system",
+            "perFlagNote": { "no_work_reason": "A personal lookup has no work reason; looking at data your job doesn't need can be an offence (Data Protection Act 2018, s.170). Decline, and suggest another way." },
+            "ifTrusted": "You use your access to the system for something personal, which is a misuse even for a colleague.",
+            "reportReply": "Thanks, declining and pointing her to another way was the right call." }
+        },
+        {
+          "id": "e17_shared_login",
+          "kind": "email",
+          "from": { "name": "Colin Mather", "address": "colin.mather@tarrowby.example" },
+          "to": "you@tarrowby.example",
+          "subject": "Watch my inbox?",
+          "time": "11:05",
+          "body": "Off sick today. Could you log in as me and keep an eye on my inbox? You've got my password from last time. Cheers, Colin.",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "colin.mather@tarrowby.example" },
+          "factorStrings": { "shared_login": { "redFlag": "A request to log in as someone else, or to use or share their password" } },
+          "truth": { "isPhish": true, "flags": ["shared_login"],
+            "kindLine": "Sharing a login isn't allowed.", "missLabel": "a shared login",
+            "perFlagNote": { "shared_login": "Your login is you; a shared password hides who did what and can breach the firm's access controls. Ask the service desk for proper shared access." },
+            "ifTrusted": "Anything done under his login looks like him, and the record is wrong.",
+            "reportReply": "Thanks, the service desk can give you proper shared access to his inbox." }
+        },
+        {
+          "id": "e17_monitoring_notice",
+          "kind": "email",
+          "from": { "name": "Tarrowby intranet", "address": "intranet@tarrowby.example" },
+          "to": "you@tarrowby.example",
+          "subject": "What we monitor and why",
+          "time": "08:30",
+          "body": "A reminder of what the firm checks on work systems and why: email and web filtering, sign-in records, and data leaving our systems. It is done within the rules, to protect staff and the firm, not to watch individuals. The full policy is on the intranet.",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "intranet@tarrowby.example" },
+          "truth": { "isPhish": false, "flags": [],
+            "whyFine": { "default": "It reads like a warning, but it's the firm telling you plainly what it checks and why, which is exactly what the rules require. Nothing to report." },
+            "falseAlarmCost": "A genuine policy notice that goes unread leaves its reason unexplained, and one that gets queried costs a colleague a little time." }
+        },
+        {
+          "id": "e17_personal_use_ok",
+          "kind": "email",
+          "from": { "name": "Tarrowby HR", "address": "hr@tarrowby.example" },
+          "to": "you@tarrowby.example",
+          "subject": "Reminder: reasonable personal use",
+          "time": "14:20",
+          "body": "A quick reminder that reasonable personal use of work kit in your own time is fine, within the policy. Keep it lawful and don't let it get in the way of work. Any questions, ask HR or the service desk.",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "tarrowby.example", "replyTo": "hr@tarrowby.example" },
+          "truth": { "isPhish": false, "flags": [],
+            "whyFine": { "default": "A genuine, ordinary policy reminder. Reasonable personal use in your own time is allowed. Handle it." },
+            "falseAlarmCost": "Reporting a routine HR reminder just takes a colleague's time." }
+        },
+        {
+          "id": "e17_free_tool",
+          "kind": "email",
+          "from": { "name": "Formatmoor", "address": "hello@formatmoor-online.example" },
+          "to": "you@tarrowby.example",
+          "subject": "Convert any file, free, no install",
+          "time": "15:30",
+          "body": "Everyone uses Formatmoor! Upload your file and convert it here, free, no install needed: https://formatmoor-online.example/go",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "formatmoor-online.example", "replyTo": "hello@formatmoor-online.example" },
+          "truth": { "isPhish": true, "flags": ["unapproved_tool"],
+            "kindLine": "An unapproved tool isn't allowed.", "missLabel": "an unapproved online tool",
+            "perFlagNote": { "unapproved_tool": "A free online tool hands the file to a provider we haven't checked; there's an approved way. Ask first, the service desk usually answers the same day." },
+            "whyFine": {
+              "pretextRelevant": "An unsolicited 'everyone uses it' pitch turns up in real and fake mail alike, so it isn't the tell. The tell is handing the firm's file to an unapproved tool."
+            },
+            "ifTrusted": "The firm's file goes to an unchecked third party.",
+            "reportReply": "Thanks, the service desk can point you to the approved converter, usually the same day." },
+          "factorStrings": { "unapproved_tool": { "redFlag": "a free app or online service with no contract, handing the firm's data to a provider we haven't checked" } }
+        }
+      ]
+    }
+  ],
+  "awarenessEpisode": {
+    "role": "general",
+    "company": "tarrowby_logistics",
+    "brand": { "name": "Tarrowby Logistics", "logoText": "TARROWBY", "accent": "#3b5b8c" },
+    "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional firm. Everyday 'can I?' moments, answered from our own rules. Not sure? Ask first.",
+    "defend": { "setId": "e17_acceptable_use_inbox", "reportAlwaysVisible": true },
+    "debrief": { "mondayCard": "slot:customer_report_route", "noBlameLine": true },
+    "strings": {
+      "weakestTells": "The reasons most often missed: {names} ({counts} each).",
+      "weakestTell": "The reason most often missed: {names} ({counts}).",
+      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. Three answers: Allowed, Not allowed, Ask first. You'll sort a set of everyday 'can I?' moments against the firm's own rules, with the reason on screen, and handle a few messages that arrive in the inbox. When you're not sure, ask first.",
+      "defendOnly": "Every one of these was an everyday call, the kind you make without thinking. When you're not sure, ask first, and an honest mistake reported quickly is fixed, not punished. Any you read the wrong way are picked out below, with the reason on screen. Not sure? Ask first. Made a mistake? Report it.",
+      "conceptPanel": [
+        { "heading": "Three answers, five responsibilities", "text": "The 'can I?' cards you just sorted used the same three answers: Allowed, Not allowed, and Ask first. No policy can list every situation, so when you're not sure, ask first. Five things are yours to do: protect your access, so passwords, codes, logins and badges are never shared; use approved tools, devices and storage; look at and share only the data your job needs; report anything suspicious, including your own mistakes; and ask first when you're unsure." },
+        { "heading": "What's monitored, and the limits", "text": "Work systems are monitored to keep them safe, within rules: email and web filtering, sign-in records, and data leaving the firm. You must be told what is checked, why and how, and the law sets limits that protect you: the content of your messages is looked at only in rare, serious cases, and you'd be told first. If monitoring worries you, ask the DPO. Work messages are records too: write every one as if the person it's about could read it, because one day they might." }
+      ],
+      "_teamLine": "E17-M2 (E14_E17_PLAYTEST_P1): the debrief team line defaults to 'kept N phish away from your team' (debrief-view.js teamLine). This set has no phish, so the override thanks the learner for handling unsafe requests the right way instead. {n} is the count.",
+      "teamLine": "By reporting or checking {n} of these rather than just acting on them, you kept the firm on the right side of its own rules.",
+      "mondayCard": "Pick the one person you'd ask when you're unsure: the service desk for software and devices, the security team for anything suspicious, the DPO for personal data, your manager for how your team works.",
+      "allRight": "You handled every one of these the right way. Nothing to pick over here.",
+      "allPhishRight": "Every rule-breaking request was raised, with every reason named.",
+      "noBlameLine": "Honest mistakes reported quickly are fixed, not punished. Deliberate misuse is different, and the policy says what happens. The difference is intent and openness.",
+      "noBlameLineCritical": "Rules are hard to carry in your head, so a miss here is no fault of yours. The points only show where to look next time.",
+      "sendOff": "That's the 'can I?' moments done. When you're not sure what the rules allow, ask first: the service desk would rather hear from you."
+    },
+    "_defendOnly": {
+      "_use": "Strings for the one defend-only shell (e17_acceptable_use_defend). The shell copies brief over strings.brief and scopeNote over scopeNote. Because E17 is defend-only only, with no attack beat to strip, brief and scopeNote here EQUAL strings.brief and scopeNote above; there is nothing to trim, and this is not an error. There are no flip strings, because E17 has no flip.",
+      "brief": "You're on an authorised exercise at Tarrowby Logistics, a fictional firm. Three answers: Allowed, Not allowed, Ask first. You'll sort a set of everyday 'can I?' moments against the firm's own rules, with the reason on screen, and handle a few messages that arrive in the inbox. When you're not sure, ask first.",
+      "scopeNote": "Authorised exercise at Tarrowby Logistics, a fictional firm. Everyday 'can I?' moments, answered from our own rules. Not sure? Ask first."
+    }
+  }
+}

@@ -1,7 +1,7 @@
 require 'test_helper'
 
 # Sync, then emit (05 "Bridging", N6; 00 section 11; packet P3-C), the server half.
-# The triage starter writes triage_percent, _reportRate, _pass and _done, waits for
+# The triage starter writes triage_percent, _reportRate, _pass and _complete, waits for
 # a sync_state the server confirmed, and only then emits the event whose mapping
 # POSTs the task. These tests drive that order over HTTP: the globals land, then
 # complete_task finds the aim's concludeRequires met. They also show what the
@@ -13,7 +13,7 @@ module BreakEscape
     include Engine.routes.url_helpers
 
     TRIAGE_GLOBALS = {
-      'triage_percent' => 72, 'triage_reportRate' => 0.5, 'triage_pass' => true, 'triage_done' => true
+      'triage_percent' => 72, 'triage_reportRate' => 0.5, 'triage_pass' => true, 'triage_complete' => true
     }.freeze
 
     setup do
@@ -38,7 +38,7 @@ module BreakEscape
                      'objects' => [], 'npcs' => [] }
         },
         'globalVariables' => {
-          'triage_percent' => 0, 'triage_reportRate' => 0, 'triage_pass' => false, 'triage_done' => false
+          'triage_percent' => 0, 'triage_reportRate' => 0, 'triage_pass' => false, 'triage_complete' => false
         },
         'objectives' => [{
           'aimId' => 'defend', 'title' => 'Defend the inbox', 'status' => 'active',
@@ -55,7 +55,7 @@ module BreakEscape
         'currentRoom' => 'lobby', 'unlockedRooms' => ['lobby'], 'unlockedObjects' => [],
         'inventory' => [], 'encounteredNPCs' => [], 'notes' => [], 'health' => 100,
         'globalVariables' => {
-          'triage_percent' => 0, 'triage_reportRate' => 0, 'triage_pass' => false, 'triage_done' => false
+          'triage_percent' => 0, 'triage_reportRate' => 0, 'triage_pass' => false, 'triage_complete' => false
         },
         'objectivesState' => { 'tasks' => {}, 'aims' => {} }
       }
@@ -79,7 +79,7 @@ module BreakEscape
       refute body['stale']
       globals = @game.reload.player_state['globalVariables']
       assert_equal true, globals['triage_pass']
-      assert_equal true, globals['triage_done']
+      assert_equal true, globals['triage_complete']
       assert_equal 72, globals['triage_percent']
 
       result = complete('triage_passed')
@@ -126,7 +126,7 @@ module BreakEscape
       assert_equal concluded_at.to_i, @game.mission_concluded_at.to_i, 'the conclusion time did not move'
     end
 
-    test 'reopen: done already on the server from a flush, task incomplete, completes once' do
+    test 'reopen: complete already on the server from a flush, task incomplete, completes once' do
       # The pagehide flush carried the globals; the tab closed before the emit
       sync({ globalVariables: TRIAGE_GLOBALS, clientTs: 5000 })
       assert_nil @game.reload.player_state.dig('objectivesState', 'tasks', 'triage_passed')
@@ -143,7 +143,7 @@ module BreakEscape
       assert_equal false, body['success']
       globals = @game.reload.player_state['globalVariables']
       assert_equal false, globals['triage_pass'], 'the refusal rolled back the whole request'
-      assert_equal false, globals['triage_done']
+      assert_equal false, globals['triage_complete']
     end
   end
 end

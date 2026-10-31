@@ -32,12 +32,16 @@
 .epr-strip .aw-strip { border-bottom: 0; }
 .epr-bar .se-overlay-close { flex: 0 0 auto; margin: 6px 10px; }
 
-.epr-body { flex: 1; min-height: 0; overflow-y: auto; }
+/* padding-bottom (E8 F8): the scroll area keeps room below its last control, so the debrief Finish
+   button is fully scrollable into view at a tall viewport (1400x1000) rather than clipped at the fold. */
+.epr-body { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 24px; }
 
 .epr-panel { padding: 16px; line-height: 1.45; }
 .epr-heading { margin: 0 0 8px; font-size: 22px; color: var(--aw-accent); }
 .epr-heading:focus { outline: none; }
 .epr-text { margin: 0 0 12px; font-size: 16px; max-width: 60ch; }
+/* batch 13: the send-off under the Episode finished panel */
+.epr-send-off { margin: 0 0 12px; padding: 10px 12px; font-size: 16px; max-width: 60ch; border-left: 4px solid var(--aw-accent, #2f6f8f); }
 .epr-scope {
     margin: 0 0 12px;
     padding: 8px 12px;
@@ -46,8 +50,12 @@
     background: #fff;
     border-left: 4px solid var(--aw-accent);
 }
+.epr-card-count { margin: 12px 0 0; font-size: 14px; }
+.epr-brief-card .epr-button + .epr-button { margin-left: 8px; }
 .epr-notice { margin: 0; font-size: 15px; color: #8a5a00; }
 .epr-notice:empty { display: none; }
+/* E14 F11: the write-stage "your draft starts again" reload note. */
+.epr-reload-note { margin: 4px 0 0; font-size: 14px; color: #52606d; }
 
 .epr-button {
     margin-top: 14px;
@@ -83,3 +91,35 @@
     .epr-bar { flex-wrap: wrap; }
     .epr-panel { padding: 12px; }
 }
+
+/* The consequence sandbox (ENG-04): the `mistake` stage's own overlay. One beat at a time on a
+   light card; readable type, nothing under 13px. */
+.epr-sbx-root {
+    --aw-accent: #2f6f5e;
+    --aw-ink: #1f2933;
+    --aw-surface: #f6f8f7;
+    --aw-line: #cfd8d4;
+    font-family: var(--se-font-readable, 'Source Sans 3', 'Segoe UI', Arial, sans-serif);
+    color: var(--aw-ink);
+    box-sizing: border-box;
+    max-width: 640px;
+    max-height: min(92vh, 760px);
+    overflow-y: auto;
+    margin: 2vh auto;
+    padding: 12px;
+    background: var(--aw-surface);
+    line-height: 1.45;
+}
+.epr-sbx-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.epr-sbx-title { font-size: 14px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--aw-accent); }
+.epr-sbx-card { padding: 12px; background: #fff; border: 1px solid var(--aw-line); }
+.epr-sbx-intro { margin: 0 0 10px; font-size: 15px; color: #52606d; }
+.epr-sbx-heading { margin: 0 0 6px; font-size: 18px; color: var(--aw-accent); }
+.epr-sbx-heading:focus { outline: none; }
+.epr-sbx-situation { margin: 0 0 12px; font-size: 16px; max-width: 60ch; }
+.epr-sbx-options { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px; }
+.epr-sbx-legend { padding: 0; margin: 0 0 6px; font-size: 14px; font-weight: 700; }
+.epr-sbx-option { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; font-size: 16px; border: 1px solid var(--aw-line); border-radius: 4px; cursor: pointer; background: #fff; }
+.epr-sbx-radio { margin: 4px 0 0; flex: none; }
+.epr-sbx-picked { border-color: var(--aw-accent); background: #eef6f3; }
+.epr-sbx-confirm:disabled { opacity: 1; background: #d3dae2; color: #3a4452; cursor: default; }
