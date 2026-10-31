@@ -1,0 +1,2 @@
+# analyse_music.py: librosa pulls in numpy, scipy, numba and soundfile. Pinned to the version that wrote summary.json.
+librosa==1.0.0

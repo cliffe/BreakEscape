@@ -1,0 +1,24 @@
+{
+  "name": "break-escape-video",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Remotion compositing stage for Break Escape trailers (see docs/video/M01_TRIAL_PLAN.md)",
+  "scripts": {
+    "sync": "node scripts/sync-assets.mjs",
+    "lint": "node scripts/lint-edit.mjs",
+    "studio": "remotion studio"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.530",
+    "@remotion/renderer": "4.0.530",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.530",
+    "@remotion/bundler": "4.0.530"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "typescript": "5.6.3"
+  },
+  "type": "module"
+}

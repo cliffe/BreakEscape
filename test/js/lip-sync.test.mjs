@@ -210,3 +210,20 @@ test('alignToEnvelope on a real TTS line: pauses land on silences', async () => 
     const rate = tl.length / (timelineDuration(tl) / 1000);
     assert.ok(rate > 4 && rate < 12, `changes per second ${rate.toFixed(1)}`);
 });
+
+test('alignToEnvelope: a quiet last word after a pause still moves the mouth', () => {
+    // Shaped like m01 Derek "Security through obscurity fails.": loud words, a half-second
+    // dip, then a soft trailing "fails" (about a tenth of the peak), then dead air.
+    const frameMs = 20, env = [];
+    const push = (ms, level) => {
+        for (let i = 0; i < ms / frameMs; i++) env.push(level * (0.6 + 0.4 * Math.abs(Math.sin(env.length * 0.9))));
+    };
+    push(300, 0); push(1700, 0.3); push(500, 0); push(800, 0.04); push(500, 0);
+    const tl = alignToEnvelope('Security through obscurity fails.', env, frameMs);
+    assert.ok(tl, 'a timeline');
+    const lastWordStart = (300 + 1700 + 500) + 60, lastWordEnd = 300 + 1700 + 500 + 800 - 60;
+    let open = 0;
+    for (let t = lastWordStart; t < lastWordEnd; t += frameMs) if (visemeAt(tl, t) !== 'rest') open += frameMs;
+    assert.ok(open / (lastWordEnd - lastWordStart) > 0.6, `mouth open ${open} ms of the last word`);
+    assert.equal(visemeAt(tl, 300 + 1700 + 500 + 800 + 300), 'rest', 'rest in the trailing silence');
+});

@@ -252,6 +252,7 @@ const UNIT_ENERGY = {
     pause: 0, gap: 0.35,
     closed: 0.15, teeth: 0.4, small_open: 0.55, round: 0.7, medium_open: 0.75, wide_open: 0.9, rest: 0.35
 };
+const TRIM_FLOOR = 0.03; // fraction of the line's peak below which head/tail frames are dead air
 const SILENT = 0.08; // normalised loudness below which a frame is silence
 // Every "a" is wide_open in the letter classes, but most are unstressed ("about", "a",
 // "that") and wide_open is the shape most likely to look overdone. So an "a" opens wide
@@ -309,16 +310,43 @@ export function textToUnits(text) {
  * @returns {Array<{viseme: string, duration: number}>|null}
  */
 export function alignToEnvelope(text, envelope, frameMs = ENVELOPE_FRAME_MS, options = {}) {
+    // The fit below lets the closing pause absorb quiet frames (rest costs little there), so a
+    // soft last word ("fails" trailing off) was swallowed whole. Fit only the audible part and
+    // give the head and tail silence back as rest afterwards.
+    if (!options._trimmed && envelope?.length) {
+        let max = 0;
+        for (const v of envelope) if (v > max) max = v;
+        const floor = max * TRIM_FLOOR;
+        let a = 0, b = envelope.length - 1;
+        while (a < b && !(envelope[a] > floor)) a++;
+        while (b > a && !(envelope[b] > floor)) b--;
+        b = Math.min(envelope.length - 1, b + 1);
+        if (a > 0 || b < envelope.length - 1) {
+            const inner = alignToEnvelope(text, envelope.slice(a, b + 1), frameMs, { ...options, _trimmed: true });
+            if (!inner) return null;
+            const steps = inner.map(s => ({ ...s }));
+            steps[0].duration += a * frameMs;
+            steps[steps.length - 1].duration += (envelope.length - 1 - b) * frameMs;
+            return steps;
+        }
+    }
     const T = envelope?.length || 0;
-    const units = [{ kind: 'pause', viseme: 'rest', weight: 2 }, ...textToUnits(text),
-                   { kind: 'pause', viseme: 'rest', weight: 2 }];
+    // The line's final punctuation is the closing pause below; keeping it as a second pause
+    // lets the pair take the whole tail and the last word with it.
+    const body = textToUnits(text);
+    while (body.length && body[body.length - 1].kind !== 'sound') body.pop();
+    // Once the dead air is trimmed off, what is left at either end is only a breath, so those
+    // pauses get a small share of the unvoiced time instead of absorbing the last word.
+    const edge = options._trimmed ? 0.25 : 2;
+    const units = [{ kind: 'pause', viseme: 'rest', weight: edge }, ...body,
+                   { kind: 'pause', viseme: 'rest', weight: edge }];
     const N = units.length;
     if (T < N || N < 3) return null;
 
     const sorted = Float32Array.from(envelope).sort();
     const ref = sorted[Math.floor(0.95 * (T - 1))];
     if (!(ref > 0)) return null;
-    const e = Float32Array.from(envelope, v => Math.min(1, v / ref));
+    const e = Float32Array.from(envelope, v => Math.sqrt(Math.min(1, v / ref)));
 
     const voiced = e.reduce((n, v) => n + (v >= SILENT ? 1 : 0), 0);
     const sumW = kinds => units.reduce((s, u) => s + (kinds.includes(u.kind) ? u.weight : 0), 0);
