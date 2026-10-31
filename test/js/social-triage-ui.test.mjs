@@ -469,7 +469,9 @@ test('a check below the host pass mark shows the try-again line; at or above it,
     const above = open(makeSet({ stage: 'post', scoringProfile: 'awareness' }),
         { stage: 'post', hostPassPercent: 70, storedResult: { percent: 80, reportRate: 1 } });
     assert.equal($(above, '.tri-below-pass'), null, 'at or above the mark: no line');
-    const noMark = open(makeSet({ stage: 'post', scoringProfile: 'awareness' }),
+    // A real check set carries outcome.passPercent 0 (no mark of its own); with no host mark either,
+    // no line shows even at a low score.
+    const noMark = open(makeSet({ stage: 'post', scoringProfile: 'awareness', outcome: { setGlobalPrefix: 'triage_{stage}_', passPercent: 0 } }),
         { stage: 'post', storedResult: { percent: 10, reportRate: 0 } });
     assert.equal($(noMark, '.tri-below-pass'), null, 'no pass mark: no line even at a low score');
 });
