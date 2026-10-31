@@ -22,7 +22,7 @@
 // { heading, text } of plain text; a blank line in the text starts a new paragraph.
 // Three optional deployment lines (the runner resolves them from social.awareness and the
 // host page's breakEscapeConfig.awareness, episode-model.js awarenessSettings):
-//   reportRoute  { heading, text, configured }: the "How to report here" box under the Monday
+//   reportRoute  { heading, text, configured, routeName? }: the "How to report here" box under the Monday
 //                card (aw1, debrief.mondayCard "slot:customer_report_route");
 //   ruleOfThumb  { heading?, text }: one line shared by every debrief, above the Monday card (aw4);
 //   teamSize     the number of people on the learner's team, for the team line (aw6).
@@ -475,14 +475,20 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     // A card per missed item, then one weakest-skill line; if nothing was missed, one short line
     // says so. The score summary, panels, Monday card and no-blame line stay. (`answers` and
     // `reviewed` were computed above, before the defendOnly lead.)
-    // aw1 (WP-02): a configured route's own name, to name after a Report verdict (buildCard). The
-    // organiser's route heading when they set one; never the generic 'How to report here' fallback
-    // (that heading means no name was typed), and nothing without a configured route. Hacktivity
-    // sends no short route name apart from the composed paragraph, so the heading is the best name.
-    const routeName = isObj(reportRoute) && reportRoute.configured === true
-        && isStr(reportRoute.heading) && reportRoute.heading.trim()
-        && reportRoute.heading.trim() !== GENERIC_ROUTE_HEADING
-        ? reportRoute.heading.trim() : null;
+    // aw1 (WP-02): a configured route's own name, to name after a Report verdict (buildCard).
+    // Hacktivity sends a short route name (reportRoute.routeName) built from the organiser's first
+    // reporting option, which completes "At work, that means: ..." naturally; prefer it. Otherwise
+    // fall back to the organiser's route heading, but never the generic 'How to report here'
+    // fallback (that heading means no name was typed), and nothing without a configured route.
+    let routeName = null;
+    if (isObj(reportRoute) && reportRoute.configured === true) {
+        if (isStr(reportRoute.routeName) && reportRoute.routeName.trim()) {
+            routeName = reportRoute.routeName.trim();
+        } else if (isStr(reportRoute.heading) && reportRoute.heading.trim()
+            && reportRoute.heading.trim() !== GENERIC_ROUTE_HEADING) {
+            routeName = reportRoute.heading.trim();
+        }
+    }
     const cards = el('div', 'aw-cards');
     for (const a of reviewed) cards.appendChild(buildCard(a, messageFor(set, a.id), set, routeName, showScore));
     root.appendChild(cards);

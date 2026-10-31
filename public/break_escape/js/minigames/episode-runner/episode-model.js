@@ -874,11 +874,17 @@ function settingText(v) {
     return typeof v === 'string' ? v.trim().slice(0, MAX_SETTING_TEXT) : '';
 }
 
-/** A string, or { heading?, text }: the cleaned { heading, text }, or null when there is no text. */
+/**
+ * A string, or { heading?, text, routeName? }: the cleaned { heading, text } (plus routeName when
+ * the host sent one, for reportRoute), or null when there is no text.
+ */
 function textBlock(v) {
     if (typeof v === 'string') return settingText(v) ? { heading: '', text: settingText(v) } : null;
     if (!isObj(v) || !settingText(v.text)) return null;
-    return { heading: settingText(v.heading), text: settingText(v.text) };
+    const out = { heading: settingText(v.heading), text: settingText(v.text) };
+    const routeName = settingText(v.routeName);
+    if (routeName) out.routeName = routeName;
+    return out;
 }
 
 /**
@@ -903,14 +909,16 @@ export function awarenessSettings(social, config) {
 }
 
 /**
- * aw1: the debrief's "How to report here" box: { heading, text, configured }, or null.
+ * aw1: the debrief's "How to report here" box: { heading, text, configured, routeName? }, or null.
  * A configured route always shows. Without one, the generic line shows only when the episode
  * asks for the customer slot (debrief.mondayCard "slot:customer_report_route").
  */
 export function reportRouteFor(episode, social, config) {
     const { reportRoute } = awarenessSettings(social, config);
     if (reportRoute) {
-        return { heading: reportRoute.heading || GENERIC_REPORT_ROUTE.heading, text: reportRoute.text, configured: true };
+        const out = { heading: reportRoute.heading || GENERIC_REPORT_ROUTE.heading, text: reportRoute.text, configured: true };
+        if (reportRoute.routeName) out.routeName = reportRoute.routeName;
+        return out;
     }
     if (episode?.debrief?.mondayCard === REPORT_ROUTE_SLOT) return { ...GENERIC_REPORT_ROUTE, configured: false };
     return null;
