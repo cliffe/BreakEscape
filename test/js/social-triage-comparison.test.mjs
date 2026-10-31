@@ -146,6 +146,34 @@ test('a post round with the pre done shows the comparison on the result step', (
     assert.match(box.textContent, /Report rate: 40% before, 100% now \(\+60 points\)\./);
 });
 
+test('show_result false hides the before/after panel and leaves no percentage on the result step', () => {
+    const s = open(checkSet(), { stage: 'post', globals: { ...preDone }, showResult: false });
+    play(s);
+    assert.equal(s.getTestState().triage.step, 'result');
+    assert.equal($(s, '.tri-compare'), null, 'the before/after panel is hidden');
+    assert.equal($(s, '.tri-score'), null, 'the score percent is hidden');
+    assert.ok($(s, '.tri-result-title'), 'the qualitative headline still shows');
+    assert.ok(!/\d+%/.test(s.container.textContent), 'no "N%" is left anywhere on the result step');
+});
+
+test('show_result true (the default) still shows the panel and the score', () => {
+    const s = open(checkSet(), { stage: 'post', globals: { ...preDone } });
+    play(s);
+    assert.ok($(s, '.tri-compare'), 'the before/after panel shows by default');
+    assert.ok($(s, '.tri-score'), 'the score shows by default');
+});
+
+test('a read-only reopen with show_result false hides the comparison and the report-rate figure', () => {
+    const s = open(checkSet(), {
+        stage: 'post', globals: { ...preDone }, showResult: false,
+        storedResult: { percent: 81, reportRate: 0.9, pass: true, readOnly: true }
+    });
+    assert.equal(s.getTestState().triage.step, 'result');
+    assert.equal($(s, '.tri-compare'), null, 'the reopened comparison is hidden');
+    assert.equal($(s, '.tri-score'), null, 'the reopened score is hidden');
+    assert.ok(!/\d+%/.test(s.container.textContent), 'no "N%" on the reopened card');
+});
+
 test('a post round with no pre shows "No baseline" and its own result; a pre round shows no panel', () => {
     const s = open(checkSet(), { stage: 'post', globals: {} });
     play(s);

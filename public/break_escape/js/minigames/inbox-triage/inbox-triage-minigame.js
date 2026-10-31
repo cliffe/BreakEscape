@@ -1478,7 +1478,11 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const nums = el('dl', 'tri-numbers');
         const addNum = (k, v, key) => { const dd = el('dd', null, v); dd.dataset.number = key; nums.append(el('dt', null, k), dd); };
         let appendNums = true;
-        if (stored) {
+        if (stored && !this.showResult) {
+            // The reopened card's only figure is the report rate (a percentage); with the result
+            // hidden there is nothing left to show on it.
+            appendNums = false;
+        } else if (stored) {
             // batch-8: the reopened result card shares the debrief's reportedPct override
             // (set.resultCopy.reportedPct, {pct} is the percentage), so a non-phishing set reads the
             // same on reopen as it does in the debrief. The debrief's reportRate line (debrief-view.js)
@@ -1565,7 +1569,8 @@ export class InboxTriageMinigame extends SocialOverlayScene {
             // E11 B2 finding 8: when those penalties floored the round at 0, say the score stops
             // there, so "0%" beside a right answer does not read as unexplained. Overridable via
             // set.resultCopy.clampedNote (''/absent keeps the default; shown only when clamped).
-            if (result.clamped && percent === 0) {
+            // The clamped note names the "0%" score, so it is dropped when the result is hidden.
+            if (this.showResult && result.clamped && percent === 0) {
                 const own = isObj(this.set?.resultCopy) ? this.set.resultCopy.clampedNote : undefined;
                 const note = own === '' ? '' : (isStr(own) && own.trim() ? own
                     : 'The round score stops at 0%, so the points taken off do not show below it.');
@@ -1644,7 +1649,9 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         // there is no baseline. Shown on a fresh round and on the read-only reopen alike.
         this.comparison = comparisonFor(this.set, this.stage, this.globals, { percent, reportRate });
         const cmpText = comparisonText(this.comparison);
-        if (cmpText) {
+        // The before/after panel is nothing but scores, so it is hidden whole when the host
+        // turns the result off (show_result false): no "N%" is left on the screen.
+        if (this.showResult && cmpText) {
             const box = el('section', `tri-compare ${this.comparison.baseline ? 'has-baseline' : 'no-baseline'}`);
             box.dataset.baseline = this.comparison.baseline ? 'true' : 'false';
             box.setAttribute('aria-label', cmpText.heading);
