@@ -296,7 +296,7 @@ Live check (keyless :3001, own games 4608, 4612, 4615, 4617; logs in the scratch
 - F20-3: Consultant (To Melanie, subject Quick one) to T. Test (carried), To changed to Sofia, back to
   Consultant: To stays Sofia, subject stays the payslip one. The older Consultant draft no longer wins.
 - F20-4: as above. A landed send, Done, Compose: blank form.
-- P7-7 (awareness E6 defend): the Parceline text's card title is "07700 900583 (not in your contacts) ·
-  Parceline: we couldn't deliver your parcel." with no dots.
+- P7-7 (awareness E6 defend): the ASAParcels text's card title is "07700 900583 (not in your contacts) ·
+  ASAParcels: we couldn't deliver your parcel." with no dots.
 - P7-2 (awareness E5 defend): reporting all three phish with only the look-alike tell ticked gives 92%
   "Getting there" (Padlock myth 0 of 1, Secrecy 0 of 1), where the P7 run read "Sharp".
