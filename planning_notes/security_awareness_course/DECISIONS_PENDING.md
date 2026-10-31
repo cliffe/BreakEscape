@@ -45,6 +45,22 @@ Questions for the user. Each has a recommendation; the plan follows the recommen
 
 ## Decided
 
+### Hacktivity setup form answers (2026-10-31, owner; https://claude.ai/artifact/29LbxBhtp1v6W67Pt6yNap)
+
+Scoring (all as recommended): every game reports a breakdown (Complete, Objectives, Result, Verified) and each Hacktivity listing's policy turns it into its score; four policies (Completion, Completion plus objectives, Objectives, Awareness) with defaults course = Completion, game event = Completion plus objectives, awareness = Awareness; the engine warns before an ending that leaves objectives open, with a per-mission `endingCheck: false` opt-out for time pressure; staff get a Verified column and a "check this" flag; the same words in the game and in Hacktivity (completion badge, objectives as the small line); leaderboards rank completed, then objectives, then earliest finish; attempts by stage (first for before- and after-checks, best for episodes, staff override per listing); the breakdown is computed from the saved game (no migration); optional pass marks on after-checks only, off by default; new behaviour on by default with a dry-run recalculation; `defend_pass` retired and `done` renamed `complete`.
+Owner note on rollout: only m01, sis01, sis02 and the Tesseract (keyholder) trials have shipped. External clients use sis01 and sis02 with the progress dashboard (hacktivity.co.uk/hacktivities/153/progress) for engagement and scores; that dashboard must be updated in line with these changes.
+
+Titles and courses: scheme A titles (topic plus "try both sides" or "spot it"); five courses as proposed; one AB/BA pair per course, letters hidden; new `organiser_note` column on game_slots (migration, owner runs it); delete the original general check outright (not launched, outdated) and seed general_v2 and data_conduct.
+Owner note on courses: CyberAware may become its own top-level kind of hacktivity alongside Courses, Games and Hackboxes (`type_of_hacktivity = "aware"`), holding several short awareness courses. Open question from the owner: go to market with only the "both sides" versions, as the USP and easier to explain?
+
+Reporting routes (WP-02): option table approved as drafted; the route is named in the Report verdict; one primary route plus optional add-ons; vendor-neutral, organisers type the button name; organisers of the organisation plus staff edit the default.
+
+Brand names: apply renames, but propose satire/parody names instead of the plain replacements (new proposals to come back to the owner).
+
+Habit line: one per CyberAware course (not per episode group).
+
+D9 accessibility: filed as future work; not pursued until there is demand (hard to reach with the game-based approach). The statement is not published.
+
 ### Decisions board answers (2026-10-30, owner)
 
 Recorded from the owner's decisions board on 2026-10-30. "Differs" means the owner chose something other than the recommendation. Owner notes are verbatim.
