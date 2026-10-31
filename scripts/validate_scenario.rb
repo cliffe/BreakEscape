@@ -241,6 +241,7 @@ def check_scenario_directory_structure(erb_path)
       end
 
       issues.concat(check_mission_scoring(mission))
+      issues.concat(check_mission_result(mission))
     rescue JSON::ParserError => e
       issues << "❌ INVALID: mission.json contains invalid JSON: #{e.message}"
     rescue StandardError => e
@@ -272,6 +273,71 @@ def check_mission_scoring(mission, json_data = nil)
 
   ["⚠️ WARNING: mission.json 'scoring' is \"#{mode}\" but no aim has missionConclusion:true, so " \
    "mission_concluded_at is never set and the score can never reach 100"]
+end
+
+# mission.json "resultGlobal" / "stage" (read by BreakEscape::Mission#result_global
+# and #result_stage) and "endingCheck". resultGlobal names the numeric game global
+# that holds an awareness check's result percent; with the rendered scenario it
+# must be declared there as a number. stage says where the result sits in the
+# course. endingCheck, when present, must be true or false.
+RESULT_STAGES = %w[pre post episode].freeze
+RESULT_GLOBAL_PATTERN = /\A[A-Za-z][A-Za-z0-9_]*_percent\z/
+
+def check_mission_result(mission, json_data = nil)
+  return [] unless mission.is_a?(Hash)
+
+  issues = []
+  if mission.key?('endingCheck') && ![true, false].include?(mission['endingCheck'])
+    issues << "❌ INVALID: mission.json 'endingCheck' is #{mission['endingCheck'].inspect}; it must be true or false " \
+              "(false turns off the warning before the ending)"
+  end
+  if mission.key?('stage') && !RESULT_STAGES.include?(mission['stage'])
+    issues << "❌ INVALID: mission.json 'stage' is #{mission['stage'].inspect}; it must be one of #{RESULT_STAGES.join(', ')}"
+  end
+  return issues unless mission.key?('resultGlobal')
+
+  name = mission['resultGlobal']
+  unless name.is_a?(String) && RESULT_GLOBAL_PATTERN.match?(name)
+    issues << "❌ INVALID: mission.json 'resultGlobal' is #{name.inspect}; it must be a global name ending in _percent " \
+              "(for example triage_pre_percent)"
+    return issues
+  end
+  if json_data
+    declared = json_data['globalVariables']
+    declared = {} unless declared.is_a?(Hash)
+    if !declared.key?(name)
+      issues << "❌ INVALID: mission.json 'resultGlobal' names #{name.inspect}, which the scenario does not declare in globalVariables"
+    elsif !declared[name].is_a?(Numeric)
+      issues << "❌ INVALID: mission.json 'resultGlobal' names #{name.inspect}, which is declared as #{declared[name].inspect} (it must be a number)"
+    end
+  end
+  unless mission.key?('stage')
+    issues << "⚠️ WARNING: mission.json has 'resultGlobal' but no 'stage' (pre, post or episode); the engine will guess it from the global's name"
+  end
+  issues
+end
+
+# The ending warning (public/break_escape/js/systems/ending-check.js). The engine asks
+# the player before the credits and before the last task of a missionConclusion aim is
+# posted, but it cannot warn in time for a one-shot debrief unless the choice that starts
+# it carries `#ending_check`. Warn when a mission has optional tasks, has not opted out with
+# "endingCheck": false, concludes through a missionConclusion aim, and none of its ink uses
+# the tag. `scenario_dir` is the scenario's directory (its ink/ folder is searched).
+def check_mission_ending_check(mission, json_data, scenario_dir)
+  return [] unless mission.is_a?(Hash) && json_data.is_a?(Hash)
+  return [] if mission['endingCheck'] == false
+
+  aims = (json_data['objectives'] || []).select { |a| a.is_a?(Hash) }
+  return [] unless aims.any? { |aim| aim['missionConclusion'] }
+  return [] unless aims.any? { |aim| (aim['tasks'] || []).any? { |t| t.is_a?(Hash) && t['optional'] == true } }
+
+  ink_files = Dir.glob(File.join(scenario_dir.to_s, '{ink,}', '*.ink'))
+  return [] if ink_files.any? { |f| File.read(f).match?(/#\s*ending_check\b/) }
+
+  ["⚠️ WARNING: the mission has optional tasks and concludes through a missionConclusion aim, but no ink file uses " \
+   "#ending_check. The engine still asks before the credits, but it can only warn before the debrief starts if the choice " \
+   "that starts it begins with #ending_check (before its #set_global or #complete_task). Add the tag, or set " \
+   "\"endingCheck\": false in mission.json if the mission is under time pressure."]
 end
 
 # Check for unknown fields in JSON that aren't in the schema
@@ -5525,6 +5591,8 @@ def main
     begin
       scoring_mission = JSON.parse(File.read(File.join(File.dirname(erb_path), 'mission.json')))
       wiring_issues.concat(check_mission_scoring(scoring_mission, json_data))
+      wiring_issues.concat(check_mission_result(scoring_mission, json_data))
+      wiring_issues.concat(check_mission_ending_check(scoring_mission, json_data, File.dirname(erb_path)))
     rescue StandardError
       # mission.json problems were already reported by the directory check
     end

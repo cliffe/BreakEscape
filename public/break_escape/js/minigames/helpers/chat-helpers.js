@@ -431,6 +431,28 @@ export async function processGameActionTags(tags, ui, options = {}) {
                     }
                     break;
 
+                case 'ending_check': {
+                    // # ending_check: put it first in the choice that starts the debrief (README_scenario_design.md,
+                    // "The ending convention"). When optional objectives are open the player is asked whether to end
+                    // the mission now. "Keep going" skips the rest of this line's tags, so a following
+                    // # set_global that starts the debrief does not run, and the story carries on.
+                    const checker = window.endingCheck;
+                    if (!checker) {
+                        result.success = true;
+                        result.message = 'ending_check ignored (not loaded)';
+                        break;
+                    }
+                    const endNow = await checker.confirm({ reason: 'tag' });
+                    result.success = true;
+                    if (endNow) {
+                        result.message = '🏁 Ending check: going ahead';
+                        break;
+                    }
+                    result.message = '🏁 Ending check: keeping going, the rest of this line\'s tags are skipped';
+                    results.push(result);
+                    return results;
+                }
+
                 case 'skip_task':
                     // The story closed this task off: shown as skipped, never as done
                     if (param) {

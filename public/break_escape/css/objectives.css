@@ -340,3 +340,23 @@
     max-height: calc(42vh - 40px);
   }
 }
+
+/* A postponed ending (systems/ending-check.js): the player chose "Keep going" at the warning. */
+.objectives-end-held {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.objectives-end-button {
+  padding: 6px 12px;
+  background: #333;
+  color: #ddd;
+  border: 2px solid #22ff88;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.objectives-end-button:hover,
+.objectives-end-button:focus {
+  background: #1d4d33;
+}

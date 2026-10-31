@@ -205,6 +205,33 @@ function switchIfConditionMet(entry, data) {
         return;
     }
 
+    // An entry carrying credits is the story's ending. If optional objectives are still open
+    // the player is asked first (systems/ending-check.js): the ending music and credits wait
+    // for the answer, and "Keep going" holds the ending for the objectives panel's button.
+    const hasEnding = !!(entry.credits?.length || entry.closingCard);
+    if (hasEnding && window.endingCheck?.needsAnswer?.()) {
+        if (_endingCheckPending) return;
+        _endingCheckPending = true;
+        window.endingCheck.confirm({ reason: 'credits' }).then((endNow) => {
+            _endingCheckPending = false;
+            if (endNow) {
+                playEntry(entry, data);
+            } else {
+                window.endingCheck.hold(() => playEntry(entry, data), { reason: 'credits' });
+            }
+        }, () => {
+            _endingCheckPending = false;
+            playEntry(entry, data);
+        });
+        return;
+    }
+    playEntry(entry, data);
+}
+
+let _endingCheckPending = false;
+
+/** Play a music event's track and, for an ending, the credits and the conclude request. */
+function playEntry(entry, data) {
     const fade = entry.fade !== false; // default true
 
     // An entry carrying credits owns the visualiser itself, gated on the server

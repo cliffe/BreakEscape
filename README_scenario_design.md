@@ -1600,6 +1600,20 @@ For a story mission, follow all four of these in every new scenario, lab games i
 3. **The credits roll from a music event** carrying `credits` (and optionally `closingCard`), triggered when the debrief closes: `conversation_closed:<debrief npc>`, or `global_variable_changed:<global>` for a global set on the last line. If the debrief NPC is also an ordinary hub NPC, guard the trigger with a condition on a global the last line sets (`"condition": "globalVars.engagement_closed === true"`), because their conversation closes many times before the ending. Put any closing sentiment in `closingCard.lines`, not in a separate end card. See [Closing card and credits](#closing-card-and-credits).
 4. **`conclusionScreen` is `{ "type": "bond_visualiser" }`.** It only re-opens the credits screen when a concluded game is reloaded, as m02–m10 do. Don't use `success` in a scenario with a story, because the story's ending is the credits. Don't use `end_screen` at all: it blocks the game with its own card in place of the credits, and it reappears on every reload. Pick `"creditsTheme": "cyber"` for anything outside the SAFETYNET campaign.
 
+#### The engine's ending warning (`endingCheck`)
+
+The engine adds a second warning on top of the story's own. Before an ending fires with optional objectives still open, a dialog lists them (only ones the player can already see) and offers **End the mission now** or **Keep going** (`public/break_escape/js/systems/ending-check.js`). Every ending trigger goes through that one check:
+
+| Trigger | Where it asks | "Keep going" does |
+|---|---|---|
+| ink tag `#ending_check` | When the tag is read | Skips the rest of that line's tags, so a `#set_global` after it never starts the debrief. The story carries on. |
+| the credits music event (`credits` or `closingCard`) | Before the ending track and the conclude request | Holds the ending; the objectives panel shows an **End the mission** button, and the ending runs by itself once nothing optional is open. |
+| the last required task of a `missionConclusion` aim | Before the task is posted to the server | The task stays undone; the same held ending. |
+
+Put `#ending_check` as the **first tag** in the choice that starts the debrief (before its `#set_global` or `#complete_task`), because a debrief that plays once cannot be taken back. The other two triggers are the safety net. The dialog never appears when no optional objective is open, after "End the mission now" for the same objectives, or on a game that had already concluded when the page loaded.
+
+`mission.json` `"endingCheck": false` turns the warning off, for a mission under time pressure that is not meant for a perfect score (sis01 and sis02). It also marks the game as `timed` in `Game#score_breakdown`. The validator warns when a mission with optional tasks that concludes through a `missionConclusion` aim has no `#ending_check` in its ink and has not opted out.
+
 #### Score and `missionConclusion`
 
 By default, scores are computed as a raw formula: `(tasks_completed / total_tasks) × 70 + (aims_completed / total_aims) × 30`. The conclusion flag does **not** force the score to 100 %. A player who concludes the mission having skipped optional tasks will receive a proportional score.

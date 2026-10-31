@@ -63,6 +63,11 @@ export class ObjectivesPanel {
     
     // Delegate aim header clicks to toggle individual aim collapse
     this.content.addEventListener('click', (e) => {
+      // A postponed ending (systems/ending-check.js): "End the mission" finishes it
+      if (e.target.closest('.objectives-end-button')) {
+        window.endingCheck?.endHeld?.();
+        return;
+      }
       const aimHeader = e.target.closest('.aim-header');
       if (!aimHeader) return;
       const aimEl = aimHeader.closest('.objective-aim');
@@ -196,6 +201,10 @@ export class ObjectivesPanel {
       `;
     });
     
+    if (window.endingCheck?.hasHeld?.()) {
+      html += '<div class="objectives-end-held"><button type="button" class="objectives-end-button" '
+        + 'title="Some optional objectives are still open">End the mission</button></div>';
+    }
     this.content.innerHTML = html;
   }
   

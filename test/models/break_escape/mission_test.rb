@@ -73,6 +73,53 @@ module BreakEscape
       assert_equal 'tasks', Mission.new(name: 'm01_first_contact', display_name: 'M1').scoring_mode
     end
 
+    test "result_global, result_stage, ending_check? and timed? read mission.json" do
+      mission = Mission.new(name: 'no_such_mission', display_name: 'X')
+      assert_nil mission.result_global # no mission.json
+      assert_nil mission.result_stage
+      assert_equal true, mission.ending_check?
+      assert_equal false, mission.timed?
+
+      cases = {
+        {} => [nil, nil, true, false],
+        { 'resultGlobal' => 'triage_pre_percent' } => ['triage_pre_percent', 'pre', true, false],
+        { 'resultGlobal' => 'triage_post_percent', 'stage' => 'post' } => ['triage_post_percent', 'post', true, false],
+        { 'resultGlobal' => 'episode_e1_defend_percent' } => ['episode_e1_defend_percent', 'episode', true, false],
+        { 'resultGlobal' => 'custom_percent', 'stage' => 'episode' } => ['custom_percent', 'episode', true, false],
+        { 'resultGlobal' => 'custom_percent', 'stage' => 'bogus' } => ['custom_percent', nil, true, false],
+        { 'resultGlobal' => 'bad name!' } => [nil, nil, true, false],
+        { 'resultGlobal' => 'no_suffix' } => [nil, nil, true, false],
+        { 'stage' => 'pre' } => [nil, nil, true, false], # a stage without a result global
+        { 'endingCheck' => false } => [nil, nil, false, true],
+        { 'endingCheck' => true } => [nil, nil, true, false],
+        { 'endingCheck' => 'no' } => [nil, nil, true, false],
+        { 'timed' => true } => [nil, nil, true, true]
+      }
+      cases.each do |meta, expected|
+        mission.define_singleton_method(:load_mission_metadata) { meta }
+        actual = [mission.result_global, mission.result_stage, mission.ending_check?, mission.timed?]
+        assert_equal expected, actual, "mission.json #{meta.inspect}"
+        assert expected[1] == mission.stage, "stage alias for #{meta.inspect}"
+        assert_equal expected[2], mission.ending_check
+      end
+    end
+
+    test "the shipped missions: sis01 and sis02 opt out of the ending warning, m01 and the Tesseract trials do not" do
+      { 'sis01_healthcare' => false, 'sis02_energy' => false,
+        'm01_first_contact' => true, 'lab_tesseract_trials' => true }.each do |name, expected|
+        mission = Mission.new(name: name, display_name: name)
+        assert_equal expected, mission.ending_check?, name
+        assert_equal !expected, mission.timed?, name
+      end
+    end
+
+    test "score_facts bundles what a breakdown needs from the mission" do
+      mission = Mission.new(name: 'no_such_mission', display_name: 'X')
+      mission.define_singleton_method(:load_mission_metadata) { { 'resultGlobal' => 'triage_pre_percent', 'endingCheck' => false, 'scoring' => 'completion' } }
+      assert_equal({ result_global: 'triage_pre_percent', result_stage: 'pre', ending_check: false,
+                     timed: true, scoring_mode: 'completion' }, mission.score_facts)
+    end
+
     test "normalise_ui_theme accepts only known themes" do
       assert_equal 'cyberpunk', Mission.normalise_ui_theme('cyberpunk')
       assert_nil Mission.normalise_ui_theme('"><script>')
