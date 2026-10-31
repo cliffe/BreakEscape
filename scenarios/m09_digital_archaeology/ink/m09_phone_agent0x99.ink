@@ -1067,6 +1067,10 @@ That's Helena done. Once you're on the plane, the archive's closed to us.
     {not start_debrief:
         ~ debrief_notice_before = albion_notified
     }
+    // Warn before the one-shot debrief if optional objectives are still open.
+    // "Keep going" skips the tags below (start_debrief never fires, the phone
+    // stays open), so the player can finish up and pick this again later.
+    #ending_check
     // A tag, so it re-emits even when already true (a reload reopens the debrief).
     #set_global:start_debrief:true
     Bringing you in. Netherton's in the hangar.
