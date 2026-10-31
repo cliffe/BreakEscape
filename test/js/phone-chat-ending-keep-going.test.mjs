@@ -33,5 +33,5 @@ test('ending_check without the module: not kept going', async () => {
     assert.equal(await gate(['ending_check']), false);
 });
 test('both display paths call the gate before typing', () => {
-    assert.equal((src.match(/await this\._endingKeptGoing\(/g) || []).length, 2);
+    assert.equal((src.match(/await this\._endingKeptGoing\?\.\(/g) || []).length, 2);
 });
