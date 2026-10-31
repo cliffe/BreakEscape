@@ -279,10 +279,10 @@ test('check missions: the set stage equals defend.stage, no pairedWith, no redec
   j = fx('clean_check_post.json');
   const raw = clone(j);
   raw.globalVariables.triage_pre_percent = 0;
-  raw.globalVariables.triage_pre_done = false;
+  raw.globalVariables.triage_pre_complete = false;
   const out = lint(j, raw);
   expectIn(out, /declares 'triage_pre_percent' in globalVariables and also imports it/);
-  expectIn(out, /declares 'triage_pre_done' in globalVariables and also imports it/);
+  expectIn(out, /declares 'triage_pre_complete' in globalVariables and also imports it/);
   expectIn(out, /triage_pre_reportRate/, 0);
 });
 
@@ -326,7 +326,7 @@ test('enable_content_prompt is a channel tell', { skip }, () => {
 test('carry-over: triage result globals and the pre baseline names are exempt from lower_snake_case', { skip }, () => {
   const ask = (j, name) => rb(`puts JSON.generate(carry_over_triage_result_name?(json, ${JSON.stringify(name)}))`, j);
   const j = fx('clean_check_post.json');
-  for (const n of ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_done', 'triage_post_reportRate', 'triage_pre_pass']) {
+  for (const n of ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_complete', 'triage_post_reportRate', 'triage_pre_pass']) {
     assert.equal(ask(j, n), true, n);
   }
   for (const n of ['Bad-Name', 'triage_pre_reportRates', 'm06_Assets', 'something_else']) {

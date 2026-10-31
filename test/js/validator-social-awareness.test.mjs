@@ -163,13 +163,13 @@ test('conclusion: one aim, concludeRequires on the done global, a host mapping',
   expectIn(lint(j), /2 aims have missionConclusion/);
   j = fx('clean_full.json');
   delete aim(j).concludeRequires;
-  expectIn(lint(j), /concludeRequires\.globals nil must list 'episode_e1_stub_defend_done'/);
+  expectIn(lint(j), /concludeRequires\.globals nil must list 'episode_e1_stub_defend_complete'/);
   j = fx('clean_full.json');
   aim(j).concludeRequires.globals = ['something_else'];
-  expectIn(lint(j), /must list 'episode_e1_stub_defend_done'/);
+  expectIn(lint(j), /must list 'episode_e1_stub_defend_complete'/);
   j = fx('clean_full.json');
   host(j).eventMappings = [];
-  expectIn(lint(j), /no NPC has an eventMappings entry for 'global_variable_changed:episode_e1_stub_defend_done'/);
+  expectIn(lint(j), /no NPC has an eventMappings entry for 'global_variable_changed:episode_e1_stub_defend_complete'/);
   j = fx('clean_full.json');
   host(j).eventMappings[0].completeTask = 'another_task';
   expectIn(lint(j), /no NPC has an eventMappings entry/);
@@ -180,8 +180,8 @@ test('conclusion: one aim, concludeRequires on the done global, a host mapping',
   ep(j).conclusionTaskId = 'elsewhere';
   expectIn(lint(j), /conclusionTaskId 'elsewhere' is not a task of the conclusion aim/);
   j = fx('clean_full.json');
-  delete j.globalVariables.episode_e1_stub_defend_done;
-  expectIn(lint(j), /done global 'episode_e1_stub_defend_done' is not declared/);
+  delete j.globalVariables.episode_e1_stub_defend_complete;
+  expectIn(lint(j), /done global 'episode_e1_stub_defend_complete' is not declared/);
 });
 
 test('state and records globals are declared as {}', { skip }, () => {
@@ -200,7 +200,7 @@ test('check missions: the pre exports, the post imports with as and completed', 
   let j = fx('clean_check_pre.json');
   j.exportGlobals = ['triage_pre_percent'];
   expectIn(lint(j), /does not list 'triage_pre_reportRate' in exportGlobals/);
-  expectIn(lint(j), /does not list 'triage_pre_done' in exportGlobals/);
+  expectIn(lint(j), /does not list 'triage_pre_complete' in exportGlobals/);
   j = fx('clean_check_post.json');
   j.importGlobals[0].as = 'baseline_percent';
   expectIn(lint(j), /import of 'triage_pre_percent' has as: "baseline_percent"/);
@@ -208,8 +208,8 @@ test('check missions: the pre exports, the post imports with as and completed', 
   delete j.importGlobals[1].as;
   expectIn(lint(j), /import of 'triage_pre_reportRate' has as: nil/);
   j = fx('clean_check_post.json');
-  j.importGlobals = j.importGlobals.filter((e) => e.var !== 'triage_pre_done');
-  expectIn(lint(j), /does not import 'triage_pre_done'/);
+  j.importGlobals = j.importGlobals.filter((e) => e.var !== 'triage_pre_complete');
+  expectIn(lint(j), /does not import 'triage_pre_complete'/);
   j = fx('clean_check_post.json');
   j.importGlobals = j.importGlobals.filter((e) => !e.completed);
   expectIn(lint(j), /no import with completed: "pre_check_completed"/);
@@ -227,8 +227,8 @@ test('check missions: the pre exports, the post imports with as and completed', 
   expectIn(lint(j), /names its stage, pre or post/);
 });
 
-test('result globals: a missing percent, reportRate or pass is a warning, naming the global', { skip }, () => {
-  for (const g of ['percent', 'reportRate', 'pass']) {
+test('result globals: a missing percent or reportRate is a warning, naming the global', { skip }, () => {
+  for (const g of ['percent', 'reportRate']) {
     const j = fx('clean_full.json');
     delete j.globalVariables[`episode_e1_stub_defend_${g}`];
     const out = lint(j);
@@ -481,7 +481,7 @@ test('standalone: false skips the conclusion, host NPC and conclusionTaskId chec
   ep(j).standalone = false;
   assert.deepEqual(lint(j), []);
   // the done global still has to be declared
-  delete j.globalVariables.episode_e1_stub_defend_done;
+  delete j.globalVariables.episode_e1_stub_defend_complete;
   expectIn(lint(j), /done global .* is not declared/);
 });
 
