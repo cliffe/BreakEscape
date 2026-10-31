@@ -681,11 +681,29 @@ export class MailRunner {
             body = `${body}\n\n${this._forwardBlock(original)}`;
             for (const a of arr(original.attachments)) if (a && !attachments.some((x) => x.kitId === a.kitId)) attachments.push(a);
         }
+        // The subject the composer previews is the subject the send will use: the `# subject:`
+        // tag verbatim if one is set, else a "Re: <latest thread subject>" default. `tagSubject`
+        // keeps the raw tag so sendPlainChoice's own resolution is unchanged (item 3).
+        const previewBox = mailboxId || this._mailboxOf(parsed.accountId);
+        const subject = this._replySubject(split.subject, this._threadSubject(threadKey, previewBox), forwardOf);
         return {
-            ok: true, chip, body, subject: split.subject, attachments, forwardOf,
+            ok: true, chip, body, subject, tagSubject: split.subject, attachments, forwardOf,
             boundary: split.boundary, replyAfter: split.replyAfter, gameTags: split.gameTags,
             hasReply: split.hasReply, rule: split.rule
         };
+    }
+
+    /**
+     * The subject a plain reply goes out with: the `# subject:` tag verbatim, else a Re:/Fwd:
+     * default built from the latest subject on the thread. Shared by the composer preview
+     * (planPlainChoice) so the learner sees the real outgoing subject before sending.
+     */
+    _replySubject(tagSubject, base, forwardOf) {
+        if (isStr(tagSubject)) return tagSubject;
+        const b = isStr(base) ? base : '';
+        if (!b) return '';
+        if (/^(re|fwd?):/i.test(b)) return b;
+        return forwardOf ? `Fwd: ${b}` : `Re: ${b}`;
     }
 
     /**
@@ -736,8 +754,8 @@ export class MailRunner {
         const account = arr(this._mailConfig.accounts).find((a) => a && a.id === acct) || null;
         const original = isStr(inReplyTo) ? this._findInMailbox(box, inReplyTo) : null;
         const lastSubject = this._threadSubject(threadKey, box);
-        let subject = isStr(plan.subject) ? plan.subject : (original && original.subject) || lastSubject || '';
-        if (!isStr(plan.subject) && subject && !/^(re|fwd?):/i.test(subject)) subject = plan.forwardOf ? `Fwd: ${subject}` : `Re: ${subject}`;
+        let subject = isStr(plan.tagSubject) ? plan.tagSubject : (original && original.subject) || lastSubject || '';
+        if (!isStr(plan.tagSubject) && subject && !/^(re|fwd?):/i.test(subject)) subject = plan.forwardOf ? `Fwd: ${subject}` : `Re: ${subject}`;
         const record = scheduler.addMessage(box, {
             id: sentId,
             kind: 'plain',
