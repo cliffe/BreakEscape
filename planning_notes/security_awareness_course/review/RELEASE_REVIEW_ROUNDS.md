@@ -72,3 +72,20 @@ Suite: the full Hacktivity suite gives 3965 runs with the two known unrelated fa
 ## Round 3
 
 Confirmation round, run because round 2 found a major.
+
+| Reviewer | Blocker | Major | Minor |
+|---|---|---|---|
+| Engine | 0 | 0 | 0 |
+| Hacktivity | 0 | 0 | 0 |
+
+Closures: R2-E1, R2-H1 and R2-S1 confirmed closed with file:line and test evidence. The hidden-results contract was swept across the check (immediate, end, review, result, reopen), the episode debrief, the pretext debrief and the end screens, and nothing is left ungated. Item counts and the retry line stay by design.
+
+Ending warning per mission: m01, m09, sis03 and lab_tesseract_trials use the ink tag; m02-m08 and m10 use an `endingCheck` mapping before the debrief; sis01 and sis02 opt out (time pressure); m10's "joined" ending is unwarned by owner decision. No mission warns only at the credits.
+
+Hacktivity sweep: two routes added in the range (the organiser reporting-route edit and update), both policy-checked with refused-side tests for all six roles. Every new permitted param is narrowed and tested, and organiser text is cleaned on save and escaped on render.
+
+Suites: engine 347 JS files, plus 607 model and controller runs, all passing. Hacktivity 3970 runs; the only failures are the two known unrelated ones (subscription flow, mail interceptor).
+
+Owner note, not a finding: the scoring revert command blocks `..` paths but would follow a symlink planted inside the app's tmp folder. That needs write access to tmp and a shell, so a realpath check would close it only if wanted.
+
+**Result: clean. The review is closed after three rounds.**
