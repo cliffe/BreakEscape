@@ -107,10 +107,35 @@ const withEndingCheckMapping = { objectives: withOptional.objectives, rooms: [
     { id: 'r', npcs: [{ id: 'hax', eventMappings: [
         { eventPattern: 'global_variable_changed:mission_complete', conversationMode: 'person-chat', endingCheck: true }] }] }] };
 
-test('ending check: quiet with the tag, with an endingCheck mapping, the opt-out, or no optional/conclusion', { skip }, () => {
-    assert.deepEqual(endingIssues({}, withOptional, { 'x.ink': '+ [Debrief]\n  #ending_check\n  #set_global:start:true\n' }), []);
+// A compiled .json carrying the tag ("^ending_check" is how inklecate stores a #ending_check tag).
+const compiledWithTag = '{"inkVersion":21,"root":[["^A line.","#","^ending_check","/#","done",null],"done",null],"listDefs":{}}';
+const compiledNoTag = '{"inkVersion":21,"root":[["^A line.","done",null],"done",null],"listDefs":{}}';
+
+test('ending check: quiet with the tag in the compiled json, with an endingCheck mapping, the opt-out, or no optional/conclusion', { skip }, () => {
+    assert.deepEqual(endingIssues({}, withOptional,
+        { 'x.ink': '+ [Debrief]\n  #ending_check\n  #set_global:start:true\n', 'x.json': compiledWithTag }), []);
     assert.deepEqual(endingIssues({}, withEndingCheckMapping), []);
     assert.deepEqual(endingIssues({ endingCheck: false }, withOptional), []);
     assert.deepEqual(endingIssues({}, noOptional), []);
     assert.deepEqual(endingIssues({}, noConclusion), []);
+});
+
+test('ending check: a stale compile (tag in the ink, not in the sibling .json) is flagged, not accepted', { skip }, () => {
+    // no compiled json at all
+    const noJson = endingIssues({}, withOptional, { 'x.ink': '+ [Debrief]\n  #ending_check\n' });
+    assert.equal(noJson.length, 1);
+    assert.match(noJson[0], /stale compile/);
+    assert.match(noJson[0], /x\.ink/);
+    assert.doesNotMatch(noJson[0], /neither uses #ending_check/, 'the stale-compile message, not the generic one');
+
+    // a compiled json that does not carry the tag
+    const staleJson = endingIssues({}, withOptional,
+        { 'x.ink': '+ [Debrief]\n  #ending_check\n', 'x.json': compiledNoTag });
+    assert.equal(staleJson.length, 1);
+    assert.match(staleJson[0], /stale compile/);
+});
+
+test('ending check: the tag is accepted on the compiled json even if the ink source is absent', { skip }, () => {
+    // only the compiled json carries the tag (the live engine reads it); no .ink stale-check fires
+    assert.deepEqual(endingIssues({}, withOptional, { 'x.json': compiledWithTag }), []);
 });
