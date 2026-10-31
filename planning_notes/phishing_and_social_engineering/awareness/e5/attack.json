@@ -157,7 +157,7 @@
           "domains": [
             { "id": "ds_letter", "domain": "fileharbour.example", "trick": "wrong-letter", "tier": 1 },
             { "id": "ds_word", "domain": "fileharbour-login.example", "trick": "extra-word", "tier": 2 },
-            { "id": "ds_vv", "domain": "d0cshare.example", "trick": "typo-squat", "tier": 3 }
+            { "id": "ds_vv", "domain": "fileharb0ur.example", "trick": "typo-squat", "tier": 3 }
           ]
         }
       ],

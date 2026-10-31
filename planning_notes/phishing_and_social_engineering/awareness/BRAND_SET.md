@@ -209,7 +209,7 @@ Gallagher is not used, because it clashes with an existing scenario. Farah was d
 - **Quayholt cast:**
   - Hana Novak, claims handler, `hana.novak@quayholt.example`, 30s, Czech-British: the E5 target.
   - The Quayholt IT Service Desk, `it-servicedesk@quayholt.example`: the sender the attacker spoofs.
-- **Decoy brand:** Fileharbour, `fileharbour.example`. Look-alikes `fileharbour-login.example`, `fileharbour.example` and `d0cshare.example`.
+- **Decoy brand:** Fileharbour, `fileharbour.example`. Look-alikes `fileharbour-login.example`, `fileharbour.example` and `fileharb0ur.example`.
 - **Pre-ship check:** "Quayholt", "Fileharbour" and "Novak" still need the real-business web-search check.
 
 ## Additions from E1 shells and E3 defend (P7-J and P7-S, 2026-10-22)
