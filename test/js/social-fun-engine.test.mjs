@@ -97,6 +97,17 @@ test('aw1: a scenario route wins over the generic line; the host page wins over 
     assert.equal(M.reportRouteFor(slotEpisode, { awareness: { reportRoute: 'x'.repeat(2000) } }).text.length, 600);
 });
 
+test('aw1: a host route carries the short routeName through to reportRouteFor', () => {
+    // Hacktivity composes the paragraph text and a short name from the organiser's first option.
+    const host = { awareness: { reportRoute: { heading: 'Reporting at Acme', text: 'Use the Report button to report it.', routeName: 'use the Report button in Outlook' } } };
+    assert.deepEqual(M.reportRouteFor(slotEpisode, {}, host),
+        { heading: 'Reporting at Acme', text: 'Use the Report button to report it.', configured: true, routeName: 'use the Report button in Outlook' });
+    // a bare string route (no object) carries no routeName
+    assert.equal(M.reportRouteFor(slotEpisode, { awareness: { reportRoute: 'Forward it to security.' } }).routeName, undefined);
+    // a non-string routeName is dropped
+    assert.equal(M.reportRouteFor(slotEpisode, {}, { awareness: { reportRoute: { text: 'x.', routeName: 42 } } }).routeName, undefined);
+});
+
 test('aw1: the debrief draws the route box under the Monday card, as plain text', () => {
     const h = host();
     const evil = '<img src=x onerror="window.pwned=1">';
@@ -166,6 +177,34 @@ test('aw1: a Report verdict names the configured route under the verdict line, a
     const h4 = host();
     renderDebrief(h4, { ...reported(), reportRoute: { heading: 'How to report here', text: 'Forward it to security.', configured: true }, onFinish() {} });
     assert.equal(h4.querySelector('.aw-card-route'), null, 'the generic box heading is not shown as a route name');
+});
+
+test('aw1: the short routeName is preferred over the heading, as plain text, with a fallback', () => {
+    const reported = () => ({ result: { answers: [{ id: 'p1', verdict: 'report', flags: [], isPhish: true }] }, set: set() });
+
+    // routeName wins over the heading, and hostile braces / script stay literal text
+    const evil = 'use the {Report} button <script>bad()</script>';
+    const h = host();
+    renderDebrief(h, { ...reported(), reportRoute: { heading: 'Reporting at Acme', text: 'Forward it.', configured: true, routeName: evil }, onFinish() {} });
+    const route = h.querySelector('.aw-card[data-message-id="p1"] .aw-card-route');
+    assert.ok(route, 'route line drawn from the short routeName');
+    assert.equal(route.textContent, `At work, that means: ${evil}.`);
+    assert.equal(h.querySelector('script'), null, 'routeName is plain text, never HTML');
+
+    // a routeName already ending in punctuation gets no second full stop
+    const h2 = host();
+    renderDebrief(h2, { ...reported(), reportRoute: { heading: 'x', text: 'y', configured: true, routeName: 'tell your manager straight away.' }, onFinish() {} });
+    assert.equal(h2.querySelector('.aw-card-route').textContent, 'At work, that means: tell your manager straight away.');
+
+    // no routeName: fall back to the organiser heading
+    const h3 = host();
+    renderDebrief(h3, { ...reported(), reportRoute: { heading: 'Reporting at Acme', text: 'Forward it.', configured: true }, onFinish() {} });
+    assert.equal(h3.querySelector('.aw-card-route').textContent, 'At work, that means: Reporting at Acme.');
+
+    // blank routeName falls back to the heading too
+    const h4 = host();
+    renderDebrief(h4, { ...reported(), reportRoute: { heading: 'Reporting at Acme', text: 'Forward it.', configured: true, routeName: '   ' }, onFinish() {} });
+    assert.equal(h4.querySelector('.aw-card-route').textContent, 'At work, that means: Reporting at Acme.');
 });
 
 // ── aw4: the shared rule of thumb (hook) ─────────────────────────────────────
