@@ -99,7 +99,7 @@ module BreakEscape
         mission.define_singleton_method(:load_mission_metadata) { meta }
         actual = [mission.result_global, mission.result_stage, mission.ending_check?, mission.timed?]
         assert_equal expected, actual, "mission.json #{meta.inspect}"
-        assert_equal expected[1], mission.stage
+        assert expected[1] == mission.stage, "stage alias for #{meta.inspect}"
         assert_equal expected[2], mission.ending_check
       end
     end
