@@ -2,7 +2,7 @@
 
 # awareness_e18_credential_attacks_at_scale — Scenario Graph Reference
 
-You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team: you don't attack one person, you go after the whole practice at once. Gather who works here and how their email addresses are built, make a word list out of the practice's own website, then try one likely password against every account in one go, and a stolen breach list across lots of services. Then it's your own seat: the alerts start arriving, and you tell the real ones from the fakes. Only that part is scored.
+You're on an authorised exercise at Merrin & Sallow Architects, a fictional London architecture practice. First you're on the red team: you don't go after one person, you go after the whole practice at once. Gather the staff and how their email addresses are built, build a word list from the practice's own website, then try one likely password against every account, and a stolen breach list across many services. Then it's your own seat: the alerts arrive, and you tell the real from the fake. Only that part is scored.
 
 ## Scenario Statistics
 

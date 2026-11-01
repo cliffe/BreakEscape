@@ -2,7 +2,7 @@
 
 # awareness_e16_insider_risk — Scenario Graph Reference
 
-You're on an authorised exercise at Quayholt Insurance, a fictional firm. A colleague is leaving on Friday, and the office is talking. Your job is not to solve anything: keep your access to yourself, report what's offered to you, notice what you actually see, and pass facts to the right person, fairly, including about the colleague everyone is whispering about. First you make this week's ordinary calls; then you see where each led. Then a short set of messages, and a fair way to raise a concern. Only the set is scored.
+You're on an authorised exercise at Quayholt Insurance, a fictional firm. A colleague is leaving on Friday and the office is talking. Your job is not to solve anything: keep your access to yourself, report what's offered to you, and pass on facts, not a verdict on anyone. First you make this week's calls and see where each led; then a fair way to raise a concern, and a short set of messages. Only the set is scored.
 
 ## Scenario Statistics
 

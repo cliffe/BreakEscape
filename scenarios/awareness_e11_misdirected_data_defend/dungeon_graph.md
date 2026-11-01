@@ -2,7 +2,7 @@
 
 # awareness_e11_misdirected_data_defend — Scenario Graph Reference
 
-You're on an authorised exercise at Carrholme Services, a fictional firm. You are covering the Care Laundry desk this morning. Items are waiting in the inbox: some are routine, some are requests or complaints that belong with someone else, and one or two were made to trick you. Sort them, and check or report anything that doesn't sit right. Reporting or checking when you are unsure is always fine and never marked down, though a real one does take a colleague's time to check.
+You're on an authorised exercise at Carrholme Services, a fictional firm, covering the Care Laundry desk this morning. Items are waiting in the inbox: some routine, some for someone else to handle, one or two made to trick you. Sort them, and check or report anything that doesn't sit right.
 
 ## Scenario Statistics
 

@@ -2,7 +2,7 @@
 
 # awareness_e13_ai_assistant — Scenario Graph Reference
 
-You're on an authorised exercise at Brightwell Foods, a fictional company. Brightwell has just switched on its own approved assistant, Brightwell Assist. First you're on the red team: write a supplier brief with a line hidden in it meant for the assistant to act on. Then you swap seats and use the assistant for real work, and handle what comes at you: a supplier email, a voicemail and a video call. Gwen Pritchard from IT is with you, and a test is coming, she'll say when. Only the second part is scored. Nothing you write leaves the game.
+You're on an authorised exercise at Brightwell Foods, a fictional company. Brightwell has just switched on its own approved assistant, Brightwell Assist. First you're on the red team: write a supplier brief for the assistant to read, plain or with a line hidden in it meant for the assistant to act on. Then you swap seats and use the assistant for real work, and handle what comes at you: supplier emails, voicemails and video calls. Gwen Pritchard from IT is with you, and a test is coming, she'll say when. Only the second part is scored. Nothing you write leaves the game.
 
 ## Scenario Statistics
 
@@ -98,7 +98,7 @@ flowchart TD
   classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
-  aim_red_team_aim{{"Plant the hidden instruction"}}
+  aim_red_team_aim{{"Write the supplier brief"}}
   aim_assistant_inbox_aim{{"Handle what comes at you"}}
 
 
@@ -130,7 +130,7 @@ flowchart TD
   node_start(("▶"))
   node_start --> training_room
 
-  aim_red_team_aim{{"Plant the hidden instruction"}}
+  aim_red_team_aim{{"Write the supplier brief"}}
   aim_assistant_inbox_aim{{"Handle what comes at you"}}
   training_room("Training Room")
 

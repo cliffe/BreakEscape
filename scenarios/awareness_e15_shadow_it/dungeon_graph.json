@@ -1,6 +1,10 @@
 {
   "scenario": "awareness_e15_shadow_it",
   "start_room": "training_room",
-  "nodes": [],
-  "edges": []
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
 }

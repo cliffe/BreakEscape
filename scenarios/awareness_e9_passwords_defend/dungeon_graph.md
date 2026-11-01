@@ -2,7 +2,7 @@
 
 # awareness_e9_passwords_defend — Scenario Graph Reference
 
-You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down: handle the prompts, choose stronger passwords, and don't hand anything to a message dressed up as IT. No real password is ever typed here.
+You're on an authorised exercise at Tarrowby Logistics, a fictional company. Someone has a password of yours, from a breach of a site you forgot you used, and your phone is buzzing with prompts. Lock the account down. No real password is ever typed here.
 
 ## Scenario Statistics
 

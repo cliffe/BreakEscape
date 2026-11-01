@@ -2,7 +2,7 @@
 
 # awareness_e16_insider_risk_defend — Scenario Graph Reference
 
-You're on an authorised exercise at Quayholt Insurance, a fictional firm, during a leaver's last week. Messages are waiting: an offer, a request to borrow a login, some sign-in prompts, a favour. Sort them, and learn to raise a concern as facts, not a verdict on anyone. Reporting or checking when you're unsure is always fine and never marked down. You are not being asked to investigate anyone.
+You're on an authorised exercise at Quayholt Insurance, a fictional firm, during a leaver's last week. First you learn to raise a concern as facts, not a verdict on anyone; then you sort a short set of messages: an offer, a request to borrow a login, some sign-in prompts, a favour. Reporting or checking when you're unsure is always fine, though a real message does take a colleague's time to check. You are not being asked to investigate anyone.
 
 ## Scenario Statistics
 

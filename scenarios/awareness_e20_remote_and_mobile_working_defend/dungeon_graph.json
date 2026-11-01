@@ -1,0 +1,10 @@
+{
+  "scenario": "awareness_e20_remote_and_mobile_working_defend",
+  "start_room": "training_room",
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
+}

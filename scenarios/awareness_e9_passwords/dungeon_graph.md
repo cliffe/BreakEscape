@@ -2,7 +2,7 @@
 
 # awareness_e9_passwords — Scenario Graph Reference
 
-You're on an authorised exercise at Tarrowby Logistics, a fictional haulier, in the depot office. First you're on the red team: look at what a colleague has put online, build a guess list from it, and watch how fast a reused password opens his work account. Then it's your own account under attack, and you lock it down. Only the lock-down part is scored.
+You're on an authorised exercise at Tarrowby Logistics, a fictional haulier, in the depot office. First you're on the red team: look at what a colleague has put online (click a line to note it), build a guess list from it, and watch how fast a reused password opens his work account. Then it's your own account under attack, and you lock it down. Only the lock-down part is scored.
 
 ## Scenario Statistics
 
