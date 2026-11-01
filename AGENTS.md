@@ -109,6 +109,7 @@ Calibrate first: put the first mission that's ready through the dialogue stage a
 - Ask for plans and long documents to be written **section by section with Edit**. A whole-file rewrite once got truncated and a plan was lost.
 - Keep prose at game-design level. Refer to casualty figures, attack steps and similar detail by citation rather than restating them, and keep briefs that touch the lab sheets or the VM's technical content short ("carry out approved item L1 in the log"). Long, detailed briefs on those topics have been stopped mid-run before; where the task is the VM's technical content itself, hand it to the model chosen for that (see "Choosing a model").
 - When parallel agents touch the same area, split them by file and tell each one to re-read any shared file just before editing it.
+- **Put the handover rule in every brief for multi-step work.** Subagents don't apply "Keep contexts short" on their own (it reads as orchestrator guidance), and in November 2026 single runs still reached 400k tokens. Add a line like: "When your context passes about 150k tokens (roughly 80 tool calls, fewer if you read many screenshots or large files), finish the step you are on, commit, write a handover note to `<path>` (done, open, in progress, files touched, commits, gotchas), report back and stop." Then start a fresh agent from that note. Prefer several short agents, one per stage or chunk, to one long one.
 
 ## Making judgements without asking
 
