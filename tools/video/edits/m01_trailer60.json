@@ -1234,9 +1234,9 @@
    "note": "minigame crescendo: flag station, 'flag{' typed",
    "framing": {
     "16:9": {
-     "cx": 0.4,
-     "cy": 0.3,
-     "zoom": 1.5
+     "cx": 0.3,
+     "cy": 0.25,
+     "zoom": 1.6
     },
     "9:16": {
      "cx": 0.4,
@@ -1277,9 +1277,9 @@
    "note": "minigame crescendo: Kali VM launcher",
    "framing": {
     "16:9": {
-     "cx": 0.6,
-     "cy": 0.3,
-     "zoom": 2
+     "cx": 0.5,
+     "cy": 0.27,
+     "zoom": 1.6
     },
     "9:16": {
      "cx": 0.6,
@@ -1301,7 +1301,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "2x crop keeps the 'kali' login post-it (lower left) out of frame"
+    "note": "1.6x crop (x .19-.81) keeps the 'kali' login post-it (lower left, x < .13) out of frame"
    }
   },
   {
