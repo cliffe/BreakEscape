@@ -239,7 +239,7 @@ The full list is under `_brandAdditions` in `awareness/e6/defend.json`.
 
 ## Additions from E2 and E4 defend (2026-10-22)
 - **E2 (Tarrowby):** the full list is under `_brandAdditions` in `awareness/e2/defend.json`. Roseanne Clarke is renamed Roseanne Wadsworth, because sis01 already uses Clarke. New cast: Tendai Moyo, Darius Petrauskas, Zsofia Szabo, Kevin Brannigan, Deborah Haldane, Thanh Nguyen, Ibrahim Diallo, Minjun Ahn and Bethany Hirst.
-- **E4 (Merrin & Sallow):** the full list is under `_brandAdditions` in `awareness/e4/defend.json`. New cast: Julian Sallow, Thandiwe Moyo, Oskar Berglund and Leah Abramson. New companies: Wrenfield Travel, Larkspur Travel, The Harbour Loft, Brackenmoor Homes and Abramson Planning.
+- **E4 (Merrin & Sallow):** the full list is under `_brandAdditions` in `awareness/e4/defend.json`. New cast: Julian Sallow, Thandiwe Moyo, Oskar Berglund and Leah Abramson. New companies: Wanderlost Travel, Larkspur Travel, The Harbour Loft, Brackenmoor Homes and Abramson Planning.
 - **Name clash:** E2 has Tendai Moyo and E4 has Thandiwe Moyo, so Moyo appears in both. They're different companies, but rename one if both episodes ship together.
 - **E2 (Tarrowby), attack persona:** Alex Rendell, the job applicant on the exercise account (`a.rendell.jobs@mailgrove.example`).
 
@@ -564,8 +564,8 @@ throwaway hosts, all `.example`. Everyone and every company is fictional; no hom
   portal), **Quayholt Protect** (security software), **Pagewrangle** (approved PDF converter in Quayholt
   Apps). Report route: the browser Report button, the "Report an incident" form, or the security team on
   extension 4444.
-- **Pagewright** (`pagewright.example`; advert look-alike `pagewright-download.example`) and **Ashby
-  Supplies** (`ashbysupplies.example`; look-alike `ashby-trade-login.example`): named in the core_08 module
+- **Pagewright** (`pagewright.example`; advert look-alike `pagewright-download.example`) and **Paperclip & Sons
+  Supplies** (`paperclipandsons.example`; look-alike `paperclip-trade-login.example`): named in the core_08 module
   docs, **not used in any E10 item**, carried only to keep the brand set aligned with the module material.
   The module docs wrote real TLDs (`.co.uk`/`.com`); swapped to `.example` per the awareness domain rule.
 
@@ -575,7 +575,7 @@ throwaway hosts, all `.example`. Everyone and every company is fictional; no hom
   fragment and brand set (which flagged them "from the E10 plan"), the core_08 module docs, and E10's own
   files. Intended reuse; E10 lands the portal shapes. No clash.
 - **`hauliernews`, `secure-alert.example`:** zero hits anywhere before E10. Clean.
-- **`pagewright-download`, `ashby-trade-login`, `ashbysupplies`:** hits only in the core_08 module docs
+- **`pagewright-download`, `paperclip-trade-login`, `paperclipandsons`:** hits only in the core_08 module docs
   (real-TLD), swapped to `.example` here.
 - **Niamh Doherty, Leila Nassar, Quayholt Apps, Quayholt Protect, Pagewrangle:** existing Quayholt cast and
   software slots (E3/E5 and the module docs). Intended reuse.
@@ -583,8 +583,8 @@ throwaway hosts, all `.example`. Everyone and every company is fictional; no hom
 ### Pre-ship web searches owed (companies/people as real businesses)
 
 Owed before release, per `00_README.md` §12 and P11: **Pagewright** (and `pagewright.example` /
-`pagewright-download.example`), **Fernside Catering** (and `fernside.example`), **Ashby Supplies** (and
-`ashbysupplies.example`), and **`hauliernews.example`**. "Leo Brennan" and "Fernside Catering" are already
+`pagewright-download.example`), **Fernside Catering** (and `fernside.example`), **Paperclip & Sons** (and
+`paperclipandsons.example`), and **`hauliernews.example`**. "Leo Brennan" and "Fernside Catering" are already
 on the standing pre-ship list from E19.
 
 ## Additions from E18 credential attacks at scale (2026-10-29)

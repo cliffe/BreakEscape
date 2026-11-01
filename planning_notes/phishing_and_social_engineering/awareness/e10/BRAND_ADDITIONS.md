@@ -16,25 +16,25 @@ Cast diversity across the mission's named/speaking people: Niamh (Northern Irish
 - **`hauliernews.example`** (`news.hauliernews.example`): a fictional industry-news site. Defend row 3 is a genuine news page carrying a fake "your browser is out of date" banner. New name; no repo hits.
 - **`secure-alert.example`, `addons.example`, `downloads.example`**: throwaway scam / store hosts for defend rows 5 (full-screen alarm), 6 (extension store) and 7 (dangerous download). Not real brands; generic.
 - **Software (teaching only, from the core_08/core_07 Quayholt slots):** **Quayholt Apps** (the staff software portal), **Quayholt Protect** (security software), **Pagewrangle** (the approved PDF converter in Quayholt Apps). Report route: the browser Report button, the "Report an incident" form, or the security team on extension 4444.
-- **Pagewright** (`pagewright.example`; advert look-alike `pagewright-download.example`) and **Ashby Supplies** (`ashbysupplies.example`; look-alike `ashby-trade-login.example`): named in the core_08 module docs. **Not used in any E10 item**; carried here only so the brand set stays aligned with the module material, and swapped to `.example` (see the domain-swap note). Drop them from the fold if the orchestrator prefers to list only names E10 ships.
+- **Pagewright** (`pagewright.example`; advert look-alike `pagewright-download.example`) and **Paperclip & Sons** (`paperclipandsons.example`; look-alike `paperclip-trade-login.example`): named in the core_08 module docs. **Not used in any E10 item**; carried here only so the brand set stays aligned with the module material, and swapped to `.example` (see the domain-swap note). Drop them from the fold if the orchestrator prefers to list only names E10 ships.
 
 ## Domain-swap note (open question 2)
 
-The core_08 module docs write real-TLD vendor domains: `pagewright.co.uk` / `pagewright-download.com`, `ashbysupplies.co.uk` / `ashby-trade-login.com`. The awareness product rule is every domain ends `.example`, so all are swapped to `.example` here (`pagewright.example`, `pagewright-download.example`, `ashbysupplies.example`, `ashby-trade-login.example`). **Confirm the swap and run the pre-ship web search** on Pagewright, Fernside Catering and Ashby Supplies.
+The core_08 module docs write real-TLD vendor domains: `pagewright.co.uk` / `pagewright-download.com`, `paperclipandsons.co.uk` / `paperclip-trade-login.com`. The awareness product rule is every domain ends `.example`, so all are swapped to `.example` here (`pagewright.example`, `pagewright-download.example`, `paperclipandsons.example`, `paperclip-trade-login.example`). **Confirm the swap and run the pre-ship web search** on Pagewright, Fernside Catering and Paperclip & Sons.
 
 ## Name-clash search (`grep -rn "<name>" scenarios planning_notes docs`, 2026-10-29)
 
 - **Leo Brennan / `leo.brennan@quayholt.example`**: already built in E19 (`awareness_e19_malware_and_updates`) and in BRAND_SET §3. Intended reuse; same address, no disagreement.
 - **Fernside / `orders.fernside.example` / `orders-fernside.example`**: hits are E19's fragment and BRAND_SET (which flags them as "from the E10 plan"), plus the core_08 module docs. Intended reuse; E10 lands the portal shapes.
 - **`hauliernews`, `secure-alert.example`**: zero hits anywhere. Clean for a new episode.
-- **`pagewright-download`, `ashby-trade-login`, `ashbysupplies`**: hits only in the core_08 module docs (real-TLD), swapped to `.example` here.
+- **`pagewright-download`, `paperclip-trade-login`, `paperclipandsons`**: hits only in the core_08 module docs (real-TLD), swapped to `.example` here.
 - **Niamh Doherty, Leila Nassar, Quayholt Apps, Quayholt Protect, Pagewrangle**: existing Quayholt cast and software slots (E3/E5 and the module docs); intended reuse.
 
 ## Pre-ship web search (required before release, orchestrator to run)
 
 - **Pagewright** and **pagewright.example** / **pagewright-download.example**
 - **Fernside Catering** and **fernside.example**
-- **Ashby Supplies** and **ashbysupplies.example**
+- **Paperclip & Sons** and **paperclipandsons.example**
 - **hauliernews.example** (industry-news site name)
 
 Everyone and every company is fictional; every address and domain ends `.example`.

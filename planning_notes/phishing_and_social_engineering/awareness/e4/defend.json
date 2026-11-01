@@ -9,7 +9,7 @@
       "Leah Abramson: planning consultant, Abramson Planning (abramsonplanning.example). 50s, British Jewish, north London. leah@abramsonplanning.example. Genuine in form B row 9"
     ],
     "companies": [
-      "Wrenfield Travel: the firm's travel agent, wrenfieldtravel.example; look-alike wrenfield-travel.example (added hyphen). Episode items 1 and 5",
+      "Wanderlost Travel: the firm's travel agent, wanderlosttravel.example; look-alike wanderlost-travel.example (added hyphen). Episode items 1 and 5",
       "Larkspur Travel: a second agent used for the Milan trip, larkspurtravel.example; look-alike larkspur-travel.example. Form A rows 2 and 3",
       "The Harbour Loft: an events venue where Julian is speaking, harbourloft.example; look-alike harbourloft-events.example (added word). Form B rows 2 and 3",
       "Brackenmoor Homes: a housing client, brackenmoorhomes.example",
@@ -19,7 +19,7 @@
       "Mail relays for the fail-but-fine rows (row 3 of each form): mailer.roomwright.example (Larkspur's booking system) and mailer.venuedesk.example (The Harbour Loft's)",
       "Shared freemail from BRAND_SET: mailgrove.example and hastypost.example"
     ],
-    "nameCheck": "Merrin, Carvalho, Chaudhry, Moyo, Berglund, Abramson, Wrenfield, Larkspur, Harbour Loft, Brackenmoor, Fennick and SwiftLane had no hits in scenarios, planning_notes, docs, story_design or the game JS on 2026-10-22, apart from BRAND_SET's own E4 proposal. Sallow appears only in BRAND_SET (and as a substring of 'toolsAllowed' in the OSINT code). Rejected after the check: Wychbourne (lab_tesseract_trials), Lindqvist (m09), Halden (sis03). Pre-ship: Merrin & Sallow, Wrenfield Travel, Larkspur Travel, The Harbour Loft and Brackenmoor Homes still need the real-business web search."
+    "nameCheck": "Merrin, Carvalho, Chaudhry, Moyo, Berglund, Abramson, Wanderlost, Larkspur, Harbour Loft, Brackenmoor, Fennick and SwiftLane had no hits in scenarios, planning_notes, docs, story_design or the game JS on 2026-10-22, apart from BRAND_SET's own E4 proposal. Sallow appears only in BRAND_SET (and as a substring of 'toolsAllowed' in the OSINT code). Rejected after the check: Wychbourne (lab_tesseract_trials), Lindqvist (m09), Halden (sis03). Pre-ship: Merrin & Sallow, Wanderlost Travel, Larkspur Travel, The Harbour Loft and Brackenmoor Homes still need the real-business web search."
   },
   "_voice": {
     "_use": "The voicemail items and their clips, for P7-Z1 and P7-Z2. Every voice is a fictional character's. A 'copied' clip is a style variant of that same character's voice (11 N7), never a real person's. Six clips in all: two in the episode set, two per check form.",
@@ -64,20 +64,20 @@
       "outcome": { "setGlobalPrefix": "episode_e4_exec_whaling_defend_", "passPercent": 0 },
       "messages": [
         {
-          "id": "e4_wrenfield_itinerary",
-          "from": { "name": "Wrenfield Travel", "address": "bookings@wrenfieldtravel.example" },
+          "id": "e4_wanderlost_itinerary",
+          "from": { "name": "Wanderlost Travel", "address": "bookings@wanderlosttravel.example" },
           "to": "tomas.carvalho@merrinsallow.example",
           "subject": "Itinerary: Catherine Merrin, Lisbon, Tuesday to Thursday",
           "time": "07:15",
-          "body": "Hello Tomás,\nHere is Catherine's itinerary for this week.\nTuesday: flight from London City at 09:55, landing in Lisbon at 12:40 local time.\nWednesday: speaking at the Lisbon Design Forum, 10:00.\nThursday: flight home at 18:20.\nThe hotel and flights are paid on the Merrin & Sallow account as usual, so there is nothing to pay.\nKind regards,\nMariam at Wrenfield Travel",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "wrenfieldtravel.example", "replyTo": "bookings@wrenfieldtravel.example" },
+          "body": "Hello Tomás,\nHere is Catherine's itinerary for this week.\nTuesday: flight from London City at 09:55, landing in Lisbon at 12:40 local time.\nWednesday: speaking at the Lisbon Design Forum, 10:00.\nThursday: flight home at 18:20.\nThe hotel and flights are paid on the Merrin & Sallow account as usual, so there is nothing to pay.\nKind regards,\nMariam at Wanderlost Travel",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "wanderlosttravel.example", "replyTo": "bookings@wanderlosttravel.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
             "whyFine": {
-              "pretextRelevant": "Booking Catherine's travel is part of your job, and Wrenfield is the agent the firm uses.",
+              "pretextRelevant": "Booking Catherine's travel is part of your job, and Wanderlost is the agent the firm uses.",
               "changed_bank_details": "It mentions payment only to say there's nothing to pay: the account is the usual one.",
-              "default": "It's from Wrenfield's real address, it matches a trip you booked, and it asks you for nothing. Notice how much of it is also on Catherine's public posts: the forum, the date, the flight time. Anyone can find those."
+              "default": "It's from Wanderlost's real address, it matches a trip you booked, and it asks you for nothing. Notice how much of it is also on Catherine's public posts: the forum, the date, the flight time. Anyone can find those."
             }
           }
         },
@@ -149,25 +149,25 @@
           }
         },
         {
-          "id": "e4_wrenfield_lookalike",
-          "from": { "name": "Wrenfield Travel Accounts", "address": "accounts@wrenfield-travel.example" },
+          "id": "e4_wanderlost_lookalike",
+          "from": { "name": "Wanderlost Travel Accounts", "address": "accounts@wanderlost-travel.example" },
           "to": "tomas.carvalho@merrinsallow.example",
           "subject": "Lisbon hotel: card payment declined, please pay by transfer today",
           "time": "14:20",
-          "body": "Dear Tomás,\nThe card payment for Ms Merrin's hotel in Lisbon was declined this morning. To keep the room, please pay the balance of £1,860 by bank transfer today.\nWe have moved to a new bank, so please use these details, not the ones on file:\nAccount name: Wrenfield Travel Ltd\nAccount number ending 0492\nKind regards,\nWrenfield Travel Accounts",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "bounce.wrenfield-travel.example", "replyTo": "accounts@wrenfield-travel.example" },
+          "body": "Dear Tomás,\nThe card payment for Ms Merrin's hotel in Lisbon was declined this morning. To keep the room, please pay the balance of £1,860 by bank transfer today.\nWe have moved to a new bank, so please use these details, not the ones on file:\nAccount name: Wanderlost Travel Ltd\nAccount number ending 0492\nKind regards,\nWanderlost Travel Accounts",
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "bounce.wanderlost-travel.example", "replyTo": "accounts@wanderlost-travel.example" },
           "truth": {
             "isPhish": true,
             "flags": ["lookalike_domain", "changed_bank_details", "senderTrust", "urgencyCalibrated"],
             "flagAlternatives": [["senderTrust", "lookalike_domain"]],
             "perFlagNote": {
-              "lookalike_domain": "This morning's itinerary came from wrenfieldtravel.example. This one is wrenfield-travel.example, with an added hyphen",
-              "changed_bank_details": "'Use these details, not the ones on file' is the commonest invoice-fraud move. The itinerary said everything was paid on the firm's account. The safe step is to ring Wrenfield on the number you already hold",
-              "senderTrust": "The name says Wrenfield, but the address is on wrenfield-travel.example, which isn't Wrenfield's",
+              "lookalike_domain": "This morning's itinerary came from wanderlosttravel.example. This one is wanderlost-travel.example, with an added hyphen",
+              "changed_bank_details": "'Use these details, not the ones on file' is the commonest invoice-fraud move. The itinerary said everything was paid on the firm's account. The safe step is to ring Wanderlost on the number you already hold",
+              "senderTrust": "The name says Wanderlost, but the address is on wanderlost-travel.example, which isn't Wanderlost's",
               "urgencyCalibrated": "'Pay the balance by bank transfer today' to keep the room is pressure to move the money before you can check the new account"
             },
             "ifTrusted": "£1,860 would go to an account the sender controls, and the hotel was already paid.",
-            "reportReply": "Thanks. Wrenfield say they sent nothing and the hotel is paid. The look-alike address has been blocked."
+            "reportReply": "Thanks. Wanderlost say they sent nothing and the hotel is paid. The look-alike address has been blocked."
           }
         }
       ]

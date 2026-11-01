@@ -56,7 +56,7 @@ Grouped by the company they touch. Every one is fictional, `.example`.
   (`marsden-holloway.example`, see §7), Fernside Catering (`fernside.example`), Northgate Audit
   (`northgate-audit.example`), Fenlow Managed IT (`fenlow.example`), Vanteq Systems (remote-support
   firm, impostor use), Marsden Holloway.
-- **Merrin & Sallow (E4/E13/E14/E18):** Wrenfield Travel (`wrenfieldtravel.example`), Larkspur
+- **Merrin & Sallow (E4/E13/E14/E18):** Wanderlost Travel (`wanderlosttravel.example`), Larkspur
   Travel (`larkspurtravel.example`), Larkmoor Travel (`larkmoortravel.example`), The Harbour Loft
   (`harbourloft.example`), Brackenmoor Homes (`brackenmoorhomes.example`), Abramson Planning
   (`abramsonplanning.example`), Fennick Summit (`fennicksummit.example`), Mossgate Cleaning

@@ -63,7 +63,7 @@ You need a free tool to shrink a large file before sending it. What's the right 
 
 ### C08-Q2 (LO1, LO2, single choice)
 
-You search for a supplier's website. The first result says "Sponsored" and its address is `ashby-trade-login.com`. The intranet's bookmark for the supplier is `ashbysupplies.co.uk`. What do you do?
+You search for a supplier's website. The first result says "Sponsored" and its address is `paperclip-trade-login.com`. The intranet's bookmark for the supplier is `paperclipandsons.co.uk`. What do you do?
 
 - A. Click the sponsored result: it's first. *Feedback: It's first because someone paid. That someone may not be the supplier.*
 - **B. Use the bookmark.** *Feedback: Right. Starting from a trusted place beats judging a search page.*
