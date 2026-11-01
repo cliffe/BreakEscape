@@ -2,7 +2,7 @@
 
 # ca18_credential_attacks_at_scale_defend — Scenario Graph Reference
 
-You're on an authorised exercise at Merrin & Sallow Architects, a fictional company. A campaign has swept the practice, and the alerts are arriving: your account locked, a new sign-in, a breach warning. Some are genuine and some are fakes built to catch you. Handle each one, and never type a password to 'check' or 'unlock' anything. No real password is ever typed here.
+You're on an authorised exercise at Merrin & Sallow Architects, a fictional company. Someone has run a password-guessing campaign across the whole practice, and now a wave of alerts is arriving: a lockout, a new sign-in, a breach warning. Some are genuine; some are fakes built to catch you.
 
 ## Scenario Statistics
 

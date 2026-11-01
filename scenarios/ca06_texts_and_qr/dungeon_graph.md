@@ -98,7 +98,7 @@ flowchart TD
   classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
-  aim_red_team_aim{{"Send the lookalike parking message"}}
+  aim_red_team_aim{{"Send the parking message in Facilities' name"}}
   aim_work_phone_aim{{"Check the work phone"}}
 
 
@@ -130,7 +130,7 @@ flowchart TD
   node_start(("▶"))
   node_start --> training_room
 
-  aim_red_team_aim{{"Send the lookalike parking message"}}
+  aim_red_team_aim{{"Send the parking message in Facilities' name"}}
   aim_work_phone_aim{{"Check the work phone"}}
   training_room("Training Room")
 

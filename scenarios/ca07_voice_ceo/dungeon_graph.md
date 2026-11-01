@@ -2,7 +2,7 @@
 
 # ca07_voice_ceo — Scenario Graph Reference
 
-Awareness episode E7, the cross-role finale. You're on an authorised exercise at Brightwell Foods, a fictional food manufacturer. First you're on the red team: research what's public about the chief executive, then script one voicemail in his voice that pushes accounts payable to release an urgent payment. Nobody judges how real it would sound. Then you swap seats and cover the finance office's phone and inbox, where a call like that lands. Only the inbox side is scored.
+Awareness episode E7, the cross-role finale. You're on an authorised exercise at Brightwell Foods, a fictional food manufacturer. First you're on the red team: research what's public about the chief executive, then write the email in his name that would go with a cloned-voice call, pushing accounts payable to release an urgent payment. Then you swap seats and cover the finance office's phone and inbox, where a call and an email like that land together. Only the inbox side is scored.
 
 ## Scenario Statistics
 
@@ -98,7 +98,7 @@ flowchart TD
   classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
-  aim_red_team_aim{{"Script the CEO voicemail"}}
+  aim_red_team_aim{{"Write the message for the cloned-voice call"}}
   aim_finance_line_aim{{"Cover the finance line"}}
 
 
@@ -130,7 +130,7 @@ flowchart TD
   node_start(("▶"))
   node_start --> training_room
 
-  aim_red_team_aim{{"Script the CEO voicemail"}}
+  aim_red_team_aim{{"Write the message for the cloned-voice call"}}
   aim_finance_line_aim{{"Cover the finance line"}}
   training_room("Training Room")
 

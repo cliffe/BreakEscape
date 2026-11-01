@@ -98,7 +98,7 @@ flowchart TD
   classDef critical  fill:#2a1500,stroke:#ffaa00,color:#ffdd88
   classDef start     fill:#003322,stroke:#00ffaa,color:#00ffaa
 
-  aim_acceptable_use_aim{{"Sort the can I moments"}}
+  aim_acceptable_use_aim{{"Sort the everyday moments"}}
 
 
   class aim_acceptable_use_aim aim
@@ -129,7 +129,7 @@ flowchart TD
   node_start(("▶"))
   node_start --> training_room
 
-  aim_acceptable_use_aim{{"Sort the can I moments"}}
+  aim_acceptable_use_aim{{"Sort the everyday moments"}}
   training_room("Training Room")
 
 

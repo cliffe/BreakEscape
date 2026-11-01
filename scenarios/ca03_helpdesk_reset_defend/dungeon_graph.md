@@ -2,7 +2,7 @@
 
 # ca03_helpdesk_reset_defend — Scenario Graph Reference
 
-Awareness episode E3, service desk only. You're in Leila Nassar's seat on the IT service desk at Quayholt Insurance, a fictional insurer. Four calls are waiting and a sign-in prompt has come up on your phone: help the real callers, and ring back or escalate anything that doesn't sit right.
+Awareness episode E3, service desk only. You're in Leila Nassar's seat on the IT service desk at Quayholt Insurance, a fictional insurer. Three calls are waiting and a sign-in prompt from overnight is still on your phone: help the real callers, and ring back or escalate anything that doesn't sit right.
 
 ## Scenario Statistics
 

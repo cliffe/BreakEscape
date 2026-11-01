@@ -1,6 +1,10 @@
 {
   "scenario": "ca00_first_play",
   "start_room": "training_room",
-  "nodes": [],
-  "edges": []
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
 }

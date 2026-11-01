@@ -1,6 +1,10 @@
 {
   "scenario": "ca10_downloads_and_fake_checks",
   "start_room": "training_room",
-  "nodes": [],
-  "edges": []
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
 }

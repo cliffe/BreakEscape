@@ -2,7 +2,7 @@
 
 # ca01_invoice_fraud_defend — Scenario Graph Reference
 
-Awareness episode E1, inbox only. You're covering the payments inbox at Brightwell Foods, a fictional food manufacturer, before the afternoon payment run. Five messages are waiting: sort them, and report or check anything that doesn't sit right.
+Awareness episode E1, inbox only. You're covering the payments inbox at Brightwell Foods, a fictional food manufacturer, before the afternoon payment run. Six messages are waiting: sort them, and report or check anything that doesn't sit right.
 
 ## Scenario Statistics
 

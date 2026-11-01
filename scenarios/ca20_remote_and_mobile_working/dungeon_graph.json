@@ -1,6 +1,10 @@
 {
   "scenario": "ca20_remote_and_mobile_working",
   "start_room": "training_room",
-  "nodes": [],
-  "edges": []
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
 }

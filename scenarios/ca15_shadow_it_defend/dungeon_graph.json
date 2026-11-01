@@ -1,6 +1,10 @@
 {
   "scenario": "ca15_shadow_it_defend",
   "start_room": "training_room",
-  "nodes": [],
-  "edges": []
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
 }

@@ -1,6 +1,10 @@
 {
   "scenario": "ca_annual_2027_defend",
   "start_room": "training_room",
-  "nodes": [],
-  "edges": []
+  "nodes": [
+
+  ],
+  "edges": [
+
+  ]
 }

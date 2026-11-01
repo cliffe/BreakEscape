@@ -2,7 +2,7 @@
 
 # ca20_remote_and_mobile_working — Scenario Graph Reference
 
-You're on an authorised exercise at Tarrowby Logistics, a fictional haulier. First you spend two days working away from the depot: a train, a café, a hotel, a morning at home. You make the everyday calls anyone makes on the road, then you see where each one led. After that you tell the safe public networks and sign-in pages from the look-alikes. Only that last part is scored. Nothing you tap is a real network, and no real password is ever typed.
+You're on an authorised exercise at Tarrowby Logistics, a fictional haulier. First you spend two days working away from the depot, and make five everyday calls on the road: on the train, in the café and its queue, and when a tablet goes missing. You make each call, then you see where it led. After that you sort the safe networks and pages from the look-alikes, a hotel's among them. Only that last part is scored. Nothing you tap is a real network, and no real password is ever typed.
 
 ## Scenario Statistics
 

@@ -2,7 +2,7 @@
 
 # ca14_social_media — Scenario Graph Reference
 
-You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. First you're on the red team: look at what one colleague, Dani Fenwick, has posted in public, pin what an attacker would use, then write one short message built from it. Then you swap sides: you spot the same tricks in a feed and an inbox, and close the gaps, on Dani's profile and your own. Only the inbox is scored.
+You're on an authorised exercise at Merrin & Sallow Architects, a fictional practice. First you play the attacker's side: look at what one colleague, Dani Fenwick, has posted in public, pin what an attacker would use, then write one short message built from it. Then you swap sides: you spot the same tricks in a feed and an inbox, and close the gaps, on Dani's profile. Only the inbox is scored.
 
 ## Scenario Statistics
 
