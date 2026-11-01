@@ -274,10 +274,10 @@ def check(pair, stage):
     else:
         # Imported names are not redeclared (the validator rejects the collision).
         extra['importGlobals'] = [
-            {'from': pre_mission, 'var': 'triage_pre_percent', 'as': 'triage_pre_percent', 'default': 0},
-            {'from': pre_mission, 'var': 'triage_pre_reportRate', 'as': 'triage_pre_reportRate', 'default': 0},
-            {'from': pre_mission, 'var': 'triage_pre_complete', 'as': 'triage_pre_complete', 'default': False},
-            {'from': pre_mission, 'completed': 'pre_check_completed'},
+            {'from': pre_mission, 'prefer': 'earliest', 'var': 'triage_pre_percent', 'as': 'triage_pre_percent', 'default': 0},
+            {'from': pre_mission, 'prefer': 'earliest', 'var': 'triage_pre_reportRate', 'as': 'triage_pre_reportRate', 'default': 0},
+            {'from': pre_mission, 'prefer': 'earliest', 'var': 'triage_pre_complete', 'as': 'triage_pre_complete', 'default': False},
+            {'from': pre_mission, 'prefer': 'earliest', 'completed': 'pre_check_completed'},
         ]
     host = HOSTS['graham' if pair == 'ab' else 'joanne']
     letters = pair.upper()
@@ -289,9 +289,9 @@ def check(pair, stage):
         aim = ('first_check_aim', 'Do the first check', 'Sort ten messages at the training kiosk.')
         task = ('finish_check', 'Finish the first check')
         display = awareness_deploy.check_title('pre', 'finance')
-        desc = (f"A check of about 8 to 10 minutes for finance staff, taken before the awareness episodes (pair {letters}). "
+        desc = ("A check of about 8 to 10 minutes for finance staff, taken before the awareness episodes. "
                 "Ten messages from the payments inbox of Brightwell Foods, a fictional company. The result is kept so the "
-                f"matching after-check (awareness_post_finance_{pair}) can show how the two compare.")
+                "matching final check can show how the two compare.")
         obs = 'A touch-screen kiosk with ten messages from a payments inbox, ready for the first check.'
         ending = success_screen('First check done', 'Your result is saved, ready for the second check to compare with.')
     else:
@@ -301,9 +301,9 @@ def check(pair, stage):
         aim = ('second_check_aim', 'Do the second check', 'Sort ten messages at the training kiosk.')
         task = ('finish_check', 'Finish the second check')
         display = awareness_deploy.check_title('post', 'finance')
-        desc = (f"A check of about 8 to 10 minutes for finance staff, taken after the awareness episodes (pair {letters}). "
-                "Ten new messages from the payments inbox of Brightwell Foods, a fictional company, matched to the "
-                f"first check (awareness_pre_finance_{pair}). The end screen compares the two results when the first check was finished.")
+        desc = ("A check of about 8 to 10 minutes for finance staff, taken after the awareness episodes. "
+                "Ten new messages from the payments inbox of Brightwell Foods, a fictional company, matched to your "
+                "starting check, and the end screen compares the two results once you have done it.")
         obs = 'A touch-screen kiosk with ten messages from a payments inbox, ready for the second check.'
         ending = success_screen('Second check done', 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.')
     ink_name = f"{host['id'].split('_')[0]}_{stage}"

@@ -246,7 +246,7 @@ CFG = {
     'host': 'graham',
     'cybok': [{'ka': 'HF', 'topic': 'Human Factors',
                'keywords': ['Security awareness', 'Phishing', 'Vishing', 'Annual assessment']}],
-    'name': 'Year-end review: spot it',
+    'name': 'Year End: the annual mixed edition',
     'brief': "You're on an authorised exercise: a fictional year-end edition. Eight messages from across the year, from three fictional companies, arrive by email, call, voicemail, text, sign-in prompt and web page. Some are real and some are scams. Check another way and report what doesn't sit right. Reporting when you're unsure is always fine and never marked down.",
     'endGoal': 'Work through the year-end messages at the training kiosk.',
     'aim': ('annual_edition_aim', 'Work through the year in review', 'Go through the eight messages at the training kiosk.'),

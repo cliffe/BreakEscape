@@ -447,10 +447,10 @@ def check(ekey, pair, stage):
     else:
         # Imported names are not redeclared (as the committed E1, E3 and E5 post shells).
         extra['importGlobals'] = [
-            {'from': pre_mission, 'var': 'triage_pre_percent', 'as': 'triage_pre_percent', 'default': 0},
-            {'from': pre_mission, 'var': 'triage_pre_reportRate', 'as': 'triage_pre_reportRate', 'default': 0},
-            {'from': pre_mission, 'var': 'triage_pre_complete', 'as': 'triage_pre_complete', 'default': False},
-            {'from': pre_mission, 'completed': 'pre_check_completed'},
+            {'from': pre_mission, 'prefer': 'earliest', 'var': 'triage_pre_percent', 'as': 'triage_pre_percent', 'default': 0},
+            {'from': pre_mission, 'prefer': 'earliest', 'var': 'triage_pre_reportRate', 'as': 'triage_pre_reportRate', 'default': 0},
+            {'from': pre_mission, 'prefer': 'earliest', 'var': 'triage_pre_complete', 'as': 'triage_pre_complete', 'default': False},
+            {'from': pre_mission, 'prefer': 'earliest', 'completed': 'pre_check_completed'},
         ]
     host = HOSTS[cfg['check_hosts'][pair]]
     letters = pair.upper()
@@ -463,9 +463,8 @@ def check(ekey, pair, stage):
         aim = ('first_check_aim', 'Do the first check', c['aim_desc'])
         task = ('finish_check', 'Finish the first check')
         display = awareness_deploy.check_title('pre', word)
-        desc = (f"A short check for {cfg['role_label']} at {company}, taken before the awareness episodes (pair {letters}). "
-                f"{c['items_pre']} The result is kept so the matching after-check (awareness_post_{word}_{pair}) "
-                "can show how the two compare.")
+        desc = (f"A short check for {cfg['role_label']} at {company}, taken before the awareness episodes. "
+                f"{c['items_pre']} The result is kept so the matching final check can show how the two compare.")
         obs = c['kiosk'].format(nth='first')
         conclusion = ('First check done', 'Your result is saved, ready for the second check to compare with.')
     else:
@@ -475,9 +474,8 @@ def check(ekey, pair, stage):
         aim = ('second_check_aim', 'Do the second check', c['aim_desc'])
         task = ('finish_check', 'Finish the second check')
         display = awareness_deploy.check_title('post', word)
-        desc = (f"A short check for {cfg['role_label']} at {company}, taken after the awareness episodes (pair {letters}). "
-                f"{c['items_post']} It is matched to the first check (awareness_pre_{word}_{pair}), and the end screen "
-                "compares the two results when the first check was finished.")
+        desc = (f"A short check for {cfg['role_label']} at {company}, taken after the awareness episodes. "
+                f"{c['items_post']} It is matched to your starting check, and the end screen compares the two results once you have done it.")
         obs = c['kiosk'].format(nth='second')
         conclusion = ('Second check done', 'Thanks for taking the time with it. If you also sat the earlier check, the results are shown side by side.')
     ink_name = f"{host['id'].split('_')[0]}_{stage}"
