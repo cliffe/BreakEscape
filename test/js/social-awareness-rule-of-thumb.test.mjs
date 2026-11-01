@@ -66,7 +66,7 @@ const STANDALONE_SHELLS = [
 const registered = [
   ...FULL_EPISODES,
   ...FULL_EPISODES.map((d) => `${d}_defend`),
-  ...CHECK_ROLES.flatMap((r) => ['pre', 'post'].flatMap((st) => ['ab', 'ba'].map((o) => `awareness_${st}_${r}_${o}`))),
+  ...CHECK_ROLES.flatMap((r) => ['pre', 'post'].flatMap((st) => ['ab', 'ba'].map((o) => `ca_${st}_${r}_${o}`))),
   ...STANDALONE_SHELLS,
 ].sort();
 
