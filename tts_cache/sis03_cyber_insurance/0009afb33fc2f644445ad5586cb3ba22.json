@@ -1,0 +1,13 @@
+{
+  "key": "0009afb33fc2f644445ad5586cb3ba22",
+  "npc": "eleanor_vance",
+  "text": "November 2025. Our underwriting team reviewed Albion's quarterly security reports. They saw the IT-to-OT segmentation work in progress. Deadline looming. Work not completed.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:31:55Z"
+}

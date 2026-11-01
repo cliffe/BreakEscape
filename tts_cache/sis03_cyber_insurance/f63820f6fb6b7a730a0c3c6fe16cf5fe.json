@@ -1,0 +1,13 @@
+{
+  "key": "f63820f6fb6b7a730a0c3c6fe16cf5fe",
+  "npc": "eleanor_vance",
+  "text": "W-03 is a breach. Whether it was inevitable or culpable — that's the argument.",
+  "voice": "Aoede",
+  "style": "Professional, authoritative claims manager. British accent. Measured and precise.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis03_cyber_insurance",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T01:23:00Z"
+}
