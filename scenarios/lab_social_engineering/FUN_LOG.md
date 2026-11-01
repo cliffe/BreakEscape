@@ -323,6 +323,14 @@ Release-readiness pass for the university launch. No scenario/ink/CSS/JS changes
   cases teach correctly. 0 blockers / 0 majors / 0 minors / 2 trivials.
 - **R22** (`playtests/R22.md`): scripted critical-path confirmation on a fresh game (358). 23/23 tasks,
   score 100, credits, `engagement_closed`. Deterministic, matches R21.
+- **R21 trivial fixes** (2026-11-01, data only): R21-1 the ledgerwell-hr look-alike payroll mail now
+  lists `senderTrust` as a scored flag (its From address is itself a look-alike), so reporting it and
+  ticking "the address doesn't match" credits the same as the office-suppiies typo-squat; both now
+  score 80/100 on that single tell (was 60 vs 80). R21-2 the careers-application phish (msg 5) gained a
+  `truth.reportLine` naming the real tell (the "portfolio" sign-in link on an unrelated domain) instead
+  of the generic "A report warns everyone else". Proven live on a keyless :3003 game (363): both phish
+  80/100 with the address tell caught, msg 5's new line rendered. No ink or voiced lines touched (125
+  TTS clips unchanged).
 
 ## Lab sheet audit
 Every room, object, NPC and mechanic the HLS sheet names matches the game as built; troubleshooting
