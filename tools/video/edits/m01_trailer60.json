@@ -346,10 +346,10 @@
    },
    "source": {
     "file": "t23_walk_kali.trimmed.mkv",
-    "in": 1.75,
-    "out": 3.75
+    "in": 0.95,
+    "out": 2.95
    },
-   "note": "the player walks up to the IT Audit Station (Kali), stops, and the VM launcher opens on the last frames (cue into the real-hacking clip)",
+   "note": "the player walks up to the IT Audit Station (Kali) and stands at it; ends before the VM launcher opens at 3.00 s (its screen shows the kali login post-it)",
    "framing": {
     "16:9": {
      "cx": 0.5,
