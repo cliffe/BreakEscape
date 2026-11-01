@@ -23,9 +23,9 @@ Time is in seconds on the timeline. Lifts in m01's music were at 12, 18, 26, 34 
 | 12.0 | 6.0 | Montage A | gameplay, hard cuts | lockpicking 1 s, phone chat 1.5 s, keypad with 3 non-answer digits 1.5 s, a server or lab set piece 1 s, a real tool (CyberChef) 1 s | cut |
 | 18.0 | 1.5 | Card | `card` | **Real / Hacking** | glitch |
 | 19.5 | 2.0 | Real hacking | gameplay, `source.type: clip` | **placeholder** (`placeholder: true`) until in-game VM capture exists | glitch |
-| 21.5 | 1.5 | Card | `card` | **Choices with / Consequences** | glitch |
+| 21.5 | 1.5 | Card | `card` | **Uncover / the Mystery** (introduces the NPC lines: what people say is mystery, not consequence) | glitch |
 | 23.0 | 12.5 | NPCs | gameplay, dialogue | three voiced NPC lines, 4.0 to 4.5 s each, portrait view with the game's own bar, hard cuts between them (Kevin, Maya, Sarah) | glitch, then cut |
-| 35.5 | 1.5 | Card | `card` | **Uncover / the Mystery** | **dissolve** (pinned) |
+| 35.5 | 1.5 | Card | `card` | **Choices with / Consequences** | **dissolve** (pinned) |
 | 37.0 | 4.5 | Montage B | gameplay | a second keypad 1.5 s (dissolve out of the card), then three 1 s walking shots with one NPC each | dissolve, then cut |
 | 41.5 | 1.5 | Card | `card` | **And Hold Back / The Entropy!** | glitch |
 | 43.0 | 2.5 | Minigame crescendo | gameplay, hard cuts | **one quick cut of every minigame type in the mission** (m01 v8: lockpick, key lock, briefcase contents, PC desktop, PIN pad, password screen, CyberChef, phone chat, flag station, Kali VM launcher), accelerating on the beat grid: 2 x 0.5 s, 4 x 0.25 s (8, 7, 8, 7 frames), 4 x about 0.125 s (4, 4, 4, 3 frames) = 75 frames. Shot audio at -10 dB. The antagonist's line starts under it (next row) | glitch, then cut |
@@ -34,7 +34,7 @@ Time is in seconds on the timeline. Lifts in m01's music were at 12, 18, 26, 34 
 
 Total 60.0 s. Cards are 1.5 s, in white Press Start 2P on the navy-to-purple gradient with the glitched mirrored reflection. The m01 cut shows the card text in two lines; keep lines short (about 12 characters per line at this size).
 
-**Card text pattern.** `Mission N / <name>`; `Real / Hacking` (only if the real-hacking slot exists, otherwise drop the card and its slot and give the time to montage A); `Choices with / Consequences` (only with at least two voiced NPC lines); `Uncover / the Mystery` (the exploration beat); a threat card in the mission's own words (m01: `And Hold Back / The Entropy!`). Do not write a generic "Your Mission" (the user's note: it is a mission trailer, name the mission).
+**Card text pattern.** `Mission N / <name>`; `Real / Hacking` (only if the real-hacking slot exists, otherwise drop the card and its slot and give the time to montage A); `Uncover / the Mystery` before the NPC lines (the user, m01 v8.4: NPC dialogue is not a consequence of the player's actions, so it is not introduced as one); `Choices with / Consequences` before the exploration montage; a threat card in the mission's own words (m01: `And Hold Back / The Entropy!`). Do not write a generic "Your Mission" (the user's note: it is a mission trailer, name the mission).
 
 ## Shot types and what each slot needs from the scout
 

@@ -4,7 +4,7 @@
  "title": "SAFETYNET: Licence to Hack, m01 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v8.4: the server-room shot at 16 s is gone; Real Hacking card at 16.0, walk up to the Kali station 2 s, then only this mission's Kali footage (Hydra and the SSH shell, slowed to 2 s; sqlmap and dirb are from other missions and are out). v8.3: Real Hacking section is now card, walk to the Kali station, hacking clip, CyberChef (the first CyberChef cut is gone from montage A); montage B drops its keypad, the chair walk is a walk to the north-west door that knocks a swivel chair (1.5 s); the crescendo's last cut is the launch device instead of the Kali launcher. v8.2: montage B's Kevin walk (the player bumped into him) replaced by a walk that pushes a swivel chair. v8: a minigame crescendo before Derek (ten hard cuts accelerating from 0.5 s to 3 frames over 2.5 s: lockpick, key lock, briefcase contents, PC desktop, PIN pad, password screen, CyberChef, phone chat, flag station, Kali VM launcher), with Derek's line starting under it (audio.pre 2.5 s) and his picture joining mid-line on a 3-frame hit. v7: closing shot reworked on the user's v6 note: the Hacktivity Labs -> Games logo (transparent SVGs, no plate) appears beside the spy on the clean laptop clip (assembles on the 52 s hit, Labs holds, morphs to Games on the 54 s hit, before the key press), the red hex curtain falls over it, and \"Play now\" and \"hacktivity.co.uk\" are drawn in white Press Start 2P with a dark outline in the curtain layer (uncovered as the red falls); no \"Play now\" before the curtain. v6: closing shot reworked (no logo plate: transparent SVG logos straight on the red curtain; \"Play now\" above the curtain; URL drawn in the curtain layer and uncovered as it falls; per-aspect closing layouts). v5: Derek re-recorded as t09_derek_v5 (lip-sync fix; cut re-derived), CTA reads Play now. v4: title holds 6 s with HaX's line J-cutting in under it, Mission 1 / First Contact card, wavy FX reflections, key-press-timed solid hex curtain with the Hacktivity Games logo in front of it (no separate end card)",
+ "status": "v8.5: the cards Uncover the Mystery (now 22.5 s, before the NPC lines) and Choices with Consequences (now 36.5 s) swap places (user: the NPC lines are not consequences of the player's actions). v8.4: the server-room shot at 16 s is gone; Real Hacking card at 16.0, walk up to the Kali station 2 s, then only this mission's Kali footage (Hydra and the SSH shell, slowed to 2 s; sqlmap and dirb are from other missions and are out). v8.3: Real Hacking section is now card, walk to the Kali station, hacking clip, CyberChef (the first CyberChef cut is gone from montage A); montage B drops its keypad, the chair walk is a walk to the north-west door that knocks a swivel chair (1.5 s); the crescendo's last cut is the launch device instead of the Kali launcher. v8.2: montage B's Kevin walk (the player bumped into him) replaced by a walk that pushes a swivel chair. v8: a minigame crescendo before Derek (ten hard cuts accelerating from 0.5 s to 3 frames over 2.5 s: lockpick, key lock, briefcase contents, PC desktop, PIN pad, password screen, CyberChef, phone chat, flag station, Kali VM launcher), with Derek's line starting under it (audio.pre 2.5 s) and his picture joining mid-line on a 3-frame hit. v7: closing shot reworked on the user's v6 note: the Hacktivity Labs -> Games logo (transparent SVGs, no plate) appears beside the spy on the clean laptop clip (assembles on the 52 s hit, Labs holds, morphs to Games on the 54 s hit, before the key press), the red hex curtain falls over it, and \"Play now\" and \"hacktivity.co.uk\" are drawn in white Press Start 2P with a dark outline in the curtain layer (uncovered as the red falls); no \"Play now\" before the curtain. v6: closing shot reworked (no logo plate: transparent SVG logos straight on the red curtain; \"Play now\" above the curtain; URL drawn in the curtain layer and uncovered as it falls; per-aspect closing layouts). v5: Derek re-recorded as t09_derek_v5 (lip-sync fix; cut re-derived), CTA reads Play now. v4: title holds 6 s with HaX's line J-cutting in under it, Mission 1 / First Contact card, wavy FX reflections, key-press-timed solid hex curtain with the Hacktivity Games logo in front of it (no separate end card)",
  "music": {
   "track": "Noir/Midnight Cipher Chase.mp3",
   "analysis": "midnight_cipher_chase.json",
@@ -468,7 +468,7 @@
    }
   },
   {
-   "id": "card_choices",
+   "id": "card_uncover",
    "type": "card",
    "duration": 1.5,
    "snap": true,
@@ -476,8 +476,8 @@
     "type": "glitch"
    },
    "text": [
-    "Choices with",
-    "Consequences"
+    "Uncover",
+    "the Mystery"
    ],
    "spoiler": {
     "reviewed": true,
@@ -660,7 +660,7 @@
    "note": "t13 17.6-22.1: line 17.695-21.926; previous line ended 17.265, next starts 22.894; influence toast fades in the first 0.5 s"
   },
   {
-   "id": "card_uncover",
+   "id": "card_choices",
    "type": "card",
    "duration": 1.5,
    "snap": true,
@@ -669,8 +669,8 @@
     "pin": true
    },
    "text": [
-    "Uncover",
-    "the Mystery"
+    "Choices with",
+    "Consequences"
    ],
    "spoiler": {
     "reviewed": true,
