@@ -26,11 +26,14 @@
 //                card (aw1, debrief.mondayCard "slot:customer_report_route");
 //   ruleOfThumb  { heading?, text }: one line shared by every debrief, above the Monday card (aw4);
 //   teamSize     the number of people on the learner's team, for the team line (aw6).
+// strings.habitLine (optional, launch pick 2026-11-01): a short per-episode habit line drawn as
+// a plain paragraph (.aw-habit-line) right under the shared rule-of-thumb box, for episodes whose
+// lesson is not an incoming message (E15, E17, E20, E11). Absent, nothing is drawn.
 // The team line (aw6) says how many phish the learner reported or checked by another route
 // ("kept the team safe"); it shows only when that is at least one, and never counts misses.
 // getState() -> { items: number, mondayCard: boolean, noBlame: boolean,
 //                 conceptPanel: boolean, voicePanel: boolean, reportRoute: 'configured' |
-//                 'generic' | null, ruleOfThumb: boolean, teamProtected: number | null,
+//                 'generic' | null, ruleOfThumb: boolean, habitLine?: true, teamProtected: number | null,
 //                 genuine: { trusted, checked, flagged } | null }.
 // The real items (disc_visible) follow the cards: the real ones trusted, what made each one
 // treated as a phish safe, the cost of a false alarm and why both halves matter (buildGenuine).
@@ -603,6 +606,12 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
     // aw4: one rule of thumb, the same in every debrief of a deployment.
     const rule = isObj(ruleOfThumb) && isStr(ruleOfThumb.text) ? ruleOfThumb : null;
     if (rule) root.appendChild(textBox('aside', 'aw-rule', rule.heading || 'The habit to keep', rule));
+    // Launch pick (2026-11-01): an optional per-episode habit line beside the shared rule of
+    // thumb, for episodes whose lesson is not an incoming message (E15, E17, E20, E11), where
+    // the shared money-and-codes line reads off-topic. Opt-in: set strings.habitLine on just
+    // those episodes; absent, nothing is drawn and the shared line stands alone as before.
+    const habit = isObj(strings) && isStr(strings.habitLine) ? strings.habitLine : null;
+    if (habit) root.appendChild(el('p', 'aw-habit-line', habit));
 
     const monday = el('aside', 'aw-monday', str(strings, 'mondayCard'));
     monday.setAttribute('aria-label', 'One thing to do on Monday');
@@ -642,7 +651,7 @@ export function renderDebrief(container, { result, set, strings = {}, variant = 
                 ...(concernShown ? { concernRecap: concernShown.state } : {}),
                 ...(Array.isArray(conceptRaw) ? { conceptPanels: conceptList.length } : {}),
                 reportRoute: route ? (route.configured === true ? 'configured' : 'generic') : null,
-                ruleOfThumb: !!rule, teamProtected: teamText ? team : null,
+                ruleOfThumb: !!rule, ...(habit ? { habitLine: true } : {}), teamProtected: teamText ? team : null,
                 genuine: genuine ? { trusted: genuine.trusted, checked: genuine.checked, flagged: genuine.flagged } : null };
         }
     };

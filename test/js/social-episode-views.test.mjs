@@ -207,6 +207,28 @@ test('debrief (Cut A): a card only for items got wrong, plus the Monday card and
     assert.equal(finished, 1);
 });
 
+test('debrief: strings.habitLine draws a per-episode habit line under the shared rule of thumb (launch pick 2026-11-01)', () => {
+    const h = host();
+    const rule = { heading: 'The habit to keep', text: 'Stop and check it yourself through a route you already trust.' };
+    const habit = 'When the official way is too slow, tell IT rather than build your own way round it.';
+    const d = renderDebrief(h, { result: result(), set: set(), strings: { mondayCard: 'On Monday.', habitLine: habit }, ruleOfThumb: rule, variant: 'full', onFinish() {} });
+    const line = h.querySelector('.aw-habit-line');
+    assert.ok(line, 'the habit line is drawn');
+    assert.equal(line.textContent, habit);
+    // it sits below the shared rule box, not above it
+    const ruleBox = h.querySelector('.aw-rule');
+    assert.ok(ruleBox && (ruleBox.compareDocumentPosition(line) & 0x04), 'the habit line follows the rule box');
+    assert.equal(d.getState().habitLine, true);
+});
+
+test('debrief: no strings.habitLine leaves the shared line alone and getState has no habitLine key', () => {
+    const h = host();
+    const rule = { heading: 'The habit to keep', text: 'Check it yourself.' };
+    const d = renderDebrief(h, { result: result(), set: set(), strings: { mondayCard: 'On Monday.' }, ruleOfThumb: rule, variant: 'full', onFinish() {} });
+    assert.equal(h.querySelector('.aw-habit-line'), null, 'no habit line when strings.habitLine is unset');
+    assert.ok(!('habitLine' in d.getState()), 'getState omits habitLine when unset');
+});
+
 test('debrief (Cut A): everything right shows one short line and no cards', () => {
     const h = host();
     const allRight = {
