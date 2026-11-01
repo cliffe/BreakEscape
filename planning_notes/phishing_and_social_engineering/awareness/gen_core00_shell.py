@@ -70,14 +70,25 @@ def clean_set(sets, set_id, stage=None, comparison=None):
     return s
 
 
+# Hosts that now have their own committed sprite art (v2 pipeline, 2026-11-01);
+# these emit their own key, others keep the shared generic placeholder sprite.
+OWN_ART_HOSTS = {
+    'anjali_rao', 'niamh_doherty', 'darren_price', 'julian_sallow', 'jun_watanabe',
+    'graham_whitfield', 'adaeze_okafor', 'fatima_begum', 'thandiwe_moyo', 'chidi_okeke',
+    'agnieszka_duda', 'yasmin_chaudhry', 'joanne_pell', 'sofia_marchetti',
+    'ibrahim_diallo', 'lerato_dlamini',
+}
+
+
 def host_npc(host, done_global, task_id, ink_path):
-    key = host['sprite']
+    key = host['id'] if host['id'] in OWN_ART_HOSTS else host['sprite']
+    sheet = host['id'] if host['id'] in OWN_ART_HOSTS else f"{host['sprite']}_v2"
     return {
         'id': host['id'],
         'displayName': host['displayName'],
         'npcType': 'person',
         'position': copy.deepcopy(training_room.HOST_POSITION),
-        'spriteSheet': f'{key}_v2',
+        'spriteSheet': sheet,
         'spriteTalk': f'assets/characters/{key}_talk.png',
         'spriteVisemes': f'assets/characters/{key}_visemes.png',
         'storyPath': ink_path,
