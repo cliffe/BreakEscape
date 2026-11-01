@@ -11,3 +11,11 @@ Stand-in for the "Real Hacking" section until in-game VM capture exists.
 - Not redacted, for the record: the CyberChef shot shows the ROT13 input/output "Password reminder: anniversary. You know the date." (a puzzle hint, not an answer).
 - Ffmpeg filter used: `fps=30,scale=1920:1080:flags=lanczos`, then crop/pixelate/overlay of the box region.
 - Edit lists mark it `placeholder: true` (lint lists it; `--final` refuses it).
+
+## real_hacking_hydra_slow.mp4
+
+The m01 trailer's real-hacking stand-in from v8.4 on: only this mission's footage (the user: Hydra and the shell are m01; sqlmap and dirb are other missions).
+
+- Source: the same old-trailer file, 19.533 s to 20.800 s (76 frames at 60 fps: Hydra's result and the SSH shell), cut where the CyberChef shot begins.
+- The same mosaic box as above (160x32 px at x 560, y 480, 10x2 blocks) over the whole clip; the password stays inside it as the terminal drifts (checked on frames 0, 30, 48, 59).
+- Slowed to 2.0 s (setpts x1.579) and resampled to 30 fps, so all 60 output frames are distinct source frames; 1920x1080, H.264 crf 18, no audio.
