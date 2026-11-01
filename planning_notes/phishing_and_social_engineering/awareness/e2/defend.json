@@ -4,7 +4,7 @@
     "_use": "For BRAND_SET.md section 3 (Tarrowby Logistics). Fatima Begum, Colin Mather and Jun Watanabe are used as proposed. Roseanne Clarke is renamed Roseanne Wadsworth: 'Clarke' is already a sis01 character (Amy Clarke). Every surname below was checked against scenarios/, planning_notes/ and docs/ on 2026-10-22 and is used nowhere else.",
     "cast": [
       "Roseanne Wadsworth (was Roseanne Clarke): agency recruiter at Kettlewick Talent, roseanne.wadsworth@kettlewick.example. 40s, Black Caribbean British. Genuine in the episode (row 1) and form B row 7; impersonated on the look-alike domain kettlewick-talent.example in form A row 6 (C2-M6)",
-      "Tendai Moyo: candidate for warehouse supervisor (nights), tendai.moyo@lintbox.example. 30s, Zimbabwean-British, ten years in a supermarket distribution centre. Genuine PDF CV in the episode",
+      "Tendai Shava: candidate for warehouse supervisor (nights), tendai.shava@lintbox.example. 30s, Zimbabwean-British, ten years in a supermarket distribution centre. Genuine PDF CV in the episode",
       "Darius Petrauskas: candidate for HGV driver (Class 1), darius.petrauskas@lintbox.example. 40s, Lithuanian, in Wakefield since 2009. Genuine Word CV in the episode",
       "Zsofia Szabo: candidate for forklift driver (nights), zsofia.szabo@lintbox.example. 30s, Hungarian. Genuine Word CV in form A row 3",
       "Kevin Brannigan: operations manager at Dewsbury Cold Store (dewsburycoldstore.example), a former employer giving a reference. 60s, Irish-born, in Yorkshire forty years. Genuine in form B row 3",
@@ -115,13 +115,13 @@
         {
           "id": "e2_cv_pdf",
           "_note": "The safe version of the row before: a real application with the CV actually attached.",
-          "from": { "name": "Tendai Moyo", "address": "tendai.moyo@lintbox.example" },
+          "from": { "name": "Tendai Shava", "address": "tendai.shava@lintbox.example" },
           "to": "jobs@tarrowby.example",
           "subject": "Application: warehouse supervisor (nights)",
           "time": "09:30",
-          "body": "Dear Fatima,\nI saw Tarrowby's post asking for CVs for the night supervisor role, and I'd like to apply. I've run a night shift of twenty pickers at a supermarket distribution centre for the last four years. My CV is attached as a PDF.\nI'm free for interview any weekday.\nKind regards,\nTendai Moyo",
-          "attachments": [ { "id": "cv", "label": "Tendai_Moyo_CV.pdf", "kind": "pdf" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "tendai.moyo@lintbox.example" },
+          "body": "Dear Fatima,\nI saw Tarrowby's post asking for CVs for the night supervisor role, and I'd like to apply. I've run a night shift of twenty pickers at a supermarket distribution centre for the last four years. My CV is attached as a PDF.\nI'm free for interview any weekday.\nKind regards,\nTendai Shava",
+          "attachments": [ { "id": "cv", "label": "Tendai_Shava_CV.pdf", "kind": "pdf" } ],
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "tendai.shava@lintbox.example" },
           "truth": {
             "isPhish": false,
             "flags": [],
