@@ -1,0 +1,13 @@
+{
+  "key": "e8e6fae3e93a86e50def89bd5fe47726",
+  "npc": "zainab_hussain",
+  "text": "The kiosk has the networks and pages you meet on the road. Connect, report, or ask the venue first. A page wanting your work password is a trap. Nothing's real.",
+  "voice": "Achernar",
+  "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e20_remote_and_mobile_working_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:00Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "3b1d1939e5adad5f829317fd095506b6",
+  "npc": "joanne_pell",
+  "text": "All saved. Thanks for sticking with it.",
+  "voice": "Zephyr",
+  "style": "Brightwell's learning and development coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_post_finance_ba",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:24Z"
+}

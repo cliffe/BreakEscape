@@ -1,0 +1,13 @@
+{
+  "key": "958b8bab580d042cb41f40031df835b1",
+  "npc": "thandiwe_moyo",
+  "text": "Both seats done, thanks.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e4_exec_whaling",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:19Z"
+}

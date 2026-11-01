@@ -1,0 +1,13 @@
+{
+  "key": "1954bf44a3ebacf20573a84671b98664",
+  "npc": "fatima_begum",
+  "text": "Welcome to the Tarrowby exercise. Start at the kiosk: research the vacancy and the recruiter, send one application as the red team, then swap seats and cover the recruitment inbox.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e2_cv_lures",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:22Z"
+}

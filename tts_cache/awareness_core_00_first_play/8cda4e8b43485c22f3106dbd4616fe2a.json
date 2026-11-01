@@ -1,0 +1,13 @@
+{
+  "key": "8cda4e8b43485c22f3106dbd4616fe2a",
+  "npc": "anjali_rao",
+  "text": "That's you set. Start your first episode whenever you're ready, and report anything that doesn't sit right.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_core_00_first_play",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:17:43Z"
+}

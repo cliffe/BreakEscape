@@ -1,0 +1,13 @@
+{
+  "key": "01e2127ca99f87b564f4767ea6b60236",
+  "npc": "agnieszka_duda",
+  "text": "Your message has gone over to accounts payable. Now take the other seat at the kiosk and cover the finance line the way a call like that would land.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e7_voice_ceo",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:36Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "f5e5a6812c849d5edc06fdf7f925fcba",
+  "npc": "chidi_okeke",
+  "text": "Any time.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e6_texts_and_qr_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:26Z"
+}

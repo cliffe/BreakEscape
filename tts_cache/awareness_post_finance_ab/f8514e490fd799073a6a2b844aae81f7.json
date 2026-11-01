@@ -1,0 +1,13 @@
+{
+  "key": "f8514e490fd799073a6a2b844aae81f7",
+  "npc": "graham_whitfield",
+  "text": "Right you are.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind; a neutral proctor for the year-end edition. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_post_finance_ab",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:20Z"
+}

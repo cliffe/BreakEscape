@@ -1,0 +1,13 @@
+{
+  "key": "adcdb78d16d45084d8c58aaaee1e6c0c",
+  "npc": "joanne_pell",
+  "text": "Hi again. Ten new messages on the kiosk for the last check. If you did the first one, you'll see both results side by side.",
+  "voice": "Zephyr",
+  "style": "Brightwell's learning and development coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_post_finance_ba",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:28Z"
+}

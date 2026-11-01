@@ -1,0 +1,13 @@
+{
+  "key": "648272d3b38d1d1a5411bb15a43b298a",
+  "npc": "lerato_dlamini",
+  "text": "You're back. Ten fresh items on the kiosk, the same idea as the first check. The end screen lines this one up against the one you did before.",
+  "voice": "Gacrux",
+  "style": "Tarrowby's health and safety adviser, in her 30s, confident and direct; runs the depot toolbox talks. Speak with a consistent South African accent from Durban throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_post_mobile_ab",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:52Z"
+}

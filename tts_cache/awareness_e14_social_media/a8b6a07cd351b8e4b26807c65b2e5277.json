@@ -1,0 +1,13 @@
+{
+  "key": "a8b6a07cd351b8e4b26807c65b2e5277",
+  "npc": "julian_sallow",
+  "text": "The fix is a setting and a pause, not shame. Nobody's in trouble for having posted them.",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e14_social_media",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:17:48Z"
+}

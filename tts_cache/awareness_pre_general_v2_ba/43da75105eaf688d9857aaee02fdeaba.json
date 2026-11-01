@@ -1,0 +1,13 @@
+{
+  "key": "43da75105eaf688d9857aaee02fdeaba",
+  "npc": "darren_price",
+  "text": "Darren here, I run the service desk. Quick check on the kiosk before the training: ten items from a Quayholt inbox. Just do what you'd normally do.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_pre_general_v2_ba",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:06Z"
+}

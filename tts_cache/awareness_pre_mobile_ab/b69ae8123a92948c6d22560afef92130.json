@@ -1,0 +1,13 @@
+{
+  "key": "b69ae8123a92948c6d22560afef92130",
+  "npc": "lerato_dlamini",
+  "text": "Good, that's your before check logged. We'll run the same kind of check after the training and line the two up.",
+  "voice": "Gacrux",
+  "style": "Tarrowby's health and safety adviser, in her 30s, confident and direct; runs the depot toolbox talks. Speak with a consistent South African accent from Durban throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_pre_mobile_ab",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:07Z"
+}

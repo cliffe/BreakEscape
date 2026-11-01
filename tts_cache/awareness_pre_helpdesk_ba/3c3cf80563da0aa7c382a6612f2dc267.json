@@ -1,0 +1,13 @@
+{
+  "key": "3c3cf80563da0aa7c382a6612f2dc267",
+  "npc": "sofia_marchetti",
+  "text": "First check saved. There's a matching one after the training, and you'll see how they compare.",
+  "voice": "Despina",
+  "style": "Quayholt's HR adviser, in her 30s, warm and approachable; second-generation Italian-British. Speak with a consistent southern English accent with a light Italian-British lilt throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_pre_helpdesk_ba",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:27Z"
+}

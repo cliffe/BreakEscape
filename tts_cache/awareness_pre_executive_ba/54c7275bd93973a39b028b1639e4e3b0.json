@@ -1,0 +1,13 @@
+{
+  "key": "54c7275bd93973a39b028b1639e4e3b0",
+  "npc": "julian_sallow",
+  "text": "That's your first check recorded. There's a second after the training, and you'll see how the two stand together.",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_pre_executive_ba",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:09Z"
+}

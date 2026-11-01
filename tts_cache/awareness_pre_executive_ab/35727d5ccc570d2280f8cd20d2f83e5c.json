@@ -1,0 +1,13 @@
+{
+  "key": "35727d5ccc570d2280f8cd20d2f83e5c",
+  "npc": "yasmin_chaudhry",
+  "text": "Hello. Before the training there's a short check on the kiosk: ten emails and voicemails of the kind a PA gets. Do what you'd normally do with them.",
+  "voice": "Laomedeia",
+  "style": "Merrin & Sallow's finance controller, in her 40s, measured and precise; the person a PA should ring about money. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_pre_executive_ab",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:00Z"
+}

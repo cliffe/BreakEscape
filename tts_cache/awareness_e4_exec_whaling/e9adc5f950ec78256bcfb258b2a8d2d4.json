@@ -1,0 +1,13 @@
+{
+  "key": "e9adc5f950ec78256bcfb258b2a8d2d4",
+  "npc": "thandiwe_moyo",
+  "text": "Your email has gone to Tomás. Now take his seat at the kiosk and work the inbox the way it lands on a travel day.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e4_exec_whaling",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:29Z"
+}

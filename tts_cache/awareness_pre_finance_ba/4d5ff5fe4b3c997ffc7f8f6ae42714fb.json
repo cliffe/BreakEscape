@@ -1,0 +1,13 @@
+{
+  "key": "4d5ff5fe4b3c997ffc7f8f6ae42714fb",
+  "npc": "joanne_pell",
+  "text": "Hi, thanks for coming. First, a quick check on the kiosk: ten payments inbox messages. Treat them as you would on a normal day.",
+  "voice": "Zephyr",
+  "style": "Brightwell's learning and development coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_pre_finance_ba",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:39Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "31967461f5fcdd793f25e143d8b55433",
+  "npc": "graham_whitfield",
+  "text": "Welcome to the year-end edition. It's a mixed run of this year's messages, across a few channels and a few companies.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind; a neutral proctor for the year-end edition. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_core_17_annual_2027_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:03Z"
+}

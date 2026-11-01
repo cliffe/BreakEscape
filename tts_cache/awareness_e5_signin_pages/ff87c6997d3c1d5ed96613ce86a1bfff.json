@@ -1,0 +1,13 @@
+{
+  "key": "ff87c6997d3c1d5ed96613ce86a1bfff",
+  "npc": "niamh_doherty",
+  "text": "Your email with the link has gone to Hana. Now take the other seat and check the pages that land behind links like yours.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e5_signin_pages",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:21:02Z"
+}

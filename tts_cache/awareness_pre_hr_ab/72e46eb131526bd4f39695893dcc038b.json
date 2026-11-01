@@ -1,0 +1,13 @@
+{
+  "key": "72e46eb131526bd4f39695893dcc038b",
+  "npc": "jun_watanabe",
+  "text": "No bother.",
+  "voice": "Puck",
+  "style": "Tarrowby's HR assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_pre_hr_ab",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:48Z"
+}

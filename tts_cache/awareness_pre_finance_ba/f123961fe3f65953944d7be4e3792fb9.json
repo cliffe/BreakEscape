@@ -1,0 +1,13 @@
+{
+  "key": "f123961fe3f65953944d7be4e3792fb9",
+  "npc": "joanne_pell",
+  "text": "Done, and saved. There's a second check after the training, so you can see what changed.",
+  "voice": "Zephyr",
+  "style": "Brightwell's learning and development coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_pre_finance_ba",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:35Z"
+}

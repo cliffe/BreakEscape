@@ -1,0 +1,13 @@
+{
+  "key": "6705b43328d646df6896e2921ce14f5f",
+  "npc": "nilesh_solanki",
+  "text": "Nothing you touch here is a real password.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e9_passwords",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:13Z"
+}

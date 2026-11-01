@@ -1,0 +1,13 @@
+{
+  "key": "695b80e2c1e9b7e518264f5ee2fca6d3",
+  "npc": "yasmin_chaudhry",
+  "text": "That's your first check saved. You'll take the second after the training, and the two get compared.",
+  "voice": "Laomedeia",
+  "style": "Merrin & Sallow's finance controller, in her 40s, measured and precise; the person a PA should ring about money. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_pre_executive_ab",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:17:56Z"
+}

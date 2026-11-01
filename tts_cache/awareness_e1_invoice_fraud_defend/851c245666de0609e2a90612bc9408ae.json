@@ -1,0 +1,13 @@
+{
+  "key": "851c245666de0609e2a90612bc9408ae",
+  "npc": "adaeze_okafor",
+  "text": "Any time.",
+  "voice": "Gacrux",
+  "style": "Brightwell's finance manager, in her 40s, who came up through accounts payable, warm and direct. Speak with a consistent British accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e1_invoice_fraud_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:13Z"
+}

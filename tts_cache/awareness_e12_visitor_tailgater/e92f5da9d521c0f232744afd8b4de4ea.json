@@ -1,0 +1,13 @@
+{
+  "key": "e92f5da9d521c0f232744afd8b4de4ea",
+  "npc": "delphine_reception",
+  "text": "Right, bear with me a second.",
+  "voice": "Despina",
+  "style": "Merrin & Sallow's front-of-house coordinator, in her 30s, poised and polite under a little pressure at the desk. Speak with a consistent southern English accent with a light Mediterranean lilt throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:51Z"
+}

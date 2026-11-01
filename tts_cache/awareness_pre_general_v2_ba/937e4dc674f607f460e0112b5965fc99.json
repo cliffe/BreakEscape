@@ -1,0 +1,13 @@
+{
+  "key": "937e4dc674f607f460e0112b5965fc99",
+  "npc": "darren_price",
+  "text": "First check's saved. You'll do another afterwards and we'll see how the two compare.",
+  "voice": "Orus",
+  "style": "Quayholt's security awareness lead, in his 50s, measured and dry. Speak with a consistent Bristol and West Country accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_pre_general_v2_ba",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:01Z"
+}

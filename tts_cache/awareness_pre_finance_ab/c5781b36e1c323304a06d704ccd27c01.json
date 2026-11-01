@@ -1,0 +1,13 @@
+{
+  "key": "c5781b36e1c323304a06d704ccd27c01",
+  "npc": "graham_whitfield",
+  "text": "That's your first check saved. You'll do another after the training, and see how the two compare.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind; a neutral proctor for the year-end edition. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_pre_finance_ab",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:21Z"
+}

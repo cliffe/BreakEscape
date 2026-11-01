@@ -1,0 +1,13 @@
+{
+  "key": "645bdfd3facba089ba2f333aa5bd3a71",
+  "npc": "ama_owusu",
+  "text": "That's both sides done. A different password for every account, not a word off the website, kept in a manager, is what breaks the spray.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e18_credential_attacks_at_scale",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:53Z"
+}

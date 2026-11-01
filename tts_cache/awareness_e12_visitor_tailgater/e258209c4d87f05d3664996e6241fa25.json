@@ -1,0 +1,13 @@
+{
+  "key": "e258209c4d87f05d3664996e6241fa25",
+  "npc": "lorna_easton",
+  "text": "Any time.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:12Z"
+}

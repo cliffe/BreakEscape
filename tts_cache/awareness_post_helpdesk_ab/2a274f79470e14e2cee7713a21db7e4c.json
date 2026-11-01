@@ -1,0 +1,13 @@
+{
+  "key": "2a274f79470e14e2cee7713a21db7e4c",
+  "npc": "anjali_rao",
+  "text": "Welcome back. Ten fresh items on the kiosk, same idea as before. If you did the first check, the end screen shows how they compare.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_post_helpdesk_ab",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:04Z"
+}

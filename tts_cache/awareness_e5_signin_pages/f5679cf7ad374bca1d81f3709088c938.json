@@ -1,0 +1,13 @@
+{
+  "key": "f5679cf7ad374bca1d81f3709088c938",
+  "npc": "niamh_doherty",
+  "text": "That's both seats done, thanks. The trick is always the address: read the bar before you type a password. A padlock doesn't make a page ours.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e5_signin_pages",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:58Z"
+}

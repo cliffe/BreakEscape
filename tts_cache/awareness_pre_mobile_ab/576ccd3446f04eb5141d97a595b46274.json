@@ -1,0 +1,13 @@
+{
+  "key": "576ccd3446f04eb5141d97a595b46274",
+  "npc": "lerato_dlamini",
+  "text": "Any time.",
+  "voice": "Gacrux",
+  "style": "Tarrowby's health and safety adviser, in her 30s, confident and direct; runs the depot toolbox talks. Speak with a consistent South African accent from Durban throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_pre_mobile_ab",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:15Z"
+}

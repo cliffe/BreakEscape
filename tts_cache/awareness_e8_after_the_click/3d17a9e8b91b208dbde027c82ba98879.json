@@ -1,0 +1,13 @@
+{
+  "key": "3d17a9e8b91b208dbde027c82ba98879",
+  "npc": "anjali_rao",
+  "text": "The one move that works for every real sign is the same: report it and let the team act. Nobody's ever in trouble for reporting.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e8_after_the_click",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:10Z"
+}

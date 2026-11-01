@@ -1,0 +1,13 @@
+{
+  "key": "623a1a8cc029d52350c16bf58f313a1b",
+  "npc": "lorna_easton",
+  "text": "Sign people in, walk them up, and if someone won't be checked, that's your answer.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e12_visitor_tailgater",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:00Z"
+}

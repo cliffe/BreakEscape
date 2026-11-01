@@ -1,0 +1,13 @@
+{
+  "key": "32b455d21431748d614c20f686b2bb2e",
+  "npc": "nilesh_solanki",
+  "text": "Start at the kiosk: I'll show you how, on a made-up colleague, then you shut it down on your own account.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e9_passwords",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:09Z"
+}

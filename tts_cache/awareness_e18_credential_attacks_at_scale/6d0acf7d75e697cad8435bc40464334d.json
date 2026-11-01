@@ -1,0 +1,13 @@
+{
+  "key": "6d0acf7d75e697cad8435bc40464334d",
+  "npc": "ama_owusu",
+  "text": "Nobody's ever in trouble for reporting.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e18_credential_attacks_at_scale",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:20:02Z"
+}

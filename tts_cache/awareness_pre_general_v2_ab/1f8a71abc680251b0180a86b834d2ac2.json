@@ -1,0 +1,13 @@
+{
+  "key": "1f8a71abc680251b0180a86b834d2ac2",
+  "npc": "anjali_rao",
+  "text": "I'm Anjali, I look after security here. There's a short check on the kiosk first: ten items from a Quayholt inbox. Do what you'd normally do.",
+  "voice": "Kore",
+  "style": "Quayholt's information security analyst, about 35, who moved to the UK from Bengaluru; calm and attentive. Speak with a consistent educated Indian English accent, softened by years in the UK, throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_pre_general_v2_ab",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:53Z"
+}

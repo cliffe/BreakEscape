@@ -1,0 +1,13 @@
+{
+  "key": "5b38a79fd33602c0bdccff47f1ce67dc",
+  "npc": "zainab_hussain",
+  "text": "I'll walk you through two days, then you sort the real networks from the fakes. Nothing here is a real password.",
+  "voice": "Achernar",
+  "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e20_remote_and_mobile_working",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:45Z"
+}

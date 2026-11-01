@@ -1,0 +1,13 @@
+{
+  "key": "047d7772c897a931c291a0ad7bfd987e",
+  "npc": "nilesh_solanki",
+  "text": "That's the lot, thanks. When you're not sure, ask first, the service desk usually answers the same day; and if you make a mistake, report it.",
+  "voice": "Iapetus",
+  "style": "Tarrowby's IT service desk analyst, in his 30s, patient and helpful with an \"ask first\" manner. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e17_acceptable_use_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:16:52Z"
+}

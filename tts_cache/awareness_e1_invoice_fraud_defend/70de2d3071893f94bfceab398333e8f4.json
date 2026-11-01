@@ -1,0 +1,13 @@
+{
+  "key": "70de2d3071893f94bfceab398333e8f4",
+  "npc": "adaeze_okafor",
+  "text": "That's the inbox sorted, thank you. If anything still bothers you, ring the sender on a number we already hold.",
+  "voice": "Gacrux",
+  "style": "Brightwell's finance manager, in her 40s, who came up through accounts payable, warm and direct. Speak with a consistent British accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "awareness_e1_invoice_fraud_defend",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:06Z"
+}
