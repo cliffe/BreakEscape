@@ -31,7 +31,7 @@ Brief a scout agent like this: point at this skill, the recipe, and the mission 
 1. Headline: counts, top picks per speaker, top set pieces.
 2. Environment notes (what was started, what was left running).
 3. **Part A, voiced lines.** One table per speaker: ID, exact text, ink file:line, knot, conversation path from the NPC's start, cheapest entry state, words, spoken length in seconds, live result.
-4. **Part B, set pieces and minigames.** Minigame inventory (where, object ids), then set pieces not yet recorded: room and object id, entry state, "answer on screen?" (yes or no, never copying the value), visual judgement.
+4. **Part B, set pieces and minigames.** Minigame inventory: **every distinct minigame type in the mission** (where, object ids, a moment of visible action, answer or post-it on screen), because the trailer aims to show a quick cut of each (the crescendo in `mission-trailer.md`); then set pieces not yet recorded: room and object id, entry state, "answer on screen?" (yes or no, never copying the value), visual judgement.
 5. Rooms with several NPCs visible together (usually none: plan walking shots as one NPC plus the player).
 6. Entry-state notes (key and gate notes: which door needs which PIN, which hub choice needs which global).
 7. Music: candidate tracks not used by an earlier mission (`docs/video/recipes/README.md`, mission-to-music table), with BPM from `tools/video/edits/music/summary.json` where analysed.

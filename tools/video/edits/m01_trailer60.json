@@ -1,10 +1,10 @@
 {
  "mission": "m01",
- "id": "m01_trailer60_v7",
+ "id": "m01_trailer60_v8",
  "title": "SAFETYNET: Licence to Hack, m01 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v7: closing shot reworked on the user's v6 note: the Hacktivity Labs -> Games logo (transparent SVGs, no plate) appears beside the spy on the clean laptop clip (assembles on the 52 s hit, Labs holds, morphs to Games on the 54 s hit, before the key press), the red hex curtain falls over it, and \"Play now\" and \"hacktivity.co.uk\" are drawn in white Press Start 2P with a dark outline in the curtain layer (uncovered as the red falls); no \"Play now\" before the curtain. v6: closing shot reworked (no logo plate: transparent SVG logos straight on the red curtain; \"Play now\" above the curtain; URL drawn in the curtain layer and uncovered as it falls; per-aspect closing layouts). v5: Derek re-recorded as t09_derek_v5 (lip-sync fix; cut re-derived), CTA reads Play now. v4: title holds 6 s with HaX's line J-cutting in under it, Mission 1 / First Contact card, wavy FX reflections, key-press-timed solid hex curtain with the Hacktivity Games logo in front of it (no separate end card)",
+ "status": "v8: a minigame crescendo before Derek (ten hard cuts accelerating from 0.5 s to 3 frames over 2.5 s: lockpick, key lock, briefcase contents, PC desktop, PIN pad, password screen, CyberChef, phone chat, flag station, Kali VM launcher), with Derek's line starting under it (audio.pre 2.5 s) and his picture joining mid-line on a 3-frame hit. v7: closing shot reworked on the user's v6 note: the Hacktivity Labs -> Games logo (transparent SVGs, no plate) appears beside the spy on the clean laptop clip (assembles on the 52 s hit, Labs holds, morphs to Games on the 54 s hit, before the key press), the red hex curtain falls over it, and \"Play now\" and \"hacktivity.co.uk\" are drawn in white Press Start 2P with a dark outline in the curtain layer (uncovered as the red falls); no \"Play now\" before the curtain. v6: closing shot reworked (no logo plate: transparent SVG logos straight on the red curtain; \"Play now\" above the curtain; URL drawn in the curtain layer and uncovered as it falls; per-aspect closing layouts). v5: Derek re-recorded as t09_derek_v5 (lip-sync fix; cut re-derived), CTA reads Play now. v4: title holds 6 s with HaX's line J-cutting in under it, Mission 1 / First Contact card, wavy FX reflections, key-press-timed solid hex curtain with the Hacktivity Games logo in front of it (no separate end card)",
  "music": {
   "track": "Noir/Midnight Cipher Chase.mp3",
   "analysis": "midnight_cipher_chase.json",
@@ -875,26 +875,456 @@
    }
   },
   {
-   "id": "derek_wide",
+   "id": "cr_lockpick",
    "type": "gameplay",
-   "duration": 4.8,
+   "duration": 0.5,
    "snap": false,
    "join": {
     "type": "glitch"
    },
    "source": {
+    "file": "t04_lockpick.trimmed.mkv",
+    "in": 6.5,
+    "out": 7.0
+   },
+   "note": "minigame crescendo: lockpicking, 'Pin 2 set!'",
+   "framing": {
+    "16:9": {
+     "cx": 0.45,
+     "cy": 0.38,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.45,
+     "cy": 0.38,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.45,
+     "cy": 0.38,
+     "zoom": 1.125
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "lockpick minigame, no code"
+   }
+  },
+  {
+   "id": "cr_key",
+   "type": "gameplay",
+   "duration": 0.5,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t19_minigames.trimmed.mkv",
+    "in": 22.35,
+    "out": 22.85
+   },
+   "note": "minigame crescendo: Derek's office key sliding into the lock (key-lock minigame)",
+   "framing": {
+    "16:9": {
+     "cx": 0.45,
+     "cy": 0.42,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.45,
+     "cy": 0.42,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.45,
+     "cy": 0.42,
+     "zoom": 1.125
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "key minigame; door title 'Derek Lawson, Operations' cropped out at 2x"
+   }
+  },
+  {
+   "id": "cr_briefcase",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t19_minigames.trimmed.mkv",
+    "in": 2.9,
+    "out": 3.1667
+   },
+   "note": "minigame crescendo: Patricia's Briefcase opened, contents icons",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.22,
+     "zoom": 2.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.22,
+     "zoom": 1.40625
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.22,
+     "zoom": 1.40625
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "container view, item icons only, no text legible"
+   }
+  },
+  {
+   "id": "cr_pc",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t07_terminal.trimmed.mkv",
+    "in": 4.4,
+    "out": 4.6333
+   },
+   "note": "minigame crescendo: IT Monitoring Station desktop (before the log file opens)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "desktop only, cut before file-open (log names Derek)"
+   }
+  },
+  {
+   "id": "cr_keypad",
+   "type": "gameplay",
+   "duration": 0.2667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06_keypad_v3.trimmed.mkv",
+    "in": 4.62,
+    "out": 4.8867
+   },
+   "note": "minigame crescendo: PIN pad, first non-answer digit lands",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": true,
+    "note": "one non-answer digit, ENTER never pressed"
+   }
+  },
+  {
+   "id": "cr_password",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t19_minigames.trimmed.mkv",
+    "in": 34.3,
+    "out": 34.5333
+   },
+   "note": "minigame crescendo: Derek's Computer password screen, letters typed",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.28,
+     "zoom": 3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.28,
+     "zoom": 1.6875
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.28,
+     "zoom": 1.6875
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "3x crop on the monitor keeps the 'Anniversary' post-it out of frame; wrong letters only, never submitted"
+   }
+  },
+  {
+   "id": "cr_cyberchef",
+   "type": "gameplay",
+   "duration": 0.1333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t14_cyberchef.trimmed.mkv",
+    "in": 7.2,
+    "out": 7.3333
+   },
+   "note": "minigame crescendo: CyberChef decoding the worked example",
+   "framing": {
+    "16:9": {
+     "cx": 0.725,
+     "cy": 0.385,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.725,
+     "cy": 0.385,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.725,
+     "cy": 0.385,
+     "zoom": 1.125
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "briefcase notes' worked example, no mission answer"
+   }
+  },
+  {
+   "id": "cr_phone",
+   "type": "gameplay",
+   "duration": 0.1333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_phone.trimmed.mkv",
+    "in": 5.4,
+    "out": 5.5333
+   },
+   "note": "minigame crescendo: phone chat, reply choice",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.385,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.385,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.385,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "phone chat choice, no answer"
+   }
+  },
+  {
+   "id": "cr_flag",
+   "type": "gameplay",
+   "duration": 0.1333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t08_flag_station.trimmed.mkv",
+    "in": 6.45,
+    "out": 6.5833
+   },
+   "note": "minigame crescendo: flag station, 'flag{' typed",
+   "framing": {
+    "16:9": {
+     "cx": 0.4,
+     "cy": 0.3,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.4,
+     "cy": 0.3,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.4,
+     "cy": 0.3,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "only the prefix 'flag{', nothing submitted"
+   }
+  },
+  {
+   "id": "cr_vm",
+   "type": "gameplay",
+   "duration": 0.1,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t20_vm_launcher.trimmed.mkv",
+    "in": 3.0,
+    "out": 3.1
+   },
+   "note": "minigame crescendo: Kali VM launcher",
+   "framing": {
+    "16:9": {
+     "cx": 0.6,
+     "cy": 0.3,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.6,
+     "cy": 0.3,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.6,
+     "cy": 0.3,
+     "zoom": 1.125
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "2x crop keeps the 'kali' login post-it (lower left) out of frame"
+   }
+  },
+  {
+   "id": "derek_wide",
+   "type": "gameplay",
+   "duration": 2.3,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
     "file": "t09_derek_v5.trimmed.mkv",
-    "in": 47.04,
+    "in": 49.54,
     "out": 51.84
    },
    "dialogue": true,
-   "note": "derek_6 wide portrait view with the game subtitle, to the silence before \"Security\" (t09_derek_v5 silence 51.46-52.06 s, cut at 51.84)",
+   "note": "derek_6 wide portrait view; v8: the line starts 2.5 s earlier under the minigame crescendo (audio.pre 2.5), picture joins mid-line, still cut at the silence before \"Security\" (t09_derek_v5 silence 51.46-52.06 s, cut at 51.84)",
    "lines": [
     {
      "speaker": "Derek Lawson",
      "text": "Entropy is inevitable. Trust is a lie.",
-     "start": 0.07,
-     "end": 4.8
+     "start": -2.43,
+     "end": 2.3
     }
    ],
    "framing": {
@@ -920,7 +1350,8 @@
    "audio": {
     "gain_db": 0,
     "dialogue": true,
-    "duck_music": true
+    "duck_music": true,
+    "pre": 2.5
    },
    "spoiler": {
     "reviewed": true,
@@ -929,6 +1360,12 @@
     "shows_ending": false,
     "keypad_partial": null,
     "note": "antagonist line; no casualty figures, no Architect, no culprit-naming text"
+   },
+   "hit": {
+    "frames": 3,
+    "k": 0.55,
+    "shift": 0.05,
+    "pix": 0.12
    }
   },
   {
