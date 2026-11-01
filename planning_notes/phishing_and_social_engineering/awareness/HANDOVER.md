@@ -24,6 +24,10 @@ New since the hold, all on main: the E3 MFA-fatigue beat is a learner decision (
 
 Next, in order: host characters after the PixelLab reset (3 Nov), then a short playtest of the new sprites; human timing runs when the user asks; the facilitator guide last.
 
+## Status 2026-11-01: launch finishing pass
+
+A launch finishing pass actioned the owner's decision-board picks and the outstanding doc/clash items (full record in `../../security_awareness_course/implementation/BUILD_LOG.md`, "2026-11-01: launch finishing pass"). In brief: the "Well done:" top band and the "nothing ticked" prompt are already engine defaults that reach E1-E7; the E2 CV-applicant Moyo clash is resolved (Tendai Moyo → Tendai Shava, text only, no audio); the E13 success screen no longer says "The debrief goes through each one"; the names register (`../../security_awareness_course/NAMES_REGISTER.md`) and the owner-calls note (`../../security_awareness_course/LAUNCH_OWNER_CALLS.md`) are written. E7 is correctly listed at Brightwell in §1 above (TODO §6 needed no fix). Still owner-gated and untouched: TTS (whole course unvoiced), human timing runs, the facilitator guide, and the four open "owner calls". The E13 video-call "you"-tile sprite is left for engine/sprite work.
+
 
 The user put development of the 38-scenario security-awareness course on hold on 2026-10-23. This note is for whoever picks it up later, human or agent. Read it with `AGENTS.md` (mission loop, model choice, standing rules) and the files it points to; trust the scenario files over any design document.
 

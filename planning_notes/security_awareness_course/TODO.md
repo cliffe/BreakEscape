@@ -12,9 +12,9 @@ The new episodes (E8 to E17), their check items and the engine work are now plan
 
 ## 4. Names register
 
-- [ ] A register of every person, company, supplier and product across the awareness product and the plan's module designs, so new episodes avoid clashes. Start from `BRAND_SET.md` and the `_brandAdditions` blocks, and add the pool in `03_WORLD_AND_CAST.md`.
-- [ ] Rename the pool names flagged as clashes in `03_WORLD_AND_CAST.md` before any is used.
-- [ ] Settle the built Moyo clash (Tendai Moyo in E2, Thandiwe Moyo in E4) if both ship together (BRAND_SET).
+- [x] A register of every person, company, supplier and product across the awareness product and the plan's module designs, so new episodes avoid clashes. Start from `BRAND_SET.md` and the `_brandAdditions` blocks, and add the pool in `03_WORLD_AND_CAST.md`. (Done 2026-11-01: `NAMES_REGISTER.md`, built from the names actually present in the 41 built shells plus `BRAND_SET.md`. It flags three newly-noticed episode-vs-check surname pairings (Demir, Baxter, Vale) and a Friendface lab-brand reuse in E4/E14.)
+- [ ] Rename the pool names flagged as clashes in `03_WORLD_AND_CAST.md` before any is used. (Register §7 lists the open ones; pool renames not done here.)
+- [x] Settle the built Moyo clash (Tendai Moyo in E2, Thandiwe Moyo in E4) if both ship together (BRAND_SET). (Done 2026-11-01: E2's one-off CV applicant Tendai Moyo renamed to **Tendai Shava** — text only, no NPC/ink/globals, no audio. Thandiwe Moyo, the recurring Merrin & Sallow character, is unchanged. Commit 85d55d7d8.)
 
 ## 5. Minor follow-ups still valid
 
@@ -29,7 +29,7 @@ Dropped as moot after the reconciliation: the role_01 explainer id (EX-02 or EX-
 
 ## 6. Doc fixes outside this plan (for the orchestrator)
 
-- [ ] `awareness/HANDOVER.md` §1 lists E7 at Merrin & Sallow; the scenario files put E7 at Brightwell Foods (`room_aw_brightwell`). The scenario files win; the handover table needs a one-word fix.
+- [x] `awareness/HANDOVER.md` §1 lists E7 at Merrin & Sallow; the scenario files put E7 at Brightwell Foods (`room_aw_brightwell`). The scenario files win; the handover table needs a one-word fix. (Checked 2026-11-01: already correct — HANDOVER §1 line 42 reads "E7 | Cloned CEO voice | Brightwell (`room_aw_brightwell`)". No fix needed.)
 
 ## 7. For the user, outside this repo
 

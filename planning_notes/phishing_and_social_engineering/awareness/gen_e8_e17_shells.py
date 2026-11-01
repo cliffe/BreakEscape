@@ -343,6 +343,14 @@ EPISODES = {
         },
     },
     'e13': {
+        # WARNING (2026-11-01): the committed e13 defend shell is HAND-MAINTAINED beyond this
+        # generator. It carries the optional deepfake demo call (owner decision 2026-10-30):
+        # the e13_demo_offered global, Gwen's demo event mapping and the Gwen demo ink knots.
+        # This generator does NOT reproduce them, so regenerating e13 defend here would DROP the
+        # demo. Do not copy a regenerated e13 defend shell over the committed one without
+        # re-applying the demo (see BUILD_LOG "E13 deepfake demo call opened"). Parity allow-lists
+        # the divergence. Bringing the demo into the generator was judged not worth the risk for a
+        # single hand-laid shell; revisit only if E13 defend must be regeneratable.
         'frag': f'{AW}/e13/defend.json',
         'full_id': 'e13_ai_assistant',
         'role_word': 'general',
