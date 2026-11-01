@@ -1009,8 +1009,9 @@
             "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass" },
             "truth": {
               "isPhish": true,
-              "flags": ["linkCredible"],
+              "flags": ["senderTrust", "linkCredible"],
               "perFlagNote": {
+                "senderTrust": "The From address is ledgerwell-hr.example, not ledgerwell.example. It passes every check because the look-alike domain really sent it.",
                 "linkCredible": "The words say ledgerwell.example, but the link goes to ledgerwell-hr.example, a different site."
               },
               "ifTrusted": "Signing in would hand over the staff portal password.",
@@ -1051,6 +1052,7 @@
             "truth": {
               "isPhish": true,
               "flags": ["linkCredible"],
+              "reportLine": "Right call: reported. A careers inbox is open to CVs from anyone, so the application itself is no surprise. The tell is the 'portfolio' link: it opens a sign-in page on an unrelated domain, which a real applicant's work samples would never need.",
               "perFlagNote": {
                 "linkCredible": "The 'portfolio' link goes to a login page on an unrelated domain, asking for a sign-in it has no reason to need."
               },
