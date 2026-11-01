@@ -1,8 +1,11 @@
 # Launch owner calls
 
+> **All four decided 2026-11-01.** The owner cleared the board; each section below carries its
+> outcome at the top. Recorded in `DECISIONS_PENDING.md` under "Launch owner calls (2026-11-01)".
+
 Items the owner left open for discussion rather than a build decision, written up so a
 call can be made away from the session. One section per call: background, options, a
-recommendation and the cost. Nothing here is built; these wait on the owner.
+recommendation and the cost.
 
 Compiled 2026-11-01 during the launch finishing pass. Sources: `DECISIONS_PENDING.md`
 ("Waiting on the user", "Open"), the owner's decisions board (2026-10-30) and the three
@@ -12,6 +15,10 @@ board item, that is noted so the owner can confirm the reading.
 ---
 
 ## 1. The in-game "habit to keep" line on episodes that are not about phishing
+
+**Decided 2026-11-01: option (b).** Keep the set-wide rule of thumb and add a short per-episode
+habit line beside it on E15, E17 and E20; E11 also gets one, E16 does not (its lesson is already
+what the shared line names). Built as an opt-in `strings.habitLine` slot in `debrief-view.js`.
 
 **Background.** Every episode's debrief shows one set-wide rule of thumb under the heading
 "The habit to keep" (`AWARENESS_RULE_OF_THUMB_TEXT` in `awareness_deploy.py`, rendered by
@@ -53,6 +60,12 @@ preferred. No audio: the debrief habit text is on-screen, not voiced. Half a day
 
 ## 2. Renaming the `defend_pass` completion field to `_complete`
 
+**Decided 2026-11-01: option (b), renamed in the plans now.** `defend_pass` is a documented-only
+field (no Break Escape or Hacktivity code, no shipped scenario), so the plan rename to `_complete`
+carries no code impact. Done in the forward-looking plans and docs; the Hacktivity-side reader
+check (progress dashboard) belongs to the coordinated scoring rollout, which needs the standing
+go-ahead before any Hacktivity edit.
+
 **Background.** The owner picked "rename to `_complete` everywhere" on the 2026-10-30 board,
 and the 2026-10-31 Hacktivity setup form restated it ("`defend_pass` retired and `done`
 renamed `complete`"), but added: "First discuss: why would this require code from Hacktivity?"
@@ -86,6 +99,10 @@ work rather than on its own. One to two days with the Hacktivity change.
 ---
 
 ## 3. D9 accessibility: what the WCAG 2.2 AA commitment entails
+
+**Decided 2026-11-01: option (a), deferred.** Keep the built HTML-surface baseline; no full AA
+audit or canvas text route until there is demand; publish no accessibility statement until a text
+route exists.
 
 **Background.** The owner recorded a pick (WCAG 2.2 AA for the episode runner's HTML views,
 the check forms and the Hacktivity pages; the game accessibility guidelines for the 2D room;
@@ -124,6 +141,13 @@ flagged as possibly out of scope.
 ---
 
 ## 4. The pre-canned reporting-route option table (WP-02)
+
+**Decided 2026-11-01 and built: free text, not a pre-canned table.** The owner chose free text as
+the most flexible form, cleaned and validated server-side (control, zero-width and bidi characters
+stripped; length caps; heading folded to one line), escaped in views and the config script, drawn
+with `textContent` in the engine. Built on Hacktivity main (commits 22a19804, b9cf4327; the route
+name is shown in the Report verdict). Hostile-input tests pass. Nothing further to build. The
+candidate option table below is kept only as a record of the discussion.
 
 **Background.** The owner approved building the reporting route and asked for the pre-canned
 option table to be drafted for approval first. The 2026-10-31 Hacktivity setup form records
