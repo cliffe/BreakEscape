@@ -9,7 +9,7 @@ skills adapted to the awareness kind, the E8 pilot reviews for format and bar, a
 half, no `mistake` stage, no flip; the one shell carries the whole episode (the "can I?" three-way sort
 plus the scored six-item triage set).
 
-Scope read end to end this pass: `scenarios/awareness_e17_acceptable_use_defend/{scenario.json.erb,
+Scope read end to end this pass: `scenarios/ca17_acceptable_use_defend/{scenario.json.erb,
 mission.json, ink/nilesh_solanki.ink}`; `planning_notes/phishing_and_social_engineering/awareness/e17/
 {defend.json, full_only.json}`; E17's lines in `gen_e8_e17_shells.py` (host dicts and the `e17`
 build entry); the spec `episodes/E17_acceptable_use.md`; and the module
@@ -22,7 +22,7 @@ line, `ruleOfThumb`, the conclusion screen and the kiosk observation text.
 Ran this pass: `validate_scenario.rb --strict-social --no-graph --skip-ink` on the shell (schema passes,
 exit 0; the only output is the 22 generic m01 template suggestions + 1 generic "no timedConversation"
 recommendation, all irrelevant to an awareness episode; **no social errors or warnings**);
-`dialoguelint.mjs scenarios/awareness_e17_acceptable_use_defend/` (ink: person lines=3, median 26, max 27,
+`dialoguelint.mjs scenarios/ca17_acceptable_use_defend/` (ink: person lines=3, median 26, max 27,
 no rule hits; timed texts 0). The brief's optional `E14_E17_PLAYTEST_P1.md` does **not** exist in
 `reviews/build/`, so there are no playtest findings to fold in. **No bridge/screen run this pass:** the
 engine judgements (concept panels and drill launch render, the Monday-card/report-route split, the sort

@@ -29,8 +29,8 @@ Source of truth: `modules/core_16_acceptable_use_and_your_responsibilities/conce
 - `designs/11_awareness_product_episodes.md` sections 3.1 (defend-only variant), 4.1 (scoring), 5.1, the
   "Built note".
 - `awareness/BRAND_SET.md`, the Tarrowby Logistics cast (the chosen company; see section 5).
-- Nearest built episodes: the defend-only shells `scenarios/awareness_e2_cv_lures_defend/` and
-  `awareness_e6_texts_and_qr_defend/` (a defend-only shell with no attack), and `awareness/e6/defend.json`
+- Nearest built episodes: the defend-only shells `scenarios/ca02_cv_lures_defend/` and
+  `ca06_texts_and_qr_defend/` (a defend-only shell with no attack), and `awareness/e6/defend.json`
   / `awareness/e4/defend.json` (the `triageSets` item shape and the `awarenessEpisode` block).
 - Engine: `episode-runner/` (`debrief-view.js`; the runner drops the attack stages for `defendOnly`),
   `systems/episode-starter.js`, `awareness-measure.js`, the inbox-triage defender, the organisation
@@ -139,7 +139,7 @@ single-aim defend shell and its `mission.json` via `meta_for`). Copy the generat
   `"spriteSheet": "male_telecom_v2"`, `"spriteTalk": "assets/characters/male_telecom_talk.png"`,
   `"spriteVisemes": "assets/characters/male_telecom_visemes.png"`, `"npcType": "person"`,
   `"id": "nilesh_solanki"`, `"displayName": "Nilesh Solanki"`,
-  `"storyPath": "scenarios/awareness_e17_acceptable_use_defend/ink/nilesh_solanki.json"`,
+  `"storyPath": "scenarios/ca17_acceptable_use_defend/ink/nilesh_solanki.json"`,
   `"currentKnot": "start"`, plus the N16 done-event `eventMappings` on
   `episode_e17_acceptable_use_defend_defend_done`. Host art is a placeholder until the PixelLab reset.
 - **Learner avatar** (shell `player`, as E6): `"spriteSheet": "female_office_worker_v2"`,
@@ -176,7 +176,7 @@ single-aim defend shell and its `mission.json` via `meta_for`). Copy the generat
 ```
 
 `full_id` is `e17_acceptable_use`, so the generator's `defend_only('e17')` builds mission
-`awareness_e17_acceptable_use_defend`, episode id `e17_acceptable_use_defend`, prefix
+`ca17_acceptable_use_defend`, episode id `e17_acceptable_use_defend`, prefix
 `episode_e17_acceptable_use_defend_defend_` (section 13, section 11b). `role_word`/`role_label` are read
 only by the generator's `check()`, which is not run for E17 (E17 feeds `data_conduct`, built by `10`'s own
 generator); they are kept for shape parity with the other entries. `minutes` is 12 (E17's one shell
@@ -418,7 +418,7 @@ Hacktivity courses. Acceptable use has no attack half, so there is nothing a "fu
 the defend-only shape; two byte-identical shells would only add a second global prefix and a maintenance
 trap for no learner benefit. `00`, `01` and this spec all say the same: one shell.
 
-- **The one shell:** folder `scenarios/awareness_e17_acceptable_use_defend/`, episode id
+- **The one shell:** folder `scenarios/ca17_acceptable_use_defend/`, episode id
   `e17_acceptable_use_defend`, `variant: "defendOnly"`, `stages: ["brief","defend","debrief"]`, set
   prefix `episode_e17_acceptable_use_defend_defend_` (the built double-suffix rule for an id ending
   `_defend`, matching the built E6 defend-only shell), defend set id `e17_acceptable_use_inbox`.
@@ -454,7 +454,7 @@ Writer: this spec only.
 Implementer: `awareness/e17/defend.json` (the `triageSets` entry `e17_acceptable_use_inbox`, the "can I?"
 card bank wired to the organisation answer key with the locked set, the `awarenessEpisode`
 defend/debrief/strings/_defendOnly keys, by analogy with `e6/defend.json`; no attack fragment, since E17
-has no attack); **one** shell `scenarios/awareness_e17_acceptable_use_defend/` (defend-only, listed in
+has no attack); **one** shell `scenarios/ca17_acceptable_use_defend/` (defend-only, listed in
 both courses; section 13), a one-room `room_aw_tarrowby` kiosk, host Nilesh, kiosk
 `{ episodeId }`; the "can I?" sort as ENG-11's `sortDrill` config (section 11a); the `unapproved_tool`
 scenario-local tell. No BRAND_SET entry (Tarrowby is built). The `data_conduct` check shells are built by

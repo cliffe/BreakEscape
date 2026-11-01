@@ -1585,7 +1585,7 @@ The validator warns if `missionConclusion: true` is present but `conclusionScree
 
 #### The ending convention
 
-The ending is chosen per scenario. **Story missions end in the credits** (`bond_visualiser`, rolled from a music event): the Licence to Hack missions, the SIS games and the lab games with a story. **Short training episodes**, such as the awareness shells (`scenarios/awareness_*`), may end on the simple success screen (`success`) instead. Either way the player is warned before the ending.
+The ending is chosen per scenario. **Story missions end in the credits** (`bond_visualiser`, rolled from a music event): the Licence to Hack missions, the SIS games and the lab games with a story. **Short training episodes**, such as the awareness shells (`scenarios/ca*`), may end on the simple success screen (`success`) instead. Either way the player is warned before the ending.
 
 For a training episode on the success screen:
 
@@ -1630,7 +1630,7 @@ A mission can pick another rule with `"scoring"` in its `mission.json` (read by 
 |---|---|---|---|
 | absent, or `"tasks"` | the formula above | the formula above | everything else |
 | `"partial_then_complete"` | the formula, capped at 99 | 100 | `lab_tesseract_trials`, `lab_social_engineering` |
-| `"completion"` | 0 | 100 | every `awareness_*` mission |
+| `"completion"` | 0 | 100 | every Cyber Aware (`ca*`) mission |
 
 "Concludes" means the game's `mission_concluded_at` is set (the `missionConclusion` aim completed and its `concludeRequires` passed, or `POST /conclude`). Hacktivity's Finish button sets `status = 'completed'` without a conclusion, and that does not count. In the two non-default modes a Restart keeps a concluded game's 100, because `mission_concluded_at` survives the reset; the default mode drops to 0 as before. Optional tasks no longer cost marks once the mission concludes, but `concludeRequires` still decides whether it concludes at all. Hacktivity's `GameScoringJob` calls the same method, unless the listing's `scoring_method` is `flags`, which still wins. The validator errors on any other `scoring` value, and warns when a non-default mode has no `missionConclusion` aim (the score could never reach 100).
 
@@ -3052,11 +3052,11 @@ Everything here is checked by `ruby scripts/validate_scenario.rb scenarios/<id>/
 
 | Shell | Kind | What it shows |
 |---|---|---|
-| `scenarios/awareness_e1_invoice_fraud` | full | The attack (OSINT, one mail, the flip), the defend round and the debrief; two aims |
-| `scenarios/awareness_e1_invoice_fraud_defend` | defend-only | The same defend set with no attack; the `_defend` id and its doubled prefix |
-| `scenarios/awareness_pre_finance_ab`, `awareness_post_finance_ab` | check pair | Ten-message forms, `exportGlobals` and `importGlobals`, the comparison panel |
-| `scenarios/awareness_e3_helpdesk_reset` | full, call attack | `attack.callId`, the `mfa` stage, the role swap (`defend.calls`) |
-| `scenarios/awareness_e5_signin_pages` | full, page attack | The `build` stage and `attack.landingPageId` |
+| `scenarios/ca01_invoice_fraud` | full | The attack (OSINT, one mail, the flip), the defend round and the debrief; two aims |
+| `scenarios/ca01_invoice_fraud_defend` | defend-only | The same defend set with no attack; the `_defend` id and its doubled prefix |
+| `scenarios/ca_pre_finance_ab`, `ca_post_finance_ab` | check pair | Ten-message forms, `exportGlobals` and `importGlobals`, the comparison panel |
+| `scenarios/ca03_helpdesk_reset` | full, call attack | `attack.callId`, the `mfa` stage, the role swap (`defend.calls`) |
+| `scenarios/ca05_signin_pages` | full, page attack | The `build` stage and `attack.landingPageId` |
 | `scenarios/test_social_episode` | fixture | The smallest full shell that validates. Stub content, `collection: "testing"` |
 
 ### Three kinds of shell
@@ -3124,7 +3124,7 @@ The validator errors when no aim (or more than one) has `missionConclusion`, whe
     "minigameData": { "episodeId": "e1_stub" } } ] } }
 ```
 
-The host is not decoration. A global cannot complete a task by itself, and `eventMappings` live on NPC records, so the host's mapping on the done global is what completes `conclusionTaskId`. The validator errors if no NPC carries it. A real shell gives the host a character, a sprite and one ink file (a welcome line that changes once the done global is true, resting in a hub as in m03; see `scenarios/awareness_e1_invoice_fraud/ink/adaeze_okafor.ink`), and adds a block for the shell in `scripts/ink_runtime_check/missions.json` so `reopencheck.mjs` covers it. `scenarios/ink/generic-npc.json` will do for a throwaway fixture.
+The host is not decoration. A global cannot complete a task by itself, and `eventMappings` live on NPC records, so the host's mapping on the done global is what completes `conclusionTaskId`. The validator errors if no NPC carries it. A real shell gives the host a character, a sprite and one ink file (a welcome line that changes once the done global is true, resting in a hub as in m03; see `scenarios/ca01_invoice_fraud/ink/adaeze_okafor.ink`), and adds a block for the shell in `scripts/ink_runtime_check/missions.json` so `reopencheck.mjs` covers it. `scenarios/ink/generic-npc.json` will do for a throwaway fixture.
 
 **6. The defend set** (`social.triageSets[]`), described under [Attack and defend](#attack-and-defend).
 
@@ -3266,7 +3266,7 @@ A full episode needs, under `social`, the pieces below. They are the same blocks
   "outcome": { "setGlobal": { "phish_supplier_contact_landed": true } } } ]
 ```
 
-The contact's `revealedBy` is the fact's `se_intel_` global, so the learner finds Pat in OSINT before Pat can be written to. The `source` of the fact is the OSINT block that grants it. E1 (`awareness_e1_invoice_fraud`) is the full-size example: two OSINT sites, four facts, a spoofed sender, a named reply, and an `analyst` account that can spoof From.
+The contact's `revealedBy` is the fact's `se_intel_` global, so the learner finds Pat in OSINT before Pat can be written to. The `source` of the fact is the OSINT block that grants it. E1 (`ca01_invoice_fraud`) is the full-size example: two OSINT sites, four facts, a spoofed sender, a named reply, and an `analyst` account that can spoof From.
 
 #### The defend set, minimally
 
@@ -3360,7 +3360,7 @@ A blank line in `report_text` starts a new paragraph in the debrief's "How to re
 
 ### Check missions and how their results carry over
 
-A check mission is the measurement half of the product: ten messages from the role's inbox, taken before the training (`pre`) and again after it (`post`), with a before-and-after panel at the end of the second. Each role has a matched pair of forms, A and B, and two orderings, so half of a group sees A first (the `ab` missions) and half B first (`ba`). The shipped set is `awareness_pre_<role>_ab`, `_ba` and `awareness_post_<role>_ab`, `_ba`.
+A check mission is the measurement half of the product: ten messages from the role's inbox, taken before the training (`pre`) and again after it (`post`), with a before-and-after panel at the end of the second. Each role has a matched pair of forms, A and B, and two orderings, so half of a group sees A first (the `ab` missions) and half B first (`ba`). The shipped set is `ca_pre_<role>_ab`, `_ba` and `ca_post_<role>_ab`, `_ba`.
 
 A check mission has `stages: ["check"]`, `variant` optional, `defend.stage` `pre` or `post`, no `attack`, and its set:
 
@@ -3379,10 +3379,10 @@ Its conclusion aim completes on `triage_pre_done`, because the carry-over reads 
 
 ```json
 "importGlobals": [
-  { "from": "awareness_pre_finance_ab", "var": "triage_pre_percent",    "as": "triage_pre_percent",    "default": 0 },
-  { "from": "awareness_pre_finance_ab", "var": "triage_pre_reportRate", "as": "triage_pre_reportRate", "default": 0 },
-  { "from": "awareness_pre_finance_ab", "var": "triage_pre_done",       "as": "triage_pre_done",       "default": false },
-  { "from": "awareness_pre_finance_ab", "completed": "pre_check_completed" }
+  { "from": "ca_pre_finance_ab", "var": "triage_pre_percent",    "as": "triage_pre_percent",    "default": 0 },
+  { "from": "ca_pre_finance_ab", "var": "triage_pre_reportRate", "as": "triage_pre_reportRate", "default": 0 },
+  { "from": "ca_pre_finance_ab", "var": "triage_pre_done",       "as": "triage_pre_done",       "default": false },
+  { "from": "ca_pre_finance_ab", "completed": "pre_check_completed" }
 ]
 ```
 

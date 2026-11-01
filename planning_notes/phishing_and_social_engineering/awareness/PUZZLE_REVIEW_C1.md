@@ -10,7 +10,7 @@ and cumulative-kit parts are out of scope (there are no VMs).
 Derived from the scenario `.json.erb` files and the engine under
 `public/break_escape/js/minigames/episode-runner/` and `js/systems/`, not the design docs.
 Coverage: all 7 full episodes and all 7 defend-only shells; one check pair sampled
-(`awareness_pre_finance_ab`, `awareness_post_finance_ba`), with the rest taken on the uniform
+(`ca_pre_finance_ab`, `ca_post_finance_ba`), with the rest taken on the uniform
 generator pattern.
 
 ## Verdict
@@ -100,7 +100,7 @@ mission can conclude. No task is left with no listener.
 
 ### Minor 1 — the mission concludes one stage before the episode's own debrief
 
-`scenarios/awareness_e1_invoice_fraud/scenario.json.erb:46-50` (and the equivalent in every full
+`scenarios/ca01_invoice_fraud/scenario.json.erb:46-50` (and the equivalent in every full
 episode): the mission-conclusion aim's `concludeRequires` is the defend `*_done` global, which is
 written when the defend triage completes — one stage before the runner's `debrief`
 (`episode-runner-minigame.js:507-529`). The conclusion task (`sort_payments_inbox` etc.) is

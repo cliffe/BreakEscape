@@ -65,13 +65,13 @@ Learning outcomes drawn on (from `modules/core_09_remote_and_mobile_working/conc
   starting point only: its four new rooms, its named bystanders (Jerome, Bryony, Grace, Ellis) and its new
   minigames (MG-14, BE-10, MG-04, MG-09) are **out of scope** here, by the user's "no new place" instruction;
   this episode reparents the teaching into the built training room.
-- **The nearest built episode at the same company: E6** `scenarios/awareness_e6_texts_and_qr/` end to end
+- **The nearest built episode at the same company: E6** `scenarios/ca06_texts_and_qr/` end to end
   (the built Tarrowby room wiring, the two-aim shape, the host NPC done event, the learner avatar, the kiosk
   object), plus its fragments `planning_notes/phishing_and_social_engineering/awareness/e6/{attack,defend}.json`
   (the Tarrowby cast, the `_brandAdditions`, the built `tarrowby-wifi.example` look-alike and the guest-Wi-Fi
   notice). E6 is the reference for the built Tarrowby room and cast, **not** the stage shape (E6 has a mail
   attack half; E20 has a consequence `mistake` half).
-- **The built `page` triage card: E5** `scenarios/awareness_e5_signin_pages/` and
+- **The built `page` triage card: E5** `scenarios/ca05_signin_pages/` and
   `planning_notes/phishing_and_social_engineering/awareness/e5/defend.json` (the `page` card with the padlock
   / "Not secure" address bar and the sign-in `fields`). E5 taught the padlock myth (core_08 LO2); E20's
   "Not secure" card cross-references it so the two do not contradict (§11, card 3).
@@ -140,7 +140,7 @@ Learning outcomes drawn on (from `modules/core_09_remote_and_mobile_working/conc
   "accent": "#3b5b8c" }`. Domain `tarrowby.example`; look-alikes `tarrowby-careers.example`,
   `tarrowbey.example` and the E6 Wi-Fi look-alike `tarrowby-wifi.example` (reused for the fake captive portal
   host, card 3).
-- **Room:** reuse the built `room_aw_tarrowby`, exactly as `scenarios/awareness_e6_texts_and_qr/
+- **Room:** reuse the built `room_aw_tarrowby`, exactly as `scenarios/ca06_texts_and_qr/
   scenario.json.erb` wires it (`"type": "room_aw_tarrowby"`, `chatBackground:
   "assets/backgrounds/rooms/aw_tarrowby_blended.png"`, the same lighting and kiosk object). **No new room.**
   The consequence sandbox, the montage and the triage cards are full-screen overlays, as at every company;
@@ -253,7 +253,7 @@ ENG-09b; §8b is the generator and shell metadata, which does not itself wait on
   NPC shape): `"spriteSheet": "female_blowse_v2"`, `"spriteTalk": "assets/characters/female_blowse_talk.png"`,
   `"spriteVisemes": "assets/characters/female_blowse_visemes.png"`, `"npcType": "person"`, `"id":
   "zainab_hussain"`, `"displayName": "Zainab Hussain"`, `"storyPath": "scenarios/
-  awareness_e20_remote_and_mobile_working/ink/zainab_hussain.json"`, `"currentKnot": "start"`, plus the N16
+  ca20_remote_and_mobile_working/ink/zainab_hussain.json"`, `"currentKnot": "start"`, plus the N16
   done-event `eventMappings`. Host art is a placeholder (a reused built sprite) until the PixelLab reset.
 - **Learner avatar** (full erb `player`), as E6: `"spriteSheet": "female_office_worker_v2"`, `"spriteTalk":
   "assets/characters/female_office_worker_talk.png"`.
@@ -300,7 +300,7 @@ shell, §20).
 - `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Remote working", "Mobile devices",
   "Public Wi-Fi", "Shoulder surfing", "Security awareness"] } ]`.
 
-Top-level erb strings (copy E6's): `scenario_id` `awareness_e20_remote_and_mobile_working`; `scenario_name`
+Top-level erb strings (copy E6's): `scenario_id` `ca20_remote_and_mobile_working`; `scenario_name`
 "Remote and mobile working: two days on the road"; `scenario_brief` = `strings.brief` (§8); `endGoal` "Walk
 the two days, then sort the networks and pages at the training kiosk."; `version` "1.0"; `disableAttacks`
 true; `startRoom` `training_room`; `startPosition` as E6.
@@ -651,7 +651,7 @@ content is already represented by the pair's existing items.
   and a `_brandAdditions` note for Zainab Hussain, The Bean and Barrow (and its networks) and Haverbridge
   Lodge (and its network). Reuse the built `tarrowby-wifi.example` and `tarrowbey.example` look-alikes; do not
   redeclare them.
-- `scenarios/awareness_e20_remote_and_mobile_working/scenario.json.erb`, `mission.json`,
+- `scenarios/ca20_remote_and_mobile_working/scenario.json.erb`, `mission.json`,
   `ink/zainab_hussain.ink` (new): the full-episode shell. Frame the room and host-ink structure from the
   Tarrowby room as E6 wires it (`01_PIPELINE.md` P5a, reuse `room_aw_tarrowby`), and take the `mistake`/`flip`
   stage shape and the two-aim consequence objectives from E11 (the ENG-04 reference), **not** E6's mail stage
@@ -661,7 +661,7 @@ content is already represented by the pair's existing items.
   `se_intel_*`, `se_landing_pages` or `guess_*` globals (no osint, build, write or guess stage). The host ink
   completes aim 1 when the `mistake` stage is done and the conclusion task on
   `episode_e20_remote_and_mobile_working_defend_done === true`.
-- `scenarios/awareness_e20_remote_and_mobile_working_defend/` (new): the defend-only shell.
+- `scenarios/ca20_remote_and_mobile_working_defend/` (new): the defend-only shell.
 - The two seeded Hacktivity courses: follow `01_PIPELINE.md` P12 (feature level only); do not use
   `awareness_deploy.py` for seeding.
 - `BRAND_SET.md`: a Tarrowby `_brandAdditions` note for Zainab Hussain, The Bean and Barrow (networks
@@ -685,7 +685,7 @@ cards 1 and 2.
 
 ## 17. Acceptance checks
 
-- `ruby scripts/validate_scenario.rb --strict-social scenarios/awareness_e20_remote_and_mobile_working/scenario.json.erb`
+- `ruby scripts/validate_scenario.rb --strict-social scenarios/ca20_remote_and_mobile_working/scenario.json.erb`
   passes (and the defend-only shell).
 - The social validators pass, including the ENG-04 `mistake` stage and `brief mistake flip defend debrief`
   order, the Wi-Fi `page.state: "wifiList"` card, and the three scenario-local tells (`lookalike_network`,

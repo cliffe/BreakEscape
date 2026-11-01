@@ -8,8 +8,8 @@ adapted to the awareness kind, and the E8/E15 pilot reviews in `reviews/build/` 
 bar. E14 is the one attack-first episode in the set (OSINT then write, built defender-inbox flip; no
 ENG-04 montage).
 
-Scope read end to end: the full shell `scenarios/awareness_e14_social_media/{scenario.json.erb,
-ink/julian_sallow.ink}`; the defend-only shell `scenarios/awareness_e14_social_media_defend/{...}`; the
+Scope read end to end: the full shell `scenarios/ca14_social_media/{scenario.json.erb,
+ink/julian_sallow.ink}`; the defend-only shell `scenarios/ca14_social_media_defend/{...}`; the
 fragments `planning_notes/phishing_and_social_engineering/awareness/e14/{attack,defend,full_only}.json`
 and `BRAND_ADDITIONS.md`; the spec `.../episodes/E14_social_media.md`; the module
 `modules/core_12_social_media_and_oversharing/concepts.md`; the E2/E4 overlap in

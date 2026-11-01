@@ -22,7 +22,7 @@ No content files changed. This review file is the only output.
   flip strings, concept cards, Monday card, `noBlameLine`, `defendOnly`, `scopeNote`) are authored in
   `planning_notes/phishing_and_social_engineering/awareness/e8/{defend,attack,full_only}.json` and copied
   into the shells. Fix the fragment; the shell inherits it.
-- **The full-episode host ink** `awareness_e8_after_the_click/ink/anjali_rao.ink` is hand-authored (no
+- **The full-episode host ink** `ca08_after_the_click/ink/anjali_rao.ink` is hand-authored (no
   generator stamp). Fix the ink directly.
 - **The defend-only host ink and the defend-only `defendIntro`/`brief`/`desc`** are written by
   `gen_e8_e17_shells.py` (the ink carries a `// Written by …` stamp). Fix the generator string, or a
@@ -42,9 +42,9 @@ the end. Awareness carries no TTS cache, so neither change invalidates recorded 
 
 ## Phase 1 — compile / lint / validate
 
-- **dialoguelint** `scenarios/awareness_e8_after_the_click/`: person ink lines=6 median=25 p90=30 max=30;
+- **dialoguelint** `scenarios/ca08_after_the_click/`: person ink lines=6 median=25 p90=30 max=30;
   `Totals by rule: none`. **Clean.**
-- **dialoguelint** `scenarios/awareness_e8_after_the_click_defend/`: person ink lines=3 median=24 p90=30
+- **dialoguelint** `scenarios/ca08_after_the_click_defend/`: person ink lines=3 median=24 p90=30
   max=30; `Totals by rule: none`. **Clean.** No `line-len`, `choice-len`, `you-after-choice`,
   `not-x-but-y`, `exit-no-reply`, `blank-reentry`, `choice-fallthrough`, `tag-on-narrator`,
   `phone-self-prefix`. Both host inks sit exactly on the 30-word bubble cap, none over.
@@ -114,7 +114,7 @@ apply to the awareness kind.
 ## MINOR
 
 ### MINOR-1 (carried from design C2 N1) — defend-only `defendIntro` frames "leave the device as it is" as the one universal move
-`scenarios/awareness_e8_after_the_click_defend/scenario.json.erb:306`; source `gen_e8_e17_shells.py:271`.
+`scenarios/ca08_after_the_click_defend/scenario.json.erb:306`; source `gen_e8_e17_shells.py:271`.
 
 > "… the one move that works for every real sign is to report it and **leave the device as it is**. Take
 > them at your own pace."
@@ -135,7 +135,7 @@ regenerate, not the shell by hand:
 Per-item feedback already carries "leave the device as it is" on the ransom-note row, so nothing is lost.
 
 ### MINOR-2 — full-episode host landed-greeting "fell for it" clashes with the no-blame register
-`scenarios/awareness_e8_after_the_click/ink/anjali_rao.ink:31` (hand-authored ink; edit directly). Voiced
+`scenarios/ca08_after_the_click/ink/anjali_rao.ink:31` (hand-authored ink; edit directly). Voiced
 host line.
 
 > "Good. The email's gone, and your colleague **fell for it**, the way most people eventually do. Now
@@ -152,14 +152,14 @@ sits in that colleague's seat. Align to the flip's own verb:
   - new: `Good. The email's gone, and your colleague signed in, the way most people eventually do. Now take their seat and see what someone else is doing with their account.`
 
 ### MINOR-3 — full-episode host completion line uses a comma splice where the defend ink uses a colon
-`scenarios/awareness_e8_after_the_click/ink/anjali_rao.ink:28` (hand-authored ink). Voiced host line;
+`scenarios/ca08_after_the_click/ink/anjali_rao.ink:28` (hand-authored ink). Voiced host line;
 punctuation only, so no effect on the spoken take, but the printed bubble shows it and the defend ink
 renders the same sentence correctly.
 
 > "The one move that works for every real sign is the same**,** report it and let the team act. Nobody's
 > ever in trouble for reporting."
 
-The defend ink (`awareness_e8_after_the_click_defend/ink/anjali_rao.ink:22`) writes the identical idea as
+The defend ink (`ca08_after_the_click_defend/ink/anjali_rao.ink:22`) writes the identical idea as
 "… is the same**:** report it and let the team act." Normalise the full ink to the colon:
 
 - `anjali_rao.ink:28`
@@ -193,7 +193,7 @@ not to act on under the stop rule.
 
 ## Voiced host lines proposed for change
 
-Both are in `scenarios/awareness_e8_after_the_click/ink/anjali_rao.ink` (hand-authored; voiced later, no
+Both are in `scenarios/ca08_after_the_click/ink/anjali_rao.ink` (hand-authored; voiced later, no
 TTS cache to invalidate):
 
 1. `:31` — "… your colleague **fell for it** …" → "… your colleague **signed in** …" (MINOR-2).

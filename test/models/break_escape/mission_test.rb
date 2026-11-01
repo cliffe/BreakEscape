@@ -39,7 +39,7 @@ module BreakEscape
         { 'title_art' => '../secrets.jpg' } => nil, { 'title_art' => 'title_art/../x.jpg' } => nil,
         { 'title_art' => 'https://example.com/a.jpg' } => nil, { 'title_art' => '/title_art/a.jpg' } => nil,
         { 'title_art' => 'title_art/a.svg' } => nil,
-        { 'title_art' => 'title_art/awareness_e12_visitor_tailgater.jpg' } => 'title_art/awareness_e12_visitor_tailgater.jpg',
+        { 'title_art' => 'title_art/ca12_visitor_tailgater.jpg' } => 'title_art/ca12_visitor_tailgater.jpg',
         { 'title_art' => 'title_art/a-b_1.png' } => 'title_art/a-b_1.png' }.each do |meta, expected|
         mission.define_singleton_method(:load_mission_metadata) { meta }
         assert_equal expected, mission.title_art_path, "title_art #{meta.inspect}"
@@ -47,8 +47,8 @@ module BreakEscape
     end
 
     test "title_art_path reads the real mission.json files and the art exists" do
-      art = Mission.new(name: 'awareness_e12_visitor_tailgater_defend', display_name: 'A').title_art_path
-      assert_equal 'title_art/awareness_e12_visitor_tailgater.jpg', art
+      art = Mission.new(name: 'ca12_visitor_tailgater_defend', display_name: 'A').title_art_path
+      assert_equal 'title_art/ca12_visitor_tailgater.jpg', art
       assert File.exist?(BreakEscape::Engine.root.join('public/break_escape/assets', art))
       assert_nil Mission.new(name: 'm01_first_contact', display_name: 'M1').title_art_path
     end
@@ -65,7 +65,7 @@ module BreakEscape
     end
 
     test "organiser_note reads the real mission.json files" do
-      note = Mission.new(name: 'awareness_pre_finance_ab', display_name: 'A').organiser_note
+      note = Mission.new(name: 'ca_pre_finance_ab', display_name: 'A').organiser_note
       assert_match(/each role's check tests the channel/, note)
       assert_nil Mission.new(name: 'm01_first_contact', display_name: 'M1').organiser_note
     end
@@ -86,7 +86,7 @@ module BreakEscape
     test "scoring_mode reads the real mission.json files" do
       assert_equal 'partial_then_complete', Mission.new(name: 'lab_tesseract_trials', display_name: 'L').scoring_mode
       assert_equal 'partial_then_complete', Mission.new(name: 'lab_social_engineering', display_name: 'L').scoring_mode
-      assert_equal 'completion', Mission.new(name: 'awareness_e1_invoice_fraud', display_name: 'A').scoring_mode
+      assert_equal 'completion', Mission.new(name: 'ca01_invoice_fraud', display_name: 'A').scoring_mode
       assert_equal 'tasks', Mission.new(name: 'm01_first_contact', display_name: 'M1').scoring_mode
     end
 

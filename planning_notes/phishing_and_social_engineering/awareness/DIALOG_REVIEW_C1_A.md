@@ -40,7 +40,7 @@ use the m01 hub / sticky-exit pattern cleanly; `blank-reentry` and starved-knot 
 ## MAJOR
 
 ### MAJOR-1 — E3 pretext call: the contact's own lines carry a self-prefix (14 lines)
-`scenarios/awareness_e3_helpdesk_reset/ink/leila_servicedesk.ink:39,58,68,72,77,79,81,83,85,87,89,96,98,100`
+`scenarios/ca03_helpdesk_reset/ink/leila_servicedesk.ink:39,58,68,72,77,79,81,83,85,87,89,96,98,100`
 
 Every one of Leila's spoken lines is prefixed with her own name, e.g.:
 
@@ -66,16 +66,16 @@ Trim to e.g. `[I'm at a conference, away from my desk phone — a callback's no 
 bubble is the first and last thing a learner reads; a 40–44-word bubble reads as a wall.
 
 Hand-authored (fix in ink):
-- `awareness_e1_invoice_fraud/ink/adaeze_okafor.ink:25` — 40 words ("You've worked it from both ends now. … what I'd want from my team.")
-- `awareness_e2_cv_lures/ink/fatima_begum.ink:24` — 32 words ("Inbox and all, that's the pair of them done. … earned a second look.")
-- `awareness_e3_helpdesk_reset/ink/darren_price.ink:23` — **44 words** ("That's the desk covered from both seats, thanks. … the check that does.")
-- `awareness_e4_exec_whaling/ink/thandiwe_moyo.ink:24` — 40 words; `:29` — 32 words.
-- `awareness_post_finance_ab/ink/graham_post.ink:24` — 35 words.
+- `ca01_invoice_fraud/ink/adaeze_okafor.ink:25` — 40 words ("You've worked it from both ends now. … what I'd want from my team.")
+- `ca02_cv_lures/ink/fatima_begum.ink:24` — 32 words ("Inbox and all, that's the pair of them done. … earned a second look.")
+- `ca03_helpdesk_reset/ink/darren_price.ink:23` — **44 words** ("That's the desk covered from both seats, thanks. … the check that does.")
+- `ca04_exec_whaling/ink/thandiwe_moyo.ink:24` — 40 words; `:29` — 32 words.
+- `ca_post_finance_ab/ink/graham_post.ink:24` — 35 words.
 
 Generated (fix the generator string, else a rebuild reverts):
-- `awareness_pre_helpdesk_ab/ink/anjali_pre.ink:24` — 39 words — source `gen_e3_e5_shells.py:74`.
-- `awareness_pre_helpdesk_ba/ink/sofia_pre.ink:24` — 31 words — source `gen_e3_e5_shells.py:84`.
-- `awareness_pre_executive_ba/ink/julian_pre.ink:24` — 31 words — source `gen_e2_e4_shells.py:121`.
+- `ca_pre_helpdesk_ab/ink/anjali_pre.ink:24` — 39 words — source `gen_e3_e5_shells.py:74`.
+- `ca_pre_helpdesk_ba/ink/sofia_pre.ink:24` — 31 words — source `gen_e3_e5_shells.py:84`.
+- `ca_pre_executive_ba/ink/julian_pre.ink:24` — 31 words — source `gen_e2_e4_shells.py:121`.
 
 **Fix:** for the 40-word-plus lines, split into two bubbles (two spoken lines on consecutive lines in
 the knot) rather than cramming. Worked examples:
@@ -106,7 +106,7 @@ E4 `thandiwe_moyo.ink:29` (32w, welcome line): drop "as the red team" →
 This is the one item whose tell is "a *different* freemail inbox from the one she publishes" rather than
 the clean "a senior name on freemail, not the company domain" used everywhere else. The published
 address is only established in the OSINT stage (`e4/attack.json:35,111`), which the **defend-only** shell
-(`awareness_e4_exec_whaling_defend`, same `e4_pa_inbox` set) never runs — so the card asserts a fact the
+(`ca04_exec_whaling_defend`, same `e4_pa_inbox` set) never runs — so the card asserts a fact the
 learner has no way to know, and the lesson can't be drawn from the card alone.
 **Fix (fragment `e4/defend.json`):** make the note stand on its own, e.g.
 > "A payment request from the managing partner on a free webmail inbox (lintbox.example), not her merrinsallow.example address. Anyone can open a free inbox in a name you know, so stop and ring her on the number in your contacts."
@@ -173,7 +173,7 @@ the pressure you were under." Optional.
 ## Notes for the fixer / next part
 
 - **Build-drift, not a finding against the copy:** the shipped full-episode scenarios carry strings the
-  fragments lack — `awareness_e2_cv_lures` has `conceptPanel` and `flipMissed`, `awareness_e4_exec_whaling`
+  fragments lack — `ca02_cv_lures` has `conceptPanel` and `flipMissed`, `ca04_exec_whaling`
   has `voicePanel`/`flipMissed`/`defendIntro` — which sit in the fragments only as `_conceptPanel` /
   `_voicePanel` drafts (`e2/defend.json:30-34`, `e4/defend.json:610-614`). If the full episodes are ever
   re-emitted from the fragments, those strings must be promoted into `strings`, or they're lost. Any copy

@@ -64,7 +64,7 @@ concept prompts can follow it.
     check-mission host **Graham Whitfield** (`BRAND_SET.md` P7-J). Resolved by the brief; confirmed still true.
 - **RESOLVED CLASH, DC Hendry -> DC Rowley.** The brief named the police-impersonation caller "DC Hendry".
   **"Hendry" is already a built character:** **Pauline Hendry, Payroll**, a genuine colleague in the built
-  check forms (`awareness_pre_general_ba`, `awareness_post_general_ba`, `awareness_pre_helpdesk_ba`). Reusing
+  check forms (`awareness_pre_general_ba`, `awareness_post_general_ba`, `ca_pre_helpdesk_ba`). Reusing
   the surname for a fraudster in the same product line is a confusion, and combined with E11's own on-screen
   resident "Pauline Grant" it doubles up oddly. I renamed the caller to **DC Rowley** ("Rowley" had no hits
   anywhere in the tree on 2026-10-29). North Pennine Police is kept (the word "Pennine" is shared with the E1
@@ -72,7 +72,7 @@ concept prompts can follow it.
   kind of entity, not a name clash).
 - **RECORDED NEAR-MISS, Hale.** E11 introduces **Gareth Hale** (genuine, a resident's son) and **Edna Hale**
   (on-screen resident) at Carrholme. **"Hale" is already in the built E3 set as Marcus Hale**, the Vanteq
-  Systems remote-access fraudster at Quayholt (`awareness_e3_helpdesk_reset`; `BRAND_SET.md`'s WP-15 note says
+  Systems remote-access fraudster at Quayholt (`ca03_helpdesk_reset`; `BRAND_SET.md`'s WP-15 note says
   "No one else is named Hale"). Different first names, different people, different companies and episodes
   (E3 fraudster at Quayholt vs E11 genuine family member at Carrholme). Treated as a near-miss, recorded and
   not renamed, the same way the project handled Marcus Webb / Marcus Hale. **For the orchestrator:** if a

@@ -25,12 +25,12 @@ onto Brightwell (game_design §"Setting and cast").
 - `planning_notes/security_awareness_course/implementation/WRITER_BRIEF.md` (engine packet ids; layout).
 - `modules/core_15_generative_ai_and_deepfakes/concepts.md` and `.../game_design.md`.
 - Built nearest-neighbour episodes:
-  - `scenarios/awareness_e7_voice_ceo/scenario.json.erb` and `ink/agnieszka_duda.ink`, the full
+  - `scenarios/ca07_voice_ceo/scenario.json.erb` and `ink/agnieszka_duda.ink`, the full
     `awarenessEpisode` block, the **mail-client template write stage** (`social.templates`,
     `social.phishTargets`, `social.mailClient`), inline **voicemail** triage items with transcripts,
     the flip strings, the `voicePanel`. E13 reuses almost all of this shape.
-  - `scenarios/awareness_e4_exec_whaling/scenario.json.erb`, the whaling attack and the exec/PA cast.
-  - `scenarios/awareness_e3_helpdesk_reset/scenario.json.erb`, the triage `call` kind and the host NPC
+  - `scenarios/ca04_exec_whaling/scenario.json.erb`, the whaling attack and the exec/PA cast.
+  - `scenarios/ca03_helpdesk_reset/scenario.json.erb`, the triage `call` kind and the host NPC
     done-event mapping (N16).
 - `planning_notes/phishing_and_social_engineering/designs/11_awareness_product_episodes.md` (defend-set
   rules §4, voicemail/call kinds §6.4, host NPC + flushed done event N16, defend-only §3.1/§5.1).
@@ -174,7 +174,7 @@ built by the generator.
   `"spriteSheet": "female_telecom_v2"`, `"spriteTalk": "assets/characters/female_telecom_talk.png"`,
   `"spriteVisemes": "assets/characters/female_telecom_visemes.png"`, `"npcType": "person"`,
   `"id": "gwen_pritchard"`, `"displayName": "Gwen Pritchard"`,
-  `"storyPath": "scenarios/awareness_e13_ai_assistant/ink/gwen_pritchard.json"`, `"currentKnot": "start"`,
+  `"storyPath": "scenarios/ca13_ai_assistant/ink/gwen_pritchard.json"`, `"currentKnot": "start"`,
   plus the N16 done-event `eventMappings`. Host art is a placeholder until the PixelLab reset.
 - **Learner avatar** (full erb `player`, as E7): `"spriteSheet": "female_office_worker_v2"`,
   `"spriteTalk": "assets/characters/female_office_worker_talk.png"`.
@@ -215,7 +215,7 @@ episode is finished." }`. `awarenessEpisode.conclusionTaskId: "handle_assistant_
   `ui_theme`: "general"; `estimated_duration_minutes`: 15.
 - `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Deepfakes", "Prompt injection", "AI assistants", "Security awareness"] } ]`.
 
-Top-level erb strings (copy E7's): `scenario_id` `awareness_e13_ai_assistant`; `scenario_name` "The AI
+Top-level erb strings (copy E7's): `scenario_id` `ca13_ai_assistant`; `scenario_name` "The AI
 assistant: both sides"; `scenario_brief` = `strings.brief` (section 8); `endGoal` "Write the supplier
 brief, then handle the assistant inbox at the training kiosk."; `version` "1.0"; `disableAttacks` true;
 `startRoom` `training_room`; `startPosition` as E7.
@@ -464,15 +464,15 @@ mirror-paired candidate slots in `general_v2` only where they fit `10`'s balance
 
 Create:
 
-- `scenarios/awareness_e13_ai_assistant/scenario.json.erb` (full shell: the `awarenessEpisode`, the
+- `scenarios/ca13_ai_assistant/scenario.json.erb` (full shell: the `awarenessEpisode`, the
   `triageSet`, `social.templates`, `social.phishTargets[assist_reader]`, `social.mailClient`,
   `social.people`, `globalVariables`, the host NPC Gwen with the N16 done mapping; the ENG-06 assistant
   config block and the ENG-07 video-call label config, per those packets). Model on E7.
-- `scenarios/awareness_e13_ai_assistant/ink/`, Gwen's welcome/brief/demo ink (the video-call demo is a
+- `scenarios/ca13_ai_assistant/ink/`, Gwen's welcome/brief/demo ink (the video-call demo is a
   `conversationMode: "video-call"` conversation opened by an event mapping with a `targetKnot`), plus
   any authored-assistant ink ENG-06 expects. Compile to `.json`.
-- `scenarios/awareness_e13_ai_assistant/mission.json`.
-- `scenarios/awareness_e13_ai_assistant_defend/` (defend-only shell).
+- `scenarios/ca13_ai_assistant/mission.json`.
+- `scenarios/ca13_ai_assistant_defend/` (defend-only shell).
 - TTS lines for the cloned voicemail and genuine voicemail, and the demo, via the `tts-audio` pipeline
   (the clone is a style variant of the real voice; it must never use a real person, 11 §3.2, core_15).
 
@@ -504,7 +504,7 @@ Validate with `check-bridge.mjs` / `run-suite.sh`.
 
 ## 17. Acceptance checks
 
-- `ruby scripts/validate_scenario.rb scenarios/awareness_e13_ai_assistant/scenario.json.erb
+- `ruby scripts/validate_scenario.rb scenarios/ca13_ai_assistant/scenario.json.erb
   --strict-social --no-graph --skip-ink` passes (the validator takes the `scenario.json.erb` file path
   per shell, not the folder, README §8.3); same for the defend-only shell. This holds once ENG-06/07's
   config and ENG-08's osint-optional stage order are in; the two scenario-local tells need no ENG-08

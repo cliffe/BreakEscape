@@ -22,7 +22,7 @@ description, the `clipboardReveal` is the one line "A hidden command that would 
 computer", no working command is shown or stored anywhere, and the `payloadKit` is empty (no link in
 the lure).
 
-Scope read end to end: both shells (`scenarios/awareness_e10_downloads_and_fake_checks{,_defend}/`
+Scope read end to end: both shells (`scenarios/ca10_downloads_and_fake_checks{,_defend}/`
 `scenario.json.erb`, `ink/niamh_doherty.ink`); the fragment
 `planning_notes/phishing_and_social_engineering/awareness/e10/defend.json`; and the batch-12 engine the
 on-screen behaviours depend on (`inbox-triage-minigame.js` result block :1472-1491, the immediate-mode

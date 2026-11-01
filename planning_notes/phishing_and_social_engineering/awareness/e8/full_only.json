@@ -1,5 +1,5 @@
 {
-  "_about": "Full-episode-only keys for scenarios/awareness_e8_after_the_click/scenario.json.erb (the E8 pilot). The Sonnet wiring agent pastes each value into the full erb at the path its note gives. None of these is in the fragment-erb parity comparison (episode-level, or allow-listed erb-only), and the generated defend-only shell never carries them. Authored by opus48. ENG-01 (flipAftermath, stepLabels) and ENG-09b (conceptPanel array) and ENG-08 (schema) must have landed first.",
+  "_about": "Full-episode-only keys for scenarios/ca08_after_the_click/scenario.json.erb (the E8 pilot). The Sonnet wiring agent pastes each value into the full erb at the path its note gives. None of these is in the fragment-erb parity comparison (episode-level, or allow-listed erb-only), and the generated defend-only shell never carries them. Authored by opus48. ENG-01 (flipAftermath, stepLabels) and ENG-09b (conceptPanel array) and ENG-08 (schema) must have landed first.",
 
   "_notes": {
     "flipAftermath": "Paste at social.awarenessEpisode.flipAftermath (ENG-01). Episode level, items authored inline; the runner shows it only when the attack landed (never on missed/noSend/landedNoTells). items[0] fa_sent is an inline copy of defend row 1 e8_sent_invoice with a DIFFERENT id (the flip item and the defend item must never share an id).",

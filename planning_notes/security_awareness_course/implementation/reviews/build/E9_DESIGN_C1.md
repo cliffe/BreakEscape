@@ -2,14 +2,14 @@
 
 Date: 2026-10-29. Reviewer: Opus 4.8, read-only (this file excepted). Kind of game: the awareness product ("Incident Simulations: Critical Cases"), short education-first episodes for non-technical staff on the neutral corporate skin (`ui_theme: "general"`). No VMs, no combat, no spy framing, no runtime language model. Method and standard: `planning_notes/security_awareness_course/implementation/REVIEWER_BRIEF.md`, the `scenario-design-review` skill adapted to the awareness kind, and the E8 pilot reviews in this folder (`E8_DESIGN_C1.md`, `E8_DESIGN_C2.md`) for format and bar. Source of truth for facts: `modules/core_03_passwords_and_mfa/concepts.md`; topic boundaries: `00_COURSE_OVERVIEW.md`.
 
-Scope read end to end: the full shell `scenarios/awareness_e9_passwords/{scenario.json.erb, ink/nilesh_solanki.ink}`; the defend-only shell `scenarios/awareness_e9_passwords_defend/{scenario.json.erb, ink/nilesh_solanki.ink}`; the fragments `planning_notes/phishing_and_social_engineering/awareness/e9/{attack.json, defend.json, full_only.json, BRAND_ADDITIONS.md}`; the spec `.../episodes/E09_passwords.md`; the module `modules/core_03_passwords_and_mfa/concepts.md`; and the engine the findings depend on (`flip-view.js`, `inbox-triage/triage-kinds.js`, `inbox-triage/triage-scoring.js`, `episode-runner/debrief-view.js`, `inbox-triage-minigame.js`).
+Scope read end to end: the full shell `scenarios/ca09_passwords/{scenario.json.erb, ink/nilesh_solanki.ink}`; the defend-only shell `scenarios/ca09_passwords_defend/{scenario.json.erb, ink/nilesh_solanki.ink}`; the fragments `planning_notes/phishing_and_social_engineering/awareness/e9/{attack.json, defend.json, full_only.json, BRAND_ADDITIONS.md}`; the spec `.../episodes/E09_passwords.md`; the module `modules/core_03_passwords_and_mfa/concepts.md`; and the engine the findings depend on (`flip-view.js`, `inbox-triage/triage-kinds.js`, `inbox-triage/triage-scoring.js`, `episode-runner/debrief-view.js`, `inbox-triage-minigame.js`).
 
 How the screens were judged: from the engine code and the authored data, **not** from a live render (the approach the E8 C2 review used for its engine findings). A bridge (`tools/playtest/se/bridge-e9-full.jsonl`) exists; I did not run it. The flip and results findings below are traced through the render and scoring code, where the path is unambiguous; a render would confirm A and B visually.
 
 Ran:
 - `validate_scenario.rb --strict-social --no-graph --skip-ink` on both shells: schema passes, **no social errors or warnings** on either (only the generic m01-style "consider adding a VM launcher / locks / music" suggestions, which do not apply to an awareness episode). Note E9 draws none of the "global set but never read" social warnings the E8 full shell carries.
-- `node --test social-awareness-fragment-erb-parity.test.mjs`: E9's own parity subtest (`E9: fragment and full erb share the same learner-facing copy`) **passes**. The suite's one failure (`every full awareness episode ... is registered`) is caused only by `awareness_e14_social_media` (the concurrent E14 work in the tree), confirmed by the diff; **not an E9 issue**.
-- `node --test social-awareness-rule-of-thumb.test.mjs`: both E9 shells carry the byte-identical rule of thumb; the two failures are the same `awareness_e14_social_media` registry miss ("expected 63 ... found 64"), **not E9**.
+- `node --test social-awareness-fragment-erb-parity.test.mjs`: E9's own parity subtest (`E9: fragment and full erb share the same learner-facing copy`) **passes**. The suite's one failure (`every full awareness episode ... is registered`) is caused only by `ca14_social_media` (the concurrent E14 work in the tree), confirmed by the diff; **not an E9 issue**.
+- `node --test social-awareness-rule-of-thumb.test.mjs`: both E9 shells carry the byte-identical rule of thumb; the two failures are the same `ca14_social_media` registry miss ("expected 63 ... found 64"), **not E9**.
 - `dialoguelint.mjs` on both shells: full `lines=8 median=15 p90=28 max=28`; defend `lines=3 median=26 p90=30 max=30`. No rule hits. Host lines are under 30 words (defend-only sits right on 30).
 
 ## Counts
@@ -64,7 +64,7 @@ Fix (pick one):
 
 ### MA3 — in the defend-only variant, three feedback lines refer to "Colin", "the attack half" and "the guesser", which that learner never saw. Major, episode-local.
 The defend-only shell has no osint/guess/flip stage, so the learner never meets Colin and never runs the guesser. But three `choice`-card feedback strings (shared from `e9/defend.json`, so carried into the defend-only shell) still name them:
-- `scenarios/awareness_e9_passwords_defend/scenario.json.erb:188` (`e9_passphrase.reportReply`): "...near the top of every guess list, exactly the pattern **the guesser tried on Colin**."
+- `scenarios/ca09_passwords_defend/scenario.json.erb:188` (`e9_passphrase.reportReply`): "...near the top of every guess list, exactly the pattern **the guesser tried on Colin**."
 - `:217` (`e9_signup_password.ifTrusted`): "Reusing your usual password is what **the attack half exploited on Colin**: one breach of a small site..."
 - `:245` (`e9_security_answer.ifTrusted`): "...the same way **it built Colin's guess list**."
 
@@ -94,7 +94,7 @@ Fix (episode-local): `scenario.json.erb:204` / `defend.json:107`, old `"note": "
 - **Timing unverified.** No run was timed. Six stages with an 8-item defend half is plausible for ~15 minutes full / ~8 defend, but a timed playtest is the honest way to confirm the budgets.
 - **`mfa_number_relay` is wired correctly.** It is declared scenario-local in `channelTells` with a `flagChips` label and a set-level `skillNames` entry (`scenario.json.erb:92–102`), and `factorStrings.mfa_number_relay.redFlag` sits on the one card that flags it (`:167`). The validator accepts it; it is not appended to the shared library.
 - **Host ink is in good shape.** The hub pattern gives a line that fits each moment (welcome, after the guesser lands, after lock-down), stays in a colleague's voice, and is under the word limit.
-- **The two failing JS tests are not E9.** Both the parity and rule-of-thumb suites fail only because `awareness_e14_social_media` (concurrent work in the tree) is not registered; E9 is registered and passes its own subtests.
+- **The two failing JS tests are not E9.** Both the parity and rule-of-thumb suites fail only because `ca14_social_media` (concurrent work in the tree) is not registered; E9 is registered and passes its own subtests.
 
 ## Verdict
 
@@ -107,7 +107,7 @@ Fix (episode-local): `scenario.json.erb:204` / `defend.json:107`, old `"note": "
 - Counts: 0 blocker, 3 major, 3 minor (6 total; 3 episode-local, 3 engine, 0 needs-user).
 - MA1 (episode-local): the flip shows the heading "Now it's your phone" twice and says "they can't get past your phone / deny what you didn't start" twice, while the authored `flipIntro` never renders (a generic default shows instead) — `scenario.json.erb:419/441/445–447`.
 - MA2 (engine + episode-local): the fake-"IT" SMS in the flip aftermath renders as an empty bubble from "Unknown sender" because the aftermath passes an empty body node and the item has no `from` — `flip-view.js:305`, `triage-kinds.js:344/357/370`, `scenario.json.erb:433–439`.
-- MA3 (episode-local): three defend-card feedback lines name "Colin"/"the attack half"/"the guesser" that the defend-only learner never saw — `awareness_e9_passwords_defend/scenario.json.erb:188/217/245` (source `e9/defend.json:113/135/156`).
+- MA3 (episode-local): three defend-card feedback lines name "Colin"/"the attack half"/"the guesser" that the defend-only learner never saw — `ca09_passwords_defend/scenario.json.erb:188/217/245` (source `e9/defend.json:113/135/156`).
 - Verdict: not yet ship-ready; fix MA1–MA3 (and MI3), raise MI1 with the engine owner, run one timed playtest, then a C2 confirm.
 
 ---

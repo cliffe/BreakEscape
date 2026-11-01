@@ -1,0 +1,13 @@
+{
+  "key": "d2cd0ea6b22696c2f3992b606c03aaa3",
+  "npc": "joanne_pell",
+  "text": "No problem.",
+  "voice": "Zephyr",
+  "style": "Brightwell's learning and development coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca_pre_finance_ba",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:42Z"
+}

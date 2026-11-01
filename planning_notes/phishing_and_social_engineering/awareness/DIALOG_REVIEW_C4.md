@@ -64,7 +64,7 @@ wrong verdict (with a critical variant). Re-audited against round 7 (`98bba5e50`
   logs/playtest notes that describe the old wording). Confirmed by grep.
 - **E1 count holds at six.** The E1 defend set is six messages (`e1_harlow_invoice`, `e1_lookalike_bank`,
   `e1_po_pennine`, `e1_pennine_bank_calm`, `e1_ceo_wire`, `e1_bank_confirmed`); the brief says "Six
-  messages are waiting." (`scenarios/awareness_e1_invoice_fraud/scenario.json.erb:93`, fragment
+  messages are waiting." (`scenarios/ca01_invoice_fraud/scenario.json.erb:93`, fragment
   `e1/defend.json:19`). Round 5's "capped lists" cap only the genuine-feedback title list (3 names + "N
   more"); they do not touch the inbox total, so the "six" count is unaffected. Spot-checked E4 ("Five
   emails and voicemails" = 5 messages) and E7 ("Three voicemails and two emails" = 5) — both correct.
@@ -94,12 +94,12 @@ warning does not fire. The reasoning that justifies E5/E6 applies identically to
 
 ### Call 2 — `borrowed_authority` on E4's pay-now pretext → **KEEP on the pretext, but the defend side is inconsistent (see C4-1)**
 
-The flag is the right tell. `ms_pretext_pay_now` (`scenarios/awareness_e4_exec_whaling/scenario.json.erb:452`)
+The flag is the right tell. `ms_pretext_pay_now` (`scenarios/ca04_exec_whaling/scenario.json.erb:452`)
 reads "Keep it between us for now, no need to trouble finance, and I'll square it with them when I land."
 Invoking the managing partner's own sign-off to push a payment past finance is borrowed/misappropriated
 authority — the **same move** E7 tags `borrowed_authority` ("'I'll sign it off when I'm back' and 'don't
 put it through the usual approval' lean on his seniority to push it past the check",
-`awareness_e7_voice_ceo/scenario.json.erb:240`). It is distinct from the co-located `secrecy_or_bypass`
+`ca07_voice_ceo/scenario.json.erb:240`). It is distinct from the co-located `secrecy_or_bypass`
 ("keep it between us"). Keep it on the pretext.
 
 The problem is that the **defend** side of E4 does not carry it, so the attack build and the defender
@@ -116,7 +116,7 @@ E3**, whose defend set is a service-desk call set (plus one MFA push), where "me
 looks like a counter-example but is not: its critical path is the phish **email** `e7_ceo_wire`; the
 cloned-voice voicemails are not a critical kind, so the default still fits. E3's channel-neutral line
 ("This was built to catch you under pressure…") is authored and has propagated correctly to the E3
-defend shell (`awareness_e3_helpdesk_reset_defend/scenario.json.erb:288`). The pre/post check shells
+defend shell (`ca03_helpdesk_reset_defend/scenario.json.erb:288`). The pre/post check shells
 are measurement-only (`missionConclusion` with a "result saved" conclusion screen, no debrief block),
 so they never render a no-blame line and correctly need neither string. Keep E3-only.
 
@@ -127,7 +127,7 @@ so they never render a no-blame line and correctly need neither string. Keep E3-
 ### C4-1 — E4 defend side omits `borrowed_authority`, so the course tells a learner who spots it "Not a flag here"
 
 `borrowed_authority` is listed in E4's defend `channelTells`
-(`scenarios/awareness_e4_exec_whaling/scenario.json.erb:105`), so the learner can tick it on any E4
+(`scenarios/ca04_exec_whaling/scenario.json.erb:105`), so the learner can tick it on any E4
 message, and the attack-build pretext claims it (`:463`). But **no E4 defend message carries it**: the
 two phish items that use the move list only `secrecy_or_bypass` (and `senderTrust` / `urgencyCalibrated`
 / `vish_callback_pressure`):
@@ -168,9 +168,9 @@ resolution.
 Round 8 reworded the E1–E4 no-blame lines (to stop them claiming "nobody is marked down" now that the
 line shows only after a wrong verdict — a good change). Two of them now close on the **same** sentence:
 
-- E1 (`scenarios/awareness_e1_invoice_fraud/scenario.json.erb:366`, fragment `e1/defend.json:940`):
+- E1 (`scenarios/ca01_invoice_fraud/scenario.json.erb:366`, fragment `e1/defend.json:940`):
   "…anyone working at pace can act on one. **A miss here just shows where to look next time.**"
-- E3 (`scenarios/awareness_e3_helpdesk_reset/scenario.json.erb:368`, fragment `e3/defend.json:576`):
+- E3 (`scenarios/ca03_helpdesk_reset/scenario.json.erb:368`, fragment `e3/defend.json:576`):
   "…is doing its job under pressure. **A miss here just shows where to look next time.**"
 
 This is the same cross-episode verbatim repetition C2-1/C3-3 varied for the `noBlameLine`, `defendOnly`
@@ -189,7 +189,7 @@ fragment). Low frequency — only after a wrong verdict, across two sessions —
 ### C4-T1 — E3 critical no-blame line uses a mild "built to A, not to B" shape (optional)
 
 `noBlameLineCritical` "This was built to catch you under pressure, **not to test how careful you are**."
-(`awareness_e3_helpdesk_reset/scenario.json.erb:369`, fragment `e3/defend.json:577`) leans on the
+(`ca03_helpdesk_reset/scenario.json.erb:369`, fragment `e3/defend.json:577`) leans on the
 negative-parallelism shape the house style watches for. It draws a real and useful contrast and reads
 well, and the engine default it stands in for avoids the shape ("says more about the attack than about
 you"). Optional: if aligning with the default, "This was built to catch you under pressure; the points
@@ -229,7 +229,7 @@ fixes are on-screen text with no voice cost.
 
 ## Notes for the fixer
 
-- C4-1: full erb `awareness_e4_exec_whaling/scenario.json.erb` (add the flag + note to `e4_boarding_payment`
+- C4-1: full erb `ca04_exec_whaling/scenario.json.erb` (add the flag + note to `e4_boarding_payment`
   `:160–164` and `e4_vm_gate` `:194–197`) **and** the E4 defend fragment, keeping fragment↔erb parity;
   then regenerate the E4 defend-only shell so its stored copy stays in sync. No generator for the full erb.
 - C4-2: E3 full erb `:368` + fragment `e3/defend.json:576` (both sides, per the DIALOG_LOG convention).

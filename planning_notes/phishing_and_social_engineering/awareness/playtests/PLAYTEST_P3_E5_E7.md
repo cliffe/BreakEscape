@@ -10,20 +10,20 @@ Logs and screenshots: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEs
 
 | Game | Scenario | Run | Driver time |
 | ---- | -------- | --- | ----------- |
-| 3835 | awareness_e5_signin_pages | careful learner, all research, SSO page, send landed, 5/5 defend | 216 s |
-| 3840 | awareness_e5_signin_pages | hurried: no research, Fileharbour/fileharbour page, newsletter pretext (did not land), 2 wrong verdicts + 2 missed ticks | 119 s |
-| 3843 | awareness_e5_signin_pages | second missed send, to read Hana's reply | short |
-| 3889 | awareness_e5_signin_pages | builder only (score reset line, logo asset) | short |
-| 3845 | awareness_e6_texts_and_qr | careful (research, blank needs evidence, back to research, landed, 6 items) | 159 s |
-| 3850 | awareness_e6_texts_and_qr | hurried: no contacts at first, newsletter pretext (did not land), 4 wrong verdicts | 74 s |
-| 3885 | awareness_e6_texts_and_qr | calm ask, to check Kaylee's reply and Compose-twice | short |
-| 3852 | awareness_e7_voice_ceo | careful (landed, 5/5 defend) | 135 s |
-| 3857 | awareness_e7_voice_ceo | hurried: catch-up pretext (did not land), mid-round Close and reopen, 3 wrong verdicts | 70 s |
-| 3860 / 3864 | awareness_pre_finance_ab / post_finance_ab | finance, A then B | 105 s / 81 s |
-| 3880 / 3882 | awareness_pre_finance_ba / post_finance_ba | finance, B then A | 39 s / about 40 s |
-| 3870 / 3873 | awareness_pre_mobile_ab / post_mobile_ab | mobile | 51 s / about 50 s |
-| 3877 | awareness_pre_executive_ab | executive (hurried, 5 phish) | about 50 s |
-| 3884 | awareness_post_helpdesk_ab | helpdesk post, read all 10 (calls, voicemail, sign-in prompt) | read only |
+| 3835 | ca05_signin_pages | careful learner, all research, SSO page, send landed, 5/5 defend | 216 s |
+| 3840 | ca05_signin_pages | hurried: no research, Fileharbour/fileharbour page, newsletter pretext (did not land), 2 wrong verdicts + 2 missed ticks | 119 s |
+| 3843 | ca05_signin_pages | second missed send, to read Hana's reply | short |
+| 3889 | ca05_signin_pages | builder only (score reset line, logo asset) | short |
+| 3845 | ca06_texts_and_qr | careful (research, blank needs evidence, back to research, landed, 6 items) | 159 s |
+| 3850 | ca06_texts_and_qr | hurried: no contacts at first, newsletter pretext (did not land), 4 wrong verdicts | 74 s |
+| 3885 | ca06_texts_and_qr | calm ask, to check Kaylee's reply and Compose-twice | short |
+| 3852 | ca07_voice_ceo | careful (landed, 5/5 defend) | 135 s |
+| 3857 | ca07_voice_ceo | hurried: catch-up pretext (did not land), mid-round Close and reopen, 3 wrong verdicts | 70 s |
+| 3860 / 3864 | ca_pre_finance_ab / post_finance_ab | finance, A then B | 105 s / 81 s |
+| 3880 / 3882 | ca_pre_finance_ba / post_finance_ba | finance, B then A | 39 s / about 40 s |
+| 3870 / 3873 | ca_pre_mobile_ab / post_mobile_ab | mobile | 51 s / about 50 s |
+| 3877 | ca_pre_executive_ab | executive (hurried, 5 phish) | about 50 s |
+| 3884 | ca_post_helpdesk_ab | helpdesk post, read all 10 (calls, voicemail, sign-in prompt) | read only |
 
 Defend-only shell: not played as a separate scenario. Every one of the E5/E6/E7 defend halves was played through its own kiosk, and the E7 hurried run included the mid-round Close and reopen. (The `_defend` scenarios were not opened.)
 
@@ -80,7 +80,7 @@ Severity: blocker 0, major 1, minor 13, trivial 5.
 
 | # | Sev | Where | Finding | Evidence | Fix |
 | - | --- | ----- | ------- | -------- | --- |
-| N-1 | **major** | Finance pre/post (all four forms) | Two phish carry one scored tell, "Sender address", that nothing on screen supports: the Fernhill Business Bank alert (`fb_bank_portal`, in pre BA and post AB) and the Merrow Logistics invoice share (`fa_invoice_share`, in pre AB and post BA). From name, From domain and link domain all match. The data note says "Brightwell doesn't bank with Fernhill" / "doesn't use Merrow Logistics", which the learner is never told. Four careful finance runs each ended "Sender address: caught 3 of 4" and "Weakest skill: Sender address". Ticking the sensible "Link or sender domain is a look-alike" is not credited (the group only covers creditors_spoof). Verify counts as caught, but the skill line still blames the learner. | `awareness_pre_finance_ab` slot 9 `Merrow Logistics <invoices@merrowlogistics.example> / View invoice ML-7731 on merrowlogistics.example`; post AB slot 3 `alerts@fernhillbusinessbank.example`. Results: pre AB "Sender address: caught 3 of 4", post BA same. Data: `truth.flags: ["senderTrust"]`. | Put the fact on screen (a "suppliers and bank on file" line in the check brief, or a supplier list in the header panel), or credit "There's no good reason I'd get this" for these two, or swap them for items with a visible tell. Audit the other roles for the same pattern (I did not). |
+| N-1 | **major** | Finance pre/post (all four forms) | Two phish carry one scored tell, "Sender address", that nothing on screen supports: the Fernhill Business Bank alert (`fb_bank_portal`, in pre BA and post AB) and the Merrow Logistics invoice share (`fa_invoice_share`, in pre AB and post BA). From name, From domain and link domain all match. The data note says "Brightwell doesn't bank with Fernhill" / "doesn't use Merrow Logistics", which the learner is never told. Four careful finance runs each ended "Sender address: caught 3 of 4" and "Weakest skill: Sender address". Ticking the sensible "Link or sender domain is a look-alike" is not credited (the group only covers creditors_spoof). Verify counts as caught, but the skill line still blames the learner. | `ca_pre_finance_ab` slot 9 `Merrow Logistics <invoices@merrowlogistics.example> / View invoice ML-7731 on merrowlogistics.example`; post AB slot 3 `alerts@fernhillbusinessbank.example`. Results: pre AB "Sender address: caught 3 of 4", post BA same. Data: `truth.flags: ["senderTrust"]`. | Put the fact on screen (a "suppliers and bank on file" line in the check brief, or a supplier list in the header panel), or credit "There's no good reason I'd get this" for these two, or swap them for items with a visible tell. Audit the other roles for the same pattern (I did not). |
 | N-2 | minor | E5 and E6 results, E7 100% screen | Result grid contradicts the item feedback. E5 hurried: Report on the real service-desk page scored 100 ("Reported, and that's never wrong") but the grid says "Real pages handled right 0 of 2". E6 hurried: Report on real Shauna text scored 100, grid "Real mail handled right 0 of 2". E7 careful: 100%, "You read every one of these the right way. Nothing to pick over here." with "Real mail handled right 2 of 3" (I reported the real Marsh End email). | `e5b.jsonl`, `e6b.jsonl`, `e7a.jsonl` | Count Report on a real item as handled right (it is scored full marks), or drop "never wrong" and score it below Verify. Gate "Nothing to pick over" on every grid line being full. |
 | N-3 | minor | E6 email, E7 CEO email | Ticking the twin of a credited tell is called "Not a flag here". E6 IT email: "Link or sender domain is a look-alike" credited ("The sender is tarrowbey.example, with an extra e") while "The sender's address doesn't match who it says it is" gets "Not a flag here: ... It wasn't one of this message's tells." E7 CEO email: urgency is credited with "...and steer you away from ringing him", but the tick "Caller discourages you from calling back the official number" is "Not a flag here". Score is not docked, but the feedback tells a correct learner they were wrong. | `e6a.jsonl` (IT email), `e7a.jsonl` (Need this paid today) | Add the sender-mismatch tick to the look-alike group, and credit callback pressure on the CEO email (its text is "reply here rather than calling"). |
 | N-4 | minor | E6 and E7 tick lists | Channel-wrong ticks remain on texts and emails: a "QR code" tick and "Reply STOP" tick on the E6 parcel text, "Unsolicited SMS" and "Reply STOP" on the E6 IT email (12 ticks), "Caller discourages you..." on both E7 emails. | `e6a.jsonl`, `e7a.jsonl` | Filter by item kind as already done for calls and voicemails. |

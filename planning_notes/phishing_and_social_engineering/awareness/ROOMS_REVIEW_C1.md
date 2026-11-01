@@ -36,7 +36,7 @@ edited with `room_edit.py`, and m6 below proposes a build script so that map cha
 - `generate_rooms.py --check` on all four: OK, 23–26 objects each. The warnings are the expected kind (bottom two rows,
   N-door corners on a room with no doors, the extinguisher on the east wall strip).
 - `check_room_walls.py 'room_aw_*'`: the floor starts at 64 on all four.
-- `slot_audit.py --notes --verbose` on the four defend shells and `awareness_e7_voice_ceo`: the kiosk lands `ok` on its
+- `slot_audit.py --notes --verbose` on the four defend shells and `ca07_voice_ceo`: the kiosk lands `ok` on its
   map slot at 238,140. 0 problems, 0 notes prompts.
 - `lighting_lookup.rb room_aw_quayholt`: all 12 Quayholt shells carry the same block, and the kiosk is covered by the
   room emitter.

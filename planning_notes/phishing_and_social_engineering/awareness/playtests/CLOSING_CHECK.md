@@ -19,13 +19,13 @@ Each bridge ran in a fresh game from new-game.rb. Counts are eval assertions pas
 
 | Bridge | Scenario | Game | Evals | Result |
 | ------ | -------- | ---- | ----- | ------ |
-| e1-full | awareness_e1_invoice_fraud | 4620 | 13/13 | PASS |
-| e2-full | awareness_e2_cv_lures | 4621 | 14/14 | PASS |
-| e3-full | awareness_e3_helpdesk_reset | 4622 | 22/22 | PASS |
-| e4-full | awareness_e4_exec_whaling | 4623 | 14/14 | PASS |
-| e5-full | awareness_e5_signin_pages | 4624 | 18/18 | PASS |
-| e6-full | awareness_e6_texts_and_qr | 4625 | 15/15 | PASS |
-| e7-full | awareness_e7_voice_ceo | 4626 | 13/13 | PASS |
+| e1-full | ca01_invoice_fraud | 4620 | 13/13 | PASS |
+| e2-full | ca02_cv_lures | 4621 | 14/14 | PASS |
+| e3-full | ca03_helpdesk_reset | 4622 | 22/22 | PASS |
+| e4-full | ca04_exec_whaling | 4623 | 14/14 | PASS |
+| e5-full | ca05_signin_pages | 4624 | 18/18 | PASS |
+| e6-full | ca06_texts_and_qr | 4625 | 15/15 | PASS |
+| e7-full | ca07_voice_ceo | 4626 | 13/13 | PASS |
 | p7-channels | test_social_p7_channels | 4627 | 18/18 | PASS |
 | 6 | lab_social_engineering | 4628 | 36/36 | PASS |
 | r4-door | lab_social_engineering | 4629 | 3/3 | PASS |

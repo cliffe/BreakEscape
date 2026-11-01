@@ -24,7 +24,7 @@ Where fixes go: map changes in `scripts/room_gen/build_aw_rooms.py` (then run it
 - `check_room_walls.py 'room_aw_*'`: floor at 64 on all four.
 - `generate_rooms.py --check` on the four: OK (22–26 objects). Warnings are the expected kinds: bottom two rows (no
   room to the south), N-door corners (no doors), the extinguisher on the east strip, one floor plant in Quayholt.
-- `slot_audit.py --notes --verbose` on the four defend shells and `awareness_e7_voice_ceo`: kiosk `ok` on its slot at
+- `slot_audit.py --notes --verbose` on the four defend shells and `ca07_voice_ceo`: kiosk `ok` on its slot at
   238,140; 0 problems, 0 notes prompts.
 - A Python check over all 38 shells against `training_room.py`: every shell has the right map type for its company,
   scenario and room `lighting` equal to `training_room_lighting.json`, `startPosition` (6, 6.2), host at (5.5, 3.8),
@@ -204,8 +204,8 @@ than a full review.
 ## In-game pass
 
 Run 2026-10-27 on keyless :3001, one game at a time, after the awareness bridges had finished. Games: Brightwell
-`awareness_e1_invoice_fraud_defend` 4485, Tarrowby `awareness_e2_cv_lures_defend` 4488, Quayholt
-`awareness_e3_helpdesk_reset_defend` 4490, Merrin Sallow `awareness_e4_exec_whaling_defend` 4491. Tours by
+`ca01_invoice_fraud_defend` 4485, Tarrowby `ca02_cv_lures_defend` 4488, Quayholt
+`ca03_helpdesk_reset_defend` 4490, Merrin Sallow `ca04_exec_whaling_defend` 4491. Tours by
 `lighting-tour.sh <shell> <out> --close-intro --check --player training_room:6,6:up`, with the lit shot as
 `training_room-a.png` and the dark shot as `training_room-player-dark.png`. Judgements on the shots are visual; no pixel
 measurements were taken.

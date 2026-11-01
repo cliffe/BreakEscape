@@ -24,7 +24,7 @@ The core_08 module docs write real-TLD vendor domains: `pagewright.co.uk` / `pag
 
 ## Name-clash search (`grep -rn "<name>" scenarios planning_notes docs`, 2026-10-29)
 
-- **Leo Brennan / `leo.brennan@quayholt.example`**: already built in E19 (`awareness_e19_malware_and_updates`) and in BRAND_SET §3. Intended reuse; same address, no disagreement.
+- **Leo Brennan / `leo.brennan@quayholt.example`**: already built in E19 (`ca19_malware_and_updates`) and in BRAND_SET §3. Intended reuse; same address, no disagreement.
 - **Fernside / `orders.fernside.example` / `orders-fernside.example`**: hits are E19's fragment and BRAND_SET (which flags them as "from the E10 plan"), plus the core_08 module docs. Intended reuse; E10 lands the portal shapes.
 - **`hauliernews`, `secure-alert.example`**: zero hits anywhere. Clean for a new episode.
 - **`pagewright-download`, `paperclip-trade-login`, `paperclipandsons`**: hits only in the core_08 module docs (real-TLD), swapped to `.example` here.

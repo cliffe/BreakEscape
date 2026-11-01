@@ -309,7 +309,7 @@ def brand_block():
 
 
 def defend_only():
-    mission = 'awareness_e1_invoice_fraud_defend'
+    mission = 'ca01_invoice_fraud_defend'
     ep_id = 'e1_invoice_fraud_defend'
     prefix = f'episode_{ep_id}_defend_'
     done = f'{prefix}complete'
@@ -368,7 +368,7 @@ def defend_only():
 
 
 def check(pair, stage):
-    mission = f'awareness_{stage}_finance_{pair}'
+    mission = f'ca_{stage}_finance_{pair}'
     ep_id = f'{stage}_finance_{pair}'
     form = {('ab', 'pre'): 'finance_form_a', ('ab', 'post'): 'finance_form_b',
             ('ba', 'pre'): 'finance_form_b', ('ba', 'post'): 'finance_form_a'}[(pair, stage)]
@@ -393,7 +393,7 @@ def check(pair, stage):
         done: False,
     }
     extra = {}
-    pre_mission = f'awareness_pre_finance_{pair}'
+    pre_mission = f'ca_pre_finance_{pair}'
     if stage == 'pre':
         extra['exportGlobals'] = ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_complete']
     else:
@@ -451,7 +451,7 @@ def check(pair, stage):
 
 # Top-level titleScreenName (engine batch 14), placed right after scenario_name. Values match the committed
 # shells (owner decision 2026-10-30): checks say Starting check / Final check, defend shells use the episode name.
-TITLE_NAMES = {'awareness_e1_invoice_fraud_defend': 'Invoice fraud'}
+TITLE_NAMES = {'ca01_invoice_fraud_defend': 'Invoice fraud'}
 
 
 def with_title_screen_name(sc, mission):

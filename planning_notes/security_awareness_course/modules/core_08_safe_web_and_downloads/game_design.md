@@ -4,7 +4,7 @@
 
 ## Built shape and episode mapping
 
-This module is **part built** (`research/built_episodes_vs_plan.md` §2). Reading a web address, look-alike domains and the padlock myth (C08-LO2) are the built **E5** `awareness_e5_signin_pages` (Quayholt Insurance, general) and its page-triage defend set and general checks. **Do not redesign the built E5 parts.** The rest, the signature of this module, is delivered by **E10** (new, with core_07): fake downloads, the "verify you are human" clipboard trick, browser warnings and extensions. E10 **extends E5**: it reuses the E5 mock browser and page-build model.
+This module is **part built** (`research/built_episodes_vs_plan.md` §2). Reading a web address, look-alike domains and the padlock myth (C08-LO2) are the built **E5** `ca05_signin_pages` (Quayholt Insurance, general) and its page-triage defend set and general checks. **Do not redesign the built E5 parts.** The rest, the signature of this module, is delivered by **E10** (new, with core_07): fake downloads, the "verify you are human" clipboard trick, browser warnings and extensions. E10 **extends E5**: it reuses the E5 mock browser and page-build model.
 
 E10 follows the built shape: an attack half that builds and reveals a fake page (never a working one), a flip, then a scored defend half of browser-screen triage, then the built debrief view with the shared "habit to keep". It uses the built landing-page model, inbox triage, awareness-measure records and concept cards, has a defend-only variant, and feeds new check items with mirror pairs (`assessment.md`).
 

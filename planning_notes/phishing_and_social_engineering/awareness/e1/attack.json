@@ -1,5 +1,5 @@
 {
-  "_note": "E1 invoice-fraud attack fragment (P7-F). A fragment of the `social` block; the shell packet (P7-K) copies these keys into scenarios/awareness_e1_invoice_fraud/scenario.json.erb. All companies and people are fictional. The learner, a junior red-teamer in Brightwell Foods' finance team, impersonates the accounts contact at supplier Harlow Packaging and emails the finance manager (phish target `supplier_contact` = Adaeze Okafor) to change the bank details on an open invoice. No payload, no link, no attachment. See the P7-F report 'Docs hand-off' for the globals the shell must declare.",
+  "_note": "E1 invoice-fraud attack fragment (P7-F). A fragment of the `social` block; the shell packet (P7-K) copies these keys into scenarios/ca01_invoice_fraud/scenario.json.erb. All companies and people are fictional. The learner, a junior red-teamer in Brightwell Foods' finance team, impersonates the accounts contact at supplier Harlow Packaging and emails the finance manager (phish target `supplier_contact` = Adaeze Okafor) to change the bank details on an open invoice. No payload, no link, no attachment. See the P7-F report 'Docs hand-off' for the globals the shell must declare.",
 
   "people": [
     { "id": "adaeze", "kind": "cast", "address": "adaeze.okafor@brightwellfoods.example",

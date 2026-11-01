@@ -14,7 +14,7 @@ matching the rules the shells have to meet now:
     line and the Monday card already say a voice is not proof and to ring back).
 
 E7 has no check missions: its role is everyone, and it reuses the general-staff forms
-(awareness_{pre,post}_general_{ab,ba}), which already have shells.
+(ca_{pre,post}_general_{ab,ba}), which already have shells.
 
 Usage: gen_e6_e7_shells.py [out_dir]   (default: the repo's scenarios/)
 """
@@ -489,7 +489,7 @@ def defend_only(ekey):
     d = cfg['defend']
     sets, EP = load(ekey)
     ep_id = f"{cfg['full_id']}_defend"
-    mission = f'awareness_{ep_id}'
+    mission = awareness_deploy.mission_name(ep_id)
     prefix = f'episode_{ep_id}_defend_'          # doubled `_defend_defend_`, as defendPrefix() gives
     done = f'{prefix}complete'
     s = clean_set(sets, cfg['defend_set'])
@@ -540,7 +540,7 @@ def check(ekey, pair, stage):
     c = cfg['check']
     sets, EP = load(ekey)
     word = cfg['role_word']
-    mission = f'awareness_{stage}_{word}_{pair}'
+    mission = f'ca_{stage}_{word}_{pair}'
     ep_id = f'{stage}_{word}_{pair}'
     fa, fb = cfg['forms']
     form = {('ab', 'pre'): fa, ('ab', 'post'): fb, ('ba', 'pre'): fb, ('ba', 'post'): fa}[(pair, stage)]
@@ -566,7 +566,7 @@ def check(ekey, pair, stage):
         done: False,
     }
     extra = {}
-    pre_mission = f'awareness_pre_{word}_{pair}'
+    pre_mission = f'ca_pre_{word}_{pair}'
     if stage == 'pre':
         extra['exportGlobals'] = ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_complete']
     else:
@@ -614,7 +614,7 @@ def check(ekey, pair, stage):
 
 # Top-level titleScreenName (engine batch 14), placed right after scenario_name. Values match the committed
 # shells (owner decision 2026-10-30): checks say Starting check / Final check, defend shells use the episode name.
-TITLE_NAMES = {'awareness_e6_texts_and_qr_defend': 'Texts and QR codes', 'awareness_e7_voice_ceo_defend': 'Cloned voices and the CEO'}
+TITLE_NAMES = {'ca06_texts_and_qr_defend': 'Texts and QR codes', 'ca07_voice_ceo_defend': 'Cloned voices and the CEO'}
 
 
 def with_title_screen_name(sc, mission):

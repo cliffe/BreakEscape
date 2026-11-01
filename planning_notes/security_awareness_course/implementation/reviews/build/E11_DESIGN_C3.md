@@ -15,7 +15,7 @@ confirm C2 and the blind/playtest findings are fixed, and look hard at what engi
 changed on screen (result counts and their new labels, the debrief recap of earlier stages, the
 "Episode finished" panel, the everyday-choices intro, the confirm prompt).
 
-Scope read end to end: both shells `scenarios/awareness_e11_misdirected_data{,_defend}/`
+Scope read end to end: both shells `scenarios/ca11_misdirected_data{,_defend}/`
 (`scenario.json.erb`, `ink/tomasz_wisniewski.ink`); the fragments
 `planning_notes/phishing_and_social_engineering/awareness/e11/{mistake,defend}.json`; the spec
 `.../episodes/E11_misdirected_data.md`; E11's lines in `gen_e8_e17_shells.py`; the modules

@@ -35,7 +35,7 @@ A learner who misses a critical behaviour goes through the remediation loop (`fe
 
 ## Check and defend items (mirror pairs)
 
-core_08 is **part built**. Reading a web address, look-alike domains and the padlock myth (C08-LO2) are covered by **E5** `awareness_e5_signin_pages` (its page-triage defend set) and the **general** check forms. The downloads, fake "verify you are human" pages, browser warnings and extensions (C08-LO1, LO3, LO4, LO5) are delivered by **E10** (new, with core_07), which **extends E5**. Only the defend half and the pre and post checks are scored (`passPercent` 0). The assessed behaviours and the question pool below map onto defend items and check items, each critical behaviour a **mirror pair** (aw5) tested by matched items across forms A and B.
+core_08 is **part built**. Reading a web address, look-alike domains and the padlock myth (C08-LO2) are covered by **E5** `ca05_signin_pages` (its page-triage defend set) and the **general** check forms. The downloads, fake "verify you are human" pages, browser warnings and extensions (C08-LO1, LO3, LO4, LO5) are delivered by **E10** (new, with core_07), which **extends E5**. Only the defend half and the pre and post checks are scored (`passPercent` 0). The assessed behaviours and the question pool below map onto defend items and check items, each critical behaviour a **mirror pair** (aw5) tested by matched items across forms A and B.
 
 | Behaviour or item | Built (E5) or new (E10) | Check mirror pair (matched A ↔ B) |
 |---|---|---|

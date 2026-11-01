@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the core_00 first-play brief shell (awareness_core_00_first_play), from
+"""Build the core_00 first-play brief shell (ca00_first_play), from
 awareness/core00/defend.json, core00/ink/anjali_rao.ink and core00/WIRING_NOTES.md (WP-12 Part A).
 
 A small sibling of gen_annual_shells.py (and gen_e8_e17_shells.py) (implementation/01_PIPELINE.md P4): the helpers are copied,
@@ -336,7 +336,7 @@ VAR hub_quiet = false
 
 
 HOST = {'id': 'anjali_rao', 'displayName': 'Anjali Rao', 'sprite': 'female_scientist'}
-MISSION = 'awareness_core_00_first_play'
+MISSION = 'ca00_first_play'
 DONE = 'episode_core_00_first_play_done'
 TASK = 'complete_brief'
 

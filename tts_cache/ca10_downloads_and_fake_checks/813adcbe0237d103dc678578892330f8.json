@@ -1,0 +1,13 @@
+{
+  "key": "813adcbe0237d103dc678578892330f8",
+  "npc": "niamh_doherty",
+  "text": "Software from Quayholt Apps, read the address, and never let a page drive your computer.",
+  "voice": "Leda",
+  "style": "Quayholt's internal communications officer and IT trainer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca10_downloads_and_fake_checks",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:19Z"
+}

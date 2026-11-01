@@ -2,7 +2,7 @@
 
 Blind run, Sonnet 5.5, headless (machine load about 11, so timings from the harness are not representative; real-person times below are estimates). Keyless server :3001. It answers the "can a player work this out" question and, for persona 1, the reload question. It is not a solvability pass (no VM, no secrets).
 
-Scenario folders: `awareness_e16_insider_risk` (full) and `awareness_e16_insider_risk_defend`.
+Scenario folders: `ca16_insider_risk` (full) and `ca16_insider_risk_defend`.
 
 | Run | Game id | Session log |
 | --- | --- | --- |

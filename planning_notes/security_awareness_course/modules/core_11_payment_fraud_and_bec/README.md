@@ -61,9 +61,9 @@ The module also gives staff outside Finance awareness of the organisation's segr
 
 This module is **largely built**. Its core is delivered by three shipped episodes in the attack-then-defend shape, plus the six finance pre and post check forms (`research/built_episodes_vs_plan.md` §2, and the scenario files under `scenarios/awareness_*`):
 
-- **Built, E1** `awareness_e1_invoice_fraud` (Brightwell, finance): invoice and bank-detail fraud. Covers C11-LO1 to LO4: the warning pattern of money plus pressure, why a genuine-looking sender proves nothing, calling back on the number on record, and keeping to the controls. Its defend set `e1_payments_inbox` and the finance check forms (`finance_form_a`, `finance_form_b`) are the measured items.
-- **Built, E7** `awareness_e7_voice_ceo` (Brightwell, everyone): the cloned-CEO-voice email beside the finance line. Reinforces LO1 and LO4 and the "verify, do not trust the ear" point (shared with core_15).
-- **Built, E4** `awareness_e4_exec_whaling` (Merrin & Sallow, executive): the "about to board, pay this" whaling email. Reinforces LO1 and LO4 from the PA's side.
+- **Built, E1** `ca01_invoice_fraud` (Brightwell, finance): invoice and bank-detail fraud. Covers C11-LO1 to LO4: the warning pattern of money plus pressure, why a genuine-looking sender proves nothing, calling back on the number on record, and keeping to the controls. Its defend set `e1_payments_inbox` and the finance check forms (`finance_form_a`, `finance_form_b`) are the measured items.
+- **Built, E7** `ca07_voice_ceo` (Brightwell, everyone): the cloned-CEO-voice email beside the finance line. Reinforces LO1 and LO4 and the "verify, do not trust the ear" point (shared with core_15).
+- **Built, E4** `ca04_exec_whaling` (Merrin & Sallow, executive): the "about to board, pay this" whaling email. Reinforces LO1 and LO4 from the PA's side.
 - **Built, checks:** `awareness_{pre,post}_finance_{ab,ba}`, four phish in ten, matched A and B forms (mirror pairs), `passPercent` 0, Verify off; the executive forms add the voicemail items.
 
 **New (builds on E1 and the finance checks):** this plan adds only two things the build lacks, in the built shape:

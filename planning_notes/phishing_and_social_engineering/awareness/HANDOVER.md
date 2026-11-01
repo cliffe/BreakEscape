@@ -1,5 +1,7 @@
 # Awareness course: handover (on hold from 2026-10-23)
 
+> **2026-11-01: scenario folders renamed `awareness_*` → `ca*`** (ca01_invoice_fraud, ca_pre_finance_ab, ca00_first_play, ca_annual_2027_defend). Older notes below use the old names; see `RENAME_2026-11-01.md` for the map.
+
 ## Status 2026-10-27: resumed
 
 The user resumed the course on 2026-10-27, so this note is a status file now rather than a hold note. Sections 2, 3 and 6 below describe the state on 23 October and are kept for history.

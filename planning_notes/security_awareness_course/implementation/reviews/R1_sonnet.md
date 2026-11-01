@@ -16,7 +16,7 @@ Severity scale is `WRITER_BRIEF.md`: B blocker, M major, m minor, t trivial.
 | `node scripts/ink_runtime_check/reopencheck.mjs scripts/ink_runtime_check/missions.json` | Runs (about 2.5 min) but **exits 1 with "Total problems: 4"** on the untouched tree (four `m09_digital_archaeology` phone NPCs). See M6. |
 | Bridges (`run-suite.sh`) | **Cannot run here.** `$HOME/.cache/ms-playwright-go/1.57.0/node` is absent; Node is v22.22.0, not 24. `00_README` §8.5 does warn about this. |
 | `bin/inklecate`, `scripts/compile-ink.sh` | Present (ELF binary). I did not compile into the repo. |
-| `dialoguelint.mjs scenarios/awareness_e5_signin_pages/` | Works. |
+| `dialoguelint.mjs scenarios/ca05_signin_pages/` | Works. |
 
 ## Findings
 
@@ -98,7 +98,7 @@ Severity scale is `WRITER_BRIEF.md`: B blocker, M major, m minor, t trivial.
 ### M8. P2/E8 disagree on which built episode to copy; host ink source differs too
 
 - **Files and sections:** `01_PIPELINE.md` P2 table row 1 and P3 bullet 1; `E08` §2, §7, §8, §15.
-- **Guess:** P2 says a mail write (E8) copies `awareness_e1_invoice_fraud`. E08 §7 says the stage list equals E1's, but §15 says "wired like `awareness_e5_signin_pages`", §8 says the host ink follows "the E5 `niamh_doherty.ink` pattern", and §9 says copy E5's templates, targets and `eventMappings`. P3 says copy `adaeze_okafor.ink`. E5 has `build`, `landingPageId`, `se_landing_pages` and `landing_*` globals, `conceptCards`, `landingPages`; copying E5 wholesale would carry those and the validator warns (`attack.landingPageId` / `build`). The two ink files are structurally identical, so that part is harmless, but the shell is not.
+- **Guess:** P2 says a mail write (E8) copies `ca01_invoice_fraud`. E08 §7 says the stage list equals E1's, but §15 says "wired like `ca05_signin_pages`", §8 says the host ink follows "the E5 `niamh_doherty.ink` pattern", and §9 says copy E5's templates, targets and `eventMappings`. P3 says copy `adaeze_okafor.ink`. E5 has `build`, `landingPageId`, `se_landing_pages` and `landing_*` globals, `conceptCards`, `landingPages`; copying E5 wholesale would carry those and the validator warns (`attack.landingPageId` / `build`). The two ink files are structurally identical, so that part is harmless, but the shell is not.
 - **Fix:** E08 §15: "copy E1 for the frame (P2) and take only the Quayholt names, sites and templates from E5". Delete "wired like E5". Say the ink is E1's structure with E5's company text (or either).
 
 ### M9. E8 §9 under-specifies the attack fragment (OSINT pages, contacts, kit, auth)
@@ -128,7 +128,7 @@ Severity scale is `WRITER_BRIEF.md`: B blocker, M major, m minor, t trivial.
 ### M13. E11 §14 builds a `data_form_a/b` pair; `10_CHECK_FORMS.md` builds `data_conduct`, with different ids and size
 
 - **Files and sections:** `E11` §14, §15; `10_CHECK_FORMS.md` "Item list: data_conduct"; `REVIEW_LOG.md` item 6.
-- **Evidence:** E11 names `data_form_a/b`, ids `da_*` / `db_*`, six rows, and shells `awareness_pre_data_ab` etc. 10 names `data_conduct_form_a/b`, ids `dca_*` / `dcb_*`, ten rows, shells `awareness_pre_data_conduct_ab` etc., one separate generator `gen_checks_v2_shells.py`. 01 P4 says check shells come from `gen_e8_e17_shells.py` (`forms`, `check_hosts`, `check` fields). So there are two generators and two form names for the same shells. E11 also adds a `mistake.json` fragment, a shape P1 does not define (P1 says an engine packet gives the fragment shape; ENG-04 gives none).
+- **Evidence:** E11 names `data_form_a/b`, ids `da_*` / `db_*`, six rows, and shells `awareness_pre_data_ab` etc. 10 names `data_conduct_form_a/b`, ids `dca_*` / `dcb_*`, ten rows, shells `ca_pre_data_conduct_ab` etc., one separate generator `gen_checks_v2_shells.py`. 01 P4 says check shells come from `gen_e8_e17_shells.py` (`forms`, `check_hosts`, `check` fields). So there are two generators and two form names for the same shells. E11 also adds a `mistake.json` fragment, a shape P1 does not define (P1 says an engine packet gives the fragment shape; ENG-04 gives none).
 - **Fix:** adopt `10`'s scheme in E11 §14/§15 and P4 (one check generator, say which). State E11's contribution as specific `dca_*`/`dcb_*` rows of `10`. Give ENG-04 a fragment shape for the `mistake` block, or say it goes in `defend.json` under `awarenessEpisode.mistake`.
 
 ### m1. E8 cast facts are partly wrong or unsupported
@@ -167,7 +167,7 @@ Severity scale is `WRITER_BRIEF.md`: B blocker, M major, m minor, t trivial.
 
 ### m8. Host sprite keys for Anjali Rao are not given
 
-- P2 lists `spriteSheet`, `spriteTalk`, `spriteVisemes` for the host; E08 §5 gives none. Anjali already hosts the helpdesk checks with `spriteSheet: "female_scientist_v2"` (`awareness_pre_helpdesk_ab`). **Fix:** E08 §5: state the three paths or "copy from `awareness_pre_helpdesk_ab` npcs[0]". Also `10` §Hosts says to reuse sprite keys from `gen_e3_e5_shells.py`.
+- P2 lists `spriteSheet`, `spriteTalk`, `spriteVisemes` for the host; E08 §5 gives none. Anjali already hosts the helpdesk checks with `spriteSheet: "female_scientist_v2"` (`ca_pre_helpdesk_ab`). **Fix:** E08 §5: state the three paths or "copy from `ca_pre_helpdesk_ab` npcs[0]". Also `10` §Hosts says to reuse sprite keys from `gen_e3_e5_shells.py`.
 
 ### m9. `10_CHECK_FORMS.md` internal faults
 

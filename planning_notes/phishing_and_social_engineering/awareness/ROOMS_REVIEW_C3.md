@@ -10,8 +10,8 @@ shells use them (company to room as in C2's table).
 
 - **Tours, keyless :3001**, one game at a time, own ids, each stopped by the tour script:
   `lighting-tour.sh <shell> <out> --close-intro --check --player training_room:6,6:up`.
-  Brightwell `awareness_e1_invoice_fraud_defend` game 4494, Tarrowby `awareness_e2_cv_lures_defend` 4496, Quayholt
-  `awareness_e3_helpdesk_reset_defend` 4500, Merrin & Sallow `awareness_e4_exec_whaling_defend` 4504. `--check` read
+  Brightwell `ca01_invoice_fraud_defend` game 4494, Tarrowby `ca02_cv_lures_defend` 4496, Quayholt
+  `ca03_helpdesk_reset_defend` 4500, Merrin & Sallow `ca04_exec_whaling_defend` 4504. `--check` read
   `mode=on` in all four, lit ambient `#c4cad8` / `#bcc2cc` / `#c4cad8` / `#cac4bc`, light map redrawing (300–333 ms).
   The E3 defend shell has another session's one-line uncommitted edit; it does not touch room fields.
 - **Light map estimate.** Each lit shot divided by the unlit map render (`render_room_preview.py --scale 2`, aligned
@@ -20,7 +20,7 @@ shells use them (company to room as in C2's table).
 - **Static checks.** `build_aw_rooms.py --check`: all eight files `same`. `check_room_walls.py 'room_aw_*'`: floor at
   64 on all four. `generate_rooms.py --check` on the four: OK, warnings of the same expected kinds as C2 (bottom two
   rows, back-wall items over N-door corners in rooms with no doors, extinguisher on the east strip, one floor plant).
-  `slot_audit.py --notes` on the four defend shells and `awareness_e7_voice_ceo`: 0 problems.
+  `slot_audit.py --notes` on the four defend shells and `ca07_voice_ceo`: 0 problems.
 - **Shell drift.** A Python check over all 38 shells against `training_room.py`: right map type per company, room and
   scenario `lighting` equal to `training_room_lighting.json`, no `chatBackground`, only the kiosk as a room object,
   host at (5.5, 3.8) in 38 of 38, start (6, 6.2) in 38 of 38. No drift.

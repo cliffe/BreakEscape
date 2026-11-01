@@ -11,8 +11,8 @@ skills adapted to the awareness kind, and the E8 pilot reviews for format and ba
 This is a combined pass: design **cycle 2** (fresh eyes over `E19_DESIGN_C1.md`, confirming each C1 finding
 is really closed, then a new look) and dialogue **cycle 1** (every learner-facing string).
 
-Scope read end to end: the full shell `scenarios/awareness_e19_malware_and_updates/{scenario.json.erb,
-ink/anjali_rao.ink}`; the defend-only shell `scenarios/awareness_e19_malware_and_updates_defend/` (same
+Scope read end to end: the full shell `scenarios/ca19_malware_and_updates/{scenario.json.erb,
+ink/anjali_rao.ink}`; the defend-only shell `scenarios/ca19_malware_and_updates_defend/` (same
 files); the fragments `planning_notes/phishing_and_social_engineering/awareness/e19/{defend.json,
 full_only.json,BRAND_ADDITIONS.md}`; E19's lines in `gen_e8_e17_shells.py` (host pair `:265-268`, defend
 block `:402-423`); the module `core_07_malware_ransomware_and_updates/concepts.md` (source of truth);

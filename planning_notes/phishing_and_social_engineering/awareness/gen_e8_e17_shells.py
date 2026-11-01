@@ -829,7 +829,7 @@ def defend_only(ekey):
     d = cfg['defend']
     sets, EP = load(ekey)
     ep_id = f"{cfg['full_id']}_defend"
-    mission = f'awareness_{ep_id}'
+    mission = awareness_deploy.mission_name(ep_id)
     prefix = f'episode_{ep_id}_defend_'          # doubled `_defend_defend_`, as defendPrefix() gives
     done = f'{prefix}complete'
     s = clean_set(sets, cfg['defend_set'])

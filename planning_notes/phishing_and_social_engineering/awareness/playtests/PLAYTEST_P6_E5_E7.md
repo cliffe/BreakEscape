@@ -12,13 +12,13 @@ Wall-clock times are driver time (from game creation to the last command, `d_<ta
 
 | Game | Scenario | Persona and route | Driver time | Wall-clock window |
 | ---- | -------- | ----------------- | ----------- | ----------------- |
-| 4486 | awareness_e5_signin_pages | abandoned: I closed the builder without building (my slip); stage marked done, no page | n/a | 17:40:56 to 17:42:30 |
-| 4493 (e5b) | awareness_e5_signin_pages | **careful**: all research, Quayholt + quayholt-sso + padlock, reauth pretext, calm Ask, page not attached (I closed the builder), 5 items, real ticks | 291 s | 17:42:57 to 17:47:40 |
-| e5c / e5d / e5e / e5f | awareness_e5_signin_pages | short probes to the reply only (no defend): Fileharbour + newsletter (no page attached), Quayholt + no padlock landed, Fileharbour + fileharbour attached | about 90 s each | 17:59 to 18:06 |
-| 4498 (e6a) | awareness_e6_texts_and_qr | **careful**: research, calm pretext and Ask from Dev Acharya, landed, 6 items with ticks | 137 s | 17:48:19 to 17:51:10 |
-| 4508 (e7a) | awareness_e7_voice_ceo | **hurried**: minimal research, urgent payment pretext, landed, reload mid-defend, trusted the phish voicemail and email, deleted two real ones | 160 s | 17:51:19 to 17:54:14 |
-| 4515 (e7b) | awareness_e7_voice_ceo | careful on research and real items, trusted the phish email on purpose (critical miss), saved avatar set to the host's sprite for the swap test | 88 s | 17:55:03 to 17:56:48 |
-| 4518 (fm) | awareness_pre_finance_ba | careful, talked to host Joanne Pell first, **reload after item 2**, then full run | 86 s | 17:57:16 to 17:58:49 |
+| 4486 | ca05_signin_pages | abandoned: I closed the builder without building (my slip); stage marked done, no page | n/a | 17:40:56 to 17:42:30 |
+| 4493 (e5b) | ca05_signin_pages | **careful**: all research, Quayholt + quayholt-sso + padlock, reauth pretext, calm Ask, page not attached (I closed the builder), 5 items, real ticks | 291 s | 17:42:57 to 17:47:40 |
+| e5c / e5d / e5e / e5f | ca05_signin_pages | short probes to the reply only (no defend): Fileharbour + newsletter (no page attached), Quayholt + no padlock landed, Fileharbour + fileharbour attached | about 90 s each | 17:59 to 18:06 |
+| 4498 (e6a) | ca06_texts_and_qr | **careful**: research, calm pretext and Ask from Dev Acharya, landed, 6 items with ticks | 137 s | 17:48:19 to 17:51:10 |
+| 4508 (e7a) | ca07_voice_ceo | **hurried**: minimal research, urgent payment pretext, landed, reload mid-defend, trusted the phish voicemail and email, deleted two real ones | 160 s | 17:51:19 to 17:54:14 |
+| 4515 (e7b) | ca07_voice_ceo | careful on research and real items, trusted the phish email on purpose (critical miss), saved avatar set to the host's sprite for the swap test | 88 s | 17:55:03 to 17:56:48 |
+| 4518 (fm) | ca_pre_finance_ba | careful, talked to host Joanne Pell first, **reload after item 2**, then full run | 86 s | 17:57:16 to 17:58:49 |
 
 Checks (scripted `runchk.py`, two batches running in parallel with each other and with other agents' load, so the times are inflated; each is its own fresh game, so all post checks show "No baseline", which is accurate):
 
@@ -94,7 +94,7 @@ P5 closed or confirmed: P5-1, 2, 3 (checks), 4, 5 (by code), 6 (checks), 7, 9, 1
 | ----- | ------ | -------- |
 | BRIGHTWELL plate | **reads correctly, W not H** | "BRIGHTWELL FOODS" on a green plate with the oat-ear mark (`room_e7_brightwell.png`). |
 | TARROWBY plate | **reads correctly** | "TARROWBY LOGISTICS" with the chevron (`room_e6_tarrowby.png`). |
-| SALLOW plate | **reads correctly** | "MERRIN & SALLOW" on a brown plate with the set-square mark, W clear (`room_check_sallow.png`, `awareness_pre_executive_ab`). |
+| SALLOW plate | **reads correctly** | "MERRIN & SALLOW" on a brown plate with the set-square mark, W clear (`room_check_sallow.png`, `ca_pre_executive_ab`). |
 | Quayholt charcoal chairs | **yes** | Six charcoal chairs round the table and one at the desk, purple plate and skirting (`room_e5_quayholt.png`). |
 | Tarrowby rooflight instead of window light | **yes, as far as I can tell** | The back wall has no window blind (Quayholt, Brightwell and Merrin & Sallow do) and a pale diagonal light pool crosses the concrete floor. I cannot tell a rooflight from a lit patch at this zoom; a closer look from the room designer would settle it. |
 | E6 at Tarrowby, E7 at Brightwell | **yes** | Plates, props (cones, hi-vis host, vending machine at Tarrowby; oat box, water cooler at Brightwell). |

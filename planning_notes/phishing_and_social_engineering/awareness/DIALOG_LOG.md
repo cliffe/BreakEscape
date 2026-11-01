@@ -99,7 +99,7 @@ Host hub/welcome lines (old → new):
 - **E7 Agnieszka, welcome:**
   - old: "Welcome to the Brightwell finale. Start at the kiosk: research what's public about the chief executive, write one message as the red team, then swap seats and cover the finance line."
   - new: "Welcome to the Brightwell finale. Start at the kiosk: research the chief executive, write one message, then swap seats and cover the finance line."
-- **Finance post check, Graham** (`awareness_post_finance_ab`, one bubble → two):
+- **Finance post check, Graham** (`ca_post_finance_ab`, one bubble → two):
   - old: "Back again. Ten fresh ones waiting on the kiosk, same sort of thing. Do them as you would, and if you sat the first check you'll get the two side by side at the end."
   - new: "Back again. Ten fresh ones on the kiosk, same sort of thing." / "Do them as you would. If you sat the first check, you'll get the two side by side at the end."
 - **Helpdesk pre check AB, Anjali** (`gen_e3_e5_shells.py`):
@@ -148,7 +148,7 @@ Host hub/welcome lines (old → new):
 The OSINT/Events page presents `catherine.merrin@lintbox.example` as Catherine's real published travel
 address, but the flip's `senderTrust` redFlag called it "a personal inbox anyone can open in her name,"
 so the learner who sent from her real published address was told it was the tell. **Fixed** by reframing
-the flip redFlag (hand-authored full erb `awareness_e4_exec_whaling/scenario.json.erb`, `factorStrings.senderTrust.redFlag`):
+the flip redFlag (hand-authored full erb `ca04_exec_whaling/scenario.json.erb`, `factorStrings.senderTrust.redFlag`):
 - old: "The From line carries Catherine's name on catherine.merrin@lintbox.example, a personal inbox anyone can open in her name, not her Merrin & Sallow address."
 - new: "The From line is catherine.merrin@lintbox.example, the free webmail travel address from her bio, not her Merrin & Sallow address. A senior name on free webmail is no proof it's really her."
 
@@ -158,7 +158,7 @@ lives only in the full erb (not generated, not in the fragment). Not a voiced li
 
 ### Job 4
 
-- **E5-5** — moved `pretextRelevant` from `sso_staff`'s `advisoryFactors` into `requiredFactors` (fragment `e5/attack.json` and shell `awareness_e5_signin_pages/scenario.json.erb`; the full E5 episode is not built by any generator, so there is no generator string to change). A weak pretext no longer lands under an advisory that says it shouldn't. e5-full bridge checked (it gathers `sso_migration` and sends the reauth pretext — see bridge results).
+- **E5-5** — moved `pretextRelevant` from `sso_staff`'s `advisoryFactors` into `requiredFactors` (fragment `e5/attack.json` and shell `ca05_signin_pages/scenario.json.erb`; the full E5 episode is not built by any generator, so there is no generator string to change). A weak pretext no longer lands under an advisory that says it shouldn't. e5-full bridge checked (it gathers `sso_migration` and sends the reauth pretext — see bridge results).
 - **E3-2** — empty research slots / raw value ids:
   - Added a `labels` map (`gordon_full`→"Gordon McLeish", `claims`→"Claims", `okonkwo_full`→"Ngozi Okonkwo", `gordon_staffid`→"QH-20719") to the `quayholt_helpdesk_reset` pretext NPC in both `e3/attack.json` and the full erb, so the judge's `{actual}`/`{said}` render display labels, not raw ids ("The list has gordon_full" → "…Gordon McLeish"). Engine reads `spec.labels` (pretext-judge.js:146).
   - Guarded the three blank-using choices in `leila_servicedesk.ink` with `{ pretext_*_name != "" }` conditions, so an empty `pretext_*` is never spoken.
@@ -245,8 +245,8 @@ No commits.
   `e5/attack.json` (pretext.facts), `e5/defend.json` (noBlameLine, defendOnly),
   `e6/attack.json` (reply), `e6/defend.json` (noBlameLine, defendOnly, canteen-QR note),
   `e7/defend.json` (noBlameLine, brief, `e7_ceo_wire` flags+note).
-- **Full erbs (hand-mirrored):** `awareness_e4_exec_whaling`, `awareness_e5_signin_pages`,
-  `awareness_e6_texts_and_qr`, `awareness_e7_voice_ceo`.
+- **Full erbs (hand-mirrored):** `ca04_exec_whaling`, `ca05_signin_pages`,
+  `ca06_texts_and_qr`, `ca07_voice_ceo`.
 - **Generated shells rebuilt into scratch, diffed, then copied in (never ran a generator into the
   repo):** 3 defend-only (`e5/e6/e7_*_defend`) + all 24 check shells (the permutation).
 
@@ -287,31 +287,31 @@ compiled ink `.json` are unchanged.
 
 1. **E6 `e6_mfa_scan` double-authored tell (N5).** Dropped `senderTrust` from `truth.flags` and its
    `perFlagNote`, kept `lookalike_domain` (the tarrowbey.example tell). `e6/defend.json` msg
-   `e6_mfa_scan`; mirrored in `awareness_e6_texts_and_qr` and regenerated into
-   `awareness_e6_texts_and_qr_defend`. **Not changed (flagged for decision):** the two check-form
+   `e6_mfa_scan`; mirrored in `ca06_texts_and_qr` and regenerated into
+   `ca06_texts_and_qr_defend`. **Not changed (flagged for decision):** the two check-form
    rows `ma_drivers_numbers_spoof` / `mb_new_starters_spoof` author the same `senderTrust` +
    `lookalike_domain` pair for one look-alike-domain tell; left out of scope (item named only the
    tarrowbey.example message, and these sit in the documented A/B form parity multiset).
 2. **E1 "pushing me to hurry" (m1).** Added `urgencyCalibrated` (+perFlagNote) to `e1_lookalike_bank`
-   ("before today's payment run"). `e1/defend.json` + `awareness_e1_invoice_fraud` →
-   `awareness_e1_invoice_fraud_defend`. The two form bank-change rows carry the same "pay today"
+   ("before today's payment run"). `e1/defend.json` + `ca01_invoice_fraud` →
+   `ca01_invoice_fraud_defend`. The two form bank-change rows carry the same "pay today"
    urgency without the flag; left as the item named one message and the forms are parity-balanced.
 3. **E2 Liam Baxter (m2).** Added `linkCredible` (+perFlagNote) to `e2_portfolio_lookalike` so ticking
    either `lookalike_domain` or `linkCredible` for the dodgy careers link is credited, not a false
-   claim. `e2/defend.json` + `awareness_e2_cv_lures` → `awareness_e2_cv_lures_defend`. (Awareness
+   claim. `e2/defend.json` + `ca02_cv_lures` → `ca02_cv_lures_defend`. (Awareness
    scoring is caught/authored with no false-claim penalty, so full flag credit now wants both link
    framings ticked; the un-ticked one shows as a debrief learning point.)
 4. **E3 call transcripts (E3-7 / N8).** Removed every player-side ("You") line from all E3 call
    transcripts, leaving the caller lines verbatim (caller-only records the learner judges). Six
    calls: `defend.calls` (gordon_impostor, gordon_real, on_behalf) + check forms helpdesk_form_a/b
    (facilities, hr_awkward, printer, payroll, comms_awkward, monitor). `e3/defend.json` +
-   `awareness_e3_helpdesk_reset` → defend-only + the 4 helpdesk check shells. **Flagged:** removing
+   `ca03_helpdesk_reset` → defend-only + the 4 helpdesk check shells. **Flagged:** removing
    the ring-back offer leaves four caller replies slightly dangling (gordon_impostor "That's my desk
    phone, am I?"; the genuine awkward calls hr_awkward/comms_awkward/facilities caller acceptances);
    caller lines were kept verbatim per the brief's "(the caller's lines stay)".
 5. **E3 debrief recap (E3-9).** Added `strings.conceptPanel` ("Why the call and the prompts worked")
    recapping the findable-facts/callback point and the MFA push-fatigue beat. `e3/defend.json` +
-   erb; also appears in `awareness_e3_helpdesk_reset_defend` (the generator keeps conceptPanel), so
+   erb; also appears in `ca03_helpdesk_reset_defend` (the generator keeps conceptPanel), so
    both variants show it.
 6. **E3 `flipMissed` after a refused/failed call (E3-1).** Reworded to read naturally when the
    vishing call did not land (distinct from flipNoSend). `e3/defend.json` + erb.
@@ -441,9 +441,9 @@ player line; they read acceptably as a caller confirming/closing and carry no ca
 - Engine/schema/validator/tests: edited directly (not generated).
 - Task A fragments: `awareness/e{1,2,3,4,5,6}/defend.json` (19 flagAlternatives insertions).
 - Task B fragment: `awareness/e3/defend.json` (5 caller lines).
-- Full episodes (hand-mirrored): `awareness_e1_invoice_fraud`, `awareness_e2_cv_lures`,
-  `awareness_e4_exec_whaling` erbs got their one grouped message's flagAlternatives;
-  `awareness_e3_helpdesk_reset` erb got the gordon_impostor line (the other four E3 defend calls
+- Full episodes (hand-mirrored): `ca01_invoice_fraud`, `ca02_cv_lures`,
+  `ca04_exec_whaling` erbs got their one grouped message's flagAlternatives;
+  `ca03_helpdesk_reset` erb got the gordon_impostor line (the other four E3 defend calls
   live only in the generated shells, not the full erb).
 - Generated shells: regenerated into scratch, diffed, copied in — 27 shells for Task A (e1/e2/e4
   defend + 24 pre/post check forms; e3/e5/e6/e7 defend-only unchanged, their grouped messages are
@@ -477,8 +477,8 @@ not touched here.
   (label by the name the caller gives) everywhere. Fragment `e3/defend.json`: `ha_call_facilities`
   Caller→**Owen**, `hb_call_payroll` Caller→**Pauline** (feeds the helpdesk check forms too).
   Fragment `e7/defend.json`: `e7_vm_ravinder_cloned` Caller→**Ravinder**. Full erbs:
-  `awareness_e3_helpdesk_reset` `e3_call_gordon_impostor` Caller→**Gordon**, `e3_call_on_behalf`
-  Caller→**Josh**; `awareness_e7_voice_ceo` cloned voicemail Caller→**Ravinder**. E4 (Catherine/
+  `ca03_helpdesk_reset` `e3_call_gordon_impostor` Caller→**Gordon**, `e3_call_on_behalf`
+  Caller→**Josh**; `ca07_voice_ceo` cloned voicemail Caller→**Ravinder**. E4 (Catherine/
   Yasmin/Oskar) was already uniform, no change. Only the `who` display label changed, never the
   spoken `text`, so no TTS cache key moves.
 - **Item 2 — finance phish with a knowledge-only tell (P3 N-1, MAJOR) + audit.**
@@ -496,7 +496,7 @@ not touched here.
   eb_travel_portal, ga_solicitor_share, gb_quarantine_notice) → visible link; look-alike/urgency/QR
   tells visible. No further fixes.
 - **Item 3 + m3 — E2/E4 "careful" flip after a failed send (P3 N1).** `flipMissed` in the
-  `awareness_e2_cv_lures` and `awareness_e4_exec_whaling` erbs said "this careful application/
+  `ca02_cv_lures` and `ca04_exec_whaling` erbs said "this careful application/
   message", wrong after a send that did not land. The engine routes **both** did-not-land and
   careful-landed-no-tells to `flipMissed` (one string, two states), and the full-episode `strings`
   schema is closed (`additionalProperties:false`), so a new `flipLandedNoTells` key cannot be added
@@ -509,7 +509,7 @@ not touched here.
   count change), but no longer a guessable parity.
 - **Item 6.**
   - E7 "ten to five on a Friday" vs the 09:04 scene stamp → "just after nine on a Friday" in
-    `e7/defend.json` and the `awareness_e7_voice_ceo` erb (F10).
+    `e7/defend.json` and the `ca07_voice_ceo` erb (F10).
   - E3 length (~17 vs 13): modest once-read trim (plan Cut F) — tightened `flipDefenderLine`
     (also drops "and sounded rushed", which was asserted even after a calm call, P3 N11) and
     `flipMissed`, in `e3/defend.json` and the erb. The larger cuts to reach 13 (skip the second
@@ -537,9 +537,9 @@ briefs, perFlagNote) are on-screen text, not NPC/host voice lines.
 
 - Fragments: `e1/defend.json`, `e3/defend.json`, `e6/attack.json`, `e7/defend.json`; generator
   `gen_e2_e4_shells.py` (exec PERMUTE).
-- Full episodes (hand-mirrored, edited directly): `awareness_e1_invoice_fraud`,
-  `awareness_e2_cv_lures`, `awareness_e3_helpdesk_reset`, `awareness_e4_exec_whaling`,
-  `awareness_e6_texts_and_qr`, `awareness_e7_voice_ceo` erbs.
+- Full episodes (hand-mirrored, edited directly): `ca01_invoice_fraud`,
+  `ca02_cv_lures`, `ca03_helpdesk_reset`, `ca04_exec_whaling`,
+  `ca06_texts_and_qr`, `ca07_voice_ceo` erbs.
 - Generated shells: regenerated into scratch, diffed, copied in — 14 shells changed
   (e1/e7 defend-only; finance, helpdesk, executive pre/post AB/BA). No-change baseline was
   byte-identical before editing; each copied diff showed only the intended change.
@@ -1004,9 +1004,9 @@ four general check scenarios regenerated and copied in. 0 residual past-tense; 3
 
 ### Pipeline / parity
 - Fragments edited: `e1/defend.json` (aw5), `e5/defend.json` (E5 reword). Generators edited: all four
-  (aw8). Full erb edited directly: `awareness_e1_invoice_fraud` (aw5, hand-mirrored, parity holds).
+  (aw8). Full erb edited directly: `ca01_invoice_fraud` (aw5, hand-mirrored, parity holds).
 - No-change baseline before editing: fresh regen of all 31 shells byte-identical to the repo.
-- After editing, regen → diff → copied in **30 changed files**: `awareness_e1_invoice_fraud_defend`
+- After editing, regen → diff → copied in **30 changed files**: `ca01_invoice_fraud_defend`
   scenario (new message), 4 general check scenarios (E5 reword), 24 check mission.json (aw8). E7 shells
   reverted to HEAD. A fresh regen of my files is byte-identical apart from the parallel lighting agent's
   `training_room.py` / `training_room_lighting.json` drift (not mine; not propagated — I used
@@ -1301,7 +1301,7 @@ E4's own attack side and E7's identical treatment. Added `borrowed_authority` to
 - `e4_vm_gate` (voicemail): flags now `vish_callback_pressure, secrecy_or_bypass, borrowed_authority`;
   note "'I'll square it with her myself' uses the managing partner's own authority to wave the payment
   past finance. It sounded like her, and a voice on its own doesn't prove who is speaking".
-Applied to the fragment `e4/defend.json` and the full erb `awareness_e4_exec_whaling/scenario.json.erb`
+Applied to the fragment `e4/defend.json` and the full erb `ca04_exec_whaling/scenario.json.erb`
 with identical flag-array and perFlagNote key order so parity holds. The defend-only shell was
 regenerated from the fragment (below). Check shells carry no episode-set per-message truth, so are
 unaffected.
@@ -1343,7 +1343,7 @@ idea without the same words. E3 is a service-desk call set (plus one MFA push), 
 - New: "These callers rehearse sounding right, and a service desk that tries to help them is doing its job
   under pressure. A miss just shows which call to slow down next time."
 Applied to the fragment `e3/defend.json` (strings.noBlameLine) and the full erb
-`awareness_e3_helpdesk_reset/scenario.json.erb` with identical text so parity holds; the E3 defend-only
+`ca03_helpdesk_reset/scenario.json.erb` with identical text so parity holds; the E3 defend-only
 shell was regenerated from the fragment (below).
 
 ### C4-T1 — E3 critical no-blame line uses a mild "built to A, not to B" shape (TRIVIAL) — FIXED (strings; fragment + full erb + defend shell)
@@ -1409,7 +1409,7 @@ the neutral gate line, with nowhere to look. Added the slot's own `stuck` pointe
 "Stuck? Show me where to look" disclosure; names a source, never the value).
 - New `stuck`: "Her own staff page lists only her normal work address. Look at the events and speaker pages
   for the address she uses while she's travelling."
-Files: `e4/attack.json`, `awareness_e4_exec_whaling/scenario.json.erb`. Attack-only, so no generated shell.
+Files: `e4/attack.json`, `ca04_exec_whaling/scenario.json.erb`. Attack-only, so no generated shell.
 
 ### P6A T1 / N20 (trivial) and P6A T2 (trivial) — "Not a flag here" reads as a contradiction on a phish — FIXED (data)
 Decision: neither `pretextRelevant` (T1/N20) nor `attachmentPlausible` (T2) is a genuine tell on the named
@@ -1431,8 +1431,8 @@ generic "It wasn't one of this message's tells." Added:
 - `e2_enable_content` whyFine.attachmentPlausible: "A Word document is a normal way to send a CV, so the
   file itself fits. What doesn't fit is being told to enable editing and content before it will show: a
   real CV never needs that."
-Files: `e1/defend.json`, `e2/defend.json`, the full erbs `awareness_e1_invoice_fraud` and
-`awareness_e2_cv_lures`, and the regenerated defend-only shells `..._defend`. Scoring and the A/B check-form
+Files: `e1/defend.json`, `e2/defend.json`, the full erbs `ca01_invoice_fraud` and
+`ca02_cv_lures`, and the regenerated defend-only shells `..._defend`. Scoring and the A/B check-form
 pairing are untouched (whyFine is explanatory only). The same pattern could later be applied to the
 check-form CEO phish for consistency; left out of this round to keep scope to the named items.
 
@@ -1447,7 +1447,7 @@ portal name fills it, and `sso_migration` stays available as a distinctive value
 "the" before `{portal}` so it reads "We are moving the Quayholt SSO to a new provider…". Verified with
 `optionsForSlot`: the blank now offers only `sso_portal_name`. The portal-name fact is on the "Signing in"
 page, the same page the learner needs for the sender address, so this does not strand the compose.
-Files: `e5/attack.json`, `awareness_e5_signin_pages/scenario.json.erb`. Attack-only, no generated shell.
+Files: `e5/attack.json`, `ca05_signin_pages/scenario.json.erb`. Attack-only, no generated shell.
 
 ### P6-2 (minor) and P5-8 (minor) — E5 Hana's miss reply doesn't match the miss — PARTLY FIXED (data) + ENGINE
 `replies.missed` was a single string asserting "the address was wrong", shown whatever the cause (no page
@@ -1457,7 +1457,7 @@ it cause-neutral and true for every miss; it no longer asserts a false cause.
   didn't put my password in. I'll go to the portal the normal way."
 - New: "That link didn't take me to Quayholt's own sign-in, so I didn't put my password in. I'll go to the
   portal the normal way."
-Files: `e5/attack.json`, `awareness_e5_signin_pages/scenario.json.erb`. ENGINE (handed over): block Send
+Files: `e5/attack.json`, `ca05_signin_pages/scenario.json.erb`. ENGINE (handed over): block Send
 until a page is attached (or say "no link attached" in the compose meter), and pick Hana's reply by cause so
 it can name the service (P5-8). `dataOnlyReply`/`phish-rules.js` read only one `replies.missed`; a
 per-cause hook (e.g. keyed by `result.firstFail`, or `missNoPage`/`missWrongService`/`missWrongAddress`)
@@ -1479,7 +1479,7 @@ lesson ("pushed to sign in before checking the address").
 - fail old: "'Sign in before the end of the day' is the kind of deadline that gets someone to sign in before
   they stop to check the address." → new: "A deadline to sign in quickly is the kind of pressure that gets
   someone to sign in before they stop to check the address." (still a full sentence, so P5-12 stays fixed.)
-Files: `e5/attack.json`, `awareness_e5_signin_pages/scenario.json.erb`. Attack-only, no generated shell.
+Files: `e5/attack.json`, `ca05_signin_pages/scenario.json.erb`. Attack-only, no generated shell.
 
 ### P6-6 (trivial) — E7 "One answer" when two phish were trusted — FIXED (data) + ENGINE
 Confirmed with the engine fixer: the count is right; a trusted phish voicemail only counts as a critical
@@ -1489,14 +1489,14 @@ cloned-voice voicemail hands over £18,400, the episode's core attack, so set `t
 no `voicemail` entry, so `criticalWhat` falls back to the generic "trusting a phish" and the two-miss line
 reads "trusting a phish, or trusting a phish email"; adding e.g. `voicemail: "acting on a spoofed voicemail"`
 to `CRITICAL_WHAT` (triage-scoring.js) would make it read cleanly.
-Files: `e7/defend.json`, `awareness_e7_voice_ceo/scenario.json.erb`, regenerated
-`awareness_e7_voice_ceo_defend`.
+Files: `e7/defend.json`, `ca07_voice_ceo/scenario.json.erb`, regenerated
+`ca07_voice_ceo_defend`.
 
 ### P5-13 (trivial) — E7 compose label still says "voice" on an email surface — FIXED (data)
 The write beat is an email in the CEO's name (C2-M4), so the From-name blank labelled "whose voice the call
 uses" misdescribed it (the options are email addresses). Relabelled to "sender's name", matching E1/E5. The
 address blank already read "the address it comes from", which is correct for an email, and was left.
-Files: `e7/attack.json`, `awareness_e7_voice_ceo/scenario.json.erb`. Attack-only, no generated shell.
+Files: `e7/attack.json`, `ca07_voice_ceo/scenario.json.erb`. Attack-only, no generated shell.
 
 ### P6-5 (trivial) — E6 result says "Real mail handled right" — HANDED TO ENGINE
 `_queueInfo()` (inbox-triage-minigame.js) returns the "Real mail" noun whenever the queue contains any email,
@@ -1524,9 +1524,9 @@ change made this round.
   touched. E5 and E4 changes are attack-only and live only in the full erbs.
 - `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs`: 1838/1838 pass (1838, not
   1824 — tests added by other sessions since; 0 fail). Parity green.
-- Validator `--strict-social --no-graph --skip-ink` on the 8 changed shells (awareness_e1_invoice_fraud(+_defend),
-  awareness_e2_cv_lures(+_defend), awareness_e4_exec_whaling, awareness_e5_signin_pages,
-  awareness_e7_voice_ceo(+_defend)): all "Validation complete" (only the pre-existing timedConversation
+- Validator `--strict-social --no-graph --skip-ink` on the 8 changed shells (ca01_invoice_fraud(+_defend),
+  ca02_cv_lures(+_defend), ca04_exec_whaling, ca05_signin_pages,
+  ca07_voice_ceo(+_defend)): all "Validation complete" (only the pre-existing timedConversation
   recommendation).
 - Bridges not run (not in this round's checks). Flag for the playtest: the E5 compose now offers only the
   portal-name reference in `{portal}`, so a bridge that picked the migration value there needs updating.
@@ -1547,7 +1547,7 @@ via `MISS_KEY`), keeping the generic `missed` as the fallback:
   (names the service — closes P5-8.)
 - missWrongAddress: "The address wasn't Quayholt's own sign-in, so I didn't put my password in. I'll go to
   the portal the normal way."
-Files: `e5/attack.json`, `awareness_e5_signin_pages/scenario.json.erb` (attack-only; no generated shell).
+Files: `e5/attack.json`, `ca05_signin_pages/scenario.json.erb` (attack-only; no generated shell).
 Validator `--strict-social` on the E5 full erb: clean (the replies.* keys are accepted).
 
 ### N-14 (minor, E6 barrier notice) — BLOCKED by the validator; reverted, handed back.
@@ -1590,8 +1590,8 @@ triageSet schema, so both items that were blocked above are now in.
 - P6-5: set `realLabel: "Real texts and notices"` on `e6_phone_messages` (the set's genuine items are a text
   and a QR notice, no real email, so this reads more accurately than the mixed default "Real texts, notices
   and emails").
-Files: `e6/defend.json`, `awareness_e6_texts_and_qr/scenario.json.erb`, and the regenerated
-`awareness_e6_texts_and_qr_defend/scenario.json.erb`. Baseline check first: with POV wiring (622effe18) now
+Files: `e6/defend.json`, `ca06_texts_and_qr/scenario.json.erb`, and the regenerated
+`ca06_texts_and_qr_defend/scenario.json.erb`. Baseline check first: with POV wiring (622effe18) now
 in the shells, a no-change regen of `gen_e6_e7_shells.py` still reproduced every e6/e7 shell byte-identically
 to HEAD (the POV `chatBackground` comes through the generator), so regenerating preserves it; after the edits
 only the E6 defend `scenario.json.erb` differed, by exactly these two changes.
@@ -1618,7 +1618,7 @@ Tested with the scoring functions (the live reply path P7-1 was still in flight;
 Decision: data-only, `brandGate: true`. No engine gate needed (the key already exists and is honoured). The
 wrong-address reply is reachable only for a genuinely weak Quayholt page (credibility below 55); a strong
 look-alike is meant to land, so that is by design, not a gap.
-Files: `e5/attack.json`, `awareness_e5_signin_pages/scenario.json.erb` (attack-only; no generated shell).
+Files: `e5/attack.json`, `ca05_signin_pages/scenario.json.erb` (attack-only; no generated shell).
 Checks: E5 full erb `--strict-social` exit 0; node suite 1850/1850 pass (count rose from 1843 with the P7-1
 engine tests in 0c3f6379d; one load-flaky run showed 4 unrelated triage-band failures that a clean re-run
 did not reproduce), parity green.

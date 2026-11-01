@@ -4,9 +4,9 @@
 
 This module is **built**. It is delivered in the awareness product's attack-then-defend shape by three shipped episodes, and this plan only extends them. **Do not redesign the built parts.**
 
-- **E1** `awareness_e1_invoice_fraud` (Brightwell Foods, finance) is the core: OSINT, then compose one templated "change our bank details" email with blanks from found facts, flip, then triage the payments inbox (`e1_payments_inbox`), then the debrief. The brand-set cast owns it: Adaeze Okafor (finance manager and host), Ravinder Sandhu (chief executive, impersonated), Tom Reilly, Mei Lin Chau, and the supplier Harlow Packaging.
-- **E7** `awareness_e7_voice_ceo` (Brightwell) carries the cloned-CEO-voice email beside the finance line.
-- **E4** `awareness_e4_exec_whaling` (Merrin & Sallow) carries the executive-whaling email from the PA's side.
+- **E1** `ca01_invoice_fraud` (Brightwell Foods, finance) is the core: OSINT, then compose one templated "change our bank details" email with blanks from found facts, flip, then triage the payments inbox (`e1_payments_inbox`), then the debrief. The brand-set cast owns it: Adaeze Okafor (finance manager and host), Ravinder Sandhu (chief executive, impersonated), Tom Reilly, Mei Lin Chau, and the supplier Harlow Packaging.
+- **E7** `ca07_voice_ceo` (Brightwell) carries the cloned-CEO-voice email beside the finance line.
+- **E4** `ca04_exec_whaling` (Merrin & Sallow) carries the executive-whaling email from the PA's side.
 - Measurement is the E1 defend set plus the finance (and executive) check forms, with mirror pairs; see `assessment.md`.
 
 **What this plan adds, in the built shape:** two gaps the build lacks (`research/built_episodes_vs_plan.md` §2): **Confirmation of Payee** (C11-LO5) as new defend and check items with mirror pairs, and **what to do once money has gone** (C11-LO6) as a short ordered debrief card and check items. Both attach to the E1 finance defend set and the finance checks; neither needs a new episode.

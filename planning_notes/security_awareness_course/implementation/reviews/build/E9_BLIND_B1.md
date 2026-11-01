@@ -59,7 +59,7 @@ Time: about 4 to 5 minutes for a rusher (115 s of clicking; a real rusher readin
 
 Issues seen: see the table (the success text, the leftover task, the "100" server score, the missing nudge to go back and research).
 
-## Run 3: defend-only (`awareness_e9_passwords_defend`), persona 1
+## Run 3: defend-only (`ca09_passwords_defend`), persona 1
 
 Makes sense to someone who never saw the full episode. Nilesh: "Your own account now: prompts coming in, and a few password choices." The kiosk brief says someone has a password of yours from a breach "of a site you forgot you used". Same eight items, 100 percent, debrief. Time about 8 minutes at reading pace (84 s of clicking). One gap: the debrief's "guessed from the obvious first (a team, a pet, the company name and a year)" talks about guessing that this run never showed; harmless.
 

@@ -1,0 +1,13 @@
+{
+  "key": "935bc8cfe523f5c17a97c9e65893499f",
+  "npc": "yasmin_chaudhry",
+  "text": "Welcome back. Ten new emails and voicemails on the kiosk, same idea. If you took the first check, the end screen compares them.",
+  "voice": "Laomedeia",
+  "style": "Merrin & Sallow's finance controller, in her 40s, measured and precise; the person a PA should ring about money. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca_post_executive_ab",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:17:47Z"
+}

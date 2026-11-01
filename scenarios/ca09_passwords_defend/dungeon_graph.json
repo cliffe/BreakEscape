@@ -1,0 +1,6 @@
+{
+  "scenario": "ca09_passwords_defend",
+  "start_room": "training_room",
+  "nodes": [],
+  "edges": []
+}

@@ -199,7 +199,7 @@ the 24 check shells were regenerated and copied in, and a fresh regen is byte-id
 - Regen all 31 generated shells to scratch, diffed every `scenario.json.erb`/`mission.json`/generated `.ink` against the repo: **88/88 byte-identical**.
 - Ink recompiled (E3 full + E3 defend-only): 0 failed.
 - A/B parity re-checked on the shells: 10/10 items, matched phish counts and flag multiset per role; phish slots differ A↔B for all six roles.
-- **Open item for the coordinator:** Cut D (4 items, an explicit orchestrator decision) trips the validator's `--strict-social` rule "an episode's defend set has 5 to 8" on `awareness_e3_helpdesk_reset` and `_defend` (the only two of 38 that fail; all others exit 0). `scripts/validate_scenario.rb` is a shared file another agent is mid-edit on, and relaxing the range is an engine/tooling change — not edited here. The coordinator should decide: relax the social-lint lower bound to 4 for awareness episodes, or revert Cut D.
+- **Open item for the coordinator:** Cut D (4 items, an explicit orchestrator decision) trips the validator's `--strict-social` rule "an episode's defend set has 5 to 8" on `ca03_helpdesk_reset` and `_defend` (the only two of 38 that fail; all others exit 0). `scripts/validate_scenario.rb` is a shared file another agent is mid-edit on, and relaxing the range is an engine/tooling change — not edited here. The coordinator should decide: relax the social-lint lower bound to 4 for awareness episodes, or revert Cut D.
 
 ## Rooms cycle 2 fixes (2026-10-27)
 
@@ -258,13 +258,13 @@ Fixes for `ROOMS_REVIEW_C3.md` (0 blockers, 0 majors, 2 minors, 3 trivials). Com
 
 Maps rebuilt with `build_aw_rooms.py` (Brightwell and Merrin & Sallow changed; Tarrowby and Quayholt `same`), then `--check`: all eight files `same`. `check_room_walls.py 'room_aw_*'`: floor at 64 on all four. `generate_rooms.py --check` on the four: OK, the same expected warning kinds. `slot_audit.py --notes` on the four defend shells and E7: 0 problems. `apply_training_room.py --refresh` and `training_room_lighting.json` were not touched; no scenario shells changed.
 
-In game (keyless :3001, games 4521 Merrin via `awareness_e4_exec_whaling_defend`, 4522 Brightwell via `awareness_e1_invoice_fraud_defend`, lit only, `--check`: mode on, lit ambient `#cac4bc` and `#c4cad8`, redraw 300 ms): plate, fig and whiteboard as above. The M is the thinnest glyph on the plate at game zoom but reads as M. The POV stage can start for Merrin once the lighting items are settled or deferred.
+In game (keyless :3001, games 4521 Merrin via `ca04_exec_whaling_defend`, 4522 Brightwell via `ca01_invoice_fraud_defend`, lit only, `--check`: mode on, lit ambient `#cac4bc` and `#c4cad8`, redraw 300 ms): plate, fig and whiteboard as above. The M is the thinnest glyph on the plate at game zoom but reads as M. The POV stage can start for Merrin once the lighting items are settled or deferred.
 
 ### Rooms cycle 3 lighting items m2 and t3 (2026-10-27)
 
 Commit aa99bbfa0. In `training_room_lighting.json`: Brightwell `room.emitters` gains `"window_blinds": { "color": "#ffd9a0", "radius": 48, "intensity": 0.1, "floorTint": 0.5 }` (m2); Quayholt `aw_quayholt_queue` intensity 0.35 to 0.25 (t3). `apply_training_room.py --refresh` into all 38 shells changed only those lines: 8 Brightwell shells gain the emitter, 12 Quayholt shells change the intensity, the other 18 are byte-identical. `validate_scenario.rb --strict-social --no-graph --skip-ink` on all 38: clean. `node --test test/js/social-*.test.mjs test/js/validator-social-*.test.mjs`: 1824 of 1824 (includes the fragment/erb parity test).
 
-In game (keyless :3001, games 4539 `awareness_e1_invoice_fraud_defend` and 4541 `awareness_e3_helpdesk_reset_defend`, lit, `--close-intro --check`: mode on, lit ambient `#c4cad8`, redraw 300 ms). Shots in `playtests/ROOMS_C3_screenshots/`: `after_c3_light_brightwell.png`, `after_c3_light_quayholt.png`, and 2x side-by-sides `after_c3_light_brightwell_before_after.png`, `after_c3_light_quayholt_before_after.png` (before on the left).
+In game (keyless :3001, games 4539 `ca01_invoice_fraud_defend` and 4541 `ca03_helpdesk_reset_defend`, lit, `--close-intro --check`: mode on, lit ambient `#c4cad8`, redraw 300 ms). Shots in `playtests/ROOMS_C3_screenshots/`: `after_c3_light_brightwell.png`, `after_c3_light_quayholt.png`, and 2x side-by-sides `after_c3_light_brightwell_before_after.png`, `after_c3_light_quayholt_before_after.png` (before on the left).
 
 | Finding | Outcome |
 |---|---|

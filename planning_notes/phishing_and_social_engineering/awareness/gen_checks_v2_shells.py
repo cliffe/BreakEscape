@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build the check shells for the "v2" topic check pairs (10_CHECK_FORMS.md):
-awareness_{pre,post}_<role_word>_{ab,ba}, four shells per pair, from
+ca_{pre,post}_<role_word>_{ab,ba}, four shells per pair, from
 awareness/checks_v2/<pair>.json.
 
 Built: general_v2 (Quayholt, Verify off) and data_conduct (Carrholme, Verify on). A further pair is one more
@@ -481,7 +481,7 @@ def check(ekey, pair, stage):
     c = cfg['check']
     sets, EP = load(ekey)
     word = cfg['role_word']
-    mission = f'awareness_{stage}_{word}_{pair}'
+    mission = f'ca_{stage}_{word}_{pair}'
     ep_id = f'{stage}_{word}_{pair}'
     fa, fb = cfg['forms']
     form = {('ab', 'pre'): fa, ('ab', 'post'): fb, ('ba', 'pre'): fb, ('ba', 'post'): fa}[(pair, stage)]
@@ -507,7 +507,7 @@ def check(ekey, pair, stage):
         done: False,
     }
     extra = {}
-    pre_mission = f'awareness_pre_{word}_{pair}'
+    pre_mission = f'ca_pre_{word}_{pair}'
     if stage == 'pre':
         extra['exportGlobals'] = ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_complete']
     else:

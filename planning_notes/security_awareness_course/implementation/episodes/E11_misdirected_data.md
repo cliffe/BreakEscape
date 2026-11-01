@@ -39,7 +39,7 @@ richer than the built awareness shape, the built shape wins and this spec distil
 - `planning_notes/phishing_and_social_engineering/awareness/BRAND_SET.md` (roster, cast, look-alike and
   cast-diversity rules; the pre-ship web-search rule).
 - Nearest built episode and its fragments: `planning_notes/phishing_and_social_engineering/awareness/e4/`
-  (`attack.json`, `defend.json`) and the shells `scenarios/awareness_e4_exec_whaling*/`. E4 is the
+  (`attack.json`, `defend.json`) and the shells `scenarios/ca04_exec_whaling*/`. E4 is the
   nearest built model for the `awarenessEpisode` block, the `triageSets` item shape, the `voicemail`
   kind and the defend-only/`_defendOnly` string split.
 - Engine: `public/break_escape/js/minigames/episode-runner/` (`episode-model.js` `STAGE_IDS`,
@@ -211,7 +211,7 @@ the mission metadata and the generator entry.
   `"spriteTalk": "assets/characters/male_office_worker_talk.png"`,
   `"spriteVisemes": "assets/characters/male_office_worker_visemes.png"`, `"npcType": "person"`,
   `"id": "tomasz_wisniewski"`, `"displayName": "Tomasz Wiśniewski"`,
-  `"storyPath": "scenarios/awareness_e11_misdirected_data/ink/tomasz_wisniewski.json"`,
+  `"storyPath": "scenarios/ca11_misdirected_data/ink/tomasz_wisniewski.json"`,
   `"currentKnot": "start"`, plus the N16 done-event `eventMappings` (section 15a). Host art is a
   placeholder until the PixelLab reset.
 - **Learner avatar** (full erb `player`, as E4): `"spriteSheet": "female_office_worker_v2"`,
@@ -245,7 +245,7 @@ Given in full in **section 15a** (the one-aim design for a `mistake` episode wit
   `ui_theme`: "general"; `estimated_duration_minutes`: 15.
 - `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Data protection", "Information handling", "Incident reporting", "Security awareness"] } ]`.
 
-Top-level erb strings (copy E4's shape): `scenario_id` `awareness_e11_misdirected_data`; `scenario_name`
+Top-level erb strings (copy E4's shape): `scenario_id` `ca11_misdirected_data`; `scenario_name`
 "Misdirected data: the Care Laundry desk"; `scenario_brief` = `strings.brief` (section 8); `endGoal`
 "Play out the morning, then sort the Care Laundry desk inbox at the training kiosk."; `version` "1.0";
 `disableAttacks` true; `startRoom` `training_room`; `startPosition` as E4.
@@ -530,8 +530,8 @@ Implementer (named here so the writer's keys line up; not the writer's job to bu
   sandbox beats and the `awarenessEpisode` block, by analogy with `e4/attack.json`) and `defend.json`
   (the `triageSets` entry `e11_carrholme_desk`, the `_brandAdditions` for Carrholme, the `awarenessEpisode`
   defend/debrief/strings/_defendOnly keys, by analogy with `e4/defend.json`).
-- Shells under `scenarios/`: `awareness_e11_misdirected_data/` (full) and
-  `awareness_e11_misdirected_data_defend/` (defend-only), each a one-room `room_aw_carrholme` kiosk map,
+- Shells under `scenarios/`: `ca11_misdirected_data/` (full) and
+  `ca11_misdirected_data_defend/` (defend-only), each a one-room `room_aw_carrholme` kiosk map,
   `ui_theme: "general"`, a host NPC (Tomasz) with the conclusion `eventMappings`, and a `kiosk` object
   `{ episodeId: "e11_misdirected_data" }` / `{ episodeId: "e11_misdirected_data_defend" }`.
 - The `data_conduct` check shells (`awareness_{pre,post}_data_conduct_{ab,ba}`) are built by `10`'s
@@ -550,7 +550,7 @@ Implementer (named here so the writer's keys line up; not the writer's job to bu
 
 A built full episode carries **two** aims: a first `red_team_aim` (the attack half, a `type: "manual"`
 task the host NPC completes on the attack-landed event) and a defend aim (`missionConclusion: true`,
-concluded on the done global). See `scenarios/awareness_e4_exec_whaling/scenario.json.erb`. **E11 has no
+concluded on the done global). See `scenarios/ca04_exec_whaling/scenario.json.erb`. **E11 has no
 attack half and no `phish_*` global**, so P2's "first aim `manual`, completed by the host's event
 mapping" and its `phish_<targetId>_attempts` global do **not** apply to E11; the `mistake` and `flip`
 stages run from the stage list inside the runner, not gated by any objective.
@@ -558,7 +558,7 @@ stages run from the stage list inside the runner, not gated by any objective.
 **Recommended: one aim.** The validator needs exactly one aim with `missionConclusion: true`
 (`awareness.rb` `conclusion_checks`); a first aim is optional and nothing in a consequence-flip episode
 requires one. So E11's full shell carries a single objective, the defend aim, concluded on the defend
-set's done global. Shape (adapt `awareness_e6_texts_and_qr_defend`'s single-aim `objectives`):
+set's done global. Shape (adapt `ca06_texts_and_qr_defend`'s single-aim `objectives`):
 
 ```jsonc
 "objectives": [
@@ -618,9 +618,9 @@ mission concluded. A second bridge for the defend-only shell: brief, defend, deb
 
 ## 17. Acceptance checks
 
-- `ruby scripts/validate_scenario.rb scenarios/awareness_e11_misdirected_data/scenario.json.erb
+- `ruby scripts/validate_scenario.rb scenarios/ca11_misdirected_data/scenario.json.erb
   --strict-social --no-graph --skip-ink` exits 0 with no new warnings; same for the defend-only shell
-  (`scenarios/awareness_e11_misdirected_data_defend/scenario.json.erb`). The validator takes the
+  (`scenarios/ca11_misdirected_data_defend/scenario.json.erb`). The validator takes the
   `scenario.json.erb` **file path** per shell, not the folder (README section 8.3). The `data_conduct`
   check shells are not E11's to validate: `10`'s generator builds **eight** shells across both shared
   pairs (`awareness_{pre,post}_{general_v2,data_conduct}_{ab,ba}`), and validating them is `10`'s

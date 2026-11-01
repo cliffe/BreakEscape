@@ -46,7 +46,7 @@ did. Under the round-5 stop rule, only minor nitpicks remain in play; nothing he
 ## Phase 2 — items changed since C4
 
 ### E3 MFA choice, outcome, defenderNote, conceptPanel — OK
-`mfa.choice` (`awareness_e3_helpdesk_reset/scenario.json.erb:176`) now authors a real decision (timing
+`mfa.choice` (`ca03_helpdesk_reset/scenario.json.erb:176`) now authors a real decision (timing
 ×count). Every combination lands, as designed; each timing `outcome` (:186/:192/:198) and each count
 `note` (:209/:215/:221) teaches which condition carried the attack, without blaming the target. The
 `defenderNote` (:232) and both conceptPanels (full erb :409 technique-general; defend fragment
@@ -56,19 +56,19 @@ landed or was refused. "impostor" spelling consistent (t-4 closed); no "imposter
 no-blame voice throughout.
 
 ### E1 / E2 whyFine teaching notes — OK
-`e1_ceo_wire.whyFine.pretextRelevant` (`awareness_e1_invoice_fraud/scenario.json.erb:281`) and E2's
+`e1_ceo_wire.whyFine.pretextRelevant` (`ca01_invoice_fraud/scenario.json.erb:281`) and E2's
 `e2_portfolio_lookalike.whyFine.pretextRelevant` (:200) and `e2_enable_content.whyFine.attachmentPlausible`
 (:281) turn a ticked non-flag on a phish into a short teaching line instead of the generic "wasn't one of
 this message's tells". Each names the cover and redirects to the real tells. Correct security content,
 warm tone, UK English.
 
 ### E4 "Stuck?" pointer — OK
-`ms_from` slot `stuck` (`awareness_e4_exec_whaling/scenario.json.erb:446`) names a source ("the events and
+`ms_from` slot `stuck` (`ca04_exec_whaling/scenario.json.erb:446`) names a source ("the events and
 speaker pages for the address she uses while she's travelling"), never the value. Resolves the
 researched-only-"Our people" dead end. Reads cleanly.
 
 ### E5 per-cause Hana replies and meter text — OK
-`sso_staff.replies` (`awareness_e5_signin_pages/scenario.json.erb:911–914`): `missNoPage`,
+`sso_staff.replies` (`ca05_signin_pages/scenario.json.erb:911–914`): `missNoPage`,
 `missWrongService` (names Fileharbour — closes P5-8), `missWrongAddress`, each true to its cause, with the
 generic `missed` as fallback. `missWrongAddress` and the fallback share their closing clause, which is
 fine — they are mutually exclusive branches. Meter `urgencyCalibrated` text (:899 fail / :901 redFlag) is
@@ -76,20 +76,20 @@ now pretext/ask-agnostic and still teaches the deadline lesson. OK.
 
 ### E6 pressure note and "Real texts and notices" — OK
 `e6_parking_permit.truth.flags` now carries `urgencyCalibrated` with a perFlagNote
-(`awareness_e6_texts_and_qr/scenario.json.erb:184`: "'Vehicles not set up may be clamped', from Monday, is
+(`ca06_texts_and_qr/scenario.json.erb:184`: "'Vehicles not set up may be clamped', from Monday, is
 there to make you scan now rather than stop to check where the code goes"). `realLabel: "Real texts and
 notices"` (:94) replaces the mixed-queue default for the set's genuine text + QR notice. Both read
 accurately for the channel. OK.
 
 ### E7 critical voicemail — OK
-`e7_vm_ravinder_cloned.truth.critical: true` (`awareness_e7_voice_ceo/scenario.json.erb:165`). The three
+`e7_vm_ravinder_cloned.truth.critical: true` (`ca07_voice_ceo/scenario.json.erb:165`). The three
 perFlagNotes (:172–174) teach callback-pressure, secrecy/bypass and borrowed authority on the cloned-voice
 voicemail; `ifTrusted` names the £18,400 loss and that Ravinder never made the call. Pairs correctly with
 the CEO-name email. OK.
 
 ### Renamed Joanne Pell (finance BA host) — OK, one trivial residue (see T1)
 `id: joanne_pell`, `displayName: Joanne Pell` resolve exactly; her pre/post ink
-(`awareness_pre_finance_ba/ink/joanne_pre.ink`, `awareness_post_finance_ba/ink/joanne_post.ink`) uses the
+(`ca_pre_finance_ba/ink/joanne_pre.ink`, `ca_post_finance_ba/ink/joanne_post.ink`) uses the
 `hub_quiet` pattern with one sticky exit and reads warmly. No stale "Farah"/"Qureshi" string reaches any
 learner-facing field or the generators (the only `Farah` hits are m10's own character, the clash reason).
 The finance brief's "ten messages" matches the set. Her displayName and lines are clean.
@@ -120,7 +120,7 @@ brought into line with the canonical bio when E3/E1 ink is next touched.
 
 ### C5-T2 — perFlagNote sentence-ending punctuation is mixed (pre-existing)
 Across the triage `perFlagNote` strings, some multi-sentence notes end on a full stop and some don't
-(e.g. `awareness_e2_cv_lures/scenario.json.erb:193–195` have no closing period; `:205` and E7 `:172`
+(e.g. `ca02_cv_lures/scenario.json.erb:193–195` have no closing period; `:205` and E7 `:172`
 do). Pre-existing, not introduced since C4, and the engine renders them as self-contained panel lines, so
 it is cosmetic. Worth a one-pass normalisation if an editor is in these files anyway; not a cycle-5
 finding to act on under the stop rule.

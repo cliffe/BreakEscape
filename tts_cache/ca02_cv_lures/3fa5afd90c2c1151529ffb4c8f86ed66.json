@@ -1,0 +1,13 @@
+{
+  "key": "3fa5afd90c2c1151529ffb4c8f86ed66",
+  "npc": "fatima_begum",
+  "text": "Any time.",
+  "voice": "Vindemiatrix",
+  "style": "Tarrowby's recruitment lead and owner of the recruitment inbox, in her 30s, friendly and organised. Speak with a consistent Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca02_cv_lures",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:19:25Z"
+}

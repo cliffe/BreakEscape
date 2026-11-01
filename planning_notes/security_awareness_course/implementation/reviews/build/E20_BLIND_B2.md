@@ -1,6 +1,6 @@
 # E20 blind run B2 (Remote and mobile working)
 
-Second blind run, fresh tester. Question answered: can a non-technical player work it out (blind, plumbing as a side effect). Scenario folders: `awareness_e20_remote_and_mobile_working` (full), `awareness_e20_remote_and_mobile_working_defend`. Keyless server :3001, headless (load under 4). Harness drove everything; the radio options and tick boxes are not in the `mg` control list, so I clicked the visible label with a DOM `eval` (visible controls only, no hidden-mechanic hunting). Nothing in scenarios/, planning_notes or earlier reports was read.
+Second blind run, fresh tester. Question answered: can a non-technical player work it out (blind, plumbing as a side effect). Scenario folders: `ca20_remote_and_mobile_working` (full), `ca20_remote_and_mobile_working_defend`. Keyless server :3001, headless (load under 4). Harness drove everything; the radio options and tick boxes are not in the `mg` control list, so I clicked the visible label with a DOM `eval` (visible controls only, no hidden-mechanic hunting). Nothing in scenarios/, planning_notes or earlier reports was read.
 
 ## Evidence
 

@@ -4,7 +4,7 @@ Date: 2026-10-30. Reviewer: Opus 4.8, read-only (this file excepted). Kind of ga
 ("Incident Simulations: Critical Cases"), short education-first episodes on the neutral corporate skin. No
 VMs, no combat, no spy framing, no runtime language model.
 
-Scope: `scenarios/awareness_core_17_annual_2027_defend/` — the `defendOnly` annual mixed edition, host
+Scope: `scenarios/ca_annual_2027_defend/` — the `defendOnly` annual mixed edition, host
 Graham Whitfield, drawing eight items from E1/E3/E5/E6/E7. This confirms the three C1 findings in
 `WP12_DESIGN_C1.md` (fixed in 634f08eea) are present and the edition still looks fresh. core_00, reviewed
 clean (0/0/0, bridge 10/10) in C1, is out of scope this round and is not re-reviewed.

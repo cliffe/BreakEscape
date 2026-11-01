@@ -59,7 +59,7 @@ Contributes to (references in `02_COMPLIANCE_MAPPING.md`):
 
 **Part built** (`research/built_episodes_vs_plan.md` §2). Reading a web address, look-alike domains and the padlock myth (C08-LO2) are covered by the built E5; the rest is delivered by the new E10, which extends E5.
 
-- **Built:** **E5** `awareness_e5_signin_pages` (Quayholt, general): the mock browser, the address bar, look-alike domains and the "a padlock does not mean it is safe" point, plus the general check forms. This is the module's C08-LO2 core.
+- **Built:** **E5** `ca05_signin_pages` (Quayholt, general): the mock browser, the address bar, look-alike domains and the "a padlock does not mean it is safe" point, plus the general check forms. This is the module's C08-LO2 core.
 - **New (extends E5):** **E10** fake downloads and "verify you are human" pages (with core_07): the software portal habit, pasting-is-the-attack, browser warnings and extensions (C08-LO1, LO3, LO4, LO5, LO6), as a full episode with a defend-only variant and new check items.
 - **Builds on built systems:** the E5 landing-page and page-triage model, the inbox-triage defender, the awareness-measure records, the concept cards and the debrief view.
 - **Checks:** the **general** role, with mirror pairs (`assessment.md`).

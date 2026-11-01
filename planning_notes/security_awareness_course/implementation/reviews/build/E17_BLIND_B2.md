@@ -1,6 +1,6 @@
 # E17 blind playtest, round B2 (Acceptable use, defend-only)
 
-Tester: Sonnet 5.5, blind (no scenario, planning, bridge or report files read). Folder `awareness_e17_acceptable_use_defend`, the only E17 folder, so both personas ran on it. Headless, keyless :3001 (machine load about 19). Harness logs: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/blind-e17-b2/p1-session.jsonl` (game 5140) and `.../p2-session.jsonl` (game 5143). Screenshots in the same folder. Verifier output: both runs "progress recorded, 1 task completed", score 100, globals `episode_e17_acceptable_use_defend_defend_done` and `_defend_pass`.
+Tester: Sonnet 5.5, blind (no scenario, planning, bridge or report files read). Folder `ca17_acceptable_use_defend`, the only E17 folder, so both personas ran on it. Headless, keyless :3001 (machine load about 19). Harness logs: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/blind-e17-b2/p1-session.jsonl` (game 5140) and `.../p2-session.jsonl` (game 5143). Screenshots in the same folder. Verifier output: both runs "progress recorded, 1 task completed", score 100, globals `episode_e17_acceptable_use_defend_defend_done` and `_defend_pass`.
 
 ## Runs and times
 

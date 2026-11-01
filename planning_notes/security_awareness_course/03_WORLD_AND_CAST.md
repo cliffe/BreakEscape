@@ -66,7 +66,7 @@ Each company's look-alikes use only the shapes a learner can learn to check: a s
 **Larkspur Group is retired as the course's setting.** The plan's single company (a facilities firm in the North of England) and its systems (The Lark, Ledger, Larkspur Chat, Larkspur Vault and so on) are no longer used. Reasons:
 
 1. The build uses a training room at one of four client companies, so a single recurring workplace has no place in the frame (R2).
-2. **"Larkspur Travel" is already a built supplier.** It appears in the executive check forms as a genuine supplier and as a look-alike (items `ea_larkspur_bank` and `ea_larkspur_invoice`, on `larkspurtravel.example` and `larkspur-travel.example`, in `awareness_pre_executive_ab` and `awareness_post_executive_ba`). A second "Larkspur" company in the same product would confuse learners and blur a check item.
+2. **"Larkspur Travel" is already a built supplier.** It appears in the executive check forms as a genuine supplier and as a look-alike (items `ea_larkspur_bank` and `ea_larkspur_invoice`, on `larkspurtravel.example` and `larkspur-travel.example`, in `ca_pre_executive_ab` and `ca_post_executive_ba`). A second "Larkspur" company in the same product would confuse learners and blur a check item.
 
 Module plans that still say "Larkspur" should read as "the brand-set company the episode is set at". Fictional suppliers and products the modules name (Northbeck Supplies, Westmoor Council, Pagewrangle and others) may be reused at a brand-set company, but each must be checked against BRAND_SET and given a `.example` domain before use.
 

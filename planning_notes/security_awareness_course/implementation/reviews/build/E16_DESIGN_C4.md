@@ -15,7 +15,7 @@ or checked", per-verdict IT replies, the conclusions note). It judges the files 
 read). Method and bar: `REVIEWER_BRIEF.md`, the `scenario-design-review` / `npc-dialog-review` skills adapted
 to this kind, the pilot reviews and the prior E16 reviews.
 
-Scope read this pass: both shells `scenarios/awareness_e16_insider_risk{,_defend}/{scenario.json.erb,
+Scope read this pass: both shells `scenarios/ca16_insider_risk{,_defend}/{scenario.json.erb,
 ink/anjali_rao.ink}`; the C3 review and the BUILD_LOG entries since; the engine the findings depend on
 (`minigames/concern-form/concern-form-model.js`, `concern-form-minigame.js`,
 `inbox-triage/inbox-triage-minigame.js` team tally, `episode-runner/debrief-view.js`). **One live run this

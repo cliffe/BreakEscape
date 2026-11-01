@@ -33,7 +33,7 @@ Source of truth: `modules/core_12_social_media_and_oversharing/concepts.md`. Sha
 - **The nearest built episode: E4 (Merrin & Sallow).** `awareness/e4/attack.json` is the model for the
   `people`/`intelFacts`/`templates`/`mailClient`/`osint`/`phishTargets` shape and the OSINT-then-write
   attack beat; `awareness/e4/defend.json` is the model for the `triageSets` item shape, the
-  `awarenessEpisode` block and the flip strings. Shells: `scenarios/awareness_e4_exec_whaling*/`.
+  `awarenessEpisode` block and the flip strings. Shells: `scenarios/ca04_exec_whaling*/`.
 - Engine: `episode-runner/flip-view.js` (the built defender-inbox flip and `defenderLine(strings,
   templateId)` for aw2), `systems/phish-rules.js`, the OSINT browser and intel board minigames, the
   look-alike NPC guard, `systems/awareness-measure.js`.
@@ -167,7 +167,7 @@ carries **two** aims; the defend-only shell is built by the generator.
   shape): `"spriteSheet": "male_office_worker_v2"`, `"spriteTalk": "assets/characters/male_office_worker_talk.png"`,
   `"spriteVisemes": "assets/characters/male_office_worker_visemes.png"`, `"npcType": "person"`,
   `"id": "julian_sallow"`, `"displayName": "Julian Sallow"`,
-  `"storyPath": "scenarios/awareness_e14_social_media/ink/julian_sallow.json"`, `"currentKnot": "start"`,
+  `"storyPath": "scenarios/ca14_social_media/ink/julian_sallow.json"`, `"currentKnot": "start"`,
   plus the N16 done-event `eventMappings`. His art already exists (built E4 cast).
 - **Learner avatar** (full erb `player`, as E4): `"spriteSheet": "female_office_worker_v2"`,
   `"spriteTalk": "assets/characters/female_office_worker_talk.png"`.
@@ -209,7 +209,7 @@ settings yourself, so this episode is finished." }`. `awarenessEpisode.conclusio
   `ui_theme`: "general"; `estimated_duration_minutes`: 15.
 - `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Social media", "Open source intelligence", "Oversharing", "Security awareness"] } ]`.
 
-Top-level erb strings (copy E4's): `scenario_id` `awareness_e14_social_media`; `scenario_name` "Social
+Top-level erb strings (copy E4's): `scenario_id` `ca14_social_media`; `scenario_name` "Social
 media and oversharing: both sides"; `scenario_brief` = `strings.brief` (section 8); `endGoal` "Write the
 pretext message, then sort the feed and inbox at the training kiosk."; `version` "1.0"; `disableAttacks`
 true; `startRoom` `training_room`; `startPosition` as E4.
@@ -431,7 +431,7 @@ part of `10`, aligned to E14's framing; they are not a separate E14 form.
 
 Writer: this spec only.
 Implementer: `awareness/e14/attack.json` and `awareness/e14/defend.json` (modelled on `e4/`); shells
-`scenarios/awareness_e14_social_media/` and `.../_defend/` (one-room `room_aw_merrin_sallow` kiosk, host
+`scenarios/ca14_social_media/` and `.../_defend/` (one-room `room_aw_merrin_sallow` kiosk, host
 Julian Sallow, kiosk `{ episodeId }`); the **"Post or Not?" feed drill as ENG-11's `sortDrill` surface**
 and the **privacy panel as ENG-13's `privacyPanel`** (section 11); `BRAND_SET.md` (Dani Fenwick); the
 `fake_profile`/`recon_request` scenario-local tells; parity/validator updates as needed. The

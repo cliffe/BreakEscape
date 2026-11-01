@@ -1,6 +1,6 @@
 # E17 blind playtest B1 (Acceptable use, defend-only)
 
-Blind run, Sonnet tester, headless (machine load about 30). E17 exists only as `awareness_e17_acceptable_use_defend`, so both personas ran on it; there is no separate defend-only run. Server :3001 (keyless).
+Blind run, Sonnet tester, headless (machine load about 30). E17 exists only as `ca17_acceptable_use_defend`, so both personas ran on it; there is no separate defend-only run. Server :3001 (keyless).
 
 Evidence: session logs in the scratchpad `aw2/blind-e17/`: `p1-session.jsonl` (seq 1-156, ends in a stuck bootstrap, see S1), `p1b-session.jsonl` (relaunched, 117 commands), `p2-session.jsonl`. verify-run.rb: game 4955 "progress recorded ... 1 tasks completed", score 100, 509 s wall clock; game 4961 "progress recorded ... 1 tasks completed", score 100, 75 s wall clock. Neither game unlocked a room or flag (none exist in this episode). Screenshot: `p1-after-reload.png` (title screen "Awareness E17: Acceptable use / Continue?").
 

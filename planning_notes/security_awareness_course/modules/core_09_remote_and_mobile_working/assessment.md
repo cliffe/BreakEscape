@@ -44,7 +44,7 @@ Every attempt is kept in the record.
 
 ## Check and defend items (mirror pairs)
 
-core_09 **builds on E6** `awareness_e6_texts_and_qr` (Tarrowby, mobile), which already covers phone-borne lures and the **mobile** check role. The rest (screens overlooked in public, overheard calls, public Wi-Fi pages, lost devices, home video calls) is delivered either as a **defend-set extension of E6 with new items** or as a later standalone episode; the mobile check forms gain matched items for it. Only the defend half and the pre and post checks are scored (`passPercent` 0). The assessed behaviours and the question pool below map onto defend items and check items, each critical behaviour a **mirror pair** (aw5) tested by matched items across forms A and B.
+core_09 **builds on E6** `ca06_texts_and_qr` (Tarrowby, mobile), which already covers phone-borne lures and the **mobile** check role. The rest (screens overlooked in public, overheard calls, public Wi-Fi pages, lost devices, home video calls) is delivered either as a **defend-set extension of E6 with new items** or as a later standalone episode; the mobile check forms gain matched items for it. Only the defend half and the pre and post checks are scored (`passPercent` 0). The assessed behaviours and the question pool below map onto defend items and check items, each critical behaviour a **mirror pair** (aw5) tested by matched items across forms A and B.
 
 | Behaviour or item | Built (E6) or new | Check mirror pair (matched A ↔ B) |
 |---|---|---|

@@ -10,15 +10,15 @@ ART_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '
                        'public', 'break_escape', 'assets', 'title_art')
 
 KEYS = {
-    'awareness_core_00_first_play', 'awareness_core_17_annual_2027_defend',
-    'awareness_e1_invoice_fraud', 'awareness_e2_cv_lures', 'awareness_e3_helpdesk_reset',
-    'awareness_e4_exec_whaling', 'awareness_e5_signin_pages', 'awareness_e6_texts_and_qr',
-    'awareness_e7_voice_ceo', 'awareness_e8_after_the_click', 'awareness_e9_passwords',
-    'awareness_e10_downloads_and_fake_checks', 'awareness_e11_misdirected_data',
-    'awareness_e12_visitor_tailgater', 'awareness_e13_ai_assistant', 'awareness_e14_social_media',
-    'awareness_e15_shadow_it', 'awareness_e16_insider_risk', 'awareness_e17_acceptable_use_defend',
-    'awareness_e18_credential_attacks_at_scale', 'awareness_e19_malware_and_updates',
-    'awareness_e20_remote_and_mobile_working',
+    'ca00_first_play', 'ca_annual_2027_defend',
+    'ca01_invoice_fraud', 'ca02_cv_lures', 'ca03_helpdesk_reset',
+    'ca04_exec_whaling', 'ca05_signin_pages', 'ca06_texts_and_qr',
+    'ca07_voice_ceo', 'ca08_after_the_click', 'ca09_passwords',
+    'ca10_downloads_and_fake_checks', 'ca11_misdirected_data',
+    'ca12_visitor_tailgater', 'ca13_ai_assistant', 'ca14_social_media',
+    'ca15_shadow_it', 'ca16_insider_risk', 'ca17_acceptable_use_defend',
+    'ca18_credential_attacks_at_scale', 'ca19_malware_and_updates',
+    'ca20_remote_and_mobile_working',
 }
 
 

@@ -48,9 +48,9 @@ const { resolveObjectField } = await mod('utils/conditional-text.js');
 const { renderDebrief } = await mod('minigames/episode-runner/debrief-view.js');
 
 const DEFEND_SHELLS = [
-    'awareness_e1_invoice_fraud_defend', 'awareness_e2_cv_lures_defend', 'awareness_e3_helpdesk_reset_defend',
-    'awareness_e4_exec_whaling_defend', 'awareness_e5_signin_pages_defend', 'awareness_e6_texts_and_qr_defend',
-    'awareness_e7_voice_ceo_defend'
+    'ca01_invoice_fraud_defend', 'ca02_cv_lures_defend', 'ca03_helpdesk_reset_defend',
+    'ca04_exec_whaling_defend', 'ca05_signin_pages_defend', 'ca06_texts_and_qr_defend',
+    'ca07_voice_ceo_defend'
 ];
 const loadShell = (name) => {
     const text = readFileSync(join(root, 'scenarios', name, 'scenario.json.erb'), 'utf8');
@@ -90,7 +90,7 @@ test('defend-only shells: the kiosk text changes once episode_<id>_defend_comple
 });
 
 test('E7 debrief: the voice panel adds the how, not a third copy of "ring back, a voice is not proof"', () => {
-    const scn = loadShell('awareness_e7_voice_ceo_defend');
+    const scn = loadShell('ca07_voice_ceo_defend');
     const strings = scn.social.awarenessEpisode.strings;
     const h = document.createElement('div');
     document.body.appendChild(h);

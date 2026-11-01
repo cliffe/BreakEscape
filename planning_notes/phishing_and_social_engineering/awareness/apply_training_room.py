@@ -31,6 +31,7 @@ leaving everything else in the file byte for byte:
 """
 import copy
 import json
+import re
 import os
 import sys
 
@@ -40,13 +41,13 @@ import training_room  # noqa: E402
 REPO = '/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape'
 
 FULL_SHELLS = [
-    'awareness_e1_invoice_fraud',
-    'awareness_e2_cv_lures',
-    'awareness_e3_helpdesk_reset',
-    'awareness_e4_exec_whaling',
-    'awareness_e5_signin_pages',
-    'awareness_e6_texts_and_qr',
-    'awareness_e7_voice_ceo',
+    'ca01_invoice_fraud',
+    'ca02_cv_lures',
+    'ca03_helpdesk_reset',
+    'ca04_exec_whaling',
+    'ca05_signin_pages',
+    'ca06_texts_and_qr',
+    'ca07_voice_ceo',
 ]
 
 HOST_BLOCK_OLD = (
@@ -200,8 +201,10 @@ def refresh_text(text):
 
 def refresh(outdir):
     import glob
-    for path in sorted(glob.glob(os.path.join(REPO, 'scenarios', 'awareness_*', 'scenario.json.erb'))):
+    for path in sorted(glob.glob(os.path.join(REPO, 'scenarios', 'ca*', 'scenario.json.erb'))):
         name = os.path.basename(os.path.dirname(path))
+        if not re.match(r'ca(\d{2}|_pre|_post|_annual)_', name):
+            continue
         text = open(path).read()
         if not json.loads(text)['rooms']['training_room']['type'].startswith('room_aw_'):
             print('SKIP (not wired):', name)

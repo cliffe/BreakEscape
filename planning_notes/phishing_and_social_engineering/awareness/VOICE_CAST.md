@@ -2,7 +2,7 @@
 
 Status: Phase 1, 2026-11-01. This is the voice casting for the security-awareness course — the 69
 `scenarios/awareness_*` scenarios (the E1–E20 episodes and their defend-only shells, the pre/post
-before-and-after checks, `awareness_core_00_first_play` and `awareness_core_17_annual_2027_defend`).
+before-and-after checks, `ca00_first_play` and `ca_annual_2027_defend`).
 The `sis0*` incident simulations are cast elsewhere and are not covered here.
 
 This phase does **not** edit any scenario, ink or generator file. The `voice` blocks are wired in
@@ -17,7 +17,7 @@ surface them (read-only; no files changed). Script:
 `<session scratchpad>/awareness-voice/analyze.rb`.
 
 - **24 distinct speaking characters.** Every awareness scenario is hosted by one person-chat NPC (the
-  trainer/host who frames the exercise and receives reports), except `awareness_e12_visitor_tailgater`,
+  trainer/host who frames the exercise and receives reports), except `ca12_visitor_tailgater`,
   which has two voiced speakers (the lobby receptionist **Delphine Arvanitis** and the training host
   **Lorna Easton**).
 - **312 voiced lines in total** (unique by TTS cache key, counted per scenario — the figure the batch
@@ -121,7 +121,7 @@ Style format (house style, per `sis01_healthcare/scenario.json.erb`):
 
 ## Within-scenario uniqueness check
 
-Only `awareness_e12_visitor_tailgater` has two voiced speakers: **Delphine Arvanitis (Despina)** and
+Only `ca12_visitor_tailgater` has two voiced speakers: **Delphine Arvanitis (Despina)** and
 **Lorna Easton (Erinome)** — distinct. Every other scenario has a single host. The two reuses
 (Despina: Delphine / Sofia; Gacrux: Adaeze / Lerato) are across scenarios that a learner never meets
 together.

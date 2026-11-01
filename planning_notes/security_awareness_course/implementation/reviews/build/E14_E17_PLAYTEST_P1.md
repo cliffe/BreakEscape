@@ -12,9 +12,9 @@ Harness notes (not game findings): `mg clickText` does not tick the flag checkbo
 
 | Run | Game id | Session log |
 | --- | --- | --- |
-| E17 defend-only (awareness_e17_acceptable_use_defend) | 4791 | /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e14-e17/e17-session.jsonl (396 commands) |
-| E14 full (awareness_e14_social_media) | 4784 | /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e14-e17/e14-session.jsonl |
-| E14 defend-only (awareness_e14_social_media_defend) | 4785 | /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e14-e17/d14-session.jsonl |
+| E17 defend-only (ca17_acceptable_use_defend) | 4791 | /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e14-e17/e17-session.jsonl (396 commands) |
+| E14 full (ca14_social_media) | 4784 | /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e14-e17/e14-session.jsonl |
+| E14 defend-only (ca14_social_media_defend) | 4785 | /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e14-e17/d14-session.jsonl |
 
 Screenshots: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e14-e17/ (e17-NN, e14-NN, d14-NN).
 

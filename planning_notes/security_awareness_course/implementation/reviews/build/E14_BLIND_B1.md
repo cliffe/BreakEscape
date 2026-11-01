@@ -1,6 +1,6 @@
 # E14 Social media and oversharing: blind playtest B1
 
-Blind run, Sonnet 5.5. Folder `awareness_e14_social_media` (full) and `awareness_e14_social_media_defend`. Headless (machine load about 30), :3001 keyless server, `speed fast`. The harness drove everything through the visible kiosk controls. Pins and the mail Send/blank pickers went through `mg clickControl` on visible controls; no hidden DOM was read.
+Blind run, Sonnet 5.5. Folder `ca14_social_media` (full) and `ca14_social_media_defend`. Headless (machine load about 30), :3001 keyless server, `speed fast`. The harness drove everything through the visible kiosk controls. Pins and the mail Send/blank pickers went through `mg clickControl` on visible controls; no hidden DOM was read.
 
 Session logs (scratchpad `aw2/blind-e14/`): `p1-session.jsonl` (game 4952, persona 1, 429 commands), `p2-session.jsonl` (game 4958, persona 2), `p3-session.jsonl` (game 4965, defend-only). Screenshots `p1-01.png` to `p1-07.png`, `p2-01.png` in the same folder.
 

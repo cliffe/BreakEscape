@@ -1,0 +1,13 @@
+{
+  "key": "ec78de6ce0efbf3f1637071df18ab0a4",
+  "npc": "julian_sallow",
+  "text": "Now you spot the same moves in a feed and an inbox, and we close the gaps, on Dani's profile and on yours.",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca14_social_media",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:17:57Z"
+}

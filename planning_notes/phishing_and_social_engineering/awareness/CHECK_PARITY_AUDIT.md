@@ -91,7 +91,7 @@ re-order is the minimum that makes the current fixed forms defensible.
 
 ### M1 — Executive pos 4: gift-card trope (A) vs plausible consultant fee (B)
 
-`scenarios/awareness_pre_executive_ab/scenario.json.erb:177` (`ea_gift_cards`, "Quick favour before
+`scenarios/ca_pre_executive_ab/scenario.json.erb:177` (`ea_gift_cards`, "Quick favour before
 11, keep it quiet") vs `…_ba/scenario.json.erb:177` (`eb_consultant_fee`, "Pay this today, between
 us").
 

@@ -30,10 +30,10 @@ built here; its content is reduced to one in-person pretext and a seven-item rec
 - `modules/core_10_physical_security/concepts.md`, `modules/core_02_social_engineering_beyond_email/concepts.md`.
 - `modules/core_10_physical_security/game_design.md` (content draft; reparent to Merrin & Sallow).
 - Built nearest-neighbour episodes:
-  - `scenarios/awareness_e3_helpdesk_reset/scenario.json.erb` and `ink/leila_servicedesk.ink`,
+  - `scenarios/ca03_helpdesk_reset/scenario.json.erb` and `ink/leila_servicedesk.ink`,
     `ink/darren_price.ink`, the pretext-call pattern, the influence bar (`social.characters`,
     `social.pretextNpcs`), the triage `call` kind, the host NPC with the done-event mapping.
-  - `scenarios/awareness_e7_voice_ceo/scenario.json.erb`, the full `awarenessEpisode` block, the
+  - `scenarios/ca07_voice_ceo/scenario.json.erb`, the full `awarenessEpisode` block, the
     `triageSets` entry with directly-authored non-email items, `strings`, `debrief`.
 - `planning_notes/phishing_and_social_engineering/designs/11_awareness_product_episodes.md`
   (defend-set rules §4, host NPC + flushed done event N16, defend-only variant §3.1/§5.1).
@@ -202,7 +202,7 @@ Defend-only variant: `"stages": ["brief","defend","debrief"]` (the runner drops 
 ## 8b. Shell and generator metadata (every value final; no guessing)
 
 Every metadata value the shell wiring and the generator need, as final strings, copying the two-aim
-call-attack shape from the built **E3** (`awareness_e3_helpdesk_reset`)
+call-attack shape from the built **E3** (`ca03_helpdesk_reset`)
 and the generator shape from `gen_e3_e5_shells.py` (E12's defend-only shell is added to
 `gen_e8_e17_shells.py` with the same field shape). E12 is a **call-attack** episode like E3 (not a
 consequence flip), so it carries **two** aims.
@@ -211,13 +211,13 @@ consequence flip), so it carries **two** aims.
 
 - **Delphine Arvanitis** (lobby pretext mark, `rooms.lobby.npcs[]`): `"id": "delphine_reception"`,
   `"displayName": "Delphine Arvanitis"`, `"npcType": "person"`, `"unlockable": ["training_room"]`,
-  `"storyPath": "scenarios/awareness_e12_visitor_tailgater/ink/delphine_reception.json"`,
+  `"storyPath": "scenarios/ca12_visitor_tailgater/ink/delphine_reception.json"`,
   `"currentKnot": "start"`. She needs a **new** person-chat portrait/bust (the influence conversation);
   world sprite and talk/viseme keys follow the E3 host-NPC shape (`<key>_v2` / `<key>_talk.png` /
   `<key>_visemes.png`), placeholder until the PixelLab queue produces her art.
 - **Lorna Easton** (kiosk host, `rooms.training_room.npcs[]`): `"id": "lorna_easton"`,
   `"displayName": "Lorna Easton"`, `"npcType": "person"`,
-  `"storyPath": "scenarios/awareness_e12_visitor_tailgater/ink/lorna_easton.json"`,
+  `"storyPath": "scenarios/ca12_visitor_tailgater/ink/lorna_easton.json"`,
   `"currentKnot": "start"`, carrying the N16 done-event `eventMappings`. **She reuses a built sprite**
   (no influence bust needed): use a built Merrin & Sallow / office-worker host sprite and talk portrait
   already in `assets/characters/` as her placeholder, for example `"spriteSheet": "female_office_worker_v2"`,
@@ -267,7 +267,7 @@ this episode is finished." }`. `awarenessEpisode.conclusionTaskId: "work_recepti
   `ui_theme`: "general"; `estimated_duration_minutes`: 15.
 - `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Physical security", "Social engineering", "Security awareness", "Tailgating"] } ]`.
 
-Top-level erb strings (copy E3's): `scenario_id` `awareness_e12_visitor_tailgater`; `scenario_name`
+Top-level erb strings (copy E3's): `scenario_id` `ca12_visitor_tailgater`; `scenario_name`
 "Visitor and tailgater: both sides"; `scenario_brief` = `strings.brief` (§8); `endGoal` "Run the
 front-desk pretext, then work the reception desk at the training kiosk."; `version` "1.0";
 `disableAttacks` true; `startRoom` `training_room` (section 9.1 item 3); `startPosition` as E3.
@@ -802,7 +802,7 @@ never in a form).
 
 Create:
 
-- `scenarios/awareness_e12_visitor_tailgater/scenario.json.erb` (full shell: two rooms, the
+- `scenarios/ca12_visitor_tailgater/scenario.json.erb` (full shell: two rooms, the
   `awarenessEpisode`, the `triageSet`, `social.characters.delphine`, `social.pretextNpcs[merrin_front_desk]`,
   `social.osint`, `social.people`, `globalVariables`). Top-level `startRoom: "training_room"` (the kiosk
   room, section 9.1 item 3). The **`lobby`** room holds the Delphine pretext NPC (`delphine_reception`,
@@ -810,11 +810,11 @@ Create:
   room (the design studio, the room the lobby opens onto) carries the badge-door **lock keys on its own
   room block** (section 9.1 item 3, `02` ENG-05c), the kiosk and the kiosk host NPC **Lorna Easton** with
   the welcome ink and the N16 done-event `eventMappings` (section 5). Model on E3 + E7.
-- `scenarios/awareness_e12_visitor_tailgater/ink/delphine_reception.ink` (+ compiled `.json`), and the
+- `scenarios/ca12_visitor_tailgater/ink/delphine_reception.ink` (+ compiled `.json`), and the
   kiosk host ink for **Lorna Easton** (the welcome/brief and debrief lines; the N16 mapping is on
   her NPC record).
-- `scenarios/awareness_e12_visitor_tailgater/mission.json` (pattern from E3/E7).
-- `scenarios/awareness_e12_visitor_tailgater_defend/` (the defend-only shell).
+- `scenarios/ca12_visitor_tailgater/mission.json` (pattern from E3/E7).
+- `scenarios/ca12_visitor_tailgater_defend/` (the defend-only shell).
 - Lobby map `public/break_escape/assets/rooms/room_aw_merrin_lobby.json` / `.tmj` via a new entry in
   `scripts/room_gen/build_aw_rooms.py` (there is no top-level `assets/`; the real path is under
   `public/break_escape/assets/`, 01 P5c). ENG-05 owns the dressing; this spec owns the wiring.
@@ -856,7 +856,7 @@ Validate with `check-bridge.mjs` / `run-suite.sh`.
 
 ## 17. Acceptance checks
 
-- `ruby scripts/validate_scenario.rb scenarios/awareness_e12_visitor_tailgater/scenario.json.erb
+- `ruby scripts/validate_scenario.rb scenarios/ca12_visitor_tailgater/scenario.json.erb
   --strict-social --no-graph --skip-ink` passes (the validator takes the `scenario.json.erb` file path
   per shell, not the folder, README §8.3); same for the defend-only shell. The five scenario-local tells
   pass because each has a `flagChips` label on the set (no library change); the shell otherwise needs
@@ -865,7 +865,7 @@ Validate with `check-bridge.mjs` / `run-suite.sh`.
   pair, and with the now-removed `e12_call_real_contractor`) with `channelTells` `["tailgating",
   "no_escort","uniform_pretext","not_expected","borrowed_authority","secrecy_or_bypass"]` and its four
   local tells labelled in `flagChips` was built into a throwaway copy of the
-  `awareness_e6_texts_and_qr_defend` shell and run through `validate_scenario.rb --strict-social`: exit 0,
+  `ca06_texts_and_qr_defend` shell and run through `validate_scenario.rb --strict-social`: exit 0,
   no social lint error. **Re-validate the updated seven-item set in scratch** the same way, with the full
   `channelTells` `["tailgating","no_escort","uniform_pretext","not_expected","unlocked_screen",
   "borrowed_authority","secrecy_or_bypass"]` and the five local tells labelled in `flagChips` (the two new

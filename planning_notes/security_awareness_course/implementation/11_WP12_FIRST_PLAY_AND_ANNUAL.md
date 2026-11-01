@@ -79,14 +79,14 @@ existing frame"; ENG-10 adds exactly the small pieces the existing frame lacks.
 
 ### Files to create or change
 
-- `scenarios/awareness_core_00_first_play/scenario.json.erb` and `mission.json` and `ink/`.
+- `scenarios/ca00_first_play/scenario.json.erb` and `mission.json` and `ink/`.
 - Place it first in both seeded Hacktivity courses (as the opening mission), so a learner meets it
   before their first episode. (Course placement is an organiser/Hacktivity edit; name it, do not do
   it without the user's go-ahead on any Hacktivity change.)
 
 ### The shell
 
-- `scenario_id: "awareness_core_00_first_play"`, `disableAttacks: true`, `startRoom: "training_room"`,
+- `scenario_id: "ca00_first_play"`, `disableAttacks: true`, `startRoom: "training_room"`,
   the standard `player` block, one training room with a host NPC and a kiosk (copy the shape from a
   built shell and `gen_e3_e5_shells.py` `scenario()`).
 - Host and room: whichever company the organiser opens first. For the shipped shell pick one default
@@ -181,7 +181,7 @@ last is a separate, later engine piece:
 
 ### Acceptance checks
 
-- `ruby scripts/validate_scenario.rb scenarios/awareness_core_00_first_play/scenario.json.erb
+- `ruby scripts/validate_scenario.rb scenarios/ca00_first_play/scenario.json.erb
   --strict-social --no-graph --skip-ink` passes (requires ENG-10's `variant: "brief"` /
   `stages: ["brief"]` validator allowance; it fails without it).
 - `node --test test/js/social-*.test.mjs` stays green, including the rule-of-thumb test.
@@ -238,7 +238,7 @@ under `--strict-social` with **no new engine packet**. No new content systems; t
   `_defend` reads `..._defend_defend_`.
 - `public/break_escape/js/minigames/episode-runner/episode-model.js` (`childLaunch` returns a single
   `triageSetId`: the runner runs **one** defend set per mission).
-- A built defend-only shell for the skeleton: `scenarios/awareness_e6_texts_and_qr_defend/`.
+- A built defend-only shell for the skeleton: `scenarios/ca06_texts_and_qr_defend/`.
 
 ## The item ids the edition reuses (8 messages; all confirmed to exist, 2026-10-28)
 
@@ -292,7 +292,7 @@ are already triage `call` data; but prefer the episode calls so the Gordon mirro
   `awareness/e17/`**: that folder is E17's (acceptable use), whose fragment follows the built
   `awareness/e${n}/defend.json` parity pattern; core_17 is not episode 17, so it gets its own
   `core17/` folder.
-- Create the shell `scenarios/awareness_core_17_annual_2027_defend/scenario.json.erb`, `mission.json`,
+- Create the shell `scenarios/ca_annual_2027_defend/scenario.json.erb`, `mission.json`,
   `ink/`. A generator is optional (the set is hand-assembled); if you add one, model it on
   `gen_e3_e5_shells.py` and never run it into the repo.
 - Place the mission in both seeded courses as the year-end item, through **01 P12**; do not
@@ -311,9 +311,9 @@ are already triage `call` data; but prefer the episode calls so the Gordon mirro
 - Host: a neutral proctor, **Graham Whitfield** by default (a built Brightwell finance check host,
   `BRAND_SET.md`), who carries the `eventMappings` completing the task on the combined set's done global
   (`global_variable_changed:episode_core_17_annual_2027_defend_defend_done`). Graham exists today only
-  with check-form welcome ink (`awareness_pre_finance_ab/ink/graham_pre.ink`), which is the wrong shape
+  with check-form welcome ink (`ca_pre_finance_ab/ink/graham_pre.ink`), which is the wrong shape
   for a defend host, so **copy the defend-host ink `ink/chidi_okeke.ink` from
-  `scenarios/awareness_e6_texts_and_qr_defend/`**, rename it to `ink/graham_whitfield.ink` (knot
+  `scenarios/ca06_texts_and_qr_defend/`**, rename it to `ink/graham_whitfield.ink` (knot
   `start`, `storyPath` pointing at the renamed file) and replace Chidi's Tarrowby lines with Graham's
   generic proctor lines.
 - The combined set `annual_2027_mixed`:
@@ -347,7 +347,7 @@ are already triage `call` data; but prefer the episode calls so the Gordon mirro
 - `defend: { setId: "annual_2027_mixed", reportAlwaysVisible: true }` in `awarenessEpisode`. No
   `defend.calls` key (the calls are reshaped into `messages`).
 - `globalVariables` (declare all; defaults as shown; copy the shape from
-  `awareness_e6_texts_and_qr_defend`): `episode_core_17_annual_2027_defend_state: {}`,
+  `ca06_texts_and_qr_defend`): `episode_core_17_annual_2027_defend_state: {}`,
   `se_awareness_records: []`, `episode_core_17_annual_2027_defend_defend_percent: 0`,
   `episode_core_17_annual_2027_defend_defend_reportRate: 0`,
   `episode_core_17_annual_2027_defend_defend_done: false`,
@@ -356,7 +356,7 @@ are already triage `call` data; but prefer the episode calls so the Gordon mirro
   `concludeRequires.globals` listing `episode_core_17_annual_2027_defend_defend_done`, and
   `conclusionTaskId` a task of that aim, completed by the host NPC's `eventMappings` entry on
   `global_variable_changed:episode_core_17_annual_2027_defend_defend_done` (the built defend conclusion
-  wiring; see `awareness_e6_texts_and_qr_defend`).
+  wiring; see `ca06_texts_and_qr_defend`).
 - `mission.json`: `display_name: "Year End: the annual mixed edition"`, `collection: "training"`,
   `ui_theme: "general"`, `difficulty_level: 1`, `scoring: "completion"`, `secgen_scenario: null`,
   `estimated_duration_minutes: 10`, a Human Factors `cybok` block.
@@ -399,7 +399,7 @@ to three beats plus the habit; the dialogue reviewer polishes.
 
 ### Strings to rewrite, missions.json, and the shell-count test
 
-- **Strings copied from the E6 defend shell and rewritten.** The `awareness_e6_texts_and_qr_defend`
+- **Strings copied from the E6 defend shell and rewritten.** The `ca06_texts_and_qr_defend`
   shell carries `defendOnly`, `defendIntro`, `flipMissedHeading`, `flipLandedNoTells`, `noBlameLine`
   and `mondayCard` strings worded for Tarrowby phones. The validator does not read most of them, but
   the debrief prints `noBlameLine` and the Monday card, and the defend intro shows at the start, so
@@ -407,7 +407,7 @@ to three beats plus the habit; the dialogue reviewer polishes.
   wording (the Monday card is `"slot:customer_report_route"`, so only its lead sentence is authored).
   The two `flip*` strings are never shown in a `defendOnly` shell (there is no flip stage); leave them
   or drop them, either validates.
-- **`mission.json`.** Copy the block from `scenarios/awareness_e7_voice_ceo_defend/mission.json`
+- **`mission.json`.** Copy the block from `scenarios/ca07_voice_ceo_defend/mission.json`
   (a built `defendOnly` shell) and change `display_name`, `description` and the `cybok` keywords; keep
   `difficulty_level: 1`, `scoring: "completion"`, `secgen_scenario: null`, `collection: "training"`,
   `ui_theme: "general"`, `estimated_duration_minutes: 10`.
@@ -420,7 +420,7 @@ to three beats plus the habit; the dialogue reviewer polishes.
 
 - **Every reused id exists.** Confirm each of the 8 ids is present in its source fragment (done above on
   2026-10-28; re-confirm at build time with a grep over the fragments).
-- `ruby scripts/validate_scenario.rb scenarios/awareness_core_17_annual_2027_defend/scenario.json.erb
+- `ruby scripts/validate_scenario.rb scenarios/ca_annual_2027_defend/scenario.json.erb
   --strict-social --no-graph --skip-ink` passes with **no new engine packet**. Specifically: the
   `defendOnly` stage order `["brief","defend","debrief"]` is allowed by `STAGES_BY_VARIANT`; the 8-item
   set is within `EPISODE_MESSAGES = (4..8)`; `attack_checks` does not run (not `full?`); the id ends

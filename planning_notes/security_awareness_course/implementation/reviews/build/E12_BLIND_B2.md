@@ -1,6 +1,6 @@
 # E12 Visitor and tailgater: blind playtest B2
 
-Second blind round, fresh tester (Sonnet). Scenario `awareness_e12_visitor_tailgater` (full) and `awareness_e12_visitor_tailgater_defend`. Server :3001 (keyless), headless. Question answered: **solvability and unexpected behaviour from a player's seat** (blind run; plumbing is covered by scripted runs).
+Second blind round, fresh tester (Sonnet). Scenario `ca12_visitor_tailgater` (full) and `ca12_visitor_tailgater_defend`. Server :3001 (keyless), headless. Question answered: **solvability and unexpected behaviour from a player's seat** (blind run; plumbing is covered by scripted runs).
 
 Screenshots: `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/blind-e12-b2/` (`r1-*` run 1, `r2-*` run 2, `r3-*` defend-only).
 

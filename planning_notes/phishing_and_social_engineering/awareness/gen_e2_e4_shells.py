@@ -553,7 +553,7 @@ def defend_only(ekey):
     d = cfg['defend']
     sets, EP, frag = load(ekey)
     ep_id = f"{cfg['full_id']}_defend"
-    mission = f'awareness_{ep_id}'
+    mission = awareness_deploy.mission_name(ep_id)
     prefix = f'episode_{ep_id}_defend_'          # doubled `_defend_defend_`, as defendPrefix() gives
     done = f'{prefix}complete'
     s = clean_set(sets, cfg['defend_set'])
@@ -608,7 +608,7 @@ def check(ekey, pair, stage):
     c = cfg['check']
     sets, EP, _frag = load(ekey)
     word = cfg['role_word']
-    mission = f'awareness_{stage}_{word}_{pair}'
+    mission = f'ca_{stage}_{word}_{pair}'
     ep_id = f'{stage}_{word}_{pair}'
     fa, fb = cfg['forms']
     form = {('ab', 'pre'): fa, ('ab', 'post'): fb, ('ba', 'pre'): fb, ('ba', 'post'): fa}[(pair, stage)]
@@ -627,7 +627,7 @@ def check(ekey, pair, stage):
         'defend': {'setId': form, 'stage': stage, 'reportAlwaysVisible': True},
     }
     extra = {}
-    pre_mission = f'awareness_pre_{word}_{pair}'
+    pre_mission = f'ca_pre_{word}_{pair}'
     if stage == 'pre':
         extra['exportGlobals'] = ['triage_pre_percent', 'triage_pre_reportRate', 'triage_pre_complete']
     else:
@@ -686,7 +686,7 @@ def check(ekey, pair, stage):
 
 # Top-level titleScreenName (engine batch 14), placed right after scenario_name. Values match the committed
 # shells (owner decision 2026-10-30): checks say Starting check / Final check, defend shells use the episode name.
-TITLE_NAMES = {'awareness_e2_cv_lures_defend': 'CV lures', 'awareness_e4_exec_whaling_defend': 'Executive impersonation'}
+TITLE_NAMES = {'ca02_cv_lures_defend': 'CV lures', 'ca04_exec_whaling_defend': 'Executive impersonation'}
 
 
 def with_title_screen_name(sc, mission):

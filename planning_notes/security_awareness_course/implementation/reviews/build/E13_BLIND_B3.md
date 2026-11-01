@@ -1,6 +1,6 @@
 # E13 The AI assistant: blind playtest B3
 
-Third blind round. Folder `awareness_e13_ai_assistant` (full) and `awareness_e13_ai_assistant_defend`. Keyless server :3001, headless (load average about 8, so timings are from a busy machine). Games 110 (persona 1, full), 112 and 115 (persona 2, full; 115 is a replay of the same rushed route to read the debrief text), 116 (defend-only, persona 1). Session logs and screenshots are in the scratchpad `aw2/blind-e13-b3/`. Blind rules kept: no scenario, planning or bridge files opened. I read visible on-screen text through the harness `mg getState` and, twice, a plain `innerText` read of an open overlay; no hidden mechanics were inspected. All clicks went through the harness `mg clickControl` on visible controls.
+Third blind round. Folder `ca13_ai_assistant` (full) and `ca13_ai_assistant_defend`. Keyless server :3001, headless (load average about 8, so timings are from a busy machine). Games 110 (persona 1, full), 112 and 115 (persona 2, full; 115 is a replay of the same rushed route to read the debrief text), 116 (defend-only, persona 1). Session logs and screenshots are in the scratchpad `aw2/blind-e13-b3/`. Blind rules kept: no scenario, planning or bridge files opened. I read visible on-screen text through the harness `mg getState` and, twice, a plain `innerText` read of an open overlay; no hidden mechanics were inspected. All clicks went through the harness `mg clickControl` on visible controls.
 
 ## What came back after the reload (persona 1)
 

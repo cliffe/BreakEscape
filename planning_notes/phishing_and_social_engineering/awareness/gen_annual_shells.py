@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the core_17 annual edition shell (awareness_core_17_annual_2027_defend), from
+"""Build the core_17 annual edition shell (ca_annual_2027_defend), from
 awareness/annual/defend.json and annual/WIRING_NOTES.md (WP-12 Part B).
 
 A small sibling of gen_e8_e17_shells.py (implementation/01_PIPELINE.md P4): the helpers are copied,
@@ -390,7 +390,7 @@ def build():
     sets = {s['id']: s for s in frag['triageSets']}
     EP = strip_private(copy.deepcopy(frag['awarenessEpisode']))
     ep_id = EP['id']
-    mission = f'awareness_{ep_id}'
+    mission = awareness_deploy.mission_name(ep_id)
     prefix = f'episode_{ep_id}_defend_'
     done = f'{prefix}complete'
     s = clean_set(sets, CFG['set'])

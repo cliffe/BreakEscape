@@ -8,9 +8,9 @@ Earned-secrets table: empty. These scenarios have no codes, PINs or flags; every
 
 | Bridge | Scenario | Game | Assertions | Result | Approx. time (create to check) |
 | ------ | -------- | ---- | ---------- | ------ | ------------------------------ |
-| e5-full | awareness_e5_signin_pages | 4575 | 18/18 | PASS first try | 45 s |
-| e6-full | awareness_e6_texts_and_qr | 4577 | 15/15 | PASS first try | 31 s |
-| e7-full | awareness_e7_voice_ceo | 4578 | 13/13 | PASS first try | 31 s |
+| e5-full | ca05_signin_pages | 4575 | 18/18 | PASS first try | 45 s |
+| e6-full | ca06_texts_and_qr | 4577 | 15/15 | PASS first try | 31 s |
+| e7-full | ca07_voice_ceo | 4578 | 13/13 | PASS first try | 31 s |
 | p7-channels | test_social_p7_channels | 4579 | 18/18 | PASS first try | 24 s |
 
 No step needed "bridge needs updating": the E5 `{portal}` blank change did not break `bridge-e5-full`.
@@ -19,15 +19,15 @@ No step needed "bridge needs updating": the E5 `{portal}` blank change did not b
 
 | Game | Scenario | Route | Notes |
 | ---- | -------- | ----- | ----- |
-| 4580 (e5a) | awareness_e5_signin_pages | full: Quayholt + quayholt-sso + padlock, calm pretext, calm Ask, landed; defend with look-alike ticks only (padlock and secrecy ticks skipped) | grade, POV, meter |
+| 4580 (e5a) | ca05_signin_pages | full: Quayholt + quayholt-sso + padlock, calm pretext, calm Ask, landed; defend with look-alike ticks only (padlock and secrecy ticks skipped) | grade, POV, meter |
 | 4582 (e5n) | same | research only, no page attached, Send | no-page cause |
 | 4584, 4585, 4587 | same | Fileharbour pages (three attempts, see P7-1/P7-3) | wrong-service cause |
 | 4589 (e5w) | same | Quayholt + quaybolt + no padlock | wrong-address cause |
-| 4591 (e6a) | awareness_e6_texts_and_qr | full, calm pretext and Ask, barrier notice ticked for pressure | result, notes, POV |
-| 4592 (e7a) | awareness_e7_voice_ceo | full, landed, then trusted all five (both phish) | two-critical line, label, POV |
-| 4593 (e7d) | awareness_e7_voice_ceo_defend | defend-only, reload mid-round, then trusted only the cloned voicemail | one-critical line |
-| 4595 / 4599 | awareness_pre_finance_ba / awareness_post_finance_ba | host Joanne Pell, careful, 100% Sharp; reload after completion | check pair |
-| 4600 | awareness_pre_executive_ba | careful, one phish trusted on purpose (slot 3) | 77% Getting there, critical line |
+| 4591 (e6a) | ca06_texts_and_qr | full, calm pretext and Ask, barrier notice ticked for pressure | result, notes, POV |
+| 4592 (e7a) | ca07_voice_ceo | full, landed, then trusted all five (both phish) | two-critical line, label, POV |
+| 4593 (e7d) | ca07_voice_ceo_defend | defend-only, reload mid-round, then trusted only the cloned voicemail | one-critical line |
+| 4595 / 4599 | ca_pre_finance_ba / ca_post_finance_ba | host Joanne Pell, careful, 100% Sharp; reload after completion | check pair |
+| 4600 | ca_pre_executive_ba | careful, one phish trusted on purpose (slot 3) | 77% Getting there, critical line |
 
 Timings (driver clock, loaded machine, includes my reading): game creation and bootstrap 15 to 20 s each (e7d 18 s, finance post 16 s); each scripted 10-item check 15 to 16 s; E5 full about 6 min; E6 full about 3 min; E7 full about 3 min; E7 defend-only round about 1 min.
 

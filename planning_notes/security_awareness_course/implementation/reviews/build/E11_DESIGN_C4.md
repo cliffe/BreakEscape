@@ -13,7 +13,7 @@ This is the C4 confirmation round after the cross-episode critical-penalty pass 
 screen changes fresh — the hidden "Verdict locked" banner in immediate mode, the confirm-prompt copy,
 the result breakdown, the weakest-skill line after "nothing to grade", and the critical penalties.
 
-Scope read end to end: both shells `scenarios/awareness_e11_misdirected_data{,_defend}/`
+Scope read end to end: both shells `scenarios/ca11_misdirected_data{,_defend}/`
 (`scenario.json.erb`, `ink/tomasz_wisniewski.ink`); the fragments
 `planning_notes/phishing_and_social_engineering/awareness/e11/{mistake,defend}.json`; and the batch-12
 engine the on-screen items depend on (`inbox-triage-minigame.js` result block :1472-1491, the

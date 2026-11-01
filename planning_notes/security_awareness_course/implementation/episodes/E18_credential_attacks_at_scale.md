@@ -62,7 +62,7 @@ Learning outcomes drawn on:
   copy its structure, its `guess`-stage wiring, its §8b, and its no-blame handling of reuse). E18 is the
   organisation-scale twin of E9 and reuses its engine packets (ENG-01 flip aftermath, ENG-09b debrief panels)
   plus the new ENG-02b.
-- **The Merrin & Sallow built shells and cast:** `scenarios/awareness_e4_exec_whaling/` end to end (the built
+- **The Merrin & Sallow built shells and cast:** `scenarios/ca04_exec_whaling/` end to end (the built
   Merrin & Sallow room wiring, the two-aim shape, the host NPC done event), its fragments
   `planning_notes/phishing_and_social_engineering/awareness/e4/{attack,defend}.json`; and the E12 and E14 specs
   (`implementation/episodes/E12_visitor_and_tailgater.md`, `E14_social_media.md`) for the built and proposed
@@ -117,7 +117,7 @@ Learning outcomes drawn on:
   the roster) cast, so E18 adds the fewest new episodes and the least art. Brand block, copied exactly from the
   built E4 shell: `{ "name": "Merrin & Sallow Architects", "logoText": "MERRIN & SALLOW", "accent": "#8a5a2b" }`.
   Domain `merrinsallow.example`; look-alikes `merrin-sallow.example`, `merrinsallow-studio.example` (E4/E12/E14).
-- **Room:** reuse the built `room_aw_merrin_sallow`, exactly as `scenarios/awareness_e4_exec_whaling/
+- **Room:** reuse the built `room_aw_merrin_sallow`, exactly as `scenarios/ca04_exec_whaling/
   scenario.json.erb` wires it (`"type": "room_aw_merrin_sallow"`, `chatBackground:
   "assets/backgrounds/rooms/aw_merrin_sallow_blended.png"`, the same lighting and kiosk object). No new room.
   The campaign console, the OSINT board and the triage cards are full-screen overlays, as at every company.
@@ -230,7 +230,7 @@ generator and shell metadata, which does not itself wait on those packets.**
 - **Ama's in-scenario host NPC sprite keys** (full erb `rooms.training_room.npcs[]`, following the E4 host NPC
   shape): `"spriteSheet": "female_scientist_v2"`, `"spriteTalk": "assets/characters/female_scientist_talk.png"`,
   `"spriteVisemes": "assets/characters/female_scientist_visemes.png"`, `"npcType": "person"`, `"id": "ama_owusu"`,
-  `"displayName": "Ama Owusu"`, `"storyPath": "scenarios/awareness_e18_credential_attacks_at_scale/ink/
+  `"displayName": "Ama Owusu"`, `"storyPath": "scenarios/ca18_credential_attacks_at_scale/ink/
   ama_owusu.json"`, `"currentKnot": "start"`, plus the N16 done-event `eventMappings`. Host art is a placeholder
   (a reused built sprite) until the PixelLab reset.
 - **Learner avatar** (full erb `player`), as E4: `"spriteSheet": "female_office_worker_v2"`, `"spriteTalk":
@@ -274,7 +274,7 @@ this episode is finished." }`. `awarenessEpisode.conclusionTaskId: "handle_the_a
 - `cybok`: `[ { "ka": "HF", "topic": "Human Factors", "keywords": ["Passwords", "Credential stuffing", "Password
   spraying", "Security awareness", "Multi-factor authentication"] } ]`.
 
-Top-level erb strings (copy E4's): `scenario_id` `awareness_e18_credential_attacks_at_scale`; `scenario_name`
+Top-level erb strings (copy E4's): `scenario_id` `ca18_credential_attacks_at_scale`; `scenario_name`
 "Credential stuffing and password spraying: both sides"; `scenario_brief` = `strings.brief` (§8); `endGoal`
 "Run the campaign, then handle the security alerts at the training kiosk."; `version` "1.0"; `disableAttacks`
 true; `startRoom` `training_room`; `startPosition` as E4.
@@ -587,7 +587,7 @@ flags.
   `channelTells` with `flagChips` labels and per-message `factorStrings.<id>.redFlag` sentences, and a
   `_brandAdditions` note for Ama Owusu, Fenlow Managed IT, Calderbank Mills, Elmgate Pavilion, "Design that lasts"
   and Verrow Street.
-- `scenarios/awareness_e18_credential_attacks_at_scale/scenario.json.erb`, `mission.json`, `ink/ama_owusu.ink`
+- `scenarios/ca18_credential_attacks_at_scale/scenario.json.erb`, `mission.json`, `ink/ama_owusu.ink`
   (new): the full-episode shell. Frame it from E1 (the `01_PIPELINE.md` P2 rule: a mail/OSINT episode copies the
   E1 shell frame and host-ink structure), add the Merrin & Sallow room from P5a (reuse `room_aw_merrin_sallow` as
   E4 wires it), and take the `guess` attack block from ENG-02/ENG-02b; E4 is the reference for the built Merrin &
@@ -598,7 +598,7 @@ flags.
   (ENG-02b's `landedGlobal`) and any other `guess_*` state globals ENG-02/ENG-02b define. The host ink completes
   the attack task on `guess_e18_landed` and the conclusion task on
   `episode_e18_credential_attacks_at_scale_defend_done === true`.
-- `scenarios/awareness_e18_credential_attacks_at_scale_defend/` (new): the defend-only shell.
+- `scenarios/ca18_credential_attacks_at_scale_defend/` (new): the defend-only shell.
 - The two seeded Hacktivity courses: follow `01_PIPELINE.md` P12 (feature level only); do not use
   `awareness_deploy.py` for seeding.
 - `BRAND_SET.md`: a Merrin & Sallow `_brandAdditions` note for Ama Owusu and Fenlow Managed IT, and the website
@@ -620,7 +620,7 @@ bridge depends on ENG-02b's test bridge for the campaign console.
 
 ## 17. Acceptance checks
 
-- `ruby scripts/validate_scenario.rb --strict-social scenarios/awareness_e18_credential_attacks_at_scale/scenario.json.erb`
+- `ruby scripts/validate_scenario.rb --strict-social scenarios/ca18_credential_attacks_at_scale/scenario.json.erb`
   passes (and the defend-only shell).
 - The social validators pass, including the ENG-02b `guess.mode: "spray"` additions and the three scenario-local
   tells (`fake_lockout_notice`, `fake_signin_alert`, `fake_breach_alert`) being accepted as labelled, non-factor

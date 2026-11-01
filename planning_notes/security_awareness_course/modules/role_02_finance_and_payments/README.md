@@ -18,8 +18,8 @@
 ## Build status
 
 - **Built, this module builds on it:**
-  - **E1 *Invoice and bank-detail fraud*** (`scenarios/awareness_e1_invoice_fraud`), Brightwell Foods, host Adaeze Okafor. The learner researches two sites, composes one "change our bank details on INV-2217" email as a supplier, sees it flipped, then defends the payments inbox (per the scenario file: 6 emails, 3 phish, Verify on). Covers R02-LO1 and LO2 in part.
-  - **E7 *Cloned CEO voice*** (`scenarios/awareness_e7_voice_ceo`), Brightwell Foods, host Agnieszka Duda. One email in the chief executive's name plus the finance line (3 voicemails and 2 emails, 2 phish, Verify on, voice panel). Covers R02-LO3 in part (an urgent "pay this" from the top).
+  - **E1 *Invoice and bank-detail fraud*** (`scenarios/ca01_invoice_fraud`), Brightwell Foods, host Adaeze Okafor. The learner researches two sites, composes one "change our bank details on INV-2217" email as a supplier, sees it flipped, then defends the payments inbox (per the scenario file: 6 emails, 3 phish, Verify on). Covers R02-LO1 and LO2 in part.
+  - **E7 *Cloned CEO voice*** (`scenarios/ca07_voice_ceo`), Brightwell Foods, host Agnieszka Duda. One email in the chief executive's name plus the finance line (3 voicemails and 2 emails, 2 phish, Verify on, voice panel). Covers R02-LO3 in part (an urgent "pay this" from the top).
   - **Finance check pair** (`awareness_{pre,post}_finance_{ab,ba}`): 10 items, 4 phish, matched flag multisets, look-alike bank changes paired with the real supplier's invoice (mirror pairs). The scenario files set Verify on in these forms, which differs from `BRAND_SET.md` §6 ("Verify is off"); the scenario file wins, so Verify is on.
 - **Builds on E1, E7 and the finance checks:** supplier bank-change fraud, chief executive fraud, a genuine-looking sender proving nothing, and ring-back on the number held are all taught and measured today.
 - **New (role extension this plan adds):** payroll diversion, Confirmation of Payee, PCI card data handling and the first hour after a suspected fraud. Delivered as one new finance episode in the built shape plus concept cards and defend items; see `game_design.md`.

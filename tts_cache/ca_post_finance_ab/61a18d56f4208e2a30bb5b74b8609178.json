@@ -1,0 +1,13 @@
+{
+  "key": "61a18d56f4208e2a30bb5b74b8609178",
+  "npc": "graham_whitfield",
+  "text": "Do them as you would. If you sat the first check, you'll get the two side by side at the end.",
+  "voice": "Umbriel",
+  "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind; a neutral proctor for the year-end edition. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "ca_post_finance_ab",
+  "source": "generate",
+  "generated": "2026-11-01",
+  "recorded_at": "2026-11-01T06:18:17Z"
+}

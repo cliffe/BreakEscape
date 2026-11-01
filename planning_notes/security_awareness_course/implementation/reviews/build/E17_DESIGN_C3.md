@@ -12,7 +12,7 @@ at commit `e14b542c2` (git clean when read). Method and bar: `REVIEWER_BRIEF.md`
 `scenario-design-review` / `npc-dialog-review` skills adapted to this kind, the pilot reviews, and the prior
 E17 reviews and playtests in this folder.
 
-Scope read this pass: `scenarios/awareness_e17_acceptable_use_defend/{scenario.json.erb, mission.json,
+Scope read this pass: `scenarios/ca17_acceptable_use_defend/{scenario.json.erb, mission.json,
 ink/nilesh_solanki.ink}`; the spec `episodes/E17_acceptable_use.md`; the prior reviews
 (`E17_DESIGN_C1.md`, `E17_DESIGN_C2_DIALOG_C1.md`, `E17_BLIND_B1`, `E17_BLIND_B2`,
 `E14_E17_PLAYTEST_P1.md`); the E17 lines of `BUILD_LOG.md`; and the engine the drill-recap finding depends

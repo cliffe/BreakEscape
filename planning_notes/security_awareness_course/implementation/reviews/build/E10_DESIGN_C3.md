@@ -24,7 +24,7 @@ command; the builder `clipboardReveal` and the defend row-1 reveal are the one l
 that would run a program on your computer"; no working command is shown, stored or written in any
 fragment, shell or spec; the `payloadKit` is empty (no link in the lure).
 
-Scope read end to end: both shells (`scenarios/awareness_e10_downloads_and_fake_checks{,_defend}/`
+Scope read end to end: both shells (`scenarios/ca10_downloads_and_fake_checks{,_defend}/`
 `scenario.json.erb`, `mission.json`, `ink/niamh_doherty.ink`); the fragments
 `planning_notes/phishing_and_social_engineering/awareness/e10/{attack,defend}.json`; the spec
 `.../episodes/E10_downloads_and_fake_checks.md`; and the result-grid engine the batch-11 count keys

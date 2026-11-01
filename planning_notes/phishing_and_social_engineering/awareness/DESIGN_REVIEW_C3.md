@@ -46,7 +46,7 @@ engine. None needs to be rated as a finding.
 | **Awareness wording on triage results** | `inbox-triage-minigame.js:720` (`_resultCopy`) | Yes | The awareness-skin / awareness-profile branch returns "ask your IT or security team" and keeps the lab-sheet wording off; called at `:832` and `:836`. `social-triage-weakest` 6/6 pass. |
 | **Defend button by set kind (phone, voice)** | `episode-runner-minigame.js:86-92, 117, 140` | Yes | `PHONE_COPY`/`VOICE_COPY`, `PHONE_KINDS`, the `DEFEND_COPY` table and `defendSetKind` are all present. The function was refined after the commit (a tie among non-email groups with no email now takes the first group; `:128-139`) — this does **not** break the commit's tests: `social-episode-runner` 29/29 pass, including the phone/voice button assertions. |
 | **Kiosk text after the round** | 7 defend shells' `observationVariants`; all 4 generators' `kiosk()` tuple + `done_obs` and EPISODES tuples | Yes | 1 `observationVariants` block in each defend shell on `episode_<id>_defend_done`; each generator carries the `done_obs` logic (4 refs each) and the "…are sorted / all dealt with / checked them all" done strings. `social-p7-followups` 3/3 pass (it loads the real shells and asserts the swap, and the E7 debrief panel). |
-| **E7 voice panel trimmed** ("How a voice gets copied") | `awareness_e7_voice_ceo_defend` and `gen_e6_e7_shells.py` | Yes (restored fcf8c6d5) | Heading "How a voice gets copied" and the trimmed text in both shell and generator; `social-p7-followups` asserts the panel adds the "how" and does not repeat the lead/Monday phrases. |
+| **E7 voice panel trimmed** ("How a voice gets copied") | `ca07_voice_ceo_defend` and `gen_e6_e7_shells.py` | Yes (restored fcf8c6d5) | Heading "How a voice gets copied" and the trimmed text in both shell and generator; `social-p7-followups` asserts the panel adds the "how" and does not repeat the lead/Monday phrases. |
 
 So the data half of 870af473 is intact. What cycle 1's regen-from-older-fragments left behind is a
 different, smaller drift, caught below.
@@ -94,7 +94,7 @@ Latent; episode-local (E3 defend-only). `planning_notes/.../awareness/gen_e3_e5_
 The generator's inline top-level `scenario_brief` still reads "…a sign-in prompt **has come up on your
 phone**: help the real callers…" — the pre-fix wording that put the MFA prompt inside the desk scene
 (C1 M7, reopened and fixed as C2-M3). The committed shell
-(`scenarios/awareness_e3_helpdesk_reset_defend/scenario.json.erb:4`) and the fragment
+(`scenarios/ca03_helpdesk_reset_defend/scenario.json.erb:4`) and the fragment
 (`e3/defend.json:34, 608, 612`) both carry the fixed wording "…a sign-in prompt **from overnight is
 still on your phone**…". So the generator disagrees with its own fragment and with the committed shell:
 a regeneration of E3 defend-only silently reintroduces the contradiction cycle 2 removed. This is the
@@ -127,11 +127,11 @@ brief, C3-M1.)
 **C3-m2. The "kiosk after the round" polish is on the 7 defend shells and E7 full, but not the 6
 E1–E6 full shells (nor the 24 checks).** Cross-cutting. 870af473 added `observationVariants` to the
 defend-only shells only; E7's full shell gained one when it was built in cycle 1/2
-(`awareness_e7_voice_ceo/scenario.json.erb:719-724`, keyed correctly on
+(`ca07_voice_ceo/scenario.json.erb:719-724`, keyed correctly on
 `episode_e7_voice_ceo_defend_done`). The E1–E6 full shells have none: after a learner finishes, the
 kiosk still reads, e.g., "…first the red-team brief and research, then the payments inbox."
-(`awareness_e1_invoice_fraud/scenario.json.erb:737`). The done global already exists and is declared
-in each full shell (`episode_<id>_defend_done`, e.g. `awareness_e1_invoice_fraud:67`), so this is a
+(`ca01_invoice_fraud/scenario.json.erb:737`). The done global already exists and is declared
+in each full shell (`episode_<id>_defend_done`, e.g. `ca01_invoice_fraud:67`), so this is a
 one-line-per-shell addition that matches E7 full and the defend shells. Lower value for the 24 check
 shells, where the learner concludes on the result screen and does not usually walk back to the kiosk;
 worth a line only if consistency is wanted there too. Fix: add an `observationVariants` entry on

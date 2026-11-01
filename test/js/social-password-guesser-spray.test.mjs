@@ -1,6 +1,6 @@
 // The organisation-scale guess modes (ENG-02b, E18): the spray and stuff builders in the password-guesser model,
 // the scene that draws them and the runner flow brief -> osint -> guess -> flip. Inline fixtures only (never a live
-// scenarios/awareness_e* file); every name, word and row is made up. E9's mode-less block is pinned by
+// scenarios/ca* file); every name, word and row is made up. E9's mode-less block is pinned by
 // social-password-guesser.test.mjs and re-checked here.
 // Run with: node --test test/js/social-password-guesser-spray.test.mjs
 import test from 'node:test';

@@ -107,7 +107,7 @@ What is already right (checked):
 ## sort-drill
 
 **Verdict: reusable component, awareness-only in practice: it cannot be placed in a mission by scenario JSON today.**
-No non-awareness scenario uses it (only `scenarios/awareness_e15_*`, `e16_*`, `e17_*`, `e14_*` via `social.awarenessEpisode.sortDrill`).
+No non-awareness scenario uses it (only `scenarios/ca15_*`, `ca16_*`, `ca17_*`, `ca14_*` via `social.awarenessEpisode.sortDrill`).
 
 The component itself is clean: no product, NPC or id names (`sort-drill-model.js:1-3`); every
 string has a default and a `config.strings` override (`sort-drill-model.js:33-71`); takes
@@ -144,7 +144,7 @@ model and the overlay standalone with inline configs, plus runner hosting.
 ## concern-form
 
 **Verdict: reusable component, awareness-only in practice (same launch gap as sort-drill).**
-No non-awareness scenario uses it (only `scenarios/awareness_e16_*` and peers via `concernForm`).
+No non-awareness scenario uses it (only `scenarios/ca16_*` and peers via `concernForm`).
 
 Component checks: model says it knows nothing of episodes (`concern-form-model.js:1-4`); all wording in
 `DEFAULT_TEXT` with `config.strings` overrides (`:34-80`); `params.config` accepted
@@ -174,7 +174,7 @@ Component checks: model says it knows nothing of episodes (`concern-form-model.j
 ## privacy-panel
 
 **Verdict: awareness/SE-engine specific as it stands; reusable with small fixes.**
-No non-awareness scenario uses it (only `scenarios/awareness_e14_social_media*`).
+No non-awareness scenario uses it (only `scenarios/ca14_social_media*`).
 
 Component checks: all wording overridable (`privacy-model.js:23-38`); `params.config` accepted
 (`privacy-panel-minigame.js:55`); read-only towards globals; namespaced CSS; tests in

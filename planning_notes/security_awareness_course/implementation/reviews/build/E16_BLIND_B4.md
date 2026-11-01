@@ -1,6 +1,6 @@
 # E16 Insider risk: blind playtest B4
 
-Fourth blind round, fresh tester. Episode `awareness_e16_insider_risk` (full) and `awareness_e16_insider_risk_defend`. Keyless server :3001, headless (load was about 7, other testers running). Blind rules kept: only the playtest skill, AGENTS.md "Housekeeping" and what a player sees on screen. The kiosk's radio options and checkboxes can't be clicked by label through the harness, so I DOM-clicked the visible option text (a helper that clicks the visible `label` containing the option text); I did not read any hidden attribute to choose.
+Fourth blind round, fresh tester. Episode `ca16_insider_risk` (full) and `ca16_insider_risk_defend`. Keyless server :3001, headless (load was about 7, other testers running). Blind rules kept: only the playtest skill, AGENTS.md "Housekeeping" and what a player sees on screen. The kiosk's radio options and checkboxes can't be clicked by label through the harness, so I DOM-clicked the visible option text (a helper that clicks the visible `label` containing the option text); I did not read any hidden attribute to choose.
 
 Evidence (scratchpad `aw2/blind-e16-b4/`):
 

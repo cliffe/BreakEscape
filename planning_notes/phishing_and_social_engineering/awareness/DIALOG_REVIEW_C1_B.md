@@ -2,7 +2,7 @@
 
 Fresh reviewer, read-only. Skill: `npc-dialog-review`. Scope set by the orchestrator:
 
-- **Episodes:** E5 (`awareness_e5_signin_pages`, `_defend`), E6 (`awareness_e6_texts_and_qr`, `_defend`), E7 (`awareness_e7_voice_ceo`, `_defend`).
+- **Episodes:** E5 (`ca05_signin_pages`, `_defend`), E6 (`ca06_texts_and_qr`, `_defend`), E7 (`ca07_voice_ceo`, `_defend`).
 - **Check shells:** `awareness_{pre,post}_{general,mobile}_{ab,ba}` (8 shells).
 - **Covered:** host ink, episode strings (brief, flip, debrief, Monday card, no-blame/defendOnly conclusions), triage copy, the SMS/QR/push cards, E7's voicemail transcripts.
 
@@ -32,7 +32,7 @@ The shells are partly generated. This matters for every fix:
 ## Major
 
 ### M1 — E5 full host "done" line crams three lessons into one 44-word bubble
-`scenarios/awareness_e5_signin_pages/ink/niamh_doherty.ink:22` (hand-authored ink)
+`scenarios/ca05_signin_pages/ink/niamh_doherty.ink:22` (hand-authored ink)
 
 > Niamh Doherty: That's both seats done, thanks. The trick is always the address: our real sign-in page sits on its own domain and your password manager knows it, so read the address bar before you ever type a password. A padlock doesn't make a page ours.
 
@@ -44,7 +44,7 @@ Proposed:
 (26 words. Fix in the ink directly.)
 
 ### M2 — E6 full host "done" line is 46 words
-`scenarios/awareness_e6_texts_and_qr/ink/chidi_okeke.ink:27` (hand-authored ink)
+`scenarios/ca06_texts_and_qr/ink/chidi_okeke.ink:27` (hand-authored ink)
 
 > Chidi Okeke: There, you've done it from both ends. On a phone it's the same move each time: if a text, a notice or an email wants a code scanned or a short link tapped, open the app yourself or ring someone on a number you already hold.
 
@@ -60,35 +60,35 @@ Proposed:
 ## Minor
 
 ### m1 — E5 full welcome line, 31 words
-`scenarios/awareness_e5_signin_pages/ink/niamh_doherty.ink:27`
+`scenarios/ca05_signin_pages/ink/niamh_doherty.ink:27`
 > Niamh Doherty: Welcome to the Quayholt exercise. Start at the kiosk: research us, build a sign-in page and send its link as the red team, then swap seats and check the pages yourself.
 
 Proposed (27 words, "as the red team" is redundant with the brief):
 > Niamh Doherty: Welcome to the Quayholt exercise. Start at the kiosk: research us, build a sign-in page and send the link, then swap seats and check the pages yourself.
 
 ### m2 — E5 full middle line, 33 words, and "the staff member" is colder than it needs to be
-`scenarios/awareness_e5_signin_pages/ink/niamh_doherty.ink:25`
+`scenarios/ca05_signin_pages/ink/niamh_doherty.ink:25`
 > Niamh Doherty: Your email with the link has gone to the staff member. Now take the other seat at the kiosk and check the pages that land behind links like yours in a real inbox.
 
 The flip names the target (Hana Novak); naming her here too is warmer and more concrete. Proposed (23 words):
 > Niamh Doherty: Your email with the link has gone to Hana. Now take the other seat and check the pages that land behind links like yours.
 
 ### m3 — E6 full middle line, 34 words, same "the depot" impersonality
-`scenarios/awareness_e6_texts_and_qr/ink/chidi_okeke.ink:30`
+`scenarios/ca06_texts_and_qr/ink/chidi_okeke.ink:30`
 > Chidi Okeke: Your message has gone over to the depot. Now take the other seat at the kiosk and go through what's waiting on a Tarrowby work phone, the way it would land on your break.
 
 The target is Kaylee Dunford (named in the flip). Proposed (26 words):
 > Chidi Okeke: Your message has gone over to Kaylee. Now take the other seat and go through a Tarrowby work phone, the way it would land on your break.
 
 ### m4 — E6 full welcome line, 35 words
-`scenarios/awareness_e6_texts_and_qr/ink/chidi_okeke.ink:32`
+`scenarios/ca06_texts_and_qr/ink/chidi_okeke.ink:32`
 > Chidi Okeke: Welcome to the Tarrowby exercise. Start at the kiosk: look at what's public, write one message as the red team, then swap seats and go through a work phone like the one it landed on.
 
 Proposed (27 words):
 > Chidi Okeke: Welcome to the Tarrowby exercise. Start at the kiosk: look at what's public, write one message, then swap seats and go through the work phone it lands on.
 
 ### m5 — E7 full welcome line, 31 words
-`scenarios/awareness_e7_voice_ceo/ink/agnieszka_duda.ink:32`
+`scenarios/ca07_voice_ceo/ink/agnieszka_duda.ink:32`
 > Agnieszka Duda: Welcome to the Brightwell finale. Start at the kiosk: research what's public about the chief executive, write one message as the red team, then swap seats and cover the finance line.
 
 Proposed (23 words):
@@ -104,7 +104,7 @@ Proposed (25 words):
 (The matching `_ba` host Pauline Hendry is already under cap; only AB's Owen line trips it.)
 
 ### m7 — Pre-check "mobile" (AB) host intro, 31 words
-`scenarios/awareness_pre_mobile_ab/ink/lerato_pre.ink:24` — **generated**; fix at `planning_notes/phishing_and_social_engineering/awareness/gen_e6_e7_shells.py:221` then re-run.
+`scenarios/ca_pre_mobile_ab/ink/lerato_pre.ink:24` — **generated**; fix at `planning_notes/phishing_and_social_engineering/awareness/gen_e6_e7_shells.py:221` then re-run.
 > Lerato Dlamini: Morning. Before the training there's a short check on the kiosk: ten texts, notices and emails from a Tarrowby work phone. Treat them the way you would on a normal shift.
 
 Proposed (26 words):
@@ -118,7 +118,7 @@ Proposed (26 words):
 The flip line actually names **Kaylee Dunford** (the attack target: `flipIntro`/`flipDefenderLine`, defend.json ~565–566). Bogdan Ionescu appears nowhere in the shipped E6 content. Not learner-facing (a `_`-prefixed note), but it will mislead the next editor into thinking the flip uses a different name. Either repoint the note to Kaylee or drop the Bogdan line.
 
 ### m9 — `phish_sso_staff_landed` set but never read (E5 full)
-`scenarios/awareness_e5_signin_pages/scenario.json.erb` (`social.phishTargets[sso_staff].outcome`)
+`scenarios/ca05_signin_pages/scenario.json.erb` (`social.phishTargets[sso_staff].outcome`)
 
 Validator SOCIAL warning: the global is set on a successful send but nothing reads it. This is **by design** — scoring is defence only (doc 11 §4.1), and the flip keys on `phish_sso_staff_attempts`, not on whether it landed. Noting it so the design-review stage can confirm it is intentional and either suppress the warning or drop the setter; no dialogue change needed. Cross-reference `scenario-design-review`.
 

@@ -87,7 +87,7 @@ unscored) sits in both shells. Both shells carry the byte-identical rule of thum
 The B2 D5 fix deliberately replaced the defend-only's "never marked down" with the "a real message does
 take a colleague's time to check" line, to match the full episode and to make the Verify-has-a-real-cost
 teaching honest. That landed in the fragment and in the kiosk brief: `defend.json` `_defendOnly.brief:292`
-and the defend erb's episode brief (`scenarios/awareness_e15_shadow_it_defend/scenario.json.erb:409`) both
+and the defend erb's episode brief (`scenarios/ca15_shadow_it_defend/scenario.json.erb:409`) both
 now read "...Reporting or checking when you're unsure is always fine, though a real message does take a
 colleague's time to check." But the defend-only shell's **top-level `scenario_brief`** (the Mission Brief
 popup; same erb `:4`) still reads "...is always fine and never marked down." — the un-updated generator

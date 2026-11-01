@@ -10,8 +10,8 @@ Run date 2026-10-29. Server :3001 keyless, headless (load average about 3, so ti
 
 | Run | Game id | Session log |
 | --- | --- | --- |
-| Full: awareness_e8_after_the_click | 4752 | /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e8/e8-full-session.jsonl (381 commands) |
-| Defend-only: awareness_e8_after_the_click_defend | 4763 | /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e8/e8-defend-session.jsonl (123 commands) |
+| Full: ca08_after_the_click | 4752 | /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e8/e8-full-session.jsonl (381 commands) |
+| Defend-only: ca08_after_the_click_defend | 4763 | /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e8/e8-defend-session.jsonl (123 commands) |
 
 Screenshots: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/2133f16a-52c8-44a8-bdee-8461b326389a/scratchpad/aw2/pt-e8/ (f01 to f51 full run, d01 to d06 defend-only).
 
@@ -166,7 +166,7 @@ Fun 3, pacing 4, clarity of goals 3 (down because of the below-the-fold controls
 
 ## P1 outcomes (content fixer, 2026-10-29)
 
-Scope: the content findings only. Engine findings F2 to F5 and readability were handled in the engine UX batch on main; the three new keys that batch added (`truth.kindLine`, `truth.missLabel`, the tick sheet listing the set's own tells first) are used below. Changes went into both the fragment (`awareness/e8/{attack,defend}.json`) and the full erb (`scenarios/awareness_e8_after_the_click/scenario.json.erb`), and the defend-only shell was regenerated with `gen_e8_e17_shells.py`. Checks rerun clean for E8: parity, rule-of-thumb, `--strict-social --no-graph --skip-ink` on both shells, dialoguelint, and `e8-full` on the keyless :3001 bridge (13/13). Ink structure unchanged (tagdiff), and no spoken host line was changed.
+Scope: the content findings only. Engine findings F2 to F5 and readability were handled in the engine UX batch on main; the three new keys that batch added (`truth.kindLine`, `truth.missLabel`, the tick sheet listing the set's own tells first) are used below. Changes went into both the fragment (`awareness/e8/{attack,defend}.json`) and the full erb (`scenarios/ca08_after_the_click/scenario.json.erb`), and the defend-only shell was regenerated with `gen_e8_e17_shells.py`. Checks rerun clean for E8: parity, rule-of-thumb, `--strict-social --no-graph --skip-ink` on both shells, dialoguelint, and `e8-full` on the keyless :3001 bridge (13/13). Ink structure unchanged (tagdiff), and no spoken host line was changed.
 
 | # | Outcome | Detail |
 | --- | --- | --- |

@@ -203,7 +203,7 @@ Line numbers are from the current working tree. `scripts/validate_scenario.rb` h
 **Manual:**
 
 - Play `lab_tesseract_trials` in a Hacktivity event with the playtest harness. Watch "Your games" go up through partial scores, stay at 99 or below, then reach 100 at the credits with optional tasks skipped.
-- Play `awareness_e1_invoice_fraud`. After the attack beat it should show 0, and 100 after the debrief.
+- Play `ca01_invoice_fraud`. After the attack beat it should show 0, and 100 after the debrief.
 - Play one pre and post pair and check that the CarryOver baseline still appears.
 
 ## 8. Open questions for the user

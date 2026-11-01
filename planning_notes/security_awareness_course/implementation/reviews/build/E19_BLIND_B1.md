@@ -7,7 +7,7 @@ Source of truth: what a player sees on screen. Nothing in scenarios/, planning_n
 | --- | --- | --- |
 | 1 Do your best, full | 4954 | tools/playtest/e19-blind-p1-session.jsonl (to reload), e19-blind-p1b-session.jsonl (after) |
 | 2 Struggling, full | 4964 | tools/playtest/e19-blind-p2-session.jsonl |
-| 3 Defend-only, persona 1 | 4967 (awareness_e19_malware_and_updates_defend) | tools/playtest/e19-blind-p3-session.jsonl |
+| 3 Defend-only, persona 1 | 4967 (ca19_malware_and_updates_defend) | tools/playtest/e19-blind-p3-session.jsonl |
 
 verify-run.rb (all three): "VERDICT: progress recorded, 0 rooms beyond the first, 0 objects unlocked, 0 flags submitted, 1 tasks completed" (score 100 in all three, including the run that scored 0% in the round; see N-4). Run 1 globals: episode_e19_malware_and_updates_defend_done, episode_e19_malware_and_updates_defend_pass.
 

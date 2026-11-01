@@ -41,25 +41,25 @@ import { dirname, join } from 'node:path';
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
 const EPISODES = [
-  { n: 1, dir: 'awareness_e1_invoice_fraud' },
-  { n: 2, dir: 'awareness_e2_cv_lures' },
-  { n: 3, dir: 'awareness_e3_helpdesk_reset' },
-  { n: 4, dir: 'awareness_e4_exec_whaling' },
-  { n: 5, dir: 'awareness_e5_signin_pages' },
-  { n: 6, dir: 'awareness_e6_texts_and_qr' },
-  { n: 7, dir: 'awareness_e7_voice_ceo' },
-  { n: 8, dir: 'awareness_e8_after_the_click' },
-  { n: 9, dir: 'awareness_e9_passwords' },
-  { n: 10, dir: 'awareness_e10_downloads_and_fake_checks' },
-  { n: 11, dir: 'awareness_e11_misdirected_data' },
-  { n: 13, dir: 'awareness_e13_ai_assistant' },
-  { n: 12, dir: 'awareness_e12_visitor_tailgater' },
-  { n: 14, dir: 'awareness_e14_social_media' },
-  { n: 15, dir: 'awareness_e15_shadow_it' },
-  { n: 16, dir: 'awareness_e16_insider_risk' },
-  { n: 19, dir: 'awareness_e19_malware_and_updates' },
-  { n: 20, dir: 'awareness_e20_remote_and_mobile_working' },
-  { n: 18, dir: 'awareness_e18_credential_attacks_at_scale' },
+  { n: 1, dir: 'ca01_invoice_fraud' },
+  { n: 2, dir: 'ca02_cv_lures' },
+  { n: 3, dir: 'ca03_helpdesk_reset' },
+  { n: 4, dir: 'ca04_exec_whaling' },
+  { n: 5, dir: 'ca05_signin_pages' },
+  { n: 6, dir: 'ca06_texts_and_qr' },
+  { n: 7, dir: 'ca07_voice_ceo' },
+  { n: 8, dir: 'ca08_after_the_click' },
+  { n: 9, dir: 'ca09_passwords' },
+  { n: 10, dir: 'ca10_downloads_and_fake_checks' },
+  { n: 11, dir: 'ca11_misdirected_data' },
+  { n: 13, dir: 'ca13_ai_assistant' },
+  { n: 12, dir: 'ca12_visitor_tailgater' },
+  { n: 14, dir: 'ca14_social_media' },
+  { n: 15, dir: 'ca15_shadow_it' },
+  { n: 16, dir: 'ca16_insider_risk' },
+  { n: 19, dir: 'ca19_malware_and_updates' },
+  { n: 20, dir: 'ca20_remote_and_mobile_working' },
+  { n: 18, dir: 'ca18_credential_attacks_at_scale' },
 ];
 
 // strings keys whose VALUE is allowed to differ between fragment and erb.
@@ -100,18 +100,18 @@ function stripNotes(v) {
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 // ENG-09d: a full episode on disk must be registered in EPISODES, or it slips past parity. A full
-// episode is awareness_e<N>_<name> without the _defend suffix (the defend-only twin and the
+// episode is ca<NN>_<name> without the _defend suffix (the defend-only twin and the
 // pre/post check shells are generated from the fragment, so they are not compared here).
 test('every full awareness episode under scenarios/ is registered for parity', () => {
   const onDisk = readdirSync(join(root, 'scenarios'), { withFileTypes: true })
-    .filter((d) => d.isDirectory() && /^awareness_e\d+_/.test(d.name) && !d.name.endsWith('_defend'))
+    .filter((d) => d.isDirectory() && /^ca(0[1-9]|[1-9]\d)_/.test(d.name) && !d.name.endsWith('_defend'))
     .map((d) => d.name).sort();
   const registered = EPISODES.map((e) => e.dir).sort();
   assert.deepEqual(onDisk.filter((d) => !registered.includes(d)), [],
     'full episode(s) with no EPISODES entry (add { n, dir } here and a fragment under planning_notes/.../awareness/e<N>/)');
   assert.deepEqual(registered.filter((d) => !onDisk.includes(d)), [], 'EPISODES entry with no folder under scenarios/');
   for (const { n, dir } of EPISODES) {
-    assert.ok(new RegExp(`^awareness_e${n}_`).test(dir), `EPISODES entry n=${n} does not match its folder ${dir}`);
+    assert.ok(new RegExp(`^ca${String(n).padStart(2, '0')}_`).test(dir), `EPISODES entry n=${n} does not match its folder ${dir}`);
   }
   assert.equal(new Set(EPISODES.map((e) => e.n)).size, EPISODES.length, 'an episode number is registered twice');
 });

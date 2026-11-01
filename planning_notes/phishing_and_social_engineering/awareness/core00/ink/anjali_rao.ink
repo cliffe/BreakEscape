@@ -7,7 +7,7 @@
 // that global. No defend set: this is a brief-only episode, nothing is scored.
 // Resting point is the hub (m03 hub_quiet pattern): the goodbye parks there quietly, and a re-talk
 // re-enters it and says the line that fits the moment.
-// The wiring agent moves this to scenarios/awareness_core_00_first_play/ink/anjali_rao.ink and
+// The wiring agent moves this to scenarios/ca00_first_play/ink/anjali_rao.ink and
 // compiles it; storyPath on the host NPC points at the compiled anjali_rao.json, currentKnot start.
 // ================================================
 
