@@ -300,3 +300,34 @@ Live check (keyless :3001, own games 4608, 4612, 4615, 4617; logs in the scratch
   ASAParcels: we couldn't deliver your parcel." with no dots.
 - P7-2 (awareness E5 defend): reporting all three phish with only the look-alike tell ticked gives 92%
   "Getting there" (Padlock myth 0 of 1, Secrecy 0 of 1), where the P7 run read "Sharp".
+
+---
+
+# Release pass (2026-11-01)
+
+Release-readiness pass for the university launch. No scenario/ink/CSS/JS changes were needed.
+
+## Gates (all green)
+- Validator `--strict-social`: exit 0 (only generic m01-style suggestions that don't apply to a
+  browser-only lab); dungeon graph regenerated, no drift.
+- Ink: 7/7 compile (known `tomasz.ink -> END` debrief_close warning only); no `.json` drift.
+- Node: `bin/test-js` on `social-*` + `validator-social-*` — 171 files, 0 failed.
+- Door alignment: OK. (3 doors.)
+- Audio (`tts:wasted`): 125 current-model clips, 125 expected lines, 0 orphans — fully voiced at HEAD,
+  no unvoiced lines.
+
+## Playtests
+- **R21** (`playtests/R21.md`): fresh-eyes second-year-undergraduate playthrough, start to finish on a
+  keyless server (:3003), lab sheet open, no walkthrough recipes. Reached credits, 23/23 tasks, score
+  100. SPF/DKIM/DMARC, URL reading, CMA/RoE content all accurate; forwarding and look-alike-domain
+  cases teach correctly. 0 blockers / 0 majors / 0 minors / 2 trivials.
+- **R22** (`playtests/R22.md`): scripted critical-path confirmation on a fresh game (358). 23/23 tasks,
+  score 100, credits, `engagement_closed`. Deterministic, matches R21.
+
+## Lab sheet audit
+Every room, object, NPC and mechanic the HLS sheet names matches the game as built; troubleshooting
+quotes and reflection questions check out. `lab_sheet_url` in mission.json resolves exactly to the HLS
+permalink. No sheet changes needed.
+
+## Verdict
+Release-ready. Then voiced (user approved TTS for this lab): see the audio note below / commit.
