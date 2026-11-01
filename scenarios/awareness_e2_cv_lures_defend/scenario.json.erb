@@ -127,7 +127,7 @@
             "id": "e2_portfolio_lookalike",
             "from": {
               "name": "Liam Baxter",
-              "address": "liam.baxter@lintbox.example"
+              "address": "liam.baxter@mailgrove.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "CV attached: warehouse supervisor",
@@ -144,8 +144,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "lintbox.example",
-              "replyTo": "liam.baxter@lintbox.example"
+              "envelopeFrom": "mailgrove.example",
+              "replyTo": "liam.baxter@mailgrove.example"
             },
             "truth": {
               "isPhish": true,
@@ -176,7 +176,7 @@
             "id": "e2_cv_pdf",
             "from": {
               "name": "Tendai Shava",
-              "address": "tendai.shava@lintbox.example"
+              "address": "tendai.shava@mailgrove.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "Application: warehouse supervisor (nights)",
@@ -193,14 +193,14 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "lintbox.example",
-              "replyTo": "tendai.shava@lintbox.example"
+              "envelopeFrom": "mailgrove.example",
+              "replyTo": "tendai.shava@mailgrove.example"
             },
             "truth": {
               "isPhish": false,
               "flags": [],
               "whyFine": {
-                "senderTrust": "Candidates apply from their personal email, so an lintbox.example address is normal here. The name and the address match.",
+                "senderTrust": "Candidates apply from their personal email, so an mailgrove.example address is normal here. The name and the address match.",
                 "attachmentPlausible": "It says the CV is attached, and it is: one PDF, which opens in the viewer.",
                 "addressedTo": "It's addressed to Fatima by name and names the job.",
                 "default": "A personal address is normal for a candidate. The CV is attached, the email names the job and the person, and it asks for nothing but an interview."
@@ -257,7 +257,7 @@
             "id": "e2_cv_docx",
             "from": {
               "name": "Darius Petrauskas",
-              "address": "darius.petrauskas@lintbox.example"
+              "address": "darius.petrauskas@mailgrove.example"
             },
             "to": "jobs@tarrowby.example",
             "subject": "HGV driver (Class 1): application",
@@ -274,8 +274,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "lintbox.example",
-              "replyTo": "darius.petrauskas@lintbox.example"
+              "envelopeFrom": "mailgrove.example",
+              "replyTo": "darius.petrauskas@mailgrove.example"
             },
             "truth": {
               "isPhish": false,
@@ -283,7 +283,7 @@
               "whyFine": {
                 "enable_content_prompt": "It's a Word file, which is normal for a CV. In the viewer it shows the whole CV read-only and asks you to switch nothing on.",
                 "attachmentPlausible": "A CV attached to an application is what you'd expect, and a Word document is a common way to send one.",
-                "senderTrust": "Candidates apply from their personal email, so an lintbox.example address is normal here.",
+                "senderTrust": "Candidates apply from their personal email, so an mailgrove.example address is normal here.",
                 "default": "A named job, a named person, a CV that's really attached, and nothing to switch on or sign in to."
               }
             }

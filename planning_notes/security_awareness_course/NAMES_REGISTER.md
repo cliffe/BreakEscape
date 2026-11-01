@@ -16,7 +16,7 @@ reconciling with `BRAND_SET.md` and `03_WORLD_AND_CAST.md`'s name pool.
 grep -rhoE '"(name|displayName|full)": *"[A-Z][a-z]+ [A-Z][a-z]+[a-z A-Z]*"' scenarios/awareness_*/scenario.json.erb
 grep -rhoE "[a-z0-9][a-z0-9.-]*\.example" scenarios/awareness_*/scenario.json.erb | sort -u
 ```
-Brand-name web searches and the Lintbox rename are the release fact-check agent's; this
+Brand-name web searches and the Mailgrove rename are the release fact-check agent's; this
 register only records what is in use and flags clashes.
 
 ---
@@ -68,7 +68,7 @@ Grouped by the company they touch. Every one is fictional, `.example`.
 
 | Name | Domain | What it is |
 |---|---|---|
-| Lintbox | `lintbox.example` | Freemail (owned by the fact-check agent; renamed from Inboxly) |
+| Mailgrove | `mailgrove.example` | Freemail (owned by the fact-check agent; renamed from Inboxly) |
 | Hastypost | `hastypost.example` | Second freemail |
 | Larchmail | `larchmail.example` | Webmail (general_v2) |
 | Cobweb Mail | `cobweb-mail.example` | Webmail |

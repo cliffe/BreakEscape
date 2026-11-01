@@ -17,7 +17,7 @@
       "Fennick Summit: an invented conference nobody at the firm is speaking at; fennicksummit-speakers.example and speaker-portal-signin.example. Form A row 8, never genuine",
       "SwiftLane Couriers: a courier the firm has never used; swiftlane-couriers.example and swiftlane-pay.example. Form B row 8, never genuine",
       "Mail relays for the fail-but-fine rows (row 3 of each form): mailer.roomwright.example (Larkspur's booking system) and mailer.venuedesk.example (The Harbour Loft's)",
-      "Shared freemail from BRAND_SET: lintbox.example and hastypost.example"
+      "Shared freemail from BRAND_SET: mailgrove.example and hastypost.example"
     ],
     "nameCheck": "Merrin, Carvalho, Chaudhry, Moyo, Berglund, Abramson, Wrenfield, Larkspur, Harbour Loft, Brackenmoor, Fennick and SwiftLane had no hits in scenarios, planning_notes, docs, story_design or the game JS on 2026-10-22, apart from BRAND_SET's own E4 proposal. Sallow appears only in BRAND_SET (and as a substring of 'toolsAllowed' in the OSINT code). Rejected after the check: Wychbourne (lab_tesseract_trials), Lindqvist (m09), Halden (sis03). Pre-ship: Merrin & Sallow, Wrenfield Travel, Larkspur Travel, The Harbour Loft and Brackenmoor Homes still need the real-business web search."
   },
@@ -83,17 +83,17 @@
         },
         {
           "id": "e4_boarding_payment",
-          "from": { "name": "Catherine Merrin", "address": "catherine.merrin.travel@lintbox.example" },
+          "from": { "name": "Catherine Merrin", "address": "catherine.merrin.travel@mailgrove.example" },
           "to": "tomas.carvalho@merrinsallow.example",
           "subject": "About to board: need this paid before I land",
           "time": "09:41",
           "body": "Tomás,\nThey're boarding us now and my work email won't load at the gate, so I'm on this one.\nThe Lisbon studio we're partnering with needs the £24,600 retainer today or we lose the slot. Their details: Atelier Ribeira, account ending 3381. Please pay it this morning.\nKeep it between us for now and don't send it through Yasmin. She'll want the approval form and there isn't time. I'll sign it off when I land.\nI'll be in the air for three hours, so email rather than ring.\nCatherine\nSent from my phone",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "catherine.merrin.travel@lintbox.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "mailgrove.example", "replyTo": "catherine.merrin.travel@mailgrove.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "borrowed_authority", "secrecy_or_bypass", "urgencyCalibrated"],
             "perFlagNote": {
-              "senderTrust": "A payment request from the managing partner on a free webmail inbox (lintbox.example), not her merrinsallow.example address. Anyone can open a free inbox in a name you know, so stop and ring her on the number in your contacts",
+              "senderTrust": "A payment request from the managing partner on a free webmail inbox (mailgrove.example), not her merrinsallow.example address. Anyone can open a free inbox in a name you know, so stop and ring her on the number in your contacts",
               "borrowed_authority": "'I'll sign it off when I land' leans on the managing partner's own authority to push the payment past Yasmin's approval. A name in the From line is no proof she sent it",
               "secrecy_or_bypass": "'Keep it between us' and 'don't send it through Yasmin' skip the approval that would catch this",
               "urgencyCalibrated": "'Before I land' and 'three hours in the air' leave no time to check and steer you away from ringing her. The flight time came from her public posts"
@@ -457,21 +457,21 @@
         },
         {
           "id": "eb_consultant_fee",
-          "from": { "name": "Catherine Merrin", "address": "catherine.m.private@lintbox.example" },
+          "from": { "name": "Catherine Merrin", "address": "catherine.m.private@mailgrove.example" },
           "to": "tomas.carvalho@merrinsallow.example",
           "subject": "Pay this today, between us",
           "time": "09:35",
           "body": "Tomás,\nI've agreed a fee of £6,750 with a heritage consultant for the Brackenmoor scheme and it has to be paid today to hold her diary. Details attached in the next email. Please keep this between us and don't raise it with Yasmin until I'm back, it's a delicate one.\nCatherine\nSent from my phone",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "catherine.m.private@lintbox.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "mailgrove.example", "replyTo": "catherine.m.private@mailgrove.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "secrecy_or_bypass", "urgencyCalibrated"],
             "perFlagNote": {
-              "senderTrust": "The managing partner's name on a personal inbox at lintbox.example, not merrinsallow.example",
+              "senderTrust": "The managing partner's name on a personal inbox at mailgrove.example, not merrinsallow.example",
               "secrecy_or_bypass": "'Keep this between us' and 'don't raise it with Yasmin' keep out the person who would check",
               "urgencyCalibrated": "'Paid today to hold her diary' leaves no time to check"
             },
-            "headerNote": "All three checks passed because the sender owns lintbox.example. A pass tells you which domain sent it, not that it's Catherine.",
+            "headerNote": "All three checks passed because the sender owns mailgrove.example. A pass tells you which domain sent it, not that it's Catherine.",
             "ifTrusted": "£6,750 would go to an account the sender controls.",
             "reportReply": "Thanks. Catherine didn't send it, and her real address is on merrinsallow.example."
           }

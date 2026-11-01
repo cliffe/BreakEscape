@@ -272,7 +272,7 @@
             "id": "gvb_ai_assistant",
             "from": {
               "name": "Priya Nadar",
-              "address": "priya.nadar@lintbox.example"
+              "address": "priya.nadar@mailgrove.example"
             },
             "to": "you@quayholt.example",
             "subject": "Your new AI assistant is ready: sign in to activate",
@@ -289,8 +289,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "lintbox.example",
-              "replyTo": "priya.nadar@lintbox.example"
+              "envelopeFrom": "mailgrove.example",
+              "replyTo": "priya.nadar@mailgrove.example"
             },
             "truth": {
               "isPhish": true,
@@ -299,7 +299,7 @@
                 "linkCredible"
               ],
               "perFlagNote": {
-                "senderTrust": "The name is dressed up as IT, but it sits on a personal inbox at lintbox.example, not quayholt.example. A smartly written email is easy to produce; it doesn't prove who sent it.",
+                "senderTrust": "The name is dressed up as IT, but it sits on a personal inbox at mailgrove.example, not quayholt.example. A smartly written email is easy to produce; it doesn't prove who sent it.",
                 "linkCredible": "The link text says ai.quayholt.example, but it goes to quayholt-ai.example, a different site built to collect your Quayholt password."
               },
               "ifTrusted": "'Sign in to activate' is the trick: the page takes your Quayholt password. A real new tool is switched on by IT, not by you signing in through a link in an email.",

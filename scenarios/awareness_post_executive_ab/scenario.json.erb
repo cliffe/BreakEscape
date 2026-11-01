@@ -237,7 +237,7 @@
             "id": "eb_consultant_fee",
             "from": {
               "name": "Catherine Merrin",
-              "address": "catherine.m.private@lintbox.example"
+              "address": "catherine.m.private@mailgrove.example"
             },
             "to": "tomas.carvalho@merrinsallow.example",
             "subject": "Pay this today, between us",
@@ -247,8 +247,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "lintbox.example",
-              "replyTo": "catherine.m.private@lintbox.example"
+              "envelopeFrom": "mailgrove.example",
+              "replyTo": "catherine.m.private@mailgrove.example"
             },
             "truth": {
               "isPhish": true,
@@ -258,11 +258,11 @@
                 "urgencyCalibrated"
               ],
               "perFlagNote": {
-                "senderTrust": "The managing partner's name on a personal inbox at lintbox.example, not merrinsallow.example",
+                "senderTrust": "The managing partner's name on a personal inbox at mailgrove.example, not merrinsallow.example",
                 "secrecy_or_bypass": "'Keep this between us' and 'don't raise it with Yasmin' keep out the person who would check",
                 "urgencyCalibrated": "'Paid today to hold her diary' leaves no time to check"
               },
-              "headerNote": "All three checks passed because the sender owns lintbox.example. A pass tells you which domain sent it, not that it's Catherine.",
+              "headerNote": "All three checks passed because the sender owns mailgrove.example. A pass tells you which domain sent it, not that it's Catherine.",
               "ifTrusted": "£6,750 would go to an account the sender controls.",
               "reportReply": "Thanks. Catherine didn't send it, and her real address is on merrinsallow.example."
             }

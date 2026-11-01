@@ -256,17 +256,17 @@
         },
         {
           "id": "ga_manager_signin",
-          "from": { "name": "Gordon McLeish", "address": "gordon.mcleish.claims@lintbox.example" },
+          "from": { "name": "Gordon McLeish", "address": "gordon.mcleish.claims@mailgrove.example" },
           "to": "you@quayholt.example",
           "subject": "Quick favour, are you in?",
           "time": "09:14",
           "body": "Are you at your desk? I'm on a site visit and locked out of my laptop. Could you send me your Quayholt sign-in so I can pull the claims report before 4? Keep it between us; going through IT will take all day.\nGordon",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "gordon.mcleish.claims@lintbox.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "mailgrove.example", "replyTo": "gordon.mcleish.claims@mailgrove.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust"],
             "perFlagNote": {
-              "senderTrust": "Gordon's name on a personal inbox at lintbox.example, not quayholt.example"
+              "senderTrust": "Gordon's name on a personal inbox at mailgrove.example, not quayholt.example"
             },
             "ifTrusted": "Whoever wrote it could sign in as you, read your mail and send messages in your name.",
             "reportReply": "Thanks. Gordon has his laptop and didn't send this. Nobody at Quayholt will ever ask for your password."

@@ -185,7 +185,7 @@
             "id": "e7_ceo_wire",
             "from": {
               "name": "Ravinder Sandhu",
-              "address": "ravinder.sandhu.private@lintbox.example"
+              "address": "ravinder.sandhu.private@mailgrove.example"
             },
             "to": "finance@brightwellfoods.example",
             "subject": "Need this paid today",
@@ -195,8 +195,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "lintbox.example",
-              "replyTo": "ravinder.sandhu.private@lintbox.example"
+              "envelopeFrom": "mailgrove.example",
+              "replyTo": "ravinder.sandhu.private@mailgrove.example"
             },
             "truth": {
               "isPhish": true,
@@ -208,7 +208,7 @@
                 "vish_callback_pressure"
               ],
               "perFlagNote": {
-                "senderTrust": "The name is the chief executive's, but the address is a personal inbox at lintbox.example, not brightwellfoods.example. The voicemail it mentions doesn't make it more real: a fake voice and a fake email can come from the same sender",
+                "senderTrust": "The name is the chief executive's, but the address is a personal inbox at mailgrove.example, not brightwellfoods.example. The voicemail it mentions doesn't make it more real: a fake voice and a fake email can come from the same sender",
                 "borrowed_authority": "The chief executive's name is doing the job the approval process should do. 'I'll sign it off when I'm back' and 'don't put it through the usual approval' lean on his seniority to push it past the check, and a name in the From line is no proof he sent it",
                 "secrecy_or_bypass": "'Keep it to yourself' and 'don't put it through the usual approval' ask you to skip the check that would catch this",
                 "urgencyCalibrated": "'Today' and 'in meetings all afternoon' leave no time to check before the money would move",

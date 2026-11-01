@@ -59,7 +59,7 @@ All four are invented, every domain ends `.example`, and each still needs the pr
 | Quayholt Insurance | `quayholt.example` | Bristol commercial insurer with an in-house IT service desk and single sign-on | E3 help-desk reset and MFA fatigue, E5 fake sign-in pages | Helpdesk and general (AB and BA) |
 | Merrin & Sallow Architects | `merrinsallow.example` | London architecture practice whose partners' diaries are partly public | E4 executive whaling | Executive (AB and BA) |
 
-Each company's look-alikes use only the shapes a learner can learn to check: a swapped character, an added hyphen or an added word. There are no homographs in the awareness product. Suppliers, banks, agencies and shared services (Harlow Packaging, Kettlewick Talent, lintbox, Fileharbour and the rest) are in BRAND_SET §3 and the `_brandAdditions` blocks of each `awareness/e*/defend.json`.
+Each company's look-alikes use only the shapes a learner can learn to check: a swapped character, an added hyphen or an added word. There are no homographs in the awareness product. Suppliers, banks, agencies and shared services (Harlow Packaging, Kettlewick Talent, mailgrove, Fileharbour and the rest) are in BRAND_SET §3 and the `_brandAdditions` blocks of each `awareness/e*/defend.json`.
 
 ## Larkspur Group: retired
 

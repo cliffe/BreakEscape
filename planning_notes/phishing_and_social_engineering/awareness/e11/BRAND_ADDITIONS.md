@@ -26,7 +26,7 @@ Ages are bands, for the concept prompts. All fictional; every address ends `.exa
 | Martin Fletcher | Sales Director | 50s, white, Manchester | `martin.fletcher@carrholme.example` | The marketing-export sandbox beat (`marketing_export`). Named on screen, not a defend-set sender. |
 | Sam Whitaker | Payroll Officer | 30s, British Caribbean | `sam.whitaker@carrholme.example` | The correct recipient of the overtime sheet (sandbox `overtime_sheet`). Named on screen, not a sender. |
 | Sam Whitlow | Manager, Hollinsbrook House (client care home, `hollinsbrookhouse.example`) | 50s, white, Yorkshire | `sam.whitlow@hollinsbrookhouse.example` | The wrong "Sam" the breach goes to; **genuine sender** in defend items 1 (`e11_wrong_sam_breach`) and 6 (`e11_cardigan_update`). |
-| Gareth Hale | Son of a resident (Hollinsbrook House) | 40s, white | `gareth.hale@lintbox.example` (freemail) | **Genuine sender** of the subject access request inside a complaint, defend item 4 (`e11_sar_everything`). |
+| Gareth Hale | Son of a resident (Hollinsbrook House) | 40s, white | `gareth.hale@mailgrove.example` (freemail) | **Genuine sender** of the subject access request inside a complaint, defend item 4 (`e11_sar_everything`). |
 | Wychbourne Court | Client care home (`wychbournecourt.example`) | n/a | `laundry@wychbournecourt.example` | **Genuine sender** of the misdirected care summary (inbound breach), defend item 5 (`e11_wychbourne_inbound`). |
 
 **People named on screen only (no art, no sender address):** Edna Hale (87, Hollinsbrook House, Room 12),
@@ -47,7 +47,7 @@ concept prompts can follow it.
 - `hollinsbrookhouse.example` (Hollinsbrook House, a client care home) and `wychbournecourt.example` (Wychbourne
   Court, a client care home): both fictional clients of Carrholme's Care Laundry line, controllers for their
   own residents' data.
-- `lintbox.example`: existing shared invented freemail from `BRAND_SET.md` (Gareth Hale's address). No new
+- `mailgrove.example`: existing shared invented freemail from `BRAND_SET.md` (Gareth Hale's address). No new
   freemail added.
 
 ## Name-clash search (grep across `scenarios/`, `planning_notes/`, `docs/`, `public/break_escape/js/`, 2026-10-29)

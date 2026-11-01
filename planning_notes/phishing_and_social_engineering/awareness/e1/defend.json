@@ -168,7 +168,7 @@
           "id": "e1_ceo_wire",
           "from": {
             "name": "Ravinder Sandhu",
-            "address": "ravinder.sandhu.private@lintbox.example"
+            "address": "ravinder.sandhu.private@mailgrove.example"
           },
           "to": "payments@brightwellfoods.example",
           "subject": "Need this paid today",
@@ -178,8 +178,8 @@
             "spf": "pass",
             "dkim": "pass",
             "dmarc": "pass",
-            "envelopeFrom": "lintbox.example",
-            "replyTo": "ravinder.sandhu.private@lintbox.example"
+            "envelopeFrom": "mailgrove.example",
+            "replyTo": "ravinder.sandhu.private@mailgrove.example"
           },
           "truth": {
             "isPhish": true,
@@ -189,7 +189,7 @@
               "urgencyCalibrated"
             ],
             "perFlagNote": {
-              "senderTrust": "The name is the chief executive's, but the address is a personal inbox at lintbox.example, not brightwellfoods.example",
+              "senderTrust": "The name is the chief executive's, but the address is a personal inbox at mailgrove.example, not brightwellfoods.example",
               "secrecy_or_bypass": "'Keep it to yourself' and 'don't put it through the usual approval' ask you to skip the check that would catch this",
               "urgencyCalibrated": "'Today' and 'in meetings all afternoon' leave no time to check, and steer you away from ringing him"
             },
@@ -350,7 +350,7 @@
           "id": "fa_ceo_transfer",
           "from": {
             "name": "Ravinder Sandhu",
-            "address": "ravinder.sandhu.ceo@lintbox.example"
+            "address": "ravinder.sandhu.ceo@mailgrove.example"
           },
           "to": "payments@brightwellfoods.example",
           "subject": "Confidential: payment needed this morning",
@@ -360,8 +360,8 @@
             "spf": "pass",
             "dkim": "pass",
             "dmarc": "pass",
-            "envelopeFrom": "lintbox.example",
-            "replyTo": "ravinder.sandhu.ceo@lintbox.example"
+            "envelopeFrom": "mailgrove.example",
+            "replyTo": "ravinder.sandhu.ceo@mailgrove.example"
           },
           "truth": {
             "isPhish": true,
@@ -371,7 +371,7 @@
               "urgencyCalibrated"
             ],
             "perFlagNote": {
-              "senderTrust": "The chief executive's name on a personal inbox at lintbox.example",
+              "senderTrust": "The chief executive's name on a personal inbox at mailgrove.example",
               "secrecy_or_bypass": "'Keep it between us' and 'don't raise it with Adaeze' cut out the person who approves payments",
               "urgencyCalibrated": "'Before 11' and 'email only' leave no time to ring and check"
             },

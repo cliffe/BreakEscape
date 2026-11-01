@@ -247,7 +247,7 @@
             "id": "gva_ceo_video",
             "from": {
               "name": "Helen Achterberg",
-              "address": "helen.achterberg@lintbox.example"
+              "address": "helen.achterberg@mailgrove.example"
             },
             "to": "you@quayholt.example",
             "subject": "A short message from me: please watch today",
@@ -264,8 +264,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "lintbox.example",
-              "replyTo": "helen.achterberg@lintbox.example"
+              "envelopeFrom": "mailgrove.example",
+              "replyTo": "helen.achterberg@mailgrove.example"
             },
             "truth": {
               "isPhish": true,
@@ -274,7 +274,7 @@
                 "linkCredible"
               ],
               "perFlagNote": {
-                "senderTrust": "The chief executive's name sits on a personal inbox at lintbox.example, not quayholt.example. A video or a voice can be faked now, so a familiar face or name is not proof of who really sent something.",
+                "senderTrust": "The chief executive's name sits on a personal inbox at mailgrove.example, not quayholt.example. A video or a voice can be faked now, so a familiar face or name is not proof of who really sent something.",
                 "linkCredible": "The link text says team-briefing.quayholt.example, but it actually goes to quayholt-briefing.example, a different site that asks for your Quayholt password."
               },
               "ifTrusted": "The page the link opens collects your Quayholt password. The 'video' is bait, and the sign-in to 'confirm you've viewed it' is the whole point.",

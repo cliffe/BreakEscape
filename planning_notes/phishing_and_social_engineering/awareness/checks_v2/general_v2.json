@@ -11,7 +11,7 @@
     ],
     "realHosts": "Reuses the E5 roster: intranet.quayholt.example, learning.quayholt.example and the quayholt.example mail domain. No new real host is added.",
     "lookalikes": "Forms add four look-alikes: quayho1t-check.example (swapped character, row 2 A), quayholt-update.example (added word, row 2 B), quayholt-briefing.example (added word, row 6 A link destination), quayholt-ai.example (added word, row 6 B link destination).",
-    "thirdParties": "Outside inboxes an impostor owns, so their automatic checks pass: lintbox.example and hastypost.example (already in the roster), larchmail.example and itrollout-support.example (new)."
+    "thirdParties": "Outside inboxes an impostor owns, so their automatic checks pass: mailgrove.example and hastypost.example (already in the roster), larchmail.example and itrollout-support.example (new)."
   },
   "_formPairing": {
     "_use": "Item n in form A matches item n in form B on kind, phish or genuine, the scored-flag multiset and difficulty; only the lure content differs. Per form: 10 items (4 phish, 6 genuine; 8 emails, 1 page, 1 sign-in prompt). Scored-flag multiset per form: senderTrust 2, linkCredible 1, lookalike_domain 1, padlock_myth 1, unrequested_mfa_push 1 (6 scored flags, identical in A and B). Row 8 no longer scores reply_to_differs (C1 P1-M1, following the built forms' C2-M6 decision: episode defend rounds run headerPanel off, so no episode teaches header reading); the reply-to point is kept in each item's headerNote as a 'you could also see' line, and reply_to_differs is removed from channelTells. Difficulty mix per form: 5 easy, 4 medium, 1 hard, identical in A and B. Phish at ordinal slots 2, 4, 6, 8 before the generator's PERMUTE. Row 8 is the pass-but-bad phish (SPF, DKIM, DMARC all pass); row 5 is the fail-but-fine genuine item (DKIM fail). Verify is off: no call or voicemail item, and the page (row 2) offers Trust/Report/Delete only.",
@@ -142,18 +142,18 @@
         },
         {
           "id": "gva_ceo_video",
-          "from": { "name": "Helen Achterberg", "address": "helen.achterberg@lintbox.example" },
+          "from": { "name": "Helen Achterberg", "address": "helen.achterberg@mailgrove.example" },
           "to": "you@quayholt.example",
           "subject": "A short message from me: please watch today",
           "time": "10:20",
           "body": "I've recorded a short video for all staff about the changes ahead. Please watch it today and sign in with your Quayholt account on the page so we can see who has viewed it.\n{{link:video}}\nHelen\nSent from my phone",
           "links": [ { "id": "video", "text": "team-briefing.quayholt.example", "destination": "https://quayholt-briefing.example/play" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "helen.achterberg@lintbox.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "mailgrove.example", "replyTo": "helen.achterberg@mailgrove.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "linkCredible"],
             "perFlagNote": {
-              "senderTrust": "The chief executive's name sits on a personal inbox at lintbox.example, not quayholt.example. A video or a voice can be faked now, so a familiar face or name is not proof of who really sent something.",
+              "senderTrust": "The chief executive's name sits on a personal inbox at mailgrove.example, not quayholt.example. A video or a voice can be faked now, so a familiar face or name is not proof of who really sent something.",
               "linkCredible": "The link text says team-briefing.quayholt.example, but it actually goes to quayholt-briefing.example, a different site that asks for your Quayholt password."
             },
             "ifTrusted": "The page the link opens collects your Quayholt password. The 'video' is bait, and the sign-in to 'confirm you've viewed it' is the whole point.",
@@ -344,18 +344,18 @@
         },
         {
           "id": "gvb_ai_assistant",
-          "from": { "name": "Priya Nadar", "address": "priya.nadar@lintbox.example" },
+          "from": { "name": "Priya Nadar", "address": "priya.nadar@mailgrove.example" },
           "to": "you@quayholt.example",
           "subject": "Your new AI assistant is ready: sign in to activate",
           "time": "10:25",
           "body": "Hi,\nWe're rolling out a new AI assistant to help with your day-to-day work. To switch yours on, open the page below and sign in with your Quayholt account. It only takes a moment.\n{{link:assistant}}\nPriya\nIT rollout team",
           "links": [ { "id": "assistant", "text": "ai.quayholt.example/start", "destination": "https://quayholt-ai.example/signin" } ],
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "priya.nadar@lintbox.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "mailgrove.example", "replyTo": "priya.nadar@mailgrove.example" },
           "truth": {
             "isPhish": true,
             "flags": ["senderTrust", "linkCredible"],
             "perFlagNote": {
-              "senderTrust": "The name is dressed up as IT, but it sits on a personal inbox at lintbox.example, not quayholt.example. A smartly written email is easy to produce; it doesn't prove who sent it.",
+              "senderTrust": "The name is dressed up as IT, but it sits on a personal inbox at mailgrove.example, not quayholt.example. A smartly written email is easy to produce; it doesn't prove who sent it.",
               "linkCredible": "The link text says ai.quayholt.example, but it goes to quayholt-ai.example, a different site built to collect your Quayholt password."
             },
             "ifTrusted": "'Sign in to activate' is the trick: the page takes your Quayholt password. A real new tool is switched on by IT, not by you signing in through a link in an email.",

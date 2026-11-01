@@ -250,7 +250,7 @@
             "id": "dca_recruiter_probe",
             "from": {
               "name": "Carla Mendes",
-              "address": "carla.mendes.hire@lintbox.example"
+              "address": "carla.mendes.hire@mailgrove.example"
             },
             "to": "you@carrholme.example",
             "subject": "Quick one about the team structure",
@@ -260,8 +260,8 @@
               "spf": "pass",
               "dkim": "pass",
               "dmarc": "pass",
-              "envelopeFrom": "lintbox.example",
-              "replyTo": "carla.mendes.hire@lintbox.example"
+              "envelopeFrom": "mailgrove.example",
+              "replyTo": "carla.mendes.hire@mailgrove.example"
             },
             "truth": {
               "isPhish": true,
@@ -270,7 +270,7 @@
                 "pretextRelevant"
               ],
               "perFlagNote": {
-                "senderTrust": "A stranger writing from a personal inbox at lintbox.example, not a contact Carrholme deals with. A friendly tone isn't a reason to trust a name you don't know.",
+                "senderTrust": "A stranger writing from a personal inbox at mailgrove.example, not a contact Carrholme deals with. A friendly tone isn't a reason to trust a name you don't know.",
                 "pretextRelevant": "Who reports to whom and when managers are away is not something you'd tell an outsider. It's exactly what someone building an impersonation wants to know."
               },
               "ifTrusted": "An org chart and a diary of when managers are out is the map an attacker uses to impersonate the right person at the right moment. 'Recruiter' is just the cover story.",

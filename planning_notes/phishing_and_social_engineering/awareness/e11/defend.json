@@ -7,7 +7,7 @@
     "castUsed": [
       "Tomasz Wiśniewski: Carrholme DPO (host; receives the reports). tomasz.wisniewski@carrholme.example. Not a defend-set sender; he is the report recipient and debrief voice.",
       "Sam Whitlow: manager, Hollinsbrook House (client care home, hollinsbrookhouse.example). sam.whitlow@hollinsbrookhouse.example. Genuine sender in items 1 and 6.",
-      "Gareth Hale: son of a resident at Hollinsbrook House, on freemail. gareth.hale@lintbox.example. Genuine sender in item 4 (the subject access request inside a complaint).",
+      "Gareth Hale: son of a resident at Hollinsbrook House, on freemail. gareth.hale@mailgrove.example. Genuine sender in item 4 (the subject access request inside a complaint).",
       "Wychbourne Court: client care home (wychbournecourt.example). laundry@wychbournecourt.example. Genuine sender in item 5 (the misdirected care summary, a received-in-error breach).",
       "DC Rowley, North Pennine Police: voice-only police-impersonation caller in item 2 (a phish). RENAMED from the brief's 'DC Hendry': see BRAND_ADDITIONS.md, the surname Hendry is already the built genuine 'Pauline Hendry, Payroll' in the general_ba / helpdesk_ba check forms."
     ],
@@ -163,12 +163,12 @@
         },
         {
           "id": "e11_sar_everything",
-          "from": { "name": "Gareth Hale", "address": "gareth.hale@lintbox.example" },
+          "from": { "name": "Gareth Hale", "address": "gareth.hale@mailgrove.example" },
           "to": "carelaundry@carrholme.example",
           "subject": "Mum's cardigan is missing AGAIN",
           "time": "10:04",
           "body": "This is the second time Mum's cardigan has gone missing from the laundry. Edna Hale, Room 12 at Hollinsbrook House. I'm her son. Frankly I've had enough, and I want EVERYTHING you hold on Mum and on me. Every note, every call, every email. I want to see the lot.\nGareth Hale",
-          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "lintbox.example", "replyTo": "gareth.hale@lintbox.example" },
+          "auth": { "spf": "pass", "dkim": "pass", "dmarc": "pass", "envelopeFrom": "mailgrove.example", "replyTo": "gareth.hale@mailgrove.example" },
           "truth": {
             "isPhish": true,
             "flags": ["data_rights_request"],
