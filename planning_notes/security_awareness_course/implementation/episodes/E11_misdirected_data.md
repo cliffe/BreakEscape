@@ -591,7 +591,7 @@ set's done global. Shape (adapt `awareness_e6_texts_and_qr_defend`'s single-aim 
 - `globalVariables` for the **full** shell (declare all; defaults as shown):
   `episode_e11_misdirected_data_state: {}`, `se_awareness_records: []`,
   `episode_e11_misdirected_data_defend_percent: 0`, `episode_e11_misdirected_data_defend_reportRate: 0`,
-  `episode_e11_misdirected_data_defend_done: false`, `episode_e11_misdirected_data_defend_pass: false`.
+  `episode_e11_misdirected_data_defend_done: false`, `episode_e11_misdirected_data_complete: false`.
   No `phish_*` global and no attack-landed global exist. (`episode_<id>_state` also holds the
   `mistakeChoices` field at runtime, section 10a; it is declared `{}` and starts empty.)
 - The **defend-only** shell uses the double-suffix prefix (section 13): done global

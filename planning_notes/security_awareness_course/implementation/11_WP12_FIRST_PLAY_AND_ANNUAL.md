@@ -351,7 +351,7 @@ are already triage `call` data; but prefer the episode calls so the Gordon mirro
   `se_awareness_records: []`, `episode_core_17_annual_2027_defend_defend_percent: 0`,
   `episode_core_17_annual_2027_defend_defend_reportRate: 0`,
   `episode_core_17_annual_2027_defend_defend_done: false`,
-  `episode_core_17_annual_2027_defend_defend_pass: false`. No `phish_*` global and no `triage_pre_*`
+  `episode_core_17_annual_2027_defend_complete: false`. No `phish_*` global and no `triage_pre_*`
   globals (core_17 is not a check mission). One objective with `missionConclusion: true`, its
   `concludeRequires.globals` listing `episode_core_17_annual_2027_defend_defend_done`, and
   `conclusionTaskId` a task of that aim, completed by the host NPC's `eventMappings` entry on

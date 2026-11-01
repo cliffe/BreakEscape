@@ -52,7 +52,7 @@ from the E6 defend shell with this set swapped in; see "Proof it validates" at t
 "episode_core_17_annual_2027_defend_defend_percent": 0,
 "episode_core_17_annual_2027_defend_defend_reportRate": 0,
 "episode_core_17_annual_2027_defend_defend_done": false,
-"episode_core_17_annual_2027_defend_defend_pass": false
+"episode_core_17_annual_2027_defend_complete": false
 ```
 
 No `phish_*` global and no `triage_pre_*` globals (core_17 is not a check mission). No `defend.calls`

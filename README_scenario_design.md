@@ -3086,7 +3086,7 @@ A shell is one scenario folder (`scenarios/<id>/` with `scenario.json.erb`, `mis
   "episode_e1_stub_defend_percent": 0,
   "episode_e1_stub_defend_reportRate": 0,
   "episode_e1_stub_defend_done": false,
-  "episode_e1_stub_defend_pass": false,
+  "episode_e1_stub_complete": false,
   "se_osint_state": {},
   "se_intel_supplier_contact": false,
   "phish_supplier_contact_landed": false,

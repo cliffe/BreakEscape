@@ -174,7 +174,7 @@ section 15a's shape exactly):
 - `globalVariables` for the **full** shell (as E11 section 15a, no `phish_*` or attack-landed global):
   `episode_e15_shadow_it_state: {}`, `se_awareness_records: []`, `episode_e15_shadow_it_defend_percent: 0`,
   `episode_e15_shadow_it_defend_reportRate: 0`, `episode_e15_shadow_it_defend_done: false`,
-  `episode_e15_shadow_it_defend_pass: false`. (`episode_<id>_state` also holds `mistakeChoices` at runtime,
+  `episode_e15_shadow_it_complete: false`. (`episode_<id>_state` also holds `mistakeChoices` at runtime,
   cleared on `flip`.)
 - The **defend-only** shell uses the double-suffix prefix (section 13): done global
   `episode_e15_shadow_it_defend_defend_done`, result globals `episode_e15_shadow_it_defend_defend_{percent,reportRate,pass}`,

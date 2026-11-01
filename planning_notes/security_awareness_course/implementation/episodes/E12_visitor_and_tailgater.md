@@ -835,7 +835,7 @@ Do **not** edit the six built role check forms, the shared `ruleOfThumb` test st
 
 Required `globalVariables` (declare all, defaults as shown): `episode_e12_visitor_tailgater_state: {}`,
 `se_awareness_records: []`, `episode_e12_visitor_tailgater_defend_percent: 0`,
-`..._defend_reportRate: 0`, `..._defend_done: false`, `..._defend_pass: false`, `se_osint_state: {}`,
+`..._defend_reportRate: 0`, `..._defend_done: false`, `..._complete: false`, `se_osint_state: {}`,
 `se_intel_merrin_badge_door: false`, `se_intel_merrin_partner_travel: false`,
 `se_intel_merrin_courier_routine: false`, `delphine_influence: 0`, `delphine_latched: ""`,
 `delphine_wary: false`, `delphine_refusing: false`, `delphine_alerted: false`,

@@ -490,7 +490,7 @@ Do **not** edit the six built role check forms, the shared `ruleOfThumb` test st
 
 Required `globalVariables` (declare all): `episode_e13_ai_assistant_state: {}`, `se_awareness_records:
 []`, `episode_e13_ai_assistant_defend_percent: 0`, `..._defend_reportRate: 0`, `..._defend_done:
-false`, `..._defend_pass: false`, `phish_assist_reader_landed: false`, `phish_assist_reader_attempts: 0`,
+false`, `..._complete: false`, `phish_assist_reader_landed: false`, `phish_assist_reader_attempts: 0`,
 plus whatever ENG-06 declares for the authored assistant state (name it `e13_assistant_state` and
 declare it as an object-valued global).
 
