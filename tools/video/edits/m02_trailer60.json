@@ -4,7 +4,7 @@
  "title": "SAFETYNET: Licence to Hack, m02 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v4 (2026-11-02): story reorder. Premise ransom -> lights -> Doyle; Hack them back: lockpick, walk_vm, Kali placeholder (--final refuses), CyberChef; to Hold back the ENTROPY: Ghost terminal -> Val; walk montage; Ward Goes Dark crescendo; Ghost call close (silent, VO later). Reeves talk-view flash. Rough cut.",
+ "status": "v5 (2026-11-02): Bernie premise (silent subtitle beat) replaces Doyle; re-shot staff walk; crescendo muted (music only), cr_bernie removed. Kali placeholder stays (--final refuses). Ghost beats silent pending VO. Rough cut.",
  "music": {
   "track": "Noir/Steel Shadows in E Minor (Remastered).mp3",
   "analysis": "steel_shadows_in_e_minor_remastered_60.json",
@@ -150,7 +150,7 @@
   {
    "id": "m_ransom",
    "type": "gameplay",
-   "duration": 1.1,
+   "duration": 1.2,
    "snap": false,
    "join": {
     "type": "glitch"
@@ -158,7 +158,7 @@
    "source": {
     "file": "t04_ransom.trimmed.mkv",
     "in": 2.6,
-    "out": 3.701
+    "out": 3.801
    },
    "note": "reception ransom screen: skull, title, timer",
    "framing": {
@@ -189,6 +189,58 @@
     "keypad_partial": null,
     "note": "ransom note and countdown only; fake wallet text is story, no code or login"
    }
+  },
+  {
+   "id": "npc_bernie_premise",
+   "type": "gameplay",
+   "duration": 3.5667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t28_bernie_premise.trimmed.mkv",
+    "in": 16.5,
+    "out": 20.0667
+   },
+   "note": "t28 Bernie at the reception desk, SILENT subtitle beat (the game's own subtitle bar carries 'The cardiac ward's monitoring is down. Nobody's watching those hearts but us.'); TTS pass later. Full frame.",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.47,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -120
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Bernie premise line; no code, culprit or ending"
+   },
+   "dialogue": false,
+   "lines": [
+    {
+     "speaker": "Bernie Nwosu",
+     "text": "The cardiac ward's monitoring is down. Nobody's watching those hearts but us.",
+     "start": 0.0,
+     "end": 3.4
+    }
+   ]
   },
   {
    "id": "m_lights",
@@ -231,64 +283,6 @@
     "shows_ending": false,
     "keypad_partial": null,
     "note": "lit reception and vestibule, no text, no code"
-   }
-  },
-  {
-   "id": "npc_doyle",
-   "type": "gameplay",
-   "duration": 3.6667,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t10_doyle.trimmed.mkv",
-    "in": 10.08,
-    "out": 13.7477
-   },
-   "note": "doyle_1 10.08-13.75; the next line starts 14.82",
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
-    },
-    "9:16": {
-     "cx": 0.72,
-     "cy": 0.444,
-     "zoom": 1.125
-    },
-    "1:1": {
-     "cx": 0.47,
-     "cy": 0.5,
-     "zoom": 1
-    }
-   },
-   "audio": {
-    "gain_db": 0,
-    "dialogue": true,
-    "duck_music": true
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "Doyle line: ward under attack, no code, culprit or ending"
-   },
-   "dialogue": true,
-   "lines": [
-    {
-     "speaker": "Sister Doyle",
-     "text": "The machines still run. Nobody's watching them.",
-     "start": 0.0,
-     "end": 3.67
-    }
-   ],
-   "caption": {
-    "9:16": true,
-    "1:1": true
    }
   },
   {
@@ -655,7 +649,7 @@
   {
    "id": "mb_chair",
    "type": "gameplay",
-   "duration": 2.9333,
+   "duration": 3.2667,
    "snap": false,
    "join": {
     "type": "cut"
@@ -663,7 +657,7 @@
    "source": {
     "file": "t12_walk_chair.trimmed.mkv",
     "in": 0.9,
-    "out": 3.8343
+    "out": 4.1677
    },
    "note": "heads for the east door and knocks the swivel chair (contact 2.12); ward lit",
    "framing": {
@@ -698,32 +692,32 @@
   {
    "id": "t26_walk_room",
    "type": "gameplay",
-   "duration": 3.0,
+   "duration": 2.6667,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t26_walk_room.trimmed.mkv",
-    "in": 1.35,
-    "out": 4.351
+    "in": 1.15,
+    "out": 3.8177
    },
-   "note": "staff-room walk (replaces mb_doyle); crop x 380-1540 y 0-1080 (the room fills this, the rest is black)",
+   "note": "staff-room walk toward the clerk's desk, re-recorded at zoom step 2: 16:9 band y 160-880 (1.5x) follows the player (centre of frame).",
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
+     "cy": 0.481,
+     "zoom": 1.5
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
+     "cy": 0.481,
+     "zoom": 1.5
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
+     "cy": 0.481,
+     "zoom": 1.5
     }
    },
    "audio": {
@@ -762,7 +756,7 @@
   {
    "id": "cr_lockpick",
    "type": "gameplay",
-   "duration": 0.6333,
+   "duration": 0.7,
    "snap": false,
    "join": {
     "type": "glitch"
@@ -770,7 +764,7 @@
    "source": {
     "file": "t03_lockpick.trimmed.mkv",
     "in": 9.3,
-    "out": 9.9343
+    "out": 10.001
    },
    "note": "crescendo 1/10: lockpick, lock not yet open",
    "framing": {
@@ -791,7 +785,7 @@
     }
    },
    "audio": {
-    "gain_db": -10
+    "gain_db": -120
    },
    "spoiler": {
     "reviewed": true,
@@ -803,52 +797,9 @@
    }
   },
   {
-   "id": "cr_bernie",
-   "type": "gameplay",
-   "duration": 0.2333,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t23_bernie_talk.trimmed.mkv",
-    "in": 3.5,
-    "out": 3.7343
-   },
-   "note": "crescendo NPC flash, talk/portrait view, no subtitle bar (y<=940)",
-   "framing": {
-    "16:9": {
-     "cx": 0.693,
-     "cy": 0.204,
-     "zoom": 3
-    },
-    "9:16": {
-     "cx": 0.693,
-     "cy": 0.333,
-     "zoom": 1.5
-    },
-    "1:1": {
-     "cx": 0.693,
-     "cy": 0.25,
-     "zoom": 2
-    }
-   },
-   "audio": {
-    "gain_db": -10
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "non-speaking NPC portrait; no subtitle bar, no readable text; Gary post-its out of frame"
-   }
-  },
-  {
    "id": "cr_keypad",
    "type": "gameplay",
-   "duration": 0.6333,
+   "duration": 0.7,
    "snap": false,
    "join": {
     "type": "cut"
@@ -856,7 +807,7 @@
    "source": {
     "file": "t06_keypad.trimmed.mkv",
     "in": 4.7,
-    "out": 5.3343
+    "out": 5.401
    },
    "note": "crescendo 2/10: PIN pad, digits 2,5,6",
    "framing": {
@@ -877,7 +828,7 @@
     }
    },
    "audio": {
-    "gain_db": -10
+    "gain_db": -120
    },
    "spoiler": {
     "reviewed": true,
@@ -891,7 +842,7 @@
   {
    "id": "cr_kim",
    "type": "gameplay",
-   "duration": 0.2333,
+   "duration": 0.2667,
    "snap": false,
    "join": {
     "type": "cut"
@@ -899,7 +850,7 @@
    "source": {
     "file": "t24_kim_talk.trimmed.mkv",
     "in": 3.6,
-    "out": 3.8343
+    "out": 3.8677
    },
    "note": "crescendo NPC flash, talk/portrait view, no subtitle bar (y<=940)",
    "framing": {
@@ -920,7 +871,7 @@
     }
    },
    "audio": {
-    "gain_db": -10
+    "gain_db": -120
    },
    "spoiler": {
     "reviewed": true,
@@ -934,7 +885,7 @@
   {
    "id": "cr_ransom",
    "type": "gameplay",
-   "duration": 0.3667,
+   "duration": 0.4,
    "snap": false,
    "join": {
     "type": "cut"
@@ -942,7 +893,7 @@
    "source": {
     "file": "t04_ransom.trimmed.mkv",
     "in": 3.0,
-    "out": 3.3677
+    "out": 3.401
    },
    "note": "crescendo 3/10: ransom title and timer",
    "framing": {
@@ -963,7 +914,7 @@
     }
    },
    "audio": {
-    "gain_db": -10
+    "gain_db": -120
    },
    "spoiler": {
     "reviewed": true,
@@ -977,7 +928,7 @@
   {
    "id": "cr_recovery",
    "type": "gameplay",
-   "duration": 0.3333,
+   "duration": 0.3667,
    "snap": false,
    "join": {
     "type": "cut"
@@ -985,7 +936,7 @@
    "source": {
     "file": "t14a_server_minigames.trimmed.mkv",
     "in": 3.4,
-    "out": 3.7343
+    "out": 3.7677
    },
    "note": "crescendo 4/10: backup-recovery source cards; panel top (title) is off frame",
    "framing": {
@@ -1006,7 +957,7 @@
     }
    },
    "audio": {
-    "gain_db": -10
+    "gain_db": -120
    },
    "spoiler": {
     "reviewed": true,
@@ -1049,7 +1000,7 @@
     }
    },
    "audio": {
-    "gain_db": -10
+    "gain_db": -120
    },
    "spoiler": {
     "reviewed": true,
@@ -1092,7 +1043,7 @@
     }
    },
    "audio": {
-    "gain_db": -10
+    "gain_db": -120
    },
    "spoiler": {
     "reviewed": true,
@@ -1135,7 +1086,7 @@
     }
    },
    "audio": {
-    "gain_db": -10
+    "gain_db": -120
    },
    "spoiler": {
     "reviewed": true,
@@ -1178,7 +1129,7 @@
     }
    },
    "audio": {
-    "gain_db": -10
+    "gain_db": -120
    },
    "spoiler": {
     "reviewed": true,
@@ -1221,7 +1172,7 @@
     }
    },
    "audio": {
-    "gain_db": -10
+    "gain_db": -120
    },
    "spoiler": {
     "reviewed": true,
@@ -1264,7 +1215,7 @@
     }
    },
    "audio": {
-    "gain_db": -10
+    "gain_db": -120
    },
    "spoiler": {
     "reviewed": true,
@@ -1307,7 +1258,7 @@
     }
    },
    "audio": {
-    "gain_db": -10
+    "gain_db": -120
    },
    "spoiler": {
     "reviewed": true,
@@ -1350,7 +1301,7 @@
     }
    },
    "audio": {
-    "gain_db": -10
+    "gain_db": -120
    },
    "spoiler": {
     "reviewed": true,
@@ -1393,7 +1344,7 @@
     }
    },
    "audio": {
-    "gain_db": -10
+    "gain_db": -120
    },
    "spoiler": {
     "reviewed": true,
