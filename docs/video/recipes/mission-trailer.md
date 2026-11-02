@@ -59,6 +59,7 @@ Total 60.0 s. Cards are 1.5 s, in white Press Start 2P on the navy-to-purple gra
 ## Must include
 
 - **A quick cut of every minigame in the mission** (the user's aim, 2026-11-01), in the crescendo before the antagonist's line. A minigame that cannot be shown safely (an answer on screen that no crop removes) is left out and named in the picks file.
+- **Every NPC who does not get a spoken (or on-screen-dialogue) beat elsewhere in the trailer appears in the crescendo** (the user's rule, 2026-11-02), as a short face/presence flash interleaved with the minigame cuts, so no character the player meets is absent from the trailer. An NPC who already carries a dialogue beat (a voiced line, or a featured text beat like a phone/video-call) is exempt. One who cannot be shown without a spoiler (a culprit's face, a badge id) appears only in an obscured or partial frame, or is named in the picks file as dropped. Lengthen the crescendo a little rather than drop a minigame type to make room.
 - The game title first and Hacktivity Games last. "Play now". Mission name on a card. At least two NPC voices and the handler. A real-hacking slot (placeholder allowed, marked).
 - Music from the game, on this mission's own track, with a duck of 10 dB under dialogue. -14 LUFS, true peak under -1 dBTP.
 - Every join to or from a card is a glitch (default) or pixel dissolve (the quieter joins); every other join is a hard cut.
