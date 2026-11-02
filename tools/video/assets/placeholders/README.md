@@ -19,3 +19,12 @@ The m01 trailer's real-hacking stand-in from v8.4 on: only this mission's footag
 - Source: the same old-trailer file, 19.533 s to 20.800 s (76 frames at 60 fps: Hydra's result and the SSH shell), cut where the CyberChef shot begins.
 - The same mosaic box as above (160x32 px at x 560, y 480, 10x2 blocks) over the whole clip; the password stays inside it as the terminal drifts (checked on frames 0, 30, 48, 59).
 - Slowed to 2.0 s (setpts x1.579) and resampled to 30 fps, so all 60 output frames are distinct source frames; 1920x1080, H.264 crf 18, no audio.
+
+## real_hacking_m02_slate.mp4
+
+Stand-in for the m02 trailer's "Real Hacking" slot (`m02_trailer60.json`, shot `real_hacking`) until in-game VM capture exists. m02 has no footage in the old Hacktivity trailer (that is m01's Hydra/SSH and other missions' sqlmap/dirb), so nothing from there is reused and no attack-terminal output is faked.
+
+- Source: m02's own take `t07_walk_vm.trimmed.mkv`, 3.0 s to 4.93 s (the player standing at the SAFETYNET Field Console in the lit server room; the console never opens), 58 frames at 30 fps, every frame a real source frame.
+- Darkened and desaturated (`eq=brightness=-0.30:saturation=0.55`), a dark band across the middle, and Press Start 2P text (40 px and 24 px) "REAL HACKING" / "// footage in capture" (centred, narrow enough to survive the 9:16 crop). No answer, login, flag or password on it.
+- Ffmpeg filter: `fps=30,eq=...,drawbox=y=400:h=280:black@0.55,drawtext x2`; 1920x1080, H.264 crf 18, yuv420p, no audio.
+- The edit marks the shot `placeholder: true` (lint lists it; `--final` refuses it). Swap for the real VM capture when it exists.

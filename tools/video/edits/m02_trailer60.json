@@ -1,0 +1,1450 @@
+{
+ "mission": "m02",
+ "id": "m02_trailer60_v1",
+ "title": "SAFETYNET: Licence to Hack, m02 60 s trailer",
+ "fps": 30,
+ "length": 60,
+ "status": "v1 (2026-11-02): built from docs/video/edits/M02_TRAILER60_SELECTS.md. Real-hacking slot is a neutral marked slate (no m02 footage exists yet). Reeves J-cut limited to 0.5 s (see shot note).",
+ "music": {
+  "track": "Noir/Steel Shadows in E Minor (Remastered).mp3",
+  "analysis": "steel_shadows_in_e_minor_remastered_60.json",
+  "start": 50.248,
+  "length": 60,
+  "gain_db": 0,
+  "fade_in": 0,
+  "fade_out": 2.0,
+  "alternatives": [
+   "Noir/Shadowline Protocol.mp3 @82.317",
+   "Noir/Encrypted Shadows.mp3 @105.537"
+  ]
+ },
+ "beat": {
+  "bpm": 156.01,
+  "period": 0.3846,
+  "offset": 0,
+  "note": "156 BPM is not a clean 0.5 s grid (beat 0.3846 s = 11.54 frames); most shots use snap:false and are frame-aligned. Cards land on the lifts at 16.92, 23.08, 35.38, 41.54 s (frames 508, 693, 1062, 1246); the drop card ends exactly on the drop at 10.77 s (frame 323). Lifts also at 29.23, 47.69, 53.85 s."
+ },
+ "duck": {
+  "db": -10,
+  "attack": 0.12,
+  "release": 0.3
+ },
+ "audio": {
+  "fade_ms": 8,
+  "target_lufs": -14,
+  "true_peak": -1.5
+ },
+ "spoiler_rules": [
+  "no full codes, PINs or passwords",
+  "no identity reveal",
+  "no ending or choice screens",
+  "keypad only partly entered"
+ ],
+ "aspects": {
+  "16:9": [
+   1920,
+   1080
+  ],
+  "9:16": [
+   1080,
+   1920
+  ],
+  "1:1": [
+   1080,
+   1080
+  ]
+ },
+ "source_size": [
+  1920,
+  1080
+ ],
+ "effects": {
+  "cardJoin": "glitch",
+  "note": "set to 'dissolve' to render the pixel-dissolve version of the same edit; blur joins are never changed"
+ },
+ "shots": [
+  {
+   "preset": "safetynet-open",
+   "snap": false
+  },
+  {
+   "id": "hax_hook",
+   "type": "gameplay",
+   "duration": 2.8333,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t01_hax_hook.trimmed.mkv",
+    "in": 15.29,
+    "out": 18.14
+   },
+   "note": "J-cut: HaX voice (take 14.26-18.14) starts 1.04 s under the held title (audio from take 14.25); picture joins at 15.29 on her portrait with the subtitle on screen; out 18.14 before any later line. Portrait centred; 9:16 crops the subtitle bar so the caption carries the line",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.51,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.4635,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 1.04
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "HaX hook: stakes line, names no code, culprit or ending"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Agent HaX",
+     "text": "If they refuse and you're too slow, people die on the ward.",
+     "start": -1.04,
+     "end": 2.83
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   }
+  },
+  {
+   "id": "card_mission",
+   "type": "card",
+   "duration": 1.9333,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Mission 2",
+    "Ransomed Trust"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "m_lights",
+   "type": "gameplay",
+   "duration": 1.5333,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t02_lights.trimmed.mkv",
+    "in": 3.3,
+    "out": 4.84
+   },
+   "note": "lights strike at take 4.51; about 1.2 s dark lead-in then the vestibule lights; shot starts on the drop (card ends on it)",
+   "framing": {
+    "16:9": {
+     "cx": 0.62,
+     "cy": 0.58,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.6,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.6,
+     "cy": 0.55,
+     "zoom": 1.25
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "lit reception and vestibule, no text, no code"
+   }
+  },
+  {
+   "id": "m_lockpick",
+   "type": "gameplay",
+   "duration": 1.1667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t03_lockpick.trimmed.mkv",
+    "in": 9.2,
+    "out": 10.3677
+   },
+   "note": "real picking mid-pick; out far before the cabinet-contents flash at ~14.6",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.36,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.48,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.48,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "lockpick minigame mid-pick; ends 4 s before the cabinet contents flash"
+   }
+  },
+  {
+   "id": "m_ransom",
+   "type": "gameplay",
+   "duration": 1.1667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04_ransom.trimmed.mkv",
+    "in": 2.6,
+    "out": 3.7677
+   },
+   "note": "reception ransom screen: skull, title, timer",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "ransom note and countdown only; fake wallet text is story, no code or login"
+   }
+  },
+  {
+   "id": "m_phone",
+   "type": "gameplay",
+   "duration": 1.1667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_phone.trimmed.mkv",
+    "in": 4.3,
+    "out": 5.4677
+   },
+   "note": "HaX phone with reply choices showing (choices shown 4.03-6.04)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.36,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.38,
+     "zoom": 1.3
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.36,
+     "zoom": 1.4
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "phone chat; reply choices; names Gary/IT only; no codes"
+   }
+  },
+  {
+   "id": "m_keypad",
+   "type": "gameplay",
+   "duration": 1.1333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06_keypad.trimmed.mkv",
+    "in": 4.6,
+    "out": 5.76
+   },
+   "note": "digits 2,5,6 on screen (not the code), ENTER never pressed",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.38,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.38,
+     "zoom": 1.4
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": true,
+    "note": "PIN display shows three digits 2,5,6 which are not the code; ENTER never pressed"
+   }
+  },
+  {
+   "id": "card_real",
+   "type": "card",
+   "duration": 1.5333,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Real",
+    "Hacking"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "walk_vm",
+   "type": "gameplay",
+   "duration": 1.9333,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t07_walk_vm.trimmed.mkv",
+    "in": 1.4,
+    "out": 3.3343
+   },
+   "note": "walk up to the SAFETYNET Field Console; the console never opens",
+   "framing": {
+    "16:9": {
+     "cx": 0.53,
+     "cy": 0.43,
+     "zoom": 1.2
+    },
+    "9:16": {
+     "cx": 0.53,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.53,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "walking shot, lit server room, no text"
+   }
+  },
+  {
+   "id": "real_hacking",
+   "type": "gameplay",
+   "duration": 1.9333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "type": "clip",
+    "file": "real_hacking_m02_slate.mp4",
+    "in": 0,
+    "out": 1.9343
+   },
+   "note": "m02's own real-hacking slot; no footage exists yet (the old trailer's is m01 / other missions, not reused)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -8
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "slate over a darkened frame of the m02 server room; no terminal output, no answer"
+   },
+   "placeholder": true,
+   "placeholder_note": "neutral slate (darkened t07_walk_vm frames, 'REAL HACKING // footage in capture') until in-game m02 VM capture exists; no old-trailer or other-mission footage"
+  },
+  {
+   "id": "m_cyberchef",
+   "type": "gameplay",
+   "duration": 0.7667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t08_cyberchef.trimmed.mkv",
+    "in": 7.7,
+    "out": 8.47
+   },
+   "note": "CROP TO THE INPUT PANE ONLY (x 962-1864, y 117-577): the output pane (decoded note, y>=581) is off in all three aspects",
+   "framing": {
+    "16:9": {
+     "cx": 0.75,
+     "cy": 0.2843,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.6,
+     "cy": 0.2843,
+     "zoom": 2
+    },
+    "1:1": {
+     "cx": 0.6417,
+     "cy": 0.2843,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "input pane only (ROT-encoded site note); decoded output pane cropped out in 16:9, 9:16 and 1:1"
+   }
+  },
+  {
+   "id": "card_uncover",
+   "type": "card",
+   "duration": 1.5333,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Uncover",
+    "the Mystery"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "npc_val",
+   "type": "gameplay",
+   "duration": 4.1,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t09_val.trimmed.mkv",
+    "in": 7.8,
+    "out": 11.901
+   },
+   "note": "val_1 7.80-11.93; out before 12.7 (choice menu). Val's LOS cone is not in the portrait view",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.69,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.465,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Val line: gatekeeper, no code, culprit or ending"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Val Okonkwo",
+     "text": "So. Who are you and who says you're allowed?",
+     "start": 0.0,
+     "end": 4.1
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   }
+  },
+  {
+   "id": "npc_doyle",
+   "type": "gameplay",
+   "duration": 3.6667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t10_doyle.trimmed.mkv",
+    "in": 10.08,
+    "out": 13.78
+   },
+   "note": "doyle_1 10.08-13.75; the next line starts 14.82",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.47,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Doyle line: ward under attack, no code, culprit or ending"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Sister Doyle",
+     "text": "The machines still run. Nobody's watching them.",
+     "start": 0.0,
+     "end": 3.67
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   }
+  },
+  {
+   "id": "npc_pryce",
+   "type": "gameplay",
+   "duration": 3.0,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t11_pryce.trimmed.mkv",
+    "in": 9.98,
+    "out": 12.981
+   },
+   "note": "pryce_1 9.51-12.98: the shot joins mid-line (in widened a little from the selects' 10.00); out 12.98, well before the next line auto-advances at 13.93",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.72,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.465,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Pryce line: patient on a ventilator, no code, culprit or ending"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Mr Pryce",
+     "text": "Forty years I fixed buses.",
+     "start": 0.0,
+     "end": 3.0
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   }
+  },
+  {
+   "id": "card_choices",
+   "type": "card",
+   "duration": 1.5333,
+   "snap": false,
+   "join": {
+    "type": "dissolve",
+    "pin": true
+   },
+   "text": [
+    "Choices with",
+    "Consequences"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "mb_val_walk",
+   "type": "gameplay",
+   "duration": 1.5333,
+   "snap": false,
+   "join": {
+    "type": "dissolve",
+    "pin": true
+   },
+   "source": {
+    "file": "t09_val.trimmed.mkv",
+    "in": 1.3,
+    "out": 2.84
+   },
+   "note": "the walk-up to Val (1.3 s of motion); out before the conversation opens at 3.07; no line",
+   "framing": {
+    "16:9": {
+     "cx": 0.5635,
+     "cy": 0.52,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.55,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.56,
+     "cy": 0.52,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "walking shot in the corridor, no dialogue, no text"
+   }
+  },
+  {
+   "id": "mb_chair",
+   "type": "gameplay",
+   "duration": 1.5333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t12_walk_chair.trimmed.mkv",
+    "in": 1.0,
+    "out": 2.54
+   },
+   "note": "heads for the east door and knocks the swivel chair (contact 2.12); ward lit",
+   "framing": {
+    "16:9": {
+     "cx": 0.42,
+     "cy": 0.5,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.25
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "walking shot, ward, no NPC touched, ransom screen on the desk is a red glow only"
+   }
+  },
+  {
+   "id": "mb_doyle",
+   "type": "gameplay",
+   "duration": 1.5333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t13_walk_doyle.trimmed.mkv",
+    "in": 1.3,
+    "out": 2.84
+   },
+   "note": "walk past Sister Doyle, never touches",
+   "framing": {
+    "16:9": {
+     "cx": 0.43,
+     "cy": 0.5,
+     "zoom": 1.3
+    },
+    "9:16": {
+     "cx": 0.45,
+     "cy": 0.5,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.45,
+     "cy": 0.5,
+     "zoom": 1.25
+    }
+   },
+   "audio": {
+    "gain_db": -6
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "walking shot past two nurses, no dialogue, no text"
+   }
+  },
+  {
+   "id": "card_threat",
+   "type": "card",
+   "duration": 1.5333,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "text": [
+    "Before the",
+    "Ward Goes Dark"
+   ],
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "card text only"
+   }
+  },
+  {
+   "id": "cr_lockpick",
+   "type": "gameplay",
+   "duration": 0.5,
+   "snap": false,
+   "join": {
+    "type": "glitch"
+   },
+   "source": {
+    "file": "t03_lockpick.trimmed.mkv",
+    "in": 9.3,
+    "out": 9.801
+   },
+   "note": "crescendo 1/10: lockpick, lock not yet open",
+   "framing": {
+    "16:9": {
+     "cx": 0.474,
+     "cy": 0.39,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.48,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.474,
+     "cy": 0.39,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "lockpick minigame; no cabinet contents (that flash is at 14.6)"
+   }
+  },
+  {
+   "id": "cr_keypad",
+   "type": "gameplay",
+   "duration": 0.5,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t06_keypad.trimmed.mkv",
+    "in": 4.7,
+    "out": 5.201
+   },
+   "note": "crescendo 2/10: PIN pad, digits 2,5,6",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.42,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.42,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": true,
+    "note": "PIN pad with three non-answer digits 2,5,6; ENTER never pressed"
+   }
+  },
+  {
+   "id": "cr_ransom",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t04_ransom.trimmed.mkv",
+    "in": 3.0,
+    "out": 3.2343
+   },
+   "note": "crescendo 3/10: ransom title and timer",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "ransom title and timer only"
+   }
+  },
+  {
+   "id": "cr_recovery",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t14a_server_minigames.trimmed.mkv",
+    "in": 3.4,
+    "out": 3.6343
+   },
+   "note": "crescendo 4/10: backup-recovery source cards; panel top (title) is off frame",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.38,
+     "zoom": 1.5
+    },
+    "9:16": {
+     "cx": 0.3,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.35,
+     "cy": 0.45,
+     "zoom": 1.2
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "source names and hours only (story); no codes"
+   }
+  },
+  {
+   "id": "cr_cyberchef",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t08_cyberchef.trimmed.mkv",
+    "in": 8.0,
+    "out": 8.2343
+   },
+   "note": "crescendo 5/10: CyberChef input pane only; output pane off in every aspect",
+   "framing": {
+    "16:9": {
+     "cx": 0.75,
+     "cy": 0.2843,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.6,
+     "cy": 0.2843,
+     "zoom": 2
+    },
+    "1:1": {
+     "cx": 0.6417,
+     "cy": 0.2843,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "input pane only; decoded output cropped out"
+   }
+  },
+  {
+   "id": "cr_phone",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t05_phone.trimmed.mkv",
+    "in": 5.6,
+    "out": 5.8343
+   },
+   "note": "crescendo 6/10: phone reply choices",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.36,
+     "zoom": 1.4
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.38,
+     "zoom": 1.3
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.36,
+     "zoom": 1.4
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "phone reply choices; no codes"
+   }
+  },
+  {
+   "id": "cr_cabinet",
+   "type": "gameplay",
+   "duration": 0.1,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t14c_supply_cabinet.trimmed.mkv",
+    "in": 3.2,
+    "out": 3.301
+   },
+   "note": "crescendo 7/10: supply cabinet: first-aid kit, gloves, stock check",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.25,
+     "zoom": 2
+    },
+    "9:16": {
+     "cx": 0.49,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.49,
+     "cy": 0.25,
+     "zoom": 2
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "nothing secret in the cabinet"
+   }
+  },
+  {
+   "id": "cr_password",
+   "type": "gameplay",
+   "duration": 0.1,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t14d_gary_password.trimmed.mkv",
+    "in": 4.8,
+    "out": 4.901
+   },
+   "note": "crescendo 8/10: CROP OFF THE POST-IT (monitor bezel x 920-1152, y 502-578): visible y ends at 482 (16:9, 1:1) and 480 (9:16)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.28,
+     "zoom": 3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.2222,
+     "zoom": 2.25
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.2778,
+     "zoom": 3
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "masked dots only; the bezel post-it is cropped out in all three aspects"
+   }
+  },
+  {
+   "id": "cr_flag",
+   "type": "gameplay",
+   "duration": 0.1,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t14b_flag_station.trimmed.mkv",
+    "in": 3.0,
+    "out": 3.101
+   },
+   "note": "crescendo 9/10: flag station, 'No flags submitted yet' (empty)",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.31,
+     "zoom": 1.6
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.333,
+     "zoom": 1.5
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.3125,
+     "zoom": 1.6
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "empty flag station, no flag text"
+   }
+  },
+  {
+   "id": "cr_walkvm",
+   "type": "gameplay",
+   "duration": 0.0667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t07_walk_vm.trimmed.mkv",
+    "in": 2.6,
+    "out": 2.6677
+   },
+   "note": "crescendo 10/10: the console desk (stands in for the skipped RFID tap)",
+   "framing": {
+    "16:9": {
+     "cx": 0.53,
+     "cy": 0.43,
+     "zoom": 1.2
+    },
+    "9:16": {
+     "cx": 0.53,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.53,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "walking shot, server room, no text"
+   }
+  },
+  {
+   "id": "reeves_wide",
+   "type": "gameplay",
+   "duration": 2.5333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t15_reeves.trimmed.mkv",
+    "in": 5.38,
+    "out": 7.9143
+   },
+   "note": "reeves_1 4.91-7.19 (take). J-cut: audio.pre 0.5 starts the voice 0.47 s before the picture, under the last cuts of the crescendo (a longer pre would play the badge-id narration at 3.0-3.5); picture in after 3.6; 3-frame hit on the cut",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.69,
+     "cy": 0.444,
+     "zoom": 1.125
+    },
+    "1:1": {
+     "cx": 0.465,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true,
+    "pre": 0.5
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "Reeves line; the badge-id narration (SC-4471, take 2.8-3.5) is neither shown nor audible"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Graham Reeves",
+     "text": "So you did the work.",
+     "start": -0.47,
+     "end": 1.81
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "hit": {
+    "frames": 3,
+    "k": 0.55,
+    "shift": 0.05,
+    "pix": 0.12
+   }
+  },
+  {
+   "id": "reeves_close",
+   "type": "gameplay",
+   "duration": 4.1,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t15_reeves.trimmed.mkv",
+    "in": 28.4,
+    "out": 32.501
+   },
+   "note": "reeves_2 28.53-32.02; hard cut to a UI-free 3x close-up (no subtitle bar) on a 3-frame hit; the pause after 'Money.' is the line's own stop",
+   "framing": {
+    "16:9": {
+     "cx": 0.672,
+     "cy": 0.19,
+     "zoom": 3
+    },
+    "9:16": {
+     "cx": 0.672,
+     "cy": 0.185,
+     "zoom": 1.6875
+    },
+    "1:1": {
+     "cx": 0.672,
+     "cy": 0.185,
+     "zoom": 3
+    }
+   },
+   "audio": {
+    "gain_db": 0,
+    "dialogue": true,
+    "duck_music": true
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "antagonist close-up, no UI, no text"
+   },
+   "dialogue": true,
+   "lines": [
+    {
+     "speaker": "Graham Reeves",
+     "text": "Money. That's the first guess, always.",
+     "start": 0.13,
+     "end": 3.62
+    }
+   ],
+   "caption": {
+    "9:16": true,
+    "1:1": true
+   },
+   "hit": {
+    "frames": 3,
+    "k": 0.55,
+    "shift": 0.05,
+    "pix": 0.12
+   }
+  },
+  {
+   "preset": "hacktivity-close",
+   "snap": false
+  }
+ ]
+}
