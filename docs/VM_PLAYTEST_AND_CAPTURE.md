@@ -179,6 +179,73 @@ recorded the same way on the Hacktivity dev page, then cut to the hero shot.
   cut in the edit; don't shrink wordlists for the camera unless you agree,
   because then the footage shows a run players won't see.
 
+## Token efficiency: never read the screen to learn a result
+
+Added 2026-11-02 after review. Reading a screenshot after every command costs
+roughly 1,000 to 1,600 tokens per image, and the model has to interpret it;
+the same answer as text is a line or two. The rules:
+
+1. **Text, not pixels.** Guest agent exec returns stdout and the exit code.
+   Every check (did Hydra find a password, is the flag file there, did `sudo`
+   work) is a guest-agent command whose output is grepped, not looked at.
+2. **Scripts do the steps, models don't.** A mission's solve script is written
+   once (one agent session), then runs with no tokens at all. It prints one
+   JSON line per step and a summary line, as `run-take.sh` does. The agent
+   reads the summary (a few hundred tokens) and only opens a step's log, with
+   `tail -n 20`, when that step failed.
+3. **The on-camera terminal still logs to text.** Start the filmed terminal
+   under `script -qf --timing=/tmp/take.tim /tmp/take.log`, and set an
+   invisible `PROMPT_COMMAND` that writes the last exit code to a file. The
+   driver knows a command has finished from `pgrep` or that file, and reads
+   its result from the log. Nothing on screen gives it away.
+4. **Screens only for footage QA, and cheaply.** Dropped frames and "did the
+   screen change" are ffmpeg checks (as `video-takes` already does). One small
+   contact sheet per take, reviewed once by the orchestrator at selects.
+5. **Cheap tiers run things.** A Haiku agent runs scripts and relays summaries;
+   Sonnet fixes a broken script; Opus reviews selects and decisions.
+6. **Reset by snapshot, not rebuild.** A rebuild is about 20 minutes; a
+   snapshot rollback is seconds. Rebuild only when the scenario XML changes,
+   and batch scenario edits so one rebuild covers them.
+
+## Where to record what
+
+Three environments, each good at different shots. Split the work, then join
+the shots in the edit.
+
+| Environment | Use it for | Weakness |
+|---|---|---|
+| Cloud dev without VMs (this container) | All game footage with lighting; all non-VM playtesting with `test:flag:N`; the game half of the hand-off shot, up to the launcher opening | No VMs |
+| Dev VM on the Proxmox network | Real-flag and scripted solves; VM desktop footage; SecGen edits and rebuilds | No WebGL (but see below) |
+| Live prototype on Hacktivity | The one shot that needs game and console in one frame, recorded by a person with OBS on a machine with a GPU; a final human play-through | Manual, one take at a time |
+
+Two points change the picture:
+
+- **VM footage doesn't need WebGL.** noVNC draws on a plain 2D canvas, so the
+  dev VM's missing WebGL costs nothing for desktop shots. Only game shots need
+  it, and those can come from the cloud dev environment.
+- **The dev VM can probably have WebGL anyway.** This container has no GPU
+  either, yet records the game with lighting: Chromium falls back to software
+  WebGL (SwiftShader; see `docs/agents/LIGHTING_LOG.md` round 4). Recent Chrome
+  versions block that fallback unless launched with `--enable-unsafe-swiftshader`
+  (or `--use-angle=swiftshader`). It is worth five minutes to try Playwright's
+  Chromium with `tools/video/capture/launch.mjs` there and check the console
+  for "Lighting disabled". If it works, the frame rate is the remaining risk:
+  m01 needed 4 cores for 30 fps at `ultrafast`.
+
+### Other options
+
+- **Record as text, replay on camera.** Capture the real solve once with
+  `script --timing` (a few KB), then play it back with `scriptreplay` in a
+  Kali-styled terminal on any display, at any speed, as often as the edit
+  needs. Real commands and real output, no VM at filming time, and the timing
+  can be stretched to fit the beat grid. It is a replay, not a live session,
+  so it's your call whether that suits a trailer that sells "real hacking".
+- **Render the terminal in Remotion** from the same log: sharpest result,
+  any aspect ratio, but the least like a real desktop.
+- **Composite the hand-off.** Instead of one live shot of game and console
+  together, cut or picture-in-picture the game take (cloud dev) into the
+  desktop take (Proxmox dev VM).
+
 ## Gaps and proposed work
 
 | # | Work | Repo | Size | Notes |
