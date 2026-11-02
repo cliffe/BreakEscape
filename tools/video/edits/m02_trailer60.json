@@ -393,10 +393,10 @@
    },
    "source": {
     "file": "t16_ghost_terminal.trimmed.mkv",
-    "in": 26.2,
-    "out": 28.0343
+    "in": 19.02,
+    "out": 20.8543
    },
-   "note": "t16 Ghost terminal contact, SILENT on-screen text. Window 26.2-28.05: header, 'You found it.', 'It's been listening ever since.' finishes before the next line types (28.06). Crop REQUIRED y 60-540 (16:9 window y 0-540 at 2x excludes reply choices at y 560-690; 9:16/1:1 2.25x window y 60-540).",
+   "note": "t16 (re-recorded) Ghost terminal, SILENT on-screen text. Window 19.02-20.85: header, 'You found it.', and the reveal line 'You call yourself an incident responder, but I know SAFETYNET, and I've been watching since you arrived.' types to completion; the next line starts typing ('> T') at about 20.9, so the last frame (20.83) is clean. Crop REQUIRED y 60-540 (16:9 window y 0-540 at 2x excludes reply choices at y 560-690).",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -423,7 +423,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "no choices (cropped), no hint line; stops before 'Through the budget meetings' (28.06)"
+    "note": "no choices (cropped); stops before the next line types at ~20.9; nothing from 'Took you rather longer' onward"
    }
   },
   {
@@ -1492,10 +1492,10 @@
    },
    "source": {
     "file": "t17_ghost_call.trimmed.mkv",
-    "in": 2.3,
-    "out": 4.701
+    "in": 2.5,
+    "out": 4.901
    },
-   "note": "t17 Ghost call reveal: video window opens (SECURE VIDEO LINK, self-view PiP), hooded figure appears, face a black void. SILENT. Window starts 2.3 not 2.1: frames 2.0-2.2 still show the recovery console (offer terms panel).",
+   "note": "t17 (re-recorded) Ghost call reveal: video window open (SECURE VIDEO LINK, self-view PiP), hooded figure appears, face a black void. SILENT. In-point 2.5 s: the recovery console offer-terms panel is on screen until 2.37 s.",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -1535,14 +1535,14 @@
    },
    "source": {
     "file": "t17_ghost_call.trimmed.mkv",
-    "in": 8.04,
-    "out": 10.411
+    "in": 20.7,
+    "out": 23.0677
    },
-   "note": "t17 Ghost call close, final content beat: '...It is easier to despise a cursor.' on screen (line changes to 'But I won't make this particular offer' at about 10.4, so out 10.41 not 10.9). SILENT, scored to music. SWAPPABLE ALT CLOSE: t17 14.0-18.0 'No name tonight, no face. You get a person.' (not used this cut).",
+   "note": "t17 (re-recorded) Ghost call close, final content beat: 'Money is simply a means to hasten your inevitable end.' on screen the whole window (20.7-23.07). The next line 'Now. You're standing at the recovery console.' replaces it at about 23.2 s, so the window stops before it. SILENT, scored to music. SWAPPABLE ALT CLOSE: t17 13.73-16.5 'No name tonight, no face. You get a person.' (not used this cut).",
    "alt_close": {
     "file": "t17_ghost_call.trimmed.mkv",
-    "in": 14.0,
-    "out": 18.0,
+    "in": 13.73,
+    "out": 16.5,
     "line": "No name tonight, no face. You get a person."
    },
    "framing": {
@@ -1571,7 +1571,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "anonymity line only; never reaches offer terms"
+    "note": "Money line only; no offer terms, no choice menu"
    }
   },
   {
