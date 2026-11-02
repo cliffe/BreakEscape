@@ -132,3 +132,28 @@ User notes this round:
 - card "Before the Ward Goes Dark" -> crescendo (minigames + talk-view Bernie/Kim/Gary + obscured Reeves + ward crowd) -> ghost_reveal -> ghost_close -> CTA preset 52-60
 
 The ~6 s freed by removing m_keypad, npc_pryce and card_choices, minus the Kali placeholder and the longer terminal, leaves slack to rebalance; keep cards on lifts. `cr_phone` stays pending the user's keep/drop call.
+
+---
+
+## v4 revision (2026-11-02): reorder to tell a story
+
+User lesson: the trailer should tell a story, not list features. User notes this round:
+1. **After the title card, the ransomware screen comes first, THEN the hospital walking.** So the opening montage order becomes `m_ransom` (the attack) then `m_lights` (walking into the dark ward), not lights-first.
+2. **Reposition the nurse and guard lines so each advances the arc** (they were grouped together): the NURSE line (`npc_doyle`, "The machines still run. Nobody's watching them.") moves EARLY, into the premise, to set up the hospital crisis; the GUARD line (`npc_val`, "So. Who are you and who says you're allowed?") sits in the INVESTIGATION section ("to Hold back the ENTROPY"), where she challenges the player. (These are the existing takes t09/t10, repositioned; swap the words only if the user asks.)
+
+Edit-only pass, no new footage. Full v4 order (edit agent to frame-align on the 156 BPM grid, cards on their lifts, total 60.000 s, CTA at 52.0 s):
+
+- safetynet-open (title) 0-6
+- hax_hook ("...people die on the ward.") — the call and the stakes
+- card_mission "Mission 2 / Ransomed Trust"
+- PREMISE: `m_ransom` (the ransomware screen, the attack) -> `m_lights` (walking into the dark ward) -> `npc_doyle` (nurse, the human stakes)
+- card "Hack them back"
+- `m_lockpick` (break in) -> `walk_vm` -> `kali_placeholder` -> `m_cyberchef`
+- card "to Hold back the ENTROPY"
+- `m_ghost_terminal` (Ghost's implant, the SAFETYNET reveal) -> `npc_val` (guard, challenged mid-investigation)
+- walk montage (no card): `mb_val_walk` -> `mb_chair` -> `t26_walk_room`
+- card "Before the Ward Goes Dark"
+- crescendo (minigames + talk-view flashes) -> `ghost_reveal` -> `ghost_close`
+- hacktivity-close (CTA) 52-60
+
+Key moves vs v3: `m_ransom` before `m_lights`; `m_lockpick` moves from the opening into "Hack them back"; `npc_doyle` moves up into the premise; `npc_val` stays in the investigation section. The NPC lines are long (3.6-4.1 s), so sections shift; rebalance on the grid. `cr_phone` still pending the user's call; the t26 staff-room walk letterboxing still pending the user's look.
