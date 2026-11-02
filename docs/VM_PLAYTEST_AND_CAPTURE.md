@@ -317,7 +317,83 @@ game already takes real flags and VM IPs at creation (`flag_hints_xml`,
 Items 1 to 6 are what playtesting needs; 7 and 8 are for video and human
 testers. Item 5 is the only per-mission work; the rest is written once.
 
+### What already exists, and where
+
+None of the game-playtest pieces above (items 1 to 8) exist in SecGenPipeline
+or anywhere else. What does exist is VM-side:
+
+| Existing | Repo | Use here |
+|---|---|---|
+| `scripts/secgen-dev-run`, `secgen-dev-destroy` | SecGen | Build and remove a mission's VMs outside Hacktivity |
+| `scripts/agent-check`, `secgen-test-run`; `PostProvisionTest` (`run_on_system`, `attack_system`, tier-3 attacks from Kali) | SecGen | Guest-agent exec, including from the attacker VM; the pattern a solve script follows |
+| `bin/scenario-driver`, `new-scenario-issues`, `scenario-collate` | SecGenPipeline | Build and run every `secgen_test` of a whole scenario. Pointed at `break_escape/safetynet/m0X.xml`, this is a ready-made VM-health preflight |
+| `bin/sweep-agent-vms`, `run-record` | SecGenPipeline | Cleanup and run records |
+
+### Recommended route: run it all through Hacktivity on dev Proxmox
+
+Building the VMs through Hacktivity on the dev Proxmox environment, rather than
+with `secgen-dev-run` and a standalone game, needs less new code and tests the
+path players use. Hacktivity already has most of the list above:
+
+| Need | Hacktivity already has |
+|---|---|
+| Build the VMs | SecGen batches (`StartSecgenBatchServiceJob`) |
+| Real flags in the game | `ReadSecgenFlagsJob` reads the project's `flag_hints.xml` into `Vm.flags`; `Game#build_vm_context` passes them to the mission |
+| Reset between runs | `revert_snapshot` to `original` (`CtrlProxmoxVmJob`, used by `RevertRelinquishedVmSetsJob`) |
+| The console in game | `vm_panel` → VM page → noVNC through the relay, including the room gate and `enable_console` |
+| Typing into the desktop | The console's type-text panel (`rfb.sendKey`) |
+| Scoring | Hacktivity's flag records |
+
+So items 1, 3, 7 and most of 8 come free. What is missing is general guest
+exec. `VmsController#vm_exec` is whitelisted (`get_clipboard`, `get_flags`,
+`get_winflags`). `Proxmox::Connection#exec_qemu_guest` also gives up after 10 s,
+raises on any stderr, and drops the exit code, so it cannot run Hydra, nmap or
+msf even if the whitelist were opened.
+
+There are two ways to add it:
+
+**A. A runner script on the dev Hacktivity box (recommended).** For example
+`bin/rails runner script/dev/vm_exec.rb --vm-set ID --vm "kali" [--user kali]
+[--timeout 600] -- <command>`. It uses the `Vm` model and `Proxmox::Connection`
+with the app's own credentials, which it reads but never prints, and returns one
+JSON line (exit code, stdout and stderr tails, path to the full log). Long jobs
+run in the background in the guest (`nohup ... > /tmp/step.log; echo $!`) and
+are polled. The agent and the playtest harness run on the same box, so they
+just call it. It adds **no web endpoint**, so nothing new can be reached from a
+browser, and it refuses to run when `Rails.env.production?`.
+
+**B. A dev mode on the `vm_exec` endpoint.** Possible: a `dev_exec` command,
+admin only, allowed only when `Rails.env.development?` **and** an explicit
+`HACKTIVITY_DEV_GUEST_EXEC=1` is set, every call logged, plus a test that
+production refuses it. It still means shipping an arbitrary-command endpoint
+in the production codebase, behind configuration. Worth it only if something
+outside the dev box (or the browser itself) has to call it. Nothing in this
+plan does.
+
+Either way, a fixed `exec_qemu_guest` variant is needed: exit code, stdout and
+stderr returned rather than raised, a caller-set timeout. Add it beside the
+existing method, so `vm_exec`'s behaviour doesn't change.
+
+What's left to build on the Hacktivity route:
+
+| # | Piece | Repo |
+|---|---|---|
+| H1 | `exec_qemu_guest` variant with exit code, stderr and timeout | Hacktivity |
+| H2 | `script/dev/vm_exec.rb` (route A), with a background-and-poll mode | Hacktivity |
+| H3 | `script/dev/mission_vm_session.rb`: for a mission and a test user, find or create the dev event and batch, wait for the build and the flags, assign a VM set, create the game, revert to `original`, print one JSON line (game URL, VM set id, VM titles, flag counts) | Hacktivity (it touches Hacktivity models), or BreakEscape `tools/playtest/` run through Hacktivity's `rails runner` |
+| H4 | Per-mission solve scripts, calling H2 | BreakEscape `scenarios/<mission>/secgen/` |
+| H5 | Harness `vm` step command, calling the solve step | BreakEscape `.claude/skills/playtest-scenario/` |
+| H6 | Camera prep (resolution, terminal profile) through H2; a `camera` snapshot | BreakEscape `tools/video/` |
+| H7 | Check software WebGL on the dev VM's Chromium (`--enable-unsafe-swiftshader`), so the walk-up shot has lighting | none, a five-minute test |
+
 ## A full game playtest with VMs
+
+On the Hacktivity route, step 1's `vm-up` and reset are H3 and
+`revert_snapshot`, and VM steps call H2. The flow is otherwise the same, with
+two extra checks: the tester plays as a **student account**, not an admin, so
+the `vm_panel` room gate and `enable_console` are exercised, and the console
+must open (which also checks the relay). At the end, the flags must show up in
+Hacktivity's scoring as well as in the game.
 
 Alias mode (`test:flag:N`) stays the default for routine runs: it is fast and
 needs no VMs. Real-VM mode runs when a mission's VM, its lab sheet or the
