@@ -547,7 +547,7 @@ Don't waste the effort on the hood. No name tonight, no face. You get a person.
 
 That's the part they always leave out, and the only part that ever mattered.
 
-Money is simply a means to your inevitable end.
+Money is simply a means to hasten your inevitable end.
 
 Now. You're standing at the recovery console.
 
