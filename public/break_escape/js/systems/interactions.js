@@ -862,7 +862,15 @@ export function handleObjectInteraction(sprite) {
         }
         playUISound('item');
         addToInventory(sprite);
-        setTimeout(() => handleObjectInteraction(sprite), 1000);
+        setTimeout(() => {
+            // A pickup mapping may already have opened this phone's thread (m02 Ghost terminal:
+            // item_picked_up:phone -> phone-chat at knot start). Opening the contact list over it
+            // 1 s later threw the typing opening away, so leave a thread that is already open.
+            const open = window.MinigameFramework?.currentMinigame;
+            if (sprite.scenarioData.type === 'phone' && open && open.gameState?.isActive && open.phoneId &&
+                open.phoneId === sprite.scenarioData.phoneId) return;
+            handleObjectInteraction(sprite);
+        }, 1000);
         return;
     }
 
