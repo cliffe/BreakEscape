@@ -1,10 +1,10 @@
 {
  "mission": "m02",
- "id": "m02_trailer60_v1",
+ "id": "m02_trailer60_v2",
  "title": "SAFETYNET: Licence to Hack, m02 60 s trailer",
  "fps": 30,
  "length": 60,
- "status": "v1 (2026-11-02): built from docs/video/edits/M02_TRAILER60_SELECTS.md. Real-hacking slot is a neutral marked slate (no m02 footage exists yet). Reeves J-cut limited to 0.5 s (see shot note).",
+ "status": "v2 (2026-11-02): Ghost terminal + hooded video call (Ghost is the mystery and the close), Reeves only as an obscured non-speaking flash, crescendo carries non-speaking NPCs (Bernie, Kim, Gary, ward crowd, Reeves obscured), real_hacking placeholder and m_phone removed. Ghost beats are silent on-screen text pending a later VO pass (intentional, not a placeholder). Rough cut.",
  "music": {
   "track": "Noir/Steel Shadows in E Minor (Remastered).mp3",
   "analysis": "steel_shadows_in_e_minor_remastered_60.json",
@@ -158,7 +158,7 @@
    "source": {
     "file": "t02_lights.trimmed.mkv",
     "in": 3.3,
-    "out": 4.84
+    "out": 4.8343
    },
    "note": "lights strike at take 4.51; about 1.2 s dark lead-in then the vestibule lights; shot starts on the drop (card ends on it)",
    "framing": {
@@ -193,7 +193,7 @@
   {
    "id": "m_lockpick",
    "type": "gameplay",
-   "duration": 1.1667,
+   "duration": 1.5333,
    "snap": false,
    "join": {
     "type": "cut"
@@ -201,7 +201,7 @@
    "source": {
     "file": "t03_lockpick.trimmed.mkv",
     "in": 9.2,
-    "out": 10.3677
+    "out": 10.7343
    },
    "note": "real picking mid-pick; out far before the cabinet-contents flash at ~14.6",
    "framing": {
@@ -236,7 +236,7 @@
   {
    "id": "m_ransom",
    "type": "gameplay",
-   "duration": 1.1667,
+   "duration": 1.5333,
    "snap": false,
    "join": {
     "type": "cut"
@@ -244,7 +244,7 @@
    "source": {
     "file": "t04_ransom.trimmed.mkv",
     "in": 2.6,
-    "out": 3.7677
+    "out": 4.1343
    },
    "note": "reception ransom screen: skull, title, timer",
    "framing": {
@@ -277,52 +277,9 @@
    }
   },
   {
-   "id": "m_phone",
-   "type": "gameplay",
-   "duration": 1.1667,
-   "snap": false,
-   "join": {
-    "type": "cut"
-   },
-   "source": {
-    "file": "t05_phone.trimmed.mkv",
-    "in": 4.3,
-    "out": 5.4677
-   },
-   "note": "HaX phone with reply choices showing (choices shown 4.03-6.04)",
-   "framing": {
-    "16:9": {
-     "cx": 0.5,
-     "cy": 0.36,
-     "zoom": 1.4
-    },
-    "9:16": {
-     "cx": 0.5,
-     "cy": 0.38,
-     "zoom": 1.3
-    },
-    "1:1": {
-     "cx": 0.5,
-     "cy": 0.36,
-     "zoom": 1.4
-    }
-   },
-   "audio": {
-    "gain_db": -6
-   },
-   "spoiler": {
-    "reviewed": true,
-    "shows_code": false,
-    "shows_identity": false,
-    "shows_ending": false,
-    "keypad_partial": null,
-    "note": "phone chat; reply choices; names Gary/IT only; no codes"
-   }
-  },
-  {
    "id": "m_keypad",
    "type": "gameplay",
-   "duration": 1.1333,
+   "duration": 1.5667,
    "snap": false,
    "join": {
     "type": "cut"
@@ -330,7 +287,7 @@
    "source": {
     "file": "t06_keypad.trimmed.mkv",
     "in": 4.6,
-    "out": 5.76
+    "out": 6.1677
    },
    "note": "digits 2,5,6 on screen (not the code), ENTER never pressed",
    "framing": {
@@ -386,7 +343,7 @@
   {
    "id": "walk_vm",
    "type": "gameplay",
-   "duration": 1.9333,
+   "duration": 2.0333,
    "snap": false,
    "join": {
     "type": "glitch"
@@ -394,7 +351,7 @@
    "source": {
     "file": "t07_walk_vm.trimmed.mkv",
     "in": 1.4,
-    "out": 3.3343
+    "out": 3.4343
    },
    "note": "walk up to the SAFETYNET Field Console; the console never opens",
    "framing": {
@@ -427,39 +384,38 @@
    }
   },
   {
-   "id": "real_hacking",
+   "id": "m_ghost_terminal",
    "type": "gameplay",
-   "duration": 1.9333,
+   "duration": 1.8333,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
-    "type": "clip",
-    "file": "real_hacking_m02_slate.mp4",
-    "in": 0,
-    "out": 1.9343
+    "file": "t16_ghost_terminal.trimmed.mkv",
+    "in": 26.2,
+    "out": 28.0343
    },
-   "note": "m02's own real-hacking slot; no footage exists yet (the old trailer's is m01 / other missions, not reused)",
+   "note": "t16 Ghost terminal contact, SILENT on-screen text. Window 26.2-28.05: header, 'You found it.', 'It's been listening ever since.' finishes before the next line types (28.06). Crop REQUIRED y 60-540 (16:9 window y 0-540 at 2x excludes reply choices at y 560-690; 9:16/1:1 2.25x window y 60-540).",
    "framing": {
     "16:9": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
+     "cy": 0.25,
+     "zoom": 2
     },
     "9:16": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
+     "cy": 0.2778,
+     "zoom": 2.25
     },
     "1:1": {
      "cx": 0.5,
-     "cy": 0.5,
-     "zoom": 1
+     "cy": 0.2778,
+     "zoom": 2.25
     }
    },
    "audio": {
-    "gain_db": -8
+    "gain_db": -6
    },
    "spoiler": {
     "reviewed": true,
@@ -467,10 +423,8 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "slate over a darkened frame of the m02 server room; no terminal output, no answer"
-   },
-   "placeholder": true,
-   "placeholder_note": "neutral slate (darkened t07_walk_vm frames, 'REAL HACKING // footage in capture') until in-game m02 VM capture exists; no old-trailer or other-mission footage"
+    "note": "no choices (cropped), no hint line; stops before 'Through the budget meetings' (28.06)"
+   }
   },
   {
    "id": "m_cyberchef",
@@ -886,7 +840,7 @@
   {
    "id": "cr_lockpick",
    "type": "gameplay",
-   "duration": 0.5,
+   "duration": 0.6333,
    "snap": false,
    "join": {
     "type": "glitch"
@@ -894,7 +848,7 @@
    "source": {
     "file": "t03_lockpick.trimmed.mkv",
     "in": 9.3,
-    "out": 9.801
+    "out": 9.9343
    },
    "note": "crescendo 1/10: lockpick, lock not yet open",
    "framing": {
@@ -927,9 +881,52 @@
    }
   },
   {
+   "id": "cr_bernie",
+   "type": "gameplay",
+   "duration": 0.2333,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t19_bernie.trimmed.mkv",
+    "in": 2.0,
+    "out": 2.2343
+   },
+   "note": "crescendo NPC flash: Bernie presence flash, crop ~x 840-1080 y 180-400",
+   "framing": {
+    "16:9": {
+     "cx": 0.504,
+     "cy": 0.264,
+     "zoom": 4
+    },
+    "9:16": {
+     "cx": 0.504,
+     "cy": 0.264,
+     "zoom": 3
+    },
+    "1:1": {
+     "cx": 0.504,
+     "cy": 0.264,
+     "zoom": 4
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "non-speaking NPC presence; no HUD, no dialogue, no readable text"
+   }
+  },
+  {
    "id": "cr_keypad",
    "type": "gameplay",
-   "duration": 0.5,
+   "duration": 0.6333,
    "snap": false,
    "join": {
     "type": "cut"
@@ -937,7 +934,7 @@
    "source": {
     "file": "t06_keypad.trimmed.mkv",
     "in": 4.7,
-    "out": 5.201
+    "out": 5.3343
    },
    "note": "crescendo 2/10: PIN pad, digits 2,5,6",
    "framing": {
@@ -970,7 +967,7 @@
    }
   },
   {
-   "id": "cr_ransom",
+   "id": "cr_kim",
    "type": "gameplay",
    "duration": 0.2333,
    "snap": false,
@@ -978,9 +975,52 @@
     "type": "cut"
    },
    "source": {
+    "file": "t20_kim.trimmed.mkv",
+    "in": 2.0,
+    "out": 2.2343
+   },
+   "note": "crescendo NPC flash: Dr Kim presence flash, crop ~x 880-1080 y 180-380; desk papers off",
+   "framing": {
+    "16:9": {
+     "cx": 0.508,
+     "cy": 0.25,
+     "zoom": 5
+    },
+    "9:16": {
+     "cx": 0.508,
+     "cy": 0.25,
+     "zoom": 3
+    },
+    "1:1": {
+     "cx": 0.508,
+     "cy": 0.25,
+     "zoom": 5
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "non-speaking NPC presence; no HUD, no dialogue, no readable text"
+   }
+  },
+  {
+   "id": "cr_ransom",
+   "type": "gameplay",
+   "duration": 0.3667,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
     "file": "t04_ransom.trimmed.mkv",
     "in": 3.0,
-    "out": 3.2343
+    "out": 3.3677
    },
    "note": "crescendo 3/10: ransom title and timer",
    "framing": {
@@ -1015,7 +1055,7 @@
   {
    "id": "cr_recovery",
    "type": "gameplay",
-   "duration": 0.2333,
+   "duration": 0.3333,
    "snap": false,
    "join": {
     "type": "cut"
@@ -1023,7 +1063,7 @@
    "source": {
     "file": "t14a_server_minigames.trimmed.mkv",
     "in": 3.4,
-    "out": 3.6343
+    "out": 3.7343
    },
    "note": "crescendo 4/10: backup-recovery source cards; panel top (title) is off frame",
    "framing": {
@@ -1056,9 +1096,52 @@
    }
   },
   {
+   "id": "cr_gary",
+   "type": "gameplay",
+   "duration": 0.2,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t21_gary.trimmed.mkv",
+    "in": 2.0,
+    "out": 2.201
+   },
+   "note": "crescendo NPC flash: Gary presence flash, crop ~x 900-1040 y 200-390; workstation post-it area off",
+   "framing": {
+    "16:9": {
+     "cx": 0.505,
+     "cy": 0.272,
+     "zoom": 5
+    },
+    "9:16": {
+     "cx": 0.505,
+     "cy": 0.272,
+     "zoom": 3
+    },
+    "1:1": {
+     "cx": 0.505,
+     "cy": 0.272,
+     "zoom": 5
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "non-speaking NPC presence; no HUD, no dialogue, no readable text"
+   }
+  },
+  {
    "id": "cr_cyberchef",
    "type": "gameplay",
-   "duration": 0.2333,
+   "duration": 0.3,
    "snap": false,
    "join": {
     "type": "cut"
@@ -1066,7 +1149,7 @@
    "source": {
     "file": "t08_cyberchef.trimmed.mkv",
     "in": 8.0,
-    "out": 8.2343
+    "out": 8.301
    },
    "note": "crescendo 5/10: CyberChef input pane only; output pane off in every aspect",
    "framing": {
@@ -1101,7 +1184,7 @@
   {
    "id": "cr_phone",
    "type": "gameplay",
-   "duration": 0.2333,
+   "duration": 0.3,
    "snap": false,
    "join": {
     "type": "cut"
@@ -1109,7 +1192,7 @@
    "source": {
     "file": "t05_phone.trimmed.mkv",
     "in": 5.6,
-    "out": 5.8343
+    "out": 5.901
    },
    "note": "crescendo 6/10: phone reply choices",
    "framing": {
@@ -1142,9 +1225,52 @@
    }
   },
   {
+   "id": "cr_ward",
+   "type": "gameplay",
+   "duration": 0.2,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t22_ward_crowd.trimmed.mkv",
+    "in": 2.0,
+    "out": 2.201
+   },
+   "note": "crescendo NPC flash: ward crowd, whole frame, no emergency state",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "non-speaking NPC presence; no HUD, no dialogue, no readable text"
+   }
+  },
+  {
    "id": "cr_cabinet",
    "type": "gameplay",
-   "duration": 0.1,
+   "duration": 0.1667,
    "snap": false,
    "join": {
     "type": "cut"
@@ -1152,7 +1278,7 @@
    "source": {
     "file": "t14c_supply_cabinet.trimmed.mkv",
     "in": 3.2,
-    "out": 3.301
+    "out": 3.3677
    },
    "note": "crescendo 7/10: supply cabinet: first-aid kit, gloves, stock check",
    "framing": {
@@ -1187,7 +1313,7 @@
   {
    "id": "cr_password",
    "type": "gameplay",
-   "duration": 0.1,
+   "duration": 0.1667,
    "snap": false,
    "join": {
     "type": "cut"
@@ -1195,7 +1321,7 @@
    "source": {
     "file": "t14d_gary_password.trimmed.mkv",
     "in": 4.8,
-    "out": 4.901
+    "out": 4.9677
    },
    "note": "crescendo 8/10: CROP OFF THE POST-IT (monitor bezel x 920-1152, y 502-578): visible y ends at 482 (16:9, 1:1) and 480 (9:16)",
    "framing": {
@@ -1230,7 +1356,7 @@
   {
    "id": "cr_flag",
    "type": "gameplay",
-   "duration": 0.1,
+   "duration": 0.1667,
    "snap": false,
    "join": {
     "type": "cut"
@@ -1238,7 +1364,7 @@
    "source": {
     "file": "t14b_flag_station.trimmed.mkv",
     "in": 3.0,
-    "out": 3.101
+    "out": 3.1677
    },
    "note": "crescendo 9/10: flag station, 'No flags submitted yet' (empty)",
    "framing": {
@@ -1273,7 +1399,7 @@
   {
    "id": "cr_walkvm",
    "type": "gameplay",
-   "duration": 0.0667,
+   "duration": 0.1333,
    "snap": false,
    "join": {
     "type": "cut"
@@ -1281,7 +1407,7 @@
    "source": {
     "file": "t07_walk_vm.trimmed.mkv",
     "in": 2.6,
-    "out": 2.6677
+    "out": 2.7343
    },
    "note": "crescendo 10/10: the console desk (stands in for the skipped RFID tap)",
    "framing": {
@@ -1314,19 +1440,62 @@
    }
   },
   {
-   "id": "reeves_wide",
+   "id": "cr_reeves",
    "type": "gameplay",
-   "duration": 2.5333,
+   "duration": 0.1,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
     "file": "t15_reeves.trimmed.mkv",
-    "in": 5.38,
-    "out": 7.9143
+    "in": 0.5,
+    "out": 0.601
    },
-   "note": "reeves_1 4.91-7.19 (take). J-cut: audio.pre 0.5 starts the voice 0.47 s before the picture, under the last cuts of the crescendo (a longer pre would play the badge-id narration at 3.0-3.5); picture in after 3.6; 3-frame hit on the cut",
+   "note": "crescendo NPC flash: Reeves OBSCURED flash (tiny top-down sprite, face unreadable, no badge), crop x 640-1280 y 220-620. Non-speaking.",
+   "framing": {
+    "16:9": {
+     "cx": 0.5,
+     "cy": 0.37,
+     "zoom": 3
+    },
+    "9:16": {
+     "cx": 0.5,
+     "cy": 0.37,
+     "zoom": 3
+    },
+    "1:1": {
+     "cx": 0.5,
+     "cy": 0.37,
+     "zoom": 3
+    }
+   },
+   "audio": {
+    "gain_db": -10
+   },
+   "spoiler": {
+    "reviewed": true,
+    "shows_code": false,
+    "shows_identity": false,
+    "shows_ending": false,
+    "keypad_partial": null,
+    "note": "non-speaking NPC presence; no HUD, no dialogue, no readable text"
+   }
+  },
+  {
+   "id": "ghost_reveal",
+   "type": "gameplay",
+   "duration": 2.4,
+   "snap": false,
+   "join": {
+    "type": "cut"
+   },
+   "source": {
+    "file": "t17_ghost_call.trimmed.mkv",
+    "in": 2.3,
+    "out": 4.701
+   },
+   "note": "t17 Ghost call reveal: video window opens (SECURE VIDEO LINK, self-view PiP), hooded figure appears, face a black void. SILENT. Window starts 2.3 not 2.1: frames 2.0-2.2 still show the recovery console (offer terms panel).",
    "framing": {
     "16:9": {
      "cx": 0.5,
@@ -1334,21 +1503,18 @@
      "zoom": 1
     },
     "9:16": {
-     "cx": 0.69,
-     "cy": 0.444,
-     "zoom": 1.125
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
     },
     "1:1": {
-     "cx": 0.465,
+     "cx": 0.5,
      "cy": 0.5,
      "zoom": 1
     }
    },
    "audio": {
-    "gain_db": 0,
-    "dialogue": true,
-    "duck_music": true,
-    "pre": 0.5
+    "gain_db": -6
    },
    "spoiler": {
     "reviewed": true,
@@ -1356,63 +1522,48 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "Reeves line; the badge-id narration (SC-4471, take 2.8-3.5) is neither shown nor audible"
-   },
-   "dialogue": true,
-   "lines": [
-    {
-     "speaker": "Graham Reeves",
-     "text": "So you did the work.",
-     "start": -0.47,
-     "end": 1.81
-    }
-   ],
-   "caption": {
-    "9:16": true,
-    "1:1": true
-   },
-   "hit": {
-    "frames": 3,
-    "k": 0.55,
-    "shift": 0.05,
-    "pix": 0.12
+    "note": "hood, face a black void; subtitle 'Before you touch that console - look up.'"
    }
   },
   {
-   "id": "reeves_close",
+   "id": "ghost_close",
    "type": "gameplay",
-   "duration": 4.1,
+   "duration": 2.3667,
    "snap": false,
    "join": {
     "type": "cut"
    },
    "source": {
-    "file": "t15_reeves.trimmed.mkv",
-    "in": 28.4,
-    "out": 32.501
+    "file": "t17_ghost_call.trimmed.mkv",
+    "in": 8.04,
+    "out": 10.411
    },
-   "note": "reeves_2 28.53-32.02; hard cut to a UI-free 3x close-up (no subtitle bar) on a 3-frame hit; the pause after 'Money.' is the line's own stop",
+   "note": "t17 Ghost call close, final content beat: '...It is easier to despise a cursor.' on screen (line changes to 'But I won't make this particular offer' at about 10.4, so out 10.41 not 10.9). SILENT, scored to music. SWAPPABLE ALT CLOSE: t17 14.0-18.0 'No name tonight, no face. You get a person.' (not used this cut).",
+   "alt_close": {
+    "file": "t17_ghost_call.trimmed.mkv",
+    "in": 14.0,
+    "out": 18.0,
+    "line": "No name tonight, no face. You get a person."
+   },
    "framing": {
     "16:9": {
-     "cx": 0.672,
-     "cy": 0.19,
-     "zoom": 3
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
     },
     "9:16": {
-     "cx": 0.672,
-     "cy": 0.185,
-     "zoom": 1.6875
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
     },
     "1:1": {
-     "cx": 0.672,
-     "cy": 0.185,
-     "zoom": 3
+     "cx": 0.5,
+     "cy": 0.5,
+     "zoom": 1
     }
    },
    "audio": {
-    "gain_db": 0,
-    "dialogue": true,
-    "duck_music": true
+    "gain_db": -6
    },
    "spoiler": {
     "reviewed": true,
@@ -1420,26 +1571,7 @@
     "shows_identity": false,
     "shows_ending": false,
     "keypad_partial": null,
-    "note": "antagonist close-up, no UI, no text"
-   },
-   "dialogue": true,
-   "lines": [
-    {
-     "speaker": "Graham Reeves",
-     "text": "Money. That's the first guess, always.",
-     "start": 0.13,
-     "end": 3.62
-    }
-   ],
-   "caption": {
-    "9:16": true,
-    "1:1": true
-   },
-   "hit": {
-    "frames": 3,
-    "k": 0.55,
-    "shift": 0.05,
-    "pix": 0.12
+    "note": "anonymity line only; never reaches offer terms"
    }
   },
   {
