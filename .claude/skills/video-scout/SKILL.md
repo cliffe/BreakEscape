@@ -31,7 +31,7 @@ Brief a scout agent like this: point at this skill, the recipe, and the mission 
 1. Headline: counts, top picks per speaker, top set pieces.
 2. Environment notes (what was started, what was left running).
 3. **Part A, voiced lines.** One table per speaker: ID, exact text, ink file:line, knot, conversation path from the NPC's start, cheapest entry state, words, spoken length in seconds, live result.
-4. **Part B, set pieces and minigames.** Minigame inventory (where, object ids), then set pieces not yet recorded: room and object id, entry state, "answer on screen?" (yes or no, never copying the value), visual judgement.
+4. **Part B, set pieces and minigames.** Minigame inventory: **every distinct minigame type in the mission** (where, object ids, a moment of visible action, answer or post-it on screen), because the trailer aims to show a quick cut of each (the crescendo in `mission-trailer.md`); then set pieces not yet recorded: room and object id, entry state, "answer on screen?" (yes or no, never copying the value), visual judgement.
 5. Rooms with several NPCs visible together (usually none: plan walking shots as one NPC plus the player).
 6. Entry-state notes (key and gate notes: which door needs which PIN, which hub choice needs which global).
 7. Music: candidate tracks not used by an earlier mission (`docs/video/recipes/README.md`, mission-to-music table), with BPM from `tools/video/edits/music/summary.json` where analysed.
@@ -133,6 +133,10 @@ Things that bit m01:
 - **Real tools.** If a scene shows a third-party tool (m01's CyberChef), note its licence; m01 checked and used it.
 - **Guard sight cones** exist only in some missions (m01 has none). Note whether the mission has one: it is a trailer beat from a later mission.
 - **VM scenes.** A VM launcher or flag lock that needs a SecGen VM cannot run in the container. Mark such shots "needs VM" and list a stand-in. The user's decision (2026-10-30): in-game VM capture is coming; until then the "Real Hacking" slot is a marked placeholder (see `docs/video/recipes/mission-trailer.md`).
+
+- **Footage from an old trailer** may mix missions: m01's old trailer shows Hydra and the SSH shell (m01) next to sqlmap and dirb (other missions). Ask or check which tools belong to this mission before planning real-hacking footage, and measure how much of it there is (m01: 1.27 s).
+- **Notes and container contents** can carry a real code in an innocent-looking example (Patricia's CyberChef note: Base64 of a real PIN). Read every note a shot opens.
+- **The minigame inventory comes from the engine as well as the scenario:** key locks open a key selection screen, takeable devices (m01's launch device) open their own minigame from the inventory, and `--give <item id>` can put an NPC-held item straight into the inventory for a take.
 
 Do not play the mission through. Entry states come from the scenario and ink and may be listed as "expected, not played"; the take stage proves them.
 
