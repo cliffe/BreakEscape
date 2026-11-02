@@ -461,14 +461,19 @@ export class PhoneChatMinigame extends MinigameScene {
         // opened the thread since: that opening is already the thread, so this is a first
         // open, not a new call. Playing the knot again showed the intro twice (E1: a phone
         // picked up with a pickup mapping's targetKnot or its currentKnot).
+        let wasPreloadedFirstOpen = false;
         if (PhoneChatConversation.isPreloadedOpening(npc, explicitStartKnot, conversationHistory)) {
             console.log(`📱 ${npcId}: opening at ${explicitStartKnot} was preloaded; showing it once`);
             explicitStartKnot = null;
+            wasPreloadedFirstOpen = true;
         }
 
-        // Show all history (including barks) in the UI
+        // Show all history (including barks) in the UI. A terminal contact's first open
+        // (its opening was preloaded, nothing answered yet) types its lines out like a live
+        // terminal rather than dumping them at once; genuine returning-visit history, and
+        // every non-terminal contact, still draws instantly (see addMessages).
         if (history.length > 0) {
-            this.ui.addMessages(history);
+            this.ui.addMessages(history, { typeTerminalOpening: wasPreloadedFirstOpen });
             // Mark messages as read, and update the HUD badge now rather than on close
             this.history.markAllRead();
             if (window.updatePhoneBadge && this.phoneId) window.updatePhoneBadge(this.phoneId);
