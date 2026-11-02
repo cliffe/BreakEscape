@@ -63,3 +63,41 @@ If any crop cannot hide the text in every aspect, drop that cut and rebalance th
 ## Real-hacking placeholder (needs building, Sonnet)
 
 m02 has no footage in the old Hacktivity trailer (that is m01's Hydra/SSH and other missions' sqlmap/dirb). The slot stays a marked placeholder until in-game VM capture exists (recipe + user, 2026-10-30). Build a 1.93 s stand-in clip at 1920x1080 30fps that shows m02's own tools in a neutral way, mark it `placeholder: true` in the edit, and document it in `tools/video/assets/placeholders/README.md`. No answer, login, flag or password value on screen. If no safe m02 clip can be made, use a title-only "Real Hacking (footage coming)" style slate rather than any other mission's footage, and flag it for the review. The review page asks the user (question 4) whether a placeholder is acceptable or the release waits for real capture.
+
+---
+
+## v2 revision (2026-11-02): Ghost is the mystery and the close; Reeves demoted to a flash
+
+User decisions this round:
+- Include **both** Ghost beats: the terminal contact (seed) and the hooded video call (payoff/closer).
+- **Ghost closes.** The hooded video call replaces Reeves as the final spoken/visual beat.
+- **Reeves** stays only as a sub-second, **face-obscured, non-speaking flash** inside the crescendo. No clear face, no badge, no line.
+
+Engine facts that shape this (checked in the scenario and `public/break_escape/js`):
+- Ghost's video call uses `conversationMode: "video-call"` but the mapping has **no `voiced: true`**, and there is no `voiced` flag anywhere in m02. Per the tts-audio skill and `npc-manager.js` (`voiced` is separate from `videoCall`), the call and the terminal contact both render as **on-screen text, silent**. The `fx: voice-distortion` on Ghost's voice is configured but never wired to play. So both Ghost beats are **silent text beats scored to the music**; no TTS is generated (no Gemini key in this container, and voicing it would be a mission change, not a trailer edit).
+- Ghost is the only m02 speaker with **zero cached audio** (confirmed across all 1044 cache sidecars), consistent with the above.
+
+### Beat changes against the v1 timeline
+
+1. **Drop `real_hacking` placeholder (20.38).** Retired. This removes the v1 review question 4 entirely (no placeholder, no "footage in capture" slate). Its slot is taken by the Ghost terminal contact (real in-game footage).
+
+2. **Drop `m_phone` (14.61, HaX phone).** Removes the second phone/terminal screen so the only comms screen in the trailer is Ghost's. Redistribute its ~1.15 s within Montage A (lockpick, ransom, keypad hold slightly longer, snap:false, stay frame-aligned).
+
+3. **New `m_ghost_terminal` (Real Hacking section, ~1.9 s, the old placeholder slot ~20.38).** Take `t16_ghost_terminal`. Terminal-themed phone-chat, planted attacker device found on the network. Show the terminal panel: header lines `> DEVICE ACTIVE` / `> CONTACT: GHOST`, then `You found it.` and `It's been listening ever since.` typing out. **Silent.** Keep the bed music at -6. **Spoiler stop:** end before "Through a man in IT sending his seventh email" and before "a drill is a thing somebody has to authorise" (oblique insider hints). Crop to the device panel. ~1.9 s is enough to read two short lines; if the edit needs it readable, borrow a few frames from walk_vm/cyberchef neighbours (keep the Real Hacking block on its lift boundaries). Reads as both "real intrusion" and the mystery seed.
+
+4. **Replace the antagonist close (v1 reeves_wide 45.38 + reeves_close 47.90, 45.38-52.00, 6.62 s) with the Ghost video call,** take `t17_ghost_call`, cut as **two beats from the one take**:
+   - `ghost_reveal` (~2.6 s): the terminal goes dark and the video window opens, hooded figure backlit, face in deliberate shadow, the `SECURE VIDEO LINK` frame and the self-view PiP. No text yet or just the opening words.
+   - `ghost_close` (~4.0 s): push/hold on the hood with the line **"No name tonight, no face. You get a person."** on screen. **Silent**, scored to the music sting; let the 2.0 s fade begin into the CTA. This is the final image before `hacktivity-close`.
+   - **Spoiler stop:** never reach the offer terms (`ghost_states_terms`: "Upload them. Unredacted. To the press terminal." is the moral-choice spoiler) or the "decryption keys... free" offer. Only the top-of-call anonymity lines are allowed: "I have been a cursor to you all night...", "You can look at me while I make it.", "No name tonight, no face. You get a person."
+
+5. **Reeves flash inside the crescendo (43.08-45.38).** Add one **2-3 frame** face-obscured Reeves flash (from `t15_reeves` if a wide/backlit/partial frame hides the face and the SC-4471 badge; otherwise record `t18_reeves_obscured` as a back/shadow take). Non-speaking. Either replace the weakest existing crescendo cut (`cr_walkvm`, the RFID stand-in) or add as an 11th cut and rebalance to ~71 frames. Must not read as a clear identification.
+
+### Takes to record (video-takes, Sonnet)
+- `t16_ghost_terminal`: `--start-room it_department`, then pick up `ghost_terminal_device` (item in it_department) -> phone-chat `start`. Capture the terminal text typing out. Keyless :3001 (unvoiced, no TTS). Advance only far enough to show the two safe lines; do not click into the spoiler choices.
+- `t17_ghost_call`: `--start-room server_room --set restore_manifest_obtained=true`, then interact `hospital_recovery_console` (type `backup_recovery`) -> video-call `on_recovery_console`. Capture the window opening, the hooded figure, the `SECURE VIDEO LINK` frame and the anonymity lines. Stop before the offer. Keyless :3001.
+- Reeves obscured frame: first check `t15_reeves` for a face-hidden frame; only record `t18_reeves_obscured` if none exists.
+
+### Review questions updated for v2
+- Q2 (antagonist): Reeves is now only a face-obscured flash; Ghost (faceless by design) is the reveal. Confirm the flash hides him enough.
+- Q4 (placeholder): **resolved/removed** (no placeholder in v2).
+- New: the two Ghost beats are **silent on-screen text** (the game does not voice them). OK as scored text beats, or do you want Ghost actually voiced in a later pass (a mission change: add `voiced: true` + paid Iapetus/distortion TTS)?
