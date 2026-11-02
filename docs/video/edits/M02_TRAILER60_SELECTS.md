@@ -157,3 +157,13 @@ Edit-only pass, no new footage. Full v4 order (edit agent to frame-align on the 
 - hacktivity-close (CTA) 52-60
 
 Key moves vs v3: `m_ransom` before `m_lights`; `m_lockpick` moves from the opening into "Hack them back"; `npc_doyle` moves up into the premise; `npc_val` stays in the investigation section. The NPC lines are long (3.6-4.1 s), so sections shift; rebalance on the grid. `cr_phone` still pending the user's call; the t26 staff-room walk letterboxing still pending the user's look.
+
+---
+
+## v5 revision (2026-11-02): Bernie premise line, re-shot staff walk, music-only crescendo
+
+1. **Premise line**: replace `npc_doyle` ("The machines still run...") with `npc_bernie_premise` (take `t28_bernie_premise`, in 16.5 out 20.6, full frame; SILENT until the user's TTS pass). The line is the canon-consistent "The cardiac ward's monitoring is down. Nobody's watching those hearts but us." Reorder the premise so reception stays together: `m_ransom` -> `npc_bernie_premise` -> `m_lights` (the attack, then Bernie at the desk states the stakes, then walking into the dark ward). Doyle's old line is dropped; she still appears in the ward-crowd crescendo flash.
+2. **Staff walk**: use the re-recorded `t26_walk_room` (in 1.15 out 3.15) where the player walks toward the clerk's desk. It was shot at zoom step 2, so the 16:9 crop is a band that follows the player (about y 160-880), not the old letterboxed full-room frame.
+3. **Crescendo audio**: MUTE the shot audio on EVERY crescendo cut (the rapid short clips). The crescendo is scored by the music only; no clip-audio fragments. (User, 2026-11-02.)
+4. **Crescendo flash**: remove `cr_bernie` (Bernie now carries the premise dialogue beat, so he is exempt from the crescendo per the rule). The ward-crowd flash still covers Doyle and the patients. Rebalance the freed frames.
+5. `cr_phone` still pending the user's keep/drop call.
