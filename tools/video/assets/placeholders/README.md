@@ -28,3 +28,12 @@ Stand-in for the m02 trailer's "Real Hacking" slot (`m02_trailer60.json`, shot `
 - Darkened and desaturated (`eq=brightness=-0.30:saturation=0.55`), a dark band across the middle, and Press Start 2P text (40 px and 24 px) "REAL HACKING" / "// footage in capture" (centred, narrow enough to survive the 9:16 crop). No answer, login, flag or password on it.
 - Ffmpeg filter: `fps=30,eq=...,drawbox=y=400:h=280:black@0.55,drawtext x2`; 1920x1080, H.264 crf 18, yuv420p, no audio.
 - The edit marks the shot `placeholder: true` (lint lists it; `--final` refuses it). Swap for the real VM capture when it exists.
+
+## hack_them_back_kali_slate.mp4
+
+Stand-in for the m02 trailer's "Hack them back" section, the Kali-commands / VM slot (`m02_trailer60.json`, shot `kali_placeholder`), until in-game VM capture exists. As with `real_hacking_m02_slate.mp4`, m02 has no footage in the old Hacktivity trailer and no attack-terminal output is faked (the cyber-safety rule).
+
+- Source: m02's own take `t07_walk_vm.trimmed.mkv`, 3.0 s to 4.9 s (the player at the SAFETYNET Field Console in the lit server room, the VM launcher; the console never opens), 57 frames at 30 fps.
+- Darkened and desaturated (`eq=brightness=-0.30:saturation=0.55`), a dark band across the middle, Press Start 2P text "KALI" (48 px) / "// footage in capture" (22 px), centred and narrow enough to survive the 9:16 crop. No answer, login, flag, password or command output on it.
+- 1.9 s, 1920x1080, H.264 crf 18, yuv420p, no audio.
+- The edit marks the shot `placeholder: true` (lint lists it; `--final` refuses it). Swap for the real Kali/VM capture when it exists.

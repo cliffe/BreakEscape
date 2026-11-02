@@ -101,3 +101,34 @@ Engine facts that shape this (checked in the scenario and `public/break_escape/j
 - Q2 (antagonist): Reeves is now only a face-obscured flash; Ghost (faceless by design) is the reveal. Confirm the flash hides him enough.
 - Q4 (placeholder): **resolved/removed** (no placeholder in v2).
 - New: the two Ghost beats are **silent on-screen text** (the game does not voice them). OK as scored text beats, or do you want Ghost actually voiced in a later pass (a mission change: add `voiced: true` + paid Iapetus/distortion TTS)?
+
+---
+
+## v3 revision (2026-11-02): card retitles, Kali placeholder back, talk-view flashes, location variety
+
+User notes this round:
+1. **Remove `m_keypad`** (the PIN keypad beat at ~0:15 in Montage A). The keypad still appears in the crescendo (cr_keypad), so the minigame type is still represented.
+2. **Add a Kali-commands placeholder** in the "Hack them back" section: `tools/video/assets/placeholders/hack_them_back_kali_slate.mp4` (1.9 s, marked `placeholder: true`). Stands in for the player's VM/Kali hacking until real capture exists. (A placeholder returns, so `--final` is refused until it is swapped; the review render stays a rough/marked cut.)
+3. **Lengthen `m_ghost_terminal`** so the reveal line is seen TYPING, specifically "...I've been watching since you arrived." Use t16 window **~17.8-20.85 s** (~3.0 s) instead of the tight 1.83 s hold. Crop unchanged (x 760-1160, y 60-540).
+4. **Remove `npc_pryce`** ("Forty years I fixed buses."). Val and Doyle remain the two NPC voice lines (recipe minimum met). Pryce still appears non-speaking in the ward-crowd crescendo flash.
+5. **Card retitles (user confirmed: three cards, drop Choices):**
+   - `card_real`: "Real Hacking" -> **"Hack them back"**
+   - `card_uncover`: "Uncover the Mystery" -> **"to Hold back the ENTROPY"** (reads with the previous card as the tagline "Hack them back / to Hold back the ENTROPY")
+   - `card_choices`: **DROPPED** entirely (the walk montage stays, without its own card header).
+   - `card_threat`: stays **"Before the Ward Goes Dark"**.
+6. **Location variety in the walk montage:** the two ward walks in a row are broken up. Replace `mb_doyle` (the ward walk past Sister Doyle) with **`t26_walk_room`** (a staff-room walk, in 1.35 out 3.4, crop x 380-1540 y 0-1080). Montage is then corridor (mb_val_walk) / ward chair-knock (mb_chair) / staff room (t26), three distinct rooms.
+7. **Crescendo NPC flashes use the talk/portrait view**, not the top-down sprite:
+   - `cr_bernie` -> **t23_bernie_talk** (in 3.5 out 6.3, crop x 1100-1650 y 0-940, drops the subtitle bar)
+   - `cr_kim` -> **t24_kim_talk** (in 3.6 out 6.5, crop x 1150-1650 y 0-940)
+   - `cr_gary` -> **t25_gary_talk** (in 3.5 out 6.3, crop x 1100-1700 y 0-940, keeps his post-its out of frame)
+   - **Reeves stays the OBSCURED top-down sprite** (t15, crop x 640-1280 y 220-580), NOT a talk-view portrait: a talk portrait would show his face and reveal the culprit. Deliberate exception to "talk view", flagged to the user.
+   - **Ward crowd stays the room shot** (t22): it is a crowd, no single talk view. Covers Pryce/Raval/Hargreaves/Chen.
+
+### Proposed v3 section structure (edit agent to frame-align on the 156 BPM grid, total 60.000 s, CTA at 52.0 s)
+- title preset 0-6 / hax hook / card_mission / m_lights / m_lockpick / m_ransom
+- card "Hack them back" -> walk_vm -> **kali_placeholder** -> m_cyberchef
+- card "to Hold back the ENTROPY" -> **m_ghost_terminal (lengthened)** -> npc_val -> npc_doyle
+- (no Choices card) walk montage: mb_val_walk -> mb_chair -> **t26_walk_room**
+- card "Before the Ward Goes Dark" -> crescendo (minigames + talk-view Bernie/Kim/Gary + obscured Reeves + ward crowd) -> ghost_reveal -> ghost_close -> CTA preset 52-60
+
+The ~6 s freed by removing m_keypad, npc_pryce and card_choices, minus the Kali placeholder and the longer terminal, leaves slack to rebalance; keep cards on lifts. `cr_phone` stays pending the user's keep/drop call.
