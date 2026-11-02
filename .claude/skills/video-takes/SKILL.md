@@ -87,6 +87,17 @@ Use the cheapest head-start from the scout, as `new-game.rb --help` lists: `--st
 | Never name the antagonist or show an ending or choice screen unless the recipe allows it | spoilers |
 | The title screen take is `--title-take` (recording starts on a black page before the game loads; the start slate is video-only) | AudioContext cannot run before the title's click |
 
+**Driving the game for takes (learnt on m01 v8):**
+- **Locked doors.** `enterRoom` returns `{reason: 'door-locked', doorway: {id}}` instead of opening the unlock minigame: `moveToNear(doorway.id)` then `interact(doorway.id)`, as `t19_minigames.mjs` does.
+- **Key locks.** With any key in the inventory the minigame opens on a key SELECTION screen first: `minigame.getState().keySelection` lists click points and labels; `clickCanvas` the right one, then `keyTarget` appears and one `clickCanvas(keyTarget)` runs the insertion. Shoot the last half second of insertion (the pins riding the key onto the shear line), not the start.
+- **`moveTo` stops where its path ends**, often short of the target (a chair, a desk, the room edge). For an exact start point, line up with short arrow-key pulses that correct both ways (`t21_walk_chair.mjs` `pulse()`); `keyLegs` only corrects forwards. Log the player position in `setup()` and check it before trusting a walk.
+- **Taking an item out of a container** (`minigame.take`) opens a note in the notes reader. Read the note before using it on camera: Patricia's CyberChef note shows a real m01 PIN as its second example and was dropped.
+- **Several minigames in one run.** A chain take (`t19_minigames.mjs`: briefcase contents, key lock, password screen) is cheaper than one take each when they share a costly setup; mark each beat.
+- **Inventory items opened under `--hide-hud`.** The tray is hidden; record without `--hide-hud` when the shot is a full-screen minigame (`t22_launch_device.mjs`), or call the item's own handler (`t14`).
+- **End a walk before anything opens.** A walk that ends on an interaction can carry a few frames of the next screen. Find the first frame of the new screen by luminance (ffmpeg to raw gray, mean per frame) and set the out point before it (`t23_walk_kali`: the VM launcher at 3.00 s shows a login post-it).
+- **Walking shots must look purposeful.** Walking into an NPC pushes them (the user cut it). Give the walk a destination (a door) and let props be incidental: the m01 chair shot is the player heading for a door who clips a swivel chair. Swivel chairs are physics bodies in `window.chairs`; their `body.center` is the wheel row, which is what the player's feet (`player.body.center`) must meet. A chair tucked under a desk can only be pushed from its open side.
+- **Setup can fail on pathing** (an NPC standing in a doorway); the take did not start, so simply run it again.
+
 **Real lockpicking.** The bridge `pressKey` does not reach the nested Phaser lockpicking scene. Dispatch `keydown`/`keyup` events with `keyCode` to `window` (see `t04_lockpick.mjs`) and read the pin state only to know when to release. Never use `completeLockpick` on camera.
 
 **Voice.** `--music 0` always (the edit supplies the music). Voiced lines play from the cache. Each target line must produce a `line-start:`/`line-end:` mark pair from the TTS manager (`watchVoice`), and its length must match the scout's ffprobe value to about 0.1 s. A line with no pair did not play: the take fails even if the picture looks right. Skipped lines (`runDialogue` presses through non-targets) are partly audible, so the edit must cut to the target marks only.
@@ -139,6 +150,9 @@ For each key mark, say in the table "frame at T shows X". Check digits on keypad
 - The keyless server and Postgres may have been stopped by the scout; restart them (Step 1 of `video-scout`).
 - Leave display 97 and the sink up between batches; stop them at the end of the stage with `env-down.sh 97` unless the next stage is another batch.
 - Headless browsers and ffmpeg processes left by a crashed take: list with `ps`, kill by PID.
+- **Never `pkill -f <pattern>`** when the pattern appears in your own command line: it kills your own shell (exit 144) and whatever you queued after it. Find PIDs with `ps -eo pid,args | grep` and `kill` those.
+- **The container can restart between turns.** Postgres, the keyless server, Xvfb and PulseAudio are then all down while `video_out/` survives. Restart them (Step 1, and `video-scout` Step 1); a stale `/tmp/.X97-lock` makes `env-up.sh` say the display is in use, and an old `env-97.pids` in `VIDEO_STATE_DIR` must go too.
+- **A take that looks wrong may be a game bug.** m01's key insertion lagged and jumped because the minigame stepped pins per frame and sampled the key 14 px off; re-recording would not have helped. Look at the minigame frame by frame (ffmpeg `fps=5` contact strip) and read its code before re-recording; fix the game where the bug is (it helps players too) and say so.
 
 ## Related
 

@@ -134,6 +134,10 @@ Things that bit m01:
 - **Guard sight cones** exist only in some missions (m01 has none). Note whether the mission has one: it is a trailer beat from a later mission.
 - **VM scenes.** A VM launcher or flag lock that needs a SecGen VM cannot run in the container. Mark such shots "needs VM" and list a stand-in. The user's decision (2026-10-30): in-game VM capture is coming; until then the "Real Hacking" slot is a marked placeholder (see `docs/video/recipes/mission-trailer.md`).
 
+- **Footage from an old trailer** may mix missions: m01's old trailer shows Hydra and the SSH shell (m01) next to sqlmap and dirb (other missions). Ask or check which tools belong to this mission before planning real-hacking footage, and measure how much of it there is (m01: 1.27 s).
+- **Notes and container contents** can carry a real code in an innocent-looking example (Patricia's CyberChef note: Base64 of a real PIN). Read every note a shot opens.
+- **The minigame inventory comes from the engine as well as the scenario:** key locks open a key selection screen, takeable devices (m01's launch device) open their own minigame from the inventory, and `--give <item id>` can put an NPC-held item straight into the inventory for a take.
+
 Do not play the mission through. Entry states come from the scenario and ink and may be listed as "expected, not played"; the take stage proves them.
 
 ## Gates
