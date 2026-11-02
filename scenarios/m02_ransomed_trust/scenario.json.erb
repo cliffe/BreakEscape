@@ -1398,6 +1398,7 @@ boardroom_pin = "0417"
               "condition": "data.objectType === 'backup_recovery' && globalVars.restore_manifest_obtained === true && !globalVars.backup_restore_initiated && !globalVars.ghost_offer_made",
               "onceOnly": true,
               "conversationMode": "video-call",
+              "voiced": true,
               "targetKnot": "on_recovery_console"
             },
             {
@@ -1406,6 +1407,7 @@ boardroom_pin = "0417"
               "condition": "data.objectType === 'backup_recovery' && globalVars.ghost_offer_made === true && !globalVars.ghost_deal_accepted && !globalVars.ghost_deal_refused && !globalVars.backup_restore_initiated",
               "onceOnly": true,
               "conversationMode": "video-call",
+              "voiced": true,
               "targetKnot": "on_console_again"
             },
             {

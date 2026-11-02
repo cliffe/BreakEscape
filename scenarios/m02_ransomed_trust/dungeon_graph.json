@@ -273,8 +273,8 @@
       "optional": false
     },
     {
-      "id": "vm_access_terminal",
-      "label": "VM Access Terminal",
+      "id": "safetynet_field_console",
+      "label": "SAFETYNET Field Console",
       "kind": "vm",
       "optional": false
     },
@@ -871,7 +871,7 @@
     },
     {
       "from": "server_room",
-      "to": "vm_access_terminal",
+      "to": "safetynet_field_console",
       "soft": false
     },
     {
@@ -1191,11 +1191,11 @@
     },
     {
       "from": "lock_vm_launcher_rooting_for_a_win",
-      "to": "vm_access_terminal",
+      "to": "safetynet_field_console",
       "soft": false
     },
     {
-      "from": "vm_access_terminal",
+      "from": "safetynet_field_console",
       "to": "vmch_submit_database_flag",
       "soft": false
     },
