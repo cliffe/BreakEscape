@@ -121,7 +121,7 @@ User notes this round:
    - `cr_bernie` -> **t23_bernie_talk** (in 3.5 out 6.3, crop x 1100-1650 y 0-940, drops the subtitle bar)
    - `cr_kim` -> **t24_kim_talk** (in 3.6 out 6.5, crop x 1150-1650 y 0-940)
    - `cr_gary` -> **t25_gary_talk** (in 3.5 out 6.3, crop x 1100-1700 y 0-940, keeps his post-its out of frame)
-   - **Reeves stays the OBSCURED top-down sprite** (t15, crop x 640-1280 y 220-580), NOT a talk-view portrait: a talk portrait would show his face and reveal the culprit. Deliberate exception to "talk view", flagged to the user.
+   - **Reeves gets a talk-view portrait too** (`t27_reeves_talk`), like the others. Update (user, 2026-11-02): seeing the NPC is not a spoiler, so his face goes in. Only his badge number (SC-4471) and any culprit-naming narration stay off the captured frame (a code is still a spoiler); crop drops the subtitle bar (y 0-940). The earlier obscured sprite (t15) is superseded.
    - **Ward crowd stays the room shot** (t22): it is a crowd, no single talk view. Covers Pryce/Raval/Hargreaves/Chen.
 
 ### Proposed v3 section structure (edit agent to frame-align on the 156 BPM grid, total 60.000 s, CTA at 52.0 s)
