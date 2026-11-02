@@ -130,6 +130,8 @@ The reusable opening and closing bumpers (`safetynet-open-<aspect>.mp4`, `hackti
 - Do not publish a page that imitates a real organisation, person or record in a way that could mislead; this one is the studio's own video and is private by default. Share only if the user says so.
 - A review copy must not be the only copy of anything.
 - Re-encoding review copies is CPU heavy: do not run it during a capture, and do it one at a time next to a render.
+- **Small rounds are normal late on.** m01 v8 went to v8.5 in a day, each a single note. Keep one page and one form, add a tab per round (`v8.1`, `v8.2` ...), a new feedback document per round (`feedback/m01_v8_3`), and put only that round's questions on the form; drop a question once the user has answered it or a recorded decision covers it.
+- **Check the frames of the changed section before publishing, every round**, and look for what a change exposes next to it (a walk's out point that now shows a launcher's post-it). Fix it before the user sees it.
 - If a render changed between rounds but the page was not republished, the user is reviewing the old one: name the round on the page and in the filename.
 
 ## Related

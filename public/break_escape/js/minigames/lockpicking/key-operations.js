@@ -154,8 +154,7 @@ export class KeyOperations {
                 // Calculate progress (0 to 1) - key moves from left to right
                 const progress = (this.parent.keyGroup.x - startX) / (fullyInsertedX - startX);
                 this.parent.keyInsertionProgress = Math.max(0, Math.min(1, progress));
-                
-                console.log('Animation update - key position:', this.parent.keyGroup.x, 'progress:', this.parent.keyInsertionProgress);
+
                 
                 // Update pin positions based on key cuts as the key is inserted
                 this.parent.keyInsertion.updatePinsWithKeyInsertion(this.parent.keyInsertionProgress);

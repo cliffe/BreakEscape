@@ -51,3 +51,12 @@ Draft from the m01 trial (October 2026). The later video skill builds on this. P
 - **Joins:** `join.pin: true` keeps a join's own type when `effects.cardJoin` is set (the two joins around "Uncover the Mystery" are pinned dissolves). `shot.hit` adds a 2-3 frame glitch inside a shot's first frames (Derek's cut to the close-up); consecutive dialogue shots share one music duck.
 - **Card reflections:** glitched, not mosaic (v4: plus ripple, scanlines, flicker).
 - **J-cut:** `audio.pre` on a gameplay shot starts its audio (and music duck) that many seconds before its picture (HaX's line begins under the held title).
+
+## v8 additions (m01 trailer, user's notes 2026-11-01/02)
+
+- **Every minigame in the mission gets a quick cut**, in a crescendo just before the antagonist's line, with the line starting under it (standing rule for mission trailers; `recipes/mission-trailer.md`).
+- **Card order:** "Uncover the Mystery" introduces the NPC lines (what people say is mystery, not a consequence of the player's actions); "Choices with Consequences" comes before the exploration montage.
+- **Real hacking is this mission's real tools only** (m01: Hydra and the SSH shell; sqlmap and dirb belong to other missions). Introduce it with the player walking up to the in-game Kali station, then the terminal footage, then CyberChef. No in-game shot of the player merely standing in the server room.
+- **Walking shots have a purpose** (heading for a door); props such as a swivel chair are knocked incidentally. Never walk into an NPC.
+- **A clean take of a minigame may need a game fix**: the m01 key-lock pins were lagging and sampled off the drawn key (fixed in `key-insertion.js`).
+- **Nothing that reveals an answer, even for 3 frames:** crop post-its and door signs out of short cuts; drop shots whose text shows a real code.

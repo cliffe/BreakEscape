@@ -95,6 +95,8 @@ Bernie Nwosu: I've had the police, two journalists, and a man from head office a
 
 Bernie Nwosu: Which is encrypted. Along with the incident.
 
+Bernie Nwosu: The cardiac ward's monitoring is down. Nobody's watching those hearts but us.
+
 Bernie Nwosu: So. Security consultant. Convince me.
 
 * [Dr. Kim called for emergency incident response at one this morning. Check your log.]

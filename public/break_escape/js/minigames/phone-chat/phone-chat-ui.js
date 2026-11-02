@@ -908,12 +908,29 @@ export default class PhoneChatUI {
      * Add multiple messages at once (for loading history)
      * @param {Array} messages - Array of message objects
      */
-    addMessages(messages) {
+    addMessages(messages, opts = {}) {
         if (!messages || messages.length === 0) {
             return;
         }
 
         const savedTheme = this.isTerminalTheme;
+
+        // A terminal contact's preloaded first open types its lines out in order, like
+        // live terminal output, instead of the instant history dump. Only on first open
+        // (opts.typeTerminalOpening) and only for a terminal theme; everything else keeps
+        // the instant draw below. Fire-and-forget: the caller does not await it, so the
+        // choices and the rest of openConversation appear as usual while it types.
+        if (opts.typeTerminalOpening && savedTheme) {
+            (async () => {
+                for (const msg of messages) {
+                    await this.addMessage(msg.type, msg.text, true, msg);
+                }
+                this.scrollToBottom();
+            })();
+            console.log(`💬 Typing out ${messages.length} preloaded terminal opening line(s)`);
+            return;
+        }
+
         this.isTerminalTheme = false;
         messages.forEach(msg => {
             this.addMessage(msg.type, msg.text, false, msg);

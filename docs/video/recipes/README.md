@@ -49,7 +49,7 @@ One track per mission. Before choosing, read this table; after the edit is final
 | Mission | Track | Window used | BPM | Where | Alternatives analysed | Notes |
 |---|---|---|---|---|---|---|
 | m01 First Contact | Noir "Midnight Cipher Chase" (`Noir/Midnight Cipher Chase.mp3`) | 60 s from 109.023 s (a downbeat); the 30 s teaser used 107.02 to 137.03 s, later moved to 109.023 s | 120 (period 0.5 s) | 60 s trailer v4 | Cold Bond Circuit at 53.847 s (86 BPM); Midnight Trigger at 92.994 s; Shadow Code 1 at 114.322 s | lifts at 12, 18, 26, 34 and 52 s; quiet bar at 48 s; strong hits at 52, 54, 56, 58 s |
-| m02 Ransomed Trust | unassigned | | | | | |
+| m02 Ransomed Trust | Noir "Steel Shadows in E Minor (Remastered)" (`Noir/Steel Shadows in E Minor (Remastered).mp3`) | 60 s from 50.248 s (a downbeat) | 156 (period 0.3846, bar 1.538 s) | 60 s trailer v1 | Shadowline Protocol at 82.317 s (124 BPM); Encrypted Shadows at 105.537 s (99 BPM) | drop at 10.77 s (lights); 4-bar lifts at 16.92/23.08/29.23/35.38/41.54/47.69/53.85 s. Also in m02's own Noir playlist; m10 uses it in game. Picked by analysis, pending the user's ear |
 | m03 Ghost in the Machine | unassigned | | | | | |
 | m04 to m08 | unassigned | | | | | |
 | Whole-game trailer | unassigned (suggestion for the user to hear: a Vocals-set track such as "Safetynet in the Smoke") | | | | | must not reuse a mission's track |

@@ -39,7 +39,9 @@ export class KeyInsertion {
         if (!this.parent.keyConfig) return;
         
         // Calculate key blade position relative to the lock
-        const keyBladeStartX = this.parent.keyGroup.x + this.parent.keyConfig.circleRadius * 2 + this.parent.keyConfig.shoulderWidth;
+        // Same blade origin as the drawing (key-drawing.js: shoulderX = circleRadius * 1.9); * 2 put the
+        // sampled surface 14px right of the drawn key, so pins sank into its slopes.
+        const keyBladeStartX = this.parent.keyGroup.x + this.parent.keyConfig.circleRadius * 1.9 + this.parent.keyConfig.shoulderWidth;
         const keyBladeEndX = keyBladeStartX + this.parent.keyConfig.bladeWidth;
         
         // Key blade base position in world coordinates
@@ -73,12 +75,10 @@ export class KeyInsertion {
                 const requiredLift = pinRestY - targetKeyPinBottom;
                 const targetLift = Math.max(0, requiredLift);
                 
-                // Smooth movement toward target
-                if (pin.currentHeight < targetLift) {
-                    pin.currentHeight = Math.min(targetLift, pin.currentHeight + 2);
-                } else if (pin.currentHeight > targetLift) {
-                    pin.currentHeight = Math.max(targetLift, pin.currentHeight - 1);
-                }
+                // The pins are spring-loaded, so the key pin rides the key surface exactly.
+                // (A fixed 2px/1px step per frame lagged behind the 4 s insertion tween,
+                // most on slow frame rates, and the pins then jumped when snapped at the end.)
+                pin.currentHeight = targetLift;
             } else {
                 // Pin is not under key blade - keep current position (don't drop back down)
                 // This ensures pins stay lifted once they've been pushed up by the key
@@ -88,9 +88,6 @@ export class KeyInsertion {
             // Use the same boundary calculation as lockpicking mode
             const boundaryPosition = -50 + pin.driverPinLength - pin.currentHeight;
             const distanceToShearLine = Math.abs(boundaryPosition - shearLineY);
-            
-            // Debug: Log boundary positions for highlighting
-            console.log(`Pin ${index} highlighting: boundaryPosition=${boundaryPosition}, distanceToShearLine=${distanceToShearLine}, tolerance=${tolerance}, shouldHighlight=${distanceToShearLine <= tolerance}, hasShearHighlight=${!!pin.shearHighlight}, hasSetHighlight=${!!pin.setHighlight}`);
             
             // Update pin highlighting based on shear line proximity
             this.parent.pinVisuals.updatePinHighlighting(pin, distanceToShearLine, tolerance);
